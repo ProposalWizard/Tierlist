@@ -1,0 +1,362 @@
+[
+ {
+  "id": "b1-the-offer.n1.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "You were snatching at them Saturday. I've a bag of balls here and the groundsman's left the shed light on, so do you want me to feed you a hundred?",
+  "file": "b1-the-offer.n1.say0.q0.mp3",
+  "seconds": 7.89
+ },
+ {
+  "id": "b1-the-offer.n1-bad.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "You put three over the bar and you looked at the keeper before every one of them.",
+  "file": "b1-the-offer.n1-bad.say0.q0.mp3",
+  "seconds": 4.26
+ },
+ {
+  "id": "b1-the-offer.n1-bad.say1.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "I've washed the kit here for thirty-one years and I've seen a lot of lads go through that. Most of them got out of it on a night like this.",
+  "file": "b1-the-offer.n1-bad.say1.q0.mp3",
+  "seconds": 7.11
+ },
+ {
+  "id": "b1-the-offer.n1-quiet.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "You don't have to say owt. Stand on the D and I'll roll them in.",
+  "file": "b1-the-offer.n1-quiet.say0.q0.mp3",
+  "seconds": 3.37
+ },
+ {
+  "id": "b1-the-offer.n-cold.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "I do. And your boots will be clean on your peg by eight tomorrow, same as they always are.",
+  "file": "b1-the-offer.n-cold.say0.q0.mp3",
+  "seconds": 4.44
+ },
+ {
+  "id": "b1-the-offer.n-leave.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Fair enough, you've trained all day. I'm out here most Thursdays if you change your mind.",
+  "file": "b1-the-offer.n-leave.say0.q0.mp3",
+  "seconds": 4.86
+ },
+ {
+  "id": "b1-the-offer.n2.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Ten lots of ten, and I count them out loud so neither of us can cheat.",
+  "file": "b1-the-offer.n2.say0.q0.mp3",
+  "seconds": 4.18
+ },
+ {
+  "id": "b1-the-offer.n2.say1.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Do you want them from where you missed on Saturday, or from further out where it's harder?",
+  "file": "b1-the-offer.n2.say1.q0.mp3",
+  "seconds": 4.55
+ },
+ {
+  "id": "b1-the-offer.n2-pick.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Corners, then. Twenty yards is for when you can do the corners.",
+  "file": "b1-the-offer.n2-pick.say0.q0.mp3",
+  "seconds": 3.71
+ },
+ {
+  "id": "b1-the-offer.n3.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "One more thing before we start. The gaffer's going to see that light from his office window. If he asks me in the morning, what am I telling him?",
+  "file": "b1-the-offer.n3.say0.q0.mp3",
+  "seconds": 8.72
+ },
+ {
+  "id": "b1-the-offer.play.caller0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Ten.",
+  "file": "b1-the-offer.play.caller0.mp3",
+  "seconds": 0.65
+ },
+ {
+  "id": "b1-the-offer.play.caller1",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Twenty.",
+  "file": "b1-the-offer.play.caller1.mp3",
+  "seconds": 0.78
+ },
+ {
+  "id": "b1-the-offer.play.caller2",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "That's thirty.",
+  "file": "b1-the-offer.play.caller2.mp3",
+  "seconds": 1.07
+ },
+ {
+  "id": "b1-the-offer.play.caller3",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Forty, and keep your head down.",
+  "file": "b1-the-offer.play.caller3.mp3",
+  "seconds": 1.67
+ },
+ {
+  "id": "b1-the-offer.play.caller4",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Fifty, so that's halfway.",
+  "file": "b1-the-offer.play.caller4.mp3",
+  "seconds": 1.49
+ },
+ {
+  "id": "b1-the-offer.play.caller5",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Sixty.",
+  "file": "b1-the-offer.play.caller5.mp3",
+  "seconds": 0.84
+ },
+ {
+  "id": "b1-the-offer.play.caller6",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Seventy, and stop looking at the goal.",
+  "file": "b1-the-offer.play.caller6.mp3",
+  "seconds": 2.27
+ },
+ {
+  "id": "b1-the-offer.play.caller7",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Eighty.",
+  "file": "b1-the-offer.play.caller7.mp3",
+  "seconds": 0.73
+ },
+ {
+  "id": "b1-the-offer.play.caller8",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Ninety.",
+  "file": "b1-the-offer.play.caller8.mp3",
+  "seconds": 0.84
+ },
+ {
+  "id": "b1-the-offer.play.caller9",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "And a hundred.",
+  "file": "b1-the-offer.play.caller9.mp3",
+  "seconds": 0.97
+ },
+ {
+  "id": "b1-the-offer.r-clean.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "I'll be honest with you, I had you down for fifty.",
+  "file": "b1-the-offer.r-clean.say0.q0.mp3",
+  "seconds": 2.53
+ },
+ {
+  "id": "b1-the-offer.r-rough.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "It's dark, mind, and my feeding's not what it was. You were still looking up before you hit it.",
+  "file": "b1-the-offer.r-rough.say0.q0.mp3",
+  "seconds": 5.15
+ },
+ {
+  "id": "b1-the-offer.soup.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "I've a flask of soup in the van if you want a cup before you go. It's only tomato.",
+  "file": "b1-the-offer.soup.say0.q0.mp3",
+  "seconds": 4.49
+ },
+ {
+  "id": "b1-the-offer.van.say1.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "I've two more seasons in me. The wife says one. When I do go they'll give me a night, a dinner or a match or something, and I'd like you there. Lads always say yes and then they've signed for somebody in Spain.",
+  "file": "b1-the-offer.van.say1.q0.mp3",
+  "seconds": 15.18
+ },
+ {
+  "id": "b1-the-offer.end.left.0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "See you tomorrow.",
+  "file": "b1-the-offer.end.left.0.q0.mp3",
+  "seconds": 1.1
+ },
+ {
+  "id": "b1-the-offer.end.thursday.0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Thursday.",
+  "file": "b1-the-offer.end.thursday.0.q0.mp3",
+  "seconds": 0.91
+ },
+ {
+  "id": "b1-the-offer.end.walked-off-honest.0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Then go and put them in the ice. We'll finish it another night.",
+  "file": "b1-the-offer.end.walked-off-honest.0.q0.mp3",
+  "seconds": 3.42
+ },
+ {
+  "id": "b1-the-offer.end.stayed-promised.0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "I'll hold you to that.",
+  "file": "b1-the-offer.end.stayed-promised.0.q0.mp3",
+  "seconds": 1.2
+ },
+ {
+  "id": "b1-the-offer.end.stayed-maybe.0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "That's all anybody can say.",
+  "file": "b1-the-offer.end.stayed-maybe.0.q0.mp3",
+  "seconds": 1.57
+ },
+ {
+  "id": "b2-the-gaffer.g1.say2.c0",
+  "speaker": "gaffer",
+  "voice": "Paul - Deep & Warm Yorkshire",
+  "text": "Was it you?",
+  "file": "b2-the-gaffer.g1.say2.c0.mp3",
+  "seconds": 1.1
+ },
+ {
+  "id": "b2-the-gaffer.g-deny.say0.q0",
+  "speaker": "gaffer",
+  "voice": "Paul - Deep & Warm Yorkshire",
+  "text": "Hm.",
+  "file": "b2-the-gaffer.g-deny.say0.q0.mp3",
+  "seconds": 0.78
+ },
+ {
+  "id": "b2-the-gaffer.g2.say0.q0",
+  "speaker": "gaffer",
+  "voice": "Paul - Deep & Warm Yorkshire",
+  "text": "What did he have you doing?",
+  "file": "b2-the-gaffer.g2.say0.q0.mp3",
+  "seconds": 1.57
+ },
+ {
+  "id": "b2-the-gaffer.g3.say1.q0",
+  "speaker": "gaffer",
+  "voice": "Paul - Deep & Warm Yorkshire",
+  "text": "On Saturday, when you get your chance, I want it low and I don't want to see you look up. Can you do that for me?",
+  "file": "b2-the-gaffer.g3.say1.q0.mp3",
+  "seconds": 7.78
+ },
+ {
+  "id": "b2-the-gaffer.end.objective.0.q0",
+  "speaker": "gaffer",
+  "voice": "Paul - Deep & Warm Yorkshire",
+  "text": "Good lad.",
+  "file": "b2-the-gaffer.end.objective.0.q0.mp3",
+  "seconds": 1.02
+ },
+ {
+  "id": "b2-the-gaffer.end.objective.1.q0",
+  "speaker": "gaffer",
+  "voice": "Paul - Deep & Warm Yorkshire",
+  "text": "And next time, finish the hundred.",
+  "file": "b2-the-gaffer.end.objective.1.q0.mp3",
+  "seconds": 2.46
+ },
+ {
+  "id": "b2-the-gaffer.end.objective-bet.0.q0",
+  "speaker": "gaffer",
+  "voice": "Paul - Deep & Warm Yorkshire",
+  "text": "Score like that and we'll talk about the penalties.",
+  "file": "b2-the-gaffer.end.objective-bet.0.q0.mp3",
+  "seconds": 2.93
+ },
+ {
+  "id": "b2-the-gaffer.setup1.q0",
+  "speaker": "gaffer",
+  "voice": "Paul - Deep & Warm Yorkshire",
+  "text": "Somebody had the shed light on till seven last night. Den says he can't think who.",
+  "file": "b2-the-gaffer.setup1.q0.mp3",
+  "seconds": 4.78
+ },
+ {
+  "id": "b2b-ten-fingers.choice1.out0.q0",
+  "speaker": "gaffer",
+  "voice": "Paul - Deep & Warm Yorkshire",
+  "text": "Next one's yours. Miss it and it goes back.",
+  "file": "b2b-ten-fingers.choice1.out0.q0.mp3",
+  "seconds": 2.87
+ },
+ {
+  "id": "b3-thursdays.t-sorry.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "You were. I've had worse off better players, mind.",
+  "file": "b3-thursdays.t-sorry.say0.q0.mp3",
+  "seconds": 3.06
+ },
+ {
+  "id": "b3-thursdays.t-sorry.say0.q1",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Go and stand on the D.",
+  "file": "b3-thursdays.t-sorry.say0.q1.mp3",
+  "seconds": 1.33
+ },
+ {
+  "id": "b3-thursdays.t-soup.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Aye, go on.",
+  "file": "b3-thursdays.t-soup.say0.q0.mp3",
+  "seconds": 0.86
+ },
+ {
+  "id": "b3-thursdays.t-soup.say1.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "My grandson's started at the under-nines. He's a left back and he hates it, he wants to be you. I told him you'd been doing corners for a month and he said that sounded boring.",
+  "file": "b3-thursdays.t-soup.say1.q0.mp3",
+  "seconds": 10.89
+ },
+ {
+  "id": "b3-thursdays.t-best.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "That's the most you've hit out here.",
+  "file": "b3-thursdays.t-best.say0.q0.mp3",
+  "seconds": 1.85
+ },
+ {
+  "id": "b3-thursdays.end.soup-grandson.0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "He'll be sick with nerves. I'll bring him.",
+  "file": "b3-thursdays.end.soup-grandson.0.q0.mp3",
+  "seconds": 2.12
+ },
+ {
+  "id": "b1-the-offer.n2.say0.c0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Right.",
+  "file": "b1-the-offer.n2.say0.c0.mp3",
+  "seconds": 0.73
+ }
+]
