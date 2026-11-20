@@ -1,0 +1,38 @@
+/* The 3D phone test page (app/star-phone3d-dev/page.tsx). */
+.p3-film { position: fixed; inset: 0; display: grid; place-items: center; background: #000; }
+.p3-wrap { display: grid; place-items: center; padding: 8px 0 24px; }
+.p3-stage { position: relative; overflow: hidden; background: #000; border-radius: 0; transform: translateZ(0); }
+.p3-wrap .p3-stage { border-radius: 22px; box-shadow: 0 10px 40px rgba(0, 0, 0, .35); }
+.p3-full { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; }
+.p3-hit { position: absolute; background: transparent; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.p3-held { position: absolute; inset: 0; }
+.p3-screen { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; }
+.p3-room-blur { opacity: 1; }
+
+/* ── Opening: eyelids part, the world sharpens, the phone comes up into the hand ── */
+.p3-opening .p3-lid { position: absolute; left: -10%; right: -10%; height: 56%; background: #000; z-index: 5; }
+.p3-opening .p3-lid-top { top: 0; border-radius: 0 0 50% 50% / 0 0 40% 40%; animation: p3-lid-top 820ms cubic-bezier(.55, 0, .2, 1) both; }
+.p3-opening .p3-lid-bottom { bottom: 0; border-radius: 50% 50% 0 0 / 40% 40% 0 0; animation: p3-lid-bottom 820ms cubic-bezier(.55, 0, .2, 1) both; }
+@keyframes p3-lid-top { 0% { transform: translateY(0); } 18% { transform: translateY(-38%); } 30% { transform: translateY(-20%); } 100% { transform: translateY(-112%); } }
+@keyframes p3-lid-bottom { 0% { transform: translateY(0); } 18% { transform: translateY(38%); } 30% { transform: translateY(20%); } 100% { transform: translateY(112%); } }
+.p3-opening .p3-held { animation: p3-raise 820ms cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes p3-raise { 0% { transform: translateY(26%) rotate(-4deg); filter: blur(6px); } 60% { filter: blur(0); } 100% { transform: none; filter: none; } }
+.p3-opening .p3-room-blur { animation: p3-fadein 820ms ease-out both; }
+@keyframes p3-fadein { from { filter: blur(10px) brightness(.6); } to { filter: none; } }
+
+/* ── HOME: the phone drops away quickly and the menu is back ── */
+.p3-closing-home .p3-held { animation: p3-drop 320ms cubic-bezier(.5, 0, .9, .5) both; }
+.p3-closing-home .p3-home { animation: p3-show 320ms ease-out both; z-index: 4; }
+@keyframes p3-drop { to { transform: translateY(60%); opacity: 0; } }
+@keyframes p3-show { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── BACK = put phone away: the hand lowers out of view, the room comes into focus ── */
+.p3-putting-away .p3-held { animation: p3-lower 750ms cubic-bezier(.45, 0, .2, 1) both; }
+@keyframes p3-lower { 0% { transform: none; } 100% { transform: translate(12%, 95%) rotate(14deg); } }
+.p3-putting-away .p3-room-blur { animation: p3-focus 750ms ease-in-out both; }
+@keyframes p3-focus { 0% { opacity: 1; } 35% { opacity: 1; } 100% { opacity: 0; } }
+.p3-house .p3-room-blur { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .p3-stage * { animation-duration: 1ms !important; }
+}

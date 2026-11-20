@@ -1793,6 +1793,21 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-wallet-dev/ · lib/star/wallet.ts, lib/star/useWallet.ts · app/api/star/wallet (GET), /buy, /webhook (refuses all) · app/api/admin/wallet/grant · supabase/migrations/star_wallet.sql (spend_gems, grant_gems, grant_item) · tests/star/wallet.mts · PAID_ITEMS.md",
   },
+  "/star-phone3d-dev": {
+    title: "3D phone (test)",
+    what: "The 3D phone flow in pictures (Harry, 19-20 Nov 2026, RUL-UI-008): tap Phone and an eye-blink opens on your hand holding the phone at the GTA angle, with your house blurred behind. No live 3D yet: this is to judge the look and the feel.",
+    buttons: [
+      { group: "The steps", items: [
+        ["Phone (bottom bar, on the Home picture)", "Plays the eye-blink and shows your hand holding the phone."],
+        ["HOME (on the phone screen)", "The phone drops away and you are back on the Home screen."],
+        ["BACK (on the phone screen)", "Put the phone away: it lowers out of view and the room comes into focus. You are in your house."],
+        ["Anywhere, in the house", "Takes the phone out again."],
+      ] },
+    ],
+    saving: ["Nothing is saved; it is pictures only."],
+    inGame: ["Not in the game. Harry judges it here first (Stage 3 of the tap-speed and 3D plan)."],
+    dev: "app/star-phone3d-dev/page.tsx + phone3d.css · pictures in public/star/phone3d/ (hand.webp from tools/phone3d/hand_phone_gta.py; room, room-blur, home and screen from captures of the game) · the screen is bent onto the glass with a CSS matrix3d from the render's printed corners · ?film=1 shows the phone-sized stage alone",
+  },
   "/star-shop-dev": {
     title: "Menu shop (test)",
     what: "The new shop for the menus (Harry, 19 Nov 2026: layout B on the navy store background), on a made-up career, so it can be looked at and bought from before it goes into the game.",
