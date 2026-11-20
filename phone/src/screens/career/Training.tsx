@@ -8,6 +8,7 @@
 import { useCallback, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DrillStrike, DrillPace, DrillVision } from "../MatchStages";
+import { DrillShell } from "./DrillShell";
 import { View, Text } from "react-native";
 import type { CareerState, Skills } from "@/lib/star/types";
 import { starsOf, totalStars, highestUnlocked, TRAINING_LEVELS } from "@/lib/star/trainingLevels";
@@ -136,17 +137,15 @@ export function DrillScreen({ career, skill, level, go }: { career: CareerState;
   const [stars, setStars] = useState<number | null>(null);
   const label = SKILL_LABELS.find((s) => s[0] === skill)?.[1] ?? skill;
   const onFinish = useCallback((n: number) => go(flow.completeTraining(skill, level, n).step), [go, skill, level]);
-  if (skill === "pace" || skill === "vision") {
+  if (skill === "pace" || skill === "vision" || skill === "power" || skill === "technique" || skill === "freeKick" || skill === "aerial") {
+    // The website's tutorial on the drill, its "?" and the 3 s result card (DrillShell.tsx).
     return (
       <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: C.bg, paddingTop: 8 }}>
-        {skill === "pace" ? <DrillPace trainingLevel={level} onFinish={onFinish} /> : <DrillVision trainingLevel={level} skills={career.skills} onFinish={onFinish} />}
-      </SafeAreaView>
-    );
-  }
-  if (skill === "power" || skill === "technique" || skill === "freeKick" || skill === "aerial") {
-    return (
-      <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: C.bg, paddingTop: 8 }}>
-        <DrillStrike kind={skill} trainingLevel={level} skills={career.skills} onFinish={onFinish} />
+        <DrillShell career={career} skill={skill} level={level} onDone={onFinish}>
+          {(finish, run) => skill === "pace" ? <DrillPace trainingLevel={level} onFinish={finish} />
+            : skill === "vision" ? <DrillVision key={run} trainingLevel={level} skills={career.skills} onFinish={finish} />
+            : <DrillStrike kind={skill} trainingLevel={level} skills={career.skills} onFinish={finish} />}
+        </DrillShell>
       </SafeAreaView>
     );
   }
