@@ -233,6 +233,8 @@ export const STAFF_PRESETS: readonly PeoplePreset[] = [
  * The head-and-haircut looks a player can have: the 6 heads (beards on and off, shaved, stubble,
  * waves, cornrows), the 3 re-shaped kit heads, and the modelled hairstyles on the close-cut heads.
  */
+// (Not the Curls, Bun and Fringe heads, h1, h4 and h5: wide-set eyes over a small jaw, they read as boys beside
+// the others. Harry, 20 Nov 2026: "not many normal looking faces". A few staff and fans still wear them.)
 const PLAYER_VARIANTS: readonly [ToonHead, CutId, string, ToonHair?][] = [
   ["h3", "as", "Short Locs & Beard", "locsShort"], ["h8", "clean", "Short Locs", "locsShort"],
   ["h3", "clean", "Shoulder Locs", "locsLong"], ["h7", "as", "Shoulder Locs & Beard", "locsLong"],
@@ -241,20 +243,17 @@ const PLAYER_VARIANTS: readonly [ToonHead, CutId, string, ToonHair?][] = [
   ["h7", "clean", "High-top", "highTop"], ["h3", "as", "High-top & Beard", "highTop"],
   ["h3", "cleanStubble", "Twists", "twists"], ["h8", "as", "Twists & Beard", "twists"],
   ["h3", "clean", "Braids", "braids"], ["h7", "as", "Braids & Beard", "braids"],
+  ["h9", "clean", "Man Bun", "manBun"], ["h3", "as", "Man Bun & Beard", "manBun"],
   ["h3", "clean", "Curly Top", "curlyTop"], ["h8", "cleanStubble", "Curly Top & Stubble", "curlyTop"], ["h9", "as", "Curly Top & Beard", "curlyTop"],
   ["h7", "clean", "Crew Cut", "crew"], ["h9", "cleanStubble", "Crew Cut & Stubble", "crew"], ["h3", "as", "Crew Cut & Beard", "crew"],
   ["h8", "clean", "Slick Back", "slickBack"], ["h7", "as", "Slick Back & Beard", "slickBack"],
   ["h3", "clean", "Tied Back", "ponytail"], ["h8", "as", "Tied Back & Beard", "ponytail"],
-  ["h9", "clean", "Man Bun", "manBun"], ["h3", "as", "Man Bun & Beard", "manBun"],
   ["h7", "cleanStubble", "Mullet", "mullet"],
   ["h7", "clean", "Broad-jaw Buzz"], ["h7", "as", "Broad-jaw Buzz & Beard"], ["h8", "as", "Long-face Buzz & Beard"], ["h8", "baldClean", "Long-face Shaved Head"],
   ["h9", "clean", "Round-face Buzz"], ["h9", "wavesClean", "Round-face Waves"], ["h7", "cornrowsClean", "Broad-jaw Cornrows"],
-  ["h1", "as", "Curls"], ["h1", "stubble", "Curls & Stubble"],
   ["h2", "as", "Quiff"], ["h2", "stubble", "Quiff & Stubble"],
   ["h3", "as", "Buzz & Beard"], ["h3", "clean", "Buzz"], ["h3", "bald", "Shaved & Beard"], ["h3", "baldClean", "Shaved Head"],
   ["h3", "waves", "Waves & Beard"], ["h3", "wavesClean", "Waves"], ["h3", "cornrows", "Cornrows & Beard"], ["h3", "cornrowsClean", "Cornrows"],
-  ["h4", "as", "Bun"], ["h4", "stubble", "Bun & Stubble"],
-  ["h5", "as", "Fringe"], ["h5", "stubble", "Fringe & Stubble"],
   ["h6", "as", "Crop & Beard"], ["h6", "clean", "Crop"], ["h6", "cleanStubble", "Crop & Stubble"], ["h6", "shaved", "Skin Fade & Beard"],
 ];
 const BUILD_WORD: Record<ToonBody, string> = { c1: "Slim", c2: "Strong", c3: "Tall" };

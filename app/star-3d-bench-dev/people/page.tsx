@@ -19,6 +19,8 @@
  *   ?set=faceids       THE FACE SYSTEM (style3d/toon/faceId.ts): 28 generated people, 4 of each heritage, front and three-quarter, each with
  *                      his own drawn face. ?faceid=0 the same people as before it (the painted faces)  ?zoom=1 the face only  ?n=28
  *                      ?emotions=<person 0..27> one face in the 8 emotions  ?sliders=<person> the mould's sliders, each at its two ends
+ *                      ?beards=1,9 each way to wear facial hair on those people  ?eyes=9,1 the 8 eye shapes on those people  ?allheads=9 his FaceId on each head
+ *                      ?perf=22 the drawn face's cost: ms a frame with and without it, 1 close up and 22 in two rows (window.__facePerf)
  *                      ?detail=0.5 (a phone's detail)  ?views=front,34  ?players=1 players only
  *   ?set=faceplay      one face changing emotion, blinking and glancing (window.__faceFrame(i), 30 a second; film: scripts/bench3d/face-film.mjs)
  *   ?set=heads         the head shapes (the two hair heads and the four re-shaped ones), front, three-quarter and side
@@ -27,7 +29,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import type { PersonLookResult } from "@/lib/star/people/presets";
-import type { PersonLook } from "@/lib/star/people3d";
+import type { PersonLook, Person3D } from "@/lib/star/people3d";
 import type { ToonBody, ToonHead } from "@/lib/star/style3d/toon/bodies";
 import type { ToonHair } from "@/lib/star/style3d/toon/hairStyles";
 import type { ToonFaceId } from "@/lib/star/style3d/toon/faceShape";
@@ -248,6 +250,23 @@ export default function BenchPeoplePage() {
         if (q.get("emotions") !== null) {
           const l = people[Number(q.get("emotions")) % people.length];
           FI.EMOTION_NAMES.forEach((e) => cards.push({ title: e[0].toUpperCase() + e.slice(1), sub: label(l), look: l, fid: { yaw: -0.25, on: true, emotion: e } }));
+        } else if (q.get("beards") !== null) {
+          // every way to wear facial hair, on these people (the same faces, only the beard changed)
+          for (const k of q.get("beards")!.split(",").map(Number)) {
+            const l = people[k % people.length];
+            FI.BEARD_STYLE_NAMES.filter((b) => b !== "none").forEach((b) => (q.get("views")?.split(",") ?? ["front"]).forEach((v) => cards.push({ title: b, sub: `${label(l)} · ${v === "34" ? "three-quarter" : v}`, look: l, fid: { yaw: YAW[v] ?? 0, on: true, mod: (f) => ({ ...f, ...FI.BEARD_STYLES[b] }) } })));
+          }
+        } else if (q.get("eyes") !== null) {
+          // the 8 eye shapes on the same faces (they must read apart on a 120 px card)
+          for (const k of q.get("eyes")!.split(",").map(Number)) {
+            const l = people[k % people.length];
+            FI.EYE_SHAPE_NAMES.forEach((e) => cards.push({ title: e, sub: label(l), look: l, fid: { yaw: -0.2, on: true, mod: (f) => ({ ...f, ...FI.eyeOfShape(e), irisR: 0.0076 }) } }));
+          }
+        } else if (q.get("allheads") !== null) {
+          // one person's FaceId on each of the 12 heads (which heads read as a lean adult)
+          const l = people[Number(q.get("allheads")) % people.length];
+          for (const head of ["h1", "h2", "h3", "h4", "h5", "h6", "h7", "h8", "h9", "m1", "m2", "m3"] as ToonHead[]) for (const v of ["front", "34"])
+            cards.push({ title: `${head} · ${l.faceId.faceBuild}`, sub: v, look: { ...l, head, hairMesh: undefined }, fid: { yaw: YAW[v], on: true } });
         } else if (q.get("sliders") !== null) {
           const l = people[Number(q.get("sliders")) % people.length];
           const S = FI.FACE_LIMITS.shape;
@@ -384,6 +403,50 @@ export default function BenchPeoplePage() {
       if (set === "faces") { cam.position.set(0, 1.74, 1.5); cam.lookAt(0, 1.685, 0); }
       else if (set === "hair" || set === "heads") { cam.position.set(0, 1.76, 1.85); cam.lookAt(0, 1.69, 0); }
       else if (set === "closeup") { cam.position.set(0, 1.7, 2.05); cam.lookAt(0, 1.58, 0); } else { cam.position.set(0, 1.46, 3.45); cam.lookAt(0, 1.31, 0); }
+
+      if (set === "faceids" && q.get("perf") !== null) {
+        // THE FACE SHADER'S COST: the same people drawn with and without their FaceId, 1 close up and N in two rows,
+        // each timed over ?frames=12 frames, the best of two goes (the GPU made to finish before the clock is read)
+        const n = Number(q.get("perf")) || 22, W = Number(q.get("w") ?? 960), H = Number(q.get("h") ?? 540), F = Number(q.get("frames") ?? 12);
+        renderer.setSize(W, H); cam.aspect = W / H;
+        box.current.replaceChildren(renderer.domElement);
+        const squad = facePeople(PR, 28, true);
+        const gl = renderer.getContext(), px = new Uint8Array(4);
+        const run = async (count: number, on: boolean): Promise<number> => {
+          const made: Person3D[] = [];
+          for (let i = 0; i < count; i++) {
+            const L = squad[i % squad.length];
+            const p = P3.makePerson3d(T, SK, all, anims, { outline: 0.006, toonHead: L.head, toonBody: L.build, who: L.id });
+            P3.dressPerson3d(T, p, L.dress);
+            if (on) applyToonFaceId(T, p, L.faceId, { detail }); else applyToonFaceShape(T, p, L.face, L.faceK);
+            addToonFace(T, p)?.set({ face: toonFaceFor({}), blink: 0 });
+            P3.poseClips(p, [[p.actions.idle ? "idle" : Object.keys(p.actions)[0], 1.2, 1]]);
+            const per = Math.ceil(count / 2);
+            p.root.position.set(count === 1 ? 0 : ((i % per) - (per - 1) / 2) * 0.62, 0, count === 1 ? 0 : i < per ? 0.5 : -0.5);
+            p.root.updateMatrixWorld(true);
+            scene.add(p.root); made.push(p);
+          }
+          if (count === 1) { const hp = new T.Vector3(); made[0].bones.Head!.getWorldPosition(hp); cam.fov = 9.5; cam.position.set(hp.x, hp.y + 0.06, hp.z + 1.25); cam.lookAt(hp.x, hp.y + 0.035, hp.z + 0.04); }
+          else { cam.fov = 24; cam.position.set(0, 1.5, 8.6); cam.lookAt(0, 1.0, 0); }
+          cam.updateProjectionMatrix();
+          for (let k = 0; k < 2; k++) renderer.render(scene, cam);
+          gl.finish(); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+          const t0 = performance.now();
+          for (let k = 0; k < F; k++) renderer.render(scene, cam);
+          gl.finish(); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+          const ms = (performance.now() - t0) / F;
+          setStatus(`${count} ${on ? "drawn" : "painted"}: ${ms.toFixed(1)} ms`); console.log(`FSDBG ${count} ${on} ${ms.toFixed(2)}`);
+          await new Promise((r) => setTimeout(r, 0));
+          if (!(q.get("keep") === `${count}` && on)) for (const p of made) { scene.remove(p.root); p.root.traverse((o) => { const m = o as import("three").Mesh; if (m.isMesh) (Array.isArray(m.material) ? m.material : [m.material]).forEach((mm) => mm?.dispose()); }); }
+          return Math.round(ms * 100) / 100;
+        };
+        const out: Record<string, number> = {};
+        for (const count of [1, n]) for (const on of [false, true, false, true]) { const key = `${count} ${on ? "drawn" : "painted"}`; const ms = await run(count, on); out[key] = out[key] === undefined ? ms : Math.min(out[key], ms); }
+        (window as unknown as { __facePerf?: unknown }).__facePerf = out;
+        setStatus(`face shader, ms a frame at ${W}x${H}: ${JSON.stringify(out)}`);
+        (window as unknown as { __sheetDone?: boolean }).__sheetDone = true;
+        return;
+      }
 
       for (let i = 0; i < cards.length; i++) {
         if (dead) return;

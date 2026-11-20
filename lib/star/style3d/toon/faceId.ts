@@ -89,7 +89,7 @@ export interface FaceId {
 
 /** Nothing leaves these (RUL-3D-010: never caricature). The mould's are on the summed shape. */
 export const FACE_LIMITS = {
-  eyeW: [0.0158, 0.0204], eyeUp: [0.0054, 0.0114], eyeLow: [0.0038, 0.0076], eyeTilt: [-0.13, 0.19], eyeGap: [-0.003, 0.0035], eyeDy: [-0.0015, 0.0015],
+  eyeW: [0.0158, 0.021], eyeUp: [0.0054, 0.0114], eyeLow: [0.0038, 0.0076], eyeTilt: [-0.19, 0.25], eyeGap: [-0.003, 0.0035], eyeDy: [-0.0015, 0.0015],
   irisR: [0.0066, 0.0088], browH: [0.0165, 0.0255], browT: [0.0036, 0.0078], browArch: [0, 0.0068], browTilt: [-0.005, 0.0065], browLen: [1.9, 2.5],
   mouthW: [0.88, 1.14], lipUp: [0.0026, 0.0066], lipLow: [0.004, 0.0086],
   shape: {
@@ -100,18 +100,19 @@ export const FACE_LIMITS = {
 
 /**
  * The eye shapes. They must read apart in a small picture (a 120 px face), so they differ in the
- * opening's height and length, its slope, how round its top is, the fold and the socket's shade,
+ * opening's height and length, its slope, how round its top is, the fold, the socket's shade and the
+ * lash line's weight (a hooded or single lid reads as a heavy dark line; a round eye as an open one),
  * each inside FACE_LIMITS.
  */
-const EYE_SHAPES: Record<EyeShape, { eyeW: number; eyeUp: number; eyeLow: number; eyeTilt: number; crease: number; hood: number; socket: number; round: number; inner: number; browH?: number }> = {
-  round: { eyeW: 0.0166, eyeUp: 0.0108, eyeLow: 0.0072, eyeTilt: 0.01, crease: 1, hood: 0, socket: 0.2, round: 1, inner: 0 },
-  almond: { eyeW: 0.0196, eyeUp: 0.0084, eyeLow: 0.005, eyeTilt: 0.09, crease: 0.9, hood: 0.05, socket: 0.3, round: 0.55, inner: 0.15 },
-  hooded: { eyeW: 0.018, eyeUp: 0.0084, eyeLow: 0.0052, eyeTilt: 0.02, crease: 0, hood: 1, socket: 0.5, round: 0.45, inner: 0 },
-  narrow: { eyeW: 0.0198, eyeUp: 0.0058, eyeLow: 0.004, eyeTilt: 0.08, crease: 0.35, hood: 0.25, socket: 0.15, round: 0.15, inner: 0.3 },
-  deepSet: { eyeW: 0.017, eyeUp: 0.0078, eyeLow: 0.0052, eyeTilt: 0, crease: 0.9, hood: 0.3, socket: 1, round: 0.6, inner: 0, browH: -0.0035 },
-  downturned: { eyeW: 0.0182, eyeUp: 0.0088, eyeLow: 0.0056, eyeTilt: -0.11, crease: 0.85, hood: 0.15, socket: 0.35, round: 0.65, inner: 0 },
-  upturned: { eyeW: 0.0188, eyeUp: 0.0084, eyeLow: 0.0048, eyeTilt: 0.17, crease: 0.8, hood: 0.05, socket: 0.25, round: 0.5, inner: 0.25 },
-  monolid: { eyeW: 0.0186, eyeUp: 0.007, eyeLow: 0.0046, eyeTilt: 0.11, crease: 0, hood: 0.4, socket: 0.1, round: 0.2, inner: 0.7 },
+const EYE_SHAPES: Record<EyeShape, { eyeW: number; eyeUp: number; eyeLow: number; eyeTilt: number; crease: number; hood: number; socket: number; round: number; inner: number; lash: number; browH?: number }> = {
+  round: { eyeW: 0.0164, eyeUp: 0.0112, eyeLow: 0.0074, eyeTilt: 0.01, crease: 1, hood: 0, socket: 0.15, round: 1, inner: 0, lash: 0.75 },
+  almond: { eyeW: 0.0202, eyeUp: 0.0084, eyeLow: 0.005, eyeTilt: 0.1, crease: 0.9, hood: 0.05, socket: 0.3, round: 0.55, inner: 0.15, lash: 1.05 },
+  hooded: { eyeW: 0.018, eyeUp: 0.0078, eyeLow: 0.0054, eyeTilt: 0.02, crease: 0, hood: 1, socket: 0.55, round: 0.4, inner: 0, lash: 1.4 },
+  narrow: { eyeW: 0.0202, eyeUp: 0.0056, eyeLow: 0.0038, eyeTilt: 0.07, crease: 0.35, hood: 0.25, socket: 0.15, round: 0.15, inner: 0.3, lash: 1 },
+  deepSet: { eyeW: 0.0168, eyeUp: 0.0076, eyeLow: 0.0052, eyeTilt: 0, crease: 0.9, hood: 0.3, socket: 1, round: 0.6, inner: 0, lash: 0.85, browH: -0.004 },
+  downturned: { eyeW: 0.0184, eyeUp: 0.0088, eyeLow: 0.0058, eyeTilt: -0.16, crease: 0.85, hood: 0.15, socket: 0.35, round: 0.65, inner: 0, lash: 1 },
+  upturned: { eyeW: 0.019, eyeUp: 0.0082, eyeLow: 0.0048, eyeTilt: 0.22, crease: 0.8, hood: 0.05, socket: 0.2, round: 0.5, inner: 0.3, lash: 1.15 },
+  monolid: { eyeW: 0.0188, eyeUp: 0.0066, eyeLow: 0.0046, eyeTilt: 0.12, crease: 0, hood: 0.45, socket: 0.05, round: 0.15, inner: 0.8, lash: 1.25 },
 };
 
 export const IRIS_COLOURS: Record<IrisName, string> = {
@@ -189,10 +190,10 @@ export type FaceBuild = "athletic" | "angular" | "square" | "long" | "youth" | "
 export const FACE_BUILDS: Record<FaceBuild, { label: string; shape: FaceShape }> = {
   athletic: { label: "Lean, athletic (the usual footballer)", shape: { faceW: -0.055, taper: 0.08, full: -0.0014, cheek: 0.002, jawW: -0.01, chinLen: 0.001 } },
   angular: { label: "Angular, cheekbones that show", shape: { faceW: -0.07, taper: 0.12, full: -0.0018, cheek: 0.005, chinLen: 0.002 } },
-  square: { label: "Square jaw, lean", shape: { faceW: -0.035, taper: -0.02, jawW: 0.015, full: -0.0013, chinW: 0.08, cheek: 0.002 } },
+  square: { label: "Square jaw, lean", shape: { faceW: -0.05, taper: 0, jawW: 0.008, full: -0.0014, chinW: 0.07, cheek: 0.002 } },
   long: { label: "Narrow, long face", shape: { faceW: -0.07, taper: 0.08, faceLen: 0.009, chinLen: 0.003, full: -0.0012 } },
   youth: { label: "Young and slim (17 to 21)", shape: { faceW: -0.05, taper: 0.1, chinLen: -0.002, faceLen: -0.003, cheek: 0.001 } },
-  broad: { label: "Broad and strong, not fat", shape: { faceW: -0.02, jawW: 0.025, taper: -0.01, full: -0.001, cheek: 0.003, chinW: 0.06 } },
+  broad: { label: "Broad and strong, not fat", shape: { faceW: -0.035, jawW: 0.015, taper: 0, full: -0.0012, cheek: 0.003, chinW: 0.05 } },
   soft: { label: "Average, a little fuller (older staff)", shape: { faceW: 0, full: 0.001, taper: 0 } },
   heavy: { label: "Round and heavy (rare)", shape: { faceW: 0.04, full: 0.0022, taper: -0.04 } },
 };
@@ -203,10 +204,17 @@ const BUILD_POOL: Record<"player" | "other", Pool<FaceBuild>> = {
 /** The outline's sliders: a build sets these, with a little of his own either way. */
 const OUTLINE: Partial<Record<keyof FaceShape, number>> = { faceW: 0.014, taper: 0.03, full: 0.0005, cheek: 0.0015, jawW: 0.012, chinLen: 0.0025, chinW: 0.05, faceLen: 0.004 };
 /**
- * What undoes the two re-shaped heads' own puff under a lean build (the broad-jaw and round-face head
- * files are wide and full below the cheekbones; on those files a lean build starts from here).
+ * What a lean build starts from on the head files that are not a lean adult's: the broad-jaw and round-face
+ * heads' own puff taken off, the boyish heads' lower face made a man's, the suit heads' jowls brought in.
  */
-export const HEAD_LEAN: Record<string, FaceShape> = { h7: { faceW: -0.05, full: -0.001, cheekW: -0.035 }, h9: { faceW: -0.085, full: -0.0024, taper: 0.04, cheekW: -0.075 } };
+export const HEAD_LEAN: Record<string, FaceShape> = {
+  h7: { faceW: -0.05, full: -0.001, cheekW: -0.035 }, h9: { faceW: -0.085, full: -0.0024, taper: 0.04, cheekW: -0.075 },
+  // the boyish heads (Curls, Quiff, Bun, Fringe): a longer lower face and a stronger chin and jaw, towards a grown man's
+  h1: { faceLen: 0.006, chinLen: 0.004, jawW: 0.012, chinW: 0.06 }, h2: { faceLen: 0.005, chinLen: 0.004, jawW: 0.012, chinW: 0.06 },
+  h4: { faceLen: 0.005, chinLen: 0.003, jawW: 0.01, full: -0.0008 }, h5: { faceLen: 0.006, chinLen: 0.004, jawW: 0.012, chinW: 0.06 },
+  // the suit heads are heavy below the cheekbones
+  m1: { faceW: -0.04, full: -0.0012 }, m2: { faceW: -0.045, full: -0.0014, cheekW: -0.03 }, m3: { faceW: -0.045, full: -0.0014, cheekW: -0.03 },
+};
 
 /** A stable 32-bit hash (FNV-1a, as bodies.ts hashId; kept here so this file stays on its own). */
 function hash(s: string): number {
@@ -247,22 +255,46 @@ export interface FaceIdContext {
   role?: string;
 }
 
+type BeardFields = Pick<FaceId, "beardStyle" | "beardCheek" | "beardChin" | "beardMous" | "beardDensity" | "beardLen" | "beardLine" | "beardStrap" | "beardSoul">;
+const BRD = (beardStyle: BeardStyle, beardCheek: number, beardChin: number, beardMous: number, beardDensity: number, beardLen: number, beardLine: number, beardStrap = 0, beardSoul = 0): BeardFields =>
+  ({ beardStyle, beardCheek, beardChin, beardMous, beardDensity, beardLen, beardLine, beardStrap, beardSoul });
+/** Each way to wear facial hair, at its middle (a person's own varies a little: beardFor). */
+export const BEARD_STYLES: Record<BeardStyle, BeardFields> = {
+  none: BRD("none", 0, 0, 0, 0, 0, 0),
+  stubble: BRD("stubble", 1, 1, 1, 0.48, 0, 0.55),
+  heavyStubble: BRD("heavyStubble", 1, 1, 1, 0.66, 0.15, 0.55),
+  boxed: BRD("boxed", 1, 1, 1, 0.9, 0.5, 0.4, 0, 1),
+  full: BRD("full", 1, 1, 1, 1, 0.92, 0.75, 0, 1),
+  faded: BRD("faded", 0.5, 1, 1, 0.85, 0.4, 0.55, 0, 1),
+  goatee: BRD("goatee", 0, 1, 1, 0.92, 0.5, 0, 0, 1),
+  circle: BRD("circle", 0, 1, 1, 0.9, 0.45, 0, 0, 0),
+  strap: BRD("strap", 1, 1, 0, 0.9, 0.4, 0, 1, 0),
+  moustache: BRD("moustache", 0.35, 0.35, 1, 0.9, 0.5, 0.55),
+};
+export const BEARD_STYLE_NAMES = Object.keys(BEARD_STYLES) as BeardStyle[];
+
 /** The facial hair for a preset's beard word: several ways to wear each, picked by the id. */
-function beardFor(id: string, word: FaceIdContext["beard"], u: (w: string) => number): Pick<FaceId, "beardStyle" | "beardCheek" | "beardChin" | "beardMous" | "beardDensity" | "beardLen" | "beardLine" | "beardStrap" | "beardSoul"> {
-  const B = (beardStyle: BeardStyle, beardCheek: number, beardChin: number, beardMous: number, beardDensity: number, beardLen: number, beardLine: number, beardStrap = 0, beardSoul = 0) =>
-    ({ beardStyle, beardCheek, beardChin, beardMous, beardDensity, beardLen, beardLine, beardStrap, beardSoul });
+function beardFor(id: string, word: FaceIdContext["beard"], u: (w: string) => number): BeardFields {
+  const S = BEARD_STYLES;
   const line = 0.3 + 0.5 * u("bline");
-  if (!word || word === "none") return B("none", 0, 0, 0, 0, 0, 0);
-  if (word === "stubble") return u("bstyle") < 0.7 ? B("stubble", 1, 1, 1, 0.4 + 0.15 * u("bd"), 0, line) : B("heavyStubble", 1, 1, 1, 0.6 + 0.12 * u("bd"), 0.15, line);
-  if (word === "full") return B("full", 1, 1, 1, 1, 0.85 + 0.15 * u("bl"), 0.6 + 0.3 * u("bline"), 0, 1);
+  if (!word || word === "none") return S.none;
+  if (word === "stubble") return u("bstyle") < 0.7 ? { ...S.stubble, beardDensity: 0.4 + 0.15 * u("bd"), beardLine: line } : { ...S.heavyStubble, beardDensity: 0.6 + 0.12 * u("bd"), beardLine: line };
+  if (word === "full") return { ...S.full, beardLen: 0.85 + 0.15 * u("bl"), beardLine: 0.6 + 0.3 * u("bline") };
   const k = u("bstyle");
-  if (k < 0.4) return B("boxed", 1, 1, 1, 0.9, 0.5, 0.2 + 0.4 * u("bline"), 0, 1);
-  if (k < 0.58) return B("faded", 0.5, 1, 1, 0.85, 0.4, line, 0, 1);
-  if (k < 0.74) return B("goatee", 0, 1, 1, 0.92, 0.5, 0, 0, 1);
-  if (k < 0.86) return B("circle", 0, 1, 1, 0.9, 0.45, 0, 0, 0);
-  if (k < 0.95) return B("strap", 1, 1, u("bm") < 0.5 ? 1 : 0, 0.9, 0.4, 0, 1, 0);
-  return B("moustache", 0.35, 0.35, 1, 0.9, 0.5, line);
+  if (k < 0.4) return { ...S.boxed, beardLine: 0.2 + 0.4 * u("bline") };
+  if (k < 0.58) return { ...S.faded, beardLine: line };
+  if (k < 0.74) return S.goatee;
+  if (k < 0.86) return S.circle;
+  if (k < 0.95) return { ...S.strap, beardMous: u("bm") < 0.5 ? 1 : 0 };
+  return { ...S.moustache, beardLine: line };
 }
+
+/** The eye numbers of one shape at its middle (the bench's eye-shape sheet; a person's own vary a little round these). */
+export function eyeOfShape(shape: EyeShape): Pick<FaceId, "eyeShape" | "eyeW" | "eyeUp" | "eyeLow" | "eyeTilt" | "crease" | "hood" | "socket" | "eyeRound" | "eyeInner" | "lash"> {
+  const E = EYE_SHAPES[shape];
+  return { eyeShape: shape, eyeW: E.eyeW, eyeUp: E.eyeUp, eyeLow: E.eyeLow, eyeTilt: E.eyeTilt, crease: E.crease, hood: E.hood, socket: E.socket, eyeRound: E.round, eyeInner: E.inner, lash: 0.9 * E.lash };
+}
+export const EYE_SHAPE_NAMES = Object.keys(EYE_SHAPES) as EyeShape[];
 
 /**
  * A person's face from his id (the same id → the same face) inside his heritage's features.
@@ -295,7 +327,7 @@ export function faceIdFor(id: string, heritage: string, ctx: FaceIdContext): Fac
   const brow = mixHex(browBase, "#1c1410", lum(browBase) > 0.3 ? 0.45 : lum(browBase) > 0.16 ? 0.25 : 0);
 
   // lips: his skin towards a rose (light skin) or a deep brown-rose (dark skin)
-  const lip = mixHex(ctx.skin, light > 0.5 ? "#b4584f" : light > 0.32 ? "#8a4338" : "#5a2c2a", 0.5 + 0.14 * j("liphue"));
+  const lip = mixHex(ctx.skin, light > 0.5 ? "#b4584f" : light > 0.32 ? "#8a4338" : "#6a3028", 0.5 + 0.14 * j("liphue"));
   const lipK = u("lipfull");
   const lipUp = H.lipUp[0] + (H.lipUp[1] - H.lipUp[0]) * lipK;
   const lipLow = H.lipLow[0] + (H.lipLow[1] - H.lipLow[0]) * clamp(lipK + 0.25 * j("liplow"), [0, 1]);
@@ -333,7 +365,7 @@ export function faceIdFor(id: string, heritage: string, ctx: FaceIdContext): Fac
     eyeTilt: clamp(E.eyeTilt + 0.025 * j("tilt"), L.eyeTilt), eyeGap: clamp(0.0028 * j("gap"), L.eyeGap), eyeDy: clamp(0.0012 * j("eyedy"), L.eyeDy),
     irisR: clamp(0.0076 * (0.5 + 0.5 * size) * (1 + 0.07 * j("irisr")) * (eyeShape === "round" ? 1.06 : eyeShape === "narrow" ? 0.94 : 1), L.irisR),
     crease: clamp(E.crease + 0.15 * j("crease"), [0, 1]), hood: clamp(E.hood + 0.15 * j("hood") + Math.max(0, age - 45) * 0.012, [0, 1]), socket: clamp(E.socket + 0.2 * j("socket"), [0, 1]),
-    lash: clamp(0.85 + 0.35 * j("lash"), [0.4, 1.4]), underEye: clamp(Math.max(0, age - 40) / 22 + (u("tired") < 0.14 ? 0.5 : 0), [0, 1]),
+    lash: clamp((0.9 + 0.2 * j("lash")) * E.lash, [0.4, 1.6]), underEye: clamp(Math.max(0, age - 40) / 22 + (u("tired") < 0.14 ? 0.5 : 0), [0, 1]),
     irisName, iris,
     browStyle,
     browH: clamp(0.0212 + (E.browH ?? 0) + 0.002 * j("browh") + BS.browArch * 0.15, L.browH), browT: clamp(BS.browT * H.browT * (1 + 0.14 * j("browt")), L.browT),
@@ -371,7 +403,7 @@ export const NEUTRAL_EMOTION: FaceEmotion = { ...NEUTRAL_FACE, smirk: 0, browAsy
 export type EmotionName = "neutral" | "happy" | "proud" | "angry" | "sad" | "worried" | "smug" | "shocked";
 /** Where the eyes go with an emotion (added to wherever he is looking): across, up. */
 export const EMOTION_GAZE: Record<EmotionName, [number, number]> = {
-  neutral: [0, 0], happy: [0, 0], proud: [0, 0.25], angry: [0, -0.1], sad: [0, -0.65], worried: [0.7, 0], smug: [-0.45, 0], shocked: [0, 0.05],
+  neutral: [0, 0], happy: [0, 0], proud: [0, 0.25], angry: [0, -0.1], sad: [0, -0.85], worried: [0.85, 0.1], smug: [-0.45, 0], shocked: [0, 0.05],
 };
 const N = NEUTRAL_EMOTION;
 export const FACE_EMOTIONS: Record<EmotionName, FaceEmotion> = {
@@ -379,8 +411,11 @@ export const FACE_EMOTIONS: Record<EmotionName, FaceEmotion> = {
   happy: { ...N, smile: 0.95, open: 0.42, wide: 0.6, teeth: 0.2, cheek: 0.9, lidLow: 0.55, lid: 0.9, browUp: 0.35 },
   proud: { ...N, smile: 0.6, press: 0.2, cheek: 0.4, lidLow: 0.3, lid: 0.85, browUp: 0.2 },
   angry: { ...N, smile: -0.45, press: 0.8, browAngry: 1, lid: 0.74, lidLow: 0.45 },
-  sad: { ...N, smile: -0.75, browSad: 1, lid: 0.64, press: 0.2 },
-  worried: { ...N, smile: -0.3, browSad: 0.8, browUp: 0.3, lid: 1.15, press: 0.5, open: 0.1 },
+  // sad and worried must not read alike: sad is HEAVY (lids half down, the mouth's corners pulled down, eyes on the
+  // floor, the brows only a little up in the middle); worried is ALERT (brows high and pinched together in the
+  // middle, eyes wide and glancing aside, lips pressed thin and small)
+  sad: { ...N, smile: -1, browSad: 0.55, lid: 0.52, lidLow: 0.1, wide: 0.1 },
+  worried: { ...N, smile: -0.12, browSad: 1, browUp: 0.7, lid: 1.35, press: 1, wide: -0.5 },
   smug: { ...N, smile: 0.35, smirk: 0.7, browUp: 0.45, browAsym: 0.9, lid: 0.68, lidLow: 0.25 },
   shocked: { ...N, smile: -0.1, open: 1, browUp: 1, lid: 1.4, wide: -0.3 },
 };
