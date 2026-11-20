@@ -728,7 +728,8 @@ export function makePerson3d(
     // the skin's own shading, so long sleeves over the arms shade like the cloth (casual sets)
     tu.uCloth.value.z = Math.min(1.4, Math.max(0.25, Math.pow(Math.max(meta.skinAvg[1], 1e-4), 1 / 2.2) / 0.7));
     u.uKit.value = 1;
-    (u as Record<string, { value: unknown }>).uSuit.value = suit ? 1 : 0;
+    // (2 = a head modelled in its suit: its own collar and tie stand round the neck; 1 = a suit or tracksuit painted on a kit head)
+    (u as Record<string, { value: unknown }>).uSuit.value = suit ? 2 : 0;
     const tl = { ...TOON_LOOK_DEFAULT, ...opts.toonLook };
     ((u as Record<string, { value: unknown }>).uShade.value as THREE.Vector4).set(tl.soft ? 1 : 0, tl.faceLift, tl.hairSheen ? 1 : 0, 0);
     patchToonBody(T, mat, u, FRAG_HEAD, FRAG_ACCESSORIES);
@@ -1018,7 +1019,7 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
     if (u.uSuitTie) u.uSuitTie.value = lin(T, look.kit.shirt);
   }
   if (look.suit && u.uSuit) {
-    u.uSuit.value = 1;
+    u.uSuit.value = Math.max(Number(u.uSuit.value) || 0, 1);
     u.uSuitCoat.value = lin(T, look.suit.coat);
     u.uSuitTrousers.value = lin(T, look.suit.trousers);
     u.uSuitShirt.value = lin(T, look.suit.shirt);

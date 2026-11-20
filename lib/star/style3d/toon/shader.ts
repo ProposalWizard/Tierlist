@@ -250,8 +250,9 @@ const TOON_BODY = `
   // collar line, and its mask calls them skin: painted the skin tone (and then the drawn face's even skin) they
   // read as skin running down into the suit (Harry, 20 Nov 2026). There the file's own paint tells them apart:
   // the shirt is pale and grey, the knot red, skin is warm.
+  // (only on a head modelled in its suit: a kit head in a painted tracksuit has no collar there, and its jaw's shade is not cloth)
   float tnCollar = 0.0, tnKnot = 0.0, tnCoat = 0.0;
-  if (uSuit > 0.5) {
+  if (uSuit > 1.5) {
     float cMx = max(c.r, max(c.g, c.b)), cSat = (cMx - min(c.r, min(c.g, c.b))) / max(cMx, 1e-4);
     // skin is warm in every head's own paint (red well over blue); a shirt (white, blue-white, its shadows) and a
     // coat (grey, navy, black) are not. Told apart by warmth, not by brightness: a shirt's blue shadow was left as
