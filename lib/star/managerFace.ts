@@ -32,7 +32,8 @@ export interface ManagerLook {
 }
 
 const SKIN = { pale: "#f1c7a5", fair: "#e8b995", olive: "#d9a077", tan: "#c68642", brown: "#a8703f", deep: "#8d5524", dark: "#6b3e1f" };
-const HAIR = { black: "#17110d", darkBrown: "#2b1b12", brown: "#3d2616", chestnut: "#5a3a22", fair: "#b88a4a", blond: "#d7b26a", ginger: "#9c4a22" };
+export const MANAGER_HAIR_COLOURS = { black: "#17110d", darkBrown: "#2b1b12", brown: "#3d2616", chestnut: "#5a3a22", fair: "#b88a4a", blond: "#d7b26a", ginger: "#9c4a22" };
+const HAIR = MANAGER_HAIR_COLOURS;
 
 const L = (skin: string, hair: ManagerHair, hairColour: string, grey: number, beard: ManagerBeard, glasses: boolean, width: number, age: number): ManagerLook =>
   ({ skin, hair, hairColour, grey, beard, glasses, width, age });

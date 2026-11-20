@@ -23,7 +23,7 @@ import type { Overlay } from "@/lib/star/cutscene/timeline";
 import { FIXTURES, FIXTURE_LIST } from "@/lib/star/cutscene/fixtures";
 import { generateScript, scoreScript } from "@/lib/star/cutscene/generate";
 import { EVENT_KINDS_COVERED } from "@/lib/star/cutscene/beats";
-import { VOICE_LINES } from "@/lib/star/cutscene/voiceLines";
+import { cutsceneSoundFor } from "@/lib/star/cutscene/sounds";
 import { useCutsceneCameraLook, type CutsceneCameraLook } from "@/lib/star/cutscene/look";
 import { createCutsceneMusic, musicBedFor, musicCue, type CutsceneMusic } from "@/lib/star/cutscene/music";
 import { holdMusic } from "@/lib/star/gameMusic";
@@ -84,8 +84,13 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
         const d = await createDirector(el, script, {
           style: styleRef.current, camera: camLook,
           onOverlay: (o) => { setOv(o); setTime(o.t); music.current?.update(o.t, !!dir.current?.playing()); },
-          // recorded lines play (scripts/cutscene/voice.py); other cues have no sound file yet
-          onSound: (cue, vol) => { if (!VOICE_LINES[cue]) return; try { const au = new Audio(`/sfx/cut-${cue}.mp3`); au.volume = Math.min(1, vol); void au.play().catch(() => {}); } catch { /* no sound */ } },
+          // every scripted cue plays its sound (cutscene/sounds.ts): the recorded lines, the pen, the cameras,
+          // the kick, the net and the crowd; nothing when the game's sound is off
+          onSound: (cue, vol) => {
+            const name = cutsceneSoundFor(cue);
+            if (!name || !sfxOn()) return;
+            try { const au = new Audio(sfxUrl(name)); au.volume = Math.min(1, Math.max(0, vol)); void au.play().catch(() => {}); } catch { /* no sound */ }
+          },
         });
         if (dead) { d.dispose(); return; }
         dir.current = d;

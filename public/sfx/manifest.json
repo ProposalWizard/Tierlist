@@ -935,6 +935,22 @@
       "kb": 19.7,
       "purpose": "Co-commentator: They'll be talking about that one for years.",
       "prompt": "(Kokoro bm_fable, speed 1.0) They'll be talking about that one for years."
+    },
+    {
+      "name": "cut-pen-scratch",
+      "file": "/sfx/cut-pen-scratch.mp3",
+      "duration": 1.33,
+      "kb": 10.7,
+      "purpose": "Cut scenes: the pen on the contract (signing)",
+      "prompt": "Made in code: scripts/sfx/cutscene_cues.py (own work, CC0)."
+    },
+    {
+      "name": "cut-camera-shutters",
+      "file": "/sfx/cut-camera-shutters.mp3",
+      "duration": 1.83,
+      "kb": 14.5,
+      "purpose": "Cut scenes: the press cameras (press, trophy)",
+      "prompt": "Made in code: scripts/sfx/cutscene_cues.py (own work, CC0)."
     }
   ]
 }

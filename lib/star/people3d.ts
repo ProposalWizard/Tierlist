@@ -199,6 +199,13 @@ export interface PersonLook {
   accessories?: WornThing[];
   /** Manager: how grey his hair is (0..1). */
   grey?: number;
+  /**
+   * Style A, smart clothes (a person preset, lib/star/people/presets.ts): the suit's colours, or a
+   * tracksuit / casual set on a kit body (the suit mode's long sleeves and trousers). Unset: as before.
+   */
+  suit?: { coat: string; trousers: string; shirt: string; tie: string; shoes?: string };
+  /** Style A: a haircut on the modelled hair (0..1 each): scalp to skin (1 bald), beard off, stubble on; pattern 1 waves, 2 cornrows. Unset: as modelled. */
+  hairCut?: { scalp?: number; beard?: number; stubble?: number; pattern?: number };
 }
 
 // ── Loading ───────────────────────────────────────────────────────────────
@@ -995,6 +1002,15 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
     u.uTrim.value = lin(T, look.kit.trim);
     if (u.uSuitTie) u.uSuitTie.value = lin(T, look.kit.shirt);
   }
+  if (look.suit && u.uSuit) {
+    u.uSuit.value = 1;
+    u.uSuitCoat.value = lin(T, look.suit.coat);
+    u.uSuitTrousers.value = lin(T, look.suit.trousers);
+    u.uSuitShirt.value = lin(T, look.suit.shirt);
+    u.uSuitTie.value = lin(T, look.suit.tie);
+    u.uShoes.value = lin(T, look.suit.shoes ?? "#141416");
+  }
+  if (u.uHairCut) u.uHairCut.value.set(look.hairCut?.scalp ?? 0, look.hairCut?.beard ?? 0, look.hairCut?.stubble ?? 0, look.hairCut?.pattern ?? 0);
   if (u.uBadgeOn) {
     u.uBadgeOn.value = look.badge ? 2 : 1;
     if (look.badge) u.uBadge.value = look.badge;

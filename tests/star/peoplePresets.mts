@@ -1,0 +1,146 @@
+/**
+ * PEOPLE PRESETS (lib/star/people/presets.ts): the same id always gets the same look; many ids
+ * get many looks; a typical scene's five suits never share a head and coat; the whole skin range
+ * is used; managers older than players; bald and shaved only on close-cut heads; known managers
+ * keep bald and beard.
+ */
+import {
+  personLook, castScene, lookKey, presetsFor, STAFF_PRESETS, PLAYER_PRESETS, ALL_PRESETS, CUTS, CLOSE_CUT_HEADS, PATTERN_HEADS, beardOf,
+  HERITAGE, styleTextures,
+  type PersonRole,
+} from "../../lib/star/people/presets";
+import { SKIN_TONES } from "../../lib/star/playerIdentity";
+import { TOON_HEADS, TOON_PLAYER_HEADS } from "../../lib/star/style3d/toon/bodies";
+import { managerLook } from "../../lib/star/managerFace";
+
+const problems: string[] = [];
+const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
+const sig = (l: ReturnType<typeof personLook>) => JSON.stringify([l.preset, l.head, l.build, l.skin, l.hairColour, l.cut, l.suit, l.kit, l.accessories, l.age]);
+
+// 1. Library size and shape
+const mgrStaff = STAFF_PRESETS.filter((p) => p.roles.includes("manager") || p.roles.includes("staff"));
+check(mgrStaff.length >= 24, `only ${mgrStaff.length} manager/staff presets (want 24+)`);
+check(PLAYER_PRESETS.length >= 48, `only ${PLAYER_PRESETS.length} player presets (want 48+)`);
+check(new Set(ALL_PRESETS.map((p) => p.id)).size === ALL_PRESETS.length, "two presets share an id");
+check(new Set(ALL_PRESETS.map((p) => p.name)).size === ALL_PRESETS.length, "two presets share a name");
+for (const p of ALL_PRESETS) {
+  check(TOON_HEADS.includes(p.head), `${p.id}: head ${p.head} is not a Style A head`);
+  check(p.outfit !== "kit" || TOON_PLAYER_HEADS.includes(p.head), `${p.id}: a kit on a suit head`);
+  check(CUTS[p.cut].scalp === 0 || CLOSE_CUT_HEADS.includes(p.head), `${p.id}: bald/shaved on ${p.head}, whose hair is not close cut`);
+  check(p.skin >= 0 && p.skin < 8, `${p.id}: skin index ${p.skin}`);
+}
+// 1b. Hair texture follows heritage, and a style only goes on hair it suits (Harry, 20 Nov 2026:
+//     "an assistant manager who's black with a quiff that would only really happen on a white guy")
+const STRAIGHT_ONLY = ["h2", "h4", "h5", "m1"];
+for (const p of ALL_PRESETS) {
+  const H = HERITAGE[p.heritage];
+  const cut = CUTS[p.cut];
+  check(H.textures.includes(p.texture), `${p.id}: ${p.texture} hair is not a ${p.heritage} texture`);
+  check(styleTextures(p.head, cut).includes(p.texture), `${p.id}: ${p.head}/${p.cut} does not suit ${p.texture} hair`);
+  check(p.skin >= H.skin[0] && p.skin <= H.skin[1], `${p.id}: skin ${p.skin} outside ${p.heritage}'s range`);
+  check(H.hair.includes(p.hair), `${p.id}: hair ${p.hair} is not a ${p.heritage} colour`);
+  if (p.texture === "coily") check(!STRAIGHT_ONLY.includes(p.head) && !(p.head === "h6" && cut.scalp < 0.9), `${p.id}: coily hair in a straight-hair style (${p.head})`);
+  if (p.texture === "straight" || p.texture === "wavy") check(p.head !== "h1" && !cut.pattern, `${p.id}: ${p.texture} hair in a curly/coily style (${p.head} ${p.cut})`);
+  check(!cut.pattern || PATTERN_HEADS.includes(p.head), `${p.id}: a pattern on ${p.head}, not a close crop`);
+}
+for (const h of Object.keys(HERITAGE) as (keyof typeof HERITAGE)[]) {
+  const mine = ALL_PRESETS.filter((p) => p.heritage === h);
+  check(mine.length >= 3, `only ${mine.length} presets of heritage ${h}`);
+  check(new Set(mine.map((p) => `${p.head}|${p.cut}`)).size >= Math.min(4, mine.length), `heritage ${h}: too few distinct styles`);
+}
+// every dark-skinned or mixed person anyone gets wears coily/curly-suited hair (never a quiff, bun or fringe)
+for (const role of ["manager", "staff", "player", "agent", "journalist", "fan"] as PersonRole[]) {
+  for (let i = 0; i < 300; i++) {
+    const l = personLook(`h${i}`, role);
+    const p = ALL_PRESETS.find((x) => x.id === l.preset)!;
+    const sk = SKIN_TONES.findIndex((t) => t.hex === l.skin);
+    check(sk >= HERITAGE[p.heritage].skin[0] && sk <= HERITAGE[p.heritage].skin[1], `${role} h${i}: skin left ${p.heritage}'s range`);
+    if (p.heritage === "black" || p.heritage === "mixed") check(!STRAIGHT_ONLY.includes(l.head), `${role} h${i}: ${p.heritage} with ${l.head}`);
+  }
+}
+
+const playerKeys = new Set(PLAYER_PRESETS.map((p) => `${p.head}|${p.cut}|${p.build}|${p.skin}|${p.hair}`));
+check(PLAYER_PRESETS.filter((p) => p.heritage === "black" || p.heritage === "mixed").length >= 16, "too few Black and mixed-race players");
+check(playerKeys.size === PLAYER_PRESETS.length, `player presets: ${PLAYER_PRESETS.length - playerKeys.size} are the same look`);
+for (let s = 0; s < 8; s++) {
+  check(PLAYER_PRESETS.some((p) => p.skin === s), `no player preset at skin ${SKIN_TONES[s].label}`);
+  check(mgrStaff.some((p) => p.skin === s), `no manager/staff preset at skin ${SKIN_TONES[s].label}`);
+}
+
+// 2. Same id, same look (and across roles the call is pure)
+for (const role of ["manager", "staff", "player", "journalist", "agent", "fan"] as PersonRole[]) {
+  for (const id of ["boss", "chairman", "Bukayo Saka", "signing-manager", "", "squad-17"]) {
+    check(sig(personLook(id, role, { club: "Arsenal" })) === sig(personLook(id, role, { club: "Arsenal" })), `${role} "${id}" changed between calls`);
+  }
+  check(presetsFor(role).length > 0, `no presets for ${role}`);
+}
+
+// 3. Variety: 100 ids → many distinct looks
+const N_DISTINCT = { player: 80, manager: 60 } as const;
+for (const role of ["player", "manager"] as const) {
+  const looks = Array.from({ length: 100 }, (_, i) => personLook(`${role}-${i * 37 + 11}`, role, { club: "Arsenal" }));
+  const distinct = new Set(looks.map(sig)).size;
+  check(distinct >= N_DISTINCT[role], `${role}: 100 ids gave only ${distinct} distinct looks (want ${N_DISTINCT[role]}+)`);
+  const presets = new Set(looks.map((l) => l.preset)).size;
+  check(presets >= (role === "player" ? 35 : 15), `${role}: 100 ids used only ${presets} presets`);
+  const skins = new Set(looks.map((l) => l.skinId));
+  check(skins.size === 8, `${role}: 100 ids covered only ${skins.size} of 8 skin tones`);
+  const heads = new Set(looks.map((l) => l.head));
+  check(heads.size >= (role === "player" ? 6 : 5), `${role}: only ${heads.size} heads`);
+  console.log(`  ${role}: 100 ids → ${distinct} distinct looks, ${presets} presets, ${heads.size} heads, ${skins.size} skin tones`);
+}
+
+// 4. Ages: managers older on average; players 17 to 38
+const avgAge = (role: PersonRole) => { const a = Array.from({ length: 200 }, (_, i) => personLook(`a${i}`, role).age); return a.reduce((s, x) => s + x, 0) / a.length; };
+const am = avgAge("manager"), ap = avgAge("player");
+check(am > ap + 12, `managers (${am.toFixed(1)}) not clearly older than players (${ap.toFixed(1)})`);
+for (let i = 0; i < 300; i++) { const a = personLook(`p${i}`, "player").age; check(a >= 17 && a <= 38, `player age ${a}`); }
+const greyMgr = Array.from({ length: 200 }, (_, i) => personLook(`g${i}`, "manager")).filter((l) => l.grey > 0.4).length;
+check(greyMgr > 50, `only ${greyMgr} of 200 managers greying`);
+const bald = Array.from({ length: 200 }, (_, i) => personLook(`b${i}`, "manager")).filter((l) => l.hairStyle === "none").length;
+check(bald >= 15, `only ${bald} of 200 managers bald`);
+const beards = Array.from({ length: 200 }, (_, i) => personLook(`b${i}`, "manager")).filter((l) => l.beard !== "none").length;
+check(beards >= 100, `only ${beards} of 200 managers with a beard or stubble`);
+
+// 5. A typical scene: boss, chairman, agent, journalist, manager never share head + coat
+const scene = (club: string, n: string) => castScene([
+  { id: `boss${n}`, role: "manager", club }, { id: `chairman${n}`, role: "staff", club }, { id: `agent${n}`, role: "agent", club },
+  { id: `journalist${n}`, role: "journalist", club }, { id: `signing-manager${n}`, role: "manager", club },
+]);
+for (const [club, n] of [["Arsenal", ""], ["Chelsea", ""], ["Wrexham", ""], ["Everton", "-2"], ["Barnet", "#7"]]) {
+  const s = scene(club, n);
+  check(new Set(s.map(lookKey)).size === s.length, `${club}${n}: two of the five share a head and coat (${s.map(lookKey).join(", ")})`);
+  check(new Set(s.map((l) => l.preset)).size === s.length, `${club}${n}: two of the five share a preset`);
+}
+let clash = 0;
+for (let i = 0; i < 500; i++) { const s = scene("Arsenal", `-${i}`); if (new Set(s.map(lookKey)).size < s.length) clash++; }
+check(clash === 0, `${clash} of 500 five-person scenes had two people sharing head and coat`);
+// a squad of 25: castScene gives everyone a different preset
+const squad = castScene(Array.from({ length: 25 }, (_, i) => ({ id: `Chelsea #${i}`, role: "player" as const, club: "Chelsea" })));
+check(new Set(squad.map((l) => l.preset)).size === 25, "a squad of 25 had two players on one preset");
+check(squad.every((l) => l.kit?.shirt === squad[0].kit?.shirt), "a squad wore different kits");
+
+// 6. Known managers keep their broad strokes
+for (const name of ["Pep Guardiola", "Mikel Arteta", "Jurgen Klopp", "Thomas Tuchel", "Sean Dyche", "Eddie Howe"]) {
+  const k = managerLook(name);
+  const l = personLook(name, "manager", { known: k });
+  check((k.hair === "bald") === (l.hairStyle === "none"), `${name}: bald ${k.hair === "bald"} but look ${l.hairStyle}`);
+  check((k.beard === "none") === (l.beard === "none"), `${name}: beard ${k.beard} but look ${l.beard}`);
+  check(l.dress.grey === 0 && /^#[0-9a-f]{6}$/.test(l.hairColour), `${name}: hair colour not final (${l.hairColour})`);
+}
+
+// 7. Shape of the result: kit for players, a suit for the rest; beard words agree with the cut
+for (let i = 0; i < 100; i++) {
+  const p = personLook(`x${i}`, "player", { club: "Liverpool" });
+  check(!!p.kit && !p.suit && p.accessories.some((a) => a.slot === "boots"), `player x${i}: no kit or boots`);
+  const m = personLook(`x${i}`, "manager", { club: "Liverpool" });
+  check(!!m.suit && !m.kit, `manager x${i}: no suit`);
+  check(m.beard === beardOf(m.head, m.cut), `manager x${i}: beard word disagrees`);
+}
+
+if (problems.length) {
+  console.error(`peoplePresets: ${problems.length} problem(s)`);
+  for (const p of problems.slice(0, 30)) console.error("  ✗ " + p);
+  process.exit(1);
+}
+console.log(`peoplePresets: ok (${STAFF_PRESETS.length} staff/manager/press/fan presets, ${PLAYER_PRESETS.length} player presets)`);

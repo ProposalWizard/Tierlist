@@ -57,6 +57,7 @@ uniform sampler2D uMask;
 uniform float uSuit;
 uniform vec3 uSuitCoat, uSuitTrousers, uSuitShirt, uSuitTie, uShoes;
 uniform vec4 uKit2;       // collar y, shorts low y, sleeve t, -
+uniform vec4 uHairCut;    // people presets (lib/star/people/presets.ts): scalp hair → skin, beard → skin, stubble, scalp pattern (1 waves, 2 cornrows); 0 = as modelled
 uniform sampler2D uBadge;
 uniform float uBadgeOn;   // 0 none, 1 shield, 2 picture
 uniform vec4 uShade;      // soft bands (0/1), face lift, hair sheen (0/1), -
@@ -260,13 +261,60 @@ const TOON_BODY = `
     col = mix(col, tnSkinOf(c), tnLike);
     tnSkin = max(tnSkin, tnLike);
   }
-  col = mix(col, min(uHairK * (dot(c, vec3(0.2126, 0.7152, 0.0722)) / uHairL), vec3(1.0)), hairM);
+  // on the face the mask's soft hair edge (beard, brows, hairline) is made crisp, and a skin-bright texel
+  // the mask half calls hair is not lifted above the hair's own light: both left pale smudges round a
+  // grey beard on dark skin (people presets, 20 Nov 2026)
+  hairM = mix(hairM, smoothstep(0.3, 0.7, hairM), head);
+  col = mix(col, min(uHairK * min(dot(c, vec3(0.2126, 0.7152, 0.0722)) / uHairL, 1.6), vec3(1.0)), hairM);
   tnFace = skin * head * smoothstep(0.1, 0.5, vRestN.z);
   if (uShade.z > 0.5) {
     // stylised hair: one flat colour (the sculpted strands smoothed away) and a painted sheen band
     float sheen = smoothstep(0.25, 0.4, vRestN.y) * (1.0 - smoothstep(0.62, 0.78, vRestN.y));
     vec3 flat_ = uHairK * mix(0.85, 1.0, smoothstep(0.0, 0.6, vRestN.y));
     col = mix(col, min(flat_ * (1.0 + 0.9 * sheen) + sheen * 0.04, vec3(1.0)), hairM);
+  }
+  {
+    // Fade & beard's mask calls the skin round each eye hair: on a greying man a pale ring round the eyes.
+    // Under the brows, round the eyes, the face is skin (the brows sit above this band).
+    float eyeRing = hairM * head * step(r.y, uFaceF.y + 0.006) * step(uFaceF.y - 0.026, r.y) * step(abs(r.x), 0.075) * step(uFaceF.w - 0.05, r.z);
+    col = mix(col, tnSkinOf(uSkinAvg), eyeRing);
+    tnSkin = max(tnSkin, eyeRing);
+    hairM *= 1.0 - eyeRing;
+  }
+  if (uHairCut.w > 0.5) {
+    // a pattern cut into the close-cut scalp (people presets: coily hair on the close-cut heads h3, m2)
+    float scalp = hairM * (1.0 - step(r.y, uFaceF.y - 0.03) * step(uNeck.z - 0.01, r.z)) * step(uFaceF.z - 0.01, r.y);
+    if (uHairCut.w < 1.5) {
+      // 360 waves: rings out from the crown, light and dark
+      vec3 crown = vec3(0.0, uFaceF.z + 0.075, uNeck.z - 0.035);
+      float d = length(r - crown);
+      float fw = fwidth(d / 0.016);
+      float wv = 0.5 + 0.5 * sin(6.2832 * d / 0.016);
+      col = mix(col, col * mix(0.72, 1.35, wv), scalp * (1.0 - smoothstep(0.35, 0.8, fw)));
+    } else {
+      // cornrows: rows front to back, a parting of skin between each, the plait's ridges along the row
+      float row = fract(r.x / 0.024 + 0.5);
+      float part = smoothstep(0.36, 0.44, abs(row - 0.5));
+      float ridge = 0.5 + 0.5 * sin(6.2832 * (r.z + r.y * 0.6) / 0.012 + (row < 0.5 ? 0.0 : 3.14));
+      vec3 braid = col * mix(0.8, 1.25, ridge * (1.0 - smoothstep(0.35, 0.8, fwidth(r.z / 0.012))));
+      col = mix(col, mix(braid, uSkinTone * 0.6, part), scalp);
+    }
+  }
+  if (uHairCut.x + uHairCut.y + uHairCut.z > 0.0) {
+    // a person preset's haircut on a head whose hair is modelled in: the scalp shaved or bald, the beard
+    // shaved off, or stubble painted on (the hair under the eyes, front half = the beard; the rest = scalp)
+    float lowFront = step(r.y, uFaceF.y - 0.03) * step(uNeck.z - 0.01, r.z);
+    float cut = smoothstep(0.02, 0.45, hairM) * mix(uHairCut.x, uHairCut.y, lowFront);
+    // the beard's own drawn edge where the mask already says skin (dark lines left round a shaved jaw)
+    float lumK = dot(c, vec3(0.2126, 0.7152, 0.0722)) / max(dot(uSkinAvg, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
+    cut = max(cut, uHairCut.y * lowFront * head * (1.0 - hairM) * smoothstep(0.5, 0.25, lumK) * step(0.025, abs(r.y - uTfMouth.y) + step(0.03, abs(r.x))));
+    vec3 bare = uSkinTone * 0.75;
+    col = mix(col, bare, cut);
+    tnSkin = max(tnSkin, cut);
+    // stubble: the jaw, chin and upper lip, never the lips
+    vec2 mo = vec2(r.x / 0.03, (r.y - uTfMouth.y) / 0.014);
+    float jaw = skin * head * smoothstep(uFaceF.y - 0.03, uFaceF.y - 0.065, r.y) * smoothstep(0.0, 0.25, vRestN.z) * step(uNeck.z - 0.01, r.z) * step(1.0, length(mo));
+    col = mix(col, col * mix(vec3(1.0), min(uHairK * 2.2 + 0.25, vec3(0.85)), 0.55), uHairCut.z * jaw);
   }
 ${TOON_FACE}
   float shirtW = step(uLines.x, r.y);
@@ -285,6 +333,11 @@ ${TOON_FACE}
     float v = shirtW * step(0.0, r.z) * step(abs(r.x), (r.y - (uKit2.x - 0.24)) * 0.38) * step(r.y, uKit2.x + 0.02);
     vec3 sh = mix(uSuitShirt, uSuitTie, step(abs(r.x), 0.014) * step(r.y, uKit2.x - 0.03));
     part = mix(part, sh, v);
+    // the two suit heads' masks call the shirt in the coat's V skin (it showed in his skin colour):
+    // under the collar, the V is shirt and tie whatever the mask says
+    float vShirt = v * step(r.y, uKit2.x - 0.005) * (1.0 - hairM);
+    kit = max(kit, vShirt);
+    skin *= 1.0 - vShirt;
     // long sleeves and trousers over what is bare skin in the kit
     vec3 tW = tL ? uWrL : uWrR;
     // (everything on the arm that is not kit, wide round the elbow, so no skin shows there; the skin's
@@ -518,6 +571,7 @@ export function toonUniforms(T: Three, mask: THREE.Texture, kit: { collarY?: num
     uSuitCoat: { value: new T.Color("#1f2533") }, uSuitTrousers: { value: new T.Color("#232733") },
     uSuitShirt: { value: new T.Color("#eef0f2") }, uSuitTie: { value: new T.Color("#7a1d2b") }, uShoes: { value: new T.Color("#141416") },
     uKit2: { value: new T.Vector4(kit.collarY ?? neckY - 0.03, kit.shortsLoY ?? 0.65, kit.sleeveT ?? 0.75, 0) },
+    uHairCut: { value: new T.Vector4(0, 0, 0, 0) },
     uBadge: { value: blank as THREE.Texture }, uBadgeOn: { value: 1 },
     uShade: { value: new T.Vector4(0, 0.35, 0, 0) },
     uName: { value: blank as THREE.Texture }, uNameOn: { value: 0 },

@@ -19,6 +19,8 @@ import type { CameraTrack, Emotion, StoryEvent } from "../../lib/star/cutscene/t
 import { filmPass, weakWideOverrun } from "../../lib/star/cutscene/cinema";
 import { musicBedFor, musicCue, musicGain, talkWindows, type MusicBed } from "../../lib/star/cutscene/music";
 import { SFX_NAMES } from "../../lib/star/sfxCatalog";
+import { cutsceneSoundFor } from "../../lib/star/cutscene/sounds";
+import fs from "node:fs";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -211,6 +213,19 @@ for (const [id, ev] of Object.entries(FIXTURE_EVENTS)) {
     }
   }
   check(shots > 20 && bad === 0, `phone: ${bad} of ${shots} person shots in every scene fill the screen (want 0)`);
+}
+
+// ── sound: every cue a script asks for plays a file that exists (none dropped) ──
+{
+  const scripts = [...Object.values(FIXTURES).map((f) => f()), ...EVENT_KINDS_COVERED.map((kind) => generateScript({ kind, stakes: 0.8, emotion: "joy", intensity: 0.8 } as StoryEvent, 2))];
+  const cues = new Set<string>();
+  for (const s of scripts) for (const tr of s.tracks) if (tr.type === "sound") cues.add((tr as { cue: string }).cue);
+  check(cues.size >= 6, `only ${cues.size} sound cues in the scripts`);
+  for (const cue of cues) {
+    const name = cutsceneSoundFor(cue);
+    check(!!name && fs.existsSync(`public/sfx/${name}.mp3`), `sound cue "${cue}" plays nothing (${name})`);
+    check(!name || SFX_NAMES.includes(name) || name.startsWith("cut-") , `sound cue "${cue}": ${name} is not on the Sound Board`);
+  }
 }
 
 // ── casting ──

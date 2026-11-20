@@ -110,6 +110,19 @@ exactly today's bodies. You never pick a file yourself:
   with `setToonBuild(p, body)` (see `engineView.ts`).
 - Only one person on screen (Home, title)? `loadToonHead(loader, head)` fetches
   one head file instead of all eight.
+- People presets (20 Nov 2026, not wired into scenes yet): `personLook(id, role, { club, known })`
+  in `lib/star/people/presets.ts` picks one of 43 staff/press/fan and 48 player presets by the
+  id's hash, with small per-person touches. Each preset has a heritage that sets skin range, hair
+  texture and colours; a style only goes on a texture it suits (`styleTextures`: no quiff, bun or
+  fringe on coily hair; waves and cornrows, painted on the close crops h3/m2, only on coily hair); `castScene([...])` keeps five people in one shot
+  from sharing a head and coat. Its `.dress` goes straight into `dressPerson3d`, with
+  `toonHead`/`toonBody` into `makePerson3d`. Two new optional looks do it: `suit` (coat,
+  trousers, shirt, tie, shoes: also a tracksuit or casual set on a kit head) and `hairCut`
+  (scalp → skin for bald/shaved on the close-cut heads h3, h6, m2; beard off; stubble on; waves or
+  cornrows; shader uniform `uHairCut`). The face's soft hair edge is crisp now (grey beards on dark
+  skin left pale smudges) and the skin round the eyes is never hair (m2's mask). Contact sheet: `/star-3d-bench-dev/people`
+  (`node scripts/bench3d/people-sheet.mjs OUTDIR`). The suit heads' shirt V is now always shirt
+  (their masks call it skin). Test: `tests/star/peoplePresets.mts`.
 - A new head: concept picture → Higgsfield image-to-3D (Tripo H3.1, face limit
   15000) → `tools/modeltest/fit.py` → `scripts/people3d/build_toon_bodies.py <dir>
   tag:dir/fit.glb[:suit]` (it also weights the fingers: `weight_fingers`) →
