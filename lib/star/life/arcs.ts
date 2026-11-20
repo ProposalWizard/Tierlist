@@ -594,7 +594,7 @@ export function questLog(c: CareerState): QuestRow[] {
     out.push({
       arc: id, title: fill(arc.title), owner: personInfo(c, owner)?.name ?? "", ownerId: owner, next, when, dots,
       clock: cl && run.k[cl.id] !== undefined ? { label: fill(cl.label), filled: run.k[cl.id], segments: cl.segments } : undefined,
-      ended: e && !next ? { title: e.title, text: e.text } : undefined, stats,
+      ended: e && !next ? { title: fill(e.title), text: fill(e.text) } : undefined, stats,
     });
   }
   return out;
