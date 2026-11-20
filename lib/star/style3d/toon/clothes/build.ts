@@ -25,7 +25,7 @@ export interface FieldsAt {
   cut?: number;
 }
 
-export type CollarKind = "crew" | "shirt" | "polo" | "lapel";
+export type CollarKind = "crew" | "shirt" | "polo" | "lapel" | "hood";
 
 export interface GarmentSpec {
   name: string;
@@ -42,6 +42,23 @@ export interface GarmentSpec {
   tie?: { top: number; bottom: number; w: number };
   /** shell relax: point passes, normal passes */
   relax?: [number, number];
+  /**
+   * THE GARMENT'S OWN SHAPE (Harry: "why does every type of trouser and top keep the outline and shorts outline —
+   * suits shouldn't look the same as hoodies"). Not an offset of the muscular body: legs and sleeves are lofted tubes
+   * along the limb with their own radius profile, the torso is swept elliptical sections from the hem up to the
+   * armpits with its own ease; each is made big enough to hold the body at every angle, so no pec, bicep or the old
+   * shorts shape shows through. Shoulders, neck and seat blend back to the (smoothed) body.
+   */
+  shape?: {
+    /** trouser legs: width as a multiple of the leg's own (smoothed) size at the thigh and at the hem; straight =
+     *  never narrower than anything below (drapes over knee and calf) */
+    legs?: { top: number; hem: number; straight?: boolean };
+    /** sleeves: width as a multiple of the arm's own size at the shoulder end and at the cuff */
+    arms?: { top: number; cuff: number };
+    /** torso: the body's smoothed size times k at each height t (0 = hem line, 1 = armpits): [t, across, front-back];
+     *  boxy 0..1 = held at the chest's size below it; pad = a structured shoulder (metres out and up) */
+    torso?: { knots: [number, number, number][]; boxy?: number; pad?: number; hem?: number };
+  };
 }
 
 /** Bone index → "torso" | "neck" | "head" | "armL" | "armR" | "legL" | "legR" and the segment (u upper, f fore, h hand). */
@@ -172,6 +189,30 @@ export function buildClothes(T: Three, body: THREE.SkinnedMesh, rig: Rig, garmen
   const trimmedBody = bodyOut.geometry(T, true);
   stats.bodyTrisAfter = trimmedBody.index!.count / 3;
 
+  // the body's own size along each limb and up the torso (used to size garments so they hold it)
+  let bodyStats: BodyStats | undefined;
+  const bodyProfile = (): BodyStats => {
+    const LRl: number[][][] = [0, 1].map(() => Array.from({ length: BIN }, () => [] as number[])), ARl: number[][][] = [0, 1].map(() => Array.from({ length: BIN }, () => [] as number[]));
+    const tor = { a: new Float64Array(BIN), f: new Float64Array(BIN), b: new Float64Array(BIN), cz: new Float64Array(BIN), n: new Float64Array(BIN) };
+    const y0 = L("Hips")[1] - 0.35, y1 = L("LeftArm")[1];
+    for (let i = 0; i < nV; i++) {
+      rp.fromBufferAttribute(REST as THREE.BufferAttribute, i);
+      const v = vf[i];
+      if (v.leg > 0.5 && v.legS < 1.97) { const A = rp.x >= 0 === (legL[0][0] >= 0) ? legL : legR, k = A === legL ? 0 : 1; const b = Math.min(BIN - 1, Math.max(0, Math.floor((v.legS / 2) * BIN))); LRl[k][b].push(perp(rp, A, v.legS)); }
+      if (v.arm > 0.5 && v.armS < 1.97) { const A = rp.x >= 0 === (armL[0][0] >= 0) ? armL : armR, k = A === armL ? 0 : 1; const b = Math.min(BIN - 1, Math.max(0, Math.floor((v.armS / 2) * BIN))); ARl[k][b].push(perp(rp, A, v.armS)); }
+      if (v.arm < 0.5 && rp.y > y0 && rp.y < y1) { const b = Math.min(BIN - 1, Math.floor(((rp.y - y0) / (y1 - y0)) * BIN)); tor.cz[b] += rp.z; tor.n[b]++; }
+    }
+    for (let b = 0; b < BIN; b++) tor.cz[b] = tor.n[b] ? tor.cz[b] / tor.n[b] : 0;
+    for (let i = 0; i < nV; i++) {
+      rp.fromBufferAttribute(REST as THREE.BufferAttribute, i);
+      const v = vf[i];
+      if (v.arm < 0.5 && rp.y > y0 && rp.y < y1) { const b = Math.min(BIN - 1, Math.floor(((rp.y - y0) / (y1 - y0)) * BIN)); tor.a[b] = Math.max(tor.a[b], Math.abs(rp.x)); const dz = rp.z - tor.cz[b]; if (dz > 0) tor.f[b] = Math.max(tor.f[b], dz); else tor.b[b] = Math.max(tor.b[b], -dz); }
+    }
+    // each slice's size: the 55th percentile of the distances (a stray seat or armpit point does not set it)
+    const p90 = (L2: number[][][]) => L2.map((bins) => Float64Array.from(bins.map((v) => { if (!v.length) return 0; v.sort((x, y) => x - y); return v[Math.floor(v.length * 0.55)]; })));
+    return { legR: p90(LRl), armR: p90(ARl), tor, y0, y1, crotch: L("LeftUpLeg")[1] - 0.06, armpit: L("LeftArm")[1] - 0.09 };
+  };
+
   for (const gm of garments) {
     const val = new Float32Array(nV), fN = new Float32Array(nV), fS = new Float32Array(nV), fH = new Float32Array(nV), fL = new Float32Array(nV);
     for (let i = 0; i < nV; i++) { const f = fieldOf(gm, i); val[i] = maxF(f); fN[i] = f.neck; fS[i] = f.sleeve; fH[i] = f.hem; fL[i] = f.leg; }
@@ -181,6 +222,7 @@ export function buildClothes(T: Three, body: THREE.SkinnedMesh, rig: Rig, garmen
     // average the normals over welded points (no cracks where the file's UV seams split a vertex)
     o.smoothNormals();
     o.relax(gm.relax?.[0] ?? 3, 0.5, gm.relax?.[1] ?? 6);
+    if (gm.shape) shapeGarment(o, gm.shape, { rig, legL, legR, armL, armR, stats: bodyStats ??= bodyProfile() });
     if (gm.tube) {
       // per leg, per slice along the leg: the radius from the leg's own axis; each slice is raised to a smoothed
       // envelope of its neighbours' radii (never lowered), so a step in the body becomes a gentle taper
@@ -221,6 +263,112 @@ export function buildClothes(T: Three, body: THREE.SkinnedMesh, rig: Rig, garmen
     ink.setIndex(keep); }
   stats.clothTris = cloth.index!.count / 3;
   return { cloth, ink, body: trimmedBody, stats };
+}
+
+const BIN = 40;
+interface BodyStats { legR: Float64Array[]; armR: Float64Array[]; tor: { a: Float64Array; f: Float64Array; b: Float64Array; cz: Float64Array; n: Float64Array }; y0: number; y1: number; crotch: number; armpit: number }
+const ss = (a: number, b: number, x: number) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+/** The point on a limb's axis at s (0 top joint, 1 middle, 2 end). */
+function axisAt(A: readonly V3[], s: number): V3 { const k = s <= 1 ? 0 : 1, t = Math.max(0, Math.min(1, s <= 1 ? s : s - 1)); return [0, 1, 2].map((q) => A[k][q] + (A[k + 1][q] - A[k][q]) * t) as V3; }
+function axisDir(A: readonly V3[], s: number): V3 { const k = s <= 1 ? 0 : 1; const d = [0, 1, 2].map((q) => A[k + 1][q] - A[k][q]); const l = Math.hypot(d[0], d[1], d[2]) || 1; return [d[0] / l, d[1] / l, d[2] / l]; }
+/** Distance from a point to the limb's axis, across the limb. */
+function perp(p: THREE.Vector3, A: readonly V3[], s: number): number {
+  const c = axisAt(A, s), d = axisDir(A, s);
+  const v = [p.x - c[0], p.y - c[1], p.z - c[2]], t = v[0] * d[0] + v[1] * d[1] + v[2] * d[2];
+  return Math.hypot(v[0] - d[0] * t, v[1] - d[1] * t, v[2] - d[2] * t);
+}
+/** A radius profile that holds the body everywhere: a straight line from `top` (at s0) to `hem` (at s1), raised until no slice pokes out. */
+function holdingLine(R: Float64Array, s0: number, s1: number, kTop: number, kHem: number, straight = true): (s: number) => number {
+  // a smooth tapered tube: the limb's own size (from a little below the top joint, where shoulder or seat points
+  // would set it), optionally never narrower than anything below it, smoothed hard, times the garment's width
+  const at = (s: number) => R[Math.min(BIN - 1, Math.max(0, Math.floor((Math.max(s, s0 + 0.18) / 2) * BIN)))];
+  const N = 80, prof = new Float64Array(N + 1);
+  for (let k = 0; k <= N; k++) prof[k] = at(s0 + ((s1 - s0) * k) / N);
+  if (straight) for (let k = N - 1; k >= 0; k--) prof[k] = Math.max(prof[k], prof[k + 1]);
+  let sm = prof;
+  for (let it = 0; it < 4; it++) { const nx = new Float64Array(N + 1); for (let k = 0; k <= N; k++) { let m = 0, n = 0; for (let q = -5; q <= 5; q++) { const v = sm[k + q]; if (v !== undefined) { m += v; n++; } } nx[k] = m / n; } sm = nx; }
+  return (s: number) => { const f = Math.max(0, Math.min(1, (s - s0) / (s1 - s0))) * N, k = Math.floor(f), t = f - k; const v = sm[k] * (1 - t) + sm[Math.min(N, k + 1)] * t; const u = f / N; return v * (kTop + (kHem - kTop) * u); };
+}
+
+/** Re-shape a cut garment to its own silhouette (see GarmentSpec.shape). Edits base points before the shell. */
+function shapeGarment(o: Out, sh: NonNullable<GarmentSpec["shape"]>, k: { rig: Rig; legL: readonly V3[]; legR: readonly V3[]; armL: readonly V3[]; armR: readonly V3[]; stats: BodyStats }) {
+  const { rig, legL, legR, armL, armR, stats: S } = k;
+  const p = { x: 0, y: 0, z: 0 } as THREE.Vector3;
+  const legLine = sh.legs ? [0, 1].map((i) => holdingLine(S.legR[i], 0.35, 1.95, sh.legs!.top, sh.legs!.hem, sh.legs!.straight ?? false)) : null;
+  const armLine = sh.arms ? [0, 1].map((i) => holdingLine(S.armR[i], 0.15, 1.95, sh.arms!.top, sh.arms!.cuff, false)) : null;
+  // the torso's ellipse per slice: the body's extents, smoothed into an envelope; boxy = held at the chest's size below it
+  const T0 = S.tor;
+  const env = (arr: Float64Array) => {
+    const o2 = new Float64Array(BIN); for (let b = 0; b < BIN; b++) { let m = 0; for (let q = -1; q <= 1; q++) m = Math.max(m, arr[b + q] ?? 0); o2[b] = m; }
+    const o3 = new Float64Array(BIN); for (let b = 0; b < BIN; b++) { let m = 0, n = 0; for (let q = -3; q <= 3; q++) { const v = o2[b + q]; if (v) { m += v; n++; } } o3[b] = n ? m / n : 0; }
+    return o3;
+  };
+  const ea = env(T0.a), ef = env(T0.f), eb = env(T0.b);
+  const czS = new Float64Array(BIN); for (let b = 0; b < BIN; b++) { let m = 0, n = 0; for (let q = -4; q <= 4; q++) { const v = T0.cz[b + q]; if (T0.n[b + q]) { m += v; n++; } } czS[b] = n ? m / n : 0; }
+  const chestBin = Math.floor(((S.armpit - S.y0) / (S.y1 - S.y0)) * BIN);
+  const lerpBin = (arr: Float64Array, y: number) => { const fb = Math.min(BIN - 1.001, Math.max(0, ((y - S.y0) / (S.y1 - S.y0)) * BIN - 0.5)), b = Math.floor(fb), t = fb - b; return arr[b] * (1 - t) + arr[b + 1] * t; };
+  const hemLine = sh.torso?.hem ?? (S.crotch + 0.02);
+  const knot = (t: number): [number, number] => {
+    const K = sh.torso?.knots ?? [[0, 1.05, 1.05], [1, 1.05, 1.05]];
+    if (t <= K[0][0]) return [K[0][1], K[0][2]];
+    for (let q = 1; q < K.length; q++) if (t <= K[q][0]) { const u = (t - K[q - 1][0]) / (K[q][0] - K[q - 1][0]); return [K[q - 1][1] + (K[q][1] - K[q - 1][1]) * u, K[q - 1][2] + (K[q][2] - K[q - 1][2]) * u]; }
+    const L2 = K[K.length - 1]; return [L2[1], L2[2]];
+  };
+  const sliceAt = (y: number) => {
+    const box = sh.torso?.boxy ?? 0, cb = Math.min(BIN - 1, Math.max(0, chestBin));
+    const t = (y - hemLine) / (S.armpit - hemLine);
+    const [kx, kz] = knot(t);
+    const a = Math.max(lerpBin(ea, y), box * ea[cb]) * kx, f = Math.max(lerpBin(ef, y), box * ef[cb]) * kz, bk = Math.max(lerpBin(eb, y), box * eb[cb]) * kz;
+    return { a, f, bk, cz: lerpBin(czS, y) };
+  };
+  for (let i = 0; i < o.n; i++) {
+    p.x = o.rest[i * 3]; p.y = o.rest[i * 3 + 1]; p.z = o.rest[i * 3 + 2];
+    let aL = 0, aR = 0, lL = 0, lR = 0;
+    for (let q = 0; q < 4; q++) { const w = o.sw[i * 4 + q]; if (!w) continue; const pt = rig.part[o.si[i * 4 + q]] ?? "torso"; if (pt.startsWith("armL")) aL += w; else if (pt.startsWith("armR")) aR += w; else if (pt.startsWith("legL")) lL += w; else if (pt.startsWith("legR")) lR += w; }
+    const base = [o.pos[i * 3], o.pos[i * 3 + 1], o.pos[i * 3 + 2]];
+    const P0 = base.slice();
+    let target: number[] | null = null, w = 0;
+    // the torso: on the ray from the slice's centre, out to the ellipse
+    let torsoT: number[] | null = null, wt = 0;
+    const armW = Math.max(aL, aR);
+    if (sh.torso && armW < 0.3) {
+      const sl = sliceAt(p.y);
+      const dx = base[0], dz = base[2] - sl.cz, bb = dz > 0 ? sl.f : sl.bk;
+      const kk = 1 / (Math.hypot(dx / sl.a, dz / bb) || 1);
+      torsoT = [dx * kk, base[1], sl.cz + dz * kk];
+      wt = 1 - ss(S.armpit - 0.02, S.armpit + 0.07, p.y);
+    }
+    if (legLine && Math.max(lL, lR) > 0.5) {
+      const A = lL >= lR ? legL : legR, ki = A === legL ? 0 : 1;
+      const s = along(p, A[0], A[1], A[2]);
+      const c = axisAt(A, s), d = axisDir(A, s);
+      const v = [base[0] - c[0], base[1] - c[1], base[2] - c[2]], t = v[0] * d[0] + v[1] * d[1] + v[2] * d[2];
+      const r = [v[0] - d[0] * t, v[1] - d[1] * t, v[2] - d[2] * t], rl = Math.hypot(r[0], r[1], r[2]) || 1;
+      // the leg is the garment's own tube (the body under it is cut away, so a muscle or the old shorts edge never shows)
+      let R = legLine[ki](s);
+      // never past the body's middle line (the two legs stay two legs)
+      const rx = r[0] / rl;
+      if (rx * Math.sign(c[0]) < -0.05) R = Math.min(R, (Math.abs(c[0]) - 0.006) / Math.abs(rx));
+      const legT = [c[0] + d[0] * t + (r[0] / rl) * R, c[1] + d[1] * t + (r[1] / rl) * R, c[2] + d[2] * t + (r[2] / rl) * R];
+      const wl = 1 - ss(S.crotch - 0.08, S.crotch + 0.02, p.y);
+      target = torsoT ? legT.map((x, q) => torsoT![q] + (x - torsoT![q]) * wl) : legT;
+      w = torsoT ? Math.max(wl, wt) : wl;
+    } else if (armLine && armW >= 0.3) {
+      const A = aL >= aR ? armL : armR, ki = A === armL ? 0 : 1;
+      const s = along(p, A[0], A[1], A[2]);
+      const c = axisAt(A, s), d = axisDir(A, s);
+      const v = [base[0] - c[0], base[1] - c[1], base[2] - c[2]], t = v[0] * d[0] + v[1] * d[1] + v[2] * d[2];
+      const r = [v[0] - d[0] * t, v[1] - d[1] * t, v[2] - d[2] * t], rl = Math.hypot(r[0], r[1], r[2]) || 1;
+      const R = armLine[ki](s);
+      target = [c[0] + d[0] * t + (r[0] / rl) * R, c[1] + d[1] * t + (r[1] / rl) * R, c[2] + d[2] * t + (r[2] / rl) * R];
+      w = ss(0.05, 0.3, s) * ss(0.3, 0.55, armW);
+    } else if (torsoT) { target = torsoT; w = wt; }
+    if (target) for (let q = 0; q < 3; q++) o.pos[i * 3 + q] = P0[q] + (target[q] - P0[q]) * w;
+    // a structured shoulder (a suit): the top of the shoulder lifted and squared out
+    if (sh.torso?.pad && p.y > S.armpit && Math.abs(p.x) > 0.08) { const k2 = ss(S.armpit, S.armpit + 0.08, p.y) * ss(0.08, 0.2, Math.abs(p.x)); o.pos[i * 3] += Math.sign(p.x) * sh.torso.pad * k2; o.pos[i * 3 + 1] += sh.torso.pad * 0.5 * k2; }
+  }
+  o.faceNormals();
+  o.relax(0, 0.5, 6);
 }
 
 /** A growing mesh: positions, normals, uv, skin, rest point, band fields; welded ids for edges. */
@@ -300,6 +448,24 @@ class Out {
       for (let c = 0; c < 3; c++) { this.pos[i * 3 + c] = P[k * 3 + c] + n0[c] * dd; this.nor[i * 3 + c] = n0[c]; }
     }
   }
+  /** Normals from the faces (after re-shaping), averaged over welded points. */
+  faceNormals() {
+    const acc = new Map<string, number[]>();
+    for (let t = 0; t < this.ind.length; t += 3) {
+      const a = this.ind[t], b = this.ind[t + 1], c = this.ind[t + 2];
+      const ux = this.pos[b * 3] - this.pos[a * 3], uy = this.pos[b * 3 + 1] - this.pos[a * 3 + 1], uz = this.pos[b * 3 + 2] - this.pos[a * 3 + 2];
+      const vx = this.pos[c * 3] - this.pos[a * 3], vy = this.pos[c * 3 + 1] - this.pos[a * 3 + 1], vz = this.pos[c * 3 + 2] - this.pos[a * 3 + 2];
+      const n = [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx];
+      for (const v of [a, b, c]) { const k = this.wid[v]; const q = acc.get(k) ?? [0, 0, 0]; q[0] += n[0]; q[1] += n[1]; q[2] += n[2]; acc.set(k, q); }
+    }
+    for (let i = 0; i < this.n; i++) {
+      const q = acc.get(this.wid[i]); if (!q) continue;
+      let l = Math.hypot(q[0], q[1], q[2]) || 1;
+      // keep the file's facing (outwards): flip if the faces wind the other way
+      if (q[0] * this.nor[i * 3] + q[1] * this.nor[i * 3 + 1] + q[2] * this.nor[i * 3 + 2] < 0) l = -l;
+      this.nor[i * 3] = q[0] / l; this.nor[i * 3 + 1] = q[1] / l; this.nor[i * 3 + 2] = q[2] / l;
+    }
+  }
   smoothNormals() {
     const acc = new Map<string, number[]>();
     for (let i = 0; i < this.n; i++) { const a = acc.get(this.wid[i]) ?? [0, 0, 0]; a[0] += this.nor[i * 3]; a[1] += this.nor[i * 3 + 1]; a[2] += this.nor[i * 3 + 2]; acc.set(this.wid[i], a); }
@@ -377,7 +543,13 @@ class Out {
       const n = [this.nor[s.src * 3], this.nor[s.src * 3 + 1], this.nor[s.src * 3 + 2]];
       const pts: number[][] = [[x, y, z]];
       const lapelZone = kind === "lapel" && front > 0.45;
-      if (lapelZone) {
+      if (kind === "hood") {
+        // a hood lying down on the upper back: thick at the back, thinning to the cords at the front
+        const back = Math.max(0, 1 - front * 1.4);
+        pts.push([x + ix * 0.004, y + c.h * back + 0.008, z + iz * 0.004],
+          [x - ix * 0.07 * back, y + c.h * 0.8 * back + 0.004, z - iz * 0.07 * back],
+          [x - ix * 0.1 * back, y - 0.14 * back, z - iz * 0.1 * back]);
+      } else if (lapelZone) {
         // a lapel: lies open on the coat, outward from the V edge, widest at the top, nothing at the V's foot
         const side = Math.sign(x - C[0]) || 1;
         const wl = (c.fold ?? 0.05) * Math.max(0, Math.min(1, (y - (C[1] - 0.32)) / 0.12));

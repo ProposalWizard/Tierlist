@@ -1,16 +1,21 @@
 /**
- * THE OUTFITS: where each garment is cut (landmarks of the body's own rest pose, metres) and which colours it
- * takes (read from the uniforms dressPerson3d already set, so kit data, nation kits and people presets drive
- * them unchanged). Landmarks: the neck ring and collar line, the shoulder seam, the sleeve end the file's kit
- * measured (sleeveT), the wrist, the waist, the hem, the shorts end (shortsLoY), the sock top (sockY), the boot
- * top (bootY), the ankle. See build.ts for how a cut becomes cloth.
+ * THE OUTFITS: where each garment is cut (landmarks of the body's own rest pose, metres), what SHAPE it has of its
+ * own (build.ts GarmentSpec.shape: lofted legs and sleeves, swept torso, with each garment's ease and drop), and
+ * which colours it takes (read from the uniforms dressPerson3d already set, so kit data, nation kits and people
+ * presets drive them unchanged). Landmarks: the neck ring and collar line, the shoulder seam, the sleeve end the
+ * file's kit measured (sleeveT), the wrist, the waist, the hem, the shorts end (shortsLoY), the sock top (sockY),
+ * the boot top (bootY), the ankle.
+ *
+ * Silhouettes (Harry: "suits shouldn't look the same as hoodies"): kit = close; shirt = a little loose, hangs from
+ * the chest; suit coat = structured shoulders, straight drop to below the hip; training jacket and hoodie = boxy,
+ * the hoodie loosest with a hood; trousers = straight legs wider than the thigh, jeans slimmer, joggers tapered.
  */
 import type * as THREE from "three";
 import type { PersonMeta } from "../../../people3d";
 import type { GarmentSpec } from "./build";
 import type { ClothSlot } from "./index";
 
-export type ClothKind = "kit" | "tracksuit" | "press" | "suit";
+export type ClothKind = "kit" | "tracksuit" | "press" | "suit" | "polo" | "fan" | "hoodie";
 type V3 = [number, number, number];
 type U = Record<string, { value: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const NONE = -1;
@@ -55,16 +60,32 @@ export function landmarks(meta: PersonMeta) {
   };
   return { LM, neckRing };
 }
+type LMs = ReturnType<typeof landmarks>["LM"];
+type Ring = ReturnType<typeof landmarks>["neckRing"];
 
-const trousers = (LM: ReturnType<typeof landmarks>["LM"], name = "trousers"): GarmentSpec => ({ name, offset: 0.009, lip: 0.004,
+/** Long trousers: straight legs of their own (ease at thigh and hem), a waist that holds a tucked shirt. */
+/** Long trousers: legs of their own (width × the leg's own size at thigh and hem; straight = drapes over knee and calf),
+ *  a seat and waist shaped from the body (a touch over a tucked shirt). */
+const trousers = (LM: LMs, k: [number, number], straight = false, seat = 1.06): GarmentSpec => ({ name: "trousers", offset: 0.004, lip: 0.004,
   fields: (pt, arm, _a, leg) => ({ neck: arm > 0.5 ? 1 : pt.y - (LM.waist + 0.01), sleeve: NONE, hem: NONE, leg: leg > 0.35 ? LM.ankle - pt.y : NONE }),
-  relax: [4, 10], tube: true });
-const shoes = (LM: ReturnType<typeof landmarks>["LM"]): GarmentSpec => ({ name: "shoes", offset: 0.005, lip: 0.003,
+  relax: [4, 10], shape: { legs: { top: k[0], hem: k[1], straight }, torso: { knots: [[0, seat, seat], [1, seat, seat]] } } });
+const shoes = (LM: LMs): GarmentSpec => ({ name: "shoes", offset: 0.005, lip: 0.003,
   fields: (pt, arm, _a, leg) => (leg > 0.5 && arm < 0.5 ? { neck: pt.y - LM.shoeTop, sleeve: NONE, hem: NONE, leg: -pt.y - 0.001 } : OFF),
   relax: [2, 6] });
+const longTop = (name: string, LM: LMs, ring: Ring, o: { off: number; neck: [number, number, number, number, number?, number?]; hem: number; wrist?: number; shape: GarmentSpec["shape"]; collar?: GarmentSpec["collar"] }): GarmentSpec => ({
+  name, offset: o.off, lip: 0.005, relax: [3, 10], collar: o.collar, shape: o.shape,
+  fields: (pt, arm, armS) => ({ neck: ring(pt, o.neck[0], o.neck[1], o.neck[2], o.neck[3], o.neck[4] ?? 0, o.neck[5] ?? 0.07), sleeve: arm > 0.5 ? (armS - (o.wrist ?? LM.wrist)) * LM.upperArm : NONE, hem: arm > 0.5 ? NONE : o.hem - pt.y, leg: NONE }),
+});
+const shortTop = (name: string, LM: LMs, ring: Ring, o: { off: number; hem: number; sleeve: number; shape: GarmentSpec["shape"]; collar?: GarmentSpec["collar"] }): GarmentSpec => ({
+  name, offset: o.off, lip: 0.004, relax: [3, 10], collar: o.collar, shape: o.shape,
+  fields: (pt, arm, armS) => ({ neck: ring(pt, 0.075, 0.066, 0.095, -0.028), sleeve: arm > 0.5 ? (armS - o.sleeve) * LM.upperArm : NONE, hem: arm > 0.5 ? NONE : o.hem - pt.y, leg: NONE }),
+});
 
 const C = (T: { r: number; g: number; b: number } | undefined, fb: [number, number, number]) => ({ r: T?.r ?? fb[0], g: T?.g ?? fb[1], b: T?.b ?? fb[2] });
-function col(three: typeof THREE.Color, c: { r: number; g: number; b: number }, k = 1) { return new three(c.r * k, c.g * k, c.b * k); }
+type RGB = ReturnType<typeof C>;
+function col(three: typeof THREE.Color, c: RGB, k = 1) { return new three(c.r * k, c.g * k, c.b * k); }
+const same = (a: RGB, b: RGB) => Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b) < 0.05;
+const shoeSlot = (u: U, Color: typeof THREE.Color, fb: [number, number, number] = [0.02, 0.02, 0.02]): ClothSlot => ({ color: col(Color, C(u.uShoes?.value, fb)), trim: new Color(0.05, 0.045, 0.04), fabric: "cotton", bands: [0, 0, 0, 0.016] });
 
 export interface OutfitDef {
   garments(meta: PersonMeta, variant: string): GarmentSpec[];
@@ -75,6 +96,7 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
   kit: {
     garments(meta, variant) {
       const { LM, neckRing } = landmarks(meta);
+      const shape: GarmentSpec["shape"] = undefined;  // the kit as approved: close to the body
       const torso = (pt: THREE.Vector3, arm: number, armS: number) => ({
         neck: neckRing(pt, 0.075, 0.066, 0.095, -0.028),
         sleeve: arm > 0.5 ? (armS - LM.sleeveShort) * LM.upperArm : NONE,
@@ -82,10 +104,11 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
       });
       const g: GarmentSpec[] = [];
       if (variant === "kit-sleeves") {
-        g.push({ name: "shirt", offset: 0.007, lip: 0.004, collar: { kind: "crew", h: 0.016, out: 0.010 }, fields: (pt, a, s) => ({ ...torso(pt, a, s), cut: Math.abs(pt.x) - LM.seamX }) });
-        g.push({ name: "sleeves", offset: 0.007, lip: 0.004, fields: (pt, a, s) => ({ ...torso(pt, a, s), cut: LM.seamX - Math.abs(pt.x) }) });
-      } else g.push({ name: "shirt", offset: 0.007, lip: 0.004, collar: { kind: "crew", h: 0.016, out: 0.010 }, fields: torso });
-      g.push({ name: "shorts", offset: 0.014, lip: 0.005, fields: (pt, arm, _a, leg) => ({ neck: arm > 0.5 ? 1 : pt.y - LM.waist, sleeve: NONE, hem: NONE, leg: leg > 0.35 ? LM.shortsEnd - pt.y : NONE }) });
+        g.push({ name: "shirt", offset: 0.007, lip: 0.004, shape, collar: { kind: "crew", h: 0.016, out: 0.010 }, fields: (pt, a, s) => ({ ...torso(pt, a, s), cut: Math.abs(pt.x) - LM.seamX }) });
+        g.push({ name: "sleeves", offset: 0.007, lip: 0.004, shape, fields: (pt, a, s) => ({ ...torso(pt, a, s), cut: LM.seamX - Math.abs(pt.x) }) });
+      } else g.push({ name: "shirt", offset: 0.007, lip: 0.004, shape, collar: { kind: "crew", h: 0.016, out: 0.010 }, fields: torso });
+      g.push({ name: "shorts", offset: 0.014, lip: 0.005,
+        fields: (pt, arm, _a, leg) => ({ neck: arm > 0.5 ? 1 : pt.y - LM.waist, sleeve: NONE, hem: NONE, leg: leg > 0.35 ? LM.shortsEnd - pt.y : NONE }) });
       g.push({ name: "socks", offset: 0.004, lip: 0.003, relax: [2, 8],
         fields: (pt, arm, _a, leg) => (leg > 0.5 && arm < 0.5 ? { neck: pt.y - LM.sockTop, sleeve: NONE, hem: LM.sockEnd - pt.y, leg: NONE } : OFF) });
       return g;
@@ -95,7 +118,6 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
       const code = Math.round(u.uPattern?.value?.x ?? 0), p2 = C(u.uPat2?.value, [1, 1, 1]);
       const { LM } = landmarks(meta);
       const pattern = code === 1 || code === 2 ? { kind: code as 1 | 2, color: col(Color, p2), width: code === 1 ? 0.045 : 0.05, centre: LM.chestY } : undefined;
-      const same = (a: typeof shirt, b: typeof shirt) => Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b) < 0.05;
       const s: ClothSlot[] = [{ color: col(Color, shirt), trim: col(Color, trim), fabric: "poly", bands: [0.012, variant === "kit-sleeves" ? 0 : 0.016, 0, 0], pattern }];
       if (variant === "kit-sleeves") s.push({ color: col(Color, p2), trim: col(Color, same(p2, shirt) ? trim : shirt), fabric: "poly", bands: [0, 0.016, 0, 0] });
       s.push({ color: col(Color, shorts), trim: col(Color, shorts, 0.82), fabric: "poly", bands: [0.03, 0, 0, 0] });
@@ -107,20 +129,18 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
     garments(meta) {
       const { LM, neckRing } = landmarks(meta);
       return [
-        { name: "jacket", offset: 0.013, lip: 0.005, collar: { kind: "crew", h: 0.028, out: 0.003 }, relax: [3, 10],
-          fields: (pt, arm, armS) => ({ neck: neckRing(pt, 0.074, 0.064, 0.085, -0.016), sleeve: arm > 0.5 ? (armS - LM.wrist) * LM.upperArm : NONE, hem: arm > 0.5 ? NONE : LM.hem - pt.y, leg: NONE }) },
-        trousers(LM), shoes(LM),
+        longTop("jacket", LM, neckRing, { off: 0.005, neck: [0.074, 0.064, 0.085, -0.016], hem: LM.hem, collar: { kind: "crew", h: 0.03, out: 0.0 }, shape: { torso: { knots: [[0, 1.0, 1.0], [0.1, 1.17, 1.12], [1, 1.14, 1.1]], boxy: 0.7 }, arms: { top: 1.18, cuff: 1.0 } } }),
+        trousers(LM, [1.18, 1.25], true, 1.1), shoes(LM),
       ];
     },
     slots(u, _v, Color) {
       const coat = C(u.uSuit?.value ? u.uSuitCoat?.value : u.uShirt?.value, [0.12, 0.13, 0.18]);
       let trim = C(u.uTrim?.value, [1, 1, 1]);
-      if (Math.abs(trim.r - coat.r) + Math.abs(trim.g - coat.g) + Math.abs(trim.b - coat.b) < 0.08) trim = { r: Math.min(1, coat.r * 2.6 + 0.08), g: Math.min(1, coat.g * 2.6 + 0.08), b: Math.min(1, coat.b * 2.6 + 0.08) };
-      const sh = C(u.uShoes?.value, [0.02, 0.02, 0.02]);
+      if (same(trim, coat) || Math.abs(trim.r - coat.r) + Math.abs(trim.g - coat.g) + Math.abs(trim.b - coat.b) < 0.08) trim = { r: Math.min(1, coat.r * 2.6 + 0.08), g: Math.min(1, coat.g * 2.6 + 0.08), b: Math.min(1, coat.b * 2.6 + 0.08) };
       return [
         { color: col(Color, coat), trim: col(Color, trim), fabric: "poly", bands: [0, 0.035, 0.03, 0] },
-        { color: col(Color, coat), trim: col(Color, trim), fabric: "poly", bands: [0.028, 0, 0, 0] },
-        { color: col(Color, sh), trim: new Color(0.05, 0.045, 0.04), fabric: "cotton", bands: [0, 0, 0, 0.016] },
+        { color: col(Color, coat), trim: col(Color, trim), fabric: "poly", bands: [0.028, 0, 0, 0.035] },
+        shoeSlot(u, Color),
       ];
     },
   },
@@ -128,20 +148,18 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
     garments(meta) {
       const { LM, neckRing } = landmarks(meta);
       return [
-        { name: "shirt", offset: 0.006, lip: 0.003, collar: { kind: "shirt", h: 0.022, out: 0.006, fold: 0.014 }, relax: [2, 8],
-          fields: (pt, arm, armS) => ({ neck: neckRing(pt, 0.07, 0.062, 0.08, -0.012), sleeve: arm > 0.5 ? (armS - LM.wrist) * LM.upperArm : NONE, hem: arm > 0.5 ? NONE : LM.tuck - pt.y, leg: NONE }) },
-        trousers(LM), shoes(LM),
+        longTop("shirt", LM, neckRing, { off: 0.004, neck: [0.07, 0.062, 0.08, -0.012], hem: LM.tuck, collar: { kind: "shirt", h: 0.022, out: 0.006, fold: 0.014 }, shape: { torso: { knots: [[0, 0.97, 0.99], [0.5, 1.01, 1.02], [1, 1.04, 1.03]] }, arms: { top: 1.08, cuff: 1.12 } } }),
+        trousers(LM, [1.12, 1.45], false, 1.08), shoes(LM),
       ];
     },
     slots(u, _v, Color) {
       const suit = !!u.uSuit?.value;
       const shirt = suit ? C(u.uSuitShirt?.value, [0.62, 0.72, 0.84]) : { r: 0.62, g: 0.72, b: 0.84 };
       const tr = suit ? C(u.uSuitTrousers?.value, [0.04, 0.045, 0.055]) : { r: 0.04, g: 0.045, b: 0.055 };
-      const sh = C(u.uShoes?.value, [0.02, 0.02, 0.02]);
       return [
         { color: col(Color, shirt), trim: col(Color, shirt, 0.85), fabric: "cotton", bands: [0, 0.03, 0, 0] },
         { color: col(Color, tr), trim: col(Color, tr, 0.8), fabric: "cotton", bands: [0.028, 0, 0, 0] },
-        { color: col(Color, sh), trim: new Color(0.05, 0.045, 0.04), fabric: "cotton", bands: [0, 0, 0, 0.016] },
+        shoeSlot(u, Color),
       ];
     },
   },
@@ -149,22 +167,71 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
     garments(meta, variant) {
       const { LM, neckRing } = landmarks(meta);
       return [
-        { name: "shirt", offset: 0.004, lip: 0.002, collar: { kind: "shirt", h: 0.022, out: 0.006, fold: 0.014 }, relax: [0, 8],
-          ...(variant === "suit-open" ? {} : { tie: { top: LM.collarY - 0.035, bottom: LM.waist + 0.02, w: 0.022 } }),
-          fields: (pt, arm, armS) => ({ neck: neckRing(pt, 0.07, 0.062, 0.08, -0.012), sleeve: arm > 0.5 ? (armS - LM.wrist - 0.06) * LM.upperArm : NONE, hem: arm > 0.5 ? NONE : LM.tuck - pt.y, leg: NONE }) },
-        { name: "coat", offset: 0.016, lip: 0.005, collar: { kind: "lapel", h: 0.024, out: 0.004, fold: 0.05 }, relax: [4, 10],
-          fields: (pt, arm, armS) => ({ neck: neckRing(pt, 0.085, 0.072, 0.1, -0.03, 0.27, 0.11), sleeve: arm > 0.5 ? (armS - LM.wrist) * LM.upperArm : NONE, hem: arm > 0.5 ? NONE : (LM.hips[1] - 0.12) - pt.y, leg: NONE }) },
-        trousers(LM), shoes(LM),
+        { ...longTop("shirt", LM, neckRing, { off: 0.003, neck: [0.07, 0.062, 0.08, -0.012], hem: LM.tuck, wrist: LM.wrist + 0.06, collar: { kind: "shirt", h: 0.022, out: 0.006, fold: 0.014 }, shape: { torso: { knots: [[0, 1.0, 1.0], [1, 1.01, 1.0]] }, arms: { top: 1.03, cuff: 1.06 } } }),
+          relax: [0, 8], ...(variant === "suit-open" ? {} : { tie: { top: LM.collarY - 0.035, bottom: LM.waist + 0.02, w: 0.022 } }) },
+        longTop("coat", LM, neckRing, { off: 0.005, neck: [0.085, 0.072, 0.1, -0.03, 0.27, 0.11], hem: LM.hips[1] - 0.13, collar: { kind: "lapel", h: 0.024, out: 0.004, fold: 0.055 }, shape: { torso: { knots: [[-0.25, 1.24, 1.14], [0.0, 1.2, 1.12], [0.32, 1.03, 1.06], [0.7, 1.1, 1.08], [1, 1.2, 1.1]], pad: 0.065, hem: LM.hips[1] - 0.06 }, arms: { top: 1.12, cuff: 1.16 } } }),
+        trousers(LM, [1.1, 1.55], true, 1.08), shoes(LM),
       ];
     },
     slots(u, _v, Color) {
       const coat = C(u.uSuitCoat?.value, [0.03, 0.035, 0.06]), tr = C(u.uSuitTrousers?.value, [0.03, 0.035, 0.06]);
-      const shirt = C(u.uSuitShirt?.value, [0.9, 0.9, 0.88]), tie = C(u.uSuitTie?.value, [0.2, 0.02, 0.03]), sh = C(u.uShoes?.value, [0.01, 0.01, 0.01]);
+      const shirt = C(u.uSuitShirt?.value, [0.9, 0.9, 0.88]), tie = C(u.uSuitTie?.value, [0.2, 0.02, 0.03]);
       return [
         { color: col(Color, shirt), trim: col(Color, shirt), trim2: col(Color, tie), fabric: "cotton" },
         { color: col(Color, coat), trim: col(Color, coat, 0.8), fabric: "wool" },
-        { color: col(Color, tr), trim: col(Color, tr), fabric: "cotton" },
-        { color: col(Color, sh), trim: new Color(0.05, 0.045, 0.04), fabric: "cotton", bands: [0, 0, 0, 0.016] },
+        { color: col(Color, tr), trim: col(Color, tr, 0.75), fabric: "cotton", bands: [0.025, 0, 0, 0] },
+        shoeSlot(u, Color, [0.01, 0.01, 0.01]),
+      ];
+    },
+  },
+  polo: {
+    garments(meta) {
+      const { LM, neckRing } = landmarks(meta);
+      return [
+        shortTop("polo", LM, neckRing, { off: 0.004, hem: LM.hem, sleeve: LM.sleeveShort, collar: { kind: "polo", h: 0.02, out: 0.006, fold: 0.012 }, shape: { torso: { knots: [[0, 1.08, 1.06], [1, 1.07, 1.05]], boxy: 0.5 }, arms: { top: 1.2, cuff: 1.4 } } }),
+        trousers(LM, [1.12, 1.45], false, 1.09), shoes(LM),
+      ];
+    },
+    slots(u, _v, Color) {
+      const club = C(u.uShirt?.value, [0.4, 0.05, 0.05]), trim = C(u.uTrim?.value, [1, 1, 1]);
+      return [
+        { color: col(Color, club, 0.55), trim: col(Color, trim), fabric: "cotton", bands: [0, 0.012, 0, 0] },
+        { color: new Color(0.42, 0.34, 0.2), trim: new Color(0.3, 0.24, 0.14), fabric: "cotton", bands: [0.025, 0, 0, 0] },
+        shoeSlot(u, Color, [0.12, 0.07, 0.04]),
+      ];
+    },
+  },
+  fan: {
+    garments(meta) {
+      const { LM, neckRing } = landmarks(meta);
+      return [
+        shortTop("shirt", LM, neckRing, { off: 0.004, hem: LM.hem - 0.02, sleeve: LM.sleeveShort + 0.08, collar: { kind: "crew", h: 0.016, out: 0.010 }, shape: { torso: { knots: [[0, 1.1, 1.08], [1, 1.08, 1.06]], boxy: 0.6 }, arms: { top: 1.22, cuff: 1.45 } } }),
+        trousers(LM, [1.08, 1.35], false, 1.1), shoes(LM),
+      ];
+    },
+    slots(u, _v, Color) {
+      const shirt = C(u.uShirt?.value, [0.6, 0.05, 0.05]), trim = C(u.uTrim?.value, [1, 1, 1]);
+      return [
+        { color: col(Color, shirt), trim: col(Color, trim), fabric: "poly", bands: [0.012, 0.016, 0, 0] },
+        { color: new Color(0.045, 0.1, 0.22), trim: new Color(0.03, 0.06, 0.14), fabric: "cotton", bands: [0.025, 0, 0, 0] },
+        shoeSlot(u, Color, [0.8, 0.78, 0.74]),
+      ];
+    },
+  },
+  hoodie: {
+    garments(meta) {
+      const { LM, neckRing } = landmarks(meta);
+      return [
+        longTop("hoodie", LM, neckRing, { off: 0.006, neck: [0.08, 0.07, 0.09, -0.02], hem: LM.hem - 0.02, wrist: LM.wrist - 0.02, collar: { kind: "hood", h: 0.05, out: -0.004 }, shape: { torso: { knots: [[0, 1.03, 1.03], [0.12, 1.38, 1.3], [0.6, 1.38, 1.28], [1, 1.3, 1.22]], boxy: 0.9 }, arms: { top: 1.42, cuff: 1.02 } } }),
+        trousers(LM, [1.2, 1.05], false, 1.12), shoes(LM),
+      ];
+    },
+    slots(u, _v, Color) {
+      const club = C(u.uSuit?.value ? u.uSuitCoat?.value : u.uShirt?.value, [0.35, 0.36, 0.38]);
+      return [
+        { color: col(Color, club), trim: col(Color, club, 0.8), fabric: "cotton", bands: [0, 0.04, 0.05, 0] },
+        { color: new Color(0.06, 0.065, 0.075), trim: new Color(0.04, 0.045, 0.05), fabric: "cotton", bands: [0.03, 0, 0, 0.04] },
+        shoeSlot(u, Color, [0.8, 0.78, 0.74]),
       ];
     },
   },
