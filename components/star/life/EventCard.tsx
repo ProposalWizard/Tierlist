@@ -15,7 +15,7 @@ import { TopHud } from "@/components/star/ui";
 import LifeFace from "./LifeFace";
 import "./life.css";
 
-const PLACE: Record<string, [string, string, string]> = {
+export const PLACE: Record<string, [string, string, string]> = {
   "food-hall": ["Food hall", "#7c2d12", "#f59e0b"],
   "dressing-room": ["Dressing room", "#1e3a8a", "#60a5fa"],
   "training-pitch": ["Training ground", "#14532d", "#4ade80"],
@@ -159,7 +159,7 @@ function TalkStill({ career, live, ids }: { career: CareerState; live: LiveEvent
   );
 }
 
-function tone(c: LifeChange): string {
+export function changeTone(c: LifeChange): string {
   if (c.kind === "memory") return "mem";
   if (c.kind === "team-rule") return "rule";
   if (c.kind === "item" && /gone/.test(c.label)) return "down";
@@ -170,11 +170,11 @@ function tone(c: LifeChange): string {
   return "";
 }
 
-function ChangeList({ changes }: { changes: LifeChange[] }) {
+export function ChangeList({ changes }: { changes: LifeChange[] }) {
   return (
     <div className="lw-changes" data-changes>
       {changes.map((c, i) => (
-        <span key={i} className="lw-change" data-tone={tone(c)}>
+        <span key={i} className="lw-change" data-tone={changeTone(c)}>
           {c.kind === "money" ? c.label : typeof c.delta === "number" ? `${c.label} ${c.delta > 0 ? "+" : ""}${c.delta}` : c.label}
         </span>
       ))}

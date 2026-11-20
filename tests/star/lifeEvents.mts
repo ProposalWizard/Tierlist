@@ -11,6 +11,10 @@
  *     comes back as a callback line in a later event.
  *  7. Old saves: no life block is fine; a broken one is put back in shape.
  *  8. Off in the real career.
+ *  9. The decision screens (Harry 20 Nov 15:35): the event picks Telltale or
+ *     the tone dial; each has its tones and a silence the checker insists on;
+ *     the clock setting; "will remember that" only when a memory was written;
+ *     the squad line and your voice; the round menu's small talk.
  */
 const store = new Map<string, string>();
 (globalThis as unknown as { localStorage: Storage }).localStorage = {
@@ -188,6 +192,61 @@ const fixed = migrateLife({ people: { a: { r: 900, b: "x", g: -5, m: [["t", 1, 9
 check(fixed.people.a.r === 100 && fixed.people.a.b === 30 && fixed.people.a.g === 0, "a broken person is clamped back to 0-100");
 check(fixed.people.a.m.length === 6 && fixed.people.a.m.every((x) => [1, 2, 3].includes(x[2])), "a broken memory log is trimmed to 6 good lines");
 check(fixed.flags.join() === "ok" && fixed.wk.length === 3, "broken fields are put back in shape");
+
+// 9: the decision screens
+{
+  const Dz = await import("../../lib/star/life/decision.ts");
+  const RM = await import("../../lib/star/life/roundMenu.ts");
+  const tt = EVENTS.filter((e) => Dz.screenFor(e) === "telltale"), dial = EVENTS.filter((e) => Dz.screenFor(e) === "dial");
+  check(tt.length >= 5 && dial.length >= 3, `the book uses both screens (Telltale ${tt.length}, dial ${dial.length})`);
+  check([...tt, ...dial].every((e) => e.choices.filter((c) => c.silent).length === 1), "every Telltale and dial event has exactly one silent answer");
+  const shirt = JSON.parse(JSON.stringify(EVENTS.find((e) => e.id === "rvl-new-signing-shirt"))) as LifeEvent;
+  const rejects = (why: string, edit: (e: LifeEvent) => void, expect: RegExp) => {
+    const e = JSON.parse(JSON.stringify(shirt)) as LifeEvent; e.id = `broken-${why}`; edit(e);
+    const probs = validateBook([...EVENTS, e], CHATS).filter((p) => p.id === e.id).map((p) => p.problem);
+    check(probs.some((p) => expect.test(p)), `the checker rejects ${why} (got: ${probs.join(" | ") || "nothing"})`);
+  };
+  rejects("telltale-no-silence", (e) => { e.choices = e.choices.filter((c) => !c.silent); }, /needs a silent answer/);
+  rejects("telltale-no-tone", (e) => { delete e.choices[0].tone; }, /needs a tone/);
+  rejects("dial-wrong-tone", (e) => { e.screen = "dial"; }, /dial only has/);
+  rejects("two-silences", (e) => { e.choices[0].silent = true; }, /more than one silent/);
+  rejects("silence-with-a-cost", (e) => { const s = e.choices.find((c) => c.silent)!; s.cost = { moneyWeeks: 1 }; }, /must always be possible/);
+
+  check(Dz.clockSecondsFor(shirt, "normal") === 8 && Dz.clockSecondsFor(shirt, "long") === 16 && Dz.clockSecondsFor(shirt, "off") === null, "the clock: Normal 8 s, Long 16 s, Off none");
+  check(Dz.clockSecondsFor(EVENTS.find((e) => e.id === "scn-match-fix-return")!, "normal") === 6, "an event can set its own clock");
+
+  // A memory written → the notice; none → no notice.
+  const c0 = career();
+  const rng = mulberry32(9);
+  const live = D.pickEvent(c0, "after-match", { rng, force: "tm-dropped-sulks", facts: { lastWon: true } });
+  check(!!live, "the dial event can be cast");
+  if (live) {
+    const quiet = R.chooseOption(D.startEvent(c0, live), live, "leave", { rng })!;
+    check(quiet.remembered.length === 0 && Dz.rememberNotice(quiet.remembered) === null, "no memory written, no 'will remember that'");
+    const sit = R.chooseOption(D.startEvent(c0, live), live, "sit", { rng })!;
+    const n = Dz.rememberNotice(sit.remembered);
+    check(!!n && n.who === P.personInfo(c0, live.cast.mate)?.short, `a memory written names who remembers (${n?.who})`);
+    const v = Dz.voiceOf(sit.career);
+    check(v.humble === 1 && v.total === 1, "your voice counts the answer (Humble 1)");
+    const q = Dz.voiceOf(quiet.career);
+    check(q.silent === 1, "saying nothing counts as saying nothing");
+    const ver = Dz.squadVerdict(c0, live, "sit");
+    check(!!ver && ver.of === Math.min(11, c0.squad.length) && ver.same >= 0 && ver.same <= ver.of, "the squad line counts your own XI");
+    check(JSON.stringify(ver) === JSON.stringify(Dz.squadVerdict(c0, live, "sit")), "the squad line is the same every time");
+    const ls = Dz.listenersFor(c0, live, live.choices.find((x) => x.id === "harder")!.choice);
+    const him = ls.find((l) => l.key === "speaker");
+    check(!!him && him.arrows < 0, "who is listening: telling him to train harder lands badly with him");
+  }
+  check(JSON.stringify(migrateLife({ voice: [3, 1, 2, 0, 4, 1] }).voice) === "[3,1,2,0,4,1]", "your voice survives a reload");
+
+  // The round menu.
+  const mate = c0.squad[1].id;
+  const menu = RM.roundMenuFor(c0, mate);
+  check(menu.categories.length === 6 && menu.categories.every((k) => k.id === "bye" || k.lines.length === 3), "the round menu: six bubbles, three lines each");
+  const mean = menu.categories.find((k) => k.id === "mean")!.lines[0];
+  const r = RM.playRoundLine(c0, mate, mean, mulberry32(3));
+  check(r.delta.bond < 0 && r.delta.grudge > 0 && r.career.relationships.team === c0.relationships.team, "a mean line costs his bond, never your bars");
+}
 
 // 8
 check(LIFE_IN_CAREER === false, "the living world is off in the real career until Harry says");

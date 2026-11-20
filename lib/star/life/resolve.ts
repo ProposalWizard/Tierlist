@@ -17,6 +17,7 @@ import { ctxFor, factsOf, weekOfMoney, type FactOverride } from "./facts";
 import { holds } from "./cond";
 import { lifeWeek, meet, moveTeamFromPerson, nudge, personInfo, remember } from "./people";
 import { fillLine, tagWords } from "./text";
+import { noteVoice, type Remembered } from "./decision";
 
 export interface LifeChange {
   kind: "bar" | "money" | "energy" | "person" | "memory" | "item" | "team-rule" | "later";
@@ -30,6 +31,8 @@ export interface ChoiceResult {
   changes: LifeChange[];
   outcome: LifeOutcome;
   minigame?: "won" | "lost";
+  /** Every memory this answer really wrote (the "will remember that" notice reads only this). */
+  remembered: Remembered[];
 }
 
 const clampInt = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -103,15 +106,19 @@ export function chooseOption(c0: CareerState, live: LiveEvent, choiceId: string,
     if (tm.fellOut) changes.push({ kind: "team-rule", label: `You and ${nm} have fallen out. The dressing room takes sides.` });
     if (tm.madeUp) changes.push({ kind: "team-rule", label: `You and ${nm} are good again.` });
   }
+  const remembered: Remembered[] = [];
   for (const r of outcome.remember ?? []) {
-    if (r.slot === "squad") { life.squad = remember(life.squad, r.tag, now, r.strength); changes.push({ kind: "memory", label: `The squad will remember: ${tagWords(r.tag)}` }); continue; }
-    if (r.slot === "you") { life.self = remember(life.self, r.tag, now, r.strength); changes.push({ kind: "memory", label: `Word gets around: ${tagWords(r.tag)}` }); continue; }
+    if (r.slot === "squad") { life.squad = remember(life.squad, r.tag, now, r.strength); changes.push({ kind: "memory", label: `The squad will remember: ${tagWords(r.tag)}` }); remembered.push({ slot: "squad", who: "The squad", tag: r.tag }); continue; }
+    if (r.slot === "you") { life.self = remember(life.self, r.tag, now, r.strength); changes.push({ kind: "memory", label: `Word gets around: ${tagWords(r.tag)}` }); remembered.push({ slot: "you", who: "", tag: r.tag }); continue; }
     const id = live.cast[r.slot];
     if (!id || id.startsWith("oneoff:")) continue;
     const p = meet(life, id, now);
     p.m = remember(p.m, r.tag, now, r.strength);
-    changes.push({ kind: "memory", label: `${personInfo(c0, id)?.short ?? "Someone"} will remember: ${tagWords(r.tag)}` });
+    const who = personInfo(c0, id)?.short ?? "Someone";
+    changes.push({ kind: "memory", label: `${who} will remember: ${tagWords(r.tag)}` });
+    remembered.push({ slot: r.slot, who, tag: r.tag });
   }
+  noteVoice(life, c0.season, ch);
   if (outcome.followUp) {
     const [a, b] = outcome.followUp.afterWeeks;
     const due = now + a + Math.floor(opts.rng() * (b - a + 1));
@@ -152,5 +159,5 @@ export function chooseOption(c0: CareerState, live: LiveEvent, choiceId: string,
 
   const text = fillLine(outcome.text, c0, live.cast, ctx);
   life.log = [...life.log, { w: now, e: live.id, c: ch.id, t: text.slice(0, 140) }].slice(-12);
-  return { career: c, text, changes, outcome, minigame: mini };
+  return { career: c, text, changes, outcome, minigame: mini, remembered };
 }

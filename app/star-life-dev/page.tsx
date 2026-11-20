@@ -11,6 +11,9 @@
  * sample · ?person=<n> opens the n-th person you know · ?social=chat|drive|races
  * with that person · ?outcome=<n> plays outcome n · ?full=1 fills the screen ·
  * ?shot=1 hides the test button (for stills).
+ * Decision screens (Harry 20 Nov 15:35): ?clock=normal|long|off · ?screens=card
+ * shows every event on the plain card · ?round=1 opens the round menu on a
+ * team-mate over the bench still.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
@@ -21,6 +24,13 @@ import "@/components/star/ui/flat.css";
 import "@/components/star/ui/glassLook.css";
 import PeoplePage from "@/components/star/life/PeoplePage";
 import EventCard, { ChatCard, OutcomeCard } from "@/components/star/life/EventCard";
+import Telltale, { type TelltalePicked } from "@/components/star/life/Telltale";
+import ToneDial, { type DialPicked } from "@/components/star/life/ToneDial";
+import RoundMenu, { type RoundReply } from "@/components/star/life/RoundMenu";
+import { STILL_GROUP, STILL_GROUP_OTHER, STILL_TALK, placeStill, pointOn, useStageSize } from "@/components/star/life/DecisionParts";
+import { readClock, screenFor, speakerId, writeClock, type ClockSetting } from "@/lib/star/life/decision";
+import { playRoundLine, roundMenuFor } from "@/lib/star/life/roundMenu";
+import { roleOf } from "@/lib/star/life/people";
 import { makeInitialCareer } from "@/lib/star/careerFlow";
 import { NATIONAL_LEAGUE_CLUBS } from "@/lib/star/clubs";
 import { mulberry32 } from "@/lib/star/season";
@@ -43,7 +53,35 @@ type View =
   | { kind: "people" }
   | { kind: "event"; live: LiveEvent }
   | { kind: "outcome"; live: LiveEvent; choiceId: string; result: ChoiceResult }
-  | { kind: "chat"; id: string; result: ChatResult };
+  | { kind: "chat"; id: string; result: ChatResult }
+  | { kind: "telltale"; live: LiveEvent; before: CareerState; picked?: TelltalePicked }
+  | { kind: "dial"; live: LiveEvent; before: CareerState; picked?: DialPicked }
+  | { kind: "round"; id: string; reply?: RoundReply | null };
+
+/** The bench still in place of the 3D world, for a talk with a team-mate in it. */
+function backdropFor(live: LiveEvent) {
+  const sp = speakerId(live);
+  return live.event.template === "talk-scene" && sp && !sp.startsWith("oneoff:") && roleOf(sp) === "teammate" ? STILL_TALK : undefined;
+}
+
+/** The round menu over the bench still (the world kit puts it over the 3D world). */
+function RoundStage({ career, id, reply, onPick, onClose }: { career: CareerState; id: string; reply?: RoundReply | null; onPick: Parameters<typeof RoundMenu>[0]["onPick"]; onClose: () => void }) {
+  const [ref, size] = useStageSize<HTMLDivElement>();
+  // His head where the ring goes (the ring leaves room under it for the lines).
+  const placed = placeStill(size.w, size.h, STILL_GROUP, Math.max(0.3, (size.h - 424) / size.h), 1.18);
+  const head = pointOn(placed, STILL_GROUP.focus.x, STILL_GROUP.focus.y);
+  const other = pointOn(placed, STILL_GROUP_OTHER.x, STILL_GROUP_OTHER.y);
+  const menu = roundMenuFor(career, id);
+  return (
+    <div ref={ref} className="relative h-full min-h-[560px] overflow-hidden bg-[#070d18]" data-round-stage>
+      {placed.wide && <div className="absolute" style={{ inset: -30, backgroundImage: `url(${STILL_GROUP.src})`, backgroundSize: "cover", filter: "blur(18px) brightness(.6)" }} />}
+      <div className="absolute" style={{ left: placed.left, top: placed.top, width: placed.width, height: placed.height, backgroundImage: `url(${STILL_GROUP.src})`, backgroundSize: "100% 100%" }} />
+      <span className="absolute left-3 top-3 z-[30] rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/80">A still: the 3D world goes here</span>
+      <RoundMenu menu={menu} anchor={{ x: head.x, y: head.y + placed.height * 0.03 }} size={size} onPick={onPick} onClose={onClose} reply={reply}
+        others={[{ x: other.x + placed.width * 0.04, y: other.y - placed.height * 0.17, icon: "🏇" }]} />
+    </div>
+  );
+}
 
 const MOMENTS: [LifeMoment, string][] = [
   ["after-match", "After a match"], ["arrive:training", "Arriving at training"], ["home:evening", "Evening at home"],
@@ -94,6 +132,10 @@ export default function LifeTestPage() {
   const [shot, setShot] = useState(false);
   const [carLevel, setCarLevel] = useState(3);
   const [horse, setHorse] = useState(false);
+  const [clock, setClock] = useState<ClockSetting>("normal");
+  const [plainCards, setPlainCards] = useState(false);
+  const plainRef = useRef(false);
+  plainRef.current = plainCards;
   const rng = useRef(mulberry32(20261120));
 
   const fresh = useCallback((kind: "fresh" | "lived" | "followup", lv = carLevel, h = horse) => {
@@ -113,8 +155,8 @@ export default function LifeTestPage() {
     const oc = q.get("outcome"); if (oc !== null) setForceOutcome(Number(oc));
     const ev = q.get("event");
     if (ev) {
-      const live = pickEvent(c, "home:evening", { rng: rng.current, force: ev, facts });
-      if (live) { c = startEvent(c, live); setCareer(c); setView({ kind: "event", live }); }
+      const live = pickEvent(c, momentOf(ev), { rng: rng.current, force: ev, facts });
+      if (live) { c = startEvent(c, live); setCareer(c); setView(eventView(live, c)); }
     }
     const pn = q.get("person"), soc = q.get("social") as SocialKind | null;
     if (pn !== null && soc) {
@@ -123,8 +165,18 @@ export default function LifeTestPage() {
       if (id) setTimeout(() => social(soc, id, c), 0);
     }
     if (prep === "followup" && !ev) setTimeout(() => runMoments(c, ["arrive:training"]), 0);
+    const ck = q.get("clock"); if (ck === "normal" || ck === "long" || ck === "off") { writeClock(ck); setClock(ck); } else setClock(readClock());
+    if (q.get("screens") === "card") setPlainCards(true);
+    if (q.get("round") === "1") { const id = c.squad.find((s) => c.life?.people[s.id])?.id ?? c.squad[0]?.id; if (id) setView({ kind: "round", id }); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** Which screen asks it: what the event says (Telltale, the dial), or the plain card. */
+  const eventView = (live: LiveEvent, before: CareerState): View => {
+    const sc = plainRef.current ? "card" : screenFor(live.event);
+    return sc === "telltale" ? { kind: "telltale", live, before } : sc === "dial" ? { kind: "dial", live, before } : { kind: "event", live };
+  };
+  const momentOf = (id: string): LifeMoment => { const w = EVENTS.find((e) => e.id === id)?.trigger.when[0]; return w && w !== "followUp" ? w : "home:evening"; };
 
   const toast = (t: string) => { setSay(t); window.setTimeout(() => setSay((s) => (s === t ? null : s)), 2600); };
 
@@ -134,9 +186,10 @@ export default function LifeTestPage() {
     for (let i = 0; i < list.length; i++) {
       const live = pickEvent(c, list[i], { rng: rng.current, facts });
       if (!live) continue;
-      setCareer(startEvent(c, live));
+      const started = startEvent(c, live);
+      setCareer(started);
       setQueue(list.slice(i + 1));
-      setView({ kind: "event", live });
+      setView(eventView(live, started));
       return true;
     }
     setQueue([]);
@@ -154,12 +207,34 @@ export default function LifeTestPage() {
     if (!runMoments(c, weekMoments(c))) toast(`Week ${c.week}: a quiet week. ${f.lastWon ? "Won" : f.lastLost ? "Lost" : "Drew"}, rated ${f.lastRating}.`);
   };
 
-  const choose = (id: string) => {
-    if (!career || view.kind !== "event") return;
+  const choose = (id: string, timedOut = false) => {
+    if (!career || (view.kind !== "event" && view.kind !== "telltale" && view.kind !== "dial")) return;
     const r = chooseOption(career, view.live, id, { rng: rng.current, facts, forceOutcome, forceMinigame: forceMini });
     if (!r) return;
     setCareer(r.career);
-    setView({ kind: "outcome", live: view.live, choiceId: id, result: r });
+    if (view.kind === "telltale") setView({ ...view, picked: { choiceId: id, result: r, timedOut } });
+    else if (view.kind === "dial") setView({ ...view, picked: { choiceId: id, result: r, before: career } });
+    else setView({ kind: "outcome", live: view.live, choiceId: id, result: r });
+  };
+
+  const roundPick = (line: Parameters<typeof playRoundLine>[2]) => {
+    if (!career || view.kind !== "round") return;
+    const r = playRoundLine(career, view.id, line, rng.current);
+    setCareer(r.career);
+    setView({ kind: "round", id: view.id, reply: { text: r.reply, delta: r.delta, key: Date.now() } });
+  };
+  const openRound = () => {
+    if (!career) return;
+    const id = career.squad.find((s) => career.life?.people[s.id])?.id ?? career.squad[0]?.id;
+    if (id) setView({ kind: "round", id });
+  };
+  const openNamed = (id: string) => {
+    if (!career) return;
+    const live = pickEvent(career, momentOf(id), { rng: rng.current, force: id, facts });
+    if (!live) { toast("Its people cannot be cast in this career (see its trigger)."); return; }
+    const started = startEvent(career, live);
+    setCareer(started);
+    setView(eventView(live, started));
   };
 
   const next = () => {
@@ -179,16 +254,13 @@ export default function LifeTestPage() {
     const o = startOuting(c, id, kind, rng.current, facts);
     if (!o) { toast("Not this week."); return; }
     setCareer(o.career);
-    if ("live" in o) setView({ kind: "event", live: o.live });
+    if ("live" in o) setView(eventView(o.live, o.career));
     else setView({ kind: "chat", id, result: o.plain });
   }
 
   const openEvent = () => {
     if (!career) return;
-    const live = pickEvent(career, "home:evening", { rng: rng.current, force: pickId, facts });
-    if (!live) { toast("Its people cannot be cast in this career (see its trigger)."); return; }
-    setCareer(startEvent(career, live));
-    setView({ kind: "event", live });
+    openNamed(pickId);
   };
 
   const life = career ? lifeOf(career) : null;
@@ -199,6 +271,9 @@ export default function LifeTestPage() {
   const screen = !career ? null
     : view.kind === "event" ? <EventCard career={career} live={view.live} onChoose={choose} />
     : view.kind === "outcome" ? <OutcomeCard career={career} live={view.live} choiceId={view.choiceId} result={view.result} onContinue={next} />
+    : view.kind === "telltale" ? <Telltale key={view.live.id} career={view.picked ? career : view.before} live={view.live} clock={clock} backdrop={backdropFor(view.live)} onChoose={choose} picked={view.picked} onContinue={next} />
+    : view.kind === "dial" ? <ToneDial key={view.live.id} career={career} live={view.live} onChoose={(id) => choose(id)} picked={view.picked} onContinue={next} />
+    : view.kind === "round" ? <RoundStage career={career} id={view.id} reply={view.reply} onPick={roundPick} onClose={() => setView({ kind: "people" })} />
     : view.kind === "chat" ? <ChatCard career={career} id={view.id} result={view.result} onContinue={() => setView({ kind: "people" })} />
     : <PeoplePage career={career} onAction={(k, id) => social(k, id)} />;
 
@@ -242,7 +317,7 @@ export default function LifeTestPage() {
               </Panel>
               <Panel title="Open any event" note="Skips the rules">
                 <select value={pickId} onChange={(e) => setPickId(e.target.value)} style={{ width: "100%", padding: 8, borderRadius: 6, color: "#111" }}>
-                  {EVENTS.map((e) => <option key={e.id} value={e.id}>{e.title.replace(/"/g, "")} ({e.category}, {e.size})</option>)}
+                  {EVENTS.map((e) => <option key={e.id} value={e.id}>{e.title.replace(/"/g, "")} ({e.category}, {e.size}){e.screen === "telltale" ? " · Telltale" : e.screen === "dial" ? " · Tone dial" : ""}</option>)}
                 </select>
                 <div style={{ marginTop: 8 }}><Btn main onClick={openEvent}>Open</Btn></div>
                 <Label>Which outcome plays</Label>
@@ -255,6 +330,33 @@ export default function LifeTestPage() {
                   <Pill on={forceMini === "won"} onClick={() => setForceMini("won")}>Win</Pill>
                   <Pill on={forceMini === "lost"} onClick={() => setForceMini("lost")}>Lose</Pill>
                 </div>
+              </Panel>
+              <Panel title="Decision screens" note="Harry 20 Nov 15:35">
+                <Label>Telltale: the other person forces it</Label>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <Btn onClick={() => openNamed("scn-doping-offer")}>The pills</Btn>
+                  <Btn onClick={() => openNamed("scn-match-fix-approach")}>The car park</Btn>
+                  <Btn onClick={() => openNamed("scn-casino-photo")}>The photo</Btn>
+                  <Btn onClick={() => openNamed("scn-match-fix-return")}>The late call</Btn>
+                </div>
+                <Label>Tone dial: press, training, dilemmas</Label>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <Btn onClick={() => openNamed("med-mixed-zone-snub")}>Mixed zone</Btn>
+                  <Btn onClick={() => openNamed("inj-tight-hamstring")}>The hamstring</Btn>
+                  <Btn onClick={() => openNamed("agt-quiet-call")}>The agent</Btn>
+                </div>
+                <Label>Round menu: tap a person</Label>
+                <Btn main onClick={openRound}>Talk to a team-mate</Btn>
+                <Label>Decision clock (this device)</Label>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {(["normal", "long", "off"] as ClockSetting[]).map((k) => <Pill key={k} on={clock === k} onClick={() => { writeClock(k); setClock(k); }}>{k === "normal" ? "Normal" : k === "long" ? "Long (x2)" : "Off"}</Pill>)}
+                </div>
+                <Label>Which screen</Label>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <Pill on={!plainCards} onClick={() => setPlainCards(false)}>As the event says</Pill>
+                  <Pill on={plainCards} onClick={() => setPlainCards(true)}>Plain card for all</Pill>
+                </div>
+                <Note>The still behind Telltale and the round menu stands in for the 3D world until the world kit wires them in.</Note>
               </Panel>
               <Panel title="Sample career" note="Resets everything">
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

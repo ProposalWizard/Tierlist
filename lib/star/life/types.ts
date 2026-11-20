@@ -90,9 +90,23 @@ export type LifeMinigame =
   | { kind: "skill-check"; stat: "pace" | "power" | "technique" | "vision" | "freeKick"; target: number }
   | { kind: "horse-race" };
 
+/** How an answer sounds (decision screens, Harry 20 Nov 2026 15:35). The
+ *  tone dial reads only humble / calm / confident / fiery; the Telltale lines
+ *  may use any of them as their tag. */
+export type LifeTone = "humble" | "calm" | "confident" | "fiery" | "honest" | "lie" | "kind" | "cold" | "brave" | "reckless";
+/** Which screen asks the question: Telltale (the other person or the world
+ *  forces the moment: slow-mo, a clock, silence is an answer), the football
+ *  tone dial (press, mixed zone, training talks, dilemmas) or the plain card. */
+export type LifeScreen = "telltale" | "dial" | "card";
+
 export interface LifeChoice {
   id: string;
   label: string;
+  /** The tone tag shown on the answer (Telltale) or its place on the dial. */
+  tone?: LifeTone;
+  /** "… Say nothing" / "… No comment": a real answer, and the one the clock
+   *  picks when it runs out. At most one per event. */
+  silent?: boolean;
   requires?: string[];
   cost?: LifeCost;
   minigame?: LifeMinigame;
@@ -117,6 +131,12 @@ export interface LifeEvent {
   size: LifeSize;
   rarity: "common" | "uncommon" | "rare" | "follow-up" | "social-action" | "callback";
   template: LifeTemplate;
+  /** Which decision screen asks it (decision.ts screenFor; default "card"). */
+  screen?: LifeScreen;
+  /** The cast slot whose line it is (the one who stays in colour; default the first). */
+  speaker?: string;
+  /** Telltale only: seconds on the clock at Normal (default 8). */
+  clockSeconds?: number;
   trigger: {
     when: LifeMoment[];
     requires?: string[];
@@ -193,6 +213,8 @@ export interface LifeState {
   /** When each team-mate joined (life week; 0 = there when the life block
    *  started), so "a new signing" means new to the club, not new to you. */
   roster?: Record<string, number>;
+  /** Your voice this season (decision screens): [season, humble, calm, confident, fiery, said nothing]. */
+  voice?: [number, number, number, number, number, number];
 }
 
 export const PERSON_MEMORY_CAP = 6;

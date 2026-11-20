@@ -52,21 +52,25 @@
     },
     {
       "id": "agt-quiet-call", "title": "\"Don't say anything. Just listen.\"", "category": "agent", "place": "driving",
-      "size": "medium", "rarity": "uncommon", "template": "phone-call",
+      "size": "medium", "rarity": "uncommon", "template": "phone-call", "screen": "dial", "speaker": "agent",
       "trigger": { "when": ["driving", "home:evening"], "requires": ["fame>=25", "week>=20", "lastRating>=6.8"], "cooldownWeeks": 46, "group": "agent-whisper", "maxPerCareer": 3 },
       "cast": [ { "slot": "agent", "pick": "agent" }, { "slot": "boss", "pick": "manager" } ],
       "setup": [
         "{agent.name}: \"Don't say anything. Just listen. A bigger club had a man at your last three. They'll come in the summer. I can let that be known, or I can keep it very quiet. Your call.\""
       ],
       "choices": [
-        { "id": "leak", "label": "\"Let it be known.\"", "outcomes": [
+        { "id": "leak", "label": "\"Let it be known.\"", "tone": "confident", "outcomes": [
           { "text": "By Thursday it is on every feed. The gaffer does not look at you in training.", "effects": { "boss": -6, "fans": -4, "fame": 3 }, "npc": [ { "slot": "agent", "bond": 5 }, { "slot": "boss", "respect": -8, "grudge": 6 } ], "remember": [ { "slot": "boss", "tag": "used-the-press-on-him", "strength": 2 }, { "slot": "agent", "tag": "you-let-him-work", "strength": 1 } ] }
         ] },
-        { "id": "quiet", "label": "\"Keep it quiet. I've a season to finish.\"", "outcomes": [
+        { "id": "quiet", "label": "\"Keep it quiet. I've a season to finish.\"", "tone": "calm", "outcomes": [
           { "text": "\"Your funeral.\" He means it kindly. Mostly.", "effects": { "boss": 2 }, "npc": [ { "slot": "agent", "respect": 2, "bond": -3 } ], "remember": [ { "slot": "agent", "tag": "you-kept-it-quiet", "strength": 1 } ] }
         ] },
-        { "id": "tell-boss", "label": "Hang up. Go and tell the gaffer yourself.", "cost": { "weekAction": 1 }, "outcomes": [
+        { "id": "tell-boss", "label": "Hang up. Go and tell the gaffer yourself.", "cost": { "weekAction": 1 }, "tone": "humble", "outcomes": [
           { "text": "He listens, nods once. \"Nobody has ever told me first.\"", "effects": { "boss": 8, "reputation": 2 }, "npc": [ { "slot": "boss", "respect": 12, "bond": 6 }, { "slot": "agent", "bond": -8, "grudge": 5 } ], "remember": [ { "slot": "boss", "tag": "told-him-first", "strength": 3 }, { "slot": "agent", "tag": "went-behind-his-back", "strength": 2 } ] }
+        ] },
+        {"id": "say-nothing", "label": "Say nothing. Hang up.", "silent": true, "outcomes": [
+          {"chance": 0.5, "text": "He takes your silence as a yes. It is in the papers by Friday.", "effects": {"boss": -4, "fame": 2}, "npc": [{"slot": "boss", "respect": -5}], "remember": [{"slot": "agent", "tag": "you-let-him-decide", "strength": 1}]},
+          {"chance": 0.5, "text": "He takes your silence as a no, and sounds hurt about it.", "npc": [{"slot": "agent", "bond": -3}], "remember": [{"slot": "agent", "tag": "you-let-him-decide", "strength": 1}]}
         ] }
       ],
       "callbacks": [
@@ -78,7 +82,7 @@
     },
     {
       "id": "med-mixed-zone-snub", "title": "The man from the tabloid", "category": "journalist", "place": "stadium-mixed-zone",
-      "size": "medium", "rarity": "common", "template": "talk-scene",
+      "size": "medium", "rarity": "common", "template": "talk-scene", "screen": "dial", "speaker": "hack",
       "trigger": { "when": ["after-match"], "requires": ["lastLost", "lastRating<6.5", "fame>=20"], "cooldownWeeks": 12, "group": "press-after-loss", "maxPerCareer": 4 },
       "cast": [ { "slot": "hack", "pick": "tabloid" } ],
       "setup": [
@@ -86,14 +90,20 @@
         "\"{you.short}. Not a shot on target. Are you worth the money?\""
       ],
       "choices": [
-        { "id": "own", "label": "\"Not today I wasn't. That's on me.\"", "outcomes": [
+        { "id": "own", "label": "\"Not today I wasn't. That's on me.\"", "tone": "humble", "outcomes": [
           { "text": "He lowers the phone a little. The piece runs under 'NO EXCUSES'. Fair.", "effects": { "fans": 3, "boss": 2 }, "npc": [ { "slot": "hack", "respect": 8 } ], "remember": [ { "slot": "hack", "tag": "you-fronted-up", "strength": 2 } ] }
         ] },
-        { "id": "walk", "label": "Walk straight past him.", "outcomes": [
+        { "id": "walk", "label": "Walk straight past him.", "silent": true, "outcomes": [
           { "text": "\"Nothing to say, then.\" He says it loudly, for the others.", "effects": { "fans": -1 }, "npc": [ { "slot": "hack", "respect": -6, "grudge": 12 } ], "remember": [ { "slot": "hack", "tag": "you-snubbed-him", "strength": 2 } ], "followUp": { "event": "med-hit-piece", "afterWeeks": [1, 6], "if": "hack.grudge>=20" } }
         ] },
-        { "id": "bite", "label": "\"Have you ever kicked a ball in your life?\"", "outcomes": [
+        { "id": "bite", "label": "\"Have you ever kicked a ball in your life?\"", "tone": "fiery", "outcomes": [
           { "text": "The clip has two million views by breakfast. Your own fans love it. He does not.", "effects": { "fans": 4, "fame": 3, "boss": -3 }, "npc": [ { "slot": "hack", "grudge": 25, "respect": -5 } ], "remember": [ { "slot": "hack", "tag": "you-mocked-him-on-camera", "strength": 3 } ], "followUp": { "event": "med-hit-piece", "afterWeeks": [1, 4] } }
+        ] },
+        {"id": "again", "label": "\"Long season. We go again.\"", "tone": "calm", "outcomes": [
+          {"text": "He sighs. Nobody prints that. Your gaffer likes it, though.", "effects": {"boss": 2}, "npc": [{"slot": "hack", "respect": -2}], "remember": [{"slot": "hack", "tag": "gave-him-nothing", "strength": 1}]}
+        ] },
+        {"id": "saturday", "label": "\"Ask me again after Saturday.\"", "tone": "confident", "outcomes": [
+          {"text": "It goes out as a promise. The fans screenshot it. Saturday had better go well.", "effects": {"fans": 2, "fame": 1, "boss": -1}, "npc": [{"slot": "hack", "respect": 3}], "remember": [{"slot": "hack", "tag": "you-promised-saturday", "strength": 2}]}
         ] }
       ],
       "callbacks": [
@@ -192,7 +202,7 @@
     },
     {
       "id": "rvl-new-signing-shirt", "title": "He wants your number", "category": "rival", "place": "dressing-room",
-      "size": "big", "rarity": "uncommon", "template": "talk-scene",
+      "size": "big", "rarity": "uncommon", "template": "talk-scene", "screen": "telltale", "speaker": "rival",
       "trigger": { "when": ["arrive:training"], "requires": ["squad.any(new && samePosition)", "clubApps>=20"], "cooldownWeeks": 92, "group": "rival-arrives", "maxPerCareer": 2 },
       "cast": [ { "slot": "rival", "pick": "squad", "where": ["new", "samePosition"], "order": "best" }, { "slot": "kitman", "pick": "kitman" } ],
       "setup": [
@@ -200,15 +210,18 @@
         "\"I've worn this since I was nine. The club said to ask you. So I'm asking.\" {kitman.short} is pretending to fold socks."
       ],
       "choices": [
-        { "id": "keep", "label": "\"Earn your own.\"", "outcomes": [
+        { "id": "keep", "label": "\"Earn your own.\"", "tone": "cold", "outcomes": [
           { "text": "He hangs it back up, slowly. \"Okay. We'll see who's wearing it in May.\"", "effects": { "team": 1, "fans": 2, "flag": "duel-shirt" }, "npc": [ { "slot": "rival", "grudge": 20, "respect": 5 } ], "remember": [ { "slot": "rival", "tag": "shirt-refused", "strength": 3 } ] }
         ] },
-        { "id": "give", "label": "Hand it over. \"Numbers don't score goals.\"", "outcomes": [
+        { "id": "give", "label": "Hand it over. \"Numbers don't score goals.\"", "tone": "kind", "outcomes": [
           { "text": "He did not expect that. The kit man raises an eyebrow. The fans who bought your shirt are not happy.", "effects": { "boss": 4, "fans": -3 }, "npc": [ { "slot": "rival", "bond": 15, "respect": -4 }, { "slot": "kitman", "respect": 3 } ], "remember": [ { "slot": "rival", "tag": "you-gave-him-the-shirt", "strength": 3 } ] }
         ] },
-        { "id": "play-for-it", "label": "\"Crossbar challenge. Winner wears it.\"", "minigame": { "kind": "skill-check", "stat": "freeKick", "target": 60 }, "outcomes": [
+        { "id": "play-for-it", "label": "\"Crossbar challenge. Winner wears it.\"", "minigame": { "kind": "skill-check", "stat": "freeKick", "target": 60 }, "tone": "confident", "outcomes": [
           { "if": "minigame.won", "text": "Bar, first go. He shakes your hand properly.", "effects": { "team": 4, "flag": "duel-shirt" }, "npc": [ { "slot": "rival", "respect": 15, "grudge": 8 } ], "remember": [ { "slot": "rival", "tag": "lost-the-shirt-on-the-crossbar", "strength": 3 } ] },
           { "if": "minigame.lost", "text": "He hits it. You don't. A deal is a deal. The fans who bought your shirt are not happy.", "effects": { "team": 3, "fans": -2 }, "npc": [ { "slot": "rival", "respect": 10, "bond": 5 } ], "remember": [ { "slot": "rival", "tag": "won-your-shirt-on-the-crossbar", "strength": 3 } ] }
+        ] },
+        {"id": "say-nothing", "label": "Say nothing.", "silent": true, "outcomes": [
+          {"text": "You say nothing. He hangs the shirt back on your peg, slowly. \"Right.\" {kitman.short} folds the same sock twice.", "effects": {"team": -1}, "npc": [{"slot": "rival", "grudge": 10, "respect": -3}], "remember": [{"slot": "rival", "tag": "you-blanked-him", "strength": 2}]}
         ] }
       ],
       "callbacks": [
@@ -219,7 +232,7 @@
     },
     {
       "id": "rvl-may-reckoning", "title": "Who wears it in May", "category": "rival", "place": "dressing-room",
-      "size": "medium", "rarity": "callback", "template": "talk-scene",
+      "size": "medium", "rarity": "callback", "template": "talk-scene", "screen": "telltale", "speaker": "rival",
       "trigger": { "when": ["season-end"], "requires": ["flag:duel-shirt", "mem(rival,'shirt-refused'|'lost-the-shirt-on-the-crossbar')"], "once": true },
       "cast": [ { "slot": "rival", "pick": "memory", "tags": ["shirt-refused", "lost-the-shirt-on-the-crossbar"] } ],
       "setup": [
@@ -227,15 +240,18 @@
         "{if outscored(rival)}You scored more. He knows it.{/if}{if !outscored(rival)}He scored more. Everybody knows it.{/if}"
       ],
       "choices": [
-        { "id": "shake", "label": "Shake his hand.", "outcomes": [
+        { "id": "shake", "label": "Shake his hand.", "tone": "kind", "outcomes": [
           { "if": "outscored(rival)", "text": "\"Keep the shirt. You earned it.\" He means it. Something between you settles.", "effects": { "team": 3 }, "npc": [ { "slot": "rival", "grudge": -15, "respect": 12, "bond": 6 } ], "remember": [ { "slot": "rival", "tag": "you-earned-the-shirt", "strength": 3 } ] },
           { "text": "He shakes it, then asks for the shirt again. In front of everyone.", "effects": { "fans": -2, "team": 1 }, "npc": [ { "slot": "rival", "respect": 4 } ], "remember": [ { "slot": "rival", "tag": "asked-again-in-may", "strength": 2 } ] }
         ] },
-        { "id": "gloat", "label": "Pin the chart back on the wall. Upside down.", "requires": ["outscored(rival)"], "outcomes": [
+        { "id": "gloat", "label": "Pin the chart back on the wall. Upside down.", "requires": ["outscored(rival)"], "tone": "fiery", "outcomes": [
           { "text": "The lads howl. He does not.", "effects": { "team": -3, "fans": 2 }, "npc": [ { "slot": "rival", "grudge": 12, "bond": -6 } ], "remember": [ { "slot": "rival", "tag": "you-rubbed-it-in", "strength": 3 } ] }
         ] },
-        { "id": "hand-over", "label": "Give him the shirt. \"You won it.\"", "requires": ["!outscored(rival)"], "outcomes": [
+        { "id": "hand-over", "label": "Give him the shirt. \"You won it.\"", "requires": ["!outscored(rival)"], "tone": "honest", "outcomes": [
           { "text": "The kit man sews your new number on that night. The gaffer nods at you in the corridor.", "effects": { "boss": 4, "fans": -3 }, "npc": [ { "slot": "rival", "grudge": -20, "respect": 10 } ], "remember": [ { "slot": "rival", "tag": "you-kept-your-word", "strength": 3 } ] }
+        ] },
+        {"id": "say-nothing", "label": "Say nothing.", "silent": true, "outcomes": [
+          {"text": "You walk past him to the showers. Behind you, the chart goes in the bin.", "effects": {"team": -1}, "npc": [{"slot": "rival", "grudge": 6, "respect": -2}], "remember": [{"slot": "rival", "tag": "you-walked-past-in-may", "strength": 1}]}
         ] }
       ],
       "callbacks": [
@@ -296,7 +312,7 @@
     },
     {
       "id": "scn-casino-photo", "title": "2:14 a.m.", "category": "scandal", "place": "casino",
-      "size": "big", "rarity": "rare", "template": "text-thread",
+      "size": "big", "rarity": "rare", "template": "text-thread", "screen": "telltale", "speaker": "stranger",
       "trigger": { "when": ["leave:casino"], "requires": ["fame>=30"], "cooldownWeeks": 46, "group": "scandal", "maxPerCareer": 2 },
       "cast": [ { "slot": "stranger", "pick": "stranger" }, { "slot": "boss", "pick": "manager" }, { "slot": "hack", "pick": "tabloid" } ],
       "setup": [
@@ -304,16 +320,20 @@
         "\"Nice night? The {hack.outlet} would pay me well for this. You can pay me better.\""
       ],
       "choices": [
-        { "id": "pay", "label": "Pay him.", "cost": { "moneyWeeks": 1.5 }, "outcomes": [
+        { "id": "pay", "label": "Pay him.", "cost": { "moneyWeeks": 1.5 }, "tone": "lie", "outcomes": [
           { "chance": 0.65, "text": "The photo never appears.", "remember": [ { "slot": "you", "tag": "paid-off-a-photo", "strength": 2 } ] },
           { "chance": 0.35, "text": "He takes the money and sells it anyway. Now there are two stories.", "effects": { "fans": -8, "boss": -8, "fame": 4, "scandal": true }, "npc": [ { "slot": "boss", "respect": -12 } ], "remember": [ { "slot": "boss", "tag": "casino-before-a-match", "strength": 3 }, { "slot": "hack", "tag": "has-the-payoff-story", "strength": 3 } ] }
         ] },
-        { "id": "tell-boss", "label": "Go to the gaffer before it breaks.", "outcomes": [
+        { "id": "tell-boss", "label": "Go to the gaffer before it breaks.", "tone": "honest", "outcomes": [
           { "text": "He is furious for four minutes and useful for ten. The club puts out a line before the paper does.", "effects": { "boss": -3, "fans": -3, "fame": 2, "scandal": true }, "npc": [ { "slot": "boss", "respect": 4 } ], "remember": [ { "slot": "boss", "tag": "owned-up-about-casino", "strength": 2 } ] }
         ] },
-        { "id": "dare", "label": "\"Sell it. I was there. So what.\"", "outcomes": [
+        { "id": "dare", "label": "\"Sell it. I was there. So what.\"", "tone": "fiery", "outcomes": [
           { "chance": 0.4, "text": "Front page Friday. Two goals Saturday. Sunday's headline: 'WHAT A GAMBLE'.", "effects": { "fame": 6, "fans": 4, "boss": -2, "scandal": true }, "npc": [ { "slot": "hack", "respect": 8 } ], "remember": [ { "slot": "squad", "tag": "casino-then-two-goals", "strength": 2 } ] },
           { "chance": 0.6, "text": "Front page Friday. A stinker Saturday. They boo you off.", "effects": { "fame": 4, "fans": -10, "boss": -8, "scandal": true }, "npc": [ { "slot": "boss", "respect": -10, "grudge": 8 } ], "remember": [ { "slot": "boss", "tag": "casino-before-a-match", "strength": 3 } ] }
+        ] },
+        {"id": "say-nothing", "label": "Leave him on read.", "silent": true, "outcomes": [
+          {"chance": 0.5, "text": "Nothing. Then nothing. Then Saturday's paper.", "effects": {"fans": -6, "boss": -6, "fame": 3, "scandal": true}, "npc": [{"slot": "boss", "respect": -6}], "remember": [{"slot": "boss", "tag": "casino-before-a-match", "strength": 2}]},
+          {"chance": 0.5, "text": "He never texts again. You check your phone forty times a day for a month.", "effects": {"energy": -6}, "remember": [{"slot": "you", "tag": "left-the-blackmailer-on-read", "strength": 2}]}
         ] }
       ],
       "callbacks": [
@@ -324,7 +344,7 @@
     },
     {
       "id": "inj-tight-hamstring", "title": "It's probably nothing", "category": "injury", "place": "physio-room",
-      "size": "medium", "rarity": "common", "template": "talk-scene",
+      "size": "medium", "rarity": "common", "template": "talk-scene", "screen": "dial", "speaker": "physio",
       "trigger": { "when": ["arrive:training"], "requires": ["energy<=35", "!injured"], "cooldownWeeks": 20, "group": "injury-scare", "maxPerCareer": 6 },
       "cast": [ { "slot": "physio", "pick": "physio" }, { "slot": "boss", "pick": "manager" } ],
       "setup": [
@@ -332,15 +352,18 @@
         "\"Play Saturday and it's probably fine. Probably. Sit out and it's definitely fine. {boss.short} will ask me. What do I tell him?\""
       ],
       "choices": [
-        { "id": "rest", "label": "\"Tell him the truth. I'll sit this one out.\"", "outcomes": [
+        { "id": "rest", "label": "\"Tell him the truth. I'll sit this one out.\"", "tone": "humble", "outcomes": [
           { "text": "You watch from the stand. Monday it feels brand new.", "effects": { "energy": 20, "boss": -1 }, "npc": [ { "slot": "physio", "respect": 8, "bond": 5 } ], "remember": [ { "slot": "physio", "tag": "you-listen-to-her", "strength": 2 } ] }
         ] },
-        { "id": "play", "label": "\"Tell him I'm fine.\"", "requires": ["!mem(physio,'made-her-lie-and-it-tore')"], "outcomes": [
+        { "id": "play", "label": "\"Tell him I'm fine.\"", "requires": ["!mem(physio,'made-her-lie-and-it-tore')"], "tone": "confident", "outcomes": [
           { "chance": 0.7, "text": "It holds. Just.", "effects": { "boss": 3, "matchFitness": -5 }, "npc": [ { "slot": "physio", "respect": -5 } ], "remember": [ { "slot": "physio", "tag": "made-her-lie-to-the-boss", "strength": 2 } ] },
           { "chance": 0.3, "text": "Sixty-third minute. You know before you hit the ground. Weeks of rehab.", "effects": { "energy": -30, "matchFitness": -25, "boss": -2 }, "npc": [ { "slot": "physio", "respect": -10, "grudge": 5 }, { "slot": "boss", "respect": -4 } ], "remember": [ { "slot": "physio", "tag": "made-her-lie-and-it-tore", "strength": 3 }, { "slot": "boss", "tag": "hid-an-injury", "strength": 2 } ] }
         ] },
-        { "id": "half", "label": "\"Bench. Twenty minutes if we need it.\"", "outcomes": [
+        { "id": "half", "label": "\"Bench. Twenty minutes if we need it.\"", "tone": "calm", "outcomes": [
           { "text": "She nods. \"That I can sell.\"", "effects": { "boss": 1, "energy": 8 }, "npc": [ { "slot": "physio", "respect": 4 } ], "remember": [ { "slot": "physio", "tag": "you-met-her-halfway", "strength": 1 } ] }
+        ] },
+        {"id": "shrug", "label": "Shrug and jog off.", "silent": true, "outcomes": [
+          {"text": "You shrug and jog off. {physio.short} tells {boss.short} the truth anyway, and that you would not.", "effects": {"energy": 10, "boss": -2}, "npc": [{"slot": "physio", "respect": -4}], "remember": [{"slot": "physio", "tag": "you-left-it-to-her", "strength": 1}]}
         ] }
       ],
       "callbacks": [
@@ -528,7 +551,7 @@
     },
     {
       "id": "tm-money-trouble", "title": "A call at midnight", "category": "team-mate", "place": "home",
-      "size": "medium", "rarity": "uncommon", "template": "phone-call",
+      "size": "medium", "rarity": "uncommon", "template": "phone-call", "screen": "telltale", "speaker": "mate",
       "trigger": { "when": ["home:evening"], "requires": ["squad.any(bond>=40)", "moneyWeeks>=6"], "cooldownWeeks": 40, "group": "money-ask", "maxPerCareer": 2 },
       "cast": [ { "slot": "mate", "pick": "squad", "where": ["bond>=40", "!mem('you-lent-him-money')"], "order": "random" } ],
       "setup": [
@@ -536,15 +559,18 @@
         "\"I'm in a hole, mate. Betting. I owe the wrong people about two weeks of what you earn. I wouldn't ask if there was anyone else.\""
       ],
       "choices": [
-        { "id": "lend", "label": "Lend it. No questions.", "cost": { "moneyWeeks": 2 }, "outcomes": [
+        { "id": "lend", "label": "Lend it. No questions.", "cost": { "moneyWeeks": 2 }, "tone": "kind", "outcomes": [
           { "text": "The money is in his account before he has finished saying thank you.", "npc": [ { "slot": "mate", "bond": 12 } ], "remember": [ { "slot": "mate", "tag": "you-lent-him-money", "strength": 3 } ], "followUp": { "event": "tm-loan-comes-back", "afterWeeks": [3, 8] } }
         ] },
-        { "id": "welfare", "label": "\"Ring the club welfare officer. Tonight. I'll come with you.\"", "outcomes": [
+        { "id": "welfare", "label": "\"Ring the club welfare officer. Tonight. I'll come with you.\"", "tone": "honest", "outcomes": [
           { "chance": 0.6, "text": "He goes. It takes a long time, but he goes.", "effects": { "boss": 1 }, "npc": [ { "slot": "mate", "bond": 2, "respect": 6 } ], "remember": [ { "slot": "mate", "tag": "pointed-him-to-help", "strength": 2 } ] },
           { "chance": 0.4, "text": "\"I asked for money, not a lecture.\" He hangs up.", "npc": [ { "slot": "mate", "bond": -6, "grudge": 5 } ], "remember": [ { "slot": "mate", "tag": "you-wouldnt-help", "strength": 2 } ] }
         ] },
-        { "id": "no", "label": "\"I can't, mate.\"", "outcomes": [
+        { "id": "no", "label": "\"I can't, mate.\"", "tone": "cold", "outcomes": [
           { "text": "Silence. Then the line goes.", "npc": [ { "slot": "mate", "bond": -10, "grudge": 8 } ], "remember": [ { "slot": "mate", "tag": "you-wouldnt-help", "strength": 2 } ] }
+        ] },
+        {"id": "say-nothing", "label": "Say nothing.", "silent": true, "outcomes": [
+          {"text": "You say nothing for too long. \"Forget it. Forget I rang.\" The line goes dead.", "npc": [{"slot": "mate", "bond": -8, "grudge": 6}], "remember": [{"slot": "mate", "tag": "you-wouldnt-help", "strength": 2}]}
         ] }
       ],
       "callbacks": [
@@ -576,7 +602,7 @@
     },
     {
       "id": "tm-dropped-sulks", "title": "The towel over his head", "category": "team-mate", "place": "dressing-room",
-      "size": "small", "rarity": "common", "template": "talk-scene",
+      "size": "small", "rarity": "common", "template": "talk-scene", "screen": "dial", "speaker": "mate",
       "trigger": { "when": ["after-match"], "requires": ["squad.any(samePosition && bond<=50)", "lastWon"], "cooldownWeeks": 14, "group": "dropped", "maxPerCareer": 4 },
       "cast": [ { "slot": "mate", "pick": "squad", "where": ["samePosition", "bond<=50"], "order": "random" } ],
       "setup": [
@@ -584,14 +610,17 @@
         "He is sat in the corner with a towel over his head while everyone else sings."
       ],
       "choices": [
-        { "id": "sit", "label": "Sit with him for a bit.", "outcomes": [
+        { "id": "sit", "label": "Sit with him for a bit.", "tone": "humble", "outcomes": [
           { "text": "Neither of you says much. You miss the singing. When you get up he says \"cheers\" to the floor.", "effects": { "team": -1 }, "npc": [ { "slot": "mate", "bond": 6, "respect": 3 } ], "remember": [ { "slot": "mate", "tag": "you-sat-with-him-after", "strength": 2 } ] }
         ] },
-        { "id": "harder", "label": "\"Train harder, then.\"", "outcomes": [
+        { "id": "harder", "label": "\"Train harder, then.\"", "tone": "fiery", "outcomes": [
           { "text": "The towel comes off. The look stays with you.", "effects": { "team": -1 }, "npc": [ { "slot": "mate", "bond": -6, "grudge": 8, "respect": 4 } ], "remember": [ { "slot": "mate", "tag": "you-told-him-train-harder", "strength": 2 } ] }
         ] },
-        { "id": "leave", "label": "Leave him to it.", "outcomes": [
+        { "id": "leave", "label": "Leave him to it.", "silent": true, "outcomes": [
           { "text": "Probably what he wanted. Probably.", "npc": [ { "slot": "mate", "bond": -1 } ] }
+        ] },
+        {"id": "keep-going", "label": "\"Your chance will come. Keep going.\"", "tone": "calm", "outcomes": [
+          {"text": "He does not look up. But he nods.", "npc": [{"slot": "mate", "bond": 3, "respect": 1}], "remember": [{"slot": "mate", "tag": "you-told-him-keep-going", "strength": 1}]}
         ] }
       ],
       "callbacks": [
@@ -649,22 +678,26 @@
     },
     {
       "id": "agt-skimmed-deal", "title": "Ten per cent", "category": "agent", "place": "home",
-      "size": "medium", "rarity": "uncommon", "template": "text-thread",
+      "size": "medium", "rarity": "uncommon", "template": "text-thread", "screen": "dial", "speaker": "agent",
       "trigger": { "when": ["home:evening"], "requires": ["fame>=35", "season>=2"], "once": true },
       "cast": [ { "slot": "agent", "pick": "agent" } ],
       "setup": [
         "Your accountant, by text: \"Your boot deal paid ten per cent more than {agent.short} told you. He kept the difference. Three seasons of it.\""
       ],
       "choices": [
-        { "id": "confront", "label": "Have it out with him.", "outcomes": [
+        { "id": "confront", "label": "Have it out with him.", "tone": "confident", "outcomes": [
           { "chance": 0.5, "text": "He goes white, then pays it back by Friday. \"A misunderstanding.\"", "effects": { "moneyWeeks": 1.5 }, "npc": [ { "slot": "agent", "respect": 8, "grudge": 5 } ], "remember": [ { "slot": "agent", "tag": "caught-him-skimming", "strength": 3 } ] },
           { "chance": 0.5, "text": "He denies it, then shouts, then hangs up. Your next deal will be harder to get.", "npc": [ { "slot": "agent", "bond": -15, "grudge": 15 } ], "remember": [ { "slot": "agent", "tag": "caught-him-skimming", "strength": 3 } ] }
         ] },
-        { "id": "watch", "label": "Say nothing. Watch him.", "outcomes": [
+        { "id": "watch", "label": "Say nothing. Watch him.", "silent": true, "outcomes": [
           { "text": "You check every line of the next contract yourself. He notices.", "npc": [ { "slot": "agent", "respect": 4, "bond": -2 } ], "remember": [ { "slot": "agent", "tag": "you-know-about-the-skim", "strength": 2 } ] }
         ] },
-        { "id": "sack", "label": "Sack him, and tell the papers why.", "outcomes": [
+        { "id": "sack", "label": "Sack him, and tell the papers why.", "tone": "fiery", "outcomes": [
           { "text": "It is a big story for two days. People who run football like a player who reads his contracts.", "effects": { "fame": 3, "reputation": 3, "fans": 2, "boss": -2 }, "npc": [ { "slot": "agent", "grudge": 40, "bond": -30 } ], "remember": [ { "slot": "agent", "tag": "you-sacked-him-in-public", "strength": 3 } ] }
+        ] },
+        {"id": "ask", "label": "Ask him nicely if there is a mistake.", "tone": "humble", "outcomes": [
+          {"chance": 0.5, "text": "He apologises for 'an admin error' and pays half of it back.", "effects": {"moneyWeeks": 0.7}, "npc": [{"slot": "agent", "respect": -3}], "remember": [{"slot": "agent", "tag": "you-let-him-off-lightly", "strength": 2}]},
+          {"chance": 0.5, "text": "\"No mistake, kid. That's the fee.\" He sounds amused.", "npc": [{"slot": "agent", "respect": -6}], "remember": [{"slot": "agent", "tag": "you-let-him-off-lightly", "strength": 2}]}
         ] }
       ],
       "callbacks": [
@@ -674,7 +707,7 @@
     },
     {
       "id": "scn-match-fix-approach", "title": "The car park", "category": "scandal", "place": "stadium-car-park",
-      "size": "big", "rarity": "rare", "template": "talk-scene",
+      "size": "big", "rarity": "rare", "template": "talk-scene", "screen": "telltale", "speaker": "stranger",
       "trigger": { "when": ["after-match"], "requires": ["divisionLevel>=3", "fame<=60", "season>=2"], "once": true },
       "cast": [ { "slot": "stranger", "pick": "stranger" }, { "slot": "boss", "pick": "manager" } ],
       "setup": [
@@ -682,14 +715,14 @@
         "\"Yellow card before the twentieth minute on Saturday. Five weeks of your wages, cash. Nobody gets hurt.\""
       ],
       "choices": [
-        { "id": "take", "label": "Take the envelope.", "outcomes": [
+        { "id": "take", "label": "Take the envelope.", "tone": "reckless", "outcomes": [
           { "chance": 0.75, "text": "You get booked in the twelfth minute. Nobody says a word. The money is in a shoebox under your bed.", "effects": { "moneyWeeks": 5 }, "remember": [ { "slot": "you", "tag": "took-the-yellow-card-money", "strength": 3 } ], "followUp": { "event": "scn-match-fix-return", "afterWeeks": [3, 8] } },
           { "chance": 0.25, "text": "The betting people have been watching him for months. Your name is in their file. The club suspends you while it is looked at.", "effects": { "reputation": -12, "boss": -10, "fans": -10, "fame": 4, "scandal": true }, "npc": [ { "slot": "boss", "respect": -15, "grudge": 10 } ], "remember": [ { "slot": "boss", "tag": "you-took-a-bribe", "strength": 3 }, { "slot": "you", "tag": "caught-in-a-fixing-file", "strength": 3 } ] }
         ] },
-        { "id": "report", "label": "Walk away. Report it to the club.", "outcomes": [
+        { "id": "report", "label": "Walk away. Report it to the club.", "tone": "honest", "outcomes": [
           { "text": "The integrity people take a statement. The gaffer shakes your hand in front of the staff.", "effects": { "reputation": 5, "boss": 4 }, "npc": [ { "slot": "boss", "respect": 10 } ], "remember": [ { "slot": "you", "tag": "reported-the-fixer", "strength": 3 } ], "followUp": { "event": "scn-match-fix-return", "afterWeeks": [4, 10] } }
         ] },
-        { "id": "quiet", "label": "Walk away. Tell nobody.", "outcomes": [
+        { "id": "quiet", "label": "Walk away. Tell nobody.", "silent": true, "outcomes": [
           { "text": "He watches you drive off. You check the mirror for a long time.", "effects": { "energy": -8 }, "remember": [ { "slot": "you", "tag": "said-nothing-to-the-fixer", "strength": 2 } ], "followUp": { "event": "scn-match-fix-return", "afterWeeks": [2, 6] } }
         ] }
       ],
@@ -701,7 +734,7 @@
     },
     {
       "id": "scn-match-fix-return", "title": "He knows where you park", "category": "scandal", "place": "home",
-      "size": "big", "rarity": "follow-up", "template": "phone-call",
+      "size": "big", "rarity": "follow-up", "template": "phone-call", "screen": "telltale", "speaker": "stranger", "clockSeconds": 6,
       "trigger": { "when": ["followUp"], "requires": ["mem(you,'took-the-yellow-card-money'|'reported-the-fixer'|'said-nothing-to-the-fixer')"], "once": true },
       "cast": [ { "slot": "stranger", "pick": "stranger" }, { "slot": "boss", "pick": "manager" } ],
       "setup": [
@@ -711,16 +744,19 @@
         "{if mem(you,'said-nothing-to-the-fixer')}\"Last chance. Ten weeks of your money for one bad pass.\"{/if}"
       ],
       "choices": [
-        { "id": "police", "label": "Go to the police. All of it.", "outcomes": [
+        { "id": "police", "label": "Go to the police. All of it.", "tone": "brave", "outcomes": [
           { "text": "Statements, a panic alarm at your mum's, a court date in the spring. You are in the papers the right way round.", "effects": { "reputation": 6, "boss": 3, "fame": 3, "energy": -10 }, "npc": [ { "slot": "boss", "respect": 8 } ], "remember": [ { "slot": "you", "tag": "went-to-the-police", "strength": 3 } ] }
         ] },
-        { "id": "comply", "label": "Do what he says.", "outcomes": [
+        { "id": "comply", "label": "Do what he says.", "tone": "reckless", "outcomes": [
           { "chance": 0.6, "text": "Ten weeks of money in a sports bag. You do not sleep.", "effects": { "moneyWeeks": 10, "energy": -15 }, "remember": [ { "slot": "you", "tag": "fixed-a-second-game", "strength": 3 } ] },
           { "chance": 0.4, "text": "It is the game the investigators were watching. It is over by Monday: suspended, every paper, every feed.", "effects": { "reputation": -12, "boss": -12, "fans": -12, "fame": 5, "scandal": true }, "npc": [ { "slot": "boss", "respect": -20, "grudge": 15 } ], "remember": [ { "slot": "boss", "tag": "you-took-a-bribe", "strength": 3 } ] }
         ] },
-        { "id": "hang-up", "label": "Hang up. Change your number.", "outcomes": [
+        { "id": "hang-up", "label": "Hang up. Change your number.", "tone": "cold", "outcomes": [
           { "chance": 0.7, "text": "Nothing. Weeks of nothing. You still check the mirror.", "effects": { "energy": -5 }, "remember": [ { "slot": "you", "tag": "changed-your-number", "strength": 1 } ] },
           { "chance": 0.3, "text": "Your car is burnt out on the drive at four in the morning. The insurance will not touch it.", "effects": { "take": "car", "energy": -10 }, "remember": [ { "slot": "you", "tag": "they-burnt-your-car", "strength": 3 } ] }
+        ] },
+        {"id": "say-nothing", "label": "Say nothing.", "silent": true, "outcomes": [
+          {"text": "You say nothing. He breathes down the line for a long time, then laughs and hangs up. You do not sleep.", "effects": {"energy": -10}, "remember": [{"slot": "you", "tag": "froze-on-the-phone", "strength": 2}]}
         ] }
       ],
       "callbacks": [
@@ -730,7 +766,7 @@
     },
     {
       "id": "scn-doping-offer", "title": "The recovery guy", "category": "scandal", "place": "training-car-park",
-      "size": "big", "rarity": "rare", "template": "talk-scene",
+      "size": "big", "rarity": "rare", "template": "talk-scene", "screen": "telltale", "speaker": "mate",
       "trigger": { "when": ["arrive:training"], "requires": ["energy<=45", "age>=20", "squad.any(bond>=30)"], "cooldownWeeks": 80, "group": "scandal", "maxPerCareer": 2 },
       "cast": [ { "slot": "mate", "pick": "squad", "where": ["bond>=30", "veteran"], "order": "random" }, { "slot": "physio", "pick": "physio" } ],
       "setup": [
@@ -738,15 +774,18 @@
         "Your legs feel like concrete."
       ],
       "choices": [
-        { "id": "take", "label": "Take them.", "outcomes": [
+        { "id": "take", "label": "Take them.", "tone": "reckless", "outcomes": [
           { "chance": 0.8, "text": "You fly for a fortnight. Nobody asks. You keep the tub in your wash bag.", "effects": { "energy": 35, "matchFitness": 10 }, "npc": [ { "slot": "mate", "bond": 6 } ], "remember": [ { "slot": "you", "tag": "took-the-pills", "strength": 3 } ] },
           { "chance": 0.2, "text": "A random test, the Monday after. The sample does not come back clean.", "effects": { "reputation": -12, "boss": -10, "fans": -8, "fame": 5, "energy": -10, "scandal": true }, "npc": [ { "slot": "mate", "bond": 4 }, { "slot": "physio", "respect": -15 } ], "remember": [ { "slot": "you", "tag": "failed-a-test", "strength": 3 } ] }
         ] },
-        { "id": "no", "label": "\"Not for me, mate.\"", "outcomes": [
+        { "id": "no", "label": "\"Not for me, mate.\"", "tone": "honest", "outcomes": [
           { "text": "He shrugs. \"Your legs.\" You notice he does not offer twice.", "npc": [ { "slot": "mate", "bond": -4, "respect": 4 } ], "remember": [ { "slot": "mate", "tag": "turned-down-the-pills", "strength": 1 } ] }
         ] },
-        { "id": "tell", "label": "Tell the physio what he is handing round.", "outcomes": [
+        { "id": "tell", "label": "Tell the physio what he is handing round.", "tone": "brave", "outcomes": [
           { "text": "The tub goes off to a lab. He is fined and dropped. He knows exactly who.", "effects": { "reputation": 2, "team": -3 }, "npc": [ { "slot": "physio", "respect": 10 }, { "slot": "mate", "bond": -15, "grudge": 20 } ], "remember": [ { "slot": "mate", "tag": "you-grassed-on-the-pills", "strength": 3 } ] }
+        ] },
+        {"id": "say-nothing", "label": "Say nothing.", "silent": true, "outcomes": [
+          {"text": "You leave the tub where it is and pull your boots on. {mate.short} shrugs and pockets it.", "npc": [{"slot": "mate", "bond": -2}], "remember": [{"slot": "mate", "tag": "you-left-the-pills", "strength": 1}]}
         ] }
       ],
       "callbacks": [

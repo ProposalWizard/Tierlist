@@ -27,6 +27,11 @@ const TEMPLATES = ["phone-call", "text-thread", "feed-post", "talk-scene"];
 const SIZES = ["small", "medium", "big"];
 const BAND: Record<string, number> = { small: 3, medium: 8, big: 12 };
 const BARS = ["boss", "team", "fans", "fame", "reputation"] as const;
+const SCREENS = ["telltale", "dial", "card"];
+const TONES = ["humble", "calm", "confident", "fiery", "honest", "lie", "kind", "cold", "brave", "reckless"];
+const DIAL = ["humble", "calm", "confident", "fiery"];
+/** A Telltale line is read in a second. */
+export const MAX_TELLTALE_LINE = 72;
 /** Lines must fit a phone card. */
 export const MAX_LINE = 240;
 /** Real brands, clubs' sponsors and people never appear (design 5.2). */
@@ -188,6 +193,33 @@ export function validateEvent(e: LifeEvent, ids: Set<string>, writtenTags: Set<s
   if (e.size === "big") {
     const big = e.choices.some((c) => c.outcomes.some((o) => Math.max(...barsOf(o).map(Math.abs)) >= 8 || o.effects?.scandal || o.effects?.take || Math.abs(o.effects?.moneyWeeks ?? 0) >= 3 || (o.npc ?? []).some((d) => Math.abs(d.grudge ?? 0) >= 20 || Math.abs(d.bond ?? 0) >= 20)));
     if (!big) bad("a big event has nothing big in it (rule 6)");
+  }
+  // The decision screens (Harry 20 Nov 15:35): Telltale and the tone dial need their tones and a silence.
+  const scr = e.screen;
+  if (scr !== undefined && !SCREENS.includes(scr)) bad(`unknown screen "${scr}"`);
+  if (e.speaker !== undefined && !slots.has(e.speaker)) bad(`speaker "${e.speaker}" is not in the cast`);
+  if (e.clockSeconds !== undefined && !(e.clockSeconds >= 4 && e.clockSeconds <= 20)) bad("the clock must be 4 to 20 seconds");
+  const silents = (e.choices ?? []).filter((c) => c.silent);
+  if (silents.length > 1) bad("more than one silent answer");
+  for (const c of silents) if (c.requires?.length || c.cost || c.minigame) bad(`choice ${c.id}: saying nothing must always be possible (no cost, test or condition)`);
+  for (const c of e.choices ?? []) if (c.tone !== undefined && !TONES.includes(c.tone)) bad(`choice ${c.id}: unknown tone "${c.tone}"`);
+  if (scr === "telltale" || scr === "dial") {
+    const spoken = (e.choices ?? []).filter((c) => !c.silent);
+    const what = scr === "telltale" ? "A Telltale moment" : "A tone-dial event";
+    if (!silents.length) bad(`${what} needs a silent answer (${scr === "telltale" ? "the clock picks it" : "… No comment"})`);
+    if (spoken.length < 2 || spoken.length > 4) bad(`${what} needs 2 to 4 things to say (has ${spoken.length})`);
+    for (const c of spoken) {
+      if (!c.tone) bad(`choice ${c.id}: ${what.toLowerCase()} needs a tone on every answer`);
+      if (scr === "telltale" && c.label.length > MAX_TELLTALE_LINE) bad(`choice ${c.id}: too long to read in a second (${c.label.length} > ${MAX_TELLTALE_LINE})`);
+    }
+    if (scr === "dial") {
+      const seen = new Set<string>();
+      for (const c of spoken) {
+        if (c.tone && !DIAL.includes(c.tone)) bad(`choice ${c.id}: the dial only has humble, calm, confident and fiery`);
+        if (c.tone && seen.has(c.tone)) bad(`choice ${c.id}: two answers on the dial's ${c.tone}`);
+        if (c.tone) seen.add(c.tone);
+      }
+    }
   }
   // The "always pick this" test.
   for (const a of e.choices ?? []) {
