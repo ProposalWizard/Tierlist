@@ -39,6 +39,8 @@ import { MediaFeed } from "./Feed";
 import { kitsOf } from "@/lib/star/kits";
 import { Backdrop, BottomBar, LOOK, glassStyle } from "../../ui/look";
 import { GameTop } from "../../world/chrome";
+import { PlayerHead } from "../../draw/PlayerHead";
+import { skinToneHex } from "@/lib/star/playerIdentity";
 
 type Inside = "social" | "squad" | "fixtures" | "messages" | "appstore" | "scout" | "kickabout";
 interface App { id: string; label: string; icon: string; bg: string; /** The icon's lighter top colour (PhoneHome bg[0]). */ hi?: string; title?: string; /** A screen of its own (nav name), or an app inside the phone. */ screen?: string; inside?: Inside; soon?: string }
@@ -320,6 +322,7 @@ function SquadApp({ career, glow }: { career: CareerState; glow: string }) {
     }))].sort((a, b) => ((b.seasonGoals + b.seasonAssists) - (a.seasonGoals + a.seasonAssists)) || ((b.overall ?? 0) - (a.overall ?? 0)));
   }, [career]);
   const W = [34, 38, 26, 26];
+  const squadKit = kitsOf(career.player.club, career.clubKits?.[career.player.club]).home;
   return (
     <View style={{ flex: 1, margin: 8, borderRadius: 12, overflow: "hidden", backgroundColor: "rgba(10,22,40,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.14)" }}>
       <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 6, backgroundColor: "rgba(0,0,0,0.3)", borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.1)" }}>
@@ -330,7 +333,9 @@ function SquadApp({ career, glow }: { career: CareerState; glow: string }) {
         renderItem={({ item: p }) => {
           const chip = ovrChip(p.overall);
           return (
-            <View style={[{ flexDirection: "row", alignItems: "center", borderRadius: 8, paddingHorizontal: 6, paddingVertical: 5, backgroundColor: "rgba(255,255,255,0.05)" }, p.isYou && youRow(glow)]}>
+            <View style={[{ flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 5, backgroundColor: "rgba(255,255,255,0.05)" }, p.isYou && youRow(glow)]}>
+              {/* Each man's face, as the packed app's squad list (the drawn head in the club's kit). */}
+              <PlayerHead id={p.isYou ? "you" : p.id} shirt={squadKit.shirt} shorts={squadKit.trim} trim={squadKit.trim} size={26} skin={p.isYou ? skinToneHex(career.player.skinTone) : undefined} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 11.5 }}>{p.name}{p.isYou ? " ★" : ""}</Text>
                 <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.7)", fontWeight: "700", fontSize: 8.5 }}>{p.age !== undefined ? `Age ${p.age} · ` : ""}★{formatMoney(p.marketValue)}</Text>
@@ -438,6 +443,7 @@ function ScoutApp({ career }: { career: CareerState }) {
   const key = report.topScorer && report.topScorer.goals > 0 ? report.topScorer : report.bestPlayer;
   const where = report.table ? `${report.table.position}${ordinal(report.table.position)} of ${report.table.of}` : null;
   const tone = { W: "#10b981", D: "#6b7280", L: "#dc2626" } as const;
+  const oppKit = kitsOf(fixture.opponent).home;
   return (
     <ScrollView contentContainerStyle={{ padding: 12, gap: 10 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.panel, borderRadius: 14, padding: 12, borderLeftWidth: 3, borderLeftColor: "#f87171" }}>
@@ -463,12 +469,43 @@ function ScoutApp({ career }: { career: CareerState }) {
         <>
           <Title>Key man</Title>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.panel, borderRadius: 12, padding: 10 }}>
+            <PlayerHead id={key.name} shirt={oppKit.shirt} shorts={oppKit.trim} trim={oppKit.trim} size={44} />
             <View style={{ flex: 1 }}>
               <Text style={{ color: C.text, fontWeight: "900", fontSize: 16 }}>{key.name}</Text>
               <Text style={{ color: C.dim, fontWeight: "800", fontSize: 12 }}>{key.position} · {key.goals}G {key.assists}A</Text>
             </View>
             <Text style={{ color: C.gold, fontWeight: "900", fontSize: 24 }}>{key.overall}</Text>
           </View>
+        </>
+      )}
+      {/* ScoutReportPanel: the three cards (top scorer, assist king, the gold "top rated") and the cup run. */}
+      <Title>Scout report</Title>
+      <View style={{ flexDirection: "row", gap: 6 }}>
+        {([["Top scorer", report.topScorer, "goals"], ["Assist king", report.topAssister, "assists"], ["Top rated", report.bestPlayer, "rating"]] as const).map(([label, p, stat]) => (
+          <View key={label} style={{ flex: 1, alignItems: "center", borderRadius: 12, paddingVertical: 8, paddingHorizontal: 4, gap: 3,
+            ...(stat === "rating" ? { backgroundImage: "linear-gradient(180deg, #fde68a, #f59e0b)" } : { backgroundColor: C.panel }) } as ViewStyle}>
+            <Text style={{ color: stat === "rating" ? "#451a03" : "#fcd34d", fontSize: 8.5, fontWeight: "900", letterSpacing: 1 }}>{label.toUpperCase()}</Text>
+            {p ? (
+              <>
+                <PlayerHead id={p.name} shirt={oppKit.shirt} shorts={oppKit.trim} trim={oppKit.trim} size={38} />
+                <Text numberOfLines={1} style={{ color: stat === "rating" ? "#1c1917" : C.text, fontSize: 11, fontWeight: "900" }}>{p.name.split(" ").slice(-1)[0]}</Text>
+                <Text style={{ color: stat === "rating" ? "#451a03" : C.dim, fontSize: 10, fontWeight: "800" }}>{stat === "goals" ? `${p.goals} goals` : stat === "assists" ? `${p.assists} assists` : `${p.overall} OVR`}</Text>
+              </>
+            ) : <Text style={{ color: C.dim, fontSize: 10 }}>—</Text>}
+          </View>
+        ))}
+      </View>
+      {report.cupRun && report.cupRun.length > 0 && (
+        <>
+          <Title>Cup run</Title>
+          {[...report.cupRun].reverse().map((r, i) => (
+            <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(0,0,0,0.3)", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 }}>
+              <Text style={{ width: 70, color: C.dim, fontSize: 11, fontWeight: "800" }}>{r.round}</Text>
+              <ClubBadge club={r.opponent} size={16} />
+              <Text numberOfLines={1} style={{ flex: 1, color: C.text, fontSize: 12, fontWeight: "800" }}>{short(r.opponent)}</Text>
+              <Text style={{ color: tone[r.result], fontWeight: "900" }}>{r.result} {r.scoreFor}-{r.scoreAgainst}{r.onPenalties ? " (p)" : ""}</Text>
+            </View>
+          ))}
         </>
       )}
     </ScrollView>
