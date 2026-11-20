@@ -2,7 +2,7 @@
  * /api/admin/patch-notes/media-sync — copies patch-note pictures into R2
  * (Harry, 22 Oct 2026). Admin only, except the timed job below.
  *
- *   GET   from Vercel's timed job (vercel.json crons, every 5 minutes; who
+ *   GET   from Supabase every 5 minutes (pg_cron job patch-notes-media-sync, supabase/migrations/frequent_jobs_cron.sql; who
  *         counts: cronAllowed in lib/patchNoteMedia.ts): one batch, so the
  *         move finishes by itself (Harry, 12 Nov 2026). Idle once done.
  *   GET   from an admin: how far the move is: files and MB in R2 out of those bundled here.
@@ -35,7 +35,7 @@ function modeBody() {
 /** When this server last saw the move finished (the timed job then idles; see CRON_IDLE_MS). */
 let finishedAt = 0;
 
-/** The timed job's call (vercel.json crons, every 5 minutes): one batch, or nothing once all is in R2. */
+/** The timed job's call (Supabase pg_cron, every 5 minutes): one batch, or nothing once all is in R2. */
 async function cronRun() {
   const mode = modeBody();
   if (!mode.connected) return NextResponse.json({ cron: true, mode: mode.mode, skipped: "storage not connected" });

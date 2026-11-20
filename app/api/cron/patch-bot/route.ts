@@ -1,7 +1,9 @@
 /**
  * /api/cron/patch-bot — the Patch bot's timer (Harry, 12 Nov 2026).
  *
- * GET from Vercel's timed job (vercel.json crons) every 15 minutes. Needs
+ * GET every 15 minutes from Supabase (pg_cron job team-room-quarter-hour,
+ * supabase/migrations/frequent_jobs_cron.sql; Vercel's free plan only allows daily
+ * jobs, 20 Nov 2026). Needs
  * CRON_SECRET, the same as the backup (lib/backup/plan.ts cronGate): with no
  * secret set it refuses, so nobody outside can make the bot run.
  *
