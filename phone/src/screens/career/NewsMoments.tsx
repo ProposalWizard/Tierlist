@@ -86,7 +86,7 @@ export function BreakingNewsPage({ career, news, onClose }: { career: CareerStat
             <View style={{ backgroundColor: "#dc2626", paddingHorizontal: 16, justifyContent: "center" }}>
               <Text style={{ color: "#fff", fontFamily: FONT.display, fontSize: 20, letterSpacing: 1.6 }}>{shortClub(news.club ?? "NEWS").toUpperCase().slice(0, 14)}</Text>
             </View>
-            <Text numberOfLines={1} style={{ flex: 1, color: "#fff", fontFamily: FONT.display, fontSize: 20, letterSpacing: 1, paddingVertical: 12, paddingHorizontal: 10 }}>{ticker.repeat(2)}</Text>
+            <Text numberOfLines={1} ellipsizeMode="clip" style={{ flex: 1, color: "#fff", fontFamily: FONT.display, fontSize: 20, letterSpacing: 1, paddingVertical: 12, paddingHorizontal: 10 }}>{ticker.repeat(2)}</Text>
           </View>
         </View>
       </Pressable>
@@ -110,20 +110,27 @@ export function PotmWinPage({ career, award, onClose }: { career: CareerState; a
             <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "700", marginTop: 6 }}>{award.monthName} — {n(award.goals, "goal")} and {n(award.assists, "assist")}</Text>
           </View>
           {/* the month's card (the feed's potmWinner graphic) */}
-          <View style={{ borderRadius: 18, overflow: "hidden", backgroundImage: `linear-gradient(160deg, ${glow}, ${rgba(glow, 0.55)} 45%, #0b1220 100%)`, boxShadow: `0px 0px 0px 1px rgba(253,230,138,0.35), 0px 0px 40px rgba(251,191,36,0.35), 0px 18px 36px -12px rgba(0,0,0,0.9)` } as ViewStyle}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingTop: 12 }}>
-              <Text style={{ color: "#fde68a", fontFamily: FONT.display, fontSize: 18, letterSpacing: 1 }}>PLAYER OF THE MONTH</Text>
-              <ClubBadge club={career.player.club} kit={kit} size={38} />
-            </View>
-            <View style={{ alignItems: "center", paddingVertical: 10 }}>
-              <View style={{ width: 150, height: 150, borderRadius: 75, overflow: "hidden", borderWidth: 4, borderColor: "#fde68a", backgroundColor: "#0b1220" }}>
-                <YourHead career={career} size={142} />
+          {/* The feed's potmWinner card (media/Graphics.tsx): your face on the club's
+              colour on the left, the words on the right, the month along the foot. */}
+          <View style={{ borderRadius: 16, overflow: "hidden", backgroundColor: "#0b1220", boxShadow: `0px 0px 0px 1px rgba(253,230,138,0.35), 0px 0px 40px rgba(251,191,36,0.35), 0px 18px 36px -12px rgba(0,0,0,0.9)` } as ViewStyle}>
+            <View style={{ flexDirection: "row", height: 132 }}>
+              <View style={{ width: "40%", alignItems: "center", justifyContent: "flex-end", overflow: "hidden", backgroundImage: `linear-gradient(180deg, ${glow}, ${rgba(glow, 0.7)})` } as ViewStyle}>
+                <YourHead career={career} size={124} />
+                <Text style={{ position: "absolute", left: 0, top: 0, backgroundColor: "#fde047", color: "#030712", fontSize: 9, fontWeight: "900", paddingHorizontal: 5, paddingVertical: 2 }}>YOU</Text>
+              </View>
+              <View style={{ flex: 1, paddingHorizontal: 12, paddingTop: 12 }}>
+                <Text style={{ color: "#fcd34d", fontSize: 9, fontWeight: "900", letterSpacing: 1.8 }}>PLAYER OF THE MONTH</Text>
+                <Text numberOfLines={1} style={{ color: "#fff", fontSize: 13, fontWeight: "800", marginTop: 6 }}>{career.player.firstName}</Text>
+                <Text numberOfLines={1} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 26, lineHeight: 30, textTransform: "uppercase" }}>{career.player.lastName}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
+                  <ClubBadge club={career.player.club} kit={kit} size={18} />
+                  <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: "900", letterSpacing: 1 }}>{career.player.club.toUpperCase()}</Text>
+                </View>
               </View>
             </View>
-            <View style={{ backgroundColor: "rgba(3,7,18,0.75)", paddingHorizontal: 14, paddingVertical: 10 }}>
-              <Text numberOfLines={1} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 28, lineHeight: 32, textTransform: "uppercase" }}>{career.player.firstName} {career.player.lastName}</Text>
-              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: "800" }}>{career.player.club}</Text>
-              <Text style={{ color: "#fcd34d", fontFamily: FONT.display, fontSize: 18, letterSpacing: 1.2, marginTop: 4 }}>{`${award.monthName} · ${n(award.goals, "goal")} · ${n(award.assists, "assist")}`.toUpperCase()}</Text>
+            <View style={{ flexDirection: "row", alignItems: "stretch", borderTopWidth: 1, borderColor: "rgba(255,255,255,0.12)" }}>
+              <Text style={{ backgroundColor: "#fde047", color: "#030712", fontSize: 11, fontWeight: "900", letterSpacing: 1.2, paddingHorizontal: 10, paddingVertical: 6 }}>{award.monthName.toUpperCase()}</Text>
+              <Text style={{ color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1.2, paddingHorizontal: 10, paddingVertical: 6 }}>{`${n(award.goals, "goal")} · ${n(award.assists, "assist")}`.toUpperCase()}</Text>
             </View>
           </View>
           <LookButton label="OK" kind="gold" onPress={onClose} style={{ marginTop: 16, paddingVertical: 14 }} />
