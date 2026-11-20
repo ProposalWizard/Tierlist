@@ -80,8 +80,8 @@ export interface WorldController {
 
 /** The demos: what happens when (seconds), and how long each runs. */
 const DEMOS: Record<string, { place: WorldPlace; duration: number; rate?: number; steps: [number, string][]; you?: [number, number, number]; watch?: string; zoom?: number }> = {
-  sofa: { place: "house", duration: 13, steps: [[0.4, "tap:tv"], [3.6, "act:use"], [10.5, "act:leave"]] },
-  fridge: { place: "house", duration: 15, steps: [[0.4, "tap:fridge"], [6.4, "act:use"]] },
+  sofa: { place: "house", duration: 14, steps: [[0.4, "tap:tv"], [4.6, "act:use"], [11.4, "act:leave"]] },
+  fridge: { place: "house", duration: 13, steps: [[0.4, "tap:fridge"], [5.0, "act:use"]] },
   visitor: { place: "garden", duration: 34, rate: 10, steps: [], you: [-0.3, 1.9, 2.6], watch: "mate-2", zoom: 0.5 },
   talk: { place: "garden", duration: 11, steps: [[0.4, "tap:mate-0"], [7.4, "act:chat"]] },
 };
@@ -244,13 +244,16 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const sofa = seatObject({ id: "sofa", label: "Sofa", at: [0.43, 0.25], facing: -Math.PI / 2, seats: 3, y: 0.445, spacing: 0.63, verb: "Sit down", lines: ["Feet up for a bit."] });
     const tv = tvObject({ id: "tv", at: [-W2 + 0.2, 0], via: "sofa", lines: ["The weekend's highlights are on."] });
     const fridge = standObject({
-      id: "fridge", kind: "fridge", label: "Drinks fridge", front: [fx0(W2), -D2 + 0.4 + 0.3 + 0.5], face: [fx0(W2), -D2 + 0.3], verb: "Take a can",
+      // he stands 0.75 m off its glass: the reach bends him forward about half a metre, so his head
+      // and chest stay outside the fridge (RUL-3D-005; at 0.45 m his head went into it)
+      id: "fridge", kind: "fridge", label: "Drinks fridge", front: [fx0(W2), -D2 + 0.4 + 0.3 + 0.75], face: [fx0(W2), -D2 + 0.3], verb: "Take a can",
       lines: ["Your KIB cans, cold."], enter: { clip: "pickup", speed: 1.7 }, loop: [{ clip: "idle", secs: 3.2, gesture: "drink" }],
       effect: { energy: 1, text: "Ice cold. Energy +1" }, stay: [3.5, 3.5], pickR: 0.6,
     });
     return {
       objects: [sofa, tv, fridge], solids: room.solids,
-      bounds: [-W2, W2, -D2, D2], you: { x: 1.2, z: D2 - 1.2, yaw: Math.PI }, ceil: room.h - 0.15,
+      bounds: [-W2, W2, -D2, D2], // far enough from the south wall that camera D opens settled (its whole boom behind him: followCam.ts)
+      you: { x: -1.3, z: Math.max(-0.5, D2 - 0.3 - FOLLOW_CAM_D.back - 0.05), yaw: Math.PI }, ceil: room.h - 0.15,
       camBox: [-W2 + 0.25, W2 - 0.25, -D2 + 0.25, D2 - 0.25],
     };
   }
@@ -597,7 +600,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
           if (o.kind === "fridge") { holdCan(you, true); fridgeDoor?.open(false); }
           show(objectCard(o, { using: true }));
         },
-        onOut: () => { if (o.kind === "fridge") show({ key: `obj:${o.id}`, title: o.label, lines: [o.effect?.text ?? "Done."], actions: [{ id: "close", label: "OK", primary: true }] }); },
+        onOut: () => { if (o.kind === "fridge") { you.face(you.yaw + Math.PI); show({ key: `obj:${o.id}`, title: o.label, lines: [o.effect?.text ?? "Done."], actions: [{ id: "close", label: "OK", primary: true }] }); } },
       });
       if (!okUse) show(objectCard(o, { taken: true }));
       else show(null);
@@ -629,6 +632,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   let CS = zoomedFollowCam(zoom.now);
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), want = new THREE.Vector3(), wantLook = new THREE.Vector3();
   let camYaw = you.yaw + Math.PI;
+  let camSide = 0;
   let first = true;
   const [cx0, cx1, cz0, cz1] = built.camBox;
   const freeBehind = (dx: number, dz: number) => boxRoom(you.x, you.z, dx, dz, cx0, cx1, cz0, cz1);
@@ -655,9 +659,12 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const len = boom.step(CS.back, freeBehind(-cfx, -cfz), dt);
     const short = CS.back - len;
     const up = riseForMin(len, Math.min(built.ceil, CS.height + short * CS.riseIfShort), built.ceil);
-    want.set(you.x - cfx * len, up, you.z - cfz * len);
+    // talking: over his right shoulder, so the man he talks to is not hidden behind him
+    camSide += ((talking && card ? 0.75 : 0) - camSide) * Math.min(1, dt * 3);
+    const rx = -cfz, rz = cfx; // the camera's right on the floor
+    want.set(you.x - cfx * len + rx * camSide, up, you.z - cfz * len + rz * camSide);
     const lookY = you.seated ? CS.lookY - 0.25 : CS.lookY;
-    wantLook.set(you.x + cfx * CS.lookAhead, lookY, you.z + cfz * CS.lookAhead);
+    wantLook.set(you.x + cfx * CS.lookAhead + rx * camSide * 0.2, lookY, you.z + cfz * CS.lookAhead + rz * camSide * 0.2);
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
     else { camPos.lerp(want, Math.min(1, dt * CS.posK)); camLook.lerp(wantLook, Math.min(1, dt * CS.lookK)); }
     const flat = capOnLine(camPos, you.x, you.z, freeBehind);
@@ -743,7 +750,9 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     step(dt);
     renderer.render(scene, camera);
   };
-  if (isOwner()) renderer.setAnimationLoop(loop);
+  // a filmed demo waits for the film tool's seek (frameStep.ts): nothing moves before frame 0
+  if (demo) { stepCam(0); renderer.render(scene, camera); }
+  else if (isOwner()) renderer.setAnimationLoop(loop);
   // filming: be at exactly second t (fixed 1/30 steps, forward only)
   const FIX = 1 / 30;
   const unpublish = publishFrameStep({
@@ -751,6 +760,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     seek: (t: number) => {
       if (!filming) { filming = true; renderer.setAnimationLoop(null); }
       while (simT + FIX / 2 < t) step(FIX);
+      if (frameN === 0) stepCam(0);
       renderer.render(scene, camera);
     },
   });
@@ -775,6 +785,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     dispose: () => {
       disposed = true;
       unpublish();
+      if ((window as any).__world3d === ctrl) delete (window as any).__world3d;
       if (isOwner()) renderer.setAnimationLoop(null);
       ro.disconnect();
       detachZoom();

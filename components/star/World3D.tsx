@@ -27,15 +27,17 @@ export default function World3D({ options, clean }: { options: WorldOptions; cle
     let gone = false;
     setState("loading");
     setCard(null);
-    import("@/lib/star/world3d/testScene")
+    // started a tick later, so React's dev double-mount never builds a second scene
+    // (the first, thrown away, would still publish the film hook and the debug handle)
+    const go = window.setTimeout(() => import("@/lib/star/world3d/testScene")
       .then(({ startWorld3d }) => startWorld3d(el, {
         onCard: (c) => { if (!gone) setCard(c); },
         onStatus: (s) => { if (!gone) setStatus(s); },
         onContextLost: () => { if (!gone) setState("failed"); },
       }, { ...optsRef.current, chat: (id) => optsRef.current.chat?.(id) ?? null }))
       .then((c) => { if (gone) { c.dispose(); return; } ctrl.current = c; setState("ready"); })
-      .catch((e) => { console.error("world3d", e); if (!gone) setState("failed"); });
-    return () => { gone = true; ctrl.current?.dispose(); ctrl.current = null; };
+      .catch((e) => { console.error("world3d", e); if (!gone) setState("failed"); }), 0);
+    return () => { gone = true; window.clearTimeout(go); ctrl.current?.dispose(); ctrl.current = null; };
   }, [key]);
 
   return (

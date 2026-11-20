@@ -143,6 +143,8 @@ export class Npc {
   private clock = 0;
   private lastClip = "";
   private q0 = new Map<any, any>();
+  /** Bones an added move turned this frame, and how the clip had left them. */
+  private posed = new Map<THREE.Object3D, THREE.Quaternion>();
   private tmp: Record<string, any>;
 
   constructor(private T: Three, readonly person: Person3D, opts: { id: string; name?: string; loco: LocoSpec[]; sit?: SitFit | null }) {
@@ -422,6 +424,10 @@ export class Npc {
     this.sync();
     // going in or out of a seat runs on its clip's own clock: never frozen by the budget
     if (!animate && this.state !== "enter" && this.state !== "exit") return false;
+    // put back the bones the added moves turned last time: a bone the clip has no track for
+    // would otherwise keep each frame's turn on top of the last (the neck wound round and round)
+    this.posed.forEach((q, bone) => bone.quaternion.copy(q));
+    this.posed.clear();
     this.play.update(adt);
     this.person.mixer.update(adt);
     this.gestures(adt);
@@ -564,6 +570,7 @@ export class Npc {
   /** Turn a bone by a world-space rotation. */
   private rotWorld(bone: THREE.Object3D, dWorld: THREE.Quaternion) {
     const { p, q } = this.tmp;
+    if (!this.posed.has(bone)) this.posed.set(bone, bone.quaternion.clone());
     bone.parent!.getWorldQuaternion(p);
     q.copy(p).invert().multiply(dWorld).multiply(p).multiply(bone.quaternion);
     bone.quaternion.copy(q);
