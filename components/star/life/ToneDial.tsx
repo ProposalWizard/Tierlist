@@ -83,7 +83,7 @@ function Dial({ sel, open, onSel }: { sel: DialTone | null; open: Set<DialTone>;
   );
 }
 
-export default function ToneDial({ career, live, onChoose, picked, onContinue, story, afterExtra, sceneImage }: {
+export default function ToneDial({ career, live, onChoose, picked, onContinue, story, afterExtra, sceneImage, face }: {
   career: CareerState; live: LiveEvent; onChoose: (choiceId: string) => void; picked?: DialPicked | null; onContinue: () => void;
   /** Events v2: the story strip over a talk on the dial. */
   story?: StoryStrip;
@@ -91,6 +91,8 @@ export default function ToneDial({ career, live, onChoose, picked, onContinue, s
   afterExtra?: ReactNode;
   /** A still behind the speaker (until the 3D world is wired in). */
   sceneImage?: string;
+  /** His face in place of the drawn head (a story's own cast). */
+  face?: ReactNode;
 }) {
   const spoken = spokenChoices(live).filter((c) => isDialTone(c.choice.tone));
   const byTone = useMemo(() => new Map(spoken.map((c) => [c.choice.tone as DialTone, c])), [spoken]);
@@ -145,7 +147,7 @@ export default function ToneDial({ career, live, onChoose, picked, onContinue, s
             {press && <span className="rec"><i />REC</span>}
             {narration.length > 0 && <div className="narr">{narration.join(" ")}</div>}
             <div className="who">
-              <LifeFace career={career} id={sp || "oneoff:stranger"} size={64} />
+              {face ?? <LifeFace career={career} id={sp || "oneoff:stranger"} size={64} />}
               <div style={{ minWidth: 0 }}>
                 <div className="src">{info?.name ?? "Someone"}{info?.outlet ? ` · ${info.outlet}` : ""}</div>
                 <div className="q">{said || live.lines[live.lines.length - 1]}</div>

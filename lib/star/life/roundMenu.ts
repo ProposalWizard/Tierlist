@@ -102,6 +102,8 @@ export function roundMenuFor(c: CareerState, id: string, offers?: RoundOffer[]):
   const staff = info?.role && info.role !== "teammate";
   const cats: RoundCategory[] = staff
     ? [cat("friendly", "Chat", "💬"), cat("banter", "Banter", "😄"), { ...cat("football", "The club", "🏟️"), lines: CLUB_LINES }, bye]
+    // A story is offering something: the short ring, so the gold bubble stands out.
+    : offers?.length ? [cat("friendly", "Chat", "💬"), cat("banter", "Banter", "😄"), cat("football", "Advice", "🎓"), bye]
     : [
       cat("friendly", "Friendly", "🤝"), cat("banter", "Banter", "😂"), cat("football", "Football", "⚽"),
       cat("business", "Business", "💼"), bye, cat("mean", "Mean", "😤"),

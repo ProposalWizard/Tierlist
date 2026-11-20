@@ -49,6 +49,8 @@ interface Props {
   story?: StoryStrip;
   /** Events v2: cards under the result (the promise made, what happens next). */
   afterExtra?: ReactNode;
+  /** A face for the no-picture case (a phone call) instead of the drawn head. */
+  face?: ReactNode;
 }
 
 export interface StoryStrip { title: string; beat: string; round?: number | string; when?: string; noClock?: string; note?: string }
@@ -66,7 +68,7 @@ export function StoryBar({ story }: { story: StoryStrip }) {
   );
 }
 
-export default function Telltale({ career, live, clock, onChoose, picked, onContinue, backdrop, world, onSlowMo, story, afterExtra }: Props) {
+export default function Telltale({ career, live, clock, onChoose, picked, onContinue, backdrop, world, onSlowMo, story, afterExtra, face }: Props) {
   const reduced = useReducedMotion();
   const [stageRef, size] = useStageSize<HTMLDivElement>();
   const [grey, setGrey] = useState(false);
@@ -176,7 +178,7 @@ export default function Telltale({ career, live, clock, onChoose, picked, onCont
       {!backdrop && !world && (
         <div className="dd-portrait" aria-hidden>
           <div style={{ boxShadow: grey && !picked ? `0 0 0 3px rgba(255,255,255,.85), 0 0 40px ${light}` : undefined, borderRadius: 999 }}>
-            <LifeFace career={career} id={sp || "oneoff:stranger"} size={size.w >= 900 ? 168 : 124} />
+            {face ?? <LifeFace career={career} id={sp || "oneoff:stranger"} size={size.w >= 900 ? 168 : 124} />}
           </div>
           <div className="nm">{name}</div>
           <div className="rl">{live.event.template === "phone-call" ? "📞 On the phone" : live.event.template === "text-thread" ? "💬 Messages" : placeName}</div>

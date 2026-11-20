@@ -16,6 +16,12 @@ import LifeFace from "./LifeFace";
 import "./life.css";
 
 export const PLACE: Record<string, [string, string, string]> = {
+  // Events v2's places (the training compound, the stadium at night)
+  "compound:pitch-2": ["Pitch two", "#14532d", "#4ade80"],
+  "compound:corridor": ["Outside the boot room", "#1e293b", "#94a3b8"],
+  "compound:kit-room": ["The kit room", "#3f2d1c", "#f5c542"],
+  "stadium:pitch": ["The ground", "#0f2a4a", "#60a5fa"],
+  "stadium:dressing-room": ["Dressing room", "#1e3a8a", "#60a5fa"],
   "food-hall": ["Food hall", "#7c2d12", "#f59e0b"],
   "dressing-room": ["Dressing room", "#1e3a8a", "#60a5fa"],
   "training-pitch": ["Training ground", "#14532d", "#4ade80"],

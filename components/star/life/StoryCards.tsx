@@ -36,9 +36,9 @@ import "./life.css";
 import "./decision.css";
 
 /** A face for the phone: the kit man and the gaffer have stills; everyone else the drawn head. */
-export function StoryFace({ career, id, size = 38 }: { career: CareerState; id: string; size?: number }) {
+export function StoryFace({ career, id, size = 38, kid }: { career: CareerState; id: string; size?: number; kid?: boolean }) {
   const role = id ? roleOf(id) : "teammate";
-  const src = role === "kitman" ? "/star/life/kitman/face-den.webp" : role === "manager" ? "/star/life/kitman/face-gaffer.webp" : null;
+  const src = role === "kitman" ? "/star/life/kitman/face-den.webp" : role === "manager" ? "/star/life/kitman/face-gaffer.webp" : kid ? "/star/life/kitman/face-kid.webp" : null;
   // eslint-disable-next-line @next/next/no-img-element
   if (src) return <img src={src} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: 999, objectFit: "cover", flex: "none" }} />;
   return <LifeFace career={career} id={id || "oneoff:stranger"} size={size} />;
@@ -103,11 +103,15 @@ export function StoryCardScreen({ career, b, live, picked, extras, onChoose, onC
   const look = beat.look ?? {};
   const strip = storyStrip(b);
   const noteLine = look.note ? live.lines[look.note.line] : undefined;
-  const narr = live.lines.filter((_, i) => !look.note || i !== look.note.line);
+  const narr0 = live.lines.filter((_, i) => !look.note || i !== look.note.line);
   const ctx = arcCtx(career, b.arc, b);
   const sign = look.note?.sign ? fillLine(look.note.sign, career, b.cast, ctx) : "";
   const bg = b.event.place.startsWith("stadium") ? "/star/life/kitman/stadium-den.webp" : null;
-  const words = noteLine?.replace(/^\s*"|"\s*$/g, "").replace(/\s*\bD\s*$/, "") ?? "";
+  // The paper holds only what is written on it; the words around the quote stay in the scene.
+  const qa = noteLine ? noteLine.indexOf('"') : -1, qb = noteLine ? noteLine.lastIndexOf('"') : -1;
+  const quoted = noteLine && qa >= 0 && qb > qa ? noteLine.slice(qa + 1, qb) : noteLine ?? "";
+  const around = noteLine && qa >= 0 && qb > qa ? `${noteLine.slice(0, qa)} ${noteLine.slice(qb + 1)}`.replace(/\s+/g, " ").trim() : "";
+  const words = quoted.replace(/\s*\bD\s*$/, "");
   const letter = words.length > 60;
   return (
     <div className="dd" data-story-card={b.beat} style={{ background: bg ? `linear-gradient(180deg, rgba(5,9,18,.35), rgba(5,9,18,.92) 70%), url(${bg}) center top / cover` : "linear-gradient(180deg,#101a2c,#05070d)", minHeight: "100%", position: "relative" }}>
@@ -119,7 +123,7 @@ export function StoryCardScreen({ career, b, live, picked, extras, onChoose, onC
             {look.big && <div style={{ position: "absolute", right: 30, top: 14, textAlign: "center", color: "#f5c542" }}><div className="dd-anton" style={{ fontSize: 58, lineHeight: 0.9 }}>{look.big}</div><div className="dd-kick" style={{ fontSize: 9 }}>{look.bigSub}</div></div>}
           </div>
         )}
-        {narr.length > 0 && <div className="dd-glass" style={{ padding: "12px 14px", fontSize: 14.5, fontWeight: 700, lineHeight: 1.4 }}>{narr.join(" ")}</div>}
+        {(narr0.length > 0 || around) && <div className="dd-glass" style={{ padding: "12px 14px", fontSize: 14.5, fontWeight: 700, lineHeight: 1.4 }}>{[...narr0, around].filter(Boolean).join(" ")}</div>}
         {noteLine && (
           <div className={`dd-paper ${letter ? "letter" : ""}`} style={{ margin: "4px 18px" }} data-note>
             <div className="w">{words}</div>

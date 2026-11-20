@@ -27,16 +27,16 @@ import Telltale from "./Telltale";
 import ToneDial from "./ToneDial";
 import RoundMenu, { type RoundReply } from "./RoundMenu";
 import ActivityHost from "./ActivityHost";
-import { AfterCards, InviteScreen, NoticeScreen, PhoneLog, StoryCardScreen } from "./StoryCards";
+import { AfterCards, InviteScreen, NoticeScreen, PhoneLog, StoryCardScreen, StoryFace } from "./StoryCards";
 import { placeStill, pointOn, useStageSize, type DecisionBackdrop } from "./DecisionParts";
 
 const K = "/star/life/kitman/";
 /** The stills behind the story's talks (the 3D compound goes here later). */
 export const STORY_STILLS: Record<string, DecisionBackdrop> = {
-  "pitch2-den": { src: `${K}pitch2-den.webp`, w: 780, h: 1240, focus: { x: 0.728, y: 0.47 } },
-  "pitch2-kid": { src: `${K}pitch2-kid.webp`, w: 780, h: 1240, focus: { x: 0.728, y: 0.47 } },
-  "van-den": { src: `${K}van-den.webp`, w: 780, h: 1240, focus: { x: 0.728, y: 0.47 } },
-  "stadium-den": { src: `${K}stadium-den.webp`, w: 780, h: 1330, focus: { x: 0.589, y: 0.577 } },
+  "pitch2-den": { src: `${K}pitch2-den.webp`, w: 1170, h: 1860, focus: { x: 0.756, y: 0.375 } },
+  "pitch2-kid": { src: `${K}pitch2-kid.webp`, w: 1170, h: 1860, focus: { x: 0.783, y: 0.375 } },
+  "van-den": { src: `${K}van-den.webp`, w: 1170, h: 1860, focus: { x: 0.756, y: 0.375 } },
+  "stadium-den": { src: `${K}stadium-den.webp`, w: 1170, h: 1995, focus: { x: 0.576, y: 0.441 } },
 };
 
 function stillFor(b: BeatLive): DecisionBackdrop | undefined {
@@ -341,11 +341,11 @@ export function StoryScreen({ story, career, facts, setCareer, allowDice }: { st
   const after = v.extras ? <AfterCards extras={v.extras} /> : undefined;
   if (screenFor(v.live.event) === "dial") {
     return <ToneDial key={v.live.id} career={v.picked ? career : v.before} live={v.live} story={storyProps} afterExtra={after}
-      sceneImage={v.b.beat === "b2-the-gaffer" ? `${K}corridor-gaffer.webp` : undefined}
+      sceneImage={v.b.beat === "b2-the-gaffer" ? `${K}corridor-gaffer.webp` : undefined} face={<StoryFace career={career} id={v.b.cast[v.live.event.speaker ?? ""] ?? ""} size={64} />}
       onChoose={(id) => story.talkChoose(id)} picked={v.picked ? { choiceId: v.picked.choiceId, result: v.picked.result, before: v.before } : null} onContinue={story.next} />;
   }
   const door = v.b.beat === "b4-the-door" ? <ChalkDoor career={career} best={Number(arcsOf(career)[v.b.arc]?.v.best ?? 0)} nights={Number(arcsOf(career)[v.b.arc]?.v.nights ?? 0)} /> : undefined;
   void node; void setCareer;
-  return <Telltale key={v.live.id} career={v.picked ? career : v.before} live={v.live} clock="off" backdrop={door ? undefined : stillFor(v.b)} world={door}
+  return <Telltale key={v.live.id} career={v.picked ? career : v.before} live={v.live} clock="off" face={<StoryFace career={career} id={v.b.cast[v.live.event.speaker ?? ""] ?? ""} size={124} />} backdrop={door ? undefined : stillFor(v.b)} world={door}
     story={storyProps} afterExtra={after} onChoose={story.talkChoose} picked={v.picked} onContinue={story.next} />;
 }
