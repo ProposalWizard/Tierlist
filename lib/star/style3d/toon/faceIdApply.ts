@@ -13,11 +13,12 @@
  */
 import type * as THREE from "three";
 import type { Person3D } from "../../people3d";
-import type { ToonHead } from "./bodies";
+import { TOON_SHAPE_HEADS, type ToonHead } from "./bodies";
 import { TOON_FACE_LANDMARKS } from "./faceLandmarks";
 import { TOON_FACE_FILE_LANDMARKS } from "./faceFileLandmarks";
 import { applyToonFaceShapeRaw } from "./faceShapeApply";
-import type { FaceId } from "./faceId";
+import { HEAD_LEAN, type FaceId } from "./faceId";
+import type { FaceShape } from "./faceShape";
 
 type Three = typeof THREE;
 
@@ -38,7 +39,15 @@ export function applyToonFaceId(T: Three, p: Person3D, f: FaceId, opts: FaceIdOp
   const lm = TOON_FACE_FILE_LANDMARKS[p.meta.file ?? ""] ?? TOON_FACE_LANDMARKS[p.toonHead];
   const u = p.u as Record<string, { value: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
   if (!lm || !u.uFiLm1) return false;
-  if (!opts.noMould) applyToonFaceShapeRaw(T, p, f.shape, 1);
+  if (!opts.noMould) {
+    // a lean build on the broad-jaw or round-face head file starts by taking that file's own puff off
+    // (HEAD_LEAN); the fuller builds keep it. At full strength on the re-shaped heads (the face types go
+    // on those gentler, a FaceId's own mould does not).
+    const lean = HEAD_LEAN[p.toonHead], keep = f.faceBuild === "heavy" ? 1 : f.faceBuild === "soft" ? 0.6 : 0;
+    const shape: FaceShape = { ...f.shape };
+    if (lean) for (const [key, v] of Object.entries(lean) as [keyof FaceShape, number][]) shape[key] = (shape[key] ?? 0) + v * (1 - keep);
+    applyToonFaceShapeRaw(T, p, shape, TOON_SHAPE_HEADS.includes(p.toonHead) ? 1 / 0.6 : 1);
+  }
 
   const cx = (lm.eyes[0][0] + lm.eyes[1][0]) / 2, eyeDX = (lm.eyes[1][0] - lm.eyes[0][0]) / 2, eyeY = (lm.eyes[0][1] + lm.eyes[1][1]) / 2;
   // the head's own eye size, part of the way (the big-eyed heads keep a bigger eye)

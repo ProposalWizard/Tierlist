@@ -20,15 +20,21 @@ type Three = typeof THREE;
 export function applyToonFaceShape(T: Three, p: Person3D, face: ToonFaceId, k = 1): boolean {
   const shape = TOON_FACE_TYPES[face]?.shape;
   if (!shape || face === "base" || !p.toonHead) return false;
-  return applyToonFaceShapeRaw(T, p, shape, k);
+  return applyToonFaceShapeRaw(T, p, shape, k, false);
 }
 
-/** The same, for any set of changes (a FaceId's own mould, faceIdApply.ts). */
-export function applyToonFaceShapeRaw(T: Three, p: Person3D, shape: FaceShape, k = 1): boolean {
+/**
+ * The same, for any set of changes (a FaceId's own mould, faceIdApply.ts). `onRebuilt`: also on a body
+ * already rebuilt to other proportions (it carries the file's rest as aRest): the rule is worked out on the
+ * file's own rest pose and each point's move is added to where the rebuild put it (the rebuild carries the
+ * head as one piece, so the move holds).
+ */
+export function applyToonFaceShapeRaw(T: Three, p: Person3D, shape: FaceShape, k = 1, onRebuilt = true): boolean {
   if (!p.toonHead) return false;
   const lm = TOON_FACE_FILE_LANDMARKS[p.meta.file ?? ""] ?? TOON_FACE_LANDMARKS[p.toonHead];
   const geo0 = p.body.geometry;
-  if (!lm || geo0.getAttribute("aRest")) return false;
+  const rest0 = geo0.getAttribute("aRest");
+  if (!lm || (rest0 && !onRebuilt)) return false;
   const kit = p.meta.kit as { collarY?: number };
   const F = faceFrame(lm, p.meta.face as never, kit.collarY ?? p.meta.face.chinY - 0.03);
   const geo = geo0.clone();
@@ -40,11 +46,12 @@ export function applyToonFaceShapeRaw(T: Three, p: Person3D, shape: FaceShape, k
   const kk = k * (TOON_SHAPE_HEADS.includes(p.toonHead) ? 0.6 : 1);
   const f = (q: [number, number, number]) => faceShapePoint(q, F, shape, kk);
   for (let i = 0; i < n; i++) {
-    const q: [number, number, number] = [pos0.getX(i), pos0.getY(i), pos0.getZ(i)];
+    const at: [number, number, number] = [pos0.getX(i), pos0.getY(i), pos0.getZ(i)];
+    const q: [number, number, number] = rest0 ? [rest0.getX(i), rest0.getY(i), rest0.getZ(i)] : at;
     let nx = nor0.getX(i), ny = nor0.getY(i), nz = nor0.getZ(i);
-    if (q[1] < F.chinY - 0.06 || (faceZone(q, F) <= 0 && faceOutlineZone(q, F) <= 0)) { P.set(q, i * 3); N.set([nx, ny, nz], i * 3); continue; }
+    if (q[1] < F.chinY - 0.06 || (faceZone(q, F) <= 0 && faceOutlineZone(q, F) <= 0)) { P.set(at, i * 3); N.set([nx, ny, nz], i * 3); continue; }
     const o = f(q);
-    P.set(o, i * 3);
+    P.set([at[0] + o[0] - q[0], at[1] + o[1] - q[1], at[2] + o[2] - q[2]], i * 3);
     // the normal through the rule's own slopes: two tangents, moved, crossed
     const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
     let t1: [number, number, number] = Math.abs(ny) < 0.9 ? [nz, 0, -nx] : [0, nz, -ny];
@@ -57,7 +64,7 @@ export function applyToonFaceShapeRaw(T: Three, p: Person3D, shape: FaceShape, k
     if (cx * nx + cy * ny + cz * nz < 0) { cx = -cx; cy = -cy; cz = -cz; }
     N.set([cx, cy, cz], i * 3);
   }
-  geo.setAttribute("aRest", new T.BufferAttribute(new Float32Array(pos0.array as ArrayLike<number>), 3));
+  if (!rest0) geo.setAttribute("aRest", new T.BufferAttribute(new Float32Array(pos0.array as ArrayLike<number>), 3));
   geo.setAttribute("position", new T.BufferAttribute(P, 3));
   geo.setAttribute("normal", new T.BufferAttribute(N, 3));
   p.body.geometry = geo;

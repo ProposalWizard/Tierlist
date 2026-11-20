@@ -243,15 +243,15 @@ export default function BenchPeoplePage() {
         const on = q.get("faceid") !== "0";
         const YAW: Record<string, number> = { front: -0.27, "34": -0.95, side: -1.6 };
         const label = (l: PersonLookResult) => `${PR.HERITAGE[PR.presetById(l.preset)!.heritage].label.split(" (")[0].split(" /")[0]} · ${SKIN_LABEL[["porcelain", "fair", "light", "tan", "olive", "brown", "deep", "dark"].indexOf(l.skinId)]}`;
-        const what = (f: FaceId) => `${f.eyeShape} ${f.irisName} · ${f.browStyle} · ${f.beardStyle}`;
+        const what = (f: FaceId) => `${f.faceBuild} · ${f.eyeShape} ${f.irisName} · ${f.beardStyle}`;
         if (q.get("emotions") !== null) {
           const l = people[Number(q.get("emotions")) % people.length];
           FI.EMOTION_NAMES.forEach((e) => cards.push({ title: e[0].toUpperCase() + e.slice(1), sub: label(l), look: l, fid: { yaw: -0.25, on: true, emotion: e } }));
         } else if (q.get("sliders") !== null) {
           const l = people[Number(q.get("sliders")) % people.length];
           const S = FI.FACE_LIMITS.shape;
-          const zero = (f: FaceId): FaceId => ({ ...f, shape: { ...f.shape, jawW: 0, chinLen: 0, chinW: 0, cheek: 0, full: 0, noseW: 0, noseLen: 0, noseBridge: 0, faceLen: 0, faceW: 0, taper: 0 } });
-          const rows: [string, (keyof typeof S)[]][] = [["Jaw width", ["faceW", "jawW"]], ["Chin", ["chinLen", "chinW"]], ["Cheeks", ["cheek", "full"]], ["Nose width", ["noseW"]], ["Nose length", ["noseLen"]], ["Nose bridge", ["noseBridge"]], ["Face length", ["faceLen"]], ["Jaw taper", ["taper"]]];
+          const zero = (f: FaceId): FaceId => ({ ...f, shape: { ...f.shape, jawW: 0, chinLen: 0, chinW: 0, cheek: 0, full: 0, noseW: 0, noseLen: 0, noseBridge: 0, noseTip: 0, faceLen: 0, faceW: 0, taper: 0, lips: 0, browRidge: 0 } });
+          const rows: [string, (keyof typeof S)[]][] = [["Jaw width", ["faceW", "jawW"]], ["Chin", ["chinLen", "chinW"]], ["Cheeks", ["cheek", "full"]], ["Nose width", ["noseW"]], ["Nose length", ["noseLen"]], ["Nose bridge and tip", ["noseBridge", "noseTip"]], ["Face length", ["faceLen"]], ["Jaw taper", ["taper"]]];
           for (const [name, keys] of rows) for (const end of [0, -1, 1]) for (const v of ["front", "34"]) {
             const mod = (f: FaceId): FaceId => { const z = zero(f); if (end !== 0) for (const k of keys) (z.shape as unknown as Record<string, number>)[k] = S[k][end < 0 ? 0 : 1]; return z; };
             cards.push({ title: `${name}: ${end === 0 ? "middle" : end < 0 ? "least" : "most"}`, sub: v === "34" ? "three-quarter" : v, look: l, fid: { yaw: YAW[v], on: true, mod } });

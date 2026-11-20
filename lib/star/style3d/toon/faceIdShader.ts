@@ -139,7 +139,8 @@ export const FI_DRAW = /* glsl */ `
       col *= 1.0 - 0.22 * fh * smoothstep(0.35, 0.8, uFiMarks.y) * fiSk * fiDet;
     }
 
-    // ── facial hair: a soft field round the jaw, its edge broken into hairs ──
+    float fiBeardK = 0.0;
+    // ── facial hair: a soft field round the jaw, shaded as hair, its edges thinning to stubble ──
     if (uFiBeard.x + uFiBeard.y + uFiBeard.z > 0.0) {
       float th = atan(fiAx, max(r.z - fiZb, 1e-4));           // 0 the middle of the face … ~1.5 at the ear
       vec2 hp = vec2(th * 0.1, r.y);                           // metres round the face, metres up
@@ -150,7 +151,7 @@ export const FI_DRAW = /* glsl */ `
       yTop = mix(yTop, min(yTop, yJaw + 0.02), uFiBeard2.y);
       float under = smoothstep(yJaw - 0.03, yJaw - 0.012, r.y + ed);       // it fades out under the jaw, never onto the neck
       float eSoft = mix(0.022, 0.007, smoothstep(0.08, 0.45, uFiBeard2.w));   // stubble fades up the cheek; a beard has an edge
-      float cheek = (1.0 - smoothstep(yTop - eSoft, yTop + 0.002, r.y + ed)) * smoothstep(0.17, 0.3, th) * under * (1.0 - smoothstep(1.4, 1.56, th));
+      float cheek = (1.0 - smoothstep(yTop - max(eSoft, 0.014), yTop + 0.004, r.y + ed)) * smoothstep(0.17, 0.3, th) * under * (1.0 - smoothstep(1.4, 1.56, th));
       float offNeck = smoothstep(fiNoseZ - 0.1, fiNoseZ - 0.075, r.z + (fiAx * fiAx) * 9.0);    // the neck's front is well behind the chin
       float chin = (1.0 - smoothstep(0.24, 0.4, th)) * (1.0 - smoothstep(fiLipBot - 0.013, fiLipBot - 0.007, r.y + ed)) * smoothstep(fiChinY - 0.03, fiChinY - 0.014, r.y) * offNeck;
       float soul = uFiBeard2.z * (1.0 - smoothstep(0.005, 0.01, fiAx + abs(ed))) * (1.0 - smoothstep(fiLipBot - 0.003, fiLipBot - 0.0015, r.y)) * step(fiLipBot - 0.016, r.y);
@@ -171,18 +172,25 @@ export const FI_DRAW = /* glsl */ `
       bars = max(bars * 0.0, goat);
       float D = max(max(cheek * uFiBeard.x, chin * uFiBeard.y * step(0.5, uFiBeard.x + uFiBeard2.z)), max(mo * uFiBeard.z, bars));
       if (D > 0.003) {
-        // a toon beard: one clean shape with a gentle edge, a little fuller along the jaw line, and at most
-        // faint strokes down the face up close. Stubble is a smooth tint with a soft outline. No speckle.
+        // a toon beard, shaded as the toon hair is: one clean shape, lighter where it catches the light on
+        // top, darker on its underside and along the jaw's curve; its edges thin out to stubble before the
+        // skin (never a pasted patch). Stubble is a smooth tint with a soft outline. No speckle.
         float len = uFiBeard2.w, dens = uFiBeard.w;
-        float Dn = smoothstep(0.08, 0.92, D);
-        float jawK = mix(0.82, 1.0, 1.0 - smoothstep(0.0, 0.04, r.y - yJaw));
-        float strokes = fiNoise(vec2(hp.x / 0.0011 + r.y * 90.0, hp.y / 0.006));
         float full = smoothstep(0.08, 0.45, len);
-        float alpha = Dn * jawK * mix(dens * 0.7, dens * (0.95 + 0.05 * strokes * fiDet), full);
-        vec3 hc = uHairK * mix(1.0, 0.72, full) * (1.0 + 0.16 * (strokes - 0.5) * fiDet * full);
+        float core = smoothstep(0.5, 0.95, D), halo = smoothstep(0.02, 0.55, D);
+        float strokes = fiNoise(vec2(hp.x / 0.0011 + r.y * 90.0, hp.y / 0.006));
+        float aStub = dens * 0.7 * halo;
+        float aFull = dens * (0.34 * halo + 0.62 * core) * (0.97 + 0.03 * strokes * fiDet);
+        float alpha = mix(aStub, aFull, full);
+        float underK = smoothstep(0.0, 0.7, -vRestN.y);                                   // the underside, under the jaw
+        float jawLine = fiBell(r.y - (yJaw - 0.002), 0.007) * smoothstep(0.3, 0.7, th);     // the jaw's own curve
+        float topK = smoothstep(yTop - 0.03, yTop - 0.004, r.y) * smoothstep(0.3, 0.6, th); // the top of the cheek catches the light
+        float shade = (1.0 - 0.34 * underK - 0.16 * jawLine) * (1.0 + 0.5 * topK + 0.12 * (strokes - 0.5) * fiDet);
+        vec3 hc = (uHairK * 0.78 + 0.012 * topK) * mix(1.0, shade, full);
         col = mix(col, min(hc, vec3(1.0)), alpha * fiSk);
         // a beard is hair: it does not take the face's lift or the skin's light
-        tnSkin *= 1.0 - alpha * full;
+        tnSkin *= 1.0 - alpha * full * core;
+        fiBeardK = alpha * full;
       }
     }
 
@@ -300,7 +308,9 @@ export const FI_DRAW = /* glsl */ `
       float upper = inM * smoothstep(-fiAA, fiAA, v) * (1.0 - smoothstep(upT - se, upT + se * 0.6, v));
       float lower = inM * (1.0 - smoothstep(-gap - fiAA, -gap + fiAA, v)) * smoothstep(-gap - loT - se, -gap - loT + se * 0.6, v);
       float inside = inM * (1.0 - smoothstep(-fiAA, fiAA, v)) * smoothstep(-gap - fiAA, -gap + fiAA, v) * step(0.0006, gap);
-      vec3 lipC = mix(uSkinTone, uFiLip, uFiMouth.w) * (1.0 - 0.2 * step(1.5, uFiBeard.y + uFiBeard.z) * uFiBeard.w);   // lips inside a beard: not lit up by the dark round them
+      // the lips: his skin, a little darker and redder (never a bright slab); inside a beard, quieter still
+      vec3 lipC = mix(uSkinTone, uFiLip, uFiMouth.w * 0.85);
+      lipC = mix(lipC, vec3(dot(lipC, vec3(0.2126, 0.7152, 0.0722))) * vec3(1.12, 0.94, 0.94), 0.25 + 0.3 * fiBeardK) * (1.0 - 0.3 * fiBeardK);
       vec3 lipU = lipC * 0.82;
       vec3 lipL = lipC * (mix(0.98, 1.08, smoothstep(-gap - loT, -gap - loT * 0.35, v)) + 0.1 * fiBell(mu, 0.45) * fiBell((v + gap + loT * 0.5) / max(loT, 1e-4), 0.28));
       col = mix(col, lipU, upper);

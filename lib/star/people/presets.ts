@@ -513,7 +513,7 @@ export function presetLook(preset: PeoplePreset, id: string, role: PersonRole, o
 
   const beard = beardOf(preset.head, cut);
   const faceId = faceIdFor(exact ? preset.id : id, preset.heritage, {
-    skin: toonSkinHex(skinIdx), hair: hairColour, hairBase: MANAGER_HAIR_COLOURS[hairId], hairId, age, beard, faceType: fc.face, faceK: fc.k,
+    skin: toonSkinHex(skinIdx), hair: hairColour, hairBase: MANAGER_HAIR_COLOURS[hairId], hairId, age, beard, faceType: fc.face, faceK: fc.k, role,
   });
 
   return {

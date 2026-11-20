@@ -82,7 +82,9 @@ export interface FaceId {
   beardLine: number; beardStrap: number; beardSoul: number;
   // ── the mould (13): moved on the mesh ──
   faceType: ToonFaceId;
-  shape: Required<Pick<FaceShape, "jawW" | "chinLen" | "chinW" | "cheek" | "full" | "noseW" | "noseLen" | "noseBridge" | "faceLen" | "browRidge" | "lips" | "faceW" | "taper">> & FaceShape;
+  /** The outline's build (FACE_BUILDS). */
+  faceBuild: FaceBuild;
+  shape: Required<Pick<FaceShape, "jawW" | "chinLen" | "chinW" | "cheek" | "full" | "noseW" | "noseLen" | "noseBridge" | "noseTip" | "faceLen" | "browRidge" | "lips" | "faceW" | "taper">> & FaceShape;
 }
 
 /** Nothing leaves these (RUL-3D-010: never caricature). The mould's are on the summed shape. */
@@ -91,8 +93,8 @@ export const FACE_LIMITS = {
   irisR: [0.0066, 0.0088], browH: [0.0165, 0.0255], browT: [0.0036, 0.0078], browArch: [0, 0.0068], browTilt: [-0.005, 0.0065], browLen: [1.9, 2.5],
   mouthW: [0.88, 1.14], lipUp: [0.0026, 0.0066], lipLow: [0.004, 0.0086],
   shape: {
-    jawW: [-0.06, 0.05], chinLen: [-0.003, 0.0045], chinW: [-0.1, 0.12], cheek: [-0.002, 0.0055], full: [-0.0012, 0.0025], noseW: [-0.22, 0.42], noseLen: [-0.0035, 0.0055],
-    noseBridge: [-0.0045, 0.005], faceLen: [-0.005, 0.008], browRidge: [-0.0015, 0.0045], lips: [-0.3, 0.5], faceW: [-0.07, 0.05], taper: [-0.08, 0.16],
+    jawW: [-0.07, 0.05], chinLen: [-0.005, 0.008], chinW: [-0.14, 0.16], cheek: [-0.004, 0.009], full: [-0.002, 0.003], noseW: [-0.35, 0.55], noseLen: [-0.006, 0.008],
+    noseBridge: [-0.007, 0.008], noseTip: [-0.003, 0.004], faceLen: [-0.01, 0.014], browRidge: [-0.0015, 0.0045], lips: [-0.3, 0.5], faceW: [-0.09, 0.055], taper: [-0.08, 0.18],
   },
 } as const;
 
@@ -173,6 +175,39 @@ export const HERITAGE_FEATURES: Record<string, { eyes: Pool<EyeShape>; iris: Poo
   },
 };
 
+/**
+ * THE FACE'S BUILD (Harry, 20 Nov 2026, on the first sheet: "there's not many normal looking faces …
+ * analyse some footballers"). Footballers are athletes: lean faces, cheekbones that show, a defined
+ * jaw. From the usual measures of adult men's faces (used as statistics only, never one person's
+ * face): the jaw's width is about 0.75 to 0.85 of the cheekbones' width, the face about 1.3 to 1.4
+ * times as high as it is wide, each eye about a fifth of the face's width, the nose about a third of
+ * its height. A build sets the OUTLINE (how wide the lower face is, how it tapers to the chin, how
+ * full the cheeks are); the nose, lips and eyes stay his heritage's. Most players get one of the
+ * lean builds; the soft and heavy ones are rare, and mostly staff and fans.
+ */
+export type FaceBuild = "athletic" | "angular" | "square" | "long" | "youth" | "broad" | "soft" | "heavy";
+export const FACE_BUILDS: Record<FaceBuild, { label: string; shape: FaceShape }> = {
+  athletic: { label: "Lean, athletic (the usual footballer)", shape: { faceW: -0.055, taper: 0.08, full: -0.0014, cheek: 0.002, jawW: -0.01, chinLen: 0.001 } },
+  angular: { label: "Angular, cheekbones that show", shape: { faceW: -0.07, taper: 0.12, full: -0.0018, cheek: 0.005, chinLen: 0.002 } },
+  square: { label: "Square jaw, lean", shape: { faceW: -0.035, taper: -0.02, jawW: 0.015, full: -0.0013, chinW: 0.08, cheek: 0.002 } },
+  long: { label: "Narrow, long face", shape: { faceW: -0.07, taper: 0.08, faceLen: 0.009, chinLen: 0.003, full: -0.0012 } },
+  youth: { label: "Young and slim (17 to 21)", shape: { faceW: -0.05, taper: 0.1, chinLen: -0.002, faceLen: -0.003, cheek: 0.001 } },
+  broad: { label: "Broad and strong, not fat", shape: { faceW: -0.02, jawW: 0.025, taper: -0.01, full: -0.001, cheek: 0.003, chinW: 0.06 } },
+  soft: { label: "Average, a little fuller (older staff)", shape: { faceW: 0, full: 0.001, taper: 0 } },
+  heavy: { label: "Round and heavy (rare)", shape: { faceW: 0.04, full: 0.0022, taper: -0.04 } },
+};
+const BUILD_POOL: Record<"player" | "other", Pool<FaceBuild>> = {
+  player: [["athletic", 40], ["angular", 15], ["square", 13], ["long", 11], ["youth", 4], ["broad", 9], ["soft", 3], ["heavy", 1]],
+  other: [["athletic", 20], ["angular", 8], ["square", 10], ["long", 8], ["broad", 12], ["soft", 28], ["heavy", 14]],
+};
+/** The outline's sliders: a build sets these, with a little of his own either way. */
+const OUTLINE: Partial<Record<keyof FaceShape, number>> = { faceW: 0.014, taper: 0.03, full: 0.0005, cheek: 0.0015, jawW: 0.012, chinLen: 0.0025, chinW: 0.05, faceLen: 0.004 };
+/**
+ * What undoes the two re-shaped heads' own puff under a lean build (the broad-jaw and round-face head
+ * files are wide and full below the cheekbones; on those files a lean build starts from here).
+ */
+export const HEAD_LEAN: Record<string, FaceShape> = { h7: { faceW: -0.05, full: -0.001 }, h9: { faceW: -0.085, full: -0.0024, taper: 0.04 } };
+
 /** A stable 32-bit hash (FNV-1a, as bodies.ts hashId; kept here so this file stays on its own). */
 function hash(s: string): number {
   let h = 0x811c9dc5;
@@ -208,6 +243,8 @@ export interface FaceIdContext {
   /** His heritage's face type and its strength (faceShape.ts faceFor). */
   faceType?: ToonFaceId;
   faceK?: number;
+  /** A player (most are lean) or anyone else. */
+  role?: string;
 }
 
 /** The facial hair for a preset's beard word: several ways to wear each, picked by the id. */
@@ -236,6 +273,8 @@ export function faceIdFor(id: string, heritage: string, ctx: FaceIdContext): Fac
   const u = (what: string) => hash(`${id}#fi-${what}`) / 4294967296;
   /** −1 … 1, more often near 0. */
   const j = (what: string) => (u(what) + u(`${what}b`) - 1);
+  /** −1 … 1, evenly: the mould's sliders use their whole range. */
+  const jw = (what: string) => u(what) * 2 - 1;
   const L = FACE_LIMITS;
 
   // eyes
@@ -268,17 +307,23 @@ export function faceIdFor(id: string, heritage: string, ctx: FaceIdContext): Fac
   const moleOn = u("mole") < 0.13;
   const moleSpot = Math.floor(u("molespot") * 4);
 
-  // the mould: his heritage's face type, a little weaker or stronger, plus his own sliders
+  // the mould: the OUTLINE from his build (most players lean), a little of his own either way; the nose,
+  // lips and brow ridge from his heritage's face type plus his own sliders
   const faceType = ctx.faceType ?? "base";
   const T = TOON_FACE_TYPES[faceType]?.shape ?? {};
   const k = ctx.faceK ?? 1;
   const S = L.shape;
-  const own = (key: keyof typeof S, amount: number) => clamp(((T[key] as number | undefined) ?? 0) * k + amount * j(`s-${key}`), S[key]);
+  const young = age <= 21 && ctx.role === "player";
+  const faceBuild = young && u("build-y") < 0.45 ? "youth" : pick(BUILD_POOL[ctx.role === "player" ? "player" : "other"], u("build"));
+  const B = FACE_BUILDS[faceBuild].shape;
+  const own = (key: keyof typeof S, amount: number, bias = 0) => key in OUTLINE
+    ? clamp(((B[key] as number | undefined) ?? 0) + (OUTLINE[key] ?? 0) * jw(`s-${key}`), S[key])
+    : clamp(((T[key] as number | undefined) ?? 0) * k * 0.7 + bias + amount * jw(`s-${key}`), S[key]);
   const shape: FaceId["shape"] = {
-    ...Object.fromEntries(Object.entries(T).map(([key, v]) => [key, (v as number) * k])),
-    jawW: own("jawW", 0.03), chinLen: own("chinLen", 0.003), chinW: own("chinW", 0.08), cheek: own("cheek", 0.003), full: own("full", 0.0012),
-    noseW: own("noseW", 0.2), noseLen: own("noseLen", 0.003), noseBridge: own("noseBridge", 0.003), faceLen: own("faceLen", 0.006), browRidge: own("browRidge", 0.002),
-    lips: clamp(((T.lips ?? 0) * k) * 0.6 + (lipK - 0.5) * 0.3, S.lips), faceW: own("faceW", 0.035), taper: own("taper", 0.07),
+    ...Object.fromEntries(Object.entries(T).filter(([key]) => !(key in OUTLINE)).map(([key, v]) => [key, (v as number) * k * 0.7])),
+    jawW: own("jawW", 0), chinLen: own("chinLen", 0), chinW: own("chinW", 0), cheek: own("cheek", 0), full: own("full", 0),
+    noseW: own("noseW", 0.3, 0.03), noseLen: own("noseLen", 0.005, 0.0005), noseBridge: own("noseBridge", 0.005), noseTip: own("noseTip", 0.003), faceLen: own("faceLen", 0), browRidge: own("browRidge", 0.002),
+    lips: clamp(((T.lips ?? 0) * k) * 0.6 + (lipK - 0.5) * 0.3, S.lips), faceW: own("faceW", 0), taper: own("taper", 0),
   };
 
   return {
@@ -301,7 +346,7 @@ export function faceIdFor(id: string, heritage: string, ctx: FaceIdContext): Fac
     freckles, age: clamp((age - 38) / 22, [0, 1]), blush: light > 0.45 ? clamp(0.25 + 0.35 * j("blush"), [0, 0.7]) : clamp(0.1 + 0.15 * j("blush"), [0, 0.3]),
     mole: moleOn ? 1 : 0, moleX: [0.034, -0.03, 0.022, -0.04][moleSpot] + 0.004 * j("molex"), moleY: [0.03, 0.012, -0.022, 0.045][moleSpot] + 0.003 * j("moley"),
     ...beardFor(id, ctx.beard, u),
-    faceType, shape,
+    faceType, faceBuild, shape,
   };
 }
 
@@ -309,7 +354,7 @@ export function faceIdFor(id: string, heritage: string, ctx: FaceIdContext): Fac
 export function faceIdKey(f: FaceId): string {
   const b3 = (x: number, r: readonly number[]) => (x < r[0] + (r[1] - r[0]) / 3 ? "-" : x > r[1] - (r[1] - r[0]) / 3 ? "+" : "0");
   const S = FACE_LIMITS.shape;
-  return [f.eyeShape, f.irisName, f.browStyle, b3(f.browT, FACE_LIMITS.browT), b3(f.lipLow, FACE_LIMITS.lipLow), f.beardStyle, f.freckles > 0 ? "f" : "", f.mole ? "m" : "", f.age > 0.3 ? "a" : "",
+  return [f.eyeShape, f.irisName, f.browStyle, f.faceBuild, b3(f.browT, FACE_LIMITS.browT), b3(f.lipLow, FACE_LIMITS.lipLow), f.beardStyle, f.freckles > 0 ? "f" : "", f.mole ? "m" : "", f.age > 0.3 ? "a" : "",
     `j${b3(f.shape.faceW, S.faceW)}`, `n${b3(f.shape.noseW, S.noseW)}`, `c${b3(f.shape.chinLen, S.chinLen)}`, `l${b3(f.shape.faceLen, S.faceLen)}`].join("|");
 }
 

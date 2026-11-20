@@ -125,7 +125,8 @@ export const FACE_GAIN = 2;
  */
 export function faceOutlineZone(p: readonly [number, number, number], F: FaceFrame): number {
   const [, y, z] = p;
-  return sm(F.frontZ - 0.19, F.frontZ - 0.155, z) * sm(F.eyeY - 0.05, F.eyeY - 0.085, y) * sm(F.chinY - 0.04, F.chinY - 0.012, y) * sm(F.collarY - 0.005, F.collarY + 0.025, y);
+  // (it comes in gently down the cheek, over 3 cm: a strong change left a notch in the cheek's line where it began)
+  return sm(F.frontZ - 0.19, F.frontZ - 0.155, z) * sm(F.eyeY - 0.05, F.eyeY - 0.08, y) * sm(F.chinY - 0.04, F.chinY - 0.012, y) * sm(F.collarY - 0.005, F.collarY + 0.025, y);
 }
 
 /** Where a rest-pose point (metres, his left +x, up +y, front +z) goes for this face, `k` times as strong. */
