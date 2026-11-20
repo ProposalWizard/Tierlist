@@ -19,10 +19,11 @@ import { LIFE_MOMENTS } from "./types";
 import { parseCond, slotsIn, tagsIn } from "./cond";
 import { BAND, MAX_LINE, MAX_TELLTALE_LINE, PICKS, REAL_NAMES } from "./validate";
 import { PLACEHOLDER_KEYS, YOU_KEYS } from "./text";
+import { ROUND_LIBRARY, type RoundKind } from "./drill";
 
 export interface ArcProblem { id: string; problem: string }
 
-const MODES = ["strike-drill", "crossbar", "feed-drill"];
+const MODES = ["strike-drill", "crossbar", "feed-drill", "challenge"];
 
 function outcomesOf(b: ArcBeat): [string, ArcOutcome[]][] {
   const e = b.event;
@@ -75,6 +76,23 @@ export function validateArc(arc: LifeArc): string[] {
           if (!rows.some(([c]) => c === "")) bad(nw, "the game has no fallback result");
           if (!rows.some(([c]) => /activity\.(won|score|tens)/.test(c))) bad(nw, "no result for doing well");
           if (typeof a.dials.from === "object") cond(nw, a.dials.from.if);
+          // A challenge (drill.ts's round library): known rounds, ten balls at most, a double only last,
+          // and whoever goes in goal is someone the story has.
+          if (a.mode === "challenge") {
+            const rs = a.dials.rounds ?? [];
+            if (!rs.length) bad(nw, "a challenge with no rounds");
+            let balls = 0;
+            rs.forEach((r, i) => {
+              const lib = ROUND_LIBRARY[r.kind as RoundKind];
+              if (!lib) { bad(nw, `unknown round "${r.kind}" (the rounds are: ${Object.keys(ROUND_LIBRARY).join(", ")})`); return; }
+              balls += r.kind === "double" ? 1 : r.balls ?? lib.balls;
+              if (r.kind === "double" && i !== rs.length - 1) bad(nw, "double or nothing must be the last round");
+            });
+            if (balls > 10) bad(nw, `a challenge has ${balls} balls; ten at most (each counts ten)`);
+            const keeperSlot = a.dials.keeperSlot;
+            if (keeperSlot && !arc.cast.some((c) => c.slot === keeperSlot)) bad(nw, `"${keeperSlot}" goes in goal but the story has no such person`);
+            if (!a.caller?.slot) bad(nw, "a challenge needs a caller (the person who feeds and reacts)");
+          }
         } else {
           const rs = n.replies ?? [];
           if (!rs.length) bad(nw, "a node with no replies and no game");

@@ -23,7 +23,7 @@ import { weekOfMoney, type FactOverride } from "./facts";
 import { fillLine } from "./text";
 import { actionsLeft } from "../week";
 import { promiseCount, MAX_OPEN_PROMISES } from "./promises";
-import { rollHundred } from "./drill";
+import { rollHundred, type RoundSpec } from "./drill";
 
 export const talkNode = (b: BeatLive): TalkNode | undefined => b.event.talk?.nodes[b.node];
 
@@ -138,6 +138,11 @@ export function inviteChips(c: CareerState, b: BeatLive): Record<string, string>
 // ── The dice: a device that cannot run the mode, a skipped week, the soak ──
 
 export function diceActivity(c: CareerState, b: BeatLive, act: LifeActivity, rng: () => number): ActivityResult {
+  if (act.mode === "challenge") {
+    // Any story's challenge: each ball against its own difficulty, as on the pitch.
+    const r = rollHundred((c.skills as unknown as Record<string, number> | undefined)?.technique ?? 50, rng, 0, (act.dials.rounds ?? []) as RoundSpec[]);
+    return { score: r.score, tens: r.tens, won: r.score * 2 >= r.hits.length, abandoned: false, byDice: true };
+  }
   if (act.mode === "strike-drill") {
     // Den's hundred: each of the ten balls against its own difficulty (drill.ts), as on the pitch.
     const fw = act.dials.from;

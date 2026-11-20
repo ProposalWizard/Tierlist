@@ -22,7 +22,7 @@ import type { Scenario } from "@/lib/star/canvasEngine";
 import type { ActivityResult } from "@/lib/star/life/arcs";
 import { mulberry32 } from "@/lib/star/season";
 import { CX, GOAL_H, POST_L, POST_R } from "@/lib/star/pitch";
-import { denAfter, feedsFor, judge, pointsOf, ROUNDS, shoutOf, TARGET_LOW, TARGET_WIDTH, type BallEnd, type Feed } from "@/lib/star/life/drill";
+import { challenge, denAfter, HUNDRED_ROUNDS, judge, pointsOf, shoutOf, TARGET_LOW, TARGET_WIDTH, type BallEnd, type ReactionLines, type RoundSpec } from "@/lib/star/life/drill";
 import { closeFrame, hundredMarkers, hundredScenario } from "@/lib/star/life/drillScene";
 import { EngineFeature } from "../EnginePlay";
 import type { ChanceResolved } from "../CanvasMatch";
@@ -34,9 +34,9 @@ type Phase = "round" | "call" | "play" | "react";
 type Light = "on" | "flicker" | "out";
 
 const WORD: Record<BallEnd, string> = { hit: "IN", saved: "SAVED", post: "OFF THE POST", wide: "WIDE", over: "OVER", high: "TOO HIGH", central: "TOO CENTRAL", wrong: "WRONG CORNER", "under-bar": "UNDER THE BAR", "missed-it": "MISSED IT" };
-const HIT_WORD: Record<string, string> = { call: "THAT CORNER", bar: "CROSSBAR!", tyre: "THROUGH IT!", bucket: "BUCKET'S OVER", keeper: "PAST HIM", dark: "IN THE DARK", double: "TWENTY!" };
+const HIT_WORD: Record<string, string> = { "call-it": "THAT CORNER", crossbar: "CROSSBAR!", tyre: "THROUGH IT!", bucket: "BUCKET'S OVER", keeper: "PAST HIM", "lights-out": "IN THE DARK", double: "TWENTY!", corners: "IN THE CORNER", far: "FROM TWENTY YARDS" };
 
-export default function HundredDrill({ career, title, seed0, extraDist, calls, callerName, face, canAbandon, energy, best, onDone, allowDice, onDice, fill }: {
+export default function HundredDrill({ career, title, seed0, extraDist, calls, callerName, callerAge, keeperName, rounds: specs, lines, face, canAbandon, energy, best, onDone, allowDice, onDice, fill }: {
   career: CareerState;
   title: string;
   seed0: number;
@@ -45,6 +45,14 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
   /** Den's counts, from the arc book ("Ten." … "And a hundred."), voiced. */
   calls: string[];
   callerName: string;
+  /** His age ({age} in a line). */
+  callerAge?: number;
+  /** Who goes in goal for a keeper round ({name}); default: him. */
+  keeperName?: string;
+  /** The story's rounds (the round library, drill.ts); default: Den's hundred. */
+  rounds?: RoundSpec[];
+  /** The story's own reaction lines (drill.ts ReactionLines). */
+  lines?: ReactionLines;
   /** His still, as a small chip beside his words (he is not drawn on the pitch). */
   face?: string | null;
   canAbandon?: boolean;
@@ -55,7 +63,10 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
   onDice?: () => void;
   fill: (s: string) => string;
 }) {
-  const feeds: Feed[] = useMemo(() => feedsFor(extraDist, seed0), [extraDist, seed0]);
+  const plan = useMemo(() => challenge(specs?.length ? specs : HUNDRED_ROUNDS, extraDist, seed0), [specs, extraDist, seed0]);
+  const feeds = plan.feeds;
+  // {name}: the person in goal; {age}: his age.
+  const say = useCallback((t: string) => t.replace(/\{name\}/g, keeperName ?? callerName).replace(/\{age\}/g, callerAge ? String(callerAge) : "Not bad"), [keeperName, callerName, callerAge]);
   const n = feeds.length;
   const careerSeen = useMemo(() => ({ ...career, careerStats: { ...career.careerStats, appearances: Math.max(1, career.careerStats?.appearances ?? 0) } }), [career]);
   const kitFixture = useMemo(() => ({ week: career.week, opponent: (career.league?.find((t) => t.name !== career.player.club)?.name) ?? "Training", home: true, played: false }), [career.week, career.league, career.player.club]);
@@ -73,8 +84,9 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
   const doneRef = useRef(-1);
   const ball = shots.length;
   const feed = feeds[Math.min(ball, n - 1)];
-  const round = ROUNDS.find((r) => r.id === feed.round)!;
-  const roundNo = ROUNDS.indexOf(round) + 1;
+  const round = plan.rounds[feed.roundNo];
+  const roundNo = feed.roundNo + 1;
+  const nRounds = plan.rounds.length;
 
   // The beats between balls: a round's card (its first ball), Den's call, then you play.
   useEffect(() => {
@@ -141,7 +153,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
     const hit = end === "hit";
     let streak = 0;
     for (let k = shots.length - 1; k >= 0 && shots[k].hit; k--) streak++;
-    const after = denAfter(end, streak, ball, feeds);
+    const after = say(fill(denAfter(end, streak, ball, feeds, lines)));
     if (hit) {
       // Den counts in tens (his voiced lines): the new total, then what he thinks of it.
       const total = pointsOf([...shots.map((x) => x.hit), true], feeds);
@@ -149,7 +161,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
       const count = fill(calls[idx] ?? "");
       setSaid((feed.double ? after : `${count} ${after}`).replace(/["“”]/g, ""));
       speak("b1-the-offer.play.caller", count);
-    } else { setSaid(fill(after).replace(/"/g, "")); stopVoice(); }
+    } else { setSaid(after.replace(/["“”]/g, "")); stopVoice(); }
     const list = [...shots, { hit, x: c?.x ?? null, z: c?.z ?? null, end }];
     setShout(null);
     setFlash({ text: hit ? (HIT_WORD[feed.target.kind === "tyre" || feed.target.kind === "bucket" ? feed.target.kind : feed.round] ?? "IN") : WORD[end], good: hit });
@@ -158,12 +170,12 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
     if (list.length >= n) window.setTimeout(() => finish(list, false), 2100);
     else window.setTimeout(() => {
       setSaid(null);
-      setPhase(feeds[list.length].round !== feed.round ? "round" : "call");
+      setPhase(feeds[list.length].roundNo !== feed.roundNo ? "round" : "call");
       setShots(list);
     }, 1750);
     // Keep this ball's shot on screen (the dots) at once; the next ball mounts after Den has spoken.
     setShotsShown(list);
-  }, [feed, feeds, shots, ball, calls, fill, n, finish]);
+  }, [feed, feeds, shots, ball, calls, fill, n, finish, say, lines]);
 
   const big = pointsOf(shotsShown.map((x) => x.hit), feeds);
 
@@ -221,14 +233,14 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
           </div>
           <div style={{ textAlign: "right" }}>
             <div className="dd-anton" style={{ fontSize: 21, lineHeight: 1 }}>{title}</div>
-            <div className="dd-kick" style={{ color: "#f5b942", marginTop: 4, letterSpacing: ".14em" }}>Round {roundNo} of 6 · {round.name}</div>
+            <div className="dd-kick" style={{ color: "#f5b942", marginTop: 4, letterSpacing: ".14em" }}>Round {roundNo} of {nRounds} · {say(round.name)}</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 4, marginTop: 7, justifyContent: "center" }} data-balls>
           {feeds.map((f, i) => {
             const s = shotsShown[i];
             const cur = i === ball && !over && !s;
-            const gap = i > 0 && feeds[i - 1].round !== f.round;
+            const gap = i > 0 && feeds[i - 1].roundNo !== f.roundNo;
             const bg = s ? (s.hit ? "#22c55e" : "#ef4444") : "rgba(255,255,255,.08)";
             return (
               <div key={i} style={{ marginLeft: gap ? 7 : 0, width: 25, height: 25, borderRadius: 99, display: "grid", placeItems: "center", fontSize: 10, fontWeight: 900, color: s ? "#fff" : cur ? "#f5b942" : "rgba(255,255,255,.4)", background: bg, boxShadow: cur ? "0 0 0 2px #f5b942, 0 0 12px rgba(245,185,66,.6)" : "inset 0 0 0 1px rgba(255,255,255,.18)" }}>
@@ -271,7 +283,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
         <style>{`@keyframes hd-flicker{0%{opacity:0}20%{opacity:.9}35%{opacity:.1}55%{opacity:.95}70%{opacity:.3}100%{opacity:.85}}`}</style>
 
         {/* Den in goal: his name over the goal */}
-        {feed.keeper && !over && <div aria-hidden className="pointer-events-none absolute z-30 dd-kick" style={{ left: `${goalAt.left}%`, top: `calc(${goalAt.top}% - 46px)`, transform: "translateX(-50%)", color: "#f5b942", textShadow: "0 2px 6px #000" }}>{callerName} in goal</div>}
+        {feed.keeper && !over && <div aria-hidden className="pointer-events-none absolute z-30 dd-kick" style={{ left: `${goalAt.left}%`, top: `calc(${goalAt.top}% - 46px)`, transform: "translateX(-50%)", color: "#f5b942", textShadow: "0 2px 6px #000" }}>{keeperName ?? callerName} in goal</div>}
 
         {/* Score */}
         <div aria-hidden style={{ position: "absolute", left: 12, top: "24%", pointerEvents: "none", zIndex: 30, textShadow: "0 2px 10px rgba(0,0,0,.8)" }} data-score={big}>
@@ -312,16 +324,16 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
         {/* A round's card: its name and Den's line */}
         {phase === "round" && !over && (
           <div className="pointer-events-none absolute inset-x-0 z-30 text-center" style={{ top: "30%", padding: "0 22px" }} data-round-card={feed.round}>
-            <div className="dd-kick" style={{ color: "rgba(255,255,255,.7)" }}>Round {roundNo} of 6 · {feeds.filter((f) => f.round === feed.round).length === 1 ? "one ball" : `${feeds.filter((f) => f.round === feed.round).length} balls`}</div>
-            <div className="dd-anton" style={{ fontSize: 46, lineHeight: 1.02, color: feed.round === "double" ? "#f5c542" : "#fff", textShadow: "0 3px 12px #000" }}>{round.name}</div>
-            <div style={{ fontSize: 16, fontWeight: 800, marginTop: 12, textShadow: "0 2px 6px #000" }}><span className="dd-kick" style={{ color: "#f5b942", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 4 }}>{chip(26)}{callerName}</span>{ball === 0 ? "Go and stand on the D. " : ""}{round.line}</div>
+            <div className="dd-kick" style={{ color: "rgba(255,255,255,.7)" }}>Round {roundNo} of {nRounds} · {feeds.filter((f) => f.roundNo === feed.roundNo).length === 1 ? "one ball" : `${feeds.filter((f) => f.roundNo === feed.roundNo).length} balls`}</div>
+            <div className="dd-anton" style={{ fontSize: 46, lineHeight: 1.02, color: feed.round === "double" ? "#f5c542" : "#fff", textShadow: "0 3px 12px #000" }}>{say(round.name)}</div>
+            <div style={{ fontSize: 16, fontWeight: 800, marginTop: 12, textShadow: "0 2px 6px #000" }}><span className="dd-kick" style={{ color: "#f5b942", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 4 }}>{chip(26)}{callerName}</span>{ball === 0 && !specs?.length ? "Go and stand on the D. " : ""}{say(fill(round.line))}</div>
           </div>
         )}
         {/* Den's call, before each ball */}
         {phase === "call" && !over && (
           <div className="pointer-events-none absolute inset-x-0 z-30 text-center" style={{ top: "34%", padding: "0 20px" }} data-call={ball}>
             <div className="dd-kick" style={{ color: "rgba(255,255,255,.7)" }}>Ball {ball + 1} of {n}{feed.double ? " · twenty, or ten off" : ""}</div>
-            <div className="dd-anton" style={{ fontSize: 40, lineHeight: 1.05, color: feed.double ? "#f5c542" : "#fff", textShadow: "0 3px 12px #000" }}>{feed.call}</div>
+            <div className="dd-anton" style={{ fontSize: 40, lineHeight: 1.05, color: feed.double ? "#f5c542" : "#fff", textShadow: "0 3px 12px #000" }}>{say(fill(feed.call))}</div>
           </div>
         )}
         {/* In the dark: his shout */}
@@ -342,7 +354,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
         <div className="dd-glass" style={{ position: "absolute", left: 12, right: 12, bottom: 12, zIndex: 31, pointerEvents: "none", padding: "10px 12px", display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", borderRadius: 12 }}>
           <div>
             <div className="dd-kick" style={{ color: "rgba(255,255,255,.65)", fontSize: 9 }}>Ball {Math.min(ball + 1, n)} of {n} · {feed.double ? "twenty, or ten off" : "ten if you get it"}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, marginTop: 2 }}>{feed.label} · {feed.dist} m{feed.keeper ? ` · ${callerName} in goal` : ""}{feed.dark ? " · lights out" : ""}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginTop: 2 }}>{say(feed.label)} · {feed.dist} m{feed.keeper ? ` · ${keeperName ?? callerName} in goal` : ""}{feed.dark ? " · lights out" : ""}</div>
           </div>
           {energy ? <div style={{ textAlign: "right" }}><div className="dd-kick" style={{ fontSize: 8, color: "rgba(255,255,255,.6)" }}>Energy</div><div style={{ color: "#ff8a80", fontWeight: 900, fontSize: 18 }}>{energy}</div></div> : null}
         </div>

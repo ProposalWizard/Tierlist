@@ -72,7 +72,12 @@ check(probs.length === 0, `the arc book passes the v2 checker: ${probs.slice(0, 
   check(DR.HUNDRED_FEEDS.length === 10 && new Set(DR.HUNDRED_FEEDS.map((f) => f.label)).size === 10, "ten balls, every one different");
   check(DR.HUNDRED_FEEDS.every((f) => f.label.split(" ").length <= 3) && DR.HUNDRED_FEEDS.some((f) => f.keeper) && DR.HUNDRED_FEEDS.some((f) => f.dark) && DR.HUNDRED_FEEDS[9].double === true, "short labels, Den in goal, lights out, the last double or nothing");
   // v3 (Harry: "a chance to be creative"): six rounds, each a different thing to do, in order.
-  check(DR.ROUNDS.length === 6 && DR.ROUNDS.every((r) => DR.HUNDRED_FEEDS.some((f) => f.round === r.id)) && DR.HUNDRED_FEEDS.every((f, i) => i === 0 || DR.ROUNDS.findIndex((r) => r.id === f.round) >= DR.ROUNDS.findIndex((r) => r.id === DR.HUNDRED_FEEDS[i - 1].round)), "six rounds, every one played, in order");
+  check(DR.ROUNDS.length === 6 && DR.ROUNDS.every((r, k) => DR.HUNDRED_FEEDS.some((f) => f.roundNo === k && f.round === r.kind)) && DR.HUNDRED_FEEDS.every((f, i) => i === 0 || f.roundNo >= DR.HUNDRED_FEEDS[i - 1].roundNo), "six rounds, every one played, in order");
+  // Any story's challenge (the round library): the balls come from its rounds, ten at most.
+  const ch = DR.challenge([{ kind: "corners", balls: 2 }, { kind: "far" }, { kind: "keeper", balls: 4 }, { kind: "props" }, { kind: "double" }]);
+  check(ch.feeds.length === 10 && ch.rounds.length === 5 && ch.feeds[9].double === true && ch.feeds.filter((f) => f.keeper).length === 5, `a story's own challenge: its rounds, ten balls (${ch.feeds.length})`);
+  check(DR.challenge([{ kind: "keeper", balls: 9 }, { kind: "far", balls: 5 }]).feeds.length === 10, "a challenge stops at ten balls");
+  check(DR.denAfter("saved", 0, 0, DR.challenge([{ kind: "keeper" }]).feeds, { "keeper:saved": "Ha! {name} keeps it out." }) === "Ha! {name} keeps it out.", "a story's own reaction line wins over the default");
   check(new Set(DR.HUNDRED_FEEDS.map((f) => f.target.kind)).size >= 5, "five kinds of target (a called corner, the bar, the tyre, the bucket, past Den)");
   // The one rule that judges a ball on the pitch.
   const T = DR.HUNDRED_FEEDS;

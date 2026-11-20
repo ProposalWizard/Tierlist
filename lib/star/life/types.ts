@@ -267,13 +267,22 @@ export interface IfValue { if: string; then: string; else: string }
 
 /** A reply that opens a real game mode (activity.ts). */
 export interface LifeActivity {
-  mode: "strike-drill" | "crossbar" | "feed-drill";
+  /** "challenge": a list of rounds from the round library (drill.ts), any story; "strike-drill" is
+   *  Den's hundred (the same screen with his six rounds). */
+  mode: "strike-drill" | "crossbar" | "feed-drill" | "challenge";
   name: string;
   intro?: string;
   dials: {
     balls?: number; shots?: number; from?: string | IfValue; keeper?: boolean;
     targets?: ("bottom-left" | "bottom-right" | "bar")[]; light?: string; feed?: string;
     opponent?: { slot: string; else?: string }; shooter?: { slot: string };
+    /** challenge: the rounds, in order (drill.ts RoundSpec: kind, balls, name, line, calls). */
+    rounds?: { kind: string; balls?: number; name?: string; line?: string; calls?: string[]; voices?: (string | null)[] }[];
+    /** challenge: who goes in goal for a keeper or double round (a cast slot; default the caller). */
+    keeperSlot?: string;
+    /** challenge: the story's own reaction lines (drill.ts ReactionLines: "hit", "saved",
+     *  "keeper:saved", "streak3", "double:miss"…; {name} = who is in goal, {age} = the caller's age). */
+    lines?: Record<string, string>;
   };
   score: string;
   /** Show the arc's best during it (an arc var name). */

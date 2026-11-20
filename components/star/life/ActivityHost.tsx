@@ -29,7 +29,7 @@ import { personInfo } from "@/lib/star/life/people";
 import { mulberry32 } from "@/lib/star/season";
 import { CX, GOAL_H, PITCH_W, POST_L, POST_R } from "@/lib/star/pitch";
 import { FRAME_TOP_FOR_GOAL } from "@/lib/star/goalFrame";
-import { TARGET_LOW, TARGET_WIDTH } from "@/lib/star/life/drill";
+import { TARGET_LOW, TARGET_WIDTH, type RoundSpec } from "@/lib/star/life/drill";
 import { gateCrossing, gateQuality, type TechniqueDrillConfig } from "@/lib/star/trainingDrills";
 import { EngineFeature } from "../EnginePlay";
 import { buildStrike, DRILL_SCENE, type StrikeSetup } from "../TrainingMinigame";
@@ -66,7 +66,7 @@ type HostProps = {
 
 export default function ActivityHost(props: HostProps) {
   // Den's hundred is its own screen (ten balls, six rounds); the other modes share this one.
-  if (props.activity.mode === "strike-drill") return <HundredHost {...props} />;
+  if (props.activity.mode === "strike-drill" || props.activity.mode === "challenge") return <HundredHost {...props} />;
   return <GamesHost {...props} />;
 }
 
@@ -78,9 +78,14 @@ function HundredHost({ career, live, activity, callerLines, onDone, allowDice, o
   const dist = Number.parseFloat(fromWord) || 12;
   const caller = activity.caller?.slot ? personInfo(career, live.cast[activity.caller.slot] ?? "") : null;
   const best = activity.showBest ? Number(ctx.v2?.arc?.v[activity.showBest.replace(/^arc\./, "")] ?? 0) : 0;
+  // A story's challenge: its rounds and lines; whoever goes in goal (a cast slot, else the caller).
+  const ch = activity.mode === "challenge";
+  const keeper = ch && activity.dials.keeperSlot ? personInfo(career, live.cast[activity.dials.keeperSlot] ?? "") : null;
   return (
     <HundredDrill career={career} title={fill(activity.name)} seed0={career.season * 977 + career.week * 31 + live.round} extraDist={dist - 12}
-      calls={callerLines?.length ? callerLines : DEFAULT_CALLS} callerName={caller?.short ?? "He"} face={caller?.role === "kitman" ? "/star/life/kitman/face-den.webp" : null} canAbandon={activity.canAbandon}
+      calls={callerLines?.length ? callerLines : DEFAULT_CALLS} callerName={caller?.short ?? "He"} callerAge={caller?.pool?.age ?? caller?.player?.age} keeperName={keeper?.short}
+      rounds={ch ? (activity.dials.rounds as RoundSpec[] | undefined) : undefined} lines={ch ? activity.dials.lines : undefined}
+      face={caller?.pool?.stills?.face ?? null} canAbandon={activity.canAbandon}
       energy={activity.cost?.energy} best={best} onDone={onDone} allowDice={allowDice} onDice={onDice} fill={fill} />
   );
 }
