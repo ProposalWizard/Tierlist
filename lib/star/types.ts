@@ -1443,6 +1443,10 @@ export interface CareerState {
   captain?: boolean;
   /** Casino stories this season, the cooldown and any casino ban (lib/star/casinoScandal.ts). */
   casinoScandal?: import("./casinoScandal").CasinoScandalState;
+  /** THE LIVING WORLD (phase 1, 20 Nov 2026): every person you meet, what
+   *  they remember, and the event director's state. Absent until the first
+   *  event; off in the real career until Harry says (lib/star/life/flag.ts). */
+  life?: import("./life/types").LifeState;
   /** The armband was just earned (careerFlow) and the manager hasn't told you
    *  yet: his "you're my captain" moment on Home (lib/star/managerMoments.ts).
    *  Cleared when seen. Never set by the owner path (appointSelfCaptain). */

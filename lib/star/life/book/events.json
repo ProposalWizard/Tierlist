@@ -1,0 +1,799 @@
+{
+  "_readme": "THE EVENT BOOK, phase 1 (30 events). Schema: lib/star/life/types.ts LifeEvent. Conditions: lib/star/life/cond.ts. Checked by tests/star/lifeEvents.mts (validate.ts). 15 come from docs/plans/living-world-sample-events-2026-11-20.json (minigames that need new art became skill checks), 15 are new in the same schema. Money is weeks of your own wage. Every brand and paper is invented.",
+  "events": [
+    {
+      "id": "drv-mate-borrow-car", "title": "\"Can I borrow the motor?\"", "category": "team-mate", "place": "driving",
+      "size": "medium", "rarity": "common", "template": "phone-call",
+      "trigger": { "when": ["driving"], "requires": ["owns:car", "carTier>=2", "squad.any(bond>=35)"], "cooldownWeeks": 30, "group": "borrow", "maxPerCareer": 3 },
+      "cast": [ { "slot": "mate", "pick": "squad", "where": ["bond>=35", "!mem('borrowed-car')"], "order": "random" } ],
+      "setup": [
+        "Your phone lights up on the dash: {mate.name}.",
+        "{mate.short}: \"Mate. Big favour. It's my mum's sixtieth Saturday night. Can I turn up in yours? I'll have it back Sunday, washed.\""
+      ],
+      "choices": [
+        { "id": "yes", "label": "\"Go on. Not a scratch.\"", "outcomes": [
+          { "chance": 0.8, "text": "It comes back Sunday, washed, with a full tank and a can of KIB on the seat.", "effects": { "team": 1, "kibCans": { "premium": 1 } }, "npc": [ { "slot": "mate", "bond": 10, "respect": 3 } ], "remember": [ { "slot": "mate", "tag": "borrowed-car", "strength": 2 } ] },
+          { "chance": 0.2, "text": "Sunday night. A photo arrives first. The front wing is against a bollard. \"I am so, so sorry.\"", "effects": { "moneyWeeks": -0.6 }, "npc": [ { "slot": "mate", "bond": 4 } ], "remember": [ { "slot": "mate", "tag": "crashed-your-car", "strength": 3 } ], "followUp": { "event": "drv-mate-crash-payback", "afterWeeks": [1, 2] } }
+        ] },
+        { "id": "no", "label": "\"Not this one, mate. Sorry.\"", "outcomes": [
+          { "text": "\"Yeah. No. Fair enough.\" He hangs up a bit quick.", "npc": [ { "slot": "mate", "bond": -6, "grudge": 4 } ], "remember": [ { "slot": "mate", "tag": "refused-car", "strength": 2 } ] }
+        ] },
+        { "id": "drive-him", "label": "\"I'll do better. I'll drive you there myself.\"", "cost": { "weekAction": 1 }, "outcomes": [
+          { "text": "You drop him at the door. His mum makes you stay for cake. There is a photo of you two on her fridge now.", "effects": { "fans": 1 }, "npc": [ { "slot": "mate", "bond": 14, "respect": 6 } ], "remember": [ { "slot": "mate", "tag": "drove-him-to-mums-60th", "strength": 3 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "mate:refused-car", "where": "social:chat", "line": "\"Was going to ask you for a lift. Then I remembered the car.\"" },
+        { "ifMemory": "mate:refused-car", "where": "match:he-could-pass-to-you", "line": "In a tight chance he shoots instead of squaring it while his grudge is 20 or more." },
+        { "ifMemory": "mate:drove-him-to-mums-60th", "where": "event:any", "line": "\"Mum still asks after you.\"" }
+      ]
+    },
+    {
+      "id": "drv-mate-crash-payback", "title": "He wants to make it right", "category": "team-mate", "place": "food-hall",
+      "size": "small", "rarity": "follow-up", "template": "talk-scene",
+      "trigger": { "when": ["followUp"], "requires": ["mem(mate,'crashed-your-car')"], "once": true },
+      "cast": [ { "slot": "mate", "pick": "carried", "tags": ["crashed-your-car"] } ],
+      "setup": [
+        "{mate.short} is waiting by your table with an envelope.",
+        "\"That's the repair. All of it. And I've told the gaffer it was me, before the papers make it you.\""
+      ],
+      "choices": [
+        { "id": "take", "label": "Take the envelope.", "outcomes": [
+          { "text": "Square. He looks relieved, and a bit small.", "effects": { "moneyWeeks": 0.6 }, "npc": [ { "slot": "mate", "respect": 4, "bond": -2 } ], "remember": [ { "slot": "mate", "tag": "paid-you-back", "strength": 1 } ] }
+        ] },
+        { "id": "wave", "label": "\"Keep it. Get your mum something.\"", "outcomes": [
+          { "text": "He does not know what to say. He will not forget it.", "effects": { "team": 2 }, "npc": [ { "slot": "mate", "bond": 15, "respect": 8 } ], "remember": [ { "slot": "mate", "tag": "you-let-the-crash-go", "strength": 3 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "mate:you-let-the-crash-go", "where": "event:scn-*", "line": "He is the first to stand up for you in the dressing room." },
+        { "ifMemory": "mate:you-let-the-crash-go", "where": "social:chat", "line": "\"Still owe you for the car. Don't think I've forgotten.\"" }
+      ]
+    },
+    {
+      "id": "agt-quiet-call", "title": "\"Don't say anything. Just listen.\"", "category": "agent", "place": "driving",
+      "size": "medium", "rarity": "uncommon", "template": "phone-call",
+      "trigger": { "when": ["driving", "home:evening"], "requires": ["fame>=25", "week>=20", "lastRating>=6.8"], "cooldownWeeks": 46, "group": "agent-whisper", "maxPerCareer": 3 },
+      "cast": [ { "slot": "agent", "pick": "agent" }, { "slot": "boss", "pick": "manager" } ],
+      "setup": [
+        "{agent.name}: \"Don't say anything. Just listen. A bigger club had a man at your last three. They'll come in the summer. I can let that be known, or I can keep it very quiet. Your call.\""
+      ],
+      "choices": [
+        { "id": "leak", "label": "\"Let it be known.\"", "outcomes": [
+          { "text": "By Thursday it is on every feed. The gaffer does not look at you in training.", "effects": { "boss": -6, "fans": -4, "fame": 3 }, "npc": [ { "slot": "agent", "bond": 5 }, { "slot": "boss", "respect": -8, "grudge": 6 } ], "remember": [ { "slot": "boss", "tag": "used-the-press-on-him", "strength": 2 }, { "slot": "agent", "tag": "you-let-him-work", "strength": 1 } ] }
+        ] },
+        { "id": "quiet", "label": "\"Keep it quiet. I've a season to finish.\"", "outcomes": [
+          { "text": "\"Your funeral.\" He means it kindly. Mostly.", "effects": { "boss": 2 }, "npc": [ { "slot": "agent", "respect": 2, "bond": -3 } ], "remember": [ { "slot": "agent", "tag": "you-kept-it-quiet", "strength": 1 } ] }
+        ] },
+        { "id": "tell-boss", "label": "Hang up. Go and tell the gaffer yourself.", "cost": { "weekAction": 1 }, "outcomes": [
+          { "text": "He listens, nods once. \"Nobody has ever told me first.\"", "effects": { "boss": 8, "reputation": 2 }, "npc": [ { "slot": "boss", "respect": 12, "bond": 6 }, { "slot": "agent", "bond": -8, "grudge": 5 } ], "remember": [ { "slot": "boss", "tag": "told-him-first", "strength": 3 }, { "slot": "agent", "tag": "went-behind-his-back", "strength": 2 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "boss:used-the-press-on-him", "where": "event:any", "line": "\"You like the papers. Read about the team in them on Saturday.\"" },
+        { "ifMemory": "boss:told-him-first", "where": "event:any", "line": "\"You came to me first, once. I've not forgotten.\"" },
+        { "ifMemory": "agent:went-behind-his-back", "where": "event:agt-*", "line": "\"Going to run this one past the gaffer too?\"" },
+        { "ifMemory": "agent:went-behind-his-back", "where": "negotiation", "line": "His opening ask for you is 5% lower: \"I work as hard as I'm trusted.\"" }
+      ]
+    },
+    {
+      "id": "med-mixed-zone-snub", "title": "The man from the tabloid", "category": "journalist", "place": "stadium-mixed-zone",
+      "size": "medium", "rarity": "common", "template": "talk-scene",
+      "trigger": { "when": ["after-match"], "requires": ["lastLost", "lastRating<6.5", "fame>=20"], "cooldownWeeks": 12, "group": "press-after-loss", "maxPerCareer": 4 },
+      "cast": [ { "slot": "hack", "pick": "tabloid" } ],
+      "setup": [
+        "{hack.name} of the {hack.outlet} steps across you in the mixed zone, phone up, recording.",
+        "\"{you.short}. Not a shot on target. Are you worth the money?\""
+      ],
+      "choices": [
+        { "id": "own", "label": "\"Not today I wasn't. That's on me.\"", "outcomes": [
+          { "text": "He lowers the phone a little. The piece runs under 'NO EXCUSES'. Fair.", "effects": { "fans": 3, "boss": 2 }, "npc": [ { "slot": "hack", "respect": 8 } ], "remember": [ { "slot": "hack", "tag": "you-fronted-up", "strength": 2 } ] }
+        ] },
+        { "id": "walk", "label": "Walk straight past him.", "outcomes": [
+          { "text": "\"Nothing to say, then.\" He says it loudly, for the others.", "effects": { "fans": -1 }, "npc": [ { "slot": "hack", "respect": -6, "grudge": 12 } ], "remember": [ { "slot": "hack", "tag": "you-snubbed-him", "strength": 2 } ], "followUp": { "event": "med-hit-piece", "afterWeeks": [1, 6], "if": "hack.grudge>=20" } }
+        ] },
+        { "id": "bite", "label": "\"Have you ever kicked a ball in your life?\"", "outcomes": [
+          { "text": "The clip has two million views by breakfast. Your own fans love it. He does not.", "effects": { "fans": 4, "fame": 3, "boss": -3 }, "npc": [ { "slot": "hack", "grudge": 25, "respect": -5 } ], "remember": [ { "slot": "hack", "tag": "you-mocked-him-on-camera", "strength": 3 } ], "followUp": { "event": "med-hit-piece", "afterWeeks": [1, 4] } }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "hack:you-fronted-up", "where": "event:med-*", "line": "\"Fair play for last time. Not many front up.\"" },
+        { "ifMemory": "hack:you-fronted-up", "where": "media-feed", "line": "His match reports mark you half a point kinder for 10 weeks." },
+        { "ifMemory": "hack:you-mocked-him-on-camera", "where": "event:scn-*", "line": "\"Remember me? I remember you.\"" }
+      ]
+    },
+    {
+      "id": "med-hit-piece", "title": "\"Sources close to the dressing room\"", "category": "journalist", "place": "home",
+      "size": "medium", "rarity": "follow-up", "template": "feed-post",
+      "trigger": { "when": ["followUp"], "requires": ["hack.grudge>=20"], "cooldownWeeks": 20, "maxPerCareer": 4 },
+      "cast": [
+        { "slot": "hack", "pick": "carried", "tags": ["you-snubbed-him", "you-mocked-him-on-camera"] },
+        { "slot": "source", "pick": "squad", "where": ["grudge>=20"], "order": "grudge-desc", "optional": true }
+      ],
+      "setup": [
+        "Your phone will not stop. {hack.outlet}: \"{you.short} 'THINKS HE'S BIGGER THAN THE CLUB', say team-mates.\"",
+        "{if source}The quotes sound a lot like {source.short}.{/if}"
+      ],
+      "choices": [
+        { "id": "ignore", "label": "Say nothing. Play on Saturday.", "outcomes": [
+          { "text": "It burns for a week and goes out.", "effects": { "fans": -4, "team": -2 }, "npc": [ { "slot": "hack", "grudge": -5 } ] }
+        ] },
+        { "id": "call-him", "label": "Ring him. Offer the sit-down interview he wanted.", "cost": { "weekAction": 1 }, "outcomes": [
+          { "text": "An hour in a hotel bar. The follow-up piece is called 'The other side of {you.short}'.", "effects": { "fans": 3, "fame": 2 }, "npc": [ { "slot": "hack", "grudge": -20, "respect": 10, "bond": 5 } ], "remember": [ { "slot": "hack", "tag": "you-gave-him-the-sitdown", "strength": 2 } ] }
+        ] },
+        { "id": "confront", "label": "Find out who talked.", "requires": ["cast.source"], "outcomes": [
+          { "text": "You put the paper on {source.short}'s seat in the canteen. He does not deny it. The room goes quiet.", "effects": { "team": -3 }, "npc": [ { "slot": "source", "grudge": 15, "respect": 6 } ], "remember": [ { "slot": "source", "tag": "you-called-him-out-in-canteen", "strength": 3 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "source:you-called-him-out-in-canteen", "where": "event:rvl-*|event:tm-*", "line": "He will not sit at your table since the canteen." },
+        { "ifMemory": "hack:you-gave-him-the-sitdown", "where": "event:any", "line": "\"Still got the tape of that sit-down. Best thing I wrote all year.\"" }
+      ]
+    },
+    {
+      "id": "fdh-kid-sits-alone", "title": "The lad on his own", "category": "food-hall", "place": "food-hall",
+      "size": "small", "rarity": "common", "template": "talk-scene",
+      "trigger": { "when": ["arrive:training"], "requires": ["squad.any(age<=18)", "age>=21"], "cooldownWeeks": 40, "group": "youngster", "maxPerCareer": 4 },
+      "cast": [
+        { "slot": "kid", "pick": "squad", "where": ["age<=18", "!mem('you-sat-with-him-day-one')"], "order": "random" },
+        { "slot": "mate", "pick": "squad", "order": "bond-desc" }
+      ],
+      "setup": [
+        "{kid.name}, {kid.age}, up from the academy, is eating on his own with his headphones in.",
+        "{mate.short} waves you over to the usual table."
+      ],
+      "choices": [
+        { "id": "sit", "label": "Sit with the kid.", "outcomes": [
+          { "text": "He takes one headphone out. Ten minutes later he is telling you about his nan's jollof. He watches where you sit every day after that.", "effects": { "boss": 2, "reputation": 1 }, "npc": [ { "slot": "kid", "bond": 18, "respect": 12 }, { "slot": "mate", "bond": -1 } ], "remember": [ { "slot": "kid", "tag": "you-sat-with-him-day-one", "strength": 3 } ] }
+        ] },
+        { "id": "wave-over", "label": "Shout him over to the lads' table.", "outcomes": [
+          { "chance": 0.6, "text": "He comes. The lads rip his trainers apart for ten minutes. He is grinning by the end.", "effects": { "team": 2 }, "npc": [ { "slot": "kid", "bond": 10, "respect": 6 } ], "remember": [ { "slot": "kid", "tag": "you-brought-him-in", "strength": 2 } ] },
+          { "chance": 0.4, "text": "He pretends not to hear, goes red, and leaves his food.", "npc": [ { "slot": "kid", "bond": -2 } ] }
+        ] },
+        { "id": "usual", "label": "Go to your usual seat.", "outcomes": [
+          { "text": "Nobody notices. That is rather the point.", "npc": [ { "slot": "kid", "bond": -1 } ], "remember": [ { "slot": "kid", "tag": "nobody-sat-with-him", "strength": 1 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "kid:you-sat-with-him-day-one", "where": "event:any", "line": "\"Day one, you sat with me. I don't forget that.\"" },
+        { "ifMemory": "kid:you-sat-with-him-day-one", "where": "match:kid-scores", "line": "He runs the length of the pitch to you when he scores." },
+        { "ifMemory": "kid:you-brought-him-in", "where": "social:chat", "line": "\"The lads still go on about my trainers. Worth it.\"" }
+      ]
+    },
+    {
+      "id": "soc-races-day-out", "title": "A day at the races", "category": "outing", "place": "racecourse",
+      "size": "medium", "rarity": "social-action", "template": "talk-scene",
+      "trigger": { "when": ["social:races"], "requires": ["mate.bond>=25"], "cooldownWeeks": 6, "maxPerCareer": 99 },
+      "cost": { "weekAction": 1, "moneyWeeks": 0.3, "energy": -4 },
+      "cast": [ { "slot": "mate", "pick": "social" } ],
+      "setup": [
+        "You and {mate.short} in the owners' bar. He has a tip from his cousin: number 7, 'Offside Trap', 12 to 1 in the fourth.",
+        "{if owns:horse}Your own {you.horse} runs in the fifth.{/if}"
+      ],
+      "choices": [
+        { "id": "back-tip", "label": "Put a proper bet on his tip.", "cost": { "moneyWeeks": 0.5 }, "outcomes": [
+          { "chance": 0.15, "text": "It wins by a nose. He is on the table. You are both on the back pages, grinning.", "effects": { "moneyWeeks": 6, "fame": 2, "boss": -2 }, "npc": [ { "slot": "mate", "bond": 16 } ], "remember": [ { "slot": "mate", "tag": "the-day-offside-trap-won", "strength": 3 } ] },
+          { "chance": 0.85, "text": "Fifth of nine. The money is gone. He cannot look at you. \"My cousin is dead to me.\"", "npc": [ { "slot": "mate", "bond": 8 } ], "remember": [ { "slot": "mate", "tag": "you-backed-his-bad-tip", "strength": 2 } ] }
+        ] },
+        { "id": "small", "label": "A fiver each way, for a laugh.", "outcomes": [
+          { "text": "A good day. Nothing happens, in the best way. He tells you he is thinking of leaving in the summer; you are the first to know.", "npc": [ { "slot": "mate", "bond": 9, "respect": 2 } ], "remember": [ { "slot": "mate", "tag": "told-you-he-might-leave", "strength": 2 } ] }
+        ] },
+        { "id": "your-horse", "label": "\"Forget his cousin. Back mine in the fifth.\"", "requires": ["owns:horse"], "cost": { "moneyWeeks": 0.5 }, "minigame": { "kind": "horse-race" }, "outcomes": [
+          { "if": "minigame.won", "text": "{you.horse} by two lengths. {mate.short} had fifty on it.", "effects": { "moneyWeeks": 2, "fame": 1 }, "npc": [ { "slot": "mate", "bond": 14, "respect": 6 } ], "remember": [ { "slot": "mate", "tag": "won-on-your-horse", "strength": 2 } ] },
+          { "if": "minigame.lost", "text": "Last. \"Lovely looking animal, though,\" he says, tearing up his slip.", "npc": [ { "slot": "mate", "bond": 7 } ], "remember": [ { "slot": "mate", "tag": "lost-on-your-horse", "strength": 1 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "mate:lost-on-your-horse", "where": "social:chat", "line": "\"How's the donkey?\"" },
+        { "ifMemory": "mate:you-backed-his-bad-tip", "where": "social:chat", "line": "\"My cousin says sorry about the horse. He's not allowed tips any more.\"" },
+        { "ifMemory": "mate:the-day-offside-trap-won", "where": "event:any", "line": "\"Offside Trap. Still got the slip in my wallet.\"" },
+        { "ifMemory": "mate:told-you-he-might-leave", "where": "summer-window", "line": "If he is sold: a goodbye text that names the day." }
+      ]
+    },
+    {
+      "id": "rvl-new-signing-shirt", "title": "He wants your number", "category": "rival", "place": "dressing-room",
+      "size": "big", "rarity": "uncommon", "template": "talk-scene",
+      "trigger": { "when": ["arrive:training"], "requires": ["squad.any(new && samePosition)", "clubApps>=20"], "cooldownWeeks": 92, "group": "rival-arrives", "maxPerCareer": 2 },
+      "cast": [ { "slot": "rival", "pick": "squad", "where": ["new", "samePosition"], "order": "best" }, { "slot": "kitman", "pick": "kitman" } ],
+      "setup": [
+        "{rival.name}, the new signing, is stood at your peg holding the number {you.number} shirt.",
+        "\"I've worn this since I was nine. The club said to ask you. So I'm asking.\" {kitman.short} is pretending to fold socks."
+      ],
+      "choices": [
+        { "id": "keep", "label": "\"Earn your own.\"", "outcomes": [
+          { "text": "He hangs it back up, slowly. \"Okay. We'll see who's wearing it in May.\"", "effects": { "team": 1, "fans": 2, "flag": "duel-shirt" }, "npc": [ { "slot": "rival", "grudge": 20, "respect": 5 } ], "remember": [ { "slot": "rival", "tag": "shirt-refused", "strength": 3 } ] }
+        ] },
+        { "id": "give", "label": "Hand it over. \"Numbers don't score goals.\"", "outcomes": [
+          { "text": "He did not expect that. The kit man raises an eyebrow. The fans who bought your shirt are not happy.", "effects": { "boss": 4, "fans": -3 }, "npc": [ { "slot": "rival", "bond": 15, "respect": -4 }, { "slot": "kitman", "respect": 3 } ], "remember": [ { "slot": "rival", "tag": "you-gave-him-the-shirt", "strength": 3 } ] }
+        ] },
+        { "id": "play-for-it", "label": "\"Crossbar challenge. Winner wears it.\"", "minigame": { "kind": "skill-check", "stat": "freeKick", "target": 60 }, "outcomes": [
+          { "if": "minigame.won", "text": "Bar, first go. He shakes your hand properly.", "effects": { "team": 4, "flag": "duel-shirt" }, "npc": [ { "slot": "rival", "respect": 15, "grudge": 8 } ], "remember": [ { "slot": "rival", "tag": "lost-the-shirt-on-the-crossbar", "strength": 3 } ] },
+          { "if": "minigame.lost", "text": "He hits it. You don't. A deal is a deal. The fans who bought your shirt are not happy.", "effects": { "team": 3, "fans": -2 }, "npc": [ { "slot": "rival", "respect": 10, "bond": 5 } ], "remember": [ { "slot": "rival", "tag": "won-your-shirt-on-the-crossbar", "strength": 3 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "rival:shirt-refused", "where": "event:rvl-may-reckoning", "line": "\"May. Like I said.\"" },
+        { "ifMemory": "rival:won-your-shirt-on-the-crossbar", "where": "event:any", "line": "He taps the number on his back when he walks past." },
+        { "ifMemory": "rival:shirt-refused", "where": "match:he-scores", "line": "He points at his own number, at you, on the bench." }
+      ]
+    },
+    {
+      "id": "rvl-may-reckoning", "title": "Who wears it in May", "category": "rival", "place": "dressing-room",
+      "size": "medium", "rarity": "callback", "template": "talk-scene",
+      "trigger": { "when": ["season-end"], "requires": ["flag:duel-shirt", "mem(rival,'shirt-refused'|'lost-the-shirt-on-the-crossbar')"], "once": true },
+      "cast": [ { "slot": "rival", "pick": "memory", "tags": ["shirt-refused", "lost-the-shirt-on-the-crossbar"] } ],
+      "setup": [
+        "Last day of the season. {rival.short} is at your peg again, the goals chart from the canteen wall in his hand.",
+        "{if outscored(rival)}You scored more. He knows it.{/if}{if !outscored(rival)}He scored more. Everybody knows it.{/if}"
+      ],
+      "choices": [
+        { "id": "shake", "label": "Shake his hand.", "outcomes": [
+          { "if": "outscored(rival)", "text": "\"Keep the shirt. You earned it.\" He means it. Something between you settles.", "effects": { "team": 3 }, "npc": [ { "slot": "rival", "grudge": -15, "respect": 12, "bond": 6 } ], "remember": [ { "slot": "rival", "tag": "you-earned-the-shirt", "strength": 3 } ] },
+          { "text": "He shakes it, then asks for the shirt again. In front of everyone.", "effects": { "fans": -2, "team": 1 }, "npc": [ { "slot": "rival", "respect": 4 } ], "remember": [ { "slot": "rival", "tag": "asked-again-in-may", "strength": 2 } ] }
+        ] },
+        { "id": "gloat", "label": "Pin the chart back on the wall. Upside down.", "requires": ["outscored(rival)"], "outcomes": [
+          { "text": "The lads howl. He does not.", "effects": { "team": -3, "fans": 2 }, "npc": [ { "slot": "rival", "grudge": 12, "bond": -6 } ], "remember": [ { "slot": "rival", "tag": "you-rubbed-it-in", "strength": 3 } ] }
+        ] },
+        { "id": "hand-over", "label": "Give him the shirt. \"You won it.\"", "requires": ["!outscored(rival)"], "outcomes": [
+          { "text": "The kit man sews your new number on that night. The gaffer nods at you in the corridor.", "effects": { "boss": 4, "fans": -3 }, "npc": [ { "slot": "rival", "grudge": -20, "respect": 10 } ], "remember": [ { "slot": "rival", "tag": "you-kept-your-word", "strength": 3 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "rival:you-rubbed-it-in", "where": "event:any", "line": "He still has the chart. He keeps it in his locker." },
+        { "ifMemory": "rival:you-kept-your-word", "where": "social:chat", "line": "\"Most lads would have found a way out of that bet. You didn't.\"" }
+      ]
+    },
+    {
+      "id": "fam-dad-old-club", "title": "Dad's old club", "category": "family", "place": "home",
+      "size": "medium", "rarity": "uncommon", "template": "phone-call",
+      "trigger": { "when": ["home:evening"], "requires": ["moneyWeeks>=20", "season>=2"], "once": true },
+      "cast": [ { "slot": "dad", "pick": "dad" } ],
+      "setup": [
+        "Dad rings. He never rings. \"The Sunday side. The one I took you to when you were five. The council want the pitch money or they fold. I'm not asking. I'm just telling you.\""
+      ],
+      "choices": [
+        { "id": "pay", "label": "Pay it. Today. Say nothing publicly.", "cost": { "moneyWeeks": 0.5 }, "outcomes": [
+          { "text": "He goes quiet for a long time. \"Your mum'll cry when I tell her.\" They paint your name on the hut.", "effects": { "reputation": 2 }, "npc": [ { "slot": "dad", "bond": 20, "respect": 15 } ], "remember": [ { "slot": "dad", "tag": "saved-the-sunday-side", "strength": 3 } ] }
+        ] },
+        { "id": "pay-loud", "label": "Pay it, and bring the cameras.", "cost": { "moneyWeeks": 0.5 }, "outcomes": [
+          { "text": "Lovely pictures. Dad stands at the back of every one.", "effects": { "fans": 5, "fame": 2 }, "npc": [ { "slot": "dad", "bond": 6, "respect": -4 } ], "remember": [ { "slot": "dad", "tag": "made-the-sunday-side-a-photo-op", "strength": 2 } ] }
+        ] },
+        { "id": "no", "label": "\"I can't be everyone's bank, Dad.\"", "outcomes": [
+          { "text": "\"No. No, course.\" The club folds in the spring. He tells you in passing.", "npc": [ { "slot": "dad", "bond": -15, "respect": -8 } ], "remember": [ { "slot": "dad", "tag": "let-the-sunday-side-fold", "strength": 3 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "dad:saved-the-sunday-side", "where": "event:fam-*", "line": "\"The kids at the Sunday side still talk about you.\"" },
+        { "ifMemory": "dad:saved-the-sunday-side", "where": "event:retirement", "line": "The Sunday side's kids form your guard of honour." },
+        { "ifMemory": "dad:let-the-sunday-side-fold", "where": "event:fam-*", "line": "\"I'd ask, but I know how you are with money.\"" }
+      ]
+    },
+    {
+      "id": "spn-rival-brand-boots", "title": "The wrong boots", "category": "sponsor", "place": "training-pitch",
+      "size": "medium", "rarity": "uncommon", "template": "text-thread",
+      "trigger": { "when": ["arrive:training"], "requires": ["fame>=30", "squad.any(bond>=50)"], "cooldownWeeks": 60, "group": "sponsor-test", "maxPerCareer": 2 },
+      "cast": [ { "slot": "mate", "pick": "squad", "where": ["bond>=50"], "order": "random" }, { "slot": "agent", "pick": "agent" } ],
+      "setup": [
+        "{mate.short} chucks you a prototype pair from his brand, Vanta. \"Try them. One session. Nobody's watching.\" They feel unbelievable.",
+        "Somebody was watching. A photo is on a fan account by tea time. {agent.short} texts: \"Your boot people have seen it. Tell me that's edited.\""
+      ],
+      "choices": [
+        { "id": "sorry", "label": "\"My mistake. Won't happen again.\"", "outcomes": [
+          { "text": "\"It had better not.\" A fine comes off your next payment.", "effects": { "moneyWeeks": -0.4 }, "npc": [ { "slot": "agent", "respect": 2 } ], "remember": [ { "slot": "agent", "tag": "wore-a-rival-brand-once", "strength": 2 } ] }
+        ] },
+        { "id": "leverage", "label": "\"They're better than yours. Match them or I walk.\"", "outcomes": [
+          { "chance": 0.45, "if": "fame>=50", "text": "A day of silence. Then a new offer, fee up.", "effects": { "moneyWeeks": 3, "fame": 1 }, "npc": [ { "slot": "agent", "respect": 10, "bond": -5 } ], "remember": [ { "slot": "agent", "tag": "you-held-them-to-ransom-and-won", "strength": 3 } ] },
+          { "text": "\"Then walk.\" They pull the bonus they owed you. Vanta do not ring.", "effects": { "moneyWeeks": -2, "fame": 1 }, "npc": [ { "slot": "agent", "grudge": 10, "bond": -6 } ], "remember": [ { "slot": "agent", "tag": "you-bluffed-and-lost", "strength": 3 } ] }
+        ] },
+        { "id": "blame", "label": "\"{mate.short} swapped them for a joke.\"", "outcomes": [
+          { "text": "They believe you. His brand does not see the funny side, and neither does he when he finds out why.", "npc": [ { "slot": "mate", "bond": -18, "grudge": 15 } ], "remember": [ { "slot": "mate", "tag": "you-threw-him-under-the-bus", "strength": 3 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "mate:you-threw-him-under-the-bus", "where": "social:any", "line": "\"Ask one of your sponsors.\"" },
+        { "ifMemory": "agent:you-bluffed-and-lost", "where": "event:agt-*", "line": "\"Last time you bluffed, it cost us both.\"" }
+      ]
+    },
+    {
+      "id": "scn-casino-photo", "title": "2:14 a.m.", "category": "scandal", "place": "casino",
+      "size": "big", "rarity": "rare", "template": "text-thread",
+      "trigger": { "when": ["leave:casino"], "requires": ["fame>=30"], "cooldownWeeks": 46, "group": "scandal", "maxPerCareer": 2 },
+      "cast": [ { "slot": "stranger", "pick": "stranger" }, { "slot": "boss", "pick": "manager" }, { "slot": "hack", "pick": "tabloid" } ],
+      "setup": [
+        "A text from a number you do not know. A photo: you, at the roulette table, clock on the wall behind you. 2:14 a.m. Match on Saturday.",
+        "\"Nice night? The {hack.outlet} would pay me well for this. You can pay me better.\""
+      ],
+      "choices": [
+        { "id": "pay", "label": "Pay him.", "cost": { "moneyWeeks": 1.5 }, "outcomes": [
+          { "chance": 0.65, "text": "The photo never appears.", "remember": [ { "slot": "you", "tag": "paid-off-a-photo", "strength": 2 } ] },
+          { "chance": 0.35, "text": "He takes the money and sells it anyway. Now there are two stories.", "effects": { "fans": -8, "boss": -8, "fame": 4, "scandal": true }, "npc": [ { "slot": "boss", "respect": -12 } ], "remember": [ { "slot": "boss", "tag": "casino-before-a-match", "strength": 3 }, { "slot": "hack", "tag": "has-the-payoff-story", "strength": 3 } ] }
+        ] },
+        { "id": "tell-boss", "label": "Go to the gaffer before it breaks.", "outcomes": [
+          { "text": "He is furious for four minutes and useful for ten. The club puts out a line before the paper does.", "effects": { "boss": -3, "fans": -3, "fame": 2, "scandal": true }, "npc": [ { "slot": "boss", "respect": 4 } ], "remember": [ { "slot": "boss", "tag": "owned-up-about-casino", "strength": 2 } ] }
+        ] },
+        { "id": "dare", "label": "\"Sell it. I was there. So what.\"", "outcomes": [
+          { "chance": 0.4, "text": "Front page Friday. Two goals Saturday. Sunday's headline: 'WHAT A GAMBLE'.", "effects": { "fame": 6, "fans": 4, "boss": -2, "scandal": true }, "npc": [ { "slot": "hack", "respect": 8 } ], "remember": [ { "slot": "squad", "tag": "casino-then-two-goals", "strength": 2 } ] },
+          { "chance": 0.6, "text": "Front page Friday. A stinker Saturday. They boo you off.", "effects": { "fame": 4, "fans": -10, "boss": -8, "scandal": true }, "npc": [ { "slot": "boss", "respect": -10, "grudge": 8 } ], "remember": [ { "slot": "boss", "tag": "casino-before-a-match", "strength": 3 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "boss:casino-before-a-match", "where": "event:any", "line": "\"Casino this week, is it? Don't.\"" },
+        { "ifMemory": "you:paid-off-a-photo", "where": "event:scn-*", "line": "The next one asks double: \"I hear you pay.\"" },
+        { "ifMemory": "squad:casino-then-two-goals", "where": "social:chat", "line": "\"Going to the casino before every game now, are we?\"" }
+      ]
+    },
+    {
+      "id": "inj-tight-hamstring", "title": "It's probably nothing", "category": "injury", "place": "physio-room",
+      "size": "medium", "rarity": "common", "template": "talk-scene",
+      "trigger": { "when": ["arrive:training"], "requires": ["energy<=35", "!injured"], "cooldownWeeks": 20, "group": "injury-scare", "maxPerCareer": 6 },
+      "cast": [ { "slot": "physio", "pick": "physio" }, { "slot": "boss", "pick": "manager" } ],
+      "setup": [
+        "Your hamstring tightens in the warm-up. {physio.name} presses a thumb into it and watches your face.",
+        "\"Play Saturday and it's probably fine. Probably. Sit out and it's definitely fine. {boss.short} will ask me. What do I tell him?\""
+      ],
+      "choices": [
+        { "id": "rest", "label": "\"Tell him the truth. I'll sit this one out.\"", "outcomes": [
+          { "text": "You watch from the stand. Monday it feels brand new.", "effects": { "energy": 20, "boss": -1 }, "npc": [ { "slot": "physio", "respect": 8, "bond": 5 } ], "remember": [ { "slot": "physio", "tag": "you-listen-to-her", "strength": 2 } ] }
+        ] },
+        { "id": "play", "label": "\"Tell him I'm fine.\"", "requires": ["!mem(physio,'made-her-lie-and-it-tore')"], "outcomes": [
+          { "chance": 0.7, "text": "It holds. Just.", "effects": { "boss": 3, "matchFitness": -5 }, "npc": [ { "slot": "physio", "respect": -5 } ], "remember": [ { "slot": "physio", "tag": "made-her-lie-to-the-boss", "strength": 2 } ] },
+          { "chance": 0.3, "text": "Sixty-third minute. You know before you hit the ground. Weeks of rehab.", "effects": { "energy": -30, "matchFitness": -25, "boss": -2 }, "npc": [ { "slot": "physio", "respect": -10, "grudge": 5 }, { "slot": "boss", "respect": -4 } ], "remember": [ { "slot": "physio", "tag": "made-her-lie-and-it-tore", "strength": 3 }, { "slot": "boss", "tag": "hid-an-injury", "strength": 2 } ] }
+        ] },
+        { "id": "half", "label": "\"Bench. Twenty minutes if we need it.\"", "outcomes": [
+          { "text": "She nods. \"That I can sell.\"", "effects": { "boss": 1, "energy": 8 }, "npc": [ { "slot": "physio", "respect": 4 } ], "remember": [ { "slot": "physio", "tag": "you-met-her-halfway", "strength": 1 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "physio:you-listen-to-her", "where": "event:inj-*", "line": "\"You do the rehab. Most don't.\"" },
+        { "ifMemory": "physio:made-her-lie-and-it-tore", "where": "event:inj-*", "line": "\"Not again. I'm telling him. You don't get to choose this time.\"" },
+        { "ifMemory": "boss:hid-an-injury", "where": "event:any", "line": "\"Fit, are you? Properly fit? I'll be asking her, not you.\"" }
+      ]
+    },
+    {
+      "id": "chn-boots-1-loan", "title": "Chain 1 of 3: \"Size nine?\"", "category": "chain:the-boots", "place": "dressing-room",
+      "size": "small", "rarity": "uncommon", "template": "talk-scene",
+      "trigger": { "when": ["walkout"], "requires": ["squad.any(age<=19)", "season>=2"], "once": true },
+      "cast": [ { "slot": "kid", "pick": "squad", "where": ["age<=19"], "order": "youngest" } ],
+      "setup": [
+        "Forty minutes to kick-off. {kid.name}'s sole has come clean off. He has one pair. He is trying to tape it and his hands are shaking.",
+        "He sees you looking. \"You're a nine, aren't you?\""
+      ],
+      "choices": [
+        { "id": "lend", "label": "Throw him your spare pair.", "outcomes": [
+          { "text": "He plays the game of his life in them. You play in your old pair, and your feet know it.", "effects": { "team": 2, "matchFitness": -3 }, "npc": [ { "slot": "kid", "bond": 15, "respect": 10 } ], "remember": [ { "slot": "kid", "tag": "wore-your-boots-on-debut", "strength": 3 } ], "followUp": { "event": "chn-boots-2-return", "afterWeeks": [1, 1] } }
+        ] },
+        { "id": "tape", "label": "\"Tape's in the physio bag. Sort yourself out.\"", "outcomes": [
+          { "text": "He plays in a taped boot and comes off at half time with a blister the size of a coin.", "npc": [ { "slot": "kid", "bond": -8, "grudge": 6 } ], "remember": [ { "slot": "kid", "tag": "you-told-him-to-tape-it", "strength": 3 } ], "followUp": { "event": "chn-boots-3-years-later", "afterWeeks": [140, 320] } }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "kid:you-told-him-to-tape-it", "where": "event:any", "line": "\"Got my own boots now, if you were wondering.\"" }
+      ]
+    },
+    {
+      "id": "chn-boots-2-return", "title": "Chain 2 of 3: He tries to give them back", "category": "chain:the-boots", "place": "training-pitch",
+      "size": "small", "rarity": "follow-up", "template": "talk-scene",
+      "trigger": { "when": ["followUp"], "requires": ["mem(kid,'wore-your-boots-on-debut')"], "once": true },
+      "cast": [ { "slot": "kid", "pick": "carried", "tags": ["wore-your-boots-on-debut"] } ],
+      "setup": [
+        "{kid.short} is waiting with your boots, cleaned better than you have ever cleaned them. \"I get paid Friday. I'll get my own.\""
+      ],
+      "choices": [
+        { "id": "keep", "label": "\"Keep them. They suit you.\"", "outcomes": [
+          { "text": "He holds them like they might break.", "npc": [ { "slot": "kid", "bond": 12, "respect": 8 } ], "remember": [ { "slot": "kid", "tag": "you-gave-him-the-boots", "strength": 3 } ], "followUp": { "event": "chn-boots-3-years-later", "afterWeeks": [140, 320] } }
+        ] },
+        { "id": "sign", "label": "Sign them first. \"For when you're famous.\"", "outcomes": [
+          { "text": "\"When, not if?\" \"When.\" The lads saw. You are 'Mr Autograph' for a week.", "effects": { "reputation": 1, "team": -1 }, "npc": [ { "slot": "kid", "bond": 16, "respect": 12 } ], "remember": [ { "slot": "kid", "tag": "you-signed-the-boots-when-not-if", "strength": 3 } ], "followUp": { "event": "chn-boots-3-years-later", "afterWeeks": [140, 320] } }
+        ] },
+        { "id": "take", "label": "Take them back. \"Cheers.\"", "outcomes": [
+          { "text": "Fair is fair. He looks at his own taped pair.", "npc": [ { "slot": "kid", "respect": 2, "bond": -2 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "kid:you-gave-him-the-boots", "where": "social:chat", "line": "\"Still wearing them. Lucky ones.\"" }
+      ]
+    },
+    {
+      "id": "chn-boots-3-years-later", "title": "Chain 3 of 3: Years later", "category": "chain:the-boots", "place": "stadium-tunnel",
+      "size": "big", "rarity": "callback", "template": "talk-scene",
+      "trigger": { "when": ["walkout"], "requires": ["mem(kid,'you-gave-him-the-boots'|'you-signed-the-boots-when-not-if'|'you-told-him-to-tape-it')"], "once": true },
+      "cast": [ { "slot": "kid", "pick": "carried", "tags": ["you-gave-him-the-boots", "you-signed-the-boots-when-not-if", "you-told-him-to-tape-it"] } ],
+      "setup": [
+        "The tunnel. {kid.name} is a man now, and a captain. He is stood next to you in the line.",
+        "{if mem(kid,'you-signed-the-boots-when-not-if')}He lifts one foot. Your old boots. Your signature, nearly worn off. \"When, not if. You said.\"{/if}",
+        "{if mem(kid,'you-gave-him-the-boots')}\"I've still got them. They're in a glass case at my mum's.\"{/if}",
+        "{if mem(kid,'you-told-him-to-tape-it')}He does not look at you. \"Tape's in the physio bag,\" he says, to nobody.{/if}"
+      ],
+      "choices": [
+        { "id": "walk", "label": "Walk out together.", "outcomes": [
+          { "if": "mem(kid,'you-signed-the-boots-when-not-if')", "text": "After the match he tells the cameras the story. It is the most shared clip of the season.", "effects": { "fans": 8, "fame": 5, "reputation": 3 }, "npc": [ { "slot": "kid", "bond": 10 } ], "remember": [ { "slot": "kid", "tag": "told-the-world-about-the-boots", "strength": 3 } ] },
+          { "if": "mem(kid,'you-gave-him-the-boots')", "text": "He hugs you before the handshake line. The cameras catch it.", "effects": { "fans": 5, "fame": 3, "reputation": 2 }, "npc": [ { "slot": "kid", "bond": 8 } ] },
+          { "text": "He marks you all game like it is personal. It is. He scores and runs past you to the away end.", "effects": { "fans": -2, "fame": -1 }, "npc": [ { "slot": "kid", "grudge": 10 } ], "remember": [ { "slot": "kid", "tag": "paid-you-back-for-the-tape", "strength": 2 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "kid:paid-you-back-for-the-tape", "where": "event:any", "line": "\"Tape's in the physio bag, isn't it?\"" },
+        { "ifMemory": "kid:told-the-world-about-the-boots", "where": "social:chat", "line": "\"My mum's had three journalists round about those boots.\"" }
+      ]
+    },
+    {
+      "id": "soc-drive-long-way", "title": "The long way round", "category": "outing", "place": "driving",
+      "size": "small", "rarity": "social-action", "template": "talk-scene",
+      "trigger": { "when": ["social:drive"], "requires": ["owns:car"], "cooldownWeeks": 2, "maxPerCareer": 99 },
+      "cost": { "weekAction": 1 },
+      "cast": [ { "slot": "mate", "pick": "social" }, { "slot": "boss", "pick": "manager" } ],
+      "setup": [
+        "{mate.short} gets in. {if carTier>=3}He runs a hand along the dash. \"This is a different life, mate.\"{/if}{if carTier<=2}He has to move a pile of kit off the seat to sit down.{/if}",
+        "You take the long way, past the ground and out along the coast road."
+      ],
+      "choices": [
+        { "id": "playlist", "label": "Let him do the music.", "outcomes": [
+          { "text": "Forty minutes of his awful playlist. He sings every word. It is the best you have felt all week.", "npc": [ { "slot": "mate", "bond": 6 } ], "remember": [ { "slot": "mate", "tag": "sang-in-your-car", "strength": 1 } ] }
+        ] },
+        { "id": "really", "label": "Ask how he is really doing.", "outcomes": [
+          { "chance": 0.5, "text": "Quiet for a mile. Then it all comes out: his dad, the move, the nights. You just drive.", "npc": [ { "slot": "mate", "bond": 10, "respect": 4 } ], "remember": [ { "slot": "mate", "tag": "opened-up-on-the-drive", "strength": 2 } ] },
+          { "chance": 0.5, "text": "\"Fine, mate. All good.\" He changes the subject to the weekend.", "npc": [ { "slot": "mate", "bond": 4 } ] }
+        ] },
+        { "id": "gaffer", "label": "Have a moan about the gaffer.", "outcomes": [
+          { "chance": 0.7, "text": "You both do the gaffer's voice. He is better at it. You laugh until the lights change.", "npc": [ { "slot": "mate", "bond": 8 } ], "remember": [ { "slot": "mate", "tag": "slagged-the-gaffer-off-together", "strength": 1 } ] },
+          { "chance": 0.3, "text": "He tells a mate, who tells the assistant. It reaches the gaffer by Monday.", "effects": { "boss": -3 }, "npc": [ { "slot": "mate", "bond": 4 }, { "slot": "boss", "respect": -6, "grudge": 4 } ], "remember": [ { "slot": "boss", "tag": "heard-you-slag-him-off", "strength": 2 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "mate:opened-up-on-the-drive", "where": "event:any", "line": "\"Cheers for the other day. In the car. I needed that.\"" },
+        { "ifMemory": "boss:heard-you-slag-him-off", "where": "event:any", "line": "\"Enjoy your drive, did you? Walls have ears.\"" },
+        { "ifMemory": "mate:sang-in-your-car", "where": "social:chat", "line": "\"Put my playlist on next time. You know you want to.\"" }
+      ]
+    },
+    {
+      "id": "soc-drive-pulled-over", "title": "Blue lights", "category": "outing", "place": "driving",
+      "size": "medium", "rarity": "social-action", "template": "talk-scene",
+      "trigger": { "when": ["social:drive"], "requires": ["owns:car", "carTier>=2", "fame>=15"], "cooldownWeeks": 30, "maxPerCareer": 3 },
+      "cost": { "weekAction": 1 },
+      "cast": [ { "slot": "mate", "pick": "social" } ],
+      "setup": [
+        "{mate.short} dares you to open it up on the bypass. You do. Blue lights in the mirror a mile later.",
+        "The officer leans in, then does a double take. \"Well, well.\""
+      ],
+      "choices": [
+        { "id": "own", "label": "Pull over properly. Own it.", "outcomes": [
+          { "text": "A fine and three points. The officer shakes your hand anyway.", "effects": { "moneyWeeks": -0.3, "reputation": 1 }, "npc": [ { "slot": "mate", "respect": 3, "bond": 2 } ], "remember": [ { "slot": "mate", "tag": "watched-you-take-the-fine", "strength": 1 } ] }
+        ] },
+        { "id": "famous", "label": "\"Do you know who I am?\"", "outcomes": [
+          { "chance": 0.5, "text": "He does. He wants a selfie for his son. You are let off with a warning.", "effects": { "fans": 1, "fame": 1 }, "npc": [ { "slot": "mate", "bond": 6 } ], "remember": [ { "slot": "mate", "tag": "the-copper-wanted-a-selfie", "strength": 1 } ] },
+          { "chance": 0.5, "text": "He does. So does the paper by Tuesday: 'DO YOU KNOW WHO I AM?'", "effects": { "reputation": -4, "fans": -3, "boss": -3, "fame": 2 }, "npc": [ { "slot": "mate", "bond": 2 } ], "remember": [ { "slot": "mate", "tag": "saw-the-do-you-know-who-i-am", "strength": 2 } ] }
+        ] },
+        { "id": "swap", "label": "Ask him to say he was driving.", "requires": ["mate.bond>=45"], "outcomes": [
+          { "chance": 0.5, "text": "He takes the points for you. He does not say a word all the way home.", "npc": [ { "slot": "mate", "bond": -8, "grudge": 6 } ], "remember": [ { "slot": "mate", "tag": "took-your-points", "strength": 3 } ] },
+          { "chance": 0.5, "text": "\"Mate. No.\" The officer heard all of it. Double the fine.", "effects": { "moneyWeeks": -0.6 }, "npc": [ { "slot": "mate", "bond": -6, "grudge": 4 } ], "remember": [ { "slot": "mate", "tag": "asked-him-to-take-your-points", "strength": 2 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "mate:took-your-points", "where": "event:any", "line": "\"Six points, mate. Six. You owe me.\"" },
+        { "ifMemory": "mate:the-copper-wanted-a-selfie", "where": "social:chat", "line": "\"Still can't believe that copper wanted a selfie.\"" }
+      ]
+    },
+    {
+      "id": "tm-birthday-whip-round", "title": "The whip-round", "category": "team-mate", "place": "dressing-room",
+      "size": "small", "rarity": "common", "template": "text-thread",
+      "trigger": { "when": ["arrive:training"], "requires": ["squad.any(bond>=20)", "moneyWeeks>=1"], "cooldownWeeks": 20, "group": "whip-round", "maxPerCareer": 5 },
+      "cast": [ { "slot": "mate", "pick": "squad", "where": ["bond>=20", "!mem('you-sorted-his-birthday')"], "order": "random" } ],
+      "setup": [
+        "The squad group chat: \"Whip-round for {mate.short}'s birthday. Drop it in the kit room by Friday. No excuses.\"",
+        "Eleven people have already sent a thumbs up."
+      ],
+      "choices": [
+        { "id": "proper", "label": "Put in properly.", "cost": { "moneyWeeks": 0.2 }, "outcomes": [
+          { "text": "He opens the card in the canteen and reads every name out.", "effects": { "team": 2 }, "npc": [ { "slot": "mate", "bond": 5 } ], "remember": [ { "slot": "mate", "tag": "put-in-for-his-birthday", "strength": 1 } ] }
+        ] },
+        { "id": "forgot", "label": "\"Left my card at home.\"", "outcomes": [
+          { "text": "Somebody screenshots it. You are 'Card at Home' for a month.", "effects": { "team": -2 }, "npc": [ { "slot": "mate", "bond": -3 } ], "remember": [ { "slot": "squad", "tag": "tight-at-the-whip-round", "strength": 1 } ] }
+        ] },
+        { "id": "night", "label": "Sort him a proper night out.", "cost": { "weekAction": 1, "energy": -5 }, "outcomes": [
+          { "text": "A table, his family, a cake shaped like a boot. He makes a speech and cries.", "effects": { "team": 3 }, "npc": [ { "slot": "mate", "bond": 10, "respect": 4 } ], "remember": [ { "slot": "mate", "tag": "you-sorted-his-birthday", "strength": 2 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "squad:tight-at-the-whip-round", "where": "social:chat", "line": "\"Got your card today, have you?\"" },
+        { "ifMemory": "mate:you-sorted-his-birthday", "where": "event:any", "line": "\"Best birthday I've had since I was a kid. Cheers for that.\"" }
+      ]
+    },
+    {
+      "id": "tm-dressing-room-prank", "title": "Boots in the ice bath", "category": "team-mate", "place": "dressing-room",
+      "size": "small", "rarity": "common", "template": "talk-scene",
+      "trigger": { "when": ["arrive:training"], "requires": ["squad.any(bond>=30)"], "cooldownWeeks": 16, "group": "prank", "maxPerCareer": 4 },
+      "cast": [
+        { "slot": "joker", "pick": "squad", "order": "bond-desc" },
+        { "slot": "victim", "pick": "squad", "where": ["bond<=45"], "order": "youngest" }
+      ],
+      "setup": [
+        "{joker.short} has frozen {victim.short}'s new boots into a block in the ice bath. The whole room is waiting for him to walk in.",
+        "{joker.short} hands you his phone. \"You film it.\""
+      ],
+      "choices": [
+        { "id": "join", "label": "Join in.", "outcomes": [
+          { "text": "{victim.short} walks in, sees it, and laughs a second too late.", "effects": { "team": 2 }, "npc": [ { "slot": "joker", "bond": 4 }, { "slot": "victim", "bond": -3, "grudge": 5 } ], "remember": [ { "slot": "victim", "tag": "laughed-at-his-boots", "strength": 1 } ] }
+        ] },
+        { "id": "stop", "label": "Get the boots out before he arrives.", "outcomes": [
+          { "text": "{joker.short} calls you a killjoy. {victim.short} never knows how close it was, until somebody tells him.", "npc": [ { "slot": "joker", "bond": -3 }, { "slot": "victim", "bond": 8, "respect": 4 } ], "remember": [ { "slot": "victim", "tag": "you-stopped-the-prank", "strength": 2 } ] }
+        ] },
+        { "id": "post", "label": "Film it and post it.", "outcomes": [
+          { "text": "Three million views. The gaffer has a word about 'the dressing room staying in the dressing room'.", "effects": { "fame": 2, "fans": 1, "boss": -2 }, "npc": [ { "slot": "victim", "grudge": 10, "bond": -4 } ], "remember": [ { "slot": "victim", "tag": "you-posted-the-prank", "strength": 2 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "victim:you-posted-the-prank", "where": "event:any", "line": "\"Still got that video up, have you?\"" },
+        { "ifMemory": "victim:you-stopped-the-prank", "where": "social:chat", "line": "\"Heard about the boots. You didn't have to do that. Thanks.\"" }
+      ]
+    },
+    {
+      "id": "tm-money-trouble", "title": "A call at midnight", "category": "team-mate", "place": "home",
+      "size": "medium", "rarity": "uncommon", "template": "phone-call",
+      "trigger": { "when": ["home:evening"], "requires": ["squad.any(bond>=40)", "moneyWeeks>=6"], "cooldownWeeks": 40, "group": "money-ask", "maxPerCareer": 2 },
+      "cast": [ { "slot": "mate", "pick": "squad", "where": ["bond>=40", "!mem('you-lent-him-money')"], "order": "random" } ],
+      "setup": [
+        "{mate.name}, at ten to midnight. He is outside somewhere; you can hear traffic.",
+        "\"I'm in a hole, mate. Betting. I owe the wrong people about two weeks of what you earn. I wouldn't ask if there was anyone else.\""
+      ],
+      "choices": [
+        { "id": "lend", "label": "Lend it. No questions.", "cost": { "moneyWeeks": 2 }, "outcomes": [
+          { "text": "The money is in his account before he has finished saying thank you.", "npc": [ { "slot": "mate", "bond": 12 } ], "remember": [ { "slot": "mate", "tag": "you-lent-him-money", "strength": 3 } ], "followUp": { "event": "tm-loan-comes-back", "afterWeeks": [3, 8] } }
+        ] },
+        { "id": "welfare", "label": "\"Ring the club welfare officer. Tonight. I'll come with you.\"", "outcomes": [
+          { "chance": 0.6, "text": "He goes. It takes a long time, but he goes.", "effects": { "boss": 1 }, "npc": [ { "slot": "mate", "bond": 2, "respect": 6 } ], "remember": [ { "slot": "mate", "tag": "pointed-him-to-help", "strength": 2 } ] },
+          { "chance": 0.4, "text": "\"I asked for money, not a lecture.\" He hangs up.", "npc": [ { "slot": "mate", "bond": -6, "grudge": 5 } ], "remember": [ { "slot": "mate", "tag": "you-wouldnt-help", "strength": 2 } ] }
+        ] },
+        { "id": "no", "label": "\"I can't, mate.\"", "outcomes": [
+          { "text": "Silence. Then the line goes.", "npc": [ { "slot": "mate", "bond": -10, "grudge": 8 } ], "remember": [ { "slot": "mate", "tag": "you-wouldnt-help", "strength": 2 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "mate:pointed-him-to-help", "where": "event:any", "line": "\"I've not had a bet in ten weeks. Thought you should know.\"" },
+        { "ifMemory": "mate:you-wouldnt-help", "where": "social:chat", "line": "He answers, but he does not look up from his phone." }
+      ]
+    },
+    {
+      "id": "tm-loan-comes-back", "title": "The loan", "category": "team-mate", "place": "food-hall",
+      "size": "medium", "rarity": "follow-up", "template": "talk-scene",
+      "trigger": { "when": ["followUp"], "requires": ["mem(mate,'you-lent-him-money')"], "maxPerCareer": 2 },
+      "cast": [ { "slot": "mate", "pick": "carried", "tags": ["you-lent-him-money"] } ],
+      "setup": [
+        "{mate.short} sits down opposite you with two coffees. \"About the money.\""
+      ],
+      "choices": [
+        { "id": "ask", "label": "\"Have you got it?\"", "outcomes": [
+          { "chance": 0.6, "text": "He slides an envelope over. Every penny, and a bit more. \"Interest.\"", "effects": { "moneyWeeks": 2 }, "npc": [ { "slot": "mate", "respect": 6, "bond": 4 } ], "remember": [ { "slot": "mate", "tag": "paid-back-every-penny", "strength": 3 } ] },
+          { "chance": 0.4, "text": "\"Not yet. Soon. I swear.\" You both know it is not soon.", "npc": [ { "slot": "mate", "bond": -6, "grudge": 6 } ], "remember": [ { "slot": "mate", "tag": "you-chased-the-loan", "strength": 2 } ] }
+        ] },
+        { "id": "forget", "label": "\"Forget it. Just stay out of the bookies.\"", "outcomes": [
+          { "text": "He looks at the table for a long time. The money is gone; he is not.", "effects": { "team": 3 }, "npc": [ { "slot": "mate", "bond": 15, "respect": 8 } ], "remember": [ { "slot": "mate", "tag": "wrote-off-the-loan", "strength": 3 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "mate:wrote-off-the-loan", "where": "event:scn-*", "line": "He is the first to stand up for you. \"He's helped more people in here than you know.\"" },
+        { "ifMemory": "mate:you-chased-the-loan", "where": "social:chat", "line": "\"I know, I know. I'm sorting it.\"" }
+      ]
+    },
+    {
+      "id": "tm-dropped-sulks", "title": "The towel over his head", "category": "team-mate", "place": "dressing-room",
+      "size": "small", "rarity": "common", "template": "talk-scene",
+      "trigger": { "when": ["after-match"], "requires": ["squad.any(samePosition && bond<=50)", "lastWon"], "cooldownWeeks": 14, "group": "dropped", "maxPerCareer": 4 },
+      "cast": [ { "slot": "mate", "pick": "squad", "where": ["samePosition", "bond<=50"], "order": "random" } ],
+      "setup": [
+        "We won. {mate.short} played ten minutes. He plays where you play.",
+        "He is sat in the corner with a towel over his head while everyone else sings."
+      ],
+      "choices": [
+        { "id": "sit", "label": "Sit with him for a bit.", "outcomes": [
+          { "text": "Neither of you says much. You miss the singing. When you get up he says \"cheers\" to the floor.", "effects": { "team": -1 }, "npc": [ { "slot": "mate", "bond": 6, "respect": 3 } ], "remember": [ { "slot": "mate", "tag": "you-sat-with-him-after", "strength": 2 } ] }
+        ] },
+        { "id": "harder", "label": "\"Train harder, then.\"", "outcomes": [
+          { "text": "The towel comes off. The look stays with you.", "effects": { "team": -1 }, "npc": [ { "slot": "mate", "bond": -6, "grudge": 8, "respect": 4 } ], "remember": [ { "slot": "mate", "tag": "you-told-him-train-harder", "strength": 2 } ] }
+        ] },
+        { "id": "leave", "label": "Leave him to it.", "outcomes": [
+          { "text": "Probably what he wanted. Probably.", "npc": [ { "slot": "mate", "bond": -1 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "mate:you-told-him-train-harder", "where": "event:rvl-*|event:tm-*", "line": "\"Train harder, you said. I did.\"" },
+        { "ifMemory": "mate:you-sat-with-him-after", "where": "social:chat", "line": "\"Cheers for the other night. In the corner.\"" }
+      ]
+    },
+    {
+      "id": "kit-man-signed-shirt", "title": "Thirty years at the club", "category": "staff", "place": "dressing-room",
+      "size": "small", "rarity": "common", "template": "talk-scene",
+      "trigger": { "when": ["arrive:training"], "requires": ["fame>=15", "clubApps>=5"], "once": true },
+      "cast": [ { "slot": "kitman", "pick": "kitman" } ],
+      "setup": [
+        "{kitman.name} has been at the club thirty years. He asks, a bit embarrassed, for a signed shirt for his grandson's hospital ward."
+      ],
+      "choices": [
+        { "id": "ward", "label": "Sign ten. Take them in yourself.", "cost": { "weekAction": 1 }, "outcomes": [
+          { "text": "The nurses line the corridor. His grandson will not let go of your hand.", "effects": { "fans": 3, "reputation": 1 }, "npc": [ { "slot": "kitman", "bond": 15, "respect": 10 } ], "remember": [ { "slot": "kitman", "tag": "you-went-to-the-ward", "strength": 3 } ] }
+        ] },
+        { "id": "one", "label": "Sign one.", "outcomes": [
+          { "text": "\"Lovely. Ta.\" He folds it like it is made of glass.", "npc": [ { "slot": "kitman", "bond": 4 } ] }
+        ] },
+        { "id": "shop", "label": "\"Ask the club shop, mate.\"", "outcomes": [
+          { "text": "\"Course.\" The lads heard. The dressing room goes a bit cold on you.", "effects": { "team": -1 }, "npc": [ { "slot": "kitman", "bond": -8, "respect": -6 } ], "remember": [ { "slot": "kitman", "tag": "told-him-ask-the-shop", "strength": 2 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "kitman:you-went-to-the-ward", "where": "event:any", "line": "\"The ward's still got your shirts on the wall.\"" },
+        { "ifMemory": "kitman:told-him-ask-the-shop", "where": "event:any", "line": "Your boots are not on your peg. He finds them, slowly." }
+      ]
+    },
+    {
+      "id": "fam-mum-birthday", "title": "Mum's birthday", "category": "family", "place": "home",
+      "size": "small", "rarity": "common", "template": "phone-call",
+      "trigger": { "when": ["home:evening"], "requires": ["season>=2", "moneyWeeks>=3"], "cooldownWeeks": 46, "group": "fam-birthday", "maxPerCareer": 6 },
+      "cast": [ { "slot": "mum", "pick": "mum" }, { "slot": "dad", "pick": "dad" } ],
+      "setup": [
+        "Dad, quietly: \"It's your mum's birthday Sunday. You're away Saturday. Just so you know.\""
+      ],
+      "choices": [
+        { "id": "weekend", "label": "Book her a weekend away.", "cost": { "moneyWeeks": 1 }, "outcomes": [
+          { "text": "She rings you from the hotel balcony in a dressing gown. Dad is in the background, pretending not to be pleased.", "npc": [ { "slot": "mum", "bond": 10 }, { "slot": "dad", "bond": 3 } ], "remember": [ { "slot": "mum", "tag": "booked-her-a-weekend", "strength": 2 } ] }
+        ] },
+        { "id": "flowers", "label": "Flowers, and a video call from the team bus.", "outcomes": [
+          { "text": "Half the squad shout happy birthday into your phone. She loves it.", "effects": { "team": 1 }, "npc": [ { "slot": "mum", "bond": 3 } ], "remember": [ { "slot": "mum", "tag": "the-squad-sang-to-her", "strength": 1 } ] }
+        ] },
+        { "id": "forget", "label": "\"Yeah, yeah.\" You forget.", "outcomes": [
+          { "text": "Dad texts at nine on Sunday night: \"She waited up.\"", "npc": [ { "slot": "mum", "bond": -10, "respect": -4 }, { "slot": "dad", "bond": -4 } ], "remember": [ { "slot": "mum", "tag": "forgot-her-birthday", "strength": 2 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "mum:forgot-her-birthday", "where": "event:fam-*", "line": "\"Don't worry, love. I know you're busy.\"" },
+        { "ifMemory": "mum:booked-her-a-weekend", "where": "event:fam-*", "line": "\"I'm still showing everyone the photos from that weekend.\"" }
+      ]
+    },
+    {
+      "id": "agt-skimmed-deal", "title": "Ten per cent", "category": "agent", "place": "home",
+      "size": "medium", "rarity": "uncommon", "template": "text-thread",
+      "trigger": { "when": ["home:evening"], "requires": ["fame>=35", "season>=2"], "once": true },
+      "cast": [ { "slot": "agent", "pick": "agent" } ],
+      "setup": [
+        "Your accountant, by text: \"Your boot deal paid ten per cent more than {agent.short} told you. He kept the difference. Three seasons of it.\""
+      ],
+      "choices": [
+        { "id": "confront", "label": "Have it out with him.", "outcomes": [
+          { "chance": 0.5, "text": "He goes white, then pays it back by Friday. \"A misunderstanding.\"", "effects": { "moneyWeeks": 1.5 }, "npc": [ { "slot": "agent", "respect": 8, "grudge": 5 } ], "remember": [ { "slot": "agent", "tag": "caught-him-skimming", "strength": 3 } ] },
+          { "chance": 0.5, "text": "He denies it, then shouts, then hangs up. Your next deal will be harder to get.", "npc": [ { "slot": "agent", "bond": -15, "grudge": 15 } ], "remember": [ { "slot": "agent", "tag": "caught-him-skimming", "strength": 3 } ] }
+        ] },
+        { "id": "watch", "label": "Say nothing. Watch him.", "outcomes": [
+          { "text": "You check every line of the next contract yourself. He notices.", "npc": [ { "slot": "agent", "respect": 4, "bond": -2 } ], "remember": [ { "slot": "agent", "tag": "you-know-about-the-skim", "strength": 2 } ] }
+        ] },
+        { "id": "sack", "label": "Sack him, and tell the papers why.", "outcomes": [
+          { "text": "It is a big story for two days. People who run football like a player who reads his contracts.", "effects": { "fame": 3, "reputation": 3, "fans": 2, "boss": -2 }, "npc": [ { "slot": "agent", "grudge": 40, "bond": -30 } ], "remember": [ { "slot": "agent", "tag": "you-sacked-him-in-public", "strength": 3 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "agent:caught-him-skimming", "where": "event:agt-*", "line": "\"I've been straight with you since. Every penny.\"" },
+        { "ifMemory": "agent:you-sacked-him-in-public", "where": "negotiation", "line": "He now works for the other side of the table." }
+      ]
+    },
+    {
+      "id": "scn-match-fix-approach", "title": "The car park", "category": "scandal", "place": "stadium-car-park",
+      "size": "big", "rarity": "rare", "template": "talk-scene",
+      "trigger": { "when": ["after-match"], "requires": ["divisionLevel>=3", "fame<=60", "season>=2"], "once": true },
+      "cast": [ { "slot": "stranger", "pick": "stranger" }, { "slot": "boss", "pick": "manager" } ],
+      "setup": [
+        "After the game, in the car park. A man in a quilted jacket walks with you to your car like he knows you.",
+        "\"Yellow card before the twentieth minute on Saturday. Five weeks of your wages, cash. Nobody gets hurt.\""
+      ],
+      "choices": [
+        { "id": "take", "label": "Take the envelope.", "outcomes": [
+          { "chance": 0.75, "text": "You get booked in the twelfth minute. Nobody says a word. The money is in a shoebox under your bed.", "effects": { "moneyWeeks": 5 }, "remember": [ { "slot": "you", "tag": "took-the-yellow-card-money", "strength": 3 } ], "followUp": { "event": "scn-match-fix-return", "afterWeeks": [3, 8] } },
+          { "chance": 0.25, "text": "The betting people have been watching him for months. Your name is in their file. The club suspends you while it is looked at.", "effects": { "reputation": -12, "boss": -10, "fans": -10, "fame": 4, "scandal": true }, "npc": [ { "slot": "boss", "respect": -15, "grudge": 10 } ], "remember": [ { "slot": "boss", "tag": "you-took-a-bribe", "strength": 3 }, { "slot": "you", "tag": "caught-in-a-fixing-file", "strength": 3 } ] }
+        ] },
+        { "id": "report", "label": "Walk away. Report it to the club.", "outcomes": [
+          { "text": "The integrity people take a statement. The gaffer shakes your hand in front of the staff.", "effects": { "reputation": 5, "boss": 4 }, "npc": [ { "slot": "boss", "respect": 10 } ], "remember": [ { "slot": "you", "tag": "reported-the-fixer", "strength": 3 } ], "followUp": { "event": "scn-match-fix-return", "afterWeeks": [4, 10] } }
+        ] },
+        { "id": "quiet", "label": "Walk away. Tell nobody.", "outcomes": [
+          { "text": "He watches you drive off. You check the mirror for a long time.", "effects": { "energy": -8 }, "remember": [ { "slot": "you", "tag": "said-nothing-to-the-fixer", "strength": 2 } ], "followUp": { "event": "scn-match-fix-return", "afterWeeks": [2, 6] } }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "you:took-the-yellow-card-money", "where": "event:scn-*", "line": "\"You've done it once. That makes the second time easy.\"" },
+        { "ifMemory": "boss:you-took-a-bribe", "where": "event:any", "line": "\"I'll be watching your first twenty minutes. Every week.\"" },
+        { "ifMemory": "you:reported-the-fixer", "where": "event:med-*", "line": "The papers call you 'the one who said no'." }
+      ]
+    },
+    {
+      "id": "scn-match-fix-return", "title": "He knows where you park", "category": "scandal", "place": "home",
+      "size": "big", "rarity": "follow-up", "template": "phone-call",
+      "trigger": { "when": ["followUp"], "requires": ["mem(you,'took-the-yellow-card-money'|'reported-the-fixer'|'said-nothing-to-the-fixer')"], "once": true },
+      "cast": [ { "slot": "stranger", "pick": "stranger" }, { "slot": "boss", "pick": "manager" } ],
+      "setup": [
+        "A withheld number, late.",
+        "{if mem(you,'took-the-yellow-card-money')}\"Same again. A penalty given away this time. You know what happens if you say no now.\"{/if}",
+        "{if mem(you,'reported-the-fixer')}\"You talked. I know where you park. I know where your mum parks.\"{/if}",
+        "{if mem(you,'said-nothing-to-the-fixer')}\"Last chance. Ten weeks of your money for one bad pass.\"{/if}"
+      ],
+      "choices": [
+        { "id": "police", "label": "Go to the police. All of it.", "outcomes": [
+          { "text": "Statements, a panic alarm at your mum's, a court date in the spring. You are in the papers the right way round.", "effects": { "reputation": 6, "boss": 3, "fame": 3, "energy": -10 }, "npc": [ { "slot": "boss", "respect": 8 } ], "remember": [ { "slot": "you", "tag": "went-to-the-police", "strength": 3 } ] }
+        ] },
+        { "id": "comply", "label": "Do what he says.", "outcomes": [
+          { "chance": 0.6, "text": "Ten weeks of money in a sports bag. You do not sleep.", "effects": { "moneyWeeks": 10, "energy": -15 }, "remember": [ { "slot": "you", "tag": "fixed-a-second-game", "strength": 3 } ] },
+          { "chance": 0.4, "text": "It is the game the investigators were watching. It is over by Monday: suspended, every paper, every feed.", "effects": { "reputation": -12, "boss": -12, "fans": -12, "fame": 5, "scandal": true }, "npc": [ { "slot": "boss", "respect": -20, "grudge": 15 } ], "remember": [ { "slot": "boss", "tag": "you-took-a-bribe", "strength": 3 } ] }
+        ] },
+        { "id": "hang-up", "label": "Hang up. Change your number.", "outcomes": [
+          { "chance": 0.7, "text": "Nothing. Weeks of nothing. You still check the mirror.", "effects": { "energy": -5 }, "remember": [ { "slot": "you", "tag": "changed-your-number", "strength": 1 } ] },
+          { "chance": 0.3, "text": "Your car is burnt out on the drive at four in the morning. The insurance will not touch it.", "effects": { "take": "car", "energy": -10 }, "remember": [ { "slot": "you", "tag": "they-burnt-your-car", "strength": 3 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "you:went-to-the-police", "where": "event:med-*", "line": "He is in court in the spring. Your name is in the paper, the right way round." },
+        { "ifMemory": "you:they-burnt-your-car", "where": "social:chat", "line": "\"Heard about your car. Anything you need, mate.\"" }
+      ]
+    },
+    {
+      "id": "scn-doping-offer", "title": "The recovery guy", "category": "scandal", "place": "training-car-park",
+      "size": "big", "rarity": "rare", "template": "talk-scene",
+      "trigger": { "when": ["arrive:training"], "requires": ["energy<=45", "age>=20", "squad.any(bond>=30)"], "cooldownWeeks": 80, "group": "scandal", "maxPerCareer": 2 },
+      "cast": [ { "slot": "mate", "pick": "squad", "where": ["bond>=30", "veteran"], "order": "random" }, { "slot": "physio", "pick": "physio" } ],
+      "setup": [
+        "{mate.short} has a 'recovery guy'. Little white pills in a plain tub. \"Nothing on the list. They don't test for it. Your legs will thank you.\"",
+        "Your legs feel like concrete."
+      ],
+      "choices": [
+        { "id": "take", "label": "Take them.", "outcomes": [
+          { "chance": 0.8, "text": "You fly for a fortnight. Nobody asks. You keep the tub in your wash bag.", "effects": { "energy": 35, "matchFitness": 10 }, "npc": [ { "slot": "mate", "bond": 6 } ], "remember": [ { "slot": "you", "tag": "took-the-pills", "strength": 3 } ] },
+          { "chance": 0.2, "text": "A random test, the Monday after. The sample does not come back clean.", "effects": { "reputation": -12, "boss": -10, "fans": -8, "fame": 5, "energy": -10, "scandal": true }, "npc": [ { "slot": "mate", "bond": 4 }, { "slot": "physio", "respect": -15 } ], "remember": [ { "slot": "you", "tag": "failed-a-test", "strength": 3 } ] }
+        ] },
+        { "id": "no", "label": "\"Not for me, mate.\"", "outcomes": [
+          { "text": "He shrugs. \"Your legs.\" You notice he does not offer twice.", "npc": [ { "slot": "mate", "bond": -4, "respect": 4 } ], "remember": [ { "slot": "mate", "tag": "turned-down-the-pills", "strength": 1 } ] }
+        ] },
+        { "id": "tell", "label": "Tell the physio what he is handing round.", "outcomes": [
+          { "text": "The tub goes off to a lab. He is fined and dropped. He knows exactly who.", "effects": { "reputation": 2, "team": -3 }, "npc": [ { "slot": "physio", "respect": 10 }, { "slot": "mate", "bond": -15, "grudge": 20 } ], "remember": [ { "slot": "mate", "tag": "you-grassed-on-the-pills", "strength": 3 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "mate:you-grassed-on-the-pills", "where": "event:any", "line": "\"Didn't have you down as a grass.\"" },
+        { "ifMemory": "you:took-the-pills", "where": "event:inj-*", "line": "\"Your bloods came back odd. Anything you want to tell me?\"" }
+      ]
+    },
+    {
+      "id": "fan-hospital-letter", "title": "A letter from the ward", "category": "fans", "place": "home",
+      "size": "small", "rarity": "common", "template": "text-thread",
+      "trigger": { "when": ["home:evening"], "requires": ["fans>=40", "fame>=10"], "cooldownWeeks": 30, "group": "fan-letter", "maxPerCareer": 3 },
+      "cast": [ { "slot": "mate", "pick": "squad", "order": "bond-desc" } ],
+      "setup": [
+        "The club forwards a letter. A boy on the children's ward, your shirt on the wall behind his bed. His operation is on Friday.",
+        "\"Please could you say good luck. You are my best player.\""
+      ],
+      "choices": [
+        { "id": "go", "label": "Go on Thursday. Take {mate.short}.", "cost": { "weekAction": 1, "energy": -5 }, "outcomes": [
+          { "text": "Two hours on the ward. {mate.short} does magic tricks, badly. The boy's mum films everything.", "effects": { "fans": 3, "reputation": 2 }, "npc": [ { "slot": "mate", "bond": 6, "respect": 4 } ], "remember": [ { "slot": "mate", "tag": "came-to-the-ward-with-you", "strength": 2 } ] }
+        ] },
+        { "id": "shirt", "label": "Send a signed shirt and a note.", "outcomes": [
+          { "text": "His mum posts a photo of him holding it. It does well.", "effects": { "fans": 1 } }
+        ] },
+        { "id": "busy", "label": "Too busy this week.", "outcomes": [
+          { "text": "Somebody posts the letter with 'no reply'. It does better than the shirt would have.", "effects": { "fans": -3 }, "remember": [ { "slot": "you", "tag": "ignored-the-ward-letter", "strength": 1 } ] }
+        ] }
+      ],
+      "callbacks": [
+        { "ifMemory": "mate:came-to-the-ward-with-you", "where": "social:chat", "line": "\"Think about that kid a lot, you know. Hope he's all right.\"" },
+        { "ifMemory": "you:ignored-the-ward-letter", "where": "event:fan-*", "line": "Somebody has dug out the old letter again." }
+      ]
+    }
+  ],
+  "chats": [
+    { "id": "c-saturday", "lines": ["\"Big one Saturday. You feeling it?\""] },
+    { "id": "c-won", "when": ["lastWon"], "lines": ["\"That's more like it. Did you see the gaffer's face at the end?\""] },
+    { "id": "c-lost", "when": ["lastLost"], "lines": ["\"Don't read the papers this week. Trust me.\""] },
+    { "id": "c-close", "where": ["bond>=60"], "lines": ["\"The missus says you have to come round for tea. She's not asking.\""] },
+    { "id": "c-cold", "where": ["bond<=20"], "lines": ["He answers in one word. Then the headphones go back in."] },
+    { "id": "c-grudge", "where": ["grudge>=30"], "lines": ["\"Oh. It's you.\""] },
+    { "id": "c-young", "where": ["age<=19"], "lines": ["\"How did you deal with it? Your first season, I mean?\""] },
+    { "id": "c-old", "where": ["veteran"], "lines": ["\"Look after your knees. Nobody tells you that.\""] },
+    { "id": "c-new", "where": ["new"], "lines": ["\"Still learning where everything is. Where do you sit in the canteen?\""] },
+    { "id": "c-car", "when": ["carTier>=3"], "lines": ["\"Saw the motor. What does that do, nought to sixty?\""] },
+    { "id": "c-horse", "when": ["owns:horse"], "lines": ["\"How's the horse? Is it actually fast or just good-looking?\""] },
+    { "id": "c-captain", "when": ["captain"], "lines": ["\"Skipper. What's the gaffer really like with you?\""] },
+    { "id": "c-fame", "when": ["fame>=60"], "lines": ["\"My little brother has your poster up. Don't let it go to your head.\""] },
+    { "id": "c-rival", "where": ["samePosition"], "lines": ["\"One of us is starting Saturday. No hard feelings, whatever happens.\""] }
+  ]
+}
