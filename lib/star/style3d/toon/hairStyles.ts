@@ -39,7 +39,7 @@ export const TOON_HAIR_INFO: Record<ToonHair, ToonHairInfo> = {
   braids: { label: "Braids", textures: ["coily"], scalp: 0, sheen: 0.3, word: "long", tris: 3205 },
   curlyTop: { label: "Curly top", textures: ["curly", "coily"], scalp: 0, sheen: 0.35, word: "short", tris: 2688 },
   crew: { label: "Crew cut", textures: ["straight", "wavy", "curly"], scalp: 0, sheen: 0.8, word: "short", tris: 540 },
-  slickBack: { label: "Slick back", textures: ["straight", "wavy"], scalp: 0, sheen: 1, word: "short", tris: 720 },
+  slickBack: { label: "Slick back", textures: ["straight", "wavy"], scalp: 0, sheen: 1, word: "short", tris: 1080 },
   ponytail: { label: "Tied back", textures: ["straight", "wavy"], scalp: 0, sheen: 1, word: "long", tris: 930 },
   manBun: { label: "Man bun", textures: ["straight", "wavy"], scalp: 0, sheen: 1, word: "long", tris: 1124 },
   mullet: { label: "Mullet", textures: ["straight", "wavy"], scalp: 0, sheen: 0.8, word: "long", tris: 1014 },
@@ -57,6 +57,6 @@ export const COILY_HAIRS: readonly ToonHair[] = TOON_HAIRS.filter((h) => TOON_HA
  */
 export const TOON_HAIR_BASE: Partial<Record<ToonHead, "h3" | "m2">> = { h3: "h3", h7: "h3", h8: "h3", h9: "h3", m2: "m2", m3: "m2" };
 /** A re-shaped head whose skull sits higher than its base's (metres up): the hair moves with it. */
-export const TOON_HAIR_LIFT: Partial<Record<ToonHead, number>> = { h8: 0.014 };
+export const TOON_HAIR_LIFT: Partial<Record<ToonHead, number>> = { h8: 0.022 };
 export const toonHairFits = (head: ToonHead) => !!TOON_HAIR_BASE[head];
 export const toonHairFile = (hair: ToonHair, head: ToonHead) => `/star/people3d/hair/hair-${TOON_HAIR_BASE[head] ?? "h3"}-${hair}.glb`;

@@ -131,7 +131,11 @@ exactly today's bodies. You never pick a file yourself:
   body's hair colour and cel light). Four re-shaped heads: h7 Broad jaw, h8 Long face, h9 Round face, m3 Older,
   lined (`TOON_SHAPE_HEADS`; `TOON_ALL_HEADS` is every head file). Built by `tools/hair3d/` (read its README:
   Blender `build_hair.py`, `reshape_heads.mjs`, the 0-crossing check). Files: `public/star/people3d/hair/`.
-  Sheets: `/star-3d-bench-dev/people?set=hair` and `?set=heads`.
+  Loose hair swings: call `hair.update(dt)` every frame (one spring per head of hair, `TOON_HAIR_SWING`; film with
+  `node scripts/bench3d/hair-swing.mjs OUTDIR`). Face types, first pass (to be rebuilt after the face research):
+  `lib/star/style3d/toon/faceShape.ts` + `faceShapeApply.ts` (`applyToonFaceShape` before `addToonFace`).
+  Light skin on a toon preset is painted a touch darker and warmer (`toonSkinHex`, presets.ts), fair or grey brows darker (`browDark`).
+  Sheets: `/star-3d-bench-dev/people?set=hair`, `?set=heads`, `?set=faces`, `?set=swing`.
 - A new head: concept picture → Higgsfield image-to-3D (Tripo H3.1, face limit
   15000) → `tools/modeltest/fit.py` → `scripts/people3d/build_toon_bodies.py <dir>
   tag:dir/fit.glb[:suit]` (it also weights the fingers: `weight_fingers`) →

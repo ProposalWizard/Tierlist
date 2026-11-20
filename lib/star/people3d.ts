@@ -206,6 +206,8 @@ export interface PersonLook {
   suit?: { coat: string; trousers: string; shirt: string; tie: string; shoes?: string };
   /** Style A: a haircut on the modelled hair (0..1 each): scalp to skin (1 bald), beard off, stubble on; pattern 1 waves, 2 cornrows. Unset: as modelled. */
   hairCut?: { scalp?: number; beard?: number; stubble?: number; pattern?: number };
+  /** Style A: how much darker than the hair the brows are drawn (0 as the hair … 0.6; a grey-haired man keeps brows that read). */
+  browDark?: number;
 }
 
 // ── Loading ───────────────────────────────────────────────────────────────
@@ -1010,6 +1012,7 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
     u.uSuitTie.value = lin(T, look.suit.tie);
     u.uShoes.value = lin(T, look.suit.shoes ?? "#141416");
   }
+  if (u.uShade) u.uShade.value.w = look.browDark ?? 0;
   if (u.uHairCut) u.uHairCut.value.set(look.hairCut?.scalp ?? 0, look.hairCut?.beard ?? 0, look.hairCut?.stubble ?? 0, look.hairCut?.pattern ?? 0);
   if (u.uBadgeOn) {
     u.uBadgeOn.value = look.badge ? 2 : 1;

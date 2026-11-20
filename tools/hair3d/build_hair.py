@@ -178,10 +178,12 @@ class Head:
 
 class Hair:
     def __init__(self, H):
-        self.H = H; self.V = []; self.F = []; self.SH = []; self.AL = []; self.W = []
+        self.H = H; self.V = []; self.F = []; self.SH = []; self.AL = []; self.W = []; self.SW = []
 
-    def add(self, verts, faces, shade, along, w=None):
+    def add(self, verts, faces, shade, along, w=None, sw=None):
+        """sw: how freely each vertex swings behind the head's movement (0 fixed … 1 a loose tip)."""
         o = len(self.V)
+        self.SW += sw if sw is not None else [0.0] * len(verts)
         self.V += verts
         self.F += [tuple(o + k for k in f) for f in faces]
         self.SH += shade; self.AL += along
@@ -239,11 +241,11 @@ def cap(M, lo, thick, naz=32, rings=(0, 0.05, 0.16, 0.3, 0.45, 0.6, 0.75, 0.9), 
     M.add(V, F, SH, AL)
 
 
-def tube(M, path, radii, sides=5, twist=0.0, shade=(0.78, 1.0), w=None, tip=0.6, flat=1.0, hint=None, bead=0.0, root_shade=None):
+def tube(M, path, radii, sides=5, twist=0.0, shade=(0.78, 1.0), w=None, tip=0.6, flat=1.0, hint=None, bead=0.0, root_shade=None, swing=0.0, swing_from=1):
     """A tapered tube along `path` (parallel-transported frame). flat < 1 squashes it along `hint`.
     bead: every other ring fatter (a braid). twist: radians per ring (a rope twist)."""
     n = len(path)
-    V, SH, AL, F = [], [], [], []
+    V, SH, AL, F, SW = [], [], [], [], []
     T = []
     for k in range(n):
         a = path[max(0, k - 1)]; b = path[min(n - 1, k + 1)]
@@ -275,16 +277,17 @@ def tube(M, path, radii, sides=5, twist=0.0, shade=(0.78, 1.0), w=None, tip=0.6,
             if root_shade is not None and k == 0:
                 sh = root_shade
             SH.append(sh); AL.append(f)
+            SW.append(swing * smooth(0.0, 1.0, (k - swing_from) / max(1, n - 1 - swing_from)) ** 1.3 if k > swing_from else 0.0)
     for k in range(n - 1):
         for s in range(sides):
             a = k * sides + s; b = k * sides + (s + 1) % sides
             F.append((a, b, b + sides, a + sides))
     r = radii[-1] if hasattr(radii, "__len__") else radii
-    V.append(path[-1] + T[-1] * r * tip); SH.append(shade[1]); AL.append(1.0)
+    V.append(path[-1] + T[-1] * r * tip); SH.append(shade[1]); AL.append(1.0); SW.append(swing)
     tipi = len(V) - 1
     for s in range(sides):
         F.append(((n - 1) * sides + s, (n - 1) * sides + (s + 1) % sides, tipi))
-    M.add(V, F, SH, AL, w)
+    M.add(V, F, SH, AL, w, SW)
 
 
 def simplify(path, tol):
@@ -381,7 +384,7 @@ def cell(p, f):
     return max(0.0, 1.0 - d[0] / max(d[1], 1e-5))
 
 
-def lumps(p, f=27.0):
+def lumps(p, f=24.0):
     """Coily lumps: big soft cells with a finer bobble on top (-0.2 … 1)."""
     return 0.75 * cell(p, f) + 0.25 * cell(p + Vector((0.31, 0.17, 0.23)), f * 2.1) + 0.12 * noise.noise(p * f * 1.3)
 
@@ -395,7 +398,7 @@ def s_afro(H, M, rnd):
     def thick(az, el, f, loc):
         t = lerp(0.02, 0.028, smooth(RAD(5), RAD(60), el))
         t = lerp(t, 0.017, smooth(RAD(120), RAD(180), abs(az)) * (1 - smooth(RAD(10), RAD(45), el)))
-        return (t - 0.004 + 0.019 * lumps(loc) * smooth(0.0, 0.1, f)) * S
+        return (t - 0.009 + 0.031 * lumps(loc) * smooth(0.0, 0.1, f)) * S
 
     def shade(az, el, f, p):
         return 0.7 + 0.3 * max(0.0, lumps(p))
@@ -404,7 +407,7 @@ def s_afro(H, M, rnd):
 
 def s_hightop(H, M, rnd):
     S = H.S
-    ytop = H.top + 0.04 * S
+    ytop = H.top + 0.03 * S
     c = Vector((0, 0, H.C.z + 0.008))
 
     def lo(az):   # where the tall hair starts: the forehead's hairline, round the sides above the fade
@@ -414,8 +417,8 @@ def s_hightop(H, M, rnd):
 
     # the outline, from the fade line (0) up the side (it leans out a little: wider at the top), round the
     # top edge, and in across a gently domed top (1): (how far up, how far out in metres, how far in to the middle)
-    PROF = ((0.0, 0.0, 1.0), (0.14, 0.0035, 1.0), (0.34, 0.0065, 1.0), (0.56, 0.009, 1.0), (0.76, 0.0105, 1.0), (0.9, 0.009, 0.99),
-            (0.975, 0.005, 0.95), (1.0, 0.0, 0.86), (1.012, 0.0, 0.66), (1.02, 0.0, 0.4), (1.024, 0.0, 0.16))
+    PROF = ((0.0, 0.0, 1.0), (0.15, 0.003, 1.0), (0.35, 0.006, 1.0), (0.55, 0.009, 1.0), (0.72, 0.0105, 0.995), (0.85, 0.009, 0.965),
+            (0.94, 0.005, 0.9), (1.0, 0.0, 0.78), (1.04, 0.0, 0.58), (1.065, 0.0, 0.34), (1.075, 0.0, 0.12))
     rings = tuple(i / len(PROF) for i in range(len(PROF)))
 
     def pos(az, el, f, loc, n, t):
@@ -427,14 +430,14 @@ def s_hightop(H, M, rnd):
         q = Vector((c.x + out.x * r0 * k, lerp(loc0.y, ytop, up), c.z + out.z * r0 * k)) + out * out_ * S
         b = (lumps(q, 30) - 0.35) * smooth(0.0, 0.3, up)
         side = smooth(0.8, 1.0, k)
-        q += out * (0.012 * b * side * S) + Vector((0, 0.009 * b * (1 - side) * S, 0))
+        q += out * (0.018 * b * side * S) + Vector((0, 0.014 * b * (1 - side) * S, 0))
         return H.push_out(q, RIM)
 
     def shade(az, el, f, p):
         return 0.72 + 0.28 * max(0.0, lumps(p, 30))
     cap(M, lo, lambda az, el, f, loc: 0.02, naz=52, rings=rings, blend=0.5, shade=shade, wall=1.0, pos=pos)
     loc, nor, fi = H.ray(0, RAD(90))
-    M.V[-1] = Vector((c.x, ytop + 0.001 * S, c.z))
+    M.V[-1] = Vector((c.x, lerp(H.top, ytop, 1.08), c.z))
 
 
 def loc_radii(n, r0, r1):
@@ -461,7 +464,7 @@ def s_locs_short(H, M, rnd):
         pts = [loc + nor * (RIM + r0 * 0.4)] + simplify(pts, 0.0012)
         w = H.weights(loc)
         k = rnd.uniform(0.9, 1.06)
-        tube(M, pts, loc_radii(len(pts), r0, r0 * 0.78), sides=5, shade=(0.74 * k, 1.0 * k), w=w, tip=0.5, hint=nor, root_shade=0.62)
+        tube(M, pts, loc_radii(len(pts), r0, r0 * 0.78), sides=5, shade=(0.74 * k, 1.0 * k), w=w, tip=0.5, hint=nor, root_shade=0.62, swing=0.3)
 
 
 def s_locs_long(H, M, rnd):
@@ -490,7 +493,7 @@ def s_locs_long(H, M, rnd):
         pts = [loc + nor * (RIM + r0 * 0.4)] + simplify(pts, 0.0011)
         w = H.weights(loc)
         k = rnd.uniform(0.88, 1.06)
-        tube(M, pts, loc_radii(len(pts), r0, r0 * 0.74), sides=5, shade=(0.72 * k, 1.0 * k), w=w, tip=0.5, hint=nor, root_shade=0.6)
+        tube(M, pts, loc_radii(len(pts), r0, r0 * 0.74), sides=5, shade=(0.72 * k, 1.0 * k), w=w, tip=0.5, hint=nor, root_shade=0.6, swing=1.0, swing_from=2)
 
 
 def scalp_path(H, a0, e0, a1, e1, n, off):
@@ -549,7 +552,7 @@ def s_locs_bun(H, M, rnd):
         start = bun_c + d0 * 0.022 * S
         pts = drape(H, start, d0, rnd.uniform(0.06, 0.1) * S, r0, d0, seg=0.014 * S, grav=0.3, clear=0.002, keep_face=False)
         if len(pts) >= 3:
-            tube(M, [bun_c + d0 * 0.01 * S] + simplify(pts, 0.0012), loc_radii(len(pts) + 1, r0, r0 * 0.75), sides=5, shade=(0.78, 1.0), w=w, tip=0.5, hint=tnor)
+            tube(M, [bun_c + d0 * 0.01 * S] + simplify(pts, 0.0012), loc_radii(len(pts) + 1, r0, r0 * 0.75), sides=5, shade=(0.78, 1.0), w=w, tip=0.5, hint=tnor, swing=0.5)
 
 
 def s_twists(H, M, rnd):
@@ -613,7 +616,7 @@ def s_braids(H, M, rnd):
         hang = drape(H, loc, nor, 0.2 * S, r0, d0, seg=0.013 * S, grav=0.3, clear=0.0022, stop_y=stop + rnd.uniform(0, 0.03), keep_face=False)
         pts += hang[1:]
         w0 = H.weights(pts[0])
-        tube(M, pts, loc_radii(len(pts), r0, r0 * 0.85), sides=5, shade=(0.8, 1.0), tip=0.6, hint=Vector((0, 1, 0)), bead=0.2, root_shade=0.7, w=None if len(hang) < 2 else None)
+        tube(M, pts, loc_radii(len(pts), r0, r0 * 0.85), sides=5, shade=(0.8, 1.0), tip=0.6, hint=Vector((0, 1, 0)), bead=0.2, root_shade=0.7, swing=1.0, swing_from=max(1, len(pts) - len(hang)))
         # the hanging part follows the nape's bones
         n_h = len(hang) - 1
         if n_h > 0:
@@ -653,15 +656,18 @@ def s_crew(H, M, rnd):
 
 def s_slick(H, M, rnd, tight=False):
     S = H.S
+    lines = 3.2 if not tight else 20.0   # the comb's lines, front to back (few and deep when worn loose)
 
     def thick(az, el, f, loc):
-        front = smooth(RAD(85), RAD(20), abs(az))
+        front = smooth(RAD(95), RAD(20), abs(az))
+        back = smooth(RAD(110), RAD(170), abs(az))
         t = lerp(0.006, 0.011, smooth(RAD(10), RAD(50), el))
         if not tight:
-            t += 0.014 * front * smooth(RAD(88), RAD(48), el)
-        return (t + (0.0013 if not tight else 0.0009) * (comb(loc) - 0.5) * smooth(0.03, 0.2, f)) * S
-    cap(M, lambda az: H.hl(az) - RAD(2), thick, naz=48, rings=(0, 0.045, 0.14, 0.26, 0.4, 0.55, 0.7, 0.85), blend=0.5,
-        shade=lambda az, el, f, p: 0.8 + 0.2 * comb(p), wall=0.85 if not tight else 0.75)
+            # a high swept-back front, the length carried over the crown and gathered at the nape
+            t += 0.021 * front * smooth(RAD(92), RAD(50), el) + 0.007 * smooth(RAD(40), RAD(80), el) + 0.009 * back * smooth(RAD(40), RAD(-10), el)
+        return (t + (0.0042 if not tight else 0.0009) * (comb(loc, lines) - 0.5) * smooth(0.03, 0.2, f)) * S
+    cap(M, lambda az: H.hl(az) - RAD(2), thick, naz=72 if not tight else 48, rings=(0, 0.045, 0.14, 0.26, 0.4, 0.55, 0.7, 0.85), blend=0.5,
+        shade=lambda az, el, f, p: (0.62 + 0.38 * comb(p, lines)) if not tight else 0.8 + 0.2 * comb(p), wall=0.92 if not tight else 0.75)
 
 
 def s_ponytail(H, M, rnd):
@@ -683,7 +689,7 @@ def s_ponytail(H, M, rnd):
         print('PONY', [tuple(round(x, 3) for x in q) for q in pts])
     n = len(pts)
     rad = [lerp(0.012, 0.023, smooth(0, 0.3, k / (n - 1))) * lerp(1.0, 0.4, smooth(0.5, 1.0, k / (n - 1))) * S for k in range(n)]
-    tube(M, pts, rad, sides=7, shade=(0.82, 1.0), w=w, tip=1.2, hint=Vector((1, 0, 0)), flat=1.5)
+    tube(M, pts, rad, sides=7, shade=(0.82, 1.0), w=w, tip=1.2, hint=Vector((1, 0, 0)), flat=1.5, swing=1.0, swing_from=1)
     # the band
     tube(M, [base + d0 * 0.012 * S, base + d0 * 0.02 * S, base + d0 * 0.028 * S], [0.0135 * S, 0.0145 * S, 0.0135 * S], sides=7, shade=(0.45, 0.45), w=w, tip=0.0, hint=Vector((1, 0, 0)))
 
@@ -726,7 +732,7 @@ def s_mullet(H, M, rnd):
             n_ = len(pts)
             rad = [r0 * lerp(1.0, 0.45, smooth(0.5, 1.0, q / (n_ - 1))) for q in range(n_)]
             kk = rnd.uniform(0.9, 1.05)
-            tube(M, pts, rad, sides=6, shade=(0.93, 1.0), w=H.weights(loc), tip=0.7, hint=out, flat=0.28)
+            tube(M, pts, rad, sides=6, shade=(0.93, 1.0), w=H.weights(loc), tip=0.7, hint=out, flat=0.28, swing=0.6)
             k += 1
 
 
@@ -846,9 +852,11 @@ def write(path, H, M, V, N, T, style, base, stats):
         for k, (j, w) in enumerate(ws[:4]):
             J[i, k] = j; W[i, k] = w
     uv = np.stack([np.clip(np.array(M.SH, np.float32), 0, 1.2) / 1.2, np.clip(np.array(M.AL, np.float32), 0, 1)], axis=1).astype(np.float32)
+    sw = np.stack([np.clip(np.array(M.SW, np.float32), 0, 1), np.zeros(n, np.float32)], axis=1).astype(np.float32)
+    stats = {**stats, "swing": bool(sw[:, 0].max() > 0)}
     w = GLB.Writer()
     prim = {"attributes": {
-        "POSITION": w.acc(V, "VEC3", 34962, minmax=True), "NORMAL": w.acc(N, "VEC3", 34962), "TEXCOORD_0": w.acc(uv, "VEC2", 34962),
+        "POSITION": w.acc(V, "VEC3", 34962, minmax=True), "NORMAL": w.acc(N, "VEC3", 34962), "TEXCOORD_0": w.acc(uv, "VEC2", 34962), "TEXCOORD_1": w.acc(sw, "VEC2", 34962),
         "JOINTS_0": w.acc(J, "VEC4", 34962), "WEIGHTS_0": w.acc(W, "VEC4", 34962)},
         "indices": w.acc(T.reshape(-1), "SCALAR", 34963), "material": 0}
     j = {"asset": {"version": "2.0", "generator": "tools/hair3d/build_hair.py"}, "scene": 0,

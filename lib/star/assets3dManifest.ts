@@ -1219,11 +1219,11 @@ export const ASSETS_3D: Asset3dFolder[] = [
       },
       {
         "path": "/star/people3d/toon-p8.glb",
-        "bytes": 281264
+        "bytes": 281252
       },
       {
         "path": "/star/people3d/toon-p9.glb",
-        "bytes": 281284
+        "bytes": 281280
       },
       {
         "path": "/star/people3d/toon-q1.glb",

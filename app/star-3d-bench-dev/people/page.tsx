@@ -13,6 +13,9 @@
  *   ?set=scene         five typical scenes (boss, chairman, agent, journalist, manager) cast by castScene
  *   ?set=hair          every modelled hairstyle (lib/star/style3d/toon/hair.ts) on three skin tones, front, three-quarter and back
  *                      (?styles=locsLong,afro  ?base=h3|m2|h7|h8|h9|m3  ?views=front,34,back,side)
+ *   ?set=faces         the face types (lib/star/style3d/toon/faceShape.ts): 28 faces, front and three-quarter, same light, several skin tones
+ *   ?set=swing         one person turning and nodding his head, the loose hair swinging (hair.ts update): ?hair=locsLong ?base=h3 ?tone=6
+ *                      plays live; window.__swingFrame(i) draws frame i of 30 a second (film: node scripts/bench3d/hair-swing.mjs OUTDIR)
  *   ?set=heads         the head shapes (the two hair heads and the four re-shaped ones), front, three-quarter and side
  *   ?cols=8 ?w=230 ?h=330   card grid and size        ?view=34|front
  * window.__sheetDone is true when every card is drawn (stills: node scripts/bench3d/people-sheet.mjs).
@@ -22,6 +25,7 @@ import type { PersonLookResult } from "@/lib/star/people/presets";
 import type { PersonLook } from "@/lib/star/people3d";
 import type { ToonBody, ToonHead } from "@/lib/star/style3d/toon/bodies";
 import type { ToonHair } from "@/lib/star/style3d/toon/hairStyles";
+import type { ToonFaceId } from "@/lib/star/style3d/toon/faceShape";
 
 const SKIN_LABEL = ["Porcelain", "Fair", "Light", "Tan", "Olive", "Brown", "Deep", "Dark"];
 const CLUBS = ["Arsenal", "Chelsea", "Liverpool", "Newcastle United", "Aston Villa", "Everton", "Wrexham", "Brighton & Hove Albion"];
@@ -30,7 +34,73 @@ interface Card {
   title: string; sub: string; look: PersonLookResult | null;
   today?: { who: string; suit: boolean; skin: string; hair: string; kit?: { shirt: string; trim: string } };
   /** A head dressed by hand (the hair and head-shape sheets). */
-  raw?: { head: ToonHead; build: ToonBody; dress: PersonLook; hair?: ToonHair; yaw: number };
+  raw?: { head: ToonHead; build: ToonBody; dress: PersonLook; hair?: ToonHair; yaw: number; face?: ToonFaceId };
+}
+
+/**
+ * The swing test: one man, his head turned left and right, nodded, then his whole body turned,
+ * the same moves every time (frame i is 1/30 s after frame i - 1), so a film is the same film.
+ */
+async function swingPage(box: HTMLDivElement, q: URLSearchParams, dead: () => boolean, setStatus: (s: string) => void) {
+  const T = await import("three");
+  const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
+  const SkU = await import("three/examples/jsm/utils/SkeletonUtils.js");
+  const { withMeshopt } = await import("@/lib/star/three3d/meshopt");
+  const P3 = await import("@/lib/star/people3d");
+  const PR = await import("@/lib/star/people/presets");
+  const HAIR = await import("@/lib/star/style3d/toon/hair");
+  const { kitsOf } = await import("@/lib/star/kits");
+  const { setToonRim } = await import("@/lib/star/style3d/toon/shader");
+  const { addToonFace, toonFaceFor } = await import("@/lib/star/style3d/toon/face");
+  const hairId = (q.get("hair") ?? "locsLong") as ToonHair, base = (q.get("base") ?? "h3") as ToonHead, tone = Number(q.get("tone") ?? 6);
+  const still = q.get("still") === "1";   // the same film with the swing off, to compare
+  const SK = ((SkU as unknown as { default?: unknown }).default ?? SkU) as never;
+  const loader = await withMeshopt(new GLTFLoader());
+  const anims = await P3.loadPeople3d(loader, "anims", "new");
+  const all = await P3.loadPeople3d(loader, "player", "new", [base]);
+  const W = Number(q.get("w") ?? 390), H = Number(q.get("h") ?? 700);
+  const renderer = new T.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(1); renderer.setSize(W, H);
+  renderer.toneMapping = T.ACESFilmicToneMapping;
+  renderer.setClearColor("#cfd6de");
+  // one canvas (a dev build runs this twice): the last one made is the one __swingFrame draws
+  box.querySelectorAll("#swing-canvas").forEach((c) => c.remove());
+  renderer.domElement.id = "swing-canvas";
+  box.appendChild(renderer.domElement);
+  const scene = new T.Scene();
+  scene.add(new T.HemisphereLight("#dfe8f5", "#5d6b46", 1.25));
+  const sun = new T.DirectionalLight("#fff0dc", 2.2); sun.position.set(1.5, 4, 3.5); scene.add(sun);
+  setToonRim(T, { color: "#fff1dd", strength: 0.5, from: [-0.35, 0.55, -1] });
+  const cam = new T.PerspectiveCamera(24, W / H, 0.1, 40);
+  cam.position.set(0.25, 1.62, 2.7); cam.lookAt(0, 1.5, 0);
+  const p = P3.makePerson3d(T, SK, all, anims, { outline: 0.006, toonHead: base, toonBody: "c2", who: "swing" });
+  P3.dressPerson3d(T, p, { skin: PR.toonSkinHex(tone), hair: "#1f1a17", hairCut: { scalp: 0, beard: 1, stubble: 0 }, kit: kitsOf("Arsenal").home, accessories: [{ slot: "boots", color: "#141416" }] } as PersonLook);
+  const face = addToonFace(T, p);
+  face?.set({ face: toonFaceFor({}), blink: 0 });
+  const hair = await HAIR.wearToonHair(T, loader, p, hairId, { outline: 0.0045 });
+  scene.add(p.root);
+  const ease = (a: number, b: number, t: number) => { const k = Math.max(0, Math.min(1, (t - a) / (b - a))); return k * k * (3 - 2 * k); };
+  const clip = p.actions.idle ? "idle" : Object.keys(p.actions)[0];
+  const frame = (i: number) => {
+    const t = i / 30;
+    // head: left, right, centre, a nod; then the whole man turns his back and comes round again
+    const yaw = 0.95 * (ease(0.5, 0.75, t) - 2 * ease(1.5, 1.8, t) + ease(2.6, 2.85, t));
+    const nod = 0.45 * (ease(3.0, 3.2, t) - ease(3.5, 3.7, t));
+    const turn = Math.PI * (ease(4.1, 4.6, t) - ease(5.4, 5.9, t)) - 0.3;
+    P3.poseClips(p, [[clip, 1.2 + t * 0.4, 1]]);
+    p.bones.neck?.rotateY(yaw * 0.4); p.bones.Head?.rotateY(yaw * 0.6);
+    p.bones.neck?.rotateX(nod * 0.4); p.bones.Head?.rotateX(nod * 0.6);
+    p.root.rotation.y = turn;
+    p.root.updateMatrixWorld(true);
+    if (!still) hair?.update(1 / 30);
+    renderer.render(scene, cam);
+  };
+  frame(0);
+  (window as unknown as { __swingFrame?: (i: number) => void; __sheetDone?: boolean }).__swingFrame = frame;
+  (window as unknown as { __sheetDone?: boolean }).__sheetDone = true;
+  setStatus(`swing: ${hairId} on ${base}${hair?.swings ? "" : " (this style has no loose hair)"}`);
+  // live: three's own render loop (this page keeps no animation loop of its own)
+  if (q.get("play") !== "0") { let i = 0; renderer.setAnimationLoop(() => { if (dead()) { renderer.setAnimationLoop(null); return; } frame(i++ % 195); }); }
 }
 
 export default function BenchPeoplePage() {
@@ -41,10 +111,11 @@ export default function BenchPeoplePage() {
     (async () => {
       const q = new URLSearchParams(window.location.search);
       const set = q.get("set") ?? "staff";
-      const close = set === "closeup" || set === "hair" || set === "heads";
+      const close = set === "closeup" || set === "hair" || set === "heads" || set === "faces";
       const cols = Number(q.get("cols") ?? (set === "hair" ? 9 : set === "heads" ? 6 : 8)), CW = Number(q.get("w") ?? (close ? 250 : 230)), CH = Number(q.get("h") ?? 330);
       const view = q.get("view") === "front" ? 0 : -0.45;
       const PR = await import("@/lib/star/people/presets");
+      if (set === "swing") { await swingPage(box.current!, q, () => dead, setStatus); return; }
       const { kitsOf } = await import("@/lib/star/kits");
       const { managerFor } = await import("@/components/star/Office3D");
       const { toonPickFor } = await import("@/lib/star/style3d/toon/bodies");
@@ -80,14 +151,13 @@ export default function BenchPeoplePage() {
           const look = PR.presetLook(p, p.id, role, { club: CLUBS[i % CLUBS.length], exact: true });
           cards.push({ title: p.name.split(" · ")[0], sub: `${p.heritage} · ${p.texture} · ${SKIN_LABEL[p.skin]} · ${role}`, look });
         });
-      } else if (set === "hair" || set === "heads") {
+      } else if (set === "hair" || set === "heads" || set === "faces") {
         const HS = await import("@/lib/star/style3d/toon/hairStyles");
-        const { SKIN_TONES } = await import("@/lib/star/playerIdentity");
         const { MANAGER_HAIR_COLOURS } = await import("@/lib/star/managerFace");
         const YAW: Record<string, number> = { front: 0, "34": -0.62, back: Math.PI, side: -Math.PI / 2 };
         const SUIT = { coat: "#1f2533", trousers: "#232733", shirt: "#eef0f2", tie: "#7a1d2b", shoes: "#141416" };
         const dressFor = (head: ToonHead, skin: number, hair: string, cut: { scalp: number; beard: number; stubble: number }, club: string): PersonLook =>
-          ({ skin: SKIN_TONES[skin].hex, hair, grey: 0, hairCut: cut, ...(head.startsWith("m") ? { suit: SUIT } : { kit: kitsOf(club).home }), accessories: [{ slot: "boots", color: "#141416" }] }) as PersonLook;
+          ({ skin: PR.toonSkinHex(skin), hair, grey: 0, hairCut: cut, browDark: PR.toonBrowDark((Object.keys(MANAGER_HAIR_COLOURS) as (keyof typeof MANAGER_HAIR_COLOURS)[]).find((k) => MANAGER_HAIR_COLOURS[k] === hair) ?? "fair", hair === "#8d8985" ? 0.6 : 0), ...(head.startsWith("m") ? { suit: SUIT } : { kit: kitsOf(club).home }), accessories: [{ slot: "boots", color: "#141416" }] }) as PersonLook;
         if (set === "hair") {
           const base = (q.get("base") ?? "h3") as ToonHead;
           const styles = (q.get("styles")?.split(",") ?? HS.TOON_HAIRS) as ToonHair[];
@@ -104,6 +174,30 @@ export default function BenchPeoplePage() {
               views.forEach((v) => cards.push({ title: `${info.label}`, sub: `${base} · ${SKIN_LABEL[tone]} · ${v === "34" ? "three-quarter" : v}`, look: null,
                 raw: { head: base, build: (["c1", "c2", "c3"] as const)[(si + ti) % 3], dress: dressFor(base, tone, hex, cut, CLUBS[(si + ti) % CLUBS.length]), hair, yaw: YAW[v] ?? 0 } }));
             });
+          });
+        } else if (set === "faces") {
+          const FS = await import("@/lib/star/style3d/toon/faceShape");
+          // every face type on the Buzz head, clean-shaven, then faces on the other heads; the skin a tone its heritage has
+          const TONE: Record<string, number> = { base: 3, a1: 6, a2: 7, a3: 5, c1: 4, s1: 4, s2: 3, e1: 2, e2: 1, e3: 2, m1: 3, m2: 2, l1: 3, l2: 2, w1: 0, w2: 1, w3: 0, w4: 1, x1: 2 };
+          // each wears a haircut, beard and hair colour his heritage's presets have (not one shared hairline)
+          const WEAR: Record<string, [ToonHair | null, string, "clean" | "as" | "stubble"]> = {
+            base: [null, "black", "clean"], a1: ["locsShort", "black", "as"], a2: ["twists", "black", "clean"], a3: ["afro", "black", "as"], c1: ["curlyTop", "darkBrown", "stubble"],
+            s1: ["slickBack", "black", "stubble"], s2: ["crew", "black", "clean"], e1: ["crew", "black", "clean"], e2: ["ponytail", "black", "clean"], e3: ["slickBack", "darkBrown", "clean"],
+            m1: ["slickBack", "black", "as"], m2: ["crew", "darkBrown", "as"], l1: ["manBun", "black", "stubble"], l2: ["mullet", "darkBrown", "clean"],
+            w1: ["crew", "blond", "clean"], w2: ["thinning", "fair", "stubble"], w3: ["mullet", "ginger", "clean"], w4: ["slickBack", "darkBrown", "as"], x1: ["ponytail", "brown", "stubble"],
+          };
+          const list: [ToonHead, ToonFaceId, number][] = [
+            ...FS.TOON_FACE_IDS.map((f) => ["h3", f, TONE[f] ?? 3] as [ToonHead, ToonFaceId, number]),
+            ["h7", "w4", 1], ["h8", "w1", 0], ["h9", "a3", 6], ["h8", "a2", 7], ["m2", "m1", 3], ["m3", "w2", 1], ["h9", "s2", 4], ["h1", "c1", 4], ["h2", "w3", 0], ["h5", "e1", 2],
+          ];
+          list.forEach(([head, face, tone], i) => {
+            const [hair0, colour, beard] = WEAR[face] ?? [null, "black", "clean"];
+            // the second time a face is shown (on another head) it wears that head's own cut
+            const hair = i < FS.TOON_FACE_IDS.length && HS.toonHairFits(head) ? hair0 : null;
+            const hex = head.startsWith("m") ? "#8d8985" : MANAGER_HAIR_COLOURS[colour as keyof typeof MANAGER_HAIR_COLOURS];
+            const cut = { scalp: hair ? HS.TOON_HAIR_INFO[hair].scalp : 0, beard: beard === "as" ? 0 : 1, stubble: beard === "stubble" ? 0.7 : 0 };
+            for (const v of ["front", "34"]) cards.push({ title: `${face} · ${FS.TOON_FACE_TYPES[face].label}`, sub: `${head} · ${SKIN_LABEL[tone]} · ${v === "34" ? "three-quarter" : v}`, look: null,
+              raw: { head, build: "c2", dress: dressFor(head, tone, hex, cut, CLUBS[i % CLUBS.length]), hair: hair ?? undefined, yaw: YAW[v], face } });
           });
         } else {
           const { TOON_HEAD_LABEL } = await import("@/lib/star/style3d/toon/bodies");
@@ -140,6 +234,7 @@ export default function BenchPeoplePage() {
       const { setToonRim } = await import("@/lib/star/style3d/toon/shader");
       const { TOON_ALL_HEADS } = await import("@/lib/star/style3d/toon/bodies");
       const HAIR = await import("@/lib/star/style3d/toon/hair");
+      const { applyToonFaceShape } = await import("@/lib/star/style3d/toon/faceShapeApply");
       if (dead || !box.current) return;
       const SK = ((SkU as unknown as { default?: unknown }).default ?? SkU) as never;
       const loader = await withMeshopt(new GLTFLoader());
@@ -166,7 +261,8 @@ export default function BenchPeoplePage() {
       setToonRim(T, { color: "#fff1dd", strength: 0.5, from: [-0.35, 0.55, -1] });
       // head to knee, a touch from his right: a lens camera at chest height
       const cam = new T.PerspectiveCamera(24, CW / (CH - 44), 0.1, 40);
-      if (set === "hair" || set === "heads") { cam.position.set(0, 1.76, 1.85); cam.lookAt(0, 1.69, 0); }
+      if (set === "faces") { cam.position.set(0, 1.74, 1.5); cam.lookAt(0, 1.685, 0); }
+      else if (set === "hair" || set === "heads") { cam.position.set(0, 1.76, 1.85); cam.lookAt(0, 1.69, 0); }
       else if (set === "closeup") { cam.position.set(0, 1.7, 2.05); cam.lookAt(0, 1.58, 0); } else { cam.position.set(0, 1.46, 3.45); cam.lookAt(0, 1.31, 0); }
 
       for (let i = 0; i < cards.length; i++) {
@@ -182,6 +278,8 @@ export default function BenchPeoplePage() {
         if (L) P3.dressPerson3d(T, p, L.dress);
         else if (R) P3.dressPerson3d(T, p, R.dress);
         else P3.dressPerson3d(T, p, { skin: c.today!.skin, hair: c.today!.hair, kit: c.today!.kit, accessories: [{ slot: "boots", color: "#141416" }] });
+        if (L) applyToonFaceShape(T, p, L.face, L.faceK);
+        else if (R?.face) applyToonFaceShape(T, p, R.face, 1);
         const face = addToonFace(T, p);
         const hairId = R?.hair ?? L?.hairMesh;
         const worn = hairId ? await HAIR.wearToonHair(T, loader, p, hairId, { outline: 0.0045 }) : null;

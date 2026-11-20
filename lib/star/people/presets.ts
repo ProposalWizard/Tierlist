@@ -36,6 +36,7 @@ import { MANAGER_HAIR_COLOURS, type ManagerBeard, type ManagerLook } from "../ma
 import { hashId, type ToonBody, type ToonHead } from "../style3d/toon/bodies";
 import { kitsOf } from "../kits";
 import { TOON_HAIR_INFO, toonHairFits, type ToonHair, type HairTexture } from "../style3d/toon/hairStyles";
+import { faceFor, type ToonFaceId } from "../style3d/toon/faceShape";
 export type { HairTexture };
 
 export type PersonRole = "manager" | "staff" | "player" | "journalist" | "agent" | "fan";
@@ -331,6 +332,9 @@ export interface PersonLookResult {
   cut: HairCut;
   /** A modelled hairstyle worn on top of the head (style3d/toon/hair.ts wearToonHair); none = the head's own hair. */
   hairMesh?: ToonHair;
+  /** His face type (style3d/toon/faceShape.ts: nose, lips, eyes, brow, cheekbones, jaw, chin), one of his heritage's, and how strong (0.8 … 1.2). Put on with faceShapeApply.ts applyToonFaceShape. */
+  face: ToonFaceId;
+  faceK: number;
   /** Smart clothes (suit, tracksuit, smart, casual). */
   suit?: { coat: string; trousers: string; shirt: string; tie: string; shoes: string };
   /** Players: the club's home kit. */
@@ -338,7 +342,7 @@ export interface PersonLookResult {
   accessories: { slot: string; color: string }[];
   /** Ready for people3d.ts dressPerson3d (plus a number, badge or name if the scene has them). */
   dress: {
-    skin: string; hair: string; grey: number; hairCut: HairCut; hairMesh?: ToonHair;
+    skin: string; hair: string; grey: number; hairCut: HairCut; hairMesh?: ToonHair; browDark?: number;
     suit?: PersonLookResult["suit"]; kit?: PersonLookResult["kit"]; accessories: { slot: string; color: string }[];
   };
 }
@@ -372,6 +376,21 @@ function nearestSkin(hex: string): number {
 }
 function nearestHair(hex: string): HairId {
   return (Object.keys(MANAGER_HAIR_COLOURS) as HairId[]).find((k) => MANAGER_HAIR_COLOURS[k] === hex) ?? "brown";
+}
+
+/**
+ * The skin a toon person is PAINTED in. The game's two lightest tones (Porcelain, Fair) drawn as they
+ * are came out near-white under the toon light: the face's shading and lines washed out ("white
+ * plastic"). On a toon person they are a touch darker and more peach, so they read as pale skin.
+ * The tone itself (skinId, the game's eight) is unchanged.
+ */
+export function toonSkinHex(index: number): string {
+  return index === 0 ? "#eac3a6" : index === 1 ? "#e0ad85" : SKIN_TONES[Math.min(7, Math.max(0, index))].hex;
+}
+/** How much darker than his hair a man's brows are drawn: grey and fair hair keep brows that read on the face. */
+export function toonBrowDark(hair: HairId, grey: number): number {
+  const fair = hair === "blond" ? 0.45 : hair === "fair" ? 0.4 : hair === "ginger" ? 0.2 : 0;
+  return Math.max(fair, grey > 0.25 ? Math.min(0.6, 0.25 + grey * 0.4) : 0);
 }
 
 /** What the beard ends up as, from the head and the cut. */
@@ -455,6 +474,8 @@ export function presetLook(preset: PeoplePreset, id: string, role: PersonRole, o
   if (!known && !exact && bare && unit(id, "stubble") < 0.2) cut.stubble = 0.55;
   if (cut.stubble > 0 && !exact) cut.stubble = Math.min(0.95, cut.stubble + (unit(id, "stubk") - 0.5) * 0.2);
 
+  // his face: one of his heritage's face types, the same for the same id (the preset's own on a labelled card)
+  const fc = exact ? { face: faceFor(preset.id, preset.heritage).face, k: 1 } : faceFor(id, preset.heritage);
   const age = exact ? preset.age : Math.round(preset.age + (unit(id, "age") - 0.5) * 6);
   const kit = opts.kit ?? (opts.club ? kitsOf(opts.club).home : undefined);
   const clubShirt = kit?.shirt ?? TIES.maroon;
@@ -489,10 +510,10 @@ export function presetLook(preset: PeoplePreset, id: string, role: PersonRole, o
 
   return {
     id, role, preset: preset.id, presetName: preset.name, outfit: preset.outfit,
-    head: preset.head, build: preset.build, skin: skinTone.hex, skinId: skinTone.id,
-    hairColour, hairId, grey, hairStyle: hairStyleOf(preset.head, cut, preset.hairMesh), beard: beardOf(preset.head, cut), age, cut, hairMesh: preset.hairMesh,
+    head: preset.head, build: preset.build, skin: toonSkinHex(skinIdx), skinId: skinTone.id,
+    hairColour, hairId, grey, hairStyle: hairStyleOf(preset.head, cut, preset.hairMesh), beard: beardOf(preset.head, cut), age, cut, hairMesh: preset.hairMesh, face: fc.face, faceK: fc.k,
     suit, kit: preset.outfit === "kit" ? kit : undefined, accessories,
-    dress: { skin: skinTone.hex, hair: hairColour, grey: 0, hairCut: cut, hairMesh: preset.hairMesh, suit, kit: preset.outfit === "kit" ? kit : undefined, accessories },
+    dress: { skin: toonSkinHex(skinIdx), hair: hairColour, grey: 0, hairCut: cut, hairMesh: preset.hairMesh, browDark: toonBrowDark(hairId, grey), suit, kit: preset.outfit === "kit" ? kit : undefined, accessories },
   };
 }
 

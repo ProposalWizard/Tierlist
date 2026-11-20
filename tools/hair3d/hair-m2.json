@@ -54,10 +54,10 @@
   "leastMm": 0.85
  },
  "slickBack": {
-  "tris": 720,
-  "verts": 385,
+  "tris": 1080,
+  "verts": 577,
   "crossing": 0,
-  "leastMm": 0.8
+  "leastMm": 0.81
  },
  "ponytail": {
   "tris": 944,

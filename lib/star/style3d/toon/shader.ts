@@ -266,6 +266,12 @@ const TOON_BODY = `
   // grey beard on dark skin (people presets, 20 Nov 2026)
   hairM = mix(hairM, smoothstep(0.3, 0.7, hairM), head);
   col = mix(col, min(uHairK * min(dot(c, vec3(0.2126, 0.7152, 0.0722)) / uHairL, 1.6), vec3(1.0)), hairM);
+  if (uShade.w > 0.0) {
+    // a greying or bald man's brows (people presets): the brows take the hair's colour, and grey brows on
+    // light skin left the face with no features (it read bleached); they keep some of their darkness
+    float brow = hairM * head * step(uFaceF.y + 0.004, r.y) * step(r.y, uFaceF.y + 0.05) * step(uFaceF.w - 0.075, r.z) * step(abs(r.x), 0.09);
+    col = mix(col, col * (1.0 - uShade.w), brow);
+  }
   tnFace = skin * head * smoothstep(0.1, 0.5, vRestN.z);
   if (uShade.z > 0.5) {
     // stylised hair: one flat colour (the sculpted strands smoothed away) and a painted sheen band
@@ -305,6 +311,9 @@ const TOON_BODY = `
     // shaved off, or stubble painted on (the hair under the eyes, front half = the beard; the rest = scalp)
     float lowFront = step(r.y, uFaceF.y - 0.03) * step(uNeck.z - 0.01, r.z);
     float cut = smoothstep(0.02, 0.45, hairM) * mix(uHairCut.x, uHairCut.y, lowFront);
+    // never the brows: a bald or shaved head lost them with its scalp (they are hair in the mask), and a
+    // light-skinned bald man's face read bleached, with no features
+    cut *= 1.0 - step(uFaceF.y - 0.03, r.y) * step(r.y, uFaceF.y + 0.05) * step(uFaceF.w - 0.075, r.z) * step(abs(r.x), 0.09);
     // the beard's own drawn edge where the mask already says skin (dark lines left round a shaved jaw)
     float lumK = dot(c, vec3(0.2126, 0.7152, 0.0722)) / max(dot(uSkinAvg, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
     cut = max(cut, uHairCut.y * lowFront * head * (1.0 - hairM) * smoothstep(0.5, 0.25, lumK) * step(0.025, abs(r.y - uTfMouth.y) + step(0.03, abs(r.x))));
@@ -674,5 +683,5 @@ if (uSkinFx.y > 1.5) gl_FragColor = tnSkin > 0.5 ? vec4(tnRegion == 1.0 ? vec3(0
 else if (uSkinFx.y > 0.5 && tnSkin > 0.5) gl_FragColor = vec4(3.0, 0.0, 3.0, 1.0);
 else if (uSkinFx.x > 0.5 && uHome.x < 0.5 && tnTone > 0.5) gl_FragColor.a = ${TOON_SKIN_MARK.toFixed(2)};`);
   };
-  mat.customProgramCacheKey = () => "people3d-toon-v12";
+  mat.customProgramCacheKey = () => "people3d-toon-v14";
 }

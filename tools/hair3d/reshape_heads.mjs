@@ -9,7 +9,7 @@
  * rule (printed as the head's line for lib/star/style3d/toon/faceLandmarks.ts).
  *
  *   h7 Broad jaw     a wider, squarer jaw and chin
- *   h8 Long face     the face 14 mm longer from chin to brow (the skull lifted with it), narrower cheeks
+ *   h8 Long face     the face 22 mm longer from chin to brow (the skull lifted with it), narrower cheeks
  *   h9 Round face    fuller cheeks, a softer wider jaw, a shorter chin
  *   m3 Older, lined  the suit head: hollower cheeks, jowls, a heavier brow, and lines painted into the
  *                    picture (forehead, between the brows, crow's feet, under the eyes, nose to mouth)
@@ -48,14 +48,16 @@ const SHAPES = {
     const w = sm(F.eyeY + 0.005, F.eyeY - 0.09, y) * sm(F.chinY - 0.042, F.chinY - 0.006, y) * sm(-0.03, 0.045, z);
     const corner = w * sm(0.03, 0.075, Math.abs(x)) * Math.exp(-(((y - (F.chinY + 0.032)) / 0.03) ** 2));
     const chin = w * sm(0.05, 0.0, Math.abs(x)) * sm(F.mouthY - 0.012, F.chinY, y);
-    return [x * (1 + 0.13 * w), y - 0.007 * corner - 0.002 * chin, z + 0.004 * chin];
+    const sq = w * sm(F.mouthY - 0.005, F.chinY + 0.004, y) * sm(0.012, 0.045, Math.abs(x));
+    const bone = sm(F.chinY - 0.02, F.chinY + 0.022, y);   // bone, not jowl: nothing hangs over the neck
+    return [x * (1 + (0.15 * w + 0.07 * sq) * bone), y - 0.008 * corner - 0.003 * chin, z + 0.005 * chin];
   } },
-  h8: { base: "h3", out: "toon-p8", lift: 0.014, f: (p, F) => {
+  h8: { base: "h3", out: "toon-p8", lift: 0.022, f: (p, F) => {
     const [x, y, z] = p;
     const back = sm(F.eyeY - 0.118, F.eyeY - 0.088, y), front = sm(F.chinY + 0.004, F.browY - 0.004, y);
     const r = mix(back, front, sm(0.0, 0.06, z));
     const narrow = sm(F.chinY - 0.03, F.chinY + 0.02, y) * sm(F.browY, F.eyeY - 0.03, y) * sm(-0.01, 0.05, z);
-    return [x * (1 - 0.07 * narrow), y + 0.014 * r, z];
+    return [x * (1 - 0.1 * narrow), y + 0.022 * r, z];
   } },
   h9: { base: "h3", out: "toon-p9", f: (p, F) => {
     let [x, y, z] = p;
@@ -63,8 +65,8 @@ const SHAPES = {
     const w = sm(F.eyeY - 0.012, F.eyeY - 0.078, y) * sm(F.chinY - 0.042, F.chinY - 0.006, y) * sm(-0.03, 0.045, z);
     const cheek = gauss([Math.abs(x), y, z], [0.062, F.mouthY + 0.026, F.noseZ - 0.085], 0.036);
     const chin = Math.exp(-(((y - F.chinY) / 0.022) ** 2)) * sm(0.04, 0.1, z) * sm(0.07, 0.02, Math.abs(x));
-    x = x * (1 + 0.05 * w) + s * 0.0075 * cheek;
-    return [x, y + 0.0065 * chin - 0.002 * cheek, z + 0.006 * cheek - 0.003 * chin];
+    x = x * (1 + 0.03 * w * sm(F.chinY - 0.02, F.chinY + 0.022, y)) + s * 0.008 * cheek;
+    return [x, y + 0.009 * chin - 0.002 * cheek, z + 0.0075 * cheek - 0.004 * chin];
   } },
   m3: { base: "m2", out: "toon-mgr3", lines: true, f: (p, F) => {
     let [x, y, z] = p;

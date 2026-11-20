@@ -34,7 +34,7 @@ S=<scratch>; GT=<dir with @gltf-transform/core@4 functions extensions meshoptimi
 tools/hair3d/build.sh $S $GT                 # all 30 files (15 styles x 2 heads), packed
 tools/hair3d/build.sh $S $GT locsLong afro   # only these styles
 node tools/hair3d/dump_head.mjs public/star/people3d/toon-p8.glb $S/h8 --tools=$GT
-blender -b --python tools/hair3d/build_hair.py -- --check $S/h8 $S/out h3 0.014   # the long face: the hair sits 14 mm higher
+blender -b --python tools/hair3d/build_hair.py -- --check $S/h8 $S/out h3 0.022   # the long face: the hair sits 22 mm higher
 ```
 
 In the game: `lib/star/style3d/toon/hairStyles.ts` (the list, which hair texture each suits, which
@@ -46,7 +46,7 @@ A new style: a function in `build_hair.py` + a line in `STYLES`, a line in `TOON
 
 `h7` Broad jaw, `h8` Long face, `h9` Round face (from Buzz & beard), `m3` Older, lined (from the suit
 head Fade & beard). One smooth rule moves the head's vertices; the skull above the ears and the back of
-the head stay where they are, so the hair above still fits (the long face lifts the skull 14 mm:
+the head stay where they are, so the hair above still fits (the long face lifts the skull 22 mm:
 `TOON_HAIR_LIFT`). Skeleton, weights, UVs, picture and mask are kept, so kit, skin tones, haircuts and
 the moving face work as on the base head.
 
@@ -60,6 +60,25 @@ measures only the game's eight heads and would drop these four lines: put them b
 
 Change a shape and the hair check above must be run again for that head.
 
+## The swing
+
+Loose hair (shoulder locs, braids, the tied-back tail, the mullet's back, the loose ends of tied-up
+locs, a little on short locs) lags and settles when the head moves: `hair.update(dt)` every frame
+(`lib/star/style3d/toon/hair.ts`, dials `TOON_HAIR_SWING`). One damped spring per head of hair, no
+cloth, no bones, no extra draw; each vertex takes its own share (TEXCOORD_1, written here: 0 on the
+scalp, 1 at a loose tip). The part of a swing that points in at the head is dropped, a tip rises at
+most 12 mm and never above the ears. Not updated, or the head still: exactly the modelled hair.
+Film: `node scripts/bench3d/hair-swing.mjs OUTDIR locsLong braids` (page `/star-3d-bench-dev/people?set=swing&hair=locsLong`).
+
+## Face types (first pass, 20 Nov 2026; to be rebuilt after the face research)
+
+`lib/star/style3d/toon/faceShape.ts` (19 sets of small changes to nose, lips, eyes, brow, cheekbones,
+jaw, chin and the lower face's outline; a list per heritage) and `faceShapeApply.ts` (moves the
+person's own copy of the vertices when he is built; the shader paints from the file's rest pose).
+Harry judged the first sheet: most faces still read the same (one painted face under all of them).
+Every face type is checked against every hair: `npx tsx tools/hair3d/face_dumps.mts <dump> <out> h3`
+then the `--check` above on `<out>/<face>` (36 face x head pairs x 15 hairs: 0 crossing).
+
 ## Where they are used
 
 Only the people presets (`lib/star/people/presets.ts`): 72 player looks and 60 staff looks, hair by
@@ -71,6 +90,6 @@ See them: `/star-3d-bench-dev/people?set=hair` (`&styles=…&base=h3|m2|h7|h8|h9
 
 ## Known limits
 
-- Hair has no physics: long locs, braids, the ponytail and the mullet's back turn with the head as one piece.
+- The swing is one spring per head of hair: every loose strand trails the same way; strands do not swing one by one or collide with the shoulders.
 - A person rebuilt to other proportions (`?prop=`, test pages) wears no modelled hair (`addToonHair` returns null).
 - Not yet wired into the match, Home, or your own player (Settings → Your look): presets only.

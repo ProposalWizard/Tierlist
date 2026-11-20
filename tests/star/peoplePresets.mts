@@ -13,11 +13,13 @@ import { SKIN_TONES } from "../../lib/star/playerIdentity";
 import { TOON_ALL_HEADS, TOON_PLAYER_HEADS, TOON_SHAPE_HEADS, toonHeadIsSuit, toonHeadFor } from "../../lib/star/style3d/toon/bodies";
 import { TOON_HAIRS, TOON_HAIR_INFO, COILY_HAIRS, toonHairFits, toonHairFile, type ToonHair } from "../../lib/star/style3d/toon/hairStyles";
 import fs from "node:fs";
+import { TOON_FACE_TYPES, TOON_FACE_IDS, HERITAGE_FACES, faceFor, faceFrame, faceShapePoint, faceZone, faceOutlineZone } from "../../lib/star/style3d/toon/faceShape";
+import { TOON_FACE_LANDMARKS } from "../../lib/star/style3d/toon/faceLandmarks";
 import { managerLook } from "../../lib/star/managerFace";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
-const sig = (l: ReturnType<typeof personLook>) => JSON.stringify([l.preset, l.head, l.build, l.skin, l.hairColour, l.cut, l.hairMesh, l.suit, l.kit, l.accessories, l.age]);
+const sig = (l: ReturnType<typeof personLook>) => JSON.stringify([l.preset, l.head, l.build, l.skin, l.hairColour, l.cut, l.hairMesh, l.face, l.faceK, l.suit, l.kit, l.accessories, l.age]);
 
 // 1. Library size and shape
 const mgrStaff = STAFF_PRESETS.filter((p) => p.roles.includes("manager") || p.roles.includes("staff"));
@@ -63,7 +65,7 @@ for (const role of ["manager", "staff", "player", "agent", "journalist", "fan"] 
   for (let i = 0; i < 300; i++) {
     const l = personLook(`h${i}`, role);
     const p = ALL_PRESETS.find((x) => x.id === l.preset)!;
-    const sk = SKIN_TONES.findIndex((t) => t.hex === l.skin);
+    const sk = SKIN_TONES.findIndex((t) => t.id === l.skinId);
     check(sk >= HERITAGE[p.heritage].skin[0] && sk <= HERITAGE[p.heritage].skin[1], `${role} h${i}: skin left ${p.heritage}'s range`);
     if (p.heritage === "black" || p.heritage === "mixed") check(!STRAIGHT_ONLY.includes(l.head), `${role} h${i}: ${p.heritage} with ${l.head}`);
   }
@@ -88,6 +90,44 @@ for (const role of ["manager", "staff", "player", "agent", "journalist", "fan"] 
     check(TOON_HAIR_INFO[l.hairMesh].textures.includes(p.texture) && l.dress.hairMesh === l.hairMesh, `${role} m${i}: ${l.hairMesh} on ${p.texture} hair`);
     check(l.hairStyle !== "none" && l.cut.scalp === Math.max(CUTS[p.cut].scalp, TOON_HAIR_INFO[l.hairMesh].scalp), `${role} m${i}: ${l.hairMesh} scalp`);
   }
+}
+
+// 1d. Face types: several per heritage, every one used, the same id the same face, and the rule never moves
+//     the skull, the ears, the sides or the back of the head (where the modelled hair sits)
+check(TOON_FACE_IDS.length >= 17, `only ${TOON_FACE_IDS.length} face types`);
+for (const h of Object.keys(HERITAGE) as (keyof typeof HERITAGE)[]) {
+  const pool = HERITAGE_FACES[h];
+  check(!!pool && new Set(pool).size >= 4, `heritage ${h}: fewer than 4 face types`);
+  const got = new Set(Array.from({ length: 300 }, (_, i) => faceFor(`f${i}`, h).face));
+  check(got.size === new Set(pool).size, `heritage ${h}: 300 people used ${got.size} of ${new Set(pool).size} faces`);
+  for (const f of pool ?? []) check(!!TOON_FACE_TYPES[f], `heritage ${h}: unknown face ${f}`);
+}
+for (const f of TOON_FACE_IDS) check(f === "base" || Object.values(HERITAGE_FACES).some((p) => p.includes(f)), `face ${f} is in no heritage's list`);
+for (let i = 0; i < 200; i++) {
+  const a = personLook(`face${i}`, "player"), b = personLook(`face${i}`, "player");
+  const p = ALL_PRESETS.find((x) => x.id === a.preset)!;
+  check(a.face === b.face && a.faceK === b.faceK, `face${i}: the face changed between calls`);
+  check(HERITAGE_FACES[p.heritage].includes(a.face) && a.faceK >= 0.8 && a.faceK <= 1.2, `face${i}: ${a.face} x${a.faceK} is not a ${p.heritage} face`);
+}
+check(new Set(Array.from({ length: 200 }, (_, i) => { const l = personLook(`v${i}`, "player"); return `${l.head}|${l.face}`; })).size >= 40, "200 players: fewer than 40 head-and-face pairs");
+{
+  // the kit hair head (h3) and the suit hair head (m2): their files' own faces (extras.face, kit.collarY)
+  const frames = [
+    faceFrame(TOON_FACE_LANDMARKS.h3!, { chinY: 1.5328, eyeY: 1.676, browY: 1.6945, frontZ: 0.1931 }, 1.5067),
+    faceFrame(TOON_FACE_LANDMARKS.m2!, { chinY: 1.5096, eyeY: 1.6626, browY: 1.6827, frontZ: 0.2132 }, 1.4296),
+  ];
+  let most = 0, moved = 0;
+  for (const F of frames) for (const f of TOON_FACE_IDS) for (let ix = -4; ix <= 4; ix++) for (let iy = 0; iy <= 16; iy++) for (let iz = -5; iz <= 11; iz++) {
+    const q: [number, number, number] = [ix * 0.02, 1.5 + iy * 0.022, iz * 0.02];
+    const o = faceShapePoint(q, F, TOON_FACE_TYPES[f].shape, 1.2);
+    const d = Math.hypot(o[0] - q[0], o[1] - q[1], o[2] - q[2]);
+    most = Math.max(most, d);
+    if (d > 0) moved++;
+    // above the brow, on and behind the ears, the sides above the ears' lobes, below the chin: nothing moves
+    if (q[1] > F.browY + 0.015 || q[2] < F.frontZ - 0.19 || q[1] < F.chinY - 0.04 || (q[2] < F.frontZ - 0.125 && q[1] > F.eyeY - 0.05)) check(d === 0 && faceZone(q, F) === 0 && faceOutlineZone(q, F) === 0, `face ${f}: moved the head outside the face at ${q.join(", ")}`);
+  }
+  check(moved > 500 && most > 0.003 && most < 0.05, `face types move the face by at most ${(most * 1000).toFixed(1)} mm (want 3 to 50, on a grid that also samples the air round the face)`);
+  console.log(`  face types: ${TOON_FACE_IDS.length}, the largest move ${(most * 1000).toFixed(1)} mm, nothing outside the face`);
 }
 
 const playerKeys = new Set(PLAYER_PRESETS.map((p) => `${p.head}|${p.cut}|${p.hairMesh ?? ""}|${p.build}|${p.skin}|${p.hair}`));
