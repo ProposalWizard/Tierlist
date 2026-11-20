@@ -279,8 +279,17 @@ ${FI_CANVAS}
   // on the face the mask's soft hair edge (beard, brows, hairline) is made crisp, and a skin-bright texel
   // the mask half calls hair is not lifted above the hair's own light: both left pale smudges round a
   // grey beard on dark skin (people presets, 20 Nov 2026)
+  // (and at the hair's own edge, where the mask is only part hair, the texel is the file's skin paint: it
+  // takes the hair's colour and no lift at all, or a fair or ginger man had a pale line round his hair, brows and beard)
+  float tnHairLift = mix(1.0, 1.6, smoothstep(0.8, 0.98, hairM));
+  // (the same where the mask says hair a texel past the painted hair: a texel as light as the skin is skin paint)
+  tnHairLift = mix(tnHairLift, 0.9, head * smoothstep(0.5, 0.75, dot(c, vec3(0.2126, 0.7152, 0.0722)) / max(dot(uSkinAvg, vec3(0.2126, 0.7152, 0.0722)), 1e-4)));
+  float tnHairRaw = hairM;
   hairM = mix(hairM, smoothstep(0.3, 0.7, hairM), head);
-  col = mix(col, min(uHairK * min(dot(c, vec3(0.2126, 0.7152, 0.0722)) / uHairL, 1.6), vec3(1.0)), hairM);
+  // (what the crisp edge gives up is skin, in the picked tone: left as the file's own light paint it was a pale
+  // line round the hair, the brows and the beard of anyone whose hair is not near black)
+  col = mix(col, tnSkinOf(c), clamp(max(tnHairRaw - hairM, 0.0) / max(1.0 - skin, 0.05), 0.0, 1.0) * head * (1.0 - kit));
+  col = mix(col, min(uHairK * min(dot(c, vec3(0.2126, 0.7152, 0.0722)) / uHairL, tnHairLift), vec3(1.0)), hairM);
   if (uShade.w > 0.0) {
     // a greying or bald man's brows (people presets): the brows take the hair's colour, and grey brows on
     // light skin left the face with no features (it read bleached); they keep some of their darkness
@@ -297,7 +306,12 @@ ${FI_CANVAS}
   {
     // Fade & beard's mask calls the skin round each eye hair: on a greying man a pale ring round the eyes.
     // Under the brows, round the eyes, the face is skin (the brows sit above this band).
+    // ONLY the texels painted as skin: the iris, the lashes and the brow's lower edge are in this band too and
+    // are hair in the mask, and painting them skin left every such man with pale, ringed eyes and a pale line
+    // under each brow (the signing scene's manager, 20 Nov 2026). A measured iris keeps the file's own paint.
     float eyeRing = hairM * head * step(r.y, uFaceF.y + 0.006) * step(uFaceF.y - 0.026, r.y) * step(abs(r.x), 0.075) * step(uFaceF.w - 0.05, r.z);
+    col = mix(col, c, hairM * tnIris);
+    eyeRing *= smoothstep(0.55, 0.8, dot(c, vec3(0.2126, 0.7152, 0.0722)) / max(dot(uSkinAvg, vec3(0.2126, 0.7152, 0.0722)), 1e-4)) * (1.0 - tnIris);
     col = mix(col, tnSkinOf(uSkinAvg), eyeRing);
     tnSkin = max(tnSkin, eyeRing);
     hairM *= 1.0 - eyeRing;
@@ -363,7 +377,9 @@ ${TOON_FACE}
     part = mix(part, sh, v);
     // the two suit heads' masks call the shirt in the coat's V skin (it showed in his skin colour):
     // under the collar, the V is shirt and tie whatever the mask says
-    float vShirt = v * step(r.y, uKit2.x - 0.005) * (1.0 - hairM);
+    // (and round the V, the lapels and the collar's notch: no torso under a coat is bare skin. Left to the
+    // mask, its coarse edge showed as a jagged skin-coloured fringe along the lapels)
+    float vShirt = max(v, step(0.25, skin) * shirtW * step(abs(r.x), 0.125)) * step(r.y, uKit2.x - 0.005) * (1.0 - hairM);
     kit = max(kit, vShirt);
     skin *= 1.0 - vShirt;
     // long sleeves and trousers over what is bare skin in the kit
@@ -711,5 +727,5 @@ if (uSkinFx.y > 1.5) gl_FragColor = tnSkin > 0.5 ? vec4(tnRegion == 1.0 ? vec3(0
 else if (uSkinFx.y > 0.5 && tnSkin > 0.5) gl_FragColor = vec4(3.0, 0.0, 3.0, 1.0);
 else if (uSkinFx.x > 0.5 && uHome.x < 0.5 && tnTone > 0.5) gl_FragColor.a = ${TOON_SKIN_MARK.toFixed(2)};`);
   };
-  mat.customProgramCacheKey = () => "people3d-toon-v15";
+  mat.customProgramCacheKey = () => "people3d-toon-v16";
 }
