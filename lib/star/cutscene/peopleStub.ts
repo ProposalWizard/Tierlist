@@ -12,6 +12,7 @@
  * face moves (style3d/toon/face.ts): blinks, eyes that look where he looks and
  * wander a little, the expression of the beat, lips that move as he speaks.
  */
+import { dressCloth, type ClothKind } from "../style3d/toon/clothes";
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { ActorSpec, BodyPart, CutsceneActor, CutscenePeople, CutscenePeopleInit, Expression, HandPose, ReachLag, Vec3 } from "./types";
@@ -96,11 +97,14 @@ export function createStubPeople(init: CutscenePeopleInit): CutscenePeople {
       if (cs) addClips(T, p, cs);
       for (const act of Object.values(p.actions)) { act.enabled = true; act.play(); act.setEffectiveWeight(0); }
       let hair: ToonHairOn | null = null;
+      // real clothes (style3d/toon/clothes): cut from the body, by role; a body it cannot dress keeps the painted ones
+      const kind = clothKindFor(spec, out);
       if (preset && p.toonHead === L!.head) {
         dressPreset(T, p, spec, L!);
+        if (kind) dressCloth(T, p, kind, spec.id);
         applyToonFaceId(T, p, L!.faceId, { detail: spec.look.detail ?? 1 });
         if (L!.hairMesh) hair = await wearToonHair(T, loader, p, L!.hairMesh, { outline: spec.outline ? 0.0045 : 0, castShadow: spec.castShadow }).catch(() => null);
-      } else dress(T, p, spec);
+      } else { dress(T, p, spec); if (kind) dressCloth(T, p, kind, spec.id); }
       const actor = new StubActor(T, spec.id, p);
       // the face that moves (a Style A head with measured spots; anything else stays as painted)
       actor.face = addToonFace(T, p);
@@ -110,6 +114,21 @@ export function createStubPeople(init: CutscenePeopleInit): CutscenePeople {
     },
     dispose() { for (const a of made) a.dispose(); made.length = 0; },
   };
+}
+
+/**
+ * Which real clothes a cast member wears (Harry, 20 Nov 2026: "why would someone in the crowd be wearing … shorts"):
+ * suits for the manager, chairman, agent and The Icon; shirt, trousers and a press pass for the press; the club
+ * tracksuit for the player at the press desk and the staff; the match kit on the pitch. Anyone else (fans, family)
+ * keeps the painted clothes for now.
+ */
+function clothKindFor(spec: ActorSpec, out: string): ClothKind | null {
+  const r = spec.role as string;
+  if (r === "manager" || r === "chairman" || r === "agent" || r === "mentor") return "suit";
+  if (r === "journalist" || r === "presenter") return "press";
+  if (out === "tracksuit") return "tracksuit";
+  if (out === "kit" || out === "keeper") return "kit";
+  return null;
 }
 
 /** A people preset's clothes (presets.ts `dress`), plus the scene's kit and shirt number. */
