@@ -16,6 +16,7 @@ FACT-KIB-013 | Our own posting tool (Admin → Marketing → Publish) posts a vi
 FACT-KIB-014 | The Knowitball Discord is a plan and kit: scripts/discord builds the server (10 roles, 21 channels, onboarding), Join buttons (footer, game Settings) show only once NEXT_PUBLIC_DISCORD_INVITE is set, and patch notes with a `discord` line post to #updates via DISCORD_UPDATES_WEBHOOK. | ui,process,client-kib
 FACT-KIB-015 | Publish posts short-form only - Instagram Reels, Facebook Reels (3-90 s), YouTube Shorts (vertical, 3 min max, #Shorts added to the description); a Short's title is 100 characters at most, hashtags included. | client-kib
 PRO-KIB-001 | Stat Twins episode for any player-season: write episodes/<player>.json, run make_episode.py, tts.py (Hugo), timeline.py, render.cjs; the format is locked to the Salah v02 cut 5 (Poster style). | career,style
+PRO-KIB-002 | "Update my stats" (Mikey) = read publish_posts results from Supabase and write one doc per post into Mikey's Brain artifact database (collection stats); "post my videos" = post what he sent from Mikey's Brain with scripts/publish/post.mjs. | team,style,brain
 REF-KIB-001 | Script v01, patch notes 0.1 to 0.3: the first Knowitball short, word for word with its sources. | process,client-kib
 RUL-KIB-001 | Voice: short, cheeky, football-mad, numbers first ("9.8% to 47.6%"). | client-kib
 RUL-KIB-002 | Real game footage only, or marked "ILLUSTRATION" on screen. | client-kib
