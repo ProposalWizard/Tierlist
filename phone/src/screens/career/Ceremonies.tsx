@@ -35,6 +35,7 @@ import { shortClub } from "@/lib/star/media/grammar";
 import { headshotIdFor } from "@/lib/star/headshot3d/look";
 import { skinToneHex } from "@/lib/star/playerIdentity";
 import { seasonLabelOf } from "@/lib/star/goalClip/reel";
+import { leoUpdateOn } from "@/lib/star/leoUpdate";
 import { retirementCheck } from "@/lib/star/retirement";
 import { Drawn } from "../../draw/useDrawing";
 import { paintStageBack, paintPodiums, paintHost, paintRoomBack } from "../../draw/ceremonyPaint";
@@ -502,7 +503,8 @@ export function SeasonAwardsNight({ career, go }: { career: CareerState; go: (s:
   const stats = career.lastSeasonAwardStats;
   const plan = useMemo(() => (stats ? awardsPlan(stats, (career.player.startYear ?? 0) * 37 + (stats.season ?? career.season)) : null), [stats, career.player.startYear, career.season]);
   const [stage, setStage] = useState<"night" | "result">("night");
-  if (stage !== "night" || !plan || plan.awards.length === 0) return <SeasonAwardsScreen career={career} go={go} />;
+  // page.tsx: the awards night is Leo's update only (leoUpdateOn("awardsNight")); off, the awards page as before.
+  if (!leoUpdateOn("awardsNight") || stage !== "night" || !plan || plan.awards.length === 0) return <SeasonAwardsScreen career={career} go={go} />;
   return <AwardsCeremony career={career} plan={plan} onDone={() => setStage("result")} />;
 }
 

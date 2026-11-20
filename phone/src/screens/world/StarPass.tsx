@@ -93,6 +93,9 @@ export function StarPassScreen() {
   const rows: [string, number][] = [
     ["Matches", st.points.match], ["Trophies", st.points.trophies], ["Awards", st.points.awards],
     ["Milestones", st.points.milestones], ["Fame", st.points.status], ...(st.carry > 0 ? [["Carried", st.carry] as [string, number]] : []),
+    // Poor matches (rating under 5.5) cost points (starPoints.ts slumpAfterMatch): shown, so
+    // the lines add up to STAR POINTS (the total read 780 under lines worth 4,130).
+    ...((led.slump?.debt ?? 0) > 0 ? [["Poor matches", -(led.slump!.debt)] as [string, number]] : []),
   ];
   const digits = String(st.stars).length;
   const top = (y: number) => roadH - y; // the road is laid out from its bottom
@@ -175,7 +178,7 @@ export function StarPassScreen() {
             <Text numberOfLines={1} style={{ marginTop: 3, color: "#fff", fontSize: 12, fontWeight: "900", letterSpacing: 1.9, textTransform: "uppercase" }}>{starTitle(st.stars)}</Text>
             {st.gate ? <Text numberOfLines={1} style={{ marginTop: 2, color: "#fff", fontSize: 11, fontWeight: "900" }}>🔒 {st.gate.need}</Text> : null}
           </View>
-          <SquareBtn icon="🎒" label="Locker" onPress={() => flash("The Locker is coming to the phone app.")} />
+          {/* The Locker (the website's 2D LockerScreen) is not built for the phone yet: no dead button. */}
           <SquareBtn icon="★" label="Pts" on={points} onPress={() => setPoints((v) => !v)} />
         </View>
         <View style={{ height: 1, marginHorizontal: 0, backgroundImage: "linear-gradient(90deg, rgba(253,224,71,0), rgba(253,224,71,0.85), rgba(253,224,71,0))" } as ViewStyle} />

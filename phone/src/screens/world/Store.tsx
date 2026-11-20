@@ -11,7 +11,11 @@
  * on the phone yet.
  */
 import { useEffect, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, Image, type ViewStyle } from "react-native";
+import { StoreFigure } from "./StoreFigure";
+import { CAN } from "../../ui/look";
+import { SHOP_PIC_3D } from "../../ui/look/worldPics";
+import { shopPic3d } from "@/lib/star/shopPicsLook";
 import type { CareerState } from "@/lib/star/types";
 import { ANIMATIONS, ACCESSORIES, bootsAtLevel, findItem, itemName, isConsumable, RARITY_LABEL, SLOT_LABEL, ANIMATION_SET_LABEL, type StoreItem } from "@/lib/star/store/catalogue";
 import { careerStoreState, careerPriceContext, careerStoreBuy, careerStoreEquip, careerStoreUnequip, careerBuyCoinPack, careerConvertCoins, careerBootStatus, shownInCareer, coinPacksAreTestMode } from "@/lib/star/store/career";
@@ -57,11 +61,10 @@ export function StoreScreen() {
       : item.kind === "accessory" ? `${SLOT_LABEL[item.slot]} · ${RARITY_LABEL[item.rarity]}`
       : item.kind === "boost" ? `${item.effect}${item.kind === "boost" && item.canId ? ` · you have ${state.inventory[item.id] ?? 0}` : ""}`
       : `+${item.boot.power} power · +${item.boot.technique} technique · ${item.boot.matches} matches${careerBootStatus(career, item.id) ? ` · ${careerBootStatus(career, item.id)}` : ""}`;
-    const swatch = item.kind === "accessory" ? item.color : null;
     return (
       <Card key={item.id + (off ?? "")}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          {swatch ? <View style={{ width: 26, height: 26, borderRadius: 6, backgroundColor: swatch.startsWith("#") ? swatch : "#64748b" }} /> : null}
+          <ItemPicture item={item} width={64} height={64} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: C.text, fontWeight: "900", fontSize: 15 }}>{itemName(item)}{percentOff ? <Text style={{ color: C.green }}>  −{percentOff}%</Text> : null}</Text>
             <Text style={{ color: C.dim, fontSize: 12 }}>{sub}</Text>
@@ -79,10 +82,12 @@ export function StoreScreen() {
           </View>
         ) : (
           <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-            <View style={{ flex: 1 }}><Btn small kind="gold" disabled={price.stars > state.stars} label={`★${price.stars.toLocaleString("en-GB")}${percentOff ? ` (was ★${full.stars.toLocaleString("en-GB")})` : ""}`} onPress={() => buy(item.id, "stars")} /></View>
+            <View style={{ flex: 1 }}><Btn small kind="gold" disabled={price.stars > state.stars} label={`★${price.stars.toLocaleString("en-GB")}`} onPress={() => buy(item.id, "stars")} /></View>
             <View style={{ flex: 1 }}><Btn small kind="plain" disabled={price.coins > state.coins} label={`🪙 ${price.coins.toLocaleString("en-GB")}`} onPress={() => buy(item.id, "coins")} /></View>
           </View>
         )}
+        {/* The old price struck through under the buttons (StoreView), never inside one where it was cut off. */}
+        {!have && percentOff ? <Text style={{ color: C.dim, fontSize: 11, marginTop: 4, textDecorationLine: "line-through" }}>★{full.stars.toLocaleString("en-GB")} · 🪙 {full.coins.toLocaleString("en-GB")}</Text> : null}
         {!have && price.weeks > 0 ? <Text style={{ color: C.dim, fontSize: 11, marginTop: 4 }}>About {price.weeks < 1 ? "half a" : Math.round(price.weeks * 10) / 10} week{price.weeks >= 1.5 ? "s" : ""} of wages</Text> : null}
       </Card>
     );
@@ -101,17 +106,40 @@ export function StoreScreen() {
       {tab === "specials" && (
         <>
           <DailyCountdown />
-          {dailySpecials(dateKey).map((s, i) => {
-            const it = findItem(s.itemId);
-            if (!it) return null;
-            return (
-              <View key={s.itemId}>
-                {i === 0 ? <Text style={{ color: C.gold, fontWeight: "900", fontSize: 11, letterSpacing: 1.5, marginBottom: 4 }}>TODAY'S PICK · −{s.percentOff}%</Text> : null}
-                {itemCard(it, s.percentOff)}
-                {(state.specialsBought[dateKey] ?? []).includes(s.itemId) ? <Text style={{ color: C.dim, fontSize: 11, fontWeight: "700", marginTop: 2 }}>Bought today</Text> : null}
-              </View>
-            );
-          })}
+          {/* StoreView's daily specials: TODAY'S PICK as one big picture card, the rest as picture tiles two across. */}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {dailySpecials(dateKey).map((s, i) => {
+              const it = findItem(s.itemId);
+              if (!it || !shownInCareer(it, career)) return null;
+              const { price, full, percentOff } = priceNow(it, ctx, state, dateKey);
+              const bought = (state.specialsBought[dateKey] ?? []).includes(s.itemId) || (owns(state, it.id) && !isConsumable(it));
+              const big = i === 0;
+              const rarity = it.kind === "animation" || it.kind === "accessory" ? it.rarity : null;
+              return (
+                <Press key={s.itemId} onPress={() => { if (!bought) buy(it.id, price.stars <= state.stars ? "stars" : "coins"); }}
+                  style={{ width: big ? "100%" : "48.5%", borderRadius: 16, overflow: "hidden", borderWidth: 1.5, borderColor: big ? "rgba(253,224,71,0.7)" : "rgba(255,255,255,0.18)", backgroundImage: "linear-gradient(180deg, rgba(30,58,95,0.9), rgba(10,22,40,0.92))" } as ViewStyle}>
+                  <View style={{ flexDirection: big ? "row" : "column" }}>
+                    <View style={{ width: big ? "48%" : "100%", height: big ? 132 : 110, alignItems: "center", justifyContent: "flex-end", backgroundImage: "linear-gradient(180deg, #14532d, #166534)" } as ViewStyle}>
+                      <ItemPicture item={it} width={big ? 150 : 140} height={big ? 128 : 106} />
+                      {rarity && <Text style={{ position: "absolute", left: 6, top: 6, backgroundColor: RARITY_BG[rarity], color: "#fff", fontSize: 9, fontWeight: "900", letterSpacing: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: "hidden" }}>{RARITY_LABEL[rarity].toUpperCase()}</Text>}
+                      {percentOff ? <Text style={{ position: "absolute", right: 6, top: 6, backgroundColor: "#e11d48", color: "#fff", fontSize: 11, fontWeight: "900", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: "hidden" }}>−{percentOff}%</Text> : null}
+                    </View>
+                    <View style={{ flex: big ? 1 : undefined, padding: 10, gap: 2 }}>
+                      {big && <Text style={{ alignSelf: "flex-start", backgroundColor: "#fde047", color: "#030712", fontSize: 9, fontWeight: "900", letterSpacing: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: "hidden", marginBottom: 2 }}>TODAY'S PICK</Text>}
+                      <Text numberOfLines={1} style={{ color: "#fff", fontSize: big ? 18 : 14, fontWeight: "900" }}>{itemName(it)}</Text>
+                      <Text numberOfLines={big ? 2 : 1} style={{ color: C.dim, fontSize: 11 }}>{it.kind === "animation" ? `${ANIMATION_SET_LABEL[it.set]}` : it.kind === "accessory" ? SLOT_LABEL[it.slot] : ""}</Text>
+                      {bought ? <Text style={{ color: C.green, fontWeight: "900", fontSize: 12, marginTop: 4 }}>Bought today</Text> : (
+                        <>
+                          <Text style={{ color: "#fff", fontSize: 13, fontWeight: "900", marginTop: 4 }}>★{price.stars.toLocaleString("en-GB")}  <Text style={{ color: "#fcd34d" }}>🪙 {price.coins.toLocaleString("en-GB")}</Text></Text>
+                          {percentOff ? <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 10.5, textDecorationLine: "line-through" }}>★{full.stars.toLocaleString("en-GB")} · {full.coins.toLocaleString("en-GB")}</Text> : null}
+                        </>
+                      )}
+                    </View>
+                  </View>
+                </Press>
+              );
+            })}
+          </View>
         </>
       )}
       {tab === "runups" && (
@@ -195,6 +223,21 @@ export function StoreScreen() {
       )}
     </Frame>
   );
+}
+
+const RARITY_BG: Record<string, string> = { common: "#4b5563", rare: "#2563eb", epic: "#7c3aed", legendary: "#d97706" };
+
+/** An item's picture (StoreView's previews, still): the man with the accessory on or in
+ *  the celebration's pose; a run-up, the man at the ball; boots, the shop's still; a can. */
+function ItemPicture({ item, width, height }: { item: StoreItem; width: number; height: number }) {
+  if (item.kind === "accessory") return <StoreFigure wear={[item]} width={width} height={height} />;
+  if (item.kind === "animation") return <StoreFigure wear={[]} width={width} height={height} runup />;
+  if (item.kind === "boost") {
+    const can = item.canId ? CAN[item.canId as keyof typeof CAN] : undefined;
+    return can ? <Image source={can} resizeMode="contain" style={{ width, height: height * 0.9 }} /> : <Text style={{ fontSize: height * 0.5 }}>⚡</Text>;
+  }
+  const still = SHOP_PIC_3D[shopPic3d("boot", (item.boot as { baseId?: string; id: string }).baseId ?? item.boot.id, item.boot.level ?? 1) ?? ""];
+  return still ? <Image source={still} resizeMode="contain" style={{ width, height }} /> : <Text style={{ fontSize: height * 0.5 }}>👟</Text>;
 }
 
 /** "new in 3h 12m 05s": the one line that changes every second, on its own. */

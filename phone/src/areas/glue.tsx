@@ -14,6 +14,10 @@ import { coreScreens } from "./core";
 import { getCareer } from "../game/store";
 import { TitleMenu } from "../screens/career/TitleMenu";
 import { WithPops } from "../screens/career/Moments";
+import { SigningMoment } from "../screens/career/Signing";
+import { listSlots } from "../world/slots";
+import { makeManager } from "@/lib/star/manager";
+import type { TransferOffer } from "@/lib/star/transfers";
 
 const Feed = worldScreens.feed;
 const Draw = worldScreens["cup-draw"];
@@ -36,20 +40,41 @@ function SeasonTransfer() {
   const nav = useNav();
   useEffect(() => {
     setTransferHandlers({
-      onSigned: (_c, offer, n) => { const s = flow.signTransfer(offer); n.replace(s.screen, s.params); },
+      // page.tsx: the move is signed across the desk first (TransferSigning), then handleSigningDone.
+      onSigned: (_c, offer, n) => { n.replace("transfer-signing", { offer }); },
       onStay: (_c, n) => { const s = flow.stayPut(); n.replace(s.screen, s.params); },
     });
   }, []);
   void nav;
   return <Transfers />;
 }
+/** The move signed across the desk (TransferSigning, drawn: Signing.tsx), then into the next season. */
+function TransferSigningStep({ params }: { params?: Record<string, unknown> }) {
+  const nav = useNav();
+  const career = getCareer();
+  const offer = params?.offer as TransferOffer | undefined;
+  if (!career || !offer) return null;
+  const done = () => { const s = flow.signTransfer(offer); nav.replace(s.screen, s.params); };
+  return (
+    <SigningMoment career={career} club={offer.club} managerName={makeManager(career, offer.club, career.season + 1).name} onDone={done} number={null}
+      terms={{ wage: offer.wage, seasonsRemaining: offer.seasons, goalBonus: offer.goalBonus, assistBonus: offer.assistBonus, appearanceFee: offer.clauses?.appearanceFee, loyaltyBonus: offer.clauses?.loyaltyBonus }} />
+  );
+}
 /**
  * The title screen with the website's full menu (TitleMenu: Load game, Hall
  * of Fame, Tutorial, Settings, Credits). Registered here, after core, so it
  * takes the "title" name; core's Title stays as it was.
  */
+/** A brand-new install opens on "Who are you?" (page.tsx phase "profile-setup"); its "‹ Main menu" comes back here. Once per launch. */
+let firstLaunchSeen = false;
 function TitleWithMenu() {
   const nav = useNav();
+  useEffect(() => {
+    if (firstLaunchSeen) return;
+    firstLaunchSeen = true;
+    if (!getCareer() && listSlots().every((s) => s.empty)) nav.go("career-new");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const open = () => { const s = flow.resumeStep(); if (s.screen === "tabs") nav.home(); else nav.replace(s.screen, s.params); };
   return (
     <TitleMenu
@@ -67,4 +92,4 @@ function TabsWithPops(props: { params?: Record<string, unknown> }) {
   return <WithPops><Tabs {...props} /></WithPops>;
 }
 
-export const glueScreens: ScreenMap = { media: MediaAfterMatch, "cup-draw": CupDrawStep, "season-transfer": SeasonTransfer, title: TitleWithMenu, tabs: TabsWithPops };
+export const glueScreens: ScreenMap = { "transfer-signing": TransferSigningStep, media: MediaAfterMatch, "cup-draw": CupDrawStep, "season-transfer": SeasonTransfer, title: TitleWithMenu, tabs: TabsWithPops };

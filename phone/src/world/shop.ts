@@ -100,7 +100,7 @@ export function buyItem(career: CareerState, item: OwnedItem): Bought {
     ownedItems: [...career.ownedItems.filter((o) => (o.baseId ?? o.id) !== base), freshItem(item)],
     happiness: Math.min(100, career.happiness + Math.floor(item.lifestyleValue / 3)),
   };
-  if (base === "phone" && isStory(career)) return { ok: true, career: recordPhoneBought(bought), unlocked: "Kickabout and Your house are on it" };
+  if (base === "phone" && isStory(career)) return { ok: true, career: recordPhoneBought(bought), unlocked: "Kickabout is on it" };
   if (base === "phone" && !isOpen(career, "phone")) return { ok: true, career: recordPhoneBought(bought), unlocked: "Phone and App Store unlocked" };
   return { ok: true, career: bought };
 }

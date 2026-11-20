@@ -34,7 +34,8 @@ import { useNav } from "../../nav";
 import { Press } from "../../ui/Press";
 import { C } from "../../world/lookKit";
 import { AntonTabs, BackPill, BottomBar, CAN, FONT, LookButton } from "../../ui/look";
-import { SHOP_PIC } from "../../ui/look/worldPics";
+import { SHOP_PIC, SHOP_PIC_3D } from "../../ui/look/worldPics";
+import { shopPic3d } from "@/lib/star/shopPicsLook";
 import { Btn, Note, rgba } from "../../world/ui";
 import { buyKib, drinkCan, buyBoot, buyBlackMarket, buyItem, bootsForSale, ownedLevelOf, STYLE_BASES, BOOT_ORDER, type Bought } from "../../world/shop";
 
@@ -66,6 +67,9 @@ const KEYS: Record<CatId, string[]> = (() => {
 /** The item's still (ShowroomShop bigName): boot-<base>-L<n>, <base>-L<n>, phone-L1; a can's own photo. */
 function picOf(cat: CatId, key: string, lv: number): ImageSourcePropType | null {
   if (cat === "cans") return CAN[key as KibCan["id"]] ?? null;
+  // The website's New pictures first (shopPicsLook.ts, fixed New): stills of the 3D shop's models.
+  const still = shopPic3d(cat === "boots" ? "boot" : "style", key, lv);
+  if (still && SHOP_PIC_3D[still]) return SHOP_PIC_3D[still];
   const name = cat === "boots" ? `boot-${key}-L${lv}` : key === "phone" ? "phone-L1" : `${key}-L${lv}`;
   return SHOP_PIC[name] ?? null;
 }
@@ -426,7 +430,7 @@ export function ShopScreen({ params }: { params?: Record<string, unknown> }) {
       </View>
       {tab === "shop" && (
         <View style={{ height: 40, justifyContent: "flex-end" }}>
-          <AntonTabs value={cat} onChange={setCat} lead={Math.round(width * 0.38)} tabs={SHOP_CATS.filter((c) => c.id !== "boots").map((c) => [c.id, c.label] as const)} />
+          <AntonTabs value={cat} onChange={setCat} lead={12} tabs={SHOP_CATS.filter((c) => c.id !== "boots").map((c) => [c.id, c.label] as const)} />
         </View>
       )}
       {tab === "boots" && <View style={{ height: 40 }} />}
@@ -500,12 +504,7 @@ function ShopBar({ active, onPick, onSponsors }: { active: Tab; onPick: (t: Tab)
     <View style={{ height: 50, flexDirection: "row", alignItems: "stretch", backgroundColor: "#05080f", borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
       {tab("shop", "Shop", "🛍️", active === "shop", () => onPick("shop"))}
       {tab("foryou", "For You", "▶️", active === "foryou", () => onPick("foryou"))}
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        {/* the walk-around 3D shop: not in this app */}
-        <View style={{ width: 54, height: 34, borderRadius: 11, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", opacity: 0.3, boxShadow: "-4px 0px 0px #22d3ee, 4px 0px 0px #f43f5e" } as ViewStyle}>
-          <Text style={{ color: "#05080f", fontSize: 15, fontWeight: "900" }}>3D</Text>
-        </View>
-      </View>
+      {/* The walk-around 3D shop is not in this app (Mikey's choice of 3D): no dead button. */}
       {tab("boots", "Boots", "👟", active === "boots", () => onPick("boots"))}
       {tab("sponsors", "Sponsors", "🤝", false, onSponsors)}
     </View>

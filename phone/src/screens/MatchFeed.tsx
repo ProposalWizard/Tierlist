@@ -97,8 +97,8 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
         <Text style={{ marginTop: 1, color: d.speed > 1 ? "#fcd34d" : "rgba(255,255,255,0.45)", fontSize: 9, fontWeight: "900" }}>{"▶".repeat(d.speed >= 4 ? 3 : d.speed)}</Text>
       </Press>
       <View>
-        {/* The playstyle buttons, floating just above the bottom stack: the chosen one full size with a glow ring. */}
-        <View style={{ position: "absolute", right: 8, bottom: "100%", marginBottom: 6, flexDirection: "row", alignItems: "flex-end", gap: 4 }}>
+        {/* The playstyle buttons in their own strip under the last feed line (the packed app): floating, they hid "+5 MINUTES ADDED". The chosen one full size with a glow ring. */}
+        <View style={{ alignSelf: "flex-end", paddingRight: 8, paddingVertical: 2, flexDirection: "row", alignItems: "flex-end", gap: 4 }}>
           {PLAYSTYLES.map((ps) => {
             const on = d.playstyle === ps, px = on ? 42 : 32;
             return (

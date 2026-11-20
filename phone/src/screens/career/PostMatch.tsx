@@ -25,6 +25,7 @@ import { Press } from "../../ui/Press";
 import { FillStar, FONT, LookButton, glassStyle, rgba } from "../../ui/look";
 import { Frame, Btn, ClubCrest, money } from "./kit";
 import { glowOf } from "./lookBits";
+import { luminance } from "@/lib/star/heroFigure";
 
 const RESULT = { win: { word: "WIN", color: "#34d399" }, draw: { word: "DRAW", color: "#fbbf24" }, loss: { word: "DEFEAT", color: "#f87171" } } as const;
 const OUTLINE = { textShadowColor: "#000", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 2 } as const;
@@ -196,7 +197,8 @@ function Side({ club, kit, you }: { club: string; kit: Kit; you: boolean }) {
     <View style={{ flex: 1, alignItems: "center", minWidth: 0 }}>
       <View style={{ width: 54, height: 54, alignItems: "center", justifyContent: "center" }}><ClubCrest club={club} size={50} /></View>
       <View style={{ alignSelf: "stretch", marginTop: 4, borderRadius: 6, borderWidth: 1, borderColor: kit.trim, backgroundColor: kit.shirt, paddingHorizontal: 4, paddingVertical: 2 }}>
-        <Text numberOfLines={1} style={[{ color: "#fff", fontSize: 11, fontWeight: "900", textAlign: "center" }, OUTLINE]}>{shortClub(club).toUpperCase()}</Text>
+        {/* A light kit gets dark words (BOURNEMOUTH on white read white on white). */}
+        <Text numberOfLines={1} style={[{ color: luminance(kit.shirt) > 0.6 ? (luminance(kit.trim) < 0.4 ? kit.trim : "#0b1220") : "#fff", fontSize: 11, fontWeight: "900", textAlign: "center" }, luminance(kit.shirt) > 0.6 ? null : OUTLINE]}>{shortClub(club).toUpperCase()}</Text>
       </View>
       <Text style={{ color: "#6ee7b7", fontSize: 8.5, fontWeight: "900", letterSpacing: 2, marginTop: 2, opacity: you ? 1 : 0 }}>YOU</Text>
     </View>

@@ -33,6 +33,8 @@ import * as flow from "../../game/flow";
 import { useSession } from "../../game/session";
 import { usePrefs, setPref, type Prefs } from "../../game/prefs";
 import { Frame, Card, Label, Row, Btn, ClubCrest, Fill, StandInNote, money, C } from "./kit";
+import { DATA_CREDITS, CREDIT_GROUPS } from "@/lib/star/dataCredits";
+import { tint } from "@/lib/star/heroFigure";
 
 export function WatchedScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
   const f: Fixture | undefined = [...career.fixtures].reverse().find((x) => x.kind === "international" && x.played && x.watch);
@@ -189,6 +191,7 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
   const prefs = usePrefs();
   const [leaving, setLeaving] = useState(false);
   const [open, setOpen] = useState(false);
+  const [credits, setCredits] = useState(false);
   const career = useCareer();
   const glow = career ? clubGlow(career.player.club, career) : "#34d399";
   // The website's Settings (SettingsScreen.tsx): the top bar, Back · the club over SETTINGS · Main menu,
@@ -202,7 +205,7 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
         </Press>
         <View style={{ flex: 1, alignItems: "center" }}>
           <View style={{ alignItems: "center", paddingHorizontal: 12, paddingVertical: 3, borderRadius: 6, backgroundColor: "rgba(3,7,18,0.6)", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" }}>
-            {career ? <Text numberOfLines={1} style={{ color: glow, fontSize: 9.5, fontWeight: "900", letterSpacing: 1.8 }}>{career.player.club.toUpperCase()}</Text> : null}
+            {career ? <Text numberOfLines={1} style={{ color: tint(glow, 0.55), fontSize: 9.5, fontWeight: "900", letterSpacing: 1.8 }}>{career.player.club.toUpperCase()}</Text> : null}
             <Text style={{ color: "#e5e7eb", fontFamily: FONT.display, fontSize: 22, lineHeight: 26, letterSpacing: 0.4 }}>SETTINGS</Text>
           </View>
         </View>
@@ -270,6 +273,37 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
           )}
         </View>
       )}
+      {/* The website's More → Data credits (lib/star/dataCredits.ts): who made the data,
+          pictures and sounds the game uses, under the licence each asks for. */}
+      <Card style={{ padding: 0 }}>
+        <Press onPress={() => setCredits((o) => !o)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 12 }}>
+          <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: glow }} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: "#fff", fontWeight: "900", fontSize: 15 }}>Data credits</Text>
+            <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600" }}>Who made the data, pictures and sounds</Text>
+          </View>
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>{credits ? "▾" : "▸"}</Text>
+        </Press>
+        {credits && (
+          <View style={{ paddingHorizontal: 12, paddingBottom: 12, gap: 10 }}>
+            {CREDIT_GROUPS.map((g) => {
+              const list = DATA_CREDITS.filter((c) => c.use === g.use);
+              if (!list.length) return null;
+              return (
+                <View key={g.use} style={{ gap: 4 }}>
+                  <Text style={{ color: "#fcd34d", fontSize: 11, fontWeight: "900", letterSpacing: 1.2 }}>{g.title.toUpperCase()}</Text>
+                  {list.map((c) => (
+                    <View key={c.id}>
+                      <Text style={{ color: "#fff", fontSize: 12, fontWeight: "800" }}>{c.source} <Text style={{ color: "rgba(255,255,255,0.6)" }}>· {c.licence}</Text></Text>
+                      <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 11 }}>{c.line}</Text>
+                    </View>
+                  ))}
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </Card>
       {onHelp && <Btn kind="plain" label="? How it works" onPress={onHelp} />}
     </Frame>
   );
