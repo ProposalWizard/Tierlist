@@ -587,6 +587,8 @@ export class MatchDriver {
     });
   }
 
+  /** A tie that must be won tonight (the game music's knockout; reads only). */
+  get knockoutTie(): boolean { return !!this.extraTimeEligibility(); }
   /** CanvasMatch extraTimeEligibility. */
   private extraTimeEligibility(): { extraTime: boolean; isLevelNow: () => boolean } | null {
     const fixture = this.setup.fixture, career = this.setup.career;
