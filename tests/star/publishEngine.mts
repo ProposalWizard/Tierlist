@@ -83,5 +83,11 @@ ok(!s.includes("EAAG") && open(s) === "EAAG-secret-token", "tokens are stored en
 let bad = false; try { open(s.replace(/.$/, s.endsWith("A") ? "B" : "A")); } catch { bad = true; }
 ok(bad, "a tampered token is refused");
 
+// The owner lock (PUBLISH_OWNER_EMAIL): unset = every admin; set = only those addresses.
+{ const { ownerOk } = await import("../../lib/publish/auth");
+  ok(ownerOk("a@x.com", {}) && ownerOk(undefined, {}), "no owner set: every admin gets in");
+  ok(ownerOk("Owner@X.com", { PUBLISH_OWNER_EMAIL: "owner@x.com" }) && !ownerOk("other@x.com", { PUBLISH_OWNER_EMAIL: "owner@x.com" }) && !ownerOk(undefined, { PUBLISH_OWNER_EMAIL: "owner@x.com" }), "owner set: only that address");
+  ok(ownerOk("b@x.com", { PUBLISH_OWNER_EMAIL: "a@x.com, b@x.com" }), "several owners split by commas"); }
+
 if (failed) { console.error(`${failed} failed`); process.exit(1); }
 console.log("all passed");

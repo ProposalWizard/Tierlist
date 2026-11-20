@@ -1,0 +1,80 @@
+{
+  "id": "ex12-new-rules",
+  "series": "Explainer",
+  "variant": "TOPIC: rule changes · STYLE: dark + green karaoke",
+  "title": "The new rules you might have missed this season",
+  "layout": "explainer",
+  "music": "07-find-a-way.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.theifab.com/news/the-ifab-introduces-further-measures-to-improve-match-flow-and-player-behaviour",
+    "https://www.flashscore.com/news/soccer-world-championship-the-major-law-changes-that-will-come-into-effect-at-the-2026-fifa-world-cup/MBfsCSqA/",
+    "https://downloads.theifab.com/downloads/circular-33?l=en"
+  ],
+  "images": {},
+  "lines": [
+    {
+      "text": "Football's rules changed this season. Here's what you might have missed.",
+      "scene": {
+        "type": "statement",
+        "text": "NEW RULES|2026/27",
+        "hi": 1
+      }
+    },
+    {
+      "text": "One. VAR can now overturn a corner that should never have been given.",
+      "scene": {
+        "type": "statement",
+        "text": "VAR|CAN CHECK|CORNERS",
+        "hi": 2
+      }
+    },
+    {
+      "text": "Two. Referees now count down restarts, to stop time-wasting.",
+      "scene": {
+        "type": "stopwatch",
+        "to": 5,
+        "word": "COUNTDOWNS ON RESTARTS"
+      }
+    },
+    {
+      "text": "Three. Telling your teammates to walk off in protest can now be a red card, where competitions choose.",
+      "scene": {
+        "type": "myth",
+        "verdict": "fact",
+        "label": "NEW",
+        "claim": "WALK-OFF PROTEST|= RED CARD"
+      }
+    },
+    {
+      "text": "And four. New offside trials are still being tested.",
+      "scene": {
+        "type": "statement",
+        "text": "OFFSIDE|STILL ON TRIAL",
+        "hi": 0
+      }
+    },
+    {
+      "text": "Which one do you think will change the game most?",
+      "scene": {
+        "type": "statement",
+        "text": "WHICH ONE|MATTERS MOST?",
+        "hi": 1
+      }
+    }
+  ],
+  "theme": {
+    "mono": "navy",
+    "palette": {
+      "navy": [
+        "#161c40",
+        "#05060d"
+      ]
+    },
+    "captions": "karaoke",
+    "hi": "#39ff88"
+  }
+}

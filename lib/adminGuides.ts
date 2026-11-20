@@ -3036,7 +3036,7 @@ export const ADMIN_GUIDES = {
 
   "/admin/marketing/publish": {
     title: "Publish",
-    what: "Post a finished video to Instagram, Facebook and YouTube now or at a set time, and see its views, likes and comments. Admins only.",
+    what: "Post a finished video to Instagram, Facebook and YouTube now or at a set time, and see its views, likes and comments. Only Mikey (the owner) can use it once PUBLISH_OWNER_EMAIL is set; until then, admins.",
     buttons: [
       { group: "Accounts", items: [
         ["Connect Facebook + Instagram", "Opens Facebook's login. Pick the Knowitball Page and its Instagram, press Allow. One login connects both."],
@@ -3045,7 +3045,8 @@ export const ADMIN_GUIDES = {
         ["Forget", "Removes that platform's saved login. Posts to it stop until you connect again."],
       ] },
       { group: "New post", items: [
-        ["Video", "Pick a video already in our storage. Put new ones in with Marketing → Uploads first."],
+        ["Video", "Pick a video. \"Mine\" = Mikey's own storage; \"Knowitball\" = the team's Marketing → Uploads."],
+        ["⬆ Upload a video", "Sends a video from this device straight into Mikey's own storage (or the team's, if his is not set up). Shows the percentage, then picks it in Video."],
         ["Instagram / Facebook / YouTube", "Tick where it goes. A platform that is not connected cannot be ticked."],
         ["Title (YouTube and Facebook)", "The video title. YouTube needs one."],
         ["Caption (all platforms)", "Caption and hashtags. On YouTube it is the description."],
@@ -3062,7 +3063,8 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: [
-      "Shared with Harry, Mikey and Leo: the queue and results are in the database (tables publish_posts and publish_accounts). The page re-reads every minute.",
+      "The queue and results are in the database (tables publish_posts and publish_accounts). The page re-reads every minute. Locked to the owner when PUBLISH_OWNER_EMAIL is set.",
+      "Uploaded videos go to Mikey's own Cloudflare bucket (PUBLISH_R2_ settings), kept apart from the team's Marketing bucket.",
       "Logins are stored encrypted. Nobody can read them from the page.",
       "A timer in the database runs the poster every 5 minutes. Instagram takes a few extra minutes to process a Reel; it shows \"Instagram is processing it\" meanwhile.",
       "Numbers refresh every 3 hours for 30 days after a post goes up.",
@@ -3071,10 +3073,10 @@ export const ADMIN_GUIDES = {
     inGame: ["Nowhere. This posts our own videos to our own accounts."],
     needs: [
       "The database tables and timer: run supabase/migrations/publishing.sql once (with the cron secret pasted in). Without it the page says the tables are missing.",
-      "Vercel settings: PUBLISH_TOKEN_KEY, PUBLISH_CRON_SECRET, PUBLISH_AGENT_TOKEN, META_APP_ID, META_APP_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, plus the four R2 storage settings. The page lists any that are missing.",
+      "Vercel settings: PUBLISH_TOKEN_KEY, PUBLISH_CRON_SECRET, PUBLISH_AGENT_TOKEN, META_APP_ID, META_APP_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, plus video storage: Mikey's own (PUBLISH_R2_ACCOUNT_ID, PUBLISH_R2_BUCKET, PUBLISH_R2_ACCESS_KEY_ID, PUBLISH_R2_SECRET_ACCESS_KEY, and a CORS rule on the bucket allowing knowitball.co.uk to PUT) or the team's four R2 settings. PUBLISH_OWNER_EMAIL locks the page to its owner. The page lists any that are missing.",
       "Until Google approves our YouTube audit, YouTube keeps every video posted from here private. Instagram must be a Professional account linked to the Facebook Page.",
     ],
-    dev: "app/admin/marketing/publish/page.tsx · components/admin/marketing/PublishPanel.tsx · lib/publish/{engine,live,meta,youtube,db,crypto,auth,video,types}.ts · /api/admin/publish{,/[id],/tick,/upload,/accounts,/connect/[platform],/callback/[platform]} · supabase/migrations/publishing.sql · scripts/publish/post.mjs · tests/star/publishEngine.mts",
+    dev: "app/admin/marketing/publish/page.tsx · components/admin/marketing/PublishPanel.tsx · lib/publish/{engine,live,meta,youtube,db,crypto,auth,video,storage,types}.ts · /api/admin/publish{,/[id],/tick,/upload,/accounts,/connect/[platform],/callback/[platform]} · supabase/migrations/publishing.sql · scripts/publish/post.mjs · tests/star/publishEngine.mts",
   },
 
 } satisfies Record<string, AdminGuide>;
