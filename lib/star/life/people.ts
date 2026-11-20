@@ -17,10 +17,15 @@ import { scaledChange } from "../relationships";
 
 // ── Who is who ──────────────────────────────────────────────────────────
 
-export type LifeRole = "teammate" | "manager" | "agent" | "dad" | "mum" | "brother" | "physio" | "kitman" | "tabloid" | "broadsheet";
+export type LifeRole = "teammate" | "manager" | "agent" | "dad" | "mum" | "brother" | "physio" | "kitman" | "tabloid" | "broadsheet"
+  // Story arcs, batch 1 (lib/star/life/book/arcs/): one of each per career, named from the career's seed.
+  | "groundsman" | "canteen" | "chairman" | "coach" | "partner" | "sister" | "pal" | "fan" | "kidfan" | "reporter" | "neighbour" | "rival" | "legend" | "sponsor" | "referee";
 export const ROLE_ID: Record<Exclude<LifeRole, "teammate">, string> = {
   manager: "mgr", agent: "agent", dad: "fam:dad", mum: "fam:mum", brother: "fam:brother",
   physio: "staff:physio", kitman: "staff:kitman", tabloid: "hack:tabloid", broadsheet: "hack:broadsheet",
+  groundsman: "staff:ground", canteen: "staff:canteen", chairman: "club:chair", coach: "staff:coach",
+  partner: "fam:partner", sister: "fam:sister", pal: "pal:school", fan: "fan:tunnel", kidfan: "fan:kid",
+  reporter: "hack:local", neighbour: "near:door", rival: "rival:one", legend: "club:legend", sponsor: "biz:rep", referee: "ref:one",
 };
 const ID_ROLE = new Map(Object.entries(ROLE_ID).map(([r, id]) => [id, r as LifeRole]));
 
@@ -33,17 +38,26 @@ const START: Record<LifeRole, [number, number, number]> = {
   teammate: [40, 30, 0], manager: [45, 25, 0], agent: [50, 45, 0],
   dad: [60, 70, 0], mum: [65, 80, 0], brother: [45, 60, 0],
   physio: [50, 35, 0], kitman: [45, 40, 0], tabloid: [35, 15, 0], broadsheet: [45, 20, 0],
+  groundsman: [45, 30, 0], canteen: [50, 45, 0], chairman: [45, 15, 0], coach: [45, 30, 0],
+  partner: [60, 75, 0], sister: [50, 65, 0], pal: [45, 55, 0], fan: [40, 30, 0], kidfan: [55, 40, 0],
+  reporter: [40, 20, 0], neighbour: [40, 20, 0], rival: [45, 5, 10], legend: [40, 20, 0], sponsor: [45, 25, 0], referee: [45, 10, 0],
 };
 
 /** The groups on the People page. */
-export const ROLE_GROUP: Record<LifeRole, "Dressing room" | "Club staff" | "Family" | "Agent" | "Press"> = {
+export const ROLE_GROUP: Record<LifeRole, "Dressing room" | "Club staff" | "Family" | "Agent" | "Press" | "Around you"> = {
   teammate: "Dressing room", manager: "Club staff", physio: "Club staff", kitman: "Club staff",
   dad: "Family", mum: "Family", brother: "Family", agent: "Agent", tabloid: "Press", broadsheet: "Press",
+  groundsman: "Club staff", canteen: "Club staff", chairman: "Club staff", coach: "Club staff",
+  partner: "Family", sister: "Family", pal: "Family", reporter: "Press", sponsor: "Agent",
+  fan: "Around you", kidfan: "Around you", neighbour: "Around you", rival: "Around you", legend: "Around you", referee: "Around you",
 };
 
 export const ROLE_TITLE: Record<LifeRole, string> = {
   teammate: "Team-mate", manager: "Your manager", agent: "Your agent", dad: "Your dad", mum: "Your mum",
   brother: "Your brother", physio: "Club physio", kitman: "Kit man", tabloid: "Tabloid reporter", broadsheet: "Broadsheet writer",
+  groundsman: "Head groundsman", canteen: "Runs the canteen", chairman: "The chairman", coach: "First-team coach",
+  partner: "Your partner", sister: "Your sister", pal: "Old school friend", fan: "Season ticket, by the tunnel", kidfan: "A young fan",
+  reporter: "Local paper", neighbour: "Your neighbour", rival: "Plays for another club", legend: "Club legend", sponsor: "Sponsor's rep", referee: "Referee",
 };
 
 const FIRST_M = ["Gary", "Steve", "Danny", "Rob", "Kev", "Tony", "Mark", "Lee", "Paul", "Dean", "Craig", "Neil"];
@@ -51,7 +65,13 @@ const FIRST_F = ["Sarah", "Jo", "Helen", "Amy", "Claire", "Nadia", "Priya", "Luc
 /** Surnames a generated squad never uses (squadData.ts), so the agent is never "Moreno" next to a Moreno at left back. */
 const SURNAMES = ["Hartley", "Brennan", "Ashworth", "Pike", "Dunmore", "Lomax", "Collier", "Prentice", "Whitlock", "Fairbrother", "Sefton", "Kettering"];
 /** Invented papers (never a real outlet). */
-export const OUTLETS: Record<"tabloid" | "broadsheet", string> = { tabloid: "Daily Whistle", broadsheet: "Sporting Ledger" };
+export const OUTLETS: Record<"tabloid" | "broadsheet" | "reporter", string> = { tabloid: "Daily Whistle", broadsheet: "Sporting Ledger", reporter: "Evening Lantern" };
+/** The invented boot brand the sponsor's rep works for (read as {sponsor.outlet}). */
+export const SPONSOR_BRAND = "Halden";
+/** More names for the story people, so the canteen and the groundsman never share a surname. */
+const SURNAMES_2 = ["Rowntree", "Gilmour", "Okafor", "Varley", "Quigley", "Thwaite", "Mensah", "Doherty", "Pickering", "Sowerby", "Callaghan", "Ibbotson", "Marsh", "Kowalski", "Haworth", "Bairstow"];
+const FIRST_OLD = ["Ron", "Alan", "Brian", "Frank", "Terry", "Derek", "Keith", "Malcolm"];
+const FIRST_KID = ["Maisie", "Ellie", "Ruby", "Isla", "Poppy", "Freya"];
 
 function hash(s: string): number {
   let h = 5381;
@@ -76,6 +96,8 @@ export function personInfo(c: CareerState, id: string): PersonInfo | null {
   const sur = c.player.lastName || "Smith";
   const seed = hash(`${c.player.firstName}|${c.player.lastName}|${c.player.startYear}`);
   const pick = <T,>(a: T[], k: string) => a[(seed + hash(k)) % a.length];
+  // The story people take consecutive names from one shuffle, so two of them never share one.
+  const nth = <T,>(a: T[], n: number) => a[(seed + n) % a.length];
   switch (role) {
     case "teammate": {
       const p = (c.squad ?? []).find((s) => s.id === id);
@@ -101,6 +123,22 @@ export function personInfo(c: CareerState, id: string): PersonInfo | null {
       const f = pick(FIRST_M, role); const s = pick(SURNAMES, `${role}-s`);
       return { id, role, name: `${f} ${s}`, short: s, outlet: OUTLETS[role] };
     }
+    // The story people (batch 1). Each is one person for the whole career, named from its seed.
+    case "groundsman": { const f = nth(FIRST_OLD, 0); return { id, role, name: `${f} ${nth(SURNAMES_2, 0)}`, short: f }; }
+    case "canteen": { const f = nth(FIRST_F, 0); return { id, role, name: `${f} ${nth(SURNAMES_2, 1)}`, short: f }; }
+    case "chairman": { const s = nth(SURNAMES_2, 2); return { id, role, name: `${nth(FIRST_OLD, 1)} ${s}`, short: `Mr ${s}` }; }
+    case "coach": { const f = nth(FIRST_M, 0); return { id, role, name: `${f} ${nth(SURNAMES_2, 3)}`, short: f }; }
+    case "partner": { const f = c.girlfriend?.name?.split(" ")[0] || nth(FIRST_F, 1); return { id, role, name: c.girlfriend?.name || `${f} ${nth(SURNAMES_2, 4)}`, short: f }; }
+    case "sister": { const f = nth(FIRST_F, 5); return { id, role, name: `${f} ${sur}`, short: f }; }
+    case "pal": { const f = nth(FIRST_M, 1); return { id, role, name: `${f} ${nth(SURNAMES_2, 5)}`, short: f }; }
+    case "fan": { const f = nth(FIRST_OLD, 2); return { id, role, name: `${f} ${nth(SURNAMES_2, 6)}`, short: f }; }
+    case "kidfan": { const f = nth(FIRST_KID, 0); return { id, role, name: `${f} ${nth(SURNAMES_2, 7)}`, short: f }; }
+    case "reporter": { const f = nth(FIRST_F, 2); return { id, role, name: `${f} ${nth(SURNAMES_2, 8)}`, short: f, outlet: OUTLETS.reporter }; }
+    case "neighbour": { const s = nth(SURNAMES_2, 9); return { id, role, name: `${nth(FIRST_F, 4)} ${s}`, short: `Mrs ${s}` }; }
+    case "rival": { const s = nth(SURNAMES_2, 10); return { id, role, name: `${nth(FIRST_M, 2)} ${s}`, short: s }; }
+    case "legend": { const s = nth(SURNAMES_2, 11); return { id, role, name: `${nth(FIRST_OLD, 3)} ${s}`, short: s }; }
+    case "sponsor": { const f = nth(FIRST_F, 3); return { id, role, name: `${f} ${nth(SURNAMES_2, 12)}`, short: f, outlet: SPONSOR_BRAND }; }
+    case "referee": { const s = nth(SURNAMES_2, 13); return { id, role, name: `${nth(FIRST_M, 3)} ${s}`, short: `Mr ${s}` }; }
   }
 }
 

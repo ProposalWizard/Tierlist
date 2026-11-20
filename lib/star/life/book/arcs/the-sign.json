@@ -1,0 +1,423 @@
+{
+ "id": "arc-the-sign",
+ "title": "It's my birthday",
+ "owner": "kidfan",
+ "summary": "A girl at the front of the stand is holding up a cardboard sign asking for your shirt because it's her birthday. Seasons later she turns up again, older, and she remembers exactly what you did.",
+ "size": "small",
+ "about": {
+  "who": [
+   "young fan"
+  ],
+  "tone": [
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "she-remembered",
+   "title": "She kept the shirt",
+   "text": "You gave a kid your shirt on her birthday, and years later she told you she still sleeps in it."
+  },
+  {
+   "id": "she-remembered-too",
+   "title": "She remembered that as well",
+   "text": "You walked past her sign. She grew up, and she remembered that too."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "sig-1-sign",
+   "title": "The sign",
+   "n": 1,
+   "event": {
+    "id": "arc-sig-1-sign",
+    "title": "The sign",
+    "category": "fans",
+    "place": "stadium:pitch",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastWon || lastGoals>=1"
+     ]
+    },
+    "setup": [
+     "Full time. At the front of the stand there's a girl of about nine holding a cardboard sign above her head with both arms: \"IT'S MY BIRTHDAY. CAN I HAVE YOUR SHIRT {you.number}?\""
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "kidfan",
+       "say": [
+        "Her dad is holding her up on the barrier. She's shouting your name, and she's spelt it right on the sign."
+       ],
+       "replies": [
+        {
+         "id": "shirt",
+         "label": "Take your shirt off and go over.",
+         "tone": "kind",
+         "goto": "k2"
+        },
+        {
+         "id": "wave",
+         "label": "Wave and point at the sign.",
+         "tone": "calm",
+         "end": "waved"
+        },
+        {
+         "id": "walk",
+         "label": "Walk off with the others.",
+         "tone": "cold",
+         "end": "walked"
+        },
+        {
+         "id": "quiet",
+         "label": "Pretend you didn't see it.",
+         "silent": true,
+         "end": "walked"
+        }
+       ]
+      },
+      "k2": {
+       "who": "kidfan",
+       "say": [
+        "She's holding the shirt like it might be taken back. \"Will you sign it? Mum said you wouldn't sign it.\""
+       ],
+       "replies": [
+        {
+         "id": "sign",
+         "label": "Sign it, and write \"happy birthday\".",
+         "tone": "kind",
+         "end": "signed"
+        },
+        {
+         "id": "pen",
+         "label": "\"I've not got a pen. It's yours anyway.\"",
+         "tone": "calm",
+         "end": "given"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "signed": [
+       {
+        "text": "Her dad posts the video. It's been watched more times than any goal you've scored.",
+        "effects": {
+         "fans": 3,
+         "fame": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 14,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "gave-her-the-birthday-shirt",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "gave"
+         }
+        }
+       }
+      ],
+      "given": [
+       {
+        "text": "She runs back up the steps with it before anyone can take it off her.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 12,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "gave-her-the-birthday-shirt",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "gave"
+         }
+        }
+       }
+      ],
+      "waved": [
+       {
+        "text": "She waves back. She keeps the sign up all the way down the tunnel.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "waved-at-her-sign",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "waved"
+         }
+        }
+       }
+      ],
+      "walked": [
+       {
+        "text": "On the replay, you can see the sign come down as you go past.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "walked-past-her-sign",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "walked"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "A kid at the front has a sign"
+  },
+  {
+   "id": "sig-2-later",
+   "title": "The girl from the barrier",
+   "after": {
+    "beat": "sig-1-sign",
+    "seasons": [
+     2,
+     4
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-sig-2-later",
+    "title": "The girl from the barrier",
+    "category": "fans",
+    "place": "stadium:car-park",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "variants": [
+     {
+      "if": "!sameClub",
+      "place": "stadium:tunnel",
+      "setupSwap": "You're the away team at your old club. A teenager is waiting by the visitors' entrance with her dad. It takes you a second."
+     }
+    ],
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A teenager in a club scarf is waiting by the players' entrance with her dad. It takes you a second.",
+     "{if arc.path=='gave'}She's wearing your old shirt over her coat. It still comes down to her knees.{/if}{if !arc.path=='gave'}She's holding a bit of old cardboard, folded in four.{/if}"
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "kidfan",
+       "say": [
+        "{if arc.path=='gave'}\"You won't remember. You gave me this on my birthday. I play centre mid for the under-sixteens now.\"{/if}",
+        "{if arc.path=='waved'}\"You waved at my sign once. I told everyone at school you'd waved at me.\"{/if}",
+        "{if arc.path=='walked'}\"I had a sign once. You walked past it. I'm not being funny, I just always wanted to tell you.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "remember",
+         "label": "\"I remember. Happy birthday, a few years late.\"",
+         "tone": "kind",
+         "end": "end-warm"
+        },
+        {
+         "id": "sorry",
+         "label": "\"I'm sorry. Have this one.\" Hand her your shirt.",
+         "tone": "honest",
+         "end": "end-sorry"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "end-quiet"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "end-warm": [
+       {
+        "if": "arc.path=='gave' || arc.path=='waved'",
+        "text": "Her dad takes a photo of the two of you. She doesn't stop smiling for the whole of it.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "remembered-her",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "she-remembered"
+        }
+       },
+       {
+        "text": "\"You don't,\" she says, but she's laughing.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "she-remembered-too"
+        }
+       }
+      ],
+      "end-sorry": [
+       {
+        "if": "arc.path=='gave'",
+        "text": "She takes it. \"That's two of yours, then,\" her dad says. She's quiet all the way to the car.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "she-remembered"
+        }
+       },
+       {
+        "text": "She takes it, and folds the old sign up again. \"Took you long enough.\"",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 10,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "made-up-for-the-sign",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "she-remembered-too"
+        }
+       }
+      ],
+      "end-quiet": [
+       {
+        "text": "She waits, then goes back to her dad.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -4
+         }
+        ],
+        "arc": {
+         "end": "she-remembered-too"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "Years later, someone remembers"
+  }
+ ]
+}

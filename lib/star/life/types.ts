@@ -36,7 +36,9 @@ export interface CastSlot {
    *  "social" (the team-mate a social action is with), "memory" (whoever
    *  holds one of `tags`), "carried" (handed over by the event that set up
    *  this follow-up). */
-  pick: "squad" | "manager" | "agent" | "dad" | "mum" | "brother" | "physio" | "kitman" | "tabloid" | "broadsheet" | "stranger" | "social" | "memory" | "carried";
+  pick: "squad" | "manager" | "agent" | "dad" | "mum" | "brother" | "physio" | "kitman" | "tabloid" | "broadsheet" | "stranger" | "social" | "memory" | "carried"
+    // Story arcs (Events v2 batch 1): people around the club and your life, each one id per career (people.ts).
+    | "groundsman" | "canteen" | "chairman" | "coach" | "partner" | "sister" | "pal" | "fan" | "kidfan" | "reporter" | "neighbour" | "rival" | "legend" | "sponsor" | "referee";
   /** Person conditions (cond.ts), all must hold. */
   where?: string[];
   order?: "bond-desc" | "bond-asc" | "grudge-desc" | "random" | "youngest" | "best";
@@ -308,8 +310,10 @@ export interface ArcOutcome extends LifeOutcome {
   };
   promise?: string;
   promiseBroken?: string[];
-  objective?: { id: string; text: string; window: { matches: number }; met: string; onMet: string; onMiss: string };
+  objective?: { id: string; text: string; window: { matches: number }; met: string; onMet: string; onMiss: string; /** Who set it and why, for the card (default: the kit man arc's words). */ why?: string };
   give?: string;
+  /** What a `give` is called and does, for the card ([name, line]); the kit man's bag has its own. */
+  giveWords?: [string, string];
   unlock?: string;
   noteSquad?: string;
   train?: Partial<Record<"pace" | "power" | "technique" | "vision", number>>;
@@ -386,6 +390,15 @@ export interface LifeArc {
   title: string;
   owner: string;
   summary: string;
+  /** small (one talk + a callback), medium (3-4 beats, a promise), big (5-7 beats across seasons, a game). */
+  size?: LifeSize;
+  /** Who it is about and how it feels (the writers' spread; the quest log does not read it). */
+  about?: { who: string[]; tone: string[] };
+  /** How often it starts when its first beat could (0-1, a seeded roll). No `start` = always (the kit man). */
+  start?: { chance: number };
+  /** A game mode this story needs that the activity host cannot mount yet. Such a story is
+   *  checked but never plays (arcBook.ts WAITING_ARCS) until the mode is built. */
+  needsActivity?: string;
   cast: CastSlot[];
   vars: Record<string, ArcVar>;
   clocks: { id: string; label: string; segments: number; tick: { on: "season-end"; by: number }[]; startsAt: string; onFull: string }[];

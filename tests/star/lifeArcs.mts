@@ -209,7 +209,7 @@ const atNight = m.career;
   check(!!kid && A.bubblesFor(y, kid).some((x) => x.label === "Feed him a hundred"), "on the kid's round menu");
   const fin = T.autoBeat(y, ARC, "b7-your-turn", { rng, pick: () => 0 })!;
   check(run(fin.career).done === "the-bag-moves-on", `the bag moves on (${run(fin.career).done})`);
-  check(JSON.stringify(fin.career.life!.arcs).length < 2500, `the story is small in the save (${JSON.stringify(fin.career.life!.arcs).length} bytes)`);
+  check(JSON.stringify(fin.career.life!.arcs![ARC]).length < 2500, `the story is small in the save (${JSON.stringify(fin.career.life!.arcs![ARC]).length} bytes)`);
 }
 // 7b: broken.
 {
@@ -230,6 +230,79 @@ const atNight = m.career;
   check(life.promises?.length === 1 && life.promises[0].st === "open", "a broken promise row is fixed or dropped");
   const v1 = migrateLife({ people: {}, fired: {} });
   check(!v1.arcs && !v1.promises, "a v1 save gets no story fields");
+}
+
+// 9: THE STORY BOOK (batch 1). Every file passes the deep checks, and every story plays start to
+// finish by the dice: each beat plays in some run, each ending is reached in some run.
+{
+  const { ALL_ARCS, WAITING_ARCS } = await import("../../lib/star/life/arcBook.ts");
+  const { validateArcBook } = await import("../../lib/star/life/validateArcs.ts");
+  const { EVENTS } = await import("../../lib/star/life/book.ts");
+  const { freshLife } = await import("../../lib/star/life/people.ts");
+  const fs = await import("node:fs");
+  const deep = validateArcBook(ALL_ARCS, EVENTS);
+  check(deep.length === 0, `every story file passes the deep checks (${deep.length}): ${deep.slice(0, 12).map((p) => `${p.id}: ${p.problem}`).join(" | ")}`);
+  // Every JSON file in the folder is in the book (a file left out would never be checked or played).
+  const files = fs.readdirSync(new URL("../../lib/star/life/book/arcs/", import.meta.url)).filter((f: string) => f.endsWith(".json"));
+  check(files.length === ALL_ARCS.length, `every story file is in the book (${files.length} files, ${ALL_ARCS.length} in the book)`);
+  check(WAITING_ARCS.every((a) => !ARCS.includes(a)), "a story waiting for its game never plays");
+
+  const ONLY = process.env.ARC;
+  const SEEDS = Number(process.env.SEEDS ?? 16);
+  const stories = ARCS.filter((a) => a.id !== ARC && (!ONLY || a.id === ONLY));
+  const moments = ["walkout", "after-match", "arrive:training", "home:evening"] as const;
+  let played = 0;
+  for (const arc of stories) {
+    const ends = new Set<string>(), beats = new Set<string>();
+    const dead: string[] = [];
+    for (let seed = 0; seed < SEEDS; seed++) {
+      const r = mulberry32(5000 + seed * 131 + arc.id.length * 7);
+      // Pick: always the first reply, always the last, or the dice (all three get every ending in time).
+      const pick = (n: number) => (seed % 3 === 0 ? 0 : seed % 3 === 1 ? n - 1 : Math.floor(r() * n));
+      let c = career();
+      if (seed % 2 === 1) c = { ...c, girlfriend: { name: "Jess Moore", happiness: 60, gifts: 0 } } as CareerState;
+      if (seed % 5 === 2) c = { ...c, fame: 45, money: 400_000 };
+      // Only this story runs: every other story is already over in this career.
+      const life = freshLife();
+      life.arcs = Object.fromEntries(ALL_ARCS.filter((a) => a.id !== arc.id).map((a) => [a.id, { at: 0, club: c.player.club, cast: {}, v: {}, k: {}, f: {}, s: {}, done: "x" }]));
+      c = { ...c, life };
+      const first = arc.beats[0].event.trigger.when.find((m) => m !== "followUp") ?? "arrive:training";
+      const take = (cc: CareerState, res: { screens: { arc: string; beat: string }[]; offers: { arc: string; beat: string }[] }) => {
+        for (const sc of res.screens) { const a = T.autoBeat(cc, sc.arc, sc.beat, { rng: r, pick }); if (a) cc = a.career; else dead.push(`${sc.beat} would not open`); }
+        for (const o of res.offers) if (r() < 0.7) { const a = T.autoBeat(cc, o.arc, o.beat, { rng: r, pick }); if (a) cc = a.career; }
+        return cc;
+      };
+      const facts = () => ({ lastRating: Math.round((5 + r() * 4) * 10) / 10, lastGoals: r() < 0.35 ? 1 : 0, lastWon: r() < 0.45, lastLost: r() < 0.35 });
+      let m = A.arcMoment(c, first as never, { rng: r, facts: facts(), force: arc.id });
+      c = take(m.career, m);
+      const start = c.season;
+      for (let guard = 0; guard < 10 * 46; guard++) {
+        const done = c.life!.arcs![arc.id];
+        if (!done || (done.done && !Object.keys(done.s).length && !done.o)) break;
+        let week = c.week + 1, season = c.season;
+        if (week > 46) {
+          m = A.arcMoment({ ...c, week: 46 }, "season-end", { rng: r, facts: facts() });
+          c = take(m.career, m);
+          week = 1; season++;
+          c = { ...c, player: { ...c.player, age: c.player.age + 1 } };
+          // One career in four moves club after a season (the stories have their other-club lines).
+          if (seed % 4 === 3 && season === start + 1) c = { ...c, player: { ...c.player, club: NATIONAL_LEAGUE_CLUBS[7] } };
+        }
+        c = { ...c, week, season, weekActions: 3, energy: 80 };
+        const f = facts();
+        for (const mo of moments) { m = A.arcMoment(c, mo, { rng: r, facts: f }); c = take(m.career, m); }
+        c = A.endOfDay(c, r).career;
+      }
+      const run = c.life!.arcs![arc.id];
+      if (run?.done) ends.add(run.done);
+      for (const [b, f] of Object.entries(run?.f ?? {})) if (f.length) beats.add(b);
+      played++;
+    }
+    for (const e of arc.ends) check(ends.has(e.id), `${arc.id}: the ending "${e.id}" is reached in ${SEEDS} careers (got ${[...ends].join(", ") || "none"})`);
+    for (const b of arc.beats) check(beats.has(b.id), `${arc.id}: the beat "${b.id}" plays in ${SEEDS} careers`);
+    check(!dead.length, `${arc.id}: every due beat opens (${dead.slice(0, 3).join(", ")})`);
+  }
+  if (process.env.V) console.log(`stories played by the dice: ${played} careers over ${stories.length} stories`);
 }
 
 console.log(fails ? `${fails} FAILED` : "life arcs: all passed");

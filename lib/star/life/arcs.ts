@@ -32,6 +32,16 @@ export const LIFE_SEASON = 50;
 /** At most this many stories open at once (the soak checks it). */
 export const MAX_OPEN_ARCS = 12;
 export const MAX_OBJECTIVES = 2;
+/** Story pacing (batch 1, 60 stories): a story with a `start` chance begins at most one per moment,
+ *  and never within this many weeks of the last story that began. The kit man (no `start`) is not paced. */
+export const START_GAP_WEEKS = 3;
+
+/** A seeded 0-1 number for a story's start roll (does not use the caller's rng, so the dice stay as they were). */
+function roll01(key: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619) >>> 0;
+  return (h % 10007) / 10007;
+}
 
 // ── The talk on screen (talk.ts moves it; kept out of the save) ─────────────
 
@@ -266,6 +276,8 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
   // 5. What wants to play now.
   const screens: ArcPick[] = [];
   const offers: MomentResult["offers"] = [];
+  const lastStart = Math.max(-999, ...Object.values(lifeOf(c).arcs ?? {}).map((r) => r.at));
+  let started = 0;
   for (const arc of ARCS) {
     life = lifeOf(c);
     let run = life.arcs?.[arc.id];
@@ -275,6 +287,8 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
       if (open >= MAX_OPEN_ARCS) continue;
       const t = first.event.trigger;
       if (opts.force !== arc.id && !t.when.includes(moment)) continue;
+      // Pacing: one new story a moment, a few weeks apart, and each has its own odds.
+      if (opts.force !== arc.id && arc.start && (started > 0 || now - lastStart < START_GAP_WEEKS || roll01(`${arc.id}|${now}|${moment}`) >= arc.start.chance)) continue;
       const fresh = startRun(c, life, arc, first);
       if (!fresh) continue;
       const nl = cloneLife(life);
@@ -283,6 +297,7 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
       if (opts.force !== arc.id && !beatOpen(trial, arc, fresh, first, moment, opts.facts)) continue;
       c = trial;
       run = fresh;
+      started++;
     }
     for (const beat of arc.beats) {
       if (!beatOpen(c, arc, run, beat, moment, opts.facts) && !(opts.force === arc.id && beat === arc.beats[0] && !run.f[beat.id])) continue;
@@ -462,14 +477,14 @@ function applyArcOutcome(c0: CareerState, b: BeatLive, o: ArcOutcome, endId: str
   if (o.noteSquad) life.squad = remember(life.squad, o.noteSquad, now, 3);
   if (o.give || o.unlock) {
     life.got = Array.from(new Set([...(life.got ?? []), ...(o.give ? [o.give] : []), ...(o.unlock ?? "").split(/[+]/).filter(Boolean).map((u) => (u.includes(":") ? u : `garden:${u}`))])).slice(-20);
-    const w = o.give ? ITEM_WORDS[o.give] : undefined;
+    const w = o.give ? ITEM_WORDS[o.give] ?? o.giveWords : undefined;
     if (w) { ex.got = { what: w[0], text: w[1] }; changes.push({ kind: "item", label: w[0] }); }
     else if (o.unlock) changes.push({ kind: "item", label: o.unlock.startsWith("trophy:") ? "On the kit room door" : "Unlocked" });
   }
   if (o.objective && (life.objs ?? []).length < MAX_OBJECTIVES) {
     const t = fillLine(o.objective.text, { ...c, life }, b.cast, ctx());
     life.objs = [...(life.objs ?? []).filter((x) => x.id !== o.objective!.id), { id: o.objective.id, arc: b.arc, text: t, left: o.objective.window.matches, met: o.objective.met, onMet: o.objective.onMet, onMiss: o.objective.onMiss, made: now }];
-    ex.objective = { text: t, window: o.objective.window.matches, why: `From ${personInfo(c, b.cast.manager ?? "mgr")?.short ?? "the gaffer"}, because of last night. ${personInfo(c, b.cast.kitman ?? "")?.short ?? "He"} will be in the tunnel.` };
+    ex.objective = { text: t, window: o.objective.window.matches, why: o.objective.why ? fillLine(o.objective.why, { ...c, life }, b.cast, ctx()) : `From ${personInfo(c, b.cast.manager ?? "mgr")?.short ?? "the gaffer"}, because of last night. ${personInfo(c, b.cast.kitman ?? "")?.short ?? "He"} will be in the tunnel.` };
   }
   if (o.train) {
     const sk = { ...c.skills } as unknown as Record<string, number>;

@@ -19,7 +19,7 @@ import { eventById } from "@/lib/star/life/book";
 import type { LifePerson } from "@/lib/star/life/types";
 import "./life.css";
 
-const GROUPS = ["Dressing room", "Club staff", "Family", "Agent", "Press"] as const;
+const GROUPS = ["Dressing room", "Club staff", "Family", "Agent", "Press", "Around you"] as const;
 
 function Bars({ p, big = false }: { p: LifePerson; big?: boolean }) {
   const cells: [string, number, string][] = [["Respect", p.r, "#60a5fa"], ["Bond", p.b, "#34d399"], ["Grudge", p.g, "#f87171"]];
@@ -55,13 +55,15 @@ export default function PeoplePage({ career, onAction, onBack }: {
   // The ones with a story first (most memories), then the closest.
   const metMates = squad.filter(met).sort((a, b) => peek(life!, b).m.length - peek(life!, a).m.length || peek(life!, b).b - peek(life!, a).b);
   const others = squad.filter((id) => !met(id));
-  const staff = [career.manager ? ROLE_ID.manager : null, ROLE_ID.physio, ROLE_ID.kitman].filter(Boolean) as string[];
-  const family = [ROLE_ID.dad, ROLE_ID.mum, ROLE_ID.brother];
-  const press = [ROLE_ID.tabloid, ROLE_ID.broadsheet].filter(met);
+  // The story people (batch 1) show once you have met them.
+  const staff = [career.manager ? ROLE_ID.manager : null, ROLE_ID.physio, ROLE_ID.kitman, ...[ROLE_ID.coach, ROLE_ID.groundsman, ROLE_ID.canteen, ROLE_ID.chairman].filter(met)].filter(Boolean) as string[];
+  const family = [ROLE_ID.dad, ROLE_ID.mum, ROLE_ID.brother, ...[ROLE_ID.sister, ROLE_ID.partner, ROLE_ID.pal].filter(met)];
+  const press = [ROLE_ID.tabloid, ROLE_ID.broadsheet, ROLE_ID.reporter].filter(met);
+  const around = [ROLE_ID.fan, ROLE_ID.kidfan, ROLE_ID.neighbour, ROLE_ID.rival, ROLE_ID.legend, ROLE_ID.referee].filter(met);
   const gone = Object.keys(life?.people ?? {}).filter((id) => roleOf(id) === "teammate" && !squad.includes(id));
   const lists: Record<(typeof GROUPS)[number], string[]> = {
     "Dressing room": [...metMates, ...(allSquad ? others : [])],
-    "Club staff": staff, Family: family, Agent: [ROLE_ID.agent], Press: press,
+    "Club staff": staff, Family: family, Agent: [ROLE_ID.agent, ...[ROLE_ID.sponsor].filter(met)], Press: press, "Around you": around,
   };
   const outs = fallOuts(life, career);
   const now = lifeWeek(career);

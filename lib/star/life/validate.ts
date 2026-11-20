@@ -21,11 +21,12 @@ import { LIFE_MOMENTS } from "./types";
 import { parseCond, parsePersonCond, slotsIn, tagsIn } from "./cond";
 import { PLACEHOLDER_KEYS, YOU_KEYS } from "./text";
 
-const PICKS: CastSlot["pick"][] = ["squad", "manager", "agent", "dad", "mum", "brother", "physio", "kitman", "tabloid", "broadsheet", "stranger", "social", "memory", "carried"];
+export const PICKS: CastSlot["pick"][] = ["squad", "manager", "agent", "dad", "mum", "brother", "physio", "kitman", "tabloid", "broadsheet", "stranger", "social", "memory", "carried",
+  "groundsman", "canteen", "chairman", "coach", "partner", "sister", "pal", "fan", "kidfan", "reporter", "neighbour", "rival", "legend", "sponsor", "referee"];
 const ORDERS = ["bond-desc", "bond-asc", "grudge-desc", "random", "youngest", "best"];
 const TEMPLATES = ["phone-call", "text-thread", "feed-post", "talk-scene"];
 const SIZES = ["small", "medium", "big"];
-const BAND: Record<string, number> = { small: 3, medium: 8, big: 12 };
+export const BAND: Record<string, number> = { small: 3, medium: 8, big: 12 };
 const BARS = ["boss", "team", "fans", "fame", "reputation"] as const;
 const SCREENS = ["telltale", "dial", "card"];
 const TONES = ["humble", "calm", "confident", "fiery", "honest", "lie", "kind", "cold", "brave", "reckless"];
@@ -35,7 +36,7 @@ export const MAX_TELLTALE_LINE = 72;
 /** Lines must fit a phone card. */
 export const MAX_LINE = 240;
 /** Real brands, clubs' sponsors and people never appear (design 5.2). */
-const REAL_NAMES = ["nike", "adidas", "puma", "umbro", "new balance", "under armour", "red bull", "coca-cola", "pepsi", "gatorade", "rolex", "ferrari", "lamborghini", "bentley", "porsche", "the sun", "daily mail", "the times", "guardian", "sky sports", "bbc", "ronaldo", "messi", "beckham", "rooney", "kane", "haaland", "bet365", "william hill", "ladbrokes", "paddy power"];
+export const REAL_NAMES = ["nike", "adidas", "puma", "umbro", "new balance", "under armour", "red bull", "coca-cola", "pepsi", "gatorade", "rolex", "ferrari", "lamborghini", "bentley", "porsche", "the sun", "daily mail", "the times", "guardian", "sky sports", "bbc", "ronaldo", "messi", "beckham", "rooney", "kane", "haaland", "bet365", "william hill", "ladbrokes", "paddy power"];
 const LATER_HOOKS = /^(match:|negotiation|media-feed|summer-window|casino:|seasons-later|event:retirement)/;
 
 export interface BookProblem { id: string; problem: string }

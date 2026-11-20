@@ -1,0 +1,639 @@
+{
+ "id": "arc-play-through-it",
+ "title": "Sign me fit",
+ "owner": "physio",
+ "summary": "The physio says your hamstring is tight and she's telling the gaffer you're a doubt. You can ask her to sign you fit. If she does, she makes you promise to tell her the moment it goes. On Saturday it twinges. A season later she's the one in trouble, and you're the one who knows the truth.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "physio",
+   "gaffer"
+  ],
+  "tone": [
+   "tense",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "physio",
+   "pick": "physio"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "signed": 0,
+  "told": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "she-had-your-back",
+   "title": "She had your back",
+   "text": "She bent the rules for you once, and when it was her neck on the line you stood next to her."
+  },
+  {
+   "id": "you-left-her-to-it",
+   "title": "You left her to it",
+   "text": "She covered for you, and when the gaffer came for her you kept your head down."
+  }
+ ],
+ "promises": {
+  "p-tell-her": {
+   "id": "p-tell-her",
+   "to": "physio",
+   "text": "Tell {physio.short} the second your hamstring pulls",
+   "due": {
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "keptBy": {
+    "beat": "ptt-2-twinge",
+    "ends": [
+     "hand"
+    ]
+   },
+   "dueText": "Saturday's game",
+   "kept": {
+    "text": "You put your hand up when it went, like you said.",
+    "npc": [
+     {
+      "slot": "physio",
+      "bond": 4,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd put your hand up. You didn't.",
+    "npc": [
+     {
+      "slot": "physio",
+      "bond": -6,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "physio",
+      "tag": "broke-the-hamstring-promise",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "ptt-1-table",
+   "title": "On the table",
+   "n": 1,
+   "event": {
+    "id": "arc-ptt-1-table",
+    "title": "On the table",
+    "category": "staff",
+    "place": "compound:physio-room",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "!injured"
+     ]
+    },
+    "setup": [
+     "{physio.name} has her thumb in the back of your thigh and she's frowning at it. There's a cup game on Saturday."
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "physio",
+       "say": [
+        "\"That's tight. Not torn, but tight. I'm telling the gaffer you're a doubt for Saturday.\""
+       ],
+       "replies": [
+        {
+         "id": "ask",
+         "label": "\"Don't. Sign me fit. I'll be careful.\"",
+         "tone": "reckless",
+         "goto": "p2"
+        },
+        {
+         "id": "truth",
+         "label": "\"It's been tight for a week, if I'm honest.\"",
+         "tone": "honest",
+         "goto": "p-truth"
+        },
+        {
+         "id": "gaffer",
+         "label": "\"I'll tell him myself that I'm fine.\"",
+         "tone": "confident",
+         "end": "over-her-head"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "p2"
+        }
+       ]
+      },
+      "p2": {
+       "who": "physio",
+       "say": [
+        "She stops pressing. \"If I sign you and it goes, it's my name on the form. Do you understand that?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I understand. I'll tell you the second it pulls.\"",
+         "tone": "honest",
+         "goto": "p3",
+         "promise": "p-tell-her"
+        },
+        {
+         "id": "leave",
+         "label": "\"Forget I asked.\"",
+         "tone": "calm",
+         "end": "rested"
+        }
+       ]
+      },
+      "p3": {
+       "who": "physio",
+       "say": [
+        "\"The second it pulls, you put your hand up and you come off. You don't wait for half-time.\""
+       ],
+       "replies": [
+        {
+         "id": "deal",
+         "label": "\"Deal.\"",
+         "tone": "calm",
+         "end": "signed"
+        },
+        {
+         "id": "joke",
+         "label": "\"You'll be the first to know, after me.\"",
+         "tone": "confident",
+         "end": "signed"
+        }
+       ]
+      },
+      "p-truth": {
+       "who": "physio",
+       "say": [
+        "\"A week.\" She writes it down. \"Then you're having Saturday off, and I'm going to tell him why.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Fair enough.\"",
+         "tone": "humble",
+         "end": "rested"
+        },
+        {
+         "id": "beg",
+         "label": "\"It's the cup. Please.\"",
+         "tone": "fiery",
+         "goto": "p2"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "signed": [
+       {
+        "text": "She signs the form. She doesn't look happy doing it.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "signed-me-fit",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "signed": 1
+         }
+        }
+       }
+      ],
+      "rested": [
+       {
+        "text": "You watch the cup game from the stand with a hot water bottle down the back of your tracksuit.",
+        "effects": {
+         "matchFitness": 4,
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "listened-to-her",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "signed": 0
+         }
+        }
+       }
+      ],
+      "over-her-head": [
+       {
+        "text": "The gaffer plays you. {physio.short} finds out from the team sheet.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": -8,
+          "respect": -6,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "went-over-her-head",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "signed": 2
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The physio doesn't like your hamstring"
+  },
+  {
+   "id": "ptt-2-twinge",
+   "title": "Sixty-one minutes",
+   "after": {
+    "beat": "ptt-1-table",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-ptt-2-twinge",
+    "title": "Sixty-one minutes",
+    "category": "match",
+    "place": "stadium:pitch",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "arc.signed>=1"
+     ]
+    },
+    "setup": [
+     "Sixty-one minutes in, you go to stretch for a ball and the back of your leg goes hot. You can still run on it. Just about."
+    ],
+    "choices": [
+     {
+      "id": "hand",
+      "label": "Put your hand up and come off.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "text": "{physio.short} is on the pitch before the ref waves her on. It's a grade one, three weeks. On the bench she hands you an ice pack and writes on her clipboard.",
+        "effects": {
+         "matchFitness": -6,
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 8,
+          "respect": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "came-off-when-it-pulled",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "told": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "hide",
+      "label": "Run it off. Say nothing.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "You finish the game. On Monday it's a grade two, six weeks, and her name is on the form.",
+        "effects": {
+         "matchFitness": -12,
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": -10,
+          "respect": -8,
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "hid-the-hamstring",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "told": 0
+         }
+        },
+        "promiseBroken": [
+         "p-tell-her"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "It might go on Saturday",
+   "look": {
+    "chip": "Saturday"
+   }
+  },
+  {
+   "id": "ptt-3-blame",
+   "title": "Her name on the form",
+   "after": {
+    "beat": "ptt-1-table",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-ptt-3-blame",
+    "title": "Her name on the form",
+    "category": "staff",
+    "place": "compound:corridor",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The club's best player tore his hamstring on Saturday. {manager.name} is shouting at {physio.short} in the corridor about who signed him fit, and half the squad can hear it."
+    ],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "manager",
+       "say": [
+        "\"Twice in two seasons. Remember {you.short}'s? That was your name on the form as well.\""
+       ],
+       "replies": [
+        {
+         "id": "back",
+         "label": "\"That was on me, gaffer. I begged her to sign me.\"",
+         "tone": "brave",
+         "goto": "b2"
+        },
+        {
+         "id": "quiet",
+         "label": "Keep walking.",
+         "tone": "cold",
+         "end": "walked-past"
+        },
+        {
+         "id": "say",
+         "label": "\"She told me to sit out. I didn't listen.\"",
+         "tone": "honest",
+         "goto": "b2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "walked-past"
+        }
+       ]
+      },
+      "b2": {
+       "who": "physio",
+       "say": [
+        "{physio.short} looks at you over his shoulder. The gaffer turns round."
+       ],
+       "replies": [
+        {
+         "id": "stand",
+         "label": "Stay where you are.",
+         "tone": "brave",
+         "end": "stood-by-her"
+        },
+        {
+         "id": "sorry",
+         "label": "\"Sorry. Carry on.\"",
+         "tone": "humble",
+         "end": "said-it-and-went"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "stood-by-her": [
+       {
+        "if": "!mem(physio,'hid-the-hamstring')",
+        "text": "\"Is that right.\" He lets her go. She brings you a coffee from the canteen the next morning and puts it down without a word.",
+        "effects": {
+         "boss": -3,
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 12,
+          "respect": 10
+         },
+         {
+          "slot": "manager",
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "stood-up-for-her",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "she-had-your-back"
+        }
+       },
+       {
+        "text": "He lets her go. She thanks you, but she still hasn't forgotten what you hid from her.",
+        "effects": {
+         "boss": -3,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 6,
+          "respect": 6,
+          "grudge": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "stood-up-for-her",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "she-had-your-back"
+        }
+       }
+      ],
+      "said-it-and-went": [
+       {
+        "text": "He stops shouting and goes back into his office. She doesn't come and find you.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "she-had-your-back"
+        }
+       }
+      ],
+      "walked-past": [
+       {
+        "text": "She gets a written warning. You hear about it from the kit man.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": -10,
+          "respect": -6,
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "let-her-take-the-blame",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "you-left-her-to-it"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Next season, she's the one in trouble"
+  }
+ ]
+}
