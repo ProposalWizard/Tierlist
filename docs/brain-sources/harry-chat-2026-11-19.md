@@ -36,3 +36,4 @@ taps and page moves feel slow next to NSS. Two read-only audits ran
    with "Phone should be level + money" and "relations ... should be happiness+ rep".
 11. "I prefer navy btw" and "the icons should be still be smaller and in the top left hovering over the bar".
 12. "also should it be £ instead of dollars" → "£ pounds (Recommended)". Answers the same message: shop into the game "yes"; the Sponsors fame pill "idk"; the Owner app gets Money + Reputation "yes".
+13. "I want u to put all inages/videos into this chat even with the test pages"

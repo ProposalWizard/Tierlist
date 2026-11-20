@@ -48,3 +48,4 @@ RUL-TEAM-029 | Leo's chats: start with a plan as progress bars (steps, time each
 RUL-TEAM-030 | A Team room bot never changes anything. A person's bot turns a bigger ask into a card only its owner can Accept; Accept adds one job to the owner's own to-do for their own Claude chat. | team,process,rule
 RUL-TEAM-031 | Propose designs to Harry throughout, tell him if Higgsfield is ever used, and show updates every 5 mins using images and visuals. | three-d,team
 RUL-TEAM-032 | Tell Harry when the connector for Supabase is needed, before starting a task that needs it (the connector is linked to another project, not Knowitball). | team
+RUL-TEAM-033 | Put all images and videos into this chat, even with the test pages: every still, render, capture, frame strip and video made during a task is sent in the chat, not only the ones picked to show. | ui,process,team
