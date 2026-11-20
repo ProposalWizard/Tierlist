@@ -18,7 +18,7 @@ import { kitsFor, type MatchKits } from "@/lib/star/kits";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { MatchDriver } from "../match/driver";
 import { matchSetupFor, type MatchSetup } from "../match/setup";
-import { MatchPitch, BANNER_MS } from "./MatchPitch";
+import { MatchPitch } from "./MatchPitch";
 import { MatchHud } from "./MatchHud";
 import { MatchFeed, MatchPause } from "./MatchFeed";
 import { MatchShootout } from "./MatchShootout";
@@ -63,7 +63,7 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
   }, [stamina]);
 
   const overlay = useCallback((d: MatchDriver) => {
-    const banner = d.banner && d.now - d.banner.at < BANNER_MS ? d.banner : null;
+    const banner = d.bannerNow();
     const lastGoal = d.goalEvents[d.goalEvents.length - 1];
     const home = d.setup.fixture.home !== false;
     const us = shortClub(d.setup.career.player.club), them = shortClub(d.setup.fixture.opponent);
