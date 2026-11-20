@@ -31,9 +31,13 @@ export const CLOTH_FALLBACKS: { who: string; why: string }[] = [];
 export const CLOTH_BUILD_MS: Record<string, number> = {};
 
 const MAX = 6;
+/** Beyond this distance (metres) the cloth's ink line is not drawn (the far-player cheaper version). */
+export const CLOTH_INK_FAR = 7;
 
 export function dressCloth(T: Three, p: Person3D, kind: ClothKind, who = ""): boolean {
   const fail = (why: string) => { if (CLOTH_FALLBACKS.length < 200) CLOTH_FALLBACKS.push({ who, why }); console.info(`[clothes] ${who || "person"} keeps painted clothes: ${why}`); return false; };
+  // ?cloth=0 on any 3D page: the painted clothes, to compare (frame cost, before / after pictures)
+  try { if (typeof location !== "undefined" && new URLSearchParams(location.search).get("cloth") === "0") return false; } catch { /* no page */ }
   if (!p.toon || !p.body.material || !(p.body.material as THREE.Material & { userData: { toon?: boolean } }).userData.toon) return fail("not a Style A body");
   const j = p.meta.joints;
   for (const n of ["neck", "Hips", "LeftArm", "LeftForeArm", "LeftUpLeg", "LeftLeg", "LeftFoot", "RightUpLeg"]) if (!j[n]) return fail(`no rest joint ${n}`);
@@ -59,6 +63,11 @@ export function dressCloth(T: Three, p: Person3D, kind: ClothKind, who = ""): bo
   const ink = new T.SkinnedMesh(built.ink, people3dOutline(T, 0.0055 * 1.3));
   ink.name = "ClothInk"; ink.frustumCulled = false; ink.visible = p.outline.visible;
   p.body.parent!.add(cloth); p.body.parent!.add(ink);
+  // far away the cloth's ink line is dropped (a draw and the cloth's triangles again; at that size the body's own
+  // outline and the colour edge carry the shape). Decided while drawing, so it applies from the next frame.
+  const inkOn = ink.visible, wp = new T.Vector3();
+  const prevBR = cloth.onBeforeRender.bind(cloth);
+  cloth.onBeforeRender = (r, sc, cam, g, m, gr) => { prevBR(r, sc, cam, g, m, gr); cloth.getWorldPosition(wp); ink.visible = inkOn && wp.distanceTo(cam.position) < CLOTH_INK_FAR; };
   cloth.bind(p.body.skeleton, p.body.bindMatrix); ink.bind(p.body.skeleton, p.body.bindMatrix);
   p.body.geometry = built.body; p.outline.geometry = built.body;
   (p.body as THREE.SkinnedMesh & { userData: { cloth?: boolean } }).userData.cloth = true;
@@ -140,7 +149,7 @@ function decalsFor(T: Three, kind: ClothKind, u: Record<string, { value: any }>,
   const sh = meta.joints.LeftArm, chestY = sh[1] - 0.09, hipsY = meta.joints.Hips[1];
   const collarY = (meta.kit as { collarY?: number }).collarY ?? meta.joints.neck[1] - 0.03, hem = hipsY - 0.025;
   const out: Decal[] = [];
-  const crest = u.uBadgeOn?.value === 2 && u.uBadge?.value ? (u.uBadge.value as THREE.Texture) : crestOf(T, (u.uTrim?.value as THREE.Color) ?? new T.Color(1, 1, 1), (u.uShirt?.value as THREE.Color) ?? new T.Color(0.5, 0, 0));
+  const crest = u.uBadgeOn?.value === 2 && u.uBadge?.value ? (u.uBadge.value as THREE.Texture) : crestOf(T, (u.uShirt?.value as THREE.Color) ?? new T.Color(0.5, 0, 0), (u.uTrim?.value as THREE.Color) ?? new T.Color(1, 1, 1));
   const dark = (i: number, k = 0.55) => hex(slots[i]?.color ?? new T.Color(0.1, 0.1, 0.1), k);
   // a button placket down the centre: a seam line and buttons (shirts, polos)
   const placket = (i: number, top: number, bottom: number, n: number) => {
