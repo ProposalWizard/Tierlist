@@ -41,7 +41,7 @@ export interface SmartSlot {
   /** The way he faces while using it. */
   facing: number;
   /** A seat: where his hips go and the seat's top (m). The person fits himself to it. */
-  seat?: { at: XZ; y: number };
+  seat?: { at: XZ; y: number; front?: number };
 }
 
 /** What using it does (shown on the card; a career hook later). */
@@ -102,6 +102,8 @@ export const SIT_EXIT: ClipStep = { clip: "sit_down", or: ["sitdown"], from: 1.6
  */
 export function seatObject(o: {
   id: string; label: string; at: XZ; facing: number; seats: number; y: number; spacing?: number;
+  /** From the hips to the seat's front edge (m): his thighs must clear the seat that far. */
+  front?: number;
   depth?: number; verb?: string; lines?: string[]; loop?: ClipStep[]; stay?: [number, number]; who?: SmartObject["who"];
 }): SmartObject {
   const sp = o.spacing ?? 0.62;
@@ -110,7 +112,7 @@ export function seatObject(o: {
   for (let i = 0; i < o.seats; i++) {
     const off = (i - (o.seats - 1) / 2) * sp;
     const at: XZ = [o.at[0] + r[0] * off, o.at[1] + r[1] * off];
-    slots.push({ id: `s${i}`, stand: [at[0] + f[0] * SIT_STEP, at[1] + f[1] * SIT_STEP], facing: o.facing, seat: { at, y: o.y } });
+    slots.push({ id: `s${i}`, stand: [at[0] + f[0] * SIT_STEP, at[1] + f[1] * SIT_STEP], facing: o.facing, seat: { at, y: o.y, front: o.front } });
   }
   const depth = o.depth ?? 0.9;
   return {

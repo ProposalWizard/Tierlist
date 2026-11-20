@@ -55,7 +55,7 @@ function World3DTest() {
     const kit = kitsOf("Arsenal").home;
     const mates = (c.squad ?? []).filter((p) => p.position !== "GK").slice(0, 3).map((p, i) => ({ id: p.id, name: p.shortName || p.name, number: [8, 14, 21][i] }));
     return {
-      place, demo, quality, number: 9, mates,
+      place, demo, quality, number: 9, mates, club: "Arsenal",
       kit: { shirt: kit.shirt, trim: kit.trim },
       // the living world's chat (lib/star/life/social.ts): pure, on this page's made-up career only
       chat: (slot: string) => {

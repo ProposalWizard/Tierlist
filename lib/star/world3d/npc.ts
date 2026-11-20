@@ -46,7 +46,20 @@ export interface NpcWorld {
 }
 
 /** Measured on one body: its seated hips and seat underside, in his own frame. */
-export interface SitFit { hx: number; hz: number; under: number }
+export interface SitFit {
+  hx: number; hz: number;
+  /** His seat's underside under the hips (m, his frame). */
+  under: number;
+  /** The underside of seat and thighs every 2 cm from 12 cm behind the hips forward (Infinity past the knee). */
+  profile?: number[];
+}
+
+/** How low he comes over a seat that reaches `front` metres in front of his hips. */
+export function underOver(fit: SitFit, front: number): number {
+  if (!fit.profile) return fit.under;
+  const n = Math.max(1, Math.min(fit.profile.length, Math.floor((front + 0.12) / 0.02) + 1));
+  return Math.min(...fit.profile.slice(0, n));
+}
 
 /** His walking pace (m/s): a stroll, and a jog for a long trip. */
 export const NPC_WALK = 1.25;
@@ -71,28 +84,30 @@ export function measureSit(T: Three, p: Person3D, clip = "sit_down", t = 1.55): 
   const hp = new T.Vector3();
   p.bones.Hips.getWorldPosition(hp);
   const local = p.root.worldToLocal(hp.clone());
-  // the underside of his seat: the body's lowest point near the hips
-  const pv = new T.Vector3();
-  const body: any = p.body;
-  body.skeleton?.update?.(); // the skin follows the posed bones (else it is last render's pose)
-  const cnt = body.geometry.attributes.position.count;
-  let under = Infinity;
-  for (let k = 0; k < cnt; k += 2) {
-    body.getVertexPosition(k, pv);
-    pv.applyMatrix4(body.matrixWorld);
-    if (Math.hypot(pv.x - hp.x, pv.z - hp.z) < 0.14) under = Math.min(under, pv.y);
+  // the underside of his seat and thighs, from the bones (a skin scan read some heads' last drawn
+  // pose): under the hip joints by 8.5 cm (measured on the Style A body: 0.502 → 0.419 m), along
+  // the thigh to the knee tapering to 6 cm. A profile by distance in front of the hips, so a seat
+  // knows how low his thighs come over its whole depth (Harry: "legs are through the bench").
+  const loc = (b?: THREE.Bone) => (b ? p.root.worldToLocal(b.getWorldPosition(new T.Vector3())) : null);
+  const ul = [loc(p.bones.LeftUpLeg), loc(p.bones.RightUpLeg)].filter(Boolean) as THREE.Vector3[];
+  const kn = [loc(p.bones.LeftLeg), loc(p.bones.RightLeg)].filter(Boolean) as THREE.Vector3[];
+  const avg = (vs: THREE.Vector3[]) => vs.reduce((a, v) => a.add(v), new T.Vector3()).multiplyScalar(1 / Math.max(1, vs.length));
+  const U = ul.length ? avg(ul) : local.clone(), K = kn.length ? avg(kn) : U.clone().add(new T.Vector3(0, 0, 0.42));
+  const profile: number[] = [];
+  for (let d = -0.12; d <= 0.6001; d += 0.02) {
+    const z = local.z + d;
+    let y: number;
+    if (z <= U.z) y = U.y - 0.085;
+    else if (z <= K.z) { const k = (z - U.z) / Math.max(1e-3, K.z - U.z); y = U.y + (K.y - U.y) * k - (0.085 + (0.06 - 0.085) * k); }
+    else y = Infinity; // past the knee the calves hang down in front of the seat
+    profile.push(y);
   }
-  const rootY = p.root.getWorldPosition(new T.Vector3()).y;
-  // a scan that found nothing sensible (some heads' skins read their last drawn pose):
-  // the seat's underside from the bones, at the share of his standing hip height
-  // measured on the bodies whose scan works (0.112 m under the hips of 0.873 m: 12.8%)
-  const hipsStand = (p.rest.get(p.bones.Hips)?.[0].y ?? 0) * (p.unit || 0.01) * (p.root.children[0]?.scale.y ?? 1);
-  const fromBones = local.y - 0.128 * (hipsStand > 0.5 && hipsStand < 1.3 ? hipsStand : 0.873);
-  if (!isFinite(under) || under - rootY < local.y - 0.2 || under - rootY > local.y - 0.05) under = fromBones + rootY;
+  const rootY = 0;
+  const under = Math.min(...profile.slice(0, 7));
   for (const [x, w, tm, en] of saved) { x.setEffectiveWeight(w); x.time = tm; x.enabled = en; }
   a.timeScale = 1;
   p.mixer.update(0);
-  return { hx: local.x, hz: local.z, under: under - rootY };
+  return { hx: local.x, hz: local.z, under: under - rootY, profile };
 }
 
 /** Where his feet (root) go for a seat, and how high (so his seat rests on it). */
@@ -101,7 +116,7 @@ export function sitRootFor(slot: SmartSlot, fit: SitFit | null): { at: XZ; y: nu
   if (!fit) return { at: slot.stand, y: 0 };
   const f = fwdOf(slot.facing), r = rightOf(slot.facing);
   const at: XZ = [slot.seat.at[0] - (r[0] * fit.hx + f[0] * fit.hz), slot.seat.at[1] - (r[1] * fit.hx + f[1] * fit.hz)];
-  return { at, y: slot.seat.y - fit.under };
+  return { at, y: slot.seat.y - underOver(fit, slot.seat.front ?? 0.3) };
 }
 
 type State = "hidden" | "stand" | "walk" | "turn" | "enter" | "use" | "exit" | "act";
@@ -186,6 +201,7 @@ export class Npc {
   /** Walk to a point (round things); `face` = the facing to turn to there. */
   walkTo(world: NpcWorld, to: XZ, o: { face?: number | null; onArrive?: () => void; run?: boolean } = {}): boolean {
     if (this.seated) return false;
+    this.gestureWant.drink = 0;
     this.goal = { to, face: o.face ?? null, onArrive: o.onArrive, tries: 0, run: !!o.run };
     return this.plan(world);
   }
@@ -338,6 +354,9 @@ export class Npc {
     return true;
   }
 
+  /** Sip from what he holds while he stands (stops when he walks, sits or acts). */
+  sip(on: boolean) { this.gestureWant.drink = on ? 1 : 0; }
+
   /** Stop what he is doing on foot (not a seat: use leave()). */
   stop() {
     if (this.seated) return;
@@ -434,6 +453,12 @@ export class Npc {
     return true;
   }
 
+  /** How far down he is (0 standing, 1 sat), from the sit clip's own time. */
+  private sitAmount(): number {
+    const p = this.play.time() / Math.max(0.01, this.clipLen());
+    return smooth(0.45, 0.95, this.state === "exit" && this.exitBack ? p : this.state === "exit" ? 1 - p : p);
+  }
+
   private clipLen(): number {
     const a = this.play_actions(this.lastClip);
     return a ? a.getClip().duration : 1;
@@ -511,6 +536,9 @@ export class Npc {
     this.gestureW.look += ((this.lookAt ? 1 : 0) - this.gestureW.look) * k;
     const b = this.person.bones;
     if (this.gestureW.look > 0.01 && this.lookAt && b.Head) this.look(this.lookAt, this.gestureW.look);
+    // hands come to the thighs as he settles, and go back to the clip as he gets up
+    const sat = this.state === "use" ? 1 : this.state === "enter" || this.state === "exit" ? this.sitAmount() : 0;
+    if (sat > 0.01) this.handsOnThighs(sat);
     if (this.gestureW.drink > 0.01 && b.RightArm && b.RightForeArm && b.RightHand && b.Head) {
       // the can comes up in a slow sip: up, a hold at the lips, down (a 4 s cycle)
       const ph = (this.clock % 4) / 4;
@@ -537,32 +565,56 @@ export class Npc {
   /** The right hand to just below and in front of his mouth (two-bone CCD), blended by w. */
   private drink(w: number) {
     const b = this.person.bones;
-    const { v, w: hp, a, b: tv, d } = this.tmp;
-    const arm = b.RightArm, fore = b.RightForeArm, hand = b.RightHand;
-    this.q0.set(arm, arm.quaternion.clone());
-    this.q0.set(fore, fore.quaternion.clone());
+    const tv = this.tmp.b;
     b.Head.getWorldPosition(tv);
     const f = fwdOf(this.yaw);
-    // 13 cm in front of the head bone, 4 cm below it: the can at the lips, the hand clear of the face
+    // 17 cm in front of the head bone, 6 cm below it: the can at the lips, the hand clear of the face
     tv.x += f[0] * 0.17; tv.z += f[1] * 0.17; tv.y -= 0.06;
+    this.reach("Right", tv, w);
+    // the check for the no-part-inside-another rule (RUL-3D-005): how near his hand comes to his head
+    b.RightHand.getWorldPosition(this.tmp.w); b.Head.getWorldPosition(this.tmp.v);
+    this.handHead = Math.min(this.handHead, this.tmp.w.distanceTo(this.tmp.v));
+  }
+
+  /**
+   * Seated, his hands rest on his thighs (the capture's hands are pressed flat on the chair
+   * seat, which sank them 5-8 cm into a bench: the seat check). A side the drink holds is left out.
+   */
+  private handsOnThighs(w: number) {
+    const b = this.person.bones;
+    for (const side of ["Left", "Right"] as const) {
+      if (side === "Right" && this.gestureW.drink > 0.02) continue;
+      const ul = b[`${side}UpLeg`], kn = b[`${side}Leg`];
+      if (!ul || !kn) continue;
+      const t = this.tmp.b;
+      ul.getWorldPosition(this.tmp.v); kn.getWorldPosition(this.tmp.w);
+      t.copy(this.tmp.v).lerp(this.tmp.w, 0.6);
+      t.y += 0.11; // the wrist above the thigh's top (its bone is ~7 cm under the skin)
+      this.reach(side, t, w);
+    }
+  }
+
+  /** One arm's hand towards a point (two-bone CCD), blended by w over what the clip gave. */
+  private reach(side: "Left" | "Right", target: THREE.Vector3, w: number) {
+    const b = this.person.bones;
+    const { v, w: hp, a, d } = this.tmp;
+    const arm = b[`${side}Arm`], fore = b[`${side}ForeArm`], hand = b[`${side}Hand`];
+    if (!arm || !fore || !hand) return;
+    const q0a = arm.quaternion.clone(), q0f = fore.quaternion.clone();
     for (let it = 0; it < 4; it++) {
       for (const bone of [fore, arm]) {
         bone.getWorldPosition(v);
         hand.getWorldPosition(hp);
         a.subVectors(hp, v).normalize();
-        this.tmp.c.subVectors(tv, v).normalize();
+        this.tmp.c.subVectors(target, v).normalize();
         d.setFromUnitVectors(a, this.tmp.c);
         this.rotWorld(bone, d);
       }
     }
-    for (const bone of [arm, fore]) {
-      const q1 = bone.quaternion.clone();
-      bone.quaternion.copy(this.q0.get(bone)).slerp(q1, w);
-    }
+    const qa = arm.quaternion.clone(), qf = fore.quaternion.clone();
+    arm.quaternion.copy(q0a).slerp(qa, w);
+    fore.quaternion.copy(q0f).slerp(qf, w);
     arm.updateMatrixWorld(true);
-    // the check for the no-part-inside-another rule (RUL-3D-005): how near his hand comes to his head
-    hand.getWorldPosition(hp); b.Head.getWorldPosition(v);
-    this.handHead = Math.min(this.handHead, hp.distanceTo(v));
   }
   /** The nearest his right hand came to his head bone while drinking (m; Infinity: never drank). */
   handHead = Infinity;

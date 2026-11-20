@@ -50,6 +50,8 @@ export interface WorldOptions {
   kit: { shirt: string; trim: string };
   /** Your shirt number. */
   number: number;
+  /** Your club (the team-mates' looks come from the people presets for it). */
+  club?: string;
   /** The garden's team-mates: two on the bench, then the one who drops round. */
   mates: WorldPerson[];
   /** How much faster than real time the clock runs (default 4). */
@@ -81,7 +83,7 @@ export interface WorldController {
 /** The demos: what happens when (seconds), and how long each runs. */
 const DEMOS: Record<string, { place: WorldPlace; duration: number; rate?: number; steps: [number, string][]; you?: [number, number, number]; watch?: string; zoom?: number }> = {
   sofa: { place: "house", duration: 14, steps: [[0.4, "tap:tv"], [4.6, "act:use"], [11.4, "act:leave"]] },
-  fridge: { place: "house", duration: 13, steps: [[0.4, "tap:fridge"], [5.0, "act:use"]] },
+  fridge: { place: "house", duration: 15, steps: [[0.4, "tap:fridge"], [5.0, "act:use"]] },
   visitor: { place: "garden", duration: 34, rate: 10, steps: [], you: [-0.3, 1.9, 2.6], watch: "mate-2", zoom: 0.5 },
   talk: { place: "garden", duration: 11, steps: [[0.4, "tap:mate-0"], [7.4, "act:chat"]] },
 };
@@ -226,29 +228,50 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
         tick: (dt) => { if (!on) return; tt += dt; acc += dt; if (acc > 0.1) { acc = 0; draw(); } },
       };
     }
-    // the fridge's glass door (the lounge's drinks fridge, north-west corner), hinged on its left
+    // the fridge stocked (Harry: "the fridge looks empty"): the lounge's fridge is a closed box with a
+    // lit front, so a shallow shelved front goes on it, 24 KIB cans on four shelves (one instanced
+    // draw), a cool light strip, and the glass door over them, hinged on its left
     {
       const fx = -W2 + 0.45 + 0.05, fz = -D2 + 0.4;
+      const F0 = fz + 0.3, DEP = 0.14;
+      const dark = mat("#2a2d33", { roughness: 0.4, metalness: 0.5 });
+      const shelfM = mat("#dfe7ee", { roughness: 0.3, metalness: 0.2, emissive: "#9fc4e0", emissiveIntensity: 0.25 });
+      for (const sx of [-1, 1]) box(0.03, 1.5, DEP, dark, fx + sx * 0.295, 0.75, F0 + DEP / 2, room.group, false);
+      box(0.62, 0.04, DEP, dark, fx, 1.48, F0 + DEP / 2, room.group, false);
+      box(0.62, 0.06, DEP, dark, fx, 0.03, F0 + DEP / 2, room.group, false);
+      const glowStrip = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.02), new THREE.MeshBasicMaterial({ color: "#e6f4ff", toneMapped: false }));
+      glowStrip.position.set(fx, 1.44, F0 + 0.04); glowStrip.rotation.x = -Math.PI / 2; room.group.add(glowStrip);
+      const SH = [0.18, 0.5, 0.82, 1.14];
+      for (const y of SH) box(0.56, 0.012, DEP - 0.02, shelfM, fx, y, F0 + DEP / 2, room.group, false);
+      const canG2 = new THREE.CylinderGeometry(0.033, 0.033, 0.12, 12);
+      const cans = new THREE.InstancedMesh(canG2, mat("#ffffff", { roughness: 0.3, metalness: 0.7 }), SH.length * 6);
+      const m4 = new THREE.Matrix4(), col = new THREE.Color();
+      const KIB = ["#d7263d", "#e2b44a", "#2563eb"];
+      let k = 0;
+      SH.forEach((y, row) => { for (let i = 0; i < 6; i++) { m4.makeTranslation(fx - 0.22 + i * 0.088, y + 0.066, F0 + 0.07); cans.setMatrixAt(k, m4); cans.setColorAt(k, col.set(KIB[(i + row) % 3])); k++; } });
+      room.group.add(cans);
+      room.solids.push([fx - 0.31, fx + 0.31, F0, F0 + DEP + 0.02]);
       const hinge = new THREE.Group();
-      hinge.position.set(fx - 0.29, 0, fz + 0.32);
+      hinge.position.set(fx - 0.29, 0, F0 + DEP + 0.005);
       room.group.add(hinge);
-      const glass = mat("#bfe3ff", { transparent: true, opacity: 0.28, roughness: 0.1, metalness: 0.2 });
-      const frame = mat("#2a2d33", { roughness: 0.4, metalness: 0.5 });
-      box(0.58, 1.4, 0.03, glass, 0.29, 0.78, 0.015, hinge, false);
-      box(0.03, 1.4, 0.04, frame, 0.57, 0.78, 0.02, hinge, false);
+      const glass = mat("#bfe3ff", { transparent: true, opacity: 0.22, roughness: 0.1, metalness: 0.2 });
+      box(0.58, 1.4, 0.02, glass, 0.29, 0.78, 0.01, hinge, false);
+      box(0.03, 1.4, 0.035, dark, 0.57, 0.78, 0.015, hinge, false);
+      box(0.58, 0.04, 0.035, dark, 0.29, 1.47, 0.015, hinge, false);
+      box(0.58, 0.04, 0.035, dark, 0.29, 0.09, 0.015, hinge, false);
       let want = 0, a = 0;
       fridgeDoor = { open: (v) => { want = v ? 1 : 0; }, tick: (dt) => { a += (want - a) * Math.min(1, dt * 5); hinge.rotation.y = -a * 1.75; } };
     }
     // the smart objects: the sofa (three seats facing the TV), the TV, the fridge
     // sofa: roomBuild.ts sofa(…, 2.3, 0.55, 0.25, "w"): seat front at x 0.11, cushion top 0.445
-    const sofa = seatObject({ id: "sofa", label: "Sofa", at: [0.43, 0.25], facing: -Math.PI / 2, seats: 3, y: 0.445, spacing: 0.63, verb: "Sit down", lines: ["Feet up for a bit."] });
+    const sofa = seatObject({ id: "sofa", label: "Sofa", at: [0.27, 0.25], facing: -Math.PI / 2, seats: 3, y: 0.445, spacing: 0.63, front: 0.16, verb: "Sit down", lines: ["Feet up for a bit."] });
     const tv = tvObject({ id: "tv", at: [-W2 + 0.2, 0], via: "sofa", lines: ["The weekend's highlights are on."] });
     const fridge = standObject({
       // he stands 0.75 m off its glass: the reach bends him forward about half a metre, so his head
       // and chest stay outside the fridge (RUL-3D-005; at 0.45 m his head went into it)
-      id: "fridge", kind: "fridge", label: "Drinks fridge", front: [fx0(W2), -D2 + 0.4 + 0.3 + 0.75], face: [fx0(W2), -D2 + 0.3], verb: "Take a can",
-      lines: ["Your KIB cans, cold."], enter: { clip: "pickup", speed: 1.7 }, loop: [{ clip: "idle", secs: 3.2, gesture: "drink" }],
-      effect: { energy: 1, text: "Ice cold. Energy +1" }, stay: [3.5, 3.5], pickR: 0.6,
+      id: "fridge", kind: "fridge", label: "Drinks fridge", front: [fx0(W2), -D2 + 0.4 + 0.3 + 0.14 + 0.72], face: [fx0(W2), -D2 + 0.3], verb: "Take a can",
+      lines: ["Your KIB cans, cold."], enter: { clip: "pickup", speed: 1.7 }, loop: [{ clip: "idle", secs: 1.2 }],
+      effect: { energy: 1, text: "Ice cold. Energy +1" }, stay: [1.2, 1.2], pickR: 0.6,
     });
     return {
       objects: [sofa, tv, fridge], solids: room.solids,
@@ -345,7 +368,9 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     }
     // the bench: four seats facing east (feet at the seat's front edge, hips 0.32 m back from it)
     const bench = seatObject({
-      id: "bench", label: "Garden bench", at: [BX + DEPTH / 2 - 0.1 - 0.32, BZ], facing: Math.PI / 2, seats: 4, y: SEAT_Y, spacing: 0.66,
+      // hips 0.2 m behind the front edge: his knees just over it, his shins hanging clear in front
+      // (at 0.42 m back the shins went through the bench's front: measured 8 cm, the seat check below)
+      id: "bench", label: "Garden bench", at: [BX + DEPTH / 2 - 0.2, BZ], facing: Math.PI / 2, seats: 4, y: SEAT_Y, spacing: 0.66, front: 0.2,
       verb: "Sit down", lines: ["Sit with the lads for a bit."],
     });
     const gateObj = standObject({ id: "gate", kind: "gate", label: "Garden gate", front: gate.inside, face: [0, 7.2], verb: "Look out", lines: ["The lane outside. Your team-mates come in this way."], pickR: 1.2, pickH: 2.2, who: "anyone" });
@@ -370,9 +395,14 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   const loader = new GLTFLoader();
   await withMeshopt(loader);
   const mates = place === "garden" ? opts.mates.slice(0, 3) : [];
-  const who = [{ you: true }, ...mates.map((m) => ({ who: `world-mate-${m.id}` }))];
+  // the team-mates are cast from the people presets (lib/star/people/presets.ts): their own
+  // head, build, hair and drawn face (the face system), no two alike
+  const PR = await import("../people/presets");
+  const looks = PR.castScene(mates.map((m) => ({ id: `world-mate-${m.id}`, role: "player" as const, club: opts.club ?? "Arsenal" })));
+  const who = [{ you: true }];
+  const heads = Array.from(new Set([...toonHeadsFor(who), ...looks.map((l) => l.head)]));
   const [charG, animG, footG] = await Promise.all([
-    loadPeople3d(loader, "player", people3dLook(), toonHeadsFor(who)),
+    loadPeople3d(loader, "player", people3dLook(), heads),
     loadPeople3d(loader, "anims", people3dLook()),
     loadAnims3d(loader, "football"),
   ]);
@@ -381,9 +411,24 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   const canG = new THREE.CylinderGeometry(0.033, 0.033, 0.12, 12);
   const canM = mat("#d7263d", { roughness: 0.3, metalness: 0.7 });
   const outline = prof.outlines ? 0.006 : 0;
-  const makeOne = (id: string, o: { you?: boolean; number: number; kit: { shirt: string; trim: string } }) => {
-    const p: Person3D = makePerson3d(THREE, SK, charG, animG, { outline, castShadow: true, ...(o.you ? { you: true } : { who: id }) });
-    dressPerson3d(THREE, p, { skin: o.you ? "#c68642" : toonSkinFor(id), hair: o.you ? "#2b1b12" : toonHairFor(id), kit: o.kit, number: tex(numberCanvas(o.number, "#ffffff")) });
+  const FI = await import("../style3d/toon/faceIdApply");
+  const FACE = await import("../style3d/toon/face");
+  const HAIR = await import("../style3d/toon/hair");
+  const faces = new Map<Npc, { rig: any; seed: number }>();
+  const hairs: any[] = [];
+  const makeOne = async (id: string, o: { you?: boolean; number: number; kit: { shirt: string; trim: string }; look?: (typeof looks)[number] }) => {
+    const L = o.look;
+    const p: Person3D = makePerson3d(THREE, SK, charG, animG, { outline, castShadow: true, ...(o.you ? { you: true } : L ? { who: L.id, toonHead: L.head, toonBody: L.build } : { who: id }) });
+    if (L) dressPerson3d(THREE, p, { ...L.dress, kit: { ...(L.kit ?? {}), ...o.kit }, number: tex(numberCanvas(o.number, "#ffffff")) } as any);
+    else dressPerson3d(THREE, p, { skin: o.you ? "#c68642" : toonSkinFor(id), hair: o.you ? "#2b1b12" : toonHairFor(id), kit: o.kit, number: tex(numberCanvas(o.number, "#ffffff")) });
+    let rig: any = null;
+    if (L) {
+      // a phone draws the face at half detail (faceIdApply.ts FACE_DETAIL)
+      FI.applyToonFaceId(THREE, p, L.faceId, { detail: FI.FACE_DETAIL[tier] });
+      rig = FACE.addToonFace(THREE, p);
+      rig?.set({ face: FACE.toonFaceFor({}), blink: 0 });
+      if (L.hairMesh) { const h = await HAIR.wearToonHair(THREE, loader, p, L.hairMesh, { outline: outline ? 0.0045 : 0 }); if (h) hairs.push(h); }
+    }
     relaxHands(THREE, p);
     addClips(THREE, p, footG);
     const hipsRest = p.rest.get(p.bones.Hips)?.[0].y ?? p.bones.Hips.position.y;
@@ -396,21 +441,24 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     scene.add(p.root);
     const sit = measureSit(THREE, p);
     const n = new Npc(THREE, p, { id, loco, sit });
+    if (rig) faces.set(n, { rig, seed: hashSeed(id) });
     // NPCs: a soft blob, no cast shadow on a phone (as the garden's bench mates)
     if (!o.you && tier !== "high") p.body.castShadow = false;
     return n;
   };
-  const you = makeOne("you", { you: true, number: opts.number, kit: opts.kit });
+  const you = await makeOne("you", { you: true, number: opts.number, kit: opts.kit });
   you.name = "You";
   if (demo?.you) you.place(demo.you[0], demo.you[1], demo.you[2]);
   else you.place(built.you.x, built.you.z, built.you.yaw);
   const watch = demo?.watch ?? null;
   const away = { shirt: "#f2f2f2", trim: opts.kit.shirt };
-  const npcs: Npc[] = mates.map((m, i) => {
-    const n = makeOne(`mate-${i}`, { number: m.number, kit: i === 2 ? away : opts.kit });
+  const npcs: Npc[] = [];
+  for (let i = 0; i < mates.length; i++) {
+    const m = mates[i];
+    const n = await makeOne(`mate-${i}`, { number: m.number, kit: i === 2 ? away : opts.kit, look: looks[i] });
+    npcs.push(n);
     n.name = m.name;
-    return n;
-  });
+  }
   const people = [you, ...npcs];
   const blobs = new Map<Npc, any>(people.map((n) => [n, blob(0.9, n === you ? 0.8 : 0.7)]));
   const holdCan = (n: Npc, on: boolean) => {
@@ -597,10 +645,10 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
         onStart: () => { if (o.kind === "fridge") fridgeDoor?.open(true); },
         onIn: () => {
           if (o.kind === "tv") tvScreen?.on(true);
-          if (o.kind === "fridge") { holdCan(you, true); fridgeDoor?.open(false); }
+          if (o.kind === "fridge") holdCan(you, true);
           show(objectCard(o, { using: true }));
         },
-        onOut: () => { if (o.kind === "fridge") { you.face(you.yaw + Math.PI); show({ key: `obj:${o.id}`, title: o.label, lines: [o.effect?.text ?? "Done."], actions: [{ id: "close", label: "OK", primary: true }] }); } },
+        onOut: () => { if (o.kind === "fridge") { fridgeDoor?.open(false); you.face(you.yaw + Math.PI, () => you.sip(true)); show({ key: `obj:${o.id}`, title: o.label, lines: [o.effect?.text ?? "Done."], actions: [{ id: "close", label: "OK", primary: true }] }); } },
       });
       if (!okUse) show(objectCard(o, { taken: true }));
       else show(null);
@@ -717,6 +765,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     });
     for (const n of npcs) if (!n.root.visible) n.update(dt, world, false);
     blobs.forEach((b, n) => { b.visible = n.root.visible; const [x, z] = n.bodyXZ(); b.position.set(x, 0.012, z); });
+    faces.forEach((f, n) => { if (n.root.visible) f.rig.set({ blink: FACE.blinkAt(simT, f.seed) }); });
+    for (const h of hairs) h.update?.(dt);
     tvScreen?.tick(dt);
     fridgeDoor?.tick(dt);
     marker.update(dt);
@@ -774,9 +824,34 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       routines: npcs.map((n) => { const r = runners.get(n); return r ? { id: n.id, i: r.index, step: r.current?.do.kind, at: r.current?.at.toFixed(1), until: r.current?.until.toFixed(1), next: r.routine.steps[r.index + 1]?.do.kind, nextAt: r.routine.steps[r.index + 1]?.at.toFixed(1) } : null; }), book: book.all(),
       sit: people.map((p) => ({ id: p.id, fit: p.sit })),
       // the seat check: each seated person's seat underside against the seat top (cm; + = above)
-      seats: people.filter((p) => p.state === "use" && p.using?.slots[0]?.seat).map((p) => {
-        const s = p.using!.slots[0].seat!;
-        return { id: p.id, gapCm: +(((p.y + (p.sit?.under ?? 0)) - s.y) * 100).toFixed(1) };
+      // the seat check (RUL-3D-005, a body never into the furniture): every skin point of each seated
+      // person inside the seat's slab (from 20 cm behind his hips to its front edge, 32 cm either side,
+      // the top 8 cm), the deepest in cm (0 = nothing in it)
+      seats: people.filter((p) => p.state === "use" && p.using?.kind === "seat" || (p.state === "use" && p.using?.via)).map((p) => {
+        const host = objects.host(p.using!);
+        const slot = host.slots.find((x) => book.holderOf(host.id, x.id) === p.id) ?? host.slots[0];
+        const s = slot.seat!;
+        const f = [Math.sin(slot.facing), Math.cos(slot.facing)], r = [Math.cos(slot.facing), -Math.sin(slot.facing)];
+        const body: any = p.person.body;
+        body.skeleton?.update?.();
+        const v = new THREE.Vector3();
+        let deep = 0, n = 0;
+        const parts: Record<string, { n: number; deep: number; along: number }> = {};
+        for (let k = 0; k < body.geometry.attributes.position.count; k += 2) {
+          body.getVertexPosition(k, v); v.applyMatrix4(body.matrixWorld);
+          const dx = v.x - s.at[0], dz = v.z - s.at[1];
+          const along = dx * f[0] + dz * f[1], side = dx * r[0] + dz * r[1];
+          if (along < -0.2 || along > (s.front ?? 0.3) || Math.abs(side) > 0.32) continue;
+          if (v.y < s.y && v.y > s.y - 0.08) {
+            deep = Math.max(deep, s.y - v.y); n++;
+            const bi = body.geometry.attributes.skinIndex, bw = body.geometry.attributes.skinWeight;
+            let best = 0; for (let c = 1; c < 4; c++) if (bw.getComponent(k, c) > bw.getComponent(k, best)) best = c;
+            const bn = body.skeleton.bones[bi.getComponent(k, best)]?.name ?? "?";
+            const e = parts[bn] ?? (parts[bn] = { n: 0, deep: 0, along: 0 });
+            e.n++; e.deep = Math.max(e.deep, +((s.y - v.y) * 100).toFixed(1)); e.along = +along.toFixed(2);
+          }
+        }
+        return { id: p.id, pierceCm: +(deep * 100).toFixed(1), points: n, liftCm: +(p.y * 100).toFixed(1), parts };
       }),
       minGap: (() => { let m = Infinity; const b = world.bodies(); for (let i = 0; i < b.length; i++) for (let j = i + 1; j < b.length; j++) m = Math.min(m, Math.hypot(b[i].x - b[j].x, b[i].z - b[j].z)); return +m.toFixed(2); })(),
       card: card?.title ?? null,
@@ -833,4 +908,11 @@ function rayCyl(o: { x: number; y: number; z: number }, d: { x: number; y: numbe
     if (t > 0) { const x = ox + d.x * t, z = oz + d.z * t; if (x * x + z * z <= r * r) return t; }
   }
   return null;
+}
+
+/** A small number from an id (a person's blink timing). */
+function hashSeed(id: string): number {
+  let h = 7;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 9973;
+  return h;
 }
