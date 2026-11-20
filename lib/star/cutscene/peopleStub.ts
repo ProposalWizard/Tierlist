@@ -147,7 +147,10 @@ function dress(T: Three, p: Person3D, spec: ActorSpec) {
     const c = newNumberCanvas(); drawShirtNumber(c, L.number);
     number = new T.CanvasTexture(c); number.colorSpace = T.SRGBColorSpace;
   }
-  dressPerson3d(T, p, { skin: L.skin, hair: L.hair, grey: L.grey, kit, number, accessories: acc, face: (L.face as never) ?? null });
+  // a tracksuit on a Style A kit head is the whole set, as the people presets wear it: long sleeves AND trousers
+  // (it was sleeves painted over a kit, so he sat at the press desk in a top and shorts, bare knees showing)
+  const suit = out === "tracksuit" && p.toonHead && kit ? { coat: kit.shirt, trousers: kit.shirt, shirt: kit.shirt, tie: kit.shirt, shoes: "#141416" } : undefined;
+  dressPerson3d(T, p, { skin: L.skin, hair: L.hair, grey: L.grey, kit, number, accessories: suit ? acc.filter((a) => a.slot !== "arms") : acc, face: (L.face as never) ?? null, ...(suit ? { suit } : {}) } as never);
 }
 
 /** Lighten (+) or darken (−) a hex colour. */
