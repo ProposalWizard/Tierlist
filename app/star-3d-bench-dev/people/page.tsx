@@ -19,10 +19,10 @@
  *   ?set=faceids       THE FACE SYSTEM (style3d/toon/faceId.ts): 28 generated people, 4 of each heritage, front and three-quarter, each with
  *                      his own drawn face. ?faceid=0 the same people as before it (the painted faces)  ?zoom=1 the face only  ?n=28
  *                      ?emotions=<person 0..27> one face in the 8 emotions  ?sliders=<person> the mould's sliders, each at its two ends
- *                      ?detail=0.5 (a phone's detail)  ?views=front,34
+ *                      ?detail=0.5 (a phone's detail)  ?views=front,34  ?players=1 players only
  *   ?set=faceplay      one face changing emotion, blinking and glancing (window.__faceFrame(i), 30 a second; film: scripts/bench3d/face-film.mjs)
  *   ?set=heads         the head shapes (the two hair heads and the four re-shaped ones), front, three-quarter and side
- *   ?cols=8 ?w=230 ?h=330   card grid and size        ?view=34|front
+ *   ?cols=8 ?w=230 ?h=330   card grid and size        ?view=34|front        ?faceid=1 the staff, players, closeup and scene sets with each person's FaceId
  * window.__sheetDone is true when every card is drawn (stills: node scripts/bench3d/people-sheet.mjs).
  */
 import { useEffect, useRef, useState } from "react";
@@ -112,13 +112,13 @@ async function swingPage(box: HTMLDivElement, q: URLSearchParams, dead: () => bo
 }
 
 /** The face system's people: generated ids (as the game makes them), the first `n / 7` of each heritage, grouped by heritage. */
-function facePeople(PR: typeof import("@/lib/star/people/presets"), n: number): PersonLookResult[] {
+function facePeople(PR: typeof import("@/lib/star/people/presets"), n: number, playersOnly = false): PersonLookResult[] {
   const HER = ["black", "mixed", "white", "southAsian", "eastAsian", "mena", "latin"] as const;
   const per = Math.max(1, Math.round(n / HER.length));
   const got: Record<string, PersonLookResult[]> = {};
   const roles = ["player", "player", "manager", "player", "staff", "player", "journalist", "fan"] as const;
   for (let i = 0; i < 4000; i++) {
-    const role = roles[i % roles.length];
+    const role = playersOnly ? "player" : roles[i % roles.length];
     const l = PR.personLook(`face-${i}`, role, { club: CLUBS[i % CLUBS.length] });
     const h = PR.presetById(l.preset)!.heritage;
     if ((got[h] ??= []).length < per) got[h].push(l);
@@ -177,8 +177,9 @@ async function facePlayPage(box: HTMLDivElement, q: URLSearchParams, dead: () =>
     const m = Math.max(0, Math.min(1, (into - HOLD) / MOVE)), e = m * m * (3 - 2 * m);
     const w = { [a]: 1 - e, [b]: e } as Partial<Record<EmotionName, number>>;
     const g0 = wanderGaze(t, 5), g1 = FI.emotionGaze(w);
-    P3.poseClips(p, [[clip, 1.2 + t * 0.5, 1]]);
-    p.root.rotation.y = -0.22;
+    // (one held pose: the film is about the face)
+    P3.poseClips(p, [[clip, 1.2, 1]]);
+    p.root.rotation.y = -0.3;
     p.root.updateMatrixWorld(true);
     face?.set({ face: FI.blendEmotions(w), blink: blinkAt(t, 3), gaze: [g0[0] * 0.35 + g1[0], g0[1] * 0.35 + g1[1]] });
     const hp = new T.Vector3(); p.bones.Head.getWorldPosition(hp);
@@ -239,7 +240,7 @@ export default function BenchPeoplePage() {
         });
       } else if (set === "faceids") {
         const FI = await import("@/lib/star/style3d/toon/faceId");
-        const people = facePeople(PR, Number(q.get("n") ?? 28));
+        const people = facePeople(PR, Number(q.get("n") ?? 28), q.get("players") === "1");
         const on = q.get("faceid") !== "0";
         const YAW: Record<string, number> = { front: -0.27, "34": -0.95, side: -1.6 };
         const label = (l: PersonLookResult) => `${PR.HERITAGE[PR.presetById(l.preset)!.heritage].label.split(" (")[0].split(" /")[0]} · ${SKIN_LABEL[["porcelain", "fair", "light", "tan", "olive", "brown", "deep", "dark"].indexOf(l.skinId)]}`;
@@ -397,7 +398,7 @@ export default function BenchPeoplePage() {
         if (L) P3.dressPerson3d(T, p, L.dress);
         else if (R) P3.dressPerson3d(T, p, R.dress);
         else P3.dressPerson3d(T, p, { skin: c.today!.skin, hair: c.today!.hair, kit: c.today!.kit, accessories: [{ slot: "boots", color: "#141416" }] });
-        if (L && c.fid?.on) applyToonFaceId(T, p, c.fid.mod ? c.fid.mod(L.faceId) : L.faceId, { detail });
+        if (L && (c.fid?.on || (!c.fid && q.get("faceid") === "1"))) applyToonFaceId(T, p, c.fid?.mod ? c.fid.mod(L.faceId) : L.faceId, { detail });
         else if (L) applyToonFaceShape(T, p, L.face, L.faceK);
         else if (R?.face) applyToonFaceShape(T, p, R.face, 1);
         const face = addToonFace(T, p);

@@ -104,7 +104,7 @@ export function addToonFace(T: Three, p: Person3D): ToonFaceRig | null {
     if (drawn) {
       inf[0] = Math.min(1, pos(f.smile) * 0.3 + f.cheek * 0.35);
       inf[1] = pos(-f.smile) * 0.25;
-      inf[2] = open * 0.45;
+      inf[2] = open * 0.7;
       inf[3] = f.browUp * 0.25;
       inf[4] = Math.max(f.browAngry, f.browSad * 0.25) * 0.3;
       inf[5] = 0;

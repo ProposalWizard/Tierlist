@@ -64,7 +64,7 @@ export const FI_CANVAS = /* glsl */ `
   // the file's own brows (hair in the mask) and, on a head painted with a beard, that beard: skin now
   float fiBrowBand = step(fiEyeY - 0.03, r.y) * (1.0 - smoothstep(fiBrowY + 0.012, fiBrowY + 0.02, r.y)) * step(fiAx, 0.09) * step(fiNoseZ - 0.085, r.z);
   // (the sideburn that is left ends on a slant, not a square stump)
-  float fiLowFace = (1.0 - smoothstep(fiEyeY - 0.042, fiEyeY - 0.03, r.y - max(r.z - fiZc, 0.0) * 0.35)) * uFiLm3.z;
+  float fiLowFace = (1.0 - smoothstep(fiEyeY - 0.024, fiEyeY - 0.012, r.y - max(r.z - fiZc, 0.0) * 0.5)) * uFiLm3.z;
   float fiKill = head * max(fiBrowBand * step(fiZc - 0.02, r.z), fiLowFace * step(fiZb - 0.075, r.z));
   float fiWasHair = hairM * fiKill;
   hairM *= 1.0 - fiKill;
@@ -159,7 +159,7 @@ export const FI_DRAW = /* glsl */ `
       // the moustache: from under the nose to the top lip, a little past the corners, thinner in the middle
       float mSoft = mix(0.008, 0.0, smoothstep(0.08, 0.45, uFiBeard2.w));     // stubble's moustache has no edge either
       float mo = (1.0 - smoothstep(fiMw0 + 0.003 - mSoft, fiMw0 + 0.011 + mSoft, fiAx + ed)) * smoothstep(fiLipTop + 0.0002, fiLipTop + 0.0022, r.y)
-        * (1.0 - smoothstep(fiNoseY - 0.022 - mSoft, fiNoseY - 0.014, r.y + ed * 0.5)) * (1.0 - 0.45 * fiBell(fiX, 0.0035) * smoothstep(fiLipTop + 0.004, fiLipTop + 0.012, r.y));
+        * (1.0 - smoothstep(fiNoseY - 0.022 - mSoft, fiNoseY - 0.014, r.y + ed * 0.5)) * (1.0 - 0.18 * fiBell(fiX, 0.0035) * smoothstep(fiLipTop + 0.004, fiLipTop + 0.012, r.y));
       // its ends carry on down to the chin when there is a chin beard (a goatee, a circle beard, a full beard)
       float bars = (1.0 - smoothstep(0.003, 0.01, abs(fiAx - (fiMw0 + 0.005)) + abs(ed))) * step(r.y, fiLipTop + 0.004) * smoothstep(fiChinY - 0.02, fiChinY - 0.008, r.y) * offNeck * min(uFiBeard.y, uFiBeard.z);
       // a goatee or a circle beard is one rounded shape round the mouth, not a frame of bars
@@ -168,7 +168,7 @@ export const FI_DRAW = /* glsl */ `
       float goat = (1.0 - smoothstep(0.82, 1.04, gd + ed * 25.0)) * offNeck * min(uFiBeard.y, uFiBeard.z);
       // (a circle beard leaves the skin under the lower lip bare)
       goat *= 1.0 - (1.0 - uFiBeard2.z) * (1.0 - smoothstep(0.75, 1.0, length(vec2(fiX / (fiMw0 * 0.62), (r.y - (fiLipBot - 0.0085)) / 0.0075))));
-      goat *= 1.0 - 0.6 * (1.0 - smoothstep(0.5, 1.0, length(vec2(fiX / 0.006, (r.y - (fiLipTop + 0.011)) / 0.008))));   // the dip under the nose
+      goat *= 1.0 - 0.2 * (1.0 - smoothstep(0.5, 1.0, length(vec2(fiX / 0.006, (r.y - (fiLipTop + 0.011)) / 0.008))));   // the dip under the nose
       bars = max(bars * 0.0, goat);
       float D = max(max(cheek * uFiBeard.x, chin * uFiBeard.y * step(0.5, uFiBeard.x + uFiBeard2.z)), max(mo * uFiBeard.z, bars));
       if (D > 0.003) {
@@ -296,7 +296,7 @@ export const FI_DRAW = /* glsl */ `
       float sm_ = uFiExC.x + uFiExC.w * mu;                       // a smile on one side: a smirk
       float ku = sqrt(max(0.0, 1.0 - mu * mu));
       float y0 = fiMouthY + sm_ * mw * 0.34 * mu * mu - sm_ * 0.0015;
-      float gap = uFiExC.y * 0.0098 * pow(ku, 0.7);
+      float gap = uFiExC.y * 0.0155 * pow(ku, 0.6);
       float bow = 1.0 - 0.2 * exp(-(mu * mu) / 0.03);
       float upT = uFiMouth.y * pow(ku, 0.55) * bow * (1.0 - 0.35 * uFiExD.y) * (1.0 - 0.25 * max(uFiExC.x, 0.0));
       float loT = uFiMouth.z * pow(ku, 0.8) * (1.0 - 0.35 * uFiExD.y) * (1.0 - 0.15 * max(uFiExC.x, 0.0));
@@ -316,7 +316,7 @@ export const FI_DRAW = /* glsl */ `
       col = mix(col, lipU, upper);
       col = mix(col, lipL, lower);
       vec3 mc = vec3(0.07, 0.016, 0.02);
-      float th_ = 0.0027 + uFiExD.x * 0.004;
+      float th_ = min(0.003 + uFiExD.x * 0.004, gap * 0.45 + uFiExD.x * 0.004);
       float teeth = smoothstep(0.15, 0.3, uFiExC.y + uFiExD.x) * (1.0 - smoothstep(th_ - fiAA, th_ + fiAA, -v)) * (1.0 - smoothstep(0.7, 0.9, abs(mu)));
       mc = mix(mc, vec3(0.86, 0.83, 0.78), teeth);
       col = mix(col, mc, inside);
