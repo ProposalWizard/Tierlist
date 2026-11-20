@@ -55,9 +55,8 @@ const APPS: App[] = [
   // No casino: the packed phone app has none (Mikey, 5 Nov 2026).
   { id: "sponsors", label: "Sponsors", icon: "🤝", hi: "#2dd4bf", bg: "#0f766e", screen: "sponsors" },
   { id: "ownership", label: "Owner", icon: "🏛️", hi: "#818cf8", bg: "#4338ca", screen: "ownership" },
-  { id: "garden", label: "Garden", icon: "🌳", hi: "#22c55e", bg: "#166534", soon: "The 3D garden" },
-  // Shown as the website's phone shows it (lib/star/home3d/flag.ts HOME3D_IN_CAREER); the 3D house is not in this app.
-  { id: "home-3d", label: "Your house", icon: "🏠", hi: "#f59e0b", bg: "#92400e", soon: "Your 3D house" },
+  // Garden and Your house are 3D places on the website; Mikey left them off the phone,
+  // so they are not on its home screen (no "coming soon" dead end).
   { id: "settings", label: "Settings", icon: "⚙️", hi: "#9ca3af", bg: "#4b5563", screen: "settings", soon: "Settings" },
 ];
 const DOCK = new Set(["social", "messages", "fixtures", "kickabout"]);
@@ -217,10 +216,9 @@ function Soon({ text }: { text: string }) {
   return <View style={{ padding: 16 }}><Empty text={text} /></View>;
 }
 
-function AppIcon({ app, badge, off, fresh, onOpen }: { app: App; badge: number; off: boolean; fresh: boolean; onOpen: () => void }) {
-  const size = 50;
+function AppIcon({ app, badge, off, fresh, onOpen, size = 50 }: { app: App; badge: number; off: boolean; fresh: boolean; onOpen: () => void; size?: number }) {
   return (
-    <Press onPress={onOpen} style={{ width: "25%", alignItems: "center", paddingVertical: 5 }}>
+    <Press onPress={onOpen} style={{ width: "25%", alignItems: "center", paddingVertical: size < 46 ? 3 : 5 }}>
       <View style={[{ width: size, height: size, borderRadius: size * 0.28, alignItems: "center", justifyContent: "center" }, off
         ? ({ backgroundImage: "linear-gradient(160deg, #0b0f17, #020304)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.07), 0px 7px 14px -6px rgba(0,0,0,0.8)" } as ViewStyle)
         : ({ backgroundImage: `linear-gradient(160deg, ${app.hi ?? app.bg}, ${app.bg})`, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.5), inset 0px -3px 6px rgba(0,0,0,0.25), 0px 7px 14px -6px rgba(0,0,0,0.8)" } as ViewStyle)]}>
@@ -242,12 +240,17 @@ function Grid({ career, glow, badges, installed, onOpen }: { career: CareerState
   const next = nextFixtureFor(career);
   const grid = career.unlocks ? [...APPS.filter((a) => !DOCK.has(a.id)), APP_STORE_ICON] : APPS.filter((a) => !DOCK.has(a.id));
   const dock = APPS.filter((a) => DOCK.has(a.id));
+  // The phone shrinks to fit (PhoneFrame): every app and the dock stay above HOME/BACK
+  // on a small phone (360 x 640) instead of the dock falling under the nav bar.
+  const [roomH, setRoomH] = useState(0);
+  const rows = Math.ceil(grid.length / 4) + 1;
+  const size = roomH ? Math.max(30, Math.min(50, Math.floor((roomH - 96) / rows - 32))) : 50;
   const icon = (a: App) => {
     const off = !!career.unlocks && a.id !== "appstore" && !installed(a.id);
-    return <AppIcon key={a.id} app={a} badge={badges[a.id] ?? 0} off={off} fresh={!!career.unlocks && appIsNew(career, a.id)} onOpen={() => (off ? onOpen(APP_STORE_ICON) : onOpen(a))} />;
+    return <AppIcon key={a.id} app={a} size={size} badge={badges[a.id] ?? 0} off={off} fresh={!!career.unlocks && appIsNew(career, a.id)} onOpen={() => (off ? onOpen(APP_STORE_ICON) : onOpen(a))} />;
   };
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 4, flexGrow: 1 }}>
+    <ScrollView onLayout={(e) => { const h = Math.round(e.nativeEvent.layout.height); if (h !== roomH) setRoomH(h); }} contentContainerStyle={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 4, flexGrow: 1 }}>
       {next ? <NextMatchWidget career={career} next={next} /> : (
         <View style={[glassStyle("glass", glow.startsWith("#") ? glow : undefined), { borderRadius: 20, padding: 12 }]}>
           <Text style={{ color: "#fde68a", fontWeight: "900", fontSize: 10, letterSpacing: 2 }}>SEASON COMPLETE</Text>

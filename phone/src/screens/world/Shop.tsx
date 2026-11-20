@@ -500,12 +500,7 @@ function ShopBar({ active, onPick, onSponsors }: { active: Tab; onPick: (t: Tab)
     <View style={{ height: 50, flexDirection: "row", alignItems: "stretch", backgroundColor: "#05080f", borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
       {tab("shop", "Shop", "🛍️", active === "shop", () => onPick("shop"))}
       {tab("foryou", "For You", "▶️", active === "foryou", () => onPick("foryou"))}
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        {/* the walk-around 3D shop: not in this app */}
-        <View style={{ width: 54, height: 34, borderRadius: 11, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", opacity: 0.3, boxShadow: "-4px 0px 0px #22d3ee, 4px 0px 0px #f43f5e" } as ViewStyle}>
-          <Text style={{ color: "#05080f", fontSize: 15, fontWeight: "900" }}>3D</Text>
-        </View>
-      </View>
+      {/* The walk-around 3D shop is not in this app (Mikey's choice of 3D): no dead button. */}
       {tab("boots", "Boots", "👟", active === "boots", () => onPick("boots"))}
       {tab("sponsors", "Sponsors", "🤝", false, onSponsors)}
     </View>
