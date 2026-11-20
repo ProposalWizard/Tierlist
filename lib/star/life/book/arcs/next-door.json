@@ -1,0 +1,520 @@
+{
+ "id": "arc-next-door",
+ "title": "Next door",
+ "owner": "neighbour",
+ "summary": "Your neighbour knocks to complain about your car across her drive and the music on a Saturday night. Promise to keep it down and the next win party tests it. A season on, she's either your biggest fan or the source for a tabloid story.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "neighbour",
+   "tabloid reporter"
+  ],
+  "tone": [
+   "funny",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "neighbour",
+   "pick": "neighbour"
+  },
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "peace": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "biggest-fan",
+   "title": "Her biggest fan",
+   "text": "The neighbour who knocked on your door now has a season ticket and makes you lemon cake."
+  },
+  {
+   "id": "the-source",
+   "title": "The source",
+   "text": "A neighbour told the papers about your parties. You know which one."
+  }
+ ],
+ "promises": {
+  "p-quiet": {
+   "id": "p-quiet",
+   "to": "neighbour",
+   "text": "Keep the noise down for {neighbour.short}",
+   "due": {
+    "weeks": [
+     1,
+     6
+    ]
+   },
+   "keptBy": {
+    "beat": "nbr-2-party",
+    "ends": [
+     "quiet",
+     "town"
+    ]
+   },
+   "dueText": "The next time you've got people round",
+   "kept": {
+    "text": "You said you'd keep it down, and you did.",
+    "npc": [
+     {
+      "slot": "neighbour",
+      "bond": 4,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You told her it wouldn't happen again.",
+    "npc": [
+     {
+      "slot": "neighbour",
+      "bond": -8,
+      "respect": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "neighbour",
+      "tag": "broke-the-noise-promise",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "nbr-1-door",
+   "title": "The knock",
+   "n": 1,
+   "event": {
+    "id": "arc-nbr-1-door",
+    "title": "The knock",
+    "category": "home",
+    "place": "home",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "It's {neighbour.name} from next door, in her dressing gown, holding a bin bag of somebody's cans from your garden."
+    ],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "neighbour",
+       "say": [
+        "\"Your car's been across my drive three mornings this week. And on Saturday the music went on till half two. I've got a hip appointment on Monday.\""
+       ],
+       "replies": [
+        {
+         "id": "sorry",
+         "label": "\"I'm sorry. It won't happen again.\"",
+         "tone": "humble",
+         "goto": "d2",
+         "promise": "p-quiet"
+        },
+        {
+         "id": "ticket",
+         "label": "\"Can I get you tickets for Saturday to make up for it?\"",
+         "tone": "kind",
+         "goto": "d-ticket"
+        },
+        {
+         "id": "mine",
+         "label": "\"It's my house. I'll play music if I want.\"",
+         "tone": "cold",
+         "end": "row"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "d2"
+        }
+       ]
+      },
+      "d-ticket": {
+       "who": "neighbour",
+       "say": [
+        "\"I don't like football.\" She looks at you. \"My late husband did. He had a season ticket for forty years.\""
+       ],
+       "replies": [
+        {
+         "id": "two",
+         "label": "\"Then come, for him. And I'll keep it down.\"",
+         "tone": "kind",
+         "end": "made-up",
+         "promise": "p-quiet"
+        },
+        {
+         "id": "ok",
+         "label": "\"Fair enough. I'll keep it down.\"",
+         "tone": "calm",
+         "end": "sorted",
+         "promise": "p-quiet"
+        }
+       ]
+      },
+      "d2": {
+       "who": "neighbour",
+       "say": [
+        "\"I've heard that before, from the last people.\""
+       ],
+       "replies": [
+        {
+         "id": "mean",
+         "label": "\"I mean it.\"",
+         "tone": "honest",
+         "end": "sorted"
+        },
+        {
+         "id": "shrug",
+         "label": "\"Well, I'm not the last people.\"",
+         "tone": "confident",
+         "end": "sorted"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "made-up": [
+       {
+        "text": "She takes the bin bag back with her, which you don't understand. She comes to the game on Saturday in her husband's scarf.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 12,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "gave-me-his-season-ticket-seat",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "peace": "warm"
+         }
+        }
+       }
+      ],
+      "sorted": [
+       {
+        "text": "\"We'll see.\" She leaves the bin bag on your step.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "said-hed-keep-it-down",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "peace": "uneasy"
+         }
+        }
+       }
+      ],
+      "row": [
+       {
+        "text": "\"Right.\" Her door closes harder than it needs to. The next day there's a note on your windscreen about the drive, with a diagram.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": -10,
+          "respect": -4,
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "told-me-its-his-house",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "peace": "war"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "Someone's at the door"
+  },
+  {
+   "id": "nbr-2-party",
+   "title": "After the win",
+   "after": {
+    "beat": "nbr-1-door",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-nbr-2-party",
+    "title": "After the win",
+    "category": "home",
+    "place": "home",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastWon"
+     ]
+    },
+    "setup": [
+     "You won, and four of the lads want to come back to yours. It's eleven o'clock already."
+    ],
+    "choices": [
+     {
+      "id": "quiet",
+      "label": "Have them round, music low, everyone gone by one.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "You turn it down twice yourself. At ten to one you see her landing light go off.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "kept-it-down-after-the-win",
+          "strength": 2
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "big",
+      "label": "Have them round, music up.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "Three in the morning. The police come at quarter past, very politely. They're fans.",
+        "effects": {
+         "reputation": -3
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": -12,
+          "respect": -6,
+          "grudge": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "had-the-police-round",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "peace": "war"
+         }
+        },
+        "promiseBroken": [
+         "p-quiet"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "town",
+      "label": "Go into town instead.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "You stay out till two and park on your own drive.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 2
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "A win, and your mates want to come round"
+  },
+  {
+   "id": "nbr-3-later",
+   "title": "A season on",
+   "after": {
+    "beat": "nbr-1-door",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-nbr-3-later",
+    "title": "A season on",
+    "category": "home",
+    "place": "home",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{if !arc.peace=='war'}There's a lemon cake on your doorstep with a note: \"For Saturday. Score one for my husband.\"{/if}",
+     "{if arc.peace=='war'}The {tabloid.outlet} has a story: \"PARTY HOUSE HELL, SAYS STAR'S NEIGHBOUR.\" There's a photo of your drive.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "knock",
+      "label": "Knock on her door.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "!arc.peace=='war'",
+        "text": "She asks you in for tea. Her husband's season ticket is in a frame on the wall, and she's renewed it in her own name.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "tea-with-the-neighbour",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "biggest-fan"
+        }
+       },
+       {
+        "text": "She opens the door with the chain on. \"I didn't say half of that,\" she says. \"But I said some of it.\"",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 2,
+          "respect": 2,
+          "grudge": -4
+         }
+        ],
+        "arc": {
+         "end": "the-source"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Leave it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "!arc.peace=='war'",
+        "text": "You eat the cake, all of it, standing up in the kitchen.",
+        "arc": {
+         "end": "biggest-fan"
+        }
+       },
+       {
+        "text": "You put the house on the market in the summer.",
+        "effects": {
+         "fans": -2
+        },
+        "arc": {
+         "end": "the-source"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "A season on, your neighbour"
+  }
+ ]
+}

@@ -1,0 +1,494 @@
+{
+ "id": "arc-the-new-boots",
+ "title": "The new boots",
+ "owner": "sponsor",
+ "summary": "Your boot sponsor's rep brings you this season's boots, and they give you blisters by Tuesday. Wear them, or paint your old ones to look like them. A photo after a match decides it. A season on, the contract's up.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "sponsor's rep"
+  ],
+  "tone": [
+   "funny",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "sponsor",
+   "pick": "sponsor"
+  }
+ ],
+ "vars": {
+  "boots": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-face-of-the-boot",
+   "title": "The face of the boot",
+   "text": "You suffered for the new boots. Now there's a poster of you in them on a bus stop."
+  },
+  {
+   "id": "dropped-by-the-brand",
+   "title": "Dropped",
+   "text": "You got caught in painted old boots. The brand found somebody else."
+  }
+ ],
+ "promises": {
+  "p-boots": {
+   "id": "p-boots",
+   "to": "sponsor",
+   "text": "Wear the new {sponsor.outlet} boots every match",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "bts-2-photo",
+    "ends": [
+     "own",
+     "hide"
+    ]
+   },
+   "dueText": "Every match this season",
+   "kept": {
+    "text": "You wore the boots, blisters and all.",
+    "npc": [
+     {
+      "slot": "sponsor",
+      "bond": 4,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said every match.",
+    "npc": [
+     {
+      "slot": "sponsor",
+      "bond": -6,
+      "respect": -6
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "bts-1-box",
+   "title": "This season's boots",
+   "n": 1,
+   "event": {
+    "id": "arc-bts-1-box",
+    "title": "This season's boots",
+    "category": "sponsor",
+    "place": "compound:boot-room",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "sponsor",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{sponsor.name} from {sponsor.outlet} is in the boot room with a box the size of a suitcase. \"The new ones. You'll be the first player in the country to wear them.\""
+    ],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "sponsor",
+       "say": [
+        "\"The contract says every match. I know you love your old pair. But it's every match.\" You've had them on for twenty minutes and there's a blister coming on your heel already."
+       ],
+       "replies": [
+        {
+         "id": "wear",
+         "label": "\"Every match. I'll break them in.\"",
+         "tone": "humble",
+         "goto": "b2",
+         "promise": "p-boots"
+        },
+        {
+         "id": "honest",
+         "label": "\"They're hurting already, if I'm honest.\"",
+         "tone": "honest",
+         "goto": "b-honest"
+        },
+        {
+         "id": "old",
+         "label": "\"I'll wear my old ones and nobody will know.\"",
+         "tone": "reckless",
+         "end": "old"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "old"
+        }
+       ]
+      },
+      "b-honest": {
+       "who": "sponsor",
+       "say": [
+        "\"Everybody says that the first week. Wear them in the shower. It works, I swear.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Every match, then.\"",
+         "tone": "calm",
+         "end": "agreed",
+         "promise": "p-boots"
+        },
+        {
+         "id": "paint",
+         "label": "\"Can't you just paint my old ones?\"",
+         "tone": "confident",
+         "end": "paint"
+        }
+       ]
+      },
+      "b2": {
+       "who": "sponsor",
+       "say": [
+        "\"Brilliant. There's a photo shoot on Friday. Wear them in.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Friday.\"",
+         "tone": "calm",
+         "end": "agreed"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "agreed": [
+       {
+        "text": "You wear them in the shower for three nights. Your flatmate thinks you've lost it.",
+        "effects": {
+         "energy": -4
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sponsor",
+          "tag": "wore-the-new-boots",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "boots": "new"
+         }
+        }
+       }
+      ],
+      "paint": [
+       {
+        "text": "\"I didn't hear that.\" She leaves. On Saturday you go out in your old pair, painted.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": -2,
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "boots": "painted"
+         }
+        }
+       }
+      ],
+      "old": [
+       {
+        "text": "You go out on Saturday in your old ones with a bit of black marker on them.",
+        "npc": [
+         {
+          "slot": "sponsor"
+         }
+        ],
+        "arc": {
+         "set": {
+          "boots": "painted"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     }
+    ]
+   },
+   "hint": "The sponsor's rep has a box for you"
+  },
+  {
+   "id": "bts-2-photo",
+   "title": "The photo",
+   "after": {
+    "beat": "bts-1-box",
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "event": {
+    "id": "arc-bts-2-photo",
+    "title": "The photo",
+    "category": "sponsor",
+    "place": "home",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "sponsor",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "{if arc.boots=='painted'}A fan's photo of your boots in close-up is going round. Under the marker you can see the other brand's stripe.{/if}",
+     "{if arc.boots=='new'}A photo of you scoring in the new boots is everywhere. Your heels are bleeding inside them.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "own",
+      "label": "Ring {sponsor.short} first and own up.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.boots=='painted'",
+        "text": "\"You painted them.\" A long silence. \"I'll talk to head office. Don't do it again.\"",
+        "effects": {
+         "moneyWeeks": -1
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": -4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sponsor",
+          "tag": "owned-up-about-the-boots",
+          "strength": 2
+         }
+        ],
+        "promiseBroken": [
+         "p-boots"
+        ]
+       },
+       {
+        "text": "\"They're killing me,\" you tell her. She sends a podiatrist round that afternoon.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sponsor",
+          "tag": "wore-them-through-the-blisters",
+          "strength": 3
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "hide",
+      "label": "Say nothing and hope it goes away.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.boots=='painted'",
+        "text": "It doesn't go away. Head office ring your agent.",
+        "effects": {
+         "moneyWeeks": -2,
+         "fame": -2
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": -10,
+          "respect": -8,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sponsor",
+          "tag": "got-caught-in-painted-boots",
+          "strength": 3
+         }
+        ],
+        "promiseBroken": [
+         "p-boots"
+        ]
+       },
+       {
+        "text": "Head office love the photo. You bleed in silence.",
+        "effects": {
+         "energy": -6
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 6,
+          "respect": 2
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     }
+    ]
+   },
+   "hint": "After the next match, a photo"
+  },
+  {
+   "id": "bts-3-renewal",
+   "title": "The renewal",
+   "after": {
+    "beat": "bts-1-box",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-bts-3-renewal",
+    "title": "The renewal",
+    "category": "sponsor",
+    "place": "town:cafe",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "sponsor",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{sponsor.short} meets you in a café with a folder. The boot deal is up for renewal."
+    ],
+    "choices": [
+     {
+      "id": "sign",
+      "label": "\"Where do I sign?\"",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "!arc.boots=='painted'",
+        "text": "\"Here, and here. And there's a bus stop poster.\" You're on the side of a bus by the spring.",
+        "effects": {
+         "moneyWeeks": 2,
+         "fame": 3
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "the-face-of-the-boot"
+        }
+       },
+       {
+        "text": "\"There's nothing to sign,\" she says, gently. \"Head office went with somebody else.\"",
+        "npc": [
+         {
+          "slot": "sponsor"
+         }
+        ],
+        "arc": {
+         "end": "dropped-by-the-brand"
+        }
+       }
+      ]
+     },
+     {
+      "id": "comfort",
+      "label": "\"Only if they make them in a wider fit.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "!arc.boots=='painted'",
+        "text": "She laughs. \"They do now. Because of you.\"",
+        "effects": {
+         "moneyWeeks": 2
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "arc": {
+         "end": "the-face-of-the-boot"
+        }
+       },
+       {
+        "text": "\"You can paint whatever you like now,\" she says. You're out of contract.",
+        "arc": {
+         "end": "dropped-by-the-brand"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     }
+    ]
+   },
+   "hint": "A season on, the contract is up"
+  }
+ ]
+}
