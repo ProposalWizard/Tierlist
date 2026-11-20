@@ -23,7 +23,7 @@ import { people3dLook } from "../look3d";
 import { createStyleKit, type StyleKit } from "../style3d/kit";
 import { resolveStyle, type StyleDef, type StyleId } from "../style3d/styles";
 import { applyMood, MOODS } from "./presets/moods";
-import { compileScript, rootAt, clipsAt, trackWeight, cameraAt, overlayAt, soundsBetween, type Compiled, type Overlay } from "./timeline";
+import { compileScript, rootAt, clipsAt, trackWeight, cameraAt, overlayAt, soundsBetween, ownMotion, type Compiled, type Overlay } from "./timeline";
 import { shotPose, mixPose, keepInside, PHONE_FRAMING_ON, type Anchor, type ShotPose } from "./presets/camera";
 import { resolvePoint } from "./presets/locations";
 import { createCutscenePeople } from "./peopleAdapter";
@@ -106,6 +106,11 @@ interface Cast { id: string; role: string; body: string; actor: CutsceneActor; c
 
 // (sit_idle, sit_down and stand_up are the motion-capture sits the "sit" stand-ins ask for first: missing here,
 // a seated man was pulled down to put his hanging feet on the floor, into the seat, knees up: "scrunched")
+/** The face a scene's feeling gives anyone with no expression of his own set. */
+const MOOD_FACE: Partial<Record<string, import("./types").Expression>> = {
+  joy: "smile", pride: "proud", relief: "smile", defiance: "determined", anger: "angry", sadness: "sad", shock: "shocked",
+  tension: "tense", gratitude: "smile", hunger: "focused", inspired: "focused",
+};
 const SITS = new Set(["sitidle", "boss-sit", "sitdown", "slot_sit", "sit_idle", "sit_down", "stand_up"]);
 /** How near the camera may come to a person (metres from his head point, body line, arm line). */
 export const PERSONAL_SPACE = { head: 0.34, body: 0.32, arm: 0.24 } as const;
@@ -349,7 +354,10 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       const seed = actorSeed(c.id);
       const ctx: PoseCtx = { T, t, local: 0, yaw: r.yaw, root: [a.root.position.x, a.root.position.y, a.root.position.z], seed, floorY: r.pos[1] };
       // a few degrees of sway with overlap on every arm, so nobody stands with dead arms (fluid.ts)
-      liveArms(a, ctx);
+      // his own carriage and arm swing (timeline.ts ownMotion), and his breathing: a line of men is not one man copied
+      const own = ownMotion(c.id);
+      if (sitW < 0.5) a.lean(own.lean + 0.012 * Math.sin(t * 1.5 * own.rate + seed * 3), own.side);
+      liveArms(a, ctx, own.arms);
       for (const pt of tracksOf(c.id, "pose") as PoseTrack[]) {
         const amt = pt.amount ?? 1;
         const w = trackWeight(pt, t, 0.3, 0.35) * amt;
@@ -402,8 +410,27 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     // props in hands, so a look at one sees where it is now (placed again at 5., after the fingers)
     placeProps(t, "held");
     // 4. look, face, talk; blinks
+    // who has the line now (everyone else's attention goes to him), and the scene's own feeling for a face with none set
+    let speakerId: string | null = null;
+    for (const c of Array.from(cast.values())) if ((tracksOf(c.id, "speak") as SpeakTrack[]).some((sp) => t >= sp.at && t <= sp.at + sp.dur)) speakerId = c.id;
+    const speakerHead = speakerId ? cast.get(speakerId)!.actor.point("eyes").clone() : null;
+    const moodFace = MOOD_FACE[script.source?.event?.emotion ?? "calm"] ?? null;
     for (const c of Array.from(cast.values())) {
       const a = c.actor;
+      const own = ownMotion(c.id);
+      // LIFE (Harry, 20 Nov 2026: "no life in their faces, everyone static"): with no look of his own set, a listener
+      // turns to whoever is speaking (his own delay and amount); otherwise the head follows his wandering eyes a
+      // little, at his own restless pace. From t and his id alone.
+      if (!(tracksOf(c.id, "look") as LookTrack[]).some((lt) => trackWeight(lt, t, 0.35, 0.35) > 0.05)) {
+        if (speakerHead && speakerId !== c.id) a.lookAt(speakerHead, 0.3 + 0.3 * (own.restless - 0.6) / 0.9);
+        else {
+          const [hx, hy] = wanderGaze(t * 0.6 * own.restless + own.phase * 40, actorSeed(c.id) * 13 + 5);
+          const hd = a.point("head");
+          const yw = rootAt(C, c.id, t).yaw + hx * 0.35 + own.head;
+          a.lookAt(new T.Vector3(hd.x + Math.sin(yw) * 3, hd.y + hy * 0.5, hd.z + Math.cos(yw) * 3), 0.4);
+        }
+      }
+      if (moodFace && !(tracksOf(c.id, "face") as FaceTrack[]).some((ft) => t >= ft.at && t <= ft.at + (ft.dur ?? 999))) a.setExpression(moodFace, 0.55);
       for (const lt of tracksOf(c.id, "look") as LookTrack[]) {
         const w = trackWeight(lt, t, 0.35, 0.35) * (lt.amount ?? 1);
         if (w > 0) a.lookAt(targetPoint(lt.target, t), w);
@@ -417,8 +444,9 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       // a recorded line: the mouth follows its loudness; otherwise a talking rhythm
       a.setMouth(!sp ? 0 : vl ? vl.env[Math.min(vl.env.length - 1, Math.max(0, Math.floor((t - sp.at) * 30)))] ?? 0 : 0.5 + 0.5 * noise1(t * 9, c.id.length));
       // blinks at uneven times, and the eyes wander a little between looks (less while he talks or looks at someone)
-      const seed = (script.seed ?? 1) * 31 + c.id.length * 7 + c.id.charCodeAt(0);
-      a.setBlink(blinkAt(t, seed));
+      // (his own blink times: an id's length and first letter gave every "mate…" the same blinks)
+      const seed = (script.seed ?? 1) * 31 + actorSeed(c.id) * 97;
+      a.setBlink(blinkAt(t * own.restless, seed));
       const looking = (tracksOf(c.id, "look") as LookTrack[]).some((lt) => trackWeight(lt, t, 0.35, 0.35) > 0.3);
       const [gx, gy] = wanderGaze(t, seed);
       a.setGaze?.(gx, gy, sp || looking ? 0.3 : 0.75);

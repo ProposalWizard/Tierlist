@@ -7,6 +7,7 @@
  * So seek(t) gives the same picture whichever frame came before, and the
  * frame-by-frame filming tool can step through it.
  */
+import { hashStr } from "./math";
 import type {
   CameraTrack, CaptionTrack, CareerContext, CastMember, ClipTrack, Cond, CutsceneScript, LetterboxTrack,
   MoveTrack, PlaceTrack, SoundTrack, StoryEvent, Target, Track, TransitionTrack, TurnTrack, Vec3,
@@ -194,6 +195,22 @@ function clipTime(tr: ClipTrack, t: number, dur: number, from?: number, speedK =
 }
 
 /**
+ * EACH PERSON'S OWN MOTION (Harry, 20 Nov 2026: "no variations - 22 players walking at the same pace in the same
+ * time"). From his id alone, the same every time: where in a stride or an idle he starts, how fast his idle
+ * runs, which of the two walks he has, how much his arms swing, how he carries himself (a little taller or
+ * rounder, a little lean), how often he blinks and looks about. "you" is the middle of every range.
+ */
+export interface OwnMotion { phase: number; rate: number; otherWalk: boolean; arms: number; lean: number; side: number; head: number; restless: number }
+export function ownMotion(id: string): OwnMotion {
+  if (id === "you") return { phase: 0, rate: 1, otherWalk: false, arms: 1, lean: 0, side: 0, head: 0, restless: 1 };
+  const h = (k: string) => (hashStr(`${id}#${k}`) >>> 0) / 4294967296;
+  return {
+    phase: h("phase"), rate: 0.88 + 0.24 * h("rate"), otherWalk: h("walk") < 0.34, arms: 0.75 + 0.5 * h("arms"),
+    lean: (h("lean") - 0.5) * 0.07, side: (h("side") - 0.5) * 0.03, head: (h("head") - 0.5) * 0.12, restless: 0.6 + 0.9 * h("restless"),
+  };
+}
+
+/**
  * Body clips for an actor at t: [real clip, time, weight][]. `has` / `dur`
  * describe the body (which clips it has, how long each is).
  */
@@ -207,10 +224,12 @@ export function clipsAt(c: Compiled, id: string, t: number, has: (n: string) => 
     out.set(name, cur ? [cur[0], cur[1] + w] : [time, w]);
     upright += up * w;
   };
+  const own = ownMotion(id);
   const sample = (tr: ClipTrack | null, w: number) => {
     if (!tr) {
       const ch = resolveClip(defaultIdle(role, body), has);
-      if (ch) add(ch.clip, ((t * (ch.speed ?? 1)) % Math.max(0.1, dur(ch.clip)) + dur(ch.clip)) % Math.max(0.1, dur(ch.clip)), w, ch.upright ?? 0);
+      // (each man's idle starts at his own moment: a line of 22 never sways as one)
+      if (ch) add(ch.clip, ((t * (ch.speed ?? 1) * own.rate + own.phase * dur(ch.clip)) % Math.max(0.1, dur(ch.clip)) + dur(ch.clip)) % Math.max(0.1, dur(ch.clip)), w, ch.upright ?? 0);
       return;
     }
     const ch = resolveClip(tr.clip, has);
@@ -249,10 +268,14 @@ export function clipsAt(c: Compiled, id: string, t: number, has: (n: string) => 
   const r = rootAt(c, id, t);
   let entries = Array.from(out.entries()).map(([n, [time, w]]) => [n, time, w] as [string, number, number]);
   if (r.gait && r.gait.weight > 0) {
-    const ch = resolveClip(r.gait.clip, has);
+    let ch = resolveClip(r.gait.clip, has);
+    let rate = 1;
+    // a third of the people who walk have the other walk (a longer, more upright stride), its feet still keeping up
+    if (ch && ch.clip === "walk" && own.otherWalk && has("walk_confident")) { ch = { ...ch, clip: "walk_confident" }; rate = (GAIT_SPEED.walk ?? 1.35) / (GAIT_SPEED.walk_confident ?? 1.4); }
     if (ch) {
       const d = Math.max(0.1, dur(ch.clip));
-      const time = ((r.gait.time * (ch.speed ?? 1)) % d + d) % d;
+      // his own place in the stride: no two men's feet land together (the walk-out marched in step)
+      const time = ((r.gait.time * (ch.speed ?? 1) * rate + own.phase * d) % d + d) % d;
       const gw = r.gait.weight;
       entries = entries.map(([n, tt, w]) => [n, tt, w * (1 - gw)] as [string, number, number]);
       upright = upright * (1 - gw) + (ch.upright ?? 0) * gw;

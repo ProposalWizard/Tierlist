@@ -10,7 +10,7 @@
 import { FIXTURES, FIXTURE_EVENTS } from "../../lib/star/cutscene/fixtures";
 import { generateScript, scoreScript } from "../../lib/star/cutscene/generate";
 import { EVENT_KINDS_COVERED } from "../../lib/star/cutscene/beats";
-import { compileScript, lintScript, rootAt, clipsAt, cameraAt, overlayAt } from "../../lib/star/cutscene/timeline";
+import { ownMotion, compileScript, lintScript, rootAt, clipsAt, cameraAt, overlayAt } from "../../lib/star/cutscene/timeline";
 import { makeSignature, signatureAt } from "../../lib/star/cutscene/signature";
 import { shotPose, PHONE_FRAMING, SHOT_PRESETS, type Anchor, type ShotPose } from "../../lib/star/cutscene/presets/camera";
 import { castLook, castAll } from "../../lib/star/cutscene/casting";
@@ -314,6 +314,22 @@ for (const [id, ev] of Object.entries(FIXTURE_EVENTS)) {
     const list = Array.from(bad);
     check(!list.length, `${id}: ${list.slice(0, 3).join("; ")}${list.length > 3 ? ` (+${list.length - 3})` : ""}`);
   }
+}
+
+// ── a group never moves as one (Harry, 20 Nov 2026: "22 players walking at the same pace in the same time") ──
+{
+  const sc = FIXTURES.walkout();
+  const C = compileScript(sc, undefined, sc.source?.event);
+  const walkers = C.cast.filter((m) => rootAt(C, m.id, 6).gait);
+  const own = walkers.map((m) => ownMotion(m.id));
+  const buckets = new Array(8).fill(0);
+  for (const o of own) buckets[Math.floor(o.phase * 8) % 8]++;
+  const most = Math.max(...buckets), other = own.filter((o) => o.otherWalk).length;
+  console.log(`walk-out: ${walkers.length} men walking, at most ${most} within an eighth of a stride of each other, ${other} on the other walk, idle pace ${Math.min(...own.map((o) => o.rate)).toFixed(2)} to ${Math.max(...own.map((o) => o.rate)).toFixed(2)}`);
+  check(walkers.length >= 10, `walk-out: only ${walkers.length} men walk at 6 s`);
+  check(most <= Math.ceil(walkers.length * 0.35), `walk-out: ${most} of ${walkers.length} men are in step`);
+  check(other >= 2 && other <= walkers.length - 2, `walk-out: ${other} men on the other walk (want a mix)`);
+  check(JSON.stringify(ownMotion("mate3")) === JSON.stringify(ownMotion("mate3")) && ownMotion("mate3").phase !== ownMotion("mate4").phase, "a man's own motion is not the same every time, or two men share it");
 }
 
 if (problems.length) { console.error(`✗ ${problems.length} problem(s):\n  ` + problems.join("\n  ")); process.exit(1); }
