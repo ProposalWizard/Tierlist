@@ -1,0 +1,379 @@
+{
+ "id": "arc-the-tablets",
+ "title": "Something for the hamstring",
+ "owner": "mate",
+ "summary": "A team-mate offers you tablets that he says will get you back from your hamstring a week early. They're not from the physio. A season on, testing day comes round.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate",
+   "physio"
+  ],
+  "tone": [
+   "dark",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "where": [
+    "age>=24"
+   ],
+   "order": "random"
+  },
+  {
+   "slot": "physio",
+   "pick": "physio"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "clean-sample",
+   "title": "Clean",
+   "text": "You said no to the tablets. On testing day you gave your sample and thought nothing of it."
+  },
+  {
+   "id": "the-letter-from-testing",
+   "title": "The letter",
+   "text": "You took them. One day the letter came."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "pil-1-offer",
+   "title": "In the boot room",
+   "n": 1,
+   "event": {
+    "id": "arc-pil-1-offer",
+    "title": "In the boot room",
+    "category": "teammates",
+    "place": "compound:boot-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "clubApps>=3"
+     ]
+    },
+    "setup": [
+     "Your hamstring has been tight for a fortnight. {mate.name} closes the boot room door behind you. He's got a little brown bottle with no label in his hand."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "mate",
+       "say": [
+        "\"For the hamstring. My cousin gets them. A week quicker, I swear. Nobody tests for them in the season.\""
+       ],
+       "replies": [
+        {
+         "id": "no",
+         "label": "\"No chance.\"",
+         "tone": "brave",
+         "end": "no"
+        },
+        {
+         "id": "what",
+         "label": "\"What's in them?\"",
+         "tone": "honest",
+         "goto": "t2"
+        },
+        {
+         "id": "physio",
+         "label": "\"I'll ask {physio.short} about them.\"",
+         "tone": "calm",
+         "end": "physio"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "t2"
+        }
+       ]
+      },
+      "t2": {
+       "who": "mate",
+       "say": [
+        "\"Does it matter? I've had them twice. Look at me.\" He's flexing."
+       ],
+       "replies": [
+        {
+         "id": "take",
+         "label": "Take the bottle.",
+         "tone": "reckless",
+         "end": "took"
+        },
+        {
+         "id": "no",
+         "label": "\"I'll do it the slow way.\"",
+         "tone": "brave",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "no": [
+       {
+        "text": "He shrugs and puts them in his washbag. \"Your loss.\"",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "turned-down-the-tablets",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "clean"
+         }
+        }
+       }
+      ],
+      "physio": [
+       {
+        "text": "\"Don't do that.\" He takes the bottle back. You don't ask her. You don't take them either.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "threatened-to-tell-the-physio",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "clean"
+         }
+        }
+       }
+      ],
+      "took": [
+       {
+        "text": "You take two that night. You're back a week early, like he said. The bottle stays in your washbag, behind the toothpaste.",
+        "effects": {
+         "matchFitness": 6,
+         "scandal": true
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "took-the-tablets",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "took"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age>=24"
+      ],
+      "order": "random"
+     },
+     {
+      "slot": "physio",
+      "pick": "physio"
+     }
+    ]
+   },
+   "hint": "A team-mate has something for you"
+  },
+  {
+   "id": "pil-2-test",
+   "title": "Testing day",
+   "after": {
+    "beat": "pil-1-offer",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-pil-2-test",
+    "title": "Testing day",
+    "category": "staff",
+    "place": "compound:physio-room",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The testers turn up at seven in the morning with their boxes. {physio.short} reads out the names. Yours is third. {mate.short}'s is fifth."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Give your sample.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='clean'",
+        "text": "Clean. You're back on the pitch by eight. {mate.short} is in there for an hour.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "clean-sample"
+        }
+       },
+       {
+        "text": "You give it. You don't sleep for three weeks. Then the letter comes, and your name is in the papers by the Friday.",
+        "effects": {
+         "reputation": -3,
+         "fans": -3,
+         "scandal": true
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "failed-the-test",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-letter-from-testing"
+        }
+       }
+      ]
+     },
+     {
+      "id": "tell",
+      "label": "Tell {physio.short} about the brown bottle first.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='clean'",
+        "text": "She listens and writes it down. {mate.short} gets a call from the testers that afternoon.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4,
+          "respect": 6
+         },
+         {
+          "slot": "mate",
+          "bond": -8,
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "told-the-physio-about-the-tablets",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "clean-sample"
+        }
+       },
+       {
+        "text": "She goes white. \"You should have told me a year ago.\" It's a three-month ban instead of a year, because you came forward.",
+        "effects": {
+         "reputation": -2,
+         "scandal": true
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "the-letter-from-testing"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age>=24"
+      ],
+      "order": "random"
+     }
+    ]
+   },
+   "hint": "A season on, testing day"
+  }
+ ]
+}

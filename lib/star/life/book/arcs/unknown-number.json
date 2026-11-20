@@ -1,0 +1,326 @@
+{
+ "id": "arc-unknown-number",
+ "title": "Unknown number",
+ "owner": "manager",
+ "summary": "A text from a number you don't know offers you money for a yellow card in the first twenty minutes. You can delete it, reply, or take it to the gaffer. A season on, someone at another club gets caught, and the papers want to know who else got the text.",
+ "size": "small",
+ "about": {
+  "who": [
+   "a stranger",
+   "gaffer",
+   "tabloid reporter"
+  ],
+  "tone": [
+   "dark",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "number",
+   "pick": "stranger"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "reported-it",
+   "title": "You reported it",
+   "text": "You took a fixer's text to the gaffer. When the story broke, your name was on the right side of it."
+  },
+  {
+   "id": "deleted-it",
+   "title": "You deleted it",
+   "text": "You deleted the text. When the story broke, you wished you hadn't."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "txt-1-text",
+   "title": "A text",
+   "n": 1,
+   "event": {
+    "id": "arc-txt-1-text",
+    "title": "A text",
+    "category": "agent",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "number",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A text from a number you don't know. \"Yellow in the first 20 on Saturday. Five grand. Nobody gets hurt. Reply Y.\""
+    ],
+    "talk": {
+     "start": "x1",
+     "nodes": {
+      "x1": {
+       "who": "number",
+       "say": [
+        "The phone sits on the kitchen table. The message says \"Read\"."
+       ],
+       "replies": [
+        {
+         "id": "gaffer",
+         "label": "Screenshot it and send it to the gaffer.",
+         "tone": "brave",
+         "end": "reported"
+        },
+        {
+         "id": "delete",
+         "label": "Delete it and block the number.",
+         "tone": "calm",
+         "end": "deleted"
+        },
+        {
+         "id": "reply",
+         "label": "Reply: \"Who is this?\"",
+         "tone": "reckless",
+         "goto": "x2"
+        },
+        {
+         "id": "quiet",
+         "label": "Leave it.",
+         "silent": true,
+         "end": "deleted"
+        }
+       ]
+      },
+      "x2": {
+       "who": "number",
+       "say": [
+        "A reply comes back in ten seconds. \"A friend. Y or N?\""
+       ],
+       "replies": [
+        {
+         "id": "n",
+         "label": "\"N. Don't text me again.\"",
+         "tone": "brave",
+         "end": "replied-no"
+        },
+        {
+         "id": "gaffer",
+         "label": "Screenshot the lot and send it to the gaffer.",
+         "tone": "brave",
+         "end": "reported"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "reported": [
+       {
+        "text": "The gaffer rings in five minutes. By the morning the league has the number.",
+        "effects": {
+         "boss": 3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "brought-me-the-fixers-text",
+          "strength": 3
+         },
+         {
+          "slot": "you",
+          "tag": "reported-the-fixer",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "reported"
+         }
+        }
+       }
+      ],
+      "deleted": [
+       {
+        "text": "You delete it. You still see the words when you close your eyes for a day or two.",
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "deleted-the-fixers-text",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "deleted"
+         }
+        }
+       }
+      ],
+      "replied-no": [
+       {
+        "text": "They don't text again. The conversation sits in your phone.",
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "replied-to-the-fixer",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "deleted"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "number",
+      "pick": "stranger"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A text from a number you don't know"
+  },
+  {
+   "id": "txt-2-story",
+   "title": "The story breaks",
+   "after": {
+    "beat": "txt-1-text",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-txt-2-story",
+    "title": "The story breaks",
+    "category": "press",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. A player at another club has been charged for taking money for yellow cards. {tabloid.name} rings. \"The same number texted half the league. Did it text you?\""
+    ],
+    "choices": [
+     {
+      "id": "yes",
+      "label": "\"Yes. I gave it to my gaffer the same night.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='reported'",
+        "text": "It's in the paper as one line, and the gaffer backs it up. Your name is on the right side of the story.",
+        "effects": {
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "reported-it"
+        }
+       },
+       {
+        "text": "\"The same night? The league says they never heard from your club.\" He prints the gap.",
+        "effects": {
+         "reputation": -3
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "deleted-it"
+        }
+       }
+      ]
+     },
+     {
+      "id": "no",
+      "label": "\"No comment.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='reported'",
+        "text": "He has the league's list. Your club reported it. He prints that instead.",
+        "effects": {
+         "reputation": 2
+        },
+        "arc": {
+         "end": "reported-it"
+        }
+       },
+       {
+        "text": "\"That's not a no.\" He prints \"STAR REFUSES TO SAY\".",
+        "effects": {
+         "reputation": -2
+        },
+        "arc": {
+         "end": "deleted-it"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, a story breaks"
+  }
+ ]
+}
