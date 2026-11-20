@@ -34,3 +34,4 @@ RUL-UI-009 | [SUPERSEDED] Every page has the relevant stats as the top 2 bars, i
 RUL-UI-010 | The menu shop is B (big picture + thumbnails) on G1 (the 3D store blurred behind frosted glass), no pitch background, SHOP at top middle, money up where fitness is, age and stars not needed on this page. | three-d,economy,ui
 RUL-UI-011 | Money should be £ instead of dollars (£ pounds): the shop goes into the game, the Owner app gets Money + Reputation, the Sponsors fame pill goes. | economy,ui
 RUL-UI-012 | The original blink was better (one quick half-blink, ~0.8 s); the houses and 3D space need cleaning up, sticking to the style but making it clean; driving from here to training/matchday is wanted. | three-d,ui
+RUL-UI-013 | Red Dead Redemption hair idea (hair and facial hair grow over a szn, style it in your bathroom, go to a barbers), a training centre food hall where teammates naturally go about their day, random events; bit by bit, mobile and PC. | team,ui
