@@ -3,7 +3,9 @@
 and measures each line's loudness 30 times a second, so a speaker's jaw and head can move with it.
 
     pip install kokoro-onnx soundfile av numpy
-    python3 scripts/cutscene/voice.py <dir with kokoro-v1.0.onnx + voices-v1.0.bin>
+    python3 scripts/cutscene/voice.py <dir with kokoro-v1.0.onnx + voices-v1.0.bin> [line ids to (re)record]
+
+With line ids, only those are recorded; every other line already in voiceLines.ts is kept as it is.
 
 Writes public/sfx/cut-<id>.mp3 and lib/star/cutscene/voiceLines.ts (duration + envelope per line).
 "The Icon" is bm_george, slowed a touch (deep, calm); invented character, no real person's voice.
@@ -15,6 +17,9 @@ from kokoro_onnx import Kokoro
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LINES = {
     "mentor-line": ("bm_george", 0.88, "Talent gets you here. Hunger keeps you here."),
+    # the press conference (20 Nov 2026: the press room had no voices): a reporter, then you
+    "press-question": ("bm_lewis", 1.0, "Two goals on your debut. What's going through your head?"),
+    "press-answer": ("bm_daniel", 0.95, "Honestly? I've dreamt about this since I was six."),
 }
 k = Kokoro(os.path.join(sys.argv[1], "kokoro-v1.0.onnx"), os.path.join(sys.argv[1], "voices-v1.0.bin"))
 
@@ -29,7 +34,13 @@ def write_mp3(path, x, sr):
     o.close()
 
 out = {}
+VL = os.path.join(ROOT, "lib", "star", "cutscene", "voiceLines.ts")
+only = set(sys.argv[2:])
+if only and os.path.exists(VL):
+    src = open(VL).read()
+    out = json.loads(src[src.index("= ") + 2: src.rindex(";")])
 for lid, (voice, speed, text) in LINES.items():
+    if only and lid not in only: continue
     x, sr = k.create(text, voice=voice, speed=speed, lang="en-gb")
     a = np.abs(x); idx = np.where(a > 0.02 * a.max())[0]
     x = x[max(0, idx[0] - int(0.02 * sr)): idx[-1] + int(0.15 * sr)]

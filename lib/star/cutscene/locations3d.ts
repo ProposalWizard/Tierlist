@@ -11,7 +11,7 @@ import type { LocationId, Vec3 } from "./types";
 import type { StyleKit } from "../style3d/kit";
 import type { Quality3d } from "../three3d/quality";
 import { buildStadium, type Stadium } from "../style3d/stadium";
-import { DESK, PRESS_DESK_TOP } from "./presets/locations";
+import { DESK, PRESS_DESK_TOP, PRESS_SEATS, PRESS_SEAT_TOP, PRESS_SEAT_LIFT } from "./presets/locations";
 import { rng } from "./math";
 
 export interface SetOpts { shirt: string; trim: string; club: string; lamps: { intensity: number; color: string }; seed: number; night: boolean }
@@ -144,12 +144,16 @@ export function buildSet(T: any, kit: StyleKit, tier: Quality3d, id: LocationId,
       plane(20, 0.18, s * 1.59, 1.0, 8, 0, -s * Math.PI / 2, mat(o.shirt));
       plane(20, 0.05, s * 1.585, 1.12, 8, 0, -s * Math.PI / 2, mat(o.trim));
     }
-    plane(3.2, 20, 0, 2.7, 8, Math.PI / 2, 0, conc);
-    // strip lights
+    plane(3.2, 20, 0, 2.7, 8, Math.PI / 2, 0, mat("#b9b2a6", { rough: 0.95 }));
+    void conc;
+    // strip lights (20 Nov 2026: the first shots were mostly black, the ceiling and the far wall unlit): a light
+    // under every other strip, a soft fill off the floor and walls, warm daylight spilling in from the mouth
     for (let z = -1; z < 18; z += 2.2) {
       const strip = new T.Mesh(new T.BoxGeometry(0.16, 0.03, 1.2), new T.MeshBasicMaterial({ color: new T.Color(3, 2.9, 2.6) })); strip.position.set(0, 2.68, z); G.add(strip); disp.push(strip.geometry);
-      if (tier !== "low" && Math.round(z) % 4 === 1) light(new T.PointLight("#fff1dc", 1.6 * L.intensity, 4.5, 1.6), 0, 2.4, z);
+      if (Math.round(z) % 4 === 1 || (tier !== "low" && Math.round(z) % 4 === 3)) light(new T.PointLight("#fff1dc", 2.2 * L.intensity, 5.5, 1.4), 0, 2.4, z);
     }
+    const fill = new T.HemisphereLight("#f3ece0", "#8a8378", 0.55); G.add(fill);
+    light(new T.PointLight("#ffe6c4", 5 * L.intensity, 12, 1.2), 0, 2.2, 17.2);
     // the club's name over the mouth
     const nc = canvas(1024, 128); { const g = nc.getContext("2d")!; g.fillStyle = o.shirt; g.fillRect(0, 0, 1024, 128); g.fillStyle = o.trim; g.font = "900 70px system-ui"; g.textAlign = "center"; g.fillText(`THIS IS ${o.club.toUpperCase()}`.slice(0, 30), 512, 90); }
     plane(3.2, 0.4, 0, 2.48, 17.9, 0, Math.PI, mat("#ffffff", { map: tex(nc) }));
@@ -160,6 +164,9 @@ export function buildSet(T: any, kit: StyleKit, tier: Quality3d, id: LocationId,
     // stadium (X, Z) → world (52.5 − Z, X + 58): the halfway line straight ahead, the touchline 6 m past the mouth
     stadium.group.position.set(52.5, -0.01, 18 + 6 + 34);
     G.add(stadium.group);
+    // the ad board along this touchline ran straight across the mouth (a team-mate walked through it): split it,
+    // leaving the teams a gap (presets/locations.ts tunnel solids)
+    gapBoard(T, stadium.group, disp);
   } else if (id === "dressing-room") {
     plane(6, 7, 0, 0, 0, -Math.PI / 2, 0, mat("#9aa4ad", { rough: 0.8 }));
     plane(6, 3, 0, 2.9, 0, Math.PI / 2, 0, mat("#e8e4dc"));
@@ -192,21 +199,54 @@ export function buildSet(T: any, kit: StyleKit, tier: Quality3d, id: LocationId,
     for (let r = 0; r < 4; r++) for (let i = -6; i <= 6; i++) pts.push([i * 0.9 + (r % 2) * 0.45, 0, 3.4 + r * 1.3]);
     crowd(pts, ["#141414", "#1f2433", "#3a1f2a", "#20202a"], [0, 1, -1], 0.85, 0.02);
   } else if (id === "press-room") {
-    plane(10, 10, 0, 0, 2, -Math.PI / 2, 0, mat("#2a3140"));
-    // sponsor backdrop in the club's colours
-    const bc = canvas(1024, 512); { const g = bc.getContext("2d")!; g.fillStyle = "#f4f4f4"; g.fillRect(0, 0, 1024, 512); for (let y = 0; y < 5; y++) for (let x = 0; x < 6; x++) { const cx = x * 180 + (y % 2) * 90 + 40, cy = y * 110 + 50; g.fillStyle = (x + y) % 2 ? o.shirt : o.trim === "#ffffff" ? "#1f2433" : o.trim; g.font = "900 34px system-ui"; g.textAlign = "center"; g.fillText((x + y) % 2 ? o.club.toUpperCase().slice(0, 10) : "STAR", cx, cy); } }
-    plane(8, 3.2, 0, 1.6, -1.25, 0, 0, mat("#ffffff", { map: tex(bc) }));
-    box(3.6, 0.05, 0.8, 0, PRESS_DESK_TOP - 0.025, -0.15, mat("#1f2433"));
-    box(3.6, PRESS_DESK_TOP - 0.065, 0.04, 0, (PRESS_DESK_TOP - 0.065) / 2, 0.22, mat(o.shirt));
-    for (const x of [-0.45, 0.55, 1.4]) { box(0.5, 0.08, 0.5, x, 0.48, -0.62, mat("#18181b")); box(0.5, 0.6, 0.06, x, 0.82, -0.88, mat("#18181b")); }
-    // journalists, seated rows
-    const pts: Vec3[] = [];
-    for (let r = 0; r < 3; r++) for (let i = -4; i <= 4; i++) if (!(r === 0 && i === -1)) pts.push([i * 0.75, 0, 2.6 + r]);
-    crowd(pts, ["#1f2933", "#475569", "#7c2d12", "#334155", "#e7e5e4"], [0, 1, -1], 0.8, 0.01);
+    // 20 Nov 2026 (graded D: open sky, capsule reporters): a real room. Walls, a ceiling with light panels,
+    // the club's branded backdrop on a frame, the desk with the club's name on its front, three rows of
+    // chairs for the reporters (the reporters are people from the presets, cast by the scene), cameras.
+    const W = 4.4, BACK = -1.45, FRONT = 7.2, H = 3.3;
+    const wall = mat("#c7ccd3", { rough: 0.9 }), dado = mat("#2a3140", { rough: 0.8 }), ceil = mat("#e6e8ea", { rough: 0.9 });
+    plane(W * 2, FRONT - BACK, 0, 0, (FRONT + BACK) / 2, -Math.PI / 2, 0, mat("#39404e", { rough: 0.85 }));
+    plane(W * 2, H, 0, H / 2, BACK, 0, 0, wall);
+    plane(W * 2, H, 0, H / 2, FRONT, 0, Math.PI, wall);
+    for (const s of [-1, 1]) {
+      plane(FRONT - BACK, H, s * W, H / 2, (FRONT + BACK) / 2, 0, -s * Math.PI / 2, wall);
+      plane(FRONT - BACK, 1.0, s * (W - 0.01), 0.5, (FRONT + BACK) / 2, 0, -s * Math.PI / 2, dado);
+    }
+    plane(W * 2, FRONT - BACK, 0, H, (FRONT + BACK) / 2, Math.PI / 2, 0, ceil);
+    // light panels in the ceiling
+    for (const z of [0.4, 2.8, 5.2]) for (const x of [-2.2, 0, 2.2]) {
+      const pnl = new T.Mesh(new T.BoxGeometry(1.0, 0.02, 0.6), new T.MeshBasicMaterial({ color: new T.Color(2.4, 2.4, 2.3) })); pnl.position.set(x, H - 0.012, z); G.add(pnl); disp.push(pnl.geometry);
+    }
+    // the backdrop: the club's name and STAR in a step-and-repeat, on a frame with feet
+    const bc = canvas(1536, 576); { const g = bc.getContext("2d")!; g.fillStyle = "#f6f6f4"; g.fillRect(0, 0, 1536, 576); g.textAlign = "center"; for (let y = 0; y < 6; y++) for (let x = 0; x < 7; x++) { const cx = x * 230 + (y % 2) * 115 + 20, cy = y * 100 + 62; const club = (x + y) % 2 === 1; g.fillStyle = club ? o.shirt : o.trim.toLowerCase() === "#ffffff" ? "#1f2433" : o.trim; g.font = club ? "900 40px system-ui" : "800 34px system-ui"; g.fillText(club ? o.club.toUpperCase().slice(0, 16) : "STAR", cx, cy); } g.fillStyle = o.shirt; g.fillRect(0, 556, 1536, 20); }
+    plane(6, 2.6, 0, 1.55, -1.25, 0, 0, mat("#ffffff", { map: tex(bc) }));
+    const frameM = mat("#20242c", { rough: 0.5, metal: 0.4 });
+    box(6.1, 0.06, 0.06, 0, 2.88, -1.26, frameM); box(6.1, 0.06, 0.06, 0, 0.24, -1.26, frameM);
+    for (const x of [-3.04, 3.04]) { box(0.06, 2.7, 0.06, x, 1.55, -1.26, frameM); box(0.06, 0.04, 0.5, x, 0.02, -1.1, frameM); }
+    // the desk: a dark top, a skirt in the club's colour with its name
+    box(3.6, 0.05, 0.8, 0, PRESS_DESK_TOP - 0.025, -0.15, mat("#1f2433", { rough: 0.5 }));
+    const dc = canvas(1024, 160); { const g = dc.getContext("2d")!; g.fillStyle = o.shirt; g.fillRect(0, 0, 1024, 160); g.fillStyle = o.trim; g.fillRect(0, 128, 1024, 8); g.font = "900 64px system-ui"; g.textAlign = "center"; g.fillText(o.club.toUpperCase().slice(0, 22), 512, 96); }
+    box(3.6, PRESS_DESK_TOP - 0.065, 0.04, 0, (PRESS_DESK_TOP - 0.065) / 2, 0.22, mat("#ffffff", { map: tex(dc) }));
+    // name cards and water on the desk
+    const card = canvas(256, 80); { const g = card.getContext("2d")!; g.fillStyle = "#f4f4f4"; g.fillRect(0, 0, 256, 80); g.fillStyle = o.shirt; g.fillRect(0, 0, 256, 10); g.fillStyle = "#1f2433"; g.font = "800 30px system-ui"; g.textAlign = "center"; g.fillText(o.club.toUpperCase().slice(0, 14), 128, 56); }
+    const cardM = mat("#ffffff", { map: tex(card) });
+    for (const x of [-0.45, 0.55]) { const nc = box(0.22, 0.07, 0.01, x + 0.24, PRESS_DESK_TOP + 0.035, 0.14, cardM); nc.rotation.x = -0.25; cyl(0.03, 0.026, 0.13, x - 0.3, PRESS_DESK_TOP + 0.065, -0.05, mat("#cfe6f2", { rough: 0.2 })); }
+    // the chairs behind the desk (his own and two empty ones)
+    const chairM = mat("#18181b", { rough: 0.6 }), legM = mat("#9aa0a8", { metal: 0.6, rough: 0.4 });
+    const deskSeat = PRESS_SEAT_TOP + PRESS_SEAT_LIFT;
+    for (const x of [-0.45, 0.55, 1.4]) { box(0.48, 0.07, 0.46, x, deskSeat - 0.035, -0.7, chairM); box(0.48, 0.55, 0.05, x, deskSeat + 0.32, -0.95, chairM); box(0.05, deskSeat - 0.07, 0.05, x, (deskSeat - 0.07) / 2, -0.7, legM); }
+    // the reporters' chairs, facing the desk
+    const seatM = mat("#2b3346", { rough: 0.7 });
+    for (const [x, z] of PRESS_SEATS) {
+      box(0.46, 0.06, 0.44, x, PRESS_SEAT_TOP - 0.03, z + 0.03, seatM);
+      box(0.46, 0.44, 0.04, x, PRESS_SEAT_TOP + 0.26, z + 0.27, seatM);
+      for (const sx of [-0.2, 0.2]) box(0.025, PRESS_SEAT_TOP - 0.06, 0.025, x + sx, (PRESS_SEAT_TOP - 0.06) / 2, z + 0.03, legM);
+    }
     // TV cameras on tripods at the back
     for (const x of [-1.6, 1.6]) { cyl(0.02, 0.02, 1.4, x, 0.7, 6, mat("#111")); box(0.25, 0.2, 0.45, x, 1.5, 6, mat("#222")); }
     light(new T.PointLight("#fff2dc", 3 * L.intensity, 9, 1.3), 0, 2.8, 1.6);
     light(new T.PointLight("#ffe7c4", 1.6 * L.intensity, 8, 1.3), -2.5, 2.5, 3);
+    light(new T.PointLight("#eef3ff", 1.8 * L.intensity, 9, 1.3), 1.5, 2.9, 4.5);
+    G.add(new T.HemisphereLight("#eef1f5", "#59606c", 0.45));
   } else if (id === "training-ground" || id === "garden") {
     // real grass (ambientCG Grass004, CC0) and a painted golden-hour plate all round, soft as if out of
     // focus (no modelled trees: low-poly trees behind a close-up read cheap)
@@ -257,4 +297,21 @@ export function buildSet(T: any, kit: StyleKit, tier: Quality3d, id: LocationId,
     update(t, dt) { for (const u of updaters) u(t); stadium?.update(dt, t); },
     dispose() { for (const d of disp) d.dispose?.(); },
   };
+}
+
+/**
+ * The stadium's touchline ad board that crosses the tunnel's mouth, cut in two with a 4.8 m gap where
+ * the teams walk out (stadium.ts builds it as one 111 m board at X = −38 on the West touchline).
+ */
+function gapBoard(T: any, stadiumGroup: any, disp: any[]) {
+  const board = stadiumGroup.children.find((o: any) => o.isMesh && o.geometry?.parameters?.width > 100 && Math.abs(o.position.x + 38) < 0.5);
+  if (!board) return;
+  board.visible = false;
+  // stadium Z → world x = 52.5 − Z: the gap is world x ±2.4, so Z 50.1 … 54.9; the board ran Z −3 … 108
+  for (const [z0, z1] of [[-3, 50.1], [54.9, 108]]) {
+    const g = new T.BoxGeometry(z1 - z0, 0.9, 0.15); disp.push(g);
+    const m = new T.Mesh(g, board.material);
+    m.position.set(board.position.x, board.position.y, (z0 + z1) / 2); m.rotation.copy(board.rotation); m.castShadow = true;
+    stadiumGroup.add(m);
+  }
 }

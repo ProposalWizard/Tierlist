@@ -13,7 +13,8 @@ import { EVENT_KINDS_COVERED } from "../../lib/star/cutscene/beats";
 import { compileScript, lintScript, rootAt, clipsAt, cameraAt, overlayAt } from "../../lib/star/cutscene/timeline";
 import { makeSignature, signatureAt } from "../../lib/star/cutscene/signature";
 import { shotPose, PHONE_FRAMING, SHOT_PRESETS, type Anchor, type ShotPose } from "../../lib/star/cutscene/presets/camera";
-import { castLook } from "../../lib/star/cutscene/casting";
+import { castLook, castAll } from "../../lib/star/cutscene/casting";
+import { LOCATIONS } from "../../lib/star/cutscene/presets/locations";
 import { makePath, rng, lensToFov } from "../../lib/star/cutscene/math";
 import type { CameraTrack, Emotion, StoryEvent } from "../../lib/star/cutscene/types";
 import { filmPass, weakWideOverrun } from "../../lib/star/cutscene/cinema";
@@ -134,7 +135,7 @@ for (const [id, ev] of Object.entries(FIXTURE_EVENTS)) {
 
 // ── the music bed ──
 {
-  const want: Record<string, MusicBed> = { signing: "signing", trophy: "trophy", walkout: "walkout", press: "press", farewell: "farewell", goal: "trophy", mentor: "press" };
+  const want: Record<string, MusicBed> = { signing: "signing", trophy: "trophy", walkout: "walkout", press: "press", farewell: "farewell", goal: "walkout", mentor: "press" };
   for (const [id, bed] of Object.entries(want)) check(musicBedFor(FIXTURES[id]()) === bed, `${id}: music bed ${musicBedFor(FIXTURES[id]())}, wanted ${bed}`);
   for (const bed of ["signing", "trophy", "walkout", "press", "farewell"] as MusicBed[]) check(SFX_NAMES.includes(musicCue(bed)), `${bed}: its music is on the Sound Board`);
   const p = FIXTURES.mentor();
@@ -234,6 +235,57 @@ for (const [id, ev] of Object.entries(FIXTURE_EVENTS)) {
   check(you.kit?.shirt === "#123456" && you.number === 23 && you.skin === "#5c3a1e", "you wear your club, number and skin");
   const boss = castLook({ id: "boss", role: "manager" });
   check(boss.body === "manager", "the manager is in a suit");
+}
+
+// ── the people presets: everyone but you is cast from lib/star/people/presets.ts ──
+{
+  for (const id of Object.keys(FIXTURES)) {
+    const sc = FIXTURES[id]();
+    const C = compileScript(sc, undefined, sc.source?.event);
+    const looks = castAll(C.cast);
+    const again = castAll(C.cast);
+    const seen = new Set<string>();
+    for (const m of C.cast) {
+      const L = looks.get(m.id)!;
+      if (m.id === "you") { check(!L.people, `${id}: you are cast as yourself, not a preset`); continue; }
+      check(!!L.people, `${id}: ${m.id} (${m.role}) is cast from the people presets`);
+      if (!L.people) continue;
+      check(JSON.stringify(L.people) === JSON.stringify(again.get(m.id)!.people), `${id}: ${m.id} looks the same every time`);
+      check(!seen.has(L.people.preset), `${id}: two people share the preset ${L.people.preset}`);
+      seen.add(L.people.preset);
+    }
+  }
+  const icon = castAll(compileScript(FIXTURES.mentor()).cast).get("mentor")!.people!;
+  check(icon.age >= 55 && icon.grey >= 0.4 && ["thinning", "receding", undefined].includes(icon.hairMesh), `The Icon is an older legend, grey (age ${icon.age}, grey ${icon.grey.toFixed(2)}, ${icon.hairMesh})`);
+  const boss = castAll(compileScript(FIXTURES.signing()).cast).get("boss")!.people!;
+  check(boss.age >= 40 && !!boss.suit, `the manager is an older man in a suit (${boss.presetName}, ${boss.age})`);
+  const tr = castAll(compileScript(FIXTURES.trophy()).cast).get("you")!;
+  check(!tr.people && !!tr.accessories?.some((a) => a.slot === "armband"), "the trophy's captain is you, with the armband");
+}
+
+// ── bodies never pass through the set or each other (RUL-3D-005) ──
+{
+  // R: a body's centre line may not enter a solid (a seated man's legs under a desk are fine); BODY: two men's centres
+  const R = 0.05, BODY = 0.3;
+  const scripts = [...Object.keys(FIXTURES).map((id) => FIXTURES[id]())];
+  for (const sc of scripts) {
+    const C = compileScript(sc, undefined, sc.source?.event);
+    const solids = LOCATIONS[sc.set.location]?.solids ?? [];
+    const ids = C.cast.map((m) => m.id);
+    const hits = new Set<string>();
+    for (let t = 0; t <= sc.duration; t += 0.1) {
+      const at = ids.map((id) => ({ id, p: rootAt(C, id, t).pos }));
+      for (const { id, p } of at) for (const b of solids) {
+        if (p[0] > b.min[0] - R && p[0] < b.max[0] + R && p[2] > b.min[2] - R && p[2] < b.max[2] + R && p[1] < b.max[1]) hits.add(`${id} inside the ${b.name} at ${t.toFixed(1)} s`);
+      }
+      for (let i = 0; i < at.length; i++) for (let j = i + 1; j < at.length; j++) {
+        const d = Math.hypot(at[i].p[0] - at[j].p[0], at[i].p[2] - at[j].p[2]);
+        if (d < BODY) hits.add(`${at[i].id} and ${at[j].id} stand in one another at ${t.toFixed(1)} s (${d.toFixed(2)} m)`);
+      }
+    }
+    const list = Array.from(hits);
+    check(!list.length, `${sc.id}: ${list.slice(0, 4).join("; ")}${list.length > 4 ? ` (+${list.length - 4})` : ""}`);
+  }
 }
 
 if (problems.length) { console.error(`✗ ${problems.length} problem(s):\n  ` + problems.join("\n  ")); process.exit(1); }

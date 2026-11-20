@@ -27,7 +27,7 @@ import { compileScript, rootAt, clipsAt, trackWeight, cameraAt, overlayAt, sound
 import { shotPose, mixPose, keepInside, PHONE_FRAMING_ON, type Anchor, type ShotPose } from "./presets/camera";
 import { resolvePoint } from "./presets/locations";
 import { createCutscenePeople } from "./peopleAdapter";
-import { castLook, DEFAULT_CLUB } from "./casting";
+import { castAll, DEFAULT_CLUB } from "./casting";
 import { buildSet, type BuiltSet } from "./locations3d";
 import { buildProp, type PropObj, type PropText } from "./props3d";
 import { createFx, type FxActive } from "./fx3d";
@@ -107,6 +107,16 @@ interface Cast { id: string; role: string; body: string; actor: CutsceneActor; c
 const SITS = new Set(["sitidle", "boss-sit", "sitdown", "slot_sit"]);
 /** How near the camera may come to a person (metres from his head point, body line, arm line). */
 export const PERSONAL_SPACE = { head: 0.34, body: 0.32, arm: 0.24 } as const;
+/**
+ * THE CAMERA-CLEAR RULE (20 Nov 2026). `near`: a still camera is never inside a solid thing of the
+ * set or a prop, or this close to one (m). `sight`: its line to the subject must be free of them up to
+ * this far short of him (m). People have their own distances (PERSONAL_SPACE).
+ */
+export const CAMERA_CLEAR = { near: 0.3, sight: 0.35 } as const;
+/** Holds with his knees on the floor (ground contact puts the knees on it). */
+const KNEELS = new Set(["kneel", "kneel-pray", "knee-slide"]);
+/** A knee's front from its joint, a toe's underside from its joint (m). */
+export const GROUND = { knee: 0.055, toe: 0.018 } as const;
 const IN_PLACE = new Set(["sitdown", "sitidle", "boss-sit", "slump_walk", "jog", "sprint", "dribble_run", "celebrate_safe"]);
 
 export async function createDirector(container: HTMLElement, written: CutsceneScript, o: DirectorOptions = {}): Promise<Director> {
@@ -145,17 +155,69 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   // ── the set ──
   let set: BuiltSet = buildSet(T, kit, tier, script.set.location, { shirt: club.shirt, trim: club.trim, club: club.name, lamps: mood.lamps, seed: script.seed ?? 1, night: script.set.mood.includes("night") });
   root.add(set.group);
+  /**
+   * THE CAMERA-CLEAR RULE'S VIEW OF THE SET (20 Nov 2026: the signing's handshake insert sat inside the
+   * pot plant, the next shot looked through a chair back). Every solid thing in the set that is not
+   * the floor, a wall-sized plane, glass or the far stadium: the camera may not sit inside one or
+   * within CAMERA_CLEAR.near of it, and must see its subject past them (clearShot, clearOfPeople).
+   */
+  const setSolids: { mesh: any; box: any; small: boolean }[] = [];
+  const measureSolids = () => {
+    setSolids.length = 0;
+    set.group.updateMatrixWorld(true);
+    const walk = (o: any) => {
+      if (o === set.stadium?.group || o.userData?.cameraPass) return;
+      if (o.isMesh && !o.isInstancedMesh && o.visible) {
+        const mt = Array.isArray(o.material) ? o.material[0] : o.material;
+        const box = new T.Box3().setFromObject(o);
+        const sz = box.getSize(new T.Vector3());
+        const big = Math.max(sz.x, sz.y, sz.z);
+        // not the floor or a rug (flat and low), not glass or a painted backdrop, not a light strip
+        const flat = sz.y < 0.06 && box.max.y < 0.3;
+        if (!box.isEmpty() && !flat && big < 40 && !(mt?.transparent && (mt.opacity ?? 1) < 0.9) && mt?.side !== T.BackSide) setSolids.push({ mesh: o, box, small: big < 3 && Math.min(sz.x, sz.y, sz.z) > 0.015 });
+      }
+      for (const c of o.children) walk(c);
+    };
+    walk(set.group);
+  };
+  measureSolids();
+  const sightRay = new T.Raycaster();
 
   // ── the cast ──
   const people = createCutscenePeople({ T, SkeletonUtils: SkU.default ?? SkU, loader, body: people3dLook() });
   const cast = new Map<string, Cast>();
+  // everyone but you is cast from the people presets (casting.ts castAll): same id, same look
+  const looks = castAll(C.cast, career);
   await Promise.all(C.cast.map(async (m) => {
-    const look = castLook(m, career);
+    const look = looks.get(m.id)!;
     const actor = await people.create({ id: m.id, role: m.role, look, outline: prof.outlines ? 0.006 : 0, castShadow: prof.shadows });
     root.add(actor.root);
     cast.set(m.id, { id: m.id, role: m.role, body: look.body, actor, clipSet: new Set(actor.clips()) });
   }));
   const persons = () => Array.from(cast.values()).map((c) => c.actor.person).filter(Boolean) as any[];
+  /**
+   * CONTACT SHADOWS (20 Nov 2026: the knee slide read as floating, its sun shadow a metre off to the side at
+   * golden hour): a soft dark patch on the floor under everyone's body, from t alone, so a man on the ground
+   * is ON it whatever the sun does.
+   */
+  const blobCanvas = document.createElement("canvas"); blobCanvas.width = blobCanvas.height = 64;
+  { const g = blobCanvas.getContext("2d")!; const gr = g.createRadialGradient(32, 32, 2, 32, 32, 31); gr.addColorStop(0, "rgba(0,0,0,0.5)"); gr.addColorStop(0.6, "rgba(0,0,0,0.22)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }
+  const blobTex = new T.CanvasTexture(blobCanvas);
+  const blobGeo = new T.PlaneGeometry(1, 1); blobGeo.rotateX(-Math.PI / 2);
+  const blobMat = new T.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, toneMapped: false });
+  const blobs = new Map<string, any>();
+  for (const id of Array.from(cast.keys())) { const b = new T.Mesh(blobGeo, blobMat); b.renderOrder = 1; b.userData.cameraPass = true; root.add(b); blobs.set(id, b); }
+  const placeBlobs = (t: number) => {
+    for (const [id, b] of Array.from(blobs)) {
+      const c = cast.get(id)!;
+      const hips = c.actor.point("hips"), floor = rootAt(C, id, t).pos[1];
+      // wider and darker the nearer his hips are to the floor (on his knees, sitting on the grass)
+      const low = clamp(1 - (hips.y - floor - 0.35) / 0.6);
+      b.position.set(hips.x, floor + 0.006, hips.z);
+      b.scale.setScalar(0.72 + 0.3 * low);
+      b.visible = c.actor.root.visible !== false;
+    }
+  };
 
   // ── props ──
   const txt: PropText = {
@@ -280,6 +342,10 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         if (w > 0 || (lag && lag.lower > 0)) applyPose(a, pt.pose, w, { ...ctx, local: t - pt.at, lag, prop: heldProp(pt.prop) });
       }
       if (cs.upright > 0) a.lookAt(actorLocal(c.id, t, [0, 1.62, 6]), 0.8 * cs.upright);
+      // GROUND CONTACT (20 Nov 2026: the knee slide floated off the grass, and sank through it as it blended in)
+      let kneelW = 0;
+      for (const pt of tracksOf(c.id, "pose") as PoseTrack[]) if (KNEELS.has(pt.pose)) kneelW = Math.max(kneelW, trackWeight(pt, t, 0.3, 0.35) * (pt.amount ?? 1));
+      if (sitW < 0.5) groundContact(a, r.pos[1], Math.min(1, kneelW * 1.5));
     }
     // 2. props at rest / placed (so reaches for them see where they are)
     placeProps(t, "rest");
@@ -343,6 +409,24 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     }
     // 5. props in hands
     placeProps(t, "held");
+    placeBlobs(t);
+  };
+
+  /**
+   * GROUND CONTACT: nobody's knees or toes go through the floor (a hold blending in lowered him before his
+   * legs had bent), and on his knees (a kneel, a knee slide) his knees and shins rest ON it, not above it.
+   * Measured on the joints: a knee's front is KNEE_R in front of its joint, a toe's underside TOE_R.
+   */
+  const groundContact = (a: CutsceneActor, floorY: number, kneelW: number) => {
+    a.root.updateMatrixWorld(true);
+    const jy = (n: string, r: number) => { const b = a.bone(n); return b ? new T.Vector3().setFromMatrixPosition(b.matrixWorld).y - r : Infinity; };
+    const knee = Math.min(jy("LeftLeg", GROUND.knee), jy("RightLeg", GROUND.knee));
+    const low = Math.min(knee, jy("LeftToeBase", GROUND.toe), jy("RightToeBase", GROUND.toe));
+    if (!isFinite(low)) return;
+    let dy = 0;
+    if (low < floorY - 0.004) dy = floorY - low;
+    else if (kneelW > 0 && isFinite(knee) && knee > floorY + 0.004) dy = -(knee - floorY) * kneelW;
+    if (dy) { a.root.position.y += dy; a.root.updateMatrixWorld(true); }
   };
 
   const traceOne = (c: Cast, tr: TraceTrack, t: number) => {
@@ -403,6 +487,18 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     }
     for (const pt of tracksOf(id, "pose") as PoseTrack[]) if (pt.prop && trackWeight(pt, t) > 0) { out.L = true; out.R = true; }
     return out;
+  };
+  /** Is this prop in someone's hands at t (attached, or a two-hand hold)? */
+  const propHeldAt = (pid: string, t: number): boolean => {
+    let held = false;
+    for (const pt of propTracks) {
+      if (pt.prop !== pid || pt.at > t) continue;
+      if (pt.action === "attach") held = true;
+      else if (pt.action === "detach" || pt.action === "place") held = false;
+    }
+    if (held) return true;
+    for (const c of Array.from(cast.values())) for (const pt of tracksOf(c.id, "pose") as PoseTrack[]) if (pt.prop === pid && trackWeight(pt, t) > 0) return true;
+    return false;
   };
   const placeProps = (t: number, phase: "rest" | "held") => {
     for (const [id, p] of Array.from(props)) {
@@ -511,7 +607,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   });
   /** A shot whose camera is inside someone, or has someone right in front of the lens, swings round until it is clear. */
   const clearShot = (spec: CameraTrack["shot"], a: Anchor, b: Anchor | null, t: number, span?: { at: number; dur: number }): CameraTrack["shot"] => {
-    if (spec.fixed || spec.preset === "ots" || spec.preset === "pov" || spec.preset === "insert") return spec;
+    if (spec.fixed) return spec;
     // a still camera on a tall phone (B5): checked at the phone's own (wider) framing through its whole
     // shot (heads near the lens), and the second subject counts too unless the shot is of both of
     // them (in "Watches him go" the mentor, the second subject, stood in front of the wider phone camera
@@ -551,9 +647,81 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         return w.clone().sub(seg.clone().multiplyScalar(along)).length() < S.side;
       });
     });
-    if (!blocked(spec)) return spec;
-    for (const dy of [28, -28, 55, -55, 85, -85]) { const s2 = { ...spec, yaw: (spec.yaw ?? 0) + dy }; if (!blocked(s2)) return s2; }
-    return { ...spec, rise: (spec.rise ?? 0) + 0.8 };
+    // the set and the props (CAMERA_CLEAR): not inside or right against a solid thing, and the subject in
+    // sight past the furniture. A still camera only (a following camera is steered by its subject); an
+    // over-the-shoulder shot keeps its shoulder but still may not look through a chair or a plant.
+    const subjProp = "prop" in spec.subject ? spec.subject.prop : null;
+    const things = (): { mesh: any; box: any; small: boolean }[] => {
+      const out = setSolids.slice();
+      for (const [pid, pr] of Array.from(props)) {
+        if (pid === subjProp || !pr.group?.visible || propHeldAt(pid, t)) continue;
+        const box = new T.Box3().setFromObject(pr.group);
+        const sz = box.getSize(new T.Vector3());
+        // a thing in someone's hands at this moment belongs to the action (the pen, the cup, the shirt)
+        if (box.isEmpty() || Math.max(sz.x, sz.y, sz.z) > 3 || Math.max(sz.x, sz.y, sz.z) < 0.3) continue;
+        out.push({ mesh: pr.group, box, small: true });
+      }
+      return out;
+    };
+    const setBlocked = (sp: CameraTrack["shot"]): number => {
+      if (!span || sp.preset === "pov") return 0;
+      const TH = things();
+      let worst = 0;
+      for (const k of [0, 0.5, 1]) {
+        const p = shotPose(sp, a, b, { aspect: asp, k, t, seed: 0, bounds: C.loc.bounds });
+        const cam = v(p.pos);
+        // inside a solid thing
+        for (const s of TH) if (s.small && s.box.clone().expandByScalar(0.05).containsPoint(cam)) worst = Math.max(worst, 2);
+        // sight lines: to where it looks, and to the subject's head. A thing within `near` of the lens on
+        // either line is a blur across the picture; one further out hides the subject.
+        const ends = [v(p.look)];
+        if (!a.thing) ends.push(v(a.head), v(a.chest));
+        const meshes = TH.map((x) => x.mesh);
+        for (const e of ends) {
+          const d = e.clone().sub(cam); const L = d.length();
+          if (L < 0.2) continue;
+          sightRay.set(cam, d.normalize()); sightRay.near = 0; sightRay.far = L - CAMERA_CLEAR.sight;
+          const hit = sightRay.far > 0.05 ? sightRay.intersectObjects(meshes, true)[0] : null;
+          if (hit) worst = Math.max(worst, hit.distance < CAMERA_CLEAR.near ? 2 : 1);
+        }
+      }
+      return worst;
+    };
+    // LINE OF SIGHT (20 Nov 2026: in the walk-out's stadium shot a rival stood between the lens and you): from
+    // a still camera to its subject's chest, nobody else's body within 0.28 m of the line anywhere between
+    // (a man near the lens is the check above; here the whole way)
+    const hidden = (sp: CameraTrack["shot"]): boolean => {
+      if (a.thing || !span) return false;
+      return [0.15, 0.5, 0.85].some((f) => {
+        const ts = span.at + span.dur * f;
+        const p = shotPose(sp, a, b, { aspect: asp, k: f, t: ts, seed: 0 });
+        const cam = v(p.pos);
+        const now = subj ? rootAt(C, subj, ts).pos : null;
+        const tgt = v(a.chest).add(now && p0 ? v([now[0] - p0[0], 0, now[2] - p0[2]]) : new T.Vector3());
+        const seg = tgt.clone().sub(cam); const L = seg.length(); seg.normalize();
+        return [...bodiesAt(ts, except), ...bodiesAt(ts, except, true)].some((q) => {
+          const w = v(q).sub(cam); const along = w.dot(seg);
+          if (along < 0.4 || along > L - 0.6) return false;
+          return w.clone().sub(seg.clone().multiplyScalar(along)).length() < 0.28;
+        });
+      });
+    };
+    // (an insert of a point between people, a handshake, must see it past them too)
+    const people = !(spec.preset === "ots" || spec.preset === "pov" || (spec.preset === "insert" && !("point" in spec.subject)));
+    const bad = (sp: CameraTrack["shot"]) => (people && blocked(sp) ? 4 : 0) + (people && hidden(sp) ? 3 : 0) + setBlocked(sp);
+    let best = spec, bestBad = bad(spec);
+    if (!bestBad) return spec;
+    // swing round (the near angles first), then a little higher, and take the first clear view; if none is
+    // clear, the least blocked (people in the lens count most)
+    const turns = spec.preset === "ots" ? [12, -12, 22, -22] : [14, -14, 28, -28, 42, -42, 55, -55, 85, -85, 120, -120];
+    for (const rise of [0, 0.3, 0.6]) for (const dy of rise ? [0, ...turns] : turns) {
+      const s2 = { ...spec, yaw: (spec.yaw ?? 0) + dy, rise: (spec.rise ?? 0) + rise };
+      const bd = bad(s2);
+      if (!bd) return s2;
+      if (bd < bestBad) { best = s2; bestBad = bd; }
+    }
+    // people still in the lens from every side: over their heads (as before)
+    return bestBad >= 4 ? { ...spec, rise: (spec.rise ?? 0) + 0.8 } : best;
   };
   const anchors = new Map<CameraTrack, { a: Anchor; b: Anchor | null; shot: CameraTrack["shot"] }>();
   const measureAnchors = () => {
@@ -621,6 +789,8 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       const b = new T.Box3().setFromObject(pr.group);
       if (!b.isEmpty() && Math.max(...b.getSize(new T.Vector3()).toArray()) < 2.5) boxes.push(b.expandByScalar(0.06));
     }
+    // the set's furniture (CAMERA_CLEAR): never inside a desk, a plant, a board
+    for (const s of setSolids) if (s.small) boxes.push(s.box.clone().expandByScalar(0.1));
     const S = PERSONAL_SPACE;
     const clear = (c: any) => parts.every((q) => c.distanceTo(q.head) > S.head && segD(c, q.chest, q.hips) > S.body && segD(c, q.sl, q.hl) > S.arm && segD(c, q.sr, q.hr) > S.arm)
       && boxes.every((b) => !b.containsPoint(c));
@@ -726,7 +896,9 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     barTop.visible = barBot.visible = lb > 0.001;
     fadeMat.opacity = ov.fade; fadeMat.color.set(ov.fadeColor); fadeQ.visible = ov.fade > 0.001;
     o.onOverlay?.({ ...ov, t });
-    if (o.onSound && lastT >= 0 && t > lastT && t - lastT < 0.5) for (const s of soundsBetween(C, lastT, t)) o.onSound(s.cue, s.volume ?? 1);
+    // the cues since the last frame; at the start (or a replay) the ones at t = 0 too (the tunnel's crowd was never heard)
+    const from = lastT >= 0 && t > lastT && t - lastT < 0.5 ? lastT : t < 0.5 && (lastT < 0 || t < lastT) ? -1 : null;
+    if (o.onSound && from !== null) for (const s of soundsBetween(C, from, t)) o.onSound(s.cue, s.volume ?? 1);
     lastT = t;
     focus.x = camera.position.x; focus.z = camera.position.z;
   };
@@ -747,6 +919,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     keyBase.clear(); keyCol.clear(); baseSun = null;
     root.remove(set.group); set.dispose();
     set = buildSet(T, kit, tier, script.set.location, { shirt: club.shirt, trim: club.trim, club: club.name, lamps: mood.lamps, seed: script.seed ?? 1, night: (edit?.mood ?? script.set.mood).includes("night") });
+    measureSolids();
     root.add(set.group);
     buildProps();
     kit.stylePeople(persons());
@@ -833,6 +1006,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       renderer.setAnimationLoop(null);
       governed.dispose();
       fx.dispose(); people.dispose();
+      blobGeo.dispose(); blobMat.dispose(); blobTex.dispose();
       for (const p of Array.from(props.values())) p.dispose();
       set.dispose(); kit.dispose();
       release(root);

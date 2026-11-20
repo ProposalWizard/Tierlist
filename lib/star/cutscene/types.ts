@@ -60,6 +60,13 @@ export interface ActorLook {
   accessories?: { slot: string; color: string; color2?: string; stripes?: string[] }[];
   /** A fitted face picture (faceFit.ts): passed straight to the people layer. */
   face?: unknown;
+  /**
+   * His people preset (lib/star/people/presets.ts, set by casting.ts castAll for everyone but you):
+   * head, build, modelled hairstyle, drawn face, clothes. `null` in a script = cast him the old way.
+   */
+  people?: import("../people/presets").PersonLookResult | null;
+  /** How finely his drawn face is painted (0 … 1; a seated crowd in the back rows is drawn at less). */
+  detail?: number;
 }
 
 export interface CastMember {

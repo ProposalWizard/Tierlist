@@ -46,7 +46,7 @@ function signing(): CutsceneScript {
   const B: Target = { actor: "boss" };
   const writeAt = b2.at + 0.65 + 0.45;
   const cams: CameraTrack[] = [
-    cam(0, b0.at + 1.5, { preset: "establishing", subject: Y, fixed: { pos: [1.95, 1.62, 2.15], look: [-0.2, 1.05, -0.6], lens: 22 }, move: "dolly-in", moveAmount: 0.12 }, "The office"),
+    cam(0, b0.at + 1.5, { preset: "establishing", subject: Y, fixed: { pos: [1.5, 1.62, 2.0], look: [-0.2, 1.05, -0.6], lens: 22 }, move: "dolly-in", moveAmount: 0.12 }, "The office"),
     cam(b0.at + 1.5, b0.dur - 1.5, { preset: "ots", subject: B, subject2: Y, side: -1 }, "Over your shoulder"),
     cam(b1.at, b1.dur, { preset: "insert", subject: { prop: "contract" }, side: 1, yaw: 25, lens: 40, move: "push" }, "The contract"),
     cam(b2.at, writeAt - b2.at, { preset: "medium-close", subject: Y, subject2: B, side: 1, yaw: 8 }, "Reaches for the pen"),
@@ -54,7 +54,8 @@ function signing(): CutsceneScript {
     cam(writeAt + 2.6, b3.at - writeAt - 2.6, { preset: "close", subject: Y, subject2: B, side: 1, yaw: 4, lens: 65, move: "push" }, "Looks up"),
     cam(b3.at, 1.5, { preset: "two-shot", subject: Y, subject2: B, side: 1 }, "Both stand"),
     cam(b3.at + 1.5, 1.2, { preset: "insert", subject: { point: [-0.02, 1.08, 0] }, side: 1, yaw: 75, lens: 42 }, "The handshake"),
-    cam(b3.at + 2.7, b3.dur - 2.7, { preset: "ots", subject: Y, subject2: B, side: 1, lens: 50 }, "Eye to eye"),
+    // (was over the manager's shoulder: on a tall phone his blurred head was a third of the picture)
+    cam(b3.at + 2.7, b3.dur - 2.7, { preset: "medium-close", subject: Y, subject2: B, side: 1, yaw: 10, lens: 50, move: "push" }, "Eye to eye"),
     cam(b4.at, b4.dur * 0.6, { preset: "full", subject: Y, fixed: { pos: [0.0, 1.4, 2.4], look: [0.0, 1.2, 1.2], lens: 18 } }, "The photo"),
     cam(b4.at + b4.dur * 0.6, c.duration - b4.at - b4.dur * 0.6, { preset: "medium-close", subject: Y, side: 1, yaw: -10, move: "push" }, "Your new number"),
   ];
@@ -75,7 +76,8 @@ function goal(): CutsceneScript {
   const cams: CameraTrack[] = [
     // open close and moving (a broadcast cuts in within a second)
     cam(0, b0.at + 0.9, { preset: "medium-wide", subject: Y, side: -1, yaw: 25, move: "follow", lens: 35 }, "On the ball"),
-    cam(b0.at + 0.9, contact - b0.at - 0.9 + 0.05, { preset: "ots", subject: { mark: "goal", y: 1.2 }, subject2: Y, side: 1, lens: 32, move: "follow" }, "Behind the shooter"),
+    // behind him, the goal ahead (20 Nov 2026: over a shoulder on a tall phone left him out of the picture)
+    cam(b0.at + 0.9, contact - b0.at - 0.9 + 0.05, { preset: "medium-wide", subject: Y, side: 1, yaw: 172, lens: 30, rise: 0.25, move: "follow" }, "Behind the shooter"),
     cam(contact + 0.05, 0.8, { preset: "wide", subject: { prop: "ball" }, fixed: { pos: [6.8, 1.2, 7.8], look: [1.4, 1.5, 0], lens: 26 } }, "Top corner"),
     cam(contact + 0.85, b1.at - contact - 0.85 + 1.5, { preset: "medium-wide", subject: Y, side: -1, yaw: 10, move: "follow" }, "Wheels away"),
     cam(b1.at + 1.5, 2.0, { preset: "low-hero", subject: Y, side: 1, yaw: 4, lens: 26, move: "dolly-in", moveAmount: 0.25 }, "The slide · low"),
@@ -97,8 +99,10 @@ function trophy(): CutsceneScript {
   const [b0] = c.beats;
   const cams: CameraTrack[] = [
     cam(0, b0.at + 1.5, { preset: "medium", subject: Y, side: 1, yaw: 15, move: "push" }, "The cup"),
-    cam(b0.at + 1.5, 2.6, { preset: "low-hero", subject: Y, side: 1, lens: 22, move: "crane-up", moveAmount: 0.5 }, "Up it goes"),
-    cam(b0.at + 4.1, 1.2, { preset: "close", subject: Y, side: -1, lens: 70 }, "The roar"),
+    // low in front of him, the cup going up against the sky (it framed the back of his head)
+    cam(b0.at + 1.5, 2.6, { preset: "low-hero", subject: Y, fixed: { pos: [0.85, 0.55, 37.7], look: [0, 1.95, 40], lens: 22 }, move: "crane-up", moveAmount: 0.4 }, "Up it goes"),
+    // a touch above his eyes, so the cup over his head shows its gap (from below it sat on his hair)
+    cam(b0.at + 4.1, 1.2, { preset: "medium-close", subject: Y, side: -1, lens: 45, rise: 0.4, move: "push" }, "The roar"),
     cam(b0.at + 5.3, c.duration - b0.at - 5.3, { preset: "wide", subject: Y, side: 1, move: "orbit-left", moveAmount: 30 }, "Champions"),
   ];
   return {
@@ -118,7 +122,8 @@ function walkout(): CutsceneScript {
     cam(b0.at + 1.6, b0.dur - 1.6, { preset: "close", subject: Y, side: 1, yaw: 10, lens: 60, move: "push" }, "The breath"),
     cam(b1.at, 2.4, { preset: "medium", subject: Y, side: 1, yaw: 160, move: "follow" }, "Down the tunnel"),
     cam(b1.at + 2.4, 2.0, { preset: "low-hero", subject: Y, side: 1, lens: 22, move: "follow" }, "The light"),
-    cam(b1.at + 4.4, c.duration - b1.at - 4.4, { preset: "wide", subject: Y, side: -1, yaw: 190, move: "crane-up", moveAmount: 1.5 }, "The stadium"),
+    // from the mouth of the tunnel, behind him, out into the stadium (it lost him behind the other team)
+    cam(b1.at + 4.4, c.duration - b1.at - 4.4, { preset: "wide", subject: Y, fixed: { pos: [0.95, 2.1, 16.6], look: [-1.2, 1.5, 30], lens: 26 }, move: "crane-up", moveAmount: 0.6 }, "The stadium"),
   ];
   return {
     id: "fixture-walkout", title: "Walk-out (hand-made)", duration: c.duration,
@@ -136,8 +141,9 @@ function press(): CutsceneScript {
   const cams: CameraTrack[] = [
     cam(0, b0.at + 1.2, { preset: "establishing", subject: Y, fixed: { pos: [2.4, 1.8, 5.2], look: [0, 1.0, -0.4], lens: 24 }, move: "dolly-in", moveAmount: 0.12 }, "The press room"),
     cam(b0.at + 1.2, b0.dur - 1.2, { preset: "medium", subject: J, subject2: Y, side: -1 }, "The question"),
-    cam(b1.at, b1.dur * 0.5, { preset: "medium", subject: Y, subject2: J, side: 1 }, "The answer"),
-    cam(b1.at + b1.dur * 0.5, c.duration - b1.at - b1.dur * 0.5, { preset: "close", subject: Y, subject2: J, side: 1, lens: 70, move: "push" }, "Close"),
+    // at his eye height, a touch above the desk (from desk height the desk's front filled half the picture)
+    cam(b1.at, b1.dur * 0.5, { preset: "medium", subject: Y, subject2: J, side: 1, rise: 0.15 }, "The answer"),
+    cam(b1.at + b1.dur * 0.5, c.duration - b1.at - b1.dur * 0.5, { preset: "close", subject: Y, subject2: J, side: 1, lens: 70, rise: 0.12, move: "push" }, "Close"),
   ];
   return {
     id: "fixture-press", title: "Press conference (hand-made)", duration: c.duration,
@@ -160,7 +166,8 @@ function mentor(): CutsceneScript {
     cam(tS, talk * 0.6, { preset: "close", subject: M, subject2: Y, side: -1, lens: 70, move: "push" }, "His word"),
     cam(tS + talk * 0.6, talk * 0.4, { preset: "close", subject: Y, subject2: M, side: 1, lens: 70 }, "You listen"),
     cam(tN, 1.4, { preset: "ots", subject: Y, subject2: M, side: 1, lens: 45 }, "Hand on the shoulder"),
-    cam(tW, c.duration - tW, { preset: "medium-close", subject: Y, subject2: M, side: 1, yaw: -20, move: "push" }, "Watches him go"),
+    // over your shoulder as he walks away (a still camera in front of you stood in his path: his back filled the screen)
+    cam(tW, c.duration - tW, { preset: "ots", subject: M, subject2: Y, side: 1, lens: 40, move: "push" }, "Watches him go"),
   ];
   return {
     id: "fixture-mentor", title: "The Icon (hand-made)", duration: c.duration,
@@ -172,14 +179,15 @@ function mentor(): CutsceneScript {
 /** The farewell: the last walk down a guard of honour, then the stadium stands for you. */
 function farewell(): CutsceneScript {
   const ev = FIXTURE_EVENTS.farewell;
-  const mates = ["mate0", "mate1", "mate2", "mate3", "mate4", "mate5"];
+  const mates = Array.from({ length: 14 }, (_, i) => `mate${i}`);
   const c = compose([farewellWalk, applause], ev, { you: "you", mates }, "pitch", 8, 0.3, { cast: [{ id: "you", role: "you", mark: [0, 0, 47] }], props: [] });
   const [b0, b1] = c.beats;
   const cams: CameraTrack[] = [
     cam(0, b0.at + 1.8, { preset: "wide", subject: Y, side: 1, yaw: 160, lens: 24, rise: 1.2, move: "dolly-in", moveAmount: 0.3 }, "The stadium"),
     cam(b0.at + 1.8, 2.0, { preset: "medium", subject: Y, side: 1, yaw: 10, move: "follow" }, "Down the guard"),
     cam(b0.at + 3.8, 1.6, { preset: "low-hero", subject: Y, side: 1, lens: 24, move: "crane-up", moveAmount: 0.4 }, "One last look"),
-    cam(b0.at + 5.4, b1.at - b0.at - 5.4 + 1.6, { preset: "wide", subject: Y, side: -1, yaw: 190, move: "orbit-left", moveAmount: 20 }, "They stand for you"),
+    // from behind him, down the guard of honour, to the stand on its feet (it showed an empty pitch)
+    cam(b0.at + 5.4, b1.at - b0.at - 5.4 + 1.6, { preset: "wide", subject: Y, fixed: { pos: [0.55, 1.75, 45.6], look: [0, 2.7, 0], lens: 32 }, move: "crane-up", moveAmount: 0.6 }, "They stand for you"),
     cam(b1.at + 1.6, c.duration - b1.at - 1.6, { preset: "close", subject: Y, side: 1, lens: 68, move: "push" }, "Goodbye"),
   ];
   return {

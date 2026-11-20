@@ -120,7 +120,8 @@ export const CLIP_QUALITY: Record<string, MoveQuality> = {
 
 /** Body holds laid over the clips (perform3d.ts). */
 export const POSE_QUALITY: Partial<Record<string, MoveQuality>> = {
-  "trophy-overhead": "weak", "trophy-chest": "weak", "hold-shirt-up": "weak", "hand-on-shoulder": "weak",
+  // the cup is held by its handles and lifted clear of his head (perform3d holdCup; 20 Nov 2026: a hand's width over)
+  "trophy-overhead": "ok", "trophy-chest": "ok", "hold-shirt-up": "ok", "hand-on-shoulder": "weak",
   applaud: "weak", "salute-crowd": "weak", "badge-kiss": "weak", "arms-up": "ok", "knee-slide": "good",
   "lean-in": "ok", "lean-back": "ok", sit: "ok", stand: "ok", nod: "ok",
   // B5c: arms copied from real people in reference videos (refMotion.ts)

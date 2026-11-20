@@ -26,6 +26,8 @@ import { solveArm, handWorldQuat, setBoneWorldQuat, rotateBoneWorld, type HandAx
 import { basisTurn } from "./hold";
 import { newNumberCanvas, drawShirtNumber } from "../signing3dTextures";
 import { addToonFace, toonFaceFor, type ToonFaceRig } from "../style3d/toon/face";
+import { applyToonFaceId } from "../style3d/toon/faceIdApply";
+import { wearToonHair, type ToonHairOn } from "../style3d/toon/hair";
 
 type Three = typeof import("three");
 
@@ -80,24 +82,47 @@ export function createStubPeople(init: CutscenePeopleInit): CutscenePeople {
       const [a, fb, cs] = await anims();
       const body = (spec.look.body ?? "player") as PersonModel;
       const out = spec.look.outfit ?? (body === "manager" ? "suit" : "kit");
+      // a people preset (casting.ts castAll: everyone but you): his own head, build, clothes, drawn face and modelled hair
+      const L = spec.look.people ?? null;
       // only this person's head (Style A; lag pass 4): the files are cached, so the cast shares them
-      const model = await loadPeople3d(loader, body, init.body, toonHeadsFor([{ who: spec.id, you: spec.role === "you", suit: out === "suit" }]));
+      const model = await loadPeople3d(loader, L ? "player" : body, init.body, L ? [L.head] : toonHeadsFor([{ who: spec.id, you: (spec.role === "you" || spec.id === "you"), suit: out === "suit" }]));
+      const preset = !!L && !!(model as { toonBodies?: unknown }).toonBodies;
       const p = makePerson3d(T, init.SkeletonUtils, model, a, {
         outline: spec.outline, castShadow: spec.castShadow, outlineNear: 2.5,
-        who: spec.id, you: spec.role === "you", suit: out === "suit",
+        who: spec.id, you: (spec.role === "you" || spec.id === "you"), suit: out === "suit",
+        ...(preset ? { toonHead: L!.head, toonBody: L!.build } : {}),
       });
       if (fb) addClips(T, p, fb);
       if (cs) addClips(T, p, cs);
       for (const act of Object.values(p.actions)) { act.enabled = true; act.play(); act.setEffectiveWeight(0); }
-      dress(T, p, spec);
+      let hair: ToonHairOn | null = null;
+      if (preset && p.toonHead === L!.head) {
+        dressPreset(T, p, spec, L!);
+        applyToonFaceId(T, p, L!.faceId, { detail: spec.look.detail ?? 1 });
+        if (L!.hairMesh) hair = await wearToonHair(T, loader, p, L!.hairMesh, { outline: spec.outline ? 0.0045 : 0, castShadow: spec.castShadow }).catch(() => null);
+      } else dress(T, p, spec);
       const actor = new StubActor(T, spec.id, p);
       // the face that moves (a Style A head with measured spots; anything else stays as painted)
       actor.face = addToonFace(T, p);
+      actor.hair = hair;
       made.push(actor);
       return actor;
     },
     dispose() { for (const a of made) a.dispose(); made.length = 0; },
   };
+}
+
+/** A people preset's clothes (presets.ts `dress`), plus the scene's kit and shirt number. */
+function dressPreset(T: Three, p: Person3D, spec: ActorSpec, L: NonNullable<ActorSpec["look"]["people"]>) {
+  const look = spec.look;
+  let number: THREE.Texture | null = null;
+  if (L.kit && look.number != null) {
+    const c = newNumberCanvas(); drawShirtNumber(c, look.number);
+    number = new T.CanvasTexture(c); number.colorSpace = T.SRGBColorSpace;
+  }
+  const acc = [...L.dress.accessories, ...(look.accessories ?? [])];
+  if (spec.role === "keeper") acc.push({ slot: "hands", color: "#f5f5f5", color2: "#16a34a" } as never);
+  dressPerson3d(T, p, { ...L.dress, kit: L.kit ? { ...L.kit, ...(look.kit ?? {}) } : undefined, number, accessories: acc } as never);
 }
 
 function dress(T: Three, p: Person3D, spec: ActorSpec) {
@@ -143,6 +168,8 @@ class StubActor implements CutsceneActor {
   private exprTilt = 0;
   /** The moving face (null: a head with no measured face). */
   face: ToonFaceRig | null = null;
+  /** A modelled hairstyle worn on top (a people preset's): kept at rest, the director poses from t alone. */
+  hair: ToonHairOn | null = null;
   private exprW: Record<string, number> = {};
   private blink = 0;
   private talk = 0;
@@ -453,5 +480,5 @@ class StubActor implements CutsceneActor {
     this.root.updateMatrixWorld(true);
   }
 
-  dispose() { this.face?.dispose(); this.root.parent?.remove(this.root); }
+  dispose() { this.face?.dispose(); this.hair?.dispose(); this.root.parent?.remove(this.root); }
 }

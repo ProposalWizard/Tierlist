@@ -11,7 +11,7 @@ import type { CutsceneActor, PoseHold, ReachLag, Vec3 } from "./types";
 import { aimBone, rotateBoneWorld, solveArm } from "../signing3dRig";
 import { FLUID_ON, clapGap, humanBeat, liftCurve, liveDrift, wander } from "./fluid";
 import { refArms, type RefArmClip } from "./refMotion";
-import { PRESS_DESK_TOP } from "./presets/locations";
+import { PRESS_DESK_TOP, PRESS_SEAT_LIFT } from "./presets/locations";
 import { gripTo, armReach, liftPlace, chestPlace, type HeldProp } from "./hold";
 import { smooth } from "./math";
 
@@ -211,13 +211,15 @@ function kneel(a: CutsceneActor, c: PoseCtx, w: number, back: number) {
     const kt = hip.clone().add(new T.Vector3(0, -thigh * 0.96, 0)).add(f.clone().multiplyScalar(0.16)).add(left.clone().multiplyScalar(0.08 * sx));
     aimBone(T, ul, knee, kt, w);
     const k2 = wp(lo);
-    aimBone(T, lo, wp(ft), k2.clone().add(f.clone().multiplyScalar(-shin * 0.95)).add(new T.Vector3(0, -0.04, 0)), w);
+    // the shin flat along the floor behind the knee (it pointed 4 cm down: the knees rode on the toes, off the grass)
+    aimBone(T, lo, wp(ft), k2.clone().add(f.clone().multiplyScalar(-shin * 0.97)).add(new T.Vector3(0, 0.004, 0)), w);
     void foot;
   }
   const lk = a.bone("LeftLeg"), rk = a.bone("RightLeg");
   if (lk && rk) {
     const ky = Math.min(wp(lk).y, wp(rk).y);
-    a.root.position.y -= (ky - (c.root[1] + 0.07)) * w;
+    // the knee's front on the floor (director.ts GROUND: the joint 5.5 cm up); the director's ground contact then holds it there
+    a.root.position.y -= (ky - (c.root[1] + 0.055)) * w;
     a.root.updateMatrixWorld(true);
   }
   if (back) a.lean(-back * w);
@@ -286,7 +288,7 @@ export function applyPose(a: CutsceneActor, pose: PoseHold, w: number, c: PoseCt
       break;
     }
     case "ref-roar": refHold(a, c, w, "roar", { lean: 0.6 }); a.hand("L", "fist", w); a.hand("R", "fist", w); break;
-    case "ref-talk-hands": refHold(a, c, w, "talk-hands", { loop: true, lean: 0.5, grip: "open", palms: "down", floor: PRESS_DESK_TOP + 0.09 }); break;
+    case "ref-talk-hands": refHold(a, c, w, "talk-hands", { loop: true, lean: 0.5, grip: "open", palms: "down", floor: PRESS_DESK_TOP - PRESS_SEAT_LIFT + 0.09 }); break;
     case "ref-trophy-lift": refHold(a, c, w, "trophy-lift", { span: 0.42, lead: "L", lean: 0.5, grip: "grip", palms: "in" }); break;
     case "ref-wave-clap": refHold(a, c, w, "wave-clap", { lean: 0.4, grip: "open" }); break;
     case "ref-shirt-up": refHold(a, c, w, "shirt-up", { span: 0.42, lean: 0.3, grip: "pinch", palms: "front" }); break;
@@ -340,8 +342,10 @@ export function applyPose(a: CutsceneActor, pose: PoseHold, w: number, c: PoseCt
       break;
     }
     case "hold-shirt-up": {
-      const y = chest + 0.02 + (FLUID_ON.on ? 0.015 * wander(t * 0.7, (c.seed ?? 0) + 4) : 0);
-      twoHands(a, c, w, [0.21, y, 0.42], [-0.21, y, 0.42], [-0.2, 0.6, 0.6], [0, -0.2, 1], [0.2, 0.6, 0.6], [0, -0.2, 1], [0, -1, -0.3], 0);
+      // 20 Nov 2026: held UP (the collar just under his chin, the number to the cameras); it hung at his waist
+      const y = sh - 0.07 + (FLUID_ON.on ? 0.012 * wander(t * 0.7, (c.seed ?? 0) + 4) : 0);
+      void chest;
+      twoHands(a, c, w, [0.2, y, 0.36], [-0.2, y, 0.36], [-0.2, 0.6, 0.6], [0, -0.2, 1], [0.2, 0.6, 0.6], [0, -0.2, 1], [0, -1, -0.3], 0);
       a.hand("L", "pinch", w); a.hand("R", "pinch", w);
       break;
     }

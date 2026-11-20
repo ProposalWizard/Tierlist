@@ -23,6 +23,11 @@ export interface LocationPreset {
   bounds?: { min: Vec3; max: Vec3 };
   /** Height of the floor at a point (stages). */
   floorAt?: (x: number, z: number) => number;
+  /**
+   * Solid things nobody may walk or stand through (RUL-3D-005: no body inside another thing). Boxes,
+   * world metres. tests/star/cutscene.mts walks every scene's people past them.
+   */
+  solids?: { name: string; min: Vec3; max: Vec3 }[];
 }
 
 const m = (x: number, y: number, z: number, yawDeg = 0): Mark => ({ pos: [x, y, z], yaw: (yawDeg * Math.PI) / 180 });
@@ -39,7 +44,16 @@ export const DESK = { w: 1.4, d: 0.68, top: 0.76 };
  * plus a little: forearms resting, elbows near 90°, shoulders down.
  */
 export const PRESS_DESK_TOP = 0.665;
+/** How far his seat at the press desk is raised (a cushion; his feet are hidden by the desk's skirt). */
+export const PRESS_SEAT_LIFT = 0.07;
 export const SEAT_Z = 0.72;
+/**
+ * THE PRESS ROOM'S SEATS (20 Nov 2026: the reporters were capsules). Three rows of seven chairs facing the
+ * desk, [x, z] of each seat; the seat's top PRESS_SEAT_TOP. Row 1's third chair is the one the reporter
+ * asking the question got up from (he stands at the "journalist" mark).
+ */
+export const PRESS_SEATS: [number, number][] = [2.55, 3.55, 4.55].flatMap((z) => [-2.25, -1.5, -0.75, 0, 0.75, 1.5, 2.25].map((x) => [x, z] as [number, number]));
+export const PRESS_SEAT_TOP = 0.41;
 
 export const LOCATIONS: Record<LocationId, LocationPreset> = {
   office: {
@@ -68,6 +82,7 @@ export const LOCATIONS: Record<LocationId, LocationPreset> = {
     },
     establish: { pos: [1.95, 1.62, 2.15], look: [-0.2, 1.05, -0.6], lens: 22 },
     bounds: { min: [-2.3, 0.2, -2.1], max: [2.3, 2.9, 2.4] },
+    solids: [{ name: "desk", min: [-DESK.w / 2, 0, -DESK.d / 2], max: [DESK.w / 2, DESK.top, DESK.d / 2] }],
   },
   pitch: {
     id: "pitch", name: "The pitch", mood: "golden-hour", indoor: false,
@@ -109,6 +124,13 @@ export const LOCATIONS: Record<LocationId, LocationPreset> = {
     },
     establish: { pos: [0.9, 1.9, 14.5], look: [-0.3, 1.3, 6], lens: 24 },
     bounds: { min: [-1.55, 0.25, -1.5], max: [1.55, 2.6, 40] },
+    // the touchline ad boards 2 m past the mouth, with a gap for the teams (TUNNEL_BOARD_GAP), and the tunnel's walls
+    solids: [
+      { name: "ad board (left)", min: [-60, 0, 19.9], max: [-2.4, 0.9, 20.1] },
+      { name: "ad board (right)", min: [2.4, 0, 19.9], max: [60, 0.9, 20.1] },
+      { name: "tunnel wall (left)", min: [-1.75, 0, -2], max: [-1.6, 2.7, 18] },
+      { name: "tunnel wall (right)", min: [1.6, 0, -2], max: [1.75, 2.7, 18] },
+    ],
   },
   "dressing-room": {
     id: "dressing-room", name: "The dressing room", mood: "interior-warm", indoor: true,
@@ -141,7 +163,9 @@ export const LOCATIONS: Record<LocationId, LocationPreset> = {
   "press-room": {
     id: "press-room", name: "The press room", mood: "interior-cool", indoor: true,
     marks: {
-      "seat.you": m(-0.45, 0, -0.55, 0),
+      // (20 Nov 2026: back from the desk's edge, so he sits AT it, not over it)
+      // and up a cushion (PRESS_SEAT_LIFT): our body sits short, his shoulders only 20 cm over the desk read as sunk in it
+      "seat.you": m(-0.45, PRESS_SEAT_LIFT, -0.62, 0),
       "seat.boss": m(0.55, 0, -0.55, 0),
       "seat.host": m(1.4, 0, -0.55, -10),
       table: m(0, PRESS_DESK_TOP - 0.025, 0, 0),
@@ -154,6 +178,10 @@ export const LOCATIONS: Record<LocationId, LocationPreset> = {
     },
     establish: { pos: [2.4, 1.8, 5.2], look: [0, 1.0, -0.4], lens: 24 },
     bounds: { min: [-4.2, 0.25, -1.4], max: [4.2, 3.2, 7] },
+    solids: [
+      { name: "press desk", min: [-1.8, 0, -0.55], max: [1.8, PRESS_DESK_TOP, 0.25] },
+      { name: "backdrop", min: [-4, 0, -1.3], max: [4, 3.2, -1.2] },
+    ],
   },
   "training-ground": {
     id: "training-ground", name: "The training ground", mood: "golden-hour", indoor: false,

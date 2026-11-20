@@ -58,6 +58,10 @@ export const SFX_CATALOG: SfxCatalogEntry[] = [
   // The cut scenes' own sounds (lib/star/cutscene/sounds.ts, made by scripts/sfx/cutscene_cues.py). The kick, net and crowd cues use the match's sounds above.
   { name: "cut-pen-scratch", label: "Cut scene: the pen on the contract", group: "Cut-scene music", wired: true, where: "When you sign in the contract-signing cut scene." },
   { name: "cut-camera-shutters", label: "Cut scene: the press cameras", group: "Cut-scene music", wired: true, where: "When the cameras go off in the press and trophy cut scenes." },
+  // The spoken lines (scripts/cutscene/voice.py, the offline Kokoro voice; lib/star/cutscene/voiceLines.ts)
+  { name: "cut-mentor-line", label: "Cut scene: The Icon's word", group: "Cut-scene music", wired: true, where: "The Icon's one line on the training ground (the mentor cut scene)." },
+  { name: "cut-press-question", label: "Cut scene: the reporter's question", group: "Cut-scene music", wired: true, where: "The reporter's question in the press-conference cut scene." },
+  { name: "cut-press-answer", label: "Cut scene: your answer to the press", group: "Cut-scene music", wired: true, where: "Your answer in the press-conference cut scene." },
   // The cut-scene music beds (lib/star/cutscene/music.ts, made by tools/cutscene-music/make_beds.py).
   { name: "cut-music-signing", label: "Music: signing a contract (warm, hopeful)", group: "Cut-scene music", wired: true, where: "Under the contract-signing cut scene (Settings → Look → Cut-scene camera: New)." },
   { name: "cut-music-trophy", label: "Music: a trophy, a goal, an award (triumphant)", group: "Cut-scene music", wired: true, where: "Under the trophy lift, goal, award and promotion cut scenes (Cut-scene camera: New)." },
