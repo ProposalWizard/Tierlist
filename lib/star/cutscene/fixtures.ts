@@ -123,8 +123,10 @@ function walkout(): CutsceneScript {
     cam(b0.at + 1.6, b0.dur - 1.6, { preset: "close", subject: Y, side: 1, yaw: 10, lens: 60, move: "push" }, "The breath"),
     cam(b1.at, 2.4, { preset: "medium", subject: Y, side: 1, yaw: 160, move: "follow" }, "Down the tunnel"),
     cam(b1.at + 2.4, 2.0, { preset: "low-hero", subject: Y, side: 1, lens: 22, move: "follow" }, "The light"),
-    // from the mouth of the tunnel, behind him, out into the stadium (it lost him behind the other team)
-    cam(b1.at + 4.4, c.duration - b1.at - 4.4, { preset: "wide", subject: Y, fixed: { pos: [0.95, 2.1, 16.6], look: [-1.2, 1.5, 30], lens: 26 }, move: "crane-up", moveAmount: 0.6 }, "The stadium"),
+    // behind him and above the heads, out into the stadium (it lost him behind the other team); not a fixed
+    // camera, so the camera-clear rule keeps the other walkers out of the lens
+    cam(b1.at + 4.4, b1.dur - 6.2, { preset: "medium-close", subject: Y, side: 1, yaw: 10, lens: 50, move: "follow" }, "Into the light"),
+    cam(b1.at + b1.dur - 1.8, c.duration - b1.at - b1.dur + 1.8, { preset: "wide", subject: Y, side: 1, yaw: 178, lens: 26, rise: 0.7, move: "crane-up", moveAmount: 0.5 }, "The stadium"),
   ];
   return {
     id: "fixture-walkout", title: "Walk-out (hand-made)", duration: c.duration,
@@ -140,7 +142,7 @@ function press(): CutsceneScript {
   const [b0, b1] = c.beats;
   const J: Target = { actor: "jour" };
   const cams: CameraTrack[] = [
-    cam(0, b0.at + 1.2, { preset: "establishing", subject: Y, fixed: { pos: [2.4, 1.8, 5.2], look: [0, 1.0, -0.4], lens: 24 }, move: "dolly-in", moveAmount: 0.12 }, "The press room"),
+    cam(0, b0.at + 1.2, { preset: "establishing", subject: Y, fixed: { pos: [3.4, 2.5, 6.7], look: [0, 0.9, -0.6], lens: 24 }, move: "dolly-in", moveAmount: 0.12 }, "The press room"),
     cam(b0.at + 1.2, b0.dur - 1.2, { preset: "medium", subject: J, subject2: Y, side: -1 }, "The question"),
     // at his eye height, a touch above the desk (from desk height the desk's front filled half the picture)
     cam(b1.at, b1.dur * 0.5, { preset: "medium", subject: Y, subject2: J, side: 1, rise: 0.15 }, "The answer"),
@@ -157,7 +159,7 @@ function mentor(): CutsceneScript {
   const ev = FIXTURE_EVENTS.mentor;
   const ids = { you: "you", other: "mentor", mates: [] };
   const c = compose([mentorWord], ev, ids, "training-ground", 7, 0.5, {
-    cast: [{ id: "you", role: "you", mark: [0, 0, 1.2], face: 200, look: { outfit: "tracksuit" } }, { id: "mentor", role: "mentor", mark: [-1.4, 0, -2.2], face: "you" }], props: [],
+    cast: [{ id: "you", role: "you", mark: [0, 0, 1.2], face: 200, look: { outfit: "tracksuit" } }, { id: "mentor", role: "mentor", mark: [-0.9, 0, -1.3], face: "you" }], props: [],
   });
   const [b0] = c.beats;
   const M: Target = { actor: "mentor" };

@@ -80,6 +80,8 @@ export const CLIP_ALIASES: Record<string, ClipChoice[]> = {
 export const GAIT_SPEED: Record<string, number> = {
   walk: 1.35, "walk-proud": 1.3, walk_confident: 1.4, "walk-sad": 1.0, slump_walk: 1.15,
   jog: 3.0, celebrate_safe: 3.4, sprint: 7.4, dribble_run: 4.6, run: 5.5,
+  // the gait names the beats ask for (20 Nov 2026: "dribble" had none, so its legs ran at a walk's 1.3 m/s, 3.5x too fast)
+  dribble: 4.6, "walk-confident": 1.4,
 };
 
 /** What a role stands doing when nothing else is asked. */

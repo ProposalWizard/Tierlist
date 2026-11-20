@@ -15,6 +15,7 @@ import { makeSignature, signatureAt } from "../../lib/star/cutscene/signature";
 import { shotPose, PHONE_FRAMING, SHOT_PRESETS, type Anchor, type ShotPose } from "../../lib/star/cutscene/presets/camera";
 import { castLook, castAll } from "../../lib/star/cutscene/casting";
 import { LOCATIONS } from "../../lib/star/cutscene/presets/locations";
+import { GAIT_SPEED } from "../../lib/star/cutscene/presets/clips";
 import { makePath, rng, lensToFov } from "../../lib/star/cutscene/math";
 import type { CameraTrack, Emotion, StoryEvent } from "../../lib/star/cutscene/types";
 import { filmPass, weakWideOverrun } from "../../lib/star/cutscene/cinema";
@@ -285,6 +286,33 @@ for (const [id, ev] of Object.entries(FIXTURE_EVENTS)) {
     }
     const list = Array.from(hits);
     check(!list.length, `${sc.id}: ${list.slice(0, 4).join("; ")}${list.length > 4 ? ` (+${list.length - 4})` : ""}`);
+  }
+}
+
+// ── a man who travels walks: a gait clip on every stretch he moves, its feet able to keep up (Harry, 20 Nov 2026:
+// "he isn't even walking") ──
+{
+  for (const id of Object.keys(FIXTURES)) {
+    const sc = FIXTURES[id]();
+    const C = compileScript(sc, undefined, sc.source?.event);
+    const bad = new Set<string>();
+    for (const m of C.cast) {
+      const moves = C.tracks.filter((x) => x.type === "move" && (x as { actor: string }).actor === m.id) as { at: number; dur: number; gait?: string }[];
+      for (let t = 0.05; t < sc.duration - 0.05; t += 0.1) {
+        const a = rootAt(C, m.id, t - 0.05).pos, b = rootAt(C, m.id, t + 0.05).pos;
+        const v = Math.hypot(b[0] - a[0], b[2] - a[2]) / 0.1;
+        if (v < 0.3 || v > 12) continue; // still, or a cut to a new place
+        const mv = moves.find((x) => t >= x.at && t <= x.at + x.dur);
+        if (moves.some((x) => x.gait === "none" && t >= x.at && t <= x.at + x.dur + 0.4)) continue; // a slide or a dive: no steps on purpose
+        if (C.tracks.some((x) => x.type === "place" && (x as { actor: string }).actor === m.id && Math.abs(x.at - t) < 0.12)) continue; // put somewhere at a cut
+        if (mv && (t < mv.at + 0.3 || t > mv.at + mv.dur - 0.3)) continue; // setting off and stopping blend in and out
+        const g = rootAt(C, m.id, t).gait;
+        if (!g || g.weight < 0.5) bad.add(`${m.id} glides at ${t.toFixed(1)} s (${v.toFixed(1)} m/s, no walk)`);
+        else if (v / (GAIT_SPEED[g.clip] ?? 1.3) > 1.75) bad.add(`${m.id} moves ${v.toFixed(1)} m/s on a ${g.clip} at ${t.toFixed(1)} s`);
+      }
+    }
+    const list = Array.from(bad);
+    check(!list.length, `${id}: ${list.slice(0, 3).join("; ")}${list.length > 3 ? ` (+${list.length - 3})` : ""}`);
   }
 }
 

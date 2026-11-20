@@ -443,7 +443,8 @@ export const walkOut: BeatDef = {
   weight: (e) => (["walkout", "debut", "rivalry"].includes(e.kind) ? 1 : 0),
   build: (c, t) => {
     const Y = c.ids.you;
-    const d = 6.2;
+    // a real walking pace (20 Nov 2026, Harry: "he isn't even walking"): ~1.4 m/s, out just past the mouth
+    const d = 7.6;
     const tr: Track[] = [];
     const walkers: [string, string][] = [["home0", "home.0"], [Y, "you.start"], ["home2", "home.2"], ["home3", "home.3"], ["home4", "home.4"], ["away0", "away.0"], ["away1", "away.1"], ["away2", "away.2"], ["away3", "away.3"], ["away4", "away.4"]];
     walkers.forEach(([id, mk], i) => {
@@ -452,7 +453,7 @@ export const walkOut: BeatDef = {
       const delay = row * 0.35 + (home ? 0 : 0.1);
       const x = home ? -0.55 : 0.55;
       void mk; void i;
-      tr.push({ type: "move", actor: id, at: t + delay, dur: d - delay, path: [[x, 0, 15.5 - row * 1.0], [x * 1.4, 0, 24 - row * 1.0]], gait: "walk", ease: 0.25 });
+      tr.push({ type: "move", actor: id, at: t + delay, dur: d - delay, path: [[x, 0, 15.2 - row * 1.0], [x * 1.15, 0, 19.6 - row * 0.9]], gait: "walk", ease: 0.25 });
     });
     tr.push(
       { type: "light", at: t + 2.5, dur: d - 2.5, exposure: 1.25 },
@@ -467,7 +468,8 @@ export const walkOut: BeatDef = {
       shots: [
         { at: t, dur: 2.4, purpose: "follow", subject: you(c), weight: 0.8, name: "Down the tunnel", hint: { preset: "medium", yaw: 165, move: "follow" } },
         { at: t + 2.4, dur: 2.0, purpose: "hero", subject: you(c), weight: 1, name: "The light", hint: { preset: "low-hero", yaw: 0, lens: 22, move: "follow" } },
-        { at: t + 4.4, dur: d - 4.4, purpose: "establish", subject: you(c), weight: 0.8, name: "The stadium", hint: { preset: "wide", yaw: 200, move: "crane-up", moveAmount: 2 } },
+        { at: t + 4.4, dur: d - 6.2, purpose: "emotion", subject: you(c), weight: 0.9, name: "Into the light", hint: { preset: "medium-close", yaw: 10, lens: 50, move: "follow" } },
+        { at: t + d - 1.8, dur: 1.8, purpose: "establish", subject: you(c), weight: 0.8, name: "The stadium", hint: { preset: "wide", yaw: 200, move: "crane-up", moveAmount: 2 } },
       ],
     };
   },
@@ -501,6 +503,7 @@ export const pressQuestion: BeatDef = {
     const reps = PRESS_REPORTER_SEATS.map(([x, z], i) => ({ id: `rep${i}`, x, z }));
     return {
       name: "The question", act: "build", dur: d,
+      props: [{ id: "jmic", kind: "mic" }],
       cast: [
         { id: "jour", role: "journalist", mark: "journalist", face: 180 },
         ...reps.map((r) => ({ id: r.id, role: "journalist" as const, mark: [r.x, 0, r.z] as Vec3, face: 180, look: { detail: 0.5 } })),
@@ -518,6 +521,12 @@ export const pressQuestion: BeatDef = {
         { type: "reach", actor: Y, hand: "R", at: 0, dur: FLUID_ON.on ? t + d + 0.2 : 30, target: { actor: Y, local: [-0.2, PRESS_DESK_TOP - PRESS_SEAT_LIFT + 0.035, 0.42] }, along: [0.25, -0.15, 1], palm: [0.15, -1, 0.05], blendIn: 0, blendOut: 0.5 },
         { type: "reach", actor: Y, hand: "L", at: 0, dur: FLUID_ON.on ? t + d + 0.3 : 30, target: { actor: Y, local: [0.2, PRESS_DESK_TOP - PRESS_SEAT_LIFT + 0.035, 0.42] }, along: [-0.25, -0.15, 1], palm: [-0.15, -1, 0.05], blendIn: 0, blendOut: 0.5 },
         { type: "clip", actor: "jour", at: 0, clip: "talk-boss", loop: true },
+        // his microphone up to his mouth, a nod into the question, the face of a man asking (he stood stiff, arms down)
+        { type: "prop", prop: "jmic", at: 0, action: "attach", actor: "jour", hand: "R", dur: 0.01 },
+        { type: "reach", actor: "jour", hand: "R", at: 0, dur: 40, target: { actor: "jour", local: [-0.12, 1.42, 0.24] }, grip: "grip", along: [0.15, 0.85, 0.35], palm: [1, 0, 0], blendIn: 0 },
+        { type: "face", actor: "jour", at: 0, expression: "focused", amount: 0.8 },
+        { type: "pose", actor: "jour", at: t + 0.6, dur: 1.2, pose: "nod", amount: 0.6 },
+        { type: "look", actor: "jour", at: 0, dur: 40, target: { actor: Y, part: "head" }, amount: 0.9 },
         { type: "speak", actor: "jour", at: t + 0.3, dur: talk, line: q, cue: rec?.cue },
         ...(rec ? [{ type: "sound", at: t + 0.3, cue: rec.cue } as Track] : []),
         { type: "caption", at: t + 0.3, dur: talk + 0.2, text: q, style: "subtitle", speaker: "Journalist" },
@@ -623,7 +632,8 @@ export const mentorWord: BeatDef = {
         { type: "pose", actor: Y, at: tN - 0.1, dur: 1.6, pose: "nod", blendIn: 0.1 },
         { type: "reach", actor: M, hand: "R", at: tH, dur: 1.4, target: { actor: Y, part: "shoulder.L" }, offset: [0, 0.05, 0], grip: "flat", palm: [0, -1, 0.2], along: [-1, 0, 0.3], blendIn: 0.4, blendOut: 0.4 },
         { type: "face", actor: M, at: tH, expression: "smile", amount: 0.6 },
-        { type: "move", actor: M, at: tW, dur: d - (tW - t), path: [[1.6, 0, -1.5], [3.2, 0, -5]], gait: "walk", ease: 0.3 },
+        // a walking pace (it was 2.5 m/s on a walk: his feet slid)
+        { type: "move", actor: M, at: tW, dur: d - (tW - t), path: [[1.2, 0, -0.8], [2.2, 0, -2.6]], gait: "walk", ease: 0.3 },
         { type: "face", actor: Y, at: tW, expression: "determined", amount: 1 },
       ],
       shots: [

@@ -117,6 +117,8 @@ export const CAMERA_CLEAR = { near: 0.3, sight: 0.35 } as const;
 const KNEELS = new Set(["kneel", "kneel-pray", "knee-slide"]);
 /** A knee's front from its joint, a toe's underside from its joint (m). */
 export const GROUND = { knee: 0.055, toe: 0.018 } as const;
+/** The cut scenes' softer light (multipliers on the style; contrast pulled towards flat; shadows lifted). */
+export const CUT_LIGHT = { key: 0.82, fill: 1.3, rim: 0.6, flatten: 0.04, exposure: 0.93, poster: 0.75, lift: 0.025 } as const;
 const IN_PLACE = new Set(["sitdown", "sitidle", "boss-sit", "slump_walk", "jog", "sprint", "dribble_run", "celebrate_safe"]);
 
 export async function createDirector(container: HTMLElement, written: CutsceneScript, o: DirectorOptions = {}): Promise<Director> {
@@ -145,6 +147,18 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     if (newCam) { d.post.bloom *= 0.35; d.post.bloomThresh = Math.max(d.post.bloomThresh, 0.95); }
     // indoors the sky's fill is mostly walled off: the set's own lamps and the window do the lighting
     if (C.loc.indoor) d.hemi = { ...d.hemi, intensity: d.hemi.intensity * 0.6 };
+    // SOFTER LIGHT (20 Nov 2026, Harry: "the lighting and contrast is a bit much at times"): every cut scene
+    // the same way, the key down, the shadow side lifted, the grade flatter, highlights held under white
+    if (newCam) {
+      d.sun = { ...d.sun, intensity: d.sun.intensity * CUT_LIGHT.key };
+      d.hemi = { ...d.hemi, intensity: d.hemi.intensity * CUT_LIGHT.fill };
+      if (d.rim) d.rim = { ...d.rim, intensity: d.rim.intensity * CUT_LIGHT.rim };
+      d.post.contrast = 1 + (d.post.contrast - 1) * 0.5 - CUT_LIGHT.flatten;
+      d.post.exposure *= CUT_LIGHT.exposure;
+      d.post.posterMix *= CUT_LIGHT.poster;
+      d.post.lift = [d.post.lift[0] + CUT_LIGHT.lift, d.post.lift[1] + CUT_LIGHT.lift, d.post.lift[2] + CUT_LIGHT.lift];
+      d.post.vignette *= 0.7;
+    }
     return d;
   };
   let edit: DirectorEdit | null = null;
@@ -855,7 +869,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         faceRim.target.position.copy(head);
       }
     }
-    faceFill.intensity = 0.9 * closeK; faceRim.intensity = (newCam ? 0.5 : 1.8) * closeK;
+    faceFill.intensity = (newCam ? 1.1 : 0.9) * closeK; faceRim.intensity = (newCam ? 0.3 : 1.8) * closeK;
     def.post.posterMix = basePoster * (1 - 0.65 * closeK);
     // lights
     let expo = 1, sunK = 1;
