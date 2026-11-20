@@ -119,3 +119,11 @@ smoothly as possible in every scenario."
 report docs/research/speed-audit-2026-11-20.md. Budgets: tap feedback under 100 ms, next screen painted under 300 ms
 (4x slowed test browser), no 3D area heavier than today's garden. Every new 3D feature is measured before it goes in.
 API cost note: the 50-event trial cost about $1.50 (Harry read it from the Usage page).
+
+## Harry, 20 Nov 2026, 18:40 to 18:50: kit man drill, voices, how people move
+
+- Kit man: "the proportions of where Den is standing compared to our player is rlly off, the drill is boring and continous, no one's doing 100 of those shots and also no one's missing." Drill redone as 10 varied, missable balls; Den and the player in one picture at one scale.
+- Plants: "one thing that is constantly bugging me is this damn tree feature, I hate it. There must be a way to have low polygon trees and leafs." Later: "Thank God the plants are finally fixed." Rule: no faceted blob plants or trees anywhere; real leaves, low triangle count.
+- Voices: "for now do Den and the Gaffer's lines for 1.5k 11 Labs credits. Other than that, the rest of the lines in the game can be free, using free voices for now. I'll just allow you to choose."
+- Cut scenes: "in that cut scene he isn't even walking, although it looks good"; "the lighting and contrast is a bit much at times".
+- How people move (asked for as an overhaul): "animations and just the way the 3D players move in general just needs a bit of an overhaul, because why the legs like squeezing past each other, they look so like awkward and hard to move. The quality is like jittering, it's like blurry almost, it's bitty. In the press conference his legs are scrunched up when he sits down. The cutscenes haven't really had any changes or thought behind them. The mentor himself, his skin color is bleeding into his suit. The suit has like blotches on it. His face looks really odd. His beard isn't really on his face. It's like the new face changes are just kind of morphing over previous stuff. The ball doesn't really actually go where his feet are. The quality is so low. Walking in the flat has much improved, but again the quality looks a little bit off."
