@@ -6,7 +6,7 @@
  * adds the career match's own parts: the scoreboard, the commentary between
  * chances, the goal plate, half time.
  */
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { View, Text, StyleSheet, type ViewStyle } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { goalInView, acceptsCaptainOrders } from "@/lib/star/canvasEngine";
@@ -18,13 +18,16 @@ import { kitsFor, type MatchKits } from "@/lib/star/kits";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { MatchDriver } from "../match/driver";
 import { matchSetupFor, type MatchSetup } from "../match/setup";
-import { MatchPitch, BANNER_MS } from "./MatchPitch";
+import { MatchPitch } from "./MatchPitch";
 import { MatchHud } from "./MatchHud";
 import { MatchFeed, MatchPause } from "./MatchFeed";
 import { MatchShootout } from "./MatchShootout";
 import { keepGoalClip } from "../match/goalClip/store";
 import { getCareer } from "../game/store";
 import { C } from "../ui/theme";
+import { setMusicScene, clearMusicScene, playTurningPoint, refreshMusic } from "../match/music";
+import { isTurningPoint } from "@/lib/star/gameMusic";
+import { usePrefs } from "../game/prefs";
 import { PitchPage, GoalBoard, StaminaBox } from "./MatchLook";
 
 export function Match({ career, fixture, onFullTime, setupFor, recordGoals = true, watch, frozen = false }: {
@@ -55,6 +58,26 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
     return d;
   }, [setup, kits, recordGoals]);
 
+  // Game music (CanvasMatch's music effects): the score, the clock, a knockout and a
+  // dribble pick the bed; a goal of yours from behind plays the turning point once.
+  const prefs = usePrefs();
+  const setupRef = useRef(setup);
+  setupRef.current = setup;
+  useEffect(() => { refreshMusic(); }, [prefs.gameMusic, prefs.sound]);
+  useEffect(() => {
+    let score = { us: 0, them: 0 };
+    const id = setInterval(() => {
+      const d = hudDriver;
+      if (!d || d.setup !== setupRef.current) return;
+      if (isTurningPoint(score.us, score.them, d.userScore)) playTurningPoint();
+      score = { us: d.userScore, them: d.oppScore };
+      setMusicScene("match", d.done
+        ? { kind: "full-time", us: d.userScore, them: d.oppScore }
+        : { kind: "match", state: { us: d.userScore, them: d.oppScore, minute: d.matchMinute, duration: d.MATCH_DURATION, knockout: d.knockoutTie, dribbling: d.phase === "tdDribble" } }, 10);
+    }, 250);
+    return () => { clearInterval(id); clearMusicScene("match"); };
+  }, []);
+
   // The stamina bar's fill, moved on the UI thread every frame (no React work).
   const stamina = useSharedValue(1);
   const onFrame = useCallback((d: MatchDriver) => {
@@ -63,7 +86,7 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
   }, [stamina]);
 
   const overlay = useCallback((d: MatchDriver) => {
-    const banner = d.banner && d.now - d.banner.at < BANNER_MS ? d.banner : null;
+    const banner = d.bannerNow();
     const lastGoal = d.goalEvents[d.goalEvents.length - 1];
     const home = d.setup.fixture.home !== false;
     const us = shortClub(d.setup.career.player.club), them = shortClub(d.setup.fixture.opponent);

@@ -36,6 +36,7 @@
  * Until the sheet has loaded, the old shapes (a shadow, a shirt, a head).
  */
 import type { SkCanvas } from "@shopify/react-native-skia";
+import { createCtx2D, type FontFor } from "../draw/ctx2d";
 import { MATCH_FIGURE_R_MULT, MATCH_FIGURE_HEIGHT_R, MATCH_KEEPER_R_SHARE, FIGURE_HEIGHT_R } from "@/lib/star/fiveASide/render";
 import { NEW_FIGURE_SCALE, NEW_OUTFIELD_SHRINK, NEW_KEEPER_GROW, NEW_VIEW_WIDTH_M, REFERENCE_CAMERA_M } from "@/lib/star/matchView";
 import { SPRITE_HEIGHT_K } from "@/lib/star/matchFigure";
@@ -134,7 +135,7 @@ function tilted(c: SkCanvas, cam: Cam, paint: () => void) {
 }
 
 /** One outfield man at pitch point `p`. `id` is CanvasMatch's sid (you, mate0, run0, def0, follower…). */
-export function drawMan(c: SkCanvas, cam: Cam, id: string, p: { x: number; y: number }, role: FigureRole, look: FigureLook, highlight = false) {
+export function drawMan(c: SkCanvas, cam: Cam, id: string, p: { x: number; y: number }, role: FigureRole, look: FigureLook, highlight = false, label?: string) {
   if (!spritesReady()) { const s = toScreen(cam, p); oldFigure(c, s.X, s.Y, rForHeight(manR(cam) * s.k * MATCH_FIGURE_HEIGHT_R) * 0.42, role, look, highlight); return; }
   const s = toCanvasPx(cam, p);
   const r = rForHeight(manR(cam) * MATCH_FIGURE_HEIGHT_R);
@@ -227,7 +228,31 @@ export function drawMan(c: SkCanvas, cam: Cam, id: string, p: { x: number; y: nu
     drawSprite(c, s.X, gy, { char: "player", clip, t, facingRad: facing, kit, height, mirror });
     if (lean) c.restore();
     if (highlight) marker(c, s.X, gy - height, r);
+    if (label) nameLabel(c, label, s.X, gy - height, r, highlight);
   });
+}
+
+/** Fonts for the drawn names (the phone's matchFont, set by the screen; none headless: no names). */
+let labelFontFor: FontFor | null = null;
+export function setFigureFonts(f: FontFor | null) { labelFontFor = f; }
+/**
+ * A taker's name over his head (matchFigure drawMarkers' label): 700 weight, max(8, 0.3 r) px,
+ * a dark outline, white, upright above his crown. The packed app (the reference) shows this
+ * size; the website's newer labelBig (15 px and up) is not in it.
+ */
+function nameLabel(c: SkCanvas, text: string, x: number, crown: number, r: number, star: boolean) {
+  if (!labelFontFor) return;
+  const g = createCtx2D(sk(), c, { width: 1, height: 1, fontFor: labelFontFor }) as unknown as CanvasRenderingContext2D;
+  g.font = `700 ${Math.max(8, r * 0.3)}px sans-serif`;
+  g.textAlign = "center";
+  g.textBaseline = "alphabetic";
+  g.lineWidth = Math.max(2, r * 0.1);
+  g.lineJoin = "round";
+  g.strokeStyle = "rgba(0,0,0,0.65)";
+  const ly = crown - r * (star ? 0.78 : 0.16);
+  g.strokeText(text, x, ly);
+  g.fillStyle = "#ffffff";
+  g.fillText(text, x, ly);
 }
 
 /** The star over your head (matchFigure drawMarkers), upright above his crown. */

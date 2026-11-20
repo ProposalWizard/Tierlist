@@ -87,9 +87,10 @@ import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponen
 import { creditChance, assistFor, noteMatePlays, probeMatePlays, type MatePlay } from "@/lib/star/credit";
 import { attachAutoKick, autoKickOf, aimFor, planPenalty, takerSkills, takerRating, designatedTaker, yourPenaltyRating, shootoutOrder, clearForShootout, AUTO_STAND_MS, type PenaltyTaker } from "@/lib/star/penaltyTaking";
 import { shortClub } from "@/lib/star/media/grammar";
+import { popupMs } from "@/lib/star/mikeyPopups";
 import { divisionOf } from "@/lib/star/calendar";
 import type { MatchStats, GoalEvent, OppGoalEvent, SquadPlayer } from "@/lib/star/types";
-import { shotsPro, knucklePowerOn, launchShot, shotSeedFor, stepKnuckle, type ContactRead } from "@/lib/star/shotModel";
+import { shotsPro, knucklePowerOn, launchShot, shotSeedFor, stepKnuckle, gradeContact, type ContactRead } from "@/lib/star/shotModel";
 import { shotPowerOn, contactFieldOn, feelPower, feelLift, struckAtGoal } from "@/lib/star/shotFeel";
 import { energyFactorFor, energyPerMinute, clampEnergy, tiredKickSkills, fatigueCut, type EnergyMode } from "@/lib/star/energy";
 import { aerialOf } from "@/lib/star/aerial";
@@ -142,6 +143,9 @@ const RECEIVE_GLIDE_S = 0.32;
 const RECEIVE_LEAD_M = 0.45;
 const MINUTE_TICK_MS = 700;
 const ACTION_BANNER_MS = 1000;
+/** MikeyPopup.tsx MIN_SHOW_MS. */
+const POPUP_MIN_SHOW_MS = 350;
+const isGoalWord = (t: string) => t === "GOAL" || t === "SCORED";
 /** CanvasMatch's FOLLOWER_RUN_SPEED (stepCommitted). */
 const FOLLOWER_RUN_SPEED = 7.0;
 /** The lead-in's replay clock cap (LEAD_REPLAY_MAX_DT). */
@@ -209,7 +213,7 @@ interface RunOn { lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[] }
 type Timer = { at: number; gen: number; fn: () => void };
 
 /** What the screen shows as the big caption (CanvasMatch showAction). */
-export interface Banner { text: string; at: number }
+export interface Banner { text: string; at: number; /** How long it stays up (mikeyPopups.ts popupMs). */ ms: number }
 
 export class MatchDriver {
   // ── fixed for the match (CanvasMatch props / refs) ──
@@ -449,7 +453,35 @@ export class MatchDriver {
     this.log = [...this.log, logLine(text, tone, shown)];
     this.bump();
   }
-  showAction(text: string) { this.banner = { text, at: this.now }; this.bump(); }
+  /**
+   * A pop-up (CanvasMatch showAction → MikeyPopup.tsx useMikeyPopup().show):
+   * up for popupMs (1 s; GOAL 1.5 s; PASS 0.8 s). A goal shows at once and is
+   * never knocked off by a lesser word; any other word waits until the last
+   * one has been up MIN_SHOW_MS (0.35 s), the newest waiting word winning.
+   * Picture only: nothing in the match reads it.
+   */
+  showAction(text: string) {
+    const c = this.banner, goal = isGoalWord(text);
+    const age = c ? this.now - c.at : Infinity;
+    if (c && isGoalWord(c.text) && !goal && age < c.ms - 150) return;
+    if (c && !goal && age < POPUP_MIN_SHOW_MS) { this.bannerPending = text; return; }
+    this.bannerPending = null;
+    this.banner = { text, at: this.now, ms: popupMs(text) };
+    this.bump();
+  }
+  private bannerPending: string | null = null;
+  /** The pop-up showing now (null when none): promotes a waiting word once the last has been read. */
+  bannerNow(): Banner | null {
+    const c = this.banner;
+    if (c && this.bannerPending !== null && this.now - c.at >= POPUP_MIN_SHOW_MS) {
+      const text = this.bannerPending;
+      this.bannerPending = null;
+      this.banner = { text, at: c.at + POPUP_MIN_SHOW_MS, ms: popupMs(text) };
+      this.bump();
+    }
+    const b = this.banner;
+    return b && this.now - b.at < b.ms ? b : null;
+  }
   private playerLabel() { return this.setup.career?.player.lastName || "you"; }
   private momentLine() {
     const you = this.playerLabel();
@@ -555,6 +587,8 @@ export class MatchDriver {
     });
   }
 
+  /** A tie that must be won tonight (the game music's knockout; reads only). */
+  get knockoutTie(): boolean { return !!this.extraTimeEligibility(); }
   /** CanvasMatch extraTimeEligibility. */
   private extraTimeEligibility(): { extraTime: boolean; isLevelNow: () => boolean } | null {
     const fixture = this.setup.fixture, career = this.setup.career;
@@ -1772,6 +1806,8 @@ export class MatchDriver {
   contactTimedOut = false;
   /** Where you hit it (ball radii) once tapped, for the spark. */
   contactSpark: { cx: number; cy: number } | null = null;
+  /** Picture only: your last strike (the ball it launched, how cleanly, header/volley), for Match feel (match/feel.ts). */
+  feelStrike: { ball: Ball; grade?: string; air?: "header" | "volley" } | null = null;
   private openContact() {
     this.phase = "contact";
     this.contactT0 = this.tickNo;
@@ -1907,6 +1943,8 @@ export class MatchDriver {
       this.ball = launch(this.sc, a.dir, a.power, contact, launchWith, this.rng);
     }
     applyAirborne(this.ball, this.sc, contact.air);
+    // Picture only (Match feel, match/feel.ts): the strike as it left the boot, read, never changed.
+    this.feelStrike = { ball: this.ball, grade: shotRead?.grade ?? gradeContact(contact, a.power, false).grade, air: contact.air?.kind };
     if (aerNow) {
       const banner = AERIAL_SPECS[aerNow.move].banner;
       if (banner) this.showAction(banner);

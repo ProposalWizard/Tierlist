@@ -438,8 +438,8 @@ export function DrillStrike({ kind, trainingLevel, skills, onFinish }: { kind: S
   return (
     <View>
       <DrillHeader kind={kind} trainingLevel={trainingLevel} results={results} />
-      {!done ? (
-        <EngineFeature height={h} openOn={openOn} onChanceResolved={onChanceResolved} onBallStep={onBallStep} markers={view.markers}
+      {/* Over: the last picture holds (frozen) with the flash on it until the result card (Training DrillShell). */}
+        <EngineFeature height={h} frozen={done} openOn={openOn} onChanceResolved={onChanceResolved} onBallStep={onBallStep} markers={view.markers}
           skills={kickSkills} setPieceSkill={skills.freeKick} keeperStrength={keeperStrength} seed={seed}
           scene={view.openGoal ? { ...DRILL_SCENE.power, keeper: false } : DRILL_SCENE[kind]}>
           {view.brief ? <Text pointerEvents="none" style={{ position: "absolute", left: 8, bottom: 8, backgroundColor: "rgba(0,0,0,0.55)", color: "#fde68a", fontSize: 11, fontWeight: "900", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, overflow: "hidden" }}>{view.brief.toUpperCase()}</Text> : null}
@@ -449,7 +449,6 @@ export function DrillStrike({ kind, trainingLevel, skills, onFinish }: { kind: S
             </View>
           )}
         </EngineFeature>
-      ) : <View style={{ height: h }} />}
     </View>
   );
 }

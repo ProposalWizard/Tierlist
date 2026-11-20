@@ -1,7 +1,7 @@
 // The scoreboard and the stats plate above the pitch, in the packed app's look (CanvasMatch's
 // career scoreboard: two team bars in their kits with the score in white boxes; the plate:
 // competition, goals, assists, pass %, rating, 2D, ⚙, sound).
-import { View, Text, Pressable, type ViewStyle } from "react-native";
+import { View, Text, Pressable, useWindowDimensions, type ViewStyle } from "react-native";
 import { shortClub } from "@/lib/star/media/grammar";
 import { competitionAbbrev } from "@/lib/star/competitions";
 import { divisionOf } from "@/lib/star/calendar";
@@ -16,6 +16,8 @@ const OUTLINE = { textShadowColor: "#000", textShadowOffset: { width: 0, height:
 
 export function MatchHud({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
   const prefs = usePrefs();
+  // CanvasMatch statCell: the labels drop to 9 px under 390 px wide (ASSISTS ran into PASS at 360).
+  const narrow = useWindowDimensions().width < 390;
   const home = d.setup.fixture.home !== false;
   const us = shortClub(d.setup.career.player.club), them = shortClub(d.setup.fixture.opponent);
   const t = d.tally;
@@ -35,7 +37,7 @@ export function MatchHud({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
   );
   const cell = (label: string, value: string, colour: string) => (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 4, borderLeftWidth: 1, borderColor: "rgba(255,255,255,0.05)" }}>
-      <Text numberOfLines={1} style={{ color: "#fff", fontSize: 10.5, fontWeight: "700", letterSpacing: -0.2 }}>{label}</Text>
+      <Text numberOfLines={1} style={{ color: "#fff", fontSize: narrow ? 9 : 10.5, fontWeight: "700", letterSpacing: -0.2 }}>{label}</Text>
       <Text style={{ color: colour, fontSize: 12, fontWeight: "900" }}>{value}</Text>
     </View>
   );
