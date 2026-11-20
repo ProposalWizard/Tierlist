@@ -41,7 +41,7 @@ import {
 import type { FrameKits } from "@/lib/star/scenarioFrame";
 import { loadPlaySettings, sanitizePlaySettings, type PlaySettings } from "@/lib/star/playArea";
 import { pressureFromDial } from "@/lib/star/pressure";
-import type { CareerState, MatchStats } from "@/lib/star/types";
+import type { CareerState, Fixture, MatchStats } from "@/lib/star/types";
 import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
 import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
@@ -436,7 +436,7 @@ export default function EnginePlay({
  */
 export function EngineFeature({
   openOn, onChanceServed, onChanceResolved, skills, setPieceSkill, keeperStrength = 62,
-  penaltyRead, seed = 1, markers, onBallStep, scene, penaltyRunup, freeKickRunup, holdAt,
+  penaltyRead, seed = 1, markers, onBallStep, scene, penaltyRunup, freeKickRunup, holdAt, career, fixture,
 }: {
   /** The picture for the next chance. Called again after every result. */
   openOn: () => Scenario;
@@ -460,6 +460,11 @@ export function EngineFeature({
   freeKickRunup?: FreeKickRunupId;
   /** A teaching pause as your run-up starts / the strike screen opens (the trial's free kick). */
   holdAt?: (moment: "runup" | "contact", release: () => void) => boolean;
+  /** Who you are and whose kit you wear (Events v2's drills: your club's kit and your own look,
+   *  as in every other screen). The same two props the real match passes; a feature without
+   *  them keeps the neutral kit it had. */
+  career?: CareerState | null;
+  fixture?: Fixture | null;
 }) {
   const w = useRealMatchWidth();
   const { boxRef, served } = useRevealPitch(onChanceServed);
@@ -473,6 +478,8 @@ export function EngineFeature({
       ? { width: bleed.width, maxWidth: "none", margin: `0 ${-bleed.side}px` }
       : { width: w, maxWidth: "100%", margin: "0 auto" }}>
       <CanvasMatch
+        career={career}
+        fixture={fixture}
         seed={seed}
         skills={skills}
         setPieceSkill={setPieceSkill}
