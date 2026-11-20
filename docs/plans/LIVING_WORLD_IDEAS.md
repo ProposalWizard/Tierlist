@@ -104,3 +104,10 @@ several rounds; arcs that return seasons later. Writing passes through the de-ai
 (harryv2157-dev/zocial-gen-operations .claude/skills/de-ai). Places: the shop's spot becomes the training compound; the
 shop moves to a bigger shop; garden levels by star pass / club size (docs/plans/2026-10-19/harry-answers-round.md:164).
 The remaining ~1,420 events are NOT written until the v2 format is agreed.
+
+## Go-ahead and Zelda (Harry, 20 Nov 2026, 16:50)
+"yes merge the 50 events and build the kit man story, also another game to look at for very cool side quest
+maintenance is Zelda - ocarina of time is a good one and breath of the wild"
+=> 50 trial events merged into Harry (80 in the book). The kit man arc ("A hundred balls in the dark") is being built
+for real. Side-quest upkeep to study: Ocarina of Time (the trading sequence, mask quests, people whose lives change
+between child and adult time) and Breath of the Wild (the quest log, Tarrey Town built up over visits, Kass).
