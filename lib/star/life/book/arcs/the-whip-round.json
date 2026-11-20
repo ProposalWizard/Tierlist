@@ -282,7 +282,7 @@
      ]
     },
     "setup": [
-     "{if !arc.path=='skipped'}A card through the door with a photo of the baby on it. \"You're invited to Ava's christening.\"{/if}",
+     "{if !arc.path=='skipped'}A card through the door with a photo of the baby on it. \"You're invited to the christening.\"{/if}",
      "{if arc.path=='skipped'}Everybody in the dressing room is talking about {mate.short}'s christening on Sunday. You find out from the group chat.{/if}"
     ],
     "choices": [
