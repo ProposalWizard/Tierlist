@@ -33,3 +33,4 @@ RUL-UI-008 | The 3D phone: Phone tab = eye-blink into a 3D phone in your hands (
 RUL-UI-009 | [SUPERSEDED] Every page has the relevant stats as the top 2 bars, in the Home bar style (3D icon over the bar): shop fame + money with a dollar bill icon; phone level + money; relations happiness + rep. | three-d,economy,ui
 RUL-UI-010 | The menu shop is B (big picture + thumbnails) on G1 (the 3D store blurred behind frosted glass), no pitch background, SHOP at top middle, money up where fitness is, age and stars not needed on this page. | three-d,economy,ui
 RUL-UI-011 | Money should be £ instead of dollars (£ pounds): the shop goes into the game, the Owner app gets Money + Reputation, the Sponsors fame pill goes. | economy,ui
+RUL-UI-012 | The original blink was better (one quick half-blink, ~0.8 s); the houses and 3D space need cleaning up, sticking to the style but making it clean; driving from here to training/matchday is wanted. | three-d,ui

@@ -37,3 +37,4 @@ taps and page moves feel slow next to NSS. Two read-only audits ran
 11. "I prefer navy btw" and "the icons should be still be smaller and in the top left hovering over the bar".
 12. "also should it be £ instead of dollars" → "£ pounds (Recommended)". Answers the same message: shop into the game "yes"; the Sponsors fame pill "idk"; the Owner app gets Money + Reputation "yes".
 13. "I want u to put all inages/videos into this chat even with the test pages"
+14. (20 Nov) On the 3D phone videos: "the original blink was better but this is looking good, the houses and 3d space are defo gonna need cleaning up too, even if that means just sticking to the style but making it clean. Also driving from here to training/matchday would be eliteeee"
