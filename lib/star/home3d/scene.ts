@@ -616,7 +616,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     me.person.root.position.set(at.x, 0, at.z);
     yaw = at.yaw; yawTurn.vel = 0; me.person.root.rotation.y = yaw;
     camYaw = openCamYaw(at.x, at.z, yaw + Math.PI, CS.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap, CS.swing); orb.reset(); first = true;
-    intro = room.intro ?? (opts.living && door ? arrivalShot(door, room.h, room.w2, room.d2) : null);
+    // (a living house's garage: from its door, the row of cars and him in view; its own low shot sat on a bonnet)
+    intro = (opts.living && room.id === "garage" ? null : room.intro) ?? (opts.living && door ? arrivalShot(door, room.h, room.w2, room.d2) : null);
     meBlob.position.set(at.x, 0.012, at.z);
     try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* first use */ }
     shadowDirty = true;

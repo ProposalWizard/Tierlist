@@ -298,7 +298,7 @@ export function buildStudio(c: Ctx, h: LivingHooks) {
   tableLamp(c, W2 - 0.28, 0.53, bz + 1.25);
   F.put("rugRound", bx - 1.3, bz + 0.3, 0, { s: 0.6, solid: false, tint: { carpet: "#c9b48e" } });
   artPiece(c, W2 - 0.03, 1.55, bz, -Math.PI / 2, 1.0, 0.7, 3);
-  X.things.push(seatObject({ id: "bed", label: "Bed", at: [bx - 0.35, bz + 0.95 - 0.2], facing: 0, seats: 1, y: 0.5, front: 0.2, verb: "Sit on the bed", lines: ["Five minutes off your feet."], loop: [{ clip: "sit_down", hold: 1.55, secs: 6 }], stay: [8, 14] }));
+  X.things.push(seatObject({ id: "bed", label: "Bed", at: [bx - 0.35, bz + 0.95 - 0.2], facing: 0, seats: 1, y: 0.54, front: 0.2, verb: "Sit on the bed", lines: ["Five minutes off your feet."], loop: [{ clip: "sit_down", hold: 1.55, secs: 6 }], stay: [8, 14] }));
   X.things[X.things.length - 1].effect = { energy: 1, text: "Rested. Energy +1" };
   // the kitchenette along the south wall (west of the front door): the stocked fridge, sink, hob, a coffee machine
   const kz = D2 - 0.45;
@@ -373,15 +373,15 @@ export function buildKitchen(c: Ctx, _h: LivingHooks) {
   X.things.push(coffeeThing("coffee", [xs[4], nz + 0.45 + 0.55], [xs[4], -D2]));
   // the island with stools (your guests lean here), a fruit bowl
   const iz = 0.15;
-  for (const ix of [-1.2, -0.34, 0.52]) F.put("kitchenBar", ix, iz, Math.PI, { tint });
-  F.put("kitchenBarEnd", 0.52 + 0.53, iz, Math.PI, { tint });
-  F.put("kitchenBarEnd", -1.2 - 0.53, iz, 0, { tint });
+  for (const ix of [-1.6, -0.74, 0.12]) F.put("kitchenBar", ix, iz, Math.PI, { tint });
+  F.put("kitchenBarEnd", 0.12 + 0.53, iz, Math.PI, { tint });
+  F.put("kitchenBarEnd", -1.6 - 0.53, iz, 0, { tint });
   const P = painter(k, env);
-  P.box(3.0, 0.05, 0.62, "#ece6dc", -0.34, 0.865, iz + 0.05);
-  P.cyl(0.16, 0.1, 0.08, "#2b2b30", -0.6, 0.93, iz);
-  for (const [fx, fz, col] of [[-0.66, iz - 0.03, "#e2b44a"], [-0.56, iz + 0.04, "#d7263d"], [-0.6, iz - 0.06, "#7cb342"]] as [number, number, string][]) P.ball(0.045, col, fx, 0.99, fz);
+  P.box(3.0, 0.05, 0.62, "#ece6dc", -0.74, 0.865, iz + 0.05);
+  P.cyl(0.16, 0.1, 0.08, "#2b2b30", -1.0, 0.93, iz);
+  for (const [fx, fz, col] of [[-1.06, iz - 0.03, "#e2b44a"], [-0.96, iz + 0.04, "#d7263d"], [-1.0, iz - 0.06, "#7cb342"]] as [number, number, string][]) P.ball(0.045, col, fx, 0.99, fz);
   P.done({ roughness: 0.4 });
-  for (const sxx of [-1.2, -0.34, 0.52]) F.put("stoolBar", sxx, iz + 0.62, Math.PI, { solid: true, pad: -0.05 });
+  for (const sxx of [-1.6, -0.74, 0.12]) F.put("stoolBar", sxx, iz + 0.62, Math.PI, { solid: true, pad: -0.05 });
   // a round table and chairs by the south wall (sit at it)
   const tx = W2 - 1.35, tz = D2 - 1.2;
   F.put("tableRound", tx, tz, 0, { s: 0.75, tint: { wood: c.wood } });
@@ -393,12 +393,12 @@ export function buildKitchen(c: Ctx, _h: LivingHooks) {
   F.put("trashcan", -W2 + 0.3, 1.35, Math.PI / 2, { s: 0.8 });
   artPiece(c, -W2 + 0.03, 1.6, D2 - 1.4, Math.PI / 2, 0.8, 0.6, 11);
   // a pendant over the island
-  for (const px of [-1.0, 0.3]) {
+  for (const px of [-1.4, -0.1]) {
     const pend = new k.THREE.Mesh(new k.THREE.CylinderGeometry(0.11, 0.17, 0.2, 16, 1, true), k.glowM("#ffd9a0", 1.6));
     pend.position.set(px, H - 0.8, iz); k.add(pend);
     k.box(0.012, 0.7, 0.012, shell.metalM, px, H - 0.35, iz);
   }
-  k.glow(k.patchT, "#ffe0b0", 0.22, 3.2, 1.6, -0.34, 0.9, iz, -Math.PI / 2, 0);
+  k.glow(k.patchT, "#ffe0b0", 0.14, 3.2, 1.6, -0.74, 0.9, iz, -Math.PI / 2, 0);
   X.guests.push({ obj: "chairs", slot: "s0" });
   return shell;
 }
@@ -423,7 +423,7 @@ export function buildBedroom(c: Ctx, h: LivingHooks) {
   artPiece(c, bx, 1.75, -D2 + 0.03, 0, 1.4, 0.6, 5);
   F.put("rugRectangle", bx, bz + 0.9, 0, { s: 0.9, solid: false, tint: { carpet: R.tier === "estate" ? "#c9b48e" : "#d9cbb4" } });
   F.put("loungeSofaOttoman", bx, bz + 1.45, 0, { s: 0.85, tint: { carpet: inp.kits.home.shirt } });
-  X.things.push(seatObject({ id: "bed", label: "Bed", at: [bx + 0.96 - 0.2, bz + 0.25], facing: Math.PI / 2, seats: 1, y: 0.5, front: 0.2, verb: "Sit on the bed", lines: ["Five minutes off your feet."], stay: [8, 14] }));
+  X.things.push(seatObject({ id: "bed", label: "Bed", at: [bx + 0.96 - 0.2, bz + 0.25], facing: Math.PI / 2, seats: 1, y: 0.54, front: 0.2, verb: "Sit on the bed", lines: ["Five minutes off your feet."], stay: [8, 14] }));
   X.things[X.things.length - 1].effect = { energy: 1, text: "Rested. Energy +1" };
   // a reading chair by the window, a plant, a dresser with your things
   F.put("loungeChair", W2 - 0.75, D2 - 1.1, -Math.PI * 0.75, { tint: { carpet: "#8a9a8a" } });

@@ -200,7 +200,7 @@ export const LIVING_ROOMS: Record<HomeTier, RoomId[]> = {
 };
 
 /** The tiers whose living house is in the real game (House: New). The rest keep TIER_ROOMS until theirs is signed off. */
-export const LIVING_TIERS: ReadonlySet<HomeTier> = new Set<HomeTier>(["starter", "flat"]);
+export const LIVING_TIERS: ReadonlySet<HomeTier> = new Set<HomeTier>(["starter", "flat", "house"]);
 
 /** Is this tier's living house on in the game (or forced on by a test page)? */
 export function livingOn(tier: HomeTier, force?: boolean): boolean {
