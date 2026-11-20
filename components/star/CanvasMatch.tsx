@@ -509,7 +509,7 @@ interface Props {
    * `markers`: cones drawn on the pitch, in pitch metres. Decoration only:
    * nothing in the engine reads them, so the football is untouched.
    */
-  markers?: { x: number; y: number; color?: string }[];
+  markers?: CanvasMarker[];
   /** Observer: the ball's position, once per physics step while it flies —
    *  so a drill can judge "did it go through the gate" off the real flight. */
   onBallStep?: (ball: { x: number; y: number; z: number }) => void;
@@ -839,6 +839,11 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
 
 /** The latest minute Play may jump straight to (the v0.25 quick start).
  *  Most first chances come by 7' (measured); a later one is read out. */
+
+/** A feature's decoration on the pitch (EngineFeature's `markers`). Nothing in the engine reads it.
+ *  Default: a cone on the grass. `z` lifts it off the ground (metres, drawn at the goal's own height
+ *  scale); `shape` "ring" is a hanging tyre of radius `r` (with a `rope` up to the bar), "bucket" a pail. */
+export interface CanvasMarker { x: number; y: number; color?: string; z?: number; shape?: "cone" | "ring" | "bucket"; r?: number; rope?: number }
 
 export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell, plannedOffAt, leadIn, dribbleControl, dribbleOnly = false, vfxOverride, realGoal }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
@@ -4677,10 +4682,36 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // A feature's cones (the markers prop) — on the grass, under everyone.
     if (markersRef.current?.length) {
       for (const m of markersRef.current) {
-        const { px, py } = toPx(m.x, m.y);
+        const at = toPx(m.x, m.y);
+        const px = at.px;
+        // Off the ground (a tyre hung from the bar): the goal's own height scale, so it sits where the frame is drawn.
+        const py = at.py - (m.z ?? 0) * heightScale;
         const vpm = viewportRef.current;
         // A cone about 0.35 m across, at this camera's own pixels per metre.
         const pxPerM = Math.max(canvas.width, canvas.height) / Math.max(vpm.x2 - vpm.x1, vpm.y2 - vpm.y1);
+        if (m.shape === "ring") {
+          // A hanging tyre: a dark ring of radius m.r (metres), its rope up to the bar, a bright rim so it reads at night.
+          const rr = Math.max(6, (m.r ?? 0.5) * heightScale);
+          if (m.rope) { ctx.strokeStyle = "rgba(220,220,210,.85)"; ctx.lineWidth = Math.max(1, rr * 0.08); ctx.beginPath(); ctx.moveTo(px, py - rr); ctx.lineTo(px, py - rr - m.rope * heightScale); ctx.stroke(); }
+          ctx.lineWidth = Math.max(3, rr * 0.34);
+          ctx.strokeStyle = "#141414";
+          ctx.beginPath(); ctx.arc(px, py, rr, 0, Math.PI * 2); ctx.stroke();
+          ctx.lineWidth = Math.max(1.5, rr * 0.09);
+          ctx.strokeStyle = m.color ?? "#facc15";
+          ctx.beginPath(); ctx.arc(px, py, rr + rr * 0.17, 0, Math.PI * 2); ctx.stroke();
+          continue;
+        }
+        if (m.shape === "bucket") {
+          // A bucket on the line: a tapered pail m.r (metres) across at the top.
+          const bw = Math.max(6, (m.r ?? 0.35) * heightScale);
+          ctx.fillStyle = m.color ?? "#dc2626";
+          ctx.beginPath();
+          ctx.moveTo(px - bw * 0.5, py - bw * 0.95); ctx.lineTo(px + bw * 0.5, py - bw * 0.95);
+          ctx.lineTo(px + bw * 0.36, py); ctx.lineTo(px - bw * 0.36, py); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = "rgba(0,0,0,.45)";
+          ctx.beginPath(); ctx.ellipse(px, py - bw * 0.95, bw * 0.5, bw * 0.13, 0, 0, Math.PI * 2); ctx.fill();
+          continue;
+        }
         const r = Math.max(3, 0.35 * pxPerM);
         ctx.fillStyle = m.color ?? "#f97316";
         ctx.beginPath();

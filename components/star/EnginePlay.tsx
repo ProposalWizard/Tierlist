@@ -30,7 +30,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { revealOnScreen } from "@/lib/revealOnScreen";
-import CanvasMatch, { type ChanceResolved } from "./CanvasMatch";
+import CanvasMatch, { type CanvasMarker, type ChanceResolved } from "./CanvasMatch";
 import type { ScenePicture } from "@/lib/star/scenePicture";
 import type { VfxOverride } from "@/lib/star/vfxLab";
 import {
@@ -448,8 +448,8 @@ export function EngineFeature({
   keeperStrength?: number;
   penaltyRead?: Partial<PenaltyReadSettings>;
   seed?: number;
-  /** Cones on the grass (decoration only). */
-  markers?: { x: number; y: number; color?: string }[];
+  /** Cones on the grass, a hanging tyre, a bucket (decoration only: CanvasMarker). */
+  markers?: CanvasMarker[];
   /** Watches the ball each physics step (read-only). */
   onBallStep?: (ball: { x: number; y: number; z: number }) => void;
   /** What is on the pitch: leave out the keeper, goal, team-mates or the
