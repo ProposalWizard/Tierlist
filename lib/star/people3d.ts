@@ -26,6 +26,7 @@
  *
  * Pure three.js; no 2D canvas drawing here (signing3dTextures.ts does that).
  */
+import { spreadClipStance, STANCE_ANKLE } from "./three3d/stance";
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { loadGltfCached } from "./three3d/perf";
@@ -421,7 +422,12 @@ const FRAG_BODY = `
   float limb = step(0.12, abs(r.x));
   float onFore = step(df, 0.085) * step(-0.05, tf) * limb;
   float onUpper = step(du, 0.095) * step(0.15, tu) * step(tu, 1.05) * limb;
-  if (uSleeve.a > 0.5) col = mix(col, uSleeve.rgb * shade, skin * max(onUpper, onFore * step(tf, 0.97)));
+  // long sleeves (a tracksuit top): the whole arm to the wrist, the elbow included, in an even cloth shade (the
+  // narrow tubes left skin showing at the elbow and round the thick upper arm, and the skin's own baked light
+  // made the sleeve blotchy)
+  float onElbowS = step(length(r - E), 0.12) * limb;
+  float sleeveW = skin * max(max(step(du, 0.12) * step(0.12, tu) * step(tu, 1.05) * limb, onElbowS), onFore * step(tf, 0.97));
+  if (uSleeve.a > 0.5) col = mix(col, uSleeve.rgb * clamp(mix(1.0, shade, 0.4), 0.8, 1.1), sleeveW);
   if (uTape.a > 0.5) col = mix(col, uTape.rgb * max(shade, 0.6), onFore * step(0.8, tf) * step(tf, 0.97));
   if (uGlove.a > 0.5) {
     float g = step(df, 0.1) * step(0.97, tf) * limb;
@@ -784,6 +790,8 @@ export function makePerson3d(
     for (const tr of c.tracks) {
       if (tr.name.endsWith(".position")) { const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= kc; tr.values = v; }
     }
+    // the moving loops: legs turned out just enough that they never brush or cross (three3d/stance.ts), per body
+    if (STANCE_ANKLE[clip.name] != null) spreadClipStance(T, inner, bones, c, `${stanceBodyKey(toonHead, toon, prop?.id, body)}|${clip.uuid}`);
     const a = mixer.clipAction(c);
     a.play();
     a.setEffectiveWeight(0);
@@ -1135,3 +1143,8 @@ const FRAG_ACCESSORIES = FRAG_BODY.slice(FRAG_BODY.indexOf("  // Arms: forearm")
 /** The body's uniforms, shader patch and outline (as makePerson3d makes them),
  *  for the human body (lib/star/human3d/human.ts). */
 export { makeUniforms as makePeople3dUniforms, patchBody as patchPeople3dBody, outlineMaterial as people3dOutline };
+
+/** Which body a clip fix is measured on: the Style A head, proportions and build, or the file's own mesh. */
+export function stanceBodyKey(toonHead: string | undefined, toon: string | undefined, prop: string | undefined, body: THREE.SkinnedMesh): string {
+  return toonHead ? `toon:${toonHead}:${prop ?? "a"}:${toon ?? "c1"}` : `mesh:${body.geometry.uuid}`;
+}

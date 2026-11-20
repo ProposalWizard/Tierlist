@@ -19,7 +19,7 @@ import type { CameraTrack, CutsceneScript, ShotSpec, StoryEvent, Target, Track }
 import { compose } from "./generate";
 import { VOICE_LINES } from "./voiceLines";
 import { frameTracks } from "./cinema";
-import { goalCelebration, goalStrike, contractSlide, handshake, officeSeated, shirtPhoto, signContract, trophyLift, tunnelLineUp, walkOut, pressQuestion, pressAnswer, mentorWord, farewellWalk, applause } from "./beats";
+import { goalCelebration, goalStrike, contractSlide, handshake, officeSeated, shirtPhoto, signContract, trophyLift, tunnelLineUp, walkOut, pressQuestion, pressAnswer, mentorWord, farewellWalk, applause, STRIKE_CONTACT } from "./beats";
 
 const Y: Target = { actor: "you" };
 const cam = (at: number, dur: number, shot: ShotSpec, name: string, cut: CameraTrack["cut"] = "cut", blend?: number): CameraTrack => ({ type: "camera", at, dur, shot, name, cut, blend });
@@ -72,7 +72,7 @@ function goal(): CutsceneScript {
   const ids = { you: "you", mates: ["mate0", "mate1", "mate2"] };
   const c = compose([goalStrike, goalCelebration], ev, ids, "pitch", 2, 0.3, { cast: [{ id: "you", role: "you", mark: "run.start" }], props: [] });
   const [b0, b1] = c.beats;
-  const contact = b0.at + 2.4 + 0.31;
+  const contact = b0.at + 2.4 + STRIKE_CONTACT;
   const cams: CameraTrack[] = [
     // open close and moving (a broadcast cuts in within a second)
     cam(0, b0.at + 0.9, { preset: "medium-wide", subject: Y, side: -1, yaw: 25, move: "follow", lens: 35 }, "On the ball"),

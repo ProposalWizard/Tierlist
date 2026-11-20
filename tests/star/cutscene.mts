@@ -303,7 +303,7 @@ for (const [id, ev] of Object.entries(FIXTURE_EVENTS)) {
         const v = Math.hypot(b[0] - a[0], b[2] - a[2]) / 0.1;
         if (v < 0.3 || v > 12) continue; // still, or a cut to a new place
         const mv = moves.find((x) => t >= x.at && t <= x.at + x.dur);
-        if (moves.some((x) => x.gait === "none" && t >= x.at && t <= x.at + x.dur + 0.4)) continue; // a slide or a dive: no steps on purpose
+        if (moves.some((x) => x.gait === "none" && t >= x.at - 0.05 && t <= x.at + x.dur + 0.4)) continue; // a slide or a dive: no steps on purpose (the speed is read over ±0.05 s)
         if (C.tracks.some((x) => x.type === "place" && (x as { actor: string }).actor === m.id && Math.abs(x.at - t) < 0.12)) continue; // put somewhere at a cut
         if (mv && (t < mv.at + 0.3 || t > mv.at + mv.dur - 0.3)) continue; // setting off and stopping blend in and out
         const g = rootAt(C, m.id, t).gait;

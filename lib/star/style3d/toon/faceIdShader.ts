@@ -69,6 +69,10 @@ export const FI_CANVAS = /* glsl */ `
   float fiWasHair = hairM * fiKill;
   hairM *= 1.0 - fiKill;
   float fiCan = max(fiFront * (1.0 - smoothstep(0.3, 0.7, hairM)), smoothstep(0.2, 0.6, fiWasHair));
+  // never the clothes: on our short necks the collar is only 2.5 to 4.5 cm under the chin, inside the face's
+  // own band, and the even skin was painted over the shirt's collar, the tie's knot and the top of the coat
+  // (Harry, 20 Nov 2026: "his skin colour is bleeding into his suit"). Below the collar line, kit stays kit.
+  fiCan *= (1.0 - kit * (1.0 - smoothstep(uKit2.x + 0.004, uKit2.x + 0.018, r.y))) * (1.0 - max(max(tnCollar, tnKnot), tnCoat));
   // the even skin: the picked tone; a little of the file's own light and dark, none of its dark patches;
   // round the nose (nostrils, the wings' shade) most of it is kept
   const vec3 fiY = vec3(0.2126, 0.7152, 0.0722);

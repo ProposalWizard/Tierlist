@@ -257,25 +257,33 @@ export const shirtPhoto: BeatDef = {
 const SHOT_SPOT: Vec3 = [-2.6, 0, 14.2];
 const SLIDE_START: Vec3 = [-6.0, 0, 18.4], SLIDE_END: Vec3 = [-7.4, 0, 22.1];
 
+/**
+ * Seconds from the start of the "shot" clip to the foot meeting the ball: the motion-capture shot_r's
+ * measured contact (0.42, its toe lowest and fastest at 0.45; the old hand-made clip's was 0.31, and the ball flew off while his foot was
+ * still swung back). The director puts the ball against the foot at the real moment (dribble).
+ */
+export const STRIKE_CONTACT = 0.45;
+
 export const goalStrike: BeatDef = {
   id: "goal-strike", act: "moment", at: ["pitch"],
   weight: (e) => (e.kind === "scored" || e.kind === "record-broken" ? 1 : 0),
   build: (c, t) => {
     const Y = c.ids.you;
     const K = "keeper";
-    const run = 2.4, contact = t + run + 0.31;
+    const run = 2.4, contact = t + run + STRIKE_CONTACT;
     const d = run + 0.95;
-    // the ball runs ahead of him, then flies into the top corner and drops in the net
-    const pts: Vec3[] = [[-5.0, 0.12, 22.6], [-4.3, 0.12, 20.3], [-3.6, 0.12, 18.1], [-2.95, 0.12, 15.9], [-2.6, 0.12, 13.7]];
-    const ball: Track[] = pts.map((p, i) => ({ type: "prop", prop: "ball", at: t + (i * run) / pts.length, action: "place", to: p, dur: run / pts.length } as Track));
+    // the ball at his feet (director.ts dribble: touched on by his right foot each stride, against it as he
+    // strikes), then into the top corner and down into the net
+    const ball: Track[] = [{ type: "prop", prop: "ball", at: t, action: "dribble", actor: Y, foot: "R", dur: contact - t } as Track];
     ball.push(
       { type: "prop", prop: "ball", at: contact, action: "place", to: [2.95, 1.95, -0.1], dur: 0.48, arc: 0.4 },
-      { type: "prop", prop: "ball", at: contact + 0.48, action: "place", to: [3.1, 0.12, -1.3], dur: 0.45 },
+      { type: "prop", prop: "ball", at: contact + 0.48, action: "place", to: [3.1, 0.11, -1.3], dur: 0.45 },
     );
     return {
       name: "The strike", act: "moment", dur: d,
       cast: [{ id: K, role: "keeper", mark: "goal.line", face: 0 }, { id: "def4", role: "rival", mark: [-9.5, 0, 25], face: "shot.spot" }],
-      props: [{ id: "ball", kind: "ball", at: [-5.3, 0.12, 23.2], scale: 1.6 }],
+      // a real-size ball on the grass (RUL-3D-006; it was 1.6x and sunk 5 cm into the pitch)
+      props: [{ id: "ball", kind: "ball", at: [-5.3, 0.11, 23.2] }],
       tracks: [
         { type: "place", actor: Y, at: t, to: "run.start", yaw: 160 },
         { type: "move", actor: Y, at: t, dur: run, path: [SHOT_SPOT], gait: "dribble", ease: 0 },

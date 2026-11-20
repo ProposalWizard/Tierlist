@@ -246,6 +246,23 @@ const TOON_BODY = `
   // collar: the chin is only ~2.5 cm above the collar line): the mask's kit specks round the jaw and
   // chin took the shirt's colour (a white rim under the chin in a white kit, a red one in a red kit)
   if (uSkinFx.w > 0.5 && kit > 0.0 && (r.y > uKit2.x + 0.03 || (r.y > uKit2.x - 0.015 && vRestN.y < -0.2 && r.z > uNeck.z + 0.03))) { skin = min(1.0, skin + kit * (1.0 - hairM)); kit = 0.0; }
+  // a suit head's shirt collar, its points and the tie's knot stand up round the front of the neck, above the
+  // collar line, and its mask calls them skin: painted the skin tone (and then the drawn face's even skin) they
+  // read as skin running down into the suit (Harry, 20 Nov 2026). There the file's own paint tells them apart:
+  // the shirt is pale and grey, the knot red, skin is warm.
+  float tnCollar = 0.0, tnKnot = 0.0, tnCoat = 0.0;
+  if (uSuit > 0.5) {
+    float cMx = max(c.r, max(c.g, c.b)), cSat = (cMx - min(c.r, min(c.g, c.b))) / max(cMx, 1e-4);
+    float zone = step(uKit2.x - 0.03, r.y) * step(r.y, uKit2.x + 0.06) * step(abs(r.x), 0.1) * step(uNeck.z, r.z) * (1.0 - hairM);
+    tnCollar = zone * (1.0 - smoothstep(0.12, 0.2, cSat)) * smoothstep(0.3, 0.45, cMx);
+    tnKnot = zone * step(2.2 * c.g, c.r) * step(2.2 * c.b, c.r) * step(0.05, c.r);
+    // and the coat's own collar round the back and sides of the neck (dark, grey): coat, not skin
+    float zoneW = step(uKit2.x - 0.03, r.y) * step(r.y, uKit2.x + 0.06) * step(abs(r.x), 0.2) * (1.0 - hairM);
+    tnCoat = zoneW * (1.0 - smoothstep(0.2, 0.3, cSat)) * (1.0 - smoothstep(0.22, 0.32, cMx));
+    kit = max(kit, tnCoat); skin *= 1.0 - tnCoat;
+    float cl = max(tnCollar, tnKnot);
+    kit = max(kit, cl); skin *= 1.0 - cl;
+  }
   float lum = max(c.r, max(c.g, c.b));
   float shade = clamp(pow(max(c.g, 1e-4), 1.0 / 2.2) / 0.7, 0.25, 1.4);
   float head = smoothstep(uFaceF.x - 0.045, uFaceF.x - 0.025, r.y);
@@ -370,11 +387,16 @@ ${TOON_FACE}
   if (uSkinFx.y > 1.5) tnRegion = r.y > uFaceF.x - 0.005 ? 1.0 : abs(r.x) < 0.12 ? 2.0 : tTu < 1.0 ? 3.0 : p3SegT(r, tE, tL ? uWrL : uWrR) < 0.97 ? 4.0 : 5.0;
   vec3 part;
   if (uSuit > 0.5) {
+    // under a coat nothing the mask left unpainted keeps the file's own colour: on the arms and the back
+    // (where the torso rule above does not reach) it showed as blue and white blotches on the suit
+    if (mTot <= 0.05 && r.y < uKit2.x - 0.005 && head < 0.01) kit = 1.0;
     part = uSuitCoat * shirtW + uSuitTrousers * (shortsW + socksW) + uShoes * bootW;
     // the white shirt and tie in the coat's V, front only
     float v = shirtW * step(0.0, r.z) * step(abs(r.x), (r.y - (uKit2.x - 0.24)) * 0.38) * step(r.y, uKit2.x + 0.02);
     vec3 sh = mix(uSuitShirt, uSuitTie, step(abs(r.x), 0.014) * step(r.y, uKit2.x - 0.03));
     part = mix(part, sh, v);
+    part = mix(part, uSuitShirt, tnCollar);
+    part = mix(part, uSuitTie, tnKnot);
     // the two suit heads' masks call the shirt in the coat's V skin (it showed in his skin colour):
     // under the collar, the V is shirt and tie whatever the mask says
     // (and round the V, the lapels and the collar's notch: no torso under a coat is bare skin. Left to the
@@ -476,6 +498,9 @@ ${TOON_FACE}
   }
   // a suit's or casual set's trousers over a kit body's white shorts: no brighter than the cloth
   float partShade = (uSuit > 0.5 && shirtW < 0.5) ? min(shade, 1.0) : shade;
+  // a suit's cloth keeps only a little of the file's own baked light and dark: the generated suit's painted
+  // folds and smudges, at full strength, were blotches on a dark coat (the toon light gives the form)
+  if (uSuit > 0.5) partShade = clamp(mix(1.0, partShade, 0.4), 0.8, 1.1);
   col = mix(col, part * partShade, kit);
   tnSkin *= 1.0 - kit;
   tnTone = max(tnSkin, tfEyesK);
