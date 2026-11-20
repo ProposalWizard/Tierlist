@@ -23,6 +23,7 @@ import { weekOfMoney, type FactOverride } from "./facts";
 import { fillLine } from "./text";
 import { actionsLeft } from "../week";
 import { promiseCount, MAX_OPEN_PROMISES } from "./promises";
+import { rollHundred } from "./drill";
 
 export const talkNode = (b: BeatLive): TalkNode | undefined => b.event.talk?.nodes[b.node];
 
@@ -137,6 +138,13 @@ export function inviteChips(c: CareerState, b: BeatLive): Record<string, string>
 // ── The dice: a device that cannot run the mode, a skipped week, the soak ──
 
 export function diceActivity(c: CareerState, b: BeatLive, act: LifeActivity, rng: () => number): ActivityResult {
+  if (act.mode === "strike-drill") {
+    // Den's hundred: each of the ten balls against its own difficulty (drill.ts), as on the pitch.
+    const fw = act.dials.from;
+    const from = typeof fw === "object" ? (holds(fw.if, arcCtx(c, b.arc, b)) ? fw.then : fw.else) : fw ?? "12m";
+    const r = rollHundred((c.skills as unknown as Record<string, number> | undefined)?.technique ?? 50, rng, (Number.parseFloat(from) || 12) - 12);
+    return { score: r.score, tens: r.tens, won: r.score >= 5, abandoned: false, byDice: true };
+  }
   const n = act.dials.balls ?? act.dials.shots ?? 10;
   const f = act.fallback ?? { stat: "technique" as const, target: 55 };
   const skill = (c.skills as unknown as Record<string, number> | undefined)?.[f.stat] ?? 50;

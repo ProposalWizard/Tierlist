@@ -22,6 +22,7 @@ const PR = await import("../../lib/star/life/promises.ts");
 const { validateArcs } = await import("../../lib/star/life/validateArcs.ts");
 const { ARCS } = await import("../../lib/star/life/arcBook.ts");
 const { migrateLife } = await import("../../lib/star/life/migrate.ts");
+const DR = await import("../../lib/star/life/drill.ts");
 const { makeInitialCareer } = await import("../../lib/star/careerFlow.ts");
 const { NATIONAL_LEAGUE_CLUBS } = await import("../../lib/star/clubs.ts");
 const { mulberry32 } = await import("../../lib/star/season.ts");
@@ -63,6 +64,21 @@ check(probs.length === 0, `the arc book passes the v2 checker: ${probs.slice(0, 
   broken("a promise with one ending", (a) => { delete a.promises["p-thursday"].broken; }, /both endings/);
   broken("an ending never reached", (a) => { a.ends.push({ id: "lost-ending", title: "x", text: "x" }); }, /never reached/);
   broken("two silences", (a) => { b1(a).nodes.n1.replies!.push({ id: "q2", label: "…", silent: true, goto: "n2" }); }, /more than one silence/);
+}
+
+// 1c: Den's hundred is short, varied and missable (Harry: "no one's missing"). The rolled
+// night (the dice stand-in) at a normal player's technique: median 6-7, real 3s and 10s.
+{
+  check(DR.HUNDRED_FEEDS.length === 10 && new Set(DR.HUNDRED_FEEDS.map((f) => f.label)).size === 10, "ten balls, every one different");
+  check(DR.HUNDRED_FEEDS.every((f) => f.label.split(" ").length <= 3) && DR.HUNDRED_FEEDS.some((f) => f.volley) && DR.HUNDRED_FEEDS.some((f) => f.keeper) && DR.HUNDRED_FEEDS[9].double === true, "two-word labels, a volley, a keeper, the last double or nothing");
+  const r = mulberry32(99);
+  const at = (t: number) => { const xs: number[] = []; for (let i = 0; i < 4000; i++) xs.push(DR.rollHundred(t, r).score); xs.sort((a, b) => a - b); return xs; };
+  const mid = at(62);
+  const med = mid[2000];
+  check(med >= 6 && med <= 7, `a normal player (technique 62) scores a median 6-7 of 10 (got ${med})`);
+  check(mid.filter((x) => x <= 3).length > 20 && at(72).filter((x) => x === 10).length > 20, "real 3s and real 10s");
+  check(DR.pointsOf([true, true, true, true, true, true, true, true, true, true]) === 100 && DR.pointsOf(Array(9).fill(false).concat([false])) === 0, "a perfect night is a hundred; a blank one nothing");
+  check(DR.denAfter("hit", 2, 3).includes("three"), "Den notices a streak");
 }
 
 // 2: the offer, then ignored.

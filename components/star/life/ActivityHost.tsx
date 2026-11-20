@@ -20,7 +20,7 @@
  *
  * Stop is a real result (abandoned), with its own line in the talk.
  */
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { Scenario } from "@/lib/star/canvasEngine";
 import type { LifeActivity } from "@/lib/star/life/types";
@@ -31,15 +31,17 @@ import { personInfo } from "@/lib/star/life/people";
 import { mulberry32 } from "@/lib/star/season";
 import { CX, GOAL_H, PITCH_W, POST_L, POST_R } from "@/lib/star/pitch";
 import { FRAME_TOP_FOR_GOAL } from "@/lib/star/goalFrame";
+import { denAfter, feedsFor, pointsOf, TARGET_LOW, TARGET_WIDTH, type BallEnd, type Feed } from "@/lib/star/life/drill";
 import { gateCrossing, gateQuality, type TechniqueDrillConfig } from "@/lib/star/trainingDrills";
 import { EngineFeature } from "../EnginePlay";
 import { buildStrike, DRILL_SCENE, type StrikeSetup } from "../TrainingMinigame";
 import type { ChanceResolved } from "../CanvasMatch";
+import { speak, stopVoice } from "@/lib/star/life/voice";
 import "./decision.css";
 
 /** A ball counts as "low in the corner": under this height, within this of a post. */
-export const CORNER_LOW = 1.0;
-export const CORNER_WIDTH = 2.0;
+export const CORNER_LOW = TARGET_LOW;
+export const CORNER_WIDTH = TARGET_WIDTH;
 
 export function cornerHit(x: number, z: number): boolean {
   return x > POST_L && x < POST_R && z <= CORNER_LOW && (x <= POST_L + CORNER_WIDTH || x >= POST_R - CORNER_WIDTH);
@@ -50,7 +52,19 @@ export function barHit(x: number, z: number): boolean {
 
 const DEFAULT_CALLS = ["\"Ten.\"", "\"Twenty.\"", "\"That's thirty.\"", "\"Forty.\"", "\"Fifty.\"", "\"Sixty.\"", "\"Seventy.\"", "\"Eighty.\"", "\"Ninety.\"", "\"And a hundred.\""];
 
-interface Shot { hit: boolean; x: number | null; z: number | null }
+interface Shot { hit: boolean; x: number | null; z: number | null; end?: BallEnd }
+
+/** The drill's camera: close on the goal, just wide enough for the ball and both posts, so the
+ *  small targets read on a phone (the match makes it taller to fit its canvas: more grass below). */
+function closeFrame(ballX: number, ballY: number) {
+  // room for you behind the ball (3 m) and a post's width either side of the goal
+  const x1 = Math.min(ballX - 4, POST_L - 1.4), x2 = Math.max(ballX + 4, POST_R + 1.4);
+  const w = Math.max(10.5, x2 - x1);
+  const h = Math.max(w * 1.25, ballY + 4);
+  const ww = Math.max(w, h * 0.62);
+  const cx = Math.max(ww / 2, Math.min(PITCH_W - ww / 2, (x1 + x2) / 2));
+  return { x1: cx - ww / 2, x2: cx + ww / 2, y1: FRAME_TOP_FOR_GOAL, y2: FRAME_TOP_FOR_GOAL + h };
+}
 
 export default function ActivityHost({ career, live, activity, callerLines, onDone, allowDice, onDice }: {
   career: CareerState;
@@ -66,9 +80,11 @@ export default function ActivityHost({ career, live, activity, callerLines, onDo
   const ctx = useMemo(() => arcCtx(career, live.arc, live), [career, live]);
   const fill = (s: string) => fillLine(s, career, live.cast, ctx);
   const mode = activity.mode;
-  const n = activity.dials.balls ?? activity.dials.shots ?? 10;
   const fromWord = typeof activity.dials.from === "object" ? (holds(activity.dials.from.if, ctx) ? activity.dials.from.then : activity.dials.from.else) : activity.dials.from ?? (mode === "crossbar" ? "16m" : "12m");
   const dist = Number.parseFloat(fromWord) || 12;
+  // Den's hundred: ten different balls (lib/star/life/drill.ts); a further-out night moves them all back.
+  const feeds: Feed[] | null = mode === "strike-drill" ? feedsFor(dist - 12) : null;
+  const n = feeds ? feeds.length : activity.dials.balls ?? activity.dials.shots ?? 10;
   const caller = activity.caller?.slot ? personInfo(career, live.cast[activity.caller.slot] ?? "") : null;
   const opp = activity.dials.opponent ? personInfo(career, live.cast[activity.dials.opponent.slot] || live.cast[activity.dials.opponent.else ?? ""] || "mgr") : null;
   const shooter = activity.dials.shooter ? personInfo(career, live.cast[activity.dials.shooter.slot] ?? "") : null;
@@ -83,11 +99,20 @@ export default function ActivityHost({ career, live, activity, callerLines, onDo
   }, [seed0, n]);
 
   // Your club's kit and your own look: the match reads them from the career and a fixture (home).
+  // After the first ball the match's "drag back to aim" tip has been seen: it stops covering Den's line.
+  const careerSeen = useMemo(() => ({ ...career, careerStats: { ...career.careerStats, appearances: Math.max(1, career.careerStats?.appearances ?? 0) } }), [career]);
   const kitFixture = useMemo(() => ({ week: career.week, opponent: (career.league?.find((t) => t.name !== career.player.club)?.name) ?? "Training", home: true, played: false }), [career.week, career.league, career.player.club]);
   const [shots, setShots] = useState<Shot[]>([]);
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
   const [said, setSaid] = useState<string | null>(null);
   const [over, setOver] = useState(false);
+  // Between balls: Den calls the next one (its two words), then you play it, then he says how it went.
+  const [phase, setPhase] = useState<"call" | "play" | "react">(mode === "strike-drill" ? "call" : "play");
+  useEffect(() => {
+    if (phase !== "call") return;
+    const t = window.setTimeout(() => setPhase("play"), 850);
+    return () => window.clearTimeout(t);
+  }, [phase]);
   const setupRef = useRef<StrikeSetup | null>(null);
   const prevRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const crossRef = useRef<{ x: number; z: number } | null>(null);
@@ -99,9 +124,23 @@ export default function ActivityHost({ career, live, activity, callerLines, onDo
   const openOn = useCallback((): Scenario => {
     const rng = mulberry32(seed0 * 7 + ball * 13);
     let setup: StrikeSetup;
+    const feed = feeds?.[ball];
     if (mode === "feed-drill") {
       setup = buildStrike("technique", 1, ball, rng);
       setup.scenario.viewport = { ...setup.viewport };
+    } else if (feed?.volley) {
+      // The match's own volley: the ball comes up off a chip and you meet it in the air.
+      setup = buildStrike("aerial", 50, 1, rng);
+      setup.scenario.defenders = [];
+      setup.scenario.viewport = { ...setup.viewport };
+    } else if (feed) {
+      setup = buildStrike("power", 1, ball, rng, { trainingLevel: 1, power: career.skills.power });
+      const sc = setup.scenario;
+      sc.ball = { x: CX + feed.x, y: feed.dist };
+      sc.player = { x: sc.ball.x - 0.4, y: feed.dist + 0.8 };
+      sc.defenders = [];
+      if (feed.keeper) sc.keeperStrength = 45;
+      sc.viewport = closeFrame(sc.ball.x, sc.ball.y);
     } else {
       setup = buildStrike("power", 1, ball, rng, { trainingLevel: 1, power: career.skills.power });
       const sc = setup.scenario;
@@ -119,7 +158,7 @@ export default function ActivityHost({ career, live, activity, callerLines, onDo
     setupRef.current = setup;
     prevRef.current = null; crossRef.current = null; gateRef.current = null; barRef.current = false;
     return setup.scenario;
-  }, [seed0, ball, mode, dist, career.skills.power]);
+  }, [seed0, ball, mode, dist, career.skills.power, feeds]);
 
   const markers = useMemo(() => {
     if (mode !== "feed-drill") return undefined;
@@ -146,10 +185,10 @@ export default function ActivityHost({ career, live, activity, callerLines, onDo
     const sc = list.filter((s) => s.hit).length;
     const oppScore = mode === "crossbar" ? oppShots.slice(0, list.length).filter(Boolean).length : undefined;
     setOver(true);
-    onDone({ score: sc, tens: sc * 10, won: mode === "crossbar" ? sc > (oppScore ?? 0) : sc >= Math.ceil(n / 2), abandoned, oppScore });
-  }, [mode, oppShots, n, onDone]);
+    onDone({ score: sc, tens: feeds ? pointsOf(list.map((x) => x.hit), feeds) : sc * 10, won: mode === "crossbar" ? sc > (oppScore ?? 0) : sc >= Math.ceil(n / 2), abandoned, oppScore });
+  }, [mode, oppShots, n, onDone, feeds]);
 
-  const onChanceResolved = useCallback((_info: ChanceResolved) => {
+  const onChanceResolved = useCallback((info: ChanceResolved) => {
     let shot: Shot;
     let text: string;
     let good: boolean;
@@ -166,34 +205,58 @@ export default function ActivityHost({ career, live, activity, callerLines, onDo
       text = shot.hit ? "CROSSBAR!" : "MISSED THE BAR";
     } else {
       const c = crossRef.current;
-      const hit = !!c && cornerHit(c.x, c.z);
-      shot = { hit, x: c?.x ?? null, z: c?.z ?? null };
+      const o = info.outcome;
+      const saved = o === "saved" || o === "caught" || o === "tipped";
+      const hit = !saved && !!c && cornerHit(c.x, c.z);
+      const end: BallEnd = hit ? "hit" : saved ? "saved" : o === "post" ? "post" : !c || c.x <= POST_L || c.x >= POST_R ? "wide" : c.z > GOAL_H ? "over" : c.z > TARGET_LOW ? "high" : "central";
+      shot = { hit, x: c?.x ?? null, z: c?.z ?? null, end };
       good = hit;
-      text = hit ? "IN THE CORNER" : !c ? "WIDE" : c.x <= POST_L || c.x >= POST_R ? "WIDE" : c.z > GOAL_H ? "OVER" : c.z > CORNER_LOW ? "TOO HIGH" : "TOO CENTRAL";
+      const word: Record<BallEnd, string> = { hit: feeds?.[ball]?.double ? "TWENTY!" : "IN THE CORNER", saved: "SAVED", post: "OFF THE POST", wide: "WIDE", over: "OVER", high: "TOO HIGH", central: "TOO CENTRAL" };
+      text = word[end];
+      let streak = 0;
+      for (let k = shots.length - 1; k >= 0 && shots[k].hit; k--) streak++;
+      const after = denAfter(end, streak, ball, feeds ?? undefined);
+      if (hit && feeds) {
+        // Den counts in tens (his voiced lines, b1's caller lines): the new total, then a streak if there is one.
+        const total = pointsOf([...shots.map((x) => x.hit), true], feeds);
+        const idx = Math.max(0, Math.min(calls.length - 1, Math.round(total / 10) - 1));
+        const count = fill(calls[idx] ?? "");
+        const streakWords = streak + 1 >= 3 && !feeds[ball]?.double ? ` ${after}` : "";
+        setSaid(`${count}${streakWords}`);
+        speak(`b1-the-offer.play.caller${idx}`, count);
+      } else { setSaid(fill(after)); stopVoice(); }
     }
     const list = [...shots, shot];
     setShots(list);
     setFlash({ text, good });
-    if (mode === "strike-drill") setSaid(fill(calls[Math.min(calls.length - 1, list.length - 1)] ?? ""));
+    if (mode === "strike-drill") {
+      setPhase("react");
+      window.setTimeout(() => setFlash(null), 1100);
+      if (list.length >= n) window.setTimeout(() => finish(list, false), 1500);
+      else window.setTimeout(() => { setSaid(null); setPhase("call"); }, 1150);
+      return;
+    }
     window.setTimeout(() => setFlash(null), 900);
     if (list.length >= n) window.setTimeout(() => finish(list, false), 1100);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, shots, n, seed0, ball, finish, calls]);
+  }, [mode, shots, n, seed0, ball, finish, calls, feeds]);
 
   const title = fill(activity.name);
-  const sub = mode === "crossbar" ? `${dist} m · hit the bar · ${opp?.short ?? "him"} next` : mode === "feed-drill" ? `Through the cones · ${shooter?.short ?? "he"} shoots` : `${dist} m · low in the corners · no keeper`;
+  const sub = mode === "crossbar" ? `${dist} m · hit the bar · ${opp?.short ?? "him"} next` : mode === "feed-drill" ? `Through the cones · ${shooter?.short ?? "he"} shoots` : `Small targets, low in the corners${feeds?.[Math.min(ball, n - 1)]?.keeper ? " · keeper in" : ""}`;
   const done = Math.min(ball, n);
-  const big = mode === "strike-drill" ? score * 10 : score;
-  const bigSub = mode === "strike-drill" ? `out of ${done * 10} so far` : mode === "crossbar" ? `${opp?.short ?? "His"} ${oppShots.slice(0, done).filter(Boolean).length}` : `${shooter?.short ?? "His"} corners`;
+  const big = feeds ? pointsOf(shots.map((x) => x.hit), feeds) : score;
+  const bigSub = feeds ? `from ${done} ball${done === 1 ? "" : "s"}` : mode === "crossbar" ? `${opp?.short ?? "His"} ${oppShots.slice(0, done).filter(Boolean).length}` : `${shooter?.short ?? "His"} corners`;
 
   return (
     <div className="dd" data-activity={mode} style={{ background: "#06110c", display: "flex", flexDirection: "column", minHeight: "100%" }}>
       {/* Head: stop, the name, the balls */}
       <div style={{ padding: "8px 12px 7px", background: "linear-gradient(180deg,#0b1a14,#06110c)" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          {activity.canAbandon && !over ? (
-            <button type="button" className="dd-ghost" style={{ height: 34, padding: "0 12px", fontSize: 12, borderRadius: 999 }} onClick={() => finish(shots, true)} data-stop>✕ Stop</button>
-          ) : <span />}
+          <div style={{ display: "flex", gap: 6 }}>
+            {activity.canAbandon && !over && <button type="button" className="dd-ghost" style={{ height: 34, padding: "0 12px", fontSize: 12, borderRadius: 999 }} onClick={() => finish(shots, true)} data-stop>✕ Stop</button>}
+            {/* Test page: what a device that cannot run the drill gets (kept off the pitch so it never sits on the ball) */}
+            {allowDice && !over && <button type="button" className="dd-ghost" style={{ height: 34, padding: "0 10px", fontSize: 11, borderRadius: 999 }} onClick={onDice} data-dice>🎲 Roll</button>}
+          </div>
           <div style={{ textAlign: "right" }}>
             <div className="dd-anton" style={{ fontSize: 21, lineHeight: 1, letterSpacing: ".02em", textTransform: "uppercase" }}>{title}</div>
             <div className="dd-kick" style={{ color: "#f5b942", marginTop: 4, letterSpacing: ".14em" }}>{sub}</div>
@@ -206,7 +269,7 @@ export default function ActivityHost({ career, live, activity, callerLines, onDo
             const bg = s ? (s.hit ? "#22c55e" : "#ef4444") : "rgba(255,255,255,.08)";
             return (
               <div key={i} style={{ width: 26, height: 26, borderRadius: 99, display: "grid", placeItems: "center", fontSize: 10, fontWeight: 900, color: s ? "#fff" : cur ? "#f5b942" : "rgba(255,255,255,.4)", background: bg, boxShadow: cur ? "0 0 0 2px #f5b942, 0 0 12px rgba(245,185,66,.6)" : "inset 0 0 0 1px rgba(255,255,255,.18)" }}>
-                {s ? (s.hit ? "✓" : "✕") : mode === "strike-drill" ? (i + 1) * 10 : i + 1}
+                {s ? (s.hit ? "✓" : "✕") : feeds?.[i]?.double ? "×2" : i + 1}
               </div>
             );
           })}
@@ -215,6 +278,8 @@ export default function ActivityHost({ career, live, activity, callerLines, onDo
 
       {/* The real engine, under a dusk light */}
       <div style={{ position: "relative" }}>
+        {/* Between balls the pitch stays (the next ball waiting), with Den's call or his word on top. */}
+        {!over && phase !== "play" && <div className="absolute inset-0 z-[29]" style={{ background: "rgba(3,8,14,.42)" }} aria-hidden data-between />}
         {!over && (
           <EngineFeature
             key={ball}
@@ -222,11 +287,11 @@ export default function ActivityHost({ career, live, activity, callerLines, onDo
             onBallStep={onBallStep}
             onChanceResolved={onChanceResolved}
             skills={{ power: career.skills.power, technique: career.skills.technique }}
-            keeperStrength={0}
+            keeperStrength={feeds?.[ball]?.keeper ? 45 : 0}
             seed={seed0 * 7 + ball * 13}
             markers={markers}
-            scene={mode === "feed-drill" ? DRILL_SCENE.technique : { ...DRILL_SCENE.power, keeper: false, ownFrame: true }}
-            career={career}
+            scene={mode === "feed-drill" ? DRILL_SCENE.technique : feeds?.[ball]?.volley ? { ...DRILL_SCENE.aerial, keeper: false } : { ...DRILL_SCENE.power, keeper: !!feeds?.[ball]?.keeper, ownFrame: true }}
+            career={ball > 0 ? careerSeen : career}
             fixture={kitFixture}
           />
         )}
@@ -252,6 +317,13 @@ export default function ActivityHost({ career, live, activity, callerLines, onDo
           </div>
         )}
         {flash && <div className="pointer-events-none absolute inset-x-0 z-30 text-center dd-anton" style={{ top: "34%", fontSize: 26, color: flash.good ? "#86efac" : "#fca5a5", textShadow: "0 2px 8px #000" }}>{flash.text}</div>}
+        {phase === "call" && feeds && !over && (
+          <div className="pointer-events-none absolute inset-x-0 z-30 text-center" style={{ top: "26%", padding: "0 20px" }} data-call={ball}>
+            <div className="dd-kick" style={{ color: "rgba(255,255,255,.7)" }}>Ball {ball + 1} of {n}{feeds[ball].double ? " · twenty, or ten off" : ""}</div>
+            <div className="dd-anton" style={{ fontSize: 40, lineHeight: 1.05, color: feeds[ball].double ? "#f5c542" : "#fff", textShadow: "0 3px 12px #000" }}>{feeds[ball].label}</div>
+            <div style={{ fontSize: 16, fontWeight: 800, marginTop: 10, textShadow: "0 2px 6px #000" }}><span className="dd-kick" style={{ color: "#f5b942", display: "block" }}>{caller?.short ?? "Den"}</span>&quot;{feeds[ball].call}&quot;</div>
+          </div>
+        )}
         {said && caller && (
           <div className="pointer-events-none absolute inset-x-0 z-30 text-center" style={{ bottom: 92, padding: "0 18px", textShadow: "0 2px 6px #000" }} data-caller>
             <div className="dd-kick" style={{ color: "#f5b942" }}>{caller.short}</div>
@@ -262,12 +334,12 @@ export default function ActivityHost({ career, live, activity, callerLines, onDo
         {/* Foot: which ball, what it costs (over the empty grass at the bottom) */}
       <div className="dd-glass" style={{ position: "absolute", left: 12, right: 12, bottom: 12, zIndex: 31, pointerEvents: "none", padding: "10px 12px", display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", borderRadius: 12 }}>
         <div>
-          <div className="dd-kick" style={{ color: "rgba(255,255,255,.65)", fontSize: 9 }}>Ball {Math.min(ball + 1, n)} of {n}{mode === "strike-drill" ? " · each one counts as ten" : ""}</div>
-          <div style={{ fontSize: 13, fontWeight: 700, marginTop: 2 }}>{activity.intro ? fill(activity.intro) : mode === "crossbar" ? `Five shots each, and ${opp?.short ?? "he"} goes after you.` : "Roll it through the cones onto his right foot."}</div>
+          <div className="dd-kick" style={{ color: "rgba(255,255,255,.65)", fontSize: 9 }}>Ball {Math.min(ball + 1, n)} of {n}{mode === "strike-drill" ? " · ten each, the last is double or nothing" : ""}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, marginTop: 2 }}>{feeds ? `${feeds[Math.min(ball, n - 1)].label} · ${feeds[Math.min(ball, n - 1)].dist} m${feeds[Math.min(ball, n - 1)].keeper ? " · keeper in" : ""}` : activity.intro ? fill(activity.intro) : mode === "crossbar" ? `Five shots each, and ${opp?.short ?? "he"} goes after you.` : "Roll it through the cones onto his right foot."}</div>
         </div>
         {activity.cost?.energy ? <div style={{ textAlign: "right" }}><div className="dd-kick" style={{ fontSize: 8, color: "rgba(255,255,255,.6)" }}>Energy</div><div style={{ color: "#ff8a80", fontWeight: 900, fontSize: 18 }}>{activity.cost.energy}</div></div> : null}
       </div>
-      {allowDice && !over && <button type="button" className="dd-ghost" style={{ position: "absolute", right: 12, top: "40%", height: 30, padding: "0 10px", fontSize: 10.5, borderRadius: 999, zIndex: 31 }} onClick={onDice} data-dice>🎲 Roll it</button>}
+
       </div>
     </div>
   );
