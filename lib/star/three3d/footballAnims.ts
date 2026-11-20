@@ -311,7 +311,7 @@ export function addClips(T: Three, p: Person3D, g: GLTF): string[] {
     if (p.toon && IDLE_POSTURE_CLIPS.has(clip.name)) relaxIdleArms(T, p.root, p.bones, c, { L: p.hand.L.palm, R: p.hand.R.palm });
     // Style A: the run and sprint no longer hunch on the shorter torso (runPosture.ts levelToonLean)
     if (p.toon && TOON_LEAN_MAX[clip.name] !== undefined) levelToonLean(T, p.root, p.bones, c, TOON_LEAN_MAX[clip.name]);
-    // the moving loops: legs turned out just enough that they never brush or cross (stance.ts), per body
+    // the running loops: no calf or knee through the other on this body's fuller legs (stance.ts)
     if (STANCE_ANKLE[clip.name] != null) spreadClipStance(T, p.root, p.bones, c, `${p.toonKey ? `toon:${p.toonHead}:${p.prop ?? "a"}:${p.toon}` : `mesh:${p.body.geometry.uuid}`}|${clip.uuid}`);
     for (const tr of c.tracks) {
       if (tr.name.endsWith(".position")) { const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= k; tr.values = v; }

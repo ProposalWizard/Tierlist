@@ -1,30 +1,13 @@
 /**
- * THE STANCE (Harry, 20 Nov 2026, on the re-filmed cut scenes and house walk:
- * "why the legs like squeezing past each other, they look so like awkward and
- * hard to move").
- *
- * Measured on a Style A body (scripts/people3d/legGap.mts): the motion-capture
- * walk put the two ankles 0.5 to 3.5 cm apart across (a tightrope walk), the
- * jog and sprint crossed them (−3 cm: each foot landing on the other's side)
- * and the sprint crossed the knees. The skin of one shin or knee touched the
- * other in about half of every stride (walk 17 of 30 frames, jog 19, sprint
- * 15). Cause: tools/mocap3d/retarget.py puts each ankle where the actor's
- * went, scaled about the middle of his body, so the actor's narrow line comes
- * across unchanged, but our bodies' legs are thicker for their hip width
- * (Style A hips are 10.5 cm joint to joint, the thighs and calves stylised
- * full), so a line a real man walks with clears for him and brushes for us.
- *
- * Fix, baked into each body's own copy of the moving loops when the person is
- * made (makePerson3d and addClips, people3d.ts / footballAnims.ts: so every
- * cut scene, the house, the garden, the shop and the drills get it), measured
- * on that body's own skeleton (a wide-hipped body needs less than a Style A
- * one) and kept per body and clip: each leg is turned out from the hip by one
- * constant angle per clip,
- * just enough that at every key the ankle stays STANCE_ANKLE out from the
- * middle and the knee STANCE_KNEE. Constant per clip, so nothing new moves
- * during a stride and a planted foot does not slide sideways. The foot keeps
- * its own turn in the world (stays flat on the floor; it does not roll onto
- * its edge). Nothing else in the clip changes.
+ * NO LEG THROUGH THE OTHER ON THE RUNS (RUL-3D-005). The hip joints are fitted to each body first
+ * (hipFit.ts), so the capture's own foot placement comes across: the walk and the idles need nothing more.
+ * The capture's runner, though, lands each foot on one line and his knees pass within a few cm: fine on
+ * his legs, but ours are fuller, and the calves and knees touched in about a third of every jog and
+ * sprint stride. So on the running loops only, each body's own copy has both legs turned out from the hip
+ * by one constant angle (nothing new moves in the stride, a planted foot does not slide sideways), just
+ * enough that the ankles stay STANCE_ANKLE apart and the knees STANCE_KNEE, and a knee that falls in
+ * towards the other leg is turned back over its foot. The foot keeps its own turn in the world.
+ * Measured per body and kept (makePerson3d and addClips). `?stance=0`: the clips as captured.
  */
 import type * as THREE from "three";
 
@@ -32,15 +15,14 @@ type Three = typeof import("three");
 
 /** The ankles' spacing across (centre to centre) at the narrowest moment of the stride, metres. */
 export const STANCE_ANKLE: Record<string, number> = {
-  walk: 0.11, walk_confident: 0.11, slump_walk: 0.11, Walk_Loop: 0.11,
-  jog: 0.095, Jog_Fwd_Loop: 0.095, dribble_run: 0.095, run: 0.09, sprint: 0.09,
+  jog: 0.06, Jog_Fwd_Loop: 0.06, dribble_run: 0.06, run: 0.06, sprint: 0.06, slump_walk: 0.06,
 };
 /** The knees' spacing across at the narrowest moment, metres. */
-export const STANCE_KNEE = 0.12;
+export const STANCE_KNEE = 0.07;
 /** A knee may sit this far in from the line hip to ankle (towards the other leg), metres; more is turned back out. */
-export const KNEE_IN_MAX = 0.01;
+export const KNEE_IN_MAX = 0.02;
 /** Never turn a leg out more than this, degrees. */
-export const STANCE_MAX_DEG = 9;
+export const STANCE_MAX_DEG = 6;
 
 export interface StanceReport { clip: string; before: { ankle: number; knee: number }; after: { ankle: number; knee: number }; deg: { L: number; R: number } }
 
@@ -169,14 +151,6 @@ export function spreadClipStance(
       }
     });
     for (const [name, v] of Array.from(values)) { const tr = clip.tracks.find((k) => k.name === name)!; tr.values = Float32Array.from(v) as never; }
-  }
-  if (typeof process !== "undefined" && process.env?.STANCE_DEBUG) {
-    const rng = (f: () => void) => { let lo = 9, hi = -9; for (const time of sample) { pose(time); f(); const o = spacing(); lo = Math.min(lo, o.ankle); hi = Math.max(hi, o.ankle); } return [lo.toFixed(3), hi.toFixed(3)]; };
-    console.log("  turned (no write)", rng(() => turnOut(deg)));
-    for (const time of sample.slice(0, 3).concat(sample.slice(-2))) { pose(time); const b = spacing().ankle; turnOut(deg); console.log("   t", time.toFixed(3), b.toFixed(3), spacing().ankle.toFixed(3)); }
-    mixer.uncacheAction(clip); mixer.uncacheClip(clip);
-    const a2 = mixer.clipAction(clip); a2.play();
-    console.log("  written", rng(() => {}));
   }
   act.stop();
   mixer.uncacheRoot(root);

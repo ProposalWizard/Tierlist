@@ -26,6 +26,7 @@
  *
  * Pure three.js; no 2D canvas drawing here (signing3dTextures.ts does that).
  */
+import { fitHipJoints } from "./three3d/hipFit";
 import { spreadClipStance, STANCE_ANKLE } from "./three3d/stance";
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -698,6 +699,9 @@ export function makePerson3d(
   // A (today) changes nothing. Done at build scale 1, before the build below.
   const prop = toon ? toonProportions() : null;
   const warp = prop ? warpToonBody(T, root, body, prop) : null;
+  // the hip joints where this body's own legs are, at the clip skeleton's hip width (three3d/hipFit.ts):
+  // some heads were rigged with them far too near the middle, and every clip's feet landed on one line
+  fitHipJoints(T, root, body, anims.scene);
   // Style A build: the whole person a touch slimmer, broader or taller
   if (toon) inner.scale.set(...TOON_BUILD_SCALE[toon]);
   const bones: Record<string, THREE.Bone> = {};
@@ -790,8 +794,8 @@ export function makePerson3d(
     for (const tr of c.tracks) {
       if (tr.name.endsWith(".position")) { const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= kc; tr.values = v; }
     }
-    // the moving loops: legs turned out just enough that they never brush or cross (three3d/stance.ts), per body
-    if (STANCE_ANKLE[clip.name] != null) spreadClipStance(T, inner, bones, c, `${stanceBodyKey(toonHead, toon, prop?.id, body)}|${clip.uuid}`);
+    // the running loops: no calf or knee through the other on this body's fuller legs (three3d/stance.ts)
+    if (STANCE_ANKLE[clip.name] != null) spreadClipStance(T, inner, bones, c, `${toonHead ? `toon:${toonHead}:${prop?.id ?? "a"}:${toon}` : `mesh:${body.geometry.uuid}`}|${clip.uuid}`);
     const a = mixer.clipAction(c);
     a.play();
     a.setEffectiveWeight(0);
@@ -1144,7 +1148,3 @@ const FRAG_ACCESSORIES = FRAG_BODY.slice(FRAG_BODY.indexOf("  // Arms: forearm")
  *  for the human body (lib/star/human3d/human.ts). */
 export { makeUniforms as makePeople3dUniforms, patchBody as patchPeople3dBody, outlineMaterial as people3dOutline };
 
-/** Which body a clip fix is measured on: the Style A head, proportions and build, or the file's own mesh. */
-export function stanceBodyKey(toonHead: string | undefined, toon: string | undefined, prop: string | undefined, body: THREE.SkinnedMesh): string {
-  return toonHead ? `toon:${toonHead}:${prop ?? "a"}:${toon ?? "c1"}` : `mesh:${body.geometry.uuid}`;
-}
