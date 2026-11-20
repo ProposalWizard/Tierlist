@@ -99,7 +99,7 @@ export default function LifeTestPage() {
   const fresh = useCallback((kind: "fresh" | "lived" | "followup", lv = carLevel, h = horse) => {
     rng.current = mulberry32(20261120);
     let c = kind === "followup" ? followUpSample() : sampleCareer(lv, h);
-    if (kind === "lived") c = autoPlay(c, 16, rng.current);
+    if (kind === "lived") c = autoPlay(c, 30, rng.current);
     setCareer(c); setView({ kind: "people" }); setQueue([]); setSay(null);
     return c;
   }, [carLevel, horse]);
@@ -258,7 +258,7 @@ export default function LifeTestPage() {
               </Panel>
               <Panel title="Sample career" note="Resets everything">
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  <Btn onClick={() => fresh("lived")}>Lived-in (16 weeks played)</Btn>
+                  <Btn onClick={() => fresh("lived")}>Lived-in (30 weeks played)</Btn>
                   <Btn onClick={() => fresh("fresh")}>Brand new</Btn>
                   <Btn onClick={() => fresh("followup")}>A follow-up waiting</Btn>
                 </div>

@@ -103,7 +103,9 @@ export function chat(c0: CareerState, id: string, rng: () => number, facts?: Fac
   const selfTags = new Set(life.self.map(([t]) => t));
   const hits: string[] = [];
   for (const e of EVENTS) for (const cb of e.callbacks) {
-    if (cb.where !== "social:chat" && cb.where !== "social:any") continue;
+    // Chat lines, and any spoken line ("…") that comes back in any later scene with him.
+    const spoken = cb.where === "event:any" && cb.line.startsWith('"');
+    if (cb.where !== "social:chat" && cb.where !== "social:any" && !spoken) continue;
     const [holder, tag] = cb.ifMemory.split(":");
     if (holder === "squad" ? squadTags.has(tag) : holder === "you" ? selfTags.has(tag) : tags.has(tag)) hits.push(cb.line);
   }

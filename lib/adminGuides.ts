@@ -604,7 +604,7 @@ export const ADMIN_GUIDES = {
         ["Games: the dice / Win / Lose", "The result of a choice's test (the crossbar, your horse)."],
       ] },
       { group: "Sample career", items: [
-        ["Lived-in (16 weeks played)", "The sample after 16 weeks played with random choices: people met, memories written, follow-ups waiting."],
+        ["Lived-in (30 weeks played)", "The sample after 30 weeks played with random choices: people met, memories written, follow-ups waiting."],
         ["Brand new", "The sample before anything has happened."],
         ["A follow-up waiting", "A team-mate crashed your car two weeks ago; he is waiting with an envelope (the follow-up and a memory coming back)."],
         ["Car: No car / Level 2 / Level 4, Owns a horse", "Starts the lived-in sample again with that car and horse."],

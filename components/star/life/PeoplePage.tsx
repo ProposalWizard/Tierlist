@@ -52,7 +52,8 @@ export default function PeoplePage({ career, onAction, onBack }: {
 
   // Who to list.
   const squad = (career.squad ?? []).map((p) => p.id);
-  const metMates = squad.filter(met).sort((a, b) => peek(life!, b).b - peek(life!, a).b);
+  // The ones with a story first (most memories), then the closest.
+  const metMates = squad.filter(met).sort((a, b) => peek(life!, b).m.length - peek(life!, a).m.length || peek(life!, b).b - peek(life!, a).b);
   const others = squad.filter((id) => !met(id));
   const staff = [career.manager ? ROLE_ID.manager : null, ROLE_ID.physio, ROLE_ID.kitman].filter(Boolean) as string[];
   const family = [ROLE_ID.dad, ROLE_ID.mum, ROLE_ID.brother];
