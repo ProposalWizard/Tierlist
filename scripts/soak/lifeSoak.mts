@@ -59,6 +59,8 @@ function runCareer(n: number): { events: number; lifeBytes: number } {
   const player = { firstName: "Soak", lastName: `Life${n}`, age: 17, skinTone: "light", club, clubBadge: null, position: POS[n % POS.length], nationality: "England", startYear: 2027 } as StarPlayer;
   let c: CareerState = makeInitialCareer(player, [...clubs], div);
   c = { ...c, contract: { ...c.contract, wage: Math.max(c.contract.wage, 400) }, money: 2000, fame: 5 };
+  // A real squad has ages and ratings (a generated one does not): give them, as the database would.
+  c = { ...c, squad: c.squad.map((p, i) => ({ ...p, age: p.age ?? 17 + ((i * 7 + n) % 17), overall: p.overall ?? 55 + ((i * 11 + n) % 25) })) };
   let events = 0;
   let lastBig = -999;
   for (let s = 1; s <= SEASONS; s++) {
