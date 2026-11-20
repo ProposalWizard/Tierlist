@@ -136,10 +136,21 @@ def build_phone(mats):
     body.data.materials.append(mats["frame"])
     plate("Glass", PW / 2 - 0.7 * MM, PH / 2 - 0.7 * MM, RC - 0.7 * MM, -PT / 2 - 0.05 * MM, mats["glass"])
     plate("ScreenPlane", SW / 2, SH / 2, RC - BEZEL, -PT / 2 - 0.12 * MM, mats["screen"])
-    # side buttons, clear of the fingers: two on the left near the top, one on the right
+
+
+def build_buttons(mats, P):
+    """Side buttons, placed only where no finger is: above the highest skin on each edge."""
     from kit import box
-    for nm, x, z, ln in (("VolUp", -1, 54, 10), ("VolDn", -1, 41, 10), ("Power", 1, 50, 14)):
-        box(nm, (x * (PW / 2 + 0.15 * MM), 0, z * MM), (0.9 * MM, 2.6 * MM, ln * MM), mats["button"], bevel=0.4 * MM, seg=3)
+    top = PH / 2 - RC
+    for side, lens in ((-1, (10, 10)), (1, (14,))):
+        near = P[(P[:, 0] * side > PW / 2 - 1 * MM) & (np.abs(P[:, 1]) < 9 * MM) & (P[:, 0] * side < PW / 2 + 6 * MM)]
+        z = (float(near[:, 2].max()) if len(near) else -PH / 2) + 5 * MM
+        z = max(z, 22 * MM)
+        for k, ln in enumerate(lens):
+            if z + ln * MM > top:
+                break
+            box(f"Button{side}{k}", (side * (PW / 2 + 0.15 * MM), 0, z + ln * MM / 2), (0.9 * MM, 2.6 * MM, ln * MM), mats["button"], bevel=0.4 * MM, seg=3)
+            z += (ln + 3) * MM
 
 
 # ------------------------------------------------------------------ materials
@@ -430,7 +441,7 @@ R0 = Matrix((a0, f0, p0)).transposed()      # columns = rest axes
 R1 = Matrix((a1, f1, p1)).transposed()
 Rhand = R1 @ R0.inverted()
 # where the index finger's knuckle goes: behind the phone, so its tip just reaches the left edge
-IDX1 = Vector((E("PHONE3D_IDX1X", 13) * MM, PT / 2 + 20 * MM, E("PHONE3D_IDXZ", 0) * MM))
+IDX1 = Vector((E("PHONE3D_IDX1X", 13) * MM, PT / 2 + 20 * MM, E("PHONE3D_IDXZ", 14) * MM))
 ANCHOR = "RightHandIndex1"
 
 
@@ -614,14 +625,26 @@ upd()
 # -------------------------------------------- the wrist: the forearm goes to the elbow
 # A real first-person arm: the elbow is low and to the right of the eye. The forearm
 # turns about the wrist to point there; the hand itself does not move.
-elbow = cam.matrix_world @ Vector((E("PHONE3D_EX", 0.13), E("PHONE3D_EY", -0.36), E("PHONE3D_EZ", -0.04)))
+elbow = cam.matrix_world @ Vector((E("PHONE3D_EX", 0.24), E("PHONE3D_EY", -0.36), E("PHONE3D_EZ", -0.04)))
 Wp = jpos("RightHand")
 hand_keep = arm.pose.bones["RightHand"].matrix.copy()
-cur = jpos("RightForeArm") - Wp
-tgt = elbow - Wp
-ax = cur.cross(tgt)
-angw = math.degrees(cur.angle(tgt))
-turn("RightForeArm", ax, angw, Wp)
+cur = (jpos("RightForeArm") - Wp).normalized()      # a straight wrist: the rest pose
+tgt = (elbow - Wp).normalized()
+# The wrist stays nearly straight. It may fold towards the palm (that brings the forearm
+# towards the eye, where it is foreshortened and reads as natural), but only a few degrees
+# sideways: a big sideways bend is what makes a pinched neck and a sagging palm heel.
+FLEX_MAX, SIDE_MAX = E("PHONE3D_WFLEX", 26), E("PHONE3D_WSIDE", 5)
+best = (9.0, 0.0, 0.0)
+for fl in np.linspace(-8, FLEX_MAX, 35):
+    for sd_ in np.linspace(-SIDE_MAX, SIDE_MAX, 11):
+        d_ = Matrix.Rotation(math.radians(sd_), 3, p1) @ (Matrix.Rotation(math.radians(fl), 3, a1) @ cur)
+        ang_ = d_.angle(tgt)
+        if ang_ < best[0]:
+            best = (ang_, float(fl), float(sd_))
+_, wflex, wside = best
+turn("RightForeArm", a1, wflex, Wp)
+turn("RightForeArm", p1, wside, Wp)
+angw = math.hypot(wflex, wside)
 arm.pose.bones["RightHand"].matrix = hand_keep
 upd()
 
@@ -657,6 +680,8 @@ for _ in range(4):
 touching = int((phone_sd(P) < 0.25 * MM).sum())
 hand_me.vertices.foreach_set("co", P.reshape(-1))
 hand_me.update()
+
+build_buttons(mats, P)
 
 # who owns each baked vertex, for the checks
 gnames = [g.name for g in hand.vertex_groups]
@@ -816,7 +841,7 @@ print("CHECK " + json.dumps({
     "deepest_into_phone_after_mm": round(max(0.0, float(-phone_sd(P).min())) * 1000, 3),
     "vertices_touching_phone": touching,
     "faces_crossing_between_fingers": cross,
-    "wrist_turn_deg": round(angw, 1),
+    "wrist_fold_to_palm_deg": round(wflex, 1), "wrist_sideways_deg": round(wside, 1),
     "skin": SKIN,
 }))
 
