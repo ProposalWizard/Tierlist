@@ -2525,6 +2525,37 @@ export const ADMIN_GUIDES = {
     dev: "components/star/Home3D.tsx (the screen, shared with the game's phase \"home-3d\") · app/star-home3d-dev/page.tsx · lib/star/home3d/{homes,rooms,roomBuild,look,trophies,outfits,wear,textures,scene}.ts · the cars and boots: public/star/home3d/*-lod.glb (light copies of the shop's generated models, tools/home3d/make_lods.mjs) · the body: lib/star/home3d/wear.ts (the Style A hook: setWearerBody)",
   },
 
+  "/star-world3d-dev": {
+    title: "3D world kit",
+    what: "The first test of people who live in the 3D places: the house lounge and a garden where people use things. In the house you sit on the sofa, watch the TV and take a can from the fridge. In the garden two team-mates sit on the bench and chat, now and then one stands up to stretch, and a third drops round at the gate, sits, has a drink and leaves. Tap anyone to talk. Not in the real game yet: the game's house and garden are unchanged.",
+    buttons: [
+      {
+        items: [
+          ["House / Garden (above the scene)", "Which place opens: the house's lounge (sofa, TV, fridge) or the garden (bench, gate, team-mates)."],
+          ["↻ Restart", "Opens the place again from the start (the same people, the same day)."],
+          ["Tap the floor", "You walk there, round furniture and round people."],
+          ["Tap the sofa, the TV, the fridge, the bench or the gate", "You walk up to it and its card opens. Sit down / Watch TV / Take a can: you do it. Stand up ends it."],
+          ["Tap a team-mate", "You walk up to him, he looks at you, and his card opens with a couple of lines."],
+          ["Chat (on a team-mate's card)", "The living world's chat: a line from the book and a small bond change, on this page's made-up career only. Once a week per team-mate; after that he says you already spoke."],
+          ["See you / Not now / OK", "Closes the card."],
+          ["Pinch or scroll the wheel", "Zooms the camera out behind you and back in (camera D)."],
+          ["The strip at the top", "The game clock and what each team-mate is doing."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. The made-up career lives on this page only and is gone when you leave or restart.",
+      "The address can hold a set-up: ?place=house|garden, ?q=low|medium|high (the quality tier), ?fps=1 for the frame meter, ?bare=1 full screen, ?demo=sofa|fridge|visitor|talk (a scripted run for filming).",
+    ],
+    inGame: [
+      "Nowhere yet. This is phase 1 of the shared world kit (docs/research/world-3d-2026-11-20.md); the real house and garden get it once Harry approves.",
+    ],
+    needs: [
+      "A phone or browser that runs 3D (WebGL).",
+    ],
+    dev: "components/star/World3D.tsx · app/star-world3d-dev/page.tsx · lib/star/world3d/{smartObject,routine,npc,interact,budget,testScene}.ts · test: tests/star/routine.mts · the lounge itself is lib/star/home3d/roomBuild.ts (unchanged)",
+  },
+
   "/star-sprites-dev": {
     title: "3D match figures",
     what: "The new small 3D players and keepers on their own, at the real match size: two clubs in their real kits running, standing, striking, celebrating, and a keeper diving. A 4x zoom underneath shows one of each.",
