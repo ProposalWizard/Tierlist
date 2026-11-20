@@ -54,6 +54,8 @@ export interface EngineFeatureProps {
   /** The website's EngineFrame observer: every drawn frame and its camera, and `frozen` (hold). */
   onFrame?: (d: MatchDriver, cam: Cam) => void;
   frozen?: boolean;
+  /** Coach the first chance (MatchPitch coachFirst). */
+  coachFirst?: boolean;
 }
 
 export function EngineFeature(p: EngineFeatureProps) {
@@ -78,7 +80,7 @@ export function EngineFeature(p: EngineFeatureProps) {
   }, []);
   return (
     <View style={{ height: p.height, marginHorizontal: 12, borderRadius: 12, borderWidth: 2, borderColor: "rgba(6,95,70,0.8)", overflow: "hidden", backgroundColor: "#22920b", boxShadow: "0px 18px 40px -12px rgba(2,44,34,0.6)" } as ViewStyle}>
-      <MatchPitch make={make} kits={FEATURE_KITS} height={p.height} banners={p.scene?.banners !== false} onFrame={p.onFrame} frozen={p.frozen} />
+      <MatchPitch make={make} kits={FEATURE_KITS} height={p.height} banners={p.scene?.banners !== false} onFrame={p.onFrame} frozen={p.frozen} coachFirst={p.coachFirst} />
       {p.children}
     </View>
   );

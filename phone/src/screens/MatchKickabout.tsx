@@ -62,7 +62,7 @@ export function Kickabout({ height: given, onReplays }: { height?: number; onRep
         <Text style={{ color: "#d1fae5", fontSize: 11, fontWeight: "900", backgroundColor: "rgba(16,185,129,0.25)", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 99, overflow: "hidden" }}>⚽ {score.goals} / {score.chances}</Text>
       </View>
       <View style={{ height }}>
-        <EngineFeature key={session} height={height} openOn={openOn} onChanceResolved={onResolved}
+        <EngineFeature key={session} coachFirst={session === 0} height={height} openOn={openOn} onChanceResolved={onResolved}
           skills={{ power: s.power, technique: s.technique }} keeperStrength={s.keeperStrength}
           penaltyRunup={s.penaltyRunup} freeKickRunup={s.freeKickRunup} seed={(Date.now() & 0xffff) + 1 + session} />
         {summary && (

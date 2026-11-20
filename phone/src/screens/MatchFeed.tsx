@@ -85,7 +85,9 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
   return (
     <View style={{ flex: 1, backgroundColor: G950 }}>
       <ScrollView ref={scroll} style={{ flex: 1 }} showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}>
+        onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
+        // The bottom stack grows (coming on, half time): stay on the latest line, clear of the playstyle buttons.
+        onLayout={() => scroll.current?.scrollToEnd({ animated: false })}>
         {lines.map((l) => <FeedLine key={l.id} l={l} d={d} kits={kits} />)}
         <View style={{ height: 52 }} />
       </ScrollView>

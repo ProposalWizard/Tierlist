@@ -24,7 +24,11 @@ import { fromScreen, screenPull, grabMetres, type Cam } from "../match/view";
 import { tapToContact } from "../match/contactBall";
 import { matchSounds } from "../match/sound";
 import { matchFeel } from "../match/feel";
+import { isAirKind } from "@/lib/star/airDrawings";
+import { airTapOn } from "@/lib/star/airTap";
 import { setSkia } from "../match/skiaApi";
+import { setFigureFonts } from "../match/figures";
+import { phoneFontFor } from "../draw/useDrawing";
 import { loadSpriteSheet } from "../match/spriteAssets";
 import { warmSpriteKits } from "../match/sprites";
 import { installWebStorage } from "../match/webStorage";
@@ -33,6 +37,8 @@ import { ICON } from "../ui/look";
 import { Caption } from "./MatchLook";
 
 setSkia(Skia);
+// The takers' names over their heads are drawn with the phone's own fonts.
+setFigureFonts(phoneFontFor);
 // The strike screen's ball: the club's own photo (public/star/ball.webp), decoded once.
 let ballLoading: Promise<void> | null = null;
 function loadContactBall() {
@@ -51,6 +57,31 @@ installWebStorage();
 function leadCaption(d: MatchDriver): string | null {
   const L = d.lead;
   return L && L.lead.captionShown && L.t < L.lead.durS ? L.lead.captionAt?.(L.t) ?? null : null;
+}
+
+/** A new story career's first match (CanvasMatch coachFirstChance's career half). */
+function firstStoryMatch(d: MatchDriver): boolean {
+  const c = d.setup.career;
+  return !!c?.unlocks?.story && (c.careerStats?.appearances ?? 0) === 0;
+}
+/** CanvasMatch data-first-chance-coach's words. */
+function coachText(d: MatchDriver): string {
+  const aim = d.phase === "aim";
+  if (isAirKind(d.sc.kind) && airTapOn()) {
+    return aim ? (d.sc.kind === "header" ? "A header! Watch him go up for the cross" : "A volley! Watch him meet the ball")
+      : "Tap the ball before the ring runs out. Its left side sends it right";
+  }
+  return aim ? "Drag back from the ball to aim and control your power, then let go" : "Tap the part of the ball you want to kick";
+}
+/** The coach card: dark glass with a yellow ring, low on the pitch while you aim, mid-left on the strike screen. */
+function CoachCard({ text, aim }: { text: string; aim: boolean }) {
+  return (
+    <View pointerEvents="none" style={[{ position: "absolute", zIndex: 40, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8,
+      backgroundColor: "rgba(5,8,15,0.82)", boxShadow: "inset 0px 0px 0px 2px #fde047, 0px 8px 20px -8px rgba(0,0,0,0.9)" } as ViewStyle,
+      aim ? { left: 12, right: 12, bottom: 64 } : { left: 12, right: 56, top: "40%" }]}>
+      <Text style={{ color: "#fff", fontSize: 13, fontWeight: "900", lineHeight: 17, textAlign: "center" }}>{text}</Text>
+    </View>
+  );
 }
 
 const BALL_GRAB_FRACTION = 0.18;
@@ -74,6 +105,8 @@ export interface PitchProps {
   onFrame?: (d: MatchDriver, cam: Cam) => void;
   /** The match stands still (the observer's `hold`): no more frames stepped, the last picture stays. */
   frozen?: boolean;
+  /** Coach the first chance (CanvasMatch coachFirstChance): the website's Kickabout (its stand-in career is new to the story). */
+  coachFirst?: boolean;
 }
 
 /** ContactBall's words and POWER bar over the strike screen (plain views: they hold still for the whole screen). */
@@ -102,7 +135,9 @@ function StrikeWords({ d, motion }: { d: MatchDriver; motion: string }) {
   );
 }
 
-export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, height, onFrame, frozen = false }: PitchProps) {
+export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, height, onFrame, frozen = false, coachFirst = false }: PitchProps) {
+  // CanvasMatch's chance counter for its coach lines: +1 each time the aim comes up.
+  const coachRef = useRef({ chances: 0, phase: "" });
   const onFrameRef = useRef(onFrame); onFrameRef.current = onFrame;
   const frozenRef = useRef(frozen); frozenRef.current = frozen;
   const [size, setSize] = useState<{ W: number; H: number } | null>(null);
@@ -154,6 +189,7 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
       while (acc >= FRAME_DT) { d.tick(); acc -= FRAME_DT; steps++; }
       feel.follow(d, steps * FRAME_DT);
       sounds.follow(d);
+      { const cr = coachRef.current; if (d.phase === "aim" && cr.phase !== "aim") cr.chances += 1; cr.phase = d.phase; }
       // A waiting pop-up comes up, or the last one goes (MikeyPopup's timers): redraw the words.
       const shown = d.bannerNow();
       const cap = leadCaption(d);
@@ -274,6 +310,9 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
         <View pointerEvents="none" style={{ position: "absolute", top: "14%", left: 0, right: 0, alignItems: "center" }}>
           <Caption text={banner.text} />
         </View>
+      )}
+      {d && size && (d.phase === "aim" || d.phase === "contact") && !d.lead && (coachFirst || firstStoryMatch(d)) && coachRef.current.chances <= 1 && (
+        <CoachCard text={coachText(d)} aim={d.phase === "aim"} />
       )}
       {d && size && overlay?.(d, size)}
     </View>

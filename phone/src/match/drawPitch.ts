@@ -102,7 +102,15 @@ export function paintPitch(c: SkCanvas, d: MatchDriver, kits: MatchKits, W: numb
   // CanvasMatch's sids (and the engine's actors, canvasEngine runnerActor): run0 the runner, then the others.
   [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners].forEach((r, i) => man(`run${i}`, r.pos, "mate", sc.relayTo === r));
   if (sc.follower && (sc.follower.active || sc.follower.who)) man("follower", sc.follower, "mate", !!sc.relayToFollower);
-  if (scene?.you !== false) man("you", sc.player, "you", true);
+  if (scene?.you !== false) {
+    // A penalty someone else takes (a shootout, the trial's takers): he wears his own side's kit,
+    // named over his head, no star (CanvasMatch: takerKit, label, labelBig).
+    const auto = autoKickOf(sc);
+    if (auto) {
+      const role: FigureRole = auto.side === "them" ? "opp" : "mate";
+      queue.push({ y: toScreen(cam, sc.player).Y, draw: () => drawMan(c, cam, "you", sc.player, role, auto.side === "them" ? theirs : ours, false, auto.taker.shortName) });
+    } else man("you", sc.player, "you", true);
+  }
   queue.sort((a, q) => a.y - q.y).forEach((f) => f.draw());
 
   // The ball (and its shadow on the grass): the website's drawn match ball (lib/star/matchBall.ts).
