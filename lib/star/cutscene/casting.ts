@@ -106,7 +106,10 @@ export function castAll(cast: readonly CastMember[], career?: CareerContext): Ma
   const club = career?.club ?? DEFAULT_CLUB, opp = career?.opponent ?? DEFAULT_RIVAL;
   for (const m of cast) {
     const look = castLook(m, career);
-    const P = m.look?.people === null || m.id === "you" ? null : presetPoolFor(m.role);
+    let P = m.look?.people === null || m.id === "you" ? null : presetPoolFor(m.role);
+    // the one who asks (seen up close, his face full size): a real press preset, never a stand-in from the
+    // agents and fans the back rows borrow (20 Nov 2026: the Super-agent's curls head read flat and orange)
+    if (P && (m.role === "journalist" || m.role === "presenter") && (m.look?.detail ?? 1) >= 1) P = { role: "journalist", pool: presetsFor("journalist").filter((p) => p.head !== "h1") };
     if (P && P.pool.length) {
       const kit = m.role === "rival" ? { shirt: opp.shirt, trim: opp.trim } : m.role === "keeper" ? { shirt: "#16a34a", trim: "#0b3d1d" } : { shirt: club.shirt, trim: club.trim };
       const pick = (salt: number) => presetLook(P.pool[(hash32(`${m.id}#preset`) + salt * 7919) % P.pool.length], m.id, P.role, { kit });

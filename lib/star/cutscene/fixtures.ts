@@ -101,8 +101,9 @@ function trophy(): CutsceneScript {
     cam(0, b0.at + 1.5, { preset: "medium", subject: Y, side: 1, yaw: 15, move: "push" }, "The cup"),
     // low in front of him, the cup going up against the sky (it framed the back of his head)
     cam(b0.at + 1.5, 2.6, { preset: "low-hero", subject: Y, fixed: { pos: [0.85, 0.55, 37.7], look: [0, 1.95, 40], lens: 22 }, move: "crane-up", moveAmount: 0.4 }, "Up it goes"),
-    // a touch above his eyes, so the cup over his head shows its gap (from below it sat on his hair)
-    cam(b0.at + 4.1, 1.2, { preset: "medium-close", subject: Y, side: -1, lens: 45, rise: 0.4, move: "push" }, "The roar"),
+    // three-quarter from the side at his eye height: the gap over his head shows (from below the cup sat on his
+    // hair; from above and in front it covered his face)
+    cam(b0.at + 4.1, 1.2, { preset: "medium-close", subject: Y, side: -1, yaw: 55, lens: 45, rise: 0.08, move: "push" }, "The roar"),
     cam(b0.at + 5.3, c.duration - b0.at - 5.3, { preset: "wide", subject: Y, side: 1, move: "orbit-left", moveAmount: 30 }, "Champions"),
   ];
   return {
