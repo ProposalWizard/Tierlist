@@ -1,0 +1,124 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Weekly Round-up 0.128</title><style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
+  .flow span.done{color:var(--green)}
+  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+  td.s{color:var(--ink2)}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  .ck{list-style:none;margin:0;padding:0}
+  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
+  .ck li:last-child{border-bottom:0}
+  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
+  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
+</style></head><body><div class="wrap">
+<header><span class="ver">v0.128 · WEEKLY</span><h1>Weekly round-up, 23 to 30 Oct</h1><p class="sub">By Leo · 30 Oct 2026, 17:50 UK · everything merged into main that week, by area. Each line names the version with the full detail.</p></header>
+<h2 class="fix"><i></i>CHECK THESE</h2><ul class="ck"><li><div class="q">Start a new career: the first hour is a story</div><div class="a">Each feature is brought in by a person after a game; moves open one at a time. v0.124.</div></li><li><div class="q">Star Pass: the 50-level road and its rewards</div><div class="a">Star Pass, then the Locker. PR #801.</div></li><li><div class="q">Power 40 is weaker; chances follow your play style</div><div class="a">Any match on a new career. v0.124.</div></li><li><div class="q">Men at 22 px on every chance kind; headers and volleys redone</div><div class="a">Any 2D chance on a phone. v0.109h.</div></li><li><div class="q">Team room in Slack's layout</div><div class="a">Admin → Team. v0.111h.</div></li><li><div class="q">Cookie banner: analytics only after Accept</div><div class="a">Open the site in a private window.</div></li><li><div class="q">Every patch note has an author, a time, its own number and a page</div><div class="a">Admin → Patch notes. Old numbers moved (0.108 is now 0.119, and others). v0.122.</div></li><li><div class="q">Leo's switches: Settings → Updates (admins)</div><div class="a">Celebrations, feed, weather, keeper catches, live chances. All off by default. v0.119, v0.121, v0.123, v0.126.</div></li></ul>
+<h2 class="add"><i></i>1 · WHO BUILT WHAT</h2><div class="dt" style="margin-bottom:10px">41 pull requests reached main from Fri 23 Oct to Fri 30 Oct, plus Mikey's rounds merged straight into main. Most of Leo's work is on the site behind switches that are off by default.</div><div class="tw" style="padding:14px"><svg viewBox="0 0 565 190" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif"><defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs><rect x="10" y="10" width="170" height="74" rx="12" fill="var(--card2)" stroke="var(--line)" stroke-width="1.5"/><text x="95" y="38" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">Mikey</text><text x="95" y="58" font-size="12" fill="var(--ink2)" text-anchor="middle">first hour story, power,</text><text x="95" y="74" font-size="12" fill="var(--ink2)" text-anchor="middle">Star Pass, cookies</text><path d="M95 86 L95 118" stroke="var(--ink3)" stroke-width="2" marker-end="url(#a)"/><rect x="195" y="10" width="170" height="74" rx="12" fill="var(--card2)" stroke="var(--line)" stroke-width="1.5"/><text x="280" y="38" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">Harry</text><text x="280" y="58" font-size="12" fill="var(--ink2)" text-anchor="middle">22 px men, aerials, Supabase,</text><text x="280" y="74" font-size="12" fill="var(--ink2)" text-anchor="middle">Team room, marketing plan</text><path d="M280 86 L280 118" stroke="var(--ink3)" stroke-width="2" marker-end="url(#a)"/><rect x="380" y="10" width="170" height="74" rx="12" fill="var(--card2)" stroke="var(--line)" stroke-width="1.5"/><text x="465" y="38" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">Leo</text><text x="465" y="58" font-size="12" fill="var(--ink2)" text-anchor="middle">keeper catches, live chances,</text><text x="465" y="74" font-size="12" fill="var(--ink2)" text-anchor="middle">sweep, notes tidy (switches)</text><path d="M465 86 L465 118" stroke="var(--ink3)" stroke-width="2" marker-end="url(#a)"/><rect x="10" y="122" width="540" height="58" rx="12" fill="var(--card2)" stroke="var(--green)" stroke-width="1.5"/><text x="280" y="148" font-size="15" font-weight="700" fill="var(--green)" text-anchor="middle">main · 23 to 30 Oct</text><text x="280" y="168" font-size="12" fill="var(--ink2)" text-anchor="middle">41 PRs · 10 new patch notes</text></svg></div><h2 class="add"><i></i>2 · CAREER AND STAR PASS (MIKEY)</h2><ul class="n"><li><div class="hd">A new career's first hour is a story</div><div class="dt">Problem: everything was open at once. Fix: a person brings in each feature after a game, moves open one at a time with a guide, set pieces are earned, the first match and the first sponsor are guided. A team-mate gives you his old boots before game 1. First contract ★35 a week in North or South. v0.124.</div></li><li><div class="hd">Power 40 is a starting player now</div><div class="dt">A full shot at Power 40: 79 → 66 km/h. The top (Power 100) stays 32.76 m/s, the old top. A Power curve box in the Play Area to type the speeds. v0.124.</div></li><li><div class="hd">Chances follow your play style and what is open</div><div class="dt">0% byline crosses on Attacking; no headers or volleys before they open. Every byline cross has a short option (300 of 300). Build-ups that end in an offside flag are not shown. A chance in every half on Medium and High. v0.124.</div></li><li><div class="hd">Room to pull back on every chance</div><div class="dt">Tight angles with no room 21% → 0. Every cutback is side-on. Men, keeper and ball are one size next to the goal on every camera. v0.124.</div></li><li><div class="hd">Star Pass: 50 levels, 16 new rewards, 4 celebrations</div><div class="dt">Every even level from 2 to 100. Golden Run-up, The Leaf free kick and Signature Boots are Star Pass only. Blender art for every box reward, tap to spin. PR #801, 28 Oct.</div></li><li><div class="hd">Broadcast pop-ups are the only pop-ups</div><div class="dt">The Pop-up pack setting is gone. 27 Oct.</div></li><li><div class="hd">One match for every tool</div><div class="dt">Corners, new-career moves and owed chances go through the shared match builder. Brain FACT-ENG-007. 27 Oct.</div></li><li><div class="hd">Cookie consent</div><div class="dt">Google Analytics and PostHog start only after Accept. 27 Oct.</div></li><li><div class="hd">Small fixes</div><div class="dt">Multiplayer draft: European winners from outside the top places now play, no crash. Player photos are found in other editions again. 27 Oct.</div></li></ul><h2 class="add"><i></i>3 · THE MATCH AND ADMIN (HARRY)</h2><ul class="n"><li><div class="hd">Men at 22 px on every chance kind</div><div class="dt">Was up to 31 px, 37 on a byline cross. Only the pitch zooms; goal rates unchanged. Live since 25 Oct. v0.109h.</div></li><li><div class="hd">Headers and volleys redone to Harry's notes</div><div class="dt">No drag-back arrow: straight to the Head it? / Volley it? screen where you tap the ball. The cross comes in once. Same in the Head &amp; Volley drill. v0.109h.</div></li><li><div class="hd">Build-ups: one smooth camera glide, landing on the chance's own frame</div><div class="dt">Worst camera jump 640 → 38 px a second. v0.109h, PR #793.</div></li><li><div class="hd">Aerial contact moves for headers and volleys</div><div class="dt">8 aerial moves; header framing 25 m; a test page at /star-aerials-dev. PRs #794, #795.</div></li><li><div class="hd">Cut-scene skin at light tones</div><div class="dt">Face against neck 5.9 → 1.0. Darker tones still 4.6 to 6.6, waiting on a call. v0.109h.</div></li><li><div class="hd">Claude can work in Supabase, asking first</div><div class="dt">Done in the live database on 25 Oct: 2 missing tables made, the login-streak hole closed, 19 missing indexes added. One login check per request (was two). v0.110h.</div></li><li><div class="hd">Team room in Slack's layout</div><div class="dt">Channel list, 9 preset channels, presence, bells per channel, #bugs fills itself from bug reports. Live since 25 Oct; bots that run Claude are not built. v0.111h.</div></li><li><div class="hd">Marketing Studio plan</div><div class="dt">Plan only: paste a TikTok link and Claude logs it, breaks it down and builds our version. 9 build slices. Guest accounts and ad pages are on the site, switched off. v0.112h.</div></li><li><div class="hd">Builds and media</div><div class="dt">The next build gets 6 GB of memory (fixed the failed deploy of #810). Patch-note clips and stills squeezed: Harry's notes 82.7 → 73.8 MB. PRs #805, #808, #811, #815.</div></li></ul><h2 class="add"><i></i>4 · LEO'S BUILDS AND PATCH NOTES</h2><ul class="n"><li><div class="hd">Celebrations, fast feed, goal videos, season end, 17 bug fixes</div><div class="dt">On the site since 24 Oct behind Leo's switch, off by default. The bicycle kick was taken out (Harry is building it). PRs #785, #787. v0.119.</div></li><li><div class="hd">The 7 overnight parts, behind Leo's 26 Oct switch</div><div class="dt">Nobody stands on you in a celebration (closest 0.23 → 1.60 m); 0 feed scroll hiccups at 4× slow (was 9); your goal's post always has its video (48% → 100%); weather in real matches (goals +1.6% to +2.8%). PR #798. v0.121.</div></li><li><div class="hd">Keeper catches and dives (Leo's switch)</div><div class="dt">16 new keeper moves; a caught ball stays in his gloves; he lands, lies a beat and gets up. Ball no longer frozen in the air (21 catches checked, 0 outside his hands). Results unchanged. PRs #810, #813, #816, #817. v0.123.</div></li><li><div class="hd">Overnight sanity sweep: 75 findings, 20 fixed</div><div class="dt">Money reads 1.9m not 1m; SAVED and POST on your own shots; the goal scoreboard sits low; celebrations moved to Store → Animations; can't-afford line. PR #818. v0.125.</div></li><li><div class="hd">Live chances (test switch, off by default)</div><div class="dt">The last pass keeps coming to you; time your strike as it arrives. 98% of open-play chances go live. Test page /star-live-chances-dev. PR #819. v0.126.</div></li><li><div class="hd">Every patch note made the same</div><div class="dt">123 notes tidied: author, time, updates, own number, a menu title and a page. 9 notes renumbered. One set of rules checks them all. PR #800. v0.122, Brain RUL-TEAM-028.</div></li></ul><h2 class="bug"><i></i>5 · STILL OPEN (FROM THIS WEEK'S NOTES, NOT RECHECKED TODAY)</h2><ul class="n"><li><div class="hd">Mikey's 26 Oct gameplay batch is not seen on a phone yet</div><div class="dt">A weaker Power 40 scores fewer goals; side-on cutbacks draw men up to 5% smaller. v0.124.</div></li><li><div class="hd">Aerial training auto-played and got stuck</div><div class="dt">v0.124.</div></li><li><div class="hd">Darker skin tones in cut scenes still differ</div><div class="dt">Face against neck 4.6 to 6.6. v0.109h.</div></li><li><div class="hd">Guest accounts not tested end to end; no downloadable database backup</div><div class="dt">v0.110h.</div></li><li><div class="hd">Store celebration previews don't move; shop names don't match pictures</div><div class="dt">Listed for a decision. v0.125.</div></li><li><div class="hd">Men stacked on one spot; wide camera cuts; 3 opponent goals in added time once</div><div class="dt">Listed for a decision. v0.125.</div></li><li><div class="hd">12 test files were already failing on main</div><div class="dt">Named in PR #801. Several were fixed on 27 Oct (chanceMaker, chanceJudge, identity, leadInGen, kindMix, freshness); not rechecked.</div></li></ul><h2 class="nxt"><i></i>6 · CALLS FOR HARRY</h2><ul class="n"><li><div class="hd">Keeper look: A Natural, B Broadcast or C Arcade</div><div class="dt">v0.123.</div></li><li><div class="hd">Store celebration previews</div><div class="dt">A moving preview needs a new animation loop, which the one-engine guard blocks. Your call. v0.125.</div></li><li><div class="hd">Marketing Studio plan</div><div class="dt">Answer the calls on the plan. v0.112h.</div></li><li><div class="hd">When Leo's switches go on for everyone</div><div class="dt">All five are off by default. v0.119, v0.121, v0.123, v0.126.</div></li></ul><details><summary>The numbers</summary><ul><li><b>41</b> pull requests merged into main this week</li><li><b>10</b> new patch notes this week</li><li><b>50</b> levels on the new Star Pass road</li><li><b>5</b> Leo builds on the site behind switches, off by default</li></ul><p>Pull requests #778 to #819 (41 merged into main; #803 was not merged).</p></details>
+<footer>One page for the week, for Harry. 41 pull requests merged into main from Fri 23 Oct to Fri 30 Oct, plus Mikey's rounds merged straight in. The 10 new patch notes (v0.109h to v0.112h, v0.121 to v0.126) are condensed here by area; each line names the version with the full detail. Biggest changes: a new career's first hour is a story (Mikey), the 50-level Star Pass road, Power 40 made weaker, chances that follow your play style, men at 22 px on every chance kind, the Slack-style Team room, Claude working in Supabase, and every patch note made the same (with its own number). Leo's builds (celebrations, feed, weather, keeper catches, live chances) are on the site behind switches that are off by default.</footer></div></body></html>
