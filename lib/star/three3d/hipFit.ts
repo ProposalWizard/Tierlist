@@ -30,7 +30,10 @@ type Three = typeof import("three");
 export const HIP_FIT_RANGE: [number, number] = [0.97, 1.03];
 
 export function hipFitOn(): boolean {
-  try { return typeof window === "undefined" || new URLSearchParams(window.location.search).get("hipfit") !== "0"; } catch { return true; }
+  try {
+    if (typeof window === "undefined") return !(typeof process !== "undefined" && process.env?.HIPFIT === "0"); // (the tests' before column)
+    return new URLSearchParams(window.location.search).get("hipfit") !== "0";
+  } catch { return true; }
 }
 
 export interface HipFitReport { before: number; after: number; clip: number }

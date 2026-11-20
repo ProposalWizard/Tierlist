@@ -1156,6 +1156,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   // the frame-by-frame filming hook: seek(t) draws exactly that moment
   (window as any).__frameStep = { owner: api, duration, seek: (s: number) => api.frameSeek(s) };
   (window as any).__cutscene = api;
+  let dbgGrid: any = null;
   (window as any).__cutsceneDebug = {
     camera, cast, props, rootAt: (id: string, t: number) => rootAt(C, id, t), pose: (s: number) => poseActors(clamp(s, 0, duration)),
     // a still from any camera at second s (the bench's close-ups: front / side / back of one actor); the script's own camera is not changed
@@ -1164,6 +1165,11 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       evaluate(held);
       const hidden = hide.map((id) => cast.get(id)?.actor.root).filter(Boolean) as any[];
       for (const r of hidden) r.visible = false;
+      // a floor grid under the looked-at spot: 10 cm squares, a bold line every 50 cm (step width can be read off a still)
+      if (hide.includes("#grid")) {
+        if (!dbgGrid) { dbgGrid = new T.Group(); const a = new T.GridHelper(4, 40, 0xffffff, 0xffffff), b = new T.GridHelper(4, 8, 0xffe14a, 0xffe14a); for (const g of [a, b]) { (g.material as any).depthTest = false; (g.material as any).transparent = true; (g.material as any).opacity = g === a ? 0.45 : 0.9; g.renderOrder = 999; dbgGrid.add(g); } scene.add(dbgGrid); }
+        dbgGrid.visible = true; dbgGrid.position.set(Math.round(look[0] * 2) / 2, (cast.values().next().value?.actor.root.position.y ?? 0) + 0.012, Math.round(look[2] * 2) / 2);
+      } else if (dbgGrid) dbgGrid.visible = false;
       camera.position.set(pos[0], pos[1], pos[2]); camera.fov = fov; camera.updateProjectionMatrix(); camera.lookAt(look[0], look[1], look[2]);
       focus.x = look[0]; focus.z = look[2];
       kit.update(1 / 30, camera, focus); set.update(held, 1 / 30); kit.render(scene, camera);

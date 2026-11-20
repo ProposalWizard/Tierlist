@@ -130,6 +130,7 @@ for (const head of heads) {
     }
   }
 }
+if (process.env.ROWS_ONLY) { for (const r of rows) console.log(r); process.exit(0); }
 console.log("body      clip            source min / mean      ours min / mean (cm between the ankles)");
 for (const r of rows) console.log(r);
 if (problems.length) { console.log(`FAIL — ${problems.length} problem(s):`); for (const p of problems) console.log("  " + p); process.exit(1); }

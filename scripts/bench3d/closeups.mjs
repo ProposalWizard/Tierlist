@@ -5,7 +5,8 @@
 //
 //   node scripts/bench3d/closeups.mjs "<director url>" OUTDIR shots.json
 // shots.json: [{ "name": "walk-front", "t": 5.2, "who": "you", "view": "front|side|back|left|<deg>",
-//               "part": "hips|head|chest|feet", "dist": 2.4, "up": 0, "fov": 30, "size": "390x844" }]
+//               "part": "hips|head|chest|feet", "dist": 2.4, "up": 0, "fov": 30, "size": "390x844", "hide": ["id", "#grid"] }]
+// view "top" looks straight down; "#grid" in hide draws a floor grid (10 cm squares, bold every 50 cm).
 // view is turned from the person's own facing (front = looking at his face).
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -40,7 +41,8 @@ for (const s of shots) {
     const turn = { front: 0, side: 90, back: 180, left: -90 }[s.view] ?? Number(s.view);
     const a = yaw + (turn * Math.PI) / 180;
     const d = s.dist ?? 2.4;
-    const pos = [at[0] + Math.sin(a) * d, at[1] + (s.up ?? 0), at[2] + Math.cos(a) * d];
+    // "top": straight down on him (his front towards the top of the picture)
+    const pos = s.view === "top" ? [at[0] - Math.sin(yaw) * 0.02, at[1] + d, at[2] - Math.cos(yaw) * 0.02] : [at[0] + Math.sin(a) * d, at[1] + (s.up ?? 0), at[2] + Math.cos(a) * d];
     D.shoot(s.t, pos, at, s.fov ?? 30, s.hide ?? []);
   }, s);
   await page.waitForTimeout(200);

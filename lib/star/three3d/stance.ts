@@ -29,7 +29,10 @@ export interface StanceReport { clip: string; before: { ankle: number; knee: num
 const LEGS = { people: ["LeftUpLeg", "LeftLeg", "LeftFoot", "RightUpLeg", "RightLeg", "RightFoot"], ual: ["thigh_l", "calf_l", "foot_l", "thigh_r", "calf_r", "foot_r"] } as const;
 /** `?stance=0` on any 3D page: the clips as captured (for a before still). */
 export function stanceOn(): boolean {
-  try { return typeof window === "undefined" || new URLSearchParams(window.location.search).get("stance") !== "0"; } catch { return true; }
+  try {
+    if (typeof window === "undefined") return !(typeof process !== "undefined" && process.env?.HIPFIT === "0");
+    return new URLSearchParams(window.location.search).get("stance") !== "0";
+  } catch { return true; }
 }
 const cache = new Map<string, { report: StanceReport; values: Map<string, Float32Array> }>();
 
