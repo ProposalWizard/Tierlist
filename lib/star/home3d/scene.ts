@@ -613,7 +613,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     let at = door ? arrivalAt(door, 1.5) : room.start;
     if (door && camKey === "D") at = settledArrival(door, (x, z) => roomFree(room, x, z) && Math.abs(x) < room.w2 - 0.6 && Math.abs(z) < room.d2 - 0.6, CS.back) ?? at;
     // a living house: further in (the arrival shot from the doorway then has him small, the room around him)
-    if (door && opts.living) for (const dIn of [2.6, 2.3, 2.0]) { const a = arrivalAt(door, dIn); if (roomFree(room, a.x, a.z) && Math.abs(a.x) < room.w2 - 0.5 && Math.abs(a.z) < room.d2 - 0.5) { at = a; break; } }
+    if (door && opts.living && room.id !== "garage") for (const dIn of [2.6, 2.3, 2.0]) { const a = arrivalAt(door, dIn); if (roomFree(room, a.x, a.z) && Math.abs(a.x) < room.w2 - 0.5 && Math.abs(a.z) < room.d2 - 0.5) { at = a; break; } }
     me.person.root.position.set(at.x, 0, at.z);
     yaw = at.yaw; yawTurn.vel = 0; me.person.root.rotation.y = yaw;
     camYaw = openCamYaw(at.x, at.z, yaw + Math.PI, CS.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap, CS.swing); orb.reset(); first = true;

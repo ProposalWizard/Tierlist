@@ -303,7 +303,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
         const slot = host.slots.find((x) => x.id === pending!.slot) ?? host.slots[0];
         if (slot) {
           const at = sitRootFor(slot, meNpc.sit).at;
-          if (Math.hypot(at[0] - meNpc.x, at[1] - meNpc.z) < 0.9) meNpc.place(at[0], at[1], meNpc.yaw);
+          if (Math.hypot(at[0] - meNpc.x, at[1] - meNpc.z) < 1.3) meNpc.place(at[0], at[1], meNpc.yaw);
         }
       }
       const quick = ob.kind === "fridge" || ob.id === "coffee";
