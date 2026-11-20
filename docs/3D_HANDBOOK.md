@@ -1159,3 +1159,35 @@ Harry on the re-filmed cut scenes: "why the legs like squeezing past each other"
 - **The ball at his feet** (`director.ts`, prop action `dribble`): the ball is touched on by whichever foot swings through each step (measured from his own pose before the first frame) and is against the striking foot at the contact; `beats.ts` `STRIKE_CONTACT` is the motion-capture shot's own contact time. The ball is real size.
 - **Close-up stills**: `node scripts/bench3d/closeups.mjs "<director url>" OUTDIR shots.json` (one actor from any side or above, 780x1688, `"hide": ["#grid"]` draws a 10 cm floor grid). Leg numbers: `npx tsx scripts/people3d/legGap.mts`.
 - Not done: the older suit head's face (still odd close up), the jagged edge of a suit head's collar (the mask is coarse there), new clips from other libraries (the capture site was refused by the network; the Quaternius set is already in the repo).
+
+### Clothes as cloth (20 Nov 2026)
+
+Harry: "The kits look not like fabric but painted on with blobs of differing paint." Research and proofs:
+`docs/research/clothes-and-necks-2026-11-20.md`. Code: `lib/star/style3d/toon/clothes/`.
+- **What it is.** A garment is the Style A body's own surface cut along landmark lines of its rest pose (neck ring,
+  collar line, shoulder seam, sleeve end, wrist, waist, hem, shorts end, sock top, ankle), pushed a few mm off the
+  skin, with a lip at every open edge, skinned to the same skeleton with the body's own weights (every clip fits).
+  The body under it is cut away (1.5 cm inside each edge), so no skin shows through and no painted kit is left.
+  Collars (crew, shirt, polo), lapels, the hood and the tie are their own pieces swept along the neck loop.
+  Trouser legs are one straight slim tube hip → ankle (4-7% over the leg; no thigh bump from the old shorts).
+- **Call.** `dressCloth(T, p, kind, who)` after `dressPerson3d` (and before `applyToonFaceId`). It reads the colours
+  `dressPerson3d` already set (kit, pattern, crest, number, suit colours), so club kits, `nationKits.ts` and the
+  people presets drive it unchanged. Kinds (`outfits.ts`): kit, tracksuit, press, suit, polo, fan, hoodie.
+- **Cost (measured, software GPU, so read the change, not the ms).** Built once per head file + proportions + kind
+  (75-314 ms on this machine), then shared; each person gets one small material. 4 draws per person (body, body
+  ink, cloth, cloth ink; 2 before). Press scene: 86 → 112 draws, 261k → 343k triangles, frame time within noise
+  (11 vs 12 frames in 20 s). Walk-out: 69 → 89 draws, 223k → 288k triangles, about +6% frame time (17 vs 16 frames
+  in 20 s). Textures +4 MB (crest, lanyard, detail canvases, cached by colour). Far people (over `CLOTH_INK_FAR`,
+  7 m) drop the cloth's ink line.
+- **Where it is on.** Cut scenes (`lib/star/cutscene/peopleStub.ts` `clothKindFor`): manager, chairman, agent and
+  The Icon in suits; press in shirt, trousers and lanyard; tracksuits for you at the press desk and the staff; kit
+  on the pitch. Fans and family keep the painted clothes for now. Not on yet: the match, the house, the garden.
+- **A body it cannot dress** keeps the painted clothes and is listed in `CLOTH_FALLBACKS` (console line
+  `[clothes] … keeps painted clothes`). `?cloth=0` on any 3D page shows the painted clothes, to compare.
+- **Sheets.** `tools/clothes3d/wardrobe-page.tsx` (copy to `app/star-3d-bench-dev/clothes/page.tsx`; `?shot=wardrobe`
+  each outfit next to today's kit player, `?shot=silhouettes` in black, `?shot=moving` 3 heads × 3 builds jogging,
+  seated and waving), stills with `node tools/clothes3d/shoot.mjs OUTDIR <shot>` (BASE = the dev server).
+- **Rules learnt.** Never inflate: types differ by cut and detail (jacket length, collar, hem, lapels), not by
+  making him wider. A hidden layer sits on the skin and the outer one a few mm out; an outer garment's shaped torso
+  never goes inside the body (`torso.hold`). Never shape sleeves to a straight shoulder → wrist line: a bent arm
+  then pokes through.
