@@ -244,3 +244,24 @@ export class FollowCarry {
     this.x = px; this.z = pz;
   }
 }
+
+/**
+ * WHERE TO ARRIVE SO THE CAMERA IS ALREADY SETTLED (20 Nov 2026, playtest: on
+ * entering the house camera D opened almost on his head, off-centre, and only
+ * settled after a second of walking, because he arrived 1 m inside the door
+ * with the wall right behind him). Steps in from the door along its inward
+ * normal, from `max` back down to `min` metres, and returns the first spot
+ * `ok` accepts (clear floor, off the walls); camera D's whole boom fits behind
+ * it. Null: none fits (the caller keeps its own spot). Pure.
+ */
+export function settledArrival(
+  door: { x: number; z: number; nx: number; nz: number },
+  ok: (x: number, z: number) => boolean,
+  back = FOLLOW_CAM_D.back, min = 1.5, max = 3.2,
+): { x: number; z: number; yaw: number; d: number } | null {
+  for (let d = Math.min(max, back + 0.45); d > min; d -= 0.25) {
+    const x = door.x + door.nx * d, z = door.z + door.nz * d;
+    if (ok(x, z)) return { x, z, yaw: Math.atan2(door.nx, door.nz), d };
+  }
+  return null;
+}

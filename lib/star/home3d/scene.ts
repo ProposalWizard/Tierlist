@@ -56,7 +56,7 @@ import { roomPlan, roomFiles, arrivalAt, arrivalDoor, type DoorPlan, type HomeSp
 import { buildRoom, disposeGroup, roomFree, MIRROR_LAYER, MIRROR_PX, type BuiltRoom, type RoomEnv, type RoomInput } from "./roomBuild";
 import { safeCompileAsync } from "../three3d/safeCompile";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
-import { FOLLOW_CAM_D, FollowBoom, FollowCarry, FollowZoom, FOLLOW_HEAD_Y, attachFollowZoom, boxRoom, capOnLine, followFade, loadFollowZoom, riseForMin, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
+import { FOLLOW_CAM_D, FollowBoom, FollowCarry, FollowZoom, FOLLOW_HEAD_Y, attachFollowZoom, boxRoom, capOnLine, followFade, loadFollowZoom, riseForMin, settledArrival, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
 
 export type { HomeSpot } from "./rooms";
 
@@ -405,7 +405,13 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   };
   let me = await dressUp(data.worn);
   if (disposed) throw new Error("disposed");
-  const START = room.start;
+  // camera D opens settled: he starts far enough inside the front door for its whole boom (followCam.ts settledArrival)
+  const START = (() => {
+    const door = room.plan.doors[0];
+    if (!door || (opts.houseCam ?? "D") !== "D" || opts.pov) return room.start;
+    const back = zoomedFollowCam(loadFollowZoom(), FOLLOW_CAM_D).back;
+    return settledArrival(door, (x, z) => roomFree(room, x, z) && Math.abs(x) < room.w2 - 0.6 && Math.abs(z) < room.d2 - 0.6, back) ?? room.start;
+  })();
   me.person.root.position.set(START.x, 0, START.z);
   me.person.root.rotation.y = START.yaw;
   scene.add(me.person.root);
@@ -571,12 +577,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     // far enough in that the camera has room behind him: camera D's whole boom where the floor is
     // clear (the doorway jam: 1.5 m in left it 1.2 m, right on the back of his head), else 1.5 m
     let at = door ? arrivalAt(door, 1.5) : room.start;
-    if (door && camKey === "D") {
-      for (let d = Math.min(3.2, CS.back + 0.45); d > 1.5; d -= 0.25) {
-        const a = arrivalAt(door, d);
-        if (roomFree(room, a.x, a.z) && Math.abs(a.x) < room.w2 - 0.6 && Math.abs(a.z) < room.d2 - 0.6) { at = a; break; }
-      }
-    }
+    if (door && camKey === "D") at = settledArrival(door, (x, z) => roomFree(room, x, z) && Math.abs(x) < room.w2 - 0.6 && Math.abs(z) < room.d2 - 0.6, CS.back) ?? at;
     me.person.root.position.set(at.x, 0, at.z);
     yaw = at.yaw; yawTurn.vel = 0; me.person.root.rotation.y = yaw;
     camYaw = openCamYaw(at.x, at.z, yaw + Math.PI, CS.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap, CS.swing); orb.reset(); first = true;

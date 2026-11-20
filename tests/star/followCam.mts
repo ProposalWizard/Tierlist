@@ -1,5 +1,5 @@
 import {
-  FOLLOW_CAM_D, FOLLOW_CAM_FAR, FOLLOW_HEAD_Y, FOLLOW_MIN_DIST, FollowBoom, FollowCarry, boxRoom, capOnLine, followFade, riseForMin, zoomedFollowCam,
+  FOLLOW_CAM_D, FOLLOW_CAM_FAR, FOLLOW_HEAD_Y, FOLLOW_MIN_DIST, FollowBoom, FollowCarry, boxRoom, capOnLine, followFade, riseForMin, settledArrival, zoomedFollowCam,
 } from "../../lib/star/three3d/followCam";
 
 /**
@@ -14,6 +14,14 @@ const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
 // the pure parts
+{
+  // entering by a south door of a 6 x 6 m room: he starts far enough in that the whole boom fits behind him
+  const door = { x: 0, z: 3, nx: 0, nz: -1 };
+  const a = settledArrival(door, (x, z) => Math.abs(x) < 2.4 && Math.abs(z) < 2.4);
+  check(!!a && 3 - a.z >= FOLLOW_CAM_D.back, `settled arrival: the boom fits behind him (${a ? (3 - a.z).toFixed(2) : "none"} m in)`);
+  check(!!a && Math.abs(a.yaw - Math.PI) < 1e-9, "settled arrival: facing into the room");
+  check(settledArrival(door, () => false) === null, "settled arrival: no clear spot, none (the caller keeps its own)");
+}
 check(Math.abs(boxRoom(0, 0, 0, 1, -3, 3, -3, 3) - 3) < 1e-9, "boxRoom: 3 m to the wall straight behind");
 check(boxRoom(0, 3.2, 0, 1, -3, 3, -3, 3) === 0, "boxRoom: outside the box, no room");
 check(boxRoom(0, 0, 0, 1, -3, 3, -3, 3, 2) === 2, "boxRoom: capped at what was asked");
