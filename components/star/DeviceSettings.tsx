@@ -18,6 +18,7 @@ import FhrSwitchRow from "./FhrSwitchRow";
 import LiveChancesSettings from "./LiveChancesSettings";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import DataCredits, { DATA_CREDIT_SOURCES } from "./DataCredits";
+import DiscordButton from "@/components/DiscordButton";
 
 /**
  * THE SETTINGS THAT BELONG TO THIS DEVICE, NOT TO A SAVE.
@@ -312,6 +313,8 @@ export function SettingsTop({ glow, fullscreen }: {
     <>
       <SetSection className="mb-1.5 mt-1">Quick</SetSection>
       <QuickSwitches glow={glow} fullscreen={fullscreen} />
+      {/* Leo, 19 Nov 2026: the community link (draws nothing until lib/discord.ts has an invite). */}
+      <DiscordButton from="game-settings" sub="Report bugs, suggest features, see updates first" className="mt-2 w-full justify-center" />
     </>
   );
 }

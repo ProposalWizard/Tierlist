@@ -26,6 +26,77 @@ import type { PatchNote } from "./patchNotes";
 
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
+  {
+      "version": "0.140",
+      "title": "Leo's patch notes: The Knowitball Discord",
+      "author": "Leo",
+      "publishedAt": "2026-11-19T18:14:34Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "A full plan and kit for a Knowitball Discord aimed at one thing: more people playing. Built: a script that makes the whole server in one go (10 roles, 21 channels, rules, welcome posts, the 2 joining questions), Join our Discord buttons on the site footer and game Settings, and new updates posting themselves to the server. Nothing shows on the site yet: it waits for the server to exist (5 minutes for Leo).",
+      "discord": "Knowitball has its own Discord: report bugs, vote on ideas, join weekly challenges and see every new update first.",
+      "stats": [
+        {
+          "value": "21",
+          "label": "channels in the plan"
+        },
+        {
+          "value": "10",
+          "label": "roles"
+        },
+        {
+          "value": "2",
+          "label": "questions when you join"
+        },
+        {
+          "value": "0",
+          "label": "buttons live until the invite is set"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "The server, in one script",
+              "detail": "scripts/discord: roles, channels, who can write where, welcome/rules/play posts, Community and the joining questions. Running it again adds only what's missing."
+            },
+            {
+              "title": "Join our Discord buttons",
+              "detail": "Site footer and game Settings (first screen). Hidden until there is an invite, so no dead links. Each press is counted (discord_click)."
+            },
+            {
+              "title": "Updates post themselves",
+              "detail": "A patch note with a player line goes to #updates once, when the Patch bot announces it. Never pings everyone."
+            },
+            {
+              "title": "Growth plan",
+              "detail": "docs/DISCORD.md: getting people in, Discord to game, the feedback loop, week one."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Needs Leo",
+          "items": [
+            {
+              "title": "Make the server + bot (5 min)",
+              "detail": "Steps in scripts/discord/README.md. Then a chat builds it."
+            },
+            {
+              "title": "Two Vercel settings",
+              "detail": "NEXT_PUBLIC_DISCORD_INVITE (buttons) and DISCORD_UPDATES_WEBHOOK (auto posts)."
+            },
+            {
+              "title": "Not run on real Discord yet",
+              "detail": "Tested against a fake Discord only."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
     {
       "version": "0.139",
       "title": "Mikey's patch notes: Getting the app ready for phones",
@@ -12443,7 +12514,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "label": "sounds remade, and sounds now played outside the match"
         },
         {
-          "value": "23",
+          "value": "21",
           "label": "before and after clips of the game, plus shop stills"
         }
       ],
