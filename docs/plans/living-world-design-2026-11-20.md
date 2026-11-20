@@ -414,3 +414,8 @@ Phase 1 is the smallest thing that proves the feeling. If 30 events with memory 
 3. Wagers are real: "u'd lose whatever u wager" (the car is gone).
 4. Scandal content: "dark" (bribes, doping and similar are allowed).
 5. Family and agent as new people: yes.
+
+## API credit pipeline (20 Nov 2026)
+GitHub Actions workflow `.github/workflows/claude.yml` (on main) runs Claude Code on the team's Anthropic API credit
+(repo secret ANTHROPIC_API_KEY, added by Harry 20 Nov). Test run 44761100397 passed. First real job: the 50-event pilot,
+written on branch `claude/life-events-pilot` with a pull request into Harry (never main).
