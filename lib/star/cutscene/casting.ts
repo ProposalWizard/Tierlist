@@ -73,7 +73,8 @@ export function castLook(m: CastMember, career?: CareerContext): Required<Pick<A
 
 /** The Icon: an older legend, grey and receding or thinning, in a dark coat with an open collar. */
 const LEGEND_IDS = ["mgr-elder-statesman", "mgr-veteran-gaffer", "mgr-old-pro"] as const;
-export const LEGEND_PRESETS: readonly PeoplePreset[] = LEGEND_IDS.map((id) => ({ ...presetById(id)!, tie: "open" as const }));
+// (he wears his preset's own tie: with the collar open, the suit head's modelled collar had nothing in it)
+export const LEGEND_PRESETS: readonly PeoplePreset[] = LEGEND_IDS.map((id) => presetById(id)!);
 
 /** The presets a cut-scene role is cast from. */
 export function presetPoolFor(role: CastMember["role"]): { role: PersonRole; pool: readonly PeoplePreset[] } | null {

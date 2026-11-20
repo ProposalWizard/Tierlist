@@ -253,12 +253,17 @@ const TOON_BODY = `
   float tnCollar = 0.0, tnKnot = 0.0, tnCoat = 0.0;
   if (uSuit > 0.5) {
     float cMx = max(c.r, max(c.g, c.b)), cSat = (cMx - min(c.r, min(c.g, c.b))) / max(cMx, 1e-4);
-    float zone = step(uKit2.x - 0.03, r.y) * step(r.y, uKit2.x + 0.06) * step(abs(r.x), 0.1) * step(uNeck.z, r.z) * (1.0 - hairM);
-    tnCollar = zone * (1.0 - smoothstep(0.12, 0.2, cSat)) * smoothstep(0.3, 0.45, cMx);
+    // skin is warm in every head's own paint (red well over blue); a shirt (white, blue-white, its shadows) and a
+    // coat (grey, navy, black) are not. Told apart by warmth, not by brightness: a shirt's blue shadow was left as
+    // skin, a ragged patch up to the jaw (the press journalist, the mentor).
+    float warm = (c.r - c.b) / max(cMx, 1e-4);
+    float cloth = 1.0 - smoothstep(0.16, 0.28, warm);
+    float zone = step(uKit2.x - 0.03, r.y) * step(r.y, uKit2.x + 0.09) * step(abs(r.x), 0.1) * step(uNeck.z, r.z) * (1.0 - hairM);
     tnKnot = zone * step(2.2 * c.g, c.r) * step(2.2 * c.b, c.r) * step(0.05, c.r);
-    // and the coat's own collar round the back and sides of the neck (dark, grey): coat, not skin
-    float zoneW = step(uKit2.x - 0.03, r.y) * step(r.y, uKit2.x + 0.06) * step(abs(r.x), 0.2) * (1.0 - hairM);
-    tnCoat = zoneW * (1.0 - smoothstep(0.2, 0.3, cSat)) * (1.0 - smoothstep(0.22, 0.32, cMx));
+    tnCollar = zone * cloth * smoothstep(0.14, 0.24, cMx) * (1.0 - tnKnot);
+    // and the coat's own collar round the back and sides of the neck (dark): coat, not skin
+    float zoneW = step(uKit2.x - 0.03, r.y) * step(r.y, uKit2.x + 0.09) * step(abs(r.x), 0.2) * (1.0 - hairM);
+    tnCoat = zoneW * cloth * (1.0 - smoothstep(0.14, 0.24, cMx));
     kit = max(kit, tnCoat); skin *= 1.0 - tnCoat;
     float cl = max(tnCollar, tnKnot);
     kit = max(kit, cl); skin *= 1.0 - cl;
