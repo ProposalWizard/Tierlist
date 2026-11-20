@@ -1,0 +1,4 @@
+{"scorer":"Vinícius Júnior","scorerShort":"Vinícius","club":"Bayern München","replay":false,
+ "goals":[{"opp":"Borussia Dortmund","home":false,"comp":"Bundesliga","round":"Der Klassiker","score":"1-1","minute":69,"kind":"long_range"},
+          {"opp":"Chelsea","home":true,"comp":"Champions League","round":"Semi-final","score":"4-1","minute":80,"kind":"run_in"},
+          {"opp":"Atlético Madrid","home":true,"comp":"Champions League","round":"Final","score":"3-0","minute":70,"kind":"run_in"}]}

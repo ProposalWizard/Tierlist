@@ -22,6 +22,11 @@ export interface TourStep {
   target: string;
   text: string;
   press?: boolean;
+  /** Swipe, not tap (Mikey's phone test, 17 Nov 2026: "the swipe should be the
+   *  main one ... the one it directs you to do in the tutorial"). The hand
+   *  slides across the page in this direction and the page underneath takes
+   *  the swipe; a tap on the target still works too. */
+  swipe?: "left" | "right";
 }
 
 // The lines that explain the top bar. Every screen's tour starts with the bars
@@ -162,7 +167,7 @@ export const BOSS_MEETING_TOUR: TourStep[] = [
 export function shopTour(line: string, canBuy: boolean): TourStep[] {
   return canBuy
     // The Shop hint is words now, not a button (Mikey, 23 Oct 2026): it says swipe.
-    ? [{ target: "tab-2", text: `Swipe left to the Shop. ${line}: buy it there` }]
+    ? [{ target: "tab-2", text: `Swipe left to the Shop. ${line}: buy it there`, swipe: "left" }]
     : [{ target: "tab-2", text: `Your next step is a phone. ${line}` }];
 }
 export const SHOP_TOUR: TourStep[] = shopTour("Your first phone", true);

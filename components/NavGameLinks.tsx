@@ -2,14 +2,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GAME_PATH } from "@/lib/star/gamePath";
+import { withoutPaused } from "@/lib/rankingsPaused";
 
-const LIVE_GAMES = [
+const ALL_LIVE_GAMES = [
   { name: "Draft", href: "/draft" },
   { name: "Tic Tac Toe", href: "/tic-tac-toe" },
   { name: "Ten-A-Ball", href: "/tenable" },
   { name: "Rankings", href: "/tierlists" },
   { name: "Road to the Golden Ball", href: GAME_PATH, beta: true },
 ];
+const LIVE_GAMES = withoutPaused(ALL_LIVE_GAMES);
 
 /** Same amber pill used everywhere else a live-but-unfinished game is marked
  *  — see GameSidebar.tsx and app/admin/page.tsx. */

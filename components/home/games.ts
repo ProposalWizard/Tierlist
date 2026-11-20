@@ -1,4 +1,5 @@
 import { GAME_PATH } from "@/lib/star/gamePath";
+import { withoutPaused } from "@/lib/rankingsPaused";
 
 /**
  * THE GAMES ON THE PUBLIC HOME (Harry, 12 Nov 2026).
@@ -22,13 +23,16 @@ export interface HomeGame {
   href: string;
 }
 
-export const MORE_GAMES: HomeGame[] = [
+const ALL_MORE_GAMES: HomeGame[] = [
   { id: "draft", name: "Draft", line: "Pick your dream eleven", href: "/draft" },
   { id: "ttt", name: "Tic Tac Toe", line: "Name players, win squares", href: "/tic-tac-toe" },
   { id: "tenable", name: "Ten-A-Ball", line: "Ten answers to find", href: "/tenable" },
   { id: "rankings", name: "Rankings", line: "Sort players into tiers", href: "/tierlists" },
   { id: "blind", name: "Blind Rankings", line: "Rank them one by one", href: "/blind-rankings" },
 ];
+
+/** The tiles shown. Rankings and Blind Rankings drop out while paused (lib/rankingsPaused.ts). */
+export const MORE_GAMES: HomeGame[] = withoutPaused(ALL_MORE_GAMES);
 
 export type HomeLook = "a" | "b" | "c" | "d";
 export const HOME_LOOKS: { id: HomeLook; name: string }[] = [

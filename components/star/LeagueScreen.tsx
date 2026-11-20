@@ -185,6 +185,8 @@ function Legend({ zones }: { zones: Zone[] }) {
 
 const W_D_L = (us?: number, them?: number) =>
   us === undefined || them === undefined ? null : us > them ? "W" : us === them ? "D" : "L";
+const RESULT_ROW = { W: "rgba(16,185,129,.16)", D: "rgba(250,204,21,.13)", L: "rgba(239,68,68,.15)" } as const;
+const RESULT_EDGE = { W: "#34d399", D: "#facc15", L: "#f87171" } as const;
 const RESULT_PILL = {
   W: { bg: "linear-gradient(180deg, #34d399, #059669)", ink: "text-white" },
   D: { bg: "linear-gradient(180deg, #fde047, #ca8a04)", ink: "text-gray-950" },
@@ -696,7 +698,10 @@ function ClubLeagueScreen({ career, compact = false, view: forcedView, hideTabs 
                   <div
                     key={i}
                     className={`relative grid items-center gap-1 rounded-lg px-1.5 py-1.5 text-xs font-bold text-white ${compact ? "grid-cols-[46px_1fr_48px_1fr]" : "grid-cols-[52px_1fr_62px_1fr]"} ${next ? "" : f.played ? "bg-white/[0.035]" : "bg-black/20"}`}
-                    style={next ? { background: "linear-gradient(90deg, rgba(16,185,129,.45), rgba(16,185,129,.18))", boxShadow: "inset 0 0 0 1px rgba(110,231,183,.8), 0 0 16px -4px rgba(16,185,129,.9)" } : undefined}
+                    // A played match's whole row is lightly tinted in your result's colour: green a
+                    // win, amber a draw, red a loss (Mikey's phone test, 11 Nov 2026).
+                    style={next ? { background: "linear-gradient(90deg, rgba(16,185,129,.45), rgba(16,185,129,.18))", boxShadow: "inset 0 0 0 1px rgba(110,231,183,.8), 0 0 16px -4px rgba(16,185,129,.9)" }
+                      : res ? { background: RESULT_ROW[res], boxShadow: `inset 3px 0 0 ${RESULT_EDGE[res]}` } : undefined}
                   >
                     {/* The week, not the date, on top — every other screen
                         and message in the game counts in weeks. The actual
@@ -726,7 +731,8 @@ function ClubLeagueScreen({ career, compact = false, view: forcedView, hideTabs 
                     <div className="flex flex-col items-center">
                       {f.played ? (
                         <span
-                          className={`rounded-md px-1.5 py-0.5 text-[11px] font-black tabular-nums ${res ? RESULT_PILL[res].ink : "text-white"}`}
+                          // One width for every score, so 1 - 0 and 10 - 2 line up (Mikey, 11 Nov 2026).
+                          className={`min-w-[46px] rounded-md px-1.5 py-0.5 text-center text-[11px] font-black tabular-nums ${res ? RESULT_PILL[res].ink : "text-white"}`}
                           style={{ background: res ? RESULT_PILL[res].bg : "rgba(0,0,0,.4)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.3), 0 2px 6px rgba(0,0,0,.4)" }}
                         >
                           {`${f.homeScore} - ${f.awayScore}`}

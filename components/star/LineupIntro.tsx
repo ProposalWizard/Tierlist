@@ -31,7 +31,7 @@ import type { SelectionVerdict } from "@/lib/star/selection";
 import { MIN_ENERGY_TO_START, MIN_ENERGY_TO_SUB, selectionFor } from "@/lib/star/selection";
 import type { Role } from "@/lib/star/formations";
 import { formationOf } from "@/lib/star/formations";
-import { offeredPositions, POSITION_NAMES, formationForClub } from "@/lib/star/teamsheet";
+import { offeredPositions, POSITION_NAMES, formationForClub, playedAsShort } from "@/lib/star/teamsheet";
 import { KIB_CANS, kibCanPrice, type KibCan } from "@/lib/star/shopData";
 import { loadLineup } from "@/lib/star/lineupStore";
 import { getSkipLineup } from "@/lib/star/lineupPrefs";
@@ -130,8 +130,10 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
   // (v0.23 W7, P90 brought back what the line-up animation dropped). It sits
   // on the line-up, where the choice shows at once; opening it stops the
   // auto-kick-off so there is time to choose.
+  const shape = savedXI?.formation ?? formationForClub(career.player.club);
+  const ownShort = playedAsShort(career.player.position as Role, shape);
   const alternates = useMemo(
-    () => offeredPositions(career.player.position, savedXI?.formation ?? formationForClub(career.player.club)),
+    () => offeredPositions(career.player.position, shape).filter((a) => a.short !== ownShort),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [career.player.club, career.player.position, saved?.formation],
   );
@@ -139,7 +141,8 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
   const [held, setHeld] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const canPick = !!onPlayAs && alternates.length > 0 && (status === "1st Team" || status === "Substitute");
-  const here = playAs ?? (career.player.position as Role);
+  // The real position's name in this shape (LM, not LW, in a flat four).
+  const here = playedAsShort(playAs ?? (career.player.position as Role), shape);
 
   // The line-up draws in, then kicks off by itself (not while choosing).
   useEffect(() => {
@@ -167,7 +170,7 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
       </button>
       {picking && (
         <div data-playas-picker className="absolute right-0 top-[36px] flex gap-px bg-black/60 p-px" style={{ boxShadow: "0 8px 20px rgba(0,0,0,.6)" }}>
-          {[{ role: null as Role | null, label: career.player.position }, ...alternates.map((a) => ({ role: a.role as Role | null, label: a.role as string }))].map(({ role, label }) => {
+          {[{ role: null as Role | null, label: ownShort }, ...alternates.map((a) => ({ role: a.role as Role | null, label: a.short }))].map(({ role, label }) => {
             const on = (playAs ?? null) === role;
             return (
               <button

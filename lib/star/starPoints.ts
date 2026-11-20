@@ -396,17 +396,18 @@ export function starTitle(level: number): string {
   return STAR_TITLES[Math.max(0, Math.min(10, Math.floor(level / 10)))];
 }
 
-// ── 2b. One level a match, at most ─────────────────────────────────────────
+// ── 2b. How far one match can lift you ──────────────────────────────────────
 
 /**
- * Harry, 1 Oct 2026: "you should never jump 2 levels, it should always be
- * longer than that." One match — with everything that lands with it before
- * your next one (a debut, achievements, a trophy, the season's awards) — can
- * lift the rating by this many levels at most. The points still bank: any
- * beyond the cap carry over and pay out one level per match after it.
- * A 1.0-10.0 save being converted is not a match: it keeps the level it had.
+ * SUPERSEDED rule (Harry, 1 Oct 2026): "you should never jump 2 levels", so
+ * one match lifted the rating by one level at most and the rest was held
+ * back. Mikey, 17 Nov 2026, from his phone test: "I want you to be able to go
+ * up as much as the XP you get allows." So there is no cap: a match lifts you
+ * as many levels as its points pay for. The curve (section 2) still makes
+ * that rare after level 4. To bring a cap back, set this to the number of
+ * levels; the hold-and-carry code below still works with any number.
  */
-export const MAX_RISE_PER_MATCH = 1;
+export const MAX_RISE_PER_MATCH = Number.POSITIVE_INFINITY;
 
 /** Matches you have played, in every competition (the ledger counts them). */
 export function matchesPlayed(led: StarLedger): number {

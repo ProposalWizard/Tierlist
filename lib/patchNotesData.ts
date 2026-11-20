@@ -27,7 +27,175 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
-      "version": "0.140",
+      "version": "0.143",
+      "title": "Leo's patch notes: Weekly round-up, 13 to 20 Nov",
+      "author": "Leo",
+      "publishedAt": "2026-11-20T17:50:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "One page for the week, for Harry. 2 pull requests merged into main from Fri 13 Nov to Fri 20 Nov (#832, #833), plus a round from the Harry branch and one direct commit. Two new patch notes (Mikey's v0.139, Leo's v0.140); the other lines come from the commit list and say so. Biggest changes: the phone app is signed with a Google Play page in 86 languages, a separate phone-built app (KIB Next) plays the same game, a round of fixes from Mikey's phone test, the Knowitball Discord kit, and Claude jobs on GitHub. Nothing new is live on Discord or Google Play yet.",
+      "stats": [
+        {
+          "value": "2",
+          "label": "pull requests merged into main this week"
+        },
+        {
+          "value": "2",
+          "label": "new patch notes (v0.139, v0.140)"
+        },
+        {
+          "value": "86",
+          "label": "languages on the Google Play page"
+        },
+        {
+          "value": "100 / 100",
+          "label": "KIB Next test matches identical to the website"
+        }
+      ],
+      "updates": [],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Privacy policy: the new phone app section",
+              "detail": "The site's privacy policy page. v0.139."
+            },
+            {
+              "title": "Fixes from Mikey's phone test",
+              "detail": "Play a career on a phone: matches play from kick-off, the page never scrolls, Home after every match, POST shows once. 17-18 Nov commits."
+            },
+            {
+              "title": "Rankings say 'not running right now'",
+              "detail": "Every Rankings page. 17 Nov."
+            },
+            {
+              "title": "Join our Discord buttons",
+              "detail": "Site footer and game Settings. Hidden until the invite link is set. v0.140."
+            },
+            {
+              "title": "Claude on GitHub",
+              "detail": "@claude in an issue, or Run workflow. Needs the ANTHROPIC_API_KEY secret. 20 Nov."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "The phone app (Mikey)",
+          "items": [
+            {
+              "title": "The packed app is signed, and its Google Play page is done",
+              "detail": "86 languages, icon, feature graphic, 8 screenshots, Play's forms, and a privacy policy that covers the phone app. A 14-day closed test comes before the public launch. v0.139."
+            },
+            {
+              "title": "Why the app lags",
+              "detail": "Hidden work stutters screens that aren't being touched. App 1.1 drops the frosted-glass blur; the phone app has no Card Night. v0.139."
+            },
+            {
+              "title": "KIB Next: a separate app built for the phone",
+              "detail": "It plays the same game with the same rules (100 of 100 test matches identical to the website): the whole career, real players offline, goal videos with Save video, your 3D player, the farewell walk-out. It has never run on a real phone. v0.139."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Game fixes (from the commit list)",
+          "items": [
+            {
+              "title": "Mikey's phone test, parts 1 to 3",
+              "detail": "Matches play from kick-off; real cup squads; one chance a half; the feed video plays once; Home after every match; the casino says Locked; the trial free-kick card sits off the wall. 18 Nov."
+            },
+            {
+              "title": "Screens fit the phone",
+              "detail": "The page never scrolls and the top stays put. The tutorial shows a swipe; the Shop hint clears the Play button. 18 Nov."
+            },
+            {
+              "title": "Smaller fixes",
+              "detail": "Hitting the post shows POST once, not twice. The star rating rises as far as the points allow. Play as lists only real positions. The star bar says when a level is held; the physio can at full energy is fixed. 17 Nov."
+            },
+            {
+              "title": "Rankings paused",
+              "detail": "Every Rankings page shows 'not running right now'. 17 Nov."
+            },
+            {
+              "title": "Build fix",
+              "detail": "The highlights tool's audio no longer broke the build. 18 Nov."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Discord and team tools",
+          "items": [
+            {
+              "title": "The Knowitball Discord, ready to build (Leo)",
+              "detail": "A script makes the whole server in one go: 10 roles, 21 channels, rules, welcome posts and 2 joining questions. Join buttons on the site and in the game. New patch notes post themselves to #updates. A growth plan. v0.140."
+            },
+            {
+              "title": "Claude on GitHub (Harry)",
+              "detail": "Run jobs on the team's API credit with @claude in an issue, or Run workflow. Until the ANTHROPIC_API_KEY secret is set, nothing runs; the website is not affected. 20 Nov."
+            },
+            {
+              "title": "Mikey's Brain (Mikey)",
+              "detail": "A private page for his 8 social accounts: approve, post, results and rules, and a step-by-step posting chain with titles, captions and hashtags per app. 17-18 Nov."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Marketing videos (Mikey, from the commit list)",
+          "items": [
+            {
+              "title": "The scout's file look",
+              "detail": "Van Dijk's replacement (v12, a 53 s cut in v13) and how Liverpool replace Alisson (v14). v11 posted to Instagram. 13-15 Nov."
+            },
+            {
+              "title": "Where should Vinícius go?",
+              "detail": "A Next club tab in the Twin Finder (need, fit and level for every top-5 club), a season sim with the game's match model, and a highlights tool that turns the game's goal clips into vertical videos. v15 and v16. 15-16 Nov."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Still open (from this week's notes, not rechecked today)",
+          "items": [
+            {
+              "title": "KIB Next has never run on a phone",
+              "detail": "Save video is untested on a device. v0.139."
+            },
+            {
+              "title": "The Discord server does not exist yet",
+              "detail": "Leo makes the server and bot (about 5 minutes) and sets two Vercel settings. Not run on real Discord. v0.140."
+            },
+            {
+              "title": "Claude on GitHub needs the ANTHROPIC_API_KEY secret",
+              "detail": "20 Nov."
+            },
+            {
+              "title": "From v0.138: no database backup yet",
+              "detail": "Cloudflare not joined up on the live site. Not rechecked."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Calls for Harry",
+          "items": [
+            {
+              "title": "Set the ANTHROPIC_API_KEY secret on GitHub",
+              "detail": "Settings → Secrets and variables → Actions. 20 Nov."
+            },
+            {
+              "title": "Closed test of the packed app, then playtest KIB Next on real phones",
+              "detail": "v0.139."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.142",
       "title": "Leo's patch notes: Weekly round-up, 6 to 13 Nov",
       "author": "Leo",
       "publishedAt": "2026-11-13T17:50:00Z",
@@ -205,7 +373,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       ]
     },
     {
-      "version": "0.139",
+      "version": "0.141",
       "title": "Leo's patch notes: Weekly round-up, 30 Oct to 6 Nov",
       "author": "Leo",
       "publishedAt": "2026-11-06T17:50:00Z",
@@ -916,6 +1084,257 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         }
       ],
       "author": "Leo",
+      "updates": []
+    },
+  {
+      "version": "0.140",
+      "title": "Leo's patch notes: The Knowitball Discord",
+      "author": "Leo",
+      "publishedAt": "2026-11-19T18:14:34Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "A full plan and kit for a Knowitball Discord aimed at one thing: more people playing. Built: a script that makes the whole server in one go (10 roles, 21 channels, rules, welcome posts, the 2 joining questions), Join our Discord buttons on the site footer and game Settings, and new updates posting themselves to the server. Nothing shows on the site yet: it waits for the server to exist (5 minutes for Leo).",
+      "discord": "Knowitball has its own Discord: report bugs, vote on ideas, join weekly challenges and see every new update first.",
+      "stats": [
+        {
+          "value": "21",
+          "label": "channels in the plan"
+        },
+        {
+          "value": "10",
+          "label": "roles"
+        },
+        {
+          "value": "2",
+          "label": "questions when you join"
+        },
+        {
+          "value": "0",
+          "label": "buttons live until the invite is set"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "The server, in one script",
+              "detail": "scripts/discord: roles, channels, who can write where, welcome/rules/play posts, Community and the joining questions. Running it again adds only what's missing."
+            },
+            {
+              "title": "Join our Discord buttons",
+              "detail": "Site footer and game Settings (first screen). Hidden until there is an invite, so no dead links. Each press is counted (discord_click)."
+            },
+            {
+              "title": "Updates post themselves",
+              "detail": "A patch note with a player line goes to #updates once, when the Patch bot announces it. Never pings everyone."
+            },
+            {
+              "title": "Growth plan",
+              "detail": "docs/DISCORD.md: getting people in, Discord to game, the feedback loop, week one."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Needs Leo",
+          "items": [
+            {
+              "title": "Make the server + bot (5 min)",
+              "detail": "Steps in scripts/discord/README.md. Then a chat builds it."
+            },
+            {
+              "title": "Two Vercel settings",
+              "detail": "NEXT_PUBLIC_DISCORD_INVITE (buttons) and DISCORD_UPDATES_WEBHOOK (auto posts)."
+            },
+            {
+              "title": "Not run on real Discord yet",
+              "detail": "Tested against a fake Discord only."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
+      "version": "0.139",
+      "title": "Mikey's patch notes: Getting the app ready for phones",
+      "author": "Mikey",
+      "publishedAt": "2026-11-19T16:18:51Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/6yuGfXVSuSWYN3i6Jrc7nP",
+      "summary": "The packed app is signed and its Google Play page is done (86 languages, icon, feature graphic, screenshots, privacy policy). It still felt laggy, so KIB Next was built: a separate app made for the phone that plays the same game with the same rules (100 of 100 test matches identical). Honest: KIB Next has never run on a real phone yet.",
+      "stats": [
+        {
+          "value": "86",
+          "label": "languages on the Play Store page"
+        },
+        {
+          "value": "100 / 100",
+          "label": "phone matches identical to the website"
+        },
+        {
+          "value": "0",
+          "label": "changes to the website's game rules"
+        },
+        {
+          "value": "14 days",
+          "label": "closed test before the public launch"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The privacy policy's phone app section",
+              "detail": "knowitball.co.uk/legal → \"Our Phone App\"."
+            },
+            {
+              "title": "Store listing text in 86 languages",
+              "detail": "Play Console → Store presence → Store listings."
+            },
+            {
+              "title": "Icon, feature graphic, 8 screenshots, AI labels",
+              "detail": "Play Console → Default store listing."
+            },
+            {
+              "title": "App 1.1: no frosted-glass blur",
+              "detail": "Install the 1.1 APK, compare scrolling with 1.0."
+            },
+            {
+              "title": "KIB Next: start a career, play a full match",
+              "detail": "Install KIB Next → New game → Play."
+            },
+            {
+              "title": "KIB Next: League, Phone, Shop, Star Pass, transfers",
+              "detail": "KIB Next → bottom bar and Home links."
+            },
+            {
+              "title": "KIB Next: your 3D player, Save video, the farewell walk-out",
+              "detail": "KIB Next → Home; Kickabout → Goal replays; your last match."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Google Play",
+          "items": [
+            {
+              "title": "Developer account",
+              "detail": "Personal, non-trader, ID verified."
+            },
+            {
+              "title": "A signed app ready to upload",
+              "detail": "app-release.aab (about 158 MB), signed with Knowitball's own upload key."
+            },
+            {
+              "title": "Store page in 86 languages",
+              "detail": "Inside every length limit; not checked by native speakers."
+            },
+            {
+              "title": "Icon, feature graphic, screenshots",
+              "detail": "Mikey's 8 screenshots made Play-ready (1080 × 1920), plus 8 captioned ones."
+            },
+            {
+              "title": "Play's forms",
+              "detail": "No data collected, no ads, 13+, no gambling, AI labels on 3 pictures."
+            },
+            {
+              "title": "Privacy policy covers the phone app",
+              "detail": "Live at knowitball.co.uk/legal."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: the packed app",
+          "items": [
+            {
+              "title": "App 1.1: no frosted-glass blur",
+              "detail": "In the app only; Mikey: not a huge change for the lag."
+            },
+            {
+              "title": "No Card Night in the phone app",
+              "detail": "Keeps Play's age rating low."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Found: why the app lags",
+          "items": [
+            {
+              "title": "Hidden work stutters untouched screens",
+              "detail": "Mikey's phone: 2D match 171 stutters in 40 s, garden 90 and feed 87 in 30 s; the Home 3D player redrew 30 times a second."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: KIB Next, the phone-built app",
+          "items": [
+            {
+              "title": "A separate app built for the phone",
+              "detail": "Reads the game's rules from the same files as the website, never changes them."
+            },
+            {
+              "title": "Matches exactly as on the website",
+              "detail": "100 of 100 test matches identical."
+            },
+            {
+              "title": "The whole career and everything around it",
+              "detail": "Trial to Hall of Fame, every league and cup, phone, shop, Owner app; no casino."
+            },
+            {
+              "title": "Real players offline, the website's drawings",
+              "detail": "Same squads and photos as the packed app."
+            },
+            {
+              "title": "Goal videos with Save video, 3D player, farewell walk-out",
+              "detail": "Not yet seen on a phone."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "KIB Next has never run on a phone (HIGH)",
+              "detail": "All checks headless or in a browser."
+            },
+            {
+              "title": "Save video untested on a device (HIGH)",
+              "detail": "iPhone has no video maker yet."
+            },
+            {
+              "title": "Extra permissions in the KIB Next test build (LOW)",
+              "detail": "Remove before any release."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Closed test of the packed app",
+              "detail": "12+ testers, 14 days."
+            },
+            {
+              "title": "Playtest KIB Next on real phones",
+              "detail": "Mikey, Harry, Leo."
+            },
+            {
+              "title": "KIB Next as version 2.0",
+              "detail": "Mikey: keep testing first."
+            }
+          ]
+        }
+      ],
       "updates": []
     },
     {
@@ -13155,7 +13574,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "label": "sounds remade, and sounds now played outside the match"
         },
         {
-          "value": "23",
+          "value": "21",
           "label": "before and after clips of the game, plus shop stills"
         }
       ],

@@ -29,3 +29,19 @@ and the episode file for `tools/video-render/twin/make_replace.py`. Every player
 The Statistical twins top 10 (and the map, the list search and the "Good video?" score) only use full seasons: "Last 5 full
 seasons" = 2021/22 to 2025/26, "Every full season" stops at 2025/26, and "One season" lists only full seasons. This season
 (2026/27, about 10 games in) appears only in the "Right now" card. The "This season only" option is gone.
+
+## Next club (15 Nov 2026)
+
+Third tab: "where should he go?" Every club in the top 5 leagues this season gets three scores out of 100 (need, fit, level;
+total = 40/30/30), with the reasons in words. Same method as `tools/video-render/twin/model/next_club.py` (read its top
+comment); change both together.
+- Clubs: `python3 fmpull_clubs.py <FM_DIR>` (league tables, each club's squad + last line-up, league-wide team stats; about
+  100 FotMob pages, 2 minutes) -> `<FM_DIR>/../clubs.json`; `build.py` packs it into `data.js` as `clubs`. Pull it again
+  every few weeks: the table, squads and team stats move.
+
+### Next club v2 (16 Nov 2026, Mikey: "level" was this season's table, "need" a few games of ratings, "fit" was possession)
+Now two checks: **his season** (the club rated like the game rates a team, he goes into their eleven, the league + a
+Champions League run played 200 times with the game's match model) 70%, and **club pull** (10 seasons of league finishes,
+trophies, squad value, a little of this season) 30%. Method: `tools/video-render/twin/model/next_club_sim.py` (top comment),
+`sim_season.mts`, `club_strength.py`; the page has the same in JS. Data: `fmpull_clubs.py <FM_DIR> --history` and the EA ratings
+pulled from our sofifa_players table into `<FM_DIR>/../sofifa2027.json` and `sofifa2026.json` (see club_strength.py).

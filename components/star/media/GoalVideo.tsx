@@ -357,6 +357,8 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
   // player worker (makeVideo.ts startLive), with its sound; the moment the
   // file is made it takes over from the same second.
   const [liveState, setLiveState] = useState<"off" | "starting" | "playing">("off");
+  /** The post's video has played to its end and waits for "Watch again". */
+  const [ended, setEnded] = useState(false);
   const [liveGen, setLiveGen] = useState(0);
   const liveCanvasRef = useRef<HTMLCanvasElement>(null);
   const liveStop = useRef<(() => void) | null>(null);
@@ -373,7 +375,7 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
   const liveSession = useRef(0);
   useEffect(() => {
     // Playing live needs only the player worker, not the file encoder (canPlay).
-    const want = live && wanted && !fill && status !== "ready" && !!edit && canPlay !== false && onView;
+    const want = live && wanted && !fill && status !== "ready" && !!edit && canPlay !== false && onView && !ended;
     if (!want) {
       if (liveState !== "off") {
         liveSession.current++;
@@ -404,13 +406,18 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
         src.start(0, ((performance.now() - startedAt) / 1000) % Math.max(0.01, buf.duration));
         liveSound.current = { src, gain };
       }).catch(() => { /* silent */ });
-    }, t => { if (current()) liveT.current = t; }).then(stop => {
+    }, t => {
+      if (!current()) return;
+      // The live player loops: the clock going back means it played once.
+      if (t < liveT.current - 0.5) { liveT.current = 0; setEnded(true); return; }
+      liveT.current = t;
+    }).then(stop => {
       if (!current()) { stop?.(); return; }
       if (!stop) { setLiveState("off"); return; }
       liveStop.current = stop;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wanted, status, edit, canPlay, onView, liveGen, live]);
+  }, [wanted, status, edit, canPlay, onView, liveGen, live, ended]);
   useEffect(() => { if (liveSound.current) liveSound.current.gain.gain.value = audible ? 1 : 0; }, [audible]);
   // Your goals, your match's highlights and a replay you opened: the live
   // player is readied for them as soon as they are on the page.
@@ -575,7 +582,7 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
             className="block h-full w-full"
             playsInline
             muted
-            loop
+            onEnded={() => setEnded(true)}
             onLoadedMetadata={(ev) => { if (seekTo.current !== null) { ev.currentTarget.currentTime = seekTo.current; seekTo.current = null; } }}
             onClick={() => { const v = videoRef.current; if (v) { if (v.paused) { setWanted(true); void v.play(); } else v.pause(); } }}
             onPlay={(ev) => { const me = ev.currentTarget; onScreen.forEach(v => { if (v !== me && !v.paused) v.pause(); }); }}
@@ -583,6 +590,18 @@ export default function GoalVideo({ clipIds, synth, standIn, style, variant = 0,
             data-goal-video-playing
           />
         ) : null}
+        {/* Plays once, then waits (Mikey's phone test, 17 Nov 2026: "the video
+            should stop once it's finished and then you can say again"). */}
+        {ended && !fill && (
+          <button
+            onClick={() => { const v = videoRef.current; setEnded(false); if (status === "ready" && v) { v.currentTime = 0; void v.play(); } }}
+            className="absolute inset-0 z-10 grid place-items-center bg-black/35"
+            aria-label="Watch again"
+            data-goal-video-again
+          >
+            <span className="flex items-center gap-2 rounded-full bg-black/65 px-4 py-2.5 text-[14px] font-black text-white ring-2 ring-white/80">↻ Watch again</span>
+          </button>
+        )}
         {status === "ready" && url && !wanted && !autoStart && (
           <button
             onClick={() => setWanted(true)}

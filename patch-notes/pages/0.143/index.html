@@ -1,0 +1,124 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Weekly Round-up 0.143</title><style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
+  .flow span.done{color:var(--green)}
+  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+  td.s{color:var(--ink2)}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  .ck{list-style:none;margin:0;padding:0}
+  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
+  .ck li:last-child{border-bottom:0}
+  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
+  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
+</style></head><body><div class="wrap">
+<header><span class="ver">v0.143 · WEEKLY</span><h1>Weekly round-up, 13 to 20 Nov</h1><p class="sub">By Leo · 20 Nov 2026, 17:50 UK · everything merged into main that week, by area. Each line names the version with the full detail.</p></header>
+<h2 class="fix"><i></i>CHECK THESE</h2><ul class="ck"><li><div class="q">Privacy policy: the new phone app section</div><div class="a">The site's privacy policy page. v0.139.</div></li><li><div class="q">Fixes from Mikey's phone test</div><div class="a">Play a career on a phone: matches play from kick-off, the page never scrolls, Home after every match, POST shows once. 17-18 Nov commits.</div></li><li><div class="q">Rankings say 'not running right now'</div><div class="a">Every Rankings page. 17 Nov.</div></li><li><div class="q">Join our Discord buttons</div><div class="a">Site footer and game Settings. Hidden until the invite link is set. v0.140.</div></li><li><div class="q">Claude on GitHub</div><div class="a">@claude in an issue, or Run workflow. Needs the ANTHROPIC_API_KEY secret. 20 Nov.</div></li></ul>
+<h2 class="add"><i></i>1 · WHO BUILT WHAT</h2><div class="dt" style="margin-bottom:10px">2 pull requests reached main from Fri 13 Nov to Fri 20 Nov (#832 Mikey's notes, #833 Leo's Discord). A round from the Harry branch and one direct commit went straight in.</div><div class="tw" style="padding:14px"><svg viewBox="0 0 565 190" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif"><defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs><rect x="10" y="10" width="170" height="74" rx="12" fill="var(--card2)" stroke="var(--line)" stroke-width="1.5"/><text x="95" y="38" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">Mikey</text><text x="95" y="58" font-size="12" fill="var(--ink2)" text-anchor="middle">Google Play page, KIB Next,</text><text x="95" y="74" font-size="12" fill="var(--ink2)" text-anchor="middle">phone test, videos</text><path d="M95 86 L95 118" stroke="var(--ink3)" stroke-width="2" marker-end="url(#a)"/><rect x="195" y="10" width="170" height="74" rx="12" fill="var(--card2)" stroke="var(--line)" stroke-width="1.5"/><text x="280" y="38" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">Harry</text><text x="280" y="58" font-size="12" fill="var(--ink2)" text-anchor="middle">Claude on GitHub,</text><text x="280" y="74" font-size="12" fill="var(--ink2)" text-anchor="middle">phone-test fixes</text><path d="M280 86 L280 118" stroke="var(--ink3)" stroke-width="2" marker-end="url(#a)"/><rect x="380" y="10" width="170" height="74" rx="12" fill="var(--card2)" stroke="var(--line)" stroke-width="1.5"/><text x="465" y="38" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">Leo</text><text x="465" y="58" font-size="12" fill="var(--ink2)" text-anchor="middle">Discord kit: server,</text><text x="465" y="74" font-size="12" fill="var(--ink2)" text-anchor="middle">Join buttons, update posts</text><path d="M465 86 L465 118" stroke="var(--ink3)" stroke-width="2" marker-end="url(#a)"/><rect x="10" y="122" width="540" height="58" rx="12" fill="var(--card2)" stroke="var(--green)" stroke-width="1.5"/><text x="280" y="148" font-size="15" font-weight="700" fill="var(--green)" text-anchor="middle">main · 13 to 20 Nov</text><text x="280" y="168" font-size="12" fill="var(--ink2)" text-anchor="middle">2 PRs · 2 new patch notes</text></svg></div><h2 class="add"><i></i>2 · THE PHONE APP (MIKEY)</h2><ul class="n"><li><div class="hd">The packed app is signed, and its Google Play page is done</div><div class="dt">86 languages, icon, feature graphic, 8 screenshots, Play's forms, and a privacy policy that covers the phone app. A 14-day closed test comes before the public launch. v0.139.</div></li><li><div class="hd">Why the app lags</div><div class="dt">Hidden work stutters screens that aren't being touched. App 1.1 drops the frosted-glass blur; the phone app has no Card Night. v0.139.</div></li><li><div class="hd">KIB Next: a separate app built for the phone</div><div class="dt">It plays the same game with the same rules (100 of 100 test matches identical to the website): the whole career, real players offline, goal videos with Save video, your 3D player, the farewell walk-out. It has never run on a real phone. v0.139.</div></li></ul><h2 class="add"><i></i>3 · GAME FIXES (FROM THE COMMIT LIST)</h2><ul class="n"><li><div class="hd">Mikey's phone test, parts 1 to 3</div><div class="dt">Matches play from kick-off; real cup squads; one chance a half; the feed video plays once; Home after every match; the casino says Locked; the trial free-kick card sits off the wall. 18 Nov.</div></li><li><div class="hd">Screens fit the phone</div><div class="dt">The page never scrolls and the top stays put. The tutorial shows a swipe; the Shop hint clears the Play button. 18 Nov.</div></li><li><div class="hd">Smaller fixes</div><div class="dt">Hitting the post shows POST once, not twice. The star rating rises as far as the points allow. Play as lists only real positions. The star bar says when a level is held; the physio can at full energy is fixed. 17 Nov.</div></li><li><div class="hd">Rankings paused</div><div class="dt">Every Rankings page shows 'not running right now'. 17 Nov.</div></li><li><div class="hd">Build fix</div><div class="dt">The highlights tool's audio no longer broke the build. 18 Nov.</div></li></ul><h2 class="add"><i></i>4 · DISCORD AND TEAM TOOLS</h2><ul class="n"><li><div class="hd">The Knowitball Discord, ready to build (Leo)</div><div class="dt">A script makes the whole server in one go: 10 roles, 21 channels, rules, welcome posts and 2 joining questions. Join buttons on the site and in the game. New patch notes post themselves to #updates. A growth plan. v0.140.</div></li><li><div class="hd">Claude on GitHub (Harry)</div><div class="dt">Run jobs on the team's API credit with @claude in an issue, or Run workflow. Until the ANTHROPIC_API_KEY secret is set, nothing runs; the website is not affected. 20 Nov.</div></li><li><div class="hd">Mikey's Brain (Mikey)</div><div class="dt">A private page for his 8 social accounts: approve, post, results and rules, and a step-by-step posting chain with titles, captions and hashtags per app. 17-18 Nov.</div></li></ul><h2 class="add"><i></i>5 · MARKETING VIDEOS (MIKEY, FROM THE COMMIT LIST)</h2><ul class="n"><li><div class="hd">The scout's file look</div><div class="dt">Van Dijk's replacement (v12, a 53 s cut in v13) and how Liverpool replace Alisson (v14). v11 posted to Instagram. 13-15 Nov.</div></li><li><div class="hd">Where should Vinícius go?</div><div class="dt">A Next club tab in the Twin Finder (need, fit and level for every top-5 club), a season sim with the game's match model, and a highlights tool that turns the game's goal clips into vertical videos. v15 and v16. 15-16 Nov.</div></li></ul><h2 class="bug"><i></i>6 · STILL OPEN (FROM THIS WEEK'S NOTES, NOT RECHECKED TODAY)</h2><ul class="n"><li><div class="hd">KIB Next has never run on a phone</div><div class="dt">Save video is untested on a device. v0.139.</div></li><li><div class="hd">The Discord server does not exist yet</div><div class="dt">Leo makes the server and bot (about 5 minutes) and sets two Vercel settings. Not run on real Discord. v0.140.</div></li><li><div class="hd">Claude on GitHub needs the ANTHROPIC_API_KEY secret</div><div class="dt">20 Nov.</div></li><li><div class="hd">From v0.138: no database backup yet</div><div class="dt">Cloudflare not joined up on the live site. Not rechecked.</div></li></ul><h2 class="nxt"><i></i>7 · CALLS FOR HARRY</h2><ul class="n"><li><div class="hd">Set the ANTHROPIC_API_KEY secret on GitHub</div><div class="dt">Settings → Secrets and variables → Actions. 20 Nov.</div></li><li><div class="hd">Closed test of the packed app, then playtest KIB Next on real phones</div><div class="dt">v0.139.</div></li></ul><details><summary>The numbers</summary><ul><li><b>2</b> pull requests merged into main this week</li><li><b>2</b> new patch notes (v0.139, v0.140)</li><li><b>86</b> languages on the Google Play page</li><li><b>100 / 100</b> KIB Next test matches identical to the website</li></ul><p>Pull requests #832 and #833, both merged into main.</p></details>
+<footer>One page for the week, for Harry. 2 pull requests merged into main from Fri 13 Nov to Fri 20 Nov (#832, #833), plus a round from the Harry branch and one direct commit. Two new patch notes (Mikey's v0.139, Leo's v0.140); the other lines come from the commit list and say so. Biggest changes: the phone app is signed with a Google Play page in 86 languages, a separate phone-built app (KIB Next) plays the same game, a round of fixes from Mikey's phone test, the Knowitball Discord kit, and Claude jobs on GitHub. Nothing new is live on Discord or Google Play yet.</footer></div></body></html>

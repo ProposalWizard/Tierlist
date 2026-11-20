@@ -228,5 +228,150 @@
    "2026-11-10 07 Van Dijk posted to Instagram (knowitballjr).",
    "2026-11-11 All 27 re-rendered with faces from the season shown (201 of 216 faces; the rest are today's photo). Voices reused."
   ]
+ },
+ {
+  "id": "v09-replace-hall-tavares-wesley",
+  "title": "v09 · How do you replace Lewis Hall? Tavares or Wesley",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-12T19:40:00Z",
+  "postOn": null,
+  "line": "Left-backs, 1,800+ minutes, any age/value/league. Ready now: Nuno Tavares (Lazio, 26, €14M, 84%): cheaper and closer to Hall. For the future: Wesley (Roma, 23, €46M, 72%): less like Hall and pricier, but younger with potential.",
+  "script": "docs/marketing/videos/v09-replace-hall-tavares-wesley/script.md",
+  "cover": "docs/marketing/videos/v09-replace-hall-tavares-wesley/cover.png",
+  "video": "docs/marketing/videos/v09-replace-hall-tavares-wesley/knowitball-v09-replace-hall-motion.mp4",
+  "seconds": 55.2,
+  "links": [],
+  "log": [
+   "2026-11-12 Made from Mikey's Replace-a-player settings and wording. Waiting for Mikey's look.",
+   "2026-11-12 Motion version (Mikey): video_replace_motion.html, same layer as the twins (moving backgrounds, badge wallpaper, specks, bobbing faces, circle wipes, ticking numbers, confetti on each option). No zoom."
+  ]
+ },
+ {
+  "id": "v10-replace-bruno",
+  "title": "v10 · How do United replace Bruno Fernandes?",
+  "stage": "check",
+  "owner": "Claude",
+  "updated": "2026-11-12T21:00:00Z",
+  "postOn": null,
+  "line": "Contract runs out. #1 Güler 83% (won't leave Madrid), #2 Dybala 81% (old, cheap), #3 Cherki 75% (won't leave City), #5 Olmo 70%: the realistic pick (out of favour at Barça).",
+  "script": "docs/marketing/videos/v10-replace-bruno/script.md",
+  "cover": "docs/marketing/videos/v10-replace-bruno/cover.png",
+  "video": "docs/marketing/videos/v10-replace-bruno/knowitball-v10-replace-bruno.mp4",
+  "seconds": 74.5,
+  "links": [],
+  "log": [
+   "2026-11-12 Made in story mode from Mikey's context, motion style. Güler is not 'by far' the closest (83% v Dybala 81%): the line says 'the closest of them all'. Waiting for Mikey's look."
+  ]
+ },
+ {
+  "id": "v11-replace-van-dijk",
+  "title": "v11 · How do Liverpool replace Van Dijk?",
+  "stage": "posted",
+  "owner": "Claude",
+  "updated": "2026-11-13T12:00:00Z",
+  "postOn": null,
+  "line": "Contract runs out. Huijsen #2 (won't leave Madrid), Van Hecke #4 (just joined Spurs), Jacobo Ramón #14 (21, Como, €48M): the young pick; Thiaw #20 (out of form); Schlotterbeck #85 (26, Dortmund, €54M): the experienced pick.",
+  "script": "docs/marketing/videos/v11-replace-van-dijk/script.md",
+  "cover": "docs/marketing/videos/v11-replace-van-dijk/cover.png",
+  "video": "docs/marketing/videos/v11-replace-van-dijk/knowitball-v11-replace-van-dijk.mp4",
+  "seconds": 93.9,
+  "links": [
+   {
+    "label": "Instagram Reel",
+    "url": "https://www.instagram.com/reel/DfsPQfbj6R_/"
+   }
+  ],
+  "log": [
+   "2026-11-13 Made in story mode from Mikey's context, motion style. Lienhart (#1) left out on purpose. Waiting for Mikey's look.",
+   "2026-11-13 Posted to Instagram (knowitballjr) as a Reel via Windsor.ai."
+  ]
+ },
+ {
+  "id": "v12-replace-van-dijk-file",
+  "title": "v12 · Replace Van Dijk, new look (scout's file)",
+  "stage": "final-check",
+  "owner": "Claude",
+  "updated": "2026-11-14T14:45:00Z",
+  "postOn": null,
+  "line": "Same script and voice as v11, new art and animation: a transfer dossier on paper, polaroids with tape, red marker, rubber stamps that slam, a corkboard with pins and string, pages sliding over each other.",
+  "script": "docs/marketing/videos/v11-replace-van-dijk/script.md",
+  "cover": "docs/marketing/videos/v12-replace-van-dijk-file/cover.png",
+  "video": "docs/marketing/videos/v12-replace-van-dijk-file/knowitball-v12-replace-van-dijk-file.mp4",
+  "seconds": 93.9,
+  "links": [],
+  "log": [
+   "2026-11-14 Remade in the new 'scout's file' look (engine video_replace_file.html) because v11's dark motion look was not performing (about 20 s average watch of 94 s). Waiting for Mikey's look."
+  ]
+ },
+ {
+  "id": "v13-replace-van-dijk-short",
+  "title": "v13 · Replace Van Dijk, short cut (53 s, scout's file)",
+  "stage": "final-check",
+  "owner": "Claude",
+  "updated": "2026-11-14T15:30:00Z",
+  "postOn": null,
+  "line": "v12 cut from 94 s to 53 s: hook, the search, map, Huijsen (won't leave Madrid), Ramón (the young pick), Schlotterbeck (the experienced pick), ending. Dropped: his rankings, Van Hecke, Thiaw, the head-to-head, Schlotterbeck's last sentence. Voice 6% faster, same takes.",
+  "script": "docs/marketing/videos/v11-replace-van-dijk/script.md",
+  "cover": "docs/marketing/videos/v13-replace-van-dijk-short/cover.png",
+  "video": "docs/marketing/videos/v13-replace-van-dijk-short/knowitball-v13-replace-van-dijk-short.mp4",
+  "seconds": 52.9,
+  "links": [],
+  "log": [
+   "2026-11-14 Short cut made from v12 because the average watch on v11 was about 20 s of 94 s. Waiting for Mikey's look."
+  ]
+ },
+ {
+  "id": "v14-replace-alisson",
+  "title": "v14 · How do Liverpool replace Alisson? (scout's file, short)",
+  "stage": "final-check",
+  "owner": "Claude",
+  "updated": "2026-11-15T21:30:00Z",
+  "postOn": null,
+  "line": "Contract runs out. Mamardashvili (already there): shown with no numbers, 'we just don't think he's good enough'. Verbruggen (Brighton, 24, €47M) the standout pick: great form, Netherlands international; only a 67% match because he's been better (save %, goals prevented, passes, 25/26). Younger options: Kinský (Spurs, 90%, only 10 games), Restes (Toulouse, 21, 82%).",
+  "script": "docs/marketing/videos/v14-replace-alisson/lines.json",
+  "cover": "docs/marketing/videos/v14-replace-alisson/cover.png",
+  "video": "docs/marketing/videos/v14-replace-alisson/knowitball-v14-replace-alisson.mp4",
+  "seconds": 56.7,
+  "links": [],
+  "log": [
+   "2026-11-15 Made from Mikey's story in the scout's file look, short format. Waiting for Mikey's look.",
+   "2026-11-15 Mikey's notes: Mamardashvili with no stats ('we don't think he's good enough'), Verbruggen's international experience added. 57 s."
+  ]
+ },
+ {
+  "id": "v15-next-club-vinicius",
+  "title": "v15 · Where should Vinícius go? (new series: next club)",
+  "stage": "final-check",
+  "owner": "Claude",
+  "updated": "2026-11-15T22:30:00Z",
+  "postOn": null,
+  "line": "All 96 top-5 clubs scored on need, style and level. #5 Milan, #4 Brighton, #3 Spurs, #2 Dortmund, #1 Arsenal (upgrade on Tzolis, 9th for possession of 96, top of the PL, €1.4bn squad).",
+  "script": "docs/marketing/videos/v15-next-club-vinicius/lines.json",
+  "cover": "docs/marketing/videos/v15-next-club-vinicius/cover.png",
+  "video": "docs/marketing/videos/v15-next-club-vinicius/knowitball-v15-next-club-vinicius.mp4",
+  "seconds": 58.1,
+  "links": [],
+  "log": [
+   "2026-11-15 First 'next club' video, from the Twin Finder's new Next club tab (model/next_club.py). Waiting for Mikey's look.",
+   "2026-11-16 Replaced by v16 (Mikey: the method was wrong). Don't post."
+  ]
+ },
+ {
+  "id": "v16-next-club-vinicius-sim",
+  "title": "v16 · Where should Vinícius go? (season sim + game highlights)",
+  "stage": "final-check",
+  "owner": "Claude",
+  "updated": "2026-11-16T21:00:00Z",
+  "postOn": null,
+  "line": "His season played 400 times at every top-5 club with the Road to Ballon d'Or match model + 10 years of club history. #5 Man City, #4 Inter, #3 Barcelona, #2 Arsenal, #1 Bayern (title 74%, top in 9 of last 10). Ends with a game-style reel of his best simulated season: Klassiker, CL semi v Chelsea, CL final v Atlético.",
+  "script": "docs/marketing/videos/v16-next-club-vinicius-sim/lines.json",
+  "cover": "docs/marketing/videos/v16-next-club-vinicius-sim/cover.png",
+  "video": "docs/marketing/videos/v16-next-club-vinicius-sim/knowitball-v16-next-club-vinicius-sim.mp4",
+  "seconds": 71.4,
+  "links": [],
+  "log": [
+   "2026-11-16 Remade after Mikey's notes on v15 (level = this season's table, need = few games, fit = possession). Reel made with tools/video-render/twin/highlights (the game's goal clips). Waiting for Mikey's look."
+  ]
  }
 ]

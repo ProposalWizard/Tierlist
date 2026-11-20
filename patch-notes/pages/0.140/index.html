@@ -1,124 +1,261 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Weekly Round-up 0.140</title><style>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Test Pages Match</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Same tokens and parts as Harry's pages (0.109h). One column, stacked cards. */
   :root{
     --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
     --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
     --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
-    --r:12px;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    --turf:#1f6b3d;--turf2:#24763f;--chalk:rgba(255,255,255,.75);
+    color-scheme:dark;
   }
   @media (prefers-color-scheme: light){
     :root:not([data-theme="dark"]){
-      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
-      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
-      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      --turf:#2f8a50;--turf2:#358f55;--chalk:rgba(255,255,255,.85);
+      color-scheme:light;
     }
   }
-  :root[data-theme="dark"]{
-    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
-    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
-    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    --turf:#2f8a50;--turf2:#358f55;--chalk:rgba(255,255,255,.85);
+    color-scheme:light;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
-  body{background:var(--bg);color:var(--ink);
+  body{margin:0;background:var(--bg);color:var(--ink);
     font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased}
-  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:flex-start;gap:8px;margin:0 0 6px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none;margin-top:7px}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 10px}
+  .upd{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:var(--r);padding:9px 12px;margin:0 0 4px;font-size:14px;color:var(--ink2)}
+  .upd b{color:var(--blue);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
 
-  header{padding:38px 0 4px}
-  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
-    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
-  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
-  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
 
-  /* stat strip */
-  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
-  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
-  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
-  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
 
-  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
-    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
-  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
-  .fix i{background:var(--green)} .fix{color:var(--green)}
-  .add i{background:var(--blue)} .add{color:var(--blue)}
-  .chg i{background:var(--violet)} .chg{color:var(--violet)}
-  .bug i{background:var(--amber)} .bug{color:var(--amber)}
-  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .idea{margin:0 0 10px;color:var(--ink2);font-size:14.5px}
+  .idea b{color:var(--ink)}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b{color:var(--ink)}
+  .sub3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--ink3);margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
 
-  ul.n{list-style:none;margin:0;padding:0}
-  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
-  ul.n>li:last-child{border-bottom:0}
-  .hd{font-weight:700;color:var(--ink)}
-  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
-  .dt b{color:var(--ink)}
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
 
-  /* before → after bar */
-  .bars{margin:9px 0 2px}
-  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
-    padding:3px 0;font-size:13px}
-  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
-  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
-  .fill.was{background:var(--line)}
-  .fill.now{background:var(--green);opacity:.85}
-  .fill.now.bad{background:var(--red)}
-  .fill.now.warn{background:var(--amber)}
-  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
-  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
 
-  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
-    padding:0 14px;margin:10px 0 0}
+  /* drawn diagrams */
+  .fig{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:10px;margin:10px 0 2px;min-width:0}
+  .fig svg{display:block;width:100%;max-width:390px;height:auto;margin:0 auto}
+  .cap{font-size:12.5px;color:var(--ink3);margin:6px 0 0;line-height:1.4}
+  .cap b{color:var(--ink2)}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  .item details{background:var(--card2)}
   details[open]{padding-bottom:12px}
-  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
-    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
   summary::-webkit-details-marker{display:none}
-  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
-  details[open] summary::before{transform:rotate(90deg)}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
   details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
-  details p:last-child{margin-bottom:0}
   details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
   details li{margin-bottom:6px}
+  details li b{color:var(--ink)}
+  details h4{margin:12px 0 4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
 
-  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
-    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
-  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
-    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
-  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
-  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px;white-space:nowrap}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
 
-  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
-    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
-  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
-  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox li.done::before{background:var(--green);content:"\2713"}
+  .okbox .q{font-weight:700}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
 
-  figure{margin:12px 0 2px}
-  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
-  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
-  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
-  .shots figure{margin:0}
-  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+  .note{border:1px dashed var(--line);border-radius:var(--r);padding:10px 12px;margin:14px 0 0;color:var(--ink2);font-size:13.5px;background:var(--card)}
+  .note b{color:var(--ink)}
 
-  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
-  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
-  .flow span.done{color:var(--green)}
-  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
-  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
-  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
-  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
-  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
-  tr:last-child td{border-bottom:0}
-  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
-  td.s{color:var(--ink2)}
-  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
-  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
-  .ck{list-style:none;margin:0;padding:0}
-  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
-  .ck li:last-child{border-bottom:0}
-  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
-  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
-  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
-</style></head><body><div class="wrap">
-<header><span class="ver">v0.140 · WEEKLY</span><h1>Weekly round-up, 6 to 13 Nov</h1><p class="sub">By Leo · 13 Nov 2026, 17:50 UK · everything merged into main that week, by area. Each line names the version with the full detail.</p></header>
-<h2 class="fix"><i></i>CHECK THESE</h2><ul class="ck"><li><div class="q">The new home at knowitball.co.uk</div><div class="a">Cream phone look, green bar and footer, an All games tab, Join the beta. v0.138.</div></li><li><div class="q">The new name: Road to the Golden Ball</div><div class="a">Title screen and the award night. New address /road-to-the-golden-ball. v0.138.</div></li><li><div class="q">Team room: Dark and Light, channel tabs, five bots with Run now</div><div class="a">Admin → Team. v0.138.</div></li><li><div class="q">Bots you can @, and a Claude bot</div><div class="a">Admin → Team, type @. Built after v0.138; needs the ANTHROPIC_API_KEY setting. 13 Nov commits.</div></li><li><div class="q">One admin home at /admin</div><div class="a">Back never leaves admin; the recorder keeps going. v0.138.</div></li><li><div class="q">Marketing → Publish</div><div class="a">Posting to Instagram, Facebook and YouTube from the admin. 11 Nov commits.</div></li></ul>
-<h2 class="add"><i></i>1 · WHO BUILT WHAT</h2><div class="dt" style="margin-bottom:10px">1 pull request (#831) reached main from Fri 6 Nov to Fri 13 Nov. Everything else went straight into main: about 90 commits. Only Harry's work has a patch note (v0.138).</div><div class="tw" style="padding:14px"><svg viewBox="0 0 565 190" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif"><defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs><rect x="10" y="10" width="170" height="74" rx="12" fill="var(--card2)" stroke="var(--line)" stroke-width="1.5"/><text x="95" y="38" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">Harry</text><text x="95" y="58" font-size="12" fill="var(--ink2)" text-anchor="middle">new home, Golden Ball,</text><text x="95" y="74" font-size="12" fill="var(--ink2)" text-anchor="middle">Team room, bots, admin</text><path d="M95 86 L95 118" stroke="var(--ink3)" stroke-width="2" marker-end="url(#a)"/><rect x="195" y="10" width="170" height="74" rx="12" fill="var(--card2)" stroke="var(--line)" stroke-width="1.5"/><text x="280" y="38" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">Mikey</text><text x="280" y="58" font-size="12" fill="var(--ink2)" text-anchor="middle">Stat Twins, Twin Finder,</text><text x="280" y="74" font-size="12" fill="var(--ink2)" text-anchor="middle">posting, preview film</text><path d="M280 86 L280 118" stroke="var(--ink3)" stroke-width="2" marker-end="url(#a)"/><rect x="380" y="10" width="170" height="74" rx="12" fill="var(--card2)" stroke="var(--line)" stroke-width="1.5"/><text x="465" y="38" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">App</text><text x="465" y="58" font-size="12" fill="var(--ink2)" text-anchor="middle">iPhone pack, smaller</text><text x="465" y="74" font-size="12" fill="var(--ink2)" text-anchor="middle">saves, scroll fix</text><path d="M465 86 L465 118" stroke="var(--ink3)" stroke-width="2" marker-end="url(#a)"/><rect x="10" y="122" width="540" height="58" rx="12" fill="var(--card2)" stroke="var(--green)" stroke-width="1.5"/><text x="280" y="148" font-size="15" font-weight="700" fill="var(--green)" text-anchor="middle">main · 6 to 13 Nov</text><text x="280" y="168" font-size="12" fill="var(--ink2)" text-anchor="middle">1 PR · ~90 commits · 1 new patch note</text></svg></div><h2 class="add"><i></i>2 · SITE, TEAM ROOM AND ADMIN (HARRY)</h2><ul class="n"><li><div class="hd">A new public home</div><div class="dt">Built as three looks on a test page first, then look D went in: the phone-screen look on cream with a green bar and footer. 6 games. Install, App Store, Steam and Join the beta. v0.138.</div></li><li><div class="hd">The game is now Road to the Golden Ball</div><div class="dt">The award is the Golden Ball. New address /road-to-the-golden-ball. v0.138.</div></li><li><div class="hd">Team room rebuilt</div><div class="dt">Dark and Light looks; every channel has its own tabs; #today is new; a message can become a task; /today and /todo; a Me home and a Team board tab. Pop-ups stay until you close them. v0.138.</div></li><li><div class="hd">Five bots, each with its own page and Run now</div><div class="dt">Health, Bug, Today, Jobs and Patch. The Patch bot announces new patch notes in #general by itself. v0.138.</div></li><li><div class="hd">Bots you can @</div><div class="dt">A Claude bot, and a bot each for Harry, Mikey and Leo, with an on-screen run and a run table. Needs ANTHROPIC_API_KEY set. From the 13 Nov commits; not in a patch note yet.</div></li><li><div class="hd">One admin home, one look</div><div class="dt">The Knowitball look is the default. Back stays inside admin. v0.138.</div></li><li><div class="hd">Recordings save to Cloudflare first</div><div class="dt">Drive is the copy. A link everyone can open, a 30-day clean-up and a Keep button. v0.138.</div></li><li><div class="hd">Behind the scenes</div><div class="dt">Failed pushes to the site fixed (marketing videos kept out of the site's functions). A morning limits check at 08:00 in #health. A nightly database backup at 03:00. Patch-note pictures move to Cloudflare by themselves. v0.138.</div></li></ul><h2 class="add"><i></i>3 · THE APP (FROM THE COMMIT LIST)</h2><ul class="n"><li><div class="hd">iPhone project and Codemagic set-up</div><div class="dt">A packed app with a back button, vibration, an icon and a more app-like feel; security updates. 10 Nov.</div></li><li><div class="hd">Online saves go up squeezed</div><div class="dt">About a quarter of the size. 10 Nov.</div></li><li><div class="hd">App fixes</div><div class="dt">A scroll lock that trapped a player on a tall screen is fixed; the phone's top bar is hidden; Go closes the keyboard; knockout names fit. 10-11 Nov.</div></li></ul><h2 class="add"><i></i>4 · MARKETING VIDEOS (MIKEY, FROM THE COMMIT LIST)</h2><ul class="n"><li><div class="hd">Stat Twins: a player's statistical twin</div><div class="dt">Episodes for Salah, Haaland, Neymar, Kane, Van Dijk and Cole Palmer, a batch of 27 videos, and a motion engine for them. Several posted to Instagram. 8-11 Nov.</div></li><li><div class="hd">Twin Finder page</div><div class="dt">Find any player's statistical twins across the top 5 leagues and every position, with key stats on tap. 8-9 Nov.</div></li><li><div class="hd">Who replaces him? and Analysed like chess</div><div class="dt">New formats: v07 (who replaces Lewis Hall at Newcastle) and CH-03 (Mourinho v Pep, Camp Nou 2010). PR #831 adds an X vs cuts template. 7-10 Nov.</div></li><li><div class="hd">Posting and a video library</div><div class="dt">Marketing → Publish posts to Instagram, Facebook and YouTube (a queue, a 5-minute timer, encrypted logins). Every Knowitball video in one searchable page. 11 Nov.</div></li><li><div class="hd">Preview film</div><div class="dt">A dressing-room set made in Blender, seven shots, and a second fast ad cut to the beat. 10 Nov.</div></li></ul><h2 class="bug"><i></i>5 · STILL OPEN (FROM THIS WEEK'S NOTES, NOT RECHECKED TODAY)</h2><ul class="n"><li><div class="hd">No database backup yet</div><div class="dt">Cloudflare is not joined up on the live site, so the first nightly backup failed. v0.138.</div></li><li><div class="hd">The Patch bot is not proven live until a note appears in #general</div><div class="dt">Bug bot and the Team board tab are proven with stand-in data only. v0.138.</div></li><li><div class="hd">About 70 admin tool pages still have their old insides</div><div class="dt">v0.138.</div></li><li><div class="hd">Only one patch note this week</div><div class="dt">The app, marketing and @bot work has no patch note yet; those lines come from the commit list.</div></li></ul><h2 class="nxt"><i></i>6 · CALLS FOR HARRY</h2><ul class="n"><li><div class="hd">Join Cloudflare up on the live site, then check the first backup</div><div class="dt">v0.138.</div></li><li><div class="hd">Set ANTHROPIC_API_KEY so the @bots can run</div><div class="dt">13 Nov commits (CLAUDE.md note).</div></li></ul><details><summary>The numbers</summary><ul><li><b>1</b> pull request merged into main (about 90 direct commits)</li><li><b>1</b> new patch note this week (v0.138)</li><li><b>6</b> games on the new home</li><li><b>0</b> database backups so far (Cloudflare not joined up)</li></ul><p>Pull request #831 (X vs cuts: food template). Everything else went straight into main.</p></details>
-<footer>One page for the week, for Harry. 1 pull request merged into main from Fri 6 Nov to Fri 13 Nov (#831); everything else went straight into main, about 90 commits. One new patch note this week (Harry's v0.138); the rest of these lines come from the commit list and say so. Biggest changes: a new public home at knowitball.co.uk, the game renamed Road to the Golden Ball, the Team room rebuilt with bots you can @, one admin home, a nightly database backup set up (not working yet), the app packed for iPhone, and a week of marketing videos (Stat Twins, Twin Finder, posting to Instagram).</footer></div></body></html>
+  /* clip card (references/clip-card.html) */
+  .clip{margin:12px auto 2px;max-width:390px;min-width:0}
+  .clip .look{font-size:14px;color:var(--ink2);margin:0 0 7px;background:var(--card2);border-radius:10px;padding:9px 12px}
+  .clip .look b{color:var(--green);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;max-height:80vh;object-fit:contain;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+  .clip .spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+  .clip .spd button.on{background:var(--ink);color:var(--bg)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .clip figcaption b{color:var(--ink2)}
+  details .clip{margin-top:4px;margin-bottom:16px}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+</head><body>
+<div class="wrap">
+<div class="wrap">
+<header>
+  <span class="ver">v0.140 &middot; 19 NOV &middot; LEO &middot; THE KNOWITBALL DISCORD</span>
+  <h1>The Knowitball Discord</h1>
+  <p class="status"><i></i><span>A plan and a kit for a Discord built to get more people playing. The whole server is made by one script; the site and game get Join buttons; new updates post themselves. Nothing shows on the site until the server exists (5 minutes for Leo).</span></p>
+  <p class="sub">Made by Leo &middot; 19 Nov 2026</p>
+</header>
+<h2 class="nxt"><i></i>WHAT YOU ASKED FOR</h2>
+<p class="snote">&ldquo;The best possible discord for knowitball &hellip; most importantly just so the number of ppl who play the game increase as much as possible asap.&rdquo;</p>
+<h2 class="add"><i></i>THE SERVER (ONE SCRIPT MAKES ALL OF IT)</h2>
+<div class="item">
+  <div class="ih"><b>6 sections, 21 channels</b><span class="tag t-meas">checked on a fake Discord</span></div>
+  <p class="idea"><b>Start here</b>: welcome, rules, announcements, #updates (posts itself). <b>Play</b>: play-now, my-career, goal-of-the-week, tierlists, draft-and-daily. <b>Community</b>: general, introduce-yourself, football-talk, memes. <b>Help build the game</b>: suggestions and bug-reports (one post each, vote with &#128077;), playtesters. <b>Events</b>: events, weekly-challenge, Matchday Live voice. <b>Team</b>: private.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>10 roles, 2 questions when you join</b><span class="tag t-meas">checked on a fake Discord</span></div>
+  <p class="idea">&ldquo;Which games do you play?&rdquo; and &ldquo;What should we ping you about?&rdquo; Picking a game opens its channels. Staff, Moderator, Playtester, Creator are given by us.</p>
+</div>
+<h2 class="add"><i></i>IN THE SITE AND GAME</h2>
+<div class="item">
+  <div class="ih"><b>Join our Discord buttons</b><span class="tag t-seen">footer seen</span></div>
+  <p class="idea">Site footer and the game&rsquo;s Settings first screen. Hidden until the invite is set, so never a dead link. Every press is counted, so we know which button brings people. The game&rsquo;s one is not seen yet (the built game needs sign-in).</p>
+  <img src="footer.png" alt="The footer with the Join our Discord button (test invite)" style="width:100%;max-width:390px;border-radius:10px">
+</div>
+<div class="item">
+  <div class="ih"><b>New updates post themselves</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">A patch note with a one-line player message goes to #updates once, with a Play now link. It never pings everyone.</p>
+</div>
+<h2 class="nxt"><i></i>THE GROWTH PLAN (docs/DISCORD.md)</h2>
+<div class="item">
+  <div class="ih"><b>In &rarr; Play &rarr; Feedback &rarr; Bring friends</b></div>
+  <p class="idea"><b>In</b>: buttons where players are, bios and every video, Disboard and top.gg listings, football subreddits, small creators. <b>Play</b>: weekly challenge, goal of the week, daily ping, every post ends with Play now. <b>Feedback</b>: every idea tagged Planned / In the game / Not doing, and the asker named when it ships. No invite rewards (against Discord&rsquo;s rules).</p>
+</div>
+<h2 class="bug"><i></i>NEEDS LEO</h2>
+<div class="item">
+  <div class="ih"><b>Make the server and the bot (5 min)</b><span class="pill p-amb">to do</span></div>
+  <p class="idea">Steps in scripts/discord/README.md. Then a chat runs the script and gives back the webhook.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Two Vercel settings</b><span class="pill p-amb">to do</span></div>
+  <p class="idea">NEXT_PUBLIC_DISCORD_INVITE turns the buttons on; DISCORD_UPDATES_WEBHOOK turns the auto posts on.</p>
+</div>
+<details><summary>How it was checked</summary>
+  <p>The setup script ran against a fake Discord: 10 roles, 6 sections, 21 channels, the right write/see limits, one webhook, five welcome posts; a second run adds nothing it already made. A new test (tests/star/discordUpdates.mts) checks the update post. The footer button was seen in a local build with a test invite (picture above); the game Settings one was not seen. Not yet run on the real Discord.</p>
+</details>
+<footer>Leo &middot; site 0.140 &middot; 19 Nov 2026 &middot; plan + kit</footer>
+</div>
+</div>
+</div>
+<script>
+(function(){
+  var K="{CKKEY}", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+  document.addEventListener('click',function(e){
+    var r=e.target.closest&&e.target.closest('.spd button'); if(!r) return;
+    var c=r.closest('.clip'), v=c.querySelector('video');
+    c.querySelectorAll('.spd button').forEach(function(x){ x.classList.toggle('on', x===r); });
+    if(v){ var rate=parseFloat(r.getAttribute('data-r')); v.playbackRate=rate; v.defaultPlaybackRate=rate; if(v.paused) v.play().catch(function(){}); }
+  });
+  document.querySelectorAll('details').forEach(function(d){
+    d.addEventListener('toggle',function(){ if(!d.open) d.querySelectorAll('video').forEach(function(v){ v.pause(); }); });
+  });
+})();
+</script>
+<style>
+.zm-t{cursor:zoom-in}
+.zm-ov{position:fixed;inset:0;z-index:1000;background:rgba(10,14,12,.92);overflow:auto;-webkit-overflow-scrolling:touch;padding:calc(56px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.zm-ov[hidden]{display:none!important}
+.zm-bar{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));display:flex;gap:8px;z-index:1001}
+.zm-bar button{font:600 15px/1 system-ui,sans-serif;padding:10px 14px;border-radius:10px;border:0;background:#fff;color:#111;cursor:pointer}
+.zm-st{transform-origin:0 0;background:var(--bg,#fff);border-radius:10px;display:inline-block}
+.zm-st img,.zm-st svg{max-width:none!important}
+.zm-hint{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));color:#fff;font:13px system-ui,sans-serif;opacity:.8}
+</style>
+<div class="zm-ov" id="zmOv" hidden><div class="zm-hint">Pinch or + / − to zoom</div><div class="zm-bar"><button id="zmOut" aria-label="Zoom out">−</button><button id="zmIn" aria-label="Zoom in">+</button><button id="zmX" aria-label="Close">✕</button></div><div id="zmBox"></div></div>
+<script>
+(function(){
+  var sel='figure img,.fig svg';
+  var ov=document.getElementById('zmOv'),box=document.getElementById('zmBox'),st=null,sc=1,w=0,h=0;
+  function apply(){st.style.transform='scale('+sc+')';box.style.width=(w*sc)+'px';box.style.height=(h*sc)+'px';}
+  function open(el){
+    var r=el.getBoundingClientRect();
+    var c=el.cloneNode(true);c.classList.remove('zm-t');
+    st=document.createElement('div');st.className='zm-st';st.appendChild(c);
+    box.innerHTML='';box.appendChild(st);ov.hidden=false;document.body.style.overflow='hidden';
+    if(c.tagName.toLowerCase()==='img'){c.style.width=(c.naturalWidth||r.width*2)+'px';c.style.height='auto';}
+    else{c.style.width=Math.max(r.width,780)+'px';c.style.maxWidth='none';c.style.height='auto';}
+    w=st.offsetWidth;h=st.offsetHeight;
+    var fit=(ov.clientWidth-32)/w;sc=Math.min(fit,Math.max(1,fit));apply();ov.scrollTo(0,0);
+  }
+  function close(){ov.hidden=true;box.innerHTML='';document.body.style.overflow='';}
+  document.querySelectorAll(sel).forEach(function(el){el.classList.add('zm-t');el.setAttribute('title','Tap to enlarge');});
+  document.addEventListener('click',function(e){
+    if(ov.contains(e.target)){if(e.target===ov)close();return;}
+    var t=e.target.closest('.zm-t');if(!t)return;
+    if(e.target.closest('a,button,summary,input,label'))return;
+    e.preventDefault();open(t);
+  });
+  document.getElementById('zmX').onclick=close;
+  document.getElementById('zmIn').onclick=function(){sc=Math.min(sc*1.4,6);apply();};
+  document.getElementById('zmOut').onclick=function(){sc=Math.max(sc/1.4,.2);apply();};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!ov.hidden)close();});
+})();
+</script>
+</body></html>
