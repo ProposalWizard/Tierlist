@@ -214,5 +214,13 @@
     "added": "2026-11-19T19:54:00Z",
     "title": "Progress 19 Nov: phone app ready for Play, Knowitball Discord, Team room mentions",
     "prompt": "Daily progress update, 18 Nov 19:54 to 19 Nov 19:54 (UK).\n\nHarry:\n- Harry's branch merged into main: in the Team room a plain name counts as a mention, the same as an @, and @all works everywhere an @name does; handoff notes for the Team room, bots and public home.\n\nMikey:\n- PR #832: patch note 0.139, getting the app ready for phones. The packed app is signed and its Google Play page is done (86 languages, icon, feature graphic, screenshots, privacy policy). KIB Next, a separate phone-first app with the same game (100 of 100 test matches identical), is built but has not run on a real phone yet.\n\nLeo:\n- PR #833: the Knowitball Discord. A script builds the whole server (10 roles, 21 channels, rules, welcome posts), Join our Discord buttons in the site footer and game Settings (hidden until the invite is set), new patch notes post to #updates by themselves, and a growth plan. Waits on Leo to make the server and bot (about 5 minutes) and two Vercel settings.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.139 Mikey: Getting the app ready for phones: https://claude.ai/artifact/6yuGfXVSuSWYN3i6Jrc7nP\n- 0.140 Leo: The Knowitball Discord (no page link yet; read it in Admin, Patch notes)."
+  },
+  {
+    "id": "progress-2026-11-20",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-11-20T19:54:00Z",
+    "title": "Progress 20 Nov: explainer videos, Publish storage, Claude on GitHub",
+    "prompt": "Daily progress update, 19 Nov 19:54 to 20 Nov 19:54 (UK).\n\nHarry:\n- Claude on GitHub: jobs can run on the team's API credit, by writing @claude in an issue or pressing Run workflow.\n\nMikey:\n- The explainer video branch merged into main: a new explainer look (illustrated full-screen scenes, circle wipes, short captions, themes), 25 story ideas with stories ex02 to ex14 and their image prompts (Pochettino, Leicester 5000-1, Messi's 91 goals, Pelé, Juventus stripes, youngest PL scorer), and version 2 drafts with Mikey's fixes.\n- Publish tool: Mikey's own video storage with an Upload button, locked to its owner.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- No new patch note today. Latest are 0.139 Mikey, Getting the app ready for phones: https://claude.ai/artifact/6yuGfXVSuSWYN3i6Jrc7nP and 0.140 Leo, The Knowitball Discord (in Admin, Patch notes)."
   }
 ]
