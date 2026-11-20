@@ -215,16 +215,20 @@ Rule: only players on the pitch wear a match kit. Everyone else wears clothes fo
 cloth way (cut lines, shells, hems). Colours for people who are not the club's are muted, so the eye goes
 to the player.
 
-Proof: `proof-wardrobe.png` (all cloth, same body): press (pale shirt with folded collar, long sleeves
-tucked into charcoal trousers, lanyard and PRESS pass), kit man (club training jacket: dark club colour,
-club trim on stand collar, cuffs and hem, zip line, crest; track trousers), fan (replica shirt worn loose
-over jeans, club scarf, white trainers), and a player in kit [measured].
-My verdict: each role reads at a glance and nobody but the player looks like he is in a kit. Not yet good:
-(1) trousers and jeans show a step at mid-thigh, because the body files have the old shorts MODELLED in
-their shape; the trouser shell copies it. Fix: smooth more below the shorts line, or build legs from a
-shorts-free body. (2) Shoes are still the painted football boots recoloured; shoes need their own small
-mesh. (3) The scarf is a thin hooped ring at the neck; it needs hanging ends to read as a scarf.
-(4) The press shirt's folded collar is too small to read at full-body size.
+Proof: `proof-wardrobe.png` (all cloth, same body, six roles): press (pale shirt with a modelled folded
+collar, long sleeves tucked into trousers, lanyard and PRESS pass), kit man (club training jacket: dark club
+colour, stand collar, trim cuffs and hem, zip, crest; track trousers), fan (replica shirt loose over jeans,
+hooped scarf, white trainers), manager (suit: coat with modelled lapels, shirt with folded collar, tie,
+trousers, shoes), coach (club polo with a modelled polo collar, chinos), and a player in kit [measured].
+Collars, lapels and the tie are their own pieces: the neck edge is walked into one loop, resampled every
+6 mm and smoothed, then a profile is swept along it (crew band; shirt/polo stand + fold with points at the
+front; coat stand at the back + lapels lying open down the V). Trousers are made a smooth tube below the
+upper thigh (each slice raised, never lowered, by up to 1.8 cm) to hide the shorts modelled into the body.
+Shoes are their own piece over the foot with a sole band.
+My verdict: each role reads at a glance; nobody but the player looks like he is in a kit; the suit reads
+as a suit. Still weak: a small bump remains at the old shorts line on trousers; the scarf is only a hooped
+ring (no hanging ends); the shoe shape is still the boot's shape; the press shirt's collar is small at
+full-body size; the lanyard is a decal. Only one head, idle pose.
 
 ### Outfit pieces (each made from the body at load, colours from slots)
 | Piece | Cut lines | Fabric | Built in proof? |
@@ -238,7 +242,10 @@ mesh. (3) The scarf is a thin hooped ring at the neck; it needs hanging ends to 
 | Replica shirt (loose, no front number) | as match shirt, untucked | poly | yes |
 | Scarf | ring at neck base | wool | ring only |
 | Lanyard + pass | decal on the shirt front | — | yes (decal) |
-| Polo, hoodie, blazer/suit coat + lapels + tie, coat/puffer, bib, cap, glasses, notepad, shoes | — | — | not built |
+| Polo (modelled collar) | neck ring, sleeve end, hem | cotton | yes |
+| Suit coat + lapels, tie | neck ring + deep V, wrist, hem; tie on the shirt front | wool, silk | yes |
+| Shoes | ankle, sole band | leather | yes (boot-shaped) |
+| Hoodie, coat/puffer, bib, cap, glasses, notepad, scarf ends | — | — | not built |
 
 About 15 pieces cover every role. A piece is shared by everyone on the same head and build; only colour
 slots change per person [reasoned].

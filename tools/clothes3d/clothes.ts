@@ -29,13 +29,21 @@ export interface FieldsAt {
   cut?: number;
 }
 
+export type CollarKind = "crew" | "shirt" | "polo" | "lapel";
+
 export interface GarmentSpec {
   name: string;
   /** distance-like fields (metres, negative inside) for a rest point; each garment picks which count */
   fields: (p: THREE.Vector3, arm: number, armS: number, leg: number, legS: number, side: number) => FieldsAt;
   offset: number;                 // metres off the skin
   lip: number;                    // thickness shown at an open edge
-  collar?: { h: number; out: number; fold?: number; color: string };
+  /** a collar piece built on the neck edge loop: crew (a ribbed band), shirt / polo (a stand that folds down, points at
+   *  the front), lapel (a coat: a stand at the back, lapels lying open down the V) */
+  collar?: { kind?: CollarKind; h: number; out: number; fold?: number; color?: string };
+  /** legs as a smooth tube: fills the hollow under any bump the body has (the old shorts modelled into its thighs) */
+  tube?: boolean;
+  /** a tie down the front of this garment (drawn in the material's second trim colour) */
+  tie?: { top: number; bottom: number; w: number };
   material: THREE.Material;
   /** shell relax: point passes, normal passes */
   relax?: [number, number];
@@ -178,7 +186,33 @@ export function buildClothes(T: Three, body: THREE.SkinnedMesh, rig: Rig, garmen
     // average the normals over welded points (no cracks where the file's UV seams split a vertex)
     o.smoothNormals();
     o.relax(gm.relax?.[0] ?? 3, 0.5, gm.relax?.[1] ?? 6);
-    o.shell(gm.offset, gm.lip, gm.collar ? { ...gm.collar, neck: rig.j("neck"), head: rig.j("Head") } : undefined);
+    if (gm.tube) {
+      // per leg, per slice along the leg: the radius from the leg's own axis; each slice is raised to a smoothed
+      // envelope of its neighbours' radii (never lowered), so a step in the body becomes a gentle taper
+      const BINS = 48, ax = (s: number, A: readonly V3[]) => { const k = s <= 1 ? 0 : 1, t = s <= 1 ? s : s - 1; return [0, 1, 2].map((q) => A[k][q] + (A[k + 1][q] - A[k][q]) * Math.max(0, Math.min(1, t))); };
+      for (const [A, sg] of [[legL, Math.sign(legL[0][0]) || 1], [legR, Math.sign(legR[0][0]) || -1]] as [readonly V3[], number][]) {
+        const rec: { i: number; b: number; d: number[]; r: number }[] = [];
+        const env = new Float64Array(BINS);
+        for (let i = 0; i < o.n; i++) {
+          const rx = o.rest[i * 3], ry = o.rest[i * 3 + 1], rz = o.rest[i * 3 + 2];
+          if (Math.sign(rx) !== sg || ry > A[0][1] - 0.02) continue;
+          rp.set(rx, ry, rz);
+          const s = along(rp, A[0], A[1], A[2]);
+          const c = ax(s, A), d = [o.pos[i * 3] - c[0], 0, o.pos[i * 3 + 2] - c[2]];
+          const r = Math.hypot(d[0], d[2]); if (r < 1e-4) continue;
+          const b = Math.max(0, Math.min(BINS - 1, Math.floor((s / 2) * BINS)));
+          if (s < 0.4) continue;      // the upper thigh and seat keep their own shape
+          rec.push({ i, b, d: [d[0] / r, 0, d[2] / r], r });
+        }
+        // each slice's typical radius (the 75th percentile), then a smoothed envelope along the leg
+        for (let b = 0; b < BINS; b++) { const rs = rec.filter((q) => q.b === b).map((q) => q.r).sort((x, y) => x - y); env[b] = rs.length ? rs[Math.floor(rs.length * 0.75)] : 0; }
+        const sm = new Float64Array(BINS);
+        for (let b = 0; b < BINS; b++) { let m = 0, w = 0; for (let k = -4; k <= 4; k++) { const v = env[b + k]; if (v) { m += v; w++; } } sm[b] = w ? m / w : 0; }
+        for (const q of rec) { const r2 = Math.max(q.r, Math.min(sm[q.b], q.r + 0.018)); o.pos[q.i * 3] += q.d[0] * (r2 - q.r); o.pos[q.i * 3 + 2] += q.d[2] * (r2 - q.r); }
+      }
+    }
+    o.shell(gm.offset, gm.lip, gm.collar ? { ...gm.collar, neck: rig.j("neck") } : undefined);
+    if (gm.tie) o.addTie(gm.tie);
     const geo = o.geometry(T, false);
     const mesh = new T.SkinnedMesh(geo, gm.material);
     mesh.name = `cloth-${gm.name}`;
@@ -186,7 +220,7 @@ export function buildClothes(T: Three, body: THREE.SkinnedMesh, rig: Rig, garmen
     // the ink line skips the collar band and the hem lips: thin strips drew black flecks along every edge
     const og = geo.clone();
     { const B = geo.getAttribute("aBand"), Lp = geo.getAttribute("aLip"), I = geo.index!.array, keep: number[] = [];
-      const thin = (v: number) => B.getX(v) > 0.45 || Lp.getX(v) > 0.75;
+      const thin = (v: number) => B.getX(v) > 0.45 || B.getW(v) > 0.25 || Lp.getX(v) > 0.75;
       for (let t = 0; t < I.length; t += 3) if (!thin(I[t]) && !thin(I[t + 1]) && !thin(I[t + 2])) keep.push(I[t], I[t + 1], I[t + 2]);
       og.setIndex(keep); }
     const ol = new T.SkinnedMesh(og, outline(0.0055));
@@ -282,9 +316,10 @@ class Out {
     for (let i = 0; i < this.n; i++) { const a = acc.get(this.wid[i]) ?? [0, 0, 0]; a[0] += this.nor[i * 3]; a[1] += this.nor[i * 3 + 1]; a[2] += this.nor[i * 3 + 2]; acc.set(this.wid[i], a); }
     for (let i = 0; i < this.n; i++) { const a = acc.get(this.wid[i])!; const l = Math.hypot(a[0], a[1], a[2]) || 1; this.nor[i * 3] = a[0] / l; this.nor[i * 3 + 1] = a[1] / l; this.nor[i * 3 + 2] = a[2] / l; }
   }
-  /** Push off the skin; a thickness lip down to the skin at every open edge; a standing collar on the neck edge. */
-  shell(off: number, lip: number, collar?: { h: number; out: number; fold?: number; color: string; neck: V3; head: V3 }) {
+  /** Push off the skin; a thickness lip down to the skin at every open edge; a collar piece on the neck edge loop. */
+  shell(off: number, lip: number, collar?: { kind?: CollarKind; h: number; out: number; fold?: number; neck: V3 }) {
     const n0 = this.n;
+    this.n0 = n0;
     for (let i = 0; i < n0; i++) for (let k = 0; k < 3; k++) this.pos[i * 3 + k] += this.nor[i * 3 + k] * off;
     // open edges: an edge used once (on welded ids)
     const count = new Map<string, number>(), dir = new Map<string, [number, number]>();
@@ -296,8 +331,7 @@ class Out {
     }
     const ring: [number, number][] = [];
     count.forEach((c, k) => { if (c === 1) ring.push(dir.get(k)!); });
-    const inner = new Map<number, number>(), up = new Map<number, number>(), flap = new Map<number, number>();
-    const nearNeck = (i: number) => Math.abs(this.band[i * 4]) < 0.004;
+    const inner = new Map<number, number>();
     for (const [a, b] of ring) {
       for (const v of [a, b]) if (!inner.has(v)) {
         const d = this.dup(v);
@@ -306,27 +340,99 @@ class Out {
         inner.set(v, d);
       }
       this.ind.push(a, inner.get(a)!, b, b, inner.get(a)!, inner.get(b)!);
-      if (collar && nearNeck(a) && nearNeck(b)) {
-        for (const v of [a, b]) if (!up.has(v)) {
-          const d = this.dup(v);
-          // up the neck, leaning in a touch towards it
-          const nx = collar.neck[0] - this.pos[v * 3], nz = collar.neck[2] - this.pos[v * 3 + 2];
-          const hl = Math.hypot(nx, nz) || 1;
-          this.pos[d * 3] += (nx / hl) * collar.out; this.pos[d * 3 + 1] += collar.h; this.pos[d * 3 + 2] += (nz / hl) * collar.out;
-          this.band[d * 4] = 0.5; // marks collar cloth for the shader
-          up.set(v, d);
-          if (collar.fold) {
-            // a shirt collar: the band folds down and out over itself
-            const f = this.dup(v);
-            this.pos[f * 3] -= (nx / hl) * collar.fold; this.pos[f * 3 + 1] += collar.h * 0.1; this.pos[f * 3 + 2] -= (nz / hl) * collar.fold;
-            this.band[f * 4] = 0.5;
-            flap.set(v, f);
-          }
-        }
-        this.ind.push(a, b, up.get(a)!, up.get(a)!, b, up.get(b)!);
-        if (collar.fold) this.ind.push(up.get(a)!, up.get(b)!, flap.get(a)!, flap.get(a)!, up.get(b)!, flap.get(b)!);
-      }
     }
+    if (collar) this.addCollar(ring.filter(([a, b]) => Math.abs(this.band[a * 4]) < 0.004 && Math.abs(this.band[b * 4]) < 0.004), collar);
+  }
+  n0 = 0;
+  /** The collar as its own piece: the neck edge walked into one ordered loop, resampled evenly and smoothed (so its
+   *  width and height are even whatever the triangles did), then a profile swept along it. Skinned like the nearest edge point. */
+  addCollar(edges: [number, number][], c: { kind?: CollarKind; h: number; out: number; fold?: number; neck: V3 }) {
+    if (edges.length < 4) return;
+    const adj = new Map<string, Set<string>>(), rep = new Map<string, number>();
+    for (const [a, b] of edges) {
+      const ka = this.wid[a], kb = this.wid[b];
+      if (!adj.has(ka)) adj.set(ka, new Set()); if (!adj.has(kb)) adj.set(kb, new Set());
+      adj.get(ka)!.add(kb); adj.get(kb)!.add(ka); rep.set(ka, a); rep.set(kb, b);
+    }
+    // walk the longest path from the back of the neck (lowest z) both ways
+    let start = Array.from(rep.keys())[0];
+    for (const k of Array.from(rep.keys())) if (this.pos[rep.get(k)! * 3 + 2] < this.pos[rep.get(start)! * 3 + 2]) start = k;
+    const walk = (from: string, not: Set<string>) => { const out: string[] = []; let cur: string | undefined = from; while (cur) { out.push(cur); not.add(cur); cur = Array.from(adj.get(cur) ?? []).find((n) => !not.has(n)); } return out; };
+    const seen = new Set<string>([start]);
+    const nb = Array.from(adj.get(start) ?? []);
+    const left = nb[0] ? walk(nb[0], seen) : [], right = nb[1] ? walk(nb[1], seen) : [];
+    const chain = [...left.reverse(), start, ...right].map((k) => rep.get(k)!);
+    const closed = chain.length > 6 && (adj.get(this.wid[chain[0]])?.has(this.wid[chain[chain.length - 1]]) ?? false);
+    // resample by arc length, then smooth (the cut edge zigzags a little across triangles)
+    const P = chain.map((i) => [this.pos[i * 3], this.pos[i * 3 + 1], this.pos[i * 3 + 2]]);
+    if (closed) { P.push(P[0]); chain.push(chain[0]); }
+    const L = [0]; for (let i = 1; i < P.length; i++) L.push(L[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1], P[i][2] - P[i - 1][2]));
+    const N = Math.max(12, Math.round(L[L.length - 1] / 0.006));
+    let S: { p: number[]; src: number }[] = [];
+    for (let k = 0; k <= N; k++) {
+      const t = (L[L.length - 1] * k) / N; let i = 1; while (i < L.length - 1 && L[i] < t) i++;
+      const u = (t - L[i - 1]) / Math.max(1e-6, L[i] - L[i - 1]);
+      S.push({ p: [0, 1, 2].map((q) => P[i - 1][q] + (P[i][q] - P[i - 1][q]) * u), src: u < 0.5 ? chain[i - 1] : chain[i] });
+    }
+    for (let it = 0; it < 4; it++) S = S.map((s, k) => {
+      const a = S[k - 1] ?? (closed ? S[S.length - 2] : s), b = S[k + 1] ?? (closed ? S[1] : s);
+      return { p: s.p.map((v, q) => v * 0.5 + (a.p[q] + b.p[q]) * 0.25), src: s.src };
+    });
+    const kind = c.kind ?? "crew";
+    const C = c.neck;
+    const rows: number[][] = [];
+    for (const s of S) {
+      const [x, y, z] = s.p;
+      let ix = C[0] - x, iz = C[2] - z; const hl = Math.hypot(ix, iz) || 1; ix /= hl; iz /= hl;
+      const front = Math.max(0, Math.min(1, (z - C[2]) / 0.06));
+      const n = [this.nor[s.src * 3], this.nor[s.src * 3 + 1], this.nor[s.src * 3 + 2]];
+      const pts: number[][] = [[x, y, z]];
+      const lapelZone = kind === "lapel" && front > 0.45;
+      if (lapelZone) {
+        // a lapel: lies open on the coat, outward from the V edge, widest at the top, nothing at the V's foot
+        const side = Math.sign(x - C[0]) || 1;
+        const wl = (c.fold ?? 0.05) * Math.max(0, Math.min(1, (y - (C[1] - 0.32)) / 0.12));
+        pts.push([x + side * wl + n[0] * 0.007, y + 0.012 + n[1] * 0.007, z + n[2] * 0.007 - wl * 0.25]);
+      } else {
+        const lean = kind === "crew" ? c.out : c.out * 0.5;
+        const top = [x + ix * lean, y + c.h, z + iz * lean];
+        pts.push(top);
+        if (kind === "shirt" || kind === "polo" || kind === "lapel") {
+          const w = (c.fold ?? 0.012) * (kind === "lapel" ? 0.6 : 1) + (kind === "shirt" ? 0.018 * front * front : 0.006 * front);
+          const drop = kind === "shirt" ? 0.02 * front * front : 0.005 * front;
+          pts.push([top[0] - ix * w, top[1] - c.h * 0.95 - drop, top[2] - iz * w + 0.004 * front]);
+        }
+      }
+      const row: number[] = [];
+      for (const q of pts) { const d = this.dup(s.src); this.pos[d * 3] = q[0]; this.pos[d * 3 + 1] = q[1]; this.pos[d * 3 + 2] = q[2]; this.band[d * 4] = 0.5; this.lip[d] = 0; row.push(d); }
+      row.push(front);
+      rows.push(row);
+    }
+    const gap = kind === "shirt" ? 0.012 : kind === "polo" ? 0.006 : 0;
+    for (let k = 0; k + 1 < rows.length; k++) {
+      const A = rows[k], B = rows[k + 1];
+      const cols = Math.min(A.length, B.length) - 1;
+      // the shirt collar opens at the front: no quad across the middle
+      if (gap && A[A.length - 1] > 0.6 && Math.abs(this.pos[A[0] * 3] - C[0]) < gap && Math.abs(this.pos[B[0] * 3] - C[0]) < gap) continue;
+      for (let r = 0; r + 1 < cols; r++) this.ind.push(A[r], B[r], A[r + 1], A[r + 1], B[r], B[r + 1]);
+    }
+  }
+  /** A tie down the centre front, laid on this garment's outer surface (skinned like the surface under it). */
+  addTie(t: { top: number; bottom: number; w: number }) {
+    const rows: number[][] = [];
+    const steps = Math.max(6, Math.round((t.top - t.bottom) / 0.012));
+    for (let k = 0; k <= steps; k++) {
+      const y = t.top - ((t.top - t.bottom) * k) / steps;
+      let best = -1, bz = -1e9;
+      for (let i = 0; i < this.n0; i++) { const px = this.pos[i * 3], py = this.pos[i * 3 + 1], pz = this.pos[i * 3 + 2]; if (Math.abs(px) < 0.03 && Math.abs(py - y) < 0.012 && pz > bz) { bz = pz; best = i; } }
+      if (best < 0) continue;
+      const f = k / steps;
+      const w = k === 0 ? t.w * 0.9 : k === 1 ? t.w * 0.55 : f > 0.96 ? 0.001 : t.w * (0.6 + 0.6 * f);
+      const z = bz + 0.006, row: number[] = [];
+      for (const sx of [-1, 1]) { const d = this.dup(best); this.pos[d * 3] = sx * w; this.pos[d * 3 + 1] = y; this.pos[d * 3 + 2] = z; this.nor[d * 3] = 0; this.nor[d * 3 + 1] = 0; this.nor[d * 3 + 2] = 1; this.band[d * 4] = -1; this.band[d * 4 + 3] = 0.5; this.lip[d] = 0; row.push(d); }
+      rows.push(row);
+    }
+    for (let k = 0; k + 1 < rows.length; k++) this.ind.push(rows[k][0], rows[k + 1][0], rows[k][1], rows[k][1], rows[k + 1][0], rows[k + 1][1]);
   }
   geometry(T: Three, plain: boolean) {
     const g = new T.BufferGeometry();
@@ -453,6 +559,7 @@ vec4 tnDecal(sampler2D t, vec4 b, float hgt, float dirZ) {
     c = mix(c, uPatC, sq);
   }
   c = mix(c, uTrim, max(band, collar));
+  c = mix(c, uTrim2, step(0.25, vBand.w));
   // wool: a fine knit (rows of small Vs), faded out before it can shimmer
   if (uKind > 0.5 && uKind < 1.5) {
     float rows = vRest.y * 260.0, cols = (vRest.x + vRest.z) * 220.0;
