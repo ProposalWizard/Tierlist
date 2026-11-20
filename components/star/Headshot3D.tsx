@@ -82,18 +82,28 @@ export default function Headshot3D({ id, you, position, skin, kit, size, height,
     const el = box.current;
     if (!el) return;
     let dead = false;
+    let idle: (() => void) | null = null;
     const ask = () => {
+      if (dead) return;
       void import("@/lib/star/headshot3d/maker").then(({ makeHeadshot }) => makeHeadshot(id, look, frame)).then((url) => {
         if (!dead) setShot({ key, url, state: url ? "ready" : "failed" });
       }).catch(() => { if (!dead) setShot({ key, url: null, state: "failed" }); });
     };
+    // Speed fix 2 (20 Nov 2026): started only once the screen has painted and
+    // the page is idle, so the tap that opened it is never held up (the drawn
+    // head shows meanwhile; Home → Stats froze 1.7 s, speed audit item 4).
+    const askWhenIdle = () => {
+      const w = window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (h: number) => void };
+      if (w.requestIdleCallback) { const h = w.requestIdleCallback(ask, { timeout: 1500 }); idle = () => w.cancelIdleCallback?.(h); }
+      else { const t = setTimeout(ask, 300); idle = () => clearTimeout(t); }
+    };
     // made only as the card comes near the screen (a page of cards never asks for every face at once)
-    if (typeof IntersectionObserver === "undefined") { ask(); return () => { dead = true; }; }
+    if (typeof IntersectionObserver === "undefined") { askWhenIdle(); return () => { dead = true; idle?.(); }; }
     const io = new IntersectionObserver((es) => {
-      if (es.some((e) => e.isIntersecting)) { io.disconnect(); ask(); }
+      if (es.some((e) => e.isIntersecting)) { io.disconnect(); askWhenIdle(); }
     }, { rootMargin: "240px" });
     io.observe(el);
-    return () => { dead = true; io.disconnect(); };
+    return () => { dead = true; idle?.(); io.disconnect(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
