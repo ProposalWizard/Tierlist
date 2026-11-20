@@ -56,6 +56,7 @@ import { roomPlan, roomFiles, arrivalAt, arrivalDoor, type DoorPlan, type HomeSp
 import { buildRoom, disposeGroup, roomFree, MIRROR_LAYER, MIRROR_PX, type BuiltRoom, type RoomEnv, type RoomInput } from "./roomBuild";
 import { safeCompileAsync } from "../three3d/safeCompile";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
+import { FOLLOW_CAM_D, FollowZoom, attachFollowZoom, loadFollowZoom, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
 
 export type { HomeSpot } from "./rooms";
 
@@ -76,6 +77,33 @@ export const ROOM_CAM = {
 };
 
 /**
+ * The walking camera, three ways to compare on the 3D phone test page only
+ * (Harry, 20 Nov 2026: "the over the shoulder angle when walking in the house
+ * felt a bit weird"). A is the game's camera (ROOM_CAM, exactly as before);
+ * B and C are tried with HomeOptions.houseCam and never change the game.
+ *   A  as the game: high (2.9 m), 4.4 m back, looking steeply down past him,
+ *      a little to one side, swinging up to 70° round him near walls.
+ *   B  "calm follow": lower (2.3 m) and centred, looking at his chest so the
+ *      room ahead reads, a softer and slower follow, a smaller swing (±35°).
+ *   C  "over the shoulder": the third-person game camera, at head height
+ *      (1.7 m) 2.4 m behind his right shoulder, looking ahead past him, a
+ *      narrower lens; it stays straight behind him (no swing round).
+ *   D  Harry's pick (20 Nov 2026: "a mix of A and C ... more zoomed, the central
+ *      shot but a slightly higher angle from A"): C's distance and lens, centred
+ *      straight behind him, at 2.2 m looking a little down at him, a smooth
+ *      follow, a small swing (±23°) off walls. The test page's default. Its
+ *      numbers and its zoom (pinch / wheel, out to about A's distance) live in
+ *      ../three3d/followCam.ts, the base for every 3D area's camera.
+ */
+export const HOUSE_CAMS: Record<"A" | "B" | "C" | "D", FollowCam> = {
+  A: { height: ROOM_CAM.height, back: ROOM_CAM.back, lookY: ROOM_CAM.lookY, lookAhead: ROOM_CAM.lookAhead, side: 0.2, lookSide: 0.1, riseIfShort: ROOM_CAM.riseIfShort, minBoom: 0.6, posK: 5, lookK: 6, yawK: 1.6, swing: 6, fov: 0 },
+  B: { height: 2.3, back: 4.2, lookY: 1.15, lookAhead: 1.6, side: 0, lookSide: 0, riseIfShort: 0.3, minBoom: 1.4, posK: 2.6, lookK: 3.2, yawK: 1.0, swing: 3, fov: 60 },
+  D: FOLLOW_CAM_D,
+  C: { height: 1.72, back: 2.4, lookY: 1.4, lookAhead: 3.2, side: 0.55, lookSide: 0.3, riseIfShort: 0.15, minBoom: 1.0, posK: 6, lookK: 7, yawK: 2.4, swing: 0, fov: 56 },
+};
+export type HouseCam = keyof typeof HOUSE_CAMS;
+
+/**
  * How long the boom can be from (px, pz) along (dx, dz) before it meets a wall
  * (the room's inside, less a gap): the camera shortens along its own line
  * instead of sliding sideways round him. Pure (tests/star/home3d.mts).
@@ -94,9 +122,9 @@ export function roomCamBoom(px: number, pz: number, dx: number, dz: number, want
  * instead of the back of his head or a near wall. The camera's yaw
  * (it stands along (sin yaw, cos yaw) from him). Pure (tests/star/home3d.mts).
  */
-export function openCamYaw(px: number, pz: number, yaw: number, want: number, w2: number, d2: number): number {
+export function openCamYaw(px: number, pz: number, yaw: number, want: number, w2: number, d2: number, swing = 6): number {
   let best = yaw, bestScore = -1;
-  for (let i = -6; i <= 6; i++) {
+  for (let i = -swing; i <= swing; i++) {
     const a = i * 0.2, y = yaw + a;
     // room behind him for the camera, and room in front of him for the camera to look into
     const ahead = roomCamBoom(px, pz, -Math.sin(y), -Math.cos(y), 6, w2, d2);
@@ -160,6 +188,8 @@ export interface HomeOptions {
    *  hidden), for a phone held up in front of them; setPov eases back out to
    *  the normal camera. Absent = the house exactly as before. */
   pov?: boolean;
+  /** The 3D phone test page only: try walking camera B or C (HOUSE_CAMS). Absent = A, the game's camera. */
+  houseCam?: HouseCam;
 }
 
 export interface HomeController {
@@ -390,7 +420,14 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   // ── State ──
   let stick = { x: 0, y: 0 };
   const keys = new Set<string>();
-  let speed = 0, yaw = Math.PI, camYaw = openCamYaw(START.x, START.z, START.yaw + Math.PI, ROOM_CAM.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap), orbitHold = 0;
+  /** The walking camera (A = the game's, unless the test page asks for B or C). */
+  let CS: FollowCam = HOUSE_CAMS[opts.houseCam ?? "A"];
+  // D zooms (pinch / wheel) between D and about A's distance, remembered per device (three3d/followCam.ts)
+  const zoom = opts.houseCam === "D" ? new FollowZoom(loadFollowZoom()) : null;
+  const zoomCam: FollowCam = { ...FOLLOW_CAM_D };
+  const detachZoom = zoom ? attachFollowZoom(container, zoom) : null;
+  if (zoom) CS = zoomedFollowCam(zoom.now, FOLLOW_CAM_D, zoomCam);
+  let speed = 0, yaw = Math.PI, camYaw = openCamYaw(START.x, START.z, START.yaw + Math.PI, CS.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap, CS.swing), orbitHold = 0;
   /** The shown facing's turn speed (three3d/animBlend.ts turnTo: turns ease in and out). */
   const yawTurn = { yaw: 0, vel: 0 };
   const orb = new OrbitCam();
@@ -428,7 +465,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    camera.fov = w / h < 0.7 ? 64 : 56;
+    camera.fov = CS.fov && w / h < 0.7 ? CS.fov : w / h < 0.7 ? 64 : 56;
     baseFov = camera.fov;
     lastOff = -1;
     camera.updateProjectionMatrix();
@@ -530,7 +567,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     const at = door ? arrivalAt(door, 1.5) : room.start; // far enough in that the camera has room behind him
     me.person.root.position.set(at.x, 0, at.z);
     yaw = at.yaw; yawTurn.vel = 0; me.person.root.rotation.y = yaw;
-    camYaw = openCamYaw(at.x, at.z, yaw + Math.PI, ROOM_CAM.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap); orb.reset(); first = true;
+    camYaw = openCamYaw(at.x, at.z, yaw + Math.PI, CS.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap, CS.swing); orb.reset(); first = true;
     intro = room.intro ?? null;
     meBlob.position.set(at.x, 0.012, at.z);
     try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* first use */ }
@@ -738,9 +775,14 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     if (now !== near) { near = now; cb.onNear(near); }
 
     // camera: behind him; a card open frames its spot
+    if (zoom) {
+      zoom.step(dt);
+      CS = zoomedFollowCam(zoom.now, FOLLOW_CAM_D, zoomCam);
+      if (!edit?.views && container.clientWidth / (container.clientHeight || 1) < 0.7 && Math.abs(camera.fov - CS.fov) > 1e-3) { camera.fov = baseFov = CS.fov; camera.updateProjectionMatrix(); }
+    }
     camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
-    else if (speed > 0.3) camYaw += angDiff(camYaw, openCamYaw(P.x, P.z, yaw + Math.PI, ROOM_CAM.back, W2 - ROOM_CAM.wallGap, D2 - ROOM_CAM.wallGap)) * Math.min(1, dt * 1.6);
+    else if (speed > 0.3) camYaw += angDiff(camYaw, openCamYaw(P.x, P.z, yaw + Math.PI, CS.back, W2 - ROOM_CAM.wallGap, D2 - ROOM_CAM.wallGap, CS.swing)) * Math.min(1, dt * CS.yawK);
     const shot0 = framed ? shotOf(framed) : null;
     // the editor's card-shot edit (none = as written; the room's own shot is never changed in place)
     const shot = shot0 && framed && edit?.views?.[framed] ? { cam: editCamera(shot0.cam, shot0.look, edit.views[framed]), look: shot0.look } : shot0;
@@ -749,16 +791,16 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     // back and up, like a room view in a third-person game, looking down past him into the
     // room; where a wall is closer than that, the boom shortens and the camera rises instead
     // (it never goes through a wall), so the room still reads.
-    const back = Math.min(ROOM_CAM.back, Math.max(W2, D2) * 2 * 0.55);
+    const back = Math.min(CS.back, Math.max(W2, D2) * 2 * 0.55);
     const cf = scratchCf.set(-Math.sin(camYaw), 0, -Math.cos(camYaw));
     const crr = scratchCr.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
     const ceil = H - ROOM_CAM.ceilingGap;
-    const [camUp0, camBack0] = orb.lift(Math.min(ceil, ROOM_CAM.height), back, ROOM_CAM.lookY);
-    const room2 = roomCamBoom(P.x, P.z, -cf.x, -cf.z, camBack0, W2 - ROOM_CAM.wallGap, D2 - ROOM_CAM.wallGap);
+    const [camUp0, camBack0] = orb.lift(Math.min(ceil, CS.height), back, CS.lookY);
+    const room2 = Math.max(CS.minBoom, roomCamBoom(P.x, P.z, -cf.x, -cf.z, camBack0, W2 - ROOM_CAM.wallGap, D2 - ROOM_CAM.wallGap));
     const short = camBack0 - room2;
-    const camUp = Math.min(ceil, camUp0 + short * ROOM_CAM.riseIfShort);
-    want.set(P.x, camUp, P.z).addScaledVector(cf, -room2).addScaledVector(crr, 0.2);
-    wantLook.set(P.x, ROOM_CAM.lookY, P.z).addScaledVector(cf, ROOM_CAM.lookAhead + short * 0.5).addScaledVector(crr, 0.1);
+    const camUp = Math.min(ceil, camUp0 + short * CS.riseIfShort);
+    want.set(P.x, camUp, P.z).addScaledVector(cf, -room2).addScaledVector(crr, CS.side);
+    wantLook.set(P.x, CS.lookY, P.z).addScaledVector(cf, CS.lookAhead + short * 0.5).addScaledVector(crr, CS.lookSide);
     // the editor's walking-camera edit (none = as written); inRoom below still keeps it inside the walls
     if (edit?.views) {
       if (edit.views.follow) want.set(...editCamera([want.x, want.y, want.z], [wantLook.x, wantLook.y, wantLook.z], edit.views.follow));
@@ -771,7 +813,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     const inRoom = (v: any) => { v.x = Math.max(-W2 + 0.25, Math.min(W2 - 0.25, v.x)); v.z = Math.max(-D2 + 0.25, Math.min(D2 - 0.25, v.z)); v.y = Math.max(CAM_MIN_Y, Math.min(H - 0.15, v.y)); };
     inRoom(want);
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
-    else { camPos.lerp(want, Math.min(1, dt * 5)); camLook.lerp(wantLook, Math.min(1, dt * 6)); }
+    else { camPos.lerp(want, Math.min(1, dt * CS.posK)); camLook.lerp(wantLook, Math.min(1, dt * CS.lookK)); }
     inRoom(camPos);
     if (dbgCam) { camera.position.set(...dbgCam.pos); camera.lookAt(...dbgCam.look); }
     else { camera.position.copy(camPos); camera.lookAt(camLook); }
@@ -792,7 +834,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     }
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
 
-    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || changing || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
+    busy = !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || changing || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       if (busy && !capAlways) dyn.frame(performance.now()); else dyn.pause();
@@ -895,6 +937,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     renderOnce: () => tick(true),
     dispose: () => {
       disposed = true;
+      detachZoom?.();
       gov.dispose();
       hEnh?.dispose();
       if (isOwner()) renderer.setAnimationLoop(null);

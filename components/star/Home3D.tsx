@@ -66,6 +66,8 @@ export interface Home3DProps {
   chrome?: boolean;
   /** The house is ready: its controller (the 3D phone test page drives the camera with it). */
   onReady?: (c: HomeController) => void;
+  /** Test page only: the walking camera to try (lib/star/home3d/scene.ts HOUSE_CAMS). Absent or "A": the game's camera. */
+  houseCam?: "A" | "B" | "C" | "D";
 }
 
 type Tab = "casual" | "kit" | "boots";
@@ -98,7 +100,7 @@ export function homeSceneData(career: CareerState, tier: HomeTier, house: HouseL
   };
 }
 
-export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady }: Home3DProps) {
+export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam }: Home3DProps) {
   const readyRef = useRef(onReady);
   readyRef.current = onReady;
   const holder = useRef<HTMLDivElement>(null);
@@ -168,6 +170,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           fixedStep: q.get("film") === "1" ? 1 / 30 : undefined,
           edit: approvedRef.current,
           ...(pov ? { pov: true } : {}),
+          ...(houseCam && houseCam !== "A" ? { houseCam } : {}),
         });
         let c: HomeController;
         try {
@@ -233,6 +236,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         onPointerMove={(e) => {
           const d = drag.current;
           if (!d || d.id !== e.pointerId) return;
+          if (holder.current?.dataset.pinching) { d.moved += 99; d.x = e.clientX; d.y = e.clientY; return; } // two fingers: the zoom (three3d/followCam.ts), not a look-round
           d.moved += Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y);
           ctrlRef.current?.orbit(e.clientX - d.x, e.clientY - d.y);
           d.x = e.clientX; d.y = e.clientY;

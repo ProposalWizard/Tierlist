@@ -41,6 +41,8 @@ import { PREMIER_LEAGUE_CLUBS } from "@/lib/star/clubs";
 import { LIFESTYLE_LEVELS, BOOT_LEVELS, baseIdOf } from "@/lib/star/shopDefaults";
 import { setToonYou } from "@/lib/star/style3d/toon/bodies";
 import type { CareerState, StarPlayer } from "@/lib/star/types";
+import { pitchFont } from "@/components/star/ui/pitchFont";
+import "@/components/star/ui/flat.css";
 import "./phone3d.css";
 
 if (typeof window !== "undefined") setToonYou({ name: "Player" });
@@ -51,7 +53,20 @@ const QUAD: [number, number][] = [[96.9, 146.3], [293.95, 176.0], [265.5, 607.3]
 /** The phone's screen, in CSS px (the box bent onto the glass). */
 const SCREEN = { w: 368, h: 666, radius: 46 };
 /** How long each move takes (ms). */
-const T = { blink: 900, home: 320, lower: 650, pull: 1400, pullIn: 900, raise: 600 };
+const T = { home: 320, lower: 650, pull: 1400, pullIn: 900, raise: 600 };
+/**
+ * The eye-opening as the phone comes up (Harry, 20 Nov 2026: "we could do WAY
+ * better on the blink, find an example of a blink in a video game and copy it").
+ * Default (B, Harry 20 Nov: "blink b is great") "Resident Evil 7": one slow
+ * open with a small flutter, almond lids with soft edges, blur that clears,
+ * the head rights itself.
+ * ?blink=A "Far Cry": the capture wake-up, two tries at opening (it cracks,
+ * droops, opens wider, a half-blink, then wide), an over-bright blurred double
+ * view that focuses.
+ * ?blink=old: the 820 ms straight-bars blink before this.
+ */
+type Blink = "A" | "B" | "old";
+const BLINK_MS: Record<Blink, number> = { A: 1700, B: 1200, old: 900 };
 
 type Scene = "home" | "opening" | "phone" | "closing-home" | "putting-away" | "pulling-back" | "house" | "taking-out" | "raising";
 
@@ -140,6 +155,9 @@ export default function Phone3dDevPage() {
 function Phone3dTest() {
   const params = useSearchParams();
   const film = params.get("film") === "1";
+  const blink: Blink = params.get("blink") === "A" ? "A" : params.get("blink") === "old" ? "old" : "B";
+  /** The house's walking camera (lib/star/home3d/scene.ts HOUSE_CAMS): D by default (Harry's pick, 20 Nov), ?cam=A (as the game), B, C. */
+  const cam = (["A", "B", "C", "D"] as const).find((c) => c === params.get("cam")) ?? "D";
   const [scene, setScene] = useState<Scene>("home");
   const [note, setNote] = useState<string | null>(null);
   const [houseReady, setHouseReady] = useState(false);
@@ -172,7 +190,7 @@ function Phone3dTest() {
     if (then) after(ms, () => setScene(then));
   };
 
-  const openPhone = () => { setNote(null); go("opening", "phone", T.blink); };
+  const openPhone = () => { setNote(null); go("opening", "phone", BLINK_MS[blink]); };
   const toHome = () => { setNote(null); go("closing-home", "home", T.home); };
   /** BACK: the phone lowers in your eyes, the room sharpens; then the camera pulls back to the normal one. */
   const putAway = () => {
@@ -231,10 +249,10 @@ function Phone3dTest() {
   const leaveNote = (to: string) => setNote(`"${to}" leaves the phone in the game. Not on this test page.`);
 
   const stage = (
-    <div className={`p3-stage p3-${scene}`} data-phone3d={scene} style={{ width: STAGE.w, height: STAGE.h }}>
+    <div className={`p3-stage p3-${scene} p3-blink-${blink}`} data-phone3d={scene} style={{ width: STAGE.w, height: STAGE.h }}>
       {/* Your house, live 3D, from your own eyes (held still while the phone is up) */}
       <div className="p3-house3d">
-        <Home3D career={career} embedded where="test" tier="house" pov chrome={scene === "house"} onReady={onReady} onBack={houseBack} backLabel="Home" />
+        <Home3D career={career} embedded where="test" tier="house" pov houseCam={cam} chrome={scene === "house"} onReady={onReady} onBack={houseBack} backLabel="Home" />
       </div>
       <div className="p3-dim" />
 
@@ -252,7 +270,7 @@ function Phone3dTest() {
         <div className="p3-held">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="p3-full" src="/star/phone3d/hand.webp" alt="" draggable={false} />
-          <div className="p3-screen" data-phone-glass style={{ width: SCREEN.w, height: SCREEN.h, borderRadius: SCREEN.radius, transform: matrix, pointerEvents: scene === "phone" ? "auto" : "none" }}>
+          <div className={`p3-screen star-root ${pitchFont.variable}`} data-phone-glass style={{ width: SCREEN.w, height: SCREEN.h, borderRadius: SCREEN.radius, transform: matrix, pointerEvents: scene === "phone" ? "auto" : "none" }}>
             <PhoneHome
               career={career}
               fill
@@ -267,10 +285,19 @@ function Phone3dTest() {
       {note && scene === "phone" && <div className="p3-note" data-phone3d-note onClick={() => setNote(null)}>{note}</div>}
 
       {/* The eye-blinks that open on the phone */}
-      {scene === "opening" && (
+      {scene === "opening" && blink === "old" && (
         <>
           <div className="p3-lid p3-lid-top" />
           <div className="p3-lid p3-lid-bottom" />
+        </>
+      )}
+      {scene === "opening" && blink !== "old" && (
+        <>
+          {/* the double view (A): a second, offset copy of the hand that slides in and merges */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {blink === "A" && <img className="p3-full p3-ghost" src="/star/phone3d/hand.webp" alt="" draggable={false} />}
+          <div className="p3-glare" />
+          <div className="p3-eyes" />
         </>
       )}
 
