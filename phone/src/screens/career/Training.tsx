@@ -71,6 +71,8 @@ export function TrainingScreen({ career, onBack, go }: { career: CareerState; on
               </View>
             </View>
             <View style={{ marginTop: 10, flexDirection: "row" }}><Bar value={value} colors={[c1, c2]} height={12} /></View>
+            {/* SkillsScreen: a shut drill says when it opens ("Opens after your third game"). */}
+            {shut && <Text style={{ color: "#fcd34d", fontSize: 12, fontWeight: "800", marginTop: 6 }}>{`Opens ${mechanicDef("aerial").when.toLowerCase()}`}</Text>}
             {!shut && !canTrain && left > 0 && career.energy < flow.TRAINING_ENERGY_COST && <Text style={{ color: "#fca5a5", fontSize: 12, fontWeight: "700", marginTop: 6 }}>Not enough energy</Text>}
           </Press>
         );

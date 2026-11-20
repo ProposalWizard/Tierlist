@@ -34,7 +34,8 @@ import { useNav } from "../../nav";
 import { Press } from "../../ui/Press";
 import { C } from "../../world/lookKit";
 import { AntonTabs, BackPill, BottomBar, CAN, FONT, LookButton } from "../../ui/look";
-import { SHOP_PIC } from "../../ui/look/worldPics";
+import { SHOP_PIC, SHOP_PIC_3D } from "../../ui/look/worldPics";
+import { shopPic3d } from "@/lib/star/shopPicsLook";
 import { Btn, Note, rgba } from "../../world/ui";
 import { buyKib, drinkCan, buyBoot, buyBlackMarket, buyItem, bootsForSale, ownedLevelOf, STYLE_BASES, BOOT_ORDER, type Bought } from "../../world/shop";
 
@@ -66,6 +67,9 @@ const KEYS: Record<CatId, string[]> = (() => {
 /** The item's still (ShowroomShop bigName): boot-<base>-L<n>, <base>-L<n>, phone-L1; a can's own photo. */
 function picOf(cat: CatId, key: string, lv: number): ImageSourcePropType | null {
   if (cat === "cans") return CAN[key as KibCan["id"]] ?? null;
+  // The website's New pictures first (shopPicsLook.ts, fixed New): stills of the 3D shop's models.
+  const still = shopPic3d(cat === "boots" ? "boot" : "style", key, lv);
+  if (still && SHOP_PIC_3D[still]) return SHOP_PIC_3D[still];
   const name = cat === "boots" ? `boot-${key}-L${lv}` : key === "phone" ? "phone-L1" : `${key}-L${lv}`;
   return SHOP_PIC[name] ?? null;
 }
@@ -426,7 +430,7 @@ export function ShopScreen({ params }: { params?: Record<string, unknown> }) {
       </View>
       {tab === "shop" && (
         <View style={{ height: 40, justifyContent: "flex-end" }}>
-          <AntonTabs value={cat} onChange={setCat} lead={Math.round(width * 0.38)} tabs={SHOP_CATS.filter((c) => c.id !== "boots").map((c) => [c.id, c.label] as const)} />
+          <AntonTabs value={cat} onChange={setCat} lead={12} tabs={SHOP_CATS.filter((c) => c.id !== "boots").map((c) => [c.id, c.label] as const)} />
         </View>
       )}
       {tab === "boots" && <View style={{ height: 40 }} />}

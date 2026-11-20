@@ -93,6 +93,9 @@ export function StarPassScreen() {
   const rows: [string, number][] = [
     ["Matches", st.points.match], ["Trophies", st.points.trophies], ["Awards", st.points.awards],
     ["Milestones", st.points.milestones], ["Fame", st.points.status], ...(st.carry > 0 ? [["Carried", st.carry] as [string, number]] : []),
+    // Poor matches (rating under 5.5) cost points (starPoints.ts slumpAfterMatch): shown, so
+    // the lines add up to STAR POINTS (the total read 780 under lines worth 4,130).
+    ...((led.slump?.debt ?? 0) > 0 ? [["Poor matches", -(led.slump!.debt)] as [string, number]] : []),
   ];
   const digits = String(st.stars).length;
   const top = (y: number) => roadH - y; // the road is laid out from its bottom

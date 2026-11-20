@@ -24,6 +24,8 @@ PASS_SRC = os.path.join(ROOT, "public/star/star-pass")
 SHOP_OUT = os.path.join(ROOT, "phone/assets/look/shop")
 PASS_OUT = os.path.join(ROOT, "phone/assets/look/starpass")
 MAP = os.path.join(ROOT, "phone/src/ui/look/worldPics.ts")
+SHOP3D_SRC = os.path.join(ROOT, "public/star/shop2d/items3d")
+SHOP3D_OUT = os.path.join(ROOT, "phone/assets/look/shop3d")
 
 
 def copy():
@@ -32,6 +34,13 @@ def copy():
     for f in sorted(glob.glob(os.path.join(SHOP_SRC, "*.webp"))):
         im = Image.open(f).convert("RGBA").resize((640, 480), Image.LANCZOS)
         im.save(os.path.join(SHOP_OUT, os.path.basename(f)), "WEBP", quality=78, method=6)
+    # The shop's "New" pictures (lib/star/shopPicsLook.ts shopPic3d, fixed New on the
+    # website): stills rendered from the 3D shop's own models, public/star/shop2d/items3d.
+    os.makedirs(SHOP3D_OUT, exist_ok=True)
+    for f in sorted(glob.glob(os.path.join(SHOP3D_SRC, "*.webp"))):
+        im = Image.open(f).convert("RGBA")
+        im.thumbnail((640, 480), Image.LANCZOS)
+        im.save(os.path.join(SHOP3D_OUT, os.path.basename(f)), "WEBP", quality=78, method=6)
     for f in sorted(glob.glob(os.path.join(PASS_SRC, "*.webp"))):
         b = os.path.basename(f)
         if b == "reward-car.webp":
@@ -53,6 +62,10 @@ def write_map():
         "export const SHOP_PIC: Record<string, ImageSourcePropType> = {",
     ]
     out += [f'  "{n}": require("../../../assets/look/shop/{n}.webp"),' for n in shop]
+    shop3d = sorted(os.path.basename(f)[:-5] for f in glob.glob(os.path.join(SHOP3D_OUT, "*.webp")))
+    out += ["};", "", "/** The shop's New stills, from the 3D shop's models, by the website's path (lib/star/shopPicsLook.ts shopPic3d). */",
+            "export const SHOP_PIC_3D: Record<string, ImageSourcePropType> = {"]
+    out += [f'  "/star/shop2d/items3d/{n}.webp": require("../../../assets/look/shop3d/{n}.webp"),' for n in shop3d]
     out += ["};", "", "/** Star Pass art by the website's path (/star/star-pass/<file>). */",
             "export const STAR_PASS_PIC: Record<string, ImageSourcePropType> = {"]
     out += [f'  "/star/star-pass/{n}": require("../../../assets/look/starpass/{n}"),' for n in pas]
