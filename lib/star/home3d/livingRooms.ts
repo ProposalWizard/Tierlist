@@ -298,7 +298,7 @@ export function buildStudio(c: Ctx, h: LivingHooks) {
   tableLamp(c, W2 - 0.28, 0.53, bz + 1.25);
   F.put("rugRound", bx - 1.3, bz + 0.3, 0, { s: 0.6, solid: false, tint: { carpet: "#c9b48e" } });
   artPiece(c, W2 - 0.03, 1.55, bz, -Math.PI / 2, 1.0, 0.7, 3);
-  X.things.push(seatObject({ id: "bed", label: "Bed", at: [bx - 0.35, bz + 0.95 - 0.2], facing: 0, seats: 1, y: 0.54, front: 0.2, verb: "Sit on the bed", lines: ["Five minutes off your feet."], loop: [{ clip: "sit_down", hold: 1.55, secs: 6 }], stay: [8, 14] }));
+  X.things.push(seatObject({ id: "bed", label: "Bed", at: [bx - 0.35, bz + 0.95 - 0.2], facing: 0, seats: 1, y: 0.54, front: 0.15, verb: "Sit on the bed", lines: ["Five minutes off your feet."], loop: [{ clip: "sit_down", hold: 1.55, secs: 6 }], stay: [8, 14] }));
   X.things[X.things.length - 1].effect = { energy: 1, text: "Rested. Energy +1" };
   // the kitchenette along the south wall (west of the front door): the stocked fridge, sink, hob, a coffee machine
   const kz = D2 - 0.45;
@@ -387,7 +387,7 @@ export function buildKitchen(c: Ctx, _h: LivingHooks) {
   F.put("tableRound", tx, tz, 0, { s: 0.75, tint: { wood: c.wood } });
   const chairs: [number, number, number][] = [[tx - 0.75, tz, Math.PI / 2], [tx + 0.75, tz, -Math.PI / 2]];
   for (const [cx, cz, cf] of chairs) F.put("chairCushion", cx, cz, cf, { tint: { carpet: c.inp.kits.home.shirt } });
-  X.things.push(seatObject({ id: "chairs", label: "Kitchen table", at: [tx - 0.75 + 0.02, tz], facing: Math.PI / 2, seats: 1, y: 0.47, front: 0.18, verb: "Sit down", lines: ["A seat at the table."] }));
+  // (the chairs are dressing for now: the walk to a seat tucked under the table is not solved)
   F.put("rugRound", tx, tz, 0, { s: 0.95, solid: false, tint: { carpet: "#b5523b" } });
   kitPlant(c, -W2 + 0.4, D2 - 0.4);
   F.put("trashcan", -W2 + 0.3, 1.35, Math.PI / 2, { s: 0.8 });
@@ -399,7 +399,7 @@ export function buildKitchen(c: Ctx, _h: LivingHooks) {
     k.box(0.012, 0.7, 0.012, shell.metalM, px, H - 0.35, iz);
   }
   k.glow(k.patchT, "#ffe0b0", 0.14, 3.2, 1.6, -0.74, 0.9, iz, -Math.PI / 2, 0);
-  X.guests.push({ obj: "chairs", slot: "s0" });
+  X.guests.push({ obj: "coffee" });
   return shell;
 }
 
@@ -423,7 +423,7 @@ export function buildBedroom(c: Ctx, h: LivingHooks) {
   artPiece(c, bx, 1.75, -D2 + 0.03, 0, 1.4, 0.6, 5);
   F.put("rugRectangle", bx, bz + 0.9, 0, { s: 0.9, solid: false, tint: { carpet: R.tier === "estate" ? "#c9b48e" : "#d9cbb4" } });
   F.put("loungeSofaOttoman", bx, bz + 1.45, 0, { s: 0.85, tint: { carpet: inp.kits.home.shirt } });
-  X.things.push(seatObject({ id: "bed", label: "Bed", at: [bx + 0.96 - 0.2, bz + 0.25], facing: Math.PI / 2, seats: 1, y: 0.54, front: 0.2, verb: "Sit on the bed", lines: ["Five minutes off your feet."], stay: [8, 14] }));
+  X.things.push(seatObject({ id: "bed", label: "Bed", at: [bx + 0.96 - 0.2, bz + 0.25], facing: Math.PI / 2, seats: 1, y: 0.54, front: 0.15, verb: "Sit on the bed", lines: ["Five minutes off your feet."], stay: [8, 14] }));
   X.things[X.things.length - 1].effect = { energy: 1, text: "Rested. Energy +1" };
   // a reading chair by the window, a plant, a dresser with your things
   F.put("loungeChair", W2 - 0.75, D2 - 1.1, -Math.PI * 0.75, { tint: { carpet: "#8a9a8a" } });
@@ -524,7 +524,7 @@ export function buildPoolTerrace(c: Ctx, _h: LivingHooks) {
   const lxs = [-W2 + 1.4, -W2 + 2.5, -W2 + 3.6].filter((x) => x < W2 - 2.2);
   lxs.forEach((lx, i) => {
     F.put("loungeChairRelax", lx, lz, 0, { tint: { carpet: towel[i % 3] } });
-    X.things.push(seatObject({ id: `lounger${i}`, label: "Lounger", at: [lx, lz - 0.05], facing: 0, seats: 1, y: 0.4, front: 0.22, verb: "Sunbathe", lines: ["Soak up the sun for a bit."] }));
+    X.things.push(seatObject({ id: `lounger${i}`, label: "Lounger", at: [lx, lz - 0.05], facing: 0, seats: 1, y: 0.4, front: 0.15, verb: "Sunbathe", lines: ["Soak up the sun for a bit."] }));
     X.things[X.things.length - 1].effect = { mood: 1, text: "Topped up the tan. Mood +1" };
   });
   for (const [ux, uz, col] of [[(lxs[0] + (lxs[1] ?? lxs[0])) / 2, lz - 0.3, "#f4efe6"], [-W2 + 1.2, D2 - 1.3, c.inp.kits.home.shirt]] as [number, number, string][]) {
@@ -677,7 +677,7 @@ export function livingFinish(c: Ctx, shell: { metalM: any; glassM: any }) {
   } else if (id === "trophy") {
     F.put("rugRectangle", 0, 0.4, 0, { solid: false, tint: { carpet: "#6b2a2a" } });
     // sit on the bench and take it all in
-    X.things.push(seatObject({ id: "bench", label: "Bench", at: [-W2 + 1.0, D2 - 0.35 - 0.2 + 0.02], facing: Math.PI, seats: 2, y: 0.42, front: 0.2, spacing: 0.6, verb: "Sit and look", lines: ["Every one of them earned."] }));
+    X.things.push(seatObject({ id: "bench", label: "Bench", at: [-W2 + 1.0, D2 - 0.375], facing: Math.PI, seats: 2, y: 0.42, front: 0.15, spacing: 0.6, verb: "Sit and look", lines: ["Every one of them earned."] }));
     X.things[X.things.length - 1].effect = { mood: 1, text: "Proud. Mood +1" };
   } else if (id === "garage") {
     F.put("trashcan", W2 - 0.35, D2 - 0.35, 0, { s: 0.7 });
@@ -709,7 +709,7 @@ export function livingFinish(c: Ctx, shell: { metalM: any; glassM: any }) {
     }));
     // the loungers by the indoor pool
     const lx0 = px0 + 0.6;
-    if (lx0 < px1) X.things.push(seatObject({ id: "lounger0", label: "Lounger", at: [lx0, pz1 + 0.95 + 0.05], facing: Math.PI, seats: 1, y: 0.42, front: 0.25, verb: "Lie back", lines: ["Feet up by the water."] }));
+    if (lx0 < px1) X.things.push(seatObject({ id: "lounger0", label: "Lounger", at: [lx0, pz1 + 0.95 + 0.05], facing: Math.PI, seats: 1, y: 0.42, front: 0.15, verb: "Lie back", lines: ["Feet up by the water."] }));
     X.guests.push({ obj: "pool" });
   } else if (id === "cinema") {
     // the recliners (roomBuild buildCinema): front row, either side of the aisle; the screen plays while you sit
@@ -717,7 +717,7 @@ export function livingFinish(c: Ctx, shell: { metalM: any; glassM: any }) {
     for (const side of [-1, 1]) {
       const xs = Array.from({ length: per }, (_, i) => side * (0.55 + 0.425 + i * 0.85));
       const mid = (xs[0] + xs[xs.length - 1]) / 2;
-      X.things.push(seatObject({ id: side < 0 ? "seatsL" : "seatsR", label: "Cinema seat", at: [mid, -0.15 - 0.05], facing: Math.PI, seats: per, spacing: 0.85, y: 0.52, front: 0.2, verb: "Watch a film", lines: ["Lights down. Your goals on the big screen."] }));
+      X.things.push(seatObject({ id: side < 0 ? "seatsL" : "seatsR", label: "Cinema seat", at: [mid, -0.15 - 0.05], facing: Math.PI, seats: per, spacing: 0.85, y: 0.52, front: 0.15, verb: "Watch a film", lines: ["Lights down. Your goals on the big screen."] }));
     }
     X.things[X.things.length - 1].effect = { mood: 1, text: "What a film. Mood +1" };
     X.guests.push({ obj: "seatsL", slot: "s0" });
