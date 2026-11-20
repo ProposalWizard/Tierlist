@@ -91,3 +91,16 @@ we haven't found, a way to have lag free, stylised, perfect animations, perfect 
 skills, paid blender projects, using animation inspiration from games like gta and red dead 2 (maybe finding open
 source movement/interaction animations). Right now it looks like a classic indie web game from like 2010 - I want
 REVOLUTIONARY."
+
+## Events need follow-through (Harry, 20 Nov 2026, 16:00)
+"it's important that they have follow through - kit man offers to stay with u - what happens if u say yes? Random ex
+legend challenges u - the game mode u play has to be built - a conversation should be able to go multiple rounds and
+not just be simple - I have a de-ai skill in my zocialgen repo - maybe try using that - analyse stories like gta, red
+dead and the nemesis system. follow through complexity and a story that comes back even seasons on is great."
+"We could change the shop area to the training compound and then move that shop into a different bigger shop which
+would allow for more random events maybe, remember we had a whole plan for garden level by star pass/club size too"
+=> Events v2: say yes and you PLAY it (the hundred balls drill, the legend 1v1 as a real game mode); conversations of
+several rounds; arcs that return seasons later. Writing passes through the de-ai skill
+(harryv2157-dev/zocial-gen-operations .claude/skills/de-ai). Places: the shop's spot becomes the training compound; the
+shop moves to a bigger shop; garden levels by star pass / club size (docs/plans/2026-10-19/harry-answers-round.md:164).
+The remaining ~1,420 events are NOT written until the v2 format is agreed.
