@@ -98,17 +98,28 @@ export default function WardrobeProofPage() {
           label(`${r[0]}: front / side`, i * W, 0, W, true);
         });
       } else {
-        const H1 = 760, H2 = 480;
-        sheet.width = W * roles.length; sheet.height = H1 + H2;
+        // each outfit next to today's kit player at the same scale (his shape must not change at a glance)
+        const W2 = 420, H1 = 780, H2 = 470, ply = people[people.length - 1];
+        sheet.width = W2 * (roles.length - 1); sheet.height = H1 + H2;
         renderer.setClearColor("#cfd6de");
-        roles.forEach((r, i) => {
-          shootOne(people[i], -0.25, W, H1, [0, 0.98, 6.6], [0, 0.93, 0], i * W, 0);
-          shootOne(people[i], -0.7, W, H2, [0, 1.3, 2.9], [0, 1.22, 0], i * W, H1);
-          label(r[0], i * W, 0, W, false);
+        const pair = (p: Person3D, yaw: number, w: number, h: number, pos: [number, number, number], look: [number, number, number], dx: number, dy: number, gap: number) => {
+          renderer.setSize(w, h); cam.aspect = w / h; cam.updateProjectionMatrix(); cam.position.set(...pos); cam.lookAt(...look);
+          p.root.rotation.y = yaw; p.root.position.x = -gap; ply.root.rotation.y = yaw; ply.root.position.x = gap;
+          p.root.updateMatrixWorld(true); ply.root.updateMatrixWorld(true);
+          scene.add(p.root); scene.add(ply.root); renderer.render(scene, cam); scene.remove(p.root); scene.remove(ply.root);
+          draws.push(renderer.info.render.calls); tris.push(renderer.info.render.triangles);
+          g2.drawImage(renderer.domElement, dx, dy);
+          p.root.position.x = 0; ply.root.position.x = 0;
+        };
+        roles.slice(0, -1).forEach((r, i) => {
+          pair(people[i], -0.2, W2, H1, [0, 0.98, 6.8], [0, 0.93, 0], i * W2, 0, 0.36);
+          pair(people[i], -0.6, W2, H2, [0, 1.25, 3.6], [0, 1.18, 0], i * W2, H1, 0.3);
+          label(`${r[0]} | today's player`, i * W2, 0, W2, false);
         });
-        g2.fillStyle = "#000"; g2.fillRect(0, H1 - 2, W * roles.length, 3);
+        g2.fillStyle = "#000"; g2.fillRect(0, H1 - 2, W2 * (roles.length - 1), 3);
+        for (let i = 1; i < roles.length - 1; i++) { g2.fillStyle = "#888"; g2.fillRect(i * W2 - 1, 0, 2, sheet.height); }
       }
-      for (let i = 1; i < roles.length; i++) { g2.fillStyle = "#888"; g2.fillRect(i * W - 1, 0, 2, sheet.height); }
+      if (shot === "silhouettes") for (let i = 1; i < roles.length; i++) { g2.fillStyle = "#888"; g2.fillRect(i * W - 1, 0, 2, sheet.height); }
       sheet.style.width = "100%";
       box.current!.appendChild(sheet);
       w0.__clothStats = { draws, tris, build: CL.CLOTH_BUILD_MS, fallbacks: CL.CLOTH_FALLBACKS };

@@ -168,7 +168,7 @@ function decalsFor(T: Three, kind: ClothKind, u: Record<string, { value: any }>,
     // the coat's fronts: the closing line below the V, two buttons, two pocket flaps, a breast pocket
     const top = collarY - 0.25, bot = hipsY - 0.13, h = top - bot;
     out.push({ tex: detail(T, `coat-${dark(1)}-${h.toFixed(3)}`, 0.46, h, (x, X, Y, px) => {
-      x.strokeStyle = dark(1, 0.5); x.lineWidth = 0.003 * px;
+      x.strokeStyle = dark(1, 2.2); x.lineWidth = 0.003 * px;
       x.beginPath(); x.moveTo(X(0.004), Y(h / 2)); x.lineTo(X(0.004), Y(-h / 2)); x.stroke();
       x.fillStyle = dark(1, 0.4); for (const yy of [h / 2 - 0.05, h / 2 - 0.12]) { x.beginPath(); x.arc(X(0.012), Y(yy), 0.006 * px, 0, Math.PI * 2); x.fill(); }
       x.lineWidth = 0.0025 * px; x.strokeStyle = dark(1, 0.55);

@@ -66,12 +66,12 @@ type Ring = ReturnType<typeof landmarks>["neckRing"];
 /** Long trousers: straight legs of their own (ease at thigh and hem), a waist that holds a tucked shirt. */
 /** Long trousers: legs of their own (width × the leg's own size at thigh and hem; straight = drapes over knee and calf),
  *  a seat and waist shaped from the body (a touch over a tucked shirt). */
-const trousers = (LM: LMs, k: [number, number], straight = false, seat = 1.06): GarmentSpec => ({ name: "trousers", offset: 0.004, lip: 0.004,
+const trousers = (LM: LMs, k: [number, number], straight = false, seat = 1.06, cuff?: number): GarmentSpec => ({ name: "trousers", offset: 0.004, lip: 0.004,
   fields: (pt, arm, _a, leg) => ({ neck: arm > 0.5 ? 1 : pt.y - (LM.waist + 0.01), sleeve: NONE, hem: NONE, leg: leg > 0.35 ? LM.ankle - pt.y : NONE }),
-  relax: [4, 10], shape: { legs: { top: k[0], hem: k[1], straight }, torso: { knots: [[0, seat, seat], [1, seat, seat]] } } });
+  relax: [4, 10], shape: { legs: { top: k[0], hem: k[1], straight, cuff }, torso: { knots: [[0, seat, seat], [1, seat, seat]] } } });
 const shoes = (LM: LMs): GarmentSpec => ({ name: "shoes", offset: 0.005, lip: 0.003,
   fields: (pt, arm, _a, leg) => (leg > 0.5 && arm < 0.5 ? { neck: pt.y - LM.shoeTop, sleeve: NONE, hem: NONE, leg: -pt.y - 0.001 } : OFF),
-  relax: [2, 6] });
+  relax: [2, 6], shape: { shoe: true } });
 const longTop = (name: string, LM: LMs, ring: Ring, o: { off: number; neck: [number, number, number, number, number?, number?]; hem: number; wrist?: number; shape: GarmentSpec["shape"]; collar?: GarmentSpec["collar"] }): GarmentSpec => ({
   name, offset: o.off, lip: 0.005, relax: [3, 10], collar: o.collar, shape: o.shape,
   fields: (pt, arm, armS) => ({ neck: ring(pt, o.neck[0], o.neck[1], o.neck[2], o.neck[3], o.neck[4] ?? 0, o.neck[5] ?? 0.07), sleeve: arm > 0.5 ? (armS - (o.wrist ?? LM.wrist)) * LM.upperArm : NONE, hem: arm > 0.5 ? NONE : o.hem - pt.y, leg: NONE }),
@@ -129,8 +129,8 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
     garments(meta) {
       const { LM, neckRing } = landmarks(meta);
       return [
-        longTop("jacket", LM, neckRing, { off: 0.005, neck: [0.074, 0.064, 0.085, -0.016], hem: LM.hem, collar: { kind: "crew", h: 0.03, out: 0.0 }, shape: { torso: { knots: [[0, 1.0, 1.0], [0.1, 1.17, 1.12], [1, 1.14, 1.1]], boxy: 0.7 }, arms: { top: 1.18, cuff: 1.0 } } }),
-        trousers(LM, [1.18, 1.25], true, 1.1), shoes(LM),
+        longTop("jacket", LM, neckRing, { off: 0.005, neck: [0.074, 0.064, 0.085, -0.016], hem: LM.hips[1] - 0.075, collar: { kind: "crew", h: 0.042, out: -0.008 }, shape: { torso: { knots: [[-0.3, 1.07, 1.06], [0, 1.06, 1.05], [1, 1.04, 1.03]], boxy: 0.6, hem: LM.hips[1] - 0.075 } } }),
+        trousers(LM, [1.07, 1.45], false, 1.05, 1.15), shoes(LM),
       ];
     },
     slots(u, _v, Color) {
@@ -148,8 +148,8 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
     garments(meta) {
       const { LM, neckRing } = landmarks(meta);
       return [
-        longTop("shirt", LM, neckRing, { off: 0.004, neck: [0.07, 0.062, 0.08, -0.012], hem: LM.tuck, collar: { kind: "shirt", h: 0.022, out: 0.006, fold: 0.014 }, shape: { torso: { knots: [[0, 0.97, 0.99], [0.5, 1.01, 1.02], [1, 1.04, 1.03]] }, arms: { top: 1.08, cuff: 1.12 } } }),
-        trousers(LM, [1.12, 1.45], false, 1.08), shoes(LM),
+        longTop("shirt", LM, neckRing, { off: 0.004, neck: [0.07, 0.062, 0.08, -0.012], hem: LM.tuck, collar: { kind: "shirt", h: 0.022, out: 0.006, fold: 0.014 }, shape: undefined }),
+        trousers(LM, [1.04, 1.3], false, 1.03), shoes(LM),
       ];
     },
     slots(u, _v, Color) {
@@ -158,7 +158,7 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
       const tr = suit ? C(u.uSuitTrousers?.value, [0.04, 0.045, 0.055]) : { r: 0.04, g: 0.045, b: 0.055 };
       return [
         { color: col(Color, shirt), trim: col(Color, shirt, 0.85), fabric: "cotton", bands: [0, 0.03, 0, 0] },
-        { color: col(Color, tr), trim: col(Color, tr, 0.8), fabric: "cotton", bands: [0.028, 0, 0, 0] },
+        { color: col(Color, tr), trim: new Color(0.03, 0.018, 0.01), fabric: "cotton", bands: [0.03, 0, 0, 0] },
         shoeSlot(u, Color),
       ];
     },
@@ -167,10 +167,10 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
     garments(meta, variant) {
       const { LM, neckRing } = landmarks(meta);
       return [
-        { ...longTop("shirt", LM, neckRing, { off: 0.003, neck: [0.07, 0.062, 0.08, -0.012], hem: LM.tuck, wrist: LM.wrist + 0.06, collar: { kind: "shirt", h: 0.022, out: 0.006, fold: 0.014 }, shape: { torso: { knots: [[0, 1.0, 1.0], [1, 1.01, 1.0]] }, arms: { top: 1.03, cuff: 1.06 } } }),
+        { ...longTop("shirt", LM, neckRing, { off: 0.003, neck: [0.07, 0.062, 0.08, -0.012], hem: LM.tuck, wrist: LM.wrist + 0.11, collar: { kind: "shirt", h: 0.022, out: 0.006, fold: 0.014 }, shape: undefined }),
           relax: [0, 8], ...(variant === "suit-open" ? {} : { tie: { top: LM.collarY - 0.035, bottom: LM.waist + 0.02, w: 0.022 } }) },
-        longTop("coat", LM, neckRing, { off: 0.005, neck: [0.085, 0.072, 0.1, -0.03, 0.27, 0.11], hem: LM.hips[1] - 0.13, collar: { kind: "lapel", h: 0.024, out: 0.004, fold: 0.055 }, shape: { torso: { knots: [[-0.25, 1.24, 1.14], [0.0, 1.2, 1.12], [0.32, 1.03, 1.06], [0.7, 1.1, 1.08], [1, 1.2, 1.1]], pad: 0.065, hem: LM.hips[1] - 0.06 }, arms: { top: 1.12, cuff: 1.16 } } }),
-        trousers(LM, [1.1, 1.55], true, 1.08), shoes(LM),
+        longTop("coat", LM, neckRing, { off: 0.005, wrist: LM.wrist - 0.04, neck: [0.085, 0.072, 0.1, -0.03, 0.27, 0.11], hem: LM.hips[1] - 0.13, collar: { kind: "lapel", h: 0.024, out: 0.004, fold: 0.055 }, shape: { torso: { knots: [[-0.25, 1.08, 1.06], [0.0, 1.06, 1.05], [0.32, 1.02, 1.03], [1, 1.05, 1.04]], pad: 0.02, hem: LM.hips[1] - 0.06 } } }),
+        trousers(LM, [1.05, 1.35], true, 1.03), shoes(LM),
       ];
     },
     slots(u, _v, Color) {
@@ -178,7 +178,7 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
       const shirt = C(u.uSuitShirt?.value, [0.9, 0.9, 0.88]), tie = C(u.uSuitTie?.value, [0.2, 0.02, 0.03]);
       return [
         { color: col(Color, shirt), trim: col(Color, shirt), trim2: col(Color, tie), fabric: "cotton" },
-        { color: col(Color, coat), trim: col(Color, coat, 0.8), fabric: "wool" },
+        { color: col(Color, coat), trim: col(Color, coat, 1.9), fabric: "wool" },
         { color: col(Color, tr), trim: col(Color, tr, 0.75), fabric: "cotton", bands: [0.025, 0, 0, 0] },
         shoeSlot(u, Color, [0.01, 0.01, 0.01]),
       ];
@@ -188,8 +188,8 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
     garments(meta) {
       const { LM, neckRing } = landmarks(meta);
       return [
-        shortTop("polo", LM, neckRing, { off: 0.004, hem: LM.hem, sleeve: LM.sleeveShort, collar: { kind: "polo", h: 0.02, out: 0.006, fold: 0.012 }, shape: { torso: { knots: [[0, 1.08, 1.06], [1, 1.07, 1.05]], boxy: 0.5 }, arms: { top: 1.2, cuff: 1.4 } } }),
-        trousers(LM, [1.12, 1.45], false, 1.09), shoes(LM),
+        shortTop("polo", LM, neckRing, { off: 0.018, hem: LM.waist - 0.035, sleeve: LM.sleeveShort, collar: { kind: "polo", h: 0.02, out: 0.006, fold: 0.012 }, shape: undefined }),
+        trousers(LM, [1.04, 1.3], false, 1.03), shoes(LM),
       ];
     },
     slots(u, _v, Color) {
@@ -205,8 +205,8 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
     garments(meta) {
       const { LM, neckRing } = landmarks(meta);
       return [
-        shortTop("shirt", LM, neckRing, { off: 0.004, hem: LM.hem - 0.02, sleeve: LM.sleeveShort + 0.08, collar: { kind: "crew", h: 0.016, out: 0.010 }, shape: { torso: { knots: [[0, 1.1, 1.08], [1, 1.08, 1.06]], boxy: 0.6 }, arms: { top: 1.22, cuff: 1.45 } } }),
-        trousers(LM, [1.08, 1.35], false, 1.1), shoes(LM),
+        shortTop("shirt", LM, neckRing, { off: 0.018, hem: LM.waist - 0.04, sleeve: LM.sleeveShort + 0.08, collar: { kind: "crew", h: 0.016, out: 0.010 }, shape: undefined }),
+        trousers(LM, [1.03, 1.22], false, 1.03), shoes(LM),
       ];
     },
     slots(u, _v, Color) {
@@ -222,8 +222,8 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
     garments(meta) {
       const { LM, neckRing } = landmarks(meta);
       return [
-        longTop("hoodie", LM, neckRing, { off: 0.006, neck: [0.08, 0.07, 0.09, -0.02], hem: LM.hem - 0.02, wrist: LM.wrist - 0.02, collar: { kind: "hood", h: 0.05, out: -0.004 }, shape: { torso: { knots: [[0, 1.03, 1.03], [0.12, 1.38, 1.3], [0.6, 1.38, 1.28], [1, 1.3, 1.22]], boxy: 0.9 }, arms: { top: 1.42, cuff: 1.02 } } }),
-        trousers(LM, [1.2, 1.05], false, 1.12), shoes(LM),
+        longTop("hoodie", LM, neckRing, { off: 0.006, neck: [0.08, 0.07, 0.09, -0.02], hem: LM.hem - 0.02, wrist: LM.wrist - 0.02, collar: { kind: "hood", h: 0.035, out: -0.004 }, shape: { torso: { knots: [[0, 1.0, 1.0], [0.12, 1.1, 1.08], [0.6, 1.1, 1.08], [1, 1.07, 1.05]], boxy: 0.6 } } }),
+        trousers(LM, [1.06, 1.3], false, 1.04, 1.12), shoes(LM),
       ];
     },
     slots(u, _v, Color) {
