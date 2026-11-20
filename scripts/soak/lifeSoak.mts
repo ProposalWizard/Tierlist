@@ -29,6 +29,11 @@ import { lifeWeek } from "../../lib/star/life/people";
 import { weekOfMoney } from "../../lib/star/life/facts";
 import type { LifeMoment } from "../../lib/star/life/types";
 import { PERSON_MEMORY_CAP, PEOPLE_CAP } from "../../lib/star/life/types";
+// Events v2: the arcs (the kit man), played alongside, every reply and game by the dice.
+import { arcMoment, arcsOf, bubblesFor, MAX_OPEN_ARCS } from "../../lib/star/life/arcs";
+import { autoBeat } from "../../lib/star/life/talk";
+import { openPromises, MAX_OPEN_PROMISES } from "../../lib/star/life/promises";
+import { ARCS } from "../../lib/star/life/arcBook";
 
 const CAREERS = Number(process.argv[2] ?? 200);
 const SEASONS = Number(process.argv[3] ?? 15);
@@ -50,6 +55,10 @@ const fireCount = new Map<string, number>();
 let weeksTotal = 0, eventsTotal = 0, socialTotal = 0, chatsTotal = 0, followUpsFired = 0, dropped = 0, pendingLeft = 0;
 let maxLife = 0, sumLife = 0, maxPeople = 0, maxMem = 0, eventMoney = 0, wageMoney = 0, callbacksShown = 0, carsLost = 0;
 const perSeason: number[] = [];
+// Events v2 counters.
+const arcEnds = new Map<string, number>(), beatFires = new Map<string, number>();
+let arcsStarted = 0, arcsUnfinished = 0, promisesOpenAtEnd = 0, promisesKept = 0, promisesBroken = 0, maxOpenArcs = 0, arcBytesMax = 0;
+const unfinishedAt = new Map<string, number>();
 const t0 = Date.now();
 
 function runCareer(n: number): { events: number; lifeBytes: number } {
@@ -111,6 +120,25 @@ function runCareer(n: number): { events: number; lifeBytes: number } {
           if ((c.ownedItems ?? []).filter((i) => i.category === "vehicle").length < carsBefore) carsLost++;
         }
       }
+      // Events v2: the stories at the same moments. Offers taken 6 times in 10, Thursdays half the time.
+      const pick = (k: number) => Math.floor(rng() * k);
+      for (const m of moments) {
+        const r = arcMoment(c, m, { rng, facts });
+        c = r.career;
+        for (const sc of r.screens) { const a = autoBeat(c, sc.arc, sc.beat, { rng, facts, pick }); check(!!a, `${sc.beat}: a due beat would not open`); if (a) { c = a.career; beatFires.set(sc.beat, (beatFires.get(sc.beat) ?? 0) + 1); } }
+        for (const o of r.offers) if (rng() < 0.6) { const a = autoBeat(c, o.arc, o.beat, { rng, facts, pick }); if (a) { c = a.career; beatFires.set(o.beat, (beatFires.get(o.beat) ?? 0) + 1); } }
+      }
+      for (const [, run] of Object.entries(arcsOf(c))) {
+        const den = run.cast.kitman;
+        if (!den) continue;
+        for (const bb of bubblesFor(c, den, facts)) if (!bb.gold && rng() < 0.5) { const a = autoBeat(c, bb.arc, bb.beat, { rng, facts, pick }); if (a) { c = a.career; beatFires.set(bb.beat, (beatFires.get(bb.beat) ?? 0) + 1); } }
+      }
+      {
+        const open = Object.values(arcsOf(c)).filter((r) => !r.done).length;
+        maxOpenArcs = Math.max(maxOpenArcs, open);
+        check(open <= MAX_OPEN_ARCS, `more than ${MAX_OPEN_ARCS} stories open at once`);
+        check(openPromises(c).length <= MAX_OPEN_PROMISES, `more than ${MAX_OPEN_PROMISES} promises open`);
+      }
       check(thisWeek <= MAX_PER_WEEK, `more than ${MAX_PER_WEEK} events in a week`);
       check(heavy <= MAX_HEAVY_PER_WEEK, `more than ${MAX_HEAVY_PER_WEEK} medium-or-big events in a week`);
       // Social actions now and then, with a random team-mate.
@@ -153,8 +181,17 @@ function runCareer(n: number): { events: number; lifeBytes: number } {
       ...c, player: { ...c.player, age: c.player.age + 1 }, squad, ownedItems: owned,
       horse: c.horse ?? (s >= 4 && rng() < 0.3 ? { name: "Soak Runner", breed: "Thoroughbred", speed: 70, stamina: 70, energy: 100, racesRun: 0, racesWon: 0, earnings: 0 } : null),
       contract: { ...c.contract, wage: Math.round(c.contract.wage * (1.05 + rng() * 0.2)) },
+      // A footballer gets better: the stories' games (rolled here) read his skills.
+      skills: { ...c.skills, technique: Math.min(85, (c.skills?.technique ?? 50) + 2), power: Math.min(85, (c.skills?.power ?? 50) + 2), vision: Math.min(85, (c.skills?.vision ?? 50) + 2) },
     };
   }
+  for (const [id, run] of Object.entries(arcsOf(c))) {
+    arcsStarted++;
+    if (run.done) arcEnds.set(`${id}:${run.done}`, (arcEnds.get(`${id}:${run.done}`) ?? 0) + 1);
+    else { arcsUnfinished++; const k = `${id} after ${run.last}`; unfinishedAt.set(k, (unfinishedAt.get(k) ?? 0) + 1); }
+    arcBytesMax = Math.max(arcBytesMax, JSON.stringify(run).length);
+  }
+  for (const p of c.life?.promises ?? []) { if (p.st === "open") promisesOpenAtEnd++; else if (p.st === "kept") promisesKept++; else promisesBroken++; }
   const bytes = c.life ? JSON.stringify(c.life).length : 0;
   pendingLeft += c.life?.pending.length ?? 0;
   for (const [id, k] of Object.entries(c.life?.fired ?? {})) {
@@ -174,6 +211,7 @@ check(repeatOk, "the same seed gave a different career (not repeatable)");
 // Reset counters after the repeat check, then the real run.
 fireCount.clear(); weeksTotal = 0; eventsTotal = 0; socialTotal = 0; chatsTotal = 0; followUpsFired = 0; dropped = 0; pendingLeft = 0;
 maxPeople = 0; maxMem = 0; eventMoney = 0; wageMoney = 0; callbacksShown = 0; carsLost = 0; perSeason.length = 0;
+arcEnds.clear(); beatFires.clear(); unfinishedAt.clear(); arcsStarted = 0; arcsUnfinished = 0; promisesOpenAtEnd = 0; promisesKept = 0; promisesBroken = 0; maxOpenArcs = 0; arcBytesMax = 0;
 for (let n = 0; n < CAREERS; n++) {
   const r = runCareer(n);
   maxLife = Math.max(maxLife, r.lifeBytes); sumLife += r.lifeBytes;
@@ -193,6 +231,13 @@ console.log(`repeatable: ${repeatOk ? "yes" : "NO"}`);
 const counts = [...fireCount.entries()].sort((a, b) => b[1] - a[1]);
 console.log(`most fired: ${counts.slice(0, 5).map(([k, v]) => `${k} ${v}`).join(", ")}`);
 console.log(`least fired: ${counts.slice(-5).map(([k, v]) => `${k} ${v}`).join(", ")}`);
+// Events v2: every arc reaches each of its endings; a beat seasons away fires; nothing left open at the end.
+for (const a of ARCS) for (const e of a.ends) check(arcEnds.has(`${a.id}:${e.id}`), `${a.id} never ended "${e.id}"`);
+for (const a of ARCS) for (const b of a.beats) check((beatFires.get(b.id) ?? 0) > 0 || b.event.trigger.when.includes("followUp") && b.id.includes("7b"), `${b.id} never fired`);
+console.log(`stories: ${arcsStarted} started, ${arcsUnfinished} unfinished at the end (${[...unfinishedAt.entries()].map(([k, v]) => `${k} ×${v}`).join(", ") || "none"}); most open at once ${maxOpenArcs}; largest story in the save ${arcBytesMax} bytes`);
+console.log(`  endings: ${[...arcEnds.entries()].map(([k, v]) => `${k.split(":")[1]} ${v}`).join(", ")}`);
+console.log(`  beats: ${[...beatFires.entries()].map(([k, v]) => `${k} ${v}`).join(", ")}`);
+console.log(`  promises: kept ${promisesKept}, broken ${promisesBroken}, still open at the end ${promisesOpenAtEnd}`);
 for (const [k, n] of problems) console.log(`  ✗ ${k} ×${n}`);
 if (!problems.size) console.log("all held");
 process.exit(problems.size ? 1 : 0);

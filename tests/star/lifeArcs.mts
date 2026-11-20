@@ -45,6 +45,26 @@ const run = (c: CareerState) => c.life!.arcs![ARC];
 const probs = validateArcs(ARCS);
 check(probs.length === 0, `the arc book passes the v2 checker: ${probs.slice(0, 6).map((p) => `${p.id}: ${p.problem}`).join(" | ")}`);
 
+// 1b: the checker rejects each kind of broken arc (v2 rules).
+{
+  const base = JSON.stringify(ARCS[0]);
+  const broken = (why: string, edit: (a: typeof ARCS[0]) => void, expect: RegExp) => {
+    const a = JSON.parse(base) as typeof ARCS[0];
+    edit(a);
+    const got = validateArcs([a]).map((p) => p.problem);
+    check(got.some((p) => expect.test(p)), `the v2 checker rejects ${why} (got: ${got.slice(0, 3).join(" | ") || "nothing"})`);
+  };
+  const b1 = (a: typeof ARCS[0]) => a.beats[0].event.talk!;
+  broken("a dead end", (a) => { b1(a).nodes["n-leave"].replies = [{ id: "x", label: "x", goto: "n-leave" }]; }, /dead end/);
+  broken("a goto to nowhere", (a) => { b1(a).nodes.n1.replies![0].goto = "nope"; }, /not a node/);
+  broken("an activity that cannot be stopped properly", (a) => { b1(a).nodes.play.result = b1(a).nodes.play.result!.filter(([c]) => c !== "activity.abandoned"); }, /stopping goes nowhere/);
+  broken("an activity with no fallback result", (a) => { b1(a).nodes.play.result = b1(a).nodes.play.result!.filter(([c]) => c !== ""); }, /no fallback result/);
+  broken("a promise with no deadline", (a) => { a.promises["p-thursday"].due = {}; }, /no deadline/);
+  broken("a promise with one ending", (a) => { delete a.promises["p-thursday"].broken; }, /both endings/);
+  broken("an ending never reached", (a) => { a.ends.push({ id: "lost-ending", title: "x", text: "x" }); }, /never reached/);
+  broken("two silences", (a) => { b1(a).nodes.n1.replies!.push({ id: "q2", label: "…", silent: true, goto: "n2" }); }, /more than one silence/);
+}
+
 // 2: the offer, then ignored.
 {
   let c = career();

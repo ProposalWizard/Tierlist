@@ -50,7 +50,7 @@ function play(c: CareerState, arcId: string, o: ArcOutcome | undefined, rng: () 
   const live: LiveEvent = {
     id: `${arcId}-promise`, event: { id: `${arcId}-promise`, title: "", category: "promise", place: "home", size: "small", rarity: "follow-up", template: "text-thread", trigger: { when: ["followUp"] }, cast: [], setup: [], choices: [], callbacks: [] } as LifeEvent,
     moment: "followUp", cast, lines: [], callbacks: [], followUp: true, social: false,
-    choices: [{ id: "p", label: "", costText: [], locked: null, choice: { id: "p", label: "", outcomes: [o] } }],
+    choices: [{ id: "p", label: "", costText: [], locked: null, choice: { id: "p", label: "", outcomes: [{ ...o, text: o.text ?? "" }] } }],
   };
   const r = chooseOption(c, live, "p", { rng, forceOutcome: 0 });
   return r ? { career: r.career, text: r.text, changes: r.changes } : { career: c, text: o.text, changes: [] };

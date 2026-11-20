@@ -590,6 +590,15 @@ export const ADMIN_GUIDES = {
         ["Continue", "Back to People, or to the next thing that happens this week."],
         ["Test tools", "Only in full screen: back to the test page."],
       ] },
+      { group: "Kit man story (Events v2): A hundred balls in the dark", items: [
+        ["▶ Start: 19, a bad Saturday", "A fresh sample (19, rated 6.1 last match) arriving at training: Den is on pitch two and his round menu has the gold Stay out bubble, today only."],
+        ["The gold bubble", "Opens the talk: four rounds or more, no clock (he is in no hurry). Your answers move his mood; 'Was I that bad?' and silence are real answers; walking away is an ending."],
+        ["Den's hundred", "The real match engine (EngineFeature, training's strike picture, keeper off, your club's kit). Ten balls from 12 m; a ball counts when it crosses the line under 1 m within 2 m of a post. Den counts in tens. Stop is an answer. 'Roll it' plays it by the dice (a device that cannot run it)."],
+        ["Jump time", "Next morning (the gaffer, on the dial), Saturday (score and the note in your boot), Next Thursday (the standing 'The hundred' bubble), Season end, and +1/+3/+8 seasons: a skip plays your Thursdays by the dice and stops when the story has something for you (the kit room door, 'I'm finishing in May', his night, the kid)."],
+        ["Switch club", "Moves you to another club: Den rings from the old club's landline and his night clashes with your new club's sponsor dinner."],
+        ["📱 Phone", "Promises (what, who, when; kept and broken) and Stories (the quest log: the beats as dots, Den's clock, the next step and when)."],
+        ["Nothing is saved", "The story lives in this sample career only; the real game does not read it (LIFE_IN_CAREER is false)."],
+      ] },
       { group: "The phone: a Telltale moment", items: [
         ["The grey, slow world", "The other person (or the world) has forced the moment: the picture slows and goes grey, the man you answer keeps his colour. The bench picture stands in for the 3D world."],
         ["The white bar", "The clock. It shrinks to the middle, amber under 40%, red under 20%. When it runs out you said nothing, and that is an answer with its own result."],
@@ -644,7 +653,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing is saved. The sample starts again when you reload the page.", "The decision clock setting is kept in this browser only."],
     inGame: ["Nowhere yet: it is off in the real career (lib/star/life/flag.ts) until Harry says. Phase 2 wires the moments into the game and adds the legend, the star pass story stops and more events."],
-    dev: "app/star-life-dev/page.tsx; screens components/star/life/ (PeoplePage, EventCard, LifeFace, life.css; decision screens Telltale, ToneDial, RoundMenu, DecisionParts, decision.css); decision data lib/star/life/decision.ts (which screen, tones, clock setting, who is listening, the squad line, your voice) and roundMenu.ts (the round menu's API for the 3D world); stills public/star/life/; system lib/star/life/ (types, cond, people, facts, director, resolve, social, sim, migrate, validate, flag); the book lib/star/life/book/events.json; tests/star/lifeEvents.mts; soak scripts/soak/lifeSoak.mts. Design: docs/plans/living-world-design-2026-11-20.md.",
+    dev: "app/star-life-dev/page.tsx; screens components/star/life/ (PeoplePage, EventCard, LifeFace, life.css; decision screens Telltale, ToneDial, RoundMenu, DecisionParts, decision.css); decision data lib/star/life/decision.ts (which screen, tones, clock setting, who is listening, the squad line, your voice) and roundMenu.ts (the round menu's API for the 3D world); stills public/star/life/; system lib/star/life/ (types, cond, people, facts, director, resolve, social, sim, migrate, validate, flag); the book lib/star/life/book/events.json; tests/star/lifeEvents.mts; soak scripts/soak/lifeSoak.mts. Design: docs/plans/living-world-design-2026-11-20.md. Events v2 (the kit man arc): talks lib/star/life/talk.ts, arcs arcs.ts + arcBook.ts (book/arcs/hundred-balls.json), promises promises.ts, checker validateArcs.ts, test tests/star/lifeArcs.mts; screens StoryPlayer, StoryCards, ActivityHost (the drills on EngineFeature); stills public/star/life/kitman/ (people drawn on /star-life-dev/portrait?id=<preset>). Design: docs/plans/living-world-events-v2-2026-11-20.md.",
   },
   "/admin/star-xp": {
     title: "XP Book",

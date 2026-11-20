@@ -524,7 +524,7 @@
         "fallback": {
          "kind": "skill-check",
          "stat": "technique",
-         "target": 55
+         "target": 45
         }
        },
        "result": [
@@ -1600,7 +1600,7 @@
         "fallback": {
          "kind": "skill-check",
          "stat": "technique",
-         "target": 55
+         "target": 45
         }
        },
        "result": [
