@@ -57,3 +57,8 @@ From Harry and Mikey's chat (20 Nov, 03:13–03:19):
 - Harry: map story elements to star pass levels ("level 10 would happen averagely at like 20 yrs old"); "events
   rather than gifts — beat club legend, unlock celebration, wager ur car vs him".
 - PC first; phone gets the simple 3D areas (phone, house, casino); training and in-game 3D maybe PC only.
+
+## Camera for 3D areas (Harry, 20 Nov 2026, 05:45)
+"D is good and should be the base for all 3d areas — I do think maybe you should be able to zoom out though?"
+Camera D: as close as C, centred straight behind you, a slightly higher angle like A. Pinch/scroll to zoom out
+towards A's distance. Every 3D area (house, garden, shop, casino, training centre) uses it as the default.
