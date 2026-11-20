@@ -62,3 +62,10 @@ From Harry and Mikey's chat (20 Nov, 03:13–03:19):
 "D is good and should be the base for all 3d areas — I do think maybe you should be able to zoom out though?"
 Camera D: as close as C, centred straight behind you, a slightly higher angle like A. Pinch/scroll to zoom out
 towards A's distance. Every 3D area (house, garden, shop, casino, training centre) uses it as the default.
+
+## Every house, fully 3D (Harry, 20 Nov 2026, 14:55)
+On the world-kit test (sofa + TV, fridge): "things like the fridge and couch + tv are genuinely incredible, if we
+have this level of 3d throughout the game this is gonna be insane, the environment and house itself is looking
+better but could still improve, also remember there is gonna be like 2-8 house options and we need 3D FOR ALL OF them."
+=> Every house tier (starter, flat, penthouse, house, villa, estate, and any later ones) gets the full 3D treatment:
+its own rooms, look pass, and usable things (sofa, TV, fridge, bed, mirror, shower, gym, pool…) from the world kit.
