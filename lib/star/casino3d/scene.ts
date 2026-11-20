@@ -64,6 +64,7 @@ import { Governor, sessionStartTier } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
 import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows, compileForBake, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
 import { OrbitCam } from "../three3d/orbitCam";
+import { FOLLOW_CAM_D, FollowCarry, boxRoom, FollowZoom, attachFollowZoom, loadFollowZoom, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
 import { casinoRoomLook } from "./roomLook";
 import { dressCasinoH, type CasinoH } from "./hRoom";
 import { clampBoom, type V3 } from "./camera";
@@ -683,11 +684,17 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   const ku = (e: KeyboardEvent) => onKey(e, false);
   window.addEventListener("keydown", kd);
   window.addEventListener("keyup", ku);
+  // Casino look New walks with camera D (../three3d/followCam.ts): close, centred behind him;
+  // pinch / wheel zooms out to about the room's camera before it, remembered per device. Old keeps its camera.
+  const zoom = H ? new FollowZoom(loadFollowZoom()) : null;
+  const CS: FollowCam = zoomedFollowCam(zoom?.now ?? 0, FOLLOW_CAM_D);
+  const detachZoom = zoom ? attachFollowZoom(container, zoom) : () => {};
+  const carry = new FollowCarry(); // New: his steps go straight into the camera (only turning is eased)
   const resize = () => {
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    camera.fov = w / h < 0.7 ? 62 : 54;
+    camera.fov = w / h < 0.7 ? (H ? CS.fov : 62) : 54;
     camera.updateProjectionMatrix();
   };
   const ro = new ResizeObserver(resize);
@@ -937,14 +944,25 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
 
     // the camera follows behind him, inside the room (or, playing a game,
     // glides in to the game's close-up)
+    if (zoom) {
+      zoom.step(dt);
+      zoomedFollowCam(zoom.now, FOLLOW_CAM_D, CS);
+      if (!focused && container.clientWidth / (container.clientHeight || 1) < 0.7 && Math.abs(camera.fov - CS.fov) > 1e-3) { camera.fov = CS.fov; camera.updateProjectionMatrix(); }
+    }
     if (H) camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
-    else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
+    else if (speed > 0.3) {
+      // New: walking straight at the camera, it holds its side and backs off rather than swinging over
+      // his head, until a wall stops it backing off (as the house: ../three3d/followCam.ts)
+      const roomBack = boxRoom(player.position.x, player.position.z, Math.sin(camYaw), Math.cos(camYaw), -ROOM.x + 0.35, ROOM.x - 0.35, -ROOM.z + 0.35, ROOM.z - 0.35);
+      const toCam = !H || roomBack < CS.back * 0.6 ? 0 : Math.max(0, Math.min(1, (Math.cos(angDiff(yaw, camYaw)) - 0.3) / 0.5));
+      camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * (H ? CS.yawK : 1.6)) * (1 - toCam);
+    }
     const cfx = -Math.sin(camYaw), cfz = -Math.cos(camYaw);
     if (H) {
-      // a touch lower than Old (2.85 m) so the view runs under the chandeliers, tilted by the drag,
+      // camera D under the chandeliers, tilted by the drag,
       // and the boom stops short of any lamp, wall or the ceiling (./camera.ts)
-      const [cy, back] = orb.lift(2.55, 4.4, 1.0);
+      const [cy, back] = orb.lift(CS.height, CS.back, CS.lookY);
       const p = clampBoom([player.position.x, 1.55, player.position.z], [player.position.x - cfx * back, cy, player.position.z - cfz * back], ROOM, lampsAt);
       want.set(p[0], p[1], p[2]);
     } else {
@@ -952,10 +970,12 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       want.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, want.x));
       want.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, want.z));
     }
-    wantLook.set(player.position.x + cfx * 2.4, 1.0, player.position.z + cfz * 2.4);
+    if (H) wantLook.set(player.position.x + cfx * CS.lookAhead, CS.lookY, player.position.z + cfz * CS.lookAhead);
+    else wantLook.set(player.position.x + cfx * 2.4, 1.0, player.position.z + cfz * 2.4);
     if (focused) { want.set(...FOCUS[focused].pos); wantLook.set(...FOCUS[focused].look); }
     const glide = focused || glideOut > 0 ? 2.6 : 5;
     if (glideOut > 0) glideOut -= dt;
+    carry.step(player.position.x, player.position.z, camPos, camLook, H && !first && !focused && glideOut <= 0);
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
     else { camPos.lerp(want, Math.min(1, dt * glide)); camLook.lerp(wantLook, Math.min(1, dt * (glide + 1))); }
     if (H && !focused && glideOut <= 0) {
@@ -979,7 +999,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
 
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
     drawn++;
-    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || camPos.distanceToSquared(want) > 1e-4
+    busy = !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || camPos.distanceToSquared(want) > 1e-4
       || games.busy() || pullT >= 0 || Math.abs(seat - seatWant) > 0.01;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
@@ -1089,6 +1109,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), frames: drawn, quality: tier, merged: frozen }),
     dispose: () => {
       disposed = true;
+      detachZoom();
       gov.dispose();
       games.dispose();
       savings.dispose();

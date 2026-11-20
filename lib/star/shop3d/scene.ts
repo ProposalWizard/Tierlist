@@ -51,6 +51,7 @@ import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { look3dStyle } from "../look3dStyle";
 import { dressShopH } from "./hRoom";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
+import { FOLLOW_CAM_D, FollowBoom, FollowCarry, FollowZoom, attachFollowZoom, boxRoom, capOnLine, loadFollowZoom, riseForMin, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
 import { safeCompileAsync } from "../three3d/safeCompile";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
 
@@ -1170,6 +1171,13 @@ async function buildShop(
   let camYaw = 0; // camera looks along -z at 0
   let orbitHold = 0;
   const orb = new OrbitCam(); // the look-around drag, eased (shared with the garden)
+  // the walking camera is camera D (../three3d/followCam.ts): close, centred behind him; pinch / wheel
+  // zooms out to about the shop's camera before it (4.6 m), remembered per device. The boom eases off the walls.
+  const zoom = new FollowZoom(loadFollowZoom());
+  const CS: FollowCam = zoomedFollowCam(zoom.now, FOLLOW_CAM_D);
+  const detachZoom = attachFollowZoom(container, zoom);
+  const boom = new FollowBoom();
+  const carry = new FollowCarry(); // his steps go straight into the camera (only turning is eased)
   let near: DisplayId | null = null;
   /** The card's dwell (./dwell.ts): the display area he is in, its timer, a tap-walk that just arrived. */
   let dwellZone: DisplayId | null = null;
@@ -1216,7 +1224,7 @@ async function buildShop(
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     // a tall phone screen sees more of the room with a wider lens
-    camera.fov = w / h < 0.7 ? 60 : 54;
+    camera.fov = w / h < 0.7 ? CS.fov : 54;
     baseFov = camera.fov;
     lastOff = -1;
     camera.updateProjectionMatrix();
@@ -1451,15 +1459,31 @@ async function buildShop(
     }
 
     // camera: follows behind him; with a card open it moves in on the item
+    zoom.step(dt);
+    zoomedFollowCam(zoom.now, FOLLOW_CAM_D, CS);
+    if (!edit?.views && container.clientWidth / (container.clientHeight || 1) < 0.7 && Math.abs(camera.fov - CS.fov) > 1e-3) { camera.fov = baseFov = CS.fov; camera.updateProjectionMatrix(); }
     camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
-    else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
+    else if (speed > 0.3) {
+      // walking straight at the camera, it holds its side and backs off (never swings over his head)
+      // until a wall stops it backing off (as the house: ../three3d/followCam.ts)
+      const back0 = boxRoom(player.position.x, player.position.z, Math.sin(camYaw), Math.cos(camYaw), -ROOM.x + 0.3, ROOM.x - 0.3, -ROOM.z + 0.3, ROOM.z - 0.35);
+      const toCam = back0 < CS.back * 0.6 ? 0 : Math.max(0, Math.min(1, (Math.cos(angDiff(yaw, camYaw)) - 0.3) / 0.5));
+      camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * CS.yawK) * (1 - toCam);
+    }
     frame += ((shot && orbitHold <= 0 ? 1 : 0) - frame) * Math.min(1, dt * 2.6);
     const cf = scratchCf.set(-Math.sin(camYaw), 0, -Math.cos(camYaw));
     const cr = scratchCr.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
-    const [camUp, camBack] = orb.lift(2.85, 4.6, 0.95); // the drag's tilt, same distance from him
-    want.set(player.position.x, camUp, player.position.z).addScaledVector(cf, -camBack).addScaledVector(cr, 0.3);
-    wantLook.set(player.position.x, 0.95, player.position.z).addScaledVector(cf, 2.4).addScaledVector(cr, 0.15);
+    const [camUp, camBack] = orb.lift(CS.height, CS.back, CS.lookY); // the drag's tilt, same distance from him
+    // the room free behind him along the camera's line (inside the walls): the boom eases in and out, never through
+    const px = player.position.x, pz = player.position.z;
+    const freeAt = (dx: number, dz: number) => boxRoom(px, pz, dx, dz, -ROOM.x + 0.3, ROOM.x - 0.3, -ROOM.z + 0.3, ROOM.z - 0.35);
+    if (first) boom.reset();
+    const len = boom.step(camBack, freeAt(-cf.x, -cf.z), dt);
+    want.set(px, riseForMin(len, camUp + (camBack - len) * CS.riseIfShort, ROOM.h - 0.25), pz).addScaledVector(cf, -len).addScaledVector(cr, CS.side);
+    // close in (a wall behind him), it looks down at him rather than past him
+    const closeK = Math.max(0, Math.min(1, (1.6 - len) / 1.2));
+    wantLook.set(px, CS.lookY + (1.2 - CS.lookY) * closeK, pz).addScaledVector(cf, (CS.lookAhead + (camBack - len) * 0.3) * (1 - closeK)).addScaledVector(cr, CS.lookSide);
     // the editor's view edits (none = as written): walking, and the card shot of what is picked
     if (edit?.views) {
       if (edit.views.follow) want.set(...editCamera([want.x, want.y, want.z], [wantLook.x, wantLook.y, wantLook.z], edit.views.follow));
@@ -1474,9 +1498,12 @@ async function buildShop(
     want.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, want.x));
     want.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, want.z));
     // walking out of the door: the camera stays inside, looking out
+    carry.step(px, pz, camPos, camLook, !first && frame < 0.5);
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
     else { camPos.lerp(want, Math.min(1, dt * 5)); camLook.lerp(wantLook, Math.min(1, dt * 6)); }
-    // the eased camera stays inside the room too (it used to cut a corner through the wall while catching up)
+    // the eased camera stays inside the room too (it used to cut a corner through the wall while catching up):
+    // walking, shortened along its own line from him and risen over him, never slid round onto his head
+    if (frame < 0.5) camPos.y = riseForMin(capOnLine(camPos, px, pz, freeAt), camPos.y, ROOM.h - 0.25);
     camPos.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, camPos.x));
     camPos.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, camPos.z));
     camPos.y = Math.max(CAM_MIN_Y, Math.min(ROOM.h - 0.25, camPos.y));
@@ -1552,7 +1579,7 @@ async function buildShop(
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
     drawn++;
     // busy (walking, turning, the camera moving): every frame, fewer pixels
-    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
+    busy = zoom.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       // dynamic resolution: judged only while moving at the full cap
@@ -1664,6 +1691,7 @@ async function buildShop(
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, shadowRenders, frames: drawn, merged: frozen, quality: tier }),
     dispose: () => {
       disposed = true;
+      detachZoom();
       gov.dispose();
       savings.dispose();
       hEnh?.dispose();

@@ -65,6 +65,7 @@ import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footba
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
+import { FOLLOW_CAM_D, FollowCarry, FollowZoom, attachFollowZoom, loadFollowZoom, riseForMin, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
 import { cullSkinned } from "../three3d/cullPeople";
 import {
@@ -200,6 +201,9 @@ const HOUSE = { x: 17.95, z: 6.6 };
 const HOUSE_DOOR = { half: 0.65, h: 2.3 };
 const START_HOUSE = { x: HOUSE.x - 1.6, z: HOUSE.z, yaw: -Math.PI / 2 };
 /** The follow camera: how far behind him, and how high. */
+// The walking camera is camera D (../three3d/followCam.ts, Harry 20 Nov 2026: "D is good and
+// should be the base for all 3D areas"): 2.5 m behind, centred, pinch / wheel zooms out to
+// 4.4 m. The garden's own camera before it (6.3 m back, 2.75 m up) is the start pose only.
 const CAM_BACK = 6.3;
 const CAM_UP = 2.75;
 const WALK = 1.55;
@@ -2310,6 +2314,11 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   /** The shown facing's turn speed (three3d/animBlend.ts turnTo: turns ease in and out). */
   const yawTurn = { yaw: 0, vel: 0 };
   const orb = new OrbitCam(); // the look-around drag, eased (shared with the shop)
+  // camera D and its zoom (pinch / wheel, remembered per device, shared by every 3D area)
+  const zoom = new FollowZoom(loadFollowZoom());
+  const CS: FollowCam = zoomedFollowCam(zoom.now, FOLLOW_CAM_D);
+  const detachZoom = attachFollowZoom(container, zoom);
+  const carry = new FollowCarry(); // his steps go straight into the camera (only turning is eased)
   let near: GardenSpot | null = null;
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0, gameT = 0;
   let doorFired = false;
@@ -2336,7 +2345,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    camera.fov = w / h < 0.7 ? 62 : 54;
+    camera.fov = w / h < 0.7 ? CS.fov : 54;
     baseFov = camera.fov;
     camera.updateProjectionMatrix();
   };
@@ -2716,10 +2725,19 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     casinoPulse?.(gameT);
     clouds.forEach((c, i) => { c.position.x += Math.sin(i) * dt * 0.25; });
 
-    // the camera follows behind him
+    // the camera follows behind him: camera D at the zoom's distance
+    zoom.step(dt);
+    zoomedFollowCam(zoom.now, FOLLOW_CAM_D, CS);
+    if (!edit?.views?.follow && container.clientWidth / (container.clientHeight || 1) < 0.7 && Math.abs(camera.fov - CS.fov) > 1e-3) { camera.fov = baseFov = CS.fov; camera.updateProjectionMatrix(); }
     camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
-    else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
+    else if (speed > 0.3) {
+      // walking straight at the camera, it holds its side and backs off rather than swinging over his
+      // head, until the boundary stops it backing off (as the house: ../three3d/followCam.ts)
+      const roomBack = exitGarden(player.position.x, player.position.z, Math.sin(camYaw), Math.cos(camYaw));
+      const toCam = roomBack < CS.back * 0.6 ? 0 : Math.max(0, Math.min(1, (Math.cos(angDiff(yaw, camYaw)) - 0.3) / 0.5));
+      camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * CS.yawK) * (1 - toCam);
+    }
     // The gazebo between him and the camera (standing south of it, looking at
     // the cars, put the camera among its posts with the team-mates filling
     // the picture): swing the camera round to the nearest side that's clear.
@@ -2727,7 +2745,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       const hx = player.position.x, hz = player.position.z;
       const inGz = hx > GZ_BOX[0] && hx < GZ_BOX[1] && hz > GZ_BOX[2] && hz < GZ_BOX[3];
       // (with room to spare round it, so no post stands right beside the camera)
-      const gzClear = (dx: number, dz: number) => inGz || enterBox(hx, hz, dx, dz, GZ_BOX[0] - 0.6, GZ_BOX[1] + 0.6, GZ_BOX[2] - 0.6, GZ_BOX[3] + 0.6) >= CAM_BACK;
+      const gzClear = (dx: number, dz: number) => inGz || enterBox(hx, hz, dx, dz, GZ_BOX[0] - 0.6, GZ_BOX[1] + 0.6, GZ_BOX[2] - 0.6, GZ_BOX[3] + 0.6) >= CS.back;
       // THE CAR PARK BUG (7 Oct 2026, "player not drawn at the car park, once
       // in 4 runs"): with his back to the boundary (behind the cars, walking
       // back to the garden) the camera stood 6.3 m behind him, outside the
@@ -2738,7 +2756,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       const wallRoom = (dx: number, dz: number) => exitGarden(hx, hz, dx, dz);
       const clear = (off: number) => {
         const dx = Math.sin(camYaw + off), dz = Math.cos(camYaw + off);
-        return gzClear(dx, dz) && wallRoom(dx, dz) >= CAM_BACK * 0.7;
+        return gzClear(dx, dz) && wallRoom(dx, dz) >= CS.back * 0.7;
       };
       let target = 0;
       if (!clear(dodge)) {
@@ -2762,10 +2780,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       if (Math.abs(dodge) < 1e-3) dodge = 0;
     }
     const cfx = -Math.sin(camYaw + dodge), cfz = -Math.cos(camYaw + dodge);
-    // lower and further back than before: more garden and sky in the frame
-    const [camUp, camBack] = orb.lift(CAM_UP, CAM_BACK, 1.3); // the drag's tilt, same distance from him
+    // camera D: close, centred behind him, a little above looking down at him
+    const [camUp, camBack] = orb.lift(CS.height, CS.back, CS.lookY); // the drag's tilt, same distance from him
     want.set(player.position.x - cfx * camBack, camUp, player.position.z - cfz * camBack);
-    wantLook.set(player.position.x + cfx * 2.4, 1.3, player.position.z + cfz * 2.4);
+    wantLook.set(player.position.x + cfx * CS.lookAhead, CS.lookY, player.position.z + cfz * CS.lookAhead);
     // the editor's walking-camera edit (none = as written); the boom below still keeps it clear of walls
     if (edit?.views?.follow) {
       want.set(...editCamera([want.x, want.y, want.z], [wantLook.x, wantLook.y, wantLook.z], edit.views.follow));
@@ -2782,7 +2800,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       const inGz = hx > GZ_BOX[0] && hx < GZ_BOX[1] && hz > GZ_BOX[2] && hz < GZ_BOX[3];
       if (!inGz) {
         const t = enterBox(hx, hz, ux, uz, ...GZ_BOX);
-        if (t < boom) boom = Math.max(2.2, t - 0.2);
+        if (t < boom) boom = Math.max(Math.min(2.2, L), t - 0.2);
       }
       // the boundary: never out past it (the wall would hide him)
       const tw = exitGarden(hx, hz, ux, uz);
@@ -2796,8 +2814,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       }
       if (boom < L) {
         want.x = hx + ux * boom; want.z = hz + uz * boom;
-        // closer in, a little lower, so it still looks over his shoulder
-        want.y = Math.max(CAM_MIN_Y, camUp - 0.75 * Math.max(0, Math.min(1, (L - boom) / 4)));
+        // closer in, a little lower, so it still looks over his shoulder, but never jammed on his head
+        want.y = riseForMin(boom, Math.max(CAM_MIN_Y, camUp - 0.75 * Math.max(0, Math.min(1, (L - boom) / 4))));
       }
       fountainHide += ((hideTop ? 1 : 0) - fountainHide) * Math.min(1, dt * 9);
       const op = 1 - fountainHide;
@@ -2821,8 +2839,9 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     camRay.camera = camera;
     const block = camRay.intersectObjects(occluders.filter(Boolean), true)[0];
     lastBlock = block ? { d: +block.distance.toFixed(2), what: String(block.object?.parent?.name || block.object?.name || block.object?.type) } : null;
-    if (block) want.copy(headPos).addScaledVector(rayDir, Math.max(1.2, block.distance - 0.35));
+    if (block) { want.copy(headPos).addScaledVector(rayDir, Math.max(1.2, block.distance - 0.35)); want.y = riseForMin(Math.hypot(want.x - headPos.x, want.z - headPos.z), want.y); }
     const camWas = camPos.clone();
+    carry.step(player.position.x, player.position.z, camPos, camLook, !first && !testCam);
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; shadowDirty = true; }
     else { camPos.lerp(want, Math.min(1, dt * (block ? 12 : 5))); camLook.lerp(wantLook, Math.min(1, dt * 6)); }
     // the eased camera must not lag into what the boom stopped short of (a tree, a wall): never further out than the clear distance
@@ -2860,7 +2879,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 
     // busy (walking, turning, the camera swinging): full frame rate at fewer
     // pixels; still: 30 a second at full pixels
-    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || camWas.distanceToSquared(camPos) > 1e-6 || !!faceTo;
+    busy = zoom.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || camWas.distanceToSquared(camPos) > 1e-6 || !!faceTo;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       // dynamic resolution: judged only while moving at the full cap (the
@@ -3003,6 +3022,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     },
     dispose: () => {
       disposed = true;
+      detachZoom();
       gov.dispose();
       savings.dispose();
       hEnh?.dispose();

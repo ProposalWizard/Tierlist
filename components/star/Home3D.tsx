@@ -66,7 +66,7 @@ export interface Home3DProps {
   chrome?: boolean;
   /** The house is ready: its controller (the 3D phone test page drives the camera with it). */
   onReady?: (c: HomeController) => void;
-  /** Test page only: the walking camera to try (lib/star/home3d/scene.ts HOUSE_CAMS). Absent or "A": the game's camera. */
+  /** Test page only: the walking camera to try (lib/star/home3d/scene.ts HOUSE_CAMS). Absent or "D": the game's camera (D, with its zoom). */
   houseCam?: "A" | "B" | "C" | "D";
 }
 
@@ -170,7 +170,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           fixedStep: q.get("film") === "1" ? 1 / 30 : undefined,
           edit: approvedRef.current,
           ...(pov ? { pov: true } : {}),
-          ...(houseCam && houseCam !== "A" ? { houseCam } : {}),
+          ...(houseCam && houseCam !== "D" ? { houseCam } : {}),
         });
         let c: HomeController;
         try {

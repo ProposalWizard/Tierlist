@@ -56,7 +56,7 @@ import { roomPlan, roomFiles, arrivalAt, arrivalDoor, type DoorPlan, type HomeSp
 import { buildRoom, disposeGroup, roomFree, MIRROR_LAYER, MIRROR_PX, type BuiltRoom, type RoomEnv, type RoomInput } from "./roomBuild";
 import { safeCompileAsync } from "../three3d/safeCompile";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
-import { FOLLOW_CAM_D, FollowZoom, attachFollowZoom, loadFollowZoom, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
+import { FOLLOW_CAM_D, FollowBoom, FollowCarry, FollowZoom, FOLLOW_HEAD_Y, attachFollowZoom, boxRoom, capOnLine, followFade, loadFollowZoom, riseForMin, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
 
 export type { HomeSpot } from "./rooms";
 
@@ -77,10 +77,11 @@ export const ROOM_CAM = {
 };
 
 /**
- * The walking camera, three ways to compare on the 3D phone test page only
- * (Harry, 20 Nov 2026: "the over the shoulder angle when walking in the house
- * felt a bit weird"). A is the game's camera (ROOM_CAM, exactly as before);
- * B and C are tried with HomeOptions.houseCam and never change the game.
+ * The walking camera, four ways (Harry, 20 Nov 2026: "the over the shoulder angle
+ * when walking in the house felt a bit weird"). D is the game's camera since
+ * 20 Nov 2026 ("should camera D go into the real game?" "yes"); A (the game's
+ * before, ROOM_CAM), B and C stay for comparing on the 3D phone test page
+ * (HomeOptions.houseCam, ?cam=A|B|C there).
  *   A  as the game: high (2.9 m), 4.4 m back, looking steeply down past him,
  *      a little to one side, swinging up to 70° round him near walls.
  *   B  "calm follow": lower (2.3 m) and centred, looking at his chest so the
@@ -109,10 +110,7 @@ export type HouseCam = keyof typeof HOUSE_CAMS;
  * instead of sliding sideways round him. Pure (tests/star/home3d.mts).
  */
 export function roomCamBoom(px: number, pz: number, dx: number, dz: number, want: number, w2: number, d2: number): number {
-  let t = want;
-  if (dx > 1e-6) t = Math.min(t, (w2 - px) / dx); else if (dx < -1e-6) t = Math.min(t, (-w2 - px) / dx);
-  if (dz > 1e-6) t = Math.min(t, (d2 - pz) / dz); else if (dz < -1e-6) t = Math.min(t, (-d2 - pz) / dz);
-  return Math.max(0.6, t);
+  return Math.max(0.6, boxRoom(px, pz, dx, dz, -w2, w2, -d2, d2, want));
 }
 
 /**
@@ -188,7 +186,7 @@ export interface HomeOptions {
    *  hidden), for a phone held up in front of them; setPov eases back out to
    *  the normal camera. Absent = the house exactly as before. */
   pov?: boolean;
-  /** The 3D phone test page only: try walking camera B or C (HOUSE_CAMS). Absent = A, the game's camera. */
+  /** The 3D phone test page only: try walking camera A, B or C (HOUSE_CAMS). Absent = D, the game's camera (with its zoom). */
   houseCam?: HouseCam;
 }
 
@@ -420,10 +418,16 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   // ── State ──
   let stick = { x: 0, y: 0 };
   const keys = new Set<string>();
-  /** The walking camera (A = the game's, unless the test page asks for B or C). */
-  let CS: FollowCam = HOUSE_CAMS[opts.houseCam ?? "A"];
+  /** The walking camera (D = the game's, unless the test page asks for A, B or C). */
+  const camKey: HouseCam = opts.houseCam ?? "D";
+  let CS: FollowCam = HOUSE_CAMS[camKey];
   // D zooms (pinch / wheel) between D and about A's distance, remembered per device (three3d/followCam.ts)
-  const zoom = opts.houseCam === "D" ? new FollowZoom(loadFollowZoom()) : null;
+  const zoom = camKey === "D" ? new FollowZoom(loadFollowZoom()) : null;
+  /** The boom behind him, eased on its own off the walls (the doorway jam: three3d/followCam.ts). */
+  const boom = new FollowBoom();
+  const carry = new FollowCarry();
+  /** How far (flat) the camera stood from him last frame. */
+  let lastFlat = 9;
   const zoomCam: FollowCam = { ...FOLLOW_CAM_D };
   const detachZoom = zoom ? attachFollowZoom(container, zoom) : null;
   if (zoom) CS = zoomedFollowCam(zoom.now, FOLLOW_CAM_D, zoomCam);
@@ -564,7 +568,15 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     grid = null;
     framed = null; frame = 0; dwellZone = null; dwell = { timer: 0, open: false }; arrivedAt = null; spotWalk = null;
     const door = arrivalDoor(room.plan, from);
-    const at = door ? arrivalAt(door, 1.5) : room.start; // far enough in that the camera has room behind him
+    // far enough in that the camera has room behind him: camera D's whole boom where the floor is
+    // clear (the doorway jam: 1.5 m in left it 1.2 m, right on the back of his head), else 1.5 m
+    let at = door ? arrivalAt(door, 1.5) : room.start;
+    if (door && camKey === "D") {
+      for (let d = Math.min(3.2, CS.back + 0.45); d > 1.5; d -= 0.25) {
+        const a = arrivalAt(door, d);
+        if (roomFree(room, a.x, a.z) && Math.abs(a.x) < room.w2 - 0.6 && Math.abs(a.z) < room.d2 - 0.6) { at = a; break; }
+      }
+    }
     me.person.root.position.set(at.x, 0, at.z);
     yaw = at.yaw; yawTurn.vel = 0; me.person.root.rotation.y = yaw;
     camYaw = openCamYaw(at.x, at.z, yaw + Math.PI, CS.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap, CS.swing); orb.reset(); first = true;
@@ -782,7 +794,15 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     }
     camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
-    else if (speed > 0.3) camYaw += angDiff(camYaw, openCamYaw(P.x, P.z, yaw + Math.PI, CS.back, W2 - ROOM_CAM.wallGap, D2 - ROOM_CAM.wallGap, CS.swing)) * Math.min(1, dt * CS.yawK);
+    else if (speed > 0.3) {
+      // camera D backed onto a wall (walking back towards the door he came in by): it may swing
+      // further round him, like the old camera, to where there is room, instead of closing in on his head
+      const blocked = camKey === "D" && boxRoom(P.x, P.z, Math.sin(camYaw), Math.cos(camYaw), -W2 + ROOM_CAM.wallGap, W2 - ROOM_CAM.wallGap, -D2 + ROOM_CAM.wallGap, D2 - ROOM_CAM.wallGap) < CS.back * 0.6;
+      // walking straight at the camera (turned round), D holds its side and backs off, so the camera
+      // never swings over his head; it swings round only once a wall stops it backing off
+      const toCam = camKey === "D" && !blocked ? Math.max(0, Math.min(1, (Math.cos(angDiff(yaw, camYaw)) - 0.3) / 0.5)) : 0;
+      camYaw += angDiff(camYaw, openCamYaw(P.x, P.z, yaw + Math.PI, CS.back, W2 - ROOM_CAM.wallGap, D2 - ROOM_CAM.wallGap, blocked ? 6 : CS.swing)) * Math.min(1, dt * CS.yawK * (blocked ? 1.6 : 1)) * (1 - toCam);
+    }
     const shot0 = framed ? shotOf(framed) : null;
     // the editor's card-shot edit (none = as written; the room's own shot is never changed in place)
     const shot = shot0 && framed && edit?.views?.[framed] ? { cam: editCamera(shot0.cam, shot0.look, edit.views[framed]), look: shot0.look } : shot0;
@@ -796,11 +816,20 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     const crr = scratchCr.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
     const ceil = H - ROOM_CAM.ceilingGap;
     const [camUp0, camBack0] = orb.lift(Math.min(ceil, CS.height), back, CS.lookY);
-    const room2 = Math.max(CS.minBoom, roomCamBoom(P.x, P.z, -cf.x, -cf.z, camBack0, W2 - ROOM_CAM.wallGap, D2 - ROOM_CAM.wallGap));
+    const wx = W2 - ROOM_CAM.wallGap, wz = D2 - ROOM_CAM.wallGap;
+    // the room free behind him along the camera's line: the boom eases in off a wall and back out,
+    // never past it (just through a doorway it used to lag into the wall and slide onto his head)
+    const freeAt = (dx: number, dz: number) => boxRoom(P.x, P.z, dx, dz, -wx, wx, -wz, wz);
+    if (first) boom.reset();
+    const room2 = camKey === "D" ? boom.step(camBack0, freeAt(-cf.x, -cf.z), dt) : Math.max(CS.minBoom, roomCamBoom(P.x, P.z, -cf.x, -cf.z, camBack0, wx, wz));
     const short = camBack0 - room2;
-    const camUp = Math.min(ceil, camUp0 + short * CS.riseIfShort);
+    const camUp = camKey === "D" ? riseForMin(room2, Math.min(ceil, camUp0 + short * CS.riseIfShort), ceil) : Math.min(ceil, camUp0 + short * CS.riseIfShort);
     want.set(P.x, camUp, P.z).addScaledVector(cf, -room2).addScaledVector(crr, CS.side);
-    wantLook.set(P.x, CS.lookY, P.z).addScaledVector(cf, CS.lookAhead + short * 0.5).addScaledVector(crr, CS.lookSide);
+    if (camKey === "D") {
+      // close in (a wall behind him), D looks down at him rather than past him, so he stays in the picture
+      const closeK = Math.max(0, Math.min(1, (1.6 - lastFlat) / 1.2));
+      wantLook.set(P.x, CS.lookY + (1.2 - CS.lookY) * closeK, P.z).addScaledVector(cf, (CS.lookAhead + short * 0.3) * (1 - closeK)).addScaledVector(crr, CS.lookSide);
+    } else wantLook.set(P.x, CS.lookY, P.z).addScaledVector(cf, CS.lookAhead + short * 0.5).addScaledVector(crr, CS.lookSide);
     // the editor's walking-camera edit (none = as written); inRoom below still keeps it inside the walls
     if (edit?.views) {
       if (edit.views.follow) want.set(...editCamera([want.x, want.y, want.z], [wantLook.x, wantLook.y, wantLook.z], edit.views.follow));
@@ -812,12 +841,23 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     if (shot) { want.lerp(scratchShot.set(...shot.cam), frame); wantLook.lerp(scratchShot.set(...shot.look), frame); }
     const inRoom = (v: any) => { v.x = Math.max(-W2 + 0.25, Math.min(W2 - 0.25, v.x)); v.z = Math.max(-D2 + 0.25, Math.min(D2 - 0.25, v.z)); v.y = Math.max(CAM_MIN_Y, Math.min(H - 0.15, v.y)); };
     inRoom(want);
+    carry.step(P.x, P.z, camPos, camLook, camKey === "D" && !first && !intro && frame < 0.5 && !dbgCam);
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
     else { camPos.lerp(want, Math.min(1, dt * CS.posK)); camLook.lerp(wantLook, Math.min(1, dt * CS.lookK)); }
+    let meA = 1;
+    if (camKey === "D" && frame < 0.5 && !intro) {
+      // the eased camera too: shortened along its own line off a wall (never slid round onto his head),
+      // risen over him if that brings it near, and if a ceiling stops the rise he fades a little
+      const flat = capOnLine(camPos, P.x, P.z, freeAt);
+      lastFlat = flat;
+      camPos.y = riseForMin(flat, camPos.y, H - 0.15);
+      meA = followFade(Math.hypot(flat, camPos.y - FOLLOW_HEAD_Y));
+    }
     inRoom(camPos);
     if (dbgCam) { camera.position.set(...dbgCam.pos); camera.lookAt(...dbgCam.look); }
     else { camera.position.copy(camPos); camera.lookAt(camLook); }
     if (pov !== null && !dbgCam) applyPov(P);
+    else if (camKey === "D") setMeAlpha(meA);
     // a card open: the picture slides up so the spot sits above the card
     const vw = container.clientWidth || 1, vh = container.clientHeight || 1;
     const offY = dbgCam ? 0 : Math.round(frame * (framed === "wardrobe" ? 0.24 : 0.17) * vh);

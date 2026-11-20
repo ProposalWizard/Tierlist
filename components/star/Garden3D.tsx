@@ -214,6 +214,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
         onPointerMove={(e) => {
           const d = drag.current;
           if (!d || d.id !== e.pointerId) return;
+          if (holder.current?.dataset.pinching) { d.moved += 99; d.x = e.clientX; d.y = e.clientY; return; } // two fingers: the zoom (three3d/followCam.ts), not a look-round
           d.moved += Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y);
           ctrlRef.current?.orbit(e.clientX - d.x, e.clientY - d.y);
           d.x = e.clientX; d.y = e.clientY;

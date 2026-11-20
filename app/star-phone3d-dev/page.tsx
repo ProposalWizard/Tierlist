@@ -156,7 +156,7 @@ function Phone3dTest() {
   const params = useSearchParams();
   const film = params.get("film") === "1";
   const blink: Blink = params.get("blink") === "A" ? "A" : params.get("blink") === "old" ? "old" : "B";
-  /** The house's walking camera (lib/star/home3d/scene.ts HOUSE_CAMS): D by default (Harry's pick, 20 Nov), ?cam=A (as the game), B, C. */
+  /** The house's walking camera (lib/star/home3d/scene.ts HOUSE_CAMS): D by default (Harry's pick, 20 Nov; the game's camera since), ?cam=A (the game's before), B, C. */
   const cam = (["A", "B", "C", "D"] as const).find((c) => c === params.get("cam")) ?? "D";
   const [scene, setScene] = useState<Scene>("home");
   const [note, setNote] = useState<string | null>(null);
