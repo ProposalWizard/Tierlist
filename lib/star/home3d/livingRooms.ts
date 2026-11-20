@@ -527,7 +527,7 @@ export function buildPoolTerrace(c: Ctx, _h: LivingHooks) {
     X.things.push(seatObject({ id: `lounger${i}`, label: "Lounger", at: [lx, lz - 0.05], facing: 0, seats: 1, y: 0.4, front: 0.22, verb: "Sunbathe", lines: ["Soak up the sun for a bit."] }));
     X.things[X.things.length - 1].effect = { mood: 1, text: "Topped up the tan. Mood +1" };
   });
-  for (const [ux, uz, col] of [[(lxs[0] + (lxs[1] ?? lxs[0])) / 2, lz - 0.3, "#f4efe6"], [W2 - 1.2, D2 - 1.3, c.inp.kits.home.shirt]] as [number, number, string][]) {
+  for (const [ux, uz, col] of [[(lxs[0] + (lxs[1] ?? lxs[0])) / 2, lz - 0.3, "#f4efe6"], [-W2 + 1.2, D2 - 1.3, c.inp.kits.home.shirt]] as [number, number, string][]) {
     P.cyl(0.025, 0.025, 2.3, "#d9d4ca", ux, 1.15, uz);
     P.cyl(0.02, 1.15, 0.35, col, ux, 2.3, uz, 0, 0, 0, 16);
     P.cyl(0.18, 0.22, 0.08, "#9a948a", ux, 0.04, uz);
@@ -636,6 +636,14 @@ export function buildLivingLounge(c: Ctx, h: LivingHooks) {
     P.done({ roughness: 0.35 });
     for (const pz of [-D2 + 1.2, -D2 + 2.5]) { const pend = new k.THREE.Mesh(new k.THREE.CylinderGeometry(0.11, 0.17, 0.2, 16, 1, true), k.glowM("#ffd9a0", 1.6)); pend.position.set(ix, H - 0.8, pz); k.add(pend); }
     k.glow(k.patchT, "#ffe0b0", 0.2, 1.4, 3.0, ix, 0.9, -D2 + 1.86, -Math.PI / 2, 0);
+  }
+  // the penthouse: a dining table between the sitting area and the kitchen, a big rug under it
+  if (pent) {
+    const dx = 1.0, dz = 1.6;
+    F.put("rugRectangle", dx, dz, 0, { solid: false, tint: { carpet: "#b9a58a" } });
+    F.put("table", dx, dz, 0, { tint: { wood: "#2a2a2e" } });
+    for (const s2 of [-1, 1]) for (const ox of [-0.45, 0.45]) F.put("chairCushion", dx + ox, dz + s2 * 0.7, s2 < 0 ? 0 : Math.PI, { tint: { carpet: inp.kits.home.shirt, wood: "#2a2a2e" } });
+    smallPlant(c, dx, 0.65, dz);
   }
   if (R.chandelier) chandelier(k, metalM, H, sx - 1.1, sz);
   X.guests.push({ obj: "sofa", slot: "s2" }, { obj: "sofa", slot: "s0" });

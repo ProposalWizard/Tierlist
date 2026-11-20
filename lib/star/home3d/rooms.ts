@@ -88,7 +88,7 @@ const DOOR_LIVING: Record<RoomId, Partial<Record<RoomId | "garden", [Wall, numbe
   // the wardrobe has the west wall and the bed the north: in from the south, on through the east
   bedroom: { hallway: ["s", -0.1], lounge: ["s", -0.1], bathroom: ["e", -0.25], dressing: ["e", 0.25] },
   bathroom: { bedroom: ["s", -0.2] },
-  dressing: { bedroom: ["w", 0] },
+  dressing: { bedroom: ["s", 0.3] },
   trophy: { hallway: ["s", 0] },
   terrace: { lounge: ["s", 0.25] },
   garage: { hallway: ["w", 0.3] },

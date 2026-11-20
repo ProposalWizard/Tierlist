@@ -73,6 +73,8 @@ export interface RoomEnv {
   cloneSkinned?: (o: any) => any;
   /** The house furniture file's scene (./furniture.ts), loaded before the first room. Unset: no furniture. */
   furniture?: any;
+  /** BufferGeometryUtils.toCreasedNormals (a living house smooths its cars' shading with it). */
+  creased?: (g: any, angle: number) => any;
 }
 
 export type Box2 = [number, number, number, number];
@@ -562,6 +564,8 @@ export function carPaint(m: any, envTex: any): any {
 }
 
 /** Your cars on the drive (best first), loaded after the room shows. */
+/** Creased copies made for cars (freed with their room by disposeGroup). */
+const creasedOf = new WeakSet<any>();
 function loadCars(env: RoomEnv, cars: RoomInput["cars"], n: number, place: (i: number, n: number, len: number) => [number, number, number], props: any, fitLen: ReturnType<typeof fitLenWith>, alive: () => boolean, seen: (o: any) => any) {
   const { THREE } = env;
   return cars.slice(0, n).map((car, i) => env.glb(car.model).then((g: any) => {
@@ -569,6 +573,8 @@ function loadCars(env: RoomEnv, cars: RoomInput["cars"], n: number, place: (i: n
     const holder = new THREE.Group();
     const root = g.scene.clone(true);
     root.traverse((o: any) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; if (o.material) o.material = carPaint(o.material, env.envTex); } });
+    // smooth shading with hard edges only at real creases (the generated meshes' own normals read dented)
+    if (env.creased) root.traverse((o: any) => { if (o.isMesh && !o.isSkinnedMesh && o.geometry?.attributes?.position) { const was = o.geometry; o.geometry = env.creased!(was, 0.75); if (o.geometry !== was) creasedOf.add(o.geometry); } });
     fitLen(root, car.length, false); // nose towards the house
     holder.add(root);
     const [x, z, ry] = place(i, Math.min(n, cars.length), car.length);
@@ -936,6 +942,9 @@ const ROOM_LOOK: Partial<Record<RoomId, { wall?: string; floor?: RoomPreset["flo
  * ceiling, skirting, cornice, panelling on the grand tiers, frames and glass,
  * what is beyond each doorway (the garden, or the next room's sign).
  */
+/** The rooms a plan was made for (its doors' rooms and itself): enough to tell a living house. */
+function inpRoomsOf(plan: RoomPlan): RoomId[] { return [plan.id, ...plan.doors.map((d) => d.to).filter((t): t is RoomId => t !== "garden")]; }
+
 export function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, wins: WinSpec[], o: { ceiling?: boolean; open?: Wall[]; parapet?: { h: number; from: number; glass?: boolean } } = {}) {
   const { THREE } = k;
   const W2 = plan.w / 2, D2 = plan.d / 2, H = plan.h;
@@ -989,7 +998,8 @@ export function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, win
       wallWith(k, H, L.along, L.at, L.len, holes[wl].map((h) => ({ ...h, y0: Math.min(h.y0, 1.04) })), trimM, 1.0, 1.04, 0.05, L.sgn * 0.045);
     }
   }
-  if (o.ceiling !== false) k.plane(plan.w, plan.d, k.mat(look.dark ? "#191512" : R.trim, { roughness: 0.95 }), 0, H, 0, Math.PI / 2);
+  // (a living penthouse: a pale ceiling, not its black trim: the dark lid filled the top of every shot)
+  if (o.ceiling !== false) k.plane(plan.w, plan.d, k.mat(look.dark ? "#191512" : R.tier === "penthouse" && isLiving(plan.id === "main" ? [] : inpRoomsOf(plan)) ? "#ebe8e2" : R.trim, { roughness: 0.95 }), 0, H, 0, Math.PI / 2);
   // windows: frame, glass, the view outside (one painted plane per wall)
   const views = new Map<string, any>();
   for (const w of wins) {
@@ -1784,15 +1794,20 @@ function buildPenthouseTerrace(c: Ctx) {
   k.plane(44, 22, cityM, -W2 - far, cy, 0, 0, Math.PI / 2);
   // the car gallery behind the glass: a dark polished floor, a lit back wall, your best car (an empty plinth without)
   const gz = D2 + 2.0;
-  k.plane(gw + 1.2, 4.2, k.mat("#1d1f24", { roughness: 0.18, metalness: 0.3, envMapIntensity: 1.5 }), gc, 0.0, D2 + 2.1, -Math.PI / 2);
-  const galleryM = new THREE.MeshBasicMaterial({ color: "#2a2c31" });
-  k.plane(gw + 1.2, H, new THREE.MeshBasicMaterial({ map: k.tex(wallCanvas("#3a3d44")), color: new THREE.Color("#c9ccd2"), fog: false }), gc, H / 2, D2 + 4.1, 0, Math.PI);
+  // (a living penthouse: a LIT showroom bay, pale walls and floor, not a dark box)
+  const lit = !!c.living;
+  k.plane(gw + 1.2, 4.2, k.mat(lit ? "#8d9096" : "#1d1f24", { roughness: 0.18, metalness: 0.3, envMapIntensity: 1.5 }), gc, 0.0, D2 + 2.1, -Math.PI / 2);
+  const galleryM = new THREE.MeshBasicMaterial({ color: lit ? "#cfccc6" : "#2a2c31" });
+  k.plane(gw + 1.2, H, new THREE.MeshBasicMaterial({ map: k.tex(wallCanvas(lit ? "#e4e1db" : "#3a3d44")), color: new THREE.Color("#c9ccd2"), fog: false }), gc, H / 2, D2 + 4.1, 0, Math.PI);
   for (const sx of [-1, 1]) k.plane(4.2, H, galleryM, gc + sx * (gw / 2 + 0.6), H / 2, D2 + 2.1, 0, sx > 0 ? -Math.PI / 2 : Math.PI / 2);
   k.plane(gw + 1.2, 4.2, galleryM, gc, H, D2 + 2.1, Math.PI / 2);
   k.box(gw * 0.8, 0.03, 0.12, k.glowM("#f4fbff", 2.6), gc, H - 0.05, gz);
   k.glow(k.patchT, "#fff4e0", 0.3, Math.min(gw, 4.6), 2.4, gc, 0.01, gz, -Math.PI / 2, 0);
   k.glow(k.glowT, "#e8f0ff", 0.22, gw + 1, 2.4, gc, 1.4, D2 + 4.05, 0, Math.PI);
-  if (inp.cars.length) c.propJobs.push(() => loadCars(env, inp.cars, 1, () => [gc, gz, 0], c.props, c.fitLen, c.alive, k.seen));
+  // the car behind the glass: the light copy (4k triangles; the shop's full model is ~23k and still shows the
+  // generated texture's crack this near, so it is not worth the frame cost), smooth-shaded at load
+  const best = inp.cars.slice(0, 1);
+  if (best.length) c.propJobs.push(() => loadCars(env, best, 1, () => [gc, gz, 0], c.props, c.fitLen, c.alive, k.seen));
   else plinth(k, c.plinthM, gc, gz, 0.6, 0.6);
   // the outdoor sofa facing the view, a low table, a rug
   const sx = -0.6, sz = 0.35;

@@ -398,6 +398,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   const roomIn: RoomInput = { tier: data.tier, rooms, kits: data.kits, slots: data.slots, cars: data.cars, boots: data.boots, casual: data.casual, stuff: data.stuff, bikeModel: data.bikeModel ?? null, club: data.club, badge: data.badge };
   const env: RoomEnv = { THREE, mergeGeometries, Reflector, prof, quality: tier, envTex, doorOpen: !!cb.onDoor, glb, cloneSkinned: (o: any) => SkeletonUtils.clone(o) };
   // a living house: its furniture (one file, ./furniture.ts) before the first room is built
+  if (isLiving(rooms)) env.creased = (await import("three/examples/jsm/utils/BufferGeometryUtils.js") as any).toCreasedNormals;
   if (isLiving(rooms)) env.furniture = (await glb(FURNITURE).catch((e: unknown) => { console.error("home: furniture", e); return null; }))?.scene ?? undefined;
   let room: BuiltRoom = buildRoom(env, roomIn, rooms[0]);
   scene.add(room.group);
