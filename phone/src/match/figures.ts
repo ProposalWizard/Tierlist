@@ -236,19 +236,20 @@ export function drawMan(c: SkCanvas, cam: Cam, id: string, p: { x: number; y: nu
 let labelFontFor: FontFor | null = null;
 export function setFigureFonts(f: FontFor | null) { labelFontFor = f; }
 /**
- * A taker's name over his head, big (matchFigure drawMarkers with labelBig, Mikey 26 Oct 2026):
- * 800 weight, max(15, 0.6 r) px, a thick dark outline, white, upright above his crown.
+ * A taker's name over his head (matchFigure drawMarkers' label): 700 weight, max(8, 0.3 r) px,
+ * a dark outline, white, upright above his crown. The packed app (the reference) shows this
+ * size; the website's newer labelBig (15 px and up) is not in it.
  */
 function nameLabel(c: SkCanvas, text: string, x: number, crown: number, r: number, star: boolean) {
   if (!labelFontFor) return;
   const g = createCtx2D(sk(), c, { width: 1, height: 1, fontFor: labelFontFor }) as unknown as CanvasRenderingContext2D;
-  g.font = `800 ${Math.max(15, r * 0.6)}px sans-serif`;
+  g.font = `700 ${Math.max(8, r * 0.3)}px sans-serif`;
   g.textAlign = "center";
   g.textBaseline = "alphabetic";
-  g.lineWidth = Math.max(3.5, r * 0.18);
+  g.lineWidth = Math.max(2, r * 0.1);
   g.lineJoin = "round";
-  g.strokeStyle = "rgba(0,0,0,0.85)";
-  const ly = crown - r * (star ? 0.78 : 0.16) - 4;
+  g.strokeStyle = "rgba(0,0,0,0.65)";
+  const ly = crown - r * (star ? 0.78 : 0.16);
   g.strokeText(text, x, ly);
   g.fillStyle = "#ffffff";
   g.fillText(text, x, ly);
