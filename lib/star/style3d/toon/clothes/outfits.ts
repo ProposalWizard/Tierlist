@@ -68,7 +68,7 @@ type Ring = ReturnType<typeof landmarks>["neckRing"];
  *  a seat and waist shaped from the body (a touch over a tucked shirt). */
 const trousers = (LM: LMs, k: [number, number], straight = false, seat = 1.06, cuff?: number): GarmentSpec => ({ name: "trousers", offset: 0.004, lip: 0.004,
   fields: (pt, arm, _a, leg) => ({ neck: arm > 0.5 ? 1 : pt.y - (LM.waist + 0.01), sleeve: NONE, hem: NONE, leg: leg > 0.35 ? LM.ankle - pt.y : NONE }),
-  relax: [4, 10], shape: { legs: { top: k[0], hem: k[1], straight, cuff }, torso: { knots: [[0, seat, seat], [1, seat, seat]] } } });
+  relax: [4, 10], shape: { legs: { top: k[0], hem: k[1], straight, cuff }, torso: { knots: [[0, seat, seat], [1, seat, seat]], hold: true } } });
 const shoes = (LM: LMs): GarmentSpec => ({ name: "shoes", offset: 0.005, lip: 0.003,
   fields: (pt, arm, _a, leg) => (leg > 0.5 && arm < 0.5 ? { neck: pt.y - LM.shoeTop, sleeve: NONE, hem: NONE, leg: -pt.y - 0.001 } : OFF),
   relax: [2, 6], shape: { shoe: true } });
@@ -129,7 +129,7 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
     garments(meta) {
       const { LM, neckRing } = landmarks(meta);
       return [
-        longTop("jacket", LM, neckRing, { off: 0.005, neck: [0.074, 0.064, 0.085, -0.016], hem: LM.hips[1] - 0.075, collar: { kind: "crew", h: 0.042, out: -0.008 }, shape: { torso: { knots: [[-0.3, 1.07, 1.06], [0, 1.06, 1.05], [1, 1.04, 1.03]], boxy: 0.6, hem: LM.hips[1] - 0.075 } } }),
+        longTop("jacket", LM, neckRing, { off: 0.012, neck: [0.074, 0.064, 0.085, -0.016], hem: LM.hips[1] - 0.075, collar: { kind: "crew", h: 0.042, out: -0.008 }, shape: { torso: { knots: [[-0.3, 1.07, 1.06], [0, 1.06, 1.05], [1, 1.04, 1.03]], boxy: 0.6, hem: LM.hips[1] - 0.075, hold: true } } }),
         trousers(LM, [1.07, 1.45], false, 1.05, 1.15), shoes(LM),
       ];
     },
@@ -139,7 +139,7 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
       if (same(trim, coat) || Math.abs(trim.r - coat.r) + Math.abs(trim.g - coat.g) + Math.abs(trim.b - coat.b) < 0.08) trim = { r: Math.min(1, coat.r * 2.6 + 0.08), g: Math.min(1, coat.g * 2.6 + 0.08), b: Math.min(1, coat.b * 2.6 + 0.08) };
       return [
         { color: col(Color, coat), trim: col(Color, trim), fabric: "poly", bands: [0, 0.035, 0.03, 0] },
-        { color: col(Color, coat), trim: col(Color, trim), fabric: "poly", bands: [0.028, 0, 0, 0.035] },
+        { color: col(Color, coat), trim: col(Color, coat, 0.8), fabric: "poly", bands: [0.028, 0, 0, 0.035] },
         shoeSlot(u, Color),
       ];
     },
@@ -167,9 +167,9 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
     garments(meta, variant) {
       const { LM, neckRing } = landmarks(meta);
       return [
-        { ...longTop("shirt", LM, neckRing, { off: 0.003, neck: [0.07, 0.062, 0.08, -0.012], hem: LM.tuck, wrist: LM.wrist + 0.11, collar: { kind: "shirt", h: 0.022, out: 0.006, fold: 0.014 }, shape: undefined }),
+        { ...longTop("shirt", LM, neckRing, { off: 0.0, neck: [0.07, 0.062, 0.08, -0.012], hem: LM.tuck, wrist: LM.wrist + 0.11, collar: { kind: "shirt", h: 0.022, out: 0.006, fold: 0.014 }, shape: { torso: { knots: [[0, 0.95, 0.96], [0.5, 0.97, 0.98], [1, 0.99, 0.99]] } } }),
           relax: [0, 8], ...(variant === "suit-open" ? {} : { tie: { top: LM.collarY - 0.035, bottom: LM.waist + 0.02, w: 0.022 } }) },
-        longTop("coat", LM, neckRing, { off: 0.005, wrist: LM.wrist - 0.04, neck: [0.085, 0.072, 0.1, -0.03, 0.27, 0.11], hem: LM.hips[1] - 0.13, collar: { kind: "lapel", h: 0.024, out: 0.004, fold: 0.055 }, shape: { torso: { knots: [[-0.25, 1.08, 1.06], [0.0, 1.06, 1.05], [0.32, 1.02, 1.03], [1, 1.05, 1.04]], pad: 0.02, hem: LM.hips[1] - 0.06 } } }),
+        longTop("coat", LM, neckRing, { off: 0.009, wrist: LM.wrist - 0.04, neck: [0.085, 0.072, 0.1, -0.03, 0.27, 0.11], hem: LM.hips[1] - 0.13, collar: { kind: "lapel", h: 0.024, out: 0.004, fold: 0.055 }, shape: { torso: { knots: [[-0.25, 1.08, 1.06], [0.0, 1.06, 1.05], [0.32, 1.02, 1.03], [1, 1.05, 1.04]], pad: 0.02, hem: LM.hips[1] - 0.06, hold: true } } }),
         trousers(LM, [1.05, 1.35], true, 1.03), shoes(LM),
       ];
     },

@@ -59,7 +59,7 @@ export interface GarmentSpec {
     shoe?: boolean;
     /** torso: the body's smoothed size times k at each height t (0 = hem line, 1 = armpits): [t, across, front-back];
      *  boxy 0..1 = held at the chest's size below it; pad = a structured shoulder (metres out and up) */
-    torso?: { knots: [number, number, number][]; boxy?: number; pad?: number; hem?: number };
+    torso?: { knots: [number, number, number][]; boxy?: number; pad?: number; hem?: number; hold?: boolean };
   };
 }
 
@@ -341,6 +341,8 @@ function shapeGarment(o: Out, sh: NonNullable<GarmentSpec["shape"]>, k: { rig: R
       const dx = base[0], dz = base[2] - sl.cz, bb = dz > 0 ? sl.f : sl.bk;
       const kk = 1 / (Math.hypot(dx / sl.a, dz / bb) || 1);
       torsoT = [dx * kk, base[1], sl.cz + dz * kk];
+      // an outer garment never goes inside the body's own surface (what is under it must stay under it)
+      if (sh.torso.hold && kk < 1) torsoT = base;
       wt = 1 - ss(S.armpit - 0.02, S.armpit + 0.07, p.y);
     }
     if (legLine && Math.max(lL, lR) > 0.5) {

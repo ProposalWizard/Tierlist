@@ -87,7 +87,34 @@ export default function WardrobeProofPage() {
       };
       const label = (s: string, x: number, y: number, w: number, dark2: boolean) => { g2.fillStyle = dark2 ? "#111" : "rgba(16,18,22,0.78)"; g2.fillRect(x, y, w, 34); g2.fillStyle = "#fff"; g2.font = "bold 20px system-ui, sans-serif"; g2.fillText(s, x + 10, y + 24, w - 16); };
       const W = 300;
-      if (shot === "silhouettes") {
+      if (shot === "moving") {
+        // THE MOVING TEST: 3 heads x 3 builds, each in an outfit, walking, seated and arms up (cloth through skin or cloth?)
+        const heads = (q.get("heads") ?? "h1,h3,h6").split(",") as ToonHead[], builds: ToonBody[] = ["c1", "c2", "c3"];
+        const allH = await P3.loadPeople3d(loader, "player", "new", heads);
+        const kinds: [ClothKind, PersonLook][] = [[roles[0][1], roles[0][2]], [roles[3][1], roles[3][2]], [roles[1][1], roles[1][2]]];
+        const tw = 260, th = 560, cols: Person3D[] = [];
+        let k = 0;
+        for (const h of heads) for (const b of builds) {
+          const [kind, look] = kinds[k++ % 3];
+          const p = P3.makePerson3d(T, SK, allH, anims, { outline: 0.006, toonHead: h, toonBody: b, who: `mv-${h}-${b}` });
+          P3.dressPerson3d(T, p, look); CL.dressCloth(T, p, kind, `${h}-${b}-${kind}`);
+          addToonFace(T, p)?.set({ face: toonFaceFor({}), blink: 0 });
+          cols.push(p);
+        }
+        const names = Object.keys(cols[0].actions);
+        console.log("CLOTHDBG clips", names.join(","));
+        const pick = (re: RegExp) => names.find((n) => re.test(n)) ?? names[0];
+        const poses: [string, number][] = [[pick(/walk|jog/), 0.45], [pick(/sitidle/), 1.0], [pick(/^wave$/), 1.0]];
+        sheet.width = tw * cols.length; sheet.height = th * 3;
+        renderer.setClearColor("#cfd6de");
+        poses.forEach(([clip, t], r) => cols.forEach((p, i) => {
+          P3.poseClips(p, [[clip, t, 1]]); p.root.updateMatrixWorld(true);
+          const hp = new T.Vector3(); p.bones.Hips.getWorldPosition(hp);
+          shootOne(p, -0.5, tw, th, [hp.x, hp.y + 0.1, hp.z + 4.6], [hp.x, hp.y - 0.05, hp.z], i * tw, r * th);
+          label(`${clip} · ${(p as Person3D & { toonHead?: string }).toonHead}/${(p as Person3D & { toon?: string }).toon}`, i * tw, r * th, tw, false);
+        }));
+        w0.__clothStats = { poses };
+      } else if (shot === "silhouettes") {
         const H = 700;
         sheet.width = W * roles.length; sheet.height = H * 2;
         scene.overrideMaterial = new T.MeshBasicMaterial({ color: 0x000000 });
