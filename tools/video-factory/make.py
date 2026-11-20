@@ -5,7 +5,7 @@ mic-in-a-room finish -> captions from the SCRIPT words timed by the transcriber
 -> render frames in a headless browser -> music + voice mix -> MP4.
 Needs: ffmpeg, node + playwright chromium, faster_whisper, and a Chatterbox venv
 (env CHATTERBOX_PY, default the session's cbx venv)."""
-import argparse, difflib, json, os, re, shutil, subprocess, sys
+import argparse, difflib, hashlib, json, os, re, shutil, subprocess, sys
 import numpy as np, soundfile as sf
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -17,6 +17,12 @@ SR, FPS = 44100, 30
 CTA = "Follow for more."  # Mikey, 7 Nov 2026: the end card stays, the voice only says this
 
 def log(*a): print(*a, flush=True)
+# Voice files are named after WHAT IS SAID, not only the line number (Mikey, 20 Nov 2026: ex02b said lines twice and in the
+# wrong place). Before, "l05-e7.mp3" was reused whenever it existed, so adding or changing a line shifted every later line
+# onto the old recordings. Now a changed line, voice or setting gets a new file, and a line whose recording doesn't match
+# its words stops the build.
+def vkey(*parts): return hashlib.sha1(json.dumps(parts, ensure_ascii=False).encode()).hexdigest()[:10]
+MIN_MATCH = 0.6
 def load(p, sr=SR):
     raw = subprocess.run(["ffmpeg", "-v", "error", "-i", p, "-f", "f32le", "-ac", "1", "-ar", str(sr), "-"], capture_output=True).stdout
     return np.frombuffer(raw, dtype=np.float32).copy()
@@ -72,7 +78,7 @@ def eleven_voice(cfg, lines, work, best):
     for i, ln in enumerate(lines):
         text = ln.get("sayEleven") or ln.get("say") or ln["text"]
         for take, seed in enumerate(cfg.get("seeds", [7, 19])):
-            mp3 = os.path.join(work, f"l{i:02d}-e{seed}.mp3"); wav = os.path.join(work, f"l{i:02d}-e{seed}.wav")
+            k = vkey(text, vid, model, vs, seed, cfg.get("tempo", 1.13), gap); mp3 = os.path.join(work, f"l{i:02d}-e{seed}-{k}.mp3"); wav = os.path.join(work, f"l{i:02d}-e{seed}-{k}.wav")
             if not os.path.exists(mp3) and take > 0 and cfg.get("noNewTakes"): continue  # reuse what was already paid for
             if not os.path.exists(mp3):
                 body = json.dumps({"text": text, "model_id": model, "voice_settings": vs, "seed": seed}).encode()
@@ -105,13 +111,16 @@ def main():
     for round_, seed in enumerate([] if eleven else [3, 11, 21]):
         todo = [i for i in range(len(lines)) if best.get(i, (0,))[0] < 0.86]
         if not todo: break
-        reqs = [[os.path.join(work, f"l{i:02d}-s{seed}.wav"), lines[i].get("say", lines[i]["text"]), seed] for i in todo]
+        vf = lambda i: os.path.join(work, f"l{i:02d}-s{seed}-{vkey(lines[i].get('say', lines[i]['text']), seed)}.wav")
+        reqs = [[vf(i), lines[i].get("say", lines[i]["text"]), seed] for i in todo]
         json.dump(reqs, open(os.path.join(work, "req.json"), "w"))
         subprocess.run([CBX, "-I", os.path.join(HERE, "voice_gen.py"), os.path.join(work, "req.json")], check=True)
         for i in todo:
-            p = os.path.join(work, f"l{i:02d}-s{seed}.wav"); heard, words = transcribe(p); s = sim(lines[i].get("say", lines[i]["text"]), heard)
+            p = vf(i); heard, words = transcribe(p); s = sim(lines[i].get("say", lines[i]["text"]), heard)
             if s > best.get(i, (-1,))[0]: best[i] = (s, p, words)
         log(f"voice round {round_ + 1}: " + ", ".join(f"{i}:{best[i][0]:.2f}" for i in sorted(best)))
+    bad = [i for i in range(len(lines)) if best.get(i, (0,))[0] < MIN_MATCH]
+    if bad: raise SystemExit("VOICE DOES NOT MATCH THE SCRIPT on line(s) " + ", ".join(f"{i} ({best.get(i, (0,))[0]:.2f}): {lines[i]['text'][:60]}" for i in bad))
     # 2. finish, place, caption
     at, scenes, chunks, plan = 0.35, [], [], []
     for i, ln in enumerate(lines):

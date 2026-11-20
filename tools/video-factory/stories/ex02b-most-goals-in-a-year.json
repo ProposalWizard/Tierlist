@@ -1,7 +1,7 @@
 {
   "id": "ex02b-most-goals-in-a-year",
   "series": "Explainer",
-  "variant": "v2: steps every 1-2 s",
+  "variant": "v2: steps every 1-2 s (20 Nov: real Chitalu pictures, voice matched line by line)",
   "title": "Who has scored the most goals in a single year?",
   "layout": "explainer",
   "music": "02-working-it-out.mp3",
@@ -36,7 +36,9 @@
     "zambia_1972": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/zambia_1972.png",
     "chitalu_goal": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/chitalu_goal.png",
     "old_records": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/old_records.png",
-    "memorial": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/memorial.png"
+    "memorial": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/memorial.png",
+    "chitalu": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/chitalu.png",
+    "chitalu_coach": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/chitalu_coach.png"
   },
   "lines": [
     {
@@ -210,7 +212,7 @@
               {
                 "year": "2012",
                 "top": "NEW",
-                "label": "86 and counting",
+                "label": "Messi breaks it",
                 "tick": true,
                 "head": "#1ea85a"
               }
@@ -372,10 +374,7 @@
           {
             "type": "portrait",
             "person": {
-              "color": "#1b1416",
-              "hair": "#0e0a0b",
-              "suit": false,
-              "rim": "rgba(255,216,74,.7)"
+              "image": "chitalu"
             },
             "name": "GODFREY CHITALU",
             "w": 0
@@ -454,10 +453,7 @@
             "leftNum": "91",
             "leftName": "MESSI",
             "right": {
-              "color": "#1b1416",
-              "hair": "#0e0a0b",
-              "suit": false,
-              "rim": "rgba(255,216,74,.7)"
+              "image": "chitalu"
             },
             "rightNum": "107",
             "rightName": "CHITALU",
@@ -497,12 +493,9 @@
           {
             "type": "portrait",
             "person": {
-              "color": "#1b1416",
-              "hair": "#0e0a0b",
-              "suit": false,
-              "rim": "rgba(255,216,74,.7)"
+              "image": "chitalu_coach"
             },
-            "name": "GODFREY CHITALU",
+            "name": "GODFREY CHITALU · ZAMBIA COACH",
             "w": 0
           },
           {
@@ -528,10 +521,7 @@
             "leftNum": "91",
             "leftName": "MESSI · 2012",
             "right": {
-              "color": "#1b1416",
-              "hair": "#0e0a0b",
-              "suit": false,
-              "rim": "rgba(255,216,74,.7)"
+              "image": "chitalu"
             },
             "rightNum": "107",
             "rightName": "CHITALU · 1972",
