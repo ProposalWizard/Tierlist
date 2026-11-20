@@ -149,8 +149,7 @@ export default function ActivityHost({ career, live, activity, callerLines, onDo
     onDone({ score: sc, tens: sc * 10, won: mode === "crossbar" ? sc > (oppScore ?? 0) : sc >= Math.ceil(n / 2), abandoned, oppScore });
   }, [mode, oppShots, n, onDone]);
 
-  const onChanceResolved = useCallback((info: ChanceResolved) => {
-    if ((window as unknown as { __kitDebug?: boolean }).__kitDebug) console.log("KITDEBUG", info.outcome, JSON.stringify(info.ball), JSON.stringify(crossRef.current), JSON.stringify(prevRef.current));
+  const onChanceResolved = useCallback((_info: ChanceResolved) => {
     let shot: Shot;
     let text: string;
     let good: boolean;

@@ -479,7 +479,7 @@ export function EngineFeature({
       : { width: w, maxWidth: "100%", margin: "0 auto" }}>
       <CanvasMatch
         career={career}
-        fixture={fixture}
+        fixture={fixture ?? undefined}
         seed={seed}
         skills={skills}
         setPieceSkill={setPieceSkill}
