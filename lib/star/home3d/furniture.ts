@@ -66,7 +66,7 @@ export function furnisher(THREE: any, parent: any, src: any | null, solids: Box2
         color: colour, roughness: glass ? 0.05 : metal ? 0.35 : /carpet|plant/i.test(base) ? 0.95 : 0.6, metalness: metal ? 0.35 : 0,
         transparent: glass, opacity: glass ? 0.3 : 1, depthWrite: !glass, envMap: envTex, envMapIntensity: metal || glass ? 1 : 0.5,
       });
-      if (glow) { t.emissive = new THREE.Color(glow); t.emissiveIntensity = 1.2; }
+      if (glow) { t.emissive = new THREE.Color(glow); t.emissiveIntensity = 0.55; }
       tints.set(key, t);
     }
     return t;

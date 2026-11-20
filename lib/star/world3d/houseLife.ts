@@ -84,6 +84,10 @@ export interface HouseLife {
   controlsYou: () => boolean;
   seated: () => boolean;
   update: (dt: number) => void;
+  /** While you use something: the camera's shot of it (seated, the shower, the mirror: from in front; the fridge, a counter: over the shoulder). Null: the follow camera. */
+  useShot: () => { cam: [number, number, number]; look: [number, number, number] } | null;
+  /** Talking to a team-mate: where he is (the camera frames you both). */
+  talkTo: () => [number, number] | null;
   /** Your body was rebuilt (clothes): measure it again. */
   rebody: () => void;
   debug: () => Record<string, unknown>;
@@ -380,6 +384,18 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       if (room?.fx) for (const f of Object.values(room.fx)) f.tick?.(dt);
     },
     rebody: () => { if (meNpc) handBack(); },
+    useShot: () => {
+      const n = meNpc;
+      if (!n || !room) return null;
+      const ob = using ?? pending?.obj ?? null;
+      const front = !ob || ob.kind === "seat" || ob.kind === "tv" || ob.kind === "spot" || ob.kind === "mirror";
+      const f = [Math.sin(n.yaw), Math.cos(n.yaw)], r = [Math.cos(n.yaw), -Math.sin(n.yaw)];
+      const d = front ? 2.3 : -2.0, side = front ? 0.5 : 0.75;
+      const clampX = (x: number) => Math.max(-room!.w2 + 0.3, Math.min(room!.w2 - 0.3, x)), clampZ = (z: number) => Math.max(-room!.d2 + 0.3, Math.min(room!.d2 - 0.3, z));
+      const cy = n.seated ? 1.55 : 1.75;
+      return { cam: [clampX(n.x + f[0] * d + r[0] * side), Math.min(room.h - 0.2, cy), clampZ(n.z + f[1] * d + r[1] * side)], look: [n.x + (front ? 0 : f[0] * 0.6), n.seated ? 0.85 : 1.15, n.z + (front ? 0 : f[1] * 0.6)] };
+    },
+    talkTo: () => (talking && card ? talking.bodyXZ() : null),
     debug: () => ({
       room: room?.id, things: objects.list.map((x) => x.id), using: using?.id ?? null, card: card?.title ?? null,
       you: meNpc?.info() ?? null, people: npcs.map((n) => ({ ...n.info(), visible: n.root.visible })), book: book.all(), where,

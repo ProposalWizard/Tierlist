@@ -865,13 +865,13 @@ export function floorLamp(k: Kit, metalM: any, x: number, z: number, pools: [num
 }
 
 /** A potted plant. Its footprint. */
-export function plant(k: Kit, potM: any, leafM: any, x: number, z: number, o: { kind?: PlantKind; h?: number; pot?: string } = {}): Box2 {
+export function plant(k: Kit, potM: any, leafM: any, x: number, z: number, o: { kind?: PlantKind; h?: number; pot?: string; y?: number } = {}): Box2 {
   void potM; void leafM;
   const { THREE } = k;
   const kind = o.kind ?? plantAt(x, z);
   const h = o.h ?? (kind === "snake" ? 0.95 : kind === "fiddle" ? 1.6 : kind === "palm" ? 1.55 : 1.15);
   const seed = Math.abs(x * 31 + z * 17);
-  const m = new THREE.Matrix4().compose(new THREE.Vector3(x, 0, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, seed % 6.28, 0)), new THREE.Vector3(1, 1, 1));
+  const m = new THREE.Matrix4().compose(new THREE.Vector3(x, o.y ?? 0, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, seed % 6.28, 0)), new THREE.Vector3(1, 1, 1));
   for (const p of plantParts(THREE, kind, seed, h, o.pot ?? "#e9e4da")) {
     const g = p.geo.index ? p.geo.toNonIndexed() : p.geo;
     if (g !== p.geo) p.geo.dispose();
@@ -885,7 +885,7 @@ export function plant(k: Kit, potM: any, leafM: any, x: number, z: number, o: { 
     if (!g.attributes.normal) g.computeVertexNormals();
     k.plantBin.push(g);
   }
-  k.blob(0.75, 0.75, x, z, 0.6);
+  if (!o.y) k.blob(0.75, 0.75, x, z, 0.6);
   return [x - 0.25, x + 0.25, z - 0.25, z + 0.25];
 }
 
@@ -926,6 +926,9 @@ const ROOM_LOOK: Partial<Record<RoomId, { wall?: string; floor?: RoomPreset["flo
   garage: { wall: "#bfc3c6", floor: "stone", rough: 0.14 },
   terrace: { floor: "boards" },
   gardenTerrace: { floor: "stone" },
+  bathroom: { floor: "stone", wall: "#d6dcdc" },
+  kitchen: { floor: "stone" },
+  poolTerrace: { floor: "stone" },
 };
 
 /**

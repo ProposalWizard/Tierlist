@@ -43,7 +43,7 @@ function blade(THREE: any, len: number, wid: number, bend: number, seg: number, 
     const w0 = wid * shape(t0) / 2, w1 = wid * shape(t1) / 2;
     const [x0, y0, z0] = pts[i], [x1, y1, z1] = pts[i + 1];
     // a gentle V across the blade (its midrib), so it catches light
-    const v = 0.18;
+    const v = 0.08;
     for (const side of [-1, 1]) {
       if (splits && i > 1 && i < seg - 1 && (i + (side > 0 ? 0 : 1)) % 2 === 0) continue; // a slit
       const a: [number, number, number] = [x0, y0, z0], b: [number, number, number] = [x1, y1, z1];
@@ -104,7 +104,7 @@ export function plantParts(THREE: any, kind: PlantKind, seed: number, h = 1.3, p
       const tip: [number, number, number] = [Math.sin(ang) * sl * Math.sin(tilt), top + sl * Math.cos(tilt), Math.cos(ang) * sl * Math.sin(tilt)];
       out.push({ geo: stem(THREE, base, tip, 0.012, 0.008), colour: "#3f7a3a" });
       // a heart-shaped leaf, split from the edge in towards the midrib (the monstera's holes)
-      const g = blade(THREE, 0.4 + r() * 0.12, 0.36 + r() * 0.08, 0.9 + r() * 0.4, 8, (t) => Math.pow(Math.sin(Math.PI * Math.min(1, t * 0.92 + 0.08)), 0.55) * (1 - 0.25 * t), 1);
+      const g = blade(THREE, 0.38 + r() * 0.1, 0.5 + r() * 0.1, 0.8 + r() * 0.4, 8, (t) => Math.pow(Math.sin(Math.PI * Math.min(1, t * 0.88 + 0.12)), 0.38) * (1 - 0.15 * t), 1);
       out.push({ geo: at(THREE, g, tip[0], tip[1], tip[2], 0.25 + tilt * 0.6, ang, 0), colour: ["#2e6a35", "#24552c", "#357a3c"][i % 3] });
     }
   } else if (kind === "fiddle") {
@@ -130,7 +130,7 @@ export function plantParts(THREE: any, kind: PlantKind, seed: number, h = 1.3, p
       for (let j = 1; j < 5; j++) {
         const u = j / 5;
         for (const side of [-1, 1]) {
-          const leaf = blade(THREE, 0.2 * (1 - u * 0.4), 0.045, 0.6, 2, (t) => Math.sin(Math.PI * Math.min(1, t + 0.15)));
+          const leaf = blade(THREE, 0.24 * (1 - u * 0.35), 0.085, 0.5, 3, (t) => Math.pow(Math.sin(Math.PI * Math.min(1, t * 0.9 + 0.1)), 0.6));
           // along the frond: up and out, then drooping
           const a = 0.5 + 1.4 * u;
           const fx = Math.sin(a * 0.9) * fl * u * 0.75, fy = Math.cos(a * 0.75) * fl * u * 0.55;

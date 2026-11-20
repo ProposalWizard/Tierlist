@@ -135,6 +135,18 @@ export function openCamYaw(px: number, pz: number, yaw: number, want: number, w2
   return best;
 }
 
+/**
+ * A living house's arrival shot (held until he moves): from just inside the doorway he came in
+ * by, up near the ceiling, looking over him into the room, so the room reads and he stands in the
+ * lower third, never filling the frame.
+ */
+export function arrivalShot(door: { x: number; z: number; nx: number; nz: number }, H: number, w2: number, d2: number): { cam: [number, number, number]; look: [number, number, number]; fov: number; outside: true } {
+  // just outside the doorway, under its top: the room seen through the door, him a few metres in
+  const reach = Math.min(w2, d2) * 1.1;
+  void H;
+  return { cam: [door.x - door.nx * 0.55, 1.95, door.z - door.nz * 0.55], look: [door.x + door.nx * reach * 2.0, 1.3, door.z + door.nz * reach * 2.0], fov: 72, outside: true };
+}
+
 export interface HomeData {
   tier: HomeTier;
   /** The club's kits (home, away) and your shirt number. */
@@ -326,7 +338,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   scene.environment = envTex;
   scene.environmentIntensity = 0.4;
   // Look H: the indoor broadcast pass (no baked set for the home: its shade is painted in, below)
-  const hEnh = lookH ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, "indoor", { exposure: 1.05, bake: null }) : null;
+  const hEnh = lookH ? (await import("../style3d/real/enhance")).enhanceH(THREE, renderer, scene, tier, "indoor", { exposure: opts.living ? 0.92 : 1.05, bake: null }) : null;
   const camera = new THREE.PerspectiveCamera(58, 1, 0.05, 80);
 
   // ── Light: one sky light, one sun through the drive window (the only shadow) ──
@@ -349,7 +361,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   // the mirror sees by the same light
   for (const l of [hemi, sun]) l.layers.enable(MIRROR_LAYER);
   // a living house: less flat fill, a warmer, stronger sun, so shapes read (the research demo's "real light" step)
-  if (opts.living) { hemi.intensity = 0.72; hemi.groundColor.set("#4a3828"); sun.intensity = 2.4; sun.color.set("#ffd7a0"); scene.environmentIntensity = 0.5; }
+  if (opts.living) { hemi.intensity = 0.7; hemi.groundColor.set("#4a3828"); sun.intensity = 2.1; sun.color.set("#ffd7a0"); scene.environmentIntensity = 0.45; renderer.toneMappingExposure = 0.92; }
 
   // ── Helpers (the shell's own: your number, your shadow blob) ──
   const tex = (cv: HTMLCanvasElement) => {
@@ -427,6 +439,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     const door = room.plan.doors[0];
     if (!door || (opts.houseCam ?? "D") !== "D" || opts.pov) return room.start;
     const back = zoomedFollowCam(loadFollowZoom(), FOLLOW_CAM_D).back;
+    if (opts.living) for (const dIn of [2.6, 2.3, 2.0]) { const a = arrivalAt(door, dIn); if (roomFree(room, a.x, a.z) && Math.abs(a.x) < room.w2 - 0.5 && Math.abs(a.z) < room.d2 - 0.5) return a; }
     return settledArrival(door, (x, z) => roomFree(room, x, z) && Math.abs(x) < room.w2 - 0.6 && Math.abs(z) < room.d2 - 0.6, back) ?? room.start;
   })();
   me.person.root.position.set(START.x, 0, START.z);
@@ -468,7 +481,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   let shadowDirty = true, shadowT = 0;
   let dbgCam: { pos: [number, number, number]; look: [number, number, number] } | null = null;
   /** The room's opening shot, held until he moves (a room frames its hero: the garage's cars, the games room). */
-  let intro = room.intro ?? null;
+  let lastIntroFov = false;
+  let intro: BuiltRoom["intro"] | null = room.intro ?? (opts.living && room.plan.doors[0] ? arrivalShot(room.plan.doors[0], room.h, room.w2, room.d2) : null);
   const walker = new TapWalker();
   const marker = makeTapMarker(THREE, scene);
   let grid: WalkGrid | null = null;
@@ -597,10 +611,12 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     // clear (the doorway jam: 1.5 m in left it 1.2 m, right on the back of his head), else 1.5 m
     let at = door ? arrivalAt(door, 1.5) : room.start;
     if (door && camKey === "D") at = settledArrival(door, (x, z) => roomFree(room, x, z) && Math.abs(x) < room.w2 - 0.6 && Math.abs(z) < room.d2 - 0.6, CS.back) ?? at;
+    // a living house: further in (the arrival shot from the doorway then has him small, the room around him)
+    if (door && opts.living) for (const dIn of [2.6, 2.3, 2.0]) { const a = arrivalAt(door, dIn); if (roomFree(room, a.x, a.z) && Math.abs(a.x) < room.w2 - 0.5 && Math.abs(a.z) < room.d2 - 0.5) { at = a; break; } }
     me.person.root.position.set(at.x, 0, at.z);
     yaw = at.yaw; yawTurn.vel = 0; me.person.root.rotation.y = yaw;
     camYaw = openCamYaw(at.x, at.z, yaw + Math.PI, CS.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap, CS.swing); orb.reset(); first = true;
-    intro = room.intro ?? null;
+    intro = room.intro ?? (opts.living && door ? arrivalShot(door, room.h, room.w2, room.d2) : null);
     meBlob.position.set(at.x, 0.012, at.z);
     try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* first use */ }
     shadowDirty = true;
@@ -884,14 +900,31 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     }
     if (intro && (speed > 0.3 || walker.active || orbitHold > 0 || shot)) intro = null; // he moved: the follow camera takes over
     if (intro) { want.set(...intro.cam); wantLook.set(...intro.look); }
+    // a living house: using something frames it (houseLife.ts useShot); talking frames you both
+    const useShot = life?.useShot() ?? null;
+    if (useShot && !intro) { want.set(...useShot.cam); wantLook.set(...useShot.look); }
+    const mate = !useShot && !intro ? life?.talkTo() ?? null : null;
+    if (mate) {
+      // from beside you, back a little: you on one side, him on the other
+      const mx = (P.x + mate[0]) / 2, mz = (P.z + mate[1]) / 2, dx = mate[0] - P.x, dz = mate[1] - P.z, dl = Math.hypot(dx, dz) || 1;
+      want.set(mx - (dz / dl) * 2.4 - (dx / dl) * 0.6, Math.min(H - 0.2, 1.75), mz + (dx / dl) * 2.4 - (dz / dl) * 0.6);
+      wantLook.set(mx, 1.1, mz);
+      // on the other side if that one is outside the room
+      if (Math.abs(want.x) > W2 - 0.3 || Math.abs(want.z) > D2 - 0.3) want.set(mx + (dz / dl) * 2.4 - (dx / dl) * 0.6, Math.min(H - 0.2, 1.75), mz - (dx / dl) * 2.4 - (dz / dl) * 0.6);
+    }
+    // a living house's arrival shot: a wider lens, from the doorway (outside the room's walls)
+    const introFov = (intro as { fov?: number } | null)?.fov;
+    if (introFov && Math.abs(camera.fov - introFov) > 1e-3) { camera.fov = introFov; camera.updateProjectionMatrix(); }
+    else if (!introFov && !edit?.views && !dbgCam && camera.fov !== baseFov && Math.abs(camera.fov - (zoom ? CS.fov : baseFov)) > 1e-3 && lastIntroFov) { camera.fov = zoom && container.clientWidth / (container.clientHeight || 1) < 0.7 ? CS.fov : baseFov; camera.updateProjectionMatrix(); }
+    lastIntroFov = !!introFov;
     if (shot) { want.lerp(scratchShot.set(...shot.cam), frame); wantLook.lerp(scratchShot.set(...shot.look), frame); }
     const inRoom = (v: any) => { v.x = Math.max(-W2 + 0.25, Math.min(W2 - 0.25, v.x)); v.z = Math.max(-D2 + 0.25, Math.min(D2 - 0.25, v.z)); v.y = Math.max(CAM_MIN_Y, Math.min(H - 0.15, v.y)); };
-    inRoom(want);
+    if (!(intro as { outside?: boolean } | null)?.outside) inRoom(want);
     carry.step(P.x, P.z, camPos, camLook, camKey === "D" && !first && !intro && frame < 0.5 && !dbgCam);
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
     else { camPos.lerp(want, Math.min(1, dt * CS.posK)); camLook.lerp(wantLook, Math.min(1, dt * CS.lookK)); }
     let meA = 1;
-    if (camKey === "D" && frame < 0.5 && !intro) {
+    if (camKey === "D" && frame < 0.5 && !intro && !useShot && !mate) {
       // the eased camera too: shortened along its own line off a wall (never slid round onto his head),
       // risen over him if that brings it near, and if a ceiling stops the rise he fades a little
       const flat = capOnLine(camPos, P.x, P.z, freeAt);
@@ -899,7 +932,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       camPos.y = riseForMin(flat, camPos.y, H - 0.15);
       meA = followFade(Math.hypot(flat, camPos.y - FOLLOW_HEAD_Y));
     }
-    inRoom(camPos);
+    if (!(intro as { outside?: boolean } | null)?.outside) inRoom(camPos);
     if (dbgCam) { camera.position.set(...dbgCam.pos); camera.lookAt(...dbgCam.look); }
     else { camera.position.copy(camPos); camera.lookAt(camLook); }
     if (pov !== null && !dbgCam) applyPov(P);

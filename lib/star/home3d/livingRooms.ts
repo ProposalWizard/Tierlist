@@ -217,14 +217,14 @@ function aoCorners(c: Ctx, open: Wall[] = [], ceiling = true) {
 /** A table lamp (the kit's) that glows, and its pool of light. */
 function tableLamp(c: Ctx, x: number, y: number, z: number, square = false) {
   c.F!.put(square ? "lampSquareTable" : "lampRoundTable", x, z, 0, { y, glow: "#ffcf8a", solid: false, cast: false });
-  c.k.glow(c.k.glowT, "#ffcf8a", 0.32, 1.3, 1.3, x, y + 0.45, z, 0, 0);
+  c.k.glow(c.k.glowT, "#ffcf8a", 0.16, 1.3, 1.3, x, y + 0.45, z, 0, 0);
   c.k.glow(c.k.patchT, "#ffd9a0", 0.14, 1.4, 1.4, x, 0.009, z, -Math.PI / 2, 0);
 }
 
 /** A tall lamp (the kit's) with its glow on the wall behind and the floor. */
 function standLamp(c: Ctx, x: number, z: number, wallRy: number | null) {
   c.F!.put("lampRoundFloor", x, z, 0, { glow: "#ffcf8a", pad: 0.05 });
-  c.k.glow(c.k.glowT, "#ffcf8a", 0.3, 1.6, 1.8, x, 1.5, z, 0, wallRy ?? 0);
+  c.k.glow(c.k.glowT, "#ffcf8a", 0.15, 1.6, 1.8, x, 1.5, z, 0, wallRy ?? 0);
   c.k.glow(c.k.patchT, "#ffd9a0", 0.16, 1.8, 1.8, x, 0.009, z, -Math.PI / 2, 0);
 }
 
@@ -239,9 +239,15 @@ function filledShelf(c: Ctx, x: number, z: number, facing: number, low = false) 
     for (const [j, off] of [[0, -0.2], [1, 0.18]] as [number, number][]) {
       const it = items[(i * 2 + j) % items.length];
       if (it === "radio" && i === ys.length - 1) continue;
+      if (it.startsWith("plantSmall")) { smallPlant(c, x + r[0] * off - f[0] * 0.02, y, z + r[1] * off - f[1] * 0.02); continue; }
       F.put(it, x + r[0] * off - f[0] * 0.02, z + r[1] * off - f[1] * 0.02, facing + (j ? 0.15 : -0.1), { y, solid: false, cast: false });
     }
   });
+}
+
+/** A small real-leaf plant on a shelf or a counter (a snake plant or a little monstera, ~0.35 m). */
+function smallPlant(c: Ctx, x: number, y: number, z: number) {
+  plant(c.k, c.potM, c.leafM, x, z, { y, h: 0.36, kind: Math.abs(Math.round(x * 5 + z * 3)) % 2 ? "snake" : "monstera", pot: "#e9e4da" });
 }
 
 /** A plant from the kit (taller and leafier than the built pot). */
@@ -261,7 +267,7 @@ function tileCanvas(ground: string, line: string, n = 8) {
 /** Tiles up a wall (to 1.25 m, or full height), round its doorways. */
 function tileWalls(c: Ctx, walls: Wall[], top: number, colour = "#eef2f2") {
   const { k, W2, D2, plan } = c;
-  const m = k.mat("#ffffff", { map: k.tex(tileCanvas(colour, "#c9d3d6"), [4, 2]), roughness: 0.25, envMapIntensity: 0.8 });
+  const m = k.mat("#ffffff", { map: k.tex(tileCanvas(colour, "#9aa8ab"), [4, 2]), roughness: 0.3, envMapIntensity: 0.5 });
   for (const wl of walls) {
     const along = wl === "n" || wl === "s" ? "x" : "z";
     const at = wl === "n" ? -D2 + 0.012 : wl === "s" ? D2 - 0.012 : wl === "w" ? -W2 + 0.012 : W2 - 0.012;
@@ -317,7 +323,7 @@ export function buildStudio(c: Ctx, h: LivingHooks) {
   F.put("rugRounded", 0.35, sz, Math.PI / 2, { s: 0.85, solid: false, tint: { carpet: "#7d6a58" } });
   standLamp(c, sx - 0.55, sz - 1.25, null);
   F.put("speakerSmall", W2 - 0.25, sz + 0.95, -Math.PI / 2);
-  F.put("plantSmall2", W2 - 0.25, sz - 0.55, 0, { y: 0.5, solid: false });
+  smallPlant(c, W2 - 0.25, 0.5, sz - 0.55);
   // the west wall: a low shelf of books and plants under the window, a tall plant
   filledShelf(c, -W2 + 0.27, 1.75, Math.PI / 2, true);
   kitPlant(c, -W2 + 0.35, 0.65);
@@ -402,7 +408,7 @@ export function buildBedroom(c: Ctx, h: LivingHooks) {
   const { k, env, R, plan, W2, D2, H, X: X0, inp } = c;
   const X = X0!;
   const F = c.F!;
-  const shell = shellOf(k, env, R, plan, [{ wall: "s", c: W2 * 0.45, w: 1.6, y0: 0.8, y1: Math.min(H - 0.35, 2.35), view: R.view }]);
+  const shell = shellOf(k, env, R, plan, [{ wall: "s", c: W2 * 0.6, w: 1.3, y0: 0.8, y1: Math.min(H - 0.35, 2.35), view: R.view }]);
   const { metalM } = shell;
   const hasWard = plan.spots.includes("wardrobe");
   if (hasWard) h.wardrobe(metalM, Math.min(R.wardrobe, plan.d - 2.6));
@@ -425,7 +431,7 @@ export function buildBedroom(c: Ctx, h: LivingHooks) {
   kitPlant(c, W2 - 0.4, -D2 + 0.45);
   const dx = hasWard ? W2 - 0.25 : -W2 + 0.25;
   F.put("sideTableDrawers", dx, 0.75, hasWard ? -Math.PI / 2 : Math.PI / 2, { tint: { wood: c.wood } });
-  F.put("plantSmall3", dx, 0.5, 0, { y: 0.77, solid: false });
+  smallPlant(c, dx, 0.77, 0.5);
   F.put("books", dx, 1.0, 0.3, { y: 0.77, solid: false });
   if (!hasWard) { framedShirt(k, env, inp.kits.home, "", c.woodM, -W2 + 0.04, 1.65, 0.4, Math.PI / 2); filledShelf(c, -W2 + 0.27, -0.9, Math.PI / 2); }
   else artPiece(c, W2 - 0.03, 1.6, 0.4, -Math.PI / 2, 0.8, 1.0, 9);
@@ -440,7 +446,7 @@ export function buildBathroom(c: Ctx, _h: LivingHooks) {
   const { THREE } = k;
   const F = c.F!;
   const shell = shellOf(k, env, R, plan, [{ wall: "n", c: -W2 * 0.35, w: 0.9, y0: 1.5, y1: Math.min(H - 0.3, 2.3), view: R.view }]);
-  tileWalls(c, ["n", "s", "e", "w"], 1.3, R.tier === "estate" || R.tier === "villa" ? "#e9e3d8" : "#eef2f2");
+  tileWalls(c, ["n", "s", "e", "w"], 1.3, R.tier === "estate" || R.tier === "villa" ? "#d9cfbf" : "#c9d8da");
   // the shower in the north-east corner: its tray, glass, the head; walk in and it runs
   const shx = W2 - 0.6, shz = -D2 + 0.6;
   F.put("shower", shx, shz, Math.PI / 2, { solid: false });
@@ -462,7 +468,7 @@ export function buildBathroom(c: Ctx, _h: LivingHooks) {
   // the bath along the north wall (the grand tiers), else a towel rail there
   if (plan.w > 3.9) {
     F.put("bathtub", -W2 + 1.22, -D2 + 0.58, 0, { s: Math.min(1, (plan.w - 1.4) / 2.4) });
-    F.put("plantSmall1", -W2 + 0.25, -D2 + 0.25, 0, { y: 0.84, solid: false });
+    smallPlant(c, -W2 + 0.25, 0.84, -D2 + 0.25);
   } else {
     const P = painter(k, env);
     for (const y of [0.9, 1.25]) P.cyl(0.015, 0.015, 0.9, "#c9cdd2", -W2 + 1.0, y, -D2 + 0.12, 0, 0, Math.PI / 2);
@@ -486,8 +492,8 @@ export function buildBathroom(c: Ctx, _h: LivingHooks) {
   // the toilet in the south-west corner, a towel ladder, a bathmat, a plant
   F.put("toilet", W2 - 0.48, D2 - 0.55, -Math.PI / 2, {});
   F.put("rugRounded", 0.0, 0.2, 0, { s: 0.42, solid: false, tint: { carpet: "#9fc4c6" } });
-  F.put("plantSmall2", W2 - 0.25, D2 - 0.25, 0, { y: 0, solid: false, s: 2.2 });
-  F.put("trashcan", -W2 + 0.25, D2 - 0.25, 0, { s: 0.55 });
+  kitPlant(c, W2 - 0.32, 0.2, 0.75);
+  F.put("trashcan", W2 - 0.25, D2 - 1.2, 0, { s: 0.55 });
   return shell;
 }
 
@@ -577,7 +583,7 @@ export function buildLivingLounge(c: Ctx, h: LivingHooks) {
   if (stuff.console) k.box(0.3, 0.07, 0.38, k.mat("#e8e8ea", { roughness: 0.4 }), -W2 + 0.22, 0.485, 0.6);
   c.solids.push([-W2, -W2 + 0.45, -1.12, 1.12]);
   for (const s of [-1, 1]) F.put("speaker", -W2 + 0.22, s * 1.35, Math.PI / 2, { s: 0.9 });
-  F.put("plantSmall3", -W2 + 0.22, -0.7, 0, { y: 0.45, solid: false });
+  smallPlant(c, -W2 + 0.22, 0.45, -0.7);
   F.put("books", -W2 + 0.22, -0.35, Math.PI / 2, { y: 0.45, solid: false });
   framedShirt(k, env, inp.kits.home, "", c.woodM, -W2 + 0.04, 1.75, -2.0, Math.PI / 2);
   framedShirt(k, env, inp.kits.away, "", c.woodM, -W2 + 0.04, 1.75, 2.0, Math.PI / 2);
@@ -598,8 +604,7 @@ export function buildLivingLounge(c: Ctx, h: LivingHooks) {
     const cinema = plan.doors.some((d) => d.to === "cinema");
     artPiece(c, cinema ? 0 : 0.6, 1.65, -D2 + 0.03, 0, cinema ? 1.0 : 1.4, cinema ? 0.75 : 0.9, stuff.art ? 2 : 17);
   }
-  floorLamp(k, metalM, W2 - 0.45, -D2 + 0.45, [[W2 - 0.03, 1.5, -D2 + 1.05, 0, -Math.PI / 2]]);
-  c.solids.push([W2 - 0.65, W2, -D2, -D2 + 0.65]);
+  standLamp(c, W2 - 0.45, -D2 + 0.45, -Math.PI / 2);
   // a reading chair and a tall plant in the south-west, a shelf on the east wall
   F.put("loungeChair", -W2 + 1.0, D2 - 0.85, Math.PI * 0.8, { tint: { carpet: R.tier === "estate" ? "#2f3b4a" : "#8a9a8a" } });
   kitPlant(c, -W2 + 0.35, D2 - 0.35);
