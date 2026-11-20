@@ -8,8 +8,7 @@
  * night by the next match's kick-off; sunset with no save), KNOWITBALL in big
  * grey Anton, you on the left with the ball (a trialist in the game's green
  * with no save yet), and the menu as slanted tabs stacked on the right.
- * Settings shows only with a save (as the website's TitleScreen: no save, no
- * settings to open).
+ * Settings shows with or without a save (page.tsx always passes onSettings).
  */
 import { useMemo, useState } from "react";
 import { View, Text, Modal, useWindowDimensions, type ViewStyle } from "react-native";
@@ -128,7 +127,8 @@ export function TitleMenu({ onContinue, onNew, onHall, onTutorial, onSettings }:
         <SlantButton icon="▤" label="Load game" onPress={() => setSheet("load")} />
         <SlantButton gold icon="🏛" label="Hall of Fame" onPress={onHall} />
         <SlantButton icon="?" label="Tutorial" onPress={onTutorial} />
-        {career && <SlantButton icon="⚙" label="Settings" onPress={onSettings} />}
+        {/* page.tsx always passes onSettings: Settings is there before any career too. */}
+        <SlantButton icon="⚙" label="Settings" onPress={onSettings} />
         <Press onPress={() => setSheet("credits")} style={{ alignSelf: "flex-end", paddingRight: 12, paddingVertical: 4 }}>
           <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: "900", letterSpacing: 1.9, textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } }}>CREDITS</Text>
         </Press>

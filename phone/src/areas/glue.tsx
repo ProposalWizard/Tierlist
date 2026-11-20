@@ -15,6 +15,7 @@ import { getCareer } from "../game/store";
 import { TitleMenu } from "../screens/career/TitleMenu";
 import { WithPops } from "../screens/career/Moments";
 import { SigningMoment } from "../screens/career/Signing";
+import { listSlots } from "../world/slots";
 import { makeManager } from "@/lib/star/manager";
 import type { TransferOffer } from "@/lib/star/transfers";
 
@@ -64,8 +65,16 @@ function TransferSigningStep({ params }: { params?: Record<string, unknown> }) {
  * of Fame, Tutorial, Settings, Credits). Registered here, after core, so it
  * takes the "title" name; core's Title stays as it was.
  */
+/** A brand-new install opens on "Who are you?" (page.tsx phase "profile-setup"); its "‹ Main menu" comes back here. Once per launch. */
+let firstLaunchSeen = false;
 function TitleWithMenu() {
   const nav = useNav();
+  useEffect(() => {
+    if (firstLaunchSeen) return;
+    firstLaunchSeen = true;
+    if (!getCareer() && listSlots().every((s) => s.empty)) nav.go("career-new");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const open = () => { const s = flow.resumeStep(); if (s.screen === "tabs") nav.home(); else nav.replace(s.screen, s.params); };
   return (
     <TitleMenu
