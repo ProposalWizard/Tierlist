@@ -58,7 +58,8 @@ export function useRiskyPart(part: RiskyPart, opts: { settleMs?: number; delayMs
       if (opts.delayMs) { start(part); setGo(true); }
       t1 = setTimeout(() => done(part), opts.settleMs ?? 4000);
     }, opts.delayMs ?? 0);
-    return () => { clearTimeout(t0); if (t1) clearTimeout(t1); };
+    // closing the screen before it settled is not a crash: clear the mark
+    return () => { clearTimeout(t0); if (t1) clearTimeout(t1); done(part); };
   }, [off, part, opts.delayMs, opts.settleMs]);
   return !off && go;
 }
