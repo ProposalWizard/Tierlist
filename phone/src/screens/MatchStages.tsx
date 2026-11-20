@@ -51,10 +51,12 @@ export function usePitchHeight(): number {
  * fits it (data-pitch-fit 56: the captions and the page's padding under the pitch;
  * above it the stage pips, the board and the safe area).
  */
+// the trial's event banner (~58 px) sits above the pitch too: leave room so the hint under the pitch stays on screen
+const TRIAL_BANNER = 58;
 export function useTrialPitchHeight(): number {
   const { width, height } = useWindowDimensions();
   const { top, bottom } = useSafeAreaInsets();
-  return Math.round(Math.max(width * 1.2, Math.min(width * 1.9, height - top - bottom - 118 - 60)));
+  return Math.round(Math.max(width * 1.2, Math.min(width * 1.9, height - top - bottom - 118 - 60 - TRIAL_BANNER)));
 }
 
 // ── Free kicks (stages/TrialFreeKicks.tsx) ──
