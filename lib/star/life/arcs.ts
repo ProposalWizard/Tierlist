@@ -23,7 +23,7 @@ import { allHold, holds, type CondCtx, type V2Ctx } from "./cond";
 import { ctxFor, factsOf, type FactOverride } from "./facts";
 import { castEvent, cloneLife, lifeOf, type LiveEvent } from "./director";
 import { chooseOption, pickOutcome, type ChoiceResult, type LifeChange } from "./resolve";
-import { lifeWeek, personInfo, remember } from "./people";
+import { lifeWeek, personInfo, remember, roleOf } from "./people";
 import { fillLine } from "./text";
 import { breakPromise, keepPromise, makePromise, openPromises, promiseDef } from "./promises";
 
@@ -293,6 +293,11 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
       if (!fresh) continue;
       const nl = cloneLife(life);
       nl.arcs = { ...(nl.arcs ?? {}), [arc.id]: fresh };
+      // The story's pool people are this career's for good (pool.ts): pinned the day it starts.
+      for (const id of Object.values(fresh.cast)) {
+        const pp = personInfo(c, id)?.pool;
+        if (pp) nl.pool = { ...(nl.pool ?? {}), [roleOf(id)]: pp.id };
+      }
       const trial: CareerState = { ...c, life: nl };
       if (opts.force !== arc.id && !beatOpen(trial, arc, fresh, first, moment, opts.facts)) continue;
       c = trial;
@@ -384,13 +389,13 @@ export function bubblesFor(c: CareerState, personId: string, facts?: FactOverrid
     if (run.o && run.o[1] === personId) {
       const beat = beatOf(arc, run.o[0]);
       const e = beat?.event.entry;
-      if (beat && e) out.push({ arc: id, beat: beat.id, label: e.bubble ?? beat.title, icon: e.icon === "ball" ? "⚽" : "⭐", hint: e.hint ?? "", gold: true, chip: "Today only" });
+      if (beat && e) out.push({ arc: id, beat: beat.id, label: fillLine(e.bubble ?? beat.title, c, run.cast, arcCtx(c, id)), icon: e.icon === "ball" ? "⚽" : "⭐", hint: e.hint ?? "", gold: true, chip: "Today only" });
     }
     for (const beat of arc.beats) {
       const e = beat.event.entry;
       if (e?.kind !== "standing" || run.cast[e.on ?? ""] !== personId) continue;
       if (!beatOpen(c, arc, run, beat, null, facts)) continue;
-      out.push({ arc: id, beat: beat.id, label: e.bubble ?? beat.title, icon: e.icon === "ball" ? "⚽" : "⭐", hint: e.hint ?? "", gold: false, chip: "Thursdays" });
+      out.push({ arc: id, beat: beat.id, label: fillLine(e.bubble ?? beat.title, c, run.cast, arcCtx(c, id)), icon: e.icon === "ball" ? "⚽" : "⭐", hint: e.hint ?? "", gold: false, chip: "Thursdays" });
     }
   }
   return out;
@@ -415,7 +420,7 @@ export interface ArcExtras {
 export interface PlayOpts { rng: () => number; facts?: FactOverride }
 
 const ITEM_WORDS: Record<string, [string, string]> = {
-  "item:dens-ball-bag": ["Den's ball bag", "\"Den's hundred\" is now a drill in your own garden."],
+  "item:dens-ball-bag": ["{kitman.short}'s ball bag", "\"{kitman.short}'s hundred\" is now a drill in your own garden."],
 };
 
 /** Play an ending of a beat's talk (or a card's choice): the outcome through
@@ -468,7 +473,7 @@ function applyArcOutcome(c0: CareerState, b: BeatLive, o: ArcOutcome, endId: str
   if (a?.end) {
     run.done = a.end;
     const e = arc.ends.find((x) => x.id === a.end);
-    if (e) ex.ended = { title: e.title, text: e.text };
+    if (e) ex.ended = { title: fillLine(e.title, c, b.cast, ctx()), text: fillLine(e.text, c, b.cast, ctx()) };
   }
   if (a?.next) {
     const nextIf = (a as { nextIf?: string }).nextIf;
@@ -478,7 +483,10 @@ function applyArcOutcome(c0: CareerState, b: BeatLive, o: ArcOutcome, endId: str
   if (o.give || o.unlock) {
     life.got = Array.from(new Set([...(life.got ?? []), ...(o.give ? [o.give] : []), ...(o.unlock ?? "").split(/[+]/).filter(Boolean).map((u) => (u.includes(":") ? u : `garden:${u}`))])).slice(-20);
     const w = o.give ? ITEM_WORDS[o.give] ?? o.giveWords : undefined;
-    if (w) { ex.got = { what: w[0], text: w[1] }; changes.push({ kind: "item", label: w[0] }); }
+    if (w) {
+      const fw = (x: string) => fillLine(x, c, b.cast, ctx());
+      ex.got = { what: fw(w[0]), text: fw(w[1]) }; changes.push({ kind: "item", label: fw(w[0]) });
+    }
     else if (o.unlock) changes.push({ kind: "item", label: o.unlock.startsWith("trophy:") ? "On the kit room door" : "Unlocked" });
   }
   if (o.objective && (life.objs ?? []).length < MAX_OBJECTIVES) {
@@ -555,7 +563,7 @@ export function questLog(c: CareerState): QuestRow[] {
       const beat = arc.beats.find((x) => x.n === n);
       if (!beat) continue;
       const done = !!run.f[beat.id]?.length;
-      dots.push({ id: beat.id, n, title: done ? beat.title : "?", state: done ? "done" : "future" });
+      dots.push({ id: beat.id, n, title: done ? fill(beat.title) : "?", state: done ? "done" : "future" });
     }
     const fut = dots.find((d) => d.state === "future");
     let next = "", when = "";
@@ -584,8 +592,8 @@ export function questLog(c: CareerState): QuestRow[] {
     if (standing && !run.done && (run.f[standing.id]?.length ?? 0) < (standing.repeat?.max ?? 0)) stats.push(fill(standing.hint));
     const e = run.done ? arc.ends.find((x) => x.id === run.done) : undefined;
     out.push({
-      arc: id, title: arc.title, owner: personInfo(c, owner)?.name ?? "", ownerId: owner, next, when, dots,
-      clock: cl && run.k[cl.id] !== undefined ? { label: cl.label, filled: run.k[cl.id], segments: cl.segments } : undefined,
+      arc: id, title: fill(arc.title), owner: personInfo(c, owner)?.name ?? "", ownerId: owner, next, when, dots,
+      clock: cl && run.k[cl.id] !== undefined ? { label: fill(cl.label), filled: run.k[cl.id], segments: cl.segments } : undefined,
       ended: e && !next ? { title: e.title, text: e.text } : undefined, stats,
     });
   }

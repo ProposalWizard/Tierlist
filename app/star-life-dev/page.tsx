@@ -350,7 +350,7 @@ export default function LifeTestPage() {
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <Btn main onClick={() => story.act.arriveWith(kitman())}>▶ Start: 19, a bad Saturday</Btn>
                   <Btn onClick={story.act.arrive}>Arrive at training</Btn>
-                  <Btn onClick={() => story.act.menu(arcsOf(career)["arc-hundred-balls"]?.cast.kitman || "staff:kitman")}>Talk to Den</Btn>
+                  <Btn onClick={() => story.act.menu(arcsOf(career)["arc-hundred-balls"]?.cast.kitman || "staff:kitman")}>Talk to the kit man</Btn>
                 </div>
                 <Label>Jump time</Label>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

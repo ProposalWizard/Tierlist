@@ -14,6 +14,7 @@ import type { CareerState, SquadPlayer } from "../types";
 import type { LifeMemory, LifePerson, LifeState } from "./types";
 import { PEOPLE_CAP, PERSON_MEMORY_CAP } from "./types";
 import { scaledChange } from "../relationships";
+import { poolPerson, type PoolPerson } from "./pool";
 
 // ── Who is who ──────────────────────────────────────────────────────────
 
@@ -87,6 +88,8 @@ export interface PersonInfo {
   /** Squad data for a team-mate. */
   player?: SquadPlayer;
   outlet?: string;
+  /** A role with a pool (pool.ts): the person this career has, with age, accent, look, sign-off. */
+  pool?: PoolPerson;
 }
 
 /** A person's name and role, from the id and the career. Null = unknown id
@@ -98,6 +101,9 @@ export function personInfo(c: CareerState, id: string): PersonInfo | null {
   const pick = <T,>(a: T[], k: string) => a[(seed + hash(k)) % a.length];
   // The story people take consecutive names from one shuffle, so two of them never share one.
   const nth = <T,>(a: T[], n: number) => a[(seed + n) % a.length];
+  // A role with a pool: the one person this career keeps for it (Den is one kit man of four).
+  const pp = role === "teammate" || role === "manager" ? null : poolPerson(c, role);
+  if (pp) return { id, role, name: `${pp.first} ${pp.last}`, short: pp.short ?? pp.first, pool: pp, outlet: role === "reporter" ? OUTLETS.reporter : undefined };
   switch (role) {
     case "teammate": {
       const p = (c.squad ?? []).find((s) => s.id === id);
@@ -117,7 +123,7 @@ export function personInfo(c: CareerState, id: string): PersonInfo | null {
     case "brother": { const f = pick(FIRST_M, "bro"); return { id, role, name: `${f} ${sur}`, short: f }; }
     case "agent": { const f = pick(FIRST_M, "agent"); const s = pick(SURNAMES, "agent-s"); return { id, role, name: `${f} ${s}`, short: f }; }
     case "physio": { const f = pick(FIRST_F, "physio"); const s = pick(SURNAMES, "physio-s"); return { id, role, name: `${f} ${s}`, short: f }; }
-    // Den: one man, written as one man (Events v2's kit man arc signs his notes "D").
+    // (the pool always has a kit man; this is only a fallback)
     case "kitman": return { id, role, name: `Den ${pick(SURNAMES, "kit-s")}`, short: "Den" };
     case "tabloid": case "broadsheet": {
       const f = pick(FIRST_M, role); const s = pick(SURNAMES, `${role}-s`);

@@ -218,6 +218,9 @@ export interface LifeState {
   roster?: Record<string, number>;
   /** Your voice this season (decision screens): [season, humble, calm, confident, fiery, said nothing]. */
   voice?: [number, number, number, number, number, number];
+  /** A role's person pinned for this career (pool.ts): role → pool id. Only set when a save
+   *  must keep someone the seed would not pick (an old save's Den). */
+  pool?: Record<string, string>;
   // ── Events v2 (arcs, promises, objectives; lib/star/life/arcs.ts). All optional. ──
   /** Stories in progress or finished, by arc id. */
   arcs?: Record<string, ArcRun>;

@@ -29,7 +29,7 @@ import RoundMenu, { type RoundReply } from "./RoundMenu";
 import ActivityHost from "./ActivityHost";
 import { AfterCards, InviteScreen, NoticeScreen, PhoneLog, StoryCardScreen, StoryFace } from "./StoryCards";
 import { placeStill, pointOn, useStageSize, type DecisionBackdrop } from "./DecisionParts";
-import { speak, stopVoice } from "@/lib/star/life/voice";
+import { speak, stopVoice, voiceCast } from "@/lib/star/life/voice";
 
 const K = "/star/life/kitman/";
 /** The stills behind the story's talks (the 3D compound goes here later): him and you drawn in one
@@ -41,17 +41,21 @@ export const STORY_STILLS: Record<string, DecisionBackdrop> = {
   "stadium-den": { src: `${K}stadium-den.webp`, w: 780, h: 1688, focus: { x: 0.639, y: 0.313 } },
 };
 
-function stillFor(b: BeatLive): DecisionBackdrop | undefined {
+function stillFor(b: BeatLive, career: CareerState): DecisionBackdrop | undefined {
   if (b.event.template === "phone-call") return undefined;
-  if (b.node === "van" || b.node === "soup" || b.node === "t-soup") return STORY_STILLS["van-den"];
-  if (b.event.place.startsWith("stadium")) return STORY_STILLS["stadium-den"];
+  // The kit man's stills are drawn only for the man they show (pool.ts): another kit man gets the
+  // empty place, and his drawn head on the line.
+  const st = b.cast.kitman ? personInfo(career, b.cast.kitman)?.pool?.stills : undefined;
+  const at = (src: string | undefined, empty: string, h = 530): DecisionBackdrop => (src ? { src, w: 780, h: 1688, focus: { x: 0.639, y: 0.313 } } : { src: `${K}${empty}`, w: 780, h, focus: { x: 0.5, y: 0.5 } });
+  if (b.node === "van" || b.node === "soup" || b.node === "t-soup") return at(st?.van, "bg-garden-van.webp");
+  if (b.event.place.startsWith("stadium")) return at(st?.stadium, "bg-stadium-night.webp", 592);
   if (b.beat === "b7-your-turn") return STORY_STILLS["pitch2-kid"];
   if (b.beat === "b4-the-door") return undefined;
-  return STORY_STILLS["pitch2-den"];
+  return at(st?.pitch, "bg-garden-dusk.webp");
 }
 
 /** The back of the kit room door: forty years of chalk, and your best. */
-function ChalkDoor({ career, best, nights }: { career: CareerState; best: number; nights: number }) {
+function ChalkDoor({ career, best, nights, cut }: { career: CareerState; best: number; nights: number; cut?: string }) {
   const rows: [string, string, string][] = [["94", "No. 9", "2009"], ["88", "No. 7", "1996"], ["86", "No. 10", "2014"], ["85", "No. 9", "1987"]];
   return (
     <div className="absolute inset-0" style={{ background: "radial-gradient(90% 60% at 50% 30%, #2c3a2a, #0c120c)" }} data-door>
@@ -64,7 +68,7 @@ function ChalkDoor({ career, best, nights }: { career: CareerState; best: number
         <div style={{ fontSize: 11, opacity: 0.4, marginTop: 10 }}>a lot of other numbers, rubbed out</div>
       </div>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`${K}cut-den.webp`} alt="" style={{ position: "absolute", right: "2%", bottom: "28%", height: "30%", filter: "brightness(.85) drop-shadow(0 12px 12px rgba(0,0,0,.6))" }} />
+      {cut && <img src={cut} alt="" style={{ position: "absolute", right: "2%", bottom: "28%", height: "30%", filter: "brightness(.85) drop-shadow(0 12px 12px rgba(0,0,0,.6))" }} />}
     </div>
   );
 }
@@ -221,7 +225,7 @@ export function useStory({ career, setCareer, rng, facts, toast }: StoryOpts) {
       toast(`Season ${c.season}, week ${c.week}.`);
       function summary(list: ArcNotice[], n: number): ArcNotice[] {
         const run = arcsOf(c)["arc-hundred-balls"];
-        return [...(n ? [{ kind: "remind" as const, arc: "arc-hundred-balls", title: "Thursdays on pitch two", text: `${n} Thursday${n === 1 ? "" : "s"} played for you by the dice while you skipped. Your best is ${run?.v.best ?? 0}.`, w: 0, who: "Den" }] : []), ...list.slice(-6)];
+        return [...(n ? [{ kind: "remind" as const, arc: "arc-hundred-balls", title: "Thursdays on pitch two", text: `${n} Thursday${n === 1 ? "" : "s"} played for you by the dice while you skipped. Your best is ${run?.v.best ?? 0}.`, w: 0, who: (career && personInfo(career, "staff:kitman")?.short) || "the kit man" }] : []), ...list.slice(-6)];
       }
       function openBeatView(cc: CareerState, arc: string, beat: string): StoryView | null {
         const o = openBeat(cc, arc, beat);
@@ -307,7 +311,7 @@ function MenuStage({ career, id, reply: rep, onOffer, onLine, onClose, facts }: 
   const beat = gold ? beatOf(arcById(gold.arc)!, gold.beat) : undefined;
   const setup = beat?.event.setup[0] && run ? beat.event.setup.map((s) => s).join(" ") : "";
   const info = personInfo(career, id);
-  const filled = setup ? setup.replace(/\{kitman\.short\}|\{kitman\.name\}/g, personInfo(career, run?.cast.kitman ?? "")?.short ?? "Den").replace(/\{kid\.(name|short)\}/g, info?.short ?? "He").replace(/\{if [^}]+\}[\s\S]*?\{\/if\}/g, "").trim() : "";
+  const filled = setup ? setup.replace(/\{kitman\.short\}|\{kitman\.name\}/g, personInfo(career, run?.cast.kitman ?? "")?.short ?? "He").replace(/\{kid\.(name|short)\}/g, info?.short ?? "He").replace(/\{if [^}]+\}[\s\S]*?\{\/if\}/g, "").trim() : "";
   return (
     <div ref={ref} className="relative h-full min-h-[560px] overflow-hidden bg-[#070d18]" data-story-menu={id}>
       <div className="absolute" style={{ left: placed.left, top: placed.top, width: placed.width, height: placed.height, backgroundImage: `url(${still.src})`, backgroundSize: "100% 100%" }} />
@@ -323,10 +327,12 @@ function MenuStage({ career, id, reply: rep, onOffer, onLine, onClose, facts }: 
 /** What the phone shows while a story screen is up. */
 /** Den and the gaffer speak the line on screen (lib/star/life/voice.ts): a node's words, an
  *  ending's words, a card's outcome. A new screen stops the last clip. */
-function useStoryVoice(v: StoryView | null) {
+function useStoryVoice(v: StoryView | null, career: CareerState | null) {
   const key = !v ? "" : v.k === "talk" ? `${v.b.beat}|${v.b.node}|${v.b.round}|${v.picked ? "end" : ""}` : v.k === "card" ? `${v.b.beat}|card|${v.picked?.choiceId ?? ""}` : v.k;
   useEffect(() => {
     if (!v) { stopVoice(); return; }
+    // Only this story's own people speak in their recorded voices (pool.ts: Den's voice is Den's).
+    if ("b" in v && career) voiceCast(Object.values(v.b.cast).map((id) => personInfo(career, id)?.pool?.id ?? "").filter(Boolean));
     if (v.k === "talk") {
       if (v.picked) { const end = v.b.lastReply?.end; if (end) speak(`${v.b.beat}.end.${end}.`, v.picked.result.text); else stopVoice(); }
       else speak([`${v.b.beat}.${v.b.node}.`, ...(v.b.round === 1 ? [`${v.b.beat}.setup`] : [])], v.live.lines.join(" "));
@@ -341,7 +347,7 @@ function useStoryVoice(v: StoryView | null) {
 
 export function StoryScreen({ story, career, facts, setCareer, allowDice }: { story: Story; career: CareerState; facts: FactOverride; setCareer: (c: CareerState) => void; allowDice?: boolean }): ReactNode {
   const v = story.view;
-  useStoryVoice(v);
+  useStoryVoice(v, career);
   if (!v) return null;
   if (v.k === "menu") {
     return <MenuStage career={career} id={v.id} reply={v.reply} facts={facts} onOffer={story.onOffer}
@@ -365,8 +371,8 @@ export function StoryScreen({ story, career, facts, setCareer, allowDice }: { st
       sceneImage={v.b.beat === "b2-the-gaffer" ? `${K}corridor-gaffer.webp` : undefined} face={<StoryFace career={career} id={v.b.cast[v.live.event.speaker ?? ""] ?? ""} size={64} />}
       onChoose={(id) => story.talkChoose(id)} picked={v.picked ? { choiceId: v.picked.choiceId, result: v.picked.result, before: v.before } : null} onContinue={story.next} />;
   }
-  const door = v.b.beat === "b4-the-door" ? <ChalkDoor career={career} best={Number(arcsOf(career)[v.b.arc]?.v.best ?? 0)} nights={Number(arcsOf(career)[v.b.arc]?.v.nights ?? 0)} /> : undefined;
+  const door = v.b.beat === "b4-the-door" ? <ChalkDoor career={career} best={Number(arcsOf(career)[v.b.arc]?.v.best ?? 0)} nights={Number(arcsOf(career)[v.b.arc]?.v.nights ?? 0)} cut={personInfo(career, v.b.cast.kitman ?? "")?.pool?.stills?.cut} /> : undefined;
   void node; void setCareer;
-  return <Telltale key={v.live.id} career={v.picked ? career : v.before} live={v.live} clock="off" backdropZoom={1} keepColour face={<StoryFace career={career} id={v.b.cast[v.live.event.speaker ?? ""] ?? ""} size={124} />} backdrop={door ? undefined : stillFor(v.b)} world={door}
+  return <Telltale key={v.live.id} career={v.picked ? career : v.before} live={v.live} clock="off" backdropZoom={1} keepColour face={<StoryFace career={career} id={v.b.cast[v.live.event.speaker ?? ""] ?? ""} size={124} />} backdrop={door ? undefined : stillFor(v.b, career)} world={door}
     story={storyProps} afterExtra={after} onChoose={story.talkChoose} picked={v.picked} onContinue={story.next} />;
 }

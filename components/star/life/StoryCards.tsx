@@ -37,7 +37,7 @@ import "./decision.css";
 /** A face for the phone: the kit man and the gaffer have stills; everyone else the drawn head. */
 export function StoryFace({ career, id, size = 38, kid }: { career: CareerState; id: string; size?: number; kid?: boolean }) {
   const role = id ? roleOf(id) : "teammate";
-  const src = role === "kitman" ? "/star/life/kitman/face-den.webp" : role === "manager" ? "/star/life/kitman/face-gaffer.webp" : kid ? "/star/life/kitman/face-kid.webp" : null;
+  const src = role === "kitman" ? (personInfo(career, id)?.pool?.stills?.face ?? null) : role === "manager" ? "/star/life/kitman/face-gaffer.webp" : kid ? "/star/life/kitman/face-kid.webp" : null;
   // eslint-disable-next-line @next/next/no-img-element
   if (src) return <img src={src} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: 999, objectFit: "cover", flex: "none" }} />;
   return <LifeFace career={career} id={id || "oneoff:stranger"} size={size} />;
@@ -113,7 +113,7 @@ function EmptyChairPost({ career }: { career: CareerState }) {
         <rect x="150" y="98" width="40" height="16" rx="2" fill="#fff" />
         <text x="170" y="109.5" textAnchor="middle" fontSize="8" fontWeight="900" fill="#111">YOUR NAME</text>
       </svg>
-      <div style={{ padding: "9px 12px 11px", fontSize: 13, fontWeight: 700 }}>A great night for Den. Thank you to everyone who came. 💛</div>
+      <div style={{ padding: "9px 12px 11px", fontSize: 13, fontWeight: 700 }}>A great night for {personInfo(career, "staff:kitman")?.short ?? "him"}. Thank you to everyone who came. 💛</div>
     </div>
   );
 }
@@ -131,7 +131,7 @@ export function StoryCardScreen({ career, b, live, picked, extras, onChoose, onC
   const narr0 = live.lines.filter((_, i) => !look.note || i !== look.note.line);
   const ctx = arcCtx(career, b.arc, b);
   const sign = look.note?.sign ? fillLine(look.note.sign, career, b.cast, ctx) : "";
-  const bg = b.event.place.startsWith("stadium") ? "/star/life/kitman/stadium-den.webp" : null;
+  const bg = b.event.place.startsWith("stadium") ? (personInfo(career, b.cast.kitman ?? "")?.pool?.stills?.stadium ?? "/star/life/kitman/bg-stadium-night.webp") : null;
   // The paper holds only what is written on it; the words around the quote stay in the scene.
   const qa = noteLine ? noteLine.indexOf('"') : -1, qb = noteLine ? noteLine.lastIndexOf('"') : -1;
   const quoted = noteLine && qa >= 0 && qb > qa ? noteLine.slice(qa + 1, qb) : noteLine ?? "";

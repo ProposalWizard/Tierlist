@@ -43,7 +43,7 @@
  "clocks": [
   {
    "id": "den-retires",
-   "label": "Den's last seasons",
+   "label": "{kitman.short}'s last seasons",
    "segments": 3,
    "tick": [
     {
@@ -114,7 +114,7 @@
     ]
    },
    "dueText": "Thursday",
-   "remind": "\"Bag's in the van for Thursday. D\""
+   "remind": "\"Bag's in the van for Thursday. {kitman.signoff}\""
   },
   "p-dens-night": {
    "id": "p-dens-night",
@@ -193,7 +193,7 @@
     ]
    },
    "dueText": "One Thursday in the next few weeks",
-   "remind": "\"He's been practising in the garden. D\""
+   "remind": "\"He's been practising in the garden. {kitman.signoff}\""
   },
   "p-dens-speech": {
    "id": "p-dens-speech",
@@ -483,7 +483,7 @@
       "play": {
        "activity": {
         "mode": "strike-drill",
-        "name": "Den's hundred",
+        "name": "{kitman.short}'s hundred",
         "intro": "Ten balls. Each one stands for ten. He rolls them in from your left and counts.",
         "dials": {
          "kind": "technique",
@@ -1570,7 +1570,7 @@
       "play": {
        "activity": {
         "mode": "strike-drill",
-        "name": "Den's hundred",
+        "name": "{kitman.short}'s hundred",
         "dials": {
          "kind": "technique",
          "balls": 10,
@@ -2358,7 +2358,7 @@
   },
   {
    "id": "b6-the-night",
-   "title": "Den's night",
+   "title": "{kitman.short}'s night",
    "after": {
     "clock": "den-retires"
    },
@@ -2376,7 +2376,7 @@
      "kind": "invite",
      "via": "text-thread",
      "from": "kitman",
-     "text": "\"Friday. 7 o'clock at the ground. Wear a shirt with a collar. D\"",
+     "text": "\"Friday. 7 o'clock at the ground. Wear a shirt with a collar. {kitman.signoff}\"",
      "choices": [
       "attend",
       "send-apologies",
@@ -2864,7 +2864,7 @@
     ],
     "setup": [
      "A real letter, with a stamp on it. The envelope has your squad number where the house number should be, and it got here anyway.",
-     "\"No hard feelings, I know how the last week goes. They gave me a clock and a lawnmower. I'm out the back most afternoons and the bag is in my shed if you're ever passing. The soup offer stands. D\""
+     "\"No hard feelings, I know how the last week goes. They gave me a clock and a lawnmower. I'm out the back most afternoons and the bag is in my shed if you're ever passing. The soup offer stands. {kitman.signoff}\""
     ],
     "choices": [
      {
@@ -2949,7 +2949,7 @@
     "art": "✉️",
     "note": {
      "line": 1,
-     "sign": "D",
+     "sign": "{kitman.initial}",
      "foot": "A letter, with a stamp on it"
     }
    }
@@ -3272,7 +3272,7 @@
   },
   {
    "id": "b7b-text-den",
-   "title": "Den hears about it",
+   "title": "{kitman.short} hears about it",
    "event": {
     "id": "arc-hb-7b-text-den",
     "title": "A photo of the back of a hand",
@@ -3300,7 +3300,7 @@
     ],
     "setup": [
      "A picture message from a number you don't have saved. It's the back of an old man's hand with \"THURS - {kid.short}\" written on it in biro.",
-     "\"New kit man rang me. Is the lad any good? D\""
+     "\"New kit man rang me. Is the lad any good? {kitman.signoff}\""
     ],
     "choices": [
      {

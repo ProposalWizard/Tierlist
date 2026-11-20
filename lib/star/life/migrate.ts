@@ -87,6 +87,11 @@ function migrateV2(o: Record<string, unknown>): Partial<LifeState> {
     }
     out.arcs = arcs;
   }
+  // The people pool (pool.ts): a pinned person is kept; a save whose kit man story started
+  // before the pool existed keeps Den (the man it was written with).
+  const pool = strMap(o.pool);
+  if (out.arcs?.["arc-hundred-balls"] && !pool.kitman) pool.kitman = "den";
+  if (Object.keys(pool).length) out.pool = pool;
   if (Array.isArray(o.promises)) {
     out.promises = o.promises.map(obj).filter((p) => str(p.id) && str(p.arc)).slice(-26).map((p): PromiseRun => ({
       id: p.id as string, arc: p.arc as string, to: String(p.to ?? ""), text: String(p.text ?? "").slice(0, 160), made: num(p.made, 0), due: num(p.due, -1),

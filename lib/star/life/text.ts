@@ -6,7 +6,7 @@ import type { CareerState } from "../types";
 import { personInfo } from "./people";
 import { holds, type CondCtx } from "./cond";
 
-export const PLACEHOLDER_KEYS = ["name", "short", "age", "outlet", "club", "position"] as const;
+export const PLACEHOLDER_KEYS = ["name", "short", "age", "outlet", "club", "position", "initial", "signoff", "from"] as const;
 export const YOU_KEYS = ["name", "short", "club", "number", "horse", "age"] as const;
 
 export function fillLine(src: string, c: CareerState, cast: Record<string, string>, ctx: CondCtx): string {
@@ -39,7 +39,10 @@ export function fillLine(src: string, c: CareerState, cast: Record<string, strin
     if (key === "name") return info.name;
     if (key === "short") return info.short;
     if (key === "outlet") return info.outlet ?? "the papers";
-    if (key === "age") return String(info.player?.age ?? "");
+    if (key === "age") return String(info.player?.age ?? info.pool?.age ?? "");
+    if (key === "initial") return info.short.replace(/^(Mr|Mrs) /, "").charAt(0);
+    if (key === "signoff") return info.pool?.signoff ?? info.short;
+    if (key === "from") return info.pool?.from ?? "round here";
     if (key === "club") return c.player.club;
     if (key === "position") return info.player?.position ?? "";
     return all;

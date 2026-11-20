@@ -136,7 +136,7 @@ check(s.step.kind === "end", "the promise ends the talk");
 let end = A.playEnding(c, (s.step as { live: typeof b }).live, (s.step as { end: string }).end, { rng, facts: bad });
 c = end.career;
 check(end.result.remembered.some((r) => r.tag === "stayed-out-with-him"), "Den will remember that");
-check(end.extras.promiseMade?.text === "Be at Den's night when he retires", `promise made: ${end.extras.promiseMade?.text}`);
+check(/^Be at [A-Z][a-z]+'s night when he retires$/.test(end.extras.promiseMade?.text ?? ""), `promise made, with this career's kit man's name: ${end.extras.promiseMade?.text}`);
 check(run(c).v.best === 80 && run(c).v.tell === 1 && run(c).v.nights === 1, `the arc keeps best 80, tell 1 (${JSON.stringify(run(c).v)})`);
 check(PR.openPromises(c).length === 1, "one open promise in the phone");
 check(A.questLog(c)[0]?.next.includes("gaffer"), `quest log: next is the gaffer (${A.questLog(c)[0]?.next})`);
@@ -303,6 +303,58 @@ const atNight = m.career;
     check(!dead.length, `${arc.id}: every due beat opens (${dead.slice(0, 3).join(", ")})`);
   }
   if (process.env.V) console.log(`stories played by the dice: ${played} careers over ${stories.length} stories`);
+}
+
+// The people pool (pool.ts; Harry: "surely varying his name/voice across different careers makes
+// sense"). For every person in a role's pool, every story that casts the role reads with no slot
+// left unfilled and with no other pool person's name; no story hard-codes a pool name.
+{
+  const { POOL, poolNames } = await import("../../lib/star/life/pool.ts");
+  const { fillLine } = await import("../../lib/star/life/text.ts");
+  const { ROLE_ID } = await import("../../lib/star/life/people.ts");
+  const strings = (o: unknown, out: string[] = []): string[] => {
+    if (typeof o === "string") out.push(o);
+    else if (Array.isArray(o)) o.forEach((x) => strings(x, out));
+    else if (o && typeof o === "object") Object.values(o).forEach((x) => strings(x, out));
+    return out;
+  };
+  const word = (n: string) => new RegExp(`(^|[^A-Za-z])${n}([^A-Za-z]|$)`);
+  for (const arc of ARCS) {
+    const roles = arc.cast.map((s) => s.pick).filter((r) => POOL[r]);
+    const all = strings(arc);
+    for (const role of roles) {
+      const names = poolNames(role);
+      const hard = all.filter((t) => names.some((n) => word(n).test(t)));
+      check(!hard.length, `${arc.id}: no ${role}'s name written into the story (${hard[0]?.slice(0, 80) ?? ""})`);
+      for (const p of POOL[role]) {
+        const base = career();
+        const c0 = { ...base, life: { ...(base.life ?? {}), pool: { [role]: p.id } } } as CareerState;
+        const cast: Record<string, string> = {};
+        for (const s of arc.cast) cast[s.slot] = (ROLE_ID as Record<string, string>)[s.pick] ?? "";
+        const ctx = A.arcCtx(c0, arc.id);
+        const filled = all.map((t) => fillLine(t, c0, cast, ctx));
+        const open = filled.filter((t) => /\{(?!arc\.|activity\.)[a-z]+\.[a-zA-Z]+\}/.test(t));
+        const other = names.filter((n) => n !== p.first && n !== (p.short ?? p.first));
+        const wrong = filled.filter((t) => other.some((n) => word(n).test(t)));
+        check(!open.length, `${arc.id} with ${role} ${p.first}: every slot filled (${open[0]?.slice(0, 80) ?? ""})`);
+        check(!wrong.length, `${arc.id} with ${role} ${p.first}: no other ${role}'s name (${wrong[0]?.slice(0, 80) ?? ""})`);
+      }
+    }
+  }
+  // The same career keeps its kit man; a different career can get another one.
+  const { personInfo } = await import("../../lib/star/life/people.ts");
+  const names = new Set<string>();
+  for (const first of ["Sam", "Alex", "Jordan", "Leo", "Harry", "Mikey", "Kai", "Theo"]) {
+    const b = career();
+    const c1 = { ...b, player: { ...b.player, firstName: first } } as CareerState;
+    const n1 = personInfo(c1, "staff:kitman")?.short, n2 = personInfo(c1, "staff:kitman")?.short;
+    check(n1 === n2, "the same career always has the same kit man");
+    names.add(n1 ?? "");
+  }
+  check(names.size >= 2, `different careers get different kit men (${[...names].join(", ")})`);
+  // An old save whose kit man story started before the pool keeps Den.
+  const old = migrateLife({ v: 2, people: {}, squad: [], self: [], fired: {}, pending: [], groups: {}, cats: {}, wk: [0, 0, 0], lastBig: -999, soc: [0, {}], flags: [], teamCarry: 0, log: [], arcs: { [ARC]: { at: 1, club: "x", cast: { kitman: "staff:kitman" }, v: {}, k: {}, f: {}, s: {} } } });
+  check(old?.pool?.kitman === "den", "an old save keeps Den");
 }
 
 console.log(fails ? `${fails} FAILED` : "life arcs: all passed");
