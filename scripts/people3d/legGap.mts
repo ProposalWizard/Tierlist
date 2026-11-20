@@ -107,3 +107,12 @@ if (process.env.REST) {
   console.log(JSON.stringify({ hipJointX: +(wp(B.LeftUpLeg).x * 100).toFixed(1), kneeX: +(wp(B.LeftLeg).x * 100).toFixed(1), ankleX: +(wp(B.LeftFoot).x * 100).toFixed(1),
     thighTop: band(Lv, wp(B.LeftUpLeg).y - 0.12, wp(B.LeftUpLeg).y - 0.06), thighMid: band(Lv, wp(B.LeftUpLeg).y - 0.22, wp(B.LeftUpLeg).y - 0.16), knee: band(Lv, wp(B.LeftLeg).y - 0.03, wp(B.LeftLeg).y + 0.03), ankle: band(Lv, wp(B.LeftFoot).y - 0.02, wp(B.LeftFoot).y + 0.05) }));
 }
+// ── the boot: heel to toe and across, against his height (a size check: RUL-3D-006) ──
+if (process.env.BOOT) {
+  const a = actor; a.beginFrame(); a.poseClips([]); a.setRoot([0, 0, 0], 0); a.endFrame();
+  person.root.updateMatrixWorld(true); body.skeleton.update();
+  const fb = new Set([bi("LeftFoot"), bi("LeftToeBase")]); const v = new THREE.Vector3(); const box = new THREE.Box3();
+  for (let i = 0; i < si.count; i++) { let best = -1, bw = 0; for (let k = 0; k < 4; k++) if (sw.getComponent(i, k) > bw) { bw = sw.getComponent(i, k); best = si.getComponent(i, k); } if (fb.has(best)) box.expandByPoint(body.getVertexPosition(i, v).applyMatrix4(body.matrixWorld)); }
+  const all = new THREE.Box3(); for (let i = 0; i < si.count; i += 5) all.expandByPoint(body.getVertexPosition(i, v).applyMatrix4(body.matrixWorld));
+  console.log(JSON.stringify({ bootLengthCm: +((box.max.z - box.min.z) * 100).toFixed(1), bootWidthCm: +((box.max.x - box.min.x) * 100).toFixed(1), heightCm: +((all.max.y - all.min.y) * 100).toFixed(1) }));
+}

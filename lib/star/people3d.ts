@@ -27,7 +27,6 @@
  * Pure three.js; no 2D canvas drawing here (signing3dTextures.ts does that).
  */
 import { fitHipJoints } from "./three3d/hipFit";
-import { spreadClipStance, STANCE_ANKLE } from "./three3d/stance";
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { loadGltfCached } from "./three3d/perf";
@@ -794,8 +793,6 @@ export function makePerson3d(
     for (const tr of c.tracks) {
       if (tr.name.endsWith(".position")) { const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= kc; tr.values = v; }
     }
-    // the running loops: no calf or knee through the other on this body's fuller legs (three3d/stance.ts)
-    if (STANCE_ANKLE[clip.name] != null) spreadClipStance(T, inner, bones, c, `${toonHead ? `toon:${toonHead}:${prop?.id ?? "a"}:${toon}` : `mesh:${body.geometry.uuid}`}|${clip.uuid}`);
     const a = mixer.clipAction(c);
     a.play();
     a.setEffectiveWeight(0);
