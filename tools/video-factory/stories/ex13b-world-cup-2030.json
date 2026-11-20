@@ -1,0 +1,503 @@
+{
+  "id": "ex13b-world-cup-2030",
+  "series": "Explainer",
+  "variant": "v2: steps every 1-2 s",
+  "title": "Why the 2030 World Cup is on three continents",
+  "layout": "explainer",
+  "music": "01-turning-point.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://olympics.com/en/news/2030-fifa-world-cup-bid-spain-portugal-morocco-uruguay-argentina-paraguay-football",
+    "https://www.nbcsports.com/soccer/news/2030-world-cup-to-be-hosted-by-spain-portugal-morocco-three-south-american-countries",
+    "https://en.wikipedia.org/wiki/1930_FIFA_World_Cup",
+    "https://editorial.fifamuseum.com/en/read/uruguay-1930-the-first-fifa-world-cup/",
+    "https://www.estadiocentenario.com.uy/en/news/article/it-is-played-at-home/",
+    "https://aa.com.tr/en/sports/explainer-who-will-host-the-2030-fifa-world-cup-and-how-will-it-work/4003714"
+  ],
+  "facts": {
+    "bid": "Spain+Portugal bid, Morocco joined (2023); Uruguay/Argentina/Paraguay(+Chile) centenary bid; FIFA Council 4 Oct 2023: single joint bid, one opening match each in UY/AR/PY; 104 matches, 101 in ES/PT/MA",
+    "1930": "13 teams (7 South America, 4 Europe, 2 North America); France, Belgium, Romania on the Conte Verde (with Rimet); Yugoslavia on the Florida; Centenario built for the centenary of Uruguay's first constitution (1830), rain delayed it, first game there five days in; final 30 July 1930 Uruguay 4-2 Argentina at the Centenario",
+    "2030": "Centenario to host Uruguay's 2030 opening match"
+  },
+  "lines": [
+    {
+      "text": "The 2030 World Cup will be played on three continents. Here's how that happened.",
+      "scene": {
+        "bg": "teal",
+        "hook": true,
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "wc_trophy_globe",
+            "big": "3 CONTINENTS",
+            "bigSize": 170,
+            "bigY": 1300,
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "HOW?",
+            "size": 360,
+            "w": 11
+          }
+        ]
+      }
+    },
+    {
+      "text": "It began as a European bid: Spain and Portugal. Then Morocco joined them.",
+      "scene": {
+        "bg": "blue",
+        "type": "x7_flags",
+        "steps": [
+          {
+            "type": "x7_flags",
+            "items": [
+              {
+                "code": "ES",
+                "label": "SPAIN"
+              }
+            ],
+            "title": "THE BID",
+            "cols": 1,
+            "w": 0
+          },
+          {
+            "type": "x7_flags",
+            "items": [
+              {
+                "code": "ES",
+                "label": "SPAIN",
+                "old": true
+              },
+              {
+                "code": "PT",
+                "label": "PORTUGAL"
+              }
+            ],
+            "title": "THE BID",
+            "w": 8
+          },
+          {
+            "type": "x7_flags",
+            "items": [
+              {
+                "code": "ES",
+                "label": "SPAIN",
+                "old": true
+              },
+              {
+                "code": "PT",
+                "label": "PORTUGAL",
+                "old": true
+              },
+              {
+                "code": "MA",
+                "label": "MOROCCO"
+              }
+            ],
+            "title": "THE BID",
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "Meanwhile, South America wanted the 2030 tournament too, for a very good reason.",
+      "scene": {
+        "bg": "orange",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "south_america_fans",
+            "label": "SOUTH AMERICA",
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "WHY 2030?",
+            "size": 260,
+            "w": 12
+          }
+        ]
+      }
+    },
+    {
+      "text": "The very first World Cup was in Uruguay, in 1930.",
+      "scene": {
+        "bg": "teal",
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1930",
+                "top": "JULY",
+                "label": "Uruguay",
+                "head": "#0038a8"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "centenario",
+            "label": "URUGUAY 1930",
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "Only thirteen teams entered. Just four came from Europe.",
+      "scene": {
+        "bg": "teal",
+        "type": "tally",
+        "steps": [
+          {
+            "type": "tally",
+            "n": 13,
+            "cols": 4,
+            "labels": [
+              "URUGUAY",
+              "ARGENTINA",
+              "BRAZIL",
+              "CHILE",
+              "PARAGUAY",
+              "PERU",
+              "BOLIVIA",
+              "USA",
+              "MEXICO",
+              "FRANCE",
+              "BELGIUM",
+              "ROMANIA",
+              "YUGOSLAVIA"
+            ],
+            "title": "13 TEAMS",
+            "dy": 40,
+            "w": 0
+          },
+          {
+            "type": "x7_flags",
+            "items": [
+              {
+                "code": "FR",
+                "label": "FRANCE"
+              },
+              {
+                "code": "BE",
+                "label": "BELGIUM"
+              },
+              {
+                "code": "RO",
+                "label": "ROMANIA"
+              },
+              {
+                "code": "YU",
+                "label": "YUGOSLAVIA"
+              }
+            ],
+            "title": "FROM EUROPE: 4",
+            "gap": 0.12,
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "Three of them crossed the Atlantic on the same ship, the Conte Verde.",
+      "scene": {
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "conte_verde",
+            "label": "THE CONTE VERDE",
+            "w": 0
+          },
+          {
+            "type": "route",
+            "cities": [
+              "EUROPE",
+              "MONTEVIDEO"
+            ],
+            "parcel": true,
+            "w": 5
+          }
+        ]
+      }
+    },
+    {
+      "text": "Uruguay built a huge new stadium, the Centenario, for a hundred years since its first constitution.",
+      "scene": {
+        "bg": "teal",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "centenario",
+            "big": "CENTENARIO",
+            "bigSize": 170,
+            "bigY": 1300,
+            "w": 0
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 100,
+            "fmt": "{v}",
+            "word": "YEARS: 1830 → 1930",
+            "size": 380,
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "But rain delayed the building, and it wasn't ready for the first games.",
+      "scene": {
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "centenario_rain",
+            "label": "NOT READY",
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "NOT|READY",
+            "hi": 1,
+            "size": 165,
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "Five days in, it opened. And in the final, Uruguay beat Argentina four-two, right there.",
+      "scene": {
+        "bg": "teal",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "centenario",
+            "label": "OPEN",
+            "w": 0
+          },
+          {
+            "type": "score",
+            "top": "30 JULY 1930 · FINAL",
+            "home": "URUGUAY",
+            "homeCol": "#5eb6e4",
+            "homeInk": "#1b1416",
+            "away": "ARGENTINA",
+            "awayCol": "#ffffff",
+            "score": "4-2",
+            "foot": "ESTADIO CENTENARIO",
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "So for the hundredth birthday, South America gets three games: in Uruguay, Argentina and Paraguay.",
+      "scene": {
+        "bg": "orange",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "100TH|BIRTHDAY",
+            "hi": 1,
+            "size": 165,
+            "w": 0
+          },
+          {
+            "type": "x7_flags",
+            "items": [
+              {
+                "code": "UY",
+                "label": "URUGUAY"
+              }
+            ],
+            "cols": 1,
+            "title": "3 OPENING GAMES",
+            "w": 11
+          },
+          {
+            "type": "x7_flags",
+            "items": [
+              {
+                "code": "UY",
+                "label": "URUGUAY",
+                "old": true
+              },
+              {
+                "code": "AR",
+                "label": "ARGENTINA"
+              }
+            ],
+            "title": "3 OPENING GAMES",
+            "w": 12
+          },
+          {
+            "type": "x7_flags",
+            "items": [
+              {
+                "code": "UY",
+                "label": "URUGUAY",
+                "old": true
+              },
+              {
+                "code": "AR",
+                "label": "ARGENTINA",
+                "old": true
+              },
+              {
+                "code": "PY",
+                "label": "PARAGUAY"
+              }
+            ],
+            "title": "3 OPENING GAMES",
+            "w": 14
+          }
+        ]
+      }
+    },
+    {
+      "text": "FIFA agreed in 2023: one joint bid, six hosts. The other hundred and one games go to Spain, Portugal and Morocco.",
+      "scene": {
+        "bg": "blue",
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "2023",
+                "top": "OCTOBER",
+                "label": "FIFA agrees",
+                "head": "#1ea85a"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "x7_flags",
+            "items": [
+              {
+                "code": "ES",
+                "label": "SPAIN",
+                "old": true
+              },
+              {
+                "code": "PT",
+                "label": "PORTUGAL",
+                "old": true
+              },
+              {
+                "code": "MA",
+                "label": "MOROCCO",
+                "old": true
+              },
+              {
+                "code": "UY",
+                "label": "URUGUAY",
+                "old": true
+              },
+              {
+                "code": "AR",
+                "label": "ARGENTINA",
+                "old": true
+              },
+              {
+                "code": "PY",
+                "label": "PARAGUAY",
+                "old": true
+              }
+            ],
+            "title": "6 HOSTS",
+            "cols": 3,
+            "w": 7
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 101,
+            "fmt": "{v}",
+            "word": "OF THE 104 GAMES",
+            "size": 380,
+            "w": 11
+          }
+        ]
+      }
+    },
+    {
+      "text": "So a hundred years on, the Centenario hosts a World Cup again.",
+      "scene": {
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "centenario",
+            "big": "1930 → 2030",
+            "bigSize": 150,
+            "bigY": 1300,
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "centenario_2030",
+            "label": "2030",
+            "w": 6
+          }
+        ]
+      }
+    },
+    {
+      "text": "Six countries. Three continents. One World Cup.",
+      "scene": {
+        "bg": "purple",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "6 COUNTRIES",
+            "size": 200,
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "6 COUNTRIES|3 CONTINENTS",
+            "size": 165,
+            "w": 2
+          },
+          {
+            "type": "statement",
+            "text": "6 COUNTRIES|3 CONTINENTS|1 WORLD CUP",
+            "hi": 2,
+            "size": 135,
+            "w": 4
+          }
+        ]
+      }
+    }
+  ],
+  "images": {
+    "wc_trophy_globe": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/wc_trophy_globe.png",
+    "south_america_fans": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/south_america_fans.png",
+    "centenario": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/centenario.png",
+    "conte_verde": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/conte_verde.png",
+    "centenario_rain": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/centenario_rain.png",
+    "centenario_2030": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/centenario_2030.png"
+  }
+}

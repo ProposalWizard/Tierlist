@@ -1,0 +1,63 @@
+{
+  "id": "ex09-fastest-goal",
+  "series": "Explainer",
+  "variant": "LENGTH: 20-second rapid cut · karaoke captions",
+  "title": "The fastest goal in Premier League history",
+  "layout": "explainer",
+  "music": "09-last-attack.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.premierleague.com/news/1170033"
+  ],
+  "images": {
+    "long": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/long.png"
+  },
+  "lines": [
+    {
+      "text": "The fastest goal in Premier League history?",
+      "scene": {
+        "type": "stopwatch",
+        "hook": true,
+        "bg": "red",
+        "to": 7.69
+      }
+    },
+    {
+      "text": "Seven point six nine seconds.",
+      "scene": {
+        "type": "stopwatch",
+        "bg": "red",
+        "to": 7.69,
+        "word": "SHANE LONG · 2019",
+        "cut": true
+      }
+    },
+    {
+      "text": "Shane Long, for Southampton, at Watford.",
+      "scene": {
+        "type": "portrait",
+        "bg": "red",
+        "person": {
+          "image": "long"
+        },
+        "name": "SHANE LONG"
+      }
+    },
+    {
+      "text": "It beat Ledley King's nine point eight two from 2000.",
+      "scene": {
+        "type": "stopwatch",
+        "bg": "navy",
+        "to": 9.82,
+        "word": "LEDLEY KING · 2000"
+      }
+    }
+  ],
+  "theme": {
+    "captions": "karaoke",
+    "hi": "#ffd400"
+  }
+}

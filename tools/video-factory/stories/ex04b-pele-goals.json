@@ -1,0 +1,436 @@
+{
+  "id": "ex04b-pele-goals",
+  "series": "Explainer",
+  "variant": "v2: steps every 1-2 s",
+  "title": "How many goals did Pelé really score?",
+  "layout": "explainer",
+  "music": "02-working-it-out.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://guinnessworldrecords.com/world-records/most-career-goals-(football)",
+    "https://www.gulf-times.com/article/652359/sport/the-only-player-to-have-won-world-cup-title-three-times",
+    "https://www.history.com/this-day-in-history/november-19/pele-scores-1000th-goal",
+    "https://www.africanews.com/amp/2022/12/30/how-pele-scored-his-thousandth-goal-at-maracana-stadium/",
+    "https://global.espn.com/football/story/_/id/37623253/has-messi-overtaken-pele-career-goals-record-depends-ask",
+    "https://baynews9.com/fl/tampa/ap-online/2022/12/29/nobody-disputes-pels-greatness-but-goal-count-fuels-debate",
+    "https://www.beinsports.com/en-us/soccer/uefa-nations-league/articles/portugal-2-1-croatia-ronaldos-900th-goal-seals-nations-league-win-2024-09-05"
+  ],
+  "facts": {
+    "guinness": "1,279 goals in 1,363 games, 7 Sep 1956 to 1 Oct 1977, incl. friendlies and tours",
+    "1000th": "penalty v Vasco da Gama, Maracana, 19 Nov 1969, ~80,000 crowd (sources say 65-80k); dedicated to the poor children of Brazil; score reported differently, not shown",
+    "1959": "127 goals in calendar 1959 (Reuters facts via Gulf Times; club-only vs all disputed, so the video says just 127 in 1959)",
+    "official": "official-only counts 757-769 -> 'around 760'",
+    "ronaldo": "900th official goal 5 Sept 2024 v Croatia, first man to 900"
+  },
+  "images": {
+    "pele": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele.png",
+    "ronaldo": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/ronaldo.png",
+    "maracana1969": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/maracana1969.png",
+    "pele_debut": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_debut.png",
+    "pele_leap": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_leap.png",
+    "pele_mics": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_mics.png",
+    "santos_tour": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/santos_tour.png",
+    "ronaldo_900": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/ronaldo_900.png"
+  },
+  "lines": [
+    {
+      "text": "How many goals did Pelé really score?",
+      "scene": {
+        "hook": true,
+        "bg": "green",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "pele_leap",
+            "big": "?",
+            "bigSize": 420,
+            "bigY": 1300,
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "He made his Santos debut aged fifteen, in 1956. And scored.",
+      "scene": {
+        "bg": "green",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "pele_debut",
+            "label": "SANTOS · 1956",
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "AGED 15|AND SCORED",
+            "hi": 1,
+            "size": 170,
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "He won three World Cups. 1958, 1962 and 1970.",
+      "scene": {
+        "bg": "yellow",
+        "type": "shelf",
+        "steps": [
+          {
+            "type": "shelf",
+            "title": "BRAZIL",
+            "items": [
+              {
+                "label": "World Cup",
+                "year": "1958",
+                "kind": "cup"
+              },
+              {
+                "label": "World Cup",
+                "year": "1962",
+                "kind": "cup"
+              },
+              {
+                "label": "World Cup",
+                "year": "1970",
+                "kind": "cup"
+              }
+            ],
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "Guinness World Records says one thousand, two hundred and seventy-nine.",
+      "scene": {
+        "bg": "green",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "pele"
+            },
+            "name": "PELÉ",
+            "w": 0
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 1279,
+            "comma": true,
+            "word": "GOALS · GUINNESS",
+            "size": 340,
+            "w": 4
+          }
+        ]
+      }
+    },
+    {
+      "text": "In one thousand, three hundred and sixty-three games, over twenty-one years.",
+      "scene": {
+        "bg": "yellow",
+        "type": "counter",
+        "steps": [
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 1363,
+            "comma": true,
+            "word": "GAMES",
+            "size": 340,
+            "w": 0
+          },
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1956",
+                "top": "FIRST",
+                "label": "Aged 15",
+                "tick": true,
+                "head": "#1ea85a"
+              },
+              {
+                "year": "1977",
+                "top": "LAST",
+                "label": "New York Cosmos",
+                "tick": true,
+                "head": "#1ea85a"
+              }
+            ],
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "His thousandth came on the nineteenth of November, 1969, at the Maracanã.",
+      "scene": {
+        "bg": "navy",
+        "type": "counter",
+        "steps": [
+          {
+            "type": "counter",
+            "prop": "calendar",
+            "top": "NOVEMBER 1969",
+            "from": 1,
+            "to": 19,
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "maracana1969",
+            "label": "THE MARACANÃ",
+            "w": 11
+          }
+        ]
+      }
+    },
+    {
+      "text": "A penalty, against Vasco da Gama, in front of around eighty thousand fans.",
+      "scene": {
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "maracana1969",
+            "big": "1,000",
+            "bigSize": 300,
+            "bigY": 1250,
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "PENALTY|v VASCO DA GAMA",
+            "hi": 1,
+            "size": 150,
+            "w": 3
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 80000,
+            "comma": true,
+            "word": "FANS",
+            "size": 300,
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "He dedicated it to the poor children of Brazil.",
+      "scene": {
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "pele_mics",
+            "label": "“FOR THE CHILDREN”",
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "How did it get so big? In 1959 alone, he scored a hundred and twenty-seven.",
+      "scene": {
+        "bg": "green",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "pele_leap",
+            "label": "SANTOS · 1959",
+            "w": 0
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 127,
+            "word": "GOALS IN 1959",
+            "size": 420,
+            "w": 12
+          }
+        ]
+      }
+    },
+    {
+      "text": "But here's the catch.",
+      "scene": {
+        "bg": "red",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "THE CATCH",
+            "hi": 0,
+            "size": 220,
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "That total counts friendlies, exhibition games and world tours too.",
+      "scene": {
+        "bg": "red",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "FRIENDLIES|EXHIBITIONS|TOURS",
+            "hi": -1,
+            "size": 150,
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "santos_tour",
+            "label": "SANTOS ON TOUR",
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "Count only official matches, and it drops to around seven hundred and sixty.",
+      "scene": {
+        "bg": "red",
+        "type": "counter",
+        "steps": [
+          {
+            "type": "counter",
+            "from": 1279,
+            "to": 760,
+            "comma": true,
+            "word": "OFFICIAL GOALS",
+            "size": 340,
+            "fmt": "~{v}",
+            "w": 6
+          }
+        ]
+      }
+    },
+    {
+      "text": "That's over five hundred goals, gone.",
+      "scene": {
+        "bg": "red",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "500+|GOALS GONE",
+            "hi": 0,
+            "size": 150,
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "And that changes who football's top scorer is.",
+      "scene": {
+        "bg": "purple",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "pele"
+            },
+            "name": "TOP SCORER?",
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "Because in September 2024, Cristiano Ronaldo became the first man to score nine hundred official goals.",
+      "scene": {
+        "bg": "purple",
+        "type": "counter",
+        "steps": [
+          {
+            "type": "counter",
+            "prop": "calendar",
+            "top": "SEPTEMBER 2024",
+            "from": 1,
+            "to": 5,
+            "w": 0
+          },
+          {
+            "type": "portrait",
+            "person": {
+              "image": "ronaldo"
+            },
+            "name": "CRISTIANO RONALDO",
+            "w": 4
+          },
+          {
+            "type": "picture",
+            "image": "ronaldo_900",
+            "big": "900",
+            "bigSize": 380,
+            "bigY": 1250,
+            "w": 12
+          }
+        ]
+      }
+    },
+    {
+      "text": "So who's the top scorer? Count everything, it's Pelé. Count only official games, it's Ronaldo.",
+      "scene": {
+        "bg": "purple",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "WHO'S|TOP?",
+            "hi": 1,
+            "size": 160,
+            "w": 0
+          },
+          {
+            "type": "versus",
+            "left": {
+              "image": "pele"
+            },
+            "leftNum": "1,279",
+            "leftName": "PELÉ",
+            "right": {
+              "image": "ronaldo"
+            },
+            "rightNum": "900+",
+            "rightName": "RONALDO",
+            "w": 6
+          },
+          {
+            "type": "versus",
+            "left": {
+              "image": "pele"
+            },
+            "leftNum": "~760",
+            "leftName": "PELÉ · OFFICIAL",
+            "right": {
+              "image": "ronaldo"
+            },
+            "rightNum": "900+",
+            "rightName": "RONALDO",
+            "w": 11
+          }
+        ]
+      }
+    }
+  ]
+}

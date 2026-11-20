@@ -1,0 +1,569 @@
+{
+  "id": "ex08b-ballon-dor",
+  "series": "Explainer",
+  "variant": "v2: steps every 1-2 s",
+  "title": "Who has won the most Ballon d'Ors?",
+  "layout": "explainer",
+  "music": "11-final-boss.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://en.wikipedia.org/wiki/Ballon_d%27Or",
+    "https://www.ballondor.com/",
+    "https://www.si.com/soccer/how-many-times-did-pele-win-ballon-dor",
+    "https://gulfnews.com/sport/football/why-pele-and-maradona-never-won-the-ballon-dor-1.500719045"
+  ],
+  "facts": {
+    "start": "created 1956 by France Football (journalists vote); first winner Stanley Matthews (Blackpool), aged 41",
+    "rules": "only European players until 1995; worldwide players at European clubs from 1995; anyone from 2007; so Pele and Maradona never won it; France Football's 2016 recount: Pele would have won 7",
+    "three": "Cruyff 1971/73/74; Platini 1983/84/85 (three in a row); Van Basten 1988/89/92, last game aged 28 (ankle), retired 1995",
+    "ronaldo": "5: 2008, 2013, 2014, 2016, 2017",
+    "messi": "8: 2009-2012 four in a row, 2015, 2019, 2021, 2023 (after the 2022 World Cup); 14 years from first to last"
+  },
+  "lines": [
+    {
+      "text": "Who has won the most Ballon d'Ors in history?",
+      "scene": {
+        "hook": true,
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "ballon_stage",
+            "big": "?",
+            "bigSize": 420,
+            "bigY": 1300,
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "It started in 1956: a French magazine asked journalists to pick Europe's best player.",
+      "scene": {
+        "bg": "navy",
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1956",
+                "top": "PARIS",
+                "label": "The first vote",
+                "head": "#d4a017"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "newsroom1956",
+            "label": "FRANCE FOOTBALL",
+            "w": 8
+          }
+        ]
+      }
+    },
+    {
+      "text": "The first winner? Stanley Matthews. Aged forty-one.",
+      "scene": {
+        "bg": "orange",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "matthews"
+            },
+            "name": "STANLEY MATTHEWS",
+            "w": 0
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 41,
+            "word": "YEARS OLD",
+            "size": 420,
+            "w": 5
+          }
+        ]
+      }
+    },
+    {
+      "text": "But for almost forty years, only Europeans could win it. So Pelé and Maradona never did.",
+      "scene": {
+        "bg": "purple",
+        "type": "statement",
+        "steps": [
+          {
+            "type": "statement",
+            "text": "EUROPEANS|ONLY",
+            "hi": 1,
+            "size": 190,
+            "w": 0
+          },
+          {
+            "type": "versus",
+            "left": {
+              "image": "pele"
+            },
+            "right": {
+              "image": "maradona"
+            },
+            "leftName": "PELÉ",
+            "rightName": "MARADONA",
+            "leftNum": "0",
+            "rightNum": "0",
+            "w": 11
+          }
+        ]
+      }
+    },
+    {
+      "text": "In 2016, the magazine went back and recounted. Pelé would have won seven.",
+      "scene": {
+        "bg": "orange",
+        "type": "ledger",
+        "steps": [
+          {
+            "type": "ledger",
+            "title": "RECOUNT",
+            "title2": "2016",
+            "w": 0
+          },
+          {
+            "type": "portrait",
+            "person": {
+              "image": "pele"
+            },
+            "name": "PELÉ",
+            "w": 8
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 7,
+            "word": "BALLON D'ORS FOR PELÉ",
+            "size": 440,
+            "w": 12
+          }
+        ]
+      }
+    },
+    {
+      "text": "So who has won the most? Three legends are tied on three.",
+      "scene": {
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "ballon_stage",
+            "big": "WHO?",
+            "bigSize": 260,
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "THREE|ON THREE",
+            "hi": 1,
+            "size": 200,
+            "w": 6
+          }
+        ]
+      }
+    },
+    {
+      "text": "Johan Cruyff, the star of Total Football, who won three European Cups in a row with Ajax.",
+      "scene": {
+        "bg": "orange",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "cruyff"
+            },
+            "name": "JOHAN CRUYFF",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "cruyff_total",
+            "label": "TOTAL FOOTBALL",
+            "w": 5
+          },
+          {
+            "type": "shelf",
+            "title": "AJAX",
+            "items": [
+              {
+                "label": "European Cup",
+                "year": "1971",
+                "kind": "bigears",
+                "col": "#d9dde3"
+              },
+              {
+                "label": "European Cup",
+                "year": "1972",
+                "kind": "bigears",
+                "col": "#d9dde3"
+              },
+              {
+                "label": "European Cup",
+                "year": "1973",
+                "kind": "bigears",
+                "col": "#d9dde3"
+              }
+            ],
+            "w": 9
+          },
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1971",
+                "top": "CRUYFF",
+                "tick": true,
+                "head": "#f5913a"
+              },
+              {
+                "year": "1973",
+                "top": "CRUYFF",
+                "tick": true,
+                "head": "#f5913a"
+              },
+              {
+                "year": "1974",
+                "top": "CRUYFF",
+                "tick": true,
+                "head": "#f5913a"
+              }
+            ],
+            "w": 16
+          }
+        ]
+      }
+    },
+    {
+      "text": "Michel Platini, a midfielder who was Serie A's top scorer three years running, and scored nine goals at Euro 84.",
+      "scene": {
+        "bg": "blue",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "platini"
+            },
+            "name": "MICHEL PLATINI",
+            "w": 0
+          },
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1983",
+                "top": "TOP SCORER",
+                "tick": true,
+                "head": "#1d3fa0"
+              },
+              {
+                "year": "1984",
+                "top": "TOP SCORER",
+                "tick": true,
+                "head": "#1d3fa0"
+              },
+              {
+                "year": "1985",
+                "top": "TOP SCORER",
+                "tick": true,
+                "head": "#1d3fa0"
+              }
+            ],
+            "w": 8
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 9,
+            "word": "GOALS AT EURO 84",
+            "size": 420,
+            "w": 15
+          }
+        ]
+      }
+    },
+    {
+      "text": "And Marco van Basten, whose volley won the Euro 88 final. His ankle ended his career at twenty-eight.",
+      "scene": {
+        "bg": "red",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "vanbasten"
+            },
+            "name": "MARCO VAN BASTEN",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "vanbasten_volley",
+            "label": "EURO 88 FINAL",
+            "w": 5
+          },
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1988",
+                "top": "VAN BASTEN",
+                "tick": true,
+                "head": "#e2384a"
+              },
+              {
+                "year": "1989",
+                "top": "VAN BASTEN",
+                "tick": true,
+                "head": "#e2384a"
+              },
+              {
+                "year": "1992",
+                "top": "VAN BASTEN",
+                "tick": true,
+                "head": "#e2384a"
+              }
+            ],
+            "w": 6
+          },
+          {
+            "type": "picture",
+            "image": "vanbasten_ankle",
+            "big": "LAST GAME AT 28",
+            "bigSize": 140,
+            "w": 12
+          }
+        ]
+      }
+    },
+    {
+      "text": "Then came the rivalry. Cristiano Ronaldo won five. The first in 2008, after forty-two goals and the Champions League.",
+      "scene": {
+        "bg": "navy",
+        "type": "versus",
+        "steps": [
+          {
+            "type": "versus",
+            "left": {
+              "image": "ronaldo"
+            },
+            "right": {
+              "image": "messi"
+            },
+            "leftName": "RONALDO",
+            "rightName": "MESSI",
+            "leftNum": "?",
+            "rightNum": "?",
+            "w": 0
+          },
+          {
+            "type": "shelf",
+            "title": "RONALDO",
+            "items": [
+              {
+                "label": "",
+                "year": "2008"
+              },
+              {
+                "label": "",
+                "year": "2013"
+              },
+              {
+                "label": "",
+                "year": "2014"
+              },
+              {
+                "label": "",
+                "year": "2016"
+              },
+              {
+                "label": "",
+                "year": "2017"
+              }
+            ],
+            "w": 4
+          },
+          {
+            "type": "statbars",
+            "person": {
+              "image": "ronaldo"
+            },
+            "stats": [
+              {
+                "v": 42,
+                "label": "GOALS 2007/08"
+              },
+              {
+                "v": 1,
+                "label": "CHAMPIONS LEAGUE"
+              }
+            ],
+            "w": 9
+          }
+        ]
+      }
+    },
+    {
+      "text": "Lionel Messi won four in a row, from 2009 to 2012. That last one, after ninety-one goals in a year.",
+      "scene": {
+        "bg": "blue",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "messi_stage",
+            "label": "LIONEL MESSI",
+            "w": 0
+          },
+          {
+            "type": "tally",
+            "n": 4,
+            "cols": 4,
+            "mark": "★",
+            "markCol": "#d4a017",
+            "labels": [
+              "2009",
+              "2010",
+              "2011",
+              "2012"
+            ],
+            "title": "FOUR IN A ROW",
+            "w": 3
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 91,
+            "word": "GOALS IN 2012",
+            "size": 420,
+            "w": 15
+          }
+        ]
+      }
+    },
+    {
+      "text": "Then 2015, 2019, 2021, and finally 2023, after he won the World Cup.",
+      "scene": {
+        "bg": "blue",
+        "type": "tally",
+        "steps": [
+          {
+            "type": "tally",
+            "n": 8,
+            "cols": 4,
+            "mark": "★",
+            "markCol": "#d4a017",
+            "labels": [
+              "2009",
+              "2010",
+              "2011",
+              "2012",
+              "2015",
+              "2019",
+              "2021",
+              "2023"
+            ],
+            "title": "MESSI",
+            "count": true,
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "messi_worldcup",
+            "label": "WORLD CUP 2022",
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "Eight Ballon d'Ors. Fourteen years between his first and his last.",
+      "scene": {
+        "bg": "navy",
+        "type": "versus",
+        "steps": [
+          {
+            "type": "versus",
+            "left": {
+              "image": "messi"
+            },
+            "right": {
+              "image": "ronaldo"
+            },
+            "leftName": "MESSI",
+            "rightName": "RONALDO",
+            "leftNum": "8",
+            "rightNum": "5",
+            "w": 0
+          },
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "2009",
+                "top": "FIRST",
+                "tick": true,
+                "head": "#d4a017"
+              },
+              {
+                "year": "2023",
+                "top": "LAST",
+                "tick": true,
+                "head": "#d4a017"
+              }
+            ],
+            "w": 3
+          }
+        ]
+      }
+    },
+    {
+      "text": "Will anyone ever catch him?",
+      "scene": {
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "ballon_stage",
+            "big": "8",
+            "bigSize": 520,
+            "bigCol": "#ffd400",
+            "w": 0
+          }
+        ]
+      }
+    }
+  ],
+  "images": {
+    "ballon_stage": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/ballon_stage.png",
+    "newsroom1956": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/newsroom1956.png",
+    "matthews": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/matthews.png",
+    "pele": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele.png",
+    "maradona": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/maradona.png",
+    "cruyff": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/cruyff.png",
+    "platini": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/platini.png",
+    "vanbasten": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/vanbasten.png",
+    "vanbasten_ankle": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/vanbasten_ankle.png",
+    "ronaldo": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/ronaldo.png",
+    "messi": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi.png",
+    "messi_stage": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi_stage.png",
+    "messi_worldcup": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi_worldcup.png"
+  }
+}
