@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   const who = await whoIs(req, ["admin", "agent"]);
-  if (!who) return NextResponse.json({ error: "Admins only." }, { status: 403 });
+  if (!who) return NextResponse.json({ error: "Only the Publish owner can use this (PUBLISH_OWNER_EMAIL), or any admin when no owner is set." }, { status: 403 });
   const target = uploadTarget();
   if (!target || !target.store.config) return NextResponse.json({ error: "No video storage is connected here (PUBLISH_R2_ settings, or the Marketing R2 settings)." }, { status: 503 });
   const config = target.store.config;
