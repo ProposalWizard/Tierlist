@@ -111,3 +111,11 @@ maintenance is Zelda - ocarina of time is a good one and breath of the wild"
 => 50 trial events merged into Harry (80 in the book). The kit man arc ("A hundred balls in the dark") is being built
 for real. Side-quest upkeep to study: Ocarina of Time (the trading sequence, mask quests, people whose lives change
 between child and adult time) and Breath of the Wild (the quest log, Tarrey Town built up over visits, Kass).
+
+## Speed is a standing rule (Harry, 20 Nov 2026, 17:25)
+"are we also done with the flow in game and it being instant clicks? Remember everything including 3d has to run as
+smoothly as possible in every scenario."
+=> Not done. A full speed audit (every tap, every 3D area) runs on GitHub on the API credit: branch claude/speed-audit,
+report docs/research/speed-audit-2026-11-20.md. Budgets: tap feedback under 100 ms, next screen painted under 300 ms
+(4x slowed test browser), no 3D area heavier than today's garden. Every new 3D feature is measured before it goes in.
+API cost note: the 50-event trial cost about $1.50 (Harry read it from the Usage page).
