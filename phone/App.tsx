@@ -1,4 +1,4 @@
-import { StatusBar } from "expo-status-bar";
+import { Immersive } from "./src/immersive";
 import { useEffect } from "react";
 import { View, BackHandler } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -28,7 +28,7 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style="light" />
+        <Immersive />
         <ToonYouSync />
         <NavProvider initial={{ name: "title" }}><Router /></NavProvider>
       </SafeAreaProvider>
