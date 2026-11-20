@@ -27,6 +27,7 @@ import { useNav } from "../../nav";
 import { readSeenMsgs, readSocialSeen } from "../../world/seen";
 import { Press } from "../Press";
 import { PlayButton } from "./Buttons";
+import { useTourTarget } from "../tour";
 
 export type BarTab = "league" | "training" | "home" | "phone" | "play";
 
@@ -78,6 +79,8 @@ export function BottomBar({ active, on }: { active?: BarTab | null; on?: Partial
   const inset = useSafeAreaInsets();
   const go = { ...useMainBarActions(), ...on };
   const [note, setNote] = useState<{ label: string; hint: string } | null>(null);
+  // Named for the coach tour (ui/tour.tsx), as the website's data-tour names.
+  const trainingT = useTourTarget("nav-training"), phoneT = useTourTarget("nav-phone"), playT = useTourTarget("nav-play");
   // worked out again only when the career changes
   const badges = useMemo<BarBadges>(() => (career ? badgesFor(career) : {}), [career]);
   const locks = useMemo<Partial<Record<BarTab, string>>>(() => (career ? locksFor(career) : {}), [career]);
@@ -101,11 +104,11 @@ export function BottomBar({ active, on }: { active?: BarTab | null; on?: Partial
         </View>
       )}
       <NavBtn label="League" icon="🏆" on={active === "league"} locked={!!locks.league} onPress={() => tap("league", "League")} />
-      <NavBtn label="Training" icon="⚽" on={active === "training"} locked={!!locks.training} count={badges.skills} bolt onPress={() => tap("training", "Training")} />
+      <View {...trainingT} style={{ flex: 1 }}><NavBtn label="Training" icon="⚽" on={active === "training"} locked={!!locks.training} count={badges.skills} bolt onPress={() => tap("training", "Training")} /></View>
       <NavBtn label="Home" icon="🏠" on={active === "home"} locked={false} onPress={() => { if (active !== "home") tap("home", "Home"); }} />
-      <NavBtn label="Phone" icon="📱" on={active === "phone"} locked={!!locks.phone} count={badges.media} dot={badges.life === "dot" && !badges.media} onPress={() => tap("phone", "Phone")} />
+      <View {...phoneT} style={{ flex: 1 }}><NavBtn label="Phone" icon="📱" on={active === "phone"} locked={!!locks.phone} count={badges.media} dot={badges.life === "dot" && !badges.media} onPress={() => tap("phone", "Phone")} /></View>
       <View style={{ flex: 1, alignItems: "center", height: 50 }}>
-        <View style={{ position: "absolute", top: -22 }}>
+        <View {...playT} style={{ position: "absolute", top: -22 }}>
           <PlayButton locked={!!locks.play} onPress={() => tap("play", "Play")} />
         </View>
       </View>

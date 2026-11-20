@@ -17,6 +17,7 @@ import { starStatus } from "@/lib/star/starPoints";
 import { formatWallet } from "@/lib/star/money";
 import { happinessOf } from "@/lib/star/relationships";
 import { Press } from "../Press";
+import { useTourTarget } from "../tour";
 import { FONT } from "./fonts";
 import { ICON } from "./pictures";
 import { Pill } from "./Text";
@@ -33,6 +34,8 @@ export function TopBar({ career, onHelp, onSettings, onStarPass, left = "star" }
 }) {
   const inset = useSafeAreaInsets();
   const p = career.player;
+  // Named for the coach tour (ui/tour.tsx), as the website's data-tour names.
+  const moneyT = useTourTarget("money"), ratingT = useTourTarget("rating"), energyT = useTourTarget("energy");
   return (
     <View style={{
       paddingTop: inset.top + 6, paddingHorizontal: 10, paddingBottom: 10,
@@ -45,16 +48,16 @@ export function TopBar({ career, onHelp, onSettings, onStarPass, left = "star" }
       <View style={{ height: 40, flexDirection: "row", alignItems: "center", gap: 6 }}>
         <Text numberOfLines={1} style={{ flex: 1, color: "#fff", fontFamily: FONT.display, fontSize: 17, letterSpacing: 0.4, textTransform: "uppercase" }}>{`${p.firstName} ${p.lastName}`}</Text>
         <Pill label="Age" value={p.age} />
-        <Pill icon={<Text style={{ color: LOOK.amber, fontSize: 12 }}>★</Text>} value={formatWallet(Math.round(career.money))} />
+        <View {...moneyT}><Pill icon={<Text style={{ color: LOOK.amber, fontSize: 12 }}>★</Text>} value={formatWallet(Math.round(career.money))} /></View>
         {onHelp ? <SquareBtn onPress={onHelp}><Text style={{ color: "#fff", fontSize: 17, fontWeight: "900" }}>?</Text></SquareBtn> : <View style={{ width: 32 }} />}
         <SquareBtn onPress={onSettings}><Text style={{ color: "#fff", fontSize: 17 }}>⚙</Text></SquareBtn>
       </View>
       {/* row 2: rating | energy */}
       <View style={{ flexDirection: "row", marginTop: 10, height: 36 }}>
-        {left === "star" ? <StarCell career={career} onPress={onStarPass} />
+        {left === "star" ? <View {...ratingT} style={{ flex: 1 }}><StarCell career={career} onPress={onStarPass} /></View>
           : left === "happiness" ? <Meter value={happinessOf(career)} colors={levelColors(happinessOf(career))} icon={<Text style={{ fontSize: 26 }}>😊</Text>} />
           : <Meter value={career.reputation} colors={["#0ea5e9", "#38bdf8"]} icon={<Image source={ICON.world} style={{ width: 40, height: 40 }} />} />}
-        <Meter value={career.energy} colors={levelColors(career.energy)} icon={<Image source={ICON.energy} style={{ width: 44, height: 44 }} />} />
+        <View {...energyT} style={{ flex: 1 }}><Meter value={career.energy} colors={levelColors(career.energy)} icon={<Image source={ICON.energy} style={{ width: 44, height: 44 }} />} /></View>
       </View>
     </View>
   );

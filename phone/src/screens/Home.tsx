@@ -35,10 +35,20 @@ import { Press } from "../ui/Press";
 import { Backdrop, TopBar, LookButton, CAN, ICON, LOOK, rgba, TEXT_SHADOW } from "../ui/look";
 import { ClubCrest, ordinal } from "./career/kit";
 import { HomePlayer } from "../three/HomePlayer";
+import { useMainBarActions } from "../ui/look/BottomBar";
+import { PointerTour, useTourTarget } from "../ui/tour";
+import { StoryBeatPop, goBeat, markTourSeen, pointStep } from "./career/StoryBeat";
+import { BreakingNewsPage, PotmWinPage } from "./career/NewsMoments";
+import { isStory, storyBeat, beatText, type Beat } from "@/lib/star/story";
+import { hasSeen, gameFirst } from "@/lib/star/unlocks";
+import { starsNow } from "@/lib/star/starPoints";
+import { welcomeTour, HELP_TOURS, type TourStep } from "@/lib/star/tours";
 
 /** The player's box shape (HomeHub FIG_ASPECT) and tallest size. */
 const FIG_ASPECT = 172 / 204;
 const FIG_MAX_H = 360;
+/** The call-up opened by itself once per window (page.tsx's intlDue effect). */
+let shownCallUp: string | null = null;
 
 export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit: () => void; onLeague?: () => void }) {
   const nav = useNav();
@@ -50,7 +60,39 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
   const [row, setRow] = useState<{ y: number; h: number } | null>(null);
   // page.tsx's central check: anything earned away from a match unlocks on Home.
   useEffect(() => { flow.settle(); }, [career]);
+  // page.tsx: on Home, a named squad opens the call-up at once (phase "dashboard" →
+  // "intl-callup" while periodDue), also after the last league match of the season.
+  const intlKey = intlDue ? `${career.season}:${periodDue(career)?.label ?? ""}` : null;
+  useEffect(() => {
+    if (!intlKey || shownCallUp === intlKey) return;
+    shownCallUp = intlKey;
+    nav.go("career-callup");
+  }, [intlKey]);
   void onQuit; // the main menu is in Settings (as on the website)
+
+  // ── The first hour as a story, and the coach (page.tsx `tour` and `beat`) ──
+  // One at a time, only when nothing else is showing on Home.
+  const pops = flow.usePops();
+  const bar = useMainBarActions();
+  const [helpTour, setHelpTour] = useState<TourStep[] | null>(null);
+  const [pointAt, setPointAt] = useState<string | null>(null);
+  const quiet = !session.news[0] && !session.potmWin && pops.length === 0 && !intlDue;
+  const welcomeDue = quiet && !!career.unlocks && !hasSeen(career, "tutorial") && (!isStory(career) || hasSeen(career, "beat-boots"));
+  const tour: { key: string; steps: TourStep[]; skippable?: boolean; onDone: () => void } | null =
+    helpTour ? { key: "help", steps: helpTour, onDone: () => setHelpTour(null) }
+    : pointAt ? { key: `point-${pointAt}`, steps: pointStep(pointAt), onDone: () => setPointAt(null) }
+    : welcomeDue ? { key: "welcome", steps: welcomeTour(gameFirst(career), next ? daysToNext(career, next) : 0, isStory(career)), skippable: !gameFirst(career), onDone: () => markTourSeen("tutorial", "help-home", "play-tip") }
+    : null;
+  const beat: Beat | null = quiet && !tour ? storyBeat(career, starsNow(career)) : null;
+  const tourPress: Record<string, () => void> = {
+    "nav-play": bar.play, "nav-training": bar.training, "nav-phone": bar.phone,
+    rating: () => nav.go("star-pass"), "can-use-basic": () => flow.useCan("basic"),
+  };
+  const onBeat = (b: Beat) => {
+    const go = goBeat(b);
+    if (go.point) setPointAt(go.point);
+    else if (go.screen) nav.go(go.screen);
+  };
 
   const figH = row ? Math.round(Math.max(104, Math.min(FIG_MAX_H, row.h - 4))) : 0;
   const figW = Math.round(figH * FIG_ASPECT);
@@ -68,15 +110,15 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
   swipeTo.current = (s) => (s === "stats" ? goStats() : goShop());
 
   const chips: { label: string; icon: string; onPress: () => void }[] = [];
-  if (over) chips.push({ label: "End of Season", icon: "🏆", onPress: () => nav.go(flow.endSeason().screen) });
-  if (!over && intlDue) chips.push({ label: "Your country's manager has named his squad", icon: "📞", onPress: () => nav.go("career-callup") });
+  if (over && !intlDue) chips.push({ label: "End of Season", icon: "🏆", onPress: () => nav.go(flow.endSeason().screen) });
+  if (intlDue) chips.push({ label: "Your country's manager has named his squad", icon: "📞", onPress: () => nav.go("career-callup") });
   if (career.placement?.kind === "youth") chips.push({ label: "Youth team: this week", icon: "🎓", onPress: () => nav.go("career-youth") });
 
   return (
     <View style={{ flex: 1, backgroundColor: "#0b1a2e" }} {...swipe.panHandlers}>
       <Backdrop kind="home" sky={sky} lineY={lineY} />
       <TopBar career={career}
-        onHelp={() => nav.go("career-help", { topic: "home" })}
+        onHelp={() => setHelpTour(HELP_TOURS.home)}
         onSettings={() => nav.go("career-settings")}
         onStarPass={SCREENS["star-pass"] ? () => nav.go("star-pass") : undefined} />
       <NextMatch career={career} next={next} />
@@ -110,25 +152,13 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
         </View>
       </View>
 
-      {/* Pop-ups over Home: breaking news, Player of the Month. */}
-      {(session.news[0] || session.potmWin) && (
-        <View style={{ position: "absolute", left: 12, right: 12, top: 150, zIndex: 5, gap: 8 }}>
-          {session.news[0] && (
-            <Press onPress={flow.dismissNews} style={{ backgroundColor: "#7f1d1d", borderRadius: 14, padding: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.25)" }}>
-              <Text style={{ color: "#fde68a", fontSize: 11, fontWeight: "900", letterSpacing: 2 }}>BREAKING NEWS</Text>
-              <Text style={{ color: "#fff", fontSize: 17, fontWeight: "900", marginTop: 4 }}>{session.news[0].headline}</Text>
-              <Text style={{ color: "#fff", marginTop: 4 }}>{session.news[0].line}</Text>
-              <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, marginTop: 6 }}>Tap to close</Text>
-            </Press>
-          )}
-          {session.potmWin && (
-            <Press onPress={() => setSession({ potmWin: null })} style={{ backgroundImage: `linear-gradient(180deg, ${LOOK.glassTop}, ${LOOK.glassBottom})`, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: LOOK.gold } as ViewStyle}>
-              <Text style={{ color: LOOK.gold, fontWeight: "900", fontSize: 16 }}>🏅 {session.potmWin.monthName} Player of the Month</Text>
-              <Text style={{ color: "#fff", marginTop: 4 }}>{session.potmWin.goals} goals and {session.potmWin.assists} assists. Tap to close.</Text>
-            </Press>
-          )}
-        </View>
-      )}
+      {/* Over Home, one at a time: Player of the Month (full screen), breaking news
+          (full screen), then the coach's tour or the next story beat. */}
+      {session.potmWin ? <PotmWinPage career={career} award={session.potmWin} onClose={() => setSession({ potmWin: null })} />
+        : session.news[0] ? <BreakingNewsPage key={session.news[0].headline} career={career} news={session.news[0]} onClose={flow.dismissNews} />
+        : null}
+      {tour && <PointerTour key={tour.key} steps={tour.steps} skippable={tour.skippable} press={tourPress} onDone={tour.onDone} />}
+      {beat && <StoryBeatPop key={beat} text={beatText(career, beat)} onGo={() => onBeat(beat)} />}
     </View>
   );
 }
@@ -309,6 +339,7 @@ const ACCENT: Record<KibCan["id"], string> = { basic: "#fb923c", premium: "#60a5
 /** One can (HomeHub CanTile `mini`): the can and its name side by side, Use and Buy under them. */
 function CanTile({ can: c, career }: { can: KibCan; career: CareerState }) {
   const accent = ACCENT[c.id];
+  const useT = useTourTarget(`can-use-${c.id}`);
   const count = career.kibCans[c.id];
   const price = kibCanPrice(c, career.contract.wage);
   const ready = !!(c.effect && career.kibAbility?.[c.effect]);
@@ -335,9 +366,11 @@ function CanTile({ can: c, career }: { can: KibCan; career: CareerState }) {
         </View>
       </View>
       <View style={{ flexDirection: "row", gap: 4, marginTop: 6 }}>
-        <LookButton kind="accent" accent={accent} small disabled={!canUse} onPress={() => flow.useCan(c.id)} style={{ flex: 1, borderRadius: 6, paddingVertical: 4 }}>
-          <Text style={{ color: canUse ? "#111" : "#fff", fontSize: 10.5, fontWeight: "900" }}>{ready ? "✓" : full ? "FULL" : "USE"}</Text>
-        </LookButton>
+        <View {...useT} style={{ flex: 1 }}>
+          <LookButton kind="accent" accent={accent} small disabled={!canUse} onPress={() => flow.useCan(c.id)} style={{ borderRadius: 6, paddingVertical: 4 }}>
+            <Text style={{ color: canUse ? "#111" : "#fff", fontSize: 10.5, fontWeight: "900" }}>{ready ? "✓" : full ? "FULL" : "USE"}</Text>
+          </LookButton>
+        </View>
         <LookButton kind="dark" small disabled={career.money < price} onPress={() => flow.buyCan(c)} style={{ flex: 1, borderRadius: 6, paddingVertical: 4 }}>
           <Text style={{ color: "#fef08a", fontSize: 10, fontWeight: "900" }}>★{formatMoney(price)}</Text>
         </LookButton>
