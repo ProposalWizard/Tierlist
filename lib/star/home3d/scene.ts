@@ -55,6 +55,9 @@ import { buildWearer, repaintKit, type WearInput } from "./wear";
 import { roomPlan, roomFiles, arrivalAt, arrivalDoor, type DoorPlan, type HomeSpot, type HomeStuff } from "./rooms";
 import { buildRoom, disposeGroup, roomFree, MIRROR_LAYER, MIRROR_PX, type BuiltRoom, type RoomEnv, type RoomInput } from "./roomBuild";
 import { safeCompileAsync } from "../three3d/safeCompile";
+import type { InteractCard } from "../world3d/interact";
+import type { HouseLife, LifeMate } from "../world3d/houseLife";
+import { FURNITURE, isLiving } from "./rooms";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
 import { FOLLOW_CAM_D, FollowBoom, FollowCarry, FollowZoom, FOLLOW_HEAD_Y, attachFollowZoom, boxRoom, capOnLine, followFade, loadFollowZoom, riseForMin, settledArrival, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
 
@@ -172,6 +175,8 @@ export interface HomeCallbacks {
   onContextLost?: () => void;
   /** He is in a room now (on opening, and after each doorway). */
   onRoom?: (id: RoomId, label: string) => void;
+  /** A living house: the card of a thing or a team-mate (lib/star/world3d/interact.ts), or null. */
+  onCard?: (card: InteractCard | null) => void;
 }
 
 export interface HomeOptions {
@@ -188,6 +193,8 @@ export interface HomeOptions {
   pov?: boolean;
   /** The 3D phone test page only: try walking camera A, B or C (HOUSE_CAMS). Absent = D, the game's camera (with its zoom). */
   houseCam?: HouseCam;
+  /** A living house (homes.ts LIVING_TIERS, the world-kit test page): things you use, team-mates round. Absent = as before. */
+  living?: { mates: LifeMate[]; club?: string; chat?: (id: string) => { line: string; change?: string } | null; onEffect?: (thing: string, e: { mood?: number; energy?: number; text?: string }) => void };
 }
 
 export interface HomeController {
@@ -206,7 +213,7 @@ export interface HomeController {
   place: (x: number, z: number, yaw?: number) => void;
   where: () => { x: number; z: number; yaw: number; t: number; changing: boolean };
   /** For checking: a fixed test camera (null: back to the follow camera). */
-  debugCamera: (pos: [number, number, number] | null, look?: [number, number, number]) => void;
+  debugCamera: (pos: [number, number, number] | null, look?: [number, number, number], fov?: number) => void;
   /** The room's plan, for checking: spots and their places. */
   plan: () => Record<string, unknown>;
   stats: () => { calls: number; triangles: number; pixelRatio: number; quality: string; merged?: { before: number; after: number }; mirror: boolean; room?: string; swapMs?: number };
@@ -232,6 +239,12 @@ export interface HomeController {
   hold: (on: boolean) => void;
   /** Draw one frame now (a held house, or filming frame by frame). */
   renderOnce: () => void;
+  /** A living house: press a card's button (use, leave, chat, close). */
+  act?: (id: string) => void;
+  /** A living house: tap a thing or a team-mate by id (filming). */
+  tapThing?: (id: string) => boolean;
+  /** A living house: what is going on (the seat check, who is where). */
+  lifeDebug?: () => Record<string, unknown>;
   dispose: () => void;
 }
 
@@ -335,6 +348,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   }
   // the mirror sees by the same light
   for (const l of [hemi, sun]) l.layers.enable(MIRROR_LAYER);
+  // a living house: less flat fill, a warmer, stronger sun, so shapes read (the research demo's "real light" step)
+  if (opts.living) { hemi.intensity = 0.72; hemi.groundColor.set("#4a3828"); sun.intensity = 2.4; sun.color.set("#ffd7a0"); scene.environmentIntensity = 0.5; }
 
   // ── Helpers (the shell's own: your number, your shadow blob) ──
   const tex = (cv: HTMLCanvasElement) => {
@@ -370,6 +385,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   // ── The room you are in: one at a time (./roomBuild.ts; which rooms, ./rooms.ts) ──
   const roomIn: RoomInput = { tier: data.tier, rooms, kits: data.kits, slots: data.slots, cars: data.cars, boots: data.boots, casual: data.casual, stuff: data.stuff, bikeModel: data.bikeModel ?? null, club: data.club, badge: data.badge };
   const env: RoomEnv = { THREE, mergeGeometries, Reflector, prof, quality: tier, envTex, doorOpen: !!cb.onDoor, glb, cloneSkinned: (o: any) => SkeletonUtils.clone(o) };
+  // a living house: its furniture (one file, ./furniture.ts) before the first room is built
+  if (isLiving(rooms)) env.furniture = (await glb(FURNITURE).catch((e: unknown) => { console.error("home: furniture", e); return null; }))?.scene ?? undefined;
   let room: BuiltRoom = buildRoom(env, roomIn, rooms[0]);
   scene.add(room.group);
   /** The editor's key-light edit, put back after each room's sun is placed (set below). */
@@ -524,14 +541,16 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     const p = me.person.root.position;
     return room.standFor(s, [p.x, p.z]);
   };
-  const walkTo = (to: XZ, face: XZ | null) => {
+  const walkTo = (to: XZ, face: XZ | null, then?: () => void) => {
     grid ??= buildGrid(-W2, W2, -D2, D2, 0.2, isFree);
     const p = me.person.root.position;
     const path = findPath(grid, [p.x, p.z], to);
     if (!path) return false;
     faceTo = null;
     spotWalk = null;
-    walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; arrivedAt = spotWalk; spotWalk = null; } });
+    // the last point exactly (a seat's stand point sits at the edge of the free floor)
+    if (then && Math.hypot(path[path.length - 1][0] - to[0], path[path.length - 1][1] - to[1]) < 0.8) path[path.length - 1] = to;
+    walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; arrivedAt = spotWalk; spotWalk = null; then?.(); } });
     const g = path[path.length - 1];
     marker.show(g[0], g[1], 0.02);
     orbitHold = 0;
@@ -587,6 +606,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     shadowDirty = true;
     lastSwapMs = performance.now() - t0;
     void room.loadProps().then(() => { shadowDirty = true; });
+    life?.enterRoom(room);
     cb.onRoom?.(room.id, room.plan.label);
     fade.style.opacity = "0";
     swapping = false;
@@ -615,6 +635,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       try {
         const next = await dressUp(worn);
         if (disposed) { disposePerson(next.person, worn.kind === "casual"); return; }
+        life?.rebody();
         const old = me;
         next.person.root.position.copy(old.person.root.position);
         next.person.root.rotation.y = yaw;
@@ -649,6 +670,23 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   };
   void room.loadProps().then(() => { shadowDirty = true; });
   cb.onRoom?.(room.id, room.plan.label);
+  // ── a living house: things to use, team-mates round (lib/star/world3d/houseLife.ts) ──
+  let life: HouseLife | null = null;
+  if (opts.living && isLiving(rooms)) {
+    const { startLife } = await import("../world3d/houseLife");
+    life = await startLife({
+      THREE, SK: SkeletonUtils, loader, scene, tier: data.tier, rooms, quality: tier, kit: data.kits.home, club: opts.living.club,
+      mates: opts.living.mates, outline: prof.outlines ? 0.006 : 0,
+      me: () => me.person,
+      walkTo: (to, face, then) => walkTo(to, face, then),
+      stopWalk: () => stopWalk(),
+      you: () => ({ x: me.person.root.position.x, z: me.person.root.position.z, yaw }),
+      setYaw: (y) => { yaw = y; yawTurn.vel = 0; me.person.root.rotation.y = y; },
+      onCard: (c) => cb.onCard?.(c),
+      chat: opts.living.chat, onEffect: opts.living.onEffect,
+    }).catch((e) => { console.error("home: living", e); return null; });
+    life?.enterRoom(room);
+  }
 
   const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
   // the shared renderer's loop is set and stopped only by its owner: a build thrown away while a
@@ -730,9 +768,12 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     gameT += dt;
     const P = me.person.root.position;
 
+    // a living house: while you use something, the world kit moves you (houseLife.ts)
+    life?.update(dt);
+    const lifeHas = !!life?.controlsYou();
     // input: the stick, else the keys, else a tap-walk
-    let ix = stick.x, iy = stick.y;
-    if (keys.size) {
+    let ix = lifeHas ? 0 : stick.x, iy = lifeHas ? 0 : stick.y;
+    if (keys.size && !lifeHas) {
       ix = (keys.has("d") || keys.has("arrowright") ? 1 : 0) - (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
       iy = (keys.has("w") || keys.has("arrowup") ? 1 : 0) - (keys.has("s") || keys.has("arrowdown") ? 1 : 0);
       const m = Math.hypot(ix, iy) || 1;
@@ -760,18 +801,22 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       if (Math.abs(d) < 0.03) faceTo = null;
     }
     marker.update(dt);
-    const [nx, nz] = collide(P.x + Math.sin(yaw) * speed * dt, P.z + Math.cos(yaw) * speed * dt);
-    const moved = Math.abs(nx - P.x) + Math.abs(nz - P.z) > 1e-4;
-    P.x = nx; P.z = nz;
-    me.person.root.rotation.y = yaw;
-    meBlob.position.set(nx, 0.012, nz);
-    if (me.gait) me.gait.update(speed, dt, 1);
+    let moved = false;
+    if (lifeHas) { speed = 0; moved = true; meBlob.position.set(P.x, 0.012, P.z); }
     else {
-      const wWalk = Math.min(1, speed / 1.5), wIdle = Math.max(0, 1 - speed / 1.5);
-      me.idle.setEffectiveWeight(wIdle); me.walk.setEffectiveWeight(wWalk); me.jog.setEffectiveWeight(0);
-      me.walk.timeScale = Math.max(0.6, speed / 1.45);
+      const [nx, nz] = collide(P.x + Math.sin(yaw) * speed * dt, P.z + Math.cos(yaw) * speed * dt);
+      moved = Math.abs(nx - P.x) + Math.abs(nz - P.z) > 1e-4;
+      P.x = nx; P.z = nz;
+      me.person.root.rotation.y = yaw;
+      meBlob.position.set(nx, 0.012, nz);
+      if (me.gait) me.gait.update(speed, dt, 1);
+      else {
+        const wWalk = Math.min(1, speed / 1.5), wIdle = Math.max(0, 1 - speed / 1.5);
+        me.idle.setEffectiveWeight(wIdle); me.walk.setEffectiveWeight(wWalk); me.jog.setEffectiveWeight(0);
+        me.walk.timeScale = Math.max(0.6, speed / 1.45);
+      }
+      me.person.mixer.update(dt);
     }
-    me.person.mixer.update(dt);
 
     // which spot is he at? (the card opens only when he stops at it or turns to it: shop3d/dwell.ts)
     const zn = zoneAt(P.x, P.z);
@@ -784,7 +829,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       dwell = stepDwell(dwell.timer, dwell.open, { inZone: !!zone, dist, speed, faceOff, arrived: !!zone && arrivedAt === zone }, dt);
       if (arrivedAt && arrivedAt === zone) arrivedAt = null;
     }
-    const now: HomeSpot | null = dwell.open ? zone : null;
+    const now: HomeSpot | null = dwell.open && !lifeHas ? zone : null;
     if (now !== near) { near = now; cb.onNear(near); }
 
     // camera: behind him; a card open frames its spot
@@ -873,6 +918,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       shadowT -= dt;
       if (shadowDirty || ((moved || speed > 0.05) && shadowT <= 0)) { renderer.shadowMap.needsUpdate = true; shadowDirty = false; shadowT = 0.1; }
     }
+    renderer.info.reset(); // counted over the whole frame (look H's passes, the mirror), for stats()
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
 
     busy = !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || changing || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
@@ -886,6 +932,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     const nowMs = performance.now();
     if (nowMs - fpsT0 >= 1000) { cb.onFps?.(Math.round((frames * 1000) / (nowMs - fpsT0))); frames = 0; fpsT0 = nowMs; }
   };
+  renderer.info.autoReset = false;
   const loop = () => tick(false);
   if (isOwner()) renderer.setAnimationLoop(loop);
 
@@ -938,6 +985,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       const s = ctrl.pick(px, py);
       if (s) { ctrl.walkToSpot(s); return { spot: s }; }
       ray.setFromCamera(ndc(px, py), camera);
+      if (life?.tap(ray.ray.origin, ray.ray.direction)) return { spot: null };
+      if (life?.controlsYou()) { life.act("leave"); return { spot: null }; }
       const hit = ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), new THREE.Vector3());
       if (!hit || Math.abs(hit.x) > W2 || Math.abs(hit.z) > D2) return null;
       return walkTo([hit.x, hit.z], null) ? { spot: null } : null;
@@ -959,7 +1008,11 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     wear,
     place: (x, z, y = yaw) => { stopWalk(); me.person.root.position.set(x, 0, z); yaw = y; camYaw = y + Math.PI; orb.reset(); first = true; shadowDirty = true; },
     where: () => ({ x: me.person.root.position.x, z: me.person.root.position.z, yaw, t: gameT, changing }),
-    debugCamera: (pos, look = [0, 1, 0]) => { dbgCam = pos ? { pos, look } : null; lastOff = -1; },
+    debugCamera: (pos, look = [0, 1, 0], fov) => {
+      dbgCam = pos ? { pos, look } : null; lastOff = -1;
+      const f = pos && fov ? fov : baseFov;
+      if (Math.abs(camera.fov - f) > 1e-3) { camera.fov = f; camera.updateProjectionMatrix(); }
+    },
     plan: () => ({ tier: data.tier, room: room.id, rooms, w: W2 * 2, d: D2 * 2, h: H, mirror: room.mirrorSpot, doors: room.doors, spots: room.plan.spots, slots: data.slots.length }),
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), quality: tier, merged: room.frozen, mirror: !!room.mirror?.visible, room: room.id, swapMs: Math.round(lastSwapMs) }),
     room: () => room.id,
@@ -976,8 +1029,13 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       else if (held) { held = false; clock.getDelta(); renderer.setAnimationLoop(loop); }
     },
     renderOnce: () => tick(true),
+    act: (id) => life?.act(id),
+    tapThing: (id) => life?.tapId(id) ?? false,
+    lifeDebug: () => life?.debug() ?? {},
     dispose: () => {
       disposed = true;
+      life?.dispose();
+      renderer.info.autoReset = true;
       detachZoom?.();
       gov.dispose();
       hEnh?.dispose();

@@ -21,7 +21,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { HomeController, HomeData, HomeSpot } from "@/lib/star/home3d/scene";
-import { homeTierOf, homeNameOf, roomPreset, cabinetSize, roomsFor, type HomeTier, type RoomId } from "@/lib/star/home3d/homes";
+import type { InteractCard } from "@/lib/star/world3d/interact";
+import { homeTierOf, homeNameOf, roomPreset, cabinetSize, roomsFor, livingOn, type HomeTier, type RoomId } from "@/lib/star/home3d/homes";
 import { homeStuffOf, carsIn, ROOM_LABEL, BIKE_LOD } from "@/lib/star/home3d/rooms";
 import { badgeSvg } from "@/lib/star/clubBadge";
 import { houseLook, type HouseLook } from "@/lib/star/home3d/look";
@@ -68,6 +69,8 @@ export interface Home3DProps {
   onReady?: (c: HomeController) => void;
   /** Test page only: the walking camera to try (lib/star/home3d/scene.ts HOUSE_CAMS). Absent or "D": the game's camera (D, with its zoom). */
   houseCam?: "A" | "B" | "C" | "D";
+  /** Test page: force the living house on or off (things you use, team-mates round; homes.ts LIVING_TIERS). Absent: the game's own choice per tier. */
+  living?: boolean;
 }
 
 type Tab = "casual" | "kit" | "boots";
@@ -76,9 +79,9 @@ type Tab = "casual" | "kit" | "boots";
  * What the 3D house is built from, off a career (the screen below, and the
  * 3D Scene Editor's house on /star-scene-editor-dev).
  */
-export function homeSceneData(career: CareerState, tier: HomeTier, house: HouseLook | undefined, choice: OutfitChoice): HomeData {
+export function homeSceneData(career: CareerState, tier: HomeTier, house: HouseLook | undefined, choice: OutfitChoice, living?: boolean): HomeData {
   const room = roomPreset(tier);
-  const rooms = roomsFor(tier, house ?? houseLook());
+  const rooms = roomsFor(tier, house ?? houseLook(), livingOn(tier, living));
   const stuff = homeStuffOf(career);
   return {
     tier,
@@ -100,7 +103,13 @@ export function homeSceneData(career: CareerState, tier: HomeTier, house: HouseL
   };
 }
 
-export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam }: Home3DProps) {
+/** Who drops round (the first outfield team-mates of your squad) and the living world's chat with them. */
+function livingFor(career: CareerState) {
+  const mates = (career.squad ?? []).filter((p) => p.position !== "GK").slice(0, 4).map((p, i) => ({ id: p.id, name: p.shortName || p.name, number: [8, 14, 21, 6][i] }));
+  return { mates, club: career.player.club };
+}
+
+export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living }: Home3DProps) {
   const readyRef = useRef(onReady);
   readyRef.current = onReady;
   const holder = useRef<HTMLDivElement>(null);
@@ -121,12 +130,14 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const room = roomPreset(tier);
   const kits = kitsOf(career.player.club);
   const slots = useMemo(() => cabinetSlots(career, cabinetSize(tier)), [career, tier]);
-  const rooms = useMemo(() => roomsFor(tier, house ?? houseLook()), [tier, house]);
+  const alive = livingOn(tier, living) && (house ?? houseLook()) === "new";
+  const rooms = useMemo(() => roomsFor(tier, house ?? houseLook(), alive), [tier, house, alive]);
+  const [lifeCard, setLifeCard] = useState<InteractCard | null>(null);
   const cars = useMemo(() => carsOnDrive(career, Math.max(room.cars, rooms.includes("garage") ? carsIn("garage", tier) : 0)), [career, room.cars, rooms, tier]);
   const boots = useMemo(() => bootChoices(career), [career]);
   const homeName = tierProp ? room.label : homeNameOf(career.ownedItems);
 
-  const data: HomeData = useMemo(() => homeSceneData(career, tier, house, choice),
+  const data: HomeData = useMemo(() => homeSceneData(career, tier, house, choice, alive),
     // built once per visit
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tier, rooms]);
@@ -154,6 +165,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         const start = () => startHome(el, {
           onNear: (s) => setNear(s),
           onRoom: (id) => setRoomNow(id),
+          onCard: (c) => setLifeCard(c),
           onFps: (f) => { (window as unknown as { __home3dFps?: number }).__home3dFps = f; },
           ...(onDoor ? { onDoor: () => { if (dead) return; setLeaving(true); doorRef.current?.(); } } : {}),
           onContextLost: () => {
@@ -171,6 +183,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           edit: approvedRef.current,
           ...(pov ? { pov: true } : {}),
           ...(houseCam && houseCam !== "D" ? { houseCam } : {}),
+          ...(alive ? { living: livingFor(career) } : {}),
         });
         let c: HomeController;
         try {
@@ -244,6 +257,24 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         onPointerUp={(e) => { const d = drag.current; drag.current = null; if (d && d.id === e.pointerId && d.moved < 10) onTap(e.clientX, e.clientY); }}
         onPointerCancel={() => { drag.current = null; }}
       />
+
+      {/* a living house: the card of a thing or a team-mate (lib/star/world3d/interact.ts) */}
+      {chrome && lifeCard && (
+        <div data-home3d-card style={{ position: "absolute", left: 12, right: 12, bottom: "max(16px, env(safe-area-inset-bottom))", maxWidth: 460, margin: "0 auto", padding: "12px 14px", borderRadius: 14, background: "rgba(8,10,16,.9)", color: "#f8fafc", borderTop: `3px solid ${GOLD}`, boxShadow: "0 10px 30px rgba(0,0,0,.4)", zIndex: 5 }}>
+          {lifeCard.sub && <div style={{ fontSize: 11, fontWeight: 900, color: GOLD, textTransform: "uppercase", letterSpacing: 0.5 }}>{lifeCard.sub}</div>}
+          <div style={{ fontSize: 18, fontWeight: 900 }}>{lifeCard.title}</div>
+          {lifeCard.lines.map((l, i) => <div key={i} style={{ fontSize: 14, lineHeight: 1.35, marginTop: 4, color: i ? "#cbd5e1" : "#f8fafc" }}>{l}</div>)}
+          {lifeCard.change && <div style={{ fontSize: 12, fontWeight: 800, color: "#86efac", marginTop: 6 }}>{lifeCard.change}</div>}
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            {lifeCard.actions.map((a) => (
+              <button key={a.id} onClick={() => ctrlRef.current?.act?.(a.id)} data-act={a.id}
+                style={{ flex: a.primary ? 2 : 1, height: 40, borderRadius: 10, border: a.primary ? "none" : "1px solid rgba(255,255,255,.25)", background: a.primary ? GOLD : "transparent", color: a.primary ? "#111" : "#f8fafc", fontWeight: 900, fontSize: 14, cursor: "pointer" }}>
+                {a.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* top bar */}
       {chrome && <div style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", gap: 8, padding: "max(12px, env(safe-area-inset-top)) 12px 0", pointerEvents: "none" }}>

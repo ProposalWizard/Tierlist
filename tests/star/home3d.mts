@@ -3,6 +3,7 @@ import {
   HOME_TIERS, HOME_FAMILY_TIER, roomPreset, homeTierOf, homeNameOf, parseHomeTier, cabinetSize, bestHome,
   roomsFor, type HomeTier, type RoomId,
 } from "../../lib/star/home3d/homes";
+import { guestRooms, GUESTS_BY_TIER } from "../../lib/star/world3d/houseLife";
 import { roomPlan, spotsOf, trophySlotsByRoom, arrivalAt, arrivalDoor, homeStuffOf } from "../../lib/star/home3d/rooms";
 import { cabinetSlots, winsOf, CABINET_TARGETS } from "../../lib/star/home3d/trophies";
 import {
@@ -162,8 +163,9 @@ for (const t of HOME_TIERS) for (const look of ["new", "old"] as const) {
   check(Object.keys(by).length === 1, `${t} (${look}): one room keeps the cabinet`);
 }
 // doorways: every door to a room has a door back; the first room has the front door; doors sit on their walls and never overlap
-for (const t of HOME_TIERS) {
-  const rs = roomsFor(t);
+// (and the living houses' too: homes.ts LIVING_ROOMS)
+for (const [t, living] of HOME_TIERS.flatMap((x) => [[x, false], [x, true]] as [HomeTier, boolean][])) {
+  const rs = roomsFor(t, "new", living);
   const plans = new Map(rs.map((r) => [r, roomPlan(t, r, rs)]));
   check(plans.get(rs[0])!.doors.some((d) => d.to === "garden"), `${t}: the first room has the front door`);
   check(rs.slice(1).every((r) => !plans.get(r)!.doors.some((d) => d.to === "garden")), `${t}: only the first room has the front door`);
@@ -192,6 +194,17 @@ for (const t of HOME_TIERS) {
   check(seenR.size === rs.length, `${t}: every room can be walked to from the front door`);
 }
 check(arrivalDoor(roomPlan("house", "lounge", roomsFor("house")), "hallway")?.to === "hallway", "from the hallway you arrive at the lounge's hallway door");
+// the living houses: one cabinet room, a wardrobe, a bed and a bathroom (but the starter's one room), team-mates by size
+for (const t of HOME_TIERS) {
+  const rs = roomsFor(t, "new", true);
+  const spots = rs.flatMap((r) => spotsOf(r, rs));
+  check(spots.filter((x) => x === "cabinet").length === 1, `${t} (living): one room keeps the cabinet`);
+  check(spots.includes("wardrobe"), `${t} (living): a wardrobe`);
+  check(t === "starter" || (rs.includes("bedroom") && rs.includes("bathroom")), `${t} (living): a bedroom and a bathroom`);
+  const g = guestRooms(rs, GUESTS_BY_TIER[t]);
+  check(g.length === GUESTS_BY_TIER[t], `${t} (living): ${GUESTS_BY_TIER[t]} team-mates have a room to be in (${g.join(", ")})`);
+}
+check(GUESTS_BY_TIER.starter === 1 && GUESTS_BY_TIER.estate === 4, "1 team-mate round at the starter flat, 4 at the estate");
 
 // your things, from the shop
 const stuffCareer = { ownedItems: [lvl("rolex", 1), lvl("smartwatch", 1), lvl("diamond", 1), lvl("tv", 1), lvl("bike", 1)], kibCans: { basic: 2, premium: 1, elite: 0 } } as unknown as CareerState;

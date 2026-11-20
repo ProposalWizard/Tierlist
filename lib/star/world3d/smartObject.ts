@@ -42,6 +42,8 @@ export interface SmartSlot {
   facing: number;
   /** A seat: where his hips go and the seat's top (m). The person fits himself to it. */
   seat?: { at: XZ; y: number; front?: number };
+  /** Standing on something (a treadmill's belt, a shower tray): his feet this far up while he uses it (m). */
+  lift?: number;
 }
 
 /** What using it does (shown on the card; a career hook later). */

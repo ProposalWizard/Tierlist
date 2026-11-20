@@ -13,12 +13,19 @@
  * ?place=house|garden, ?demo=sofa|fridge|visitor|talk (a scripted run, for
  * filming with scripts/film/frames3d.mjs), ?bare=1 / ?film=1 full screen,
  * ?q=low|medium|high the quality tier. Nothing is saved.
+ *
+ * ?place=house&tier=starter|flat|penthouse|house|villa|estate: the LIVING HOUSE of that home (the
+ * real house screen, components/star/Home3D.tsx, with homes.ts LIVING_ROOMS forced on): every
+ * room, the things to use, team-mates round. Built here first; a tier reaches the game through
+ * homes.ts LIVING_TIERS.
  */
 import { Suspense, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Btn, Pill } from "@/components/admin/broadcast/BroadcastPage";
 import World3D from "@/components/star/World3D";
+import Home3D from "@/components/star/Home3D";
+import { parseHomeTier, HOME_TIERS, type HomeTier } from "@/lib/star/home3d/homes";
 import "../star-3d-area-dev/stage3d.css";
 import { setToonYou } from "@/lib/star/style3d/toon/bodies";
 import { makeInitialCareer } from "@/lib/star/careerFlow";
@@ -75,7 +82,11 @@ function World3DTest() {
   }, [place, demo, quality, run]);
 
   const bare = params.get("bare") === "1" || params.get("film") === "1";
-  const stage = <World3D key={`${place}-${run}`} options={options} clean={params.get("clean") === "1"} />;
+  const houseTier: HomeTier | null = parseHomeTier(params.get("tier"));
+  const [tier, setTier] = useState<HomeTier | null>(houseTier);
+  const stage = place === "house" && tier
+    ? <Home3D key={`${tier}-${run}`} career={career.current!} tier={tier} living house="new" where="test" embedded={!bare} backLabel="Back" onBack={() => setTier(null)} />
+    : <World3D key={`${place}-${run}`} options={options} clean={params.get("clean") === "1"} />;
   if (bare) {
     return (
       <>
@@ -90,6 +101,7 @@ function World3DTest() {
         <div className="s3-bar" data-world3d-dev>
           <Pill on={place === "house"} onClick={() => setPlace("house")}>House</Pill>
           <Pill on={place === "garden"} onClick={() => setPlace("garden")}>Garden</Pill>
+          {HOME_TIERS.map((t) => <Pill key={t} on={place === "house" && tier === t} onClick={() => { setPlace("house"); setTier(t); }}>{t}</Pill>)}
           <Btn onClick={() => setRun((k) => k + 1)}>↻ Restart</Btn>
         </div>
         <div className="s3-stage">{stage}</div>

@@ -161,7 +161,10 @@ export type RoomId =
   | "main" | "hallway" | "lounge" | "dressing" | "trophy" | "terrace"
   | "garage" | "games" | "cinema" | "gym" | "gardenTerrace"
   /** The flat's little hallway by its front door (boots, coats, keys). */
-  | "nook";
+  | "nook"
+  // the living houses (Harry, 20 Nov 2026: "there is gonna be like 2-8 house options and we need 3D FOR ALL OF them")
+  /** The starter flat's one room: bed, kitchenette, small TV, wardrobe. */
+  | "studio" | "kitchen" | "bedroom" | "bathroom" | "poolTerrace";
 
 /**
  * The rooms of each tier, in the order the dots show them (the first is where
@@ -179,7 +182,33 @@ export const TIER_ROOMS: Record<HomeTier, RoomId[]> = {
   estate: ["hallway", "lounge", "dressing", "trophy", "garage", "games", "cinema", "gym", "gardenTerrace"],
 };
 
-/** The rooms you walk through: the tier's rooms on the New look, the one room on Old. */
-export function roomsFor(tier: HomeTier, look: "new" | "old" = "new"): RoomId[] {
-  return look === "old" ? ["main"] : [...(TIER_ROOMS[tier] ?? TIER_ROOMS.starter)];
+/**
+ * THE LIVING HOUSES (Harry, 20 Nov 2026: "things like the fridge and couch + tv are genuinely
+ * incredible ... remember there is gonna be like 2-8 house options and we need 3D FOR ALL OF
+ * them"). Every tier with the rooms a home of that size has, each with things you can use
+ * (lib/star/world3d: sofa + TV, fridge, bed, mirror, shower, gym, pool...) and team-mates who
+ * drop round. Built on /star-world3d-dev?place=house&tier=<tier> first; a tier reaches the
+ * game once it is in LIVING_TIERS.
+ */
+export const LIVING_ROOMS: Record<HomeTier, RoomId[]> = {
+  starter: ["studio"],
+  flat: ["nook", "lounge", "bedroom", "bathroom"],
+  penthouse: ["lounge", "bedroom", "bathroom", "terrace"],
+  house: ["hallway", "lounge", "kitchen", "bedroom", "bathroom", "trophy", "garage"],
+  villa: ["hallway", "lounge", "kitchen", "bedroom", "bathroom", "dressing", "trophy", "garage", "gym", "games", "poolTerrace"],
+  estate: ["hallway", "lounge", "kitchen", "bedroom", "bathroom", "dressing", "trophy", "garage", "gym", "games", "poolTerrace", "cinema", "gardenTerrace"],
+};
+
+/** The tiers whose living house is in the real game (House: New). The rest keep TIER_ROOMS until theirs is signed off. */
+export const LIVING_TIERS: ReadonlySet<HomeTier> = new Set<HomeTier>([]);
+
+/** Is this tier's living house on in the game (or forced on by a test page)? */
+export function livingOn(tier: HomeTier, force?: boolean): boolean {
+  return force ?? LIVING_TIERS.has(tier);
+}
+
+/** The rooms you walk through: the tier's rooms on the New look (its living house once on), the one room on Old. */
+export function roomsFor(tier: HomeTier, look: "new" | "old" = "new", living = false): RoomId[] {
+  if (look === "old") return ["main"];
+  return [...((living ? LIVING_ROOMS[tier] : TIER_ROOMS[tier]) ?? TIER_ROOMS.starter)];
 }

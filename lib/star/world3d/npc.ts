@@ -228,6 +228,8 @@ export class Npc {
     const path = findPath(world.grid, [this.x, this.z], g.to);
     for (const [n] of blocked) world.grid.free[n] = 1;
     if (!path) { this.note = "no way"; return false; }
+    // already there (the start and the goal in one cell): no walk at all
+    if (!path.length) { this.state = "stand"; this.arrived(); return true; }
     // the last point exactly (findPath snaps to a free cell: a seat's front is free)
     if (Math.hypot(path[path.length - 1][0] - g.to[0], path[path.length - 1][1] - g.to[1]) < 0.8) path[path.length - 1] = g.to;
     this.walker.go(path, { run: g.run, onArrive: () => this.arrived() });
@@ -437,6 +439,10 @@ export class Npc {
         this.y = j.root.y * (1 - smooth(0.1, 0.75, this.exitBack ? 1 - p : p));
       }
       else if (this.state === "use") this.y = j.root.y;
+    } else if (j && j.slot.lift) {
+      // standing on it (a treadmill, a shower tray): stepped up while in, down as he comes out
+      const want = this.state === "enter" || this.state === "use" ? j.slot.lift : 0;
+      this.y += (want - this.y) * Math.min(1, dt * 10);
     }
     // standing up is the sit played backwards: done at its first frame
     if (this.state === "exit" && this.exitBack && this.play.time() <= 0.03) this.outOf();

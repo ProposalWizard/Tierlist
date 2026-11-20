@@ -176,6 +176,9 @@ for (const f of [...["family", "hatch", "suv", "sports", "classic", "super"].map
 // the garden's props the estate's terrace uses (tools/home3d/make_terrace_props.mjs): the
 // terrace joins its pieces into one draw per material, reading their vertices, so floats stay.
 POLICY["star/home3d/terrace-props.glb"] = { q: null, webp: true };
+// the house furniture (tools/home3d/make_furniture.py, Kenney CC0): pieces are cloned and joined
+// into a room's still draws (freezeStatic), so positions stay float.
+POLICY["star/home3d/furniture.glb"] = { q: null, webp: true };
 // Speed job B (9 Oct 2026): every generated shop item has a KTX2 twin (*-hf.ktx2.glb, packed
 // pictures that stay packed on the chip), written already meshopt-packed by tools/shop3d/ktx2_items.mjs
 // from the file above. Re-make it with that tool, never here.

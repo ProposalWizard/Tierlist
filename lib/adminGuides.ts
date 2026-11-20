@@ -2559,6 +2559,7 @@ export const ADMIN_GUIDES = {
       {
         items: [
           ["House / Garden (above the scene)", "Which place opens: the house's lounge (sofa, TV, fridge) or the garden (bench, gate, team-mates)."],
+          ["starter / flat / penthouse / house / villa / estate", "Opens the LIVING HOUSE of that home (the real house screen with every room of that home): things to use in every room (sofa and TV, fridge, bed, shower, mirror, coffee machine, treadmill, pool table, loungers, cinema seats) and team-mates round (1 in the starter flat up to 4 at the estate). Walk through a doorway to the next room. Same as ?place=house&tier=villa. Nothing is saved; a home reaches the real game only once it is switched on in the code (LIVING_TIERS)."],
           ["↻ Restart", "Opens the place again from the start (the same people, the same day)."],
           ["Tap the floor", "You walk there, round furniture and round people."],
           ["Tap the sofa, the TV, the fridge, the bench or the gate", "You walk up to it and its card opens. Sit down / Watch TV / Take a can: you do it. Stand up ends it."],
