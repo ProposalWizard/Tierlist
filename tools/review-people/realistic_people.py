@@ -677,37 +677,87 @@ def reach(P, side, target, pole):
 DESK_TOP = 0.745
 
 
-def sit_at_desk(P, t=1.0, fwd=0.40, spread=0.17):
-    """The game's seated clip for the body and legs; the hands are then laid on the desk here
-    (in the game the scene's own arm solver does that), palms down, fingers a little closed."""
+def wrist_report(P):
+    """How far each wrist is bent (forearm against hand), degrees."""
+    out = {}
+    for side in ("Left", "Right"):
+        fa = (jpos(P, f"{side}Hand") - jpos(P, f"{side}ForeArm")).normalized()
+        hd = (jpos(P, f"{side}HandMiddle1") - jpos(P, f"{side}Hand")).normalized()
+        out[side] = round(math.degrees(fa.angle(hd)), 1)
+    return out
+
+
+def sit_at_desk(P, t=1.0, fwd=0.40, spread=0.17, lift=None):
+    """The game's seated clip for the body and legs; the hands are then laid on the desk here.
+    REVIEW_FIX=1 is the corrected version (Harry, 20 Nov 2026: "the legs are pushing into the body a bit
+    and the hands/wrists/arms are super weird"):
+      - hips: he sits a little back and his knees a little lower than his hips, so the hip is not folded
+        past what the skin can do (the thigh no longer runs into the belly and the jacket);
+      - arms: elbows hang down by his sides, not out like wings;
+      - wrists: no forced palm-down twist. The forearm turns only as far as a real forearm rests on a
+        desk (half turned, thumb side up and in), spread along the forearm, and the wrist stays straight;
+      - fingers: the game's own relaxed curl (cutscene/hands.ts `relaxed`)."""
+    fix = os.environ.get("REVIEW_FIX") == "1"
     pose_from_clip(P, os.environ.get("REVIEW_SIT", "boss-sit"), t)
     face_front(P)
-    # the clip seats him a little high for this body: put his feet on the floor
     arm_ = P["arm"]
+    if fix:
+        turn(P, "Hips", (1, 0, 0), -7)                       # sit back
+        for side in ("Left", "Right"):
+            turn(P, f"{side}UpLeg", (1, 0, 0), 16)           # knees lower than the hips
+            turn(P, f"{side}Leg", (1, 0, 0), -9)             # shins back to upright
+            kn = jpos(P, f"{side}Leg")
+            hp = jpos(P, f"{side}UpLeg")
+            sx = 1 if side == "Left" else -1
+            if abs(kn.x - hp.x) > 0.07:                      # knees in from the wide splay
+                turn(P, f"{side}UpLeg", (0, 0, 1), sx * 9)
     low = min(jpos(P, "LeftFoot").z, jpos(P, "RightFoot").z)
     arm_.matrix_world = Matrix.Translation((0, 0, 0.10 - low)) @ arm_.matrix_world
     upd()
-    for b_, d_ in (("Spine", 5), ("Spine01", 4), ("neck", -6)):
+    for b_, d_ in ((("Spine", 9), ("Spine01", 5), ("neck", -6)) if fix else (("Spine", 5), ("Spine01", 4), ("neck", -6))):
         turn(P, b_, (1, 0, 0), d_)
+    twist = {}
     for side, sx in (("Left", 1), ("Right", -1)):
         sh = jpos(P, f"{side}Arm")
-        reach(P, side, (sx * spread, sh.y - fwd, DESK_TOP + 0.035), (sx * 0.9, 0.35, -0.5))
-        for _ in range(3):   # lay the palm down: half the twist in the forearm, half in the wrist
+        if not fix:
+            reach(P, side, (sx * spread, sh.y - fwd, DESK_TOP + 0.035), (sx * 0.9, 0.35, -0.5))
+            tw = 0.0
+            for _ in range(3):   # lay the palm down: half the twist in the forearm, half in the wrist
+                n, f, a = palm_normal(P, side)
+                fa = (jpos(P, f"{side}Hand") - jpos(P, f"{side}ForeArm")).normalized()
+                down = Vector((0, 0, -1))
+                dproj = (down - fa * down.dot(fa)).normalized()
+                nproj = (n - fa * n.dot(fa)).normalized()
+                ang = math.degrees(nproj.angle(dproj)) * (1 if nproj.cross(dproj).dot(fa) > 0 else -1)
+                turn(P, f"{side}ForeArm", fa, ang * 0.5)
+                turn(P, f"{side}Hand", fa, ang * 0.5)
+                tw += ang
+            twist[side] = round(tw, 1)
+            aim(P, f"{side}Hand", f"{side}HandMiddle1", Vector((-sx * 0.45, -1, -0.03)))
+            n, f, a = palm_normal(P, side)
+            down = Vector((0, 0, -1))
+            dproj = (down - f * down.dot(f)).normalized()
+            nproj = (n - f * n.dot(f)).normalized()
+            turn(P, f"{side}Hand", f, math.degrees(nproj.angle(dproj)) * (1 if nproj.cross(dproj).dot(f) > 0 else -1))
+            curl(P, side, (8, 14, 10))
+        else:
+            reach(P, side, (sx * 0.15, sh.y - 0.33, DESK_TOP + 0.045 + (lift or {}).get(side, 0.0)), (sx * 0.25, 0.45, -1))
+            # the palm wants to face down and in (half turned): turn the forearm at most 40 degrees towards
+            # that, none of it at the wrist, so nothing is wrung
             n, f, a = palm_normal(P, side)
             fa = (jpos(P, f"{side}Hand") - jpos(P, f"{side}ForeArm")).normalized()
-            down = Vector((0, 0, -1))
-            dproj = (down - fa * down.dot(fa)).normalized()
+            want = Vector((-sx * 0.55, 0, -1)).normalized()
+            dproj = (want - fa * want.dot(fa)).normalized()
             nproj = (n - fa * n.dot(fa)).normalized()
             ang = math.degrees(nproj.angle(dproj)) * (1 if nproj.cross(dproj).dot(fa) > 0 else -1)
-            turn(P, f"{side}ForeArm", fa, ang * 0.5)
-            turn(P, f"{side}Hand", fa, ang * 0.5)
-        aim(P, f"{side}Hand", f"{side}HandMiddle1", Vector((-sx * 0.45, -1, -0.03)))
-        n, f, a = palm_normal(P, side)
-        down = Vector((0, 0, -1))
-        dproj = (down - f * down.dot(f)).normalized()
-        nproj = (n - f * n.dot(f)).normalized()
-        turn(P, f"{side}Hand", f, math.degrees(nproj.angle(dproj)) * (1 if nproj.cross(dproj).dot(f) > 0 else -1))
-        curl(P, side, (8, 14, 10))
+            ang = max(-40, min(40, ang))
+            turn(P, f"{side}ForeArm", fa, ang)
+            twist[side] = round(ang, 1)
+            # the hand in line with the forearm, dropped a touch onto the desk
+            fa = (jpos(P, f"{side}Hand") - jpos(P, f"{side}ForeArm")).normalized()
+            aim(P, f"{side}Hand", f"{side}HandMiddle1", (fa + Vector((-sx * 0.12, 0, -0.10))).normalized())
+            curl(P, side, (12, 19, 11))
+    P["twist"] = twist
 
 
 # ------------------------------------------------------------- the three men
@@ -863,6 +913,59 @@ def crossings(P):
     return out
 
 
+def lap_crossing(P, zone=0.13):
+    """Seated: faces of a thigh that cut the trunk (belly, jacket hem, seat), away from the hip fold itself.
+    Faces within `zone` metres of the hip joint are the fold and are not counted (as the repo's check does)."""
+    out = {}
+    for side in ("Left", "Right"):
+        hip = np.array(jpos(P, f"{side}UpLeg"))
+        legs, trunk = [], []
+        for ob in P["meshes"]:
+            if not (ob.name.endswith("Body.skin") or ob.name.endswith("Body.suit")):
+                continue
+            pts = world_points([ob])[0]
+            vg = {g.index: g.name for g in ob.vertex_groups}
+            dom = []
+            for v in ob.data.vertices:
+                b = max(v.groups, key=lambda g: g.weight) if v.groups else None
+                dom.append(vg[b.group] if b else "")
+            for p in ob.data.polygons:
+                names = {dom[i] for i in p.vertices}
+                tri = [tuple(pts[i]) for i in p.vertices]
+                c = np.mean(np.array(tri), axis=0)
+                if np.linalg.norm(c - hip) < zone:
+                    continue
+                if names <= {f"{side}UpLeg", f"{side}Leg"}:
+                    legs.append(tri)
+                elif all(not n.startswith("Left") and not n.startswith("Right") for n in names):
+                    trunk.append(tri)
+
+        def tree(polys):
+            vs, fs = [], []
+            for poly in polys:
+                fs.append(tuple(range(len(vs), len(vs) + len(poly))))
+                vs.extend(poly)
+            return BVHTree.FromPolygons(vs, fs)
+        out[side] = len(tree(legs).overlap(tree(trunk))) if legs and trunk else 0
+    return out
+
+
+def hand_low(P, side):
+    """The lowest point of one hand (m)."""
+    lo = 9.0
+    for ob in P["meshes"]:
+        if not ob.name.endswith("Body.skin"):
+            continue
+        pts = world_points([ob])[0]
+        vg = {g.index: g.name for g in ob.vertex_groups}
+        for v in ob.data.vertices:
+            b = max(v.groups, key=lambda g: g.weight) if v.groups else None
+            if b and vg[b.group].startswith(f"{side}Hand"):
+                lo = min(lo, pts[v.index][2])
+    return lo
+
+
+FIX = os.environ.get("REVIEW_FIX") == "1"
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scn = setup(SAMPLES)
 check = {}
@@ -902,6 +1005,18 @@ else:
     P = make_person("m", PEOPLE[WHO if WHO in PEOPLE else "a"])
     sit_at_desk(P)
     upd()
+    if FIX:
+        # both hands down onto the same desk: measure where each hand's lowest point came out, pose again
+        lift = {"Left": 0.0, "Right": 0.0}
+        for _ in range(4):
+            lows = {sd: hand_low(P, sd) for sd in ("Left", "Right")}
+            base = min(lows.values())
+            if max(lows.values()) - base < 0.0008:
+                break
+            for sd in lows:
+                lift[sd] += base - lows[sd]
+            sit_at_desk(P, lift=lift)
+            upd()
     arms = np.vstack(world_points([o for o in P["meshes"] if o.name.endswith("Body.skin") or o.name.endswith("Body.suit")]))
     over = arms[(arms[:, 1] < -0.30) & (arms[:, 2] > 0.70)]
     top = float(over[:, 2].min()) - 0.0015
@@ -910,7 +1025,19 @@ else:
     for nm, w_ in (("left", wl), ("right", wr)):
         hp = over[(np.linalg.norm(over[:, :2] - np.array([w_.x, w_.y]), axis=1) < 0.2)]
         check[f"{nm}_hand_lowest_point_above_desk_mm"] = round((float(hp[:, 2].min()) - top) * 1000, 1) if len(hp) else None
+    if FIX:
+        # a smoothing pass after the bones that keeps the rest shape's detail: it rounds out the folds a
+        # bent joint leaves (in the game this would be baked as a corrective shape per pose, not run live)
+        for ob in P["meshes"]:
+            if ob.name.endswith("Body.suit"):   # cloth only: the skin's picture seams would open
+                md = ob.modifiers.new("fold", "CORRECTIVE_SMOOTH")
+                md.factor = 0.5
+                md.iterations = 8
+                md.rest_source = "ORCO"
     check["crossings"] = crossings(P)
+    check["thigh_faces_cutting_trunk"] = lap_crossing(P)
+    check["forearm_twist_deg"] = P.get("twist")
+    check["wrist_bend_deg"] = wrist_report(P)
     oak = wood("Oak", "#6b4226", "#3d2413")
     box("Desk", (0, -1.10, top - 0.025), (2.4, 1.6, 0.05), oak, bevel=0.006)
     paper = box("Paper", (0.0, -0.86, top + 0.001), (0.21, 0.297, 0.001), mat_flat("Paper", "#f3f1ea", rough=0.7))
