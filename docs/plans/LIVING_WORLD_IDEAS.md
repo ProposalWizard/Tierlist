@@ -127,3 +127,14 @@ API cost note: the 50-event trial cost about $1.50 (Harry read it from the Usage
 - Voices: "for now do Den and the Gaffer's lines for 1.5k 11 Labs credits. Other than that, the rest of the lines in the game can be free, using free voices for now. I'll just allow you to choose."
 - Cut scenes: "in that cut scene he isn't even walking, although it looks good"; "the lighting and contrast is a bit much at times".
 - How people move (asked for as an overhaul): "animations and just the way the 3D players move in general just needs a bit of an overhaul, because why the legs like squeezing past each other, they look so like awkward and hard to move. The quality is like jittering, it's like blurry almost, it's bitty. In the press conference his legs are scrunched up when he sits down. The cutscenes haven't really had any changes or thought behind them. The mentor himself, his skin color is bleeding into his suit. The suit has like blotches on it. His face looks really odd. His beard isn't really on his face. It's like the new face changes are just kind of morphing over previous stuff. The ball doesn't really actually go where his feet are. The quality is so low. Walking in the flat has much improved, but again the quality looks a little bit off."
+
+## Harry, 20 Nov 2026, 21:30: after the full-quality walk-out and press films
+
+- "yes merge the report and start fixing the slow taps."
+- Kit man: "the worst thing of the kit man is the drill, I think it's a chance to be creative, also make sure it's the main engine."
+- Houses: "fix all still weak points. Also sleeping in the house should actually pass time."
+- People: "the walking is getting there but the same thing that was killing players/managers is killing animations, no variations - 22 players walking at the same pace in the same time. No life in their faces, everyone static."
+- Kits: "The kits look not like fabric but painted on with blobs of differing paint."
+- Necks and clothes: "you're struggling a lot with necks and skin colour into clothes. I think you need to also research fabric/clothes and how to successfully look like it."
+- The bar: "forget even being 'perfect', we cannot ship the product with cut scenes like the given." Cut scenes stay off the live game until Harry has seen them pass.
+- Earlier the same evening: "instead of using aim of rough cm why not try and find walking animations and match them to our style/bodies, same goes for standing"; cars without Higgsfield: "yea definitely not on the cars lol" (dropped).
