@@ -38,3 +38,4 @@ taps and page moves feel slow next to NSS. Two read-only audits ran
 12. "also should it be £ instead of dollars" → "£ pounds (Recommended)". Answers the same message: shop into the game "yes"; the Sponsors fame pill "idk"; the Owner app gets Money + Reputation "yes".
 13. "I want u to put all inages/videos into this chat even with the test pages"
 14. (20 Nov) On the 3D phone videos: "the original blink was better but this is looking good, the houses and 3d space are defo gonna need cleaning up too, even if that means just sticking to the style but making it clean. Also driving from here to training/matchday would be eliteeee"
+15. (20 Nov) "also on the realistic people - that doesn't mean changing the style it just means body proportions, no bugs, picthes, sponsor boards, proportions in general, views, hands, picking things up, interacting, etc"
