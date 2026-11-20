@@ -48,6 +48,9 @@ import { freshLife, lifeWeek, meet, personInfo, teamForMatch } from "@/lib/star/
 import type { FactOverride } from "@/lib/star/life/facts";
 import { actionsLeft } from "@/lib/star/week";
 import { LIFE_IN_CAREER } from "@/lib/star/life/flag";
+import { StoryScreen, useStory } from "@/components/star/life/StoryPlayer";
+import { questLog, arcsOf } from "@/lib/star/life/arcs";
+import { promiseList } from "@/lib/star/life/promises";
 
 type View =
   | { kind: "people" }
@@ -105,6 +108,16 @@ function sampleCareer(carLevel = 3, horse = false): CareerState {
   };
 }
 
+/** The kit man story's sample (Events v2): 19, a bad Saturday, good feet, season 1. */
+function kitmanSample(): CareerState {
+  const c = sampleCareer(2);
+  return {
+    ...c, season: 1, week: 12, clubAppearances: 9, fame: 12, energy: 80, life: freshLife(),
+    player: { ...c.player, age: 19 },
+    skills: { ...c.skills, technique: 72, power: Math.max(60, c.skills.power) },
+  };
+}
+
 /** The follow-up sample: a team-mate crashed your car two weeks ago and is waiting with an envelope. */
 function followUpSample(): CareerState {
   const c = sampleCareer();
@@ -137,6 +150,21 @@ export default function LifeTestPage() {
   const plainRef = useRef(false);
   plainRef.current = plainCards;
   const rng = useRef(mulberry32(20261120));
+  const [diceOk, setDiceOk] = useState(true);
+  const story = useStory({ career, setCareer: (c) => setCareer(c), rng: () => rng.current(), facts, toast: (t) => toast(t), allowDice: diceOk });
+  // A new story screen starts at the top of the phone (the drill scrolls it).
+  const storyKey = story.view ? `${story.view.k}:${"b" in story.view ? `${story.view.b.beat}:${story.view.b.node}` : ""}` : "";
+  useEffect(() => { const el = document.querySelector("[data-life-scroll]"); if (el) el.scrollTop = 0; }, [storyKey]);
+  // Test hook for the stills driver (a dev page only): the story's controls without the panel.
+  useEffect(() => { (window as unknown as { __kitStory?: unknown }).__kitStory = { ...story.act, start: () => story.act.arriveWith(kitman()), club: () => setCareer((c) => (c ? { ...c, player: { ...c.player, club: NATIONAL_LEAGUE_CLUBS[(NATIONAL_LEAGUE_CLUBS.indexOf(c.player.club as (typeof NATIONAL_LEAGUE_CLUBS)[number]) + 5) % NATIONAL_LEAGUE_CLUBS.length] } } : c)) }; });
+  const kitman = () => {
+    rng.current = mulberry32(20261120);
+    const c = kitmanSample();
+    setCareer(c); setView({ kind: "people" }); setQueue([]); setSay(null);
+    setFacts({ lastLost: true, lastWon: false, lastRating: 6.1, lastGoals: 0 });
+    story.act.close();
+    return c;
+  };
 
   const fresh = useCallback((kind: "fresh" | "lived" | "followup", lv = carLevel, h = horse) => {
     rng.current = mulberry32(20261120);
@@ -149,8 +177,9 @@ export default function LifeTestPage() {
   // Read the URL after the first paint, so the server and the browser agree.
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
-    const prep = (q.get("prep") ?? "lived") as "fresh" | "lived" | "followup";
-    let c = fresh(prep === "fresh" || prep === "followup" ? prep : "lived");
+    const prep = (q.get("prep") ?? "lived") as "fresh" | "lived" | "followup" | "kitman";
+    let c = prep === "kitman" ? kitman() : fresh(prep === "fresh" || prep === "followup" ? prep : "lived");
+    if (prep === "kitman" && q.get("go") === "arrive") { const k = c; setTimeout(() => story.act.arriveWith(k), 0); }
     setFull(q.get("full") === "1"); setShot(q.get("shot") === "1");
     const oc = q.get("outcome"); if (oc !== null) setForceOutcome(Number(oc));
     const ev = q.get("event");
@@ -268,7 +297,9 @@ export default function LifeTestPage() {
   const thisWeek = life && life.wk[0] === now ? life.wk[1] : 0;
   const bytes = useMemo(() => (career?.life ? JSON.stringify(career.life).length : 0), [career]);
 
+  const storyScreen = career && story.view ? <StoryScreen story={story} career={career} facts={facts} setCareer={setCareer} allowDice={diceOk} /> : null;
   const screen = !career ? null
+    : storyScreen ? storyScreen
     : view.kind === "event" ? <EventCard career={career} live={view.live} onChoose={choose} />
     : view.kind === "outcome" ? <OutcomeCard career={career} live={view.live} choiceId={view.choiceId} result={view.result} onContinue={next} />
     : view.kind === "telltale" ? <Telltale key={view.live.id} career={view.picked ? career : view.before} live={view.live} clock={clock} backdrop={backdropFor(view.live)} onChoose={choose} picked={view.picked} onContinue={next} />
@@ -285,6 +316,12 @@ export default function LifeTestPage() {
       <div className="relative h-full overflow-y-auto overscroll-contain bg-[#05070d] text-white" data-life-scroll>
         {screen}
       </div>
+      {career && (!story.view || story.view.k === "menu") && (
+        <button type="button" onClick={() => story.act.phone(promiseList(career).some((p) => p.st === "open") || !questLog(career).length ? "promises" : "stories")} data-open-phone
+          className="absolute right-3 z-[55] rounded-full bg-black/70 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-white ring-1 ring-white/25" style={{ top: story.view ? 40 : 10 }}>
+          📱 Phone{promiseList(career).filter((p) => p.st === "open").length ? ` · ${promiseList(career).filter((p) => p.st === "open").length}` : ""}
+        </button>
+      )}
       {say && <button type="button" onClick={() => setSay(null)} className="absolute bottom-6 left-1/2 z-[60] w-[86%] -translate-x-1/2 rounded-xl bg-black/85 px-3 py-2 text-[12px] font-bold text-white ring-1 ring-white/20">{say}</button>}
       {full && !shot && <button type="button" onClick={() => setFull(false)} className="absolute bottom-3 left-3 z-[61] rounded-lg bg-black/70 px-2.5 py-1.5 text-[11px] font-black text-white ring-1 ring-white/25">Test tools</button>}
     </div>
@@ -308,6 +345,35 @@ export default function LifeTestPage() {
                   <Pill on={!!facts.lastLost} onClick={() => setFacts({ ...facts, lastWon: false, lastLost: true })}>Lost</Pill>
                   {[5.5, 6.5, 7.5, 8.5].map((r) => <Pill key={r} on={facts.lastRating === r} onClick={() => setFacts({ ...facts, lastRating: r })}>{r}</Pill>)}
                 </div>
+              </Panel>
+              <Panel title="Kit man story (Events v2)" note="A hundred balls in the dark">
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <Btn main onClick={() => story.act.arriveWith(kitman())}>▶ Start: 19, a bad Saturday</Btn>
+                  <Btn onClick={story.act.arrive}>Arrive at training</Btn>
+                  <Btn onClick={() => story.act.menu(arcsOf(career)["arc-hundred-balls"]?.cast.kitman || "staff:kitman")}>Talk to Den</Btn>
+                </div>
+                <Label>Jump time</Label>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <Btn onClick={story.act.nextMorning}>Next morning</Btn>
+                  <Btn onClick={() => story.act.saturday(true)}>Saturday: you score</Btn>
+                  <Btn onClick={() => story.act.saturday(false)}>Saturday: no goal</Btn>
+                  <Btn onClick={story.act.thursday}>Next Thursday</Btn>
+                  <Btn onClick={story.act.seasonEnd}>Season end</Btn>
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                  <Btn onClick={() => story.act.skip(1)}>+1 season</Btn>
+                  <Btn onClick={() => story.act.skip(3)}>+3 seasons</Btn>
+                  <Btn onClick={() => story.act.skip(8)}>+8 seasons</Btn>
+                </div>
+                <Note>A skip plays your Thursdays by the dice and stops when the story has something for you.</Note>
+                <Label>Club</Label>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <Btn onClick={() => { const i = NATIONAL_LEAGUE_CLUBS.indexOf(career.player.club as (typeof NATIONAL_LEAGUE_CLUBS)[number]); const club = NATIONAL_LEAGUE_CLUBS[(i + 5) % NATIONAL_LEAGUE_CLUBS.length]; setCareer({ ...career, player: { ...career.player, club } }); toast(`You sign for ${club}.`); }}>Switch club</Btn>
+                  <Btn onClick={() => story.act.phone("promises")}>Phone: promises</Btn>
+                  <Btn onClick={() => story.act.phone("stories")}>Phone: stories</Btn>
+                </div>
+                <Pill on={diceOk} onClick={() => setDiceOk(!diceOk)}>Show &quot;Roll it instead&quot; on the drill</Pill>
+                <Note>{career.player.club} · age {career.player.age} · season {career.season} week {career.week}. {(() => { const r = arcsOf(career)["arc-hundred-balls"]; return r ? `Best ${r.v.best}, nights ${r.v.nights}, clock ${r.k["den-retires"] ?? "-"}/3${r.done ? `, ended: ${r.done}` : ""}.` : "Not started."; })()}</Note>
               </Panel>
               <Panel title="A moment, now" note="The director decides">
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
