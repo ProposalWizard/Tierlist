@@ -232,7 +232,7 @@
 .dd-card2 .h { font-size: 15px; font-weight: 900; margin-top: 5px; line-height: 1.25; }
 .dd-card2 .s { font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, .72); margin-top: 3px; line-height: 1.35; }
 .dd-dotrow { display: flex; gap: 5px; margin-top: 8px; }
-.dd-dotrow > div { flex: 1; text-align: center; }
+.dd-dotrow > div { flex: 1; min-width: 0; text-align: center; }
 .dd-dotrow i { display: block; height: 5px; border-radius: 4px; background: rgba(255, 255, 255, .18); }
 .dd-dotrow .done i { background: #f5c542; }
 .dd-dotrow .now i { background: #fff; box-shadow: 0 0 8px #fff; }
@@ -246,3 +246,6 @@
 .dd-offer .n { color: var(--c); }
 .dd-offer .chip { position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%); background: #ef4444; color: #fff; font-size: 8.5px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; padding: 3px 7px; border-radius: 999px; white-space: nowrap; }
 .dd-rm-card { position: absolute; left: 14px; right: 14px; bottom: 18px; padding: 13px 15px; z-index: 6; }
+.dd-tt-col, .dd-after { min-width: 0; max-width: 100%; }
+.dd-tt[data-dim="1"] .dd-world { filter: brightness(.82); }
+.dd-tt[data-dim="1"] .dd-vig { opacity: .75; }

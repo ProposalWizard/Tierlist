@@ -51,6 +51,10 @@ interface Props {
   afterExtra?: ReactNode;
   /** A face for the no-picture case (a phone call) instead of the drawn head. */
   face?: ReactNode;
+  /** How far the still is pushed in (default 1.18). A two-shot still uses 1, so you stay in it. */
+  backdropZoom?: number;
+  /** Keep the world in colour (a two-shot still: greying all but his face made it read as a mask). */
+  keepColour?: boolean;
 }
 
 export interface StoryStrip { title: string; beat: string; round?: number | string; when?: string; noClock?: string; note?: string }
@@ -68,7 +72,7 @@ export function StoryBar({ story }: { story: StoryStrip }) {
   );
 }
 
-export default function Telltale({ career, live, clock, onChoose, picked, onContinue, backdrop, world, onSlowMo, story, afterExtra, face }: Props) {
+export default function Telltale({ career, live, clock, onChoose, picked, onContinue, backdrop, world, onSlowMo, story, afterExtra, face, backdropZoom = 1.18, keepColour }: Props) {
   const reduced = useReducedMotion();
   const [stageRef, size] = useStageSize<HTMLDivElement>();
   const [grey, setGrey] = useState(false);
@@ -148,7 +152,7 @@ export default function Telltale({ career, live, clock, onChoose, picked, onCont
     return () => window.removeEventListener("keydown", on);
   }, [asking, picked, spoken, silent, pick, onContinue]);
 
-  const placed = backdrop ? placeStill(size.w, size.h, backdrop, 0.3, 1.18) : null;
+  const placed = backdrop ? placeStill(size.w, size.h, backdrop, 0.3, backdropZoom) : null;
   const head = placed && backdrop ? pointOn(placed, backdrop.focus.x, backdrop.focus.y) : null;
   const focusVars = head ? ({ "--fpx": `${head.x}px`, "--fpy": `${head.y + placed!.height * 0.045}px`, "--fr-x": `${placed!.width * 0.125}px`, "--fr-y": `${placed!.height * 0.11}px`, "--fx": `${head.x}px`, "--fy": `${head.y}px` } as React.CSSProperties) : undefined;
   const [placeName, dark, light] = PLACE[live.event.place] ?? [live.event.place.replace(/-/g, " "), "#1e293b", "#94a3b8"];
@@ -165,7 +169,7 @@ export default function Telltale({ career, live, clock, onChoose, picked, onCont
   );
 
   return (
-    <div ref={stageRef} className="dd dd-tt" data-grey={grey ? 1 : 0} data-telltale={live.id} data-phase={picked ? "after" : asking ? "ask" : "in"} style={focusVars}>
+    <div ref={stageRef} className="dd dd-tt" data-grey={grey && !keepColour ? 1 : 0} data-dim={grey && keepColour ? 1 : 0} data-telltale={live.id} data-phase={picked ? "after" : asking ? "ask" : "in"} style={focusVars}>
       {/* The world */}
       <div ref={worldRef} className="dd-world" style={{ transformOrigin: head ? `${head.x}px ${head.y}px` : "50% 40%" }}>
         {world ?? (backdrop ? stillLayer(false) : (
@@ -243,8 +247,8 @@ export default function Telltale({ career, live, clock, onChoose, picked, onCont
           <div className="dd-shade" />
           <div className="dd-tt-bottom" style={{ paddingBottom: 22 }}>
             <div className="dd-tt-col dd-fade-in">
-              <div className="dd-said">{picked.timedOut ? "Time ran out. You said nothing." : pickedChoice?.choice.silent ? "You said nothing." : `You · ${TONE_LOOK[pickedChoice?.choice.tone ?? "calm"].word}`}</div>
-              {pickedChoice && !pickedChoice.choice.silent && <div className="dd-sub" style={{ fontSize: size.w >= 900 ? 20 : 16, opacity: 0.9 }}>{pickedChoice.label}</div>}
+              {!afterExtra && <div className="dd-said">{picked.timedOut ? "Time ran out. You said nothing." : pickedChoice?.choice.silent ? "You said nothing." : `You · ${TONE_LOOK[pickedChoice?.choice.tone ?? "calm"].word}`}</div>}
+              {!afterExtra && pickedChoice && !pickedChoice.choice.silent && <div className="dd-sub" style={{ fontSize: size.w >= 900 ? 20 : 16, opacity: 0.9 }}>{pickedChoice.label}</div>}
               <div className="dd-result" data-result>{picked.result.text}</div>
               {verdict && !story && (
                 <div style={{ margin: "4px 0 6px" }} data-verdict>

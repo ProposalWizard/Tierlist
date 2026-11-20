@@ -10,7 +10,7 @@
  * queue behind it. Pure state moves come from lib/star/life/{arcs,talk,promises}.ts.
  * Nothing here reaches a real career (LIFE_IN_CAREER is false).
  */
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { ArcNotice, LifeActivity, LifeMoment } from "@/lib/star/life/types";
 import type { FactOverride } from "@/lib/star/life/facts";
@@ -29,14 +29,16 @@ import RoundMenu, { type RoundReply } from "./RoundMenu";
 import ActivityHost from "./ActivityHost";
 import { AfterCards, InviteScreen, NoticeScreen, PhoneLog, StoryCardScreen, StoryFace } from "./StoryCards";
 import { placeStill, pointOn, useStageSize, type DecisionBackdrop } from "./DecisionParts";
+import { speak, stopVoice } from "@/lib/star/life/voice";
 
 const K = "/star/life/kitman/";
-/** The stills behind the story's talks (the 3D compound goes here later). */
+/** The stills behind the story's talks (the 3D compound goes here later): him and you drawn in one
+ *  frame by the game's toon renderer (/star-life-dev/portrait?scene=…), the same scale and ground. */
 export const STORY_STILLS: Record<string, DecisionBackdrop> = {
-  "pitch2-den": { src: `${K}pitch2-den.webp`, w: 1170, h: 1860, focus: { x: 0.756, y: 0.375 } },
-  "pitch2-kid": { src: `${K}pitch2-kid.webp`, w: 1170, h: 1860, focus: { x: 0.783, y: 0.375 } },
-  "van-den": { src: `${K}van-den.webp`, w: 1170, h: 1860, focus: { x: 0.756, y: 0.375 } },
-  "stadium-den": { src: `${K}stadium-den.webp`, w: 1170, h: 1995, focus: { x: 0.576, y: 0.441 } },
+  "pitch2-den": { src: `${K}pitch2-den.webp`, w: 780, h: 1688, focus: { x: 0.639, y: 0.313 } },
+  "pitch2-kid": { src: `${K}pitch2-kid.webp`, w: 780, h: 1688, focus: { x: 0.665, y: 0.291 } },
+  "van-den": { src: `${K}van-den.webp`, w: 780, h: 1688, focus: { x: 0.639, y: 0.313 } },
+  "stadium-den": { src: `${K}stadium-den.webp`, w: 780, h: 1688, focus: { x: 0.639, y: 0.313 } },
 };
 
 function stillFor(b: BeatLive): DecisionBackdrop | undefined {
@@ -71,7 +73,7 @@ export type StoryView =
   | { k: "menu"; id: string; reply?: RoundReply | null }
   | { k: "talk"; b: BeatLive; live: LiveEvent; before: CareerState; picked?: { choiceId: string; result: ChoiceResult; timedOut: boolean }; extras?: ArcExtras }
   | { k: "activity"; b: BeatLive; activity: LifeActivity; before: CareerState }
-  | { k: "card"; b: BeatLive; live: LiveEvent; picked?: { choiceId: string; result: ChoiceResult }; extras?: ArcExtras }
+  | { k: "card"; b: BeatLive; live: LiveEvent; picked?: { choiceId: string; result: ChoiceResult }; extras?: ArcExtras; post?: "empty-chair" }
   | { k: "invite"; b: BeatLive }
   | { k: "notices"; list: ArcNotice[] }
   | { k: "phone"; tab: "promises" | "stories" };
@@ -281,7 +283,7 @@ export function useStory({ career, setCareer, rng, facts, toast }: StoryOpts) {
     if (r.ended) {
       setCareer(r.ended.career);
       const b = view.b;
-      setView({ k: "card", b: { ...b, stage: "card" }, live: { ...cardLive(r.ended.career, b, facts), choices: [] }, picked: { choiceId: a, result: r.ended.result }, extras: r.ended.extras });
+      setView({ k: "card", b: { ...b, stage: "card" }, live: { ...cardLive(r.ended.career, b, facts), lines: [], choices: [] }, picked: { choiceId: a, result: r.ended.result }, extras: r.ended.extras, post: "empty-chair" });
     }
   };
 
@@ -297,7 +299,7 @@ function MenuStage({ career, id, reply: rep, onOffer, onLine, onClose, facts }: 
   const offers: RoundOffer[] = bubbles.map((x) => ({ id: `${x.arc}:${x.beat}`, ...x }));
   const kid = !id.startsWith("staff:") && id !== "mgr";
   const still = kid ? STORY_STILLS["pitch2-kid"] : STORY_STILLS["pitch2-den"];
-  const placed = placeStill(size.w, size.h, still, Math.max(0.3, (size.h - 424) / size.h), 1.08);
+  const placed = placeStill(size.w, size.h, still, Math.max(0.3, (size.h - 424) / size.h), 1);
   const head = pointOn(placed, still.focus.x, still.focus.y);
   const menu = roundMenuFor(career, id, offers);
   const gold = bubbles.find((x) => x.gold) ?? bubbles[0];
@@ -319,8 +321,27 @@ function MenuStage({ career, id, reply: rep, onOffer, onLine, onClose, facts }: 
 }
 
 /** What the phone shows while a story screen is up. */
+/** Den and the gaffer speak the line on screen (lib/star/life/voice.ts): a node's words, an
+ *  ending's words, a card's outcome. A new screen stops the last clip. */
+function useStoryVoice(v: StoryView | null) {
+  const key = !v ? "" : v.k === "talk" ? `${v.b.beat}|${v.b.node}|${v.b.round}|${v.picked ? "end" : ""}` : v.k === "card" ? `${v.b.beat}|card|${v.picked?.choiceId ?? ""}` : v.k;
+  useEffect(() => {
+    if (!v) { stopVoice(); return; }
+    if (v.k === "talk") {
+      if (v.picked) { const end = v.b.lastReply?.end; if (end) speak(`${v.b.beat}.end.${end}.`, v.picked.result.text); else stopVoice(); }
+      else speak([`${v.b.beat}.${v.b.node}.`, ...(v.b.round === 1 ? [`${v.b.beat}.setup`] : [])], v.live.lines.join(" "));
+    } else if (v.k === "card" && v.picked) {
+      const i = v.b.event.choices.findIndex((c) => c.id === v.picked!.choiceId);
+      if (i >= 0) speak(`${v.b.beat}.choice${i}.out`, v.picked.result.text); else stopVoice();
+    } else if (v.k !== "activity") stopVoice();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  useEffect(() => () => stopVoice(), []);
+}
+
 export function StoryScreen({ story, career, facts, setCareer, allowDice }: { story: Story; career: CareerState; facts: FactOverride; setCareer: (c: CareerState) => void; allowDice?: boolean }): ReactNode {
   const v = story.view;
+  useStoryVoice(v);
   if (!v) return null;
   if (v.k === "menu") {
     return <MenuStage career={career} id={v.id} reply={v.reply} facts={facts} onOffer={story.onOffer}
@@ -329,7 +350,7 @@ export function StoryScreen({ story, career, facts, setCareer, allowDice }: { st
   if (v.k === "phone") return <PhoneLog career={career} tab={v.tab} onTab={(t) => story.setView({ k: "phone", tab: t })} onClose={story.act.close} />;
   if (v.k === "notices") return <NoticeScreen career={career} notices={v.list} onContinue={story.next} />;
   if (v.k === "invite") return <InviteScreen career={career} b={v.b} onAnswer={story.inviteChoose} />;
-  if (v.k === "card") return <StoryCardScreen career={career} b={v.b} live={v.live} picked={v.picked} extras={v.extras} onChoose={story.cardChoose} onContinue={story.next} />;
+  if (v.k === "card") return <StoryCardScreen career={career} b={v.b} live={v.live} picked={v.picked} extras={v.extras} post={v.post} onChoose={story.cardChoose} onContinue={story.next} />;
   if (v.k === "activity") {
     return <ActivityHost key={`${v.b.beat}-${v.b.round}`} career={career} live={v.b} activity={v.activity} callerLines={callerLines(v.b.arc, v.activity)} onDone={story.activityResult}
       allowDice={allowDice} onDice={() => story.activityResult(diceActivity(career, v.b, v.activity, Math.random))} />;
@@ -346,6 +367,6 @@ export function StoryScreen({ story, career, facts, setCareer, allowDice }: { st
   }
   const door = v.b.beat === "b4-the-door" ? <ChalkDoor career={career} best={Number(arcsOf(career)[v.b.arc]?.v.best ?? 0)} nights={Number(arcsOf(career)[v.b.arc]?.v.nights ?? 0)} /> : undefined;
   void node; void setCareer;
-  return <Telltale key={v.live.id} career={v.picked ? career : v.before} live={v.live} clock="off" face={<StoryFace career={career} id={v.b.cast[v.live.event.speaker ?? ""] ?? ""} size={124} />} backdrop={door ? undefined : stillFor(v.b)} world={door}
+  return <Telltale key={v.live.id} career={v.picked ? career : v.before} live={v.live} clock="off" backdropZoom={1} keepColour face={<StoryFace career={career} id={v.b.cast[v.live.event.speaker ?? ""] ?? ""} size={124} />} backdrop={door ? undefined : stillFor(v.b)} world={door}
     story={storyProps} afterExtra={after} onChoose={story.talkChoose} picked={v.picked} onContinue={story.next} />;
 }

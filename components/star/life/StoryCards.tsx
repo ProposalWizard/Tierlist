@@ -30,7 +30,6 @@ import { lifeWeek, personInfo, roleOf } from "@/lib/star/life/people";
 import { TONE_LOOK } from "@/lib/star/life/decision";
 import LifeFace from "./LifeFace";
 import { ChangeList } from "./EventCard";
-import { RememberToast } from "./DecisionParts";
 import { StoryBar } from "./Telltale";
 import "./life.css";
 import "./decision.css";
@@ -60,9 +59,13 @@ export function NextDots({ dots, next, when }: { dots: QuestDot[]; next?: string
 export function AfterCards({ extras }: { extras: ArcExtras }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }} data-after-cards>
-      {extras.promisesKept.map((p) => (
-        <div key={`k${p.text}`} className="dd-card2 gold" data-promise-kept><div className="k" style={{ color: "#f5c542" }}><span>🤝 Promise kept</span></div><div className="h">{p.text}</div><div className="s">{p.who} will remember that, for good.</div></div>
-      ))}
+      {extras.promisesKept.length > 0 && (
+        <div className="dd-card2 gold" data-promise-kept>
+          <div className="k" style={{ color: "#f5c542" }}><span>🤝 {extras.promisesKept.length > 1 ? `${extras.promisesKept.length} promises kept` : "Promise kept"}</span></div>
+          {extras.promisesKept.map((p) => <div key={p.text} className="h" style={{ fontSize: 14, marginTop: 4 }}>{p.text}</div>)}
+          <div className="s">{extras.promisesKept[0].who} will remember that, for good.</div>
+        </div>
+      )}
       {extras.promisesBroken.map((p) => (
         <div key={`b${p.text}`} className="dd-card2 red" data-promise-broken><div className="k" style={{ color: "#ff8a80" }}><span>✕ Promise broken</span></div><div className="h">{p.text}</div><div className="s">{p.who} will remember that, and so will the squad.</div></div>
       ))}
@@ -89,15 +92,37 @@ export function AfterCards({ extras }: { extras: ArcExtras }) {
       {extras.ended && (
         <div className="dd-card2" data-ended><div className="k" style={{ color: "rgba(255,255,255,.7)" }}><span>The story ends</span></div><div className="h">{extras.ended.title}</div><div className="s">{extras.ended.text}</div></div>
       )}
-      {!extras.ended && <NextDots dots={extras.dots} next={extras.next} />}
+      {!extras.ended && (extras.got ? <div className="dd-card2" data-next><div className="k" style={{ color: "rgba(255,255,255,.7)" }}><span>Next</span></div><div className="s">{extras.next}</div></div> : <NextDots dots={extras.dots} next={extras.next} />)}
     </div>
   );
 }
 
 /** A beat on a card: the note in your boot, his letter, a picture message. */
-export function StoryCardScreen({ career, b, live, picked, extras, onChoose, onContinue }: {
+/** The club's post the morning after his night: the empty chair (storyboard 16). */
+function EmptyChairPost({ career }: { career: CareerState }) {
+  return (
+    <div className="dd-card2" data-club-post style={{ padding: 0, overflow: "hidden" }}>
+      <div style={{ display: "flex", gap: 9, alignItems: "center", padding: "10px 12px" }}>
+        <div style={{ width: 30, height: 30, borderRadius: 99, background: "#b91c1c", display: "grid", placeItems: "center", fontSize: 15 }}>🏟️</div>
+        <div><div style={{ fontWeight: 900, fontSize: 13.5 }}>{career.player.club}</div><div style={{ fontSize: 10.5, color: "#9fb3c8", fontWeight: 700 }}>Saturday · 34 years, one kit man</div></div>
+      </div>
+      <svg viewBox="0 0 340 150" style={{ display: "block", width: "100%", background: "linear-gradient(180deg,#1b2436,#0d1220)" }} aria-label="A round table with an empty chair and a name card">
+        <ellipse cx="170" cy="112" rx="132" ry="26" fill="#e9e4d8" />
+        {[60, 115, 225, 280].map((x) => <rect key={x} x={x - 16} y="62" width="32" height="44" rx="10" fill="#2b3446" />)}
+        <rect x="153" y="40" width="34" height="62" rx="6" fill="none" stroke="#f5c542" strokeWidth="2.5" />
+        <rect x="150" y="98" width="40" height="16" rx="2" fill="#fff" />
+        <text x="170" y="109.5" textAnchor="middle" fontSize="8" fontWeight="900" fill="#111">YOUR NAME</text>
+      </svg>
+      <div style={{ padding: "9px 12px 11px", fontSize: 13, fontWeight: 700 }}>A great night for Den. Thank you to everyone who came. 💛</div>
+    </div>
+  );
+}
+
+export function StoryCardScreen({ career, b, live, picked, extras, onChoose, onContinue, post }: {
   career: CareerState; b: BeatLive; live: LiveEvent; picked?: { choiceId: string; result: ChoiceResult } | null; extras?: ArcExtras | null;
   onChoose: (id: string) => void; onContinue: () => void;
+  /** Den's night ended without you: the club's post with the empty chair, in place of the scene. */
+  post?: "empty-chair";
 }) {
   const beat = beatOf(arcById(b.arc)!, b.beat)!;
   const look = beat.look ?? {};
@@ -123,7 +148,8 @@ export function StoryCardScreen({ career, b, live, picked, extras, onChoose, onC
             {look.big && <div style={{ position: "absolute", right: 30, top: 14, textAlign: "center", color: "#f5c542" }}><div className="dd-anton" style={{ fontSize: 58, lineHeight: 0.9 }}>{look.big}</div><div className="dd-kick" style={{ fontSize: 9 }}>{look.bigSub}</div></div>}
           </div>
         )}
-        {(narr0.length > 0 || around) && <div className="dd-glass" style={{ padding: "12px 14px", fontSize: 14.5, fontWeight: 700, lineHeight: 1.4 }}>{[...narr0, around].filter(Boolean).join(" ")}</div>}
+        {post === "empty-chair" && <EmptyChairPost career={career} />}
+        {!post && (narr0.length > 0 || around) && <div className="dd-glass" style={{ padding: "12px 14px", fontSize: 14.5, fontWeight: 700, lineHeight: 1.4 }}>{[...narr0, around].filter(Boolean).join(" ")}</div>}
         {noteLine && (
           <div className={`dd-paper ${letter ? "letter" : ""}`} style={{ margin: "4px 18px" }} data-note>
             <div className="w">{words}</div>
@@ -141,7 +167,9 @@ export function StoryCardScreen({ career, b, live, picked, extras, onChoose, onC
         })}
         {picked && (
           <>
-            <RememberToast remembered={picked.result.remembered} top={46} />
+            {picked.result.remembered.length > 0 && (() => { const r = picked.result.remembered.find((x) => x.slot !== "squad" && x.slot !== "you") ?? picked.result.remembered[0]; return (
+              <div className="dd-card2" data-remember style={{ borderLeft: "4px solid #f5c542" }}><div className="h" style={{ marginTop: 0 }}>↻ <span style={{ color: "#f5c542" }}>{r.who || "People"}</span> will remember that.</div><div className="s">{r.tag.replace(/-/g, " ").replace(/^./, (m) => m.toUpperCase())}.</div></div>
+            ); })()}
             <div className="dd-glass" style={{ padding: "12px 14px", fontSize: 15, fontWeight: 700, lineHeight: 1.4 }} data-result>{picked.result.text}</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}><ChangeList changes={picked.result.changes.filter((x) => x.kind !== "memory")} /></div>
             {extras && <AfterCards extras={extras} />}
