@@ -405,3 +405,12 @@ Phase 1 is the smallest thing that proves the feeling. If 30 events with memory 
 3. **Losing your car for real** in the legend wager. Harry asked for it; it is in the sample. Confirm it is truly gone.
 4. **Scandal content** (bribes, doping in STAR_LIFE_EVENTS): how dark is allowed?
 5. **Family and agent** are new people (STAR_ROADMAP 18, Mikey's list). OK to add them in phase 2?
+
+## Harry's answers (20 Nov 2026, 06:20)
+1. Star pass: "roughly B" (levels re-tuned to ages), "but it's rlly more important that the actual rewards and story
+   aspect of the game is actually working." Mikey's area: confirm the re-tune with him; story stops and rewards first.
+2. Grudges affect the match, through the team: "if ur relationship with 1 player goes down enough the general team
+   relationship goes down if it's enough, your team relationship effects in game."
+3. Wagers are real: "u'd lose whatever u wager" (the car is gone).
+4. Scandal content: "dark" (bribes, doping and similar are allowed).
+5. Family and agent as new people: yes.
