@@ -297,3 +297,13 @@ Also worth checking in the rollout: signing, office, awards night, farewell, ova
 - Mixamo FAQ: https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html
 - VRoid guidelines: https://vroid.com/en/studio/guidelines
 - three.js skinned batching: https://discourse.threejs.org/t/how-to-batch-skinned-mesh/30348 , https://discourse.threejs.org/t/optimization-of-large-amounts-100-1000-of-skinned-meshes-cpu-bottlenecks/58196
+
+## 7. Rollout status (21 Nov 2026, night)
+
+- The builder is in the game code: `lib/star/style3d/toon/clothes/` (see `docs/3D_HANDBOOK.md` "Clothes as cloth").
+- On in cut scenes by role (suit, press, tracksuit, kit); fans and family still painted; match, house and garden not yet.
+- Lesson from Harry's "WHAT THE HELL IS THIS": garments with their own inflated silhouette (lofted tubes, wide
+  ellipses) made everyone look overweight and ringed. Reverted to the close-fit shells he approved; only the
+  trouser legs are a straight slim tube (to remove the old shorts bump), and types differ by cut and detail.
+- Measured cost (software GPU): press scene +26 draws, +31% triangles, frame time within noise; walk-out +20 draws,
+  +30% triangles, about +6% frame time.
