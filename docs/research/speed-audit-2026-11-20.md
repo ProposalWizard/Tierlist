@@ -104,3 +104,74 @@ Anything under about 100 ms feels instant; 100 to 300 ms feels quick; over
   squads. Real squads mean more pictures to load.
 - **4x slower CPU run.** Started after the normal run; it had not finished when
   this report was committed. Not in the table.
+
+## Fixes, 20 Nov
+
+Commits on `Harry`: 5421147c (fix 1, kick off), 3c082313 (fix 2, Stats
+headshot), b66e3cbb (fix 3, 3D entry). Production builds of the commit
+before the fixes (281e09f3) and of b66e3cbb, both with
+`NEXT_PUBLIC_STAR_OFFLINE_DEV=1` and no squad data (invented squads, as in
+the audit). The machine was shared with other builders (a dev server, a
+3D shooter), so a plain before-run then after-run was not fair: untouched
+taps (Settings, League) came out 50-160% slower in the later run. The table
+below is an **interleaved A/B**: both servers up at once, each repeat taps
+BEFORE then AFTER, one browser at a time. Median of 3 (Garden after: 2;
+the third was cut short). ms, this software-GPU machine.
+
+| Tap | Painted before → after | Frozen until before → after | Longest block before → after |
+|-----|-----------------------:|----------------------------:|-----------------------------:|
+| Kick off | 278 → 228 | 121 → 89 | 121 → 89 |
+| Play → team sheet | 545 → 693 | 4,436 → 4,618 | 346 → 238 |
+| Home → Stats | 526 → 830 | 1,450 → 1,773 | 680 → 615 |
+| Phone → House (3D) | 2,502 → 1,744 | 11,991 → 11,642 | 4,145 → 4,725 |
+| Phone → Garden (3D) | 3,617 → 3,462 | 4,968 → 5,442 | 19,058 → 23,026 |
+
+Read it as: kick off a little better; everything else within this
+machine's noise (run-to-run spread is 30-100% on the 3D taps). No tap got
+measurably worse beyond that noise, and none got clearly better except kick off.
+
+What was found (measured with CPU profiles and Chrome traces):
+
+1. **Kick off.** The audit's 1.7 s block did not come back on 281e09f3:
+   kick off measured 0.26-0.37 s before any fix. The player's first match is
+   from the bench, and the match already coloured its kits in slices while
+   the commentary ran. Fix 1 starts that colouring on the team sheet, in idle
+   time (lib/star/matchSpriteWarm.ts, called from MatchdayScreen.tsx). After
+   it, the profile at kick off shows only the sliced colouring (no
+   one-block colouring by the first frame). Same kits as CanvasMatch picks
+   (test tests/star/matchSpriteWarm.mts compares all four kits, home and
+   away, against CanvasMatch's own formula), same colouring function, so the
+   same pixels. CanvasMatch.tsx was not changed.
+2. **Play → team sheet, the job ~4 s later.** It is the team sheet's own
+   automatic kick off (the bar at the top runs out and the match starts by
+   itself): the match mounting, its chance list and its kit colouring. It
+   is the match start, not a stray job. It is about 100-130 ms of React plus
+   sliced work. Fix 1 moves part of it earlier. Nothing else was changed.
+3. **Home → Stats.** The 0.7-0.8 s block is the headshot draw plus reading
+   the picture back (`toBlob` waits for the software GPU). Fix 2 starts the
+   face only in idle time and builds its shaders before the draw. The block
+   is still about 0.6 s here: the read-back is GPU drawing, which a phone's
+   GPU does far faster (reasoned, not measured).
+4. **House and Garden.** Traces show the freeze is not mainly shader linking.
+   It is Chrome's software compositor reading the WebGL frame back on the
+   page thread (`Commit → GLES2::ReadPixels`, 8-11 s for the Garden's first
+   frame): SwiftShader builds its drawing code at the first draw and rasters
+   at 2x. A phone with a GPU does not read the frame back on the page thread.
+   Fix 3 (shaders finished one at a time between frames on devices without
+   parallel compile; no resize to the same size) cut the linking pieces to
+   ≤150 ms each, but the big first-frame block stays on this machine. A
+   tried extra step, drawing each new material once into one pixel before
+   the first frame, moved about 3 s out of that block but made 0.7-0.9 s
+   pieces and changed what is drawn before the first frame; it was
+   reverted, not committed.
+5. **First load.** Not changed: `/star-dev` first load 1.53 MB before, 1.54 MB
+   after (`next build`); 2,791 → 2,794 KB of JavaScript in 125 files on the
+   wire. Biggest things in it (source size, from webpack's module list):
+   CanvasMatch.tsx 764 KB, canvasEngine.ts 418 KB, nation-names.json 471 KB,
+   researched club data 221 KB, authoredScenarios.json 174 KB, mp4/webm
+   muxers 130 KB, supabase auth/realtime/storage 434 KB. Making the match load
+   on demand (`lazyScreen`) was tried: the one-engine guard then fails
+   ("app/star-dev/page.tsx is listed as mounting <CanvasMatch> but no longer
+   does"), because it cannot see a lazy mount. The guard may not be edited,
+   so this needs a team decision. The name lists are read synchronously by
+   career code; moving them out is a refactor, not an additive change.
