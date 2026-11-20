@@ -19,10 +19,12 @@ export interface DrillMarker { x: number; y: number; color?: string; z?: number;
 
 /** The close camera: the goal, the ball and a man behind it, so the small targets read on a phone. */
 export function closeFrame(ballX: number, ballY: number) {
-  const x1 = Math.min(ballX - 4, POST_L - 1.4), x2 = Math.max(ballX + 4, POST_R + 1.4);
-  const w = Math.max(10.5, x2 - x1);
-  const h = Math.max(w * 1.25, ballY + 4);
-  const ww = Math.max(w, h * 0.62);
+  // Tight: the goal with half a metre either side, you and the ball, little else. The frame is
+  // made as tall and narrow as the phone's canvas so the match does not pad it with empty grass.
+  const x1 = Math.min(ballX - 2.2, POST_L - 0.5), x2 = Math.max(ballX + 2.2, POST_R + 0.5);
+  const w = x2 - x1;
+  const h = Math.max(w * 1.6, ballY - FRAME_TOP_FOR_GOAL + 2.6);
+  const ww = Math.max(w, h / 1.85);
   const cx = Math.max(ww / 2, Math.min(PITCH_W - ww / 2, (x1 + x2) / 2));
   return { x1: cx - ww / 2, x2: cx + ww / 2, y1: FRAME_TOP_FOR_GOAL, y2: FRAME_TOP_FOR_GOAL + h };
 }
@@ -47,7 +49,7 @@ export function hundredScenario(f: Feed, rng: () => number): Scenario {
 export function hundredMarkers(f: Feed): DrillMarker[] | undefined {
   const t = f.target;
   if (t.kind === "tyre") return [{ x: t.x, y: 0.05, z: t.z, shape: "ring", r: t.r, rope: Math.max(0, GOAL_H - t.z - t.r) }];
-  if (t.kind === "bucket") return [{ x: t.x, y: 0.1, shape: "bucket", r: 0.45 }];
+  if (t.kind === "bucket") return [{ x: t.x, y: 0.1, shape: "bucket", r: 0.75, color: "#f43f5e" }];
   if (t.kind === "corner") {
     // Two cones on the line marking the corner he called.
     const a = t.side === "L" ? POST_L + 0.15 : POST_R - 0.15;

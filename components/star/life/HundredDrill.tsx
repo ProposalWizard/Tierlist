@@ -184,12 +184,12 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
   const dark = light === "out";
   // The pool: over the goal and the ball, soft at the edge. Fixed shares of the box (the goal sits at
   // the top, you in the lower fifth on every ball).
-  const poolX = 50, poolY = 46;
-  const lampMask = `radial-gradient(ellipse 62% 52% at ${poolX}% ${poolY}%, transparent 0, transparent 30%, #000 92%)`;
+  const poolX = 50, poolY = 40;
+  const lampMask = `radial-gradient(ellipse 60% 56% at ${poolX}% ${poolY}%, transparent 0, transparent 24%, #000 90%)`;
   // In the dark: a glint low in the middle where the ball and you stand (the close camera always puts
   // you in the lower fifth), and a faint goal mouth at the top. Fixed shares of the box: the engine's
   // tilted camera does not map pitch metres to the screen in a straight line.
-  const darkMask = `radial-gradient(ellipse 48% 13% at 45% 81%, transparent 0, transparent 35%, #000 100%), radial-gradient(ellipse 50% 12% at 50% 9%, transparent 0, transparent 30%, #000 100%)`;
+  const darkMask = `radial-gradient(ellipse 30% 9% at 45% 80%, rgba(0,0,0,.45) 0, rgba(0,0,0,.6) 40%, #000 100%), radial-gradient(ellipse 50% 10% at 50% 9%, rgba(0,0,0,.7) 0, #000 100%)`;
 
   const target = feed.target;
   // Where the target sits on the screen (the test driver aims at it; nothing in the game reads it).
@@ -252,18 +252,24 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
           />
         )}
         {/* The shed light: the night everywhere, one warm pool over the goal and the ball. Look only. */}
-        <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 24, background: "rgba(3,8,18,.30)" }} />
-        <div aria-hidden data-lamp={`${poolX.toFixed(0)},${poolY.toFixed(0)}`} style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 24, background: "rgba(2,5,12,.72)", WebkitMaskImage: lampMask, maskImage: lampMask }} />
+        <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 24, background: "rgba(3,8,18,.40)" }} />
+        <div aria-hidden data-lamp={`${poolX.toFixed(0)},${poolY.toFixed(0)}`} style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 24, background: "rgba(1,3,8,.86)", WebkitMaskImage: lampMask, maskImage: lampMask }} />
         <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 24, background: `radial-gradient(ellipse 70% 40% at ${poolX}% ${poolY}%, rgba(255,214,140,.13), rgba(255,214,140,0) 70%)` }} />
         {/* Lights out: dark everywhere but a glint on the ball and the goal mouth; a flicker as it goes. */}
         <div aria-hidden data-dark style={{
-          position: "absolute", inset: 0, pointerEvents: "none", zIndex: 25, background: "rgba(1,3,6,.86)",
+          position: "absolute", inset: 0, pointerEvents: "none", zIndex: 25, background: "rgba(0,1,3,.95)",
           WebkitMaskImage: darkMask, maskImage: darkMask, WebkitMaskComposite: "source-in", maskComposite: "intersect",
           opacity: dark ? 1 : light === "flicker" ? 0.6 : 0,
           animation: light === "flicker" ? "hd-flicker .9s steps(6) 1" : undefined, transition: dark ? "opacity .08s" : "opacity .4s",
         }} />
         <style>{`@keyframes hd-flicker{0%{opacity:0}20%{opacity:.9}35%{opacity:.1}55%{opacity:.95}70%{opacity:.3}100%{opacity:.85}}`}</style>
 
+        {/* Den, when he is not in goal: by the bag at the edge of the light, feeding you (a picture; look only). */}
+        {!feed.keeper && !over && !dark && <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/star/life/kitman/cut-den.webp" alt="" aria-hidden data-feeder style={{ position: "absolute", right: "1%", top: "55%", height: "19%", zIndex: 26, pointerEvents: "none", filter: "brightness(.62) saturate(.8) drop-shadow(-18px 10px 10px rgba(0,0,0,.7))" }} />
+          <div aria-hidden style={{ position: "absolute", right: "17%", top: "71%", width: 34, height: 20, borderRadius: "40% 40% 30% 30%", background: "radial-gradient(circle at 40% 35%, #3b3f4a, #15171c)", zIndex: 26, pointerEvents: "none", boxShadow: "0 6px 8px rgba(0,0,0,.6)" }} />
+        </>}
         {/* Den in goal: his name over the goal */}
         {feed.keeper && !over && <div aria-hidden className="pointer-events-none absolute z-30 dd-kick" style={{ left: `${goalAt.left}%`, top: `calc(${goalAt.top}% - 46px)`, transform: "translateX(-50%)", color: "#f5b942", textShadow: "0 2px 6px #000" }}>{callerName} in goal</div>}
 

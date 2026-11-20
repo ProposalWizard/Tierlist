@@ -4696,7 +4696,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           ctx.lineWidth = Math.max(3, rr * 0.34);
           ctx.strokeStyle = "#141414";
           ctx.beginPath(); ctx.arc(px, py, rr, 0, Math.PI * 2); ctx.stroke();
-          ctx.lineWidth = Math.max(1.5, rr * 0.09);
+          ctx.lineWidth = Math.max(2, rr * 0.14);
           ctx.strokeStyle = m.color ?? "#facc15";
           ctx.beginPath(); ctx.arc(px, py, rr + rr * 0.17, 0, Math.PI * 2); ctx.stroke();
           continue;
@@ -4710,6 +4710,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           ctx.lineTo(px + bw * 0.36, py); ctx.lineTo(px - bw * 0.36, py); ctx.closePath(); ctx.fill();
           ctx.fillStyle = "rgba(0,0,0,.45)";
           ctx.beginPath(); ctx.ellipse(px, py - bw * 0.95, bw * 0.5, bw * 0.13, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = Math.max(1.5, bw * 0.06);
+          ctx.beginPath(); ctx.ellipse(px, py - bw * 0.95, bw * 0.5, bw * 0.13, 0, 0, Math.PI * 2); ctx.stroke();
           continue;
         }
         const r = Math.max(3, 0.35 * pxPerM);
