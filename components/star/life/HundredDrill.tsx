@@ -79,12 +79,12 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
     if (over) return;
     if (phase === "round") {
       speak("b3-thursdays.t-sorry.say0.q1", ball === 0 ? "Go and stand on the D." : "");
-      const t = window.setTimeout(() => setPhase("call"), ball === 0 ? 2600 : 2200);
+      const t = window.setTimeout(() => setPhase("call"), ball === 0 ? 2400 : 1900);
       return () => window.clearTimeout(t);
     }
     if (phase === "call") {
       if (feed.voice) speak(feed.voice, feed.call); else stopVoice();
-      const t = window.setTimeout(() => setPhase("play"), 1300);
+      const t = window.setTimeout(() => setPhase("play"), 1100);
       return () => window.clearTimeout(t);
     }
     if (phase === "play" && feed.dark) {
@@ -142,7 +142,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
       const total = pointsOf([...shots.map((x) => x.hit), true], feeds);
       const idx = Math.max(0, Math.min(calls.length - 1, Math.round(total / 10) - 1));
       const count = fill(calls[idx] ?? "");
-      setSaid(feed.double ? after.replace(/"/g, "") : `${count} ${after.replace(/"/g, "")}`);
+      setSaid((feed.double ? after : `${count} ${after}`).replace(/["“”]/g, ""));
       speak("b1-the-offer.play.caller", count);
     } else { setSaid(fill(after).replace(/"/g, "")); stopVoice(); }
     const list = [...shots, { hit, x: c?.x ?? null, z: c?.z ?? null, end }];
@@ -150,13 +150,13 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
     setLight("on");
     setFlash({ text: hit ? (HIT_WORD[feed.target.kind === "tyre" || feed.target.kind === "bucket" ? feed.target.kind : feed.round] ?? "IN") : WORD[end], good: hit });
     setPhase("react");
-    window.setTimeout(() => setFlash(null), 1400);
-    if (list.length >= n) window.setTimeout(() => finish(list, false), 2200);
+    window.setTimeout(() => setFlash(null), 1300);
+    if (list.length >= n) window.setTimeout(() => finish(list, false), 2100);
     else window.setTimeout(() => {
       setSaid(null);
       setPhase(feeds[list.length].round !== feed.round ? "round" : "call");
       setShots(list);
-    }, 2000);
+    }, 1750);
     // Keep this ball's shot on screen (the dots) at once; the next ball mounts after Den has spoken.
     setShotsShown(list);
   }, [feed, feeds, shots, ball, calls, fill, n, finish]);
