@@ -16,7 +16,7 @@ import { TitleMenu } from "../screens/career/TitleMenu";
 import { WithPops } from "../screens/career/Moments";
 import { SigningMoment } from "../screens/career/Signing";
 import { makeManager } from "@/lib/star/manager";
-import type { TransferOffer } from "@/lib/star/types";
+import type { TransferOffer } from "@/lib/star/transfers";
 
 const Feed = worldScreens.feed;
 const Draw = worldScreens["cup-draw"];
