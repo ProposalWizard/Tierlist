@@ -367,6 +367,27 @@ export function wordTexture(T: Three, s: string, fill: string): THREE.Texture {
   const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 
+/** A lanyard and pass: two straps from the neck to a card (drawn sharp, laid on the shirt front). */
+export function lanyardTexture(T: Three, strap: string, word: string): THREE.Texture {
+  const c = document.createElement("canvas"); c.width = 512; c.height = 768;
+  const x = c.getContext("2d")!;
+  x.strokeStyle = strap; x.lineWidth = 26; x.lineCap = "round";
+  x.beginPath(); x.moveTo(40, 0); x.lineTo(236, 430); x.moveTo(472, 0); x.lineTo(276, 430); x.stroke();
+  x.fillStyle = "#fafafa"; x.strokeStyle = "#9aa3ad"; x.lineWidth = 6;
+  x.fillRect(146, 420, 220, 300); x.strokeRect(146, 420, 220, 300);
+  x.fillStyle = strap; x.fillRect(146, 420, 220, 80);
+  x.fillStyle = "#ffffff"; x.font = "bold 54px Arial, sans-serif"; x.textAlign = "center"; x.fillText(word, 256, 480);
+  x.fillStyle = "#c9ced6"; x.fillRect(176, 530, 80, 100); x.fillStyle = "#6b7280"; x.fillRect(270, 545, 70, 14); x.fillRect(270, 575, 70, 14); x.fillRect(270, 605, 50, 14);
+  const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t;
+}
+/** A zip down the front: a line in the trim colour with a pull at the top. */
+export function zipTexture(T: Three, col: string): THREE.Texture {
+  const c = document.createElement("canvas"); c.width = 64; c.height = 1024;
+  const x = c.getContext("2d")!;
+  x.fillStyle = col; x.fillRect(26, 0, 12, 1024); x.fillRect(18, 10, 28, 60);
+  const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t;
+}
+
 export interface FabricOpts {
   kind: "poly" | "wool" | "cotton";
   color: string; trim: string; trim2?: string;

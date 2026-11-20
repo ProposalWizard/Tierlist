@@ -24,6 +24,9 @@ One person, the "Buzz/crop & beard" body (h6, Tall), measured on this machine's 
 | Cloth kit, merged (all garments one mesh, colours by garment id) | 4 (body, body ink, cloth, cloth ink) [reasoned] | same 39,588 | same | 88 draws, 0.87 M tris |
 | Cloth kit, merged, far players (LOD: no ink on cloth, no socks mesh) | 3 [reasoned] | ~27k [reasoned] | same | ~66 draws |
 | Jumper + shirt + trousers (cut scenes, 1-5 people) | 8 [measured] | 48,216 (+61%) [measured] | ~1.2 MB per head-and-outfit [reasoned] | n/a |
+| Press (shirt + trousers + lanyard decal) | 6 [measured] | 33,868 (+13%) [measured] | ~1 MB per head-and-outfit | crowd/press rows: merge, 4 |
+| Kit man (training jacket + track trousers) | 6 [measured] | 34,084 (+14%) [measured] | same | — |
+| Fan (replica shirt + jeans + scarf) | 8 [measured] | 35,266 (+18%) [measured] | same | 30 fans merged: 120 draws; far crowd stays cards/VAT |
 
 - The body loses what the clothes cover: 14,936 → 7,992 triangles under a kit, 6,013 under a jumper [measured].
   So the cloth costs less than its own size.
@@ -202,8 +205,73 @@ Times are estimates for one builder, not measured.
 | 5 | Cut scenes: jumper, shirt collar piece, tracksuit, suit (lapel + tie pieces), polo | press room, office, signing look like clothes | 1-5 people: negligible | 3-4 days |
 | 6 | Match: LOD (far players: no cloth ink, no socks mesh, ~3 draws) and a frame-meter check on a mid Android | 3D match kits | ~66 draws far, 88 near | 1-2 days |
 | 7 | Remove kit / suit painting from the body shader once every scene uses cloth | simpler shader | small saving | 1 day |
+| 8 | Wardrobe by role: the ~15 pieces (shoes, polo, hoodie, blazer + lapels + tie, coat, cap, glasses, scarf ends, notepad), a role → outfit table with seeded variety, and fix every place listed in section 6 | nobody but players in kit | 4-6 draws per person merged to 4; pieces shared per head | 5-7 days |
 
 Order: cut scenes first (few people, close up, where Harry saw the faults), the match last.
+
+## 6. Wardrobe by role (Harry: "why would someone in the crowd be wearing … a V-neck T-shirt and shorts?")
+
+Rule: only players on the pitch wear a match kit. Everyone else wears clothes for their job, built the same
+cloth way (cut lines, shells, hems). Colours for people who are not the club's are muted, so the eye goes
+to the player.
+
+Proof: `proof-wardrobe.png` (all cloth, same body): press (pale shirt with folded collar, long sleeves
+tucked into charcoal trousers, lanyard and PRESS pass), kit man (club training jacket: dark club colour,
+club trim on stand collar, cuffs and hem, zip line, crest; track trousers), fan (replica shirt worn loose
+over jeans, club scarf, white trainers), and a player in kit [measured].
+My verdict: each role reads at a glance and nobody but the player looks like he is in a kit. Not yet good:
+(1) trousers and jeans show a step at mid-thigh, because the body files have the old shorts MODELLED in
+their shape; the trouser shell copies it. Fix: smooth more below the shorts line, or build legs from a
+shorts-free body. (2) Shoes are still the painted football boots recoloured; shoes need their own small
+mesh. (3) The scarf is a thin hooped ring at the neck; it needs hanging ends to read as a scarf.
+(4) The press shirt's folded collar is too small to read at full-body size.
+
+### Outfit pieces (each made from the body at load, colours from slots)
+| Piece | Cut lines | Fabric | Built in proof? |
+|---|---|---|---|
+| Match shirt (crew/V, short/long sleeve, contrast sleeves) | neck ring, seam, sleeve end, tuck | poly | yes |
+| Shorts, socks | waist, shorts end; sock top, sock end | poly, cotton | yes |
+| Long trousers / chinos / jeans / track trousers | waist, ankle | cotton or poly | yes (thigh step) |
+| Shirt (folded collar) | neck ring, wrist, tuck | cotton | yes |
+| Jumper (V or crew) | neck ring + V, wrist, hem | wool | yes |
+| Training jacket (stand collar, zip) | neck ring, wrist, hem | poly | yes |
+| Replica shirt (loose, no front number) | as match shirt, untucked | poly | yes |
+| Scarf | ring at neck base | wool | ring only |
+| Lanyard + pass | decal on the shirt front | — | yes (decal) |
+| Polo, hoodie, blazer/suit coat + lapels + tie, coat/puffer, bib, cap, glasses, notepad, shoes | — | — | not built |
+
+About 15 pieces cover every role. A piece is shared by everyone on the same head and build; only colour
+slots change per person [reasoned].
+
+### Roles → outfits (seeded per person inside the role)
+| Role | Outfit |
+|---|---|
+| Player on the pitch | match kit (club or nation data) |
+| Player at the press desk / training | club tracksuit or training top + track trousers |
+| Player at home / guests at the house | casual: shirt or hoodie or polo + jeans/chinos + trainers |
+| Journalist, presenter, press room | shirt or jumper + trousers + lanyard; some coats |
+| Manager | suit + tie, or club coat over a jumper |
+| Coaches, kit man, physio | club training jacket or tracksuit in club colours |
+| Chairman, agent, mentor/legend | suit (agent: open collar) |
+| Family and friends | casual, muted colours |
+| Fans / crowd | replica shirt or coat or hoodie + jeans + scarf (never shorts and boots) |
+
+### Where a non-player gets a kit body or shorts today (the rollout must fix each)
+Read in the code [measured]:
+- `lib/star/cutscene/peopleStub.ts` `dress()`: outfit `casual` → a painted KIT (`kit = { shirt, trim }`,
+  no long sleeves or trousers): shorts and boots. `training-bib` → kit. Any actor with no outfit and a
+  non-manager body defaults to `kit`.
+- `lib/star/cutscene/casting.ts`: `fan` and `family` → `outfit: "casual"` (so shorts via peopleStub, above);
+  `physio` and `mentor` → tracksuit (painted on a kit head).
+- `lib/star/cutscene/casting.ts` line ~89: the journalist pool takes every `smart`/`casual` preset; those
+  are drawn as the suit mode painted on a kit head (`presets.ts` `presetLook`, `outfit !== "kit"`).
+- `lib/star/people/presets.ts`: all fans (`fan-*`) are `casual` = coat colour painted on a kit head; the
+  72 player presets are `kit` (right on the pitch, wrong at home or the press desk).
+- `lib/star/world3d/houseLife.ts` (~line 193): team-mates visiting your house are dressed in their club
+  kit with numbers.
+- `lib/star/home3d/wear.ts`: your own clothes at home are a painted tracksuit/casual set on a kit head.
+Also worth checking in the rollout: signing, office, awards night, farewell, ovation scenes (all call
+`dressPerson3d`).
 
 ## Sources
 - Ready Player Me, custom outfits: https://docs.readyplayer.me/ready-player-me/customizing-guides/create-custom-assets/create-custom-outfits (read via search summary; host blocked here)

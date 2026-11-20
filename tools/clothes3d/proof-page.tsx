@@ -14,6 +14,9 @@ import type { PersonLook, Person3D } from "@/lib/star/people3d";
 import type { ToonHead, ToonBody } from "@/lib/star/style3d/toon/bodies";
 
 type V3 = [number, number, number];
+/** The wardrobe by role: a player in kit; press (shirt, trousers, lanyard); kit man (club training jacket + track trousers); fan (replica shirt, jeans, scarf); jumper (smart staff). */
+type Outfit = "kit" | "jumper" | "press" | "kitman" | "fan";
+const SHOES: Record<Outfit, string> = { kit: "#141416", jumper: "#2a1d14", press: "#151515", kitman: "#141416", fan: "#ece9e2" };
 interface Kit { shirt: string; trim: string; shorts: string; socks: string; sleeves?: string; words?: string; name: string }
 
 export default function ClothesProofPage() {
@@ -76,7 +79,7 @@ export default function ClothesProofPage() {
       const jumperCol = q.get("jumper") ?? "#2d4f8e";
       const stats: Record<string, number>[] = [];
 
-      const make = async (after: boolean, outfit: "kit" | "jumper", kit: Kit): Promise<Person3D> => {
+      const make = async (after: boolean, outfit: Outfit, kit: Kit): Promise<Person3D> => {
         const p = P3.makePerson3d(T, SK, all, anims, { outline: 0.006, toonHead: head, toonBody: build, who: "clothes-proof" });
         const skin = L.dress.skin;
         const pat = kit.words ? parseKitPattern(kit.words, kit.shirt, kit.trim) : null;
@@ -87,6 +90,7 @@ export default function ClothesProofPage() {
           // the body under the cloth is deleted; whatever painted kit is left showing is skin, boots stay boots
           look.suit = undefined;
           look.kit = { shirt: skin, trim: skin, shorts: skin, socks: skin, pattern: null };
+          look.accessories = [{ slot: "boots", color: SHOES[outfit] }];
         }
         P3.dressPerson3d(T, p, look);
         if (after) for (const k of ["uBadgeOn", "uNumOn", "uNameOn"]) if (p.u[k]) (p.u[k] as { value: number }).value = 0;
@@ -111,7 +115,7 @@ export default function ClothesProofPage() {
       };
 
       // ── the real clothes: every edge is a cut at a named landmark of this body's own rest pose ──
-      const dressReal = (p: Person3D, outfit: "kit" | "jumper", kit: Kit, pat: ReturnType<typeof parseKitPattern>) => {
+      const dressReal = (p: Person3D, outfit: Outfit, kit: Kit, pat: ReturnType<typeof parseKitPattern>) => {
         const m = p.meta, j = (n: string) => (m.joints[n] ?? [0, 0, 0]) as V3;
         const rig = C.rigOf(T, p.body, m.joints as Record<string, V3>);
         const neck = j("neck"), hips = j("Hips"), sh = j("LeftArm");
@@ -187,6 +191,42 @@ export default function ClothesProofPage() {
           garments.push({ name: "socks", offset: 0.004, lip: 0.003,
             fields: (pt, arm, _a, leg) => (leg > 0.5 && arm < 0.5 ? { neck: pt.y - LM.sockTop, sleeve: NONE, hem: LM.sockEnd - pt.y, leg: NONE } : { neck: 1, sleeve: 1, hem: 1, leg: 1 }),
             material: fabric({ kind: "cotton", color: kit.socks, trim: kit.socks === kit.trim ? kit.shirt : kit.trim, bands: [0.022, 0, 0, 0] }), relax: [2, 8] });
+        } else if (outfit === "press" || outfit === "kitman" || outfit === "fan") {
+          const trousersOf = (name: string, color: string, kind: "cotton" | "poly", waist: number, fold = 0) => garments.push({ name, offset: 0.009, lip: 0.004,
+            fields: (pt, arm, _a, leg) => ({ neck: arm > 0.5 ? 1 : pt.y - waist, sleeve: NONE, hem: NONE, leg: leg > 0.35 ? LM.ankle + fold - pt.y : NONE }),
+            material: fabric({ kind, color, trim: "#" + new T.Color(color).multiplyScalar(0.8).getHexString(), bands: [0.028, 0, 0, fold ? 0.03 : 0] }), relax: [3, 8] });
+          if (outfit === "press") {
+            // a pale shirt with a folded collar, long sleeves, tucked in; charcoal trousers; a lanyard and press pass
+            const shirtC = "#cfdcec";
+            garments.push({ name: "shirt", offset: 0.006, lip: 0.003, collar: { h: 0.02, out: 0.006, fold: 0.008, color: shirtC },
+              fields: (pt, arm, armS) => ({ neck: neckRing(pt, 0.07, 0.062, 0.08, -0.012), sleeve: arm > 0.5 ? (armS - LM.wrist) * upperArm : NONE, hem: arm > 0.5 ? NONE : LM.tuck - pt.y, leg: NONE }),
+              material: fabric({ kind: "cotton", color: shirtC, trim: "#" + new T.Color(shirtC).multiplyScalar(0.85).getHexString(), bands: [0, 0.03, 0, 0],
+                front: { tex: C.lanyardTexture(T, "#1d3f8f", "PRESS"), at: [0, chestY - 0.035, 0], size: [0.17, 0.26] } }), relax: [2, 8] });
+            trousersOf("trousers", "#3a3d44", "cotton", LM.waist + 0.01);
+          } else if (outfit === "kitman") {
+            // the club's training jacket: dark club colour, club trim on the stand collar, cuffs and zip; track trousers
+            const body = "#" + new T.Color(kit.shirt).multiplyScalar(kit.shirt.toLowerCase() === "#ffffff" ? 0.25 : 0.42).getHexString();
+            garments.push({ name: "jacket", offset: 0.013, lip: 0.005, collar: { h: 0.028, out: 0.003, color: kit.trim },
+              fields: (pt, arm, armS) => ({ neck: neckRing(pt, 0.074, 0.064, 0.085, -0.016), sleeve: arm > 0.5 ? (armS - LM.wrist) * upperArm : NONE, hem: arm > 0.5 ? NONE : LM.hem - pt.y, leg: NONE }),
+              material: fabric({ kind: "poly", color: body, trim: kit.shirt, bands: [0, 0.035, 0.03, 0],
+                crest: { tex: C.crestTexture(T, kit.trim, kit.shirt, "KB"), at: [0.085, chestY, 0], size: 0.065 },
+                front: { tex: C.zipTexture(T, kit.trim), at: [0, (collarY + LM.hem) / 2, 0], size: [0.03, collarY - LM.hem] } }), relax: [3, 10] });
+            trousersOf("trousers", body, "poly", LM.waist + 0.01, 0.0);
+          } else {
+            // a fan: the replica shirt (no number on the front) worn loose over jeans; a club scarf; trainers
+            garments.push({ name: "shirt", offset: 0.013, lip: 0.004, collar: { h: 0.016, out: 0.010, color: kit.trim },
+              fields: (pt, arm, armS) => ({ neck: neckRing(pt, 0.075, 0.066, 0.095, -0.028), sleeve: arm > 0.5 ? (armS - LM.sleeveShort - 0.08) * upperArm : NONE, hem: arm > 0.5 ? NONE : LM.hem - 0.02 - pt.y, leg: NONE }),
+              material: fabric({ kind: "poly", color: kit.shirt, trim: kit.trim, bands: [0.012, 0.016, 0, 0], crest: { tex: C.crestTexture(T, kit.trim, kit.shirt, "KB"), at: [0.085, chestY, 0], size: 0.075 } }) });
+            trousersOf("jeans", "#3d5a80", "cotton", LM.waist + 0.005);
+            // the scarf: a thick ring round the neck's base, hooped in club colours
+            garments.push({ name: "scarf", offset: 0.03, lip: 0.012,
+              fields: (pt, arm) => {
+                if (arm > 0.3) return { neck: 1, sleeve: 1, hem: 1, leg: 1 };
+                const r = Math.hypot(pt.x - neck[0], pt.z - neck[2]);
+                return { neck: pt.y - (collarY + 0.012), sleeve: NONE, hem: (collarY - 0.045) - pt.y, leg: NONE, cut: r - 0.115 };
+              },
+              material: fabric({ kind: "wool", color: kit.shirt, trim: kit.shirt, pattern: { kind: "hoops", color: kit.trim, width: 0.012, centre: collarY } }), relax: [4, 10] });
+          }
         } else {
           // the shirt under the jumper: a high neck with a folded collar, cuffs just past the jumper's
           garments.push({ name: "shirt", offset: 0.004, lip: 0.002, collar: { h: 0.02, out: 0.006, fold: 0.008, color: suitLook.shirt },
@@ -252,6 +292,19 @@ export default function ClothesProofPage() {
           label(`${name}: today | cloth`, 0, i * th, tw * 2, 22);
         });
         g2.fillStyle = "#000"; g2.fillRect(tw - 1, 0, 2, th * 6); for (let i = 1; i < 6; i++) g2.fillRect(0, i * th - 1, tw * 2, 3);
+      } else if (shot === "wardrobe") {
+        // the wardrobe by role, all cloth: press, kit man, fan, and a player in kit for comparison
+        const tw = 520, th1 = 1100, th2 = 700;
+        sheet.width = tw * 4; sheet.height = th1 + th2;
+        const kit = KITS[q.get("kit") ?? "liverpool"]();
+        const who: [string, Outfit][] = [["Press: shirt, trousers, lanyard", "press"], ["Kit man: club training jacket", "kitman"], ["Fan: replica shirt, jeans, scarf", "fan"], ["Player: match kit", "kit"]];
+        for (let i = 0; i < 4; i++) {
+          const a = await make(true, who[i][1], kit);
+          shoot(a, -0.25, () => ({ pos: [0, 1.0, 5.6] as V3, look: [0, 0.94, 0] as V3, fov: 24 }), tw, th1, i * tw, 0);
+          shoot(a, -0.7, near((p) => wp(p, "Spine01").add(new T.Vector3(0, 0.12, 0)), 2.0), tw, th2, i * tw, th1);
+          label(who[i][0], i * tw, 0, tw, 22);
+        }
+        g2.fillStyle = "#000"; g2.fillRect(0, th1 - 2, tw * 4, 4); for (let i = 1; i < 4; i++) g2.fillRect(i * tw - 1, 0, 3, th1 + th2);
       } else if (shot === "patterns") {
         // real nation kits from the data: stripes, contrast sleeves, hoops. Top today, bottom cloth.
         const tw = 520, th = 844;
