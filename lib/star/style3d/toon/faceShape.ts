@@ -51,6 +51,8 @@ export interface FaceShape {
   taper?: number;
   /** The lower face longer (+) or shorter, metres at the chin (the mouth and nose move their share); not multiplied by FACE_GAIN. */
   faceLen?: number;
+  /** The cheeks beside the nose and mouth narrower (−, a share; never wider: see faceCheekZone). */
+  cheekW?: number;
 }
 
 export type ToonFaceId =
@@ -129,12 +131,24 @@ export function faceOutlineZone(p: readonly [number, number, number], F: FaceFra
   return sm(F.frontZ - 0.19, F.frontZ - 0.155, z) * sm(F.eyeY - 0.05, F.eyeY - 0.08, y) * sm(F.chinY - 0.04, F.chinY - 0.012, y) * sm(F.collarY - 0.005, F.collarY + 0.025, y);
 }
 
+/**
+ * How much of a NARROWER cheek a point takes: the cheeks' sides from just under the eyes down, in front of
+ * the ears (the outline's zone starts lower, below the ears' lobes, so a round head's cheeks stayed full
+ * above a slim jaw). Only ever used to bring the cheeks in, which cannot push the face through hanging hair.
+ */
+export function faceCheekZone(p: readonly [number, number, number], F: FaceFrame): number {
+  const [, y, z] = p;
+  return sm(F.frontZ - 0.165, F.frontZ - 0.125, z) * sm(F.eyeY - 0.008, F.eyeY - 0.05, y) * sm(F.chinY - 0.04, F.chinY - 0.012, y) * sm(F.collarY - 0.005, F.collarY + 0.025, y);
+}
+
 /** Where a rest-pose point (metres, his left +x, up +y, front +z) goes for this face, `k` times as strong. */
 export function faceShapePoint(p: readonly [number, number, number], F: FaceFrame, S: FaceShape, k = 1): [number, number, number] {
   const W = faceZone(p, F) * k * FACE_GAIN;
   const O = faceOutlineZone(p, F) * k;
-  if (W <= 0 && O <= 0) return [p[0], p[1], p[2]];
-  const [x0, y, z] = p;
+  const C = Math.min(0, S.cheekW ?? 0) * k * faceCheekZone(p, F);
+  if (W <= 0 && O <= 0 && C === 0) return [p[0], p[1], p[2]];
+  const [x00, y, z] = p;
+  const x0 = x00 * (1 + C);
   // the outline first: the lower face wider or narrower, the jaw tapering to the chin or squaring out
   // (a wider face is bone, not jowl: the widening is over by the jaw's lower edge, so nothing hangs over the neck)
   const bone = sm(F.chinY - 0.012, F.chinY + 0.03, y);

@@ -27,6 +27,15 @@ export const TOON_PAINTED_BEARD: readonly ToonHead[] = ["h3", "h6", "m1", "m2", 
 
 const LIP_SCALE = 1.45;
 
+/** Fine detail by the game's quality: a computer or a close-up, a phone, the weakest phones. */
+export const FACE_DETAIL = { high: 1, medium: 0.5, low: 0 } as const;
+
+/** Change a drawn face's detail later (the quality governor stepping down or up). */
+export function setToonFaceDetail(p: Person3D, detail: number): void {
+  const u = p.u as Record<string, { value: { w: number } }>;
+  if (u.uFiLm3) u.uFiLm3.value.w = Math.max(0, Math.min(1, detail));
+}
+
 export interface FaceIdOptions {
   /** Fine detail (hairs, freckles, folds): 1 full (a computer, a close-up), 0.5 a phone, 0 none. */
   detail?: number;

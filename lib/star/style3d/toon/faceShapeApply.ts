@@ -13,7 +13,7 @@ import type { Person3D } from "../../people3d";
 import { TOON_FACE_LANDMARKS } from "./faceLandmarks";
 import { TOON_SHAPE_HEADS } from "./bodies";
 import { TOON_FACE_FILE_LANDMARKS } from "./faceFileLandmarks";
-import { TOON_FACE_TYPES, faceFrame, faceShapePoint, faceZone, faceOutlineZone, type FaceShape, type ToonFaceId } from "./faceShape";
+import { TOON_FACE_TYPES, faceFrame, faceShapePoint, faceZone, faceOutlineZone, faceCheekZone, type FaceShape, type ToonFaceId } from "./faceShape";
 
 type Three = typeof THREE;
 
@@ -49,7 +49,7 @@ export function applyToonFaceShapeRaw(T: Three, p: Person3D, shape: FaceShape, k
     const at: [number, number, number] = [pos0.getX(i), pos0.getY(i), pos0.getZ(i)];
     const q: [number, number, number] = rest0 ? [rest0.getX(i), rest0.getY(i), rest0.getZ(i)] : at;
     let nx = nor0.getX(i), ny = nor0.getY(i), nz = nor0.getZ(i);
-    if (q[1] < F.chinY - 0.06 || (faceZone(q, F) <= 0 && faceOutlineZone(q, F) <= 0)) { P.set(at, i * 3); N.set([nx, ny, nz], i * 3); continue; }
+    if (q[1] < F.chinY - 0.06 || (faceZone(q, F) <= 0 && faceOutlineZone(q, F) <= 0 && faceCheekZone(q, F) <= 0)) { P.set(at, i * 3); N.set([nx, ny, nz], i * 3); continue; }
     const o = f(q);
     P.set([at[0] + o[0] - q[0], at[1] + o[1] - q[1], at[2] + o[2] - q[2]], i * 3);
     // the normal through the rule's own slopes: two tangents, moved, crossed

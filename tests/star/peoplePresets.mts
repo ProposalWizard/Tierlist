@@ -13,7 +13,7 @@ import { SKIN_TONES } from "../../lib/star/playerIdentity";
 import { TOON_ALL_HEADS, TOON_PLAYER_HEADS, TOON_SHAPE_HEADS, toonHeadIsSuit, toonHeadFor } from "../../lib/star/style3d/toon/bodies";
 import { TOON_HAIRS, TOON_HAIR_INFO, COILY_HAIRS, toonHairFits, toonHairFile, type ToonHair } from "../../lib/star/style3d/toon/hairStyles";
 import fs from "node:fs";
-import { TOON_FACE_TYPES, TOON_FACE_IDS, HERITAGE_FACES, faceFor, faceFrame, faceShapePoint, faceZone, faceOutlineZone } from "../../lib/star/style3d/toon/faceShape";
+import { TOON_FACE_TYPES, TOON_FACE_IDS, HERITAGE_FACES, faceFor, faceFrame, faceShapePoint, faceZone, faceOutlineZone, faceCheekZone } from "../../lib/star/style3d/toon/faceShape";
 import { TOON_FACE_LANDMARKS } from "../../lib/star/style3d/toon/faceLandmarks";
 import { managerLook } from "../../lib/star/managerFace";
 import { faceIdFor, faceIdKey, FACE_LIMITS, HERITAGE_FEATURES, FACE_EMOTIONS, EMOTION_NAMES, blendEmotions, NEUTRAL_EMOTION } from "../../lib/star/style3d/toon/faceId";
@@ -243,7 +243,7 @@ for (let i = 0; i < 100; i++) {
     const o = faceShapePoint(q, F, l.faceId.shape, 1);
     const d = Math.hypot(o[0] - q[0], o[1] - q[1], o[2] - q[2]);
     most = Math.max(most, d);
-    if (faceZone(q, F) === 0 && faceOutlineZone(q, F) === 0) check(d === 0, `face ${l.id}: its mould moved the head outside the face`);
+    if (faceZone(q, F) === 0 && faceOutlineZone(q, F) === 0 && faceCheekZone(q, F) === 0) check(d === 0, `face ${l.id}: its mould moved the head outside the face`);
   }
   check(most > 0.004 && most < 0.05, `the moulds move the face by at most ${(most * 1000).toFixed(1)} mm (want 4 to 50, on a grid that also samples the air round the face)`);
   console.log(`  face system: ${words} of 500 players have a face of their own (${four} on eye shape, iris, brows and beard alone); the mould moves up to ${(most * 1000).toFixed(1)} mm`);

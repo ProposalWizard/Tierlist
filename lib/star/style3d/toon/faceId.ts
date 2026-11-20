@@ -206,7 +206,7 @@ const OUTLINE: Partial<Record<keyof FaceShape, number>> = { faceW: 0.014, taper:
  * What undoes the two re-shaped heads' own puff under a lean build (the broad-jaw and round-face head
  * files are wide and full below the cheekbones; on those files a lean build starts from here).
  */
-export const HEAD_LEAN: Record<string, FaceShape> = { h7: { faceW: -0.05, full: -0.001 }, h9: { faceW: -0.085, full: -0.0024, taper: 0.04 } };
+export const HEAD_LEAN: Record<string, FaceShape> = { h7: { faceW: -0.05, full: -0.001, cheekW: -0.035 }, h9: { faceW: -0.085, full: -0.0024, taper: 0.04, cheekW: -0.075 } };
 
 /** A stable 32-bit hash (FNV-1a, as bodies.ts hashId; kept here so this file stays on its own). */
 function hash(s: string): number {

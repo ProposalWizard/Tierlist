@@ -136,6 +136,19 @@ exactly today's bodies. You never pick a file yourself:
   `lib/star/style3d/toon/faceShape.ts` + `faceShapeApply.ts` (`applyToonFaceShape` before `addToonFace`).
   Light skin on a toon preset is painted a touch darker and warmer (`toonSkinHex`, presets.ts), fair or grey brows darker (`browDark`).
   Sheets: `/star-3d-bench-dev/people?set=hair`, `?set=heads`, `?set=faces`, `?set=swing`.
+- **The face system (20 Nov 2026, Harry: "straight-to-the-face build"; bench only, not in the game yet).** Each person's own face is a
+  FaceId (`lib/star/style3d/toon/faceId.ts`: about fifty numbers and three colours from his id, `personLook(...).faceId`; the same id, the
+  same face): eye shape (round, almond, hooded, narrow, deep-set, downturned, upturned, single lid), size, spacing and a real eye colour,
+  brows, lips, freckles, age lines, a mole, facial hair, and the mould (`faceBuild`: most players lean and athletic; jaw, chin, cheeks, nose,
+  face length). Features come from his heritage's pools, every number inside `FACE_LIMITS` (RUL-3D-010). `applyToonFaceId(T, person, faceId,
+  { detail })` (`faceIdApply.ts`; after `dressPerson3d`, before `addToonFace`) moves his own copy of the mesh and switches on the drawn face in
+  the body shader (`faceIdShader.ts`, `#define TOON_FACEID`): the head's painted eyes, brows, lips and beard are painted out, the skin evened,
+  and his own drawn on the surface. Everyone without a FaceId runs the old shader (one shared change: a measured iris keeps its own paint).
+  Emotions: `FACE_EMOTIONS` (neutral, happy, proud, angry, sad, worried, smug, shocked) = 14 numbers, `blendEmotions({ happy: 0.6, smug: 0.4 })`
+  into `face.set({ face, blink, gaze })`; blinks and glances as before (`blinkAt`, `wanderGaze`). Detail: 1 a computer or a close-up, 0.5 a
+  phone (`FACE_DETAIL`); fine detail also fades by itself as the face gets small; give a FaceId only to people seen up close.
+  Sheets: `/star-3d-bench-dev/people?set=faceids` (`&faceid=0` before, `&zoom=1`, `&emotions=9`, `&sliders=9`), `?set=faceplay`; film:
+  `node scripts/bench3d/face-film.mjs OUTDIR`. Tests: `tests/star/peoplePresets.mts`. Not done: mouth shapes from sound.
 - A new head: concept picture → Higgsfield image-to-3D (Tripo H3.1, face limit
   15000) → `tools/modeltest/fit.py` → `scripts/people3d/build_toon_bodies.py <dir>
   tag:dir/fit.glb[:suit]` (it also weights the fingers: `weight_fingers`) →
