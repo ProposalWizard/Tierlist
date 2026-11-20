@@ -2,15 +2,10 @@
 id: FACT-KIB-014
 type: fact
 client: kib
-tags: [client-kib]
+tags: [ui, process, client-kib]
 status: live
-date: 2026-11-20
-source: "lib/publish/meta.ts:52-70"
-summary: Publish posts short-form only - Instagram Reels, Facebook Reels (3-90 s), YouTube Shorts (vertical, 3 min max, #Shorts added to the description); a Short's title is 100 characters at most, hashtags included.
+date: 2026-11-19
+source: "lib/discord.ts:1-20"
+summary: The Knowitball Discord is a plan and kit: scripts/discord builds the server (10 roles, 21 channels, onboarding), Join buttons (footer, game Settings) show only once NEXT_PUBLIC_DISCORD_INVITE is set, and patch notes with a `discord` line post to #updates via DISCORD_UPDATES_WEBHOOK.
 ---
-Mikey, 20 Nov 2026: "I only post on Facebook Reels, YouTube Shorts and Instagram Reels." Facebook uses the Reels API
-(start, upload from the signed link, finish PUBLISHED); Instagram uses media_type REELS; YouTube makes any vertical
-upload of 3 minutes or less a Short, and the tool appends #Shorts to the description. Mikey: the YouTube title (the
-line people see on a Short) is capped at 100 characters including any hashtags in it; aim for under 70. The
-Publish page's title box stops at 100. Videos live in Mikey's own Cloudflare bucket (PUBLISH_R2_* in Vercel);
-the page is locked to PUBLISH_OWNER_EMAIL.
+Leo, 19 Nov 2026: "the best possible discord … most importantly just so the number of ppl who play the game increase." Plan and growth playbook: docs/DISCORD.md. Server built from scripts/discord/blueprint.json by setup-server.mjs (name-matched, safe to rerun; bots cannot create servers, so Leo makes the empty one and adds the bot). The Patch bot's 15-minute run sends a note's player line once, when it first announces the note (lib/teamRoom/patchBotServer.ts); notes without `discord` are never posted (team notes stay internal). Never @everyone from a bot; no invite rewards (Discord rules). Clicks: PostHog `discord_click` {from}.
