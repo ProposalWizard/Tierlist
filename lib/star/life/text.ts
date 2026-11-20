@@ -13,10 +13,14 @@ export function fillLine(src: string, c: CareerState, cast: Record<string, strin
   // {if X}…{/if}: X is a cast slot (filled?) or any condition.
   let s = src.replace(/\{if ([^}]+)\}([\s\S]*?)\{\/if\}/g, (_, cond: string, body: string) => {
     const k = cond.trim();
-    const ok = /^[a-z]+$/.test(k) ? !!cast[k] : holds(k, ctx);
+    const slot = /^(!?)([a-z]+)$/.exec(k);
+    const ok = slot ? (slot[1] ? !cast[slot[2]] : !!cast[slot[2]]) : holds(k, ctx);
     return ok ? body : "";
   });
-  s = s.replace(/\{([a-z]+)\.([a-z]+)\}/g, (all, slot: string, key: string) => {
+  s = s.replace(/\{([a-z]+)\.([a-zA-Z]+)\}/g, (all, slot: string, key: string) => {
+    // Events v2: what the story keeps and the game just played.
+    if (slot === "arc") { const v = ctx.v2?.arc?.v[key]; return v === undefined ? all : String(v); }
+    if (slot === "activity") { const a = ctx.v2?.activity as unknown as Record<string, number> | undefined; return a && a[key] !== undefined ? String(a[key]) : all; }
     if (slot === "you") {
       const p = c.player;
       if (key === "name") return `${p.firstName} ${p.lastName}`;

@@ -35,7 +35,12 @@ export interface RoundMenuData {
   categories: RoundCategory[];
   /** One plain hint under the menu, e.g. "He is relaxed, so jokes land better today". */
   hint: string;
+  /** Events v2: a story's bubbles on this person (the gold "Stay out", today only). */
+  offers?: RoundOffer[];
 }
+
+/** A story's bubble on the round menu (arcs.ts bubblesFor). */
+export interface RoundOffer { id: string; arc: string; beat: string; label: string; icon: string; gold: boolean; chip: string; hint: string }
 
 export const ROUND_COLORS: Record<RoundCategoryId, string> = {
   friendly: "#3ddc84", banter: "#facc15", football: "#4aa8ff", business: "#c4b5fd", mean: "#ff5a4d", bye: "#9aa7b8",
@@ -48,6 +53,13 @@ export function moodOf(b: number, g: number): RoundMood {
   if (b < 25) return { face: "😒", word: "Cold" };
   return { face: "😐", word: "Fine" };
 }
+
+/** Small talk with club staff about the club. */
+const CLUB_LINES: RoundLine[] = [
+  { id: "how-long", text: "How long have you been here?", icon: "🗓️", tag: "bond" },
+  { id: "best-player", text: "Best player you've washed kit for?", icon: "⭐", tag: "respect" },
+  { id: "the-gaffer", text: "What's the gaffer like, really?", icon: "👔", tag: "risky" },
+];
 
 const LINES: Record<Exclude<RoundCategoryId, "bye">, RoundLine[]> = {
   friendly: [
@@ -79,20 +91,26 @@ const LINES: Record<Exclude<RoundCategoryId, "bye">, RoundLine[]> = {
 
 /** What the menu shows for one person. A man with a grudge gets fewer kind lines
  *  and more ways to make it worse; a relaxed man takes a joke. */
-export function roundMenuFor(c: CareerState, id: string): RoundMenuData {
+export function roundMenuFor(c: CareerState, id: string, offers?: RoundOffer[]): RoundMenuData {
   const life = lifeOf(c);
   const p = peek(life, id);
   const info = personInfo(c, id);
   const mood = moodOf(p.b, p.g);
   const cat = (k: Exclude<RoundCategoryId, "bye">, label: string, icon: string): RoundCategory => ({ id: k, label, icon, color: ROUND_COLORS[k], lines: LINES[k] });
-  const cats: RoundCategory[] = [
-    cat("friendly", "Friendly", "🤝"), cat("banter", "Banter", "😂"), cat("football", "Football", "⚽"),
-    cat("business", "Business", "💼"), { id: "bye", label: "See you", icon: "👋", color: ROUND_COLORS.bye, lines: [] }, cat("mean", "Mean", "😤"),
-  ];
+  const bye: RoundCategory = { id: "bye", label: "See you", icon: "👋", color: ROUND_COLORS.bye, lines: [] };
+  // Club staff get the short ring (a kit man has no boot deal to ask about).
+  const staff = info?.role && info.role !== "teammate";
+  const cats: RoundCategory[] = staff
+    ? [cat("friendly", "Chat", "💬"), cat("banter", "Banter", "😄"), { ...cat("football", "The club", "🏟️"), lines: CLUB_LINES }, bye]
+    : [
+      cat("friendly", "Friendly", "🤝"), cat("banter", "Banter", "😂"), cat("football", "Football", "⚽"),
+      cat("business", "Business", "💼"), bye, cat("mean", "Mean", "😤"),
+    ];
   const hint = mood.word === "Angry" ? "He is angry with you. Kind words land worse today"
     : mood.word === "Relaxed" || mood.word === "Happy" ? `He is ${mood.word.toLowerCase()}, so jokes land better today`
     : mood.word === "Cold" ? "He does not know you well yet" : "Tap a bubble to talk to him";
-  return { id, name: info?.short ?? "Him", role: info?.role === "teammate" ? "Team-mate" : info?.role ?? "", mood, bond: p.b, respect: p.r, grudge: p.g, categories: cats, hint };
+  const role = info?.role === "teammate" ? "Team-mate" : info?.role === "kitman" ? "Kit man" : info?.role ?? "";
+  return { id, name: info?.short ?? "Him", role, mood, bond: p.b, respect: p.r, grudge: p.g, categories: cats, hint, ...(offers?.length ? { offers } : {}) };
 }
 
 const REPLIES: Record<RoundTag, [string[], string[]]> = {

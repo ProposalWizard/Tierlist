@@ -44,9 +44,29 @@ interface Props {
   backdrop?: DecisionBackdrop;
   world?: ReactNode;
   onSlowMo?: (scale: number) => void;
+  /** Events v2: the story strip over a talk ("A hundred balls in the dark · Beat 1 of 7 · Round 2"),
+   *  the no-clock words ("He's in no hurry") and how the talk is going. */
+  story?: StoryStrip;
+  /** Events v2: cards under the result (the promise made, what happens next). */
+  afterExtra?: ReactNode;
 }
 
-export default function Telltale({ career, live, clock, onChoose, picked, onContinue, backdrop, world, onSlowMo }: Props) {
+export interface StoryStrip { title: string; beat: string; round?: number | string; when?: string; noClock?: string; note?: string }
+
+/** The strip over a story's screens (Telltale, the dial, the card). */
+export function StoryBar({ story }: { story: StoryStrip }) {
+  return (
+    <>
+      <div className="dd-story" data-story>
+        <span className="t">◆ {story.title}</span>
+        <span className="b">{story.beat}{story.round !== undefined && story.round !== "" ? ` · ${typeof story.round === "number" ? `Round ${story.round}` : story.round}` : ""}</span>
+      </div>
+      {story.when && <div className="dd-when" data-when>{story.when}</div>}
+    </>
+  );
+}
+
+export default function Telltale({ career, live, clock, onChoose, picked, onContinue, backdrop, world, onSlowMo, story, afterExtra }: Props) {
   const reduced = useReducedMotion();
   const [stageRef, size] = useStageSize<HTMLDivElement>();
   const [grey, setGrey] = useState(false);
@@ -166,7 +186,13 @@ export default function Telltale({ career, live, clock, onChoose, picked, onCont
 
       {!picked && (
         <>
-          <div className="dd-tt-kick dd-kick" style={{ opacity: grey ? 1 : 0, transition: "opacity .3s" }}>{bigWord}</div>
+          {story ? <StoryBar story={story} /> : <div className="dd-tt-kick dd-kick" style={{ opacity: grey ? 1 : 0, transition: "opacity .3s" }}>{bigWord}</div>}
+          {story && (story.noClock || story.note) && (
+            <div className="dd-story-sub" style={{ top: story.when ? 74 : 40 }} data-talk-mood>
+              {story.noClock && secs === null && <div>{story.noClock}</div>}
+              {story.note && <div className="n">{story.note}</div>}
+            </div>
+          )}
           {head && info && (
             <div className="dd-tag" style={{ left: head.x, top: head.y - placed!.height * 0.075, opacity: asking ? 1 : 0, transition: "opacity .3s" }}>
               {mood?.face} {info.short}
@@ -179,7 +205,7 @@ export default function Telltale({ career, live, clock, onChoose, picked, onCont
               <div className="dd-tt-col">
                 {narration[0] && <div className="dd-narr dd-fade-in">{narration.join(" ")}</div>}
                 <div className="dd-sub dd-fade-in"><b>{info ? info.short : name}</b>{said || live.lines[live.lines.length - 1]}</div>
-                {secs !== null ? <div className="dd-timer" data-clock={secs}><i ref={barRef} style={{ width: "100%", background: "#fff" }} /></div> : <div className="dd-noclock">No clock · take your time</div>}
+                {secs !== null ? <div className="dd-timer" data-clock={secs}><i ref={barRef} style={{ width: "100%", background: "#fff" }} /></div> : story?.noClock ? null : <div className="dd-noclock">No clock · take your time</div>}
                 {spoken.map((c, i) => {
                   const look = TONE_LOOK[c.choice.tone ?? "calm"];
                   const state = chosen ? (chosen === c.id ? "picked" : "other") : undefined;
@@ -205,10 +231,11 @@ export default function Telltale({ career, live, clock, onChoose, picked, onCont
         </>
       )}
 
+      {picked && story && <StoryBar story={{ ...story, round: "Done", when: undefined }} />}
       {picked && (
         <div className="dd-after">
-          <RememberToast remembered={picked.result.remembered} top={size.w >= 900 ? 40 : 22} />
-          <div className="dd-fade-in" style={{ position: "absolute", left: 16, right: 16, top: picked.result.remembered.length ? (size.w >= 900 ? 120 : 98) : 22, display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <RememberToast remembered={picked.result.remembered} top={(size.w >= 900 ? 40 : 22) + (story ? 26 : 0)} />
+          <div className="dd-fade-in" style={{ position: "absolute", left: 16, right: 16, top: (picked.result.remembered.length ? (size.w >= 900 ? 120 : 98) : 22) + (story ? 26 : 0), display: "flex", gap: 6, flexWrap: "wrap", zIndex: 7 }}>
             <ChangeList changes={picked.result.changes.filter((c) => c.kind !== "memory")} />
           </div>
           <div className="dd-shade" />
@@ -217,12 +244,13 @@ export default function Telltale({ career, live, clock, onChoose, picked, onCont
               <div className="dd-said">{picked.timedOut ? "Time ran out. You said nothing." : pickedChoice?.choice.silent ? "You said nothing." : `You · ${TONE_LOOK[pickedChoice?.choice.tone ?? "calm"].word}`}</div>
               {pickedChoice && !pickedChoice.choice.silent && <div className="dd-sub" style={{ fontSize: size.w >= 900 ? 20 : 16, opacity: 0.9 }}>{pickedChoice.label}</div>}
               <div className="dd-result" data-result>{picked.result.text}</div>
-              {verdict && (
+              {verdict && !story && (
                 <div style={{ margin: "4px 0 6px" }} data-verdict>
                   <div className="dd-verdict">{verdict.same} of your {verdict.of} team-mates would have {verdict.phrase}</div>
                   <div className="dd-verdict-bar"><i style={{ width: `${(verdict.same / verdict.of) * 100}%`, background: TONE_LOOK[verdict.tone].color }} /></div>
                 </div>
               )}
+              {afterExtra}
               <button type="button" className="dd-main" onClick={onContinue} data-continue>Continue <span className="dd-kbd dd-pc-only" style={{ background: "rgba(5,46,22,.2)" }}>Enter</span></button>
             </div>
           </div>

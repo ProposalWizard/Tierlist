@@ -95,7 +95,8 @@ export function personInfo(c: CareerState, id: string): PersonInfo | null {
     case "brother": { const f = pick(FIRST_M, "bro"); return { id, role, name: `${f} ${sur}`, short: f }; }
     case "agent": { const f = pick(FIRST_M, "agent"); const s = pick(SURNAMES, "agent-s"); return { id, role, name: `${f} ${s}`, short: f }; }
     case "physio": { const f = pick(FIRST_F, "physio"); const s = pick(SURNAMES, "physio-s"); return { id, role, name: `${f} ${s}`, short: f }; }
-    case "kitman": { const f = pick(FIRST_M, "kit"); return { id, role, name: `${f} ${pick(SURNAMES, "kit-s")}`, short: f }; }
+    // Den: one man, written as one man (Events v2's kit man arc signs his notes "D").
+    case "kitman": return { id, role, name: `Den ${pick(SURNAMES, "kit-s")}`, short: "Den" };
     case "tabloid": case "broadsheet": {
       const f = pick(FIRST_M, role); const s = pick(SURNAMES, `${role}-s`);
       return { id, role, name: `${f} ${s}`, short: s, outlet: OUTLETS[role] };
@@ -106,7 +107,7 @@ export function personInfo(c: CareerState, id: string): PersonInfo | null {
 // ── The store ────────────────────────────────────────────────────────────
 
 export function freshLife(): LifeState {
-  return { v: 1, people: {}, squad: [], self: [], fired: {}, pending: [], groups: {}, cats: {}, wk: [0, 0, 0], lastBig: -999, soc: [0, {}], flags: [], teamCarry: 0, log: [] };
+  return { v: 2, people: {}, squad: [], self: [], fired: {}, pending: [], groups: {}, cats: {}, wk: [0, 0, 0], lastBig: -999, soc: [0, {}], flags: [], teamCarry: 0, log: [] };
 }
 
 /** The life week: one number that only goes up (season × 50 + week). */

@@ -12,7 +12,7 @@
  * how many of your own team-mates would have said it your way, and your voice
  * this season.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { LiveEvent } from "@/lib/star/life/director";
 import type { ChoiceResult } from "@/lib/star/life/resolve";
@@ -21,6 +21,7 @@ import { personInfo, roleOf } from "@/lib/star/life/people";
 import LifeFace from "./LifeFace";
 import { PLACE } from "./EventCard";
 import { RememberToast } from "./DecisionParts";
+import type { StoryStrip } from "./Telltale";
 import "./life.css";
 import "./decision.css";
 
@@ -82,8 +83,14 @@ function Dial({ sel, open, onSel }: { sel: DialTone | null; open: Set<DialTone>;
   );
 }
 
-export default function ToneDial({ career, live, onChoose, picked, onContinue }: {
+export default function ToneDial({ career, live, onChoose, picked, onContinue, story, afterExtra, sceneImage }: {
   career: CareerState; live: LiveEvent; onChoose: (choiceId: string) => void; picked?: DialPicked | null; onContinue: () => void;
+  /** Events v2: the story strip over a talk on the dial. */
+  story?: StoryStrip;
+  /** Events v2: cards under the result (a match objective, what happens next). */
+  afterExtra?: ReactNode;
+  /** A still behind the speaker (until the 3D world is wired in). */
+  sceneImage?: string;
 }) {
   const spoken = spokenChoices(live).filter((c) => isDialTone(c.choice.tone));
   const byTone = useMemo(() => new Map(spoken.map((c) => [c.choice.tone as DialTone, c])), [spoken]);
@@ -120,17 +127,20 @@ export default function ToneDial({ career, live, onChoose, picked, onContinue }:
     return () => window.removeEventListener("keydown", on);
   }, [picked, turn, say, silent, onChoose, onContinue]);
 
-  if (picked) return <Landed career={career} live={live} picked={picked} onContinue={onContinue} />;
+  // A line that is not a voice on the dial (a lie, an honest answer) sits under it as its own button.
+  const others = spokenChoices(live).filter((c) => !isDialTone(c.choice.tone));
+  if (picked) return <Landed career={career} live={live} picked={picked} onContinue={onContinue} story={story} afterExtra={afterExtra} />;
 
   return (
     <div className="dd dd-cq"><div className="dd-dial" data-dial={live.id}>
+      {story && <div className="dd-story" style={{ position: "relative", margin: "-4px -4px 6px", borderRadius: 10 }} data-story><span className="t">◆ {story.title}</span><span className="b">{story.beat}{story.round !== undefined ? ` · ${typeof story.round === "number" ? `Round ${story.round}` : story.round}` : ""}</span></div>}
       <div className="dd-head">
-        <span className="dd-kick" style={{ color: "rgba(255,255,255,.82)" }}>🎬 {MOMENT_WORD[live.moment] ?? placeName}</span>
+        <span className="dd-kick" style={{ color: story?.when ? "#f5c542" : "rgba(255,255,255,.82)" }}>{story?.when ? story.when : `🎬 ${MOMENT_WORD[live.moment] ?? placeName}`}</span>
         <span className="dd-chip" style={{ fontSize: 10.5, padding: "5px 9px", color: "rgba(255,255,255,.82)" }}>No clock · take your time</span>
       </div>
       <div className="dd-dial-grid">
         <div className="dd-dial-left">
-          <div className="dd-scene" style={{ background: `radial-gradient(120% 90% at 30% 0%, ${light}55, transparent 60%), linear-gradient(180deg, ${dark}, #0b0d1e)` }}>
+          <div className="dd-scene" style={{ background: sceneImage ? `linear-gradient(180deg, rgba(6,10,20,.1), rgba(6,10,20,.85) 92%), url(${sceneImage}) center 18% / cover` : `radial-gradient(120% 90% at 30% 0%, ${light}55, transparent 60%), linear-gradient(180deg, ${dark}, #0b0d1e)` }}>
             <span className="pill dd-kick">{placeName}</span>
             {press && <span className="rec"><i />REC</span>}
             {narration.length > 0 && <div className="narr">{narration.join(" ")}</div>}
@@ -169,6 +179,11 @@ export default function ToneDial({ career, live, onChoose, picked, onContinue }:
             </div>
             <div className="dd-note">A guess, not a promise.{twist ? ` ${twist}` : ""}</div>
           </div>
+          {others.map((c) => (
+            <button key={c.id} type="button" className="dd-line" style={{ "--tone": TONE_LOOK[c.choice.tone ?? "calm"].color, minHeight: 46, fontSize: 14 } as React.CSSProperties} disabled={!!c.locked} onClick={() => onChoose(c.id)} data-choice={c.id}>
+              <span>{c.label}</span><span className="t">{TONE_LOOK[c.choice.tone ?? "calm"].word}</span>
+            </button>
+          ))}
           <div className="dd-btns">
             {silent && <button type="button" className="dd-ghost" onClick={() => onChoose(silent.id)} data-choice={silent.id} data-silent>… No comment <span className="dd-kbd dd-pc-only">Space</span></button>}
             <button type="button" className="dd-main" disabled={!cur || !!cur.locked} onClick={say} data-say>Say it <span className="dd-kbd dd-pc-only" style={{ background: "rgba(5,46,22,.2)" }}>Enter</span></button>
@@ -186,7 +201,7 @@ function defaultListeners(c: CareerState, live: LiveEvent): Listener[] {
 }
 
 /* ── How it landed ── */
-function Landed({ career, live, picked, onContinue }: { career: CareerState; live: LiveEvent; picked: DialPicked; onContinue: () => void }) {
+function Landed({ career, live, picked, onContinue, story, afterExtra }: { career: CareerState; live: LiveEvent; picked: DialPicked; onContinue: () => void; story?: StoryStrip; afterExtra?: ReactNode }) {
   const ch = live.choices.find((c) => c.id === picked.choiceId);
   const tone = ch?.choice.silent ? null : ch?.choice.tone;
   const verdict = squadVerdict(picked.before, live, picked.choiceId);
@@ -211,6 +226,7 @@ function Landed({ career, live, picked, onContinue }: { career: CareerState; liv
   const segs: [DialTone | "silent", number][] = [["humble", voice.humble], ["calm", voice.calm], ["confident", voice.confident], ["fiery", voice.fiery], ["silent", voice.silent]];
   return (
     <div className="dd dd-cq"><div className="dd-out" data-landed={live.id}>
+      {story && <div className="dd-story" style={{ position: "relative", margin: "-4px -4px 6px", borderRadius: 10 }}><span className="t">◆ {story.title}</span><span className="b">{story.beat} · Done</span></div>}
       <RememberToast remembered={picked.result.remembered} />
       <div className="dd-out-grid">
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -257,6 +273,7 @@ function Landed({ career, live, picked, onContinue }: { career: CareerState; liv
               <div className="dd-voice-lab">{segs.filter(([, n]) => n > 0).map(([t, n]) => <span key={t} style={{ color: TONE_LOOK[t].color }}>{t === "silent" ? "Nothing" : TONE_LOOK[t].word} {n}</span>)}</div>
             </div>
           )}
+          {afterExtra}
           <button type="button" className="dd-main" style={{ marginTop: "auto" }} onClick={onContinue} data-continue>Continue <span className="dd-kbd dd-pc-only" style={{ background: "rgba(5,46,22,.2)" }}>Enter</span></button>
         </div>
       </div>

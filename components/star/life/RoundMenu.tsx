@@ -20,7 +20,7 @@
  * Keys on a computer: 1-6 a bubble, then 1-3 a line, Esc goes back.
  */
 import { useEffect, useState } from "react";
-import type { RoundCategory, RoundLine, RoundMenuData, RoundTag } from "@/lib/star/life/roundMenu";
+import type { RoundCategory, RoundLine, RoundMenuData, RoundOffer, RoundTag } from "@/lib/star/life/roundMenu";
 import "./decision.css";
 
 export interface RoundReply { text: string; delta: { bond: number; respect: number; grudge: number }; key: number }
@@ -30,7 +30,13 @@ const TAG: Record<RoundTag, [string, string]> = {
   bond: ["▲ BOND", "#3ddc84"], respect: ["▲ RESPECT", "#4aa8ff"], risky: ["▲▼ RISKY", "#f5b942"], mean: ["▼ BOND", "#ff5a4d"], bye: ["", ""],
 };
 
-export default function RoundMenu({ menu, anchor, size, onPick, onClose, reply, others = [] }: {
+/** Bubbles evenly round him, starting on his left (a story's gold bubble goes first). */
+function anglesFor(n: number): number[] {
+  if (n === 6) return ANGLES;
+  return Array.from({ length: n }, (_, i) => 180 + (i * 360) / n);
+}
+
+export default function RoundMenu({ menu, anchor, size, onPick, onClose, reply, others = [], onOffer, card }: {
   menu: RoundMenuData;
   anchor: { x: number; y: number };
   size: { w: number; h: number };
@@ -39,6 +45,10 @@ export default function RoundMenu({ menu, anchor, size, onPick, onClose, reply, 
   reply?: RoundReply | null;
   /** Picture bubbles over other people (what they chat about on their own). */
   others?: { x: number; y: number; icon: string }[];
+  /** Events v2: a story's bubble was tapped (the talk opens). */
+  onOffer?: (o: RoundOffer) => void;
+  /** Events v2: the scene, under the ring ("Pitch two · after training"). */
+  card?: { kicker: string; text: string; hint?: string };
 }) {
   const [open, setOpen] = useState<RoundCategory | null>(null);
   const wide = size.w >= 900;
@@ -49,6 +59,8 @@ export default function RoundMenu({ menu, anchor, size, onPick, onClose, reply, 
   const listW = Math.min(size.w - 32, 440);
   const listTop = Math.min(cy + R + 52, size.h - 3 * 56 - 70);
 
+  const nOffers = menu.offers?.length ?? 0;
+  const angles = anglesFor(nOffers + menu.categories.length);
   const choose = (c: RoundCategory) => { if (c.id === "bye") { onClose(); return; } setOpen((o) => (o?.id === c.id ? null : c)); };
 
   useEffect(() => {
@@ -79,7 +91,7 @@ export default function RoundMenu({ menu, anchor, size, onPick, onClose, reply, 
 
       {/* His plate: name, mood, bond and respect */}
       <div className="dd-plate dd-glass" style={{ left: cx, top: plateTop }} data-plate>
-        <div className="top"><span style={{ fontSize: 17 }}>{menu.mood.face}</span>{menu.name}<span className="mood">{menu.mood.word}</span></div>
+        <div className="top"><span style={{ fontSize: 17 }}>{menu.mood.face}</span>{menu.name}<span className="mood">{menu.role && menu.role !== "Team-mate" ? menu.role : menu.mood.word}</span></div>
         <div className="bars">
           Bond<div className="bar"><i style={{ width: `${menu.bond}%`, background: "#3ddc84" }} /></div>
           Respect<div className="bar"><i style={{ width: `${menu.respect}%`, background: "#4aa8ff" }} /></div>
@@ -93,8 +105,19 @@ export default function RoundMenu({ menu, anchor, size, onPick, onClose, reply, 
         <circle cx={cx} cy={cy} r={R} fill="none" stroke="rgba(255,255,255,.22)" strokeWidth="1.5" strokeDasharray="3 7" />
         <circle cx={cx} cy={cy} r={R * 0.46} fill="none" stroke="rgba(255,255,255,.85)" strokeWidth="2.5" />
       </svg>
-      {menu.categories.map((c, i) => {
-        const a = (ANGLES[i % 6] * Math.PI) / 180;
+      {(menu.offers ?? []).map((o, i) => {
+        const a = (angles[i] * Math.PI) / 180;
+        return (
+          <button key={o.id} type="button" className="dd-node dd-pop dd-offer" style={{ "--c": o.gold ? "#f5c542" : "#35d0ba", left: cx + Math.cos(a) * R, top: cy + Math.sin(a) * R, animationDelay: `${i * 30}ms` } as React.CSSProperties}
+            data-offer={o.beat} data-gold={o.gold ? 1 : 0} aria-label={o.label} onClick={() => onOffer?.(o)} data-state={open ? "dim" : undefined}>
+            <div><div className="i">{o.icon}</div><div className="n">{o.label}</div></div>
+            {o.chip && <span className="chip">{o.chip}</span>}
+          </button>
+        );
+      })}
+      {menu.categories.map((c, ci) => {
+        const i = ci + nOffers;
+        const a = (angles[i] * Math.PI) / 180;
         const state = open ? (open.id === c.id ? "on" : "dim") : undefined;
         return (
           <button key={c.id} type="button" className="dd-node dd-pop" style={{ "--c": c.color, left: cx + Math.cos(a) * R, top: cy + Math.sin(a) * R, animationDelay: `${i * 30}ms` } as React.CSSProperties}
@@ -117,7 +140,13 @@ export default function RoundMenu({ menu, anchor, size, onPick, onClose, reply, 
           })}
         </div>
       )}
-      <div className="dd-rm-hint">{open || /bubble/i.test(menu.hint) ? menu.hint : `${menu.hint}. Tap a bubble.`}</div>
+      {card && !open ? (
+        <div className="dd-glass dd-rm-card" data-scene-card>
+          <div className="dd-kick" style={{ color: "#f5c542" }}>{card.kicker}</div>
+          <div style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.35, marginTop: 4 }}>{card.text}</div>
+          {card.hint && <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.62)", marginTop: 6, fontWeight: 600 }}>{card.hint}</div>}
+        </div>
+      ) : <div className="dd-rm-hint">{open || /bubble/i.test(menu.hint) ? menu.hint : `${menu.hint}. Tap a bubble.`}</div>}
     </div>
   );
 }

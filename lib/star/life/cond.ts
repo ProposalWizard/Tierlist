@@ -62,7 +62,24 @@ export interface CondCtx {
   minigame?: "won" | "lost";
   /** A 0-1 roll for this outcome (roll<0.3). */
   roll?: number;
+  /** Events v2: the story, the talk so far, the game just played (arcs.ts, talk.ts). */
+  v2?: V2Ctx;
 }
+
+/** What a v2 condition can read: arc.x, arc.clock(id), talk.mood, said:x,
+ *  activity.score / tens / won / abandoned, promise(id), sameClub. */
+export interface V2Ctx {
+  arc?: { v: Record<string, number | string>; k: Record<string, number>; club: string };
+  talk?: { mood: number; said: string[] };
+  activity?: { score: number; tens: number; won: boolean; abandoned: boolean; oppScore?: number };
+  /** Is this promise made and still open (or kept)? */
+  promise?: (id: string) => boolean;
+  /** Your club now. */
+  club?: string;
+}
+
+/** One side of a v2 comparison: a number, a 'word', or a value the story keeps. */
+type V2Val = { n: number } | { s: string } | { ref: string; arg?: string };
 
 type Atom =
   | { t: "num"; key: FactNumber; op: Op; v: number }
@@ -75,7 +92,13 @@ type Atom =
   | { t: "outscored"; slot: string }
   | { t: "lifeFlag"; name: string }
   | { t: "mini"; won: boolean }
-  | { t: "roll"; op: Op; v: number };
+  | { t: "roll"; op: Op; v: number }
+  | { t: "said"; tag: string }
+  | { t: "promise"; id: string }
+  | { t: "sameClub" }
+  | { t: "act"; what: "won" | "lost" | "abandoned" }
+  | { t: "v2cmp"; l: V2Val; op: Op; r: V2Val }
+  | { t: "and"; parts: AtomN[] };
 type AtomN = { neg: boolean; a: Atom };
 type PAtom =
   | { t: "pnum"; key: PersonNumber; op: Op; v: number }
@@ -120,10 +143,61 @@ function parsePerson(raw: string): PAtomN | string {
   return `unknown person condition "${raw}"`;
 }
 
+const V2_REFS = /^(arc\.[a-z]+|arc\.clock\([a-z0-9-]+\)|talk\.mood|activity\.(score|tens|oppScore))$/;
+function v2Val(x: string): V2Val | null {
+  const t = x.trim();
+  if (/^-?\d+(\.\d+)?$/.test(t)) return { n: Number(t) };
+  const q = /^'([a-z0-9-]*)'$/.exec(t);
+  if (q) return { s: q[1] };
+  if (!V2_REFS.test(t)) return null;
+  const c = /^arc\.clock\(([a-z0-9-]+)\)$/.exec(t);
+  return c ? { ref: "arc.clock", arg: c[1] } : { ref: t };
+}
+
+/** Split on a word joiner outside brackets (squad.any(a && b) stays whole). */
+function splitTop(src: string, sep: string): string[] {
+  const out: string[] = [];
+  let depth = 0, cur = "";
+  for (let i = 0; i < src.length; i++) {
+    const ch = src[i];
+    if (ch === "(") depth++;
+    if (ch === ")") depth--;
+    if (depth === 0 && src.startsWith(sep, i)) { out.push(cur); cur = ""; i += sep.length - 1; continue; }
+    cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+
+function parseV2(s: string, neg: boolean): AtomN | string | null {
+  let m = /^said:([a-z0-9-]+)$/.exec(s);
+  if (m) return { neg, a: { t: "said", tag: m[1] } };
+  m = /^promise\(([a-z0-9-]+)\)$/.exec(s);
+  if (m) return { neg, a: { t: "promise", id: m[1] } };
+  if (s === "sameClub" || s === "sameClub(arc.start)") return { neg, a: { t: "sameClub" } };
+  m = /^activity\.(won|lost|abandoned)$/.exec(s);
+  if (m) return { neg, a: { t: "act", what: m[1] as "won" | "lost" | "abandoned" } };
+  if (!/^(arc\.|talk\.|activity\.)/.test(s)) return null;
+  const o = OP_RE.exec(s);
+  if (!o) return `unknown story condition "${s}"`;
+  const l = v2Val(s.slice(0, o.index)), r = v2Val(s.slice(o.index + o[1].length));
+  if (!l || !r) return `unknown story condition "${s}"`;
+  return { neg, a: { t: "v2cmp", l, op: o[1] as Op, r } };
+}
+
 function parseAtom(raw: string): AtomN | string {
+  // "a && b": every part must hold (outside brackets).
+  const ands = splitTop(raw, "&&");
+  if (ands.length > 1) {
+    const parts: AtomN[] = [];
+    for (const p of ands) { const a = parseAtom(p); if (typeof a === "string") return a; parts.push(a); }
+    return { neg: false, a: { t: "and", parts } };
+  }
   let s = raw.trim();
   const neg = s.startsWith("!");
   if (neg) s = s.slice(1).trim();
+  const v2 = parseV2(s, neg);
+  if (v2) return v2;
   if (s === "minigame.won" || s === "minigame.lost") return { neg, a: { t: "mini", won: s === "minigame.won" } };
   if ((FACT_FLAGS as readonly string[]).includes(s)) return { neg, a: { t: "flag", key: s as FactFlag } };
   let m = /^owns:([a-z]+)$/.exec(s);
@@ -161,7 +235,7 @@ export function parseCond(src: string): AtomN[] | string {
   const out: AtomN[] = [];
   let err: string | null = null;
   // "||" splits alternatives, but not inside mem('a'|'b') (one bar only there).
-  for (const alt of src.split("||")) {
+  for (const alt of splitTop(src, "||")) {
     const a = parseAtom(alt);
     if (typeof a === "string") { err = a; break; }
     out.push(a);
@@ -185,7 +259,8 @@ export function slotsIn(src: string): string[] {
   const p = parseCond(src);
   if (typeof p === "string") return [];
   const out: string[] = [];
-  for (const { a } of p) if ("slot" in a) out.push(a.slot);
+  const walk = (list: AtomN[]) => { for (const { a } of list) { if (a.t === "and") walk(a.parts); else if ("slot" in a) out.push(a.slot); } };
+  walk(p);
   return out;
 }
 
@@ -194,10 +269,14 @@ export function tagsIn(src: string): string[] {
   const p = parseCond(src);
   if (typeof p === "string") return [];
   const out: string[] = [];
-  for (const { a } of p) {
-    if (a.t === "mem") out.push(...a.tags);
-    if (a.t === "squadAny") for (const c of a.conds) if (c.a.t === "pmem") out.push(...c.a.tags);
-  }
+  const walk = (list: AtomN[]) => {
+    for (const { a } of list) {
+      if (a.t === "and") walk(a.parts);
+      if (a.t === "mem") out.push(...a.tags);
+      if (a.t === "squadAny") for (const c of a.conds) if (c.a.t === "pmem") out.push(...c.a.tags);
+    }
+  };
+  walk(p);
   return out;
 }
 
@@ -250,8 +329,32 @@ function atomHolds(x: AtomN, ctx: CondCtx): boolean {
       break;
     }
     case "squadAny": v = ctx.squad().some((p) => a.conds.every((c) => personHolds(p, c, ctx.facts.position))); break;
+    case "and": v = a.parts.every((p) => atomHolds(p, ctx)); break;
+    case "said": v = !!ctx.v2?.talk?.said.includes(a.tag); break;
+    case "promise": v = !!ctx.v2?.promise?.(a.id); break;
+    case "sameClub": v = !ctx.v2?.arc || ctx.v2.arc.club === ctx.v2.club; break;
+    case "act": { const x = ctx.v2?.activity; v = !!x && (a.what === "abandoned" ? x.abandoned : a.what === "won" ? x.won && !x.abandoned : !x.won && !x.abandoned); break; }
+    case "v2cmp": {
+      const l = v2Read(a.l, ctx), r = v2Read(a.r, ctx);
+      if (l === undefined || r === undefined) { v = false; break; }
+      if (typeof l === "number" && typeof r === "number") v = cmp(l, a.op, r);
+      else v = a.op === "==" ? String(l) === String(r) : false;
+      break;
+    }
   }
   return x.neg ? !v : v;
+}
+
+/** A story value (undefined when there is no story to read). */
+export function v2Read(x: V2Val, ctx: CondCtx): number | string | undefined {
+  if ("n" in x) return x.n;
+  if ("s" in x) return x.s;
+  const v2 = ctx.v2;
+  if (x.ref === "arc.clock") return v2?.arc ? v2.arc.k[x.arg ?? ""] ?? 0 : undefined;
+  if (x.ref === "talk.mood") return v2?.talk?.mood;
+  if (x.ref.startsWith("activity.")) { const a = v2?.activity; return a ? (a as unknown as Record<string, number>)[x.ref.slice(9)] : undefined; }
+  if (x.ref.startsWith("arc.")) return v2?.arc?.v[x.ref.slice(4)];
+  return undefined;
 }
 
 /** Is the condition true? A condition that does not parse is never true. */

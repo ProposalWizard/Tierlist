@@ -216,3 +216,33 @@
   .dd-line[data-state="picked"], .dd-node[data-state="on"] { transform: none; }
   .dd-scene .rec i { animation: none; }
 }
+
+/* ── Events v2: the story strip, the talk's mood, the cards after a talk ── */
+.dd-story { position: absolute; left: 0; right: 0; top: 0; z-index: 9; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 14px 9px; background: linear-gradient(180deg, rgba(3, 7, 14, .92), rgba(3, 7, 14, .55)); font-size: 9.5px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+.dd-story .t { color: #f5d06f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dd-story .b { color: rgba(255, 255, 255, .78); white-space: nowrap; }
+.dd-when { position: absolute; left: 50%; top: 42px; transform: translateX(-50%); z-index: 9; background: #f5c542; color: #2a1d00; font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; padding: 5px 13px; border-radius: 999px; box-shadow: 0 6px 18px -6px rgba(245, 197, 66, .7); white-space: nowrap; }
+.dd-story-sub { position: absolute; left: 14px; right: 14px; z-index: 9; font-size: 9.5px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; color: rgba(255, 255, 255, .55); display: flex; flex-direction: column; gap: 4px; text-shadow: 0 1px 4px #000; }
+.dd-story-sub .n { color: #5eead4; }
+.dd-card2 { border-radius: 14px; padding: 11px 13px; background: rgba(8, 16, 30, .78); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); text-align: left; }
+.dd-card2.gold { box-shadow: inset 0 0 0 1.5px rgba(245, 197, 66, .85), 0 0 22px -8px rgba(245, 197, 66, .6); }
+.dd-card2.red { box-shadow: inset 0 0 0 1.5px rgba(255, 90, 77, .8); }
+.dd-card2.teal { box-shadow: inset 0 0 0 1.5px rgba(53, 208, 186, .8); }
+.dd-card2 .k { font-size: 9.5px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; display: flex; justify-content: space-between; gap: 8px; }
+.dd-card2 .h { font-size: 15px; font-weight: 900; margin-top: 5px; line-height: 1.25; }
+.dd-card2 .s { font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, .72); margin-top: 3px; line-height: 1.35; }
+.dd-dotrow { display: flex; gap: 5px; margin-top: 8px; }
+.dd-dotrow > div { flex: 1; text-align: center; }
+.dd-dotrow i { display: block; height: 5px; border-radius: 4px; background: rgba(255, 255, 255, .18); }
+.dd-dotrow .done i { background: #f5c542; }
+.dd-dotrow .now i { background: #fff; box-shadow: 0 0 8px #fff; }
+.dd-dotrow small { display: block; font-size: 8.5px; font-weight: 800; color: rgba(255, 255, 255, .55); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dd-paper { background: #f6efdc; color: #2b2116; border-radius: 4px; padding: 16px 18px 12px; transform: rotate(-1.5deg); box-shadow: 0 16px 30px -12px rgba(0, 0, 0, .8); font-family: Georgia, "Times New Roman", serif; }
+.dd-paper .w { font-size: 22px; line-height: 1.25; }
+.dd-paper .sg { text-align: right; font-size: 17px; margin-top: 8px; font-style: italic; }
+.dd-paper .ft { font-family: system-ui, sans-serif; font-size: 8.5px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; color: #8a7a60; margin-top: 8px; }
+.dd-paper.letter .w { font-size: 15px; }
+.dd-offer { width: 84px !important; height: 84px !important; margin: -42px 0 0 -42px !important; box-shadow: 0 0 0 3px var(--c), 0 0 26px -2px var(--c) !important; }
+.dd-offer .n { color: var(--c); }
+.dd-offer .chip { position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%); background: #ef4444; color: #fff; font-size: 8.5px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; padding: 3px 7px; border-radius: 999px; white-space: nowrap; }
+.dd-rm-card { position: absolute; left: 14px; right: 14px; bottom: 18px; padding: 13px 15px; z-index: 6; }

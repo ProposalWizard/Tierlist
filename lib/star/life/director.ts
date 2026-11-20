@@ -108,7 +108,7 @@ function castSlot(c: CareerState, life: LifeState, s: CastSlot, taken: Set<strin
   return id;
 }
 
-function castEvent(c: CareerState, life: LifeState, e: LifeEvent, opts: PickOpts, carried: Record<string, string> | null, now: number): Record<string, string> | null {
+export function castEvent(c: CareerState, life: LifeState, e: LifeEvent, opts: PickOpts, carried: Record<string, string> | null, now: number): Record<string, string> | null {
   const cast: Record<string, string> = {};
   const taken = new Set<string>();
   for (const s of e.cast) {

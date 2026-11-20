@@ -14,7 +14,7 @@ import { actionsLeft } from "../week";
 import { formatMoney, MONEY_SIGN } from "../money";
 import { cloneLife, cantPay, lifeOf, type LiveEvent } from "./director";
 import { ctxFor, factsOf, weekOfMoney, type FactOverride } from "./facts";
-import { holds } from "./cond";
+import { holds, type V2Ctx } from "./cond";
 import { lifeWeek, meet, moveTeamFromPerson, nudge, personInfo, remember } from "./people";
 import { fillLine, tagWords } from "./text";
 import { noteVoice, type Remembered } from "./decision";
@@ -60,6 +60,8 @@ export interface ChooseOpts {
   forceOutcome?: number;
   /** Test page: the minigame result. */
   forceMinigame?: "won" | "lost";
+  /** Events v2: the story values the outcome's lines and conditions read. */
+  v2?: V2Ctx;
 }
 
 export function chooseOption(c0: CareerState, live: LiveEvent, choiceId: string, opts: ChooseOpts): ChoiceResult | null {
@@ -81,7 +83,7 @@ export function chooseOption(c0: CareerState, live: LiveEvent, choiceId: string,
   // The minigame, then the outcome.
   let mini: "won" | "lost" | undefined;
   if (ch.minigame) mini = opts.forceMinigame ?? (opts.rng() < minigameChance(c0, ch.minigame) ? "won" : "lost");
-  const ctx = ctxFor(c0, life, live.cast, factsOf(c0, opts.facts), { minigame: mini, roll: opts.rng() });
+  const ctx = ctxFor(c0, life, live.cast, factsOf(c0, opts.facts), { minigame: mini, roll: opts.rng(), v2: opts.v2 });
   const roll = opts.rng();
   const outcome = typeof opts.forceOutcome === "number" && ch.outcomes[opts.forceOutcome]
     ? ch.outcomes[opts.forceOutcome]

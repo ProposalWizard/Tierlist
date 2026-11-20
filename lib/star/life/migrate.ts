@@ -5,7 +5,7 @@
  * memory logs trimmed to 6, people to 60, so a damaged or older block can
  * never crash the director.
  */
-import type { LifeMemory, LifePerson, LifeState } from "./types";
+import type { ArcRun, LifeMemory, LifePerson, LifeState, ObjectiveRun, PromiseRun } from "./types";
 import { PEOPLE_CAP, PERSON_MEMORY_CAP } from "./types";
 import { freshLife } from "./people";
 
@@ -39,7 +39,7 @@ export function migrateLife(raw: unknown): LifeState {
   const wk = Array.isArray(o.wk) ? o.wk : [];
   const soc = Array.isArray(o.soc) ? o.soc : [];
   return {
-    v: 1,
+    v: 2,
     people,
     squad: mems(o.squad).slice(-PERSON_MEMORY_CAP),
     self: mems(o.self),
@@ -58,6 +58,46 @@ export function migrateLife(raw: unknown): LifeState {
     teamCarry: Math.max(-0.99, Math.min(0.99, num(o.teamCarry, 0))),
     ...(o.roster && typeof o.roster === "object" ? { roster: numMap(o.roster) } : {}),
     ...(Array.isArray(o.voice) && o.voice.length === 6 ? { voice: o.voice.map((x) => Math.max(0, Math.round(num(x, 0)))) as LifeState["voice"] } : {}),
+    ...migrateV2(o),
     log: (Array.isArray(o.log) ? o.log : []).map(obj).filter((r) => typeof r.e === "string").slice(-12).map((r) => ({ w: num(r.w, 0), e: r.e as string, c: String(r.c ?? ""), t: String(r.t ?? "").slice(0, 140) })),
   };
+}
+
+/** Events v2's fields (arcs, promises, objectives, things you got): kept when
+ *  well formed, dropped piece by piece when not. A v1 block gets none of them. */
+function migrateV2(o: Record<string, unknown>): Partial<LifeState> {
+  const out: Partial<LifeState> = {};
+  const str = (v: unknown) => typeof v === "string";
+  const strMap = (v: unknown) => Object.fromEntries(Object.entries(obj(v)).filter(([, x]) => str(x))) as Record<string, string>;
+  const numList = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is number => typeof x === "number").slice(-12) : []);
+  if (o.arcs && typeof o.arcs === "object") {
+    const arcs: Record<string, ArcRun> = {};
+    for (const [id, rv] of Object.entries(obj(o.arcs)).slice(0, 40)) {
+      const r = obj(rv);
+      const v = Object.fromEntries(Object.entries(obj(r.v)).filter(([, x]) => typeof x === "number" || str(x)).slice(0, 12)) as ArcRun["v"];
+      const f: ArcRun["f"] = {};
+      for (const [b, w] of Object.entries(obj(r.f))) f[b] = numList(w);
+      const oo = Array.isArray(r.o) && str(r.o[0]) && str(r.o[1]) && typeof r.o[2] === "number" ? (r.o as [string, string, number]) : undefined;
+      arcs[id] = {
+        at: num(r.at, 0), club: str(r.club) ? (r.club as string) : "", cast: strMap(r.cast), v,
+        k: Object.fromEntries(Object.entries(obj(r.k)).filter(([, x]) => typeof x === "number")) as Record<string, number>,
+        f, s: Object.fromEntries(Object.entries(obj(r.s)).filter(([, x]) => typeof x === "number")) as Record<string, number>,
+        ...(oo ? { o: oo } : {}), ...(str(r.done) ? { done: r.done as string } : {}), ...(str(r.last) ? { last: r.last as string } : {}),
+      };
+    }
+    out.arcs = arcs;
+  }
+  if (Array.isArray(o.promises)) {
+    out.promises = o.promises.map(obj).filter((p) => str(p.id) && str(p.arc)).slice(-26).map((p): PromiseRun => ({
+      id: p.id as string, arc: p.arc as string, to: String(p.to ?? ""), text: String(p.text ?? "").slice(0, 160), made: num(p.made, 0), due: num(p.due, -1),
+      st: p.st === "kept" || p.st === "broken" ? p.st : "open", ...(typeof p.end === "number" ? { end: p.end } : {}), ...(p.r ? { r: 1 as const } : {}),
+    }));
+  }
+  if (Array.isArray(o.objs)) {
+    out.objs = o.objs.map(obj).filter((x) => str(x.id) && str(x.met) && str(x.onMet) && str(x.onMiss)).slice(-2).map((x): ObjectiveRun => ({
+      id: x.id as string, arc: String(x.arc ?? ""), text: String(x.text ?? ""), left: num(x.left, 1), met: x.met as string, onMet: x.onMet as string, onMiss: x.onMiss as string, made: num(x.made, 0),
+    }));
+  }
+  if (Array.isArray(o.got)) out.got = o.got.filter(str).slice(-20) as string[];
+  return out;
 }

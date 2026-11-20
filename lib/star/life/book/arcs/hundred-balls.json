@@ -1,0 +1,3359 @@
+{
+ "id": "arc-hundred-balls",
+ "title": "A hundred balls in the dark",
+ "owner": "kitman",
+ "summary": "The kit man offers to feed you a hundred balls after a bad game. Say yes and you play the drill. He tells the manager, the drill becomes a thing the two of you do, your best score goes on the kit room door, and seasons later he retires and holds you to a promise.",
+ "cast": [
+  {
+   "slot": "kitman",
+   "pick": "kitman"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "legend",
+   "pick": "legend",
+   "optional": true
+  },
+  {
+   "slot": "kid",
+   "pick": "squad",
+   "where": [
+    "age<=19"
+   ],
+   "order": "youngest",
+   "optional": true,
+   "bindAt": "b7-your-turn"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "tell": 0,
+  "drill": "corners",
+  "last": 0,
+  "best": 0,
+  "nights": 0,
+  "bag": 0,
+  "speech": 0,
+  "stake": 0,
+  "gave": 0
+ },
+ "clocks": [
+  {
+   "id": "den-retires",
+   "label": "Den's last seasons",
+   "segments": 3,
+   "tick": [
+    {
+     "on": "season-end",
+     "by": 1
+    }
+   ],
+   "startsAt": "b1-the-offer",
+   "onFull": "b6-the-night"
+  }
+ ],
+ "ends": [
+  {
+   "id": "the-bag-moves-on",
+   "title": "The bag moves on",
+   "text": "You stayed out with him, you went to his night, and the bag ended up on pitch two with another lad."
+  },
+  {
+   "id": "the-empty-chair",
+   "title": "The empty chair",
+   "text": "You told him you'd come and you didn't, and the chair with your name on it is in the photographs."
+  },
+  {
+   "id": "went-in",
+   "title": "You went in",
+   "text": "He offered, and you went in with the others."
+  }
+ ],
+ "promises": {
+  "p-thursday": {
+   "id": "p-thursday",
+   "to": "kitman",
+   "text": "Stay out with {kitman.short} on Thursday",
+   "due": {
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "keptBy": {
+    "beat": "b3-thursdays",
+    "played": true
+   },
+   "kept": {
+    "npc": [
+     {
+      "slot": "kitman",
+      "bond": 6,
+      "respect": 5
+     }
+    ]
+   },
+   "broken": {
+    "text": "Thursday came and you went home. He waited until half six.",
+    "npc": [
+     {
+      "slot": "kitman",
+      "bond": -8,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "kitman",
+      "tag": "said-thursday-and-never-came",
+      "strength": 2
+     }
+    ]
+   },
+   "dueText": "Thursday",
+   "remind": "\"Bag's in the van for Thursday. D\""
+  },
+  "p-dens-night": {
+   "id": "p-dens-night",
+   "to": "kitman",
+   "text": "Be at {kitman.short}'s night when he retires",
+   "due": {
+    "beat": "b6-the-night"
+   },
+   "remind": {
+    "beat": "b5-last-season"
+   },
+   "keptBy": {
+    "beat": "b6-the-night",
+    "ends": [
+     "took-the-bag",
+     "took-the-bag-thursdays",
+     "bag-stays"
+    ]
+   },
+   "kept": {
+    "text": "You said you'd come, and you came."
+   },
+   "broken": {
+    "text": "The chair with your name on it stayed empty."
+   },
+   "dueText": "His last Friday, at the ground"
+  },
+  "p-grandson": {
+   "id": "p-grandson",
+   "to": "kitman",
+   "text": "Feed {kitman.short}'s grandson some balls one Thursday",
+   "due": {
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "keptBy": {
+    "beat": "b3-thursdays",
+    "played": true
+   },
+   "kept": {
+    "text": "The lad hits four out of ten and tells everyone at school it was nine.",
+    "effects": {
+     "fans": 2
+    },
+    "npc": [
+     {
+      "slot": "kitman",
+      "bond": 10
+     }
+    ],
+    "remember": [
+     {
+      "slot": "kitman",
+      "tag": "fed-his-grandson",
+      "strength": 3
+     }
+    ]
+   },
+   "broken": {
+    "text": "The lad came three Thursdays running in his boots. You weren't there for any of them.",
+    "npc": [
+     {
+      "slot": "kitman",
+      "bond": -10,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "kitman",
+      "tag": "his-grandson-waited",
+      "strength": 3
+     }
+    ]
+   },
+   "dueText": "One Thursday in the next few weeks",
+   "remind": "\"He's been practising in the garden. D\""
+  },
+  "p-dens-speech": {
+   "id": "p-dens-speech",
+   "to": "kitman",
+   "text": "Say a few words at {kitman.short}'s night",
+   "due": {
+    "beat": "b6-the-night"
+   },
+   "keptBy": {
+    "beat": "b6-the-night",
+    "ends": [
+     "took-the-bag",
+     "took-the-bag-thursdays",
+     "bag-stays"
+    ]
+   },
+   "dueText": "At his night",
+   "kept": {
+    "text": "You stood up and said a few words."
+   },
+   "broken": {
+    "text": "Somebody else had to do the speech."
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "b1-the-offer",
+   "title": "A hundred balls in the dark",
+   "event": {
+    "id": "arc-hb-1-offer",
+    "title": "A hundred balls in the dark",
+    "category": "training",
+    "place": "compound:pitch-2",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kitman",
+    "entry": {
+     "kind": "offer",
+     "on": "kitman",
+     "bubble": "Stay out",
+     "icon": "ball",
+     "hint": "He has a bag of balls and nowhere to be",
+     "lastsDays": 1,
+     "ifIgnored": "ignored"
+    },
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "age<=21",
+      "lastRating<6.6",
+      "!injured"
+     ],
+     "cooldownWeeks": 30,
+     "group": "extra-work",
+     "once": true
+    },
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     }
+    ],
+    "setup": [
+     "Training finished forty minutes ago. {kitman.name} is still on pitch two with a bag of balls, and the only light is the one over the mower shed."
+    ],
+    "talk": {
+     "start": "n1",
+     "nodes": {
+      "n1": {
+       "who": "kitman",
+       "say": [
+        "\"You were snatching at them Saturday. I've a bag of balls here and the groundsman's left the shed light on, so do you want me to feed you a hundred?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Go on then, feed me a hundred.\"",
+         "tone": "confident",
+         "goto": "n2"
+        },
+        {
+         "id": "ask",
+         "label": "\"Was I that bad?\"",
+         "tone": "honest",
+         "goto": "n1-bad",
+         "note": "You asked · he's being straight"
+        },
+        {
+         "id": "no",
+         "label": "\"Not tonight, {kitman.short}, I'm done in.\"",
+         "tone": "calm",
+         "goto": "n-leave"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "n1-quiet"
+        }
+       ]
+      },
+      "n1-bad": {
+       "who": "kitman",
+       "say": [
+        "\"You put three over the bar and you looked at the keeper before every one of them.\"",
+        "\"I've washed the kit here for thirty-one years and I've seen a lot of lads go through that. Most of them got out of it on a night like this.\""
+       ],
+       "replies": [
+        {
+         "id": "fix",
+         "label": "\"So what do I do about it?\"",
+         "tone": "humble",
+         "mood": 1,
+         "goto": "n2"
+        },
+        {
+         "id": "kitman",
+         "label": "\"You wash the kit, {kitman.short}.\"",
+         "tone": "cold",
+         "mood": -2,
+         "set": [
+          "snapped"
+         ],
+         "goto": "n-cold"
+        },
+        {
+         "id": "no",
+         "label": "\"I hear you, but not tonight.\"",
+         "tone": "calm",
+         "goto": "n-leave"
+        }
+       ]
+      },
+      "n1-quiet": {
+       "who": "kitman",
+       "say": [
+        "He waits a bit, then tips the bag out. \"You don't have to say owt. Stand on the D and I'll roll them in.\""
+       ],
+       "replies": [
+        {
+         "id": "stand",
+         "label": "Walk to the D.",
+         "tone": "calm",
+         "goto": "n2"
+        },
+        {
+         "id": "shake",
+         "label": "Shake your head and go in.",
+         "tone": "cold",
+         "goto": "n-leave"
+        }
+       ]
+      },
+      "n-cold": {
+       "who": "kitman",
+       "say": [
+        "\"I do. And your boots will be clean on your peg by eight tomorrow, same as they always are.\" He starts putting the balls back in the bag."
+       ],
+       "replies": [
+        {
+         "id": "sorry",
+         "label": "\"That came out wrong and I'm sorry. Can I still have the hundred?\"",
+         "tone": "honest",
+         "mood": 1,
+         "goto": "n2"
+        },
+        {
+         "id": "go",
+         "label": "Leave him to it.",
+         "tone": "cold",
+         "end": "snubbed"
+        }
+       ]
+      },
+      "n-leave": {
+       "who": "kitman",
+       "say": [
+        "\"Fair enough, you've trained all day. I'm out here most Thursdays if you change your mind.\""
+       ],
+       "replies": [
+        {
+         "id": "thursday",
+         "label": "\"I'll come out Thursday, and I mean that.\"",
+         "tone": "honest",
+         "end": "thursday"
+        },
+        {
+         "id": "see",
+         "label": "\"See you tomorrow.\"",
+         "tone": "calm",
+         "end": "left"
+        }
+       ]
+      },
+      "n2": {
+       "who": "kitman",
+       "say": [
+        "{if said:snapped}\"Right.\" He doesn't look up. {/if}\"Ten lots of ten, and I count them out loud so neither of us can cheat.\"",
+        "\"Do you want them from where you missed on Saturday, or from further out where it's harder?\""
+       ],
+       "replies": [
+        {
+         "id": "spot",
+         "label": "\"From where I missed, low in the corners.\"",
+         "tone": "calm",
+         "var": {
+          "drill": "corners"
+         },
+         "goto": "n3"
+        },
+        {
+         "id": "far",
+         "label": "\"Further out, from twenty yards.\"",
+         "tone": "brave",
+         "var": {
+          "drill": "twenty"
+         },
+         "goto": "n3"
+        },
+        {
+         "id": "you",
+         "label": "\"You've watched more of this than me. You pick.\"",
+         "tone": "humble",
+         "mood": 1,
+         "var": {
+          "drill": "corners"
+         },
+         "goto": "n2-pick"
+        }
+       ]
+      },
+      "n2-pick": {
+       "who": "kitman",
+       "say": [
+        "\"Corners, then. Twenty yards is for when you can do the corners.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Corners.\"",
+         "tone": "calm",
+         "goto": "n3"
+        }
+       ]
+      },
+      "n3": {
+       "who": "kitman",
+       "say": [
+        "\"One more thing before we start. The gaffer's going to see that light from his office window. If he asks me in the morning, what am I telling him?\""
+       ],
+       "replies": [
+        {
+         "id": "truth",
+         "label": "\"Tell him it was me.\"",
+         "tone": "honest",
+         "var": {
+          "tell": 1
+         },
+         "goto": "play"
+        },
+        {
+         "id": "secret",
+         "label": "\"Nothing. This stays on pitch two.\"",
+         "tone": "calm",
+         "var": {
+          "tell": 0
+         },
+         "goto": "play"
+        },
+        {
+         "id": "joke",
+         "label": "\"Tell him you made me do it.\"",
+         "tone": "confident",
+         "mood": 1,
+         "var": {
+          "tell": 1
+         },
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "strike-drill",
+        "name": "Den's hundred",
+        "intro": "Ten balls. Each one stands for ten. He rolls them in from your left and counts.",
+        "dials": {
+         "kind": "technique",
+         "balls": 10,
+         "feed": "from-left",
+         "keeper": false,
+         "from": {
+          "if": "arc.drill=='twenty'",
+          "then": "20m",
+          "else": "12m"
+         },
+         "targets": [
+          "bottom-left",
+          "bottom-right"
+         ],
+         "light": "dusk-one-lamp"
+        },
+        "score": "balls that finish inside a marked corner (0-10); shown as tens",
+        "caller": {
+         "slot": "kitman",
+         "lines": [
+          "\"Ten.\"",
+          "\"Twenty.\"",
+          "\"That's thirty.\"",
+          "\"Forty, and keep your head down.\"",
+          "\"Fifty, so that's halfway.\"",
+          "\"Sixty.\"",
+          "\"Seventy, and stop looking at the goal.\"",
+          "\"Eighty.\"",
+          "\"Ninety.\"",
+          "\"And a hundred.\""
+         ]
+        },
+        "cost": {
+         "energy": -6
+        },
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "technique",
+         "target": 55
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "r-abandon"
+        ],
+        [
+         "activity.score>=8",
+         "r-clean"
+        ],
+        [
+         "activity.score>=5",
+         "r-better"
+        ],
+        [
+         "",
+         "r-rough"
+        ]
+       ]
+      },
+      "r-clean": {
+       "who": "kitman",
+       "say": [
+        "\"{activity.tens} out of a hundred. I'll be honest with you, I had you down for fifty.\""
+       ],
+       "replies": [
+        {
+         "id": "more",
+         "label": "\"Same again Thursday?\"",
+         "tone": "confident",
+         "set": [
+          "asked-again"
+         ],
+         "goto": "soup"
+        },
+        {
+         "id": "thanks",
+         "label": "\"I needed that, {kitman.short}, thanks.\"",
+         "tone": "humble",
+         "mood": 1,
+         "goto": "soup"
+        }
+       ]
+      },
+      "r-better": {
+       "who": "kitman",
+       "say": [
+        "\"{activity.tens}. That's {activity.tens} more than you hit on Saturday, and the last two lots were the best you struck all night.\""
+       ],
+       "replies": [
+        {
+         "id": "more",
+         "label": "\"I want another go at it. Thursday?\"",
+         "tone": "confident",
+         "set": [
+          "asked-again"
+         ],
+         "goto": "soup"
+        },
+        {
+         "id": "thanks",
+         "label": "\"Thanks for staying out.\"",
+         "tone": "humble",
+         "mood": 1,
+         "goto": "soup"
+        }
+       ]
+      },
+      "r-rough": {
+       "who": "kitman",
+       "say": [
+        "\"{activity.tens}. It's dark, mind, and my feeding's not what it was. You were still looking up before you hit it.\""
+       ],
+       "replies": [
+        {
+         "id": "again",
+         "label": "\"Then I'm back Thursday until I stop doing it.\"",
+         "tone": "brave",
+         "set": [
+          "asked-again"
+         ],
+         "goto": "soup"
+        },
+        {
+         "id": "blame",
+         "label": "\"I can't see the ball out here.\"",
+         "tone": "fiery",
+         "mood": -1,
+         "goto": "soup"
+        }
+       ]
+      },
+      "r-abandon": {
+       "who": "kitman",
+       "say": [
+        "\"That's {activity.tens}, and we said a hundred.\" He looks at the balls still in the bag, then at you."
+       ],
+       "replies": [
+        {
+         "id": "sorry",
+         "label": "\"I'm sorry, but my legs have gone.\"",
+         "tone": "honest",
+         "end": "walked-off-honest"
+        },
+        {
+         "id": "enough",
+         "label": "\"That'll do me.\"",
+         "tone": "cold",
+         "end": "walked-off"
+        }
+       ]
+      },
+      "soup": {
+       "who": "kitman",
+       "say": [
+        "\"I've a flask of soup in the van if you want a cup before you go. It's only tomato.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Go on, and I'll carry the bag.\"",
+         "tone": "kind",
+         "mood": 1,
+         "goto": "van"
+        },
+        {
+         "id": "no",
+         "label": "\"Thanks, but I'd better get off.\"",
+         "tone": "calm",
+         "end": "stayed"
+        }
+       ]
+      },
+      "van": {
+       "who": "kitman",
+       "say": [
+        "You sit on the back step of the van. {if legend}\"I did this with {legend.name} when he was nineteen, and he'd not thank me for telling you he was worse at it than you.\"{/if}",
+        "\"I've two more seasons in me. The wife says one. When I do go they'll give me a night, a dinner or a match or something, and I'd like you there. Lads always say yes and then they've signed for somebody in Spain.\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"I'll be there, wherever I'm playing by then.\"",
+         "tone": "honest",
+         "end": "stayed-promised"
+        },
+        {
+         "id": "maybe",
+         "label": "\"If I can get there, I will.\"",
+         "tone": "calm",
+         "end": "stayed-maybe"
+        },
+        {
+         "id": "joke",
+         "label": "\"You'll still be here when I've retired.\"",
+         "tone": "confident",
+         "end": "stayed-joked"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ignored": [
+       {
+        "text": "You go in with the others. From the car park you can see him kicking the balls back into the bag one at a time.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "walked-past-the-bag",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "left"
+         },
+         "next": "b3-thursdays"
+        }
+       }
+      ],
+      "snubbed": [
+       {
+        "text": "He zips the bag and carries it in on his own. In the morning your boots are clean on your peg, and he doesn't say good morning.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": -10,
+          "respect": -8,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "told-him-he-washes-the-kit",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "snubbed"
+         },
+         "next": "b3-thursdays"
+        }
+       }
+      ],
+      "left": [
+       {
+        "text": "\"See you tomorrow.\" He turns the shed light off himself.",
+        "effects": {
+         "energy": 3
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": -1
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "went-home-tired",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "left"
+         },
+         "next": "b3-thursdays"
+        }
+       }
+      ],
+      "thursday": [
+       {
+        "text": "\"Thursday.\" He writes it on the back of his hand in biro, which is where he writes everything.",
+        "effects": {
+         "energy": 3
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 2
+         }
+        ],
+        "promise": "p-thursday",
+        "arc": {
+         "set": {
+          "path": "left"
+         },
+         "next": "b3-thursdays"
+        }
+       }
+      ],
+      "walked-off-honest": [
+       {
+        "text": "\"Then go and put them in the ice. We'll finish it another night.\" He means it.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 2,
+          "respect": -1
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "stopped-short-of-the-hundred",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stayed",
+          "last": "activity.tens"
+         },
+         "add": {
+          "nights": 1
+         },
+         "next": "b2-the-gaffer"
+        }
+       }
+      ],
+      "walked-off": [
+       {
+        "text": "He collects the rest himself. It takes him a while, because some of them went a long way wide.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": -4,
+          "respect": -5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "stopped-short-of-the-hundred",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stayed",
+          "last": "activity.tens"
+         },
+         "add": {
+          "nights": 1
+         },
+         "next": "b2-the-gaffer"
+        }
+       }
+      ],
+      "stayed": [
+       {
+        "text": "It's gone seven when you get to your car. Your right foot aches in a way you quite like.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "stayed-out-with-him",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stayed",
+          "last": "activity.tens",
+          "best": "max(best,activity.tens)"
+         },
+         "add": {
+          "nights": 1
+         },
+         "next": "b2-the-gaffer"
+        }
+       }
+      ],
+      "stayed-promised": [
+       {
+        "text": "\"I'll hold you to that.\" He pours the soup into the flask lid and gives you the lid.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 14,
+          "respect": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "stayed-out-with-him",
+          "strength": 3
+         }
+        ],
+        "promise": "p-dens-night",
+        "arc": {
+         "set": {
+          "path": "stayed",
+          "last": "activity.tens",
+          "best": "max(best,activity.tens)"
+         },
+         "add": {
+          "nights": 1
+         },
+         "next": "b2-the-gaffer"
+        }
+       }
+      ],
+      "stayed-maybe": [
+       {
+        "text": "\"That's all anybody can say.\" The soup is too hot and you both drink it anyway.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 11,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "stayed-out-with-him",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stayed",
+          "last": "activity.tens",
+          "best": "max(best,activity.tens)"
+         },
+         "add": {
+          "nights": 1
+         },
+         "next": "b2-the-gaffer"
+        }
+       }
+      ],
+      "stayed-joked": [
+       {
+        "text": "He laughs, and then he tells you about the 1998 cup run, twice.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 12,
+          "respect": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "stayed-out-with-him",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stayed",
+          "last": "activity.tens",
+          "best": "max(best,activity.tens)"
+         },
+         "add": {
+          "nights": 1
+         },
+         "next": "b2-the-gaffer"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [
+     {
+      "ifMemory": "kitman:stayed-out-with-him",
+      "where": "social:chat",
+      "line": "\"Pitch two's free Thursday, if your legs are up to it.\""
+     },
+     {
+      "ifMemory": "kitman:told-him-he-washes-the-kit",
+      "where": "event:any",
+      "line": "Your boots are on your peg, clean. He has left the laces out."
+     }
+    ]
+   },
+   "hint": "{kitman.short} is on pitch two after training with a bag of balls.",
+   "n": 1
+  },
+  {
+   "id": "b2-the-gaffer",
+   "title": "He tells the gaffer",
+   "after": {
+    "beat": "b1-the-offer",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "requires": [
+    "arc.path=='stayed'"
+   ],
+   "event": {
+    "id": "arc-hb-2-gaffer",
+    "title": "The light over the mower shed",
+    "category": "manager",
+    "place": "compound:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "followUp",
+      "arrive:training"
+     ]
+    },
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     }
+    ],
+    "setup": [
+     "{if arc.tell==1}{manager.name} stops you outside the boot room. {kitman.short} is in there with the door open, pairing socks.{/if}",
+     "{if arc.tell==0}{manager.name} stops you outside the boot room. \"Somebody had the shed light on till seven last night. {kitman.short} says he can't think who.\"{/if}"
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "manager",
+       "say": [
+        "{if arc.tell==1 && arc.last>=50}\"{kitman.short} tells me you were out on pitch two till gone seven, and that you hit {arc.last} out of a hundred.\"{/if}",
+        "{if arc.tell==1 && arc.last<50}\"{kitman.short} tells me you were out on pitch two last night. He also tells me you stopped at {arc.last}.\"{/if}",
+        "{if arc.tell==0}\"Was it you?\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"I needed it after Saturday, gaffer.\"",
+         "tone": "humble",
+         "goto": "g2"
+        },
+        {
+         "id": "calm",
+         "label": "\"It was me. I'm working on my finishing.\"",
+         "tone": "calm",
+         "goto": "g2"
+        },
+        {
+         "id": "confident",
+         "label": "\"Yes. So start me Saturday and you'll see it.\"",
+         "tone": "confident",
+         "mood": -1,
+         "goto": "g2"
+        },
+        {
+         "id": "deny",
+         "label": "\"Not me, gaffer.\"",
+         "tone": "lie",
+         "requires": [
+          "arc.tell==0"
+         ],
+         "goto": "g-deny"
+        },
+        {
+         "id": "quiet",
+         "label": "No comment.",
+         "silent": true,
+         "goto": "g-deny"
+        }
+       ]
+      },
+      "g-deny": {
+       "who": "manager",
+       "say": [
+        "\"Hm.\" He looks at your boots, which have fresh grass on them, and then walks on."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Go and get changed.",
+         "tone": "calm",
+         "end": "denied"
+        }
+       ]
+      },
+      "g2": {
+       "who": "manager",
+       "say": [
+        "\"What did he have you doing?\""
+       ],
+       "replies": [
+        {
+         "id": "corners",
+         "label": "\"Low in the corners. I keep looking at the keeper.\"",
+         "tone": "humble",
+         "mood": 1,
+         "goto": "g3"
+        },
+        {
+         "id": "vague",
+         "label": "\"Bit of shooting.\"",
+         "tone": "calm",
+         "goto": "g3"
+        }
+       ]
+      },
+      "g3": {
+       "who": "manager",
+       "say": [
+        "{if talk.mood>=1}\"He's right about the keeper. I've had the video lads clip it for you and it's on the laptop in my office when you want it.\"{/if}",
+        "\"On Saturday, when you get your chance, I want it low and I don't want to see you look up. Can you do that for me?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Low, and I won't look up.\"",
+         "tone": "calm",
+         "end": "objective"
+        },
+        {
+         "id": "bet",
+         "label": "\"If I score like that, I'm on the penalties.\"",
+         "tone": "confident",
+         "end": "objective-bet"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "denied": [
+       {
+        "text": "In the boot room {kitman.short} says nothing, and pairs the same two socks again.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -2
+         },
+         {
+          "slot": "kitman",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "kept-your-secret",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "next": "b3-thursdays"
+        }
+       }
+      ],
+      "objective": [
+       {
+        "if": "arc.last>=50",
+        "text": "\"Good lad.\" Behind him {kitman.short} gives you a thumbs up with a sock on it.",
+        "effects": {
+         "boss": 3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "objective": {
+         "id": "o-low-corner",
+         "text": "Score at the next match",
+         "window": {
+          "matches": 2
+         },
+         "met": "lastGoals>=1",
+         "onMet": "b2b-ten-fingers",
+         "onMiss": "b3-thursdays"
+        }
+       },
+       {
+        "text": "\"And next time, finish the hundred.\" He says it loud enough for the boot room to hear.",
+        "effects": {
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -1
+         }
+        ],
+        "objective": {
+         "id": "o-low-corner",
+         "text": "Score at the next match",
+         "window": {
+          "matches": 2
+         },
+         "met": "lastGoals>=1",
+         "onMet": "b2b-ten-fingers",
+         "onMiss": "b3-thursdays"
+        }
+       }
+      ],
+      "objective-bet": [
+       {
+        "text": "He nearly smiles. \"Score like that and we'll talk about the penalties.\"",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "asked-for-the-penalties",
+          "strength": 2
+         }
+        ],
+        "objective": {
+         "id": "o-low-corner",
+         "text": "Score at the next match",
+         "window": {
+          "matches": 2
+         },
+         "met": "lastGoals>=1",
+         "onMet": "b2b-ten-fingers",
+         "onMiss": "b3-thursdays"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [
+     {
+      "ifMemory": "manager:asked-for-the-penalties",
+      "where": "event:mgr-*",
+      "line": "\"You still want those penalties?\""
+     }
+    ]
+   },
+   "hint": "The gaffer saw the shed light from his office, and he'll want a word.",
+   "n": 2
+  },
+  {
+   "id": "b2b-ten-fingers",
+   "title": "Ten fingers",
+   "after": {
+    "objective": "o-low-corner"
+   },
+   "event": {
+    "id": "arc-hb-2b-ten-fingers",
+    "title": "A note in your left boot",
+    "category": "staff",
+    "place": "stadium:dressing-room",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kitman",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastGoals>=1"
+     ]
+    },
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ],
+    "setup": [
+     "When the ball went in you looked at the tunnel, and {kitman.short} had both hands up with all ten fingers out.",
+     "After the game there's a note folded in your left boot. \"Corners. Thursday?\" He's signed it, in case you thought it was from somebody else."
+    ],
+    "choices": [
+     {
+      "id": "keep",
+      "label": "Put the note in your washbag.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "It's still in there at the end of the season, gone soft at the folds.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "kept-his-note",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "next": "b3-thursdays"
+        }
+       }
+      ]
+     },
+     {
+      "id": "pens",
+      "label": "Find the gaffer. \"About those penalties.\"",
+      "tone": "confident",
+      "requires": [
+       "mem(manager,'asked-for-the-penalties')"
+      ],
+      "outcomes": [
+       {
+        "text": "\"Next one's yours. Miss it and it goes back.\"",
+        "effects": {
+         "boss": 1,
+         "flag": "on-penalties"
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 3
+         }
+        ],
+        "arc": {
+         "next": "b3-thursdays"
+        }
+       }
+      ]
+     },
+     {
+      "id": "bin",
+      "label": "Leave it in the boot.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "He finds it when he cleans them, and that's the last note you get from him.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": -3
+         }
+        ],
+        "arc": {
+         "next": "b3-thursdays"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [
+     {
+      "ifMemory": "kitman:kept-his-note",
+      "where": "event:arc-hb-6-night",
+      "line": "\"He's still got a note I left in his boot. I've seen it in his washbag.\""
+     }
+    ]
+   },
+   "hint": "Score in the next two matches. {kitman.short} watches from the tunnel.",
+   "look": {
+    "chip": "Saturday · you scored",
+    "art": "🙌",
+    "big": "10",
+    "bigSub": "fingers",
+    "note": {
+     "line": 1,
+     "sign": "{kitman.short}",
+     "foot": "Found in your left boot"
+    }
+   },
+   "n": 3
+  },
+  {
+   "id": "b3-thursdays",
+   "title": "Thursdays on pitch two",
+   "after": {
+    "beat": "b1-the-offer",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "repeat": {
+    "everyWeeks": 2,
+    "max": 12
+   },
+   "event": {
+    "id": "arc-hb-3-thursdays",
+    "title": "Thursdays on pitch two",
+    "category": "training",
+    "place": "compound:pitch-2",
+    "size": "small",
+    "rarity": "social-action",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kitman",
+    "entry": {
+     "kind": "standing",
+     "on": "kitman",
+     "bubble": "The hundred",
+     "icon": "ball",
+     "hint": "Thursdays, after training",
+     "ifIgnored": null
+    },
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "!injured",
+      "kitman.grudge<20 || arc.path=='snubbed'"
+     ]
+    },
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     }
+    ],
+    "setup": [
+     "Thursday, and the bag is already out on pitch two."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "kitman",
+       "say": [
+        "{if arc.path=='snubbed'}He sees you coming and keeps counting the balls into the bag. \"Did you want something?\"{/if}",
+        "{if arc.path=='left'}\"You came, then. I'd half put the bag away.\"{/if}",
+        "{if arc.path=='stayed' && arc.nights<3}\"Your best is {arc.best}. From the same place, or are we moving you back?\"{/if}",
+        "{if arc.path=='stayed' && arc.nights>=3}\"{arc.best} to beat. I've started bringing two flasks, by the way, because you drink all the soup.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "same",
+         "label": "\"Same place, because I want {arc.best} beaten.\"",
+         "tone": "confident",
+         "requires": [
+          "arc.path=='stayed'"
+         ],
+         "var": {
+          "drill": "corners"
+         },
+         "goto": "play"
+        },
+        {
+         "id": "back",
+         "label": "\"Move me back to twenty yards.\"",
+         "tone": "brave",
+         "requires": [
+          "arc.path=='stayed'"
+         ],
+         "var": {
+          "drill": "twenty"
+         },
+         "goto": "play"
+        },
+        {
+         "id": "first",
+         "label": "\"Is the offer still there? The hundred?\"",
+         "tone": "humble",
+         "requires": [
+          "arc.path=='left'"
+         ],
+         "goto": "play"
+        },
+        {
+         "id": "apology",
+         "label": "\"I was out of order the other night.\"",
+         "tone": "honest",
+         "requires": [
+          "arc.path=='snubbed'"
+         ],
+         "goto": "t-sorry"
+        },
+        {
+         "id": "talk",
+         "label": "\"Can we just have the soup tonight?\"",
+         "tone": "kind",
+         "requires": [
+          "arc.nights>=2"
+         ],
+         "goto": "t-soup"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "t-quiet"
+        }
+       ]
+      },
+      "t-quiet": {
+       "who": "kitman",
+       "say": [
+        "He rolls one out to you anyway."
+       ],
+       "replies": [
+        {
+         "id": "hit",
+         "label": "Hit it.",
+         "tone": "calm",
+         "goto": "play"
+        },
+        {
+         "id": "go",
+         "label": "Roll it back and go in.",
+         "tone": "cold",
+         "end": "not-tonight"
+        }
+       ]
+      },
+      "t-sorry": {
+       "who": "kitman",
+       "say": [
+        "\"You were. I've had worse off better players, mind.\" He tips the bag out again. \"Go and stand on the D.\""
+       ],
+       "replies": [
+        {
+         "id": "d",
+         "label": "Stand on the D.",
+         "tone": "calm",
+         "var": {
+          "path": "stayed"
+         },
+         "goto": "play"
+        }
+       ]
+      },
+      "t-soup": {
+       "who": "kitman",
+       "say": [
+        "\"Aye, go on.\" You sit on the van step.",
+        "\"My grandson's started at the under-nines. He's a left back and he hates it, he wants to be you. I told him you'd been doing corners for a month and he said that sounded boring.\""
+       ],
+       "replies": [
+        {
+         "id": "bring",
+         "label": "\"Bring him one Thursday and I'll feed him some.\"",
+         "tone": "kind",
+         "end": "soup-grandson"
+        },
+        {
+         "id": "laugh",
+         "label": "\"He's right, it is boring.\"",
+         "tone": "confident",
+         "end": "soup"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "strike-drill",
+        "name": "Den's hundred",
+        "dials": {
+         "kind": "technique",
+         "balls": 10,
+         "feed": "from-left",
+         "keeper": false,
+         "from": {
+          "if": "arc.drill=='twenty'",
+          "then": "20m",
+          "else": "12m"
+         },
+         "targets": [
+          "bottom-left",
+          "bottom-right"
+         ],
+         "light": "dusk-one-lamp"
+        },
+        "score": "corners hit (0-10), shown as tens",
+        "showBest": "arc.best",
+        "caller": {
+         "slot": "kitman",
+         "useLinesOf": "arc-hb-1-offer"
+        },
+        "cost": {
+         "energy": -5
+        },
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "technique",
+         "target": 55
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "t-stop"
+        ],
+        [
+         "activity.tens>arc.best",
+         "t-best"
+        ],
+        [
+         "",
+         "t-done"
+        ]
+       ]
+      },
+      "t-best": {
+       "who": "kitman",
+       "say": [
+        "\"{activity.tens}. That's the most you've hit out here.\" He writes it on the back of his hand."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Don't wash that hand.\"",
+         "tone": "confident",
+         "end": "new-best"
+        },
+        {
+         "id": "bag",
+         "label": "Help him pick the balls up.",
+         "tone": "kind",
+         "end": "new-best-helped"
+        }
+       ]
+      },
+      "t-done": {
+       "who": "kitman",
+       "say": [
+        "\"{activity.tens} tonight. {arc.best} is still the one to beat.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Can I come back next Thursday?\"",
+         "tone": "calm",
+         "end": "night"
+        }
+       ]
+      },
+      "t-stop": {
+       "who": "kitman",
+       "say": [
+        "\"Stopping there? Suit yourself, there's a game Saturday.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Saving my legs.\"",
+         "tone": "calm",
+         "end": "stopped"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "not-tonight": [
+       {
+        "text": "He catches it under his foot and watches you go.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": -2
+         }
+        ]
+       }
+      ],
+      "soup": [
+       {
+        "text": "You sit there until the shed light goes off on its timer.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "add": {
+          "nights": 1
+         }
+        }
+       }
+      ],
+      "soup-grandson": [
+       {
+        "text": "\"He'll be sick with nerves. I'll bring him.\"",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 9,
+          "respect": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "offered-to-feed-his-grandson",
+          "strength": 2
+         }
+        ],
+        "promise": "p-grandson",
+        "arc": {
+         "add": {
+          "nights": 1
+         }
+        }
+       }
+      ],
+      "new-best": [
+       {
+        "text": "In the morning your number is chalked on the inside of the kit room door, with {activity.tens} next to it.",
+        "effects": {
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 5,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": "activity.tens",
+          "last": "activity.tens"
+         },
+         "add": {
+          "nights": 1
+         },
+         "check": "b4-the-door"
+        },
+        "train": {
+         "technique": 1
+        }
+       }
+      ],
+      "new-best-helped": [
+       {
+        "text": "Some of them have gone as far as pitch three. In the morning your number is chalked inside the kit room door, with {activity.tens} next to it.",
+        "effects": {
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": "activity.tens",
+          "last": "activity.tens"
+         },
+         "add": {
+          "nights": 1
+         },
+         "check": "b4-the-door"
+        },
+        "train": {
+         "technique": 1
+        }
+       }
+      ],
+      "night": [
+       {
+        "text": "You have a cup of soup on the van step and then you drive home.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "last": "activity.tens"
+         },
+         "add": {
+          "nights": 1
+         }
+        },
+        "train": {
+         "technique": 1
+        }
+       }
+      ],
+      "stopped": [
+       {
+        "text": "He doesn't mind. He counts what's left back into the bag.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "add": {
+          "nights": 1
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [
+     {
+      "ifMemory": "kitman:his-grandson-waited",
+      "where": "event:any",
+      "line": "\"The little one's stopped asking about you, if you were wondering.\""
+     }
+    ]
+   },
+   "hint": "Thursdays after training, on pitch two. {kitman.short} brings the bag."
+  },
+  {
+   "id": "b4-the-door",
+   "title": "The kit room door",
+   "requires": [
+    "arc.best>=90",
+    "arc.nights>=3"
+   ],
+   "event": {
+    "id": "arc-hb-4-door",
+    "title": "The kit room door",
+    "category": "staff",
+    "place": "compound:kit-room",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kitman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "once": true
+    },
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     },
+     {
+      "slot": "legend",
+      "pick": "legend",
+      "optional": true
+     }
+    ],
+    "setup": [
+     "{kitman.short} opens the kit room door all the way so you can see the back of it. There are forty years of chalk on it, numbers and scores in different handwriting.",
+     "Near the top it says 94, with the number nine beside it and the year 2009."
+    ],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "kitman",
+       "say": [
+        "\"That's {if legend}{legend.name}'s{/if}{if !legend}the old number nine's{/if}. Nobody's got near it since. You're on {arc.best}, and I've only one piece of chalk left, so I'm not writing you up there for a ninety-three.\""
+       ],
+       "replies": [
+        {
+         "id": "now",
+         "label": "\"Get the bag and I'll do it tonight.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "ask",
+         "label": "\"How many goes did it take him?\"",
+         "tone": "honest",
+         "goto": "d2"
+        },
+        {
+         "id": "leave",
+         "label": "\"Leave his up there, it's his door.\"",
+         "tone": "humble",
+         "end": "left-it"
+        }
+       ]
+      },
+      "d2": {
+       "who": "kitman",
+       "say": [
+        "\"All of one winter. He did it the week after his dad's funeral and he never came out again after, he said he'd done it.\""
+       ],
+       "replies": [
+        {
+         "id": "now",
+         "label": "\"Get the bag.\"",
+         "tone": "brave",
+         "goto": "play"
+        },
+        {
+         "id": "leave",
+         "label": "\"Then it stays his.\"",
+         "tone": "kind",
+         "end": "left-it"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "strike-drill",
+        "name": "The door",
+        "intro": "Ten balls from twenty yards. Ten out of ten beats the door.",
+        "dials": {
+         "kind": "technique",
+         "balls": 10,
+         "feed": "from-left",
+         "keeper": false,
+         "from": "20m",
+         "targets": [
+          "bottom-left",
+          "bottom-right"
+         ],
+         "light": "dusk-one-lamp"
+        },
+        "score": "corners hit (0-10)",
+        "target": 10,
+        "caller": {
+         "slot": "kitman",
+         "useLinesOf": "arc-hb-1-offer"
+        },
+        "cost": {
+         "energy": -6
+        },
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "technique",
+         "target": 82
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "d-stop"
+        ],
+        [
+         "activity.score>=10",
+         "d-beat"
+        ],
+        [
+         "",
+         "d-short"
+        ]
+       ]
+      },
+      "d-beat": {
+       "who": "kitman",
+       "say": [
+        "He doesn't say anything for a bit. Then he goes in and gets the chalk."
+       ],
+       "replies": [
+        {
+         "id": "under",
+         "label": "\"Put me underneath his.\"",
+         "tone": "humble",
+         "end": "on-the-door-under"
+        },
+        {
+         "id": "top",
+         "label": "\"A hundred goes at the top.\"",
+         "tone": "confident",
+         "end": "on-the-door-top"
+        }
+       ]
+      },
+      "d-short": {
+       "who": "kitman",
+       "say": [
+        "\"{activity.tens}. He missed it plenty of times as well, I'll tell you that for nothing.\""
+       ],
+       "replies": [
+        {
+         "id": "again",
+         "label": "\"Keep the chalk somewhere safe.\"",
+         "tone": "calm",
+         "end": "short"
+        }
+       ]
+      },
+      "d-stop": {
+       "who": "kitman",
+       "say": [
+        "\"Stopping there? The door's been on its hinges since 1987, so it'll wait for you.\""
+       ],
+       "replies": [
+        {
+         "id": "again",
+         "label": "\"Another night, then.\"",
+         "tone": "calm",
+         "end": "short"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "left-it": [
+       {
+        "text": "\"He'd like that.\" He shuts the door. {if legend}He'll tell {legend.short}, as well, you can see him deciding to.{/if}",
+        "npc": [
+         {
+          "slot": "kitman",
+          "respect": 8
+         },
+         {
+          "slot": "legend",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "left-the-legends-94-alone",
+          "strength": 3
+         }
+        ]
+       }
+      ],
+      "on-the-door-under": [
+       {
+        "text": "Your number goes on the door under his, with 100 beside it and this year. His hand shakes a bit doing the zeros.",
+        "effects": {
+         "boss": 2,
+         "reputation": 1
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 8,
+          "respect": 10
+         },
+         {
+          "slot": "legend",
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "a-hundred-on-the-door",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": 100
+         }
+        },
+        "unlock": "trophy:the-kit-room-door"
+       }
+      ],
+      "on-the-door-top": [
+       {
+        "text": "He has to stand on a crate to reach. Your number goes above the 94. Somebody will tell the old number nine by lunchtime.",
+        "effects": {
+         "fans": 1,
+         "reputation": 1
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 4,
+          "respect": 8
+         },
+         {
+          "slot": "legend",
+          "respect": 3,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "a-hundred-on-the-door",
+          "strength": 3
+         },
+         {
+          "slot": "legend",
+          "tag": "chalked-yourself-above-him",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": 100
+         }
+        },
+        "unlock": "trophy:the-kit-room-door"
+       }
+      ],
+      "short": [
+       {
+        "text": "The chalk goes back in his top pocket. He says he'll get it out again when you beat your best.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "retry": "b4-the-door"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [
+     {
+      "ifMemory": "legend:chalked-yourself-above-him",
+      "where": "event:arc-lg-*",
+      "line": "\"I hear I've been moved down a door.\""
+     },
+     {
+      "ifMemory": "kitman:a-hundred-on-the-door",
+      "where": "social:chat",
+      "line": "\"Had a young lad in the kit room yesterday asking whose hundred that was.\""
+     }
+    ]
+   },
+   "hint": "Get your best to 90 and {kitman.short} will show you the back of the kit room door.",
+   "n": 4
+  },
+  {
+   "id": "b5-last-season",
+   "title": "\"I'm finishing in May\"",
+   "requires": [
+    "arc.clock(den-retires)>=2",
+    "arc.path=='stayed'"
+   ],
+   "event": {
+    "id": "arc-hb-5-last-season",
+    "title": "\"I'm finishing in May\"",
+    "category": "staff",
+    "place": "compound:kit-room",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kitman",
+    "variants": [
+     {
+      "if": "!sameClub",
+      "template": "phone-call",
+      "place": "home",
+      "setupSwap": "It's the old club's landline. You know the number because it has never changed."
+     }
+    ],
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ],
+     "requires": [
+      "week<=8"
+     ],
+     "once": true
+    },
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     }
+    ],
+    "setup": [
+     "{kitman.short} is labelling next season's pegs, and he has stopped at his own coat hook."
+    ],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "kitman",
+       "say": [
+        "\"I've told the gaffer and I've told the chairman, so I'm telling you. I'm finishing in May. The wife was right about the knees.\"",
+        "{if promise(p-dens-night)}\"They're giving me a night at the ground, the last Friday of the season. You said you'd come, on the van step, and I wrote it down.\"{/if}",
+        "{if !promise(p-dens-night)}\"They're giving me a night at the ground, the last Friday of the season. I'd like you there, if you're about.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I said I'd be there. I'll be there.\"",
+         "tone": "honest",
+         "requires": [
+          "promise(p-dens-night)"
+         ],
+         "goto": "s2"
+        },
+        {
+         "id": "yes2",
+         "label": "\"The last Friday? I'll be there.\"",
+         "tone": "honest",
+         "requires": [
+          "!promise(p-dens-night)"
+         ],
+         "promise": "p-dens-night",
+         "goto": "s2"
+        },
+        {
+         "id": "hedge",
+         "label": "\"The last week's tight, {kitman.short}. I'll try.\"",
+         "tone": "calm",
+         "goto": "s-hedge"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "s-hedge"
+        }
+       ]
+      },
+      "s-hedge": {
+       "who": "kitman",
+       "say": [
+        "\"I know it is. I've done the last week of the season thirty-odd times.\" He goes back to the pegs."
+       ],
+       "replies": [
+        {
+         "id": "commit",
+         "label": "\"No. Put my name down. I'm coming.\"",
+         "tone": "honest",
+         "promise": "p-dens-night",
+         "goto": "s2"
+        },
+        {
+         "id": "leave",
+         "label": "Leave it there.",
+         "tone": "cold",
+         "end": "hedged"
+        }
+       ]
+      },
+      "s2": {
+       "who": "kitman",
+       "say": [
+        "\"Good. There's one more thing and you can say no. They want somebody to stand up and say a few words, and the chairman asked who. I said you.\""
+       ],
+       "replies": [
+        {
+         "id": "speech",
+         "label": "\"I'll do it. I'm not good at it, but I'll do it.\"",
+         "tone": "brave",
+         "end": "speech"
+        },
+        {
+         "id": "no-speech",
+         "label": "\"I'll come, but somebody else should talk.\"",
+         "tone": "humble",
+         "end": "coming"
+        },
+        {
+         "id": "who",
+         "label": "\"Why me? You've had better players than me.\"",
+         "tone": "honest",
+         "goto": "s3"
+        }
+       ]
+      },
+      "s3": {
+       "who": "kitman",
+       "say": [
+        "\"I have. But they went in when training finished.\""
+       ],
+       "replies": [
+        {
+         "id": "speech",
+         "label": "\"All right. I'll say a few words.\"",
+         "tone": "brave",
+         "end": "speech"
+        },
+        {
+         "id": "no-speech",
+         "label": "\"I'll be there. I can't do a speech.\"",
+         "tone": "humble",
+         "end": "coming"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "hedged": [
+       {
+        "text": "He writes the last peg label and sticks it on crooked.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "wouldnt-say-yes-to-his-night",
+          "strength": 2
+         }
+        ]
+       }
+      ],
+      "coming": [
+       {
+        "text": "\"That'll do me.\" It goes on the back of his hand.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "speech": 0
+         }
+        }
+       }
+      ],
+      "speech": [
+       {
+        "text": "\"Keep it short. And don't tell them about the soup, they'll all want some.\"",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "speech": 1
+         }
+        },
+        "promise": "p-dens-speech"
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": []
+   },
+   "hint": "{kitman.short} says his knees have a season or two left in them.",
+   "n": 5
+  },
+  {
+   "id": "b6-the-night",
+   "title": "Den's night",
+   "after": {
+    "clock": "den-retires"
+   },
+   "event": {
+    "id": "arc-hb-6-night",
+    "title": "The last Friday of the season",
+    "category": "staff",
+    "place": "stadium:pitch",
+    "size": "big",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kitman",
+    "entry": {
+     "kind": "invite",
+     "via": "text-thread",
+     "from": "kitman",
+     "text": "\"Friday. 7 o'clock at the ground. Wear a shirt with a collar. D\"",
+     "choices": [
+      "attend",
+      "send-apologies",
+      "ignore"
+     ],
+     "cost": {
+      "weekAction": 1
+     },
+     "clash": {
+      "if": "!sameClub",
+      "cost": {
+       "moneyWeeks": 0.3
+      },
+      "line": "You play for another club now, and Friday is their sponsor dinner."
+     },
+     "labels": {
+      "attend": "Go to {kitman.short}'s night.",
+      "send-apologies": "Send a signed shirt and a card.",
+      "ignore": "Don't answer."
+     }
+    },
+    "trigger": {
+     "when": [
+      "season-end"
+     ],
+     "once": true
+    },
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "legend",
+      "pick": "legend",
+      "optional": true
+     }
+    ],
+    "setup": [
+     "There are four hundred people on the pitch at round tables, and a small stage where the centre circle is. {kitman.short} is in a suit. Nobody here has seen him in one before.",
+     "{if mem(kitman,'you-went-to-the-ward')}Two nurses from the children's ward are on his table.{/if}"
+    ],
+    "talk": {
+     "start": {
+      "if": "arc.speech==1",
+      "then": "sp1",
+      "else": "c1"
+     },
+     "nodes": {
+      "sp1": {
+       "who": "manager",
+       "screen": "dial",
+       "say": [
+        "{manager.name} taps the microphone. \"He asked for one of the players to say something, and he picked this one.\" He hands it to you."
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "Tell them about pitch two, and the shed light.",
+         "tone": "humble",
+         "goto": "sp2"
+        },
+        {
+         "id": "calm",
+         "label": "Thank him, plainly, for thirty-odd years of clean boots.",
+         "tone": "calm",
+         "goto": "sp2"
+        },
+        {
+         "id": "confident",
+         "label": "Tell them your score on the door, and who counted it.",
+         "tone": "confident",
+         "requires": [
+          "arc.best>=80"
+         ],
+         "goto": "sp2"
+        },
+        {
+         "id": "fiery",
+         "label": "Tell them the club never paid him enough.",
+         "tone": "fiery",
+         "set": [
+          "had-a-go-at-the-club"
+         ],
+         "goto": "sp2"
+        },
+        {
+         "id": "freeze",
+         "label": "No comment.",
+         "silent": true,
+         "goto": "sp-freeze"
+        }
+       ]
+      },
+      "sp-freeze": {
+       "who": "kitman",
+       "say": [
+        "You stand there with the microphone and nothing comes. {kitman.short} shouts from his table: \"He's better with a ball. Somebody give him a ball.\" People laugh, and it lets you off."
+       ],
+       "replies": [
+        {
+         "id": "sit",
+         "label": "\"What he said, and thanks, {kitman.short}.\"",
+         "tone": "humble",
+         "goto": "c1"
+        }
+       ]
+      },
+      "sp2": {
+       "who": "kitman",
+       "say": [
+        "{if said:had-a-go-at-the-club}The chairman's table has gone quiet, and the tables at the back are clapping. {kitman.short} is looking at his plate, but he's smiling.{/if}",
+        "{if !said:had-a-go-at-the-club}It lasts about a minute. When you get to the soup, he shouts \"I told you not to mention the soup,\" and four hundred people laugh.{/if}"
+       ],
+       "replies": [
+        {
+         "id": "sit",
+         "label": "Sit down next to him.",
+         "tone": "calm",
+         "goto": "c1"
+        }
+       ]
+      },
+      "c1": {
+       "who": "kitman",
+       "say": [
+        "\"They want a bit of a show before the raffle. There's a goal up at the far end. Crossbar, you against {if legend}{legend.short}{/if}{if !legend}the gaffer{/if}, five each, and the tables are putting money on it for the children's ward.\"",
+        "\"I'll count.\""
+       ],
+       "replies": [
+        {
+         "id": "play",
+         "label": "\"Go on. A week of my wages says I win.\"",
+         "tone": "confident",
+         "var": {
+          "stake": 1
+         },
+         "goto": "bar"
+        },
+        {
+         "id": "play-quiet",
+         "label": "\"I'll play. Keep my money out of it.\"",
+         "tone": "calm",
+         "var": {
+          "stake": 0
+         },
+         "goto": "bar"
+        },
+        {
+         "id": "pass",
+         "label": "\"Not in these shoes. Let the kids have a go.\"",
+         "tone": "kind",
+         "goto": "c-after"
+        }
+       ]
+      },
+      "bar": {
+       "activity": {
+        "mode": "crossbar",
+        "name": "Crossbar for the ward",
+        "dials": {
+         "shots": 5,
+         "opponent": {
+          "slot": "legend",
+          "else": "manager"
+         },
+         "place": "stadium",
+         "light": "floodlit",
+         "crowd": "tables"
+        },
+        "stakes": {
+         "wager": {
+          "moneyWeeks": {
+           "if": "arc.stake==1",
+           "then": 1,
+           "else": 0
+          }
+         },
+         "toCharity": true
+        },
+        "watchers": [
+         "kitman",
+         "manager"
+        ],
+        "canAbandon": false,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "freeKick",
+         "target": 60
+        }
+       },
+       "result": [
+        [
+         "activity.won",
+         "c-won"
+        ],
+        [
+         "",
+         "c-lost"
+        ]
+       ]
+      },
+      "c-won": {
+       "who": "kitman",
+       "say": [
+        "\"{activity.score} to {activity.oppScore}. The ward gets the lot either way, so don't look so pleased.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Double it. Put mine in as well.\"",
+         "tone": "kind",
+         "var": {
+          "gave": 1
+         },
+         "goto": "c-after"
+        },
+        {
+         "id": "ok2",
+         "label": "Take the applause.",
+         "tone": "confident",
+         "goto": "c-after"
+        }
+       ]
+      },
+      "c-lost": {
+       "who": "kitman",
+       "say": [
+        "\"{activity.oppScore} to {activity.score}, to the old man. I've watched you hit that bar for fun on a Thursday.\""
+       ],
+       "replies": [
+        {
+         "id": "pay",
+         "label": "Pay up and shake his hand.",
+         "tone": "humble",
+         "goto": "c-after"
+        }
+       ]
+      },
+      "c-after": {
+       "who": "kitman",
+       "say": [
+        "It's late. The tables are being stacked, and he has walked you out to the car park to the van.",
+        "\"I'm not allowed to take anything that belongs to the club. But the bag's mine, I bought it in 1994.\" He gets the ball bag out of the back. \"There's forty in there. Some of them are older than you.\""
+       ],
+       "replies": [
+        {
+         "id": "take",
+         "label": "\"I'll look after it.\"",
+         "tone": "kind",
+         "end": "took-the-bag"
+        },
+        {
+         "id": "club",
+         "label": "\"Leave it for the next kit man. I'll tell him why.\"",
+         "tone": "humble",
+         "end": "bag-stays"
+        },
+        {
+         "id": "feed",
+         "label": "\"Only if you come and feed me on Thursdays.\"",
+         "tone": "confident",
+         "end": "took-the-bag-thursdays"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "took-the-bag": [
+       {
+        "text": "It goes in your boot. It smells of grass and dubbin, and it will be in your garden from tomorrow.",
+        "effects": {
+         "fans": 3,
+         "team": 3,
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 20,
+          "respect": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "came-to-his-night",
+          "strength": 3
+         }
+        ],
+        "give": "item:dens-ball-bag",
+        "unlock": "garden:hundred-balls-corner",
+        "arc": {
+         "set": {
+          "bag": 1
+         },
+         "next": "b7-your-turn"
+        },
+        "noteSquad": "you-spoke-at-dens-night"
+       }
+      ],
+      "took-the-bag-thursdays": [
+       {
+        "text": "\"I'll bring the soup.\" He does, most Thursdays, to your garden, until his knees stop him driving.",
+        "effects": {
+         "fans": 3,
+         "team": 3,
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 25,
+          "respect": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "came-to-his-night",
+          "strength": 3
+         }
+        ],
+        "give": "item:dens-ball-bag",
+        "unlock": "garden:hundred-balls-corner+den-visits",
+        "arc": {
+         "set": {
+          "bag": 1
+         },
+         "next": "b7-your-turn"
+        }
+       }
+      ],
+      "bag-stays": [
+       {
+        "text": "He puts it back in the kit room himself, on the hook where it has always been. The new man starts in July.",
+        "effects": {
+         "team": 4,
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 15,
+          "respect": 14
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "came-to-his-night",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "bag": 0
+         },
+         "next": "b7-your-turn"
+        }
+       }
+      ],
+      "@send-apologies": [
+       {
+        "text": "You send a signed shirt and a card. He props the card against the water jug on his table. The chair with your name on it stays empty, and it is in the back of most of the photos.",
+        "effects": {
+         "team": -2,
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": -15,
+          "respect": -10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "the-empty-chair",
+          "strength": 3
+         }
+        ],
+        "promiseBroken": [
+         "p-dens-night",
+         "p-dens-speech"
+        ],
+        "noteSquad": "empty-chair-at-dens-night",
+        "arc": {
+         "end": "the-empty-chair",
+         "next": "b6b-letter",
+         "afterWeeks": [
+          2,
+          3
+         ]
+        }
+       }
+      ],
+      "@ignore": [
+       {
+        "text": "You don't answer, and the Friday goes by. On Saturday the club posts the photos. There's a chair with your name card on it and nobody in it.",
+        "effects": {
+         "team": -4,
+         "fans": -3,
+         "reputation": -2
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": -25,
+          "respect": -20
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "the-empty-chair",
+          "strength": 3
+         }
+        ],
+        "promiseBroken": [
+         "p-dens-night",
+         "p-dens-speech"
+        ],
+        "noteSquad": "empty-chair-at-dens-night",
+        "arc": {
+         "end": "the-empty-chair",
+         "next": "b6b-letter",
+         "afterWeeks": [
+          2,
+          3
+         ]
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [
+     {
+      "ifMemory": "squad:empty-chair-at-dens-night",
+      "where": "social:banter",
+      "line": "\"Busy Friday, was it? There was a chair free.\""
+     },
+     {
+      "ifMemory": "kitman:came-to-his-night",
+      "where": "event:fan-testimonial-offer",
+      "line": "{kitman.short} is first on your own guest list, and he has already rung to ask about parking."
+     }
+    ]
+   },
+   "hint": "{kitman.short}'s night is the last Friday of his last season.",
+   "n": 6
+  },
+  {
+   "id": "b6b-letter",
+   "title": "A letter in his handwriting",
+   "requires": [
+    "mem(kitman,'the-empty-chair')"
+   ],
+   "event": {
+    "id": "arc-hb-6b-letter",
+    "title": "A letter in his handwriting",
+    "category": "staff",
+    "place": "home",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "kitman",
+    "trigger": {
+     "when": [
+      "followUp"
+     ]
+    },
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "carried"
+     }
+    ],
+    "setup": [
+     "A real letter, with a stamp on it. The envelope has your squad number where the house number should be, and it got here anyway.",
+     "\"No hard feelings, I know how the last week goes. They gave me a clock and a lawnmower. I'm out the back most afternoons and the bag is in my shed if you're ever passing. The soup offer stands. D\""
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Drive over this week.",
+      "tone": "honest",
+      "cost": {
+       "weekAction": 1
+      },
+      "outcomes": [
+       {
+        "text": "He's on his knees in a flower bed when you pull up. He makes you carry the mower back to the shed before he'll put the kettle on.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 14,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "came-round-after-the-letter",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "bag": 1
+         },
+         "reopen": "b7-your-turn"
+        },
+        "give": "item:dens-ball-bag"
+       }
+      ]
+     },
+     {
+      "id": "write",
+      "label": "Write back.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "It takes you three goes. He writes back inside a week, two sides, mostly about the lawn.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 5
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "drawer",
+      "label": "Put it in a drawer.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "It's still in the drawer when you move house.",
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "never-answered-dens-letter",
+          "strength": 3
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [
+     {
+      "ifMemory": "you:never-answered-dens-letter",
+      "where": "event:fan-testimonial-offer",
+      "line": "Going through the guest list, you get to the staff and stop at the kit man's line."
+     }
+    ]
+   },
+   "hint": "Something from {kitman.short} is in the post.",
+   "look": {
+    "chip": "Two weeks later · in the post",
+    "art": "✉️",
+    "note": {
+     "line": 1,
+     "sign": "D",
+     "foot": "A letter, with a stamp on it"
+    }
+   }
+  },
+  {
+   "id": "b7-your-turn",
+   "title": "Somebody else's bad Saturday",
+   "after": {
+    "beat": "b6-the-night",
+    "seasons": [
+     2,
+     8
+    ]
+   },
+   "requires": [
+    "age>=27",
+    "squad.any(age<=19)"
+   ],
+   "event": {
+    "id": "arc-hb-7-your-turn",
+    "title": "Somebody else's bad Saturday",
+    "category": "training",
+    "place": "compound:pitch-2",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kid",
+    "entry": {
+     "kind": "offer",
+     "on": "kid",
+     "bubble": "Feed him a hundred",
+     "icon": "ball",
+     "hint": "He missed two on Saturday and he's still out here",
+     "lastsDays": 1,
+     "ifIgnored": "walked-past"
+    },
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "squad.any(age<=19)"
+     ],
+     "once": true
+    },
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest",
+      "optional": false
+     }
+    ],
+    "setup": [
+     "Training finished forty minutes ago and {kid.name} is still on pitch two, on his own, hitting balls at an empty goal and going to fetch every one.",
+     "{if arc.bag==1}{kitman.short}'s old bag is in the boot of your car.{/if}"
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "kid",
+       "say": [
+        "He stops when he sees you. \"Sorry. I'll get out of the way, I was only going to do a few more.\""
+       ],
+       "replies": [
+        {
+         "id": "feed",
+         "label": "\"Stand on the D. I'll roll you a hundred.\"",
+         "tone": "kind",
+         "goto": "k2"
+        },
+        {
+         "id": "tell",
+         "label": "\"You're looking at the keeper. I used to do it.\"",
+         "tone": "honest",
+         "mood": 1,
+         "goto": "k2"
+        },
+        {
+         "id": "leave",
+         "label": "\"Don't stay out too long.\"",
+         "tone": "calm",
+         "end": "walked-past"
+        }
+       ]
+      },
+      "k2": {
+       "who": "kid",
+       "say": [
+        "\"A hundred? Have you not got somewhere to be?\""
+       ],
+       "replies": [
+        {
+         "id": "no",
+         "label": "\"Not tonight, so it's ten lots of ten and I count.\"",
+         "tone": "calm",
+         "goto": "feed"
+        },
+        {
+         "id": "den",
+         "label": "\"A kit man did this for me. I owe somebody one.\"",
+         "tone": "honest",
+         "requires": [
+          "mem(kitman,'stayed-out-with-him')"
+         ],
+         "mood": 1,
+         "goto": "feed"
+        }
+       ]
+      },
+      "feed": {
+       "activity": {
+        "mode": "feed-drill",
+        "name": "You feed, he shoots",
+        "intro": "Roll ten passes onto his right foot. A good feed gives him a better chance.",
+        "dials": {
+         "kind": "pass-gate",
+         "balls": 10,
+         "shooter": {
+          "slot": "kid"
+         },
+         "light": "dusk-one-lamp"
+        },
+        "score": "his corners out of 10, helped by how many of your passes went through the gate",
+        "cost": {
+         "energy": -3
+        },
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "vision",
+         "target": 50
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "k-stop"
+        ],
+        [
+         "activity.score>=6",
+         "k-good"
+        ],
+        [
+         "",
+         "k-poor"
+        ]
+       ]
+      },
+      "k-good": {
+       "who": "kid",
+       "say": [
+        "\"{activity.tens}! Did you see the last one?\" He's out of breath and he can't stop grinning."
+       ],
+       "replies": [
+        {
+         "id": "thu",
+         "label": "\"Same time Thursday, and bring a coat.\"",
+         "tone": "kind",
+         "end": "thursdays-again"
+        },
+        {
+         "id": "once",
+         "label": "\"That's how you hit it Saturday.\"",
+         "tone": "calm",
+         "end": "once"
+        }
+       ]
+      },
+      "k-poor": {
+       "who": "kid",
+       "say": [
+        "\"{activity.tens}. That's rubbish, isn't it.\""
+       ],
+       "replies": [
+        {
+         "id": "thu",
+         "label": "\"I got forty my first night. Thursday?\"",
+         "tone": "kind",
+         "end": "thursdays-again"
+        },
+        {
+         "id": "hard",
+         "label": "\"It's not good, so come back Thursday.\"",
+         "tone": "honest",
+         "end": "thursdays-again"
+        }
+       ]
+      },
+      "k-stop": {
+       "who": "kid",
+       "say": [
+        "\"Oh. Right. Thanks for the ones you did.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Sorry, I've got to be somewhere.\"",
+         "tone": "calm",
+         "end": "stopped-short"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "walked-past": [
+       {
+        "text": "You get in the car. In the mirror he's fetching the ball again.",
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "you-went-in",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "end": "went-in"
+        }
+       }
+      ],
+      "once": [
+       {
+        "text": "He scores on Saturday, low, and he doesn't look up. He finds you first.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 12,
+          "respect": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "you-fed-him-a-hundred",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-bag-moves-on"
+        }
+       }
+      ],
+      "thursdays-again": [
+       {
+        "text": "{if arc.bag==1}You get the bag out of your boot and leave it on the hook in the kit room, where it used to hang.{/if} Next Thursday he's out there before you are.",
+        "effects": {
+         "team": 3,
+         "boss": 2,
+         "reputation": 1
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 18,
+          "respect": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "you-fed-him-a-hundred",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-bag-moves-on",
+         "next": "b7b-text-den",
+         "afterWeeks": [
+          0,
+          1
+         ],
+         "nextIf": "mem(kitman,'came-to-his-night') || mem(kitman,'came-round-after-the-letter')"
+        }
+       }
+      ],
+      "stopped-short": [
+       {
+        "text": "He collects the balls on his own.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "you-stopped-at-thirty",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "went-in"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [
+     {
+      "ifMemory": "kid:you-fed-him-a-hundred",
+      "where": "match:he-scores",
+      "line": "He runs past the others to you and holds up ten fingers."
+     },
+     {
+      "ifMemory": "kid:you-fed-him-a-hundred",
+      "where": "event:arc-lg-6-your-circle",
+      "line": "\"I'm not taking it easy on you because of Thursdays.\""
+     }
+    ]
+   },
+   "hint": "Years from now, a kid will have a bad Saturday of his own.",
+   "n": 7
+  },
+  {
+   "id": "b7b-text-den",
+   "title": "Den hears about it",
+   "event": {
+    "id": "arc-hb-7b-text-den",
+    "title": "A photo of the back of a hand",
+    "category": "staff",
+    "place": "home",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "kitman",
+    "trigger": {
+     "when": [
+      "followUp"
+     ]
+    },
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "carried"
+     },
+     {
+      "slot": "kid",
+      "pick": "carried"
+     }
+    ],
+    "setup": [
+     "A picture message from a number you don't have saved. It's the back of an old man's hand with \"THURS - {kid.short}\" written on it in biro.",
+     "\"New kit man rang me. Is the lad any good? D\""
+    ],
+    "choices": [
+     {
+      "id": "good",
+      "label": "\"Better than I was. Come and count for us.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "He comes the next Thursday with two flasks, and sits on a fold-up chair by the shed.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 10
+         },
+         {
+          "slot": "kid",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "counted-for-the-kid",
+          "strength": 3
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "honest",
+      "label": "\"Not yet. He looks at the keeper.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "text": "\"So did you.\"",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 4
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": []
+   },
+   "hint": "{kitman.short} has heard about the kid.",
+   "look": {
+    "chip": "A picture message",
+    "art": "✋"
+   }
+  }
+ ]
+}

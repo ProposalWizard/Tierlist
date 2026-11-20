@@ -189,7 +189,8 @@ export interface LifePending {
 export interface LifeLogRow { w: number; e: string; c: string; t: string }
 
 export interface LifeState {
-  v: 1;
+  /** 1 = phase 1; 2 = the v2 fields below may be present (migrate.ts). */
+  v: 1 | 2;
   people: Record<string, LifePerson>;
   /** Things the whole dressing room saw. */
   squad: LifeMemory[];
@@ -215,7 +216,221 @@ export interface LifeState {
   roster?: Record<string, number>;
   /** Your voice this season (decision screens): [season, humble, calm, confident, fiery, said nothing]. */
   voice?: [number, number, number, number, number, number];
+  // ── Events v2 (arcs, promises, objectives; lib/star/life/arcs.ts). All optional. ──
+  /** Stories in progress or finished, by arc id. */
+  arcs?: Record<string, ArcRun>;
+  /** Promises and debts: up to 6 open, the last 20 kept or broken. */
+  promises?: PromiseRun[];
+  /** Match objectives a talk set (at most 2). */
+  objs?: ObjectiveRun[];
+  /** Things a story gave you ("item:dens-ball-bag", "garden:hundred-balls-corner"). */
+  got?: string[];
+  /** Notices waiting to be shown once (a promise kept or broken, a reminder text). */
+  notes?: ArcNotice[];
 }
 
 export const PERSON_MEMORY_CAP = 6;
 export const PEOPLE_CAP = 60;
+
+// ═══════════════════════ EVENTS V2 (docs/plans/living-world-events-v2-2026-11-20.md) ═══════════════════════
+
+/** A value an arc keeps between beats (who won, your best, the path you took). */
+export type ArcVar = number | string;
+
+/** One reply in a talk. Goes to another node, or ends the talk. */
+export interface TalkReply {
+  id: string;
+  label: string;
+  tone?: LifeTone;
+  silent?: boolean;
+  requires?: string[];
+  goto?: string;
+  end?: string;
+  /** The talk's running mood: how he is taking you. */
+  mood?: number;
+  /** A note for later in this same talk ("snapped"). */
+  set?: string[];
+  /** Values the arc keeps. */
+  var?: Record<string, ArcVar>;
+  /** Makes this promise (an id in the arc's promises). */
+  promise?: string;
+  cost?: LifeCost;
+}
+
+/** A value that depends on the arc: {"if": cond, "then": a, "else": b}. */
+export interface IfValue { if: string; then: string; else: string }
+
+/** A reply that opens a real game mode (activity.ts). */
+export interface LifeActivity {
+  mode: "strike-drill" | "crossbar" | "feed-drill";
+  name: string;
+  intro?: string;
+  dials: {
+    balls?: number; shots?: number; from?: string | IfValue; keeper?: boolean;
+    targets?: ("bottom-left" | "bottom-right" | "bar")[]; light?: string; feed?: string;
+    opponent?: { slot: string; else?: string }; shooter?: { slot: string };
+  };
+  score: string;
+  /** Show the arc's best during it (an arc var name). */
+  showBest?: string;
+  /** Ten out of ten (the door). */
+  target?: number;
+  caller?: { slot: string; lines?: string[]; useLinesOf?: string };
+  cost?: LifeCost;
+  canAbandon: boolean;
+  /** For a device that cannot run the mode: a skill check, shown as a roll. */
+  fallback: { kind: "skill-check"; stat: "pace" | "power" | "technique" | "vision" | "freeKick"; target: number } | null;
+}
+
+export interface TalkNode {
+  who?: string;
+  /** This node on a different screen (the speech at Den's night: the dial). */
+  screen?: LifeScreen;
+  say?: string[];
+  replies?: TalkReply[];
+  activity?: LifeActivity;
+  /** [condition, node]: the first that holds; "" is the fallback. */
+  result?: [string, string][];
+}
+
+/** A v2 outcome: a v1 outcome plus what it does to the story. */
+export interface ArcOutcome extends LifeOutcome {
+  arc?: {
+    set?: Record<string, ArcVar>;
+    add?: Record<string, number>;
+    next?: string;
+    /** Weeks until `next` is due (default 0). */
+    afterWeeks?: [number, number];
+    end?: string;
+    retry?: string;
+    reopen?: string;
+    check?: string;
+  };
+  promise?: string;
+  promiseBroken?: string[];
+  objective?: { id: string; text: string; window: { matches: number }; met: string; onMet: string; onMiss: string };
+  give?: string;
+  unlock?: string;
+  noteSquad?: string;
+  train?: Partial<Record<"pace" | "power" | "technique" | "vision", number>>;
+  startArc?: { id: string; with: Record<string, string> };
+}
+
+export interface LifeTalk {
+  start: string | IfValue;
+  nodes: Record<string, TalkNode>;
+  ends: Record<string, ArcOutcome[]>;
+}
+
+export interface ArcEntry {
+  /** offer: a gold bubble on his round menu, gone when the week turns.
+   *  standing: a bubble while the beat is open. invite: a text with three answers. */
+  kind: "offer" | "standing" | "invite";
+  on?: string;
+  from?: string;
+  bubble?: string;
+  icon?: string;
+  hint?: string;
+  lastsDays?: number;
+  /** The ending played if the offer runs out. */
+  ifIgnored?: string | null;
+  text?: string;
+  /** invite: the three answers' labels. */
+  labels?: Record<string, string>;
+  choices?: string[];
+  cost?: LifeCost;
+  clash?: { if: string; cost: LifeCost; line: string };
+}
+
+/** A beat's event: a LifeEvent with a talk (or plain choices for a card). */
+export interface ArcEvent extends Omit<LifeEvent, "choices"> {
+  choices: (Omit<LifeChoice, "outcomes"> & { outcomes: ArcOutcome[] })[];
+  talk?: LifeTalk;
+  entry?: ArcEntry;
+  variants?: { if: string; template?: LifeTemplate; place?: string; setupSwap?: string }[];
+}
+
+export interface ArcBeat {
+  id: string;
+  title: string;
+  /** The quest log's line for this beat while it is the next thing (BotW's quest log). */
+  hint: string;
+  after?: { beat?: string; weeks?: [number, number]; seasons?: [number, number]; objective?: string; clock?: string };
+  requires?: string[];
+  repeat?: { everyWeeks: number; max: number };
+  /** The card's picture: a chip, a big emoji or number, a paper note. */
+  look?: { chip?: string; art?: string; big?: string; bigSub?: string; note?: { line: number; sign?: string; foot?: string } };
+  /** Its number on the main line ("Beat 3 of 7"); none for a side beat. */
+  n?: number;
+  event: ArcEvent;
+}
+
+export interface ArcPromiseDef {
+  id: string;
+  to: string;
+  text: string;
+  /** weeks: due that many weeks after it is made. beat: due when that beat plays. */
+  due: { weeks?: [number, number]; beat?: string };
+  /** What keeps it: that beat played (reached its game) or ended one of these ways. */
+  keptBy: { beat: string; played?: boolean; ends?: string[] };
+  /** Said in the phone list: when it is due, in words. */
+  dueText: string;
+  /** A text a week before a week-based deadline. */
+  remind?: string;
+  kept?: ArcOutcome;
+  broken?: ArcOutcome;
+}
+
+export interface LifeArc {
+  id: string;
+  title: string;
+  owner: string;
+  summary: string;
+  cast: CastSlot[];
+  vars: Record<string, ArcVar>;
+  clocks: { id: string; label: string; segments: number; tick: { on: "season-end"; by: number }[]; startsAt: string; onFull: string }[];
+  ends: { id: string; title: string; text: string }[];
+  promises: Record<string, ArcPromiseDef>;
+  beats: ArcBeat[];
+}
+
+/** One story in the save (small on purpose: ids, weeks, a few values). */
+export interface ArcRun {
+  /** Life week it started. */
+  at: number;
+  /** The club you were at when it started. */
+  club: string;
+  cast: Record<string, string>;
+  v: Record<string, ArcVar>;
+  /** Clock id → segments filled. */
+  k: Record<string, number>;
+  /** Beat id → life weeks it played. */
+  f: Record<string, number[]>;
+  /** Beat id → the life week it is due (set by an ending's `next`, an objective). */
+  s: Record<string, number>;
+  /** An open offer: [beat, person id, life week it goes]. */
+  o?: [string, string, number];
+  /** How it ended (an arc end id); a later beat can still change it. */
+  done?: string;
+  /** The last beat that played. */
+  last?: string;
+}
+
+export interface PromiseRun {
+  id: string;
+  arc: string;
+  to: string;
+  /** What your phone shows, filled in when made. */
+  text: string;
+  made: number;
+  /** Life week it is due by, or -1 when it is due at a beat. */
+  due: number;
+  st: "open" | "kept" | "broken";
+  end?: number;
+  /** A reminder was sent. */
+  r?: 1;
+}
+
+export interface ObjectiveRun { id: string; arc: string; text: string; left: number; met: string; onMet: string; onMiss: string; made: number }
+
+export interface ArcNotice { kind: "kept" | "broken" | "remind" | "ignored" | "objective"; arc: string; title: string; text: string; who?: string; w: number; changes?: { kind: "bar" | "money" | "energy" | "person" | "memory" | "item" | "team-rule" | "later"; label: string; delta?: number }[] }
