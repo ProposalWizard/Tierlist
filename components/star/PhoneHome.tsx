@@ -84,8 +84,14 @@ const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const appOf = (id: AppId | "relations") => (id === "appstore" ? APP_STORE_ICON : id === "scout" ? SCOUT_APP : APPS.find((a) => a.id === (id === "relationships" ? "relations" : id))!);
 
-export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase, relations, relationsIntro }: {
+export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase, relations, relationsIntro, fill = false, onPhoneHome }: {
   career: CareerState;
+  /** The 3D phone test page: the phone fills its box exactly (it sits on the
+   *  3D phone's glass, where a measured size would be the bent one). Absent: measured, as before. */
+  fill?: boolean;
+  /** The nav bar's Home on the phone's own home screen (the 3D phone test
+   *  page: back to the game's Home). Absent: dimmed there, as before. */
+  onPhoneHome?: () => void;
   /** Relationships drawn INSIDE the phone, like Squad (Mikey's playtest, 24 Oct
    *  2026). Absent: the app leaves the phone for the Relations page, as before. */
   relations?: React.ReactNode;
@@ -174,11 +180,11 @@ export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClo
 
   return (
     <div ref={boxRef} className="flex h-full w-full items-center justify-center overflow-hidden">
-      {size && (
-        <div style={{ width: size.w, height: size.h }}>
+      {(size || fill) && (
+        <div style={fill ? { width: "100%", height: "100%" } : { width: size!.w, height: size!.h }}>
           <PhoneFrame statusLabel={dateLabel} wallpaper={wallpaper(theme.glow, theme.trim)} rim={theme.glow} ownHomeBar
             onBack={app !== null ? goHome : onClose} backLabel={app !== null ? "Back to home screen" : "Close phone"}
-            onHome={app !== null ? goHome : undefined}>
+            onHome={app !== null ? goHome : onPhoneHome}>
             <div ref={screenRef} className="relative flex min-h-0 flex-1 flex-col">
               {app === null && <Grid career={career} glow={theme.glow} badges={badges} onOpen={open} onClose={onClose} installed={installed} isNew={isNew} />}
               {app !== null && (

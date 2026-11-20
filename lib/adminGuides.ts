@@ -1795,18 +1795,20 @@ export const ADMIN_GUIDES = {
   },
   "/star-phone3d-dev": {
     title: "3D phone (test)",
-    what: "The 3D phone flow in pictures (Harry, 19-20 Nov 2026, RUL-UI-008): tap Phone and an eye-blink opens on your hand holding the phone at the GTA angle, with your house blurred behind. No live 3D yet: this is to judge the look and the feel.",
+    what: "The 3D phone flow (Harry, 19-20 Nov 2026, RUL-UI-008): tap Phone and an eye-blink opens on your hand holding the real phone, with your real 3D house behind it seen from your own eyes (blurred, one still frame). Put the phone away and the camera pulls back from your eyes into the normal 3D house, where you can walk round.",
     buttons: [
       { group: "The steps", items: [
-        ["Phone (bottom bar, on the Home picture)", "Plays the eye-blink and shows your hand holding the phone."],
-        ["HOME (on the phone screen)", "The phone drops away and you are back on the Home screen."],
-        ["BACK (on the phone screen)", "Put the phone away: it lowers out of view and the room comes into focus. You are in your house."],
-        ["Anywhere, in the house", "Takes the phone out again."],
+        ["Phone (bottom bar, on the Home picture)", "An eye-blink (under a second) opens on your hand holding the phone. Waits until the house has loaded."],
+        ["The apps on the phone", "The real phone on a sample career. Messages, Squad, Social, Fixtures, Relationships, Kickabout and the others that live in the phone open and work on the glass (a relationship game only shows a note). Apps that leave the phone in the game (Shop, Store, Garden, Your house, Casino, Sponsors, Owner, Settings) only show a one-line note here."],
+        ["HOME (the phone's own bar)", "In an app: back to the phone's home screen. On the phone's home screen: the phone drops away and you are back on the Home screen."],
+        ["BACK (the phone's own bar)", "In an app: back to the phone's home screen. On the phone's home screen: put the phone away. It lowers out of view while the room sharpens (still your eyes), then the camera pulls back to the house's normal camera."],
+        ["The house (after BACK)", "The real 3D house: the stick or tap to walk, drag to look, doorways to other rooms, the wardrobe and cabinet cards. Its ‹ Home pill goes to the Home screen."],
+        ["📱 Phone (in the house)", "The camera goes back into your eyes and the phone comes up again."],
       ] },
     ],
-    saving: ["Nothing is saved; it is pictures only."],
+    saving: ["Nothing is saved. The career is a made-up sample; the wardrobe's choice is forgotten on reload."],
     inGame: ["Not in the game. Harry judges it here first (Stage 3 of the tap-speed and 3D plan)."],
-    dev: "app/star-phone3d-dev/page.tsx + phone3d.css · pictures in public/star/phone3d/ (hand.webp from tools/phone3d/hand_phone_gta.py; room, room-blur, home and screen from captures of the game) · the screen is bent onto the glass with a CSS matrix3d from the render's printed corners · ?film=1 shows the phone-sized stage alone",
+    dev: "app/star-phone3d-dev/page.tsx + phone3d.css · the house is components/star/Home3D.tsx with pov (lib/star/home3d/scene.ts setPov / hold / renderOnce; absent = the house as before) · the phone is components/star/PhoneHome.tsx with fill + onPhoneHome, bent onto the glass with a CSS matrix3d from the render's printed corners · hand.webp from tools/phone3d/hand_phone_gta.py · ?film=1 = the stage alone on a film clock: window.__phone3dStep(ms) moves the CSS and the 3D one frame (videos are made frame by frame)",
   },
   "/star-shop-dev": {
     title: "Menu shop (test)",

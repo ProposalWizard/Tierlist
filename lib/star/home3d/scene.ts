@@ -156,6 +156,10 @@ export interface HomeOptions {
   /** The 3D Scene Editor's edit (/star-scene-editor-dev), or an approved one in the
    *  game (lib/star/sceneEdits). Absent = the house exactly as before. */
   edit?: WalkSceneEdit | null;
+  /** The 3D phone (RUL-UI-008, /star-phone3d-dev): open in his eyes (he is
+   *  hidden), for a phone held up in front of them; setPov eases back out to
+   *  the normal camera. Absent = the house exactly as before. */
+  pov?: boolean;
 }
 
 export interface HomeController {
@@ -192,6 +196,14 @@ export interface HomeController {
   cameraPose: () => { pos: [number, number, number]; look: [number, number, number]; fov: number };
   /** Editor only: the room from above for the mini-map. */
   layout: () => { people: { id: string; x: number; z: number }[]; sunDir: [number, number, number]; bounds: { min: [number, number, number]; max: [number, number, number] } };
+  /** First person (the 3D phone): 1 = his eyes (he is hidden), 0 = the normal
+   *  camera, between = on the straight line from one to the other (he fades in
+   *  once the camera is clear of his head); null = off, as before. */
+  setPov: (k: number | null) => void;
+  /** Hold the picture: draw one frame, then no loop at all until hold(false). */
+  hold: (on: boolean) => void;
+  /** Draw one frame now (a held house, or filming frame by frame). */
+  renderOnce: () => void;
   dispose: () => void;
 }
 
@@ -558,6 +570,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
         next.person.root.rotation.y = yaw;
         scene.add(next.person.root);
         me = next;
+        findHead();
         disposePerson(old.person, old.worn.kind === "casual");
         try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* first use */ }
         shadowDirty = true;
@@ -590,7 +603,68 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
   // the shared renderer's loop is set and stopped only by its owner: a build thrown away while a
   // newer one is starting (React's double effects in dev, a quick switch) never stops the live one
-  if (isOwner()) renderer.setAnimationLoop(() => {
+  // ── First person (the 3D phone, opts.pov): his eyes, eased out to the normal camera (setPov) ──
+  let pov: number | null = opts.pov ? 1 : null;
+  if (opts.pov) {
+    // a step into the room from where he starts, so the camera he pulls back to has its full boom and frames him
+    const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw);
+    for (const d of [1.4, 1.0, 0.6]) {
+      const x = START.x + fx * d, z = START.z + fz * d;
+      if (roomFree(room, x, z)) { me.person.root.position.set(x, 0, z); meBlob.position.set(x, 0.012, z); break; }
+    }
+  }
+  let held = false;
+  let headBone: any = null;
+  const findHead = () => { headBone = null; me.person.root.traverse((o: any) => { if (!headBone && o.isBone && /head$/i.test(o.name)) headBone = o; }); };
+  findHead();
+  const povHead = new THREE.Vector3(), povEye = new THREE.Vector3(), povLook = new THREE.Vector3(), povF = new THREE.Vector3();
+  /** His materials as they were, while he is faded (null: as built). */
+  type Faded = { m: any; transparent: boolean; opacity: number; depthWrite: boolean };
+  let faded: Faded[] | null = null;
+  const blobOpacity = 0.75;
+  const setMeAlpha = (a: number) => {
+    if (a >= 1) {
+      if (faded) { for (const f of faded) { f.m.transparent = f.transparent; f.m.opacity = f.opacity; f.m.depthWrite = f.depthWrite; f.m.needsUpdate = true; } faded = null; }
+      meBlob.material.opacity = blobOpacity;
+      return;
+    }
+    if (!faded) {
+      // drawn (at nothing) from the start, so his see-through shaders are built while he is hidden, not mid-move
+      const list: Faded[] = [];
+      faded = list;
+      const had = new Set<unknown>();
+      me.person.root.traverse((o: any) => {
+        for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) {
+          if (had.has(m)) continue;
+          had.add(m);
+          list.push({ m, transparent: m.transparent, opacity: m.opacity, depthWrite: m.depthWrite });
+          m.transparent = true; m.needsUpdate = true;
+        }
+      });
+    }
+    for (const f of faded) { f.m.opacity = f.opacity * a; f.m.depthWrite = a > 0.98; }
+    meBlob.material.opacity = blobOpacity * a;
+  };
+  /** The camera at his eyes, k of the way back from the normal camera (camPos/camLook, already placed). */
+  const applyPov = (P: any) => {
+    const k = Math.max(0, Math.min(1, pov ?? 0));
+    if (headBone) headBone.getWorldPosition(povHead); else povHead.set(P.x, 1.62, P.z);
+    // he looks the way the normal camera looks, so the pull-back is one straight line
+    povF.set(camLook.x - camPos.x, 0, camLook.z - camPos.z);
+    if (povF.lengthSq() < 1e-6) povF.set(Math.sin(yaw), 0, Math.cos(yaw));
+    povF.normalize();
+    povEye.copy(povHead).addScaledVector(povF, 0.12); povEye.y += 0.05;
+    povLook.copy(povEye).addScaledVector(povF, 3); povLook.y -= 0.5;
+    const eyeY = povEye.y, s = 1 - k;
+    povEye.lerp(camPos, s); povLook.lerp(camLook, s);
+    // up and over his head, not through it: the camera rises faster than it moves back (plus a small arc)
+    povEye.y = Math.min(H - 0.15, Math.max(povEye.y, eyeY + (camPos.y - eyeY) * Math.sqrt(s) + 0.35 * Math.sin(Math.PI * s)));
+    camera.position.copy(povEye); camera.lookAt(povLook);
+    // he shows once the camera is clear of his head, fading in over the next 0.6 m
+    setMeAlpha(Math.max(0, Math.min(1, (camera.position.distanceTo(povHead) - 0.75) / 0.6)));
+  };
+
+  const tick = (force = false) => {
     if (disposed) return;
     let dt: number;
     if (opts.fixedStep) dt = opts.fixedStep;
@@ -598,7 +672,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       acc += Math.min(0.25, clock.getDelta());
       const cap = busy && !capAlways ? prof.fpsCap : prof.stillFps;
       govCap = cap;
-      if (cap < 60 && acc < 1 / (cap + 1)) return;
+      if (!force && cap < 60 && acc < 1 / (cap + 1)) return;
       dt = Math.min(0.05, acc);
       gov.frame(performance.now(), govCap);
       acc = 0;
@@ -701,6 +775,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     inRoom(camPos);
     if (dbgCam) { camera.position.set(...dbgCam.pos); camera.lookAt(...dbgCam.look); }
     else { camera.position.copy(camPos); camera.lookAt(camLook); }
+    if (pov !== null && !dbgCam) applyPov(P);
     // a card open: the picture slides up so the spot sits above the card
     const vw = container.clientWidth || 1, vh = container.clientHeight || 1;
     const offY = dbgCam ? 0 : Math.round(frame * (framed === "wardrobe" ? 0.24 : 0.17) * vh);
@@ -727,7 +802,9 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     frames++;
     const nowMs = performance.now();
     if (nowMs - fpsT0 >= 1000) { cb.onFps?.(Math.round((frames * 1000) / (nowMs - fpsT0))); frames = 0; fpsT0 = nowMs; }
-  });
+  };
+  const loop = () => tick(false);
+  if (isOwner()) renderer.setAnimationLoop(loop);
 
   const ray = new THREE.Raycaster();
   const ndc = (px: number, py: number) => {
@@ -805,6 +882,17 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     room: () => room.id,
     rooms: () => rooms.map((id) => ({ id, label: roomPlan(data.tier, id, rooms).label })),
     goToRoom: (id) => goToRoom(id, null),
+    setPov: (k) => {
+      pov = k;
+      if (k === null) setMeAlpha(1);
+      else { stick = { x: 0, y: 0 }; stopWalk(); }
+    },
+    hold: (on) => {
+      if (!isOwner() || disposed) return;
+      if (on) { held = true; renderer.setAnimationLoop(null); tick(true); }
+      else if (held) { held = false; clock.getDelta(); renderer.setAnimationLoop(loop); }
+    },
+    renderOnce: () => tick(true),
     dispose: () => {
       disposed = true;
       gov.dispose();
