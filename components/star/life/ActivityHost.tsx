@@ -80,7 +80,7 @@ function HundredHost({ career, live, activity, callerLines, onDone, allowDice, o
   const best = activity.showBest ? Number(ctx.v2?.arc?.v[activity.showBest.replace(/^arc\./, "")] ?? 0) : 0;
   return (
     <HundredDrill career={career} title={fill(activity.name)} seed0={career.season * 977 + career.week * 31 + live.round} extraDist={dist - 12}
-      calls={callerLines?.length ? callerLines : DEFAULT_CALLS} callerName={caller?.short ?? "Den"} canAbandon={activity.canAbandon}
+      calls={callerLines?.length ? callerLines : DEFAULT_CALLS} callerName={caller?.short ?? "He"} face={caller?.role === "kitman" ? "/star/life/kitman/face-den.webp" : null} canAbandon={activity.canAbandon}
       energy={activity.cost?.energy} best={best} onDone={onDone} allowDice={allowDice} onDice={onDice} fill={fill} />
   );
 }

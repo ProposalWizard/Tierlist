@@ -36,7 +36,7 @@ type Light = "on" | "flicker" | "out";
 const WORD: Record<BallEnd, string> = { hit: "IN", saved: "SAVED", post: "OFF THE POST", wide: "WIDE", over: "OVER", high: "TOO HIGH", central: "TOO CENTRAL", wrong: "WRONG CORNER", "under-bar": "UNDER THE BAR", "missed-it": "MISSED IT" };
 const HIT_WORD: Record<string, string> = { call: "THAT CORNER", bar: "CROSSBAR!", tyre: "THROUGH IT!", bucket: "BUCKET'S OVER", keeper: "PAST HIM", dark: "IN THE DARK", double: "TWENTY!" };
 
-export default function HundredDrill({ career, title, seed0, extraDist, calls, callerName, canAbandon, energy, best, onDone, allowDice, onDice, fill }: {
+export default function HundredDrill({ career, title, seed0, extraDist, calls, callerName, face, canAbandon, energy, best, onDone, allowDice, onDice, fill }: {
   career: CareerState;
   title: string;
   seed0: number;
@@ -45,6 +45,8 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
   /** Den's counts, from the arc book ("Ten." … "And a hundred."), voiced. */
   calls: string[];
   callerName: string;
+  /** His still, as a small chip beside his words (he is not drawn on the pitch). */
+  face?: string | null;
   canAbandon?: boolean;
   energy?: number;
   best: number;
@@ -78,6 +80,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
   useEffect(() => {
     if (over) return;
     if (phase === "round") {
+      setLight("on");
       speak("b3-thursdays.t-sorry.say0.q1", ball === 0 ? "Go and stand on the D." : "");
       const t = window.setTimeout(() => setPhase("call"), ball === 0 ? 2400 : 1900);
       return () => window.clearTimeout(t);
@@ -90,14 +93,16 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
     if (phase === "play" && feed.dark) {
       // The groundsman's timer: a flicker, then dark; Den shouts the corner.
       const sh = shoutOf(feed);
-      setLight("flicker");
+      const already = ball > 0 && !!feeds[ball - 1]?.dark;
+      if (!already) setLight("flicker");
       const t1 = window.setTimeout(() => {
         setLight("out");
         if (sh) { setShout(sh.text); if (sh.voice) speak(sh.voice, sh.text); }
-      }, ball > 0 && feeds[ball - 1]?.dark ? 250 : 900);
+      }, already ? 200 : 900);
       return () => window.clearTimeout(t1);
     }
     if (phase === "play") setLight("on");
+    // (the dark holds through "call" and "react" inside its round)
   }, [phase, ball, feed, feeds, over]);
 
   const prevRef = useRef<{ x: number; y: number; z: number } | null>(null);
@@ -147,7 +152,6 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
     } else { setSaid(fill(after).replace(/"/g, "")); stopVoice(); }
     const list = [...shots, { hit, x: c?.x ?? null, z: c?.z ?? null, end }];
     setShout(null);
-    setLight("on");
     setFlash({ text: hit ? (HIT_WORD[feed.target.kind === "tyre" || feed.target.kind === "bucket" ? feed.target.kind : feed.round] ?? "IN") : WORD[end], good: hit });
     setPhase("react");
     window.setTimeout(() => setFlash(null), 1300);
@@ -192,6 +196,8 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
   const darkMask = `radial-gradient(ellipse 30% 9% at 45% 80%, rgba(0,0,0,.45) 0, rgba(0,0,0,.6) 40%, #000 100%), radial-gradient(ellipse 50% 10% at 50% 9%, rgba(0,0,0,.7) 0, #000 100%)`;
 
   const target = feed.target;
+  // eslint-disable-next-line @next/next/no-img-element
+  const chip = (size: number) => (face ? <img src={face} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: 999, objectFit: "cover", boxShadow: "0 0 0 2px rgba(245,185,66,.7)" }} /> : null);
   // Where the target sits on the screen (the test driver aims at it; nothing in the game reads it).
   const aimX = target.kind === "corner" || target.kind === "half" ? (target.side === "L" ? POST_L + 0.7 : POST_R - 0.7)
     : target.kind === "tyre" || target.kind === "bucket" ? target.x : target.kind === "past" ? (feed.x >= 0 ? POST_R - 0.7 : POST_L + 0.7) : CX;
@@ -264,12 +270,6 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
         }} />
         <style>{`@keyframes hd-flicker{0%{opacity:0}20%{opacity:.9}35%{opacity:.1}55%{opacity:.95}70%{opacity:.3}100%{opacity:.85}}`}</style>
 
-        {/* Den, when he is not in goal: by the bag at the edge of the light, feeding you (a picture; look only). */}
-        {!feed.keeper && !over && !dark && <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/star/life/kitman/cut-den.webp" alt="" aria-hidden data-feeder style={{ position: "absolute", right: "1%", top: "55%", height: "19%", zIndex: 26, pointerEvents: "none", filter: "brightness(.62) saturate(.8) drop-shadow(-18px 10px 10px rgba(0,0,0,.7))" }} />
-          <div aria-hidden style={{ position: "absolute", right: "17%", top: "71%", width: 34, height: 20, borderRadius: "40% 40% 30% 30%", background: "radial-gradient(circle at 40% 35%, #3b3f4a, #15171c)", zIndex: 26, pointerEvents: "none", boxShadow: "0 6px 8px rgba(0,0,0,.6)" }} />
-        </>}
         {/* Den in goal: his name over the goal */}
         {feed.keeper && !over && <div aria-hidden className="pointer-events-none absolute z-30 dd-kick" style={{ left: `${goalAt.left}%`, top: `calc(${goalAt.top}% - 46px)`, transform: "translateX(-50%)", color: "#f5b942", textShadow: "0 2px 6px #000" }}>{callerName} in goal</div>}
 
@@ -314,7 +314,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
           <div className="pointer-events-none absolute inset-x-0 z-30 text-center" style={{ top: "30%", padding: "0 22px" }} data-round-card={feed.round}>
             <div className="dd-kick" style={{ color: "rgba(255,255,255,.7)" }}>Round {roundNo} of 6 · {feeds.filter((f) => f.round === feed.round).length === 1 ? "one ball" : `${feeds.filter((f) => f.round === feed.round).length} balls`}</div>
             <div className="dd-anton" style={{ fontSize: 46, lineHeight: 1.02, color: feed.round === "double" ? "#f5c542" : "#fff", textShadow: "0 3px 12px #000" }}>{round.name}</div>
-            <div style={{ fontSize: 16, fontWeight: 800, marginTop: 12, textShadow: "0 2px 6px #000" }}><span className="dd-kick" style={{ color: "#f5b942", display: "block" }}>{callerName}</span>{ball === 0 ? "Go and stand on the D. " : ""}{round.line}</div>
+            <div style={{ fontSize: 16, fontWeight: 800, marginTop: 12, textShadow: "0 2px 6px #000" }}><span className="dd-kick" style={{ color: "#f5b942", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 4 }}>{chip(26)}{callerName}</span>{ball === 0 ? "Go and stand on the D. " : ""}{round.line}</div>
           </div>
         )}
         {/* Den's call, before each ball */}
@@ -333,7 +333,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
         )}
         {said && (
           <div className="pointer-events-none absolute inset-x-0 z-30 text-center" style={{ bottom: 92, padding: "0 18px", textShadow: "0 2px 6px #000" }} data-caller>
-            <div className="dd-kick" style={{ color: "#f5b942" }}>{callerName}</div>
+            <div className="dd-kick" style={{ color: "#f5b942", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 3 }}>{chip(24)}{callerName}</div>
             <div style={{ fontSize: 17, fontWeight: 800 }}>&ldquo;{said}&rdquo;</div>
           </div>
         )}
