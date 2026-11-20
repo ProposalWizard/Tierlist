@@ -75,3 +75,19 @@ its own rooms, look pass, and usable things (sofa, TV, fridge, bed, mirror, show
 could be way better when making decisions even maybe with the timed slow motion effect"
 => Research Telltale (The Walking Dead) choice screens and The Sims social menus; propose better decision/talk screens
 for the living-world events and team-mate chats, including a timed choice with the world slowing down behind it.
+
+## Decision screens: all three, each for its job (Harry, 20 Nov 2026, 15:35)
+"I love all of these, especially sims and telltale, think they can both be in the game, I love the sims round bar to
+decide what to interact on and then the telltale for actual conversing - also for random events where the other person
+forces the interaction with you or something happens telltale is perfect - think there's a use for the football mix too,
+maybe press conferences, training stuff, dilemmas etc - this has opened up a whole new avenue in the game"
+=> Sims round menu = choosing what to do with a person you tap. Telltale = the conversation itself, and any event
+where the other person (or the world) forces the moment. Football tone dial = press conferences, training, dilemmas.
+
+## "Revolutionary", not "2010 indie web game" (Harry, 20 Nov 2026, 15:35)
+"when I look online I see these amazing AI 3d games, perfect no clipping, great environments … the way their
+characters move, interact with objects, the environment around them it's all so clean. I feel like there's something
+we haven't found, a way to have lag free, stylised, perfect animations, perfect environments - whether this is github
+skills, paid blender projects, using animation inspiration from games like gta and red dead 2 (maybe finding open
+source movement/interaction animations). Right now it looks like a classic indie web game from like 2010 - I want
+REVOLUTIONARY."
