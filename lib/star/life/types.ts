@@ -190,6 +190,9 @@ export interface LifeState {
   teamCarry: number;
   /** The last 12 things that happened (the People page's "Lately"). */
   log: LifeLogRow[];
+  /** When each team-mate joined (life week; 0 = there when the life block
+   *  started), so "a new signing" means new to the club, not new to you. */
+  roster?: Record<string, number>;
 }
 
 export const PERSON_MEMORY_CAP = 6;

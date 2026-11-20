@@ -576,6 +576,49 @@ export const ADMIN_GUIDES = {
     inGame: ["Relations (boss, team, fans) and the Sponsors screen (the advert, on each deal)."],
     dev: "app/star-relgames-dev/page.tsx; the games are components/star/relgames/, their rules lib/star/relationships.ts, lib/star/bossPenalties.ts, lib/star/bossTalk.ts and lib/star/bossSession.ts.",
   },
+  "/star-life-dev": {
+    title: "Living world",
+    what: "Phase 1 of the living world on a sample career: every person remembers what you did, events fire for a reason and come back later, and you can spend time with team-mates. Off in the real game until Harry says.",
+    buttons: [
+      { group: "The phone (left)", items: [
+        ["People", "Who you know, in groups (dressing room, club staff, family, agent, press). Each person has three bars (Respect, Bond, Grudge, 0 to 100) and the last thing he remembers. The top card is the team bar: fall out with one man and the whole room takes sides."],
+        ["Tap a person", "Opens what he remembers (up to 6 lines; the dots are how strong: 3 never fades) and, for a team-mate, the three social actions."],
+        ["Chat", "Free, once a week per person. He brings up something he remembers if he can, else a line about the week. Bond +1 to +3; a man holding a grudge may blank you."],
+        ["Go for a drive", "Needs a car. Costs 1 day. Plays a drive with him in the passenger seat; what he says follows your car."],
+        ["A day at the races", "His bond 25 or more. Costs 1 day, 0.3 weeks of your wage and 4 energy. The bets are real: lose and the money is gone."],
+        ["An event's buttons", "Your choices. A grey chip is what it costs; a red chip says why you cannot pick it. 'Follow-up' means an earlier choice brought this back; a yellow 'remembers' strip is a memory coming back."],
+        ["Continue", "Back to People, or to the next thing that happens this week."],
+        ["Test tools", "Only in full screen: back to the test page."],
+      ] },
+      { group: "The week", items: [
+        ["▶ Play a week", "The week turns (a day count back, a week's money, a match result rolled), then the director looks at each moment of the week: the walk-out, after the match, arriving at training, the evening, driving. Most weeks are quiet; at most 2 events a week."],
+        ["+10 weeks", "Jumps ten weeks with nothing happening, so a follow-up comes due."],
+        ["Last match: Won / Drew / Lost and the ratings", "What the director thinks your last match was. Some events only fire after a loss or a bad rating."],
+      ] },
+      { group: "A moment, now", items: [
+        ["After a match … Season end", "Asks the director at that one moment. It may say nothing happened: that is the rules working (budget, cooldowns, a reason to fire)."],
+      ] },
+      { group: "Open any event", items: [
+        ["The list and Open", "Opens one event straight away, skipping the week's budget and cooldowns. Its people must still exist in this career."],
+        ["The dice / Outcome 1, 2, 3", "Which outcome plays when a choice has chances (e.g. the 20% crash). The dice = the real odds."],
+        ["Games: the dice / Win / Lose", "The result of a choice's test (the crossbar, your horse)."],
+      ] },
+      { group: "Sample career", items: [
+        ["Lived-in (16 weeks played)", "The sample after 16 weeks played with random choices: people met, memories written, follow-ups waiting."],
+        ["Brand new", "The sample before anything has happened."],
+        ["A follow-up waiting", "A team-mate crashed your car two weeks ago; he is waiting with an envelope (the follow-up and a memory coming back)."],
+        ["Car: No car / Level 2 / Level 4, Owns a horse", "Starts the lived-in sample again with that car and horse."],
+        ["Full screen", "The phone fills the screen, for looking at it on a phone."],
+      ] },
+      { group: "The other panels", items: [
+        ["Waiting to come back", "Every follow-up an earlier choice set up, and when it is due."],
+        ["The numbers", "How big the living world is in the save, the team bar and what a match would read from it, and whether it is on in the real game."],
+      ] },
+    ],
+    saving: ["Nothing is saved. The sample starts again when you reload the page."],
+    inGame: ["Nowhere yet: it is off in the real career (lib/star/life/flag.ts) until Harry says. Phase 2 wires the moments into the game and adds the legend, the star pass story stops and more events."],
+    dev: "app/star-life-dev/page.tsx; screens components/star/life/ (PeoplePage, EventCard, LifeFace, life.css); system lib/star/life/ (types, cond, people, facts, director, resolve, social, sim, migrate, validate, flag); the book lib/star/life/book/events.json; tests/star/lifeEvents.mts; soak scripts/soak/lifeSoak.mts. Design: docs/plans/living-world-design-2026-11-20.md.",
+  },
   "/admin/star-xp": {
     title: "XP Book",
     what: "Every amount of XP the career gives, on one page. Change a number, tick it off as checked, or leave a note on what should change. New achievements, records, awards and milestones go in New ideas.",

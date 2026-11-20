@@ -14,7 +14,7 @@ import type { CastSlot, LifeChoice, LifeEvent, LifeMoment, LifeState } from "./t
 import { EVENTS, eventById } from "./book";
 import { allHold, hasMemory, holds, parsePersonCond, personHolds, type PersonView } from "./cond";
 import { ctxFor, factsOf, squadViews, weekOfMoney, type FactOverride } from "./facts";
-import { freshLife, lifeWeek, meet, peek, ROLE_ID, roleOf, tidy } from "./people";
+import { freshLife, lifeWeek, meet, noteSquad, peek, ROLE_ID, roleOf, tidy } from "./people";
 import { fillLine } from "./text";
 import { actionsLeft } from "../week";
 
@@ -140,7 +140,7 @@ function sizeOk(e: LifeEvent, life: LifeState, now: number, b: { n: number; heav
  *  event in the book says comes back "event:any", "event:<this id>" or
  *  "event:<prefix>*"; squad memories when a team-mate is in it; your own. */
 function callbacksFor(c: CareerState, life: LifeState, e: LifeEvent, cast: Record<string, string>, ctx: ReturnType<typeof ctxFor>): LiveCallback[] {
-  const out: LiveCallback[] = [];
+  const out: (LiveCallback & { at: number })[] = [];
   const seen = new Set<string>();
   const hits = (where: string) => {
     if (!where.startsWith("event:")) return false;
@@ -154,21 +154,23 @@ function callbacksFor(c: CareerState, life: LifeState, e: LifeEvent, cast: Recor
       const tag = cb.ifMemory.split(":")[1];
       const holderSlot = cb.ifMemory.split(":")[0];
       let who = "";
-      if (holderSlot === "squad") { if (!hasMate || !life.squad.some(([t]) => t === tag)) continue; who = "The lads"; }
-      else if (holderSlot === "you") { if (!life.self.some(([t]) => t === tag)) continue; who = ""; }
+      let at = -1;
+      if (holderSlot === "squad") { const m = life.squad.find(([t]) => t === tag); if (!hasMate || !m) continue; who = "The lads"; at = m[1]; }
+      else if (holderSlot === "you") { const m = life.self.find(([t]) => t === tag); if (!m) continue; who = ""; at = m[1]; }
       else {
         const holder = Object.values(cast).find((id) => id && hasMemory(life.people[id], [tag]));
         if (!holder) continue;
         const slot = Object.keys(cast).find((k) => cast[k] === holder)!;
         who = fillLine(`{${slot}.short}`, c, cast, ctx);
-        const line = fillLine(cb.line, c, cast, ctx);
-        out.push({ who, line }); seen.add(cb.line);
+        const mAt = life.people[holder].m.find(([t]) => t === tag)?.[1] ?? 0;
+        out.push({ who, line: fillLine(cb.line, c, cast, ctx), at: mAt }); seen.add(cb.line);
         continue;
       }
-      out.push({ who, line: fillLine(cb.line, c, cast, ctx) }); seen.add(cb.line);
+      out.push({ who, line: fillLine(cb.line, c, cast, ctx), at }); seen.add(cb.line);
     }
   }
-  return out.slice(0, 2);
+  // One memory coming back at a time: the freshest one (two read as a list, not a moment).
+  return out.sort((a, b) => b.at - a.at).slice(0, 1).map(({ who, line }) => ({ who, line }));
 }
 
 export function costText(c: CareerState, cost: LifeChoice["cost"]): string[] {
@@ -252,6 +254,8 @@ export function pickEvent(c: CareerState, moment: LifeMoment, opts: PickOpts): L
   const pool: { e: LifeEvent; cast: Record<string, string>; w: number }[] = [];
   for (const e of EVENTS) {
     if (!e.trigger.when.includes(moment)) continue;
+    // A pay-off that carries its people only ever comes as a follow-up (the boots, years later).
+    if (e.cast.some((s) => s.pick === "carried")) continue;
     if (!freshOk(e, life, now)) continue;
     if (!social && !sizeOk(e, life, now, b)) continue;
     const cast = castEvent(c, life, e, opts, null, now);
@@ -285,6 +289,7 @@ export function startEvent(c: CareerState, live: LiveEvent): CareerState {
   const life = cloneLife(lifeOf(c));
   const now = lifeWeek(c);
   if (life.wk[0] !== now) { tidy(life, c, now); life.wk = [now, 0, 0]; }
+  noteSquad(life, c, now);
   if (!live.social) {
     life.wk[1] += 1;
     if (live.event.size !== "small") life.wk[2] += 1;

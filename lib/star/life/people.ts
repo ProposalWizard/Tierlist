@@ -48,7 +48,8 @@ export const ROLE_TITLE: Record<LifeRole, string> = {
 
 const FIRST_M = ["Gary", "Steve", "Danny", "Rob", "Kev", "Tony", "Mark", "Lee", "Paul", "Dean", "Craig", "Neil"];
 const FIRST_F = ["Sarah", "Jo", "Helen", "Amy", "Claire", "Nadia", "Priya", "Lucy"];
-const SURNAMES = ["Hartley", "Okafor", "Brennan", "Walsh", "Moreno", "Pike", "Dunmore", "Achebe", "Collier", "Varga", "Lynch", "Sefton"];
+/** Surnames a generated squad never uses (squadData.ts), so the agent is never "Moreno" next to a Moreno at left back. */
+const SURNAMES = ["Hartley", "Brennan", "Ashworth", "Pike", "Dunmore", "Lomax", "Collier", "Prentice", "Whitlock", "Fairbrother", "Sefton", "Kettering"];
 /** Invented papers (never a real outlet). */
 export const OUTLETS: Record<"tabloid" | "broadsheet", string> = { tabloid: "Daily Whistle", broadsheet: "Sporting Ledger" };
 
@@ -189,6 +190,24 @@ export function tidy(life: LifeState, c: CareerState, now: number): void {
     ids.sort((a, b) => score(a) - score(b));
     for (const id of ids.slice(0, ids.length - PEOPLE_CAP)) delete life.people[id];
   }
+}
+
+/** Keep the roster in step with the squad (who joined when). Mutates `life`. */
+export function noteSquad(life: LifeState, c: CareerState, now: number): void {
+  const ids = (c.squad ?? []).map((p) => p.id);
+  if (!life.roster) { life.roster = Object.fromEntries(ids.map((id) => [id, 0])); return; }
+  const keep = new Set(ids);
+  for (const id of Object.keys(life.roster)) if (!keep.has(id)) delete life.roster[id];
+  for (const id of ids) if (life.roster[id] === undefined) life.roster[id] = now;
+}
+
+/** A new signing: joined in the last NEW_SIGNING_WEEKS (unknown to a roster that exists = just arrived). */
+export const NEW_SIGNING_WEEKS = 8;
+export function isNewSigning(life: LifeState, id: string, now: number): boolean {
+  const r = life.roster;
+  if (!r || !Object.keys(r).length) return false;
+  const at = r[id];
+  return at === undefined || (at > 0 && now - at <= NEW_SIGNING_WEEKS);
 }
 
 // ── The team rule (Harry, 20 Nov 2026) ──────────────────────────────────

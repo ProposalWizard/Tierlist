@@ -18,7 +18,7 @@ import { CHATS, EVENTS } from "./book";
 import { allHold, parsePersonCond, personHolds } from "./cond";
 import { cantPay, cloneLife, lifeOf, pickEvent, startEvent, type LiveEvent } from "./director";
 import { carTier, ctxFor, factsOf, personView, type FactOverride } from "./facts";
-import { lifeWeek, meet, moveTeamFromPerson, nudge, personInfo, roleOf } from "./people";
+import { lifeWeek, meet, moveTeamFromPerson, noteSquad, nudge, personInfo, roleOf } from "./people";
 import { fillLine } from "./text";
 import type { LifeChange } from "./resolve";
 import { actionsLeft } from "../week";
@@ -77,6 +77,7 @@ function countSocial(c: CareerState, id: string): CareerState {
   const life = cloneLife(lifeOf(c));
   const now = lifeWeek(c);
   if (life.soc[0] !== now) life.soc = [now, {}];
+  noteSquad(life, c, now);
   life.soc[1][id] = (life.soc[1][id] ?? 0) + 1;
   return { ...c, life };
 }

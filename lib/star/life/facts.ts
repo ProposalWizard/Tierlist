@@ -5,7 +5,7 @@
 import type { CareerState, Fixture } from "../types";
 import type { LifeState } from "./types";
 import type { CondCtx, LifeFacts, PersonView } from "./cond";
-import { lifeWeek, peek, roleOf } from "./people";
+import { isNewSigning, lifeWeek, peek, roleOf } from "./people";
 import { starLevel } from "../starPoints";
 import { divisionOf } from "../calendar";
 import { typicalWeeklyWage } from "../economy";
@@ -62,9 +62,6 @@ export function factsOf(c: CareerState, o: FactOverride = {}): LifeFacts {
   };
 }
 
-/** A new signing: first met within the last 8 life weeks, and not at the start. */
-const NEW_WEEKS = 8;
-
 export function personView(c: CareerState, life: LifeState, id: string, now: number): PersonView | null {
   const rec = peek(life, id);
   if (roleOf(id) === "teammate") {
@@ -72,7 +69,7 @@ export function personView(c: CareerState, life: LifeState, id: string, now: num
     if (!p) return life.people[id] ? { id, rec, isNew: false, veteran: false } : null;
     return {
       id, rec, age: p.age, overall: p.overall, goals: p.seasonGoals, position: p.position,
-      isNew: rec.s > 0 && now - rec.s <= NEW_WEEKS, veteran: (p.age ?? 0) >= 31,
+      isNew: isNewSigning(life, id, now), veteran: (p.age ?? 0) >= 31,
     };
   }
   return { id, rec, isNew: false, veteran: false };

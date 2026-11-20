@@ -11,7 +11,7 @@ import { applyEffects, type DilemmaEffect } from "../dilemmas";
 import { happinessOf } from "../relationships";
 import { horseRating } from "../horse";
 import { actionsLeft } from "../week";
-import { formatMoney } from "../money";
+import { formatMoney, MONEY_SIGN } from "../money";
 import { cloneLife, cantPay, lifeOf, type LiveEvent } from "./director";
 import { ctxFor, factsOf, weekOfMoney, type FactOverride } from "./facts";
 import { holds } from "./cond";
@@ -71,7 +71,7 @@ export function chooseOption(c0: CareerState, live: LiveEvent, choiceId: string,
   const week = weekOfMoney(c0);
 
   // The cost of the choice itself.
-  if (ch.cost?.moneyWeeks) { const m = Math.round(ch.cost.moneyWeeks * week); c = { ...c, money: Math.max(0, c.money - m) }; changes.push({ kind: "money", label: `−${formatMoney(m)}`, delta: -m }); }
+  if (ch.cost?.moneyWeeks) { const m = Math.round(ch.cost.moneyWeeks * week); c = { ...c, money: Math.max(0, c.money - m) }; changes.push({ kind: "money", label: `−${MONEY_SIGN}${formatMoney(m)}`, delta: -m }); }
   if (ch.cost?.weekAction) { c = { ...c, weekActions: Math.max(0, actionsLeft(c) - ch.cost.weekAction) }; changes.push({ kind: "later", label: `${ch.cost.weekAction} day used` }); }
   if (ch.cost?.energy) { c = { ...c, energy: clampInt(c.energy + ch.cost.energy, 0, 100) }; changes.push({ kind: "energy", label: `${ch.cost.energy} energy`, delta: ch.cost.energy }); }
 
@@ -134,7 +134,7 @@ export function chooseOption(c0: CareerState, live: LiveEvent, choiceId: string,
   }
   if (c.fame !== before.fame) changes.push({ kind: "bar", label: "Fame", delta: c.fame - before.fame });
   if (c.reputation !== before.reputation) changes.push({ kind: "bar", label: "Reputation", delta: c.reputation - before.reputation });
-  if (c.money !== before.money) { const d = c.money - before.money; changes.push({ kind: "money", label: `${d > 0 ? "+" : "−"}${formatMoney(Math.abs(d))}`, delta: d }); }
+  if (c.money !== before.money) { const d = c.money - before.money; changes.push({ kind: "money", label: `${d > 0 ? "+" : "−"}${MONEY_SIGN}${formatMoney(Math.abs(d))}`, delta: d }); }
   if (fx.scandal) changes.push({ kind: "bar", label: "A scandal this season" });
   if (fx.energy) { const e = clampInt(c.energy + fx.energy, 0, 100); changes.push({ kind: "energy", label: "Energy", delta: e - c.energy }); c = { ...c, energy: e }; }
   if (fx.take === "car") {

@@ -56,6 +56,7 @@ export function migrateLife(raw: unknown): LifeState {
     soc: [num(soc[0], 0), numMap(soc[1])],
     flags: (Array.isArray(o.flags) ? o.flags : []).filter((x): x is string => typeof x === "string").slice(-12),
     teamCarry: Math.max(-0.99, Math.min(0.99, num(o.teamCarry, 0))),
+    ...(o.roster && typeof o.roster === "object" ? { roster: numMap(o.roster) } : {}),
     log: (Array.isArray(o.log) ? o.log : []).map(obj).filter((r) => typeof r.e === "string").slice(-12).map((r) => ({ w: num(r.w, 0), e: r.e as string, c: String(r.c ?? ""), t: String(r.t ?? "").slice(0, 140) })),
   };
 }

@@ -133,6 +133,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-guest-dev", "Guest accounts", "Play without signing in: the ad landing pages and the save-your-career prompt", "rbd", "career", "Harry", "live", "own", "team"),
   P("/star-awards-night-dev", "Season awards night", "The awards read out in a small 3D hall, made-up results", "rbd", "career", "Leo", "live", "none", "team"),
   P("/star-relgames-dev", "Relationship games", "Play the boss, team-mate and fan mini-games", "rbd", "career", "Mikey", "live", "none", "team"),
+  P("/star-life-dev", "Living world", "People who remember, events with weight, time with team-mates (phase 1, off in the game)", "rbd", "career", "Harry", "live", "none", "team"),
   P("/star-goals-gallery-dev", "Career goals", "Stats → Goals with a made-up career; Hall of Fame best goals", "rbd", "career", "Leo", "live", "browser", "team"),
   P("/star-aerials-dev", "Headers and volleys", "Force any aerial move (header, volley, bicycle, scorpion) on a real chance", "rbd", "chances", "Harry", "live", "none", "team"),
   P("/star-goal-clips-dev", "Goal videos", "Record a goal and turn it into a video with sound", "rbd", "career", "Leo", "live", "browser", "team"),
@@ -315,7 +316,7 @@ export const TEST_PAGES = new Set<string>([
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev",
   "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev", "/star-shootout-dev", "/star-weather-dev", "/star-live-chances-dev",
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev", "/star-awards-night-dev",
-  "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev",
+  "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev", "/star-life-dev",
 ]);
 export const isTestPage = (url: string) => TEST_PAGES.has(url);
 
