@@ -9,8 +9,8 @@ import { NextResponse } from "next/server";
 import { whoIs } from "@/lib/publish/auth";
 import { accountViews, insertPost, listPosts } from "@/lib/publish/db";
 import { PLATFORMS, type Platform } from "@/lib/publish/types";
-import { getStorage } from "@/lib/marketing/storage";
-import { isVideoKey, itemsFromList, mediaOf } from "@/lib/marketing/r2";
+import { itemsFromList, type MediaItem } from "@/lib/marketing/r2";
+import { OWN, isPublishVideo, kibStorage, ownStorage, storeOf } from "@/lib/publish/storage";
 
 export const dynamic = "force-dynamic";
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -20,11 +20,16 @@ export async function GET(req: Request) {
   if (!who) return json({ error: "Admins only." }, 403);
   const out: Record<string, unknown> = { setup: setupState() };
   try { out.accounts = await accountViews(); out.posts = await listPosts(); } catch (e) { out.error = (e as Error).message; out.accounts = []; out.posts = []; }
-  try {
-    const store = getStorage();
-    out.videos = store.mode === "r2" ? itemsFromList(await store.list("videos/")).filter((v) => v.kind === "video").slice(0, 200) : [];
-    out.storage = store.mode;
-  } catch (e) { out.videos = []; out.storageError = (e as Error).message; }
+  // Mikey's own bucket first (marked "own:"), then the team's Marketing uploads.
+  const videos: (MediaItem & { source: "own" | "kib" })[] = [];
+  const errors: string[] = [];
+  for (const source of ["own", "kib"] as const) {
+    const store = storeOf(source); if (!store) continue;
+    try { for (const v of itemsFromList(await store.list("videos/")).filter((x) => x.kind === "video").slice(0, 200)) videos.push({ ...v, key: (source === "own" ? OWN : "") + v.key, source }); }
+    catch (e) { errors.push((e as Error).message); }
+  }
+  out.videos = videos; out.storage = ownStorage() ? "own" : kibStorage() ? "r2" : "off";
+  if (errors.length) out.storageError = errors.join(" ");
   return json(out);
 }
 
@@ -34,7 +39,7 @@ export async function POST(req: Request) {
   const b = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!b) return json({ error: "Send the post as JSON." }, 400);
   const key = b.video_key;
-  if (!isVideoKey(key) || mediaOf(key)?.kind !== "video") return json({ error: "Pick a video from Marketing storage." }, 400);
+  if (!isPublishVideo(key)) return json({ error: "Pick a video from storage." }, 400);
   const platforms = Array.isArray(b.platforms) ? PLATFORMS.filter((p) => (b.platforms as unknown[]).includes(p)) as Platform[] : [];
   if (!platforms.length) return json({ error: "Tick at least one platform." }, 400);
   const one = typeof b.caption === "string" ? b.caption : "";
@@ -60,6 +65,7 @@ function setupState() {
     google: has("GOOGLE_CLIENT_ID") && has("GOOGLE_CLIENT_SECRET"),
     cron: has("PUBLISH_CRON_SECRET"),
     agent: has("PUBLISH_AGENT_TOKEN"),
-    storage: has("R2_ACCOUNT_ID") && has("R2_ACCESS_KEY_ID") && has("R2_SECRET_ACCESS_KEY") && has("R2_BUCKET"),
+    storage: !!ownStorage() || !!kibStorage(),
+    ownStorage: !!ownStorage(),
   };
 }
