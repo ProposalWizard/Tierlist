@@ -1,0 +1,537 @@
+{
+ "id": "arc-chairmans-dinner",
+ "title": "The top table",
+ "owner": "chairman",
+ "summary": "The chairman wants you at the top table of a dinner with a man who might buy the club, and he wants you to say the club is in great shape. You know the wages were late last month. What you say at the dinner, and what happens to the club after, is yours to carry.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "chairman"
+  ],
+  "tone": [
+   "tense",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "said": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-club-was-sold",
+   "title": "Sold",
+   "text": "The man bought the club on the strength of a dinner you sat at. Half the staff were gone by Christmas."
+  },
+  {
+   "id": "you-told-the-truth",
+   "title": "You told the truth",
+   "text": "You said the wages were late, to the wrong man at the wrong table, and it might have saved the club."
+  }
+ ],
+ "promises": {
+  "p-right-things": {
+   "id": "p-right-things",
+   "to": "chairman",
+   "text": "Say the right things at {chairman.short}'s dinner",
+   "due": {
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "keptBy": {
+    "beat": "chd-2-dinner",
+    "ends": [
+     "sell"
+    ]
+   },
+   "dueText": "Friday night",
+   "kept": {
+    "text": "You said the right things, like he asked.",
+    "npc": [
+     {
+      "slot": "chairman",
+      "bond": 4,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd say the right things.",
+    "npc": [
+     {
+      "slot": "chairman",
+      "bond": -6,
+      "respect": -4
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "chd-1-ask",
+   "title": "The top table",
+   "n": 1,
+   "event": {
+    "id": "arc-chd-1-ask",
+    "title": "The top table",
+    "category": "club",
+    "place": "stadium:directors-box",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "clubApps>=5"
+     ]
+    },
+    "setup": [
+     "{chairman.name} has asked to see you in the directors' lounge, which has carpet and a fish tank. He's never spoken to you before except to say well done."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "chairman",
+       "say": [
+        "\"There's a dinner on Friday. A gentleman who's interested in investing. I'd like you at the top table, being the face of the club. Tell him how happy everybody is.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll be there, Mr Chairman.\"",
+         "tone": "humble",
+         "goto": "c2"
+        },
+        {
+         "id": "wages",
+         "label": "\"The wages were late last month. People aren't happy.\"",
+         "tone": "honest",
+         "goto": "c-wages"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm a footballer, not a salesman.\"",
+         "tone": "cold",
+         "end": "refused"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "c2"
+        }
+       ]
+      },
+      "c2": {
+       "who": "chairman",
+       "say": [
+        "\"Good lad. He'll ask about the training ground and the youth set-up. Say good things. It's important for everybody's jobs, yours included.\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"I'll say the right things.\"",
+         "tone": "calm",
+         "end": "agreed",
+         "promise": "p-right-things"
+        },
+        {
+         "id": "honest",
+         "label": "\"I'll be honest with him.\"",
+         "tone": "honest",
+         "end": "honest-warning"
+        }
+       ]
+      },
+      "c-wages": {
+       "who": "chairman",
+       "say": [
+        "He stops smiling. \"That was a bank issue, sorted in two days. Which is exactly why we need investment. Will you come?\""
+       ],
+       "replies": [
+        {
+         "id": "come",
+         "label": "\"I'll come. I won't lie for you, though.\"",
+         "tone": "brave",
+         "end": "honest-warning"
+        },
+        {
+         "id": "fine",
+         "label": "\"Fine. I'll say the right things.\"",
+         "tone": "calm",
+         "end": "agreed",
+         "promise": "p-right-things"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "agreed": [
+       {
+        "text": "He shakes your hand with both of his. \"I knew you were one of us.\"",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "agreed-to-the-top-table",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "yes"
+         }
+        }
+       }
+      ],
+      "honest-warning": [
+       {
+        "text": "\"Just be yourself,\" he says, and you can see he means the opposite.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": 2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "honest"
+         }
+        }
+       }
+      ],
+      "refused": [
+       {
+        "text": "\"I see.\" The next week your parking space has been moved to the far end of the car park.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -6,
+          "respect": -2,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "wouldnt-sit-at-his-table",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The chairman has a favour to ask"
+  },
+  {
+   "id": "chd-2-dinner",
+   "title": "Friday night",
+   "after": {
+    "beat": "chd-1-ask",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-chd-2-dinner",
+    "title": "Friday night",
+    "category": "club",
+    "place": "stadium:directors-box",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "arc.said=='yes' || arc.said=='honest'"
+     ]
+    },
+    "setup": [
+     "A hotel ballroom with the club crest on every napkin. The man interested in buying the club is on your left. He's been asking the waiter about the wine for ten minutes.",
+     "He turns to you. \"So, honestly. How's it going behind the scenes?\""
+    ],
+    "choices": [
+     {
+      "id": "sell",
+      "label": "\"Best club I've been at. Everyone's happy.\"",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "text": "He nods and writes something on his napkin. {chairman.short} winks at you across the table.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "said-the-right-things",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "sold"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "truth",
+      "label": "\"The wages were late last month. People are worried.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "text": "He puts his fork down. {chairman.short} goes a colour you haven't seen on a person before.",
+        "effects": {
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -12,
+          "respect": -4,
+          "grudge": 14
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "told-the-buyer-about-the-wages",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "truth"
+         }
+        },
+        "promiseBroken": [
+         "p-right-things"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "dodge",
+      "label": "\"Ask the chairman, I just play.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "He laughs. He asks the chairman, who talks for twenty minutes.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "dodged"
+         }
+        },
+        "promiseBroken": [
+         "p-right-things"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The dinner is on Friday",
+   "look": {
+    "chip": "Friday"
+   }
+  },
+  {
+   "id": "chd-3-after",
+   "title": "New owners",
+   "after": {
+    "beat": "chd-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-chd-3-after",
+    "title": "New owners",
+    "category": "club",
+    "place": "compound:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "chairman",
+    "variants": [
+     {
+      "if": "!sameClub",
+      "template": "text-thread",
+      "place": "home",
+      "setupSwap": "You read about your old club on your phone."
+     }
+    ],
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{if arc.said=='sold'}The sale went through in the summer. This morning six people from the office, the canteen and the academy have been let go.{/if}",
+     "{if !arc.said=='sold'}The sale fell through in the summer. {chairman.short} is still in charge, and the wages have been on time all year.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "speak",
+      "label": "Say something about it in your next interview.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.said=='sold'",
+        "text": "It goes everywhere. The new owner's office stops replying to the paper.",
+        "effects": {
+         "fans": 6,
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "spoke-out-after-the-sale",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "the-club-was-sold"
+        }
+       },
+       {
+        "text": "You thank the staff who stayed. {chairman.short} sends you a bottle of something with a short note.",
+        "effects": {
+         "fans": 4
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "you-told-the-truth"
+        }
+       }
+      ]
+     },
+     {
+      "id": "keep",
+      "label": "Keep your head down.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.said=='sold'",
+        "text": "You keep your head down. The canteen is a vending machine by October.",
+        "effects": {
+         "team": -3
+        },
+        "arc": {
+         "end": "the-club-was-sold"
+        }
+       },
+       {
+        "text": "You keep your head down, and the club stays as it is.",
+        "arc": {
+         "end": "you-told-the-truth"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Next season the club's future is decided"
+  }
+ ]
+}

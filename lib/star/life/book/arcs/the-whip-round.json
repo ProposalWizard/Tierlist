@@ -1,0 +1,364 @@
+{
+ "id": "arc-the-whip-round",
+ "title": "The whip-round",
+ "owner": "mate",
+ "summary": "A team-mate's partner has had a baby and the captain's doing a whip-round for a pram. What you put in the envelope gets noticed. A season later there's a christening.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate"
+  ],
+  "tone": [
+   "awkward",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "order": "random"
+  },
+  {
+   "slot": "capt",
+   "pick": "squad",
+   "where": [
+    "veteran"
+   ],
+   "order": "best"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "godparent",
+   "title": "Uncle",
+   "text": "You put your hand in your pocket when it mattered, and now the kid calls you uncle."
+  },
+  {
+   "id": "left-out",
+   "title": "Left out",
+   "text": "You got it wrong with the envelope, and you weren't on the christening list."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "whp-1-envelope",
+   "title": "The envelope",
+   "n": 1,
+   "event": {
+    "id": "arc-whp-1-envelope",
+    "title": "The envelope",
+    "category": "teammates",
+    "place": "compound:changing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "capt",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.name}'s partner had a baby girl at four this morning. {capt.name} is going round the dressing room with a brown envelope for a pram."
+    ],
+    "talk": {
+     "start": "w1",
+     "nodes": {
+      "w1": {
+       "who": "capt",
+       "say": [
+        "He holds the envelope open in front of you. \"Pram, car seat, the lot. Everyone's putting in what they can.\""
+       ],
+       "replies": [
+        {
+         "id": "big",
+         "label": "Put in a week's wage.",
+         "tone": "kind",
+         "goto": "w-big",
+         "cost": {
+          "moneyWeeks": 1
+         }
+        },
+        {
+         "id": "normal",
+         "label": "Put in what the others are putting in.",
+         "tone": "calm",
+         "end": "normal"
+        },
+        {
+         "id": "card",
+         "label": "\"I'll get her something myself.\"",
+         "tone": "honest",
+         "end": "own-gift"
+        },
+        {
+         "id": "quiet",
+         "label": "Pat your pockets. \"Haven't got cash on me.\"",
+         "silent": true,
+         "end": "skipped"
+        }
+       ]
+      },
+      "w-big": {
+       "who": "capt",
+       "say": [
+        "He looks in the envelope, then at you. \"That's too much, son.\""
+       ],
+       "replies": [
+        {
+         "id": "keep",
+         "label": "\"It's not. She's his first.\"",
+         "tone": "kind",
+         "end": "big"
+        },
+        {
+         "id": "take",
+         "label": "\"Give half back, then.\"",
+         "tone": "humble",
+         "end": "normal"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "big": [
+       {
+        "text": "The pram they buy is better than the one the gaffer's daughter had. {mate.short} finds out who put in most within a day.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 12,
+          "respect": 4
+         },
+         {
+          "slot": "capt",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "paid-for-the-pram",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "big"
+         }
+        }
+       }
+      ],
+      "normal": [
+       {
+        "text": "{capt.short} moves on to the next peg.",
+        "npc": [
+         {
+          "slot": "capt",
+          "respect": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "normal"
+         }
+        }
+       }
+      ],
+      "own-gift": [
+       {
+        "text": "You mean it. On the way home you buy a tiny pair of boots in the club colours.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "bought-the-baby-boots",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "normal"
+         }
+        }
+       }
+      ],
+      "skipped": [
+       {
+        "text": "\"There's a cash machine at the garage,\" {capt.short} says, loud enough for the room.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "respect": -3
+         },
+         {
+          "slot": "mate",
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "skipped-the-whip-round",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "skipped"
+         }
+        },
+        "noteSquad": "skipped-the-whip-round"
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "random"
+     }
+    ]
+   },
+   "hint": "There's a whip-round going"
+  },
+  {
+   "id": "whp-2-christening",
+   "title": "The christening",
+   "after": {
+    "beat": "whp-1-envelope",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-whp-2-christening",
+    "title": "The christening",
+    "category": "teammates",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{if !arc.path=='skipped'}A card through the door with a photo of the baby on it. \"You're invited to Ava's christening.\"{/if}",
+     "{if arc.path=='skipped'}Everybody in the dressing room is talking about {mate.short}'s christening on Sunday. You find out from the group chat.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go.",
+      "tone": "kind",
+      "cost": {
+       "weekAction": 1
+      },
+      "outcomes": [
+       {
+        "if": "!arc.path=='skipped'",
+        "text": "{if arc.path=='big'}His partner holds your hand at the door and asks if you'll be the baby's godfather. You say yes before you know what that means.{/if}{if arc.path=='normal'}You stand at the back with the lads and drink warm squash.{/if}",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "came-to-the-christening",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "godparent"
+        }
+       },
+       {
+        "text": "You turn up uninvited with a present. It's awkward for ten minutes, then his mum hands you the baby.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "godparent"
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Send a card.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "He sends a thumbs up. You see the photos in the group chat.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "end": "left-out"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "random"
+     }
+    ]
+   },
+   "hint": "A season on, a card in the post"
+  }
+ ]
+}

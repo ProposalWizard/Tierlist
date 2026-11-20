@@ -1,0 +1,1311 @@
+{
+ "id": "arc-kid-in-digs",
+ "title": "The kid in digs",
+ "owner": "kid",
+ "summary": "The youngest lad in the squad has a week to show the coach something or he's going out on loan. He asks you to feed him balls after training. Say yes and you play it, and he holds you to Tuesdays. The coach asks your view, the next season decides whether he makes it, and a few years on he's the one in your shirt.",
+ "size": "big",
+ "about": {
+  "who": [
+   "academy kid",
+   "coach"
+  ],
+  "tone": [
+   "warm",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.2
+ },
+ "cast": [
+  {
+   "slot": "kid",
+   "pick": "squad",
+   "where": [
+    "age<=19"
+   ],
+   "order": "youngest"
+  },
+  {
+   "slot": "coach",
+   "pick": "coach"
+  }
+ ],
+ "vars": {
+  "trained": 0,
+  "kept": 0,
+  "made": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "passed-on",
+   "title": "He passed it on",
+   "text": "You fed a scared kid balls on a Tuesday. Years later he's doing the same for somebody else."
+  },
+  {
+   "id": "never-looked-back",
+   "title": "He never looked back",
+   "text": "He made it, and he made it clear he did it on his own."
+  },
+  {
+   "id": "the-one-that-got-away",
+   "title": "The one that got away",
+   "text": "He went on loan and never came back. Somebody said he's selling cars now."
+  }
+ ],
+ "promises": {
+  "p-tuesday": {
+   "id": "p-tuesday",
+   "to": "kid",
+   "text": "Feed {kid.short} on Tuesday",
+   "due": {
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "keptBy": {
+    "beat": "dig-2-tuesday",
+    "played": true
+   },
+   "dueText": "Next Tuesday",
+   "kept": {
+    "text": "You said Tuesday, and you were there.",
+    "npc": [
+     {
+      "slot": "kid",
+      "bond": 6,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "Tuesday came, and he waited on pitch two with the bag until the floodlights went off.",
+    "npc": [
+     {
+      "slot": "kid",
+      "bond": -10,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "kid",
+      "tag": "stood-him-up-on-tuesday",
+      "strength": 3
+     }
+    ]
+   },
+   "remind": "\"Tuesday? I've borrowed the good balls off the kit man.\""
+  }
+ },
+ "beats": [
+  {
+   "id": "dig-1-week",
+   "title": "One week",
+   "n": 1,
+   "event": {
+    "id": "arc-dig-1-week",
+    "title": "One week",
+    "category": "teammates",
+    "place": "compound:pitch-2",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "squad.any(age<=19)"
+     ]
+    },
+    "setup": [
+     "{kid.name} is sitting on the ball bag on pitch two in his coat. He lives in digs with a landlady who makes him take his boots off at the gate."
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "kid",
+       "say": [
+        "\"{coach.short} says I've got a week to show him something or I'm going on loan to some club up north. I can't finish. I just can't. Will you feed me a few?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Get on the D.\"",
+         "tone": "kind",
+         "goto": "k2"
+        },
+        {
+         "id": "why",
+         "label": "\"Why me and not one of the coaches?\"",
+         "tone": "honest",
+         "goto": "k-why"
+        },
+        {
+         "id": "no",
+         "label": "\"Ask the coaches, mate. I'm done.\"",
+         "tone": "cold",
+         "end": "refused"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "k-why"
+        }
+       ]
+      },
+      "k-why": {
+       "who": "kid",
+       "say": [
+        "\"Because they're the ones deciding. You're the only one who scores for fun.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Go on, then. Ten.\"",
+         "tone": "kind",
+         "goto": "k2"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm knackered. Another day.\"",
+         "tone": "calm",
+         "end": "another-day"
+        }
+       ]
+      },
+      "k2": {
+       "who": "kid",
+       "say": [
+        "\"Roll them through the cones onto my right. If I miss, don't say anything. I'll know.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Roll the first one.",
+         "tone": "calm",
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "feed-drill",
+        "name": "One week",
+        "intro": "Ten passes through the cones. A good ball gives him a better chance.",
+        "dials": {
+         "balls": 10,
+         "shooter": {
+          "slot": "kid"
+         }
+        },
+        "score": "his goals off your passes (0-10)",
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "vision",
+         "target": 55
+        },
+        "cost": {
+         "energy": -5
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "f-stop"
+        ],
+        [
+         "activity.score>=6",
+         "f-good"
+        ],
+        [
+         "",
+         "f-poor"
+        ]
+       ]
+      },
+      "f-good": {
+       "who": "kid",
+       "say": [
+        "\"{activity.score}! I haven't hit {activity.score} all season.\" He's grinning at the goal. \"Same again Tuesday? Please?\""
+       ],
+       "replies": [
+        {
+         "id": "tues",
+         "label": "\"Tuesday. I'll be here.\"",
+         "tone": "honest",
+         "end": "trained-promised",
+         "promise": "p-tuesday"
+        },
+        {
+         "id": "see",
+         "label": "\"We'll see how my legs are.\"",
+         "tone": "calm",
+         "end": "trained"
+        }
+       ]
+      },
+      "f-poor": {
+       "who": "kid",
+       "say": [
+        "\"{activity.score}.\" He's not grinning. \"That's me, isn't it.\""
+       ],
+       "replies": [
+        {
+         "id": "tues",
+         "label": "\"That's one go. Tuesday, again.\"",
+         "tone": "kind",
+         "end": "trained-promised",
+         "promise": "p-tuesday"
+        },
+        {
+         "id": "honest",
+         "label": "\"You're snatching at them. Slow down.\"",
+         "tone": "honest",
+         "end": "trained"
+        }
+       ]
+      },
+      "f-stop": {
+       "who": "kid",
+       "say": [
+        "\"Oh. Right. Thanks anyway.\""
+       ],
+       "replies": [
+        {
+         "id": "sorry",
+         "label": "\"My calf's gone. Tuesday instead?\"",
+         "tone": "honest",
+         "end": "stopped-promised",
+         "promise": "p-tuesday"
+        },
+        {
+         "id": "go",
+         "label": "Go in.",
+         "tone": "cold",
+         "end": "refused"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "trained-promised": [
+       {
+        "text": "He writes \"TUESDAY\" on his hand, the way the old kit men do.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 12,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "fed-him-on-pitch-two",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "trained": 1
+         }
+        }
+       }
+      ],
+      "trained": [
+       {
+        "text": "He picks up every ball on his own and doesn't let you help.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "fed-him-on-pitch-two",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "trained": 1
+         }
+        }
+       }
+      ],
+      "stopped-promised": [
+       {
+        "text": "\"Tuesday,\" he says. He stays out on his own after you go.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "stopped-feeding-him",
+          "strength": 1
+         }
+        ]
+       }
+      ],
+      "another-day": [
+       {
+        "text": "\"Course.\" He's still out there when you drive off.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "said-another-day",
+          "strength": 1
+         }
+        ]
+       }
+      ],
+      "refused": [
+       {
+        "text": "He shoots on his own until it's dark. The coach notices that, at least.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -6,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "wouldnt-feed-him",
+          "strength": 2
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The youngest lad has a week to show something"
+  },
+  {
+   "id": "dig-2-tuesday",
+   "title": "Tuesday",
+   "after": {
+    "beat": "dig-1-week",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-dig-2-tuesday",
+    "title": "Tuesday",
+    "category": "teammates",
+    "place": "compound:pitch-2",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Tuesday. {kid.short} is on pitch two with the bag before anyone else is changed."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "kid",
+       "say": [
+        "{if arc.trained==1}\"Same as last time? I've been practising slowing down. My landlady says I walk too fast as well.\"{/if}",
+        "{if arc.trained==0}\"You came. I didn't think you would.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"On the D.\"",
+         "tone": "calm",
+         "goto": "play"
+        },
+        {
+         "id": "bail",
+         "label": "\"Not today, mate. The gaffer wants me in the gym.\"",
+         "tone": "lie",
+         "end": "bailed"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "feed-drill",
+        "name": "Tuesday",
+        "intro": "Ten more through the cones.",
+        "dials": {
+         "balls": 10,
+         "shooter": {
+          "slot": "kid"
+         }
+        },
+        "score": "his goals off your passes (0-10)",
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "vision",
+         "target": 55
+        },
+        "cost": {
+         "energy": -5
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "f-stop"
+        ],
+        [
+         "activity.score>=6",
+         "f-good"
+        ],
+        [
+         "",
+         "f-poor"
+        ]
+       ]
+      },
+      "f-good": {
+       "who": "kid",
+       "say": [
+        "\"{activity.score}. Is that good? That's good, isn't it.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"That's good.\"",
+         "tone": "kind",
+         "end": "good"
+        },
+        {
+         "id": "more",
+         "label": "\"It's better. Now do it in a game.\"",
+         "tone": "honest",
+         "end": "good"
+        }
+       ]
+      },
+      "f-poor": {
+       "who": "kid",
+       "say": [
+        "\"{activity.score}. Worse than last time.\""
+       ],
+       "replies": [
+        {
+         "id": "fine",
+         "label": "\"The ball's wet. You're fine.\"",
+         "tone": "kind",
+         "end": "okay"
+        },
+        {
+         "id": "work",
+         "label": "\"Then we'll do it Thursday as well.\"",
+         "tone": "brave",
+         "end": "good"
+        }
+       ]
+      },
+      "f-stop": {
+       "who": "kid",
+       "say": [
+        "\"That's all right. I'll do the rest.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Leave him the bag.",
+         "tone": "calm",
+         "end": "okay"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "He scores in the under-23s on Saturday, low into the corner, and looks up at the stand to see if you saw.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 8,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "came-back-on-tuesday",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "trained": 2
+         }
+        }
+       }
+      ],
+      "okay": [
+       {
+        "text": "He thanks you twice and goes back to his digs on the bus.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "came-back-on-tuesday",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "trained": 1
+         }
+        }
+       }
+      ],
+      "bailed": [
+       {
+        "text": "He finds out at lunch that you weren't in the gym.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -10,
+          "respect": -4,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "lied-about-tuesday",
+          "strength": 3
+         }
+        ],
+        "promiseBroken": [
+         "p-tuesday"
+        ]
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "He's waiting on pitch two"
+  },
+  {
+   "id": "dig-3-coach",
+   "title": "What do you reckon?",
+   "after": {
+    "beat": "dig-1-week",
+    "weeks": [
+     2,
+     4
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-dig-3-coach",
+    "title": "What do you reckon?",
+    "category": "staff",
+    "place": "compound:office",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{coach.name} has the loan forms on his desk. \"You've been out there with {kid.short}. What do you reckon? Keep him or send him?\""
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "coach",
+       "say": [
+        "\"I'm asking you because the lads tell you things they don't tell me.\""
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"He's not ready. But he's close.\"",
+         "tone": "humble",
+         "end": "loan"
+        },
+        {
+         "id": "calm",
+         "label": "\"Keep him. He's better than he thinks.\"",
+         "tone": "calm",
+         "end": "keep"
+        },
+        {
+         "id": "confident",
+         "label": "\"Keep him and I'll take him under my wing.\"",
+         "tone": "confident",
+         "end": "keep-wing"
+        },
+        {
+         "id": "fiery",
+         "label": "\"That's your job, not mine.\"",
+         "tone": "fiery",
+         "end": "not-my-job"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "keep": [
+       {
+        "text": "The loan forms go back in the drawer. {kid.short} never finds out it was you.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "kept": 1
+         }
+        }
+       }
+      ],
+      "keep-wing": [
+       {
+        "text": "\"Then he's yours.\" {coach.short} tears the loan form up in front of you, which you think is a bit much.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "vouched-for-the-kid",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "kept": 1
+         }
+        }
+       }
+      ],
+      "loan": [
+       {
+        "text": "He goes north on Monday, on loan till May. He texts you from the coach: \"Thanks for Tuesdays.\"",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 2
+         },
+         {
+          "slot": "kid",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "kept": 0
+         }
+        }
+       }
+      ],
+      "not-my-job": [
+       {
+        "text": "\"Fair.\" He sends him on loan anyway.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "kept": 0
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "The coach wants your opinion on him"
+  },
+  {
+   "id": "dig-4-debut",
+   "title": "Next season",
+   "after": {
+    "beat": "dig-1-week",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-dig-4-debut",
+    "title": "Next season",
+    "category": "teammates",
+    "place": "stadium:dressing-room",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "after-match",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{if arc.kept==1}{kid.name} made his debut today. He came on with eight minutes left and scored with his first touch, low into the corner.{/if}",
+     "{if arc.kept==0}A call from {kid.name}, from his loan club. It's late, and there's a television on somewhere behind him.{/if}"
+    ],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "kid",
+       "say": [
+        "{if arc.kept==1}He finds you in the dressing room with his shirt still on. \"Did you see where it went?\"{/if}",
+        "{if arc.kept==0}\"I'm thinking of packing it in. I'm not playing, I'm on my own, and my mum's not well.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "warm",
+         "label": "\"Bottom corner. Like a Tuesday.\"",
+         "tone": "kind",
+         "requires": [
+          "arc.kept==1"
+         ],
+         "end": "warm"
+        },
+        {
+         "id": "warm2",
+         "label": "\"Don't pack it in. Ring me every night if you need to.\"",
+         "tone": "kind",
+         "requires": [
+          "arc.kept==0"
+         ],
+         "end": "warm"
+        },
+        {
+         "id": "push",
+         "label": "\"One goal. Now do it again.\"",
+         "tone": "honest",
+         "requires": [
+          "arc.kept==1"
+         ],
+         "end": "push"
+        },
+        {
+         "id": "push2",
+         "label": "\"Everybody hates loans. Get your head down.\"",
+         "tone": "honest",
+         "requires": [
+          "arc.kept==0"
+         ],
+         "end": "push"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "quiet"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "warm": [
+       {
+        "text": "{if arc.kept==1}He keeps the ball. It's in his digs on top of the wardrobe.{/if}{if arc.kept==0}He rings three nights that week, then once a week, then he stops needing to.{/if}",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "there-for-his-first-season",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "made": "yes"
+         }
+        }
+       }
+      ],
+      "push": [
+       {
+        "text": "{if arc.kept==1}He does, the week after.{/if}{if arc.kept==0}He goes quiet on the line. He plays the next game and scores.{/if}",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 4,
+          "respect": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "made": "yes"
+         }
+        }
+       }
+      ],
+      "quiet": [
+       {
+        "text": "{if arc.kept==1}He waits for you to say something, then goes to find someone who will.{/if}{if arc.kept==0}\"Doesn't matter,\" he says. The line goes.{/if}",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "nothing-to-say-when-it-mattered",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "made": "quit"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "Next season is make or break for him"
+  },
+  {
+   "id": "dig-5-shirt",
+   "title": "The team sheet",
+   "after": {
+    "beat": "dig-4-debut",
+    "seasons": [
+     1,
+     3
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-dig-5-shirt",
+    "title": "The team sheet",
+    "category": "manager",
+    "place": "compound:corridor",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kid",
+    "variants": [
+     {
+      "if": "!sameClub",
+      "template": "text-thread",
+      "place": "home",
+      "setupSwap": "A text from {kid.short}. \"Starting on Saturday. Up front. Thought you'd want to know.\""
+     }
+    ],
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{if arc.made=='yes'}The team sheet is on the board. {kid.short}'s name is where yours usually is. You're on the bench.{/if}",
+     "{if arc.made=='quit'}A text from a number you don't have. \"It's {kid.short}. I've packed it in. Just wanted to say thanks for trying.\"{/if}"
+    ],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "kid",
+       "say": [
+        "{if arc.made=='yes'}He's waiting by the board, red in the face. \"I didn't ask for it. I swear I didn't.\"{/if}",
+        "{if arc.made=='quit'}A second text. \"I'm working at my uncle's garage. It's all right, honestly.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "gracious",
+         "label": "\"You earned it. Go and score.\"",
+         "tone": "kind",
+         "requires": [
+          "arc.made=='yes'"
+         ],
+         "end": "gracious"
+        },
+        {
+         "id": "gracious2",
+         "label": "\"If you ever want to play again, ring me.\"",
+         "tone": "kind",
+         "requires": [
+          "!arc.made=='yes'"
+         ],
+         "end": "gracious"
+        },
+        {
+         "id": "sour",
+         "label": "Walk past him to the gaffer's office.",
+         "tone": "cold",
+         "requires": [
+          "arc.made=='yes'"
+         ],
+         "end": "sour"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "sour"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "gracious": [
+       {
+        "if": "arc.made=='yes'",
+        "text": "{if arc.made=='yes'}He scores twice. Both times he runs to the bench, to you.{/if}{if arc.made=='quit'}He sends a thumbs up. You don't hear from him again for a long time.{/if}",
+        "effects": {
+         "team": 6,
+         "boss": 3
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 10,
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "gave-him-my-place-gracefully",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "made": "yes"
+         }
+        }
+       },
+       {
+        "text": "He sends a thumbs up. You don't hear from him again for a long time.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-one-that-got-away"
+        }
+       }
+      ],
+      "sour": [
+       {
+        "if": "arc.made=='yes'",
+        "text": "{if arc.made=='yes'}The gaffer doesn't change it. {kid.short} plays well, and celebrates with everyone except you.{/if}{if arc.made=='quit'}The phone stays quiet.{/if}",
+        "effects": {
+         "team": -5,
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -10,
+          "respect": -4,
+          "grudge": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "sulked-when-he-got-my-place",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "made": "sour"
+         }
+        }
+       },
+       {
+        "text": "The phone stays quiet.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "end": "the-one-that-got-away"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "One day he'll be good enough for your place"
+  },
+  {
+   "id": "dig-6-legacy",
+   "title": "A photo from pitch two",
+   "after": {
+    "beat": "dig-5-shirt",
+    "seasons": [
+     2,
+     4
+    ]
+   },
+   "n": 5,
+   "event": {
+    "id": "arc-dig-6-legacy",
+    "title": "A photo from pitch two",
+    "category": "teammates",
+    "place": "home",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "followUp"
+     ]
+    },
+    "setup": [
+     "A photo from {kid.short}. It's dark, it's pitch two, and there's a skinny lad on the D with a bag of balls next to him.",
+     "{if arc.made=='yes'}\"His first week. Says he can't finish. Sound familiar?\"{/if}{if arc.made=='sour'}\"Feeding the young lad. Someone should, eh.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "reply",
+      "label": "\"Roll it onto his right. Tell him not to look at the keeper.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.made=='yes'",
+        "text": "He sends back a voice note of the kid scoring and the whole of pitch two cheering.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "passed-it-on-to-him",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "passed-on"
+        }
+       },
+       {
+        "text": "He reads it. He doesn't reply.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 2,
+          "grudge": -4
+         }
+        ],
+        "arc": {
+         "end": "never-looked-back"
+        }
+       }
+      ]
+     },
+     {
+      "id": "call",
+      "label": "Ring him.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.made=='yes'",
+        "text": "He picks up laughing. You talk for an hour about Tuesdays.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 8,
+          "respect": 6
+         }
+        ],
+        "arc": {
+         "end": "passed-on"
+        }
+       },
+       {
+        "text": "It rings out. The photo stays on your phone.",
+        "npc": [
+         {
+          "slot": "kid"
+         }
+        ],
+        "arc": {
+         "end": "never-looked-back"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "Years on, you'll hear from him",
+   "look": {
+    "chip": "Years later"
+   }
+  }
+ ]
+}

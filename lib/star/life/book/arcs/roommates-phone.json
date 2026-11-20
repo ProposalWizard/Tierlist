@@ -1,0 +1,632 @@
+{
+ "id": "arc-roommates-phone",
+ "title": "One in the morning",
+ "owner": "roomie",
+ "summary": "Away trip, one in the morning. Your room-mate is betting on football on his phone, which players aren't allowed to do. He asks you to keep it quiet. A few weeks later the gaffer reads out the rules to the whole squad, and the season after, it catches up with him one way or another.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "team-mate: the room-mate",
+   "gaffer"
+  ],
+  "tone": [
+   "dark",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "roomie",
+   "pick": "squad",
+   "order": "bond-desc"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "quiet": 0,
+  "stopped": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "he-got-clean",
+   "title": "He got clean",
+   "text": "You kept his secret and made him stop. He's never put another bet on."
+  },
+  {
+   "id": "the-ban",
+   "title": "The ban",
+   "text": "It came out. He got banned, and he knows who could have stopped it."
+  }
+ ],
+ "promises": {
+  "p-quiet": {
+   "id": "p-quiet",
+   "to": "roomie",
+   "text": "Say nothing about {roomie.short}'s betting",
+   "due": {
+    "weeks": [
+     2,
+     8
+    ]
+   },
+   "keptBy": {
+    "beat": "rmp-2-rules",
+    "ends": [
+     "quiet",
+     "quiet-snap"
+    ]
+   },
+   "dueText": "For as long as he's clean",
+   "kept": {
+    "text": "You said nothing, like you promised.",
+    "npc": [
+     {
+      "slot": "roomie",
+      "bond": 4,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You promised him you'd say nothing.",
+    "npc": [
+     {
+      "slot": "roomie",
+      "bond": -8,
+      "respect": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "roomie",
+      "tag": "broke-the-betting-promise",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "rmp-1-hotel",
+   "title": "One in the morning",
+   "n": 1,
+   "event": {
+    "id": "arc-rmp-1-hotel",
+    "title": "One in the morning",
+    "category": "teammates",
+    "place": "away:hotel",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "roomie",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Away hotel, one in the morning. {roomie.name}'s phone is lighting up his face. He's watching a game from another league with the sound off, and he's swearing at it."
+    ],
+    "talk": {
+     "start": "h1",
+     "nodes": {
+      "h1": {
+       "who": "roomie",
+       "say": [
+        "He sees you're awake. \"Don't. I know. I've got sixty quid on the away side and they're losing.\""
+       ],
+       "replies": [
+        {
+         "id": "ask",
+         "label": "\"How much have you got on this month?\"",
+         "tone": "honest",
+         "goto": "h2"
+        },
+        {
+         "id": "rules",
+         "label": "\"You know we can't bet on football.\"",
+         "tone": "brave",
+         "goto": "h-rules"
+        },
+        {
+         "id": "sleep",
+         "label": "\"Turn the screen down. I'm trying to sleep.\"",
+         "tone": "calm",
+         "end": "slept"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "h2"
+        }
+       ]
+      },
+      "h2": {
+       "who": "roomie",
+       "say": [
+        "He doesn't answer for a while. \"More than sixty. More than I'll say.\""
+       ],
+       "replies": [
+        {
+         "id": "help",
+         "label": "\"Delete it. Now, with me here.\"",
+         "tone": "brave",
+         "goto": "h-rules"
+        },
+        {
+         "id": "lend",
+         "label": "\"If you're short, I can help. Just stop.\"",
+         "tone": "kind",
+         "goto": "h-rules"
+        }
+       ]
+      },
+      "h-rules": {
+       "who": "roomie",
+       "say": [
+        "\"If this gets out I'm finished. You won't say anything, will you? Promise me.\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"I won't say anything. You stop.\"",
+         "tone": "honest",
+         "end": "promised",
+         "promise": "p-quiet"
+        },
+        {
+         "id": "no",
+         "label": "\"I can't promise that.\"",
+         "tone": "honest",
+         "end": "no-promise"
+        },
+        {
+         "id": "tell",
+         "label": "\"I'm telling the gaffer in the morning.\"",
+         "tone": "cold",
+         "end": "told"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "promised": [
+       {
+        "text": "He deletes the app while you watch. Then he lies awake till four.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "kept-his-secret",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "quiet": 1,
+          "stopped": 1
+         }
+        }
+       }
+      ],
+      "no-promise": [
+       {
+        "text": "He turns over and faces the wall. In the morning he's moved his bag to the other bed.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": -4,
+          "respect": 2,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "wouldnt-promise",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "quiet": 0
+         }
+        }
+       }
+      ],
+      "told": [
+       {
+        "text": "He's in the gaffer's office before breakfast, and he doesn't come to breakfast.",
+        "effects": {
+         "boss": 3,
+         "team": -3
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": -14,
+          "grudge": 16
+         },
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "grassed-me-up",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "quiet": 2
+         }
+        },
+        "noteSquad": "grassed-on-the-room-mate"
+       }
+      ],
+      "slept": [
+       {
+        "text": "You fall asleep to the light of his phone. He's still on it when the alarm goes.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "quiet": 0
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "roomie",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "Your room-mate can't sleep"
+  },
+  {
+   "id": "rmp-2-rules",
+   "title": "The rules",
+   "after": {
+    "beat": "rmp-1-hotel",
+    "weeks": [
+     2,
+     5
+    ]
+   },
+   "event": {
+    "id": "arc-rmp-2-rules",
+    "title": "The rules",
+    "category": "manager",
+    "place": "compound:changing-room",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "arc.quiet<2"
+     ]
+    },
+    "setup": [
+     "The gaffer has the whole squad in the dressing room and a sheet of paper from the league. \"Somebody at another club got eight months last week for betting. If anyone in here has a problem, tell me now, or tell me in private.\"",
+     "{roomie.short} is looking at the floor."
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "manager",
+       "say": [
+        "His eyes stop on you. \"Anything, {you.short}?\""
+       ],
+       "replies": [
+        {
+         "id": "calm",
+         "label": "\"Nothing from me, gaffer.\"",
+         "tone": "calm",
+         "end": "quiet"
+        },
+        {
+         "id": "humble",
+         "label": "\"Can I see you after?\"",
+         "tone": "humble",
+         "end": "private"
+        },
+        {
+         "id": "fiery",
+         "label": "\"Why are you asking me?\"",
+         "tone": "fiery",
+         "end": "quiet-snap"
+        },
+        {
+         "id": "quiet",
+         "label": "… Say nothing",
+         "silent": true,
+         "end": "quiet"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "quiet": [
+       {
+        "text": "{roomie.short} catches your eye on the way out and nods once.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "kept-quiet-at-the-meeting",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "quiet": 1
+         }
+        }
+       }
+      ],
+      "quiet-snap": [
+       {
+        "text": "\"Because you're in the front row.\" Nobody laughs.",
+        "effects": {
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "quiet": 1
+         }
+        }
+       }
+      ],
+      "private": [
+       {
+        "if": "arc.stopped==0",
+        "text": "You tell the gaffer. He gets the club's welfare people in, quietly. {roomie.short} works out who it was by Friday.",
+        "effects": {
+         "boss": 4
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": -10,
+          "grudge": 10
+         },
+         {
+          "slot": "manager",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "told-the-gaffer-in-private",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "quiet": 2
+         }
+        },
+        "promiseBroken": [
+         "p-quiet"
+        ]
+       },
+       {
+        "text": "You go in and talk about your own form for five minutes. You don't tell him.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -1
+         }
+        ],
+        "arc": {
+         "set": {
+          "quiet": 1
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "roomie",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "The gaffer wants a word with everyone"
+  },
+  {
+   "id": "rmp-3-letter",
+   "title": "A letter from the league",
+   "after": {
+    "beat": "rmp-1-hotel",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-rmp-3-letter",
+    "title": "A letter from the league",
+    "category": "teammates",
+    "place": "compound:car-park",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "roomie",
+    "variants": [
+     {
+      "if": "!sameClub",
+      "template": "phone-call",
+      "place": "home",
+      "setupSwap": "{roomie.name} rings you. You haven't been on the same team since you moved."
+     }
+    ],
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{roomie.name} is sitting in his car in the car park with the engine off and an envelope on the passenger seat."
+    ],
+    "talk": {
+     "start": "l1",
+     "nodes": {
+      "l1": {
+       "who": "roomie",
+       "say": [
+        "{if arc.stopped==1 && arc.quiet==1}\"It's from the league. They've gone back through everyone's accounts. Mine's clean since that night. Since you.\"{/if}",
+        "{if arc.stopped==0 || arc.quiet==2}\"It's from the league. They went back through everyone's accounts. Twelve months.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "glad",
+         "label": "\"Then you're fine. Go and train.\"",
+         "tone": "kind",
+         "end": "talked"
+        },
+        {
+         "id": "sorry",
+         "label": "\"I'm sorry, mate. I'm here if you need me.\"",
+         "tone": "honest",
+         "end": "talked"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "talked"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "talked": [
+       {
+        "if": "arc.stopped==1 && arc.quiet==1",
+        "text": "He folds the letter in half and puts it in the glovebox. \"I owe you.\"",
+        "effects": {
+         "team": 4
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 10,
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "got-him-clean",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "he-got-clean"
+        }
+       },
+       {
+        "text": "He nods and starts the engine. The papers have it by the weekend.",
+        "effects": {
+         "team": -4
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": -2,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "was-there-when-he-got-banned",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "the-ban"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "roomie",
+      "pick": "squad",
+      "order": "bond-desc"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Next season, it catches up"
+  }
+ ]
+}

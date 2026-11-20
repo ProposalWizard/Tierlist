@@ -1,0 +1,350 @@
+{
+ "id": "arc-the-snorer",
+ "title": "The snorer",
+ "owner": "roomie",
+ "summary": "Your room-mate snores like a lawnmower and you've got a game tomorrow. What you do about it at two in the morning becomes a dressing-room story. A season later, it's still a story.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate: the room-mate"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "roomie",
+   "pick": "squad",
+   "order": "bond-desc"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-recording",
+   "title": "The recording",
+   "text": "The video of him snoring is still the most watched thing in the squad's group chat."
+  },
+  {
+   "id": "good-sleep",
+   "title": "A good night's sleep",
+   "text": "He got it fixed, and he thinks it was his idea."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "snr-1-night",
+   "title": "Two in the morning",
+   "n": 1,
+   "event": {
+    "id": "arc-snr-1-night",
+    "title": "Two in the morning",
+    "category": "teammates",
+    "place": "away:hotel",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "roomie",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Two in the morning in the team hotel. {roomie.name} is asleep on his back and snoring like someone's starting a lawnmower in the bathroom."
+    ],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "roomie",
+       "say": [
+        "He stops for about five seconds. Then he starts again, louder."
+       ],
+       "replies": [
+        {
+         "id": "film",
+         "label": "Film it for the group chat.",
+         "tone": "reckless",
+         "goto": "s-film"
+        },
+        {
+         "id": "wake",
+         "label": "Throw a pillow at him.",
+         "tone": "fiery",
+         "goto": "s-wake"
+        },
+        {
+         "id": "towel",
+         "label": "Sleep in the bath with the door shut.",
+         "tone": "humble",
+         "end": "bath"
+        },
+        {
+         "id": "quiet",
+         "label": "Lie there and take it.",
+         "silent": true,
+         "end": "lay-awake"
+        }
+       ]
+      },
+      "s-wake": {
+       "who": "roomie",
+       "say": [
+        "\"Wha? I wasn't asleep.\" He's asleep again before he's finished saying it."
+       ],
+       "replies": [
+        {
+         "id": "film",
+         "label": "Right. Film it.",
+         "tone": "reckless",
+         "goto": "s-film"
+        },
+        {
+         "id": "tell",
+         "label": "In the morning, tell him straight.",
+         "tone": "honest",
+         "end": "told"
+        }
+       ]
+      },
+      "s-film": {
+       "who": "roomie",
+       "say": [
+        "Forty seconds of it. At the end he says \"corner\" in his sleep, very clearly."
+       ],
+       "replies": [
+        {
+         "id": "post",
+         "label": "Post it.",
+         "tone": "reckless",
+         "end": "posted"
+        },
+        {
+         "id": "keep",
+         "label": "Keep it for a better day.",
+         "tone": "confident",
+         "end": "kept"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "posted": [
+       {
+        "text": "It's had four hundred laughing faces by breakfast. He takes it well for about a day.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 2,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "posted-me-snoring",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "posted"
+         }
+        },
+        "noteSquad": "the-snoring-video"
+       }
+      ],
+      "kept": [
+       {
+        "text": "You keep it. He doesn't know you've got it, which is the best part.",
+        "npc": [
+         {
+          "slot": "roomie"
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kept"
+         }
+        }
+       }
+      ],
+      "told": [
+       {
+        "text": "\"I don't snore.\" He goes very quiet when the physio says he does.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "told-me-i-snore",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "told"
+         }
+        }
+       }
+      ],
+      "bath": [
+       {
+        "text": "You wake up with a crick in your neck and the shower tap in your ear.",
+        "effects": {
+         "energy": -6
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "told"
+         }
+        }
+       }
+      ],
+      "lay-awake": [
+       {
+        "text": "You get about three hours. You're flat on Saturday.",
+        "effects": {
+         "energy": -8
+        },
+        "arc": {
+         "set": {
+          "path": "told"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "roomie",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "Your room-mate is snoring"
+  },
+  {
+   "id": "snr-2-later",
+   "title": "Still snoring",
+   "after": {
+    "beat": "snr-1-night",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-snr-2-later",
+    "title": "Still snoring",
+    "category": "teammates",
+    "place": "away:hotel",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "roomie",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{if arc.path=='posted'}Somebody has set the snoring video as the ringtone on the physio's phone. {roomie.short} has heard it eleven times this week.{/if}",
+     "{if !arc.path=='posted'}{roomie.short} has had something done to his nose in the summer. He tells everyone it was a boxing injury.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "more",
+      "label": "{if arc.path=='kept'}Post the old video now.{/if}{if !arc.path=='kept'}Do the lawnmower noise at him.{/if}",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "The dressing room goes up. He laughs, eventually, and chases you round the physio bed.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 2,
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "never-let-the-snoring-go",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "the-recording"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Let him have the boxing story.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "\"Boxing,\" you say. \"Tough sport.\" He gives you a look that's half a thank you.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "good-sleep"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "roomie",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "A season on, the snoring"
+  }
+ ]
+}

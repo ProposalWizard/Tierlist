@@ -1,0 +1,326 @@
+{
+ "id": "arc-the-head-shave",
+ "title": "Clippers in the dressing room",
+ "owner": "mate",
+ "summary": "A team-mate is shaving his head for the hospice that looked after his nan, and he asks you to do it with him. A season later there's a reason to remember it.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate"
+  ],
+  "tone": [
+   "warm",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "order": "bond-desc"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "for-his-nan",
+   "title": "For his nan",
+   "text": "You shaved your head for his nan, and the photo is on the wall at the hospice."
+  },
+  {
+   "id": "kept-your-hair",
+   "title": "You kept your hair",
+   "text": "You said no to the clippers, and he did it on his own."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "hsv-1-clippers",
+   "title": "The clippers",
+   "n": 1,
+   "event": {
+    "id": "arc-hsv-1-clippers",
+    "title": "The clippers",
+    "category": "teammates",
+    "place": "compound:changing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.name} has a pair of clippers and a bin bag on the bench. The hospice that looked after his nan is raising money, and he's going bald for it on Friday."
+    ],
+    "talk": {
+     "start": "h1",
+     "nodes": {
+      "h1": {
+       "who": "mate",
+       "say": [
+        "\"It's a grand if two of us do it. I've asked six lads and they've all got photo shoots, apparently. Will you?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Go on. Do me first.\"",
+         "tone": "brave",
+         "goto": "h2"
+        },
+        {
+         "id": "money",
+         "label": "\"I'll give you the grand. I'm keeping my hair.\"",
+         "tone": "honest",
+         "end": "paid",
+         "cost": {
+          "moneyWeeks": 1
+         }
+        },
+        {
+         "id": "no",
+         "label": "\"I can't, mate. Sorry.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "no"
+        }
+       ]
+      },
+      "h2": {
+       "who": "mate",
+       "say": [
+        "\"Number one or the full thing?\""
+       ],
+       "replies": [
+        {
+         "id": "full",
+         "label": "\"Full thing.\"",
+         "tone": "reckless",
+         "end": "shaved"
+        },
+        {
+         "id": "one",
+         "label": "\"Number one. I'm not a hero.\"",
+         "tone": "humble",
+         "end": "shaved"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "shaved": [
+       {
+        "text": "The video gets more money than the hospice has ever raised in a weekend. Your mum doesn't speak to you for three days.",
+        "effects": {
+         "fans": 3,
+         "fame": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 14,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "shaved-my-head-for-his-nan",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "shaved"
+         }
+        }
+       }
+      ],
+      "paid": [
+       {
+        "text": "He takes the money and shaves his own head. \"You're a coward,\" he says, smiling.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "paid-instead-of-shaving",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "paid"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He does it on his own on Friday with the kit man holding the clippers.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "A team-mate has a pair of clippers"
+  },
+  {
+   "id": "hsv-2-hospice",
+   "title": "The hospice",
+   "after": {
+    "beat": "hsv-1-clippers",
+    "seasons": [
+     1,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-hsv-2-hospice",
+    "title": "The hospice",
+    "category": "teammates",
+    "place": "compound:car-park",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "variants": [
+     {
+      "if": "!sameClub",
+      "template": "text-thread",
+      "place": "home",
+      "setupSwap": "A text from {mate.short}. His nan died on Sunday."
+     }
+    ],
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{mate.short} is in the car park early, still in his coat. His nan died on Sunday. The hospice has asked if he'll come and open their new garden."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "\"I'll come with you.\"",
+      "tone": "kind",
+      "cost": {
+       "weekAction": 1
+      },
+      "outcomes": [
+       {
+        "text": "{if arc.path=='shaved'}The photo of the two of you with no hair is on the wall by the door. He laughs at it, then he has to go outside for a bit.{/if}{if !arc.path=='shaved'}You stand next to him while he cuts the ribbon.{/if}",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "came-to-the-hospice",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "for-his-nan"
+        }
+       }
+      ]
+     },
+     {
+      "id": "words",
+      "label": "\"I'm sorry, mate.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='shaved'",
+        "text": "\"She liked you. She said you had a kind face, for a footballer.\"",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "for-his-nan"
+        }
+       },
+       {
+        "text": "He nods and goes in to train.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "kept-your-hair"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "A season on, a reason to remember"
+  }
+ ]
+}
