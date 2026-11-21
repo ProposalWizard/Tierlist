@@ -55,6 +55,8 @@ import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { neonCanvas, numberCanvas, blobCanvas } from "../shop3d/textures";
 import { dressInKit, type KitColours } from "../shop3d/scene";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
+import { ownMotion, lifeSeed, type OwnMotion } from "../people/life";
+import { addToonFace, blinkAt, wanderGaze, type ToonFaceRig } from "../style3d/toon/face";
 import { people3dLook } from "../look3d";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
 import { makeWalkClip } from "../walkClip";
@@ -543,7 +545,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   const dealers: Person3D[] = [];
   type NpcRole = "croupier" | "dealer" | "bartender" | "slots" | "leaner";
   /** Each person's clip player, what he does by default, and his next turn. */
-  const npcs: { p: Person3D; pl: ClipPlayer; role: NpcRole; base: string; next: number; until: number; x: number; z: number }[] = [];
+  const npcs: { p: Person3D; pl: ClipPlayer; role: NpcRole; base: string; next: number; until: number; x: number; z: number; own: OwnMotion; seed: number; face: ToonFaceRig | null; clock: number }[] = [];
   /** Your reaction after a game (null if the clips didn't load). */
   let cheerA: any = null, groanA: any = null;
   /** Sat at the slot machine, and pulling its lever (null if not loaded). */
@@ -593,8 +595,11 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       circles.push([sp.x, sp.z, sp.role === "slots" ? 0.3 : 0.35]);
       const pl = new ClipPlayer(THREE, d.actions);
       const base = ({ croupier: "dealer_idle", dealer: "dealer_idle", bartender: "bartender_idle", slots: "slot_sit", leaner: "lean_table" } as const)[sp.role];
-      if (!pl.play(base, { from: Math.random() * 3 })) pl.play("idle");
-      npcs.push({ p: d, pl, role: sp.role, base, next: 3 + Math.random() * 6, until: 0, x: sp.x, z: sp.z });
+      // each one's own life (people/life.ts, as the house visitors and the world's walkers): where in his idle he
+      // starts, his idle's pace, and a face that blinks and glances at its own times
+      const id = `casino-${sp.role}-${dealers.length - 1}`, own = ownMotion(id);
+      if (!pl.play(base, { from: own.phase * 3 })) pl.play("idle");
+      npcs.push({ p: d, pl, role: sp.role, base, next: 3 + Math.random() * 6, until: 0, x: sp.x, z: sp.z, own, seed: lifeSeed(id), face: addToonFace(THREE, d), clock: own.phase * 7 });
     }
     person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false, you: true });
     player = person.root;
@@ -844,10 +849,15 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
         n.next = a + Math.random() * (b - a);
         if (n.role !== "bartender") staffMove(n.role);
       }
-      n.pl.update(dt);
+      // his idle at his own pace (a timed move, the croupier's spin with the wheel, at the clip's own)
+      n.pl.update(dt * (n.pl.current === n.base ? n.own.rate : 1));
+      n.clock += dt;
       const seen = frustum.intersectsSphere(sph.set(v3.set(n.x, 1, n.z), 1.2));
       n.p.root.visible = seen;
-      if (seen) n.p.mixer.update(dt);
+      if (seen) {
+        n.p.mixer.update(dt);
+        n.face?.set({ blink: blinkAt(n.clock, n.seed), gaze: wanderGaze(n.clock * 0.6 * n.own.restless + n.own.phase * 40, n.seed) });
+      }
     }
   };
 
