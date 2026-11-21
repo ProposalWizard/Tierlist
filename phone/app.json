@@ -19,8 +19,10 @@
       "predictiveBackGestureEnabled": false
     },
     "plugins": [
-      "expo-font",
+      ["expo-font", { "fonts": ["./assets/look/fonts/Anton.ttf", "./assets/look/fonts/Cinzel-Black.ttf"] }],
+      "./plugins/withKibAndroid",
       "expo-asset",
+      ["expo-image-picker", { "photosPermission": "Allow KIB Next to use one of your photos for your player.", "cameraPermission": "Allow KIB Next to take a photo for your player.", "microphonePermission": false }],
       ["expo-media-library", { "granularPermissions": [], "photosPermission": false, "savePhotosPermission": "Allow KIB Next to save your goal videos to your photos." }]
     ]
   }

@@ -33,7 +33,27 @@ const upstream = config.resolver.resolveRequest;
 // the trial, "useSyncExternalStore of null"). Every React import resolves from the app.
 const PHONE_ENTRY = path.join(__dirname, "index.ts");
 const ONE_COPY = /^(react|react-native|react-dom|scheduler)(\/.*)?$/;
+// THE APP'S OWN "react-native" (src/rn.js): Text and TextInput that never grow with the
+// phone's font size, and a Modal drawn in the app's own window. For the app's own files
+// only (phone/src, App.tsx, index.ts): packages and src/rn.js itself get the real one.
+const OWN_RN = path.join(__dirname, "src/rn.js");
+const APP_DIR = __dirname + path.sep;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // Browser only: the web build's compiler turns `import { Text } from "react-native"` into
+  // "react-native-web/dist/exports/Text" before this runs, so the same three are sent on here.
+  if (platform === "web") {
+    const m = /^react-native-web\/dist\/exports\/(Text|TextInput|Modal)$/.exec(moduleName);
+    const o = context.originModulePath || "";
+    if (m && o !== OWN_RN && o.startsWith(APP_DIR) && !o.includes(`${path.sep}node_modules${path.sep}`)) {
+      return { type: "sourceFile", filePath: path.join(WEB_DIR, `rn${m[1]}.js`) };
+    }
+  }
+  if (moduleName === "react-native") {
+    const o = context.originModulePath || "";
+    if (o !== OWN_RN && o.startsWith(APP_DIR) && !o.includes(`${path.sep}node_modules${path.sep}`)) {
+      return { type: "sourceFile", filePath: OWN_RN };
+    }
+  }
   if (ONE_COPY.test(moduleName) && !(context.originModulePath || "").startsWith(path.join(__dirname, "node_modules"))) {
     const ctx = { ...context, originModulePath: PHONE_ENTRY };
     return upstream ? upstream(ctx, moduleName, platform) : context.resolveRequest(ctx, moduleName, platform);
