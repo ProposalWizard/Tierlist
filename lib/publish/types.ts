@@ -9,6 +9,8 @@ export const isPlatform = (p: unknown): p is Platform => typeof p === "string" &
 /** One platform's progress for one post. */
 export interface PlatformResult {
   stage: "pending" | "processing" | "done" | "failed";
+  /** What the platform last said about it (Facebook Reel phases), for the page and for checking. */
+  note?: string;
   /** Instagram: the media container while Instagram processes the video. */
   container?: string;
   /** The post's id on the platform once it exists. */

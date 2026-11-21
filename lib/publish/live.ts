@@ -5,7 +5,7 @@
 import { open, seal } from "./crypto";
 import { duePosts, getAccount, recentPosted, saveAccount, updatePost } from "./db";
 import type { EngineApi } from "./engine";
-import { facebookPostVideo, facebookStats, instagramContainerState, instagramPublish, instagramStartReel, instagramStats } from "./meta";
+import { facebookPostVideo, facebookReelState, facebookStats, instagramContainerState, instagramPublish, instagramStartReel, instagramStats } from "./meta";
 import type { Platform } from "./types";
 import { videoForPosting } from "./video";
 import { youtubeAccess, youtubeStats, youtubeUpload } from "./youtube";
@@ -37,6 +37,7 @@ export function liveApi(): EngineApi {
     async instagramState(c) { const a = await account("instagram"); return instagramContainerState(c, open(a.token_enc)); },
     async instagramPublish(c) { const a = await account("instagram"); return instagramPublish(a.account_id, open(a.token_enc), c); },
     async facebookPost(url, title, caption) { const a = await account("facebook"); return facebookPostVideo(a.account_id, open(a.token_enc), url, title, caption); },
+    async facebookState(id) { const a = await account("facebook"); return facebookReelState(id, open(a.token_enc)); },
     async youtubeUpload(video, title, caption) { return youtubeUpload(await youtubeToken(), video, title, caption, "public"); },
     async stats(p, id) {
       if (p === "youtube") return (await youtubeStats(await youtubeToken(), id)).stats;

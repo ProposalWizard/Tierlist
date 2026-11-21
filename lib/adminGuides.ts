@@ -3224,7 +3224,7 @@ export const ADMIN_GUIDES = {
         ["Post now / Schedule post (big button)", "Puts the post in the queue."],
       ] },
       { group: "Posts and numbers", items: [
-        ["↻ Check now", "Runs the poster straight away instead of waiting for the 5-minute timer, and refreshes numbers that are due."],
+        ["↻ Check now", "Runs the poster straight away instead of waiting for the 5-minute timer, and re-reads every recent post's numbers from Instagram, Facebook and YouTube now (live numbers)."],
         ["Post now", "Posts a scheduled post straight away."],
         ["Cancel", "Stops a scheduled post. Nothing goes out."],
         ["Try again", "Retries the platforms that failed. Platforms that already posted are not posted twice."],
