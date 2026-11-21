@@ -1,0 +1,364 @@
+{
+ "id": "arc-the-lift",
+ "title": "Can you give us a lift?",
+ "owner": "kid",
+ "summary": "The youngest lad's mum can't drive, and the bus takes an hour and a half. He asks if you'd give him a lift in every day. You drive him in, and what you talk about in the car is the story. A season on, he's passed his test.",
+ "size": "small",
+ "about": {
+  "who": [
+   "academy kid"
+  ],
+  "tone": [
+   "warm",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "needsActivity": "drive",
+ "cast": [
+  {
+   "slot": "kid",
+   "pick": "squad",
+   "where": [
+    "age<=19"
+   ],
+   "order": "youngest"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-car-pool",
+   "title": "The car pool",
+   "text": "You drove a kid in every morning for a season. Now he drives the young lads in, and he plays your music."
+  },
+  {
+   "id": "the-bus",
+   "title": "The bus",
+   "text": "You said no to the lift. He got the bus, and then a moped, and then a car, without you."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "lft-1-ask",
+   "title": "The bus stop",
+   "n": 1,
+   "event": {
+    "id": "arc-lft-1-ask",
+    "title": "The bus stop",
+    "category": "teammates",
+    "place": "compound:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "owns:car",
+      "squad.any(age<=19)"
+     ]
+    },
+    "setup": [
+     "{kid.name} is the last one in again, red-faced, with his bag still on. The bus from his estate takes an hour and a half."
+    ],
+    "talk": {
+     "start": "l1",
+     "nodes": {
+      "l1": {
+       "who": "kid",
+       "say": [
+        "\"You go past the end of my road. My mum can't drive. Could you… I'll put in for petrol.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Half seven at the end of your road. Don't be late.\"",
+         "tone": "kind",
+         "goto": "l2"
+        },
+        {
+         "id": "music",
+         "label": "\"Only if I pick the music.\"",
+         "tone": "confident",
+         "goto": "l2"
+        },
+        {
+         "id": "no",
+         "label": "\"I like driving on my own, mate. Sorry.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "no"
+        }
+       ]
+      },
+      "l2": {
+       "who": "kid",
+       "say": [
+        "Half seven the next morning he's at the end of his road with two bacon rolls."
+       ],
+       "replies": [
+        {
+         "id": "drive",
+         "label": "Drive him in.",
+         "tone": "calm",
+         "goto": "drive"
+        }
+       ]
+      },
+      "drive": {
+       "activity": {
+        "mode": "drive",
+        "name": "The drive in",
+        "intro": "Half an hour into training with the kid in the passenger seat. He talks when you let him.",
+        "dials": {
+         "route": "his estate to the training ground",
+         "passenger": {
+          "slot": "kid"
+         },
+         "talk": "his mum, his digs, his finishing"
+        },
+        "score": "how the drive went (arrived on time, what you talked about)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -2
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "d-late"
+        ],
+        [
+         "activity.won",
+         "d-good"
+        ],
+        [
+         "",
+         "d-quiet"
+        ]
+       ]
+      },
+      "d-good": {
+       "who": "kid",
+       "say": [
+        "By the training ground he's told you about his mum's two jobs and asked you how to go near post. He's never asked a first-teamer anything before."
+       ],
+       "replies": [
+        {
+         "id": "again",
+         "label": "\"Same time tomorrow.\"",
+         "tone": "kind",
+         "end": "lift"
+        }
+       ]
+      },
+      "d-quiet": {
+       "who": "kid",
+       "say": [
+        "He sleeps most of the way with his head on the window."
+       ],
+       "replies": [
+        {
+         "id": "again",
+         "label": "\"Same time tomorrow.\"",
+         "tone": "kind",
+         "end": "lift"
+        }
+       ]
+      },
+      "d-late": {
+       "who": "kid",
+       "say": [
+        "You hit the roadworks and you're both late. The gaffer fines you both and the kid looks like he might cry."
+       ],
+       "replies": [
+        {
+         "id": "pay",
+         "label": "\"I'll pay his.\"",
+         "tone": "kind",
+         "end": "lift"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "lift": [
+       {
+        "text": "It becomes every morning. By Christmas he's sorted out the radio buttons for you.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 12,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "drove-me-in-every-morning",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lift"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He nods and gets the bus.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "wouldnt-give-me-a-lift",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "bus"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "The youngest lad has a favour to ask"
+  },
+  {
+   "id": "lft-2-test",
+   "title": "He passed",
+   "after": {
+    "beat": "lft-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-lft-2-test",
+    "title": "He passed",
+    "category": "teammates",
+    "place": "compound:car-park",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. {kid.short} pulls into the car park in a tiny car with L plates still in the back window and two of the academy lads in the back."
+    ],
+    "choices": [
+     {
+      "id": "beep",
+      "label": "Beep at him.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='lift'",
+        "text": "He beeps back twice and turns his music up. It's your music.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-car-pool"
+        }
+       },
+       {
+        "text": "He waves, politely.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-bus"
+        }
+       }
+      ]
+     },
+     {
+      "id": "park",
+      "label": "Park and go in.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='lift'",
+        "text": "There's a bacon roll on your peg with a note: \"Petrol money, a year late.\"",
+        "arc": {
+         "end": "the-car-pool"
+        }
+       },
+       {
+        "text": "You hear him laughing in the car park with the young lads.",
+        "arc": {
+         "end": "the-bus"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "A season on, he's passed his test"
+  }
+ ]
+}

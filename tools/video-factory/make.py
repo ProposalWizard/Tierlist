@@ -5,6 +5,7 @@ mic-in-a-room finish -> captions from the SCRIPT words timed by the transcriber
 -> render frames in a headless browser -> music + voice mix -> MP4.
 Needs: ffmpeg, node + playwright chromium, faster_whisper, and a Chatterbox venv
 (env CHATTERBOX_PY, default the session's cbx venv)."""
+import hashlib
 import argparse, difflib, json, os, re, shutil, subprocess, sys
 import numpy as np, soundfile as sf
 
@@ -72,7 +73,10 @@ def eleven_voice(cfg, lines, work, best):
     for i, ln in enumerate(lines):
         text = ln.get("sayEleven") or ln.get("say") or ln["text"]
         for take, seed in enumerate(cfg.get("seeds", [7, 19])):
-            mp3 = os.path.join(work, f"l{i:02d}-e{seed}.mp3"); wav = os.path.join(work, f"l{i:02d}-e{seed}.wav")
+            # The file name carries the words' fingerprint: a rewritten line never reuses an old recording
+            # (Mikey, 20 Nov 2026: the voice said the wrong lines after a script rewrite).
+            h = hashlib.sha1(f"{vid}|{model}|{text}".encode()).hexdigest()[:10]
+            mp3 = os.path.join(work, f"l{i:02d}-{h}-e{seed}.mp3"); wav = os.path.join(work, f"l{i:02d}-{h}-e{seed}.wav")
             if not os.path.exists(mp3) and take > 0 and cfg.get("noNewTakes"): continue  # reuse what was already paid for
             if not os.path.exists(mp3):
                 body = json.dumps({"text": text, "model_id": model, "voice_settings": vs, "seed": seed}).encode()

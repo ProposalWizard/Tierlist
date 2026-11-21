@@ -14,7 +14,7 @@ import {
   SPONSOR_NEGOTIATION,
 } from "@/lib/star/sponsorDeals";
 import { fameOf, fameLevel, FAME_LEVELS } from "@/lib/star/fame";
-import { formatMoneyPrecise as formatMoney } from "@/lib/star/money";
+import { formatMoneyPrecise as formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { ClubCard, PressButton, Shine, StatBar, clubTheme, rgba } from "./ui";
 import { Screen, ScreenHeader } from "./ui/Screen";
 import { SegTabs, CardTitle } from "./screenKit";
@@ -80,7 +80,7 @@ function TargetRow({ t, color }: { t: BrandTarget; color: string }) {
         <span className="shrink-0 tabular-nums">{t.done ? "Done" : judgedLater ? "End of season" : `${t.progress} / ${t.target}`}</span>
       </div>
       <StatBar value={pct} colors={t.done ? ["#34d399", "#a7f3d0"] : [color, "#ffffff"]} className="mt-1 h-2.5" sheen={false} />
-      <div className="mt-0.5 text-[10.5px] font-bold text-white">Bonus ★{formatMoney(t.bonus)}{t.done ? " — paid" : ""}</div>
+      <div className="mt-0.5 text-[10.5px] font-bold text-white">Bonus {MONEY_SIGN}{formatMoney(t.bonus)}{t.done ? " — paid" : ""}</div>
     </div>
   );
 }
@@ -98,7 +98,7 @@ function DealCard({ d, money, onWalkAway, onAdvert, advertDone }: { d: BrandDeal
           <div className="text-[11px] font-bold text-white">{d.category} · {seasonsText(d.seasonsLeft)} left</div>
         </div>
         <div className="text-right">
-          <div className="text-[18px] font-black leading-none text-yellow-300" style={{ textShadow: "0 0 10px rgba(251,191,36,.5)" }}>★{formatMoney(d.weekly)}</div>
+          <div className="text-[18px] font-black leading-none text-yellow-300" style={{ textShadow: "0 0 10px rgba(251,191,36,.5)" }}>{MONEY_SIGN}{formatMoney(d.weekly)}</div>
           <div className="text-[9.5px] font-black uppercase tracking-wider text-white">a week</div>
         </div>
       </div>
@@ -128,7 +128,7 @@ function DealCard({ d, money, onWalkAway, onAdvert, advertDone }: { d: BrandDeal
         <button onClick={() => setConfirm(true)} className="kib-press relative mt-2 text-[10.5px] font-black uppercase tracking-wider text-white underline">Walk away early</button>
       ) : (
         <div className="relative mt-2 rounded-xl border border-red-400/70 bg-red-500/15 p-2">
-          <div className="text-[11.5px] font-bold text-white">Leaving early means paying the deal&rsquo;s whole guaranteed value: <b>★{formatMoney(d.guaranteed)}</b>.{money < d.guaranteed ? " You can't afford it." : ""}</div>
+          <div className="text-[11.5px] font-bold text-white">Leaving early means paying the deal&rsquo;s whole guaranteed value: <b>{MONEY_SIGN}{formatMoney(d.guaranteed)}</b>.{money < d.guaranteed ? " You can't afford it." : ""}</div>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <PressButton variant="danger" size="none" disabled={money < d.guaranteed} onClick={() => onWalkAway(d.id)} className="rounded-lg py-2 text-[11px] font-black">Pay and leave</PressButton>
             <PressButton variant="secondary" size="none" onClick={() => setConfirm(false)} className="rounded-lg py-2 text-[11px] font-black">Keep the deal</PressButton>
@@ -165,14 +165,14 @@ function OfferCard({ o, career, act }: { o: BrandOffer; career: CareerState; act
       {o.kind === "milestone" ? (
         <div className="relative mt-2 rounded-xl bg-black/30 p-2 text-center">
           <div className="text-[10px] font-black uppercase tracking-wider text-white">They pay you</div>
-          <div className="text-[22px] font-black text-yellow-300">★{formatMoney(o.signingOn)}</div>
+          <div className="text-[22px] font-black text-yellow-300">{MONEY_SIGN}{formatMoney(o.signingOn)}</div>
         </div>
       ) : (
         <div className="relative mt-2 rounded-xl bg-black/30 p-2">
-          <Row label="Weekly fee" value={`★${formatMoney(o.weekly)}${current ? ` (now ★${formatMoney(current.weekly)})` : ""}`} gold />
+          <Row label="Weekly fee" value={`${MONEY_SIGN}${formatMoney(o.weekly)}${current ? ` (now ${MONEY_SIGN}${formatMoney(current.weekly)})` : ""}`} gold />
           <Row label="Length" value={seasonsText(o.seasons)} />
-          <Row label="Signing-on payment" value={`★${formatMoney(o.signingOn)}`} />
-          {o.targets.map((t, i) => <Row key={i} label={i === 0 ? (o.targets.length > 1 ? "Targets" : "Target") : ""} value={`${targetLabel(t)} · bonus ★${formatMoney(t.bonus)}`} />)}
+          <Row label="Signing-on payment" value={`${MONEY_SIGN}${formatMoney(o.signingOn)}`} />
+          {o.targets.map((t, i) => <Row key={i} label={i === 0 ? (o.targets.length > 1 ? "Targets" : "Target") : ""} value={`${targetLabel(t)} · bonus ${MONEY_SIGN}${formatMoney(t.bonus)}`} />)}
           {o.clause && <Row label="Clause" value={o.clause === "exclusive" ? CLAUSE.exclusive(o.category) : CLAUSE.behaviour()} />}
         </div>
       )}
@@ -206,8 +206,10 @@ function Row({ label, value, gold = false }: { label: string; value: string; gol
   );
 }
 
-export default function SponsorsScreen({ career, onBack, act, startTab }: {
+export default function SponsorsScreen({ career, onBack, act, startTab, hud }: {
   career: CareerState; onBack: () => void; act: SponsorActions; startTab?: Tab;
+  /** The top bars: Fame + Money (RUL-UI-009). */
+  hud?: React.ReactNode;
 }) {
   const b = brandsOf(career);
   const [tab, setTab] = useState<Tab>(startTab ?? (b.offers.length ? "offers" : "deals"));
@@ -223,16 +225,16 @@ export default function SponsorsScreen({ career, onBack, act, startTab }: {
   const nextPct = next ? Math.max(0, Math.min(100, ((fame - curMin) / Math.max(1, next.min - curMin)) * 100)) : 100;
   return (
     <Screen glow={theme.glow}>
+      {hud && <div className="sticky top-0 z-30 -mx-3 -mt-3 mb-2">{hud}</div>}
       <div className="w-full flex-1">
-        <ScreenHeader title="Sponsors" kicker="Your deals" onBack={onBack}
-          right={<div className="rounded-full bg-amber-400/15 px-2 py-1 text-[10px] font-black text-amber-300 ring-1 ring-amber-300/30">★ {Math.round(fame)} fame</div>} />
+        <ScreenHeader title="Sponsors" kicker="Your deals" onBack={onBack} />
 
         {/* The summary: weekly money and your deal slots. */}
         <ClubCard glow={theme.glow} className="relative overflow-hidden p-3">
           <div className="flex items-end justify-between">
             <div>
               <CardTitle tone="text-emerald-300">Sponsor money</CardTitle>
-              <div className="text-[26px] font-black leading-none text-yellow-300" style={{ textShadow: "0 0 12px rgba(251,191,36,.5)" }}>★{formatMoney(total)}</div>
+              <div className="text-[26px] font-black leading-none text-yellow-300" style={{ textShadow: "0 0 12px rgba(251,191,36,.5)" }}>{MONEY_SIGN}{formatMoney(total)}</div>
               <div className="text-[10.5px] font-bold text-white">a week, paid with your wage</div>
             </div>
             <div className="w-[46%] text-right">

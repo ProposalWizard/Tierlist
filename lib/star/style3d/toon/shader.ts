@@ -25,6 +25,7 @@
  */
 import type * as THREE from "three";
 import { SMALL_INK } from "../smallMen";
+import { FI_HEAD, FI_CANVAS, FI_DRAW } from "./faceIdShader";
 
 type Three = typeof import("three");
 
@@ -57,6 +58,7 @@ uniform sampler2D uMask;
 uniform float uSuit;
 uniform vec3 uSuitCoat, uSuitTrousers, uSuitShirt, uSuitTie, uShoes;
 uniform vec4 uKit2;       // collar y, shorts low y, sleeve t, -
+uniform vec4 uHairCut;    // people presets (lib/star/people/presets.ts): scalp hair → skin, beard → skin, stubble, scalp pattern (1 waves, 2 cornrows); 0 = as modelled
 uniform sampler2D uBadge;
 uniform float uBadgeOn;   // 0 none, 1 shield, 2 picture
 uniform vec4 uShade;      // soft bands (0/1), face lift, hair sheen (0/1), -
@@ -79,6 +81,8 @@ uniform vec4 uTfOn;       // the moving face (TOON_FACE): on (0/1), blink (0 ope
 uniform vec4 uTfEyeR, uTfEyeL; // each eye opening: centre x, y, half width, half height (rest metres)
 uniform vec4 uTfGaze;     // gaze x, y (-1..1), upper lid open (1 = as painted, under 1 heavier), lower lid up (0..1)
 uniform vec4 uTfMouth;    // the mouth: centre x, the line between the lips (y), half width, -
+uniform vec4 uTfIrisA;    // each iris's centre: his right x, y, his left x, y (rest metres)
+uniform vec2 uTfIrisB;    // each iris's radius (0 = not measured)
 uniform vec3 uTfWhite, uTfLidC, uTfLash; // the eye white, the lid (the picture's own skin, linear), the lash line
 float tnSkin = 0.0;       // this point is bare skin (face, neck, arms, hands): set in the body
 float tfEyesK = 0.0;      // this point is in a moving face's eye (TOON_FACE)
@@ -242,11 +246,49 @@ const TOON_BODY = `
   // collar: the chin is only ~2.5 cm above the collar line): the mask's kit specks round the jaw and
   // chin took the shirt's colour (a white rim under the chin in a white kit, a red one in a red kit)
   if (uSkinFx.w > 0.5 && kit > 0.0 && (r.y > uKit2.x + 0.03 || (r.y > uKit2.x - 0.015 && vRestN.y < -0.2 && r.z > uNeck.z + 0.03))) { skin = min(1.0, skin + kit * (1.0 - hairM)); kit = 0.0; }
+  // a suit head's shirt collar, its points and the tie's knot stand up round the front of the neck, above the
+  // collar line, and its mask calls them skin: painted the skin tone (and then the drawn face's even skin) they
+  // read as skin running down into the suit (Harry, 20 Nov 2026). There the file's own paint tells them apart:
+  // the shirt is pale and grey, the knot red, skin is warm.
+  // (only on a head modelled in its suit: a kit head in a painted tracksuit has no collar there, and its jaw's shade is not cloth)
+  float tnCollar = 0.0, tnKnot = 0.0, tnCoat = 0.0;
+  if (uSuit > 1.5) {
+    float cMx = max(c.r, max(c.g, c.b)), cSat = (cMx - min(c.r, min(c.g, c.b))) / max(cMx, 1e-4);
+    // skin is warm in every head's own paint (red well over blue); a shirt (white, blue-white, its shadows) and a
+    // coat (grey, navy, black) are not. Told apart by warmth, not by brightness: a shirt's blue shadow was left as
+    // skin, a ragged patch up to the jaw (the press journalist, the mentor).
+    float warm = (c.r - c.b) / max(cMx, 1e-4);
+    float cloth = 1.0 - smoothstep(0.16, 0.28, warm);
+    float zone = step(uKit2.x - 0.03, r.y) * step(r.y, uKit2.x + 0.09) * step(abs(r.x), 0.1) * step(uNeck.z, r.z) * (1.0 - hairM);
+    tnKnot = zone * step(2.2 * c.g, c.r) * step(2.2 * c.b, c.r) * step(0.05, c.r);
+    tnCollar = zone * cloth * smoothstep(0.14, 0.24, cMx) * (1.0 - tnKnot);
+    // and the coat's own collar round the back and sides of the neck (dark): coat, not skin
+    float zoneW = step(uKit2.x - 0.03, r.y) * step(r.y, uKit2.x + 0.09) * step(abs(r.x), 0.2) * (1.0 - hairM);
+    tnCoat = zoneW * cloth * (1.0 - smoothstep(0.14, 0.24, cMx));
+    kit = max(kit, tnCoat); skin *= 1.0 - tnCoat;
+    float cl = max(tnCollar, tnKnot);
+    kit = max(kit, cl); skin *= 1.0 - cl;
+  }
   float lum = max(c.r, max(c.g, c.b));
   float shade = clamp(pow(max(c.g, 1e-4), 1.0 / 2.2) / 0.7, 0.25, 1.4);
   float head = smoothstep(uFaceF.x - 0.045, uFaceF.x - 0.025, r.y);
   vec3 col = c;
+  // never the iris: the mask half calls it skin and a brown iris is skin-coloured, so it took the picked tone
+  // and every eye was the colour of its face (Harry's faces, 20 Nov 2026). Inside each measured iris
+  // (faceLandmarks.ts) the head's own paint stays.
+  float tnIris = max(uTfIrisB.x > 0.0 ? 1.0 - smoothstep(0.86, 1.0, length(r.xy - uTfIrisA.xy) / uTfIrisB.x) : 0.0, uTfIrisB.y > 0.0 ? 1.0 - smoothstep(0.86, 1.0, length(r.xy - uTfIrisA.zw) / uTfIrisB.y) : 0.0)
+    * step(uFaceF.w - 0.08, r.z) * head;
+#ifdef TOON_FACEID
+  // (a drawn face is on a clean head, faceClean.ts: no painted iris to keep, its eyes are drawn)
+  tnIris = 0.0;
+#endif
+  skin *= 1.0 - tnIris;
+#ifdef TOON_FACEID
+${FI_CANVAS}
+  col = mix(col, mix(tnSkinOf(c), fiSkinC, fiCan), skin);
+#else
   col = mix(col, tnSkinOf(c), skin);
+#endif
   tnSkin = skin * (1.0 - hairM);
   if (uSkinFx.w > 0.5) {
     // on the head, what the mask leaves to the file's own paint and is skin-coloured (the lips, the line
@@ -257,10 +299,30 @@ const TOON_BODY = `
     float tnMx = max(c.r, max(c.g, c.b));
     float tnSat = (tnMx - min(c.r, min(c.g, c.b))) / max(tnMx, 1e-4);
     float tnLike = clamp(1.0 - kit - skin - hairM, 0.0, 1.0) * head * smoothstep(0.3, 0.5, tnL) * smoothstep(0.2, 0.35, tnSat);
+    tnLike *= 1.0 - tnIris;
     col = mix(col, tnSkinOf(c), tnLike);
     tnSkin = max(tnSkin, tnLike);
   }
-  col = mix(col, min(uHairK * (dot(c, vec3(0.2126, 0.7152, 0.0722)) / uHairL), vec3(1.0)), hairM);
+  // on the face the mask's soft hair edge (beard, brows, hairline) is made crisp, and a skin-bright texel
+  // the mask half calls hair is not lifted above the hair's own light: both left pale smudges round a
+  // grey beard on dark skin (people presets, 20 Nov 2026)
+  // (and at the hair's own edge, where the mask is only part hair, the texel is the file's skin paint: it
+  // takes the hair's colour and no lift at all, or a fair or ginger man had a pale line round his hair, brows and beard)
+  float tnHairLift = mix(1.0, 1.6, smoothstep(0.8, 0.98, hairM));
+  // (the same where the mask says hair a texel past the painted hair: a texel as light as the skin is skin paint)
+  tnHairLift = mix(tnHairLift, 0.9, head * smoothstep(0.5, 0.75, dot(c, vec3(0.2126, 0.7152, 0.0722)) / max(dot(uSkinAvg, vec3(0.2126, 0.7152, 0.0722)), 1e-4)));
+  float tnHairRaw = hairM;
+  hairM = mix(hairM, smoothstep(0.3, 0.7, hairM), head);
+  // (what the crisp edge gives up is skin, in the picked tone: left as the file's own light paint it was a pale
+  // line round the hair, the brows and the beard of anyone whose hair is not near black)
+  col = mix(col, tnSkinOf(c), clamp(max(tnHairRaw - hairM, 0.0) / max(1.0 - skin, 0.05), 0.0, 1.0) * head * (1.0 - kit));
+  col = mix(col, min(uHairK * min(dot(c, vec3(0.2126, 0.7152, 0.0722)) / uHairL, tnHairLift), vec3(1.0)), hairM);
+  if (uShade.w > 0.0) {
+    // a greying or bald man's brows (people presets): the brows take the hair's colour, and grey brows on
+    // light skin left the face with no features (it read bleached); they keep some of their darkness
+    float brow = hairM * head * step(uFaceF.y + 0.004, r.y) * step(r.y, uFaceF.y + 0.05) * step(uFaceF.w - 0.075, r.z) * step(abs(r.x), 0.09);
+    col = mix(col, col * (1.0 - uShade.w), brow);
+  }
   tnFace = skin * head * smoothstep(0.1, 0.5, vRestN.z);
   if (uShade.z > 0.5) {
     // stylised hair: one flat colour (the sculpted strands smoothed away) and a painted sheen band
@@ -268,7 +330,62 @@ const TOON_BODY = `
     vec3 flat_ = uHairK * mix(0.85, 1.0, smoothstep(0.0, 0.6, vRestN.y));
     col = mix(col, min(flat_ * (1.0 + 0.9 * sheen) + sheen * 0.04, vec3(1.0)), hairM);
   }
+  {
+    // Fade & beard's mask calls the skin round each eye hair: on a greying man a pale ring round the eyes.
+    // Under the brows, round the eyes, the face is skin (the brows sit above this band).
+    // ONLY the texels painted as skin: the iris, the lashes and the brow's lower edge are in this band too and
+    // are hair in the mask, and painting them skin left every such man with pale, ringed eyes and a pale line
+    // under each brow (the signing scene's manager, 20 Nov 2026). A measured iris keeps the file's own paint.
+    float eyeRing = hairM * head * step(r.y, uFaceF.y + 0.006) * step(uFaceF.y - 0.026, r.y) * step(abs(r.x), 0.075) * step(uFaceF.w - 0.05, r.z);
+    col = mix(col, c, hairM * tnIris);
+    eyeRing *= smoothstep(0.55, 0.8, dot(c, vec3(0.2126, 0.7152, 0.0722)) / max(dot(uSkinAvg, vec3(0.2126, 0.7152, 0.0722)), 1e-4)) * (1.0 - tnIris);
+    col = mix(col, tnSkinOf(uSkinAvg), eyeRing);
+    tnSkin = max(tnSkin, eyeRing);
+    hairM *= 1.0 - eyeRing;
+  }
+  if (uHairCut.w > 0.5) {
+    // a pattern cut into the close-cut scalp (people presets: coily hair on the close-cut heads h3, m2)
+    float scalp = hairM * (1.0 - step(r.y, uFaceF.y - 0.03) * step(uNeck.z - 0.01, r.z)) * step(uFaceF.z - 0.01, r.y);
+    if (uHairCut.w < 1.5) {
+      // 360 waves: rings out from the crown, light and dark
+      vec3 crown = vec3(0.0, uFaceF.z + 0.075, uNeck.z - 0.035);
+      float d = length(r - crown);
+      float fw = fwidth(d / 0.016);
+      float wv = 0.5 + 0.5 * sin(6.2832 * d / 0.016);
+      col = mix(col, col * mix(0.72, 1.35, wv), scalp * (1.0 - smoothstep(0.35, 0.8, fw)));
+    } else {
+      // cornrows: rows front to back, a parting of skin between each, the plait's ridges along the row
+      float row = fract(r.x / 0.024 + 0.5);
+      float part = smoothstep(0.36, 0.44, abs(row - 0.5));
+      float ridge = 0.5 + 0.5 * sin(6.2832 * (r.z + r.y * 0.6) / 0.012 + (row < 0.5 ? 0.0 : 3.14));
+      vec3 braid = col * mix(0.8, 1.25, ridge * (1.0 - smoothstep(0.35, 0.8, fwidth(r.z / 0.012))));
+      col = mix(col, mix(braid, uSkinTone * 0.6, part), scalp);
+    }
+  }
+  if (uHairCut.x + TN_BEARD_OFF + TN_STUBBLE > 0.0) {
+    // a person preset's haircut on a head whose hair is modelled in: the scalp shaved or bald, the beard
+    // shaved off, or stubble painted on (the hair under the eyes, front half = the beard; the rest = scalp)
+    float lowFront = step(r.y, uFaceF.y - 0.03) * step(uNeck.z - 0.01, r.z);
+    float cut = smoothstep(0.02, 0.45, hairM) * mix(uHairCut.x, TN_BEARD_OFF, lowFront);
+    // never the brows: a bald or shaved head lost them with its scalp (they are hair in the mask), and a
+    // light-skinned bald man's face read bleached, with no features
+    cut *= 1.0 - step(uFaceF.y - 0.03, r.y) * step(r.y, uFaceF.y + 0.05) * step(uFaceF.w - 0.075, r.z) * step(abs(r.x), 0.09);
+    // the beard's own drawn edge where the mask already says skin (dark lines left round a shaved jaw)
+    float lumK = dot(c, vec3(0.2126, 0.7152, 0.0722)) / max(dot(uSkinAvg, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
+    cut = max(cut, TN_BEARD_OFF * lowFront * head * (1.0 - hairM) * smoothstep(0.5, 0.25, lumK) * step(0.025, abs(r.y - uTfMouth.y) + step(0.03, abs(r.x))));
+    vec3 bare = uSkinTone * 0.75;
+    col = mix(col, bare, cut);
+    tnSkin = max(tnSkin, cut);
+    // stubble: the jaw, chin and upper lip, never the lips
+    vec2 mo = vec2(r.x / 0.03, (r.y - uTfMouth.y) / 0.014);
+    float jaw = skin * head * smoothstep(uFaceF.y - 0.03, uFaceF.y - 0.065, r.y) * smoothstep(0.0, 0.25, vRestN.z) * step(uNeck.z - 0.01, r.z) * step(1.0, length(mo));
+    col = mix(col, col * mix(vec3(1.0), min(uHairK * 2.2 + 0.25, vec3(0.85)), 0.55), TN_STUBBLE * jaw);
+  }
+#ifdef TOON_FACEID
+${FI_DRAW}
+#else
 ${TOON_FACE}
+#endif
   float shirtW = step(uLines.x, r.y);
   float bootW = 1.0 - step(uLines.z, r.y);
   float shortsW = step(uLines.y, r.y) * (1.0 - shirtW);
@@ -280,11 +397,23 @@ ${TOON_FACE}
   if (uSkinFx.y > 1.5) tnRegion = r.y > uFaceF.x - 0.005 ? 1.0 : abs(r.x) < 0.12 ? 2.0 : tTu < 1.0 ? 3.0 : p3SegT(r, tE, tL ? uWrL : uWrR) < 0.97 ? 4.0 : 5.0;
   vec3 part;
   if (uSuit > 0.5) {
+    // under a coat nothing the mask left unpainted keeps the file's own colour: on the arms and the back
+    // (where the torso rule above does not reach) it showed as blue and white blotches on the suit
+    if (mTot <= 0.05 && r.y < uKit2.x - 0.005 && head < 0.01) kit = 1.0;
     part = uSuitCoat * shirtW + uSuitTrousers * (shortsW + socksW) + uShoes * bootW;
     // the white shirt and tie in the coat's V, front only
     float v = shirtW * step(0.0, r.z) * step(abs(r.x), (r.y - (uKit2.x - 0.24)) * 0.38) * step(r.y, uKit2.x + 0.02);
     vec3 sh = mix(uSuitShirt, uSuitTie, step(abs(r.x), 0.014) * step(r.y, uKit2.x - 0.03));
     part = mix(part, sh, v);
+    part = mix(part, uSuitShirt, tnCollar);
+    part = mix(part, uSuitTie, tnKnot);
+    // the two suit heads' masks call the shirt in the coat's V skin (it showed in his skin colour):
+    // under the collar, the V is shirt and tie whatever the mask says
+    // (and round the V, the lapels and the collar's notch: no torso under a coat is bare skin. Left to the
+    // mask, its coarse edge showed as a jagged skin-coloured fringe along the lapels)
+    float vShirt = max(v, step(0.25, skin) * shirtW * step(abs(r.x), 0.125)) * step(r.y, uKit2.x - 0.005) * (1.0 - hairM);
+    kit = max(kit, vShirt);
+    skin *= 1.0 - vShirt;
     // long sleeves and trousers over what is bare skin in the kit
     vec3 tW = tL ? uWrL : uWrR;
     // (everything on the arm that is not kit, wide round the elbow, so no skin shows there; the skin's
@@ -379,6 +508,9 @@ ${TOON_FACE}
   }
   // a suit's or casual set's trousers over a kit body's white shorts: no brighter than the cloth
   float partShade = (uSuit > 0.5 && shirtW < 0.5) ? min(shade, 1.0) : shade;
+  // a suit's cloth keeps only a little of the file's own baked light and dark: the generated suit's painted
+  // folds and smudges, at full strength, were blotches on a dark coat (the toon light gives the form)
+  if (uSuit > 0.5) partShade = clamp(mix(1.0, partShade, 0.4), 0.8, 1.1);
   col = mix(col, part * partShade, kit);
   tnSkin *= 1.0 - kit;
   tnTone = max(tnSkin, tfEyesK);
@@ -466,7 +598,7 @@ if (typeof window !== "undefined") {
  */
 export const TOON_RIM_OFF = { color: "#ffffff", strength: 0 } as const;
 let rimU: { uRimFx: { value: THREE.Vector4 }; uRimDirV: { value: THREE.Vector3 } } | null = null;
-function toonRimUniforms(T: Three) {
+export function toonRimUniforms(T: Three) {
   rimU ??= { uRimFx: { value: new T.Vector4(1, 1, 1, 0) }, uRimDirV: { value: new T.Vector3(0.3, 0.5, -1).normalize() } };
   return rimU;
 }
@@ -518,6 +650,7 @@ export function toonUniforms(T: Three, mask: THREE.Texture, kit: { collarY?: num
     uSuitCoat: { value: new T.Color("#1f2533") }, uSuitTrousers: { value: new T.Color("#232733") },
     uSuitShirt: { value: new T.Color("#eef0f2") }, uSuitTie: { value: new T.Color("#7a1d2b") }, uShoes: { value: new T.Color("#141416") },
     uKit2: { value: new T.Vector4(kit.collarY ?? neckY - 0.03, kit.shortsLoY ?? 0.65, kit.sleeveT ?? 0.75, 0) },
+    uHairCut: { value: new T.Vector4(0, 0, 0, 0) },
     uBadge: { value: blank as THREE.Texture }, uBadgeOn: { value: 1 },
     uShade: { value: new T.Vector4(0, 0.35, 0, 0) },
     uName: { value: blank as THREE.Texture }, uNameOn: { value: 0 },
@@ -531,8 +664,17 @@ export function toonUniforms(T: Three, mask: THREE.Texture, kit: { collarY?: num
     // the moving face (TOON_FACE, toon/face.ts): off until a face is added
     uTfOn: { value: new T.Vector4(0, 0, 0, 0) },
     uTfEyeR: { value: new T.Vector4(-0.045, 1.65, 0.016, 0.009) }, uTfEyeL: { value: new T.Vector4(0.045, 1.65, 0.016, 0.009) },
+    uTfIrisA: { value: new T.Vector4(0, 0, 0, 0) }, uTfIrisB: { value: new T.Vector2(0, 0) },
     uTfGaze: { value: new T.Vector4(0, 0, 1, 0) }, uTfMouth: { value: new T.Vector4(0, 1.57, 0.022, 0) },
     uTfWhite: { value: new T.Color(0.86, 0.84, 0.8) }, uTfLidC: { value: new T.Color(0.6, 0.4, 0.3) }, uTfLash: { value: new T.Color(0.05, 0.03, 0.025) },
+    // the drawn face (TOON_FACEID, faceIdApply.ts): read only by a person given a FaceId
+    uFiLm1: { value: new T.Vector4(0, 0.046, 1.65, 1.68) }, uFiLm2: { value: new T.Vector4(1.6, 0.19, 1.57, 1.51) }, uFiLm3: { value: new T.Vector4(0.028, 0.045, 0, 1) },
+    uFiEye: { value: new T.Vector4(0.0178, 0.0085, 0.0052, 0.06) }, uFiEye2: { value: new T.Vector4(0, 0, 0.0074, 1) }, uFiEye3: { value: new T.Vector4(0, 0.3, 1, 0) }, uFiEye4: { value: new T.Vector4(0.6, 0, 0, 0) },
+    uFiBrowA: { value: new T.Vector4(0.0215, 0.0058, 0.0035, 0.003) }, uFiBrowB: { value: new T.Vector4(2.3, 0.02, 0.45, 0.8) },
+    uFiMouth: { value: new T.Vector4(0.028, 0.0045, 0.006, 0.8) }, uFiMarks: { value: new T.Vector4(0, 0, 0, 0) }, uFiMole: { value: new T.Vector4(0, 0, 0, 1) },
+    uFiBeard: { value: new T.Vector4(0, 0, 0, 0) }, uFiBeard2: { value: new T.Vector4(0.5, 0, 0, 0) },
+    uFiIris: { value: new T.Color("#4a2c17") }, uFiLip: { value: new T.Color("#9a5a4a") }, uFiBrowC: { value: new T.Color("#17120f") },
+    uFiExA: { value: new T.Vector4(1, 0, 0, 0) }, uFiExB: { value: new T.Vector4(0, 0, 0, 0) }, uFiExC: { value: new T.Vector4(0.04, 0, 0, 0) }, uFiExD: { value: new T.Vector4(0, 0, 0, 0) },
   };
 }
 
@@ -565,7 +707,7 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
       .replace("#include <common>", "#include <common>\nvarying vec3 vRest;\nvarying vec3 vRestN;\n#ifdef TOON_AREST\nattribute vec3 aRest;\n#endif")
       .replace("#include <begin_vertex>", "#include <begin_vertex>\n#ifdef TOON_AREST\nvRest = aRest;\n#else\nvRest = position;\n#endif\nvRestN = normal;");
     sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", `#include <common>${head}${TOON_HEAD}`)
+      .replace("#include <common>", `#include <common>${head}${TOON_HEAD}${FI_HEAD}`)
       // a far, small man (smallMen.ts SMALL_INK): the skin/hair map's mip bias fades out below fromPx drawing
       // pixels tall (the far mip is already coarse; the extra bias turned faces and hair into flat blocks)
       .replace("#include <map_fragment>", `float tnSmallFar = 1.0 - smoothstep(${SMALL_INK.toPx.toFixed(1)}, ${SMALL_INK.fromPx.toFixed(1)}, 1.8 / max(max(length(dFdx(vViewPosition)), length(dFdy(vViewPosition))), 1e-5));
@@ -620,5 +762,5 @@ if (uSkinFx.y > 1.5) gl_FragColor = tnSkin > 0.5 ? vec4(tnRegion == 1.0 ? vec3(0
 else if (uSkinFx.y > 0.5 && tnSkin > 0.5) gl_FragColor = vec4(3.0, 0.0, 3.0, 1.0);
 else if (uSkinFx.x > 0.5 && uHome.x < 0.5 && tnTone > 0.5) gl_FragColor.a = ${TOON_SKIN_MARK.toFixed(2)};`);
   };
-  mat.customProgramCacheKey = () => "people3d-toon-v12";
+  mat.customProgramCacheKey = () => "people3d-toon-v16";
 }

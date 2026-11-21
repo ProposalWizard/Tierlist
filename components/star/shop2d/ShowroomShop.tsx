@@ -42,7 +42,7 @@ import { hasBootDeal, bootPrice } from "@/lib/star/sponsorDeals";
 import { divisionOf } from "@/lib/star/calendar";
 import { SHOP_TIERS, weeksOfWallet } from "@/lib/star/economy";
 import { ruleBookFor } from "@/lib/star/ruleBook";
-import { formatMoney, formatWallet } from "@/lib/star/money";
+import { formatMoney, formatWallet, MONEY_SIGN } from "@/lib/star/money";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
 import { fameGainFromBuying, fameLevel, fameOf, isWornOut, itemLifeSeasons, nextFameLevel, ownedFame, OWNED_FAME_MAX } from "@/lib/star/fame";
 import { useShopPicsLook, shopPic3d } from "@/lib/star/shopPicsLook";
@@ -244,7 +244,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
   const [adShown, setAdShown] = useState(false);
   const homeLevel = Math.max(1, SHOP_TIERS.findIndex((t) => t.anchor === divisionOf(career)) + 1);
   const [spent, setSpent] = useState({ n: 0, text: "" });
-  const spend = (price: number) => setSpent((s) => ({ n: s.n + 1, text: `−★${formatMoney(price)}` }));
+  const spend = (price: number) => setSpent((s) => ({ n: s.n + 1, text: `−${MONEY_SIGN}${formatMoney(price)}` }));
   const [confirm, setConfirm] = useState<null | { info: ConfirmInfo; run: (lawyers: boolean) => string | void }>(null);
   const [moment, setMoment] = useState<Moment | null>(null);
   const [soldOut, setSoldOut] = useState<Set<string>>(() => new Set());
@@ -779,7 +779,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
           )}
           <button onClick={() => { setFameOpen((v) => !v); setMoreOpen(false); }} data-balance-chip aria-label="Balance and fame"
             className="kib-press relative flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-black/60 pl-2.5 pr-2 ring-1 ring-amber-300/45 backdrop-blur">
-            <span className="text-[13.5px] font-black tabular-nums text-amber-300">★{formatWallet(career.money)}</span>
+            <span className="text-[13.5px] font-black tabular-nums text-amber-300">{MONEY_SIGN}{formatWallet(career.money)}</span>
             <span className="flex items-center gap-0.5 rounded-full bg-amber-300/15 px-1.5 py-0.5 text-[11px] font-black tabular-nums text-amber-100" data-fame-chip>👑{fame}</span>
             {spent.n > 0 && <span key={spent.n} className="pointer-events-none absolute right-2 top-full text-[12px] font-black text-red-300" style={{ animation: "srSpent 1.4s ease-out both" }}>{spent.text}</span>}
           </button>
@@ -1056,7 +1056,7 @@ function ListCard({ v, accent, on, next, own, onTap }: { v: View; accent: string
         ) : (
           <span className="flex items-baseline gap-1.5">
             <span className={`text-[11.5px] font-black uppercase ${v.button.disabled ? "text-white/55" : "text-white/85"}`}>{v.button.label}</span>
-            {v.button.price !== undefined && <span className={`text-[16px] font-black tabular-nums ${v.button.disabled ? "text-white/45" : "text-amber-300"}`}>★{formatMoney(v.button.price)}</span>}
+            {v.button.price !== undefined && <span className={`text-[16px] font-black tabular-nums ${v.button.disabled ? "text-white/45" : "text-amber-300"}`}>{MONEY_SIGN}{formatMoney(v.button.price)}</span>}
           </span>
         )}
       </span>
@@ -1111,9 +1111,9 @@ function BuyPill({ b, variant }: { b: View["button"]; variant: "A" | "B" }) {
       style={{ background: bg, color: ink, boxShadow: off ? "inset 0 0 0 1px rgba(255,255,255,.2)" : `0 6px 16px -6px ${b.danger ? "#dc2626" : variant === "A" ? accent : "rgba(0,0,0,.8)"}, inset 0 1px 0 rgba(255,255,255,.35)` }}>
       <span className="truncate text-[14px] font-extrabold">{b.label}</span>
       {b.price !== undefined && (variant === "A" || off || b.danger ? (
-        <span className="flex h-[32px] shrink-0 items-center rounded-full px-2.5 text-[15px] font-black tabular-nums" style={{ background: off ? "transparent" : "rgba(0,0,0,.16)" }}>★{formatMoney(b.price)}</span>
+        <span className="flex h-[32px] shrink-0 items-center rounded-full px-2.5 text-[15px] font-black tabular-nums" style={{ background: off ? "transparent" : "rgba(0,0,0,.16)" }}>{MONEY_SIGN}{formatMoney(b.price)}</span>
       ) : (
-        <span className="flex h-[32px] shrink-0 items-center rounded-full px-2.5 text-[15px] font-black tabular-nums text-[#1c1203]" style={{ background: "#f5b82e" }}>★{formatMoney(b.price)}</span>
+        <span className="flex h-[32px] shrink-0 items-center rounded-full px-2.5 text-[15px] font-black tabular-nums text-[#1c1203]" style={{ background: "#f5b82e" }}>{MONEY_SIGN}{formatMoney(b.price)}</span>
       ))}
       {b.price === undefined && <span className="w-3" />}
     </button>
@@ -1198,7 +1198,7 @@ function DetailSheet({ sheet, onClose, onPick, career, homeLevel, bootLevels, ba
         <div className="mt-2 text-[11px] font-bold text-white/80">Cans cost a slice of your weekly wage, so they stay worth something as you go up.</div>
         <div className="mt-3 grid grid-cols-[1fr_1.6fr] gap-2">
           {onUseCan ? <button disabled={useBlocked} onClick={() => { onUseCan(c.id); }} className="kib-press rounded-[4px] bg-white/[0.08] py-3 text-[14px] font-black uppercase text-white ring-1 ring-white/15 disabled:opacity-35">{waiting ? "Ready" : "Use one"}</button> : <span />}
-          <GoldButton disabled={career.money < price} onClick={() => onBuy(() => askCan(c))}>{career.money < price ? "Not enough" : `Buy ★${formatMoney(price)}`}</GoldButton>
+          <GoldButton disabled={career.money < price} onClick={() => onBuy(() => askCan(c))}>{career.money < price ? "Not enough" : `Buy ${MONEY_SIGN}${formatMoney(price)}`}</GoldButton>
         </div>
       </StoreSheet>
     );
@@ -1240,9 +1240,9 @@ function DetailSheet({ sheet, onClose, onPick, career, homeLevel, bootLevels, ba
           {sold ? (
             <div className="rounded-[4px] bg-white/[0.06] py-3 text-center text-[13px] font-black uppercase tracking-wide text-red-300 ring-1 ring-red-400/40">Sold out — back next visit</div>
           ) : isBanned ? (
-            <GoldButton danger onClick={() => onBuy(() => askBoot(b, true))}>Buy from shady guys ★{formatMoney(blackMarketPrice(b.price))}</GoldButton>
+            <GoldButton danger onClick={() => onBuy(() => askBoot(b, true))}>Buy from shady guys {MONEY_SIGN}{formatMoney(blackMarketPrice(b.price))}</GoldButton>
           ) : (
-            <GoldButton disabled={!can} onClick={() => onBuy(() => askBoot(b, false))}>{can ? `Buy now ★${formatMoney(b.price)}` : "Not enough money"}</GoldButton>
+            <GoldButton disabled={!can} onClick={() => onBuy(() => askBoot(b, false))}>{can ? `Buy now ${MONEY_SIGN}${formatMoney(b.price)}` : "Not enough money"}</GoldButton>
           )}
         </div>
       </StoreSheet>
@@ -1285,7 +1285,7 @@ function DetailSheet({ sheet, onClose, onPick, career, homeLevel, bootLevels, ba
       {IN_3D.has(base) && onOpen3D && <div className="mt-2 flex justify-end"><ThreeDLink onOpen3D={onOpen3D} /></div>}
       <div className="mt-2">
         <GoldButton disabled={!canBuy} onClick={() => onBuy(() => askItem(it, mine))}>
-          {blocked ? (ownLv === lv ? "You own this one" : `You own level ${ownLv}`) : career.money < it.price ? "Not enough money" : `${verb} ★${formatMoney(it.price)}`}
+          {blocked ? (ownLv === lv ? "You own this one" : `You own level ${ownLv}`) : career.money < it.price ? "Not enough money" : `${verb} ${MONEY_SIGN}${formatMoney(it.price)}`}
         </GoldButton>
       </div>
     </StoreSheet>

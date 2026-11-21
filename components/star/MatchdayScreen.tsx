@@ -60,6 +60,7 @@ import VersusScreen from "./VersusScreen";
 import { CanTile, cardStyle, glowOf, short } from "./HomeHub";
 import { HomeFxStyles, useCountUp } from "./HomeFx";
 import { useLeoUpdate } from "@/lib/star/leoUpdate";
+import { warmMatchSprites } from "@/lib/star/matchSpriteWarm";
 
 interface Props {
   career: CareerState;
@@ -94,6 +95,10 @@ export default function MatchdayScreen(p: Props) {
   // Tell the live-score pop-ups which week is being played, so a bell rung
   // on the Fixtures page for one of this week's other games reaches the match.
   useEffect(() => { setLiveScoreWeek(career.season, nextFixture.week); }, [career.season, nextFixture.week]);
+  // Speed fix 1 (20 Nov 2026): the match's 3D players coloured in your kits
+  // while this screen shows, so KICK OFF never waits on it (matchSpriteWarm.ts).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => warmMatchSprites(career, nextFixture), [career.season, nextFixture.week, nextFixture.opponent, nextFixture.home]);
 
   // ── The team sheets ── (moved as-is from page.tsx)
   // Between this screen and kick-off, because the eleven you are about to play

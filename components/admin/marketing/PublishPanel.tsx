@@ -73,7 +73,7 @@ export default function PublishPanel({ notice }: { notice: { ok: boolean; text: 
     try { const key = await uploadForPublish(f, (x) => setUp(x)); await load(); setVideo(key); }
     catch (e) { setErr((e as Error).message); } finally { setUp(null); }
   };
-  const tickNow = () => act("tick", () => fetch("/api/admin/publish/tick", { method: "POST" }));
+  const tickNow = () => act("tick", () => fetch("/api/admin/publish/tick?fresh=1", { method: "POST" }));
 
   const schedule = async () => {
     const platforms = ORDER.filter((p) => picked[p] && ready(p));

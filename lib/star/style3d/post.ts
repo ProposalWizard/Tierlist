@@ -71,7 +71,8 @@ void main() {
       float r = i < 8 ? rad : rad * 2.3;
       vec2 o = vec2(cos(a), sin(a)) * r * vec2(res.y / res.x, 1.0);
       vec3 s = texture2D(tColor, vUv + o).rgb;
-      b += max(s - bloomThresh, 0.0) * (i < 8 ? 1.0 : 0.6);
+      // (capped: a strip light three times white stamped 16 hard copies of itself round it, blocky and shimmering)
+      b += min(max(s - bloomThresh, 0.0), vec3(0.5)) * (i < 8 ? 1.0 : 0.6);
     }
     c += b * bloom / 10.0;
   }

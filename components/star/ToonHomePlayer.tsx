@@ -12,6 +12,14 @@
  * (kept on this device) or a plain grey shape, never the old figure (speed
  * job B, 9 Oct 2026: a slow load showed the old drawn player first). Only if
  * 3D can't start does the old figure stay, so the box is never empty.
+ *
+ * KEPT BETWEEN VISITS (tap speed, 19 Nov 2026). Every return to Home used to
+ * build him from nothing (new 3D context, shaders compiled again: the biggest
+ * cost of the tap, measured) and every exit threw him away. Now the built
+ * player is kept (`kept`, one at a time): leaving Home only stops his frames
+ * and takes his canvas off the page; coming back puts it straight back. He is
+ * freed for real after KEEP_MS away, or when what he looks like changes. He
+ * also draws nothing while his box is off screen.
  */
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { CareerState } from "@/lib/star/types";
@@ -34,8 +42,18 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
   useEffect(() => {
     const el = wrap.current;
     if (!el) return;
+    // Back to Home with him already built: put him straight back.
+    if (kept && kept.sig === sig) {
+      const k = kept;
+      turn.current = k.turn;
+      k.attach(el);
+      setReady(true);
+      return () => k.detach();
+    }
+    freeKept();
     let dead = false, raf = 0, last = 0;
     let dispose = () => {};
+    let entry: Kept | null = null;
     (async () => {
       try {
         const THREE = await import("three");
@@ -46,8 +64,10 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
         const { loadAnims3d, addClips, clipInfo } = await import("@/lib/star/three3d/footballAnims");
         const { addToonFace, toonFaceFor, blinkAt, wanderGaze } = await import("@/lib/star/style3d/toon/face");
         const { setToonRim } = await import("@/lib/star/style3d/toon/shader");
-        const { homeIdleAt, homeSway, HOME_BALL_REST } = await import("@/lib/star/homeIdle");
-        const { makeHomeSet, juggleSpot } = await import("@/lib/star/homeSet3d");
+        const { homeIdleAt, homeSway, HOME_IDLE_BEATS, HOME_IDLE_ROUND } = await import("@/lib/star/homeIdle");
+        const jb = HOME_IDLE_BEATS.find((b) => b.clip === "juggle");
+        const JUGGLE_BEAT = { from: jb?.from ?? 6, dur: jb?.dur ?? 6, round: HOME_IDLE_ROUND };
+        const { makeHomeSet, homeBallAt } = await import("@/lib/star/homeSet3d");
         const { numberTexture } = await import("@/lib/star/style3d/gameplay");
         if (dead) return;
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
@@ -68,7 +88,7 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
           loadToonHead(loader, you.head), loadPeople3d(loader, "anims", "new"),
           loadAnims3d(loader as never, "football").catch(() => null),
         ]);
-        if (dead) { renderer.dispose(); return; }
+        if (dead) { renderer.dispose(); renderer.forceContextLoss(); return; }
         const SK = (SkeletonUtils as unknown as { default?: unknown }).default ?? SkeletonUtils;
         const p = makePerson3d(THREE, SK as never, g, anims, { outline: 0.006, you: true });
         dressPerson3d(THREE, p, { skin: you.skin, hair: you.hair, kit: { shirt: kitShirt, trim: kitTrim }, number: numberTexture(THREE, num) });
@@ -85,9 +105,9 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
         const fitW = (0.95 / (width / height)) / 2 / Math.tan((18 * Math.PI) / 360);
         cam.position.set(0, tall * 0.47, Math.max(fit, fitW));
         cam.lookAt(0, tall * 0.535, 0);
-        el.appendChild(renderer.domElement);
         renderer.domElement.style.width = `${width}px`;
         renderer.domElement.style.height = `${height}px`;
+        const tr0 = turn.current;
         const has = (c: string) => !!p.actions[c];
         const len = (c: string) => p.actions[c]?.getClip().duration ?? 1;
         const t0 = performance.now();
@@ -105,45 +125,81 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
             const hips = p.bones.Hips;
             if (hips) { hips.position.x += (homeSway(t) / (p.unit || 0.01)) * st.idle; hips.updateMatrixWorld(true); }
           }
-          const tr = turn.current;
+          const tr = tr0;
           if (tr.drag === null && where === "home") tr.yaw += (restYaw - tr.yaw) * 0.04; // drifts back to his pose
           p.root.rotation.y = tr.yaw;
           p.root.updateMatrixWorld(true);
           // the face: the beat's look, the eyes wandering (down to his ball in the keepy-uppies), blinks, the lips
           const gz = wanderGaze(t, 11);
           face?.set({ face: toonFaceFor(st.face), blink: blinkAt(t, 5), talk: st.talk, gaze: st.juggle > 0.5 ? [gz[0] * 0.3, -0.75] : gz });
-          homeSet.place(p, tr.yaw, st.juggle, juggleSpot(jInfo, st.juggleT) ?? HOME_BALL_REST, t);
+          // the ball moves like a ball: flicked up, kept up, dropped with a bounce (homeBallAt)
+          { const bp = homeBallAt(jInfo, t, JUGGLE_BEAT); homeSet.place(p, tr.yaw, 1, bp, t, bp[1] > 0.115 ? 1 : 0); }
           renderer.render(scene, cam);
           // keep this first picture for the next visit's wait (read straight after the draw),
           // only when the kept one is missing or out of date: encoding it cost 1.6 s on every
           // return to Home (Mikey's playtest, 21 Oct 2026: "going back … you see how it took a second")
           if (!snapped) { snapped = true; if (readSnap(where, sig) === null) keepSnap(where, sig, renderer.domElement); }
         };
-        (window as unknown as { __homePlayer?: unknown }).__homePlayer = { draw: drawAt };
+        // off screen (scrolled away, or a page laid over Home): no frames
+        let onScreen = true;
+        const seen = typeof IntersectionObserver === "function"
+          ? new IntersectionObserver((es) => { onScreen = es.some((x) => x.isIntersecting); }) : null;
         const frame = (now: number) => {
           raf = requestAnimationFrame(frame);
-          if (document.hidden || now - last < 33) return;
+          if (document.hidden || !onScreen || now - last < 33) return;
           last = now;
           // stills and films (the bench): window.__homeT holds one moment
           const held = (window as unknown as { __homeT?: number }).__homeT;
           drawAt(typeof held === "number" ? held : (now - t0) / 1000);
         };
-        raf = requestAnimationFrame(frame);
-        setReady(true);
-        dispose = () => {
-          cancelAnimationFrame(raf);
-          face?.dispose();
-          homeSet.dispose();
-          setToonRim(THREE, { color: "#ffffff", strength: 0 });
-          renderer.dispose();
-          renderer.domElement.remove();
+        const rim = () => setToonRim(THREE, { color: "#fff1dd", strength: 0.75, from: [-0.35, 0.55, -1] });
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        const stop = () => { cancelAnimationFrame(raf); raf = 0; seen?.disconnect(); setToonRim(THREE, { color: "#ffffff", strength: 0 }); };
+        entry = {
+          sig, turn: tr0,
+          attach: (host) => {
+            if (timer) { clearTimeout(timer); timer = null; }
+            host.appendChild(renderer.domElement);
+            rim();
+            onScreen = true; seen?.observe(host);
+            (window as unknown as { __homePlayer?: unknown }).__homePlayer = { draw: drawAt };
+            if (!raf) raf = requestAnimationFrame(frame);
+          },
+          detach: () => {
+            stop();
+            renderer.domElement.remove();
+            timer = setTimeout(() => { if (kept === entry) freeKept(); }, KEEP_MS);
+          },
+          free: () => {
+            if (timer) clearTimeout(timer);
+            stop();
+            face?.dispose();
+            homeSet.dispose();
+            // his own meshes and pictures too (the old dispose left them), then the 3D context itself
+            p.root.traverse((o) => {
+              const m = o as { geometry?: { dispose?: () => void }; material?: unknown };
+              m.geometry?.dispose?.();
+              for (const mat of ([] as unknown[]).concat(m.material ?? [])) {
+                const mm = mat as Record<string, unknown> & { dispose?: () => void };
+                for (const v of Object.values(mm)) (v as { isTexture?: boolean; dispose?: () => void } | null)?.isTexture && (v as { dispose: () => void }).dispose();
+                mm.dispose?.();
+              }
+            });
+            renderer.dispose();
+            renderer.forceContextLoss();
+            renderer.domElement.remove();
+          },
         };
+        kept = entry;
+        entry.attach(el);
+        setReady(true);
+        dispose = () => entry?.detach();
       } catch (e) {
         console.error("Style A home player", e);
         if (!dead) setFailed(true);
       }
     })();
-    return () => { dead = true; cancelAnimationFrame(raf); dispose(); };
+    return () => { dead = true; if (!entry) cancelAnimationFrame(raf); dispose(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [width, height, where, kitShirt, kitTrim, num, you.head, you.body, you.skin, you.hair]);
 
@@ -162,6 +218,23 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
       <div ref={wrap} className="absolute inset-0" />
     </div>
   );
+}
+
+/** The one built player kept between visits (see the note at the top). */
+interface Kept {
+  sig: string;
+  turn: { yaw: number; drag: null | number; from: number };
+  attach: (host: HTMLElement) => void;
+  detach: () => void;
+  free: () => void;
+}
+let kept: Kept | null = null;
+/** How long he is kept after you leave Home: a quick look at League and back costs nothing. */
+const KEEP_MS = 90_000;
+function freeKept() {
+  const k = kept;
+  kept = null;
+  k?.free();
 }
 
 /** The wait with no kept picture: a soft grey player shape where he will stand. */

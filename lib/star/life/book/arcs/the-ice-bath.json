@@ -1,0 +1,347 @@
+{
+ "id": "arc-the-ice-bath",
+ "title": "Ten minutes in the ice",
+ "owner": "physio",
+ "summary": "The physio bets you can't last ten minutes in the ice bath, longer than the toughest lad in the squad. It's daft, it's in front of everyone, and next season she has the stopwatch out again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "physio",
+   "team-mate"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "physio",
+   "pick": "physio"
+  },
+  {
+   "slot": "hard",
+   "pick": "squad",
+   "where": [
+    "veteran"
+   ],
+   "order": "best"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "ice-king",
+   "title": "The ice king",
+   "text": "You lasted longest in the ice bath, and your time is on the whiteboard in the physio room."
+  },
+  {
+   "id": "frozen-out",
+   "title": "Frozen out",
+   "text": "You got out first. Twice. The lads have a name for you now."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "ice-1-bath",
+   "title": "The ice bath",
+   "n": 1,
+   "event": {
+    "id": "arc-ice-1-bath",
+    "title": "The ice bath",
+    "category": "staff",
+    "place": "compound:physio-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Recovery day. {physio.name} is holding a stopwatch over the ice bath. {hard.name} is already in it up to his chest and humming."
+    ],
+    "talk": {
+     "start": "i1",
+     "nodes": {
+      "i1": {
+       "who": "physio",
+       "say": [
+        "\"He's done nine minutes. Nobody's beaten ten in this club. Get in.\""
+       ],
+       "replies": [
+        {
+         "id": "in",
+         "label": "Get in.",
+         "tone": "brave",
+         "goto": "i2"
+        },
+        {
+         "id": "bet",
+         "label": "\"What do I get if I do eleven?\"",
+         "tone": "confident",
+         "goto": "i2"
+        },
+        {
+         "id": "no",
+         "label": "\"I'll watch, thanks.\"",
+         "tone": "calm",
+         "end": "watched"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "watched"
+        }
+       ]
+      },
+      "i2": {
+       "who": "hard",
+       "say": [
+        "Five minutes in, {hard.short} is still humming. Your feet stopped being yours two minutes ago."
+       ],
+       "replies": [
+        {
+         "id": "stay",
+         "label": "Stay in.",
+         "tone": "brave",
+         "end": "stayed"
+        },
+        {
+         "id": "out",
+         "label": "Get out.",
+         "tone": "humble",
+         "end": "got-out"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "stayed": [
+       {
+        "text": "Eleven minutes. {hard.short} gets out at ten and a half and shakes your hand with fingers that don't work. {physio.short} writes your time on the whiteboard.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4,
+          "respect": 4
+         },
+         {
+          "slot": "hard",
+          "bond": 2,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "hard",
+          "tag": "beat-me-in-the-ice",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "won"
+         }
+        }
+       }
+      ],
+      "got-out": [
+       {
+        "text": "You last six minutes and come out pink. {hard.short} does twelve to make a point.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "hard",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lost"
+         }
+        }
+       }
+      ],
+      "watched": [
+       {
+        "text": "{hard.short} does ten minutes on his own and gets a round of applause. He looks at you while he gets it.",
+        "npc": [
+         {
+          "slot": "hard",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lost"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "hard",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The physio has a stopwatch"
+  },
+  {
+   "id": "ice-2-again",
+   "title": "The whiteboard",
+   "after": {
+    "beat": "ice-1-bath",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-ice-2-again",
+    "title": "The whiteboard",
+    "category": "staff",
+    "place": "compound:physio-room",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. {physio.short} has the stopwatch out again, and the whiteboard has a new name at the top."
+    ],
+    "choices": [
+     {
+      "id": "in",
+      "label": "Get in and go for it.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.path=='won'",
+        "text": "Twelve minutes. The new name comes off and yours goes back up. You can't feel your legs until lunch.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "ice-king"
+        }
+       },
+       {
+        "if": "!arc.path=='won'",
+        "chance": 0.5,
+        "text": "Seven minutes and out. Somebody shouts \"Frozen out!\" and it sticks.",
+        "effects": {
+         "team": 1
+        },
+        "arc": {
+         "end": "frozen-out"
+        }
+       },
+       {
+        "if": "!arc.path=='won'",
+        "chance": 0.5,
+        "text": "Eleven minutes. The physio rubs out the top name and writes yours. {hard.short} claps slowly.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "hard",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "ice-king"
+        }
+       }
+      ]
+     },
+     {
+      "id": "pass",
+      "label": "\"I'm retired from that.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='won'",
+        "text": "\"Retired champion,\" {physio.short} says, and leaves your old time in a box at the side.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "ice-king"
+        }
+       },
+       {
+        "text": "\"Again?\" The lads do the noise. You know the noise.",
+        "arc": {
+         "end": "frozen-out"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "hard",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "Next season, the stopwatch comes out again"
+  }
+ ]
+}

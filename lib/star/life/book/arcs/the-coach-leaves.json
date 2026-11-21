@@ -1,0 +1,476 @@
+{
+ "id": "arc-the-coach-leaves",
+ "title": "He's got a job",
+ "owner": "coach",
+ "summary": "The first-team coach has been offered his first manager's job, two leagues down. He asks you to put a word in with the chairman so they let him go. A season later he's a manager, and he wants you.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "coach",
+   "chairman"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "coach",
+   "pick": "coach"
+  },
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  }
+ ],
+ "vars": {
+  "word": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "his-first-signing",
+   "title": "His first call",
+   "text": "You helped a coach get his first job. He rings you before anyone else every summer."
+  },
+  {
+   "id": "he-went-without-you",
+   "title": "He went without you",
+   "text": "He left without your word, and he's never asked you for anything since."
+  }
+ ],
+ "promises": {
+  "p-word": {
+   "id": "p-word",
+   "to": "coach",
+   "text": "Put a word in with {chairman.short} for {coach.short}",
+   "due": {
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "keptBy": {
+    "beat": "cch-2-chair",
+    "ends": [
+     "speak"
+    ]
+   },
+   "dueText": "This week",
+   "kept": {
+    "text": "You said you'd speak to the chairman, and you did.",
+    "npc": [
+     {
+      "slot": "coach",
+      "bond": 4,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd put a word in.",
+    "npc": [
+     {
+      "slot": "coach",
+      "bond": -8,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "coach",
+      "tag": "broke-the-word-promise",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "cch-1-news",
+   "title": "First job",
+   "n": 1,
+   "event": {
+    "id": "arc-cch-1-news",
+    "title": "First job",
+    "category": "staff",
+    "place": "compound:car-park",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{coach.name} is leaning on your car. He's been a coach for nine years and never a manager."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "coach",
+       "say": [
+        "\"A club two leagues down wants me as manager. {chairman.short} won't let me out of my contract. He listens to you lot. Would you put a word in?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll see him this week.\"",
+         "tone": "kind",
+         "goto": "c2",
+         "promise": "p-word"
+        },
+        {
+         "id": "stay",
+         "label": "\"Stay. You're the best coach here.\"",
+         "tone": "honest",
+         "goto": "c-stay"
+        },
+        {
+         "id": "no",
+         "label": "\"Not my business, coach.\"",
+         "tone": "cold",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "c-stay"
+        }
+       ]
+      },
+      "c-stay": {
+       "who": "coach",
+       "say": [
+        "\"I'm forty-four. If I don't go now I'll be a coach until they carry me out.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Then I'll talk to him.\"",
+         "tone": "brave",
+         "goto": "c2",
+         "promise": "p-word"
+        },
+        {
+         "id": "no",
+         "label": "\"I'd rather you stayed. Sorry.\"",
+         "tone": "honest",
+         "end": "no-honest"
+        }
+       ]
+      },
+      "c2": {
+       "who": "coach",
+       "say": [
+        "\"Don't tell him I asked you. Make it sound like your idea.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"My idea.\"",
+         "tone": "calm",
+         "end": "will"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "will": [
+       {
+        "text": "He shakes your hand like you've already done it.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "said-hed-speak-to-the-chairman",
+          "strength": 2
+         }
+        ]
+       }
+      ],
+      "no": [
+       {
+        "text": "He gets off your car. \"Fair enough.\"",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": -6,
+          "respect": -2,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "wouldnt-put-a-word-in",
+          "strength": 2
+         }
+        ]
+       }
+      ],
+      "no-honest": [
+       {
+        "text": "\"That's kind. It's also no use to me.\" He laughs, a bit.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 4
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The coach has news"
+  },
+  {
+   "id": "cch-2-chair",
+   "title": "The directors' lounge",
+   "after": {
+    "beat": "cch-1-news",
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "event": {
+    "id": "arc-cch-2-chair",
+    "title": "The directors' lounge",
+    "category": "club",
+    "place": "stadium:directors-box",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "promise(p-word)"
+     ]
+    },
+    "setup": [
+     "{chairman.name} is in the lounge with the fish tank, reading the paper."
+    ],
+    "choices": [
+     {
+      "id": "speak",
+      "label": "\"Let {coach.short} go. He's earned it.\"",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "He folds the paper. \"Did he put you up to this?\" \"No.\" He lets him go on Friday, with a small fee.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": -2
+         },
+         {
+          "slot": "coach",
+          "bond": 12,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "got-me-my-first-job",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "word": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "bottle",
+      "label": "Ask about the parking instead.",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "text": "You talk about the car park for ten minutes and leave. {coach.short} is waiting by the door.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": -10,
+          "respect": -6,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "bottled-it-with-the-chairman",
+          "strength": 3
+         }
+        ],
+        "promiseBroken": [
+         "p-word"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "You said you'd see the chairman"
+  },
+  {
+   "id": "cch-3-call",
+   "title": "The manager rings",
+   "after": {
+    "beat": "cch-1-news",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-cch-3-call",
+    "title": "The manager rings",
+    "category": "staff",
+    "place": "home",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "season-end"
+     ]
+    },
+    "setup": [
+     "{coach.name} rings. It's his first summer as a manager. His team stayed up on the last day."
+    ],
+    "choices": [
+     {
+      "id": "listen",
+      "label": "Hear him out.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.word==1",
+        "text": "\"I'm not ringing to sign you. You're too good for us. I'm ringing to say thank you, and to ask about a left-back.\" You talk for an hour.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "rings-me-every-summer",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "his-first-signing"
+        }
+       },
+       {
+        "text": "He's polite and quick. He wanted the number of your physio, not you.",
+        "npc": [
+         {
+          "slot": "coach"
+         }
+        ],
+        "arc": {
+         "end": "he-went-without-you"
+        }
+       }
+      ]
+     },
+     {
+      "id": "busy",
+      "label": "\"Can I ring you back?\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.word==1",
+        "text": "He rings back himself the next day, from a motorway services.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "his-first-signing"
+        }
+       },
+       {
+        "text": "You don't ring back. Neither does he.",
+        "arc": {
+         "end": "he-went-without-you"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "A season on, he's a manager now"
+  }
+ ]
+}

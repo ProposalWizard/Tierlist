@@ -94,7 +94,8 @@ export interface LiftPlace { y: number; z: number; clear: number; straight: numb
 /** At most this share of the arm's full length (a lift is near straight arms; fully straight looks locked). */
 export const LIFT_REACH = 0.97;
 /** The base clears his crown by this much, or his face by this much in front. */
-export const LIFT_CLEAR = { over: 0.035, front: 0.025 };
+// (20 Nov 2026: 3.5 cm read as the cup sitting on his head from a low camera; a hand's width now)
+export const LIFT_CLEAR = { over: 0.09, front: 0.05 };
 
 /**
  * The handles' middle when the cup is held up over his head (actor frame):

@@ -1,0 +1,43 @@
+# Harry's chat, 19 Nov 2026: tap speed, one UI, 3D phone
+
+Context: Mikey (18 Nov): the app "feels like a website packed into an app";
+taps and page moves feel slow next to NSS. Two read-only audits ran
+(tap speed + UI, 3D + lag). Harry's answers, verbatim:
+
+1. On the plan: "we can use the current shop ui on the 3d phone and make a new
+   unified shop for the current ui"
+2. "it would be amazing if you could transition straight from the 3d phone shot
+   to being at home - super simple reusable transitions like getting up from a
+   chair/bed/different rooms every time - and based on what house u have."
+3. When the clip plays: "In two circumstances - clicking into Phone causes some
+   sort of fade transition (maybe an eye blinking open type of thing) that takes
+   you to the 3d phone screen (this is just the phone UI now) - then you can
+   either click home or put phone away. (in a more natural sense) putting phone
+   away keeps u in the 3d world."
+4. After the build stages: a Fable review of 3D builds and cut scenes (managers
+   all looking the same, body parts going through people, bad audio; many
+   voices, random events, a story element baked into a random career).
+5. "SUPER HARD AND BIG BUILDS - take time with each phase - confirm looks and
+   drafts with me - ask any questions needed"
+6. Later the same day: "make sure to propose designs to me throughout - tell me
+   if higgsfeild (Higgsfield) is ever used and show me updates every 5 mins using images and
+   visuals"
+7. On the Supabase connector (it is linked to another project, not
+   Knowitball's): "Okay from now on tell me when u need the connector for
+   supabase before starting a task that needs it"
+8. Shop design picks (drafts in the chat): "I think B" (big picture + thumbnails),
+   "doesn't need the pitch background", then G1 (the 3D store blurred behind
+   frosted glass) "is good", top bar: "move money up to where fitness is" and
+   "put shop up to top middle (age and stars not needed on this page)".
+9. Top bars: "fame + money but make money into the bar style with a dollar bill
+   icon"; "for the bars it should be like this [the Home star/energy bars] ...
+   we need to do this for every page (have the relevant stats as the top 2 bars)".
+10. Money sign: "Switch to $ everywhere". Bars per page: the table in the chat,
+   with "Phone should be level + money" and "relations ... should be happiness+ rep".
+11. "I prefer navy btw" and "the icons should be still be smaller and in the top left hovering over the bar".
+12. "also should it be £ instead of dollars" → "£ pounds (Recommended)". Answers the same message: shop into the game "yes"; the Sponsors fame pill "idk"; the Owner app gets Money + Reputation "yes".
+13. "I want u to put all inages/videos into this chat even with the test pages"
+14. (20 Nov) On the 3D phone videos: "the original blink was better but this is looking good, the houses and 3d space are defo gonna need cleaning up too, even if that means just sticking to the style but making it clean. Also driving from here to training/matchday would be eliteeee"
+15. (20 Nov) "also on the realistic people - that doesn't mean changing the style it just means body proportions, no bugs, picthes, sponsor boards, proportions in general, views, hands, picking things up, interacting, etc"
+16. (20 Nov) "what if we add a red dead redemption hair idea to the game, like ur hair and potentially facial hair grows over a szn naturally and then when in ur bathroom u can style it and u can also go to a barbers... Also something like a training centre where u can actually interact with teammates in like a food hall, and they naturally go about their day. on top of all of this random events. Bit by by bit but this needs to work on mobile and PC this turns it from Ai slop to revolutionary football career mode game"
+17. (20 Nov) On the preset staff sheet: "the mixed race and the darker skinned characters are tending to not have features of those ethnicities. For example, like there's assistant manager there who's black with a quiff that would only really happen on a white guy or the fixer. And for those, I would say we really need to research black hair, black hairstyles... The actual character, like the player, has good hair. It just comes to managers and it just, yeah, it gets cooked."

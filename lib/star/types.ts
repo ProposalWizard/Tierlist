@@ -1309,6 +1309,11 @@ export interface CareerState {
   /** Things you can still do before the next match. Refills every week. */
   weekActions?: number;
   /**
+   * The gap between matches you last slept in your 3D house (lib/star/home3d/sleep.ts): a night's
+   * sleep is that week's Rest, once per gap. Absent on every older save: no night slept yet.
+   */
+  lastSleep?: { season: number; week: number };
+  /**
    * Training sessions left this week (absent = the full 2). Refilled only
    * after a SATURDAY match, so a Saturday-Wednesday-Saturday week still has
    * just 2 between them (Mikey, 29 Sep 2026). See week.ts.
@@ -1443,6 +1448,10 @@ export interface CareerState {
   captain?: boolean;
   /** Casino stories this season, the cooldown and any casino ban (lib/star/casinoScandal.ts). */
   casinoScandal?: import("./casinoScandal").CasinoScandalState;
+  /** THE LIVING WORLD (phase 1, 20 Nov 2026): every person you meet, what
+   *  they remember, and the event director's state. Absent until the first
+   *  event; off in the real career until Harry says (lib/star/life/flag.ts). */
+  life?: import("./life/types").LifeState;
   /** The armband was just earned (careerFlow) and the manager hasn't told you
    *  yet: his "you're my captain" moment on Home (lib/star/managerMoments.ts).
    *  Cleared when seen. Never set by the owner path (appointSelfCaptain). */

@@ -14,7 +14,7 @@
  */
 import { useEffect, useState } from "react";
 import type React from "react";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { SHOP_TIERS } from "@/lib/star/economy";
 import { useCountUp, FloatText, Pop } from "../ui";
 
@@ -56,7 +56,7 @@ export function StoreHero({ title, sub, money, spent, spentText, right }: {
         <div className="relative shrink-0 text-right">
           <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Balance</div>
           <div data-store-balance className="flex items-center justify-end gap-1 text-[24px] font-black leading-none tabular-nums text-yellow-300" style={{ textShadow: "0 2px 10px rgba(0,0,0,.8), 0 0 16px rgba(250,204,21,.45)" }}>
-            <span className="text-[18px]">★</span><Pop value={spent}>{formatMoney(Math.round(shown))}</Pop>
+            <span className="text-[18px]">{MONEY_SIGN}</span><Pop value={spent}>{formatMoney(Math.round(shown))}</Pop>
           </div>
           <FloatText trigger={spent} text={spentText} color="#fca5a5" className="right-0 top-[105%]" size={15} />
           {right && <div className="mt-1.5 flex justify-end">{right}</div>}
@@ -156,7 +156,7 @@ export function PriceLine({ price, can, label }: { price: number | null; can: bo
   return (
     <div className={`flex items-center justify-center gap-1 text-[12.5px] font-black tabular-nums ${can ? "text-yellow-300" : "text-white/55"}`}>
       {label && <span className="text-[9.5px] font-black uppercase tracking-wide text-white/70">{label}</span>}
-      {price === null ? <span className="text-emerald-300">MAXED</span> : <>★{formatMoney(price)}</>}
+      {price === null ? <span className="text-emerald-300">MAXED</span> : <>{MONEY_SIGN}{formatMoney(price)}</>}
     </div>
   );
 }
@@ -305,11 +305,11 @@ export function ConfirmSheet({ info, money, onCancel, onConfirm }: {
           {info.sub && <div className="mt-0.5 text-[11.5px] font-bold text-white/80">{info.sub}</div>}
           <div className="mt-2 grid grid-cols-2 gap-1.5 text-center">
             <div className="rounded-[4px] bg-white/[0.06] py-1.5 ring-1 ring-white/10">
-              <div className="text-[15px] font-black tabular-nums text-yellow-300">★{formatMoney(price)}</div>
+              <div className="text-[15px] font-black tabular-nums text-yellow-300">{MONEY_SIGN}{formatMoney(price)}</div>
               <div className="text-[9px] font-black uppercase tracking-wide text-white/65">Price</div>
             </div>
             <div className="rounded-[4px] bg-white/[0.06] py-1.5 ring-1 ring-white/10">
-              <div className={`text-[15px] font-black tabular-nums ${ok ? "text-white" : "text-red-300"}`}>{ok ? `★${formatMoney(after)}` : `−★${formatMoney(-after)}`}</div>
+              <div className={`text-[15px] font-black tabular-nums ${ok ? "text-white" : "text-red-300"}`}>{ok ? `${MONEY_SIGN}${formatMoney(after)}` : `−${MONEY_SIGN}${formatMoney(-after)}`}</div>
               <div className="text-[9px] font-black uppercase tracking-wide text-white/65">{ok ? "Left after" : "Short"}</div>
             </div>
           </div>
@@ -321,7 +321,7 @@ export function ConfirmSheet({ info, money, onCancel, onConfirm }: {
           <div className="text-[11px] font-bold text-red-100">Banned by the FA — a real chance of getting caught buying it anyway.</div>
           <label className="mt-2 flex items-center gap-2 text-[11px] font-bold text-white/90">
             <input type="checkbox" checked={lawyers} onChange={(e) => setLawyers(e.target.checked)} />
-            Hire lawyers first (★{formatMoney(info.blackMarket.lawyerFee)} — cuts the risk a lot, doesn&apos;t remove it)
+            Hire lawyers first ({MONEY_SIGN}{formatMoney(info.blackMarket.lawyerFee)} — cuts the risk a lot, doesn&apos;t remove it)
           </label>
         </div>
       )}
@@ -329,7 +329,7 @@ export function ConfirmSheet({ info, money, onCancel, onConfirm }: {
       <div className="mt-3 grid grid-cols-[1fr_1.8fr] gap-2">
         <button onClick={onCancel} className="kib-press rounded-[4px] bg-white/[0.08] py-3 text-[14px] font-black uppercase tracking-wide text-white ring-1 ring-white/15">Cancel</button>
         <GoldButton data-confirm-buy danger={!!info.blackMarket} disabled={!ok} onClick={() => { const r = onConfirm(lawyers); if (r) setMsg(r); }}>
-          {ok ? `${info.verb} ★${formatMoney(price)}` : "Not enough money"}
+          {ok ? `${info.verb} ${MONEY_SIGN}${formatMoney(price)}` : "Not enough money"}
         </GoldButton>
       </div>
     </StoreSheet>

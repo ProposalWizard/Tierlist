@@ -55,6 +55,8 @@ export interface Garden3DProps {
   onTraining?: () => void;
   /** Walked through your house's back door (9 Oct 2026): your 3D home. Absent: the door stays shut. */
   onHouse?: () => void;
+  /** "📱 Phone" in the top bar: the 3D phone in your hand (components/star/HousePhone.tsx). Absent: no button. */
+  onPhone?: () => void;
   /** Where you appear: at the shop's doors (coming out of it), the casino's,
    *  the training pitch's gate, or the garden gate. */
   arrive?: GardenData["arrive"];
@@ -66,7 +68,7 @@ export interface Garden3DProps {
   embedded?: boolean;
 }
 
-export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, onHouse, arrive = "gate", sky, where = "career", embedded = false }: Garden3DProps) {
+export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, onHouse, onPhone, arrive = "gate", sky, where = "career", embedded = false }: Garden3DProps) {
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<GardenController | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -214,6 +216,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
         onPointerMove={(e) => {
           const d = drag.current;
           if (!d || d.id !== e.pointerId) return;
+          if (holder.current?.dataset.pinching) { d.moved += 99; d.x = e.clientX; d.y = e.clientY; return; } // two fingers: the zoom (three3d/followCam.ts), not a look-round
           d.moved += Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y);
           ctrlRef.current?.orbit(e.clientX - d.x, e.clientY - d.y);
           d.x = e.clientX; d.y = e.clientY;
@@ -233,6 +236,11 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
           <span style={{ fontSize: 20, lineHeight: 1, marginTop: -2 }}>&#8249;</span>Home
         </button>
         <div style={{ flex: 1 }} />
+        {onPhone && (
+          <button onClick={onPhone} aria-label="Phone" data-pick-up style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 6, fontWeight: 900 }}>
+            <span aria-hidden style={{ fontSize: 15 }}>📱</span>Phone
+          </button>
+        )}
         <div style={{ ...pill, gap: 6 }} aria-label="Trophies">
           <span aria-hidden style={{ fontSize: 16 }}>🏆</span><b style={{ color: GOLD }}>{info.trophyCount + (career.ballonDorWins ?? 0)}</b>
         </div>

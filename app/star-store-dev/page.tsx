@@ -30,6 +30,7 @@ import type { PriceContext } from "@/lib/star/store/catalogue";
 import {
   STORE_DIVISIONS, shopLevelFor, typicalWageFor, sanitizeTestSettings, DEFAULT_TEST_SETTINGS, type StoreTestSettings,
 } from "@/lib/star/store/testArea";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 const STATE_KEY = "star-store-test-v1";
 const SETTINGS_KEY = "star-store-test-settings-v1";
@@ -45,7 +46,7 @@ function save(key: string, value: unknown) {
 }
 
 function Stars({ v }: { v: number }) {
-  return <span className="tabular-nums"><span className="text-yellow-300">★</span>{Math.round(v).toLocaleString("en-GB")}</span>;
+  return <span className="tabular-nums"><span className="text-yellow-300">{MONEY_SIGN}</span>{Math.round(v).toLocaleString("en-GB")}</span>;
 }
 
 export default function StoreTestPage() {
@@ -103,12 +104,12 @@ export default function StoreTestPage() {
             </div>
           </div>
           <label className="st-field">
-            <span>Weekly wage ★</span>
+            <span>Weekly wage {MONEY_SIGN}</span>
             <input type="number" min={1} value={settings.weeklyWage}
               onChange={(e) => setSettings((s) => ({ ...s, weeklyWage: Math.max(1, Math.round(Number(e.target.value) || 1)) }))} />
           </label>
           <label className="st-field">
-            <span>Wallet ★</span>
+            <span>Wallet {MONEY_SIGN}</span>
             <input type="number" min={0} value={state.stars}
               onChange={(e) => setState((s) => ({ ...s, stars: Math.max(0, Math.round(Number(e.target.value) || 0)) }))} />
           </label>
@@ -124,7 +125,7 @@ export default function StoreTestPage() {
             )}
           </div>
           <button
-            onClick={() => { if (window.confirm("Reset purchases? Wallet goes back to ★5,000 and 300 Coins.")) setState(START_STATE); }}
+            onClick={() => { if (window.confirm("Reset purchases? Wallet goes back to £5,000 and 300 Coins.")) setState(START_STATE); }}
             className="st-reset"
           >Reset purchases</button>
           <Note>A test wallet on this device only. Buying Coins adds them free; no real money is taken.</Note>

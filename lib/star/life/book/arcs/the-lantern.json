@@ -1,0 +1,900 @@
+{
+ "id": "arc-the-lantern",
+ "title": "Two minutes for the Lantern",
+ "owner": "reporter",
+ "summary": "After a bad defeat the local paper's reporter asks you for two minutes in the car park. What you say, and what you tell her off the record, decides whether she's on your side when the team news starts leaking. She asks for one thing in return, and she remembers it when you leave.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "local reporter",
+   "gaffer",
+   "tabloid reporter"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "lean": "none",
+  "secret": 0,
+  "leak": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "a-friend-in-print",
+   "title": "A friend in print",
+   "text": "The local paper had your back when it mattered, and she got her interview."
+  },
+  {
+   "id": "burned",
+   "title": "Burned",
+   "text": "She trusted you and you went elsewhere. The Lantern hasn't printed your name kindly since."
+  }
+ ],
+ "promises": {
+  "p-first-word": {
+   "id": "p-first-word",
+   "to": "reporter",
+   "text": "Give {reporter.short} the first interview when you leave",
+   "due": {
+    "beat": "lan-4-exclusive"
+   },
+   "keptBy": {
+    "beat": "lan-4-exclusive",
+    "ends": [
+     "her"
+    ]
+   },
+   "dueText": "The day you leave",
+   "kept": {
+    "text": "You said she'd get it first, and she did.",
+    "npc": [
+     {
+      "slot": "reporter",
+      "bond": 4,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said she'd get it first.",
+    "npc": [
+     {
+      "slot": "reporter",
+      "bond": -6,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "reporter",
+      "tag": "broke-the-interview-promise",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "lan-1-carpark",
+   "title": "Two minutes",
+   "n": 1,
+   "event": {
+    "id": "arc-lan-1-carpark",
+    "title": "Two minutes",
+    "category": "press",
+    "place": "stadium:car-park",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastLost"
+     ]
+    },
+    "setup": [
+     "{reporter.name} from the {reporter.outlet} is waiting by your car with her notebook already open. You lost, and it wasn't close."
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "reporter",
+       "say": [
+        "\"Two minutes? We go to print at nine and I've got a hole on the back page where a happy story was going to be.\""
+       ],
+       "replies": [
+        {
+         "id": "honest",
+         "label": "\"We were second to everything. That's on us.\"",
+         "tone": "honest",
+         "goto": "r2"
+        },
+        {
+         "id": "off",
+         "label": "\"Off the record?\"",
+         "tone": "calm",
+         "goto": "r-off"
+        },
+        {
+         "id": "no",
+         "label": "\"Not tonight. Ask the gaffer.\"",
+         "tone": "cold",
+         "end": "snub"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "r-quiet"
+        }
+       ]
+      },
+      "r2": {
+       "who": "reporter",
+       "say": [
+        "She writes it down. \"Can I use ‘second to everything’? It's the only honest thing anyone's said to me all season.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Use it.\"",
+         "tone": "brave",
+         "end": "quoted"
+        },
+        {
+         "id": "soft",
+         "label": "\"Make it ‘we weren't at it’. Less of a headline.\"",
+         "tone": "calm",
+         "end": "quoted-soft"
+        }
+       ]
+      },
+      "r-off": {
+       "who": "reporter",
+       "say": [
+        "\"Off the record means I can't print it. I've been doing this nineteen years and I've never once broken that.\""
+       ],
+       "replies": [
+        {
+         "id": "leak",
+         "label": "\"The gaffer's lost half the dressing room.\"",
+         "tone": "reckless",
+         "end": "told-her",
+         "var": {
+          "secret": 1
+         }
+        },
+        {
+         "id": "think",
+         "label": "\"Then I'll keep it to myself as well.\"",
+         "tone": "calm",
+         "end": "quoted-soft"
+        }
+       ]
+      },
+      "r-quiet": {
+       "who": "reporter",
+       "say": [
+        "She waits, then closes the notebook. \"I'll put ‘declined to comment’. It reads worse than you'd think.\""
+       ],
+       "replies": [
+        {
+         "id": "fine",
+         "label": "\"Put that, then.\"",
+         "tone": "cold",
+         "end": "snub"
+        },
+        {
+         "id": "ok",
+         "label": "\"Fine. We weren't good enough.\"",
+         "tone": "honest",
+         "end": "quoted-soft"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "snub": [
+       {
+        "text": "Saturday's back page says you walked past without a word. It's true, and somebody has stuck it on the dressing-room door.",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": -4,
+          "respect": -2,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "walked-past-her-notebook",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "lean": "enemy"
+         }
+        }
+       }
+      ],
+      "quoted": [
+       {
+        "text": "\"Second to everything\" is the headline. The fans' forum likes you for it, and the gaffer doesn't.",
+        "effects": {
+         "fans": 3,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "gave-her-an-honest-quote",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "lean": "friend"
+         }
+        }
+       }
+      ],
+      "quoted-soft": [
+       {
+        "text": "She prints it, a small box at the bottom of the page.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "gave-her-a-quote",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "lean": "neutral"
+         }
+        }
+       }
+      ],
+      "told-her": [
+       {
+        "text": "She stops writing for that one, and doesn't start again until you're talking about the weather.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "told-her-off-the-record",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "lean": "friend"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "The local reporter wants a quote"
+  },
+  {
+   "id": "lan-2-call",
+   "title": "She rings",
+   "after": {
+    "beat": "lan-1-carpark",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-lan-2-call",
+    "title": "She rings",
+    "category": "press",
+    "place": "home",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your phone goes at half nine. It's the {reporter.outlet}'s number."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "reporter",
+       "say": [
+        "{if arc.secret==1}\"I want you to know I didn't print it, and I won't. I'm ringing because I want something back one day.\"{/if}",
+        "{if arc.secret==0 && arc.lean=='enemy'}\"I'm not ringing to argue. I'm ringing because one day you'll leave this club, and I want the first interview when you do.\"{/if}",
+        "{if arc.secret==0 && !arc.lean=='enemy'}\"Thanks for Saturday. I'll be straight: one day you'll leave this club, and I want the first interview when you do.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"When I go, you get it first.\"",
+         "tone": "honest",
+         "end": "promised",
+         "promise": "p-first-word"
+        },
+        {
+         "id": "depends",
+         "label": "\"Depends who's asking by then.\"",
+         "tone": "calm",
+         "end": "maybe"
+        },
+        {
+         "id": "no",
+         "label": "\"I don't do deals with papers.\"",
+         "tone": "cold",
+         "end": "no-deal"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "promised": [
+       {
+        "text": "\"I'll write it in my diary. I still keep a paper one.\"",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "promised-her-the-first-interview",
+          "strength": 3
+         }
+        ]
+       }
+      ],
+      "maybe": [
+       {
+        "text": "\"That's an honest answer, at least.\"",
+        "npc": [
+         {
+          "slot": "reporter",
+          "respect": 2
+         }
+        ]
+       }
+      ],
+      "no-deal": [
+       {
+        "text": "\"Then I'll have to find my own stories.\" She hangs up before you do.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "wouldnt-deal",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "lean": "enemy"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "She'll want something back"
+  },
+  {
+   "id": "lan-3-leak",
+   "title": "Somebody's talking",
+   "after": {
+    "beat": "lan-1-carpark",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-lan-3-leak",
+    "title": "Somebody's talking",
+    "category": "manager",
+    "place": "compound:office",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The {tabloid.outlet} printed the team on Friday, a day before the gaffer read it out. {manager.name} has the paper on his desk and you in the chair.",
+     "\"You were seen in the car park with the woman from the {reporter.outlet}. Twice.\""
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "manager",
+       "say": [
+        "\"So tell me it wasn't you.\""
+       ],
+       "replies": [
+        {
+         "id": "calm",
+         "label": "\"It wasn't me. She's never asked me for the team.\"",
+         "tone": "calm",
+         "goto": "k2"
+        },
+        {
+         "id": "fiery",
+         "label": "\"If you think it's me, drop me.\"",
+         "tone": "fiery",
+         "end": "defiant",
+         "mood": -1
+        },
+        {
+         "id": "humble",
+         "label": "\"I talk to her. I've never told her the team.\"",
+         "tone": "humble",
+         "goto": "k2"
+        },
+        {
+         "id": "quiet",
+         "label": "… Say nothing",
+         "silent": true,
+         "end": "silent"
+        }
+       ]
+      },
+      "k2": {
+       "who": "manager",
+       "say": [
+        "{if arc.lean=='friend'}On the way out your phone buzzes. It's {reporter.short}: \"Ask him who drives the youth team minibus. That's all I'll say.\"{/if}",
+        "{if !arc.lean=='friend'}\"Then who? Somebody in this building is phoning a tabloid.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "tip",
+         "label": "Tell him what {reporter.short} said.",
+         "tone": "brave",
+         "requires": [
+          "arc.lean=='friend'"
+         ],
+         "end": "found-it"
+        },
+        {
+         "id": "dunno",
+         "label": "\"I don't know, gaffer.\"",
+         "tone": "calm",
+         "end": "cleared"
+        },
+        {
+         "id": "guess",
+         "label": "\"Ask the lads who need the money.\"",
+         "tone": "cold",
+         "end": "pointed"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "found-it": [
+       {
+        "text": "The minibus driver's nephew works at the {tabloid.outlet}. Nobody tells the dressing room how the gaffer found out.",
+        "effects": {
+         "boss": 6
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 6
+         },
+         {
+          "slot": "reporter",
+          "bond": 6,
+          "respect": 6
+         },
+         {
+          "slot": "tabloid",
+          "respect": -4,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "used-her-tip-well",
+          "strength": 3
+         },
+         {
+          "slot": "tabloid",
+          "tag": "cost-him-a-source",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "leak": "found"
+         }
+        }
+       }
+      ],
+      "cleared": [
+       {
+        "text": "He believes you, mostly. It stops after a few weeks and nobody finds out why.",
+        "effects": {
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "leak": "stopped"
+         }
+        }
+       }
+      ],
+      "pointed": [
+       {
+        "text": "Two of the younger lads get called in after you. The dressing room knows who put them there.",
+        "effects": {
+         "team": -4,
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "leak": "blamed"
+         }
+        },
+        "noteSquad": "pointed-at-the-young-lads"
+       }
+      ],
+      "defiant": [
+       {
+        "text": "He doesn't drop you, but he leaves you on the bench for a half to make the point.",
+        "effects": {
+         "boss": -5
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -4,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "told-him-to-drop-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "leak": "stopped"
+         }
+        }
+       }
+      ],
+      "silent": [
+       {
+        "text": "\"That's not a no.\" He folds the paper and puts it in the bin.",
+        "effects": {
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -3,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "said-nothing-about-the-leak",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "leak": "stopped"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Next season the team news gets out early"
+  },
+  {
+   "id": "lan-4-exclusive",
+   "title": "The first interview",
+   "after": {
+    "beat": "lan-3-leak",
+    "seasons": [
+     1,
+     3
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-lan-4-exclusive",
+    "title": "The first interview",
+    "category": "press",
+    "place": "home",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{if !sameClub}You've signed for a new club. Your phone has forty missed calls. One is the {reporter.outlet}, and one is the {tabloid.outlet}, offering money.{/if}",
+     "{if sameClub}Word's out that you could leave in the summer. {reporter.short} texts first. Then the {tabloid.outlet} rings, offering money for the story.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "her",
+      "label": "Ring {reporter.short} back first.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "promise(p-first-word)",
+        "text": "Her piece runs over two pages. She uses your words and nobody else's.",
+        "effects": {
+         "fans": 6,
+         "reputation": 4
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 10,
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "kept-the-interview-promise",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "a-friend-in-print"
+        }
+       },
+       {
+        "text": "She's surprised you rang. The piece is short and fair.",
+        "effects": {
+         "fans": 3,
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "a-friend-in-print"
+        }
+       }
+      ]
+     },
+     {
+      "id": "money",
+      "label": "Take the {tabloid.outlet}'s money.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "Two weeks' wages for an hour of talking. They change half of what you said. {reporter.short} doesn't text again.",
+        "effects": {
+         "moneyWeeks": 2,
+         "fans": -4,
+         "reputation": -4
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": -12,
+          "respect": -8,
+          "grudge": 14
+         },
+         {
+          "slot": "tabloid",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "sold-the-interview-elsewhere",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "burned"
+        },
+        "promiseBroken": [
+         "p-first-word"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "nobody",
+      "label": "Talk to nobody.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "!promise(p-first-word)",
+        "text": "\"Fair enough,\" {reporter.short} texts. \"I'll still be here.\"",
+        "npc": [
+         {
+          "slot": "reporter",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "a-friend-in-print"
+        }
+       },
+       {
+        "text": "{reporter.short} reads about your move in somebody else's paper. She sends one text: \"You said first.\"",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": -8,
+          "respect": -6,
+          "grudge": 8
+         }
+        ],
+        "arc": {
+         "end": "burned"
+        },
+        "promiseBroken": [
+         "p-first-word"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "When you leave, she'll be waiting",
+   "look": {
+    "chip": "Seasons later"
+   }
+  }
+ ]
+}

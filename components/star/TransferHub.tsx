@@ -5,7 +5,7 @@ import type { CareerState } from "@/lib/star/types";
 import type { InterestLevel, InterestedClub, SeasonGrade, WindowInterest } from "@/lib/star/transferInterest";
 import { INTEREST_STEPS, levelOf } from "@/lib/star/transferInterest";
 import { leagueNameFor, divisionOf, type CareerDivision } from "@/lib/star/calendar";
-import { formatMoney, formatMoneyPrecise } from "@/lib/star/money";
+import { formatMoney, formatMoneyPrecise, MONEY_SIGN } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import { BarButton, KitStyles, Shine, useClubTheme, clubTheme, rgba } from "./ui";
 import { shortClub } from "@/lib/star/media/grammar";
@@ -42,7 +42,7 @@ interface Props {
 
 type Page = "hub" | "league" | "club";
 
-const wageText = (w: number) => `★${formatMoneyPrecise(w)}`;
+const wageText = (w: number) => `${MONEY_SIGN}${formatMoneyPrecise(w)}`;
 const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
 
 /** Like NSS's "(CHAMPS)": the club's European competition this season. */
@@ -297,7 +297,7 @@ export default function TransferHub({ career, interest, onNegotiate, onStay }: P
               <p className="mt-2.5 rounded-lg bg-black/40 px-2.5 py-2 text-[14px] font-bold italic text-white">“{club.why}”</p>
               <div className="mt-2.5 grid grid-cols-2 gap-1.5">
                 <Fact k="Contract" v={`${club.offer.seasons} seasons`} />
-                <Fact k="Your club gets" v={`★${formatMoney(club.fee)}`} gold />
+                <Fact k="Your club gets" v={`${MONEY_SIGN}${formatMoney(club.fee)}`} gold />
                 <Fact k="Your wage now" v={`${wageText(career.contract.wage)}/wk`} />
                 {club.moved
                   ? <Fact k="Last season" v={MOVED_WORD[club.moved]} />

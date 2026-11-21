@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { CountUp, FloatText, PressButton, useTrigger } from "./ui";
 import { SetCard, SetHead, SetNote, SetDivider } from "./settingsKit";
 
@@ -43,7 +43,7 @@ export default function DevMoneyPanel({
   const [coined, fireCoined] = useTrigger();
   const [coinText, setCoinText] = useState("");
 
-  const add = (n: number) => { onAddMoney(n); setAddedText(`+★${money(n)}`); fireAdded(); };
+  const add = (n: number) => { onAddMoney(n); setAddedText(`+${MONEY_SIGN}${money(n)}`); fireAdded(); };
   const addCoins = (n: number) => { onAddCoins?.(n); setCoinText(`+${n.toLocaleString("en-GB")}`); fireCoined(); };
 
   return (
@@ -52,7 +52,7 @@ export default function DevMoneyPanel({
       <SetNote>For testing Investments/Boardroom without grinding for it.</SetNote>
       <div className="relative mt-2 flex items-center justify-between rounded-xl bg-black/30 px-3 py-2" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,.55), inset 0 0 0 1px rgba(253,224,71,.18)" }}>
         <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white">Current balance</span>
-        <span className="text-[16px] font-black tabular-nums text-yellow-200">★<CountUp value={career.money} ms={800} format={(n) => formatMoney(Math.round(n))} /></span>
+        <span className="text-[16px] font-black tabular-nums text-yellow-200">{MONEY_SIGN}<CountUp value={career.money} ms={800} format={(n) => formatMoney(Math.round(n))} /></span>
         <FloatText trigger={added} text={addedText} color="#fde047" className="right-6 top-0" size={14} />
       </div>
 
@@ -65,13 +65,13 @@ export default function DevMoneyPanel({
             onClick={() => add(p)}
             className="rounded-lg py-1.5 text-[10px] font-black"
           >
-            +★{money(p)}
+            +{MONEY_SIGN}{money(p)}
           </PressButton>
         ))}
       </div>
 
       <div className="mt-2 flex items-center gap-2">
-        <span className="text-sm font-black text-yellow-300">★</span>
+        <span className="text-sm font-black text-yellow-300">{MONEY_SIGN}</span>
         <input
           type="number" min={0} step={1000}
           value={amount}

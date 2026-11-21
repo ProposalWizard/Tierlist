@@ -61,7 +61,7 @@ check(r.ok && r.state.coins === rich.coins - basePrice(acc, ctx).coins && r.stat
 // Not enough money → refused, state unchanged.
 const poor = { ...START_STATE, stars: 0, coins: 0 };
 const nope = buy(poor, acc.id, "stars", ctx, DAY);
-check(!nope.ok && nope.state === poor && nope.reason === "Not enough ★.", "poor: no ★");
+check(!nope.ok && nope.state === poor && nope.reason === "Not enough money.", "poor: no ★");
 check(buy(poor, acc.id, "coins", ctx, DAY).reason === "Not enough Coins.", "poor: no Coins");
 
 // Equip: only what you own, one per slot.

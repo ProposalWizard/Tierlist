@@ -1,0 +1,463 @@
+{
+ "id": "arc-the-charity-match",
+ "title": "Captain for the day",
+ "owner": "reporter",
+ "summary": "The local paper is organising a charity match for a lad from the town who needs an operation abroad, and they want you to captain one side. Say yes and you play it. Weeks later the money is counted, and a season on the lad walks out with you.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "local reporter",
+   "team-mate"
+  ],
+  "tone": [
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "needsActivity": "testimonial-match",
+ "cast": [
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  },
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "order": "bond-desc"
+  }
+ ],
+ "vars": {
+  "played": 0,
+  "raised": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-walk-out",
+   "title": "He walked out with you",
+   "text": "You captained a charity game. A season later the lad it was for walked out holding your hand."
+  },
+  {
+   "id": "short-of-the-target",
+   "title": "Short",
+   "text": "You didn't play, and they fell short. He had the operation in the end, a year late."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "chm-1-ask",
+   "title": "Captain for the day",
+   "n": 1,
+   "event": {
+    "id": "arc-chm-1-ask",
+    "title": "Captain for the day",
+    "category": "press",
+    "place": "home",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{reporter.name} from the {reporter.outlet} rings. There's a lad in the town, eight, who needs an operation abroad, and the paper is putting on a charity match."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "reporter",
+       "say": [
+        "\"Locals against old pros, at the ground, on a Sunday. We need someone to captain the locals. You'd bring in two thousand people on your own.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'm in. Put me down as captain.\"",
+         "tone": "kind",
+         "goto": "c2"
+        },
+        {
+         "id": "mate",
+         "label": "\"I'll do it if {mate.short} plays as well.\"",
+         "tone": "confident",
+         "goto": "c2"
+        },
+        {
+         "id": "no",
+         "label": "\"I can't risk an injury, sorry.\"",
+         "tone": "honest",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "no"
+        }
+       ]
+      },
+      "c2": {
+       "who": "reporter",
+       "say": [
+        "\"Brilliant. I'll put it on the front.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"When do we kick off?\"",
+         "tone": "calm",
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "testimonial-match",
+        "name": "The charity match",
+        "intro": "Twenty minutes each way at the ground, locals against old pros. You're captain.",
+        "dials": {
+         "minutes": 40,
+         "teams": "locals v old pros",
+         "you": "captain"
+        },
+        "score": "your side's goals, and the gate",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -6
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "m-off"
+        ],
+        [
+         "activity.won",
+         "m-won"
+        ],
+        [
+         "",
+         "m-lost"
+        ]
+       ]
+      },
+      "m-won": {
+       "who": "reporter",
+       "say": [
+        "\"You won, and we've taken nineteen thousand on the gate. Guess which one's going on the front page.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Nineteen?\"",
+         "tone": "calm",
+         "end": "played"
+        }
+       ]
+      },
+      "m-lost": {
+       "who": "reporter",
+       "say": [
+        "\"You lost to a team of fifty-year-olds, which the paper will mention. Nineteen thousand on the gate, though.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Fair.\"",
+         "tone": "humble",
+         "end": "played"
+        }
+       ]
+      },
+      "m-off": {
+       "who": "reporter",
+       "say": [
+        "You come off with a tight hamstring after ten minutes. The crowd claps you off anyway."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Watch the rest from the bench.",
+         "tone": "calm",
+         "end": "played"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "played": [
+       {
+        "text": "The {reporter.outlet} prints a photo of you holding a giant cheque the wrong way up.",
+        "effects": {
+         "fans": 6,
+         "fame": 3
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 10,
+          "respect": 6
+         },
+         {
+          "slot": "mate",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "captained-the-charity-match",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "played": 1
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"I understand.\" They get a weather presenter to captain it. It raises nine thousand.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": -4,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "wouldnt-do-the-charity-match",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "played": 0
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "The local paper has a favour"
+  },
+  {
+   "id": "chm-2-count",
+   "title": "The count",
+   "after": {
+    "beat": "chm-1-ask",
+    "weeks": [
+     2,
+     4
+    ]
+   },
+   "event": {
+    "id": "arc-chm-2-count",
+    "title": "The count",
+    "category": "press",
+    "place": "home",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{reporter.short} texts. \"Final total from the match and the online page.\""
+    ],
+    "choices": [
+     {
+      "id": "top",
+      "label": "Top it up to the target yourself.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "\"Are you serious?\" They hit the target on a Tuesday. The lad's mum writes you a card with a drawing on it.",
+        "effects": {
+         "fans": 3,
+         "moneyWeeks": -2
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "topped-up-the-appeal",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "raised": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "share",
+      "label": "Share the page again.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "Another four thousand comes in. They're close.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "raised": 0
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "Weeks later, the money is counted"
+  },
+  {
+   "id": "chm-3-walk",
+   "title": "The walk out",
+   "after": {
+    "beat": "chm-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-chm-3-walk",
+    "title": "The walk out",
+    "category": "fans",
+    "place": "stadium:tunnel",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on. The club's mascot today is nine, and he's holding a toy plane, and he had his operation in the summer."
+    ],
+    "choices": [
+     {
+      "id": "hand",
+      "label": "Hold his hand on the walk out.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.played==1 || arc.raised==1",
+        "text": "He doesn't let go at the halfway line. You have to walk him back to the tunnel yourself.",
+        "effects": {
+         "fans": 4
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-walk-out"
+        }
+       },
+       {
+        "text": "He holds your hand. He had the operation a year later than he should have, his mum says.",
+        "npc": [
+         {
+          "slot": "reporter"
+         }
+        ],
+        "arc": {
+         "end": "short-of-the-target"
+        }
+       }
+      ]
+     },
+     {
+      "id": "nod",
+      "label": "High-five him and get in the line.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.played==1",
+        "text": "He high-fives you so hard it stings.",
+        "arc": {
+         "end": "the-walk-out"
+        }
+       },
+       {
+        "text": "He high-fives the next player as well.",
+        "arc": {
+         "end": "short-of-the-target"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "A season on, the lad"
+  }
+ ]
+}

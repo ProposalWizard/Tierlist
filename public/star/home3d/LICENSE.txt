@@ -20,3 +20,11 @@ bike-lod.glb, jet-lod.glb (Oct 2026): light copies of the shop's own motorbike a
 terrace-props.glb (Oct 2026): a few of the 3D garden's Kenney CC0 pieces (hedge, lantern,
 potted plant, lounge chair, oak, bush, wooden fence) copied out of public/star/garden3d/props.glb
 by tools/home3d/make_terrace_props.mjs (see public/star/garden3d/LICENSE.txt). CC0, no change.
+
+furniture.glb (20 Nov 2026): the living houses' furniture (beds, sofas, kitchen units, fridge,
+shower, bath, toilet, basin, lamps, rugs, plants, shelves, books, TV, speakers, stools, tables,
+chairs). Pieces from Kenney's Furniture Kit (https://kenney.nl/assets/furniture-kit), released
+under Creative Commons Zero (CC0 1.0, https://creativecommons.org/publicdomain/zero/1.0/); the
+kit's License.txt is in tools/home3d/kenney-furniture/. Joined one object per piece, scaled to
+metres by tools/home3d/make_furniture.py (Blender), packed by scripts/perf3d/shrink-models.mjs.
+No other change. Credit: Kenney (www.kenney.nl).

@@ -31,7 +31,7 @@ import type { CareerState } from "@/lib/star/types";
 import type { CasinoController, CasinoStation, CasinoCallbacks } from "@/lib/star/casino3d/scene";
 import type { CasinoGameId } from "./Casino";
 import { kitsOf } from "@/lib/star/kits";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { shop3dPlayerLook } from "@/lib/star/signing3d";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
@@ -199,6 +199,7 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
         onPointerMove={(e) => {
           const d = drag.current;
           if (!d || d.id !== e.pointerId) return;
+          if (holder.current?.dataset.pinching) { d.moved += 99; d.x = e.clientX; d.y = e.clientY; return; } // two fingers: the zoom (three3d/followCam.ts), not a look-round
           d.moved += Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y);
           ctrlRef.current?.orbit(e.clientX - d.x, e.clientY - d.y);
           d.x = e.clientX; d.y = e.clientY;
@@ -217,7 +218,7 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
         </button>
         <div style={{ flex: 1 }} />
         <div style={{ ...pill, gap: 6 }} aria-label="Money">
-          <span aria-hidden style={{ fontSize: 15 }}>★</span><b style={{ color: GOLD }}>{formatMoney(liveBank ?? career.money)}</b>
+          <span aria-hidden style={{ fontSize: 15 }}>{MONEY_SIGN}</span><b style={{ color: GOLD }}>{formatMoney(liveBank ?? career.money)}</b>
         </div>
       </div>
 

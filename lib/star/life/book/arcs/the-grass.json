@@ -1,0 +1,471 @@
+{
+ "id": "arc-the-grass",
+ "title": "Real grass",
+ "owner": "groundsman",
+ "summary": "The chairman wants to rip up the pitch and put a plastic one down, and the groundsman's job goes with it. The groundsman asks you to say something at the fans' forum. A season on, you'll be playing on whatever won.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "groundsman",
+   "chairman"
+  ],
+  "tone": [
+   "warm",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "groundsman",
+   "pick": "groundsman"
+  },
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  }
+ ],
+ "vars": {
+  "spoke": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "real-grass",
+   "title": "Real grass",
+   "text": "You stood up for the groundsman at the fans' forum. The grass is still real and so is his job."
+  },
+  {
+   "id": "plastic",
+   "title": "Plastic",
+   "text": "The pitch went plastic and the groundsman went with it. You can smell the rubber in your kit."
+  }
+ ],
+ "promises": {
+  "p-forum": {
+   "id": "p-forum",
+   "to": "groundsman",
+   "text": "Speak up for the grass at the fans' forum",
+   "due": {
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "keptBy": {
+    "beat": "grd-2-forum",
+    "ends": [
+     "stand"
+    ]
+   },
+   "dueText": "Thursday",
+   "kept": {
+    "text": "You said you'd say grass, and you said it.",
+    "npc": [
+     {
+      "slot": "groundsman",
+      "bond": 4,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd speak up for the grass.",
+    "npc": [
+     {
+      "slot": "groundsman",
+      "bond": -8,
+      "respect": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "groundsman",
+      "tag": "broke-the-forum-promise",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "grd-1-shed",
+   "title": "The mower shed",
+   "n": 1,
+   "event": {
+    "id": "arc-grd-1-shed",
+    "title": "The mower shed",
+    "category": "staff",
+    "place": "compound:mower-shed",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{groundsman.name} is sitting in the mower shed with a flask, staring at a letter. He's done the pitch at this club for twenty-six years."
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "groundsman",
+       "say": [
+        "\"{chairman.short} wants a plastic pitch. Cheaper, he says. No groundsman needed, he says. There's a fans' forum on Thursday. If one of you lot stood up and said you wanted grass…\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll be there Thursday.\"",
+         "tone": "brave",
+         "goto": "g2",
+         "promise": "p-forum"
+        },
+        {
+         "id": "ask",
+         "label": "\"Is plastic that bad?\"",
+         "tone": "honest",
+         "goto": "g-plastic"
+        },
+        {
+         "id": "no",
+         "label": "\"I can't go against the chairman.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "g-plastic"
+        }
+       ]
+      },
+      "g-plastic": {
+       "who": "groundsman",
+       "say": [
+        "\"Ask your knees in ten years. Ask the lad at the club down the road who did his cruciate on one.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Right. Thursday.\"",
+         "tone": "brave",
+         "goto": "g2",
+         "promise": "p-forum"
+        },
+        {
+         "id": "no",
+         "label": "\"I'll think about it.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      },
+      "g2": {
+       "who": "groundsman",
+       "say": [
+        "He screws the lid back on the flask. \"You don't have to make a speech. Just say grass.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"I'll say grass.\"",
+         "tone": "calm",
+         "end": "will"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "will": [
+       {
+        "text": "He gives you a tomato from his greenhouse behind the shed, which he does not do.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "said-hed-speak-for-the-grass",
+          "strength": 2
+         }
+        ]
+       }
+      ],
+      "no": [
+       {
+        "text": "He folds the letter up very small.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": -6,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "wouldnt-speak-for-the-grass",
+          "strength": 2
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The groundsman is worried"
+  },
+  {
+   "id": "grd-2-forum",
+   "title": "The fans' forum",
+   "after": {
+    "beat": "grd-1-shed",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-grd-2-forum",
+    "title": "The fans' forum",
+    "category": "club",
+    "place": "stadium:lounge",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Thursday. Two hundred fans in the lounge, a microphone on a stand, and {chairman.short} on the stage with a slideshow about the new pitch."
+    ],
+    "choices": [
+     {
+      "id": "stand",
+      "label": "Stand up and say grass.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "You say more than grass. The room claps. {chairman.short} goes very pink, and says he'll \"take it away and look at it.\"",
+        "effects": {
+         "fans": 6,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 12,
+          "respect": 6
+         },
+         {
+          "slot": "chairman",
+          "bond": -6,
+          "respect": -2,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "stood-up-for-the-grass",
+          "strength": 3
+         },
+         {
+          "slot": "chairman",
+          "tag": "spoke-against-the-plastic-pitch",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "spoke": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "sit",
+      "label": "Sit at the back and say nothing.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "Nobody stands up. The slideshow ends with a picture of a plastic pitch and a smiling family.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": -8,
+          "respect": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "sat-at-the-back-at-the-forum",
+          "strength": 3
+         }
+        ],
+        "promiseBroken": [
+         "p-forum"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     }
+    ]
+   },
+   "hint": "Thursday's fans' forum",
+   "look": {
+    "chip": "Thursday"
+   }
+  },
+  {
+   "id": "grd-3-pitch",
+   "title": "Pre-season",
+   "after": {
+    "beat": "grd-1-shed",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-grd-3-pitch",
+    "title": "Pre-season",
+    "category": "staff",
+    "place": "stadium:pitch",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "groundsman",
+    "variants": [
+     {
+      "if": "!sameClub",
+      "template": "text-thread",
+      "place": "home",
+      "setupSwap": "A photo from your old club's groundsman: the pitch, the first day of pre-season."
+     }
+    ],
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "walkout"
+     ]
+    },
+    "setup": [
+     "{if arc.spoke==1}First day of pre-season. The pitch is green and striped, and {groundsman.short} is on the mower with his headphones in.{/if}",
+     "{if arc.spoke==0}First day of pre-season. The pitch is plastic, bright green, and it smells like a new car. The mower shed is a store room.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "wave",
+      "label": "{if arc.spoke==1}Wave at the mower.{/if}{if arc.spoke==0}Ring {groundsman.short}.{/if}",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.spoke==1",
+        "text": "He takes one hand off and salutes. There's a tomato in your boot when you go home.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "real-grass"
+        }
+       },
+       {
+        "text": "He's doing the bowling green at the cricket club now. \"It's a nice green,\" he says. \"Very flat.\"",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "plastic"
+        }
+       }
+      ]
+     },
+     {
+      "id": "train",
+      "label": "Get on with training.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.spoke==1",
+        "text": "At the end you take your boots off and walk back to the dressing room on it in your socks.",
+        "arc": {
+         "end": "real-grass"
+        }
+       },
+       {
+        "text": "Your knees ache by Wednesday.",
+        "effects": {
+         "matchFitness": -2
+        },
+        "arc": {
+         "end": "plastic"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     }
+    ]
+   },
+   "hint": "A season on, the pitch"
+  }
+ ]
+}

@@ -1,11 +1,11 @@
 # Brain index: one file per client, open the one you need
 file | notes
-_index-3d.md | 11
+_index-3d.md | 13
 _index-all.md | 20
 _index-dat.md | 15
 _index-data.md | 1
 _index-eng.md | 21
 _index-engine.md | 1
-_index-kib.md | 24
-_index-team.md | 46
-_index-ui.md | 29
+_index-kib.md | 26
+_index-team.md | 49
+_index-ui.md | 35

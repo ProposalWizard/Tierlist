@@ -1,0 +1,400 @@
+{
+ "id": "arc-the-red-card",
+ "title": "Talk to him",
+ "owner": "manager",
+ "summary": "A young lad got sent off and the whole ground blamed him for the defeat. The gaffer asks you to talk to him, not as a coach, as a player. What you say to him travels further than you think. A season on, he's in a big game again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "gaffer",
+   "academy kid"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "kid",
+   "pick": "squad",
+   "where": [
+    "age<=21"
+   ],
+   "order": "youngest"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "he-stayed-on",
+   "title": "He stayed on",
+   "text": "You talked to a kid after his worst day, and the next time it mattered he kept his head."
+  },
+  {
+   "id": "he-went-again",
+   "title": "He went again",
+   "text": "He got sent off again, and you weren't the one he listened to."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "red-1-office",
+   "title": "Talk to him",
+   "n": 1,
+   "event": {
+    "id": "arc-red-1-office",
+    "title": "Talk to him",
+    "category": "manager",
+    "place": "compound:office",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Monday. {kid.name} got a straight red on Saturday and the papers have made him the reason you lost. {manager.name} shuts his office door."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "manager",
+       "say": [
+        "\"He won't listen to me today. He might listen to you. Go and find him.\""
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"I'll try, gaffer.\"",
+         "tone": "humble",
+         "goto": "t2"
+        },
+        {
+         "id": "confident",
+         "label": "\"Leave him with me.\"",
+         "tone": "confident",
+         "goto": "t2"
+        },
+        {
+         "id": "fiery",
+         "label": "\"He cost us the game. He can sort himself out.\"",
+         "tone": "fiery",
+         "end": "refused"
+        },
+        {
+         "id": "quiet",
+         "label": "… Say nothing",
+         "silent": true,
+         "goto": "t2"
+        }
+       ]
+      },
+      "t2": {
+       "who": "kid",
+       "say": [
+        "He's in the gym on a bike, going nowhere very fast. He takes one earphone out."
+       ],
+       "replies": [
+        {
+         "id": "story",
+         "label": "\"I got sent off on my debut. Nobody remembers.\"",
+         "tone": "honest",
+         "end": "story"
+        },
+        {
+         "id": "tough",
+         "label": "\"It was a red. Learn from it and stop sulking.\"",
+         "tone": "brave",
+         "end": "tough"
+        },
+        {
+         "id": "sit",
+         "label": "Get on the bike next to him and say nothing.",
+         "tone": "calm",
+         "end": "sat"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "story": [
+       {
+        "text": "He stops pedalling. \"Was it a bad one?\" \"Worse than yours.\" He laughs for the first time since Saturday.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 10,
+          "respect": 6
+         },
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "talked-me-round-after-the-red",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "tough": [
+       {
+        "text": "He nods, hard. He's in early every day that week.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 2,
+          "respect": 8
+         },
+         {
+          "slot": "manager",
+          "respect": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "told-me-straight-after-the-red",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "sat": [
+       {
+        "text": "You do twenty minutes side by side. At the end he says \"Thanks\" to the wall.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 2
+         },
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "sat-with-me-after-the-red",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "refused": [
+       {
+        "text": "\"I didn't ask what he cost us.\" The gaffer goes to find the kid himself.",
+        "effects": {
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -4
+         },
+         {
+          "slot": "kid",
+          "bond": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "wouldnt-talk-to-the-kid",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cold"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=21"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "The gaffer wants you to talk to someone"
+  },
+  {
+   "id": "red-2-derby",
+   "title": "The big one",
+   "after": {
+    "beat": "red-1-office",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-red-2-derby",
+    "title": "The big one",
+    "category": "match",
+    "place": "stadium:pitch",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on, a big game. In the seventieth minute their striker goes down holding his face and {kid.short} is standing over him with his fists clenched."
+    ],
+    "choices": [
+     {
+      "id": "pull",
+      "label": "Get between them and pull him away.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.path=='kind'",
+        "text": "He lets you. He walks backwards with his hands up. The ref books the other lad for diving.",
+        "effects": {
+         "boss": 2,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "pulled-me-away-in-the-big-one",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "he-stayed-on"
+        }
+       },
+       {
+        "text": "He shoves you off and goes again. Red card, second time in two seasons.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -2,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "end": "he-went-again"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Leave it to the ref.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='kind'",
+        "text": "{kid.short} looks over at you, and unclenches. He walks away himself.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "he-stayed-on"
+        }
+       },
+       {
+        "text": "Red card. He walks off past the gaffer without looking at him.",
+        "effects": {
+         "team": -2
+        },
+        "arc": {
+         "end": "he-went-again"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=21"
+      ],
+      "order": "youngest"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, a big game for him"
+  }
+ ]
+}

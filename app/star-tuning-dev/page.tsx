@@ -10,6 +10,7 @@ import {
 } from "@/lib/star/tuningStore";
 import { KIB_CANS_DEFAULT, BOOTS_CATALOGUE_DEFAULT, LIFESTYLE_ITEMS_DEFAULT } from "@/lib/star/shopDefaults";
 import "./balance.css";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 /**
  * BALANCE NUMBERS — every game-balance number the star career game ships
@@ -83,19 +84,19 @@ function ShopPanels({ onChange }: { onChange: () => void }) {
       <Panel title="Shop — KIB Cans" note="Price and energy per can">
         {KIB_CANS_DEFAULT.map((c) => (
           <PriceRow key={c.id} catalogue="kibCans" itemId={c.id} name={c.name} onChange={onChange}
-            fields={[{ field: "price", label: "★", base: c.price }, { field: "restore", label: "⚡", base: c.restore }]} />
+            fields={[{ field: "price", label: MONEY_SIGN, base: c.price }, { field: "restore", label: "⚡", base: c.restore }]} />
         ))}
       </Panel>
       <Panel title="Shop — Boots" note="Price only">
         {BOOTS_CATALOGUE_DEFAULT.map((b) => (
           <PriceRow key={b.id} catalogue="boots" itemId={b.id} name={b.name} onChange={onChange}
-            fields={[{ field: "price", label: "★", base: b.price }]} />
+            fields={[{ field: "price", label: MONEY_SIGN, base: b.price }]} />
         ))}
       </Panel>
       <Panel title="Shop — Lifestyle" note="Price only">
         {LIFESTYLE_ITEMS_DEFAULT.map((it) => (
           <PriceRow key={it.id} catalogue="lifestyle" itemId={it.id} name={it.name} onChange={onChange}
-            fields={[{ field: "price", label: "★", base: it.price }]} />
+            fields={[{ field: "price", label: MONEY_SIGN, base: it.price }]} />
         ))}
       </Panel>
     </>
