@@ -21,26 +21,33 @@ import { useNav } from "../../nav";
 import { Press } from "../../ui/Press";
 import { FONT } from "../../ui/look";
 import { ClubBadge, clubGlow, rgba } from "../../world/ui";
-import { OverviewBody } from "../career/Farewell";
+import { CareerOverviewView } from "../career/EndScreens";
 
 const GOLD = "#fbbf24";
 const SKY = "#38bdf8";
 const years = (first: number, seasons: number) => `${first}–${String(first + Math.max(1, seasons)).slice(-2)}`;
 
-function Page({ children, bar }: { children: ReactNode; bar: { icon: string; label: string; onPress: () => void; tone?: string }[] }) {
+type BarItem = { icon: string; label: string; onPress: () => void; tone?: string };
+function Bar({ items }: { items: BarItem[] }) {
+  const inset = useSafeAreaInsets();
+  return (
+    <View style={{ flexDirection: "row", gap: 6, paddingHorizontal: 8, paddingTop: 6, paddingBottom: Math.max(8, inset.bottom), backgroundColor: "#0b0f1a", borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.15)" }}>
+      {items.map((b) => (
+        <Press key={b.label} onPress={b.onPress} style={{ flex: 1, height: 52, alignItems: "center", justifyContent: "center", gap: 2, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "rgba(255,255,255,0.18)" }}>
+          <Text style={{ color: b.tone ?? "#fcd34d", fontSize: 16, lineHeight: 19, fontWeight: "900" }}>{b.icon}</Text>
+          <Text numberOfLines={1} style={{ color: "#fff", fontSize: 10.5, lineHeight: 13, fontWeight: "900", letterSpacing: 0.8, textTransform: "uppercase" }}>{b.label}</Text>
+        </Press>
+      ))}
+    </View>
+  );
+}
+function Page({ children, bar }: { children: ReactNode; bar: BarItem[] }) {
   const inset = useSafeAreaInsets();
   return (
     <View style={{ flex: 1, backgroundColor: "#05080f", paddingTop: inset.top }}>
       <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: `radial-gradient(90% 38% at 50% 0%, ${rgba(GOLD, 0.22)} 0%, rgba(0,0,0,0) 70%), linear-gradient(180deg, #0b0f1a, #05080f 60%)` } as ViewStyle} />
       <ScrollView contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 24 }}>{children}</ScrollView>
-      <View style={{ flexDirection: "row", gap: 6, paddingHorizontal: 8, paddingTop: 6, paddingBottom: Math.max(8, inset.bottom), backgroundColor: "#0b0f1a", borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.15)" }}>
-        {bar.map((b) => (
-          <Press key={b.label} onPress={b.onPress} style={{ flex: 1, height: 52, alignItems: "center", justifyContent: "center", gap: 2, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "rgba(255,255,255,0.18)" }}>
-            <Text style={{ color: b.tone ?? "#fcd34d", fontSize: 16, lineHeight: 19, fontWeight: "900" }}>{b.icon}</Text>
-            <Text numberOfLines={1} style={{ color: "#fff", fontSize: 10.5, lineHeight: 13, fontWeight: "900", letterSpacing: 0.8, textTransform: "uppercase" }}>{b.label}</Text>
-          </Press>
-        ))}
-      </View>
+      <Bar items={bar} />
     </View>
   );
 }
@@ -75,19 +82,14 @@ export function HallOfFameScreen() {
 
   if (comparing) return <Compare mine={entries} start={comparing} onClose={() => setComparing(null)} />;
   if (opened) {
+    // the career's own overview pages (the career area's CareerOverviewView), with the Hall's bar under them
     return (
-      <Page bar={[
+      <CareerOverviewView career={opened.career} bar={<Bar items={[
         { icon: "‹", label: "Hall of Fame", onPress: () => { setOpen(null); setArmed(false); } },
         { icon: "⚖️", label: "Compare", onPress: () => setComparing({ a: opened.id }) },
         { icon: "↗", label: "Share", onPress: () => { Share.share({ message: shareText(opened) }).catch(() => {}); } },
         { icon: "🗑", label: armed ? "Sure?" : "Remove", tone: "#fca5a5", onPress: () => { if (!armed) { setArmed(true); return; } removeFromPhoneHall(opened.id); setArmed(false); setOpen(null); } },
-      ]}>
-        <View style={{ alignItems: "center", paddingTop: 16, paddingBottom: 8 }}>
-          <Text style={{ color: "#fde68a", fontSize: 10, fontWeight: "900", letterSpacing: 3 }}>HALL OF FAME</Text>
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ marginTop: 4, color: "#fff", fontFamily: FONT.display, fontSize: 30, lineHeight: 36, textTransform: "uppercase" }}>{opened.card.name}</Text>
-        </View>
-        <View style={{ gap: 10 }}><OverviewBody career={opened.career} /></View>
-      </Page>
+      ]} />} />
     );
   }
   const goals = entries.reduce((n, e) => n + e.card.goals, 0);
