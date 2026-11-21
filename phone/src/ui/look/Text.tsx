@@ -57,8 +57,8 @@ export function Pill({ label, value, icon, style }: { label?: string; value: Rea
 /** A rounded outlined tag: the new-career pages' "ROAD TO THE GOLDEN BALL". */
 export function Tag({ children, color = LOOK.emerald300 }: { children: ReactNode; color?: string }) {
   return (
-    <View style={{ alignSelf: "center", paddingHorizontal: 12, paddingVertical: 3, borderRadius: 999, backgroundColor: "rgba(16,185,129,0.2)", borderWidth: 1, borderColor: "rgba(52,211,153,0.4)" }}>
-      <Text style={{ color, fontSize: 10, fontWeight: "800", letterSpacing: 1.6 }}>{typeof children === "string" ? children.toUpperCase() : children}</Text>
+    <View style={{ alignSelf: "center", paddingHorizontal: 12, paddingVertical: 2, borderRadius: 999, backgroundColor: "rgba(16,185,129,0.2)", borderWidth: 1, borderColor: "rgba(52,211,153,0.4)" }}>
+      <Text style={{ color, fontSize: 10, lineHeight: 15, fontWeight: "700", letterSpacing: 1 }}>{typeof children === "string" ? children.toUpperCase() : children}</Text>
     </View>
   );
 }
