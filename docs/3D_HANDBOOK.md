@@ -1223,3 +1223,25 @@ Harry: "instead of using aim of rough cm why not try and find walking animations
 - **Checks**: `tests/star/gaitWidth.mts` holds every head and build to the library rig's own step width (`clips[name].srcFeet`); `bodyOverlap.mts` includes the new clips.
 - **Test scenes** (`lib/star/cutscene/testScenes.ts`, not in any list): `?scene=director&fixture=walkers&cam=old` (eight men crossing a pitch), `solo-walk_relaxed`, `solo-idle_relaxed`. `cam=old` because the film pass cuts away from any walk.
 - Not done: `jog_easy` is a stylised, bouncy run (5.6 m/s in place) and is not picked by anyone yet; UAL 2 (arms folded, phone) is not on this machine.
+### Cloth clothes in the houses and the garden (21 Nov 2026)
+
+Harry, after the re-filmed press conference and walk-out: "yes the clothes films are better, put them in houses".
+- **Who wears what** (`lib/star/style3d/toon/clothes/casual.ts`, picked from the person's id, so always the same):
+  you = your saved home set on the cloth (hoodie & joggers → `hoodie`, tee & jeans → `tee`, shirt & chinos →
+  `shirt`, club tracksuit → `tracksuit`, smart coat → `suit` open, no tie), its colours kept; team-mates in the
+  house and on the gazebo bench = a quarter in club training wear, the rest a tee, hoodie, shirt or club polo in muted
+  colours, never the match kit, never a number; the garden kick-about = club training tracksuits. A body the cloth
+  cannot dress keeps the painted kit, without a number. No saved choice yet = casual off the pitch (`DEFAULT_OUTFIT`
+  was the kit); training and the match always the kit. The shop's "you" uses the same `buildWearer`, so he matches.
+- **New kinds** `tee` (the fan's cut, plain) and `shirt` (the press shirt, no lanyard); `dressCloth(..., { colours,
+  whiteBalance })`: colours by garment (top, inner, trousers, shoes); `HOME_WB` 0.6 takes most of a warm lamp's colour
+  off the cloth (a grey hoodie turned khaki in the estate). Cut scenes pass nothing and are unchanged.
+- **Seats**: `npc.ts measureSit` reads the cloth under his seat and thighs (+3 cm), so 0 cm goes through the sofa
+  (the seat check in `lifeDebug().seats` now has `clothCm`); the garden bench scan reads the trousers too.
+- **Cost** (software GPU, quality high, `?cloth=0` vs cloth, the guests' lounge): +2 draws and about +9.5k triangles a
+  person. Worst room, estate lounge (you + 2 team-mates): 68 → 74 draws, 96k → 122k triangles (budget 120 / 150k).
+  Garden arrival 132 → 133 draws (already over 120 before this).
+- **Film**: `node scripts/film/scenes/estate-cloth-walk.mjs 3000 OUT [cloth=0]` (10 s, 30 fps, 780x1688).
+- Not done: the untucked hem notch on the tee (trousers show at the front corners, as on the fan shirt); the hood is a
+  simple lump at the back; no family or partner people exist in the houses yet.
+
