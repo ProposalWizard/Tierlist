@@ -68,6 +68,24 @@ export async function facebookPostVideo(pageId: string, token: string, videoUrl:
   return { id, link: `https://www.facebook.com/reel/${id}` };
 }
 
+/**
+ * Where a Facebook Reel has got to. The finish step only ASKS Meta to publish: Meta then fetches, processes and
+ * publishes on its own, and any of those can fail quietly (Mikey, 21 Nov 2026: marked posted, no Reel on the Page).
+ */
+export async function facebookReelState(videoId: string, token: string): Promise<{ phase: "published" | "processing" | "error"; why: string; link: string | null }> {
+  const r = await graph(videoId, { fields: "status,permalink_url,published", access_token: token });
+  const st = (r.status ?? {}) as { video_status?: string; uploading_phase?: Phase; processing_phase?: Phase; publishing_phase?: Phase & { publish_status?: string } };
+  type Phase = { status?: string; error?: { message?: string }; errors?: { message?: string }[] };
+  const errOf = (ph?: Phase) => ph?.error?.message || ph?.errors?.[0]?.message || "";
+  const summary = `video ${st.video_status ?? "?"} · upload ${st.uploading_phase?.status ?? "?"} · processing ${st.processing_phase?.status ?? "?"} · publishing ${st.publishing_phase?.status ?? "?"}${st.publishing_phase?.publish_status ? ` (${st.publishing_phase.publish_status})` : ""}`;
+  const err = errOf(st.uploading_phase) || errOf(st.processing_phase) || errOf(st.publishing_phase);
+  const link = typeof r.permalink_url === "string" ? (r.permalink_url.startsWith("http") ? r.permalink_url : `https://www.facebook.com${r.permalink_url}`) : null;
+  const bad = st.video_status === "error" || [st.uploading_phase, st.processing_phase, st.publishing_phase].some((x) => x?.status === "error") || !!err;
+  if (bad) return { phase: "error", why: `${err || "Meta reported an error"} [${summary}]`, link };
+  const live = st.publishing_phase?.status === "complete" || (st.video_status === "ready" && r.published === true);
+  return { phase: live ? "published" : "processing", why: summary, link };
+}
+
 /** Reel numbers. Meta names them differently for Reels; whatever comes back is kept under a plain name. */
 export async function facebookStats(videoId: string, token: string): Promise<Record<string, number>> {
   const r = await graph(`${videoId}/video_insights`, { access_token: token });

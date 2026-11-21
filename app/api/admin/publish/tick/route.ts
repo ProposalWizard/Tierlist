@@ -15,7 +15,9 @@ export const maxDuration = 300;
 async function run(req: Request) {
   const who = await whoIs(req, ["cron", "admin", "agent"]);
   if (!who) return NextResponse.json({ error: "Not allowed." }, { status: 403 });
-  const report = await tick(liveApi());
+  // ?fresh=1 (a person or a chat asking for live numbers): re-read every recent post's numbers now.
+  const fresh = who.kind !== "cron" && new URL(req.url).searchParams.get("fresh") === "1";
+  const report = await tick(liveApi(), { fresh });
   return NextResponse.json({ ok: true, by: who.kind, ...report }, { headers: { "Cache-Control": "no-store" } });
 }
 
