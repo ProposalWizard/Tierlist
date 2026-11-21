@@ -206,7 +206,9 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
     let shownBanner: unknown = null, shownCap: string | null = null;
     const sounds = matchSounds();
     const feel = matchFeel();
-    const loop = (t: number) => {
+    const loop = (frameT: number) => {
+      // The frame's time off the one clock everything else here runs on (the pop-ups' timers too).
+      const t = typeof performance !== "undefined" && performance.now ? performance.now() : frameT;
       const d = dRef.current!;
       if (!last) last = t;
       const frameS = (t - last) / 1000;
