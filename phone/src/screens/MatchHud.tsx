@@ -64,8 +64,8 @@ export function MatchHud({ d, kits, onGear }: { d: MatchDriver; kits: MatchKits;
         {cell("ASSISTS", String(t.assists), "#6ee7b7")}
         {cell("PASS", `${passPct}%`, "#c4b5fd")}
         {cell("RATING", rating.toFixed(1), "#7dd3fc")}
-        {/* The players' look: the phone draws the 2D sprites (the website's toggle shows "2D" for them). */}
-        {chip(<Text style={{ color: "#fff", fontSize: 11, fontWeight: "900" }}>2D</Text>)}
+        {/* No 2D | 3D switch: the packed app's (Match3DLayer `can3d`) is only there when the phone can draw
+            the 3D match view; KIB Next draws the match in the one look, so there is no choice to offer. */}
         {chip(<LineIcon kind="gear" />, onGear, "Settings")}
         {chip(<LineIcon kind={prefs.sound ? "sound" : "muted"} />,() => setPref("sound", !prefs.sound), prefs.sound ? "Mute sound" : "Unmute sound")}
       </View>

@@ -18,10 +18,12 @@ import { Press } from "../../ui/Press";
 import { C } from "../../world/lookKit";
 import { Btn, rgba, clubGlow } from "../../world/ui";
 import { Backdrop } from "../../ui/look";
+import { NegotiatorFace } from "../../draw/NegotiatorFace";
 
 const money = (n: number) => formatMoneyPrecise(n);
 const MOOD_LABEL: Record<CounterpartMood, string> = { happy: "Feeling good about this", neutral: "Getting down to business", angry: "Losing patience" };
 const MOOD_FACE: Record<CounterpartMood, string> = { happy: "😊", neutral: "😐", angry: "😠" };
+void MOOD_FACE;
 const MOOD_COLOUR: Record<CounterpartMood, string> = { happy: "#34d399", neutral: "#64748b", angry: "#ef4444" };
 
 function logColour(line: string): string {
@@ -70,7 +72,7 @@ export function Negotiation({ mode, playerName, marketValue, counterpartLabel, i
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
     <Backdrop kind="stadium" />
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: inset.top + 16, paddingBottom: inset.bottom + 30, gap: 12 }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: "center", width: "100%", maxWidth: 384, alignSelf: "center", padding: 16, paddingTop: inset.top + 16, paddingBottom: inset.bottom + 30, gap: 12 }}>
       <View style={{ alignItems: "center" }}>
         <Text style={{ color: "#7dd3fc", fontWeight: "900", fontSize: 11, letterSpacing: 3 }}>{(kicker ?? (mode === "buying" ? "Negotiating a Signing" : "Negotiating a Sale")).toUpperCase()}</Text>
         <Text style={{ color: C.text, fontWeight: "900", fontSize: 22, textAlign: "center", marginTop: 4 }}>{playerName.toUpperCase()}</Text>
@@ -79,8 +81,9 @@ export function Negotiation({ mode, playerName, marketValue, counterpartLabel, i
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.panel, borderRadius: 16, padding: 12, borderWidth: 2, borderColor: rgba(MOOD_COLOUR[mood], 0.8) }}>
-        <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: rgba(glow.startsWith("#") ? glow : "#3b82f6", 0.35), alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontSize: 34 }}>{MOOD_FACE[mood]}</Text>
+        {/* the website's drawn agent (AgentPortrait), not an emoji face */}
+        <View style={{ width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: rgba(MOOD_COLOUR[mood], 0.7), alignItems: "center", justifyContent: "center" }}>
+          <NegotiatorFace mood={mood} size={60} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ color: C.dim, fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>{mode === "buying" ? "THEIR AGENT" : "INTERESTED BUYER"}</Text>
@@ -119,7 +122,9 @@ export function Negotiation({ mode, playerName, marketValue, counterpartLabel, i
           </View>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <Btn style={{ flex: 1 }} label="📄 Accept" onPress={() => propose(state.theirPosition)} />
-            <Btn style={{ flex: 1 }} tone="red" label="🚪 Walk away" onPress={() => onDone(null)} />
+<Press onPress={() => onDone(null)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 11, borderRadius: 12, backgroundColor: "rgba(69,10,10,0.5)", borderWidth: 1, borderColor: "rgba(239,68,68,0.3)" }}>
+              <Text style={{ fontSize: 13 }}>🚪</Text><Text style={{ color: "#fecaca", fontSize: 13, fontWeight: "900" }}>Walk Away</Text>
+            </Press>
           </View>
         </>
       )}
@@ -151,7 +156,9 @@ export function Negotiation({ mode, playerName, marketValue, counterpartLabel, i
             <Btn style={{ flex: 1 }} tone="green" label={mode === "buying" ? "🤝 Make offer" : "🤝 Set asking price"} onPress={() => propose(amount)} />
             <Btn style={{ flex: 1 }} label="📄 Accept offer" onPress={() => propose(state.theirPosition)} />
           </View>
-          <Btn tone="red" label="🚪 Walk away" onPress={() => onDone(null)} />
+<Press onPress={() => onDone(null)} style={{  flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 11, borderRadius: 12, backgroundColor: "rgba(69,10,10,0.5)", borderWidth: 1, borderColor: "rgba(239,68,68,0.3)" }}>
+              <Text style={{ fontSize: 13 }}>🚪</Text><Text style={{ color: "#fecaca", fontSize: 13, fontWeight: "900" }}>Walk Away</Text>
+            </Press>
           {onStepAway ? <Btn tone="plain" label="Step Away (check other interested clubs)" onPress={() => onStepAway(state)} /> : null}
         </>
       )}

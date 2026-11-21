@@ -28,6 +28,7 @@ import { readSeenMsgs, readSocialSeen } from "../../world/seen";
 import { Press } from "../Press";
 import { PlayButton } from "./Buttons";
 import { useTourTarget } from "../tour";
+import { LockIcon } from "../LockIcon";
 
 export type BarTab = "league" | "training" | "home" | "phone" | "play";
 
@@ -39,7 +40,8 @@ export function useMainBarActions(): Record<BarTab, () => void> {
     league: () => { nav.home(); nav.replace("tabs", { tab: "league" }); },
     home: () => nav.home(),
     training: () => nav.go("career-training"),
-    phone: () => nav.go("phone"),
+    // The manager's word comes through the Phone while it is due (page.tsx navTo).
+    phone: () => { if (career && managerTalkDue(career)) nav.go("career-relationship-game", { kind: "boss" }); else nav.go("phone"); },
     play: () => { if (career && flow.seasonOver(career)) nav.go(flow.endSeason().screen); else nav.go("career-prematch"); },
   };
 }
@@ -81,6 +83,7 @@ export function BottomBar({ active, on }: { active?: BarTab | null; on?: Partial
   const [note, setNote] = useState<{ label: string; hint: string } | null>(null);
   // Named for the coach tour (ui/tour.tsx), as the website's data-tour names.
   const trainingT = useTourTarget("nav-training"), phoneT = useTourTarget("nav-phone"), playT = useTourTarget("nav-play");
+  const leagueT = useTourTarget("nav-league"), homeT = useTourTarget("home");
   // worked out again only when the career changes
   const badges = useMemo<BarBadges>(() => (career ? badgesFor(career) : {}), [career]);
   const locks = useMemo<Partial<Record<BarTab, string>>>(() => (career ? locksFor(career) : {}), [career]);
@@ -103,9 +106,9 @@ export function BottomBar({ active, on }: { active?: BarTab | null; on?: Partial
           <Text style={{ color: "#fcd34d", fontSize: 12, fontWeight: "700" }}>{note.hint}</Text>
         </View>
       )}
-      <NavBtn label="League" icon="🏆" on={active === "league"} locked={!!locks.league} onPress={() => tap("league", "League")} />
+      <View {...leagueT} style={{ flex: 1 }}><NavBtn label="League" icon="🏆" on={active === "league"} locked={!!locks.league} onPress={() => tap("league", "League")} /></View>
       <View {...trainingT} style={{ flex: 1 }}><NavBtn label="Training" icon="⚽" on={active === "training"} locked={!!locks.training} count={badges.skills} bolt onPress={() => tap("training", "Training")} /></View>
-      <NavBtn label="Home" icon="🏠" on={active === "home"} locked={false} onPress={() => { if (active !== "home") tap("home", "Home"); }} />
+      <View {...homeT} style={{ flex: 1 }}><NavBtn label="Home" icon="🏠" on={active === "home"} locked={false} onPress={() => { if (active !== "home") tap("home", "Home"); }} /></View>
       <View {...phoneT} style={{ flex: 1 }}><NavBtn label="Phone" icon="📱" on={active === "phone"} locked={!!locks.phone} count={badges.media} dot={badges.life === "dot" && !badges.media} onPress={() => tap("phone", "Phone")} /></View>
       <View style={{ flex: 1, alignItems: "center", height: 50 }}>
         <View {...playT} style={{ position: "absolute", top: -22 }}>
@@ -122,7 +125,7 @@ function NavBtn({ label, icon, on, locked, count, bolt, dot, onPress }: { label:
       on && ({ backgroundColor: "rgba(255,255,255,0.18)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.34)" } as ViewStyle)]}>
       <Text style={{ fontSize: 18, opacity: locked ? 0.3 : 1 }}>{icon}</Text>
       <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: locked ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.92)", fontSize: 12, fontWeight: "900" }}>{label}</Text>
-      {locked && <Text style={{ position: "absolute", right: 6, top: 4, fontSize: 10 }}>🔒</Text>}
+      {locked && <View style={{ position: "absolute", right: 7, top: 5 }}><LockIcon size={13} color="rgba(255,255,255,0.75)" /></View>}
       {!locked && !!count && count > 0 && (
         <View style={{ position: "absolute", right: 4, top: 3, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: bolt ? "#fbbf24" : "#ef4444", borderWidth: 2, borderColor: "#1e3a5c" }}>
           {bolt && <Text style={{ fontSize: 8, marginRight: 1 }}>⚡</Text>}

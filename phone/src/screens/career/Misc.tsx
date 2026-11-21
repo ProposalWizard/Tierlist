@@ -19,7 +19,7 @@ import { Press } from "../../ui/Press";
 import { useEffect, useRef, useState } from "react";
 import { View, Text, Image, Platform, BackHandler, type ViewStyle } from "react-native";
 import { FONT, LOOK, LookButton } from "../../ui/look";
-import { clubGlow } from "./lookBits";
+import { clubGlow, PopIn, Burst } from "./lookBits";
 import { listSlots, loadSlot, newInSlot, deleteSlot, activeSlot } from "../../world/slots";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { nextFixtureFor, fixtureLabel } from "@/lib/star/competitions";
@@ -36,43 +36,6 @@ import { usePrefs, setPref, type Prefs } from "../../game/prefs";
 import { Frame, Card, Label, Row, Btn, ClubCrest, Fill, StandInNote, money, C } from "./kit";
 import { DATA_CREDITS, CREDIT_GROUPS } from "@/lib/star/dataCredits";
 import { tint } from "@/lib/star/heroFigure";
-
-export function WatchedScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
-  const f: Fixture | undefined = [...career.fixtures].reverse().find((x) => x.kind === "international" && x.played && x.watch);
-  return (
-    <Frame kicker="On TV" title={f ? `${career.player.nationality} v ${f.opponent}` : "Full time"} footer={<Btn label="Continue" onPress={() => go(flow.HOME)} />}>
-      {f && <Card><Text style={{ color: C.text, fontSize: 40, fontWeight: "900", textAlign: "center" }}>{f.homeScore}–{f.awayScore}</Text></Card>}
-    </Frame>
-  );
-}
-
-// ── The international call-up ──
-export function CallUpScreen({ go }: { go: (s: flow.Step) => void }) {
-  const [d] = useState<IntlDecision | null>(() => flow.callUpDecision());
-  if (!d) return <Frame title="International break"><Btn label="Back to the club" onPress={() => go(flow.HOME)} /></Frame>;
-  const tournament = d.period.kind === "tournament";
-  return (
-    <Frame kicker={tournament ? d.period.label : `International break · ${d.period.label}`} title={d.called ? "Called up" : "Not selected"}
-      footer={<Btn label={d.called ? "Report for duty →" : "Back to the club →"} onPress={() => go(flow.answerCallUp(d))} />}>
-      <Card tone={d.called ? C.green : C.red}>
-        <Text style={{ color: C.text, fontSize: 17, fontWeight: "900" }}>
-          {d.called ? `You're in the ${d.nation} squad${tournament ? ` for the ${d.period.comp}` : ""}${d.starter ? " — as a starter" : ""}.` : `Left out of the ${d.nation} squad.`}
-        </Text>
-        <Text style={{ color: C.dim, marginTop: 6 }}>{d.reason}</Text>
-        {d.line ? <Text style={{ color: C.text, marginTop: 8, fontStyle: "italic" }}>{d.line}</Text> : null}
-        <View style={{ marginTop: 10 }}>
-          <Text style={{ color: C.dim, fontSize: 11, fontWeight: "800", marginBottom: 4 }}>THE MANAGER'S VIEW {Math.round(d.manager)} / 100</Text>
-          <Fill value={d.manager} color={C.gold} />
-        </View>
-      </Card>
-      <Card>
-        <Label>{tournament ? "Group games" : `${d.nation}'s matches`}</Label>
-        {d.period.matches.slice(0, tournament ? 3 : 6).map((m, i) => <Row key={i} k={`${m.home} v ${m.away}`} v={new Date(m.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} />)}
-        <Text style={{ color: C.dim, marginTop: 6 }}>{!d.called ? "Played without you." : tournament ? `You stay with the squad until ${d.nation} are knocked out.` : "Any club games in between are played without you."}</Text>
-      </Card>
-    </Frame>
-  );
-}
 
 // ── Contract renewal: higher or lower ──
 export function ContractRenewalScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
@@ -105,23 +68,38 @@ export function ContractRenewalScreen({ career, go }: { career: CareerState; go:
   const offeredWage = renewalWage(c.wage, wins, locked);
   const factor = c.wage > 0 ? offeredWage / c.wage : renewalMultiplier(wins, locked);
   const offer = (base: number) => Math.round(base * factor);
+  const [stamp, setStamp] = useState(false);
   const finalise = () => {
     if (signed.current) return;
     signed.current = true;
-    go(flow.contractComplete({
+    // The website's SIGNED stamp (SecondaryScreens.tsx), seen for a moment before the screen moves on.
+    setStamp(true);
+    setTimeout(() => go(flow.contractComplete({
       club: c.club, wage: offeredWage, goalBonus: offer(c.goalBonus), assistBonus: offer(c.assistBonus), seasonsRemaining: 3,
       ...offerClauses(career, offeredWage, mulberry32(career.season * 71 + wins * 13 + rounds)),
-    }));
+    })), 900);
   };
   const back = () => go(flow.contractComplete(null));
   const face = (v: number | null) => (v === null ? "?" : v === 1 ? "A" : v === 11 ? "J" : v === 12 ? "Q" : v === 13 ? "K" : String(v));
 
   return (
-    <Frame kicker="Contract renewal" title={c.club}>
+    <Frame kicker="Contract renewal" title={c.club} scroll={false}>
+     <View style={{ flex: 1, justifyContent: "center", padding: 12, gap: 10, width: "100%", maxWidth: 400, alignSelf: "center" }}>
+      {stamp && (
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, zIndex: 20, alignItems: "center", justifyContent: "center" }}>
+          <Burst count={30} spread={1.4} colors={["#34d399", "#fde047", "#ffffff"]} />
+          <PopIn>
+            <View style={{ borderRadius: 12, borderWidth: 4, borderColor: "#34d399", backgroundColor: "rgba(2,44,34,0.85)", paddingHorizontal: 20, paddingVertical: 8, transform: [{ rotate: "-6deg" }], boxShadow: "0px 0px 40px rgba(52,211,153,0.5)" } as never}>
+              <Text style={{ color: "#6ee7b7", fontSize: 30, fontWeight: "900", letterSpacing: 3 }}>SIGNED</Text>
+            </View>
+          </PopIn>
+        </View>
+      )}
       {phase === "intro" && !willing && (
-        <Card>
-          <Text style={{ color: C.text, fontWeight: "900", fontSize: 16 }}>📝 Not interested in renegotiating right now.</Text>
-          <Text style={{ color: C.dim, marginTop: 6, marginBottom: 14 }}>You haven't done enough lately to earn a better deal — a real hot streak of form, or a genuine jump in your game, and they'll be a lot more willing to talk.</Text>
+        <Card style={{ alignItems: "center" }}>
+          <Text style={{ fontSize: 40 }}>📝</Text>
+          <Text style={{ color: C.text, fontWeight: "900", fontSize: 16, textAlign: "center", marginTop: 6 }}>Not interested in renegotiating right now.</Text>
+          <Text style={{ color: C.dim, marginTop: 6, marginBottom: 14, textAlign: "center" }}>You haven't done enough lately to earn a better deal — a real hot streak of form, or a genuine jump in your game, and they'll be a lot more willing to talk.</Text>
           <Btn label="Back" onPress={back} />
         </Card>
       )}
@@ -144,7 +122,8 @@ export function ContractRenewalScreen({ career, go }: { career: CareerState; go:
         <>
           <Text style={{ color: C.dim, textAlign: "center" }}>Round {rounds + 1} · <Text style={{ color: C.green }}>{wins} correct</Text></Text>
           <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 16 }}>
-            <PlayingCard v={face(current)} /><Text style={{ color: C.dim, fontSize: 24 }}>→</Text><PlayingCard v={face(next)} dark={next === null} />
+            <PlayingCard v={face(current)} /><Text style={{ color: C.dim, fontSize: 24 }}>→</Text>
+            <PopIn key={`${rounds}-${next === null ? "q" : next}`}><PlayingCard v={face(next)} dark={next === null} /></PopIn>
           </View>
           {message ? <Text style={{ color: message.startsWith("✓") ? C.green : C.red, fontWeight: "900", textAlign: "center" }}>{message}</Text> : null}
           <Card tone={locked ? C.red : C.green}>
@@ -164,6 +143,7 @@ export function ContractRenewalScreen({ career, go }: { career: CareerState; go:
           ) : <Btn label="Sign Contract →" onPress={finalise} />}
         </>
       )}
+     </View>
     </Frame>
   );
 }

@@ -23,6 +23,7 @@ import { shortClub } from "@/lib/star/media/grammar";
 import * as flow from "../../game/flow";
 import { Press } from "../../ui/Press";
 import { Frame, Card, Label, Btn, Fill, ClubCrest, C } from "./kit";
+import { AchievementToasts, AchievementToast } from "./Achievements";
 
 // ── The press conference ──
 function Delta({ label, n }: { label: string; n: number }) {
@@ -136,11 +137,18 @@ export function Pops() {
   const pops = flow.usePops();
   const p = pops[0];
   useEffect(() => {
-    if (!p || p.kind === "milestone") return;
-    const t = setTimeout(flow.dismissPop, p.kind === "rating" ? 3000 : 3200 + (p.kind === "achievements" ? p.items.length * 900 : 0));
+    if (!p || p.kind !== "rating") return;
+    const t = setTimeout(flow.dismissPop, 3000);
     return () => clearTimeout(t);
   }, [p]);
   if (!p) return null;
+  // Achievements earned away from a match: one card at a time, low on the screen,
+  // "ACHIEVEMENT 2 OF 3 · GOLD", the medal, the star bar, a timer line (page.tsx offMatchAch, hold 3200).
+  if (p.kind === "achievements") {
+    return <AchievementToasts key={p.items.map((a) => a.label).join()} items={p.items} hold={3200} onDone={flow.dismissPop}
+      star={p.star ? { from: { stars: p.star.from, toNext: p.star.fromNext ?? 0 }, to: { stars: p.star.to, toNext: p.star.toNext } } : undefined} />;
+  }
+  if (p.kind === "toast") return <AchievementToast key={p.label} label={p.label} unlocked={p.unlocked} record={p.record} onClose={flow.dismissPop} />;
   if (p.kind === "milestone") {
     return (
       <Modal transparent animationType="fade" onRequestClose={flow.dismissPop}>
@@ -157,26 +165,9 @@ export function Pops() {
     <View pointerEvents="box-none" style={{ position: "absolute", left: 12, right: 12, top: 0 }}>
       <TopSpace min={54} pad={16} />
       <Press onPress={flow.dismissPop}>
-        {p.kind === "rating" ? (
-          <View style={{ backgroundColor: "#10b981", borderRadius: 12, padding: 10, borderWidth: 1, borderColor: "#6ee7b7" }}>
-            <Text style={{ color: "#000", fontWeight: "900", textAlign: "center" }}>▲ Star rating up: ★{p.from} → ★{p.to}</Text>
-          </View>
-        ) : (
-          <View style={{ backgroundColor: "#1c1917", borderRadius: 14, padding: 12, borderWidth: 1.5, borderColor: C.gold, gap: 6 }}>
-            {p.items.map((a) => (
-              <View key={a.label}>
-                <Text style={{ color: C.gold, fontWeight: "900" }}>🏅 {a.label}</Text>
-                <Text style={{ color: C.text, fontSize: 12 }}>{a.description}</Text>
-              </View>
-            ))}
-            {p.star && (
-              <View style={{ marginTop: 4 }}>
-                <Text style={{ color: C.dim, fontSize: 10, fontWeight: "900" }}>★ STAR RATING {Math.floor(p.star.from)} → {Math.floor(p.star.to)}</Text>
-                <Fill value={p.star.toNext * 100} color={C.gold} height={6} />
-              </View>
-            )}
-          </View>
-        )}
+        <View style={{ backgroundColor: "#10b981", borderRadius: 8, padding: 8, borderWidth: 1, borderColor: "#6ee7b7" }}>
+          <Text style={{ color: "#000", fontWeight: "900", fontSize: 12, textAlign: "center" }}>▲ Star rating up: ★{p.from} → ★{p.to}</Text>
+        </View>
       </Press>
     </View>
   );

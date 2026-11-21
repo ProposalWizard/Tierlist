@@ -29,8 +29,8 @@
  */
 import {
   buildScenario, launch, stepBall, stepBallInNet, settleBall, stepBallPastBar, stepBallCleared,
-  stepKeeper, settleJumps, stepDefenders, stepReactions, initDefenders,
-  chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView,
+  stepKeeper, settleJumps, stepDefenders, stepReactions, stepTouchChase, touchChaseSpeed, initDefenders, resetForTouchOn,
+  chainReturnChance, CHAIN_MAX, TOUCH_CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
   orderableRunners, acceptsCaptainOrders,
   curveDirFromSwipe, applyCurveSwipe,
@@ -55,7 +55,7 @@ import { getTuning } from "@/lib/star/tuningStore";
 import { PITCH_W, BOX_L, BOX_R, BOX_DEPTH, POST_L, POST_R, CX } from "@/lib/star/pitch";
 import { mulberry32 } from "@/lib/star/season";
 import { newChancesOn } from "@/lib/star/newChances";
-import { stepPlayOn, carryFrom, carryOnLeadIn, MAX_LAY_OFFS, runAfterWanted, startPlayOnRun, type PlayOn, type CarryFrom } from "@/lib/star/playOn";
+import { stepPlayOn, carryFrom, carryOnLeadIn, MAX_LAY_OFFS, runAfterWanted, startPlayOnRun, callForIt, callForItShown, type PlayOn, type CarryFrom } from "@/lib/star/playOn";
 import { barCap } from "@/lib/star/legs";
 import { afterPassStickOn } from "@/lib/star/afterPass";
 import { mechanicOpen, type Mechanic } from "@/lib/star/mechanics";
@@ -90,7 +90,7 @@ import { shortClub } from "@/lib/star/media/grammar";
 import { popupMs } from "@/lib/star/mikeyPopups";
 import { divisionOf } from "@/lib/star/calendar";
 import type { MatchStats, GoalEvent, OppGoalEvent, SquadPlayer } from "@/lib/star/types";
-import { shotsPro, knucklePowerOn, launchShot, shotSeedFor, stepKnuckle, gradeContact, type ContactRead } from "@/lib/star/shotModel";
+import { shotsPro, knucklePowerOn, launchShot, shotSeedFor, stepKnuckle, gradeContact, stepWindUp, aimedAtGoal, powerShotStrike, POWER_SHOT_WINDUP_S, POWER_SHOT_CONTACT, type ContactRead, type ShotExtras } from "@/lib/star/shotModel";
 import { shotPowerOn, contactFieldOn, feelPower, feelLift, struckAtGoal } from "@/lib/star/shotFeel";
 import { energyFactorFor, energyPerMinute, clampEnergy, tiredKickSkills, fatigueCut, type EnergyMode } from "@/lib/star/energy";
 import { aerialOf } from "@/lib/star/aerial";
@@ -347,6 +347,54 @@ export class MatchDriver {
   /** The widen when the ball comes back into your run (CanvasMatch camEaseRef). */
   private camEase: { from: Viewport; to: Viewport; t: number } | null = null;
   private big = false;
+  // ── The chance's own buttons (CanvasMatch state): Touch Mode, the ⚡ power shot, the captain's call ──
+  /** Touch Mode (Boot.extraTouch / the KIB can): the corner toggle. Off at kick-off, as on the website. */
+  touchModeOn = false;
+  /** ⚡ Power shot armed for the next shot at goal (CanvasMatch powerArmed). */
+  powerArmed = false;
+  /** Seconds left of the power shot's wind-up, or null (CanvasMatch windUpRef). */
+  private windUp: number | null = null;
+  /** The strike screen is the power shot's green circle (CanvasMatch powerStrike). */
+  powerStrike = false;
+  /** What "Call for it" answered, for 1.5 s (CanvasMatch callMsg). */
+  private callMsgNow: { text: string; untilTick: number } | null = null;
+  get canExtraTouch(): boolean { return this.setup.canExtraTouch; }
+  /** CanvasMatch: the TOUCH toggle is on screen whenever your boots or can give the extra touch and a chance is on. */
+  get touchButtonShown(): boolean {
+    return this.canExtraTouch && !this.feature && (this.phase === "aim" || this.phase === "runup" || this.phase === "contact" || this.phase === "flight" || this.phase === "result");
+  }
+  toggleTouchMode() { this.touchModeOn = !this.touchModeOn; this.bump(); }
+  get windingUp(): boolean { return this.windUp !== null; }
+  /** CanvasMatch: the ⚡ Power shot button (Settings → Gameplay "Knuckleball & power shot", off by default). */
+  get powerShotShown(): boolean {
+    return knucklePowerOn() && this.mechOpen("powerShot") && this.phase === "aim" && !this.lead && this.windUp === null
+      && !["penalty", "free_kick", "corner", "byline_cross"].includes(this.sc.kind);
+  }
+  togglePowerShot() { this.powerArmed = !this.powerArmed; this.bump(); }
+  /** CanvasMatch callForItShown: the captain, while his pass plays on. */
+  get callForItShown(): boolean {
+    return this.phase === "flight" && callForItShown({ captain: this.isCaptain, stickLive: !!this.playOn, layOffLive: false });
+  }
+  get callMsg(): string | null { const m = this.callMsgNow; return m && this.tickNo < m.untilTick && this.phase === "flight" ? m.text : null; }
+  /** Captain's "Call for it" (CanvasMatch onCallForIt → playOn.ts callForIt). */
+  callForIt() {
+    const po = this.playOn;
+    if (!po?.stick || this.phase !== "flight") return;
+    const r = callForIt(po, this.sc);
+    const text = r === "late" ? "Too late, he's shooting" : r === "coming" ? "It's coming!" : "Calling for it!";
+    this.callMsgNow = { text, untilTick: this.tickNo + ticksFor(1500) };
+    if (r === "calling") this.pushLine(`${this.playerLabel()} calls for it…`);
+    this.later(1500, () => this.bump());
+    this.bump();
+  }
+  /** The power shot's green circle was hit (or missed): quality 0..1 (CanvasMatch PowerShotContact onStrike). */
+  powerStrikeDone(quality: number) {
+    if (this.phase !== "contact" || !this.powerStrike) return;
+    // Its own seeded draw, so the match's random stream is untouched.
+    const r = mulberry32(shotSeedFor(this.seed ^ 0x9073, this.rngCalls.current));
+    this.powerStrike = false;
+    this.handleContact(POWER_SHOT_CONTACT, undefined, { ...powerShotStrike(quality, r), noKnuckle: true });
+  }
   td: FpRunState | null = null;
   tdReady = false;
   private tdNotes = 0;
@@ -1216,7 +1264,11 @@ export class MatchDriver {
     const carry = chain && !isTouchContinuation ? this.carryOn : null;
     this.carryOn = null;
 
-    {
+    // A re-touch, or a lay-off taken back in your run, is the SAME move carrying on: it is
+    // repositioned where the ball is, never remade (CanvasMatch loadScenario → resetForTouchOn).
+    if (chain && isTouchContinuation) {
+      resetForTouchOn(this.sc, chain.pos);
+    } else {
       if (request) this.lastDeal = request.deal;
       const made = makeChance({
         deal: this.lastDeal,
@@ -1315,6 +1367,7 @@ export class MatchDriver {
     this.dragging = false;
     this.aimCommitAt = null; this.presser = null; this.thumbOrigin = null;
     this.receiveGlide = null;
+    this.windUp = null; this.powerStrike = false; this.callMsgNow = null;
   }
 
   /** CanvasMatch setUpKeeper. */
@@ -1671,7 +1724,7 @@ export class MatchDriver {
     if (this.lead) { this.skipLeadIn(); return; }
     if (this.phase === "aim" && autoKickOf(this.sc)) return;
     if (this.phase === "aim" && isAirKind(this.sc.kind) && airTapOn()) return;
-    if (this.phase !== "aim") return;
+    if (this.phase !== "aim" || this.windUp !== null) return;
     const b = this.sc.ball;
     const r = this.captainPickAt(p, captainGrabM);
     if (r) { this.captainDrag = { target: r, from: p, to: p }; return; }
@@ -1725,6 +1778,17 @@ export class MatchDriver {
   release(dir: Vec2, power: number) {
     if (hasRunup(this.sc.kind)) { this.startRunup(dir, power); return; }
     this.aim = { dir, power };
+    // An armed power shot winds up first (shotModel.ts): the pitch keeps moving for
+    // POWER_SHOT_WINDUP_S, then the green-circle screen opens (CanvasMatch onPointerUp).
+    if (this.powerArmed && knucklePowerOn() && this.mechOpen("powerShot") && aimedAtGoal(this.sc, dir)) {
+      this.powerStrike = true;
+      this.powerArmed = false;
+      this.windUp = POWER_SHOT_WINDUP_S;
+      this.pushLine("He pulls the leg right back…");
+      this.bump();
+      return;
+    }
+    this.powerStrike = false;
     this.openContact();
     this.bump();
   }
@@ -1888,7 +1952,7 @@ export class MatchDriver {
   }
   /** A touch on the strike screen's ball: (cx, cy) on it, +right/+down, in ball radii. */
   tapContact(cx: number, cy: number) {
-    if (this.phase !== "contact" || this.contactLocked) return;
+    if (this.phase !== "contact" || this.contactLocked || this.powerStrike) return;
     const motion = this.strikeMotion();
     const at = this.contactBallNow();
     this.contactFrozen = at;
@@ -1900,7 +1964,7 @@ export class MatchDriver {
     this.later(air ? AIR_VERDICT_MS : GROUND_TAP_MS, () => this.contact(air ? { cx, cy, lift } : { cx, cy }));
   }
   private contactClock() {
-    if (this.phase !== "contact" || this.contactLocked) return;
+    if (this.phase !== "contact" || this.contactLocked || this.powerStrike) return;
     const cd = this.contactCountdown();
     if (!cd || cd.left > 0) return;
     this.contactLocked = true;
@@ -1951,6 +2015,7 @@ export class MatchDriver {
   private handleContact(
     tapped: { cx: number; cy: number; lift?: number; late?: boolean; aim?: { dir: Vec2; power: number } },
     over?: { dir: Vec2; power: number; skills?: KickSkills },
+    extras?: ShotExtras,
   ) {
     let a = over ? { dir: over.dir, power: over.power } : tapped.aim ?? this.aim;
     if (!a) return;
@@ -1981,8 +2046,8 @@ export class MatchDriver {
     const shotKnuckle = !auto && knucklePowerOn() && this.mechOpen("knuckle");
     const shotField = !auto && contactFieldOn();
     const shotLift = feelPow ? feelLift(strikeWith.power) : 1;
-    const shotRec = (shotPro || shotKnuckle || shotField || shotLift !== 1)
-      ? { seed: shotSeedFor(this.seed, this.rngCalls.current), pro: shotPro, knuckle: shotKnuckle, field: shotField, lift: shotLift }
+    const shotRec = (shotPro || shotKnuckle || extras || shotField || shotLift !== 1)
+      ? { seed: shotSeedFor(this.seed, this.rngCalls.current), extras, pro: shotPro, knuckle: shotKnuckle, field: shotField, lift: shotLift }
       : null;
     this.physAcc = 0;
     this.deflections = 0;
@@ -2024,12 +2089,16 @@ export class MatchDriver {
       });
       this.strikeRule = kd;
     }
+    // Touch Mode (CanvasMatch handleContact): the instant your boot is on the ball you stand where it
+    // is, so the chase measures from there. Only with the toggle on and the boots (or the can) for it.
+    if (this.touchModeOn && this.canExtraTouch && !auto) this.sc.player = { x: this.ball.pos.x, y: this.ball.pos.y };
     this.playOn = null;
     this.playOnCaught = false;
     {
       const sc = this.sc;
       delete sc.matePace;
-      if (runAfterWanted({ kind: sc.kind, youShotAtGoal: this.ball.youStruckAtGoal === true, auto: !!auto })) {
+      const touchOn = this.touchModeOn && this.canExtraTouch;
+      if (!touchOn && !this.shootoutKick && runAfterWanted({ kind: sc.kind, youShotAtGoal: this.ball.youStruckAtGoal === true, auto: !!auto })) {
         this.playOnRng = mulberry32(((this.seed ^ Math.imul(this.rngCalls.current + 1, 0x9e3779b1)) ^ 0x61a7) >>> 0);
         const bl = this.ball;
         const stick = afterPassStickOn() && this.mechOpen("steer");
@@ -2043,6 +2112,7 @@ export class MatchDriver {
     if (this.sc.kind === "header" && this.ball.lastTouch === "defence") this.pushLine("He gets up highest and heads it clear!");
     else if (shotRead && SHOT_LINES[shotRead.grade]) { this.pushLine(SHOT_LINES[shotRead.grade]!); if (shotRead.grade === "knuckle") this.showAction("KNUCKLEBALL"); }
     else this.pushLine(commentaryStrike(this.sc.kind, this.rng, this.targetName(this.sc)));
+    if (extras?.powerMult) this.showAction(`⚡ x${extras.powerMult.toFixed(2)}`);
     this.bump();
   }
 
@@ -2087,6 +2157,12 @@ export class MatchDriver {
     if (this.phase === "aim" && !this.lead) {
       stepKeeper(this.sc, dt);
       brainAim(this.sc, dt);
+    }
+    // The power shot's wind-up: the defence closes while the leg goes back (CanvasMatch's frame loop).
+    if (this.phase === "aim" && this.windUp !== null) {
+      stepWindUp(this.sc, dt);
+      this.windUp -= dt;
+      if (this.windUp <= 0) { this.windUp = null; this.openContact(); }
     }
     // A header or volley: no drag, the strike screen opens by itself (the aerial move, or the air tap's wait).
     {
@@ -2339,11 +2415,15 @@ export class MatchDriver {
       stepReactions(sc, ball, h, this.rng);
       stepKind(sc, ball, h, this.strikeRule);
       brainStep(sc, ball, h);
+      // Touch Mode (CanvasMatch): you chase your own uncontested touch; catching it earns the second kick.
+      const touchLive = this.touchModeOn && this.canExtraTouch
+        && ball.owner === "you" && ball.lastTouch !== "keeper" && acceptsCaptainOrders(sc.kind);
+      const caughtUp = touchLive && stepTouchChase(sc, ball, h, this.setup.career ? touchChaseSpeed(this.setup.career.skills.pace) : undefined);
       const incoming = { vx: ball.vel.x, vy: ball.vel.y, vz: ball.vz, z: ball.z, spin: ball.spin };
       const mateProbe = probeMatePlays(sc);
       stepKnuckle(ball, h);
       const po = this.playOn;
-      if (po) {
+      if (po && !touchLive) {
         const wasLive = po.layOffLive;
         const caughtIt = stepPlayOn(po, sc, ball, h, this.playOnRng, this.layOffsLeft) === "caught";
         if (caughtIt) { this.playOnCaught = true; this.resolveOutcome("delivered"); break; }
@@ -2369,6 +2449,8 @@ export class MatchDriver {
       if (this.feature?.onBallStep) {
         try { this.feature.onBallStep({ x: ball.pos.x, y: ball.pos.y, z: ball.z }); } catch { /* an observer never breaks the match */ }
       }
+      // stepBall's own ending wins if it came on the same step (a clearance, the ball going out).
+      if (!res && caughtUp) res = "touchOn";
       if (res === "short") clearLooseWin(ball, sc);
       if (res) { this.resolveOutcome(res); break; }
     }
@@ -2590,6 +2672,14 @@ export class MatchDriver {
       } else {
         this.logMoment(`${who ?? "He"} keeps it — the move goes on without ${this.playerLabel()}.`, "chance");
         if (newChancesOn() && !goalInView(sc.kind)) this.showAction(this.passBanner());
+      }
+    } else if (res === "touchOn") {
+      // Touch Mode's own chain (CanvasMatch): never a roll, one extra touch (its own budget,
+      // TOUCH_CHAIN_MAX), from where the ball rests. chainDepth is carried, not spent.
+      const touches = sc.touchTouches ?? 0;
+      const b = this.ball;
+      if (b && touches < TOUCH_CHAIN_MAX) {
+        this.chain = { pos: { x: b.pos.x, y: b.pos.y }, depth: sc.chainDepth ?? 0, ambition: Math.max(0.3, sc.passDifficulty ?? 0), touchTouches: touches + 1 };
       }
     }
     this.attempts += 1;
