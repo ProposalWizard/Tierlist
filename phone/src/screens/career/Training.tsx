@@ -9,7 +9,8 @@ import { useCallback, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DrillStrike, DrillPace, DrillVision } from "../MatchStages";
 import { DrillShell } from "./DrillShell";
-import { View, Text } from "react-native";
+import { View, Text, Pressable } from "react-native";
+import { kitsFor } from "@/lib/star/kits";
 import type { CareerState, Skills } from "@/lib/star/types";
 import { starsOf, totalStars, highestUnlocked, TRAINING_LEVELS } from "@/lib/star/trainingLevels";
 import { trainingLeft, TRAINING_SESSIONS_PER_WEEK, canAct, actionsLeft } from "@/lib/star/week";
@@ -135,6 +136,8 @@ export function LevelSelectScreen({ career, skill, onBack, go }: { career: Caree
  * EngineFeature); Pace is the Gauntlet's first-person run (DrillPace) and
  * Vision picks the pass on the match (DrillVision).
  */
+/** TrainingMinigame SKILL_LOOK's icons. */
+const DRILL_ICON: Record<string, string> = { pace: "⚡", power: "💥", technique: "🎯", vision: "👁️", freeKick: "🌀", aerial: "🤸" };
 export function DrillScreen({ career, skill, level, go }: { career: CareerState; skill: keyof Skills; level: number; go: (s: flow.Step) => void }) {
   const [stars, setStars] = useState<number | null>(null);
   const label = SKILL_LABELS.find((s) => s[0] === skill)?.[1] ?? skill;
@@ -142,7 +145,21 @@ export function DrillScreen({ career, skill, level, go }: { career: CareerState;
   if (skill === "pace" || skill === "vision" || skill === "power" || skill === "technique" || skill === "freeKick" || skill === "aerial") {
     // The website's tutorial on the drill, its "?" and the 3 s result card (DrillShell.tsx).
     return (
-      <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: C.bg, paddingTop: 8 }}>
+      // Under the pitch the website is green (the pitch look), not navy.
+      <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: "rgb(12,71,38)", paddingTop: 6 }}>
+        {/* TrainingMinigame's top: ✕ EXIT on the left (the only way out besides the phone's back button),
+            the skill over a band in the club's colour. Leaving costs nothing: no session, no energy. */}
+        <View style={{ flexDirection: "row", alignItems: "center", height: 34, marginHorizontal: 12, marginBottom: 6, borderRadius: 2, overflow: "hidden",
+          backgroundImage: `linear-gradient(90deg, ${kitsFor(career.player.club, career.player.club, career.clubKits?.[career.player.club]).home.shirt}66, rgba(16,82,47,0.9) 70%)`, borderWidth: 1, borderColor: "rgba(255,255,255,0.14)" } as never}>
+          <Pressable onPress={() => go({ screen: "career-training" })} accessibilityRole="button" accessibilityLabel="Exit the drill" hitSlop={8}
+            style={{ height: 34, paddingHorizontal: 12, justifyContent: "center", backgroundColor: "rgba(0,0,0,0.45)" }}>
+            <Text numberOfLines={1} style={{ color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1.2 }}>✕ EXIT</Text>
+          </Pressable>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flex: 1, textAlign: "center", paddingHorizontal: 8, color: "#fff", fontSize: 12, fontWeight: "900", letterSpacing: 1.4 }}>
+            {DRILL_ICON[skill]} {String(label).toUpperCase()} · LEVEL {level}
+          </Text>
+          <View style={{ width: 62 }} />
+        </View>
         <DrillShell career={career} skill={skill} level={level} onDone={onFinish}>
           {(finish, run) => skill === "pace" ? <DrillPace trainingLevel={level} onFinish={finish} />
             : skill === "vision" ? <DrillVision key={run} trainingLevel={level} skills={career.skills} onFinish={finish} />
