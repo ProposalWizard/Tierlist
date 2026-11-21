@@ -239,7 +239,8 @@ export const FI_DRAW = /* glsl */ `
         // the lids' skin over the rest opening (a blink, a heavy lid, a squint)
         col = mix(col, uSkinTone * 0.92, lidZone * (1.0 - inEye));
         // the eyeball: darker to its corners, the upper lid's shadow across its top
-        vec3 ew = vec3(0.9, 0.88, 0.855) * mix(0.8, 1.0, pow(k, 0.6));
+        // (an eye white is never paper white: a touch of the skin's warmth, so the eye sits in the face, not on it)
+        vec3 ew = mix(vec3(0.86, 0.84, 0.815), uSkinTone, 0.14) * mix(0.76, 1.0, pow(k, 0.6));
         float ir = uFiEye2.z;
         vec2 ic = vec2(uFiExA.z * s * w * 0.3, (top0 + bot0) * 0.5 + uFiEye.y * 0.05 + uFiExA.w * uFiEye.y * 0.34);
         vec2 qi = q - ic;
@@ -252,7 +253,12 @@ export const FI_DRAW = /* glsl */ `
         float hl = length(vec2(qi.x * s - 0.3 * ir, qi.y - 0.34 * ir)) / ir;
         iris = mix(iris, vec3(1.0), (1.0 - smoothstep(0.15, 0.25, hl)) * 0.95);
         ew = mix(ew, iris, 1.0 - smoothstep(0.94, 1.04, dI));
-        ew *= mix(0.66, 1.0, smoothstep(0.0, uFiEye.y * 0.42, top - q.y));
+        ew *= mix(0.55, 1.0, smoothstep(0.0, uFiEye.y * 0.6, top - q.y));
+        // the lids' rim: the skin round the opening turns in, a soft shade just outside it (heavier above),
+        // so the eye reads set into the head, not stuck on it
+        float rimD = max(max(bot - q.y, q.y - top), (abs(t) - 1.0) * w);
+        float rim = (1.0 - smoothstep(0.0, 0.0022 + fiAA, rimD)) * step(0.0, rimD) * (1.0 - smoothstep(1.0, 1.25, abs(t)));
+        col *= 1.0 - fiSk * rim * mix(0.14, 0.26, step(0.0, q.y));
         col = mix(col, ew, inEye);
         // the lash line on the upper lid's edge, heavier to the outer corner
         float lt = (0.0008 + 0.0009 * uFiEye3.z) * (0.62 + 0.58 * smoothstep(-1.0, 1.0, t));

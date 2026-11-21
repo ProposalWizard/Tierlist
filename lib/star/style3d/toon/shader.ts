@@ -278,6 +278,10 @@ const TOON_BODY = `
   // (faceLandmarks.ts) the head's own paint stays.
   float tnIris = max(uTfIrisB.x > 0.0 ? 1.0 - smoothstep(0.86, 1.0, length(r.xy - uTfIrisA.xy) / uTfIrisB.x) : 0.0, uTfIrisB.y > 0.0 ? 1.0 - smoothstep(0.86, 1.0, length(r.xy - uTfIrisA.zw) / uTfIrisB.y) : 0.0)
     * step(uFaceF.w - 0.08, r.z) * head;
+#ifdef TOON_FACEID
+  // (a drawn face is on a clean head, faceClean.ts: no painted iris to keep, its eyes are drawn)
+  tnIris = 0.0;
+#endif
   skin *= 1.0 - tnIris;
 #ifdef TOON_FACEID
 ${FI_CANVAS}

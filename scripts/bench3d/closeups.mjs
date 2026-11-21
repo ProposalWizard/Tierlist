@@ -36,7 +36,7 @@ for (const s of shots) {
   await page.evaluate((s) => {
     const D = window.__cutsceneDebug;
     window.__frameStep.seek(s.t);
-    const at = D.part(s.who, s.part ?? "hips");
+    const at = D.part(s.who, s.part ?? "hips"); if (s.aim) at[1] += s.aim;
     const yaw = D.yaw(s.who);
     const turn = { front: 0, side: 90, back: 180, left: -90 }[s.view] ?? Number(s.view);
     const a = yaw + (turn * Math.PI) / 180;

@@ -265,7 +265,8 @@ export default function BenchPeoplePage() {
         } else if (q.get("allheads") !== null) {
           // one person's FaceId on each of the 12 heads (which heads read as a lean adult)
           const l = people[Number(q.get("allheads")) % people.length];
-          for (const head of ["h1", "h2", "h3", "h4", "h5", "h6", "h7", "h8", "h9", "m1", "m2", "m3"] as ToonHead[]) for (const v of ["front", "34"])
+          const heads = (q.get("heads")?.split(",") ?? ["h1", "h2", "h3", "h4", "h5", "h6", "h7", "h8", "h9", "m1", "m2", "m3"]) as ToonHead[];
+          for (const head of heads) for (const v of q.get("views")?.split(",") ?? ["front", "34"])
             cards.push({ title: `${head} · ${l.faceId.faceBuild}`, sub: v, look: { ...l, head, hairMesh: undefined }, fid: { yaw: YAW[v], on: true } });
         } else if (q.get("sliders") !== null) {
           const l = people[Number(q.get("sliders")) % people.length];

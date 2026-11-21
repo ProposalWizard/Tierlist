@@ -17,6 +17,7 @@ import { TOON_SHAPE_HEADS, type ToonHead } from "./bodies";
 import { TOON_FACE_LANDMARKS } from "./faceLandmarks";
 import { TOON_FACE_FILE_LANDMARKS } from "./faceFileLandmarks";
 import { applyToonFaceShapeRaw } from "./faceShapeApply";
+import { cleanToonFace } from "./faceClean";
 import { HEAD_LEAN, type FaceId } from "./faceId";
 import type { FaceShape } from "./faceShape";
 
@@ -41,6 +42,8 @@ export interface FaceIdOptions {
   detail?: number;
   /** Leave the mesh alone (only the drawn face). */
   noMould?: boolean;
+  /** Keep the head file's own painted face under the drawn one (the old way, to compare: ?faceclean=0). */
+  keepPaint?: boolean;
 }
 
 export function applyToonFaceId(T: Three, p: Person3D, f: FaceId, opts: FaceIdOptions = {}): boolean {
@@ -83,6 +86,9 @@ export function applyToonFaceId(T: Three, p: Person3D, f: FaceId, opts: FaceIdOp
   u.uFiIris.value = new T.Color(f.iris);
   u.uFiLip.value = new T.Color(f.lip);
   u.uFiBrowC.value = new T.Color(f.brow);
+  // the drawn face goes on a clean head: the file's own painted face swapped for even skin (faceClean.ts)
+  const keepPaint = opts.keepPaint ?? (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("faceclean") === "0");
+  if (!keepPaint) cleanToonFace(T, p, lm);
   const mat = p.body.material as THREE.MeshStandardMaterial;
   if (!mat.defines || mat.defines.TOON_FACEID === undefined) {
     mat.defines = { ...(mat.defines ?? {}), TOON_FACEID: "" };
