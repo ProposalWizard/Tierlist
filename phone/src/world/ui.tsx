@@ -6,13 +6,14 @@ import { NationFlag } from "../draw/NationFlag";
  * dark green and gold (ui/theme.ts). Every button is ui/Press.
  */
 import { useEffect, useRef, type ComponentRef, type ReactNode } from "react";
-import { View, Text, ScrollView, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
+import { View, Text, ScrollView, useWindowDimensions, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
+import { tint, rgba as heroRgba } from "@/lib/star/heroFigure";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { kitsOf } from "@/lib/star/kits";
 import type { CareerState } from "@/lib/star/types";
 import { Press } from "../ui/Press";
 import { C, R } from "../ui/theme";
-import { Backdrop, BottomBar, CapsTabs, LOOK, LookButton, ScreenHeader, glassStyle, type BackdropKind, type BarTab } from "../ui/look";
+import { Backdrop, BottomBar, FONT, LOOK, LookButton, ScreenHeader, glassStyle, type BackdropKind, type BarTab } from "../ui/look";
 
 // ── Colours ─────────────────────────────────────────────────────────────────
 
@@ -95,16 +96,36 @@ export function Title({ children, color = LOOK.emerald300, style }: { children: 
 }
 
 export function Empty({ text }: { text: string }) {
+  // the website's Empty: rounded-xl, bg-black/30 (the glass skin's blue-slate), 12 px bold white
   return (
-    <View style={[glassStyle("glass"), { borderRadius: 14, padding: 16 }]}>
-      <Text style={{ color: C.text, fontWeight: "700", textAlign: "center", fontSize: 13 }}>{text}</Text>
+    <View style={{ borderRadius: 12, paddingHorizontal: 12, paddingVertical: 16, backgroundColor: "rgba(8,20,38,0.26)", marginBottom: 8 }}>
+      <Text style={{ color: C.text, fontWeight: "700", textAlign: "center", fontSize: 12, lineHeight: 18 }}>{text}</Text>
     </View>
   );
 }
 
-/** One row of tabs (the website's SegTabs): a glass track, small capitals. */
+/**
+ * One row of tabs, the website's SegTabs (screenKit.tsx): a dark sunk track 37 px tall, 11 px
+ * capitals (10 px under 380 wide), the chosen one white on a light pane with an emerald line
+ * that pokes 3 px under it; the rest white at 55%.
+ */
 export function Seg<T extends string>({ value, onChange, tabs }: { value: T; onChange: (t: T) => void; tabs: readonly (readonly [T, string])[] }) {
-  return <CapsTabs value={value} onChange={onChange} tabs={tabs} />;
+  const { width } = useWindowDimensions();
+  const fs = width >= 380 ? 11 : 10;
+  return (
+    <View style={{ flexDirection: "row", padding: 4, borderRadius: 12, backgroundColor: "rgba(8,20,38,0.26)", boxShadow: "inset 0px 1px 3px rgba(0,0,0,0.5)" } as ViewStyle}>
+      {tabs.map(([k, label]) => {
+        const on = value === k;
+        return (
+          <Press key={k} onPress={() => onChange(k)} style={[{ flex: 1, minWidth: 0, paddingVertical: 6, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+            on && ({ backgroundColor: "rgba(255,255,255,0.15)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.16), 0px 2px 6px rgba(0,0,0,0.35)" } as ViewStyle)]}>
+            <Text numberOfLines={1} style={{ color: on ? "#fff" : "rgba(255,255,255,0.55)", fontWeight: "900", fontSize: fs, lineHeight: fs * 1.5, letterSpacing: fs * 0.05, textTransform: "uppercase" }}>{label}</Text>
+            {on ? <View pointerEvents="none" style={{ position: "absolute", left: 12, right: 12, bottom: -3, height: 3, borderRadius: 2, backgroundColor: "#34d399", boxShadow: "0px 0px 8px rgba(52,211,153,0.8)" } as ViewStyle} /> : null}
+          </Press>
+        );
+      })}
+    </View>
+  );
 }
 
 /**
@@ -133,29 +154,33 @@ export function Chips<T extends string>({ value, onChange, items }: { value: T; 
   );
 }
 
-/** ‹ Round 8 ›: back through played rounds, on to future ones. */
+/** ‹ Round 8 ›: back through played rounds, on to future ones (the website's RoundNav: 36 px squares, Anton arrows). */
 export function RoundNav({ label, sub, onPrev, onNext }: { label: string; sub?: string; onPrev?: () => void; onNext?: () => void }) {
   const btn = (txt: string, on?: () => void) => (
-    <Press disabled={!on} onPress={on} style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: "rgba(255,255,255,0.28)", alignItems: "center", justifyContent: "center", opacity: on ? 1 : 0.4 }}>
-      <Text style={{ color: C.text, fontSize: 22, fontWeight: "900", marginTop: -2 }}>{txt}</Text>
+    <Press disabled={!on} onPress={on} style={{ width: 36, height: 36, borderRadius: 6, backgroundColor: "rgba(8,20,38,0.32)", alignItems: "center", justifyContent: "center", opacity: on ? 1 : 0.25 }}>
+      <Text style={{ color: C.text, fontSize: 18, lineHeight: 27, fontFamily: FONT.display }}>{txt}</Text>
     </Press>
   );
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
       {btn("‹", onPrev)}
-      <View style={{ flex: 1, alignItems: "center" }}>
-        <Text style={{ color: C.text, fontWeight: "900", fontSize: 15 }}>{label}</Text>
-        {sub ? <Text style={{ color: C.dim, fontWeight: "700", fontSize: 11 }}>{sub}</Text> : null}
+      <View style={{ flex: 1, minWidth: 0, alignItems: "center" }}>
+        <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 14, lineHeight: 21 }}>{label}</Text>
+        {sub ? <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.7)", fontWeight: "700", fontSize: 10, lineHeight: 15 }}>{sub}</Text> : null}
       </View>
       {btn("›", onNext)}
     </View>
   );
 }
 
-/** Your club's row: lit in your club's colour. */
+/** Your club's row, the website's youRowStyle (screenKit.tsx): the club colour lifted toward white, a bright rim, a glow. */
 export function youRow(glow: string): ViewStyle {
-  const g = glow.startsWith("#") ? glow : C.green;
-  return { backgroundImage: `linear-gradient(90deg, ${rgba(g, 0.85)}, ${rgba(g, 0.5)})`, borderWidth: 1, borderColor: "rgba(255,255,255,0.45)", boxShadow: `0px 0px 10px ${rgba(g, 0.5)}` } as ViewStyle;
+  const g = glow.startsWith("#") || glow.startsWith("rgb") ? glow : C.green;
+  const lit = tint(g, 0.22);
+  return {
+    backgroundImage: `linear-gradient(90deg, ${heroRgba(lit, 0.85)}, ${heroRgba(g, 0.5)} 55%, ${heroRgba(g, 0.3)})`,
+    boxShadow: `inset 0px 0px 0px 1.5px ${heroRgba(tint(g, 0.5), 0.95)}, inset 0px 1px 0px rgba(255,255,255,0.25), 0px 0px 18px -2px ${heroRgba(lit, 0.9)}`,
+  } as ViewStyle;
 }
 
 /** A big button in the website's 3D look: gold, green (primary), red or glass. */
