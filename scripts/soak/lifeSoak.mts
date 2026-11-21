@@ -179,6 +179,8 @@ function runCareer(n: number): { events: number; lifeBytes: number } {
     if (s >= 1 && !owned.some((i) => i.category === "vehicle") && rng() < 0.7) { const car = carAt(Math.min(5, 1 + Math.floor(s / 3))); if (car) owned.push(freshItem(car)); }
     c = {
       ...c, player: { ...c.player, age: c.player.age + 1 }, squad, ownedItems: owned,
+      // Half the careers meet somebody by season 2 (the partner stories need one).
+      girlfriend: c.girlfriend ?? (s >= 1 && n % 2 === 0 ? { name: "Soak Partner", happiness: 60, gifts: 0 } : null),
       horse: c.horse ?? (s >= 4 && rng() < 0.3 ? { name: "Soak Runner", breed: "Thoroughbred", speed: 70, stamina: 70, energy: 100, racesRun: 0, racesWon: 0, earnings: 0 } : null),
       contract: { ...c.contract, wage: Math.round(c.contract.wage * (1.05 + rng() * 0.2)) },
       // A footballer gets better: the stories' games (rolled here) read his skills.

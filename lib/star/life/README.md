@@ -103,6 +103,20 @@ other corner), `under-bar`, `missed-it` (the tyre or bucket). Also `streak3`, `s
 `{age}` = the caller's age, plus every slot above. His counts after a hit are the caller's
 `lines` (ten of them: "Ten." … "And a hundred.").
 
+### 4b. Who is remembered (the 60-person cap)
+
+`people.ts` `tidy`, run once a week and whenever a story's ending pushes past `PEOPLE_CAP` (60):
+a team-mate who has left is forgotten unless he is in a story that is still open, is owed an
+open promise, or left a strong feeling (bond 50+ or grudge 40+) with a memory of strength 2+.
+Over the cap the weakest go first, never someone in an open story or owed a promise. So a
+minor person is forgotten once his story closes; write a strength-3 memory only for something
+he should carry for good.
+
+### 4c. A game that does not exist yet
+
+Mark the story `"needsActivity": "<mode>"` and write the talk with that mode. It is checked
+(`validateArcBook`) but never plays (`WAITING_ARCS` in `arcBook.ts`) until the mode is built.
+
 ### 5. Voice and pictures
 
 - Voice: `voice.ts` plays recorded clips whose words are on screen. A pool person's clips

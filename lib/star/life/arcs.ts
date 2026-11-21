@@ -18,12 +18,13 @@
  */
 import type { CareerState } from "../types";
 import type { ArcBeat, ArcEvent, ArcNotice, ArcOutcome, ArcRun, ArcVar, LifeArc, LifeChoice, LifeEvent, LifeMoment, LifeState, ObjectiveRun, TalkReply } from "./types";
+import { PEOPLE_CAP } from "./types";
 import { ARCS, arcById, beatOf, mainCount } from "./arcBook";
 import { allHold, holds, type CondCtx, type V2Ctx } from "./cond";
 import { ctxFor, factsOf, type FactOverride } from "./facts";
 import { castEvent, cloneLife, lifeOf, type LiveEvent } from "./director";
 import { chooseOption, pickOutcome, type ChoiceResult, type LifeChange } from "./resolve";
-import { lifeWeek, personInfo, remember, roleOf } from "./people";
+import { lifeWeek, personInfo, remember, roleOf, tidy } from "./people";
 import { fillLine } from "./text";
 import { breakPromise, keepPromise, makePromise, openPromises, promiseDef } from "./promises";
 
@@ -247,6 +248,18 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
   // 2. Promises: a reminder a week out, broken once the date is gone.
   c = promiseClock(c, (n) => notices.push(n), opts.rng);
   let life = cloneLife(lifeOf(c));
+  // The stories meet people too: keep the remembered list inside its cap (people.ts tidy).
+  if (Object.keys(life.people).length > PEOPLE_CAP) tidy(life, c, now);
+  // A finished story (with nothing still scheduled) keeps only what the quest log shows: its
+  // ending, its owner, and the weeks its beats played. Sixty stories stay small in the save.
+  for (const [id, run] of Object.entries(life.arcs ?? {})) {
+    const arc = arcById(id);
+    if (!arc?.start || !run.done || run.o || Object.keys(run.s).length || !Object.keys(run.v).length) continue;
+    run.v = {}; run.k = {};
+    run.cast = run.cast[arc.owner] ? { [arc.owner]: run.cast[arc.owner] } : {};
+    for (const b of Object.keys(run.f)) run.f[b] = run.f[b].slice(-1);
+    delete run.last;
+  }
   // 3. A match objective (after a match): met, or one match fewer to do it in.
   if (moment === "after-match" && life.objs?.length) {
     const keep: ObjectiveRun[] = [];
@@ -444,6 +457,8 @@ export function playEnding(c0: CareerState, b: BeatLive, endId: string, opts: Pl
   c = result.career;
   const extras: ArcExtras = { promisesKept: [], promisesBroken: [], next: "", dots: [] };
   c = applyArcOutcome(c, b, outcome, endId, now, opts, extras, result.changes);
+  // A story's ending can meet someone new: keep the remembered list inside its cap.
+  if (Object.keys(lifeOf(c).people).length > PEOPLE_CAP) { const l = cloneLife(lifeOf(c)); tidy(l, c, now); c = { ...c, life: l }; }
   const q = questLog(c).find((x) => x.arc === b.arc);
   extras.next = q?.next ?? "";
   extras.dots = q?.dots ?? [];

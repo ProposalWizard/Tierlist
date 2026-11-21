@@ -217,21 +217,39 @@ export function fade(list: LifeMemory[], now: number): LifeMemory[] {
 }
 
 /**
- * Once a week: fade memories, and drop people who have gone and left nothing
- * strong behind (design 2.3: "his record is kept if he has any strength-2
- * memory"). Never more than PEOPLE_CAP records.
+ * Who is remembered (story batch 1, 21 Nov 2026). Once a week, and whenever the
+ * stories push past PEOPLE_CAP:
+ *  1. Memories past their time fade.
+ *  2. A team-mate who has left is forgotten unless he still MATTERS: he is in a
+ *     story that is still open, a promise to him is still open, or he left a strong
+ *     feeling (bond 50+ or grudge 40+) with a memory of strength 2 or more. A
+ *     minor team-mate is forgotten once his story closes.
+ *     (Was: any strength-2 memory kept him, design 2.3. With 60 stories writing
+ *     strength-3 memories that kept every old team-mate for ever.)
+ *  3. Over PEOPLE_CAP, the weakest go first: never someone in an open story or owed
+ *     a promise; a role (family, staff, press) before a team-mate only when it has
+ *     nothing at all.
  */
 export function tidy(life: LifeState, c: CareerState, now: number): void {
   const inSquad = new Set((c.squad ?? []).map((p) => p.id));
+  const live = new Set<string>();
+  for (const run of Object.values(life.arcs ?? {})) if (!run.done || Object.keys(run.s).length) for (const id of Object.values(run.cast)) if (id) live.add(id);
+  for (const pr of life.promises ?? []) if (pr.st === "open") live.add(pr.to);
   for (const [id, p] of Object.entries(life.people)) {
     p.m = fade(p.m, now);
-    if (roleOf(id) === "teammate" && !inSquad.has(id) && !p.m.some(([, , s]) => s >= 2)) delete life.people[id];
+    if (roleOf(id) !== "teammate" || inSquad.has(id) || live.has(id)) continue;
+    const strong = (p.b >= 50 || p.g >= 40) && p.m.some(([, , s]) => s >= 2);
+    if (!strong) delete life.people[id];
   }
   life.squad = fade(life.squad, now);
   life.self = fade(life.self, now);
   const ids = Object.keys(life.people);
   if (ids.length > PEOPLE_CAP) {
-    const score = (id: string) => { const p = life.people[id]; return p.m.reduce((a, [, , s]) => a + s * 10, 0) + Math.abs(p.b - 30) + p.g + (inSquad.has(id) ? 50 : 0) + (roleOf(id) !== "teammate" ? 1000 : 0); };
+    const score = (id: string) => {
+      const p = life.people[id];
+      const has = p.m.reduce((a, [, , s]) => a + s * 10, 0) + Math.abs(p.b - 30) + p.g;
+      return has + (live.has(id) ? 10_000 : 0) + (inSquad.has(id) ? 50 : 0) + (roleOf(id) !== "teammate" && (has > 10 || p.m.length) ? 1000 : 0);
+    };
     ids.sort((a, b) => score(a) - score(b));
     for (const id of ids.slice(0, ids.length - PEOPLE_CAP)) delete life.people[id];
   }
