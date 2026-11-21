@@ -51,7 +51,8 @@ function packedDir() {
   return c.find((d) => fs.existsSync(path.join(d, "index.html")));
 }
 const save = JSON.parse(execFileSync("npx", ["tsx", path.join(PHONE, "tools/look/make-save.mts")], { cwd: REPO, encoding: "utf8", maxBuffer: 64 << 20 }).trim().split("\n").pop());
-const servers = { packed: await serve(packedDir()), next: await serve(WEB_OUT) };
+// "dev": the website itself in dev mode (npm run dev), the packed app's own code with its test hooks on (window.__starMatch).
+const servers = { packed: await serve(packedDir()), next: await serve(WEB_OUT), dev: { url: (process.env.PT_DEV_URL || "http://localhost:3100") + "/road-to-the-golden-ball" } };
 const browser = await chromium.launch({
   args: ["--use-gl=swiftshader", "--enable-unsafe-swiftshader", "--autoplay-policy=no-user-gesture-required"],
 });
@@ -115,7 +116,9 @@ async function mouseDrag(e, { x1, y1, x2, y2, steps = 14, ms = 18, hold = 0, sho
 async function nap(e, ms) { if (e.clock) await e.page.clock.runFor(ms); else await e.page.waitForTimeout(ms); }
 
 const H = {
-  async open({ app, name, w = 412, h = 915, save: withSave = false, video = true, url = "/", clock = false }) {
+  async open({ app, name, w = 412, h = 915, save: withSave = false, saveFile = null, video = true, url = "/", clock = false }) {
+    const kvAll = saveFile ? JSON.parse(fs.readFileSync(saveFile, "utf8").trim().split("\n").pop()) : save; if (saveFile) withSave = true;
+    if (app === "dev" && url === "/") url = "";
     if (pages.has(name)) await H.close({ name });
     const ctx = await browser.newContext({
       viewport: { width: w, height: h }, deviceScaleFactor: 1, isMobile: true, hasTouch: true,
@@ -126,7 +129,7 @@ const H = {
         if (sessionStorage.getItem("pt-seeded")) return;
         localStorage.clear(); for (const [k, v] of Object.entries(kv)) localStorage.setItem(k, v);
         sessionStorage.setItem("pt-seeded", "1");
-      }, save[app]);
+      }, kvAll[app === "dev" ? "packed" : app]);
     }
     const page = await ctx.newPage();
     const errors = [];
@@ -147,7 +150,7 @@ const H = {
     if (v) { const src = await v.path(); const dst = path.join(MEDIA, `${name}.webm`); fs.renameSync(src, dst); return { video: dst, errors: e.errors }; }
     return { errors: e.errors };
   },
-  async shot({ name, file }) { const f = path.join(MEDIA, `${file || name}.png`); await pages.get(name).page.screenshot({ path: f }); return { file: f }; },
+  async shot({ name, file }) { const f = path.join(MEDIA, `${file || name}.jpg`); await pages.get(name).page.screenshot({ path: f, type: "jpeg", quality: 80 }); return { file: f }; },
   async text({ name }) { return { text: await pages.get(name).page.evaluate(() => document.body.innerText) }; },
   async tap({ name, x, y, wait = 600 }) { const e = pages.get(name); await e.page.touchscreen.tap(x, y); await nap(e, wait); return { ok: true }; },
   async mclick({ name, x, y, wait = 600 }) { const e = pages.get(name); await e.page.mouse.click(x, y); await e.page.waitForTimeout(wait); return { ok: true }; },
@@ -175,7 +178,7 @@ const H = {
   async wait({ name, ms }) { await nap(pages.get(name), ms); return { ok: true }; },
   async burst({ name, n = 6, every = 250, file }) {
     const p = pages.get(name).page; const files = [];
-    for (let i = 0; i < n; i++) { const f = path.join(MEDIA, `${file}-${String(i).padStart(2, "0")}.png`); await p.screenshot({ path: f }); files.push(f); await p.waitForTimeout(every); }
+    for (let i = 0; i < n; i++) { const f = path.join(MEDIA, `${file}-${String(i).padStart(2, "0")}.jpg`); await p.screenshot({ path: f, type: "jpeg", quality: 80 }); files.push(f); await p.waitForTimeout(every); }
     return { files };
   },
   /** Step time by hand (Playwright's clock: Date, timers and animation frames in the page): op install | pause | run {ms} | resume. */
@@ -190,11 +193,13 @@ const H = {
   /** n stills, time stepped by `ms` between each (needs clock install + pause first): a true flip book. */
   async steps({ name, n = 10, ms = 50, file }) {
     const p = pages.get(name).page; const files = [];
-    for (let i = 0; i < n; i++) { await p.clock.runFor(ms); const f = path.join(MEDIA, `${file}-${String(i).padStart(2, "0")}.png`); await p.screenshot({ path: f }); files.push(f); }
+    for (let i = 0; i < n; i++) { await p.clock.runFor(ms); const f = path.join(MEDIA, `${file}-${String(i).padStart(2, "0")}.jpg`); await p.screenshot({ path: f, type: "jpeg", quality: 80 }); files.push(f); }
     return { files };
   },
   /** Slow (or speed up) the page's CSS animations (the packed app's pop-ups): rate 0.1 = ten times slower. */
   async rate({ name, rate = 1 }) { await pages.get(name).cdp.send("Animation.enable"); await pages.get(name).cdp.send("Animation.setPlaybackRate", { playbackRate: rate }); return { ok: true }; },
+  /** A script in THIS process: js is an async function body given (page, e, H, MEDIA); returns its value. */
+  async run({ name, js }) { const e = pages.get(name); const fn = new Function("page", "e", "H", "MEDIA", `return (async () => { ${js} })()`); return { v: await fn(e?.page, e, H, MEDIA) }; },
   async errors({ name }) { return { errors: pages.get(name).errors }; },
   async list() { return { pages: [...pages.keys()] }; },
 };
