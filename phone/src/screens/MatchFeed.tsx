@@ -142,6 +142,8 @@ function KickOffCard({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
 export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const lines = d.log.slice(-40);
+  // The tap that opened this screen (KICK OFF, a chance ending) must not also skip the commentary.
+  const shownAt = useRef(Date.now());
   const energy = Math.round(d.liveEnergyAt(d.matchMinute));
   const modes: EnergyMode[] = ["low", "medium", "high"];
   const minute = minuteLabel(d.matchMinute, d.ADDED, d.MATCH_DURATION);
@@ -154,7 +156,7 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
         // The bottom stack grows (coming on, half time): stay on the latest line, clear of the playstyle buttons.
         onLayout={() => scroll.current?.scrollToEnd({ animated: false })}>
         {/* A tap on the commentary empties the queue in one go (MatchCommentary onSkip). */}
-        <Pressable onPress={() => d.skipFeed()} disabled={!d.canSkipFeed} style={{ flexGrow: 1 }}>
+        <Pressable onPress={() => { if (Date.now() - shownAt.current > 450) d.skipFeed(); }} disabled={!d.canSkipFeed} style={{ flexGrow: 1 }}>
           {/* While the kick-off card shows, its "KICK OFF" replaces the feed's own kick-off row (MatchCommentary: lines ≤ 1). */}
           {d.log.length <= 1
             ? <KickOffCard d={d} kits={kits} />

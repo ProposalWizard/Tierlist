@@ -18,7 +18,7 @@
  * another position, the manager's "Team news" when dropped, the weather line.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, Text, View, type ViewStyle } from "react-native";
+import { Pressable, Text, View, useWindowDimensions, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withDelay, withRepeat, Easing } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { CareerState, Fixture, LeagueResult } from "@/lib/star/types";
@@ -225,6 +225,9 @@ function Lineup({ career, matchday, clubKits, competition, date, results, canSim
   const managers: Record<string, string> = career.manager ? { [career.player.club]: career.manager.name } : {};
   const [compHead, ...rest] = competition.split(" · ");
   const compTail = rest.join(" · ");
+  // A long competition name on a narrow phone: smaller, tighter letters, so the round stays on the line.
+  const winW = useWindowDimensions().width;
+  const chipTight = competition.length > 20 && winW < 400;
   const [showSubs, setShowSubs] = useState(false);
   // "Play as" (LineupIntro's picker): your own position in this shape, and the others the shape offers.
   const [picking, setPicking] = useState(false);
@@ -284,7 +287,7 @@ function Lineup({ career, matchday, clubKits, competition, date, results, canSim
             <View style={{ flex: 1, alignItems: "center" }}>
               {/* One line at every width (VersusScreen's chip): the words shrink before they wrap. */}
               <View style={{ maxWidth: "100%", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" }}>
-                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: "rgba(255,255,255,0.8)", fontSize: 9.5, fontWeight: "900", letterSpacing: 1.2, textAlign: "center" }}>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: "rgba(255,255,255,0.8)", fontSize: chipTight ? 8 : 9.5, fontWeight: "900", letterSpacing: chipTight ? 0.3 : 1.2, textAlign: "center" }}>
                   ⚽ {compHead.toUpperCase()}
                   {compTail ? <Text style={{ color: "#fcd34d" }}><Text style={{ color: "rgba(255,255,255,0.3)" }}> · </Text>{compTail.toUpperCase()}</Text> : null}
                 </Text>
@@ -293,7 +296,7 @@ function Lineup({ career, matchday, clubKits, competition, date, results, canSim
             <View style={{ width: 58 }} />
           </View>
           {/* ⏩ and ⚙, mirroring Back */}
-          <View style={{ position: "absolute", right: 8, top: 10, gap: 6 }}>
+          <View style={{ position: "absolute", right: 8, top: 10, gap: 6, zIndex: 6 }}>
             {canSim && <Square onPress={() => { hold(); onSim(); }} edge="rgba(125,211,252,0.55)"><Text style={{ color: "#e0f2fe", fontSize: 14 }}>⏩</Text></Square>}
             <Square onPress={() => { hold(); setGear(true); }} edge="rgba(255,255,255,0.45)"><Text style={{ color: "#fff", fontSize: 16 }}>⚙</Text></Square>
           </View>
