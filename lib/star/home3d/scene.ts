@@ -140,20 +140,36 @@ export function openCamYaw(px: number, pz: number, yaw: number, want: number, w2
  * by, up near the ceiling, looking over him into the room, so the room reads and he stands in the
  * lower third, never filling the frame.
  */
-export function arrivalShot(door: { x: number; z: number; nx: number; nz: number }, H: number, w2: number, d2: number): { cam: [number, number, number]; look: [number, number, number]; fov: number } {
+export function arrivalShot(door: { x: number; z: number; nx: number; nz: number }, H: number, w2: number, d2: number, you?: { x: number; z: number }, free?: (x: number, z: number) => boolean): { cam: [number, number, number]; look: [number, number, number]; fov: number } {
   // (21 Nov 2026: the old shot stood just outside the doorway at head height, straight behind him: in a
   // kitchen or a garage his back filled the frame and the island or a car hid the room.) Now: inside,
-  // in the corner beside the door he came in by, up near the ceiling, looking down across the room,
-  // so the room reads and he (2 to 2.6 m in) stands in the lower third, nothing tall in front of him.
+  // in a corner beside the door he came in by, up near the ceiling, looking down past him into the
+  // room, so the room reads and he stands in the lower part of the frame. Of the two corners, the one
+  // whose line down to him is clear of furniture (a car, an island) and nearer the wall's middle.
   const tx = -door.nz, tz = door.nx; // along the door's wall
-  const along = door.x * tx + door.z * tz;
-  const s = along > 0 ? -1 : 1; // towards the middle of that wall: the wider side
-  const off = 1.2; // along the wall from the door (kept inside the room below)
   const clamp = (v: number, m: number) => Math.max(-m + 0.3, Math.min(m - 0.3, v));
-  const cx = clamp(door.x + door.nx * 0.3 + tx * s * off, w2), cz = clamp(door.z + door.nz * 0.3 + tz * s * off, d2);
+  const camY = Math.max(2.1, H - 0.25);
   const deep = (Math.abs(door.nx) > 0.5 ? w2 : d2) * 2; // the room's depth from this door
-  const lx = door.x + door.nx * deep * 0.62 - tx * s * 0.45, lz = door.z + door.nz * deep * 0.62 - tz * s * 0.45;
-  return { cam: [cx, Math.max(2.1, H - 0.25), cz], look: [clamp(lx, w2), 0.55, clamp(lz, d2)], fov: 66 };
+  const me = you ?? { x: door.x + door.nx * 2.2, z: door.z + door.nz * 2.2 };
+  let best: { cam: [number, number, number]; s: number; score: number } | null = null;
+  for (const s of [1, -1]) {
+    const cam: [number, number, number] = [clamp(door.x + door.nx * 0.3 + tx * s * 1.2, w2), camY, clamp(door.z + door.nz * 0.3 + tz * s * 1.2, d2)];
+    // the sight line from the camera down to his chest: count the low points over furniture
+    let blocked = 0;
+    for (let i = 1; i < 12; i++) {
+      const t = i / 12, y = camY + (1.2 - camY) * t;
+      if (y > 1.6) continue;
+      const x = cam[0] + (me.x - cam[0]) * t, z = cam[2] + (me.z - cam[2]) * t;
+      if (free && !free(x, z)) blocked++;
+    }
+    const along = (cam[0] - door.x) * tx + (cam[2] - door.z) * tz;
+    const score = -blocked * 10 + Math.abs(along) - Math.abs(cam[0] * tx + cam[2] * tz) * 0.3;
+    if (!best || score > best.score) best = { cam, s, score };
+  }
+  const { cam, s } = best!;
+  // look between him and the far side of the room: he sits low in the frame, the room above him
+  const rx = door.x + door.nx * deep * 0.62 - tx * s * 0.45, rz = door.z + door.nz * deep * 0.62 - tz * s * 0.45;
+  return { cam, look: [clamp(me.x * 0.45 + rx * 0.55, w2), 0.6, clamp(me.z * 0.45 + rz * 0.55, d2)], fov: 66 };
 }
 
 export interface HomeData {
@@ -383,7 +399,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     // night: the lamps off, a cold blue moonlight through the window, the view outside dark
     night: { hemi: 0.2, sun: 0.22, env: 0.22, hemiC: new THREE.Color("#8fa2d8"), sunC: new THREE.Color("#7f9ce0"), view: new THREE.Color("#141b30"), patch: 0, lamp: 0.08, exp: 0.82 },
     // the next morning: warm, low sun through the same window, the lamps off
-    morning: { hemi: 0.95, sun: 1.45, env: 0.85, hemiC: new THREE.Color("#ffd6a0"), sunC: new THREE.Color("#ffb468"), view: new THREE.Color("#ffdcae"), patch: 1.5, lamp: 0.2, exp: 1.04 },
+    // (the room's reflections are neutral white: turned down so the warm sky light shows)
+    morning: { hemi: 1.25, sun: 1.45, env: 0.5, hemiC: new THREE.Color("#ffc98e"), sunC: new THREE.Color("#ffb468"), view: new THREE.Color("#ffd8a6"), patch: 1.5, lamp: 0.2, exp: 1.04 },
   };
   let lightFrom: DayLight = LIGHTS.day, lightTo: DayLight = LIGHTS.day, lightK = 1;
   /** Painted things that follow the clock (roomBuild tags them: window views, skies, sun patches). */
@@ -550,7 +567,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   let dbgCam: { pos: [number, number, number]; look: [number, number, number] } | null = null;
   /** The room's opening shot, held until he moves (a room frames its hero: the garage's cars, the games room). */
   let lastIntroFov = false;
-  let intro: BuiltRoom["intro"] | null = room.intro ?? (opts.living && room.plan.doors[0] ? arrivalShot(room.plan.doors[0], room.h, room.w2, room.d2) : null);
+  let intro: BuiltRoom["intro"] | null = room.intro ?? (opts.living && room.plan.doors[0] ? arrivalShot(room.plan.doors[0], room.h, room.w2, room.d2, START, (x, z) => roomFree(room, x, z)) : null);
   const walker = new TapWalker();
   const marker = makeTapMarker(THREE, scene);
   let grid: WalkGrid | null = null;
@@ -686,7 +703,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     yaw = at.yaw; yawTurn.vel = 0; me.person.root.rotation.y = yaw;
     camYaw = openCamYaw(at.x, at.z, yaw + Math.PI, CS.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap, CS.swing); orb.reset(); first = true;
     // (a living house's garage: from its door, the row of cars and him in view; its own low shot sat on a bonnet)
-    intro = (opts.living && room.id === "garage" ? null : room.intro) ?? (opts.living && door ? arrivalShot(door, room.h, room.w2, room.d2) : null);
+    intro = (opts.living && room.id === "garage" ? null : room.intro) ?? (opts.living && door ? arrivalShot(door, room.h, room.w2, room.d2, at, (x, z) => roomFree(room, x, z)) : null);
     meBlob.position.set(at.x, 0.012, at.z);
     try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* first use */ }
     shadowDirty = true;

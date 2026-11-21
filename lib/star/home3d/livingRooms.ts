@@ -491,7 +491,7 @@ export function buildBathroom(c: Ctx, _h: LivingHooks) {
   }));
   X.things[X.things.length - 1].slots[0].lift = 0.1;
   // the bath along the north wall (the grand tiers), else a towel rail there
-  if (plan.w > 3.9) {
+  if (plan.w > 3.85) { // the villa (3.89 m) and the estate; it missed the villa by a centimetre before
     const ts = Math.min(1, (plan.w - 1.4) / 2.4), tbx = -W2 + 1.22, tbz = -D2 + 0.58;
     F.put("bathtub", tbx, tbz, 0, { s: ts });
     smallPlant(c, -W2 + 0.25, 0.84, -D2 + 0.25);
