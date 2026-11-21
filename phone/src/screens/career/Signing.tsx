@@ -40,6 +40,17 @@ const SIG = { x: 132, y: 134, w: 80, h: 22 };
 const REACH = { elbow: [171, 140] as P, hand: [196, 150] as P };
 const ZOOM_MS = 450, SIGN_MS = 1200, OUT_MS = 450, CHEER_MS = 500;
 /** TrialReward.tsx SIGNATURE_D: the hand-written name. */
+/** The pen (SigningScene.tsx: a dark barrel with a gold clip and a nib, leaning 18° right), drawn, not an emoji. */
+function Pen() {
+  return (
+    <View style={{ width: 16, height: 36, transform: [{ rotate: "18deg" }], transformOrigin: "bottom" } as ViewStyle}>
+      <View style={{ position: "absolute", left: 5, top: 0, width: 6, height: 27, borderRadius: 2.5, backgroundColor: "#111827", boxShadow: "1px 3px 2px rgba(0,0,0,0.45)" } as ViewStyle} />
+      <View style={{ position: "absolute", left: 6.3, top: 1, width: 2, height: 22, borderRadius: 1, backgroundColor: "#d4af37", opacity: 0.85 }} />
+      <View style={{ position: "absolute", left: 5, top: 27, width: 0, height: 0, borderLeftWidth: 3, borderRightWidth: 3, borderTopWidth: 9, borderLeftColor: "transparent", borderRightColor: "transparent", borderTopColor: "#1f2937" }} />
+    </View>
+  );
+}
+
 const SIGNATURE_D = "M12 44 C 26 12, 38 12, 44 30 C 50 48, 58 48, 66 26 C 72 10, 84 14, 86 34 C 88 50, 100 48, 108 32 C 116 16, 130 18, 132 36 C 134 52, 148 50, 158 30 C 168 10, 184 14, 190 32 C 196 50, 212 48, 224 30 C 234 16, 250 16, 262 34 C 268 43, 278 46, 288 40";
 const CLUB_SIG_D = "M10 40 C 30 10, 50 50, 70 26 S 110 18, 130 36 S 170 44, 200 22 S 250 30, 290 26";
 
@@ -237,7 +248,7 @@ export function SigningMoment({ career, club, managerName, onDone, terms, number
                 </View>
                 {/* the pen, travelling along your line */}
                 {(beat === "zoom" || beat === "sign") && (
-                  <Text style={{ position: "absolute", left: 12 + SIG.x - 14 + (beat === "sign" ? ink * (SIG.w - 4) : 0), top: SIG.y - 26, fontSize: 22, transform: [{ rotate: "-10deg" }] }}>🖊️</Text>
+                  <View pointerEvents="none" style={{ position: "absolute", left: 12 + SIG.x - 4 + (beat === "sign" ? ink * (SIG.w - 4) : 0), top: SIG.y - 30 }}><Pen /></View>
                 )}
               </View>
             </Animated.View>

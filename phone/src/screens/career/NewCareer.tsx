@@ -111,7 +111,7 @@ export function NewCareer({ onDone, onBack }: { onDone: (p: StarPlayer) => void;
                 ) : (
                   <View>
                     <Field value={search} onChange={setSearch} placeholder={`Search ${ALL_NATIONALITIES.length} nationalities…`} max={30} />
-                    <ScrollView nestedScrollEnabled style={{ marginTop: 6, maxHeight: 176, borderRadius: 8, backgroundColor: "rgba(31,41,55,0.6)" }} keyboardShouldPersistTaps="handled">
+                    <ScrollView nestedScrollEnabled contentOffset={{ x: 0, y: search ? 0 : Math.max(0, list.indexOf(nationality)) * 35 }} style={{ marginTop: 6, maxHeight: 176, borderRadius: 8, backgroundColor: "rgba(31,41,55,0.6)" }} keyboardShouldPersistTaps="handled">
                       {list.length === 0 && <Text style={{ color: "rgba(255,255,255,0.6)", textAlign: "center", padding: 12, fontSize: 12, fontWeight: "700" }}>No match.</Text>}
                       {list.map((n) => (
                         <Press key={n} onPress={() => { setNat(n); setSearch(""); setNatOpen(false); }}

@@ -80,12 +80,7 @@ export function SeasonAwardsScreen({ career, go }: { career: CareerState; go: (s
           </View>
         );
       })}
-      {stats.teamOfSeason.length > 0 && (
-        <Card>
-          <Label>Team of the Season</Label>
-          {stats.teamOfSeason.map((m, i) => <Row key={i} k={`${m.label ?? m.role} · ${m.name}`} v={shortClub(m.club)} color={m.isYou ? C.green : C.text} />)}
-        </Card>
-      )}
+      {stats.teamOfSeason.length > 0 && <TeamOfSeasonPitch career={career} team={stats.teamOfSeason} />}
       {(career.lastSeasonRecords?.length ?? 0) > 0 && (
         <Card tone={C.gold}>
           <Label>Your records broken</Label>
@@ -94,5 +89,43 @@ export function SeasonAwardsScreen({ career, go }: { career: CareerState; go: (s
       )}
       {career.lastWorld && <Btn kind="plain" label="🌍 Every league and cup" onPress={() => nav.go("season-review")} />}
     </Frame>
+  );
+}
+
+/** The Team of the Season on a pitch, 4-3-3 (SeasonAwardsScreen.tsx TeamOfSeasonPitch): each man's head, his club's crest, his name. */
+function TeamOfSeasonPitch({ career, team }: { career: CareerState; team: NonNullable<CareerState["lastSeasonAwardStats"]>["teamOfSeason"] }) {
+  const [w, setW] = useState(0);
+  const h = Math.round((w * 4) / 3);
+  const line = "rgba(255,255,255,0.3)";
+  return (
+    <View>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
+        <Text style={{ color: "rgba(252,211,77,0.9)", fontSize: 10, fontWeight: "900", letterSpacing: 1.1 }}>TEAM OF THE SEASON</Text>
+        <Text style={{ color: "#fff", fontSize: 9, fontWeight: "700" }}>4-3-3</Text>
+      </View>
+      <View onLayout={(e) => setW(Math.floor(e.nativeEvent.layout.width))} style={{ height: h || undefined, aspectRatio: h ? undefined : 0.75, borderRadius: 16, overflow: "hidden", backgroundColor: "#1a6d33", borderWidth: 1, borderColor: "rgba(255,255,255,0.12)" }}>
+        {Array.from({ length: 11 }, (_, k) => <View key={k} style={{ position: "absolute", left: 0, right: 0, top: `${k * 9}%`, height: "9%", backgroundColor: k % 2 ? "#1a6d33" : "#1f7a3a" }} />)}
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: "50%", height: 1, backgroundColor: line }} />
+        <View pointerEvents="none" style={{ position: "absolute", left: "38%", top: "43.5%", width: "24%", height: "13%", borderRadius: 999, borderWidth: 1, borderColor: line }} />
+        <View pointerEvents="none" style={{ position: "absolute", left: "24%", top: -1, width: "52%", height: "13%", borderWidth: 1, borderColor: line }} />
+        <View pointerEvents="none" style={{ position: "absolute", left: "24%", bottom: -1, width: "52%", height: "13%", borderWidth: 1, borderColor: line }} />
+        {w > 0 && team.map((m, i) => {
+          const kit = kitsOf(m.club, career.clubKits?.[m.club]).home;
+          const bw = w * 0.26;
+          return (
+            <View key={`${m.role}-${i}`} style={{ position: "absolute", left: m.x * w - bw / 2, top: m.y * h - 26, width: bw, alignItems: "center" }}>
+              <View>
+                <View style={{ width: 36, height: 36, borderRadius: 18, overflow: "hidden", borderWidth: 2, borderColor: m.isYou ? "#fcd34d" : "rgba(255,255,255,0.8)", backgroundColor: kit.shirt, alignItems: "center", justifyContent: "flex-end" }}>
+                  <PlayerHead id={m.isYou ? "you" : m.name} shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={32} skin={m.isYou ? skinToneHex(career.player.skinTone) : undefined} />
+                </View>
+                <View style={{ position: "absolute", right: -3, bottom: -2 }}><ClubCrest club={m.club} size={14} /></View>
+              </View>
+              <Text numberOfLines={1} style={{ marginTop: 2, color: m.isYou ? "#fcd34d" : "#fff", fontSize: 9, fontWeight: "900", textShadowColor: "rgba(0,0,0,0.95)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>{m.isYou ? "YOU" : m.name}</Text>
+              <Text numberOfLines={1} style={{ color: "#fff", fontSize: 7, fontWeight: "700", textShadowColor: "rgba(0,0,0,0.95)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>{shortClub(m.club)}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
   );
 }

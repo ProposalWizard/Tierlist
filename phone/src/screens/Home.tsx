@@ -49,6 +49,7 @@ import { trainingLeft } from "@/lib/star/week";
 import { loadLineup } from "@/lib/star/lineupStore";
 import { getCareer, setCareer } from "../game/store";
 import { useHomeFlow, useHomeIsShown, daysToNext } from "./career/Coach";
+import { RiseIn } from "./career/lookBits";
 import { UnlockPop, EnergyBackToast, ManagerChat, DugoutBanner, CaptainMoment, NeedsChip, DutyRow } from "./career/HomeMoments";
 
 /** The player's box shape (HomeHub FIG_ASPECT) and tallest size. */
@@ -126,8 +127,9 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
         onHelp={() => askTour(HELP_TOURS.home)}
         onSettings={() => nav.go("career-settings")}
         onStarPass={SCREENS["star-pass"] ? () => nav.go("star-pass") : undefined} />
-      <NextMatch career={career} next={next} />
-      <StatTiles career={career} />
+      {/* The next match and the four numbers rise in each time Home opens (HomeHub RiseIn). */}
+      <RiseIn index={0}><NextMatch career={career} next={next} /></RiseIn>
+      <RiseIn index={1}><StatTiles career={career} /></RiseIn>
       {duty ? <DutyRow duty={duty} onOpen={onLeague} /> : <LeagueStrip career={career} onOpen={onLeague} />}
 
       {/* You, centre stage (HomeHub HeroNew). */}
