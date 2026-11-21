@@ -15,7 +15,7 @@
  * The 3D shop is not in this app (its button is greyed, as the website greys
  * it where there is no 3D shop).
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Image, Modal, ScrollView, Text, View, type ImageSourcePropType, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Boot, CareerState, OwnedItem } from "@/lib/star/types";
@@ -23,9 +23,21 @@ import { KIB_CANS, kibCanPrice, kibCanEffectLabel, baseIdOf, type KibCan } from 
 import { hasBootDeal } from "@/lib/star/sponsorDeals";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
-import { fameGainFromBuying, isWornOut, itemLifeSeasons, fameOf } from "@/lib/star/fame";
+import { fameGainFromBuying, isWornOut, itemLifeSeasons, fameOf, fameLevel, nextFameLevel, ownedFame, OWNED_FAME_MAX } from "@/lib/star/fame";
+import { nextUpIndex } from "@/lib/star/shopNextItem";
+import { loadShopItemsView, saveShopItemsView } from "@/lib/star/shopItemsView";
+import { weeksOfWallet } from "@/lib/star/economy";
+import { HELP_TOURS, STORY_SHOP_TOUR } from "@/lib/star/tours";
+import { hasSeen, isOpen } from "@/lib/star/unlocks";
+import { isStory } from "@/lib/star/story";
 import { styleGroupOf, levelName, familyName, fameFromOwned, fameText, type StyleGroup } from "@/lib/star/lifestyleLevels";
 import { styleUnlockStar } from "@/lib/star/unlocks";
+import { installWebStorage } from "../../match/webStorage";
+import { SvgIcon, SHOP_BAR_ICON } from "../../world/SvgIcon";
+import { markSeenKeys } from "../../world/help";
+import { PointerTour, TourTarget } from "../../ui/tour";
+import { SCREENS } from "../../areas/registry";
+import { StoreSheet, PicBox, LevelLadder, GiveChips, SaveUp, GoldButton, GreyButton, ConfirmSheet, PurchaseMoment, weeksText, type Moment } from "./shopParts";
 import { starsNow } from "@/lib/star/starPoints";
 import { SHOP_TIERS } from "@/lib/star/economy";
 import { formatMoney, formatWallet } from "@/lib/star/money";
@@ -36,7 +48,7 @@ import { C } from "../../world/lookKit";
 import { AntonTabs, BackPill, BottomBar, CAN, FONT, LookButton } from "../../ui/look";
 import { SHOP_PIC, SHOP_PIC_3D } from "../../ui/look/worldPics";
 import { shopPic3d } from "@/lib/star/shopPicsLook";
-import { Btn, Note, rgba } from "../../world/ui";
+import { Note, rgba } from "../../world/ui";
 import { buyKib, drinkCan, buyBoot, buyBlackMarket, buyItem, bootsForSale, ownedLevelOf, STYLE_BASES, BOOT_ORDER, type Bought } from "../../world/shop";
 
 export type CatId = "cans" | "boots" | StyleGroup;
@@ -77,7 +89,9 @@ function picOf(cat: CatId, key: string, lv: number): ImageSourcePropType | null 
 type ItemsView = 1 | 3 | 5;
 type Tab = "shop" | "foryou" | "boots";
 
-interface Confirm { title: string; sub: string; price: number; verb: string; note?: string; black?: Boot; run: (lawyers: boolean) => Bought }
+interface Confirm { title: string; sub: string; price: number; verb: string; note?: string; black?: Boot; run: (lawyers: boolean) => Bought;
+  /** For the confirm sheet and the purchase moment (filled in by the screen). */
+  cat?: CatId; key?: string; level?: number; word?: string; momentTitle?: string; fx?: string }
 
 /** One item, worked out once for every way it is shown (list card, page, sheet). */
 interface ItemView {
@@ -112,7 +126,8 @@ function itemView({ career, cat, k, boots, level, onAsk, onUse }: {
     badges.push({ text: `×${have} owned`, color: "#60a5fa" });
     if (waiting) badges.push({ text: "Ready next match", color: C.gold });
     button = { label: career.money >= price ? "Buy" : "Not enough", price, disabled: career.money < price,
-      run: () => onAsk({ title: c.name, sub: kibCanEffectLabel(c), price, verb: "Buy", run: () => buyKib(career, c) }) };
+      run: () => onAsk({ title: c.name, sub: kibCanEffectLabel(c), price, verb: "Buy", run: () => buyKib(career, c),
+        cat, key: k, level: CAN_TIER[c.id], word: "+1 Can!", momentTitle: `${c.name} — ${kibCanEffectLabel(c)}`, fx: c.id === "basic" ? "fx-energy" : c.id === "premium" ? "fx-curve" : "fx-touch" }) };
     extra = { label: waiting ? "Ready" : "Use one", disabled: have === 0 || waiting || (!c.effect && (career.energy ?? 0) >= 100), run: () => onUse(c.id) };
   } else if (cat === "boots") {
     const list = boots.filter((b) => baseIdOf(b) === k).sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
@@ -135,6 +150,7 @@ function itemView({ career, cat, k, boots, level, onAsk, onUse }: {
       title: `${b.name} L${lv}`, sub: `+${b.power} power · +${b.technique} technique · ${b.matches} matches`,
       price: black ? blackMarketPrice(b.price) : b.price, verb: "Buy", note: "You put them on straight away.", black: black ? b : undefined,
       run: (lawyers) => (black ? buyBlackMarket(career, b, lawyers) : buyBoot(career, b)),
+      cat, key: k, level: lv, word: "Equipped!", momentTitle: `${b.name} L${lv} — ${b.matches} matches`, fx: b.extraTouch ? "fx-touch" : b.curve ? "fx-curve" : "fx-power",
     });
     button = banned
       ? { label: "Black market", price: blackMarketPrice(b.price), disabled: false, danger: true, run: () => onAsk(ask(true)) }
@@ -167,7 +183,8 @@ function itemView({ career, cat, k, boots, level, onAsk, onUse }: {
       : blocked ? { label: ownLv === lv ? "You own this one" : `You own level ${ownLv}`, disabled: true, run: () => {} }
       : { label: career.money >= it.price ? verb : "Not enough", price: it.price, disabled: career.money < it.price,
         run: () => onAsk({ title: levelName(it), sub: `${familyName(it)} · ${fameText(fameGainFromBuying(career.ownedItems, it))} fame`, price: it.price, verb,
-          note: mine && !worn ? `Replaces your ${levelName(mine)}.` : undefined, run: () => buyItem(career, it) }) };
+          note: mine && !worn ? `Replaces your ${levelName(mine)}.` : undefined, run: () => buyItem(career, it),
+            cat, key: k, level: lv, word: verb === "Upgrade" ? "Upgraded!" : verb === "Repair" ? "Repaired!" : "Yours!", momentTitle: levelName(it) }) };
   }
 
   return { cat, key: k, title, sub, level: lv, levels, pic: picOf(cat, k, lv), icon: SHOP_CATS.find((c) => c.id === cat)!.icon, stats, badges, button, extra, locked };
@@ -181,10 +198,9 @@ function Pic({ v, size, grey }: { v: ItemView; size: number; grey?: boolean }) {
 }
 
 /** 5 items: one card per row (ShowroomShop ListCard): picture, name, price. Tap to open. */
-function ListCard({ v, accent, on, onTap }: { v: ItemView; accent: string; on: boolean; onTap: () => void }) {
+function ListCard({ v, accent, on, next, own, onTap }: { v: ItemView; accent: string; on: boolean; next: boolean; own: string | null; onTap: () => void }) {
   const locked = v.locked !== null;
   const tier = v.levels > 1 ? tierColour(v.level) : accent;
-  const own = v.badges.find((b) => /^Owned|^Equipped/.test(b.text))?.text ?? null;
   return (
     <Press onPress={onTap} style={[{ height: 126, flexDirection: "row", gap: 12, padding: 8, borderRadius: 16, opacity: locked ? 0.6 : 1,
       backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03))" } as ViewStyle,
@@ -195,7 +211,12 @@ function ListCard({ v, accent, on, onTap }: { v: ItemView; accent: string; on: b
         {locked && <Text style={{ position: "absolute", fontSize: 30 }}>🔒</Text>}
       </View>
       <View style={{ flex: 1, minWidth: 0, justifyContent: "center", gap: 3 }}>
-        {own ? <Text style={{ alignSelf: "flex-start", color: "#a7f3d0", backgroundColor: "rgba(6,95,70,0.9)", fontSize: 9.5, fontWeight: "900", letterSpacing: 0.6, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: "hidden", textTransform: "uppercase" }}>{own}</Text> : null}
+        {next || own ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            {next ? <Text style={{ color: "#05080f", backgroundColor: accent, fontSize: 9.5, lineHeight: 13, fontWeight: "900", letterSpacing: 0.3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, overflow: "hidden", textTransform: "uppercase" }}>Next up</Text> : null}
+            {own ? <Text style={{ color: "#a7f3d0", backgroundColor: "rgba(6,95,70,0.9)", fontSize: 9.5, lineHeight: 13, fontWeight: "900", letterSpacing: 0.3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, overflow: "hidden", textTransform: "uppercase" }}>{own}</Text> : null}
+          </View>
+        ) : null}
         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 19, lineHeight: 24 }}>{v.title}</Text>
         <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.7)", fontSize: 11.5, fontWeight: "700" }}>{v.sub}</Text>
         {locked ? (
@@ -218,12 +239,12 @@ function ListCard({ v, accent, on, onTap }: { v: ItemView; accent: string; on: b
  * category and where you are (CANS · 1/3), the next category, the name in
  * Anton, what it gives, Use one and Buy.
  */
-function Pages({ items, width, horizontal, narrow, accentOf, view, onOpen, nextCat }: {
+function Pages({ items, width, horizontal, narrow, accentOf, view, onOpen, nextCat, startAt = 0 }: {
   items: { cat: CatId; key: string }[]; width: number; horizontal: boolean; narrow?: boolean;
-  accentOf: (c: CatId) => string; view: (c: CatId, k: string) => ItemView; onOpen: (c: CatId, k: string) => void; nextCat?: string;
+  accentOf: (c: CatId) => string; view: (c: CatId, k: string) => ItemView; onOpen: (c: CatId, k: string) => void; nextCat?: string; startAt?: number;
 }) {
   const [h, setH] = useState(0);
-  const [at, setAt] = useState(0);
+  const [at, setAt] = useState(startAt);
   const step = horizontal ? width : h;
   return (
     <View style={{ flex: 1 }} onLayout={(e) => setH(e.nativeEvent.layout.height)}>
@@ -235,6 +256,7 @@ function Pages({ items, width, horizontal, narrow, accentOf, view, onOpen, nextC
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}
           pagingEnabled
+          initialScrollIndex={startAt > 0 && startAt < items.length ? startAt : undefined}
           onMomentumScrollEnd={(e) => setAt(Math.round((horizontal ? e.nativeEvent.contentOffset.x : e.nativeEvent.contentOffset.y) / Math.max(1, step)))}
           getItemLayout={(_, i) => ({ length: step, offset: step * i, index: i })}
           renderItem={({ item, index }) => {
@@ -325,60 +347,201 @@ function BuyPill({ b }: { b: ItemView["button"] }) {
   );
 }
 
-/** The level pips (ShowroomShop Pips): one bar per level, coloured up to the one shown; tap one to see it. */
-function Pips({ level, of, onPick }: { level: number; of: number; onPick: (lv: number) => void }) {
-  if (of <= 1) return null;
+/** What the phone opens: the apps you get, one line each (StyleShop.tsx PhoneOpens). */
+const PHONE_APPS: { icon: string; name: string; what: string; bg: [string, string] }[] = [
+  { icon: "💬", name: "Social", what: "Fans and the press react to you", bg: ["#34d399", "#047857"] },
+  { icon: "💌", name: "Messages", what: "Your boss, agent and family", bg: ["#f472b6", "#e11d48"] },
+  { icon: "🛒", name: "App Store", what: "More apps as you go up", bg: ["#60a5fa", "#1d4ed8"] },
+];
+function PhoneOpens() {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center" }}>
-      {Array.from({ length: of }, (_, i) => (
-        <Press key={i} onPress={() => onPick(i + 1)} style={{ height: 26, justifyContent: "center", paddingHorizontal: 3 }}>
-          <View style={{ width: 22, height: i + 1 === level ? 9 : 7, borderRadius: 5, backgroundColor: i < level ? tierColour(i + 1) : "rgba(255,255,255,0.2)" }} />
-        </Press>
-      ))}
+    <View style={{ marginTop: 8, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.05)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", padding: 8 }}>
+      <Text style={{ marginBottom: 6, color: "#f0abfc", fontSize: 10, fontWeight: "900", letterSpacing: 1.6 }}>WHAT YOU GET</Text>
+      <View style={{ flexDirection: "row", gap: 6 }}>
+        {PHONE_APPS.map((a) => (
+          <View key={a.name} style={{ flex: 1, alignItems: "center" }}>
+            <View style={{ width: 44, height: 44, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundImage: `linear-gradient(160deg, ${a.bg[0]}, ${a.bg[1]})` } as ViewStyle}><Text style={{ fontSize: 22 }}>{a.icon}</Text></View>
+            <Text style={{ marginTop: 4, color: "#fff", fontSize: 11, lineHeight: 14, fontWeight: "900" }}>{a.name}</Text>
+            <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 9.5, lineHeight: 12, fontWeight: "700", textAlign: "center" }}>{a.what}</Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
-/** The item's sheet: big picture, the level pips, what it gives, Buy. */
-function DetailSheet({ v, accent, catLabel, onLevel, onClose }: { v: ItemView; accent: string; catLabel: string; onLevel: (lv: number) => void; onClose: () => void }) {
-  const inset = useSafeAreaInsets();
+/**
+ * The item's sheet (ShowroomShop DetailSheet): the picture in its lit box, the name, the
+ * trophy level ladder with prices, three "what it gives" tiles, the save-up box when you
+ * can't pay yet, and one full-width button. A can: its effect in big words, three tiles,
+ * the wage note, Use one and Buy.
+ */
+function DetailSheet({ v, career, boots, onLevel, onClose }: { v: ItemView; career: CareerState; boots: Boot[]; onLevel: (lv: number) => void; onClose: () => void }) {
+  const pic = <Pic v={v} size={220} grey={v.locked !== null} />;
+  if (v.cat === "cans") {
+    const c = KIB_CANS.find((x) => x.id === v.key)!;
+    const price = kibCanPrice(c, career.contract.wage);
+    const have = career.kibCans[c.id] ?? 0;
+    return (
+      <StoreSheet open onClose={onClose} title={c.name} accent="#fb923c">
+        <PicBox lv={CAN_TIER[c.id]}><View style={{ height: "88%", aspectRatio: 0.55 }}>{pic}</View></PicBox>
+        <Text style={{ marginTop: 8, color: "#fff", fontFamily: FONT.display, fontSize: 20, lineHeight: 26, textAlign: "center" }}>{kibCanEffectLabel(c)}</Text>
+        <View style={{ marginTop: 8 }}><GiveChips items={[
+          { label: "You have", value: `×${have}`, color: "#93c5fd" },
+          { label: c.effect ? "For" : "Energy", value: c.effect ? "Next match" : `+${c.restore}`, color: "#fdba74" },
+          { label: "Energy now", value: `${Math.round(career.energy ?? 0)}`, color: "#ffffff" },
+        ]} /></View>
+        <Text style={{ marginTop: 8, color: "rgba(255,255,255,0.8)", fontSize: 11, lineHeight: 15, fontWeight: "700" }}>Cans cost a slice of your weekly wage, so they stay worth something as you go up.</Text>
+        <View style={{ marginTop: 12, flexDirection: "row", gap: 8 }}>
+          <GreyButton style={{ flex: 1 }} disabled={!v.extra || v.extra.disabled} label={v.extra?.label ?? "Use one"} onPress={() => v.extra?.run()} />
+          <GoldButton style={{ flex: 1.6 }} disabled={career.money < price} label={career.money < price ? "Not enough" : `Buy ★${formatMoney(price)}`} onPress={v.button.run} />
+        </View>
+      </StoreSheet>
+    );
+  }
+  if (v.cat === "boots") {
+    const levels = boots.filter((b) => baseIdOf(b) === v.key).sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+    const b = levels.find((x) => x.level === v.level) ?? levels[0];
+    const lv = b.level ?? 1;
+    const cur = career.currentBoot;
+    const wearing = baseIdOf(cur);
+    const mineLv = wearing === v.key ? cur.level ?? 0 : 0;
+    const mineB = levels.find((x) => x.level === mineLv);
+    const banned = !!v.button.danger;
+    const can = career.money >= b.price;
+    return (
+      <StoreSheet open onClose={onClose} title={b.name} accent={tierColour(lv)}>
+        <PicBox lv={lv}>{pic}</PicBox>
+        <View style={{ marginTop: 4, alignItems: "center" }}>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 22, lineHeight: 28 }}>{b.name} <Text style={{ color: tierColour(lv) }}>L{lv}</Text></Text>
+          <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, lineHeight: 15, fontWeight: "900", letterSpacing: 2, textTransform: "uppercase" }}>{rungName(lv)} level{banned ? " · banned by the FA" : ""}</Text>
+        </View>
+        <LevelLadder selected={lv} onPick={onLevel} rungs={levels.map((x) => ({ level: x.level ?? 1, price: x.price, owned: wearing === v.key && (x.level ?? 0) === mineLv }))} />
+        <View style={{ marginTop: 8 }}><GiveChips items={[
+          { label: "Power", value: `+${b.power}`, delta: mineB && b.power > mineB.power ? `▲ ${b.power - mineB.power} on yours` : undefined, color: "#6ee7b7" },
+          { label: "Technique", value: `+${b.technique}`, delta: mineB && b.technique > mineB.technique ? `▲ ${b.technique - mineB.technique} on yours` : undefined, color: "#6ee7b7" },
+          { label: "Matches", value: `${b.matches}`, color: "#fde68a" },
+        ]} /></View>
+        {b.curve ? <View style={{ marginTop: 8, borderRadius: 4, backgroundColor: "rgba(14,165,233,0.15)", borderWidth: 1, borderColor: "rgba(56,189,248,0.4)", padding: 8 }}><Text style={{ color: "#e0f2fe", fontSize: 11.5, lineHeight: 16, fontWeight: "700" }}>Swipe while a shot is in the air to bend, lift or dip it.</Text></View> : null}
+        {b.extraTouch ? <View style={{ marginTop: 8, borderRadius: 4, backgroundColor: "rgba(217,70,239,0.15)", borderWidth: 1, borderColor: "rgba(232,121,249,0.4)", padding: 8 }}><Text style={{ color: "#fae8ff", fontSize: 11.5, lineHeight: 16, fontWeight: "700" }}>Touch Mode: after you strike it, chase it down for a second touch.</Text></View> : null}
+        <Text style={{ marginTop: 8, paddingHorizontal: 2, color: "rgba(255,255,255,0.75)", fontSize: 10.5, lineHeight: 15, fontWeight: "700" }}>{weeksText(weeksOfWallet(b.price / b.matches, career.contract.wage))} of income per match</Text>
+        <View style={{ marginTop: 8 }}>
+          {banned ? <GoldButton danger label={`Buy from shady guys ★${formatMoney(blackMarketPrice(b.price))}`} onPress={v.button.run} />
+            : <GoldButton disabled={!can} label={can ? `Buy now ★${formatMoney(b.price)}` : "Not enough money"} onPress={v.button.run} />}
+        </View>
+      </StoreSheet>
+    );
+  }
+  const levels = STYLE_BASES.get(v.key)!;
+  const it = levels.find((l) => l.level === v.level) ?? levels[0];
+  const owned = career.ownedItems;
+  const mine = owned.find((o) => baseIdOf(o) === v.key);
+  const worn = !!mine && isWornOut(mine);
+  const ownLv = mine ? ownedLevelOf(career, v.key) : 0;
+  const blocked = !!mine && !worn && (it.level ?? 0) <= ownLv;
+  const gain = fameGainFromBuying(owned, it);
+  const nowFame = mine && !worn ? fameFromOwned(owned, mine) : 0;
+  const life = itemLifeSeasons(it);
+  const lv = it.level ?? 1;
+  const b = v.button;
   return (
-    <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.65)" }}>
-      <Press onPress={onClose} style={{ flex: 1 }}><View /></Press>
-      <View style={{ borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 18 + inset.bottom, gap: 8,
-        backgroundImage: `radial-gradient(80% 40% at 50% 0%, ${rgba(accent, 0.22)}, rgba(0,0,0,0) 70%), linear-gradient(180deg, #0b1222, #05080f)`, borderTopWidth: 1, borderColor: "rgba(255,255,255,0.15)" } as ViewStyle}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Text style={{ flex: 1, color: accent, fontSize: 11, fontWeight: "900", letterSpacing: 1.8, textTransform: "uppercase" }}>{v.cat === "cans" ? `${v.title} ${v.sub}` : catLabel}</Text>
-          <Press onPress={onClose} style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.1)" }}><Text style={{ color: "#fff", fontSize: 16, fontWeight: "900" }}>✕</Text></Press>
-        </View>
-        <View style={{ height: 220, alignItems: "center", justifyContent: "center" }}>
-          <View pointerEvents="none" style={{ position: "absolute", bottom: 14, width: "70%", height: 34, borderRadius: 999, backgroundImage: "radial-gradient(closest-side, rgba(0,0,0,0.75), rgba(0,0,0,0))" } as ViewStyle} />
-          <Pic v={v} size={220} grey={v.locked !== null} />
-        </View>
-        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 28, lineHeight: 34 }}>{v.title}</Text>
-        <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: "700" }}>{v.sub}</Text>
-        <Pips level={v.level} of={v.levels} onPick={onLevel} />
-        {v.badges.length > 0 && (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-            {v.badges.map((b) => <Text key={b.text} style={{ color: "#111", backgroundColor: b.color, fontSize: 10, fontWeight: "900", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, overflow: "hidden" }}>{b.text}</Text>)}
-          </View>
-        )}
-        <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 12 }}>
-          {v.stats.map((s) => <Text key={s.text} style={{ color: s.color, fontWeight: "900", fontSize: 13 }}>{s.text}</Text>)}
-        </View>
-        {v.locked !== null ? (
-          <Text style={{ color: "#fcd34d", fontWeight: "900", letterSpacing: 0.8, marginTop: 6 }}>🔒 HIGHER STAR RATING · REACH ★{v.locked}</Text>
-        ) : (
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 8, marginTop: 6 }}>
-            {v.extra && (
-              <Press disabled={v.extra.disabled} onPress={v.extra.run} style={{ height: 40, paddingHorizontal: 14, borderRadius: 999, justifyContent: "center", backgroundColor: "rgba(0,0,0,0.4)", borderWidth: 1, borderColor: "rgba(255,255,255,0.3)", opacity: v.extra.disabled ? 0.35 : 1 }}>
-                <Text style={{ color: "#fff", fontSize: 12, fontWeight: "900", textTransform: "uppercase" }}>{v.extra.label}</Text>
-              </Press>
-            )}
-            <BuyPill b={v.button} />
-          </View>
-        )}
+    <StoreSheet open onClose={onClose} title={familyName(it)} accent={tierColour(lv)}>
+      <PicBox lv={lv}>{pic}</PicBox>
+      <View style={{ marginTop: 4, alignItems: "center" }}>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 21, lineHeight: 27 }}>{levelName(it)}</Text>
+        {levels.length > 1 ? <Text style={{ color: tierColour(lv), fontSize: 11, lineHeight: 15, fontWeight: "900", letterSpacing: 2, textTransform: "uppercase" }}>Level {lv} · {rungName(lv)}</Text> : null}
       </View>
+      {v.key === "phone" ? <PhoneOpens /> : null}
+      {levels.length > 1 ? <LevelLadder selected={lv} onPick={onLevel} rungs={levels.map((l) => ({ level: l.level ?? 1, price: l.price, owned: !!mine && !worn && (l.level ?? 0) === ownLv }))} /> : null}
+      <View style={{ marginTop: 8 }}><GiveChips items={[
+        { label: mine && !worn ? `fame (now ${fameText(nowFame)})` : "Fame", value: fameText(gain), color: "#fcd34d" },
+        { label: "Lasts", value: life === null ? "Forever" : `${life} season${life === 1 ? "" : "s"}`, color: "#ffffff" },
+        { label: "Of income", value: weeksText(weeksOfWallet(it.price, career.contract.wage)), color: "#93c5fd" },
+      ]} /></View>
+      {v.locked === null && !blocked && career.money < it.price ? <SaveUp have={career.money} need={it.price} wage={career.contract.wage} /> : null}
+      <View style={{ marginTop: 8 }}>
+        <GoldButton disabled={b.disabled} onPress={b.run}
+          label={v.locked !== null ? `🔒 Higher star rating · reach ★${v.locked}` : blocked ? b.label : career.money < it.price ? "Not enough money" : `${b.label} ★${formatMoney(it.price)}`} />
+      </View>
+    </StoreSheet>
+  );
+}
+
+/** A short line under the name, like a video's description: never the exact price (ForYouFeed.tsx FLAVOUR). */
+const FLAVOUR: Record<CatId, string[]> = {
+  cans: ["One can, one big week.", "For the days the legs say no.", "Crack it open before kick-off."],
+  boots: ["Laced up and ready.", "Feel every touch.", "New boots, new season."],
+  drip: ["Walk in like you own the place.", "The tunnel is a catwalk.", "Dressed for the cameras."],
+  gadgets: ["Plugged in between matches.", "Your downtime, upgraded.", "Everyone in the dressing room wants one."],
+  cars: ["Turn heads at the training ground.", "The car park will notice.", "Arrive in style."],
+  homes: ["Somewhere to call home.", "Room for the trophies.", "The neighbours will talk."],
+  holiday: ["Summer break, sorted.", "Switch off between seasons.", "Somewhere far from the press."],
+};
+const pickLine = (list: string[], key: string) => list[key.split("").reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7) % list.length];
+
+function RoundButton({ icon, label, onPress, disabled, gold, on }: { icon: string; label: string; onPress?: () => void; disabled?: boolean; gold?: boolean; on?: boolean }) {
+  return (
+    <Press onPress={onPress} disabled={disabled || !onPress} style={{ width: 52, alignItems: "center", gap: 3 }}>
+      <View style={[{ width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" }, gold
+        ? ({ backgroundImage: "linear-gradient(180deg,#fde68a,#f59e0b 55%,#d97706)", boxShadow: "0px 4px 14px -4px rgba(245,158,11,0.9)" } as ViewStyle)
+        : { backgroundColor: "rgba(0,0,0,0.35)" }]}>
+        <Text style={{ color: gold ? "#1c1203" : on ? "#fb7185" : "#fff", fontSize: 17, lineHeight: 21, fontWeight: "900" }}>{icon}</Text>
+      </View>
+      <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.9)", fontSize: 10, lineHeight: 13, fontWeight: "700", textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 4 }}>{label}</Text>
+    </Press>
+  );
+}
+
+/**
+ * FOR YOU (ForYouFeed.tsx): the shop as a short-video feed. One item fills the screen; swipe
+ * up and down through every item, locked ones too. A caption bottom-left (name, a short line,
+ * tags; never the price) and round buttons bottom-right: Like, Info, See all, Buy / Save up.
+ */
+function ForYou({ items, width, view, own, stars, onDetails, onSeeAll }: {
+  items: { cat: CatId; key: string }[]; width: number; view: (c: CatId, k: string) => ItemView; own: (c: CatId, k: string) => string | null; stars: number;
+  onDetails: (c: CatId, k: string) => void; onSeeAll: (c: CatId, k: string) => void;
+}) {
+  const [h, setH] = useState(0);
+  const [liked, setLiked] = useState<Record<string, boolean>>({});
+  return (
+    <View style={{ flex: 1 }} onLayout={(e) => setH(e.nativeEvent.layout.height)}>
+      {h > 0 && (
+        <FlatList data={items} keyExtractor={(it) => `${it.cat}-${it.key}`} pagingEnabled showsVerticalScrollIndicator={false}
+          getItemLayout={(_, i) => ({ length: h, offset: h * i, index: i })} initialNumToRender={2} windowSize={3}
+          renderItem={({ item }) => {
+            const v = view(item.cat, item.key);
+            const cat = SHOP_CATS.find((c) => c.id === item.cat)!;
+            const locked = v.locked !== null;
+            const id = `${item.cat}-${item.key}`;
+            const o = own(item.cat, item.key);
+            const line = locked ? `Opens at ${v.locked}★. You're on ${stars}★ — keep playing.` : pickLine(FLAVOUR[item.cat], item.key);
+            const tags = [`#${cat.label.toLowerCase()}`, ...(v.levels > 1 ? [`#level${v.level}`] : []), "#knowitball"];
+            return (
+              <View style={{ width, height: h }}>
+                <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: `radial-gradient(60% 36% at 50% 40%, rgba(255,255,255,0.15), rgba(255,255,255,0) 70%), radial-gradient(90% 55% at 50% 44%, ${rgba(cat.accent, 0.2)}, rgba(0,0,0,0) 72%)` } as ViewStyle} />
+                <Press onPress={locked ? undefined : () => onDetails(item.cat, item.key)} style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 110, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 }}>
+                  <View style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center", transform: [{ scale: v.cat === "cans" ? 0.7 : 1.08 }] }}><Pic v={v} size={Math.min(width, h) * 0.7} grey={locked} /></View>
+                  {locked ? <View style={{ position: "absolute", width: 72, height: 72, borderRadius: 36, backgroundColor: "rgba(0,0,0,0.55)", borderWidth: 2, borderColor: "rgba(252,211,77,0.6)", alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 36 }}>🔒</Text></View> : null}
+                </Press>
+                <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 64, bottom: 12, paddingHorizontal: 14 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <Text numberOfLines={1} style={{ flexShrink: 1, color: "rgba(255,255,255,0.75)", fontSize: 13.5, lineHeight: 18, fontWeight: "700", textShadowColor: "rgba(0,0,0,0.85)", textShadowRadius: 6 }}>{v.title}</Text>
+                    {o ? <Text style={{ color: "#d1fae5", backgroundColor: "rgba(4,120,87,0.8)", fontSize: 10, lineHeight: 14, fontWeight: "900", paddingHorizontal: 6, borderRadius: 4, overflow: "hidden", textTransform: "uppercase" }}>{o}</Text> : null}
+                  </View>
+                  <Text style={{ marginTop: 4, color: "#fff", fontSize: 14.5, lineHeight: 20, fontWeight: "600", textShadowColor: "rgba(0,0,0,0.85)", textShadowRadius: 6 }}>{line}</Text>
+                  <Text numberOfLines={1} style={{ marginTop: 2, color: "rgba(255,255,255,0.85)", fontSize: 13, lineHeight: 18, fontWeight: "700", textShadowColor: "rgba(0,0,0,0.85)", textShadowRadius: 6 }}>{tags.join(" ")}</Text>
+                </View>
+                <View style={{ position: "absolute", right: 6, bottom: 14, alignItems: "center", gap: 12 }}>
+                  <RoundButton icon={liked[id] ? "♥" : "♡"} on={liked[id]} label="Like" onPress={() => setLiked((l) => ({ ...l, [id]: !l[id] }))} />
+                  <RoundButton icon="ⓘ" label="Info" disabled={locked} onPress={() => onDetails(item.cat, item.key)} />
+                  <RoundButton icon="▦" label="See all" onPress={() => onSeeAll(item.cat, item.key)} />
+                  {!locked ? <RoundButton gold={!v.button.disabled} disabled={v.button.disabled} onPress={v.button.run} icon={v.button.label === "Upgrade" ? "▲" : "★"}
+                    label={v.button.disabled ? (v.button.price !== undefined ? "Save up" : "Owned") : v.button.label} /> : null}
+                </View>
+              </View>
+            );
+          }} />
+      )}
     </View>
   );
 }
@@ -390,81 +553,191 @@ export function ShopScreen({ params }: { params?: Record<string, unknown> }) {
   const start = (params?.cat as CatId | undefined) ?? "cans";
   const [cat, setCat] = useState<CatId>(start === "boots" ? "cans" : start);
   const [tab, setTab] = useState<Tab>(start === "boots" ? "boots" : "shop");
-  const [view, setView] = useState<ItemsView>(5);
+  // 1 | 3 | 5 is kept on this phone, as the website keeps it (star-shop-items-view; 5 by default)
+  const [view, setViewState] = useState<ItemsView>(() => { installWebStorage(); return loadShopItemsView(); });
+  const setView = (n: ItemsView) => { setViewState(n); saveShopItemsView(n); };
   const [note, setNote] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
+  const [moment, setMoment] = useState<Moment | null>(null);
   const [sheet, setSheet] = useState<{ cat: CatId; key: string } | null>(null);
   const [pick, setPick] = useState<Record<string, number>>({});
   const [width, setWidth] = useState(0);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [fameOpen, setFameOpen] = useState(false);
+  const [helpTour, setHelpTour] = useState(false);
+  const [bought, setBought] = useState(0);
+  const listRef = useRef<FlatList<string>>(null);
   const flash = (t: string) => { setNote(t); setTimeout(() => setNote((n) => (n === t ? null : n)), 3500); };
   const boots = useMemo(() => (career ? bootsForSale(career) : []), [career]);
   const bootKeys = useMemo(() => BOOT_ORDER.filter((b) => boots.some((x) => baseIdOf(x) === b)), [boots]);
   const forYou = useMemoForYou(bootKeys);
-  if (!career) return null;
   const shownCat: CatId = tab === "boots" ? "boots" : cat;
-  const accent = SHOP_CATS.find((c) => c.id === shownCat)!.accent;
   const keys = shownCat === "boots" ? bootKeys : KEYS[shownCat];
+  /** Yours already (ShowroomShop isOwned / ownLabel). Cans are used up, never "owned". */
+  const isOwned = (c: CatId, k: string): boolean => {
+    if (!career || c === "cans") return false;
+    if (c === "boots") return baseIdOf(career.currentBoot) === k && career.currentBoot.matches > 0;
+    const mine = career.ownedItems.find((o) => baseIdOf(o) === k);
+    return !!mine && !isWornOut(mine);
+  };
+  const ownLabel = (c: CatId, k: string): string | null => {
+    if (!career) return null;
+    if (c === "cans") { const n = career.kibCans[k as KibCan["id"]] ?? 0; return n > 0 ? `×${n} owned` : null; }
+    if (c === "boots") return baseIdOf(career.currentBoot) === k ? (career.currentBoot.matches > 0 ? `On · L${career.currentBoot.level ?? 1}` : "Worn out") : null;
+    const mine = career.ownedItems.find((o) => baseIdOf(o) === k);
+    if (!mine) return null;
+    if (isWornOut(mine)) return "Worn out";
+    return (STYLE_BASES.get(k)?.length ?? 1) > 1 ? `Owned · L${ownedLevelOf(career, k)}` : "Owned";
+  };
+  /** Where a category lands you: the cheapest item you don't own yet (lib/star/shopNextItem.ts). */
+  const nextUp = (c: CatId, ks: string[], from = 0): number => {
+    if (!career || c === "cans") return Math.max(0, Math.min(ks.length - 1, from));
+    const stars = career.unlocks ? starsNow(career) : 0;
+    return nextUpIndex(ks.map((k) => {
+      if (c === "boots") {
+        const l1 = boots.filter((b) => baseIdOf(b) === k).sort((a, b) => (a.level ?? 0) - (b.level ?? 0))[0];
+        return { owned: isOwned(c, k), locked: false, price: l1?.price ?? 0 };
+      }
+      return { owned: isOwned(c, k), locked: !!career.unlocks && stars < styleUnlockStar(k), price: STYLE_BASES.get(k)?.[0]?.price ?? 0 };
+    }), from);
+  };
+  const nu = shownCat === "cans" ? -1 : nextUp(shownCat, keys, -1);
+  const landing = nextUp(shownCat, keys);
+  // the list opens on the next item (and comes back to it after a purchase)
+  useEffect(() => {
+    if (view !== 5 || landing <= 0) return;
+    const id = setTimeout(() => { try { listRef.current?.scrollToIndex({ index: landing, animated: false, viewPosition: 0 }); } catch { /* not laid out yet */ } }, 60);
+    return () => clearTimeout(id);
+  }, [shownCat, view, bought]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!career) return null;
+  const accent = SHOP_CATS.find((c) => c.id === shownCat)!.accent;
   const apply = (r: Bought, done: string) => {
     if (!r.ok) { flash(r.reason ?? "Can't do that"); return; }
     setCareer(r.career);
     flash(r.unlocked ? `${done} ${r.unlocked}.` : done);
   };
-  const v = (c: CatId, k: string) => itemView({ career, cat: c, k, boots, level: pick[k], onAsk: setConfirm, onUse: (id) => apply(drinkCan(career, id), "Drunk.") });
+  const v = (c: CatId, k: string) => itemView({ career, cat: c, k, boots, level: pick[k], onAsk: (cf) => { setSheet(null); setConfirm(cf); }, onUse: (id) => apply(drinkCan(career, id), "Drunk.") });
   const fame = fameOf(career);
+  const fl = fameLevel(fame);
+  const nfl = nextFameLevel(fame);
   const sheetView = sheet ? v(sheet.cat, sheet.key) : null;
+  const picFor = (c: CatId, k: string, lv: number) => { const src = picOf(c, k, lv); return src ? <Image source={src} resizeMode="contain" fadeDuration={0} style={{ width: "100%", height: "100%" }} /> : <Text style={{ fontSize: 48 }}>{SHOP_CATS.find((x) => x.id === c)!.icon}</Text>; };
+  const moreLinks: { id: string; icon: string; label: string; go: () => void }[] = [
+    { id: "sponsors", icon: "🤝", label: "Sponsors", go: () => nav.go("sponsors") },
+    ...(SCREENS.store ? [{ id: "store", icon: "🪙", label: "Store", go: () => nav.go("store") }] : []),
+  ];
+  // The coach: the story's first Shop visit (cans, then Boots), else the first-visit line, else the "?" replay.
+  const storyTour = !!career.unlocks && isStory(career) && isOpen(career, "shop") && !hasSeen(career, "story-shop-tour");
+  const firstHelp = !storyTour && !!career.unlocks && !hasSeen(career, "help-shop");
 
   return (
     <View style={{ flex: 1, backgroundColor: "#05080f" }} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
       {/* the shop's dark room, lit from above */}
       <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: `radial-gradient(70% 45% at 50% 30%, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0) 70%), radial-gradient(90% 50% at 50% 100%, ${rgba(accent, 0.1)} 0%, rgba(0,0,0,0) 70%), linear-gradient(180deg, #0d0f14, #05080f)` } as ViewStyle} />
 
-      {/* top: back · 1|3|5 · balance + fame */}
+      {/* top: back · 1|3|5 · More · balance + fame */}
       <View style={{ paddingTop: inset.top + 4, paddingHorizontal: 10, flexDirection: "row", alignItems: "center", gap: 6, height: inset.top + 50 }}>
         <BackPill onPress={() => nav.back()} />
         <Text numberOfLines={1} style={{ flex: 1, paddingLeft: 4, color: tab === "boots" ? accent : "#fff", fontSize: 16, fontWeight: "900" }}>{tab === "foryou" ? "For You" : tab === "boots" ? "Boots" : ""}</Text>
         {tab !== "foryou" && <ViewSwitch view={view} onPick={setView} />}
-        <View style={{ height: 36, flexDirection: "row", alignItems: "center", gap: 6, paddingLeft: 10, paddingRight: 6, borderRadius: 999, backgroundColor: "rgba(0,0,0,0.6)", borderWidth: 1, borderColor: "rgba(252,211,77,0.45)" }}>
+        {tab === "shop" && (
+          <Press onPress={() => { setMoreOpen((o) => !o); setFameOpen(false); }} style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: moreOpen ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.55)", borderWidth: 1, borderColor: moreOpen ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)" }}>
+            <Text style={{ color: "#fff", fontSize: 18, lineHeight: 20, fontWeight: "900" }}>⋯</Text>
+          </Press>
+        )}
+        <Press onPress={() => { setFameOpen((o) => !o); setMoreOpen(false); }} style={{ height: 36, flexDirection: "row", alignItems: "center", gap: 6, paddingLeft: 10, paddingRight: 6, borderRadius: 999, backgroundColor: "rgba(0,0,0,0.6)", borderWidth: 1, borderColor: "rgba(252,211,77,0.45)" }}>
           <Text style={{ color: "#fcd34d", fontSize: 13.5, fontWeight: "900" }}>★{formatWallet(career.money)}</Text>
           <Text style={{ color: "#fef3c7", fontSize: 11, fontWeight: "900", backgroundColor: "rgba(252,211,77,0.15)", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999, overflow: "hidden" }}>👑{fame}</Text>
-        </View>
+        </Press>
       </View>
       {tab === "shop" && (
-        <View style={{ height: 40, justifyContent: "flex-end" }}>
+        <TourTarget name="cat-cans" style={{ height: 40, justifyContent: "flex-end" }}>
           <AntonTabs value={cat} onChange={setCat} lead={12} tabs={SHOP_CATS.filter((c) => c.id !== "boots").map((c) => [c.id, c.label] as const)} />
-        </View>
+        </TourTarget>
       )}
       {tab === "boots" && <View style={{ height: 40 }} />}
       <View style={{ paddingHorizontal: 12 }}><Note text={note} /></View>
 
       <View style={{ flex: 1 }}>
         {tab === "foryou" ? (
-          width > 0 && <Pages key="fy" items={forYou} width={width} horizontal={false} accentOf={(c) => SHOP_CATS.find((x) => x.id === c)!.accent} view={v} onOpen={(c, k) => setSheet({ cat: c, key: k })} />
+          width > 0 && <ForYou items={forYou} width={width} view={v} own={ownLabel} stars={career.unlocks ? starsNow(career) : 0}
+            onDetails={(c, k) => setSheet({ cat: c, key: k })}
+            onSeeAll={(c) => { if (c === "boots") setTab("boots"); else { setCat(c); setTab("shop"); } setView(5); }} />
         ) : view === 5 ? (
           <FlatList
+            ref={listRef}
             key={`list-${shownCat}`}
             data={keys}
             keyExtractor={(k) => `${shownCat}-${k}`}
+            getItemLayout={(_, i) => ({ length: 136, offset: 6 + 136 * i, index: i })}
             contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 6, paddingBottom: 20, gap: 10 }}
-            renderItem={({ item: k, index }) => <ListCard v={v(shownCat, k)} accent={accent} on={index === 0} onTap={() => setSheet({ cat: shownCat, key: k })} />}
+            renderItem={({ item: k, index }) => {
+              const iv = v(shownCat, k);
+              return <ListCard v={iv} accent={accent} on={index === landing} next={index === nu && !isOwned(shownCat, k)} own={ownLabel(shownCat, k)}
+                onTap={() => { if (iv.locked === null) setSheet({ cat: shownCat, key: k }); }} />;
+            }}
           />
         ) : (
-          width > 0 && <Pages key={`p${view}-${shownCat}`} items={keys.map((k) => ({ cat: shownCat, key: k }))} width={width} horizontal narrow={view === 3}
+          width > 0 && <Pages key={`p${view}-${shownCat}-${bought}`} items={keys.map((k) => ({ cat: shownCat, key: k }))} width={width} horizontal narrow={view === 3} startAt={landing}
             nextCat={tab === "shop" ? SHOP_CATS.filter((c) => c.id !== "boots")[SHOP_CATS.filter((c) => c.id !== "boots").findIndex((c) => c.id === cat) + 1]?.label : undefined}
             accentOf={() => accent} view={v} onOpen={(c, k) => setSheet({ cat: c, key: k })} />
         )}
+        {/* ⋯ More: the links that are not on the shop's bar */}
+        {moreOpen && tab === "shop" ? (
+          <View style={{ position: "absolute", left: 10, right: 10, top: 2, flexDirection: "row", gap: 6, borderRadius: 14, backgroundColor: "rgba(11,18,34,0.97)", borderWidth: 1, borderColor: "rgba(255,255,255,0.15)", padding: 8 }}>
+            {moreLinks.map((l) => (
+              <Press key={l.id} onPress={() => { setMoreOpen(false); l.go(); }} style={{ width: "23.5%", alignItems: "center", gap: 4, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.06)", paddingVertical: 8 }}>
+                <Text style={{ fontSize: 22, lineHeight: 26 }}>{l.icon}</Text>
+                <Text numberOfLines={1} style={{ color: "#fff", fontSize: 10.5, lineHeight: 14, fontWeight: "900", letterSpacing: 0.3, textTransform: "uppercase" }}>{l.label}</Text>
+              </Press>
+            ))}
+          </View>
+        ) : null}
+        {/* the fame banner: tap ★ 👑 */}
+        {fameOpen ? (
+          <Press onPress={() => setFameOpen(false)} style={{ position: "absolute", left: 10, right: 10, top: 2, borderRadius: 12, backgroundColor: "rgba(11,18,34,0.97)", borderWidth: 1, borderColor: "rgba(252,211,77,0.4)", padding: 12 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <Text style={{ color: "#fcd34d", fontSize: 34, lineHeight: 38, fontWeight: "900", fontVariant: ["tabular-nums"], textShadowColor: "rgba(251,191,36,0.5)", textShadowRadius: 16 }}>{fame}</Text>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ color: "#fef3c7", fontSize: 13, lineHeight: 17, fontWeight: "900", letterSpacing: 1.8, textTransform: "uppercase" }}>Fame · {fl.name}</Text>
+                <View style={{ marginTop: 4, height: 9, borderRadius: 5, backgroundColor: "rgba(0,0,0,0.6)", borderWidth: 1, borderColor: "rgba(252,211,77,0.3)", overflow: "hidden" }}>
+                  <View style={{ height: "100%", width: `${nfl ? Math.max(3, Math.min(100, ((fame - fl.min) / (nfl.min - fl.min)) * 100)) : 100}%`, backgroundImage: "linear-gradient(90deg, #f59e0b, #fde047)" } as ViewStyle} />
+                </View>
+                <Text style={{ marginTop: 4, color: "rgba(255,255,255,0.85)", fontSize: 11, lineHeight: 15, fontWeight: "700" }}>{nfl ? `${nfl.min - fame} to ${nfl.name}` : "Top level"}</Text>
+              </View>
+            </View>
+            <View style={{ marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
+              <Text style={{ color: "#fff", fontSize: 11.5, lineHeight: 16, fontWeight: "900" }}>From your stuff <Text style={{ color: "#fcd34d" }}>{fameText(ownedFame(career.ownedItems))}</Text> <Text style={{ color: "rgba(255,255,255,0.6)" }}>/ {OWNED_FAME_MAX}</Text></Text>
+            </View>
+          </Press>
+        ) : null}
       </View>
 
-      <ShopBar active={tab} onPick={(t) => setTab(t)} onSponsors={() => nav.go("sponsors")} />
+      <ShopBar active={tab} onPick={(t) => { setTab(t); setMoreOpen(false); setFameOpen(false); }} onSponsors={() => nav.go("sponsors")} />
       <BottomBar active={null} />
 
-      <Modal visible={!!sheetView} transparent animationType="slide" onRequestClose={() => setSheet(null)}>
-        {sheet && sheetView && (
-          <DetailSheet v={sheetView} accent={SHOP_CATS.find((c) => c.id === sheet.cat)!.accent} catLabel={SHOP_CATS.find((c) => c.id === sheet.cat)!.label}
-            onLevel={(lv) => setPick((p) => ({ ...p, [sheet.key]: lv }))} onClose={() => setSheet(null)} />
-        )}
-      </Modal>
-      <ConfirmSheet c={confirm} money={career.money} onClose={() => setConfirm(null)}
-        onRun={(lawyers) => { if (!confirm) return; const r = confirm.run(lawyers); setConfirm(null); setSheet(null); apply(r, `${confirm.title}: yours!`); }} />
+      {sheet && sheetView ? (
+        <DetailSheet v={sheetView} career={career} boots={boots} onLevel={(lv) => setPick((p) => ({ ...p, [sheet.key]: lv }))} onClose={() => setSheet(null)} />
+      ) : null}
+      <ConfirmSheet
+        info={confirm ? {
+          title: confirm.title, sub: confirm.sub, level: confirm.level ?? 1, price: confirm.price, verb: confirm.verb, note: confirm.note,
+          pic: confirm.cat && confirm.key ? picFor(confirm.cat, confirm.key, confirm.level ?? 1) : null,
+          blackMarket: confirm.black ? { lawyerFee: LAWYER_FEE, lawyerPrice: (l) => confirm.price + (l ? LAWYER_FEE : 0) } : undefined,
+        } : null}
+        money={career.money} onCancel={() => setConfirm(null)}
+        onConfirm={(lawyers) => {
+          if (!confirm) return;
+          const r = confirm.run(lawyers);
+          if (!r.ok) return r.reason ?? "Failed";
+          setCareer(r.career); setConfirm(null); setSheet(null); setBought((n) => n + 1);
+          if (r.unlocked) flash(`${r.unlocked}.`);
+          setMoment({ pic: confirm.cat && confirm.key ? picFor(confirm.cat, confirm.key, confirm.level ?? 1) : null, level: confirm.level ?? 1, title: confirm.momentTitle ?? confirm.title, word: confirm.word, fx: confirm.fx });
+        }} />
+      {moment ? <PurchaseMoment m={moment} onDone={() => setMoment(null)} /> : null}
+      {helpTour ? <PointerTour key="help-shop" steps={HELP_TOURS.shop} onDone={() => setHelpTour(false)} />
+        : storyTour ? <PointerTour key="story-shop" steps={STORY_SHOP_TOUR} press={{ "shop-tab-boots": () => setTab("boots") }} onDone={() => markSeenKeys("story-shop-tour", "help-cans", "help-boots", "help-shop")} />
+        : firstHelp && !sheet && !confirm && !moment ? <PointerTour key="first-shop" steps={HELP_TOURS.shop} onDone={() => markSeenKeys("help-shop")} /> : null}
     </View>
   );
 }
@@ -492,50 +765,25 @@ function ViewSwitch({ view, onPick }: { view: ItemsView; onPick: (v: ItemsView) 
   );
 }
 
-/** The shop's own bar, TikTok-style: Shop · For You · 3D · Boots · Sponsors. */
+/** The shop's own bar, TikTok-style: Shop · For You · Boots · Sponsors, in the website's white line icons
+ *  (the 3D shop's centre button is left out: it is not in this app). */
 function ShopBar({ active, onPick, onSponsors }: { active: Tab; onPick: (t: Tab) => void; onSponsors: () => void }) {
-  const tab = (t: Tab | "sponsors", label: string, icon: string, on: boolean, onPress: () => void) => (
-    <Press key={t} onPress={onPress} style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 3 }}>
-      <Text style={{ fontSize: 17, opacity: on ? 1 : 0.6 }}>{icon}</Text>
-      <Text style={{ color: on ? "#fff" : "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: "700" }}>{label}</Text>
-    </Press>
-  );
+  const tab = (t: Tab | "sponsors", label: string, on: boolean, onPress: () => void) => {
+    const color = on ? "#ffffff" : "#999b9f";
+    const body = <>
+      <SvgIcon body={SHOP_BAR_ICON[t](on)} size={22} color={color} />
+      <Text style={{ color: on ? "#fff" : "rgba(255,255,255,0.6)", fontSize: 10, lineHeight: 12, fontWeight: "700" }}>{label}</Text>
+    </>;
+    return t === "boots"
+      ? <TourTarget key={t} name="shop-tab-boots" style={{ flex: 1 }}><Press onPress={onPress} style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 3 }}>{body}</Press></TourTarget>
+      : <Press key={t} onPress={onPress} style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 3 }}>{body}</Press>;
+  };
   return (
-    <View style={{ height: 50, flexDirection: "row", alignItems: "stretch", backgroundColor: "#05080f", borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
-      {tab("shop", "Shop", "🛍️", active === "shop", () => onPick("shop"))}
-      {tab("foryou", "For You", "▶️", active === "foryou", () => onPick("foryou"))}
-      {/* The walk-around 3D shop is not in this app (Mikey's choice of 3D): no dead button. */}
-      {tab("boots", "Boots", "👟", active === "boots", () => onPick("boots"))}
-      {tab("sponsors", "Sponsors", "🤝", false, onSponsors)}
+    <View style={{ height: 52, flexDirection: "row", alignItems: "stretch", backgroundColor: "#05080f", borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
+      {tab("shop", "Shop", active === "shop", () => onPick("shop"))}
+      {tab("foryou", "For You", active === "foryou", () => onPick("foryou"))}
+      {tab("boots", "Boots", active === "boots", () => onPick("boots"))}
+      {tab("sponsors", "Sponsors", false, onSponsors)}
     </View>
-  );
-}
-
-function ConfirmSheet({ c, money, onClose, onRun }: { c: Confirm | null; money: number; onClose: () => void; onRun: (lawyers: boolean) => void }) {
-  const [lawyers, setLawyers] = useState(false);
-  const price = c ? c.price + (c.black && lawyers ? LAWYER_FEE : 0) : 0;
-  return (
-    <Modal visible={!!c} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.65)" }}>
-        {c && (
-          <View style={{ backgroundImage: "linear-gradient(180deg, #0b1222, #05080f)", borderTopLeftRadius: 22, borderTopRightRadius: 22, borderTopWidth: 1, borderColor: "rgba(255,255,255,0.15)", padding: 18, paddingBottom: 34, gap: 10 } as ViewStyle}>
-            <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: C.text, fontFamily: FONT.display, fontSize: 24, lineHeight: 30 }}>{c.title}</Text>
-            <Text style={{ color: C.dim, fontWeight: "700" }}>{c.sub}</Text>
-            {c.note ? <Text style={{ color: C.text, fontWeight: "700" }}>{c.note}</Text> : null}
-            {c.black && (
-              <Press onPress={() => setLawyers((l) => !l)} style={{ flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderRadius: 12, backgroundColor: lawyers ? rgba("#fbbf24", 0.25) : C.panel2 }}>
-                <Text style={{ fontSize: 18 }}>{lawyers ? "☑" : "☐"}</Text>
-                <Text style={{ color: C.text, fontWeight: "800", flex: 1 }}>Pay lawyers (+★{formatMoney(LAWYER_FEE)}): less chance of getting caught</Text>
-              </Press>
-            )}
-            <Text style={{ color: C.gold, fontWeight: "900", fontSize: 24 }}>★{formatMoney(price)}</Text>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <Btn style={{ flex: 1 }} tone="plain" label="Not now" onPress={onClose} />
-              <Btn style={{ flex: 2 }} tone={c.black ? "red" : "gold"} disabled={money < price} label={money < price ? "Not enough money" : c.verb} onPress={() => onRun(lawyers)} />
-            </View>
-          </View>
-        )}
-      </View>
-    </Modal>
   );
 }
