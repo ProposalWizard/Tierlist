@@ -27,6 +27,174 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.142",
+      "title": "Harry's patch notes: 3D phone, real clothes at home",
+      "author": "Harry",
+      "publishedAt": "2026-11-21T05:25:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/RtSxn6BtEpLzYaQup2K27F",
+      "summary": "The Phone tab now opens onto your own hand holding the phone in your house, and every app works on the glass. BACK puts it away into your house; a Phone button in the house and the garden brings it back. At home nobody wears a match kit any more: you wear your home outfit in real cloth, team-mates wear casual or club training clothes. Weak phones keep the flat phone.",
+      "stats": [
+        {
+          "value": "0.6 s",
+          "label": "eyes open onto the phone"
+        },
+        {
+          "value": "6",
+          "label": "houses in real clothes, plus the garden"
+        },
+        {
+          "value": "74 / 120",
+          "label": "draws in the busiest room (was 68)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The Phone tab opens onto your hand holding the phone",
+              "detail": "Home → Phone (bottom bar). A tap skips the move."
+            },
+            {
+              "title": "Open two apps and tap something in each",
+              "detail": "On the 3D phone: Messages → a message; Relationships → scroll."
+            },
+            {
+              "title": "BACK puts the phone away and you are in your house",
+              "detail": "BACK, bottom right of the phone."
+            },
+            {
+              "title": "The Phone button in the house",
+              "detail": "In your house: \"Phone\", top right."
+            },
+            {
+              "title": "The Phone button in the garden",
+              "detail": "Home → Garden → \"Phone\", top right."
+            },
+            {
+              "title": "HOME on the phone goes straight to Home",
+              "detail": "HOME, bottom left of the phone."
+            },
+            {
+              "title": "Kickabout turns the phone flat to your face",
+              "detail": "On the 3D phone: Kickabout."
+            },
+            {
+              "title": "A team-mate on the sofa wears casual clothes, not a kit",
+              "detail": "Phone → Your house → the lounge."
+            },
+            {
+              "title": "You wear your own home outfit, in cloth",
+              "detail": "Home → House; then change it in the wardrobe and look again."
+            },
+            {
+              "title": "The garden bench and the pitch",
+              "detail": "Home → Garden → the gazebo bench, then the training pitch."
+            },
+            {
+              "title": "Can you read the phone's text?",
+              "detail": "Any app on the 3D phone. Say yes or \"too small\"."
+            },
+            {
+              "title": "How smooth is the camera move?",
+              "detail": "Phone tab in, BACK out, Phone button in again."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "The 3D phone is in the real game",
+              "detail": "Problem: the 3D phone only lived on a test page. Why: the Phone tab still opened the flat phone, and the house and phone were two screens. Fix: one screen, so the house never reloads; every app works on the glass. Weak phones (no 3D, quality Low, reduce motion, the first visit's phone tour) keep the flat phone."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Real clothes in the houses and the garden",
+              "detail": "You: your saved home outfit in cloth. Team-mates: about 1 in 4 in club training wear, the rest a tee, hoodie, shirt or polo; the same man always wears the same. Garden pitch: training tracksuits. Match and training: still the kit."
+            },
+            {
+              "title": "No outfit picked? A hoodie, not the kit",
+              "detail": "At home, in the garden and in the shop."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The house behind the phone can stall while it loads",
+              "detail": "It loads after 2.5 s, or on BACK."
+            },
+            {
+              "title": "Garden → phone took about 3 s on the build machine"
+            },
+            {
+              "title": "Phone text is about 55% of its flat size",
+              "detail": "Judge it on your phone.",
+              "pill": {
+                "text": "your call",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The eyes open in 0.6 s, not the approved 1.2 s blink B"
+            },
+            {
+              "title": "Clothes leftovers",
+              "detail": "A notch at the tee's hem, the hood is a lump, the first team-mate wears the same slate hoodie in every house."
+            },
+            {
+              "title": "The shop in cloth not looked at"
+            },
+            {
+              "title": "Carried from 0.141",
+              "detail": "Cut scenes not ready; the mentor's face; cars up close; the bed pose; speed on a phone."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Your phone test: text size, smoothness, load time"
+            },
+            {
+              "title": "Fix the clothes leftovers and give team-mates more variety"
+            },
+            {
+              "title": "Look at the shop in cloth"
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.141 · 21 Nov 2026 · Sleep, living houses, cloth clothes",
+              "detail": "Sleep passes the night (+10 energy); six lived-in houses; cloth in cut scenes; feet land apart; kick off faster. Still open: cut scenes, the mentor's face, cars up close, the bed pose, speed on a phone."
+            },
+            {
+              "title": "v0.138 · 13 Nov 2026 · New home, Team room, bots, admin",
+              "detail": "Still open: Cloudflare not joined up on the live site."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
       "version": "0.141",
       "title": "Harry's patch notes: Sleep, living houses, cloth clothes",
       "author": "Harry",
