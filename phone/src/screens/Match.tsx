@@ -30,6 +30,7 @@ import { setMusicScene, clearMusicScene, playTurningPoint, refreshMusic } from "
 import { isTurningPoint } from "@/lib/star/gameMusic";
 import { usePrefs } from "../game/prefs";
 import { PitchPage, GoalBoard, StaminaBox, MatchSettingsSheet } from "./MatchLook";
+import { PopIn } from "./career/lookBits";
 
 export function Match({ career, fixture, onFullTime, setupFor, recordGoals = true, watch, frozen = false }: {
   career: CareerState; fixture: Fixture; onFullTime: (d: MatchDriver) => void;
@@ -204,6 +205,7 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
   return (
     <PitchPage>
       <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1 }}>
+        <OvationSlot />
         <HudSlot kits={kits} onGear={() => setGear(true)} />
         {/* The pitch in its frame (CanvasMatch: border-2 emerald-800/80, square corners in the pitch scope). */}
         <View style={{ flex: 1, marginHorizontal: 12, marginBottom: 8, borderWidth: 2, borderColor: "rgba(6,95,70,0.8)", borderRadius: 2, overflow: "hidden", backgroundColor: "#22920b", boxShadow: "0px 18px 40px -12px rgba(2,44,34,0.6)" } as ViewStyle}>
@@ -242,6 +244,19 @@ function CaptainSlot() {
         {runs ? ` · ${runs} run${runs > 1 ? "s" : ""} called` : null}
       </Text>
     </View>
+  );
+}
+/** The farewell: you have come off, and the whole ground stands (CanvasMatch data-farewell-ovation, kib-pop). */
+function OvationSlot() {
+  useSyncExternalStore((f) => { hudSubs.add(f); return () => hudSubs.delete(f); }, () => hudVersion);
+  const d = hudDriver;
+  if (!d || !d.setup.farewell || !d.hooked || d.hookedAt === null || d.matchMinute < d.hookedAt) return null;
+  return (
+    <PopIn style={{ marginHorizontal: 12, marginBottom: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 4, alignItems: "center",
+      backgroundImage: "linear-gradient(90deg, rgba(251,191,36,0.28), rgba(251,191,36,0.10))", boxShadow: "inset 0px 0px 0px 1px rgba(251,191,36,0.6)" } as ViewStyle}>
+      <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: "#fde68a", fontSize: 19, lineHeight: 21, fontWeight: "900", letterSpacing: 0.5 }}>👏 STANDING OVATION 👏</Text>
+      <Text style={{ marginTop: 4, color: "#fff", fontSize: 12.5, lineHeight: 17, fontWeight: "700", textAlign: "center" }}>{Math.round(d.hookedAt)}&apos; — you come off. The whole ground is on its feet for you.</Text>
+    </PopIn>
   );
 }
 function HudSlot({ kits, onGear }: { kits: MatchKits; onGear?: () => void }) {

@@ -5,6 +5,7 @@ import { shortClub } from "@/lib/star/media/grammar";
 import type { MatchKits } from "@/lib/star/kits";
 import type { MatchDriver } from "../match/driver";
 import { C } from "../ui/theme";
+import { PopIn } from "./career/lookBits";
 
 export function MatchShootout({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
   const so = d.shootout;
@@ -43,9 +44,11 @@ export function MatchShootout({ d, kits }: { d: MatchDriver; kits: MatchKits }) 
         {side("away", so.awayClub, true)}
       </View>
       {so.final && winner && (
-        <Text style={{ marginTop: 4, textAlign: "center", color: C.green, fontSize: 12, fontWeight: "900" }}>
-          {shortClub(winner).toUpperCase()} WIN {Math.max(st.homeScore, st.awayScore)}–{Math.min(st.homeScore, st.awayScore)} ON PENALTIES
-        </Text>
+        <PopIn>
+          <Text style={{ marginTop: 4, textAlign: "center", color: C.green, fontSize: 12, fontWeight: "900" }}>
+            {shortClub(winner).toUpperCase()} WIN {Math.max(st.homeScore, st.awayScore)}–{Math.min(st.homeScore, st.awayScore)} ON PENALTIES
+          </Text>
+        </PopIn>
       )}
     </View>
   );

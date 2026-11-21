@@ -17,7 +17,8 @@ import { followedTeams, toggleFollowedTeam, setLiveScoreWeek } from "@/lib/star/
 import { MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import type { MatchDriver } from "../match/driver";
 import { Press } from "../ui/Press";
-import { FONT } from "../ui/look";
+import { FONT, CAN } from "../ui/look";
+import { TourTarget } from "../ui/tour";
 import { EnergyIcon, kitRow } from "./MatchLook";
 
 // MatchCommentary's three playstyles, in its order, with PlaystyleIcon's glow colours and pictures.
@@ -74,10 +75,18 @@ function FeedLine({ l, d, kits }: { l: LogLine; d: MatchDriver; kits: MatchKits 
   const weight = l.tone === "goal" || l.tone === "oppGoal" ? "900" : kit ? "700" : "400";
   return (
     <View style={[{ flexDirection: "row", alignItems: "flex-start", gap: 8, paddingLeft: l.tone === "assist" ? 32 : 12, paddingRight: 64, paddingVertical: 6, backgroundColor: row.backgroundColor }, LINE_GLOSS]}>
+      {l.tone === "goal" ? <GoalFlash /> : null}
       {chip}
       <Text style={{ flex: 1, color: row.color, fontSize: 12, fontWeight: weight, lineHeight: 16 }}>{l.text}</Text>
     </View>
   );
+}
+
+/** MatchCommentary's kibGoalFlash: your goal's line lands near white, then settles to the kit colour (1.7 s, once). */
+function GoalFlash() {
+  const a = useRef(new Animated.Value(0)).current;
+  useEffect(() => { Animated.timing(a, { toValue: 1, duration: 1700, easing: Easing.out(Easing.ease), useNativeDriver: true }).start(); }, [a]);
+  return <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "#fff", opacity: a.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0.6, 0.25, 0] }) }} />;
 }
 
 // components/star/KickOffCard.tsx: you look out of the players' tunnel onto a floodlit pitch; "THE TEAMS
@@ -277,12 +286,14 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
         </Pressable>
       </ScrollView>
       {/* The minute and the speed on one plate, floating over the feed's corner (tap: faster). */}
-      <Press onPress={() => d.cycleSpeed()} style={{ position: "absolute", right: 8, top: 8, width: 56, alignItems: "center", paddingVertical: 4, paddingHorizontal: 2, borderRadius: 8, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", backgroundColor: "rgba(16,82,47,0.85)", boxShadow: "0px 2px 6px rgba(0,0,0,0.35)" } as ViewStyle}>
+      <TourTarget name="match-speed" style={{ position: "absolute", right: 8, top: 8, width: 56 }}>
+      <Press onPress={() => d.cycleSpeed()} style={{ width: 56, alignItems: "center", paddingVertical: 4, paddingHorizontal: 2, borderRadius: 8, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", backgroundColor: "rgba(16,82,47,0.85)", boxShadow: "0px 2px 6px rgba(0,0,0,0.35)" } as ViewStyle}>
         {/* One line whatever the minute: "90+10'" shrinks to fit the plate. */}
         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ alignSelf: "stretch", textAlign: "center", color: minute.includes("+") ? "#fcd34d" : "#fff", fontFamily: FONT.display, fontSize: minute.includes("+") ? (minute.length > 4 ? 12 : 14) : 17, lineHeight: 20 }}>{minute}&apos;</Text>
         {/* 1, 2, 4, 8: one to four arrows (MatchCommentary). */}
         <Text numberOfLines={1} style={{ marginTop: 1, color: d.speed > 1 ? "#fcd34d" : "rgba(255,255,255,0.45)", fontSize: 9, fontWeight: "900" }}>{"▶".repeat(d.speed === 8 ? 4 : d.speed === 4 ? 3 : d.speed)}</Text>
       </Press>
+      </TourTarget>
       {/* Every other score in the division, right now (MatchCommentary: under the clock). */}
       {live.week.fixtures.length > 0 && (
         <Press onPress={() => setScoresOpen(true)} style={{ position: "absolute", right: 8, top: 50, width: 56, alignItems: "center", justifyContent: "center", paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", backgroundColor: "rgba(16,82,47,0.85)", boxShadow: "0px 2px 6px rgba(0,0,0,0.35)" } as ViewStyle}>
@@ -292,7 +303,7 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
       {pop && !scoresOpen && <LiveScorePop pop={pop} onClose={closePop} />}
       <View>
         {/* The playstyle buttons in their own strip under the last feed line (the packed app): floating, they hid "+5 MINUTES ADDED". The chosen one full size with a glow ring. */}
-        <View style={{ alignSelf: "flex-end", paddingRight: 8, paddingVertical: 2, flexDirection: "row", alignItems: "flex-end", gap: 4 }}>
+        <TourTarget name="match-playstyle" style={{ alignSelf: "flex-end", paddingRight: 8, paddingVertical: 2, flexDirection: "row", alignItems: "flex-end", gap: 4 }}>
           {PLAYSTYLES.map((ps) => {
             const on = d.playstyle === ps, px = on ? 42 : 32;
             return (
@@ -304,19 +315,22 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
               </Press>
             );
           })}
-        </View>
+        </TourTarget>
         {/* Waiting on you: coming on, half time (MatchCommentary's amber bar). */}
         {p && (
           <View style={{ borderTopWidth: 1, borderColor: "rgba(251,191,36,0.4)", backgroundColor: "rgba(69,26,3,0.4)", paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10 }}>
             {p.label ? <Text style={{ textAlign: "center", color: "#fde68a", fontSize: 11, fontWeight: "900", letterSpacing: 2 }}>{p.label.toUpperCase()}</Text> : null}
-            {p.halfTime && !d.setup.farewell ? <Text style={{ textAlign: "center", color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: "800", marginTop: 2 }}>Energy {energy}%</Text> : null}
             <View style={{ flexDirection: "row", gap: 8, marginTop: p.label ? 10 : 0 }}>
               {/* Half time only: drink a Basic KIB can (+65) before the second half. */}
               {p.halfTime && !d.setup.farewell && (
                 <Press onPress={() => d.drinkHalfTimeKib()} disabled={d.kibCansLeft() <= 0 || d.energy >= 100}
                   style={{ flexBasis: "33%", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 4, backgroundColor: d.kibCansLeft() <= 0 || d.energy >= 100 ? "#374151" : "#f97316" }}>
-                  <Text style={{ color: d.kibCansLeft() <= 0 ? "#fff" : "#030712", fontWeight: "900", fontSize: 10, letterSpacing: 0.4 }}>USE CAN</Text>
-                  <Text style={{ color: d.kibCansLeft() <= 0 ? "#fff" : "#030712", fontWeight: "900", fontSize: 14 }}>×{d.kibCansLeft()}</Text>
+                  {/* the can's picture, then "USE CAN" over "×n" (MatchCommentary KibCanIcon h-8 w-5) */}
+                  <Image source={CAN.basic} resizeMode="contain" style={{ width: 20, height: 32 }} />
+                  <View style={{ alignItems: "flex-start" }}>
+                    <Text numberOfLines={1} style={{ color: d.kibCansLeft() <= 0 || d.energy >= 100 ? "#fff" : "#030712", fontWeight: "900", fontSize: 10, lineHeight: 11, letterSpacing: 0.4 }}>USE CAN</Text>
+                    <Text style={{ color: d.kibCansLeft() <= 0 || d.energy >= 100 ? "#fff" : "#030712", fontWeight: "900", fontSize: 14, lineHeight: 15, marginTop: 2 }}>×{d.kibCansLeft()}</Text>
+                  </View>
                 </Press>
               )}
               <Pressable onPress={() => d.continuePause()} accessibilityRole="button"
@@ -328,7 +342,7 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
         )}
         {/* Your energy, and the three modes (the farewell has none). */}
         {!d.setup.farewell && (
-          <View style={{ borderTopWidth: 1, borderColor: "rgba(255,255,255,0.1)", backgroundColor: G900, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10 }}>
+          <TourTarget name="match-energy" style={{ borderTopWidth: 1, borderColor: "rgba(255,255,255,0.1)", backgroundColor: G900, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <Text style={{ color: "#fff", fontSize: 10, fontWeight: "900", letterSpacing: 1.6 }}>ENERGY</Text>
               <View style={{ flex: 1, height: 12, borderRadius: 6, backgroundColor: G700, overflow: "hidden" }}>
@@ -349,7 +363,7 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
                 );
               })}
             </View>
-          </View>
+          </TourTarget>
         )}
       </View>
       {scoresOpen && (

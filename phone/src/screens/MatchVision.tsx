@@ -249,7 +249,7 @@ export function TrialVisionStage({ trial, onDone, maxHeight }: { trial: TrialPro
           </Pressable>
         )}
         {phase === "ready" && rep === 0 && !go && (
-          <TeachCard headline="Tap the team-mate in the most space." short="Tap the man in most space."
+          <TeachCard gesture="tap" headline="Tap the team-mate in the most space." short="Tap the man in most space."
             lines={["You are green. The red shirts are marking.", "The clock starts on zero and does not wait — never picking scores nothing."]} onDismiss={startFromTeach} />
         )}
         {phase === "ready" && !(rep === 0 && !go) && (

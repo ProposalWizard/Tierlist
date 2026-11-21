@@ -14,8 +14,10 @@
  *   - Settings → "Skip the line-up": straight into the match.
  *
  * Also the phone's own pre-match redirects (youth week, loan brief).
- * Not here (the website has them, the phone's flow does not yet): "Play as"
- * another position, the manager's "Team news" when dropped, the weather line.
+ *   - Dropped to the bench after starting the last one: the manager's "Team news"
+ *     card first, once a fixture (LineupIntro + ManagerMoments.tsx ManagerSays, the
+ *     plain card: the phone has no 3D office).
+ * Not here: the weather line (Leo's update, off by default on the website).
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, Text, View, useWindowDimensions, type ViewStyle } from "react-native";
@@ -36,6 +38,7 @@ import { loadLineup, managerFor } from "@/lib/star/lineupStore";
 import { formationOf } from "@/lib/star/formations";
 import { fixtureDateLabel, divisionOf, leagueNameFor } from "@/lib/star/calendar";
 import { place, across } from "@/lib/star/pitchLayout";
+import { benchMomentFor } from "@/lib/star/managerMoments";
 import { MIN_ENERGY_TO_START, MIN_ENERGY_TO_SUB, selectionFor } from "@/lib/star/selection";
 import { KIB_CANS, kibCanPrice } from "@/lib/star/shopData";
 import { skinToneHex } from "@/lib/star/playerIdentity";
@@ -47,7 +50,7 @@ import { Press } from "../../ui/Press";
 import { PlayerHead } from "../../draw/PlayerHead";
 import { Backdrop, Bar, FONT, LOOK, LookButton, CAN, glassStyle, levelColors, rgba } from "../../ui/look";
 import { ClubCrest } from "./kit";
-import { glowOf } from "./lookBits";
+import { glowOf, clubGlow } from "./lookBits";
 
 /** How long the line-up shows before it kicks off by itself (LineupIntro LINEUP_MS). */
 const LINEUP_MS = 3800;
@@ -81,6 +84,11 @@ function MatchDay({ career, f, go, onBack }: { career: CareerState; f: Fixture; 
   const e = Math.max(0, Math.min(100, Math.round(projectedEnergy(career))));
   const tired = !watching && e < MIN_ENERGY_TO_START;
   const [asked, setAsked] = useState(false);
+  // LineupIntro: dropped to the bench after starting the last one = "Team news" first, once a fixture.
+  const [benchHeard, setBenchHeard] = useState(false);
+  const benchMoment = useMemo(() => { try { return benchMomentFor(career, sel, f, e); } catch { return null; } },
+    [career.season, f.week, f.kind, status]); // eslint-disable-line react-hooks/exhaustive-deps
+  const benchHold = !!benchMoment && !benchHeard;
 
   const saved = loadLineup(career.player.club);
   const intlCareer = useMemo(() => (f.kind === "international" ? internationalCareer(career, f) : null),
@@ -97,13 +105,20 @@ function MatchDay({ career, f, go, onBack }: { career: CareerState; f: Fixture; 
   const went = useRef(false);
   const kickOff = () => { if (went.current) return; went.current = true; flow.readyWeek(); go({ screen: "match" }); };
   const sim = () => { if (went.current) return; went.current = true; go(flow.simMatch()); };
-  const showLineup = !watching && (!tired || asked) && teamsReady && !prefs.skipLineup;
+  const showLineup = !benchHold && !watching && (!tired || asked) && teamsReady && !prefs.skipLineup;
 
   // Nothing to draw (a squad too thin), or "Skip the line-up": straight in.
   useEffect(() => {
-    if (watching || (tired && !asked) || showLineup) return;
+    if (benchHold || watching || (tired && !asked) || showLineup) return;
     kickOff();
-  }, [watching, tired, asked, showLineup]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [benchHold, watching, tired, asked, showLineup]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (benchHold && benchMoment) {
+    return (
+      <ManagerSaysCard career={career} title="Team news" text={benchMoment.text}
+        onContinue={() => { setBenchHeard(true); setCareer((c) => ({ ...c, benchMomentSeen: benchMoment.key })); }} />
+    );
+  }
 
   if (showLineup && matchday) {
     const competition = !f.kind || f.kind === "league"
@@ -131,7 +146,7 @@ function MatchDay({ career, f, go, onBack }: { career: CareerState; f: Fixture; 
   const cansNeeded = Math.max(1, Math.ceil((MIN_ENERGY_TO_SUB - e) / Math.max(1, can.restore)));
   const canIcon = <View style={{ width: 18, height: 28, alignItems: "center", justifyContent: "center" }}><Animated.Image source={CAN.basic} style={{ width: 12, height: 28 }} resizeMode="contain" /></View>;
   return (
-    <PromptShell onBack={onBack}>
+    <PromptShell onBack={onBack} glow={clubGlow(career.player.club, career)}>
       {watching ? (
         <>
           <Text style={{ fontSize: 34, textAlign: "center" }}>{status === "Injured" ? "🩹" : sel.away ? "✈️" : f.watch ? "📺" : "📋"}</Text>
@@ -162,9 +177,12 @@ function MatchDay({ career, f, go, onBack }: { career: CareerState; f: Fixture; 
             <Text style={{ fontSize: 26 }}>⚡</Text>
             <Text style={{ color: "#fff", fontSize: 20, fontWeight: "900", letterSpacing: 0.6 }}>LOW ENERGY</Text>
           </View>
-          <View style={{ marginTop: 12, flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Bar value={Math.max(3, e)} colors={levelColors(e)} height={22} />
-            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "900", width: 34, textAlign: "right" }}>{e}</Text>
+          {/* LineupIntro: SquareBar h-[26px], the number over the bar, centred */}
+          <View style={{ marginTop: 12, flexDirection: "row", alignItems: "center" }}>
+            <Bar value={Math.max(3, e)} colors={levelColors(e)} height={26} />
+            <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ color: "#fff", fontSize: 14, fontWeight: "900", textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 3, textShadowOffset: { width: 0, height: 1 } }}>{e}</Text>
+            </View>
           </View>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
             {have > 0 && (
@@ -182,13 +200,33 @@ function MatchDay({ career, f, go, onBack }: { career: CareerState; f: Fixture; 
   );
 }
 
+/** The manager's words on the plain card (ManagerMoments.tsx OfficeMoment, plain): title right, slate box, Continue. */
+export function ManagerSaysCard({ career, title, text, onContinue }: { career: CareerState; title: string; text: string; onContinue: () => void }) {
+  return (
+    <View style={{ flex: 1, backgroundColor: "#0b1220", justifyContent: "center", paddingHorizontal: 12, paddingBottom: 24, paddingTop: 12 }}>
+      <View style={{ width: "100%", maxWidth: 384, alignSelf: "center" }}>
+        <Text style={{ color: "#93c5fd", fontSize: 18, fontWeight: "900", letterSpacing: 0.5, textAlign: "right", marginBottom: 8 }}>{title.toUpperCase()}</Text>
+        <View style={{ backgroundColor: "#334155", borderRadius: 4, paddingHorizontal: 12, paddingVertical: 8 }}>
+          <Text style={{ color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 0.6 }}>{(career.manager?.name ?? "The manager").toUpperCase()}</Text>
+          <Text style={{ color: "#fff", fontSize: 15, fontWeight: "700", lineHeight: 21 }}>{text}</Text>
+        </View>
+        <LookButton onPress={onContinue} style={{ marginTop: 12, borderRadius: 4, paddingVertical: 12 }}>
+          <Text style={{ color: "#fff", fontSize: 14, fontWeight: "900" }}>CONTINUE →</Text>
+        </LookButton>
+      </View>
+    </View>
+  );
+}
+
 /** The prompt card over the night: a dark see-through panel, ‹ Back under it. */
-function PromptShell({ children, onBack }: { children: React.ReactNode; onBack: () => void }) {
+function PromptShell({ children, onBack, glow }: { children: React.ReactNode; onBack: () => void; glow?: string }) {
+  // LineupIntro's prompt page: navy to near-black with the club's glow at the top; the card
+  // sits in the middle of the top 70% of the screen (min-h-[70dvh], justify-center).
   return (
     <View style={{ flex: 1, backgroundColor: "#05080f" }}>
-      <Backdrop kind="stadium" />
-      <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(5,8,15,0.55)" }} />
-      <SafeAreaView style={{ flex: 1, justifyContent: "center", paddingHorizontal: 16 }}>
+      <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: "linear-gradient(180deg, #0a1120 0%, #05080f 60%)" } as ViewStyle} />
+      {glow ? <View style={{ position: "absolute", left: 0, right: 0, top: 0, height: "45%", backgroundImage: `radial-gradient(ellipse at 50% -18%, ${rgba(glow, 0.33)} 0%, transparent 70%)` } as ViewStyle} /> : null}
+      <SafeAreaView style={{ height: "70%", justifyContent: "center", paddingHorizontal: 16 }}>
         <View style={{ padding: 16, backgroundColor: "rgba(0,0,0,0.55)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.2)" } as ViewStyle}>
           {children}
           <Press onPress={onBack} style={{ marginTop: 8, paddingVertical: 10, alignItems: "center" }}>
@@ -279,7 +317,8 @@ export function Lineup({ career, matchday, clubKits, competition, date, results,
   const skin = skinToneHex(career.player.skinTone);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0b1a2e" }}>
+    // LineupIntro: a tap anywhere that is not a button kicks off; with the position list open it closes it.
+    <Pressable style={{ flex: 1, backgroundColor: "#0b1a2e" }} onPress={() => { if (picking) setPicking(false); else if (showSubs) setShowSubs(false); else if (!gear) kick(); }}>
       <Backdrop kind="stadium" />
       <SafeAreaView edges={["top"]} style={{ flex: 1, paddingHorizontal: 12, paddingTop: 10 }}>
         {/* ── The header: each side's colour washing in from its own edge ── */}
@@ -311,7 +350,16 @@ export function Lineup({ career, matchday, clubKits, competition, date, results,
             <TeamHeader club={home.club} manager={managers[home.club]} kit={kits.home} formation={home.formation.name} form={recentForm(home.club, results)} scouted={scouted(home)} />
             <View style={{ alignItems: "center", paddingTop: 10, gap: 4, width: 84 }}>
               <Animated.Text style={[{ color: "#dfe3ea", fontSize: 28, fontWeight: "900", fontStyle: "italic", letterSpacing: -1, textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 3 }, slamStyle]}>VS</Animated.Text>
-              <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: "700" }}>📅 {date}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                {/* VersusScreen CalendarIcon: a drawn calendar page, 10 px */}
+                <View style={{ width: 10, height: 10, opacity: 0.8 }}>
+                  <View style={{ position: "absolute", left: 1, right: 1, top: 2, bottom: 0.5, borderWidth: 0.8, borderColor: "#fff", borderRadius: 1 }} />
+                  <View style={{ position: "absolute", left: 1, right: 1, top: 4, height: 0.8, backgroundColor: "#fff" }} />
+                  <View style={{ position: "absolute", left: 2.8, top: 1, width: 0.8, height: 2, backgroundColor: "#fff" }} />
+                  <View style={{ position: "absolute", right: 2.8, top: 1, width: 0.8, height: 2, backgroundColor: "#fff" }} />
+                </View>
+                <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: "700" }}>{date}</Text>
+              </View>
             </View>
             <TeamHeader club={away.club} manager={managers[away.club]} kit={kits.away} formation={away.formation.name} form={recentForm(away.club, results)} scouted={scouted(away)} />
           </View>
@@ -399,7 +447,7 @@ export function Lineup({ career, matchday, clubKits, competition, date, results,
           <Animated.View style={[{ height: 4, backgroundColor: "#34d399" }, fillStyle]} />
         </View>
       )}
-    </View>
+    </Pressable>
   );
 }
 

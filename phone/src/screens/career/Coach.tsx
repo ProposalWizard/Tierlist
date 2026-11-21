@@ -18,7 +18,7 @@
  * (page.tsx:5352-5480): unlock pop-up → energy toast → tour → the manager's
  * set-piece word → story beat → "New in your game".
  */
-import { useEffect, useLayoutEffect, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import {
   welcomeTour, LEAGUE_TOUR, FIRST_GAME_TOUR, shopTour, HELP_TOURS, TRAINING_TOUR, LEVEL_TOUR, ONE_MORE_DRILL_TOUR, bossTour,
@@ -66,16 +66,16 @@ export function daysToNext(career: CareerState, next: Fixture): number {
   return Math.max(0, Math.round((nextTs - today) / 86400000));
 }
 
-export type Where = "home" | "training" | "levels" | "relations" | "stats" | "shop" | "phone" | null;
+export type Where = "home" | "training" | "levels" | "relations" | "stats" | "shop" | "phone" | "match" | null;
 const WHERE: Record<string, Where> = {
   "career-training": "training", "career-training-levels": "levels", "career-relations": "relations", relations: "relations",
-  "career-stats": "stats", shop: "shop", phone: "phone",
+  "career-stats": "stats", shop: "shop", phone: "phone", match: "match",
 };
 /** The "?" tour of a screen by its name in the app. */
 export function helpFor(screen: string | undefined): HelpScreen {
   const w = screen ? WHERE[screen] : null;
   if (w === "levels") return "training";
-  if (w && w !== "home") return w;
+  if (w && w !== "home" && w !== "match") return w;
   if (screen === "sponsors") return "sponsors";
   if (screen === "career-settings" || screen === "settings") return "settings";
   return "home";
@@ -100,6 +100,12 @@ function energyToastNow(session: Session, quiet: boolean, onHome: boolean): bool
 
 /** The tour due on this screen, or null (page.tsx:5384-5444). */
 export function tourDue(career: CareerState, where: Where, quiet: boolean, energyToast: boolean): Tour | null {
+  // A new career's first match: the energy and Low/Medium/High, the play style and the
+  // speed, once (page.tsx matchTourOn, forced: no skip).
+  if (where === "match") {
+    return isStory(career) && (career.careerStats?.appearances ?? 0) === 0 && !hasSeen(career, "match-tour")
+      ? { key: "match-tour", steps: MATCH_TOUR, onDone: seen("match-tour") } : null;
+  }
   if (!career.unlocks || !quiet || energyToast || !where) return null;
   const onHome = where === "home", onTraining = where === "training", onRelations = where === "relations";
   const next = nextFixtureFor(career);
@@ -154,6 +160,11 @@ export function tourDue(career: CareerState, where: Where, quiet: boolean, energ
   if (where === "phone" && !hasSeen(career, "help-phone")) return { key: "first-phone", steps: HELP_TOURS.phone, onDone: seen("help-phone") };
   return null;
 }
+const MATCH_TOUR: TourStep[] = [
+  { target: "match-energy", text: "Your ENERGY. Pick Low, Medium or High. High: the ball comes to you more, but energy drops fast" },
+  { target: "match-playstyle", text: "How you play: more attacking or more defensive" },
+  { target: "match-speed", text: "Tap here to speed the match up" },
+];
 /** The website finds the boss's game by its button's label; the phone names it "rel-boss". */
 const BOSS_MEETING: TourStep[] = BOSS_MEETING_TOUR.map((s) => ({ ...s, target: "rel-boss" }));
 
@@ -205,7 +216,15 @@ export function CoachHost() {
   const where = useWhere();
   const nav = useNav();
   const bar = useMainBarActions();
+  // The first match's pointer waits a moment, until the match screen is drawn (page.tsx matchTourReady, 1500 ms).
+  const [matchReady, setMatchReady] = useState(false);
+  useEffect(() => {
+    if (where !== "match") { setMatchReady(false); return; }
+    const t = setTimeout(() => setMatchReady(true), 1500);
+    return () => clearTimeout(t);
+  }, [where]);
   if (!career) return null;
+  if (where === "match" && !matchReady && !asked) return null;
   const quiet = quietNow(career, session, pops, where === "home");
   const due = asked ? null : tourDue(career, where, quiet, energyToastNow(session, quiet, where === "home"));
   const tour: (Tour & { chain?: boolean }) | null = asked

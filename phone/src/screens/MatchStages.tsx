@@ -71,8 +71,8 @@ export function TrialFreeKicksStage({ trial, onDone, skills, freeKickRunup }: { 
       title="Free kicks" hint="Bend it round the wall or lift it over — sides of the ball curl it, the bottom lifts it."
       teach={{ headline: "There is no way through the wall.", place: "bottom", short: "Round the wall, or over it.", lines: ["Drag back from the ball to aim. Pull further for more power.", "Then let go."] }}
       pauseTeach={{
-        runup: { drill: "freeKickRunup", headline: "You run up to take free kicks.", lines: ["As you hit the ball, you get a timed strike."] },
-        contact: { drill: "freeKickStrike", place: "top", headline: "Tap the ball before the ring runs out.", lines: ["Tap its side to bend it round the wall.", "Tap low on it to lift it over the wall.", "Run out of time and you scuff it."] },
+        runup: { drill: "freeKickRunup", gesture: "run", headline: "You run up to take free kicks.", lines: ["As you hit the ball, you get a timed strike."] },
+        contact: { drill: "freeKickStrike", gesture: "strike", place: "top", headline: "Tap the ball before the ring runs out.", lines: ["Tap its side to bend it round the wall.", "Tap low on it to lift it over the wall.", "Run out of time and you scuff it."] },
       }}
       subtitle={(rep) => { const s = freeKickSetup(trial, rep); return `${Math.round(s.distance)} m out · ${Math.max(1, Math.round(s.wall))} in the wall`; }}
       forceCompactTeach onDone={onDone} />

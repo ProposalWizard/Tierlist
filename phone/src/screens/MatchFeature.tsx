@@ -151,9 +151,58 @@ export function TrialCaption({ line, prompt }: { line?: string; prompt?: string 
   );
 }
 
-/** TrialPenalties.tsx TeachGlyph "drag": pull back from the ball, the shot goes the other way. Drawn once. */
-function DragGlyph() {
+export type TeachGesture = "drag" | "tap" | "flick" | "strike" | "run";
+/**
+ * TrialPenalties.tsx TeachGlyph, one per gesture the trial asks for (a drag arrow on the
+ * stage you tap is a wrong instruction): drag = pull back from the ball; tap = a ring round
+ * a man and a finger; strike = the big ball, its countdown ring, a tap on its side; run = you
+ * jogging in to the ball; flick = a quick swipe past.
+ */
+function DragGlyph({ gesture = "drag" }: { gesture?: TeachGesture }) {
   const head = useMemo(() => { const b = Skia.PathBuilder.Make(); b.moveTo(46, 5); b.lineTo(51, 14); b.lineTo(41, 14); b.close(); return b.build(); }, []);
+  const finger = useMemo(() => { const b = Skia.PathBuilder.Make(); b.moveTo(44, 38); b.lineTo(52, 30); b.lineTo(58, 42); b.close(); return b.build(); }, []);
+  const flickHead = useMemo(() => { const b = Skia.PathBuilder.Make(); b.moveTo(56, 16); b.lineTo(48, 12); b.lineTo(50, 22); b.close(); return b.build(); }, []);
+  if (gesture === "tap") return (
+    <Canvas style={{ width: 32, height: 24 }}>
+      <Group transform={[{ scale: 0.5 }]}>
+        <Circle cx={30} cy={24} r={13} color="#fbbf24" style="stroke" strokeWidth={2}><DashPathEffect intervals={[4, 3]} /></Circle>
+        <Circle cx={30} cy={24} r={6.5} color="#f8fafc" />
+        <Circle cx={30} cy={24} r={6.5} color="#0f172a" style="stroke" strokeWidth={1.5} />
+        <Path path={finger} color="#f97316" />
+      </Group>
+    </Canvas>
+  );
+  if (gesture === "strike") return (
+    <Canvas style={{ width: 32, height: 24 }}>
+      <Group transform={[{ scale: 0.5 }]}>
+        <Circle cx={30} cy={24} r={17} color="#fbbf24" style="stroke" strokeWidth={3}><DashPathEffect intervals={[80, 30]} /></Circle>
+        <Circle cx={30} cy={24} r={12} color="#f8fafc" />
+        <Circle cx={30} cy={24} r={12} color="#0f172a" style="stroke" strokeWidth={1.5} />
+        <Circle cx={38} cy={26} r={3.2} color="#f97316" />
+      </Group>
+    </Canvas>
+  );
+  if (gesture === "run") return (
+    <Canvas style={{ width: 32, height: 24 }}>
+      <Group transform={[{ scale: 0.5 }]}>
+        <Line p1={vec(8, 40)} p2={vec(40, 30)} color="#fbbf24" style="stroke" strokeWidth={2.5} strokeCap="round"><DashPathEffect intervals={[4, 3]} /></Line>
+        <Circle cx={10} cy={40} r={5} color="#0ea5e9" />
+        <Circle cx={10} cy={40} r={5} color="#0f172a" style="stroke" strokeWidth={1.5} />
+        <Circle cx={48} cy={28} r={6} color="#f8fafc" />
+        <Circle cx={48} cy={28} r={6} color="#0f172a" style="stroke" strokeWidth={1.5} />
+      </Group>
+    </Canvas>
+  );
+  if (gesture === "flick") return (
+    <Canvas style={{ width: 32, height: 24 }}>
+      <Group transform={[{ scale: 0.5 }]}>
+        <Circle cx={18} cy={30} r={6} color="#f8fafc" />
+        <Circle cx={18} cy={30} r={6} color="#0f172a" style="stroke" strokeWidth={1.5} />
+        <Line p1={vec(26, 30)} p2={vec(52, 18)} color="#fbbf24" style="stroke" strokeWidth={2.5} strokeCap="round"><DashPathEffect intervals={[5, 3]} /></Line>
+        <Path path={flickHead} color="#f97316" />
+      </Group>
+    </Canvas>
+  );
   return (
     <Canvas style={{ width: 32, height: 24 }}>
       <Group transform={[{ scale: 0.5 }]}>
@@ -169,8 +218,8 @@ function DragGlyph() {
 }
 
 /** stages/TrialPenalties.tsx TeachCard (the full-screen form: a tap anywhere closes it). */
-export function TeachCard({ headline, lines, short, compact = false, place = "middle", onDismiss }: {
-  headline: string; lines: string[]; short?: string; compact?: boolean; place?: "middle" | "top" | "bottom"; onDismiss: () => void;
+export function TeachCard({ headline, lines, short, compact = false, place = "middle", gesture = "drag", onDismiss }: {
+  headline: string; lines: string[]; short?: string; compact?: boolean; place?: "middle" | "top" | "bottom"; gesture?: TeachGesture; onDismiss: () => void;
 }) {
   void compact; void short;
   return (
@@ -178,7 +227,7 @@ export function TeachCard({ headline, lines, short, compact = false, place = "mi
       <View style={{ width: "100%", maxWidth: 320 }}>
         <View style={{ borderRadius: 12, borderWidth: 2, borderColor: "rgba(251,191,36,0.7)", backgroundColor: "rgba(255,255,255,0.75)", paddingHorizontal: 12, paddingVertical: 8, boxShadow: "0px 10px 18px rgba(0,0,0,0.25)" } as ViewStyle}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <DragGlyph />
+            <DragGlyph gesture={gesture} />
             <View style={{ backgroundColor: "#fbbf24", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
               <Text style={{ fontSize: 9, fontWeight: "900", letterSpacing: 1.6, color: "#000" }}>HOW TO PLAY</Text>
             </View>
@@ -221,7 +270,7 @@ export interface StrikeStageProps {
   markersFor?: (rep: number) => { x: number; y: number; color?: string }[];
   onBallStep?: (ball: { x: number; y: number; z: number }) => void;
   judge?: (info: ChanceResolved) => { quality: number; text: string };
-  pauseTeach?: Partial<Record<"runup" | "contact", { drill: TeachableDrill; headline: string; lines: string[]; place?: "middle" | "top" | "bottom" }>>;
+  pauseTeach?: Partial<Record<"runup" | "contact", { drill: TeachableDrill; headline: string; lines: string[]; place?: "middle" | "top" | "bottom"; gesture?: TeachGesture }>>;
   height: number;
 }
 
@@ -333,7 +382,7 @@ export function StrikeStage({
         freeKickRunup={freeKickRunup}
         holdAt={pauseTeach ? holdAt : undefined}
       >
-        {pauseCard && <TeachCard headline={pauseCard.headline} lines={pauseCard.lines} place={pauseCard.place} onDismiss={closePause} />}
+        {pauseCard && <TeachCard headline={pauseCard.headline} lines={pauseCard.lines} place={pauseCard.place} gesture={pauseCard.gesture} onDismiss={closePause} />}
         {showTeach && teach && <TeachCard headline={teach.headline} lines={teach.lines} short={teach.short} place={teach.place} compact={forceCompactTeach} onDismiss={dismissTeach} />}
       </EngineFeature>
       <TrialCaption line={resultText} prompt={resultText || showTeach ? "" : hint} />
