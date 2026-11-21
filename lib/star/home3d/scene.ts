@@ -1127,7 +1127,10 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       shadowT -= dt;
       if (shadowDirty || ((moved || speed > 0.05) && shadowT <= 0)) { renderer.shadowMap.needsUpdate = true; shadowDirty = false; shadowT = 0.1; }
     }
-    renderer.info.reset(); // counted over the whole frame (look H's passes, the mirror), for stats()
+    // counted over the whole frame (look H's passes, the mirror), for stats(); the flag set again each frame, as a
+    // shared renderer's earlier home (dev's double mount) turns it back on when it is disposed
+    renderer.info.autoReset = false;
+    renderer.info.reset();
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
 
     busy = !!sleepSeq || !!dipSeq || !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || changing || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;

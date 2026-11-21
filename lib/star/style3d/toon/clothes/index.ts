@@ -27,7 +27,14 @@ type Three = typeof import("three");
 
 /** Colours that replace an outfit's own (sRGB hex): off-pitch clothes at home (`./casual.ts`), your saved home set. */
 export interface ClothColours { top?: string; trim?: string; inner?: string; trousers?: string; shoes?: string }
-export interface ClothOpts { colours?: ClothColours }
+/** The house and garden's white balance for cloth (ClothOpts.whiteBalance). */
+export const HOME_WB = 0.6;
+export interface ClothOpts {
+  colours?: ClothColours;
+  /** 0..1: how much of a lamp's colour the cloth leaves out (a camera's white balance). A warm room turned a grey
+   *  hoodie khaki and white trainers beige; the house and garden use 0.6. 0 (cut scenes): the light as it is. */
+  whiteBalance?: number;
+}
 
 const CACHE = new Map<string, Built & { names: string[] }>();
 /** Who kept the painted clothes, and why (read by tests and the bench). */
@@ -63,7 +70,7 @@ export function dressCloth(T: Three, p: Person3D, kind: ClothKind, who = "", opt
   }
   const slots = OUTFITS[kind].slots(u, variant, T.Color, p.meta);
   if (opts.colours) recolour(T, slots, built.names, kind, opts.colours);
-  const mat = clothMaterial(T, slots, decalsFor(T, kind, u, p.meta, slots));
+  const mat = clothMaterial(T, slots, decalsFor(T, kind, u, p.meta, slots), opts.whiteBalance ?? 0);
   const cloth = new T.SkinnedMesh(built.cloth, mat);
   cloth.name = "Cloth"; cloth.frustumCulled = false; cloth.castShadow = p.body.castShadow;
   const ink = new T.SkinnedMesh(built.ink, people3dOutline(T, 0.0055 * 1.3));
@@ -232,7 +239,7 @@ function decalsFor(T: Three, kind: ClothKind, u: Record<string, { value: any }>,
 }
 
 /** The cloth's material: toon bands per fabric, a sheen, crisp trim bands, stripes/hoops, collars, a tie, decals. */
-export function clothMaterial(T: Three, slots: ClothSlot[], decals: Decal[]): THREE.Material {
+export function clothMaterial(T: Three, slots: ClothSlot[], decals: Decal[], whiteBalance = 0): THREE.Material {
   const gm = new T.DataTexture(new Uint8Array([150, 205, 255]), 3, 1, T.RedFormat);
   gm.minFilter = gm.magFilter = T.NearestFilter; gm.needsUpdate = true;
   const m = new T.MeshToonMaterial({ color: 0xffffff, gradientMap: gm, side: T.DoubleSide });
@@ -250,6 +257,7 @@ export function clothMaterial(T: Three, slots: ClothSlot[], decals: Decal[]): TH
     uD0: { value: D[0]?.tex ?? blank }, uD1: { value: D[1]?.tex ?? blank }, uD2: { value: D[2]?.tex ?? blank }, uD3: { value: D[3]?.tex ?? blank },
     uDB: { value: D.slice(0, 4).map((d) => new T.Vector4(d?.at[0] ?? 0, d?.at[1] ?? 0, d?.size[0] ?? 0, d?.size[1] ?? 0)) },
     uDS: { value: D.slice(0, 4).map((d) => new T.Vector2(d ? d.slot : -1, d?.back ? -1 : 1)) },
+    uWB: { value: whiteBalance },
   };
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, un);
@@ -258,7 +266,12 @@ export function clothMaterial(T: Three, slots: ClothSlot[], decals: Decal[]): TH
       .replace("#include <begin_vertex>", "#include <begin_vertex>\nvRest = aRest; vBand = aBand; vLip = aLip; vGar = aGarment;")
       .replace("#include <defaultnormal_vertex>", "#include <defaultnormal_vertex>\nvNrmV = normalize(transformedNormal);");
     sh.fragmentShader = sh.fragmentShader
+      .replace("#include <lights_toon_pars_fragment>", (T.ShaderChunk as Record<string, string>).lights_toon_pars_fragment
+        .replace("* directLight.color;", "* tnWB(directLight.color);")
+        .replace("reflectedLight.indirectDiffuse += irradiance *", "reflectedLight.indirectDiffuse += tnWB(irradiance) *"))
       .replace("#include <common>", `#include <common>
+uniform float uWB;
+vec3 tnWB(vec3 c) { return mix(c, vec3(dot(c, vec3(0.299, 0.587, 0.114))), uWB); }
 varying vec3 vRest; varying vec4 vBand; varying float vLip; varying float vGar; varying vec3 vNrmV;
 uniform vec3 uCol[${MAX}], uTrim[${MAX}], uTrim2[${MAX}], uPatC[${MAX}]; uniform float uFab[${MAX}]; uniform vec4 uBands[${MAX}], uPat[${MAX}];
 uniform sampler2D uD0, uD1, uD2, uD3; uniform vec4 uDB[4]; uniform vec2 uDS[4];
@@ -308,6 +321,6 @@ float tnFab = uFab[g];
 }
 #include <opaque_fragment>`);
   };
-  m.customProgramCacheKey = () => "toon-cloth-v2";
+  m.customProgramCacheKey = () => "toon-cloth-v3";
   return m;
 }

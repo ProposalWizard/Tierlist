@@ -50,7 +50,7 @@ import { blobCanvas, neonCanvas, numberCanvas } from "../shop3d/textures";
 import { tierLookNew } from "../three3d/tierLook";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, toonHeadsFor, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
-import { dressCloth, offPitchWear } from "../style3d/toon/clothes";
+import { dressCloth, offPitchWear, HOME_WB } from "../style3d/toon/clothes";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
@@ -1830,7 +1830,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       kit: data.kit, number: canvasTex(numberCanvas(data.number, "#ffffff")),
     });
     // the approved cloth kit (a body the cloth cannot dress keeps the painted one)
-    if (!casual) dressCloth(THREE, person, "kit", "you");
+    if (!casual) dressCloth(THREE, person, "kit", "you", { whiteBalance: HOME_WB });
     relaxHands(THREE, person); // the one body's fingers in a natural curl
     player = person.root;
     personRef = person;
@@ -1857,7 +1857,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       // off the pitch: casual or club training wear in real cloth, never the match kit or a number (Harry, 21 Nov
       // 2026: "put them in houses"; the garden visitors dress as the house's: style3d/toon/clothes/casual.ts)
       dressPerson3d(THREE, m, { skin: SKIN[i % 3], hair: HAIR[i % 3], kit: data.kit, number: null });
-      { const ow = offPitchWear(`garden-mate-${num}`, "mate", data.kit); dressCloth(THREE, m, ow.kind, `garden-mate-${num}`, { colours: ow.colours }); }
+      { const ow = offPitchWear(`garden-mate-${num}`, "mate", data.kit); dressCloth(THREE, m, ow.kind, `garden-mate-${num}`, { colours: ow.colours, whiteBalance: HOME_WB }); }
       relaxHands(THREE, m);
       const z = gz.z - benchLen / 2 + 0.5 + i * ((benchLen - 1.0) / 2);
       m.root.rotation.y = -Math.PI / 2; // facing out of the gazebo (west)
@@ -2162,7 +2162,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         outlines.push(m.outline);
         // a kick-about in the club's training wear (real cloth), no match kit, no number
         dressPerson3d(THREE, m, { skin: SKINS[i], hair: HAIR[i % 3], kit: data.kit, number: null });
-        { const ow = offPitchWear(`garden-bench-${i}`, "training", data.kit); dressCloth(THREE, m, ow.kind, `garden-bench-${i}`, { colours: ow.colours }); }
+        { const ow = offPitchWear(`garden-bench-${i}`, "training", data.kit); dressCloth(THREE, m, ow.kind, `garden-bench-${i}`, { colours: ow.colours, whiteBalance: HOME_WB }); }
         relaxHands(THREE, m);
         addClips(THREE, m, fbG);
         root = m.root; mixer = m.mixer;

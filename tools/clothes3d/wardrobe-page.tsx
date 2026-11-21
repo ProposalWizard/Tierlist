@@ -5,6 +5,8 @@
  *   ?shot=silhouettes   solid black figures, front and side (can you tell suit from hoodie from kit in black?)
  *   ?shot=wardrobe      the same in colour, full body and three-quarter upper body
  *   ?head=h6&build=c3   which body
+ *   ?shot=moving&kinds=tee,shirt,hoodie&poses=sit_down:1.55,drink:1,pickup:0.8
+ *                       the moving test in the home's outfits and the house's poses (football + casino clips added)
  * window.__sheetDone is true when drawn. Nothing saves or commits.
  */
 import { useEffect, useRef, useState } from "react";
@@ -51,6 +53,8 @@ export default function WardrobeProofPage() {
         ["Manager", "suit", { skin, hair, suit: { coat: "#2b3346", trousers: "#2b3346", shirt: "#f2f2ee", tie: "#7a1f2b", shoes: "#120f0d" } }],
         ["Coach", "polo", { skin, hair, kit }],
         ["Hoodie", "hoodie", { skin, hair, suit: { coat: "#5b6270", trousers: "#1c1e22", shirt: "#5b6270", tie: "#5b6270", shoes: "#ece9e2" } }],
+        ["Tee", "tee", { skin, hair }],
+        ["Shirt", "shirt", { skin, hair }],
         ["Player", "kit", { skin, hair, kit, accessories: [{ slot: "boots", color: "#141416" }] }],
       ];
       const renderer = new T.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -91,21 +95,25 @@ export default function WardrobeProofPage() {
         // THE MOVING TEST: 3 heads x 3 builds, each in an outfit, walking, seated and arms up (cloth through skin or cloth?)
         const heads = (q.get("heads") ?? "h1,h3,h6").split(",") as ToonHead[], builds: ToonBody[] = ["c1", "c2", "c3"];
         const allH = await P3.loadPeople3d(loader, "player", "new", heads);
-        const kinds: [ClothKind, PersonLook][] = [[roles[0][1], roles[0][2]], [roles[3][1], roles[3][2]], [roles[1][1], roles[1][2]]];
+        const want = q.get("kinds")?.split(",") as ClothKind[] | undefined;
+        const kinds: [ClothKind, PersonLook][] = want ? want.map((k) => [k, roles.find((r) => r[1] === k)?.[2] ?? { skin, hair, kit }]) : [[roles[0][1], roles[0][2]], [roles[3][1], roles[3][2]], [roles[1][1], roles[1][2]]];
+        const { addClips, loadAnims3d } = await import("@/lib/star/three3d/footballAnims");
+        const extra = q.get("poses") ? await Promise.all([loadAnims3d(loader, "football"), loadAnims3d(loader, "casino").catch(() => null)]) : [];
         const tw = 260, th = 560, cols: Person3D[] = [];
         let k = 0;
         for (const h of heads) for (const b of builds) {
-          const [kind, look] = kinds[k++ % 3];
+          const [kind, look] = kinds[k++ % kinds.length];
           const p = P3.makePerson3d(T, SK, allH, anims, { outline: 0.006, toonHead: h, toonBody: b, who: `mv-${h}-${b}` });
           P3.dressPerson3d(T, p, look); CL.dressCloth(T, p, kind, `${h}-${b}-${kind}`);
           addToonFace(T, p)?.set({ face: toonFaceFor({}), blink: 0 });
+          for (const g of extra) if (g) addClips(T, p, g);
           cols.push(p);
         }
         const names = Object.keys(cols[0].actions);
         console.log("CLOTHDBG clips", names.join(","));
         const pick = (re: RegExp) => names.find((n) => re.test(n)) ?? names[0];
-        const poses: [string, number][] = [[pick(/walk|jog/), 0.45], [pick(/sitidle/), 1.0], [pick(/^wave$/), 1.0]];
-        sheet.width = tw * cols.length; sheet.height = th * 3;
+        const poses: [string, number][] = q.get("poses") ? q.get("poses")!.split(",").map((x) => { const [n, t] = x.split(":"); return [names.includes(n) ? n : pick(new RegExp(n)), +(t ?? 1)] as [string, number]; }) : [[pick(/walk|jog/), 0.45], [pick(/sitidle/), 1.0], [pick(/^wave$/), 1.0]];
+        sheet.width = tw * cols.length; sheet.height = th * poses.length;
         renderer.setClearColor("#cfd6de");
         poses.forEach(([clip, t], r) => cols.forEach((p, i) => {
           P3.poseClips(p, [[clip, t, 1]]); p.root.updateMatrixWorld(true);

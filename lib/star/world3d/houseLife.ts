@@ -214,7 +214,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       // the same). A body the cloth cannot dress keeps the painted kit, without a number.
       P3.dressPerson3d(THREE, p, { ...L.dress, kit: { ...(L.kit ?? {}), ...o.kit }, number: null } as any);
       const ow = CL.offPitchWear(L.id, "mate", o.kit);
-      CL.dressCloth(THREE, p, ow.kind, L.id, { colours: ow.colours });
+      CL.dressCloth(THREE, p, ow.kind, L.id, { colours: ow.colours, whiteBalance: CL.HOME_WB });
       FI.applyToonFaceId(THREE, p, L.faceId, { detail: FI.FACE_DETAIL[o.quality] });
       const rig = FACE.addToonFace(THREE, p);
       rig?.set({ face: FACE.toonFaceFor({}), blink: 0 });

@@ -30,7 +30,7 @@ export function shadeHex(hex: string, k: number): string {
 
 // muted colours: the eye goes to you, not to the guests
 const TEES = ["#ece9e2", "#22252b", "#7d828a", "#2e3a55", "#6f7556"];
-const HOODS = ["#7a7f87", "#2b2f36", "#3c4a5e", "#5c6152", "#8a7d6b"];
+const HOODS = ["#4b5563", "#2b2f36", "#3c4a5e", "#5c6152", "#8a7d6b"];
 const SHIRTS = ["#c9d7ea", "#f1efe9", "#a9b8a0", "#d9cbb4"];
 const JEANS = ["#34507a", "#2a3550", "#3f4650", "#1f2126"];
 const CHINOS = ["#b79b6e", "#3a3f48", "#6d6552", "#2c3a4f"];

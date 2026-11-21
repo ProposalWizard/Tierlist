@@ -34,7 +34,7 @@ import { makeHuman, defaultHumanSpec, HUMAN3D_FILE, type HumanSpec } from "../hu
 import { loadGltfCached } from "../three3d/perf";
 import { loadModel3d } from "../three3d/ktx2";
 import type { Worn, Kit2 } from "./outfits";
-import { dressCloth, homeSetCloth } from "../style3d/toon/clothes";
+import { dressCloth, homeSetCloth, HOME_WB } from "../style3d/toon/clothes";
 
 export interface WearInput {
   worn: Worn;
@@ -81,7 +81,7 @@ export async function buildWearer(T: any, SkeletonUtils: any, loader: any, w: We
       // the smart coat over an open shirt (no tie): the tie colour matches the shirt, so the suit reads as "open"
       const u = p.u as Record<string, { value: any }>;
       if (cw.kind === "suit" && u.uSuitTie && u.uSuitShirt) u.uSuitTie.value = u.uSuitShirt.value.clone();
-      dressCloth(T, p, cw.kind, "you", { colours: cw.colours });
+      dressCloth(T, p, cw.kind, "you", { colours: cw.colours, whiteBalance: HOME_WB });
     }
     relaxHands(T, p);
     return p;
@@ -108,7 +108,7 @@ export async function buildWearer(T: any, SkeletonUtils: any, loader: any, w: We
     accessories: [{ slot: "boots", color: w.worn.boots }],
   });
   // the approved cloth kit (the painted one stays for a body the builder cannot dress)
-  if (toon && w.cloth !== false) dressCloth(T, p, "kit", "you");
+  if (toon && w.cloth !== false) dressCloth(T, p, "kit", "you", { whiteBalance: HOME_WB });
   relaxHands(T, p);
   return p;
 }

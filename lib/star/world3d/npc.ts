@@ -104,6 +104,21 @@ export function measureSit(T: Three, p: Person3D, clip = "sit_down", t = 1.55): 
     else y = Infinity; // past the knee the calves hang down in front of the seat
     profile.push(y);
   }
+  // cloth clothes (style3d/toon/clothes): trousers and a hem sit a little outside the skin, so the profile comes down
+  // to the lowest cloth under his seat and thighs in this pose (only within 5 cm under the bones' line: the shins
+  // hanging past the knee are not his seat). Without cloth nothing changes.
+  const cloth = (p.body.parent as THREE.Object3D | null)?.getObjectByName("Cloth") as THREE.SkinnedMesh | undefined;
+  if (cloth?.isSkinnedMesh) {
+    p.body.skeleton.update();
+    const v = new T.Vector3(), n = cloth.geometry.getAttribute("position").count;
+    for (let k = 0; k < n; k += 2) {
+      cloth.getVertexPosition(k, v); v.applyMatrix4(cloth.matrixWorld); p.root.worldToLocal(v);
+      if (Math.abs(v.x - local.x) > 0.26 || v.y > U.y) continue;
+      const i = Math.round((v.z - local.z + 0.12) / 0.02);
+      if (i < 0 || i >= profile.length || !Number.isFinite(profile[i])) continue;
+      if (v.y < profile[i] && v.y > profile[i] - 0.05) profile[i] = v.y;
+    }
+  }
   const rootY = 0;
   const under = Math.min(...profile.slice(0, 7));
   for (const [x, w, tm, en] of saved) { x.setEffectiveWeight(w); x.time = tm; x.enabled = en; }
