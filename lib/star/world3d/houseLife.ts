@@ -201,7 +201,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     const FI = await import("../style3d/toon/faceIdApply");
     const FACE = await import("../style3d/toon/face");
     const HAIR = await import("../style3d/toon/hair");
-    const { numberCanvas } = await import("../shop3d/textures");
+    const CL = await import("../style3d/toon/clothes");
     const mates = o.mates.slice(0, where.length);
     const looks = PR.castScene(mates.map((m) => ({ id: `world-mate-${m.id}`, role: "player" as const, club: o.club ?? "Arsenal" })));
     const heads = Array.from(new Set(looks.map((l: any) => l.head)));
@@ -209,8 +209,12 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     for (let i = 0; i < mates.length && !disposed; i++) {
       const L: any = looks[i], m = mates[i];
       const p = P3.makePerson3d(THREE, o.SK, charG, animG, { outline: o.outline, castShadow: o.quality === "high", who: L.id, toonHead: L.head, toonBody: L.build } as any);
-      const nt = new THREE.CanvasTexture(numberCanvas(m.number, "#ffffff")); nt.colorSpace = THREE.SRGBColorSpace;
-      P3.dressPerson3d(THREE, p, { ...L.dress, kit: { ...(L.kit ?? {}), ...(i % 2 ? { shirt: "#f2f2f2", trim: o.kit.shirt } : o.kit) }, number: nt } as any);
+      // off the pitch: casual or the club's training wear in real cloth, never the match kit or a number (Harry,
+      // 21 Nov 2026: "put them in houses"; style3d/toon/clothes/casual.ts picks it from his id, so he always dresses
+      // the same). A body the cloth cannot dress keeps the painted kit, without a number.
+      P3.dressPerson3d(THREE, p, { ...L.dress, kit: { ...(L.kit ?? {}), ...o.kit }, number: null } as any);
+      const ow = CL.offPitchWear(L.id, "mate", o.kit);
+      CL.dressCloth(THREE, p, ow.kind, L.id, { colours: ow.colours });
       FI.applyToonFaceId(THREE, p, L.faceId, { detail: FI.FACE_DETAIL[o.quality] });
       const rig = FACE.addToonFace(THREE, p);
       rig?.set({ face: FACE.toonFaceFor({}), blink: 0 });
@@ -517,16 +521,20 @@ function seatCheck(THREE: any, p: Npc, book: SlotBook) {
   const f = [Math.sin(slot.facing), Math.cos(slot.facing)], r = [Math.cos(slot.facing), -Math.sin(slot.facing)];
   const body: any = p.person.body;
   body.skeleton?.update?.();
+  // the cloth clothes (style3d/toon/clothes) are what sit on the seat when he wears them: checked as well
+  const cloth: any = body.parent?.getObjectByName?.("Cloth") ?? null;
   const v = new THREE.Vector3();
-  let deep = 0, n = 0;
-  for (let k = 0; k < body.geometry.attributes.position.count; k += 2) {
-    body.getVertexPosition(k, v); v.applyMatrix4(body.matrixWorld);
-    const dx = v.x - s.at[0], dz = v.z - s.at[1];
-    const along = dx * f[0] + dz * f[1], side = dx * r[0] + dz * r[1];
-    if (along < -0.2 || along > (s.front ?? 0.3) || Math.abs(side) > 0.32) continue;
-    if (v.y < s.y && v.y > s.y - 0.08) { deep = Math.max(deep, s.y - v.y); n++; }
+  let deep = 0, n = 0, clothDeep = 0;
+  for (const m of cloth ? [body, cloth] : [body]) {
+    for (let k = 0; k < m.geometry.attributes.position.count; k += 2) {
+      m.getVertexPosition(k, v); v.applyMatrix4(m.matrixWorld);
+      const dx = v.x - s.at[0], dz = v.z - s.at[1];
+      const along = dx * f[0] + dz * f[1], side = dx * r[0] + dz * r[1];
+      if (along < -0.2 || along > (s.front ?? 0.3) || Math.abs(side) > 0.32) continue;
+      if (v.y < s.y && v.y > s.y - 0.08) { deep = Math.max(deep, s.y - v.y); n++; if (m === cloth) clothDeep = Math.max(clothDeep, s.y - v.y); }
+    }
   }
-  return { id: p.id, obj: host.id, pierceCm: +(deep * 100).toFixed(1), points: n, liftCm: +(p.y * 100).toFixed(1) };
+  return { id: p.id, obj: host.id, pierceCm: +(deep * 100).toFixed(1), clothCm: cloth ? +(clothDeep * 100).toFixed(1) : null, points: n, liftCm: +(p.y * 100).toFixed(1) };
 }
 
 /** Where a ray first meets a standing cylinder (centre x,z, radius r, from the floor to h), or null. */

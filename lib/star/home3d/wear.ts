@@ -34,6 +34,7 @@ import { makeHuman, defaultHumanSpec, HUMAN3D_FILE, type HumanSpec } from "../hu
 import { loadGltfCached } from "../three3d/perf";
 import { loadModel3d } from "../three3d/ktx2";
 import type { Worn, Kit2 } from "./outfits";
+import { dressCloth, homeSetCloth } from "../style3d/toon/clothes";
 
 export interface WearInput {
   worn: Worn;
@@ -45,6 +46,9 @@ export interface WearInput {
   hairStyle?: "short" | "long" | "buzz" | "none";
   outline: number;
   castShadow: boolean;
+  /** Real cloth clothes on a Style A body (style3d/toon/clothes; Harry, 21 Nov 2026: "put them in houses").
+   *  Default on; false keeps the painted clothes. `?cloth=0` on the page also keeps them, to compare. */
+  cloth?: boolean;
 }
 
 export type WearerMaker = (T: any, SkeletonUtils: any, loader: any, w: WearInput) => Promise<Person3D | null>;
@@ -72,6 +76,13 @@ export async function buildWearer(T: any, SkeletonUtils: any, loader: any, w: We
     const c = w.worn.set.colours(w.kits.home);
     dressPerson3d(T, p, { skin: toonYou().skin, hair: toonYou().hair, kit: { shirt: c.main ?? "#7a7f87", trim: c.accent ?? c.main ?? "#7a7f87", shorts: c.trousers, socks: c.trousers } });
     paintCasualToon(T, p, c);
+    if (w.cloth !== false) {
+      const cw = homeSetCloth(w.worn.set.id, c);
+      // the smart coat over an open shirt (no tie): the tie colour matches the shirt, so the suit reads as "open"
+      const u = p.u as Record<string, { value: any }>;
+      if (cw.kind === "suit" && u.uSuitTie && u.uSuitShirt) u.uSuitTie.value = u.uSuitShirt.value.clone();
+      dressCloth(T, p, cw.kind, "you", { colours: cw.colours });
+    }
     relaxHands(T, p);
     return p;
   }
@@ -96,6 +107,8 @@ export async function buildWearer(T: any, SkeletonUtils: any, loader: any, w: We
     skin: toon ? toonYou().skin : w.skin, hair: toon ? toonYou().hair : w.hair, kit: w.kits[w.worn.kit], number: w.number,
     accessories: [{ slot: "boots", color: w.worn.boots }],
   });
+  // the approved cloth kit (the painted one stays for a body the builder cannot dress)
+  if (toon && w.cloth !== false) dressCloth(T, p, "kit", "you");
   relaxHands(T, p);
   return p;
 }
@@ -121,12 +134,17 @@ function paintCasualToon(T: any, p: Person3D, c: Partial<Record<"main" | "second
   if (u.uNumOn) u.uNumOn.value = 0;
 }
 
-/** Repaint a kit-wearing person for another kit or boot colour without rebuilding him. */
-export function repaintKit(T: any, p: Person3D, w: WearInput) {
-  if (w.worn.kind !== "kit") return;
+/** Wearing cloth clothes (dressCloth): a colour change then means a new person, not a repaint. */
+export function wearsCloth(p: Person3D): boolean { return !!(p.body as any)?.userData?.cloth; }
+
+/** Repaint a kit-wearing person for another kit or boot colour without rebuilding him. False: he wears cloth (rebuild him). */
+export function repaintKit(T: any, p: Person3D, w: WearInput): boolean {
+  if (w.worn.kind !== "kit") return false;
+  if (wearsCloth(p)) return false;
   const toon = !!p.toon;
   dressPerson3d(T, p, {
     skin: toon ? toonYou().skin : w.skin, hair: toon ? toonYou().hair : w.hair, kit: w.kits[w.worn.kit], number: w.number,
     accessories: [{ slot: "boots", color: w.worn.boots }],
   });
+  return true;
 }

@@ -736,7 +736,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     p.root.traverse((o: any) => {
       const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
       for (const m of ms) m.dispose?.();
-      if (wasCasual && o.isSkinnedMesh && o.name !== "Outline") o.geometry?.dispose?.();
+      // cloth geometry (and the cut body under it) is shared by everyone of that head and outfit: never freed here
+      if (wasCasual && o.isSkinnedMesh && o.name !== "Outline" && o.name !== "Cloth" && o.name !== "ClothInk" && !o.userData?.cloth) o.geometry?.dispose?.();
     });
   };
   const wear = (worn: Worn): Promise<void> => {
@@ -744,7 +745,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       if (disposed) return;
       const cur = me.worn;
       // same body, new colours: a repaint (a kit for a kit)
-      if (cur.kind === "kit" && worn.kind === "kit") { repaintKit(THREE, me.person, wearIn(worn)); me.worn = worn; return; }
+      if (cur.kind === "kit" && worn.kind === "kit" && repaintKit(THREE, me.person, wearIn(worn))) { me.worn = worn; return; }
       if (cur.kind === "casual" && worn.kind === "casual" && cur.set.id === worn.set.id) return;
       changing = true;
       try {

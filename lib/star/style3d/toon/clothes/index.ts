@@ -22,9 +22,14 @@ import { buildClothes, rigOf, type GarmentSpec, type Built } from "./build";
 import { OUTFITS, type ClothKind } from "./outfits";
 
 export type { ClothKind } from "./outfits";
+export { homeSetCloth, offPitchWear, type OffPitchWear } from "./casual";
 type Three = typeof import("three");
 
-const CACHE = new Map<string, Built>();
+/** Colours that replace an outfit's own (sRGB hex): off-pitch clothes at home (`./casual.ts`), your saved home set. */
+export interface ClothColours { top?: string; trim?: string; inner?: string; trousers?: string; shoes?: string }
+export interface ClothOpts { colours?: ClothColours }
+
+const CACHE = new Map<string, Built & { names: string[] }>();
 /** Who kept the painted clothes, and why (read by tests and the bench). */
 export const CLOTH_FALLBACKS: { who: string; why: string }[] = [];
 /** Build timings, ms (first build of each head + kind). */
@@ -34,7 +39,7 @@ const MAX = 6;
 /** Beyond this distance (metres) the cloth's ink line is not drawn (the far-player cheaper version). */
 export const CLOTH_INK_FAR = 7;
 
-export function dressCloth(T: Three, p: Person3D, kind: ClothKind, who = ""): boolean {
+export function dressCloth(T: Three, p: Person3D, kind: ClothKind, who = "", opts: ClothOpts = {}): boolean {
   const fail = (why: string) => { if (CLOTH_FALLBACKS.length < 200) CLOTH_FALLBACKS.push({ who, why }); console.info(`[clothes] ${who || "person"} keeps painted clothes: ${why}`); return false; };
   // ?cloth=0 on any 3D page: the painted clothes, to compare (frame cost, before / after pictures)
   try { if (typeof location !== "undefined" && new URLSearchParams(location.search).get("cloth") === "0") return false; } catch { /* no page */ }
@@ -51,12 +56,13 @@ export function dressCloth(T: Three, p: Person3D, kind: ClothKind, who = ""): bo
   if (!built) {
     const t0 = performance.now();
     const specs: GarmentSpec[] = OUTFITS[kind].garments(p.meta, variant);
-    try { built = buildClothes(T, p.body, rigOf(T, p.body, j as Record<string, [number, number, number]>), specs); }
+    try { built = { ...buildClothes(T, p.body, rigOf(T, p.body, j as Record<string, [number, number, number]>), specs), names: specs.map((g) => g.name) }; }
     catch (e) { return fail(`build failed: ${String(e)}`); }
     CLOTH_BUILD_MS[key] = Math.round(performance.now() - t0);
     CACHE.set(key, built);
   }
   const slots = OUTFITS[kind].slots(u, variant, T.Color, p.meta);
+  if (opts.colours) recolour(T, slots, built.names, kind, opts.colours);
   const mat = clothMaterial(T, slots, decalsFor(T, kind, u, p.meta, slots));
   const cloth = new T.SkinnedMesh(built.cloth, mat);
   cloth.name = "Cloth"; cloth.frustumCulled = false; cloth.castShadow = p.body.castShadow;
@@ -90,6 +96,24 @@ export function dressCloth(T: Three, p: Person3D, kind: ClothKind, who = ""): bo
   bm.customProgramCacheKey = () => `${prevKey()}-cloth`;
   bm.needsUpdate = true;
   return true;
+}
+
+/** An outfit's slots in other colours, by garment: the top (the outer piece), the suit's shirt under it, trousers,
+ *  shoes. Hems and trims follow the new colour (a shade under it) unless a trim is given. */
+function recolour(T: Three, slots: ClothSlot[], names: string[], kind: ClothKind, c: ClothColours) {
+  const C = (h: string) => new T.Color(h);
+  names.forEach((n, i) => {
+    const s = slots[i];
+    if (!s) return;
+    const role = n === "trousers" ? "trousers" : n === "shoes" ? "shoes" : kind === "suit" && n === "shirt" ? "inner" : ["shorts", "socks", "sleeves"].includes(n) ? null : "top";
+    const hexOf = role ? c[role as keyof ClothColours] : undefined;
+    if (!hexOf) return;
+    s.color = C(hexOf);
+    if (role === "top") s.trim = c.trim ? C(c.trim) : C(hexOf).multiplyScalar(0.82);
+    else if (role === "trousers") s.trim = C(hexOf).multiplyScalar(0.78);
+    else if (role === "inner") s.trim = C(hexOf).multiplyScalar(0.86);
+    if (s.trim2 && role === "inner") s.trim2 = C(hexOf);
+  });
 }
 
 /** One garment slot's look (colours linear). */
@@ -177,6 +201,8 @@ function decalsFor(T: Three, kind: ClothKind, u: Record<string, { value: any }>,
     out.push({ tex: zip(T, (u.uTrim?.value as THREE.Color) ?? new T.Color(1, 1, 1)), slot: 0, at: [0, (collarY + hem) / 2], size: [0.03, collarY - hem] });
   } else if (kind === "press") {
     out.push({ tex: lanyard(T), slot: 0, at: [0, chestY - 0.035], size: [0.17, 0.26] });
+    out.push(placket(0, collarY - 0.03, hipsY + 0.03, 6));
+  } else if (kind === "shirt") {
     out.push(placket(0, collarY - 0.03, hipsY + 0.03, 6));
   } else if (kind === "polo") {
     out.push({ tex: crest, slot: 0, at: [0.085, chestY], size: [0.06, 0.06] });

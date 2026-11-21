@@ -15,7 +15,7 @@ import type { PersonMeta } from "../../../people3d";
 import type { GarmentSpec } from "./build";
 import type { ClothSlot } from "./index";
 
-export type ClothKind = "kit" | "tracksuit" | "press" | "suit" | "polo" | "fan" | "hoodie";
+export type ClothKind = "kit" | "tracksuit" | "press" | "suit" | "polo" | "fan" | "hoodie" | "tee" | "shirt";
 type V3 = [number, number, number];
 type U = Record<string, { value: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const NONE = -1;
@@ -216,6 +216,41 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
         { color: col(Color, shirt), trim: col(Color, trim), fabric: "poly", bands: [0.012, 0.016, 0, 0] },
         { color: new Color(0.045, 0.1, 0.22), trim: new Color(0.03, 0.06, 0.14), fabric: "cotton", bands: [0.025, 0, 0, 0] },
         shoeSlot(u, Color, [0.8, 0.78, 0.74]),
+      ];
+    },
+  },
+  // ── off the pitch at home (21 Nov 2026: "put them in houses") ──
+  // tee: the fan's cut (crew collar, short sleeves, loose over the jeans), plain cotton, no crest.
+  tee: {
+    garments(meta) {
+      const { LM, neckRing } = landmarks(meta);
+      return [
+        shortTop("tee", LM, neckRing, { off: 0.016, hem: LM.waist - 0.04, sleeve: LM.sleeveShort + 0.06, collar: { kind: "crew", h: 0.012, out: 0.008 }, shape: undefined }),
+        trousers(LM, [1.03, 1.22], false, 1.03), shoes(LM),
+      ];
+    },
+    slots(_u, _v, Color) {
+      return [
+        { color: new Color(0.86, 0.85, 0.82), trim: new Color(0.74, 0.73, 0.7), fabric: "cotton", bands: [0.01, 0.012, 0, 0] },
+        { color: new Color(0.045, 0.1, 0.22), trim: new Color(0.03, 0.06, 0.14), fabric: "cotton", bands: [0.025, 0, 0, 0] },
+        shoeSlot(_u, Color, [0.8, 0.78, 0.74]),
+      ];
+    },
+  },
+  // shirt: the press shirt's cut (folded collar, long sleeves, tucked), chinos, shoes; no lanyard.
+  shirt: {
+    garments(meta) {
+      const { LM, neckRing } = landmarks(meta);
+      return [
+        longTop("shirt", LM, neckRing, { off: 0.004, neck: [0.07, 0.062, 0.08, -0.012], hem: LM.tuck, collar: { kind: "shirt", h: 0.022, out: 0.006, fold: 0.014 }, shape: undefined }),
+        trousers(LM, [1.04, 1.3], false, 1.03), shoes(LM),
+      ];
+    },
+    slots(u, _v, Color) {
+      return [
+        { color: new Color(0.6, 0.69, 0.82), trim: new Color(0.51, 0.59, 0.7), fabric: "cotton", bands: [0, 0.03, 0, 0] },
+        { color: new Color(0.48, 0.38, 0.22), trim: new Color(0.34, 0.27, 0.16), fabric: "cotton", bands: [0.03, 0, 0, 0] },
+        shoeSlot(u, Color, [0.07, 0.035, 0.015]),
       ];
     },
   },
