@@ -1,0 +1,154 @@
+{
+  "id": "ex11-guess-the-club",
+  "series": "Explainer",
+  "variant": "FORMAT: quiz (clues, then the reveal) · pastel colours",
+  "title": "Guess the club in four clues",
+  "layout": "explainer",
+  "music": "10-good-spell.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://en.wikipedia.org/wiki/Manchester_United_F.C."
+  ],
+  "images": {
+    "pochettino": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pochettino.png"
+  },
+  "lines": [
+    {
+      "text": "Can you guess the club in four clues?",
+      "scene": {
+        "type": "clues",
+        "hook": true,
+        "bg": "purple",
+        "items": [
+          "?",
+          "?",
+          "?",
+          "?"
+        ],
+        "show": 0
+      }
+    },
+    {
+      "text": "Clue one. It was founded in 1878, by railway workers.",
+      "scene": {
+        "type": "clues",
+        "bg": "purple",
+        "items": [
+          "Founded 1878 by railway workers",
+          "",
+          "",
+          ""
+        ],
+        "show": 1
+      }
+    },
+    {
+      "text": "Clue two. Back then, it was called Newton Heath.",
+      "scene": {
+        "type": "clues",
+        "bg": "purple",
+        "items": [
+          "Founded 1878 by railway workers",
+          "Called Newton Heath",
+          "",
+          ""
+        ],
+        "show": 2
+      }
+    },
+    {
+      "text": "Clue three. It has won twenty English league titles.",
+      "scene": {
+        "type": "clues",
+        "bg": "purple",
+        "items": [
+          "Founded 1878 by railway workers",
+          "Called Newton Heath",
+          "20 English league titles",
+          ""
+        ],
+        "show": 3
+      }
+    },
+    {
+      "text": "Clue four. This week, it gave its job to Mauricio Pochettino.",
+      "scene": {
+        "type": "clues",
+        "bg": "purple",
+        "items": [
+          "Founded 1878 by railway workers",
+          "Called Newton Heath",
+          "20 English league titles",
+          "New boss: Pochettino"
+        ],
+        "show": 4
+      }
+    },
+    {
+      "text": "It's Manchester United.",
+      "scene": {
+        "type": "clues",
+        "bg": "red",
+        "items": [
+          "Founded 1878 by railway workers",
+          "Called Newton Heath",
+          "20 English league titles",
+          "New boss: Pochettino"
+        ],
+        "answer": "MANCHESTER UNITED"
+      }
+    },
+    {
+      "text": "Newton Heath became Manchester United in 1902.",
+      "scene": {
+        "type": "years",
+        "bg": "red",
+        "items": [
+          {
+            "year": "1878",
+            "top": "NEWTON HEATH",
+            "label": "Founded",
+            "head": "#2d6a4f"
+          },
+          {
+            "year": "1902",
+            "top": "MAN UNITED",
+            "label": "Renamed",
+            "tick": true
+          }
+        ]
+      }
+    }
+  ],
+  "theme": {
+    "palette": {
+      "red": [
+        "#ff8fab",
+        "#e05780"
+      ],
+      "teal": [
+        "#9be3e0",
+        "#3ea6ae"
+      ],
+      "yellow": [
+        "#ffe58a",
+        "#f4a300"
+      ],
+      "purple": [
+        "#cdb4db",
+        "#7d6bb0"
+      ],
+      "blue": [
+        "#a2d2ff",
+        "#4a8fe0"
+      ],
+      "green": [
+        "#b5e48c",
+        "#52b788"
+      ]
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "id": "ex14-pochettino-short",
+  "series": "Explainer",
+  "variant": "LENGTH: 20-second cut of ex01",
+  "title": "Pochettino at United in 20 seconds",
+  "layout": "explainer",
+  "music": "05-under-the-cosh.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.skysports.com/football/news/13611745/mauricio-pochettino-manchester-united-agree-two-and-a-half-year-deal-with-usa-manager-to-replace-michael-carrick"
+  ],
+  "images": {
+    "pochettino": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pochettino.png"
+  },
+  "lines": [
+    {
+      "text": "Pochettino takes over a United side eighteenth in the table.",
+      "scene": {
+        "type": "portrait",
+        "hook": true,
+        "bg": "red",
+        "scale": 1.3,
+        "person": {
+          "image": "pochettino"
+        }
+      }
+    },
+    {
+      "text": "Expect a four-two-three-one, and a hard press.",
+      "scene": {
+        "type": "press",
+        "bg": "green",
+        "won": "WON IT HIGH"
+      }
+    },
+    {
+      "text": "His first game? Liverpool. On Sunday.",
+      "scene": {
+        "type": "fixture",
+        "bg": "red",
+        "now": {
+          "top": "SUNDAY 22 NOVEMBER",
+          "teams": "LIVERPOOL v MAN UTD",
+          "foot": "ANFIELD"
+        }
+      }
+    }
+  ],
+  "theme": {
+    "captions": "karaoke",
+    "hi": "#ffd400"
+  }
+}

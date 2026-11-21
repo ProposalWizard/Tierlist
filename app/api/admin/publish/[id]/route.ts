@@ -15,7 +15,7 @@ const json = (body: unknown, status = 200) => NextResponse.json(body, { status, 
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const who = await whoIs(req, ["admin", "agent"]);
-  if (!who) return json({ error: "Admins only." }, 403);
+  if (!who) return json({ error: "Only the Publish owner can use this (PUBLISH_OWNER_EMAIL), or any admin when no owner is set." }, 403);
   const b = (await req.json().catch(() => ({}))) as { action?: string; scheduled_at?: string };
   try {
     const post = await getPost(params.id);

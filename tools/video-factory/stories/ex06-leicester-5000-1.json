@@ -1,0 +1,178 @@
+{
+  "id": "ex06-leicester-5000-1",
+  "series": "Explainer",
+  "title": "How did a 5,000-to-1 shot win the Premier League?",
+  "layout": "explainer",
+  "music": "03-winning.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://lcfc.com/news/1664758/leicesters-201516-title-win-in-numbers",
+    "https://www.skysports.com/football/news/30385/10283289/leicester-city-201516-premier-league-season-review",
+    "https://www.premierleague.com/en/news/2748139",
+    "https://www.theanalyst.com/articles/on-this-day-leicester-city-premier-league-title-2-may"
+  ],
+  "facts": {
+    "odds": "5000-1 before 2015-16",
+    "before": "bottom at Christmas 2014, survived in 2014-15",
+    "vardy": "scored in 11 consecutive PL games (record, beat van Nistelrooy's 10), 28 Nov 2015 v Man United",
+    "title": "sealed 2 May 2016 when Spurs drew 2-2 at Chelsea; 81 points, 10 clear; Arsenal 71, Spurs 70",
+    "mahrez": "PFA Players' Player of the Year 2016"
+  },
+  "images": {
+    "ranieri": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/ranieri.png",
+    "vardy": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/vardy.png",
+    "kante": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/kante.png",
+    "mahrez": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mahrez.png",
+    "leicesterfans": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/leicesterfans.png"
+  },
+  "lines": [
+    {
+      "text": "How did a five-thousand-to-one shot win the Premier League?",
+      "scene": {
+        "type": "odds",
+        "hook": true,
+        "bg": "blue",
+        "title": "BET SLIP",
+        "pick": "LEICESTER CITY",
+        "market": "TO WIN THE PREMIER LEAGUE",
+        "to": 5000,
+        "foot": "AUGUST 2015"
+      }
+    },
+    {
+      "text": "In August 2015, that's what the bookmakers thought of Leicester City.",
+      "scene": {
+        "type": "odds",
+        "bg": "blue",
+        "cut": true,
+        "title": "BET SLIP",
+        "pick": "LEICESTER CITY",
+        "market": "TO WIN THE PREMIER LEAGUE",
+        "to": 5000,
+        "foot": "AUGUST 2015"
+      }
+    },
+    {
+      "text": "And fair enough. The season before, they were bottom at Christmas.",
+      "scene": {
+        "type": "table",
+        "bg": "navy",
+        "title": "PREMIER LEAGUE · CHRISTMAS 2014",
+        "rows": [
+          {
+            "pos": 20,
+            "name": "Leicester City",
+            "pts": "",
+            "hi": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "Then they hired Claudio Ranieri.",
+      "scene": {
+        "type": "portrait",
+        "bg": "blue",
+        "person": {
+          "image": "ranieri",
+          "hairStyle": "slick",
+          "hair": "#cfcac2"
+        },
+        "name": "CLAUDIO RANIERI"
+      }
+    },
+    {
+      "text": "His team sat deep, and hit you on the break.",
+      "scene": {
+        "type": "press",
+        "bg": "green",
+        "won": "ON THE BREAK"
+      }
+    },
+    {
+      "text": "Jamie Vardy scored in eleven league games in a row. A Premier League record.",
+      "scene": {
+        "type": "portrait",
+        "bg": "blue",
+        "person": {
+          "image": "vardy"
+        },
+        "name": "VARDY · 11 GAMES IN A ROW"
+      }
+    },
+    {
+      "text": "N'Golo Kanté seemed to be everywhere at once.",
+      "scene": {
+        "type": "portrait",
+        "bg": "blue",
+        "person": {
+          "image": "kante",
+          "hairStyle": "short"
+        },
+        "name": "N'GOLO KANTÉ"
+      }
+    },
+    {
+      "text": "And Riyad Mahrez was named the PFA Player of the Year.",
+      "scene": {
+        "type": "portrait",
+        "bg": "blue",
+        "person": {
+          "image": "mahrez",
+          "hairStyle": "short"
+        },
+        "name": "RIYAD MAHREZ"
+      }
+    },
+    {
+      "text": "On the second of May, Tottenham drew at Chelsea, and Leicester were champions.",
+      "scene": {
+        "type": "fixture",
+        "bg": "blue",
+        "now": {
+          "top": "2 MAY 2016",
+          "teams": "CHELSEA 2-2 SPURS",
+          "foot": "LEICESTER ARE CHAMPIONS"
+        }
+      }
+    },
+    {
+      "text": "Eighty-one points. Ten clear.",
+      "scene": {
+        "type": "table",
+        "bg": "navy",
+        "title": "PREMIER LEAGUE 2015/16",
+        "rows": [
+          {
+            "pos": 1,
+            "name": "Leicester City",
+            "pts": 81,
+            "hi": true
+          },
+          {
+            "pos": 2,
+            "name": "Arsenal",
+            "pts": 71
+          },
+          {
+            "pos": 3,
+            "name": "Tottenham",
+            "pts": 70
+          }
+        ]
+      }
+    },
+    {
+      "text": "Five thousand to one.",
+      "scene": {
+        "type": "picture",
+        "image": "leicesterfans",
+        "bg": "blue",
+        "label": "CHAMPIONS · 5,000/1"
+      }
+    }
+  ]
+}
