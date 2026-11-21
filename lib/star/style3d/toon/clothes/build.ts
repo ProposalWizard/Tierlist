@@ -518,7 +518,7 @@ class Out {
     const nb = Array.from(adj.get(start) ?? []);
     const left = nb[0] ? walk(nb[0], seen) : [], right = nb[1] ? walk(nb[1], seen) : [];
     const chain = [...left.reverse(), start, ...right].map((k) => rep.get(k)!);
-    const closed = chain.length > 6 && (adj.get(this.wid[chain[0]])?.has(this.wid[chain[chain.length - 1]]) ?? false);
+    let closed = chain.length > 6 && (adj.get(this.wid[chain[0]])?.has(this.wid[chain[chain.length - 1]]) ?? false);
     // resample by arc length, then smooth (the cut edge zigzags a little across triangles)
     const P = chain.map((i) => [this.pos[i * 3], this.pos[i * 3 + 1], this.pos[i * 3 + 2]]);
     if (closed) { P.push(P[0]); chain.push(chain[0]); }
@@ -536,6 +536,36 @@ class Out {
     });
     const kind = c.kind ?? "crew";
     const C = c.neck;
+    // ROUND THE NECK BY ANGLE (round 3): on a lumpy head file the neck edge is several pieces (the walk above stops at
+    // the first fork), so the collar came out in strips with the neck showing between them. A collar that goes all
+    // the way round is laid by angle instead: every edge point binned by its angle round the neck, each bin's mean,
+    // empty bins filled from their neighbours, smoothed round the ring. Shirt and polo collars only: the kit's crew
+    // collar (approved as it is), the hood and the lapel (open at the V) keep the walk.
+    if (kind === "shirt" || kind === "polo") {
+      const NB = 96, bins: { p: number[]; n: number; src: number; d: number }[] = Array.from({ length: NB }, () => ({ p: [0, 0, 0], n: 0, src: -1, d: 1e9 }));
+      const all = new Set<number>(); for (const [a, b] of edges) { all.add(a); all.add(b); }
+      for (const i of Array.from(all)) {
+        const x = this.pos[i * 3], y = this.pos[i * 3 + 1], z = this.pos[i * 3 + 2];
+        const k = Math.min(NB - 1, Math.floor(((Math.atan2(x - C[0], z - C[2]) + Math.PI) / (2 * Math.PI)) * NB));
+        const B = bins[k]; B.p[0] += x; B.p[1] += y; B.p[2] += z; B.n++;
+        const dd = Math.abs(y - B.p[1] / B.n); if (dd < B.d) { B.d = dd; B.src = i; }
+      }
+      const filled = bins.filter((b) => b.n).length;
+      if (filled >= NB * 0.5) {
+        let P2 = bins.map((b) => (b.n ? b.p.map((v) => v / b.n) : null));
+        const src = bins.map((b) => b.src);
+        for (let k = 0; k < NB; k++) if (!P2[k]) {
+          let a = k, b = k; while (!P2[(a + NB) % NB]) a--; while (!P2[b % NB]) b++;
+          const A2 = P2[(a + NB) % NB]!, B2 = P2[b % NB]!, t = (k - a) / (b - a);
+          P2[k] = A2.map((v, q) => v + (B2[q] - v) * t); src[k] = src[(a + NB) % NB] >= 0 ? src[(a + NB) % NB] : src[b % NB];
+        }
+        for (let it = 0; it < 6; it++) P2 = P2.map((p0, k) => p0!.map((v, q) => v * 0.5 + (P2[(k + NB - 1) % NB]![q] + P2[(k + 1) % NB]![q]) * 0.25));
+        // start at the back (angle ±π) and go round, closed
+        S = P2.map((p0, k) => ({ p: p0!, src: src[k] }));
+        S.push({ p: S[0].p.slice(), src: S[0].src });
+        closed = true;
+      }
+    }
     const rows: number[][] = [];
     for (const s of S) {
       const [x, y, z] = s.p;
@@ -558,10 +588,13 @@ class Out {
         const lean = kind === "crew" ? c.out : c.out * 0.5;
         const top = [x + ix * lean, y + c.h, z + iz * lean];
         pts.push(top);
-        if (kind === "shirt" || kind === "polo" || kind === "lapel") {
+        if ((kind === "shirt" || kind === "polo" || kind === "lapel") && c.fold !== 0) {
           const w = (c.fold ?? 0.012) * (kind === "lapel" ? 0.6 : 1) + (kind === "shirt" ? 0.018 * front * front : 0.006 * front);
           const drop = kind === "shirt" ? 0.02 * front * front : 0.005 * front;
-          pts.push([top[0] - ix * w, top[1] - c.h * 0.95 - drop, top[2] - iz * w + 0.004 * front]);
+          // the fold rests on the garment just outside the edge (lifted off it along the edge's own normal): hung a
+          // collar's height down it went into the shirt's sloping front and the shoulders and came out as a ruff
+          const lift = 0.006;
+          pts.push([x - ix * w * 0.6 + n[0] * lift, y - 0.004 - drop * 0.3 + Math.max(0, n[1]) * lift, z - iz * w * 0.6 + n[2] * lift + 0.003 * front]);
         }
       }
       const row: number[] = [];
@@ -570,6 +603,7 @@ class Out {
       rows.push(row);
     }
     const gap = kind === "shirt" ? 0.012 : kind === "polo" ? 0.006 : 0;
+    const i0 = this.ind.length;
     for (let k = 0; k + 1 < rows.length; k++) {
       const A = rows[k], B = rows[k + 1];
       const cols = Math.min(A.length, B.length) - 1;
@@ -577,6 +611,21 @@ class Out {
       if (gap && A[A.length - 1] > 0.6 && Math.abs(this.pos[A[0] * 3] - C[0]) < gap && Math.abs(this.pos[B[0] * 3] - C[0]) < gap) continue;
       for (let r = 0; r + 1 < cols; r++) this.ind.push(A[r], B[r], A[r + 1], A[r + 1], B[r], B[r + 1]);
     }
+    // the collar's own normals, from its own faces and facing away from the neck (round 3: it kept the body's normal
+    // at each edge point it was swept from, so a toon light cut it into flat white and grey plates, "jagged shards")
+    const acc = new Map<number, number[]>();
+    for (let t = i0; t < this.ind.length; t += 3) {
+      const a = this.ind[t], b = this.ind[t + 1], c2 = this.ind[t + 2];
+      const ux = this.pos[b * 3] - this.pos[a * 3], uy = this.pos[b * 3 + 1] - this.pos[a * 3 + 1], uz = this.pos[b * 3 + 2] - this.pos[a * 3 + 2];
+      const vx = this.pos[c2 * 3] - this.pos[a * 3], vy = this.pos[c2 * 3 + 1] - this.pos[a * 3 + 1], vz = this.pos[c2 * 3 + 2] - this.pos[a * 3 + 2];
+      const n = [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx], l = Math.hypot(n[0], n[1], n[2]) || 1;
+      for (const v of [a, b, c2]) { const q = acc.get(v) ?? [0, 0, 0]; q[0] += n[0] / l; q[1] += n[1] / l; q[2] += n[2] / l; acc.set(v, q); }
+    }
+    acc.forEach((q, v) => {
+      const ox = this.pos[v * 3] - C[0], oz = this.pos[v * 3 + 2] - C[2];
+      const sg = q[0] * ox + q[2] * oz < 0 ? -1 : 1, l = Math.hypot(q[0], q[1], q[2]) || 1;
+      this.nor[v * 3] = (sg * q[0]) / l; this.nor[v * 3 + 1] = (sg * q[1]) / l; this.nor[v * 3 + 2] = (sg * q[2]) / l;
+    });
   }
   /** A tie down the centre front, laid on this garment's outer surface (skinned like the surface under it). */
   addTie(t: { top: number; bottom: number; w: number }) {

@@ -48,9 +48,20 @@ function pixels(img: CanvasImageSource & { width: number; height: number }): { d
  */
 export function faceCleanAt(
   r: [number, number, number], m: [number, number, number], c: [number, number, number],
-  F: { chinY: number; eyeY: number; browY: number; noseY: number; noseZ: number; headZ: number; neckZ: number; collarY: number },
+  F: { chinY: number; eyeY: number; browY: number; noseY: number; noseZ: number; headZ: number; neckZ: number; collarY: number; suitLow?: number; seamX?: number },
 ): number {
   const [x, y, z] = r, ax = Math.abs(x);
+  // A SUIT HEAD (round 3, Harry on the mentor: "his skin color is bleeding into his suit"): the head file has a
+  // suit, shirt collar and tie painted round its neck, and the cloth suit (clothes/) goes on top of it. Every
+  // texel from under the jaw down to the upper chest (inside the shoulders) is clean skin, front and back, so
+  // whatever the cloth collar leaves open is his neck and nothing painted: no pink ring, no painted collar's
+  // jagged edge, no dark band under the chin. The cloth hides the rest.
+  if (F.suitLow !== undefined && y >= F.suitLow && y < F.chinY + 0.004 && ax < (F.seamX ?? 0.12)) {
+    const hair = m[2] > 0.5 && m[2] >= m[1];
+    // the nape's own hair stays (behind the neck, just under the skull)
+    if (hair && z < F.neckZ - 0.01 && y > F.chinY - 0.03) return -3;
+    return 1;
+  }
   if (y < F.collarY + 0.008 || y > F.browY + 0.07) return -1;
   if (m[0] > 0.5) return -2;                                   // kit: the collar, the shirt
   const hair = m[2] > 0.5 && m[2] >= m[1];
@@ -77,12 +88,15 @@ export function faceCleanAt(
   return 1;
 }
 
+/** A head modelled in a suit (m1, m2, m3): its neck is cleaned down to the chest too. */
+export const isSuitHead = (p: Person3D) => typeof p.toonHead === "string" && p.toonHead.startsWith("m");
+
 /** Swap this person's picture and mask for his head file's clean copy. False when it cannot (no DOM, no picture). */
 export function cleanToonFace(T: Three, p: Person3D, lm: ToonFaceLandmarks): boolean {
   const mat = p.body.material as THREE.MeshStandardMaterial;
   const u = p.u as Record<string, { value: THREE.Texture }>;
   if (!mat.map || !u.uMask?.value) return false;
-  const key = `${p.meta.file ?? p.toonHead}`;
+  const key = `${p.meta.file ?? p.toonHead}${isSuitHead(p) ? "|neck" : ""}`;
   let clean = CACHE.get(key);
   if (clean === undefined) {
     clean = build(T, p, lm, mat.map, u.uMask.value);
@@ -144,6 +158,8 @@ function build(T: Three, p: Person3D, lm: ToonFaceLandmarks, map: THREE.Texture,
     chinY: lm.chinY, eyeY: (lm.eyes[0][1] + lm.eyes[1][1]) / 2, browY: lm.browY, noseY: lm.nose[1], noseZ: lm.nose[2],
     headZ: p.meta.joints.Head?.[2] ?? 0.045, neckZ: p.meta.joints.neck?.[2] ?? 0.02,
     collarY: kit.collarY ?? p.meta.face.chinY - 0.03,
+    // a suit head: clean from 10 cm under the collar line up (clothes/ covers it with the cloth suit)
+    ...(isSuitHead(p) ? { suitLow: (kit.collarY ?? p.meta.face.chinY - 0.03) - 0.1, seamX: Math.abs(p.meta.joints.LeftArm?.[0] ?? 0.17) - 0.03 } : {}),
   };
   const S = p.meta.skinAvg;
   const skin = [srgb(S[0]), srgb(S[1]), srgb(S[2])];
@@ -175,7 +191,7 @@ function build(T: Three, p: Person3D, lm: ToonFaceLandmarks, map: THREE.Texture,
   for (let t = 0; t < n; t += 3) {
     const a = index.getX(t), b = index.getX(t + 1), cc = index.getX(t + 2);
     const ymax = Math.max(rest.getY(a), rest.getY(b), rest.getY(cc)), ymin = Math.min(rest.getY(a), rest.getY(b), rest.getY(cc));
-    if (ymax < F.collarY || ymin > F.browY + 0.08) continue;
+    if (ymax < (F.suitLow ?? F.collarY) || ymin > F.browY + 0.08) continue;
     // the picture: read the mask at the same spot (its own size)
     tri(a, b, cc, C, (i, r, px, py) => {
       const mi = (Math.min(M.h - 1, Math.floor((py / C.h) * M.h)) * M.w + Math.min(M.w - 1, Math.floor((px / C.w) * M.w))) * 4;

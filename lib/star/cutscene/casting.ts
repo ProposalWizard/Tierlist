@@ -115,8 +115,12 @@ export function castAll(cast: readonly CastMember[], career?: CareerContext): Ma
       const kit = m.role === "rival" ? { shirt: opp.shirt, trim: opp.trim } : m.role === "keeper" ? { shirt: "#16a34a", trim: "#0b3d1d" } : { shirt: club.shirt, trim: club.trim };
       const pick = (salt: number) => presetLook(P.pool[(hash32(`${m.id}#preset`) + salt * 7919) % P.pool.length], m.id, P.role, { kit });
       let L = pick(0);
+      // test pages only: ?castpreset=<id>:<preset id>,… casts that person as that preset (the bench's close-ups of one head)
+      const forced = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("castpreset")?.split(",").map((x) => x.split(":")).find(([id]) => id === m.id)?.[1] : undefined;
+      const fp = forced ? presetById(forced) : undefined;
+      if (fp) L = presetLook(fp, m.id, P.role, { kit });
       const taken = (x: PersonLookResult) => presets.has(x.preset) || (!x.kit && keys.has(lookKey(x)));
-      for (let salt = 1; salt < 80 && taken(L); salt++) L = pick(salt);
+      for (let salt = 1; !fp && salt < 80 && taken(L); salt++) L = pick(salt);
       presets.add(L.preset); keys.add(lookKey(L));
       look.people = L;
       look.skin = L.skin; look.hair = L.hairColour; look.grey = L.grey;
