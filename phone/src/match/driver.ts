@@ -120,6 +120,7 @@ import type { GoalTrack, ClipBody, FrameState as ClipFrame } from "@/lib/star/go
 import { lateKindOf } from "@/lib/star/goalClip/commentary";
 import { minuteLabel } from "@/lib/star/addedTime";
 import { footSign, takerFootSign, drawnTakerAt } from "@/lib/star/kickFoot";
+import { panToKeep, followStep, widenToHold, easeCam, BACK_EASE_S } from "@/lib/star/runCamera";
 import { keeperKit, type MatchKits } from "@/lib/star/kits";
 import { stageScene } from "@/lib/star/scenePicture";
 import { ballMotionAt, sweepPeriod, liftOf, contactLimitS, lateAirContact, TOO_SLOW_MS, AIR_VERDICT_MS, GROUND_TAP_MS } from "./contactBall";
@@ -336,6 +337,8 @@ export class MatchDriver {
   private boot: { t: number; stopT: number | null; then: (() => void) | null } | null = null;
   private receiveGlide: { from: Vec2; to: Vec2; z0: number; t0: number } | null = null;
   private keepRunCam = false;
+  /** The widen when the ball comes back into your run (CanvasMatch camEaseRef). */
+  private camEase: { from: Viewport; to: Viewport; t: number } | null = null;
   private big = false;
   td: FpRunState | null = null;
   tdReady = false;
@@ -1219,8 +1222,20 @@ export class MatchDriver {
       separateBodies(sc);
     }
     this.standBackForRunup(sc0);
+    // B14b (CanvasMatch loadScenario, lib/star/runCamera.ts): the ball came back into your run, so the
+    // camera you were watching stays (no re-frame, no cut). It eases wider only if you, the ball and
+    // the goal would not all be in the picture.
+    const keepCam = this.keepRunCam && isTouchContinuation; // (a feature with its own frame never reaches here)
     this.keepRunCam = false;
-    this.frameScenario(sc0);
+    if (keepCam) {
+      const cur = { ...this.viewport };
+      const to = widenToHold(cur, [sc0.player, sc0.ball, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }]);
+      sc0.viewport = { x1: Math.min(sc0.viewport.x1, to.x1), x2: Math.max(sc0.viewport.x2, to.x2), y1: Math.min(sc0.viewport.y1, to.y1), y2: Math.max(sc0.viewport.y2, to.y2) };
+      this.camEase = to.x1 === cur.x1 && to.x2 === cur.x2 && to.y1 === cur.y1 && to.y2 === cur.y2 ? null : { from: cur, to, t: 0 };
+    } else {
+      this.camEase = null;
+      this.frameScenario(sc0);
+    }
     this.resetChanceState();
     this.phase = "aim";
     this.maybeBigMoment();
@@ -2148,6 +2163,21 @@ export class MatchDriver {
     if (this.runOn) {
       if (this.phase === "aim" || this.phase === "contact") this.stepRunOn(dt);
       else this.runOn = null;
+    }
+    // The one moving camera, your run (CanvasMatch's frame loop, B14b): while your pass plays on, the
+    // chance's camera pans (never zooms) just enough to keep you, and a ball played back to you, in the
+    // picture, inside the play area. When the ball comes back a widen eases in over BACK_EASE_S.
+    if (!this.feature?.scene?.ownFrame && !this.lead && !this.runOn && this.phase !== "tdDribble") {
+      const ce = this.camEase;
+      if (ce) {
+        ce.t += dt;
+        this.viewport = easeCam(ce.from, ce.to, ce.t / BACK_EASE_S);
+        if (ce.t >= BACK_EASE_S) this.camEase = null;
+      } else if (this.playOn && this.phase === "flight") {
+        const sc = this.sc, b = this.ball;
+        const want = panToKeep(this.viewport, [sc.player, ...(this.playOn.layOffLive && b ? [b.pos] : [])], sc.viewport);
+        this.viewport = followStep(this.viewport, want, dt);
+      }
     }
     if (this.lead) this.stepLeadIn(replayDt);
     this.recordGoalFrame(dt);
