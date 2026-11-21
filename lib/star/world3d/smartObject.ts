@@ -75,6 +75,8 @@ export interface SmartObject {
   pick: { at: XZ; r: number; h: number };
   /** Used FROM another object (the TV from the sofa's seats). */
   via?: string;
+  /** A bed you can sleep in (home3d/livingRooms.ts): its middle, the way from its foot to its head, the mattress top, the duvet's colour. */
+  bed?: { at: XZ; head: number; top: number; duvet: string };
 }
 
 /** Forward and right on the floor for a facing. */

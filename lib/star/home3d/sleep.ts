@@ -17,6 +17,7 @@
  */
 import type { CareerState } from "../types";
 import { actionsLeft, rest } from "../week";
+import { nextFixtureFor } from "../competitions";
 
 export type SleepWhy = "rested" | "sleptAlready" | "nothingLeft" | "fullEnergy";
 
@@ -36,16 +37,24 @@ export function sleptThisWeek(c: Pick<CareerState, "season" | "week" | "lastSlee
   return !!c.lastSleep && c.lastSleep.season === c.season && c.lastSleep.week === c.week;
 }
 
+/** "Next: Chelsea (home)", or nothing when there is no match to come. */
+function nextLine(c: CareerState): string {
+  try {
+    const f = nextFixtureFor(c);
+    return f ? ` Next: ${f.opponent} (${f.home ? "home" : "away"}).` : "";
+  } catch { return ""; }
+}
+
 /** A night in your bed. Returns the same career object when nothing changes. */
 export function sleepNight(c: CareerState): SleepResult {
-  if (sleptThisWeek(c)) return { career: c, rested: false, why: "sleptAlready", gained: 0, text: "A lie-in. You already had a full night's sleep before this match." };
-  if (actionsLeft(c) <= 0) return { career: c, rested: false, why: "nothingLeft", gained: 0, text: "A good night. Nothing left to do this week: the next match is up." };
-  if (c.energy >= 100) return { career: c, rested: false, why: "fullEnergy", gained: 0, text: "A good night. Your energy was already full." };
+  if (sleptThisWeek(c)) return { career: c, rested: false, why: "sleptAlready", gained: 0, text: `You've already slept since the last match: no more energy until it's played.${nextLine(c)}` };
+  if (actionsLeft(c) <= 0) return { career: c, rested: false, why: "nothingLeft", gained: 0, text: `A good night, but this week's three things are used up: no energy back.${nextLine(c)}` };
+  if (c.energy >= 100) return { career: c, rested: false, why: "fullEnergy", gained: 0, text: `A good night. Your energy was already full (100).${nextLine(c)}` };
   const next = rest(c);
   const gained = next.energy - c.energy;
   return {
     career: { ...next, lastSleep: { season: c.season, week: c.week } },
     rested: true, why: "rested", gained,
-    text: `A full night's sleep. Energy +${gained} (now ${next.energy}). That was this week's rest.`,
+    text: `Rested: energy ${c.energy} → ${next.energy} (+${gained}). That was this week's rest.${nextLine(c)}`,
   };
 }

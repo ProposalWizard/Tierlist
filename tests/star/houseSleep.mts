@@ -24,12 +24,13 @@ const r = rest(base);
 check(a.rested && a.why === "rested", "a first night in the gap rests you");
 check(a.career.energy === r.energy && a.career.energy > base.energy, `energy as Rest gives (${base.energy} → ${a.career.energy}, Rest ${r.energy})`);
 check(actionsLeft(a.career) === actionsLeft(base) - 1, "it spends one of the week's things, as Rest does");
-check(a.gained === a.career.energy - base.energy && a.text.includes(`+${a.gained}`), "the card says what it gave");
+check(a.gained === a.career.energy - base.energy && a.text.includes(`${base.energy} → ${a.career.energy}`), "the card says what it gave");
 check(sleptThisWeek(a.career) && !sleptThisWeek(base), "the gap is marked slept");
 
 // ── cannot be repeated for gain ──
 const b = sleepNight(a.career);
 check(!b.rested && b.why === "sleptAlready" && b.career === a.career, "a second night in the same gap changes nothing");
+check(b.text.startsWith("You've already slept since the last match"), "a second night says why not");
 let c = a.career;
 for (let i = 0; i < 20; i++) c = sleepNight(c).career;
 check(c.energy === a.career.energy && actionsLeft(c) === actionsLeft(a.career), "twenty more nights: not one point more");

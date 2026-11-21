@@ -124,7 +124,8 @@ export interface BuiltRoom {
 function makeKit(env: RoomEnv, root: any, o: { oneGlowDraw?: boolean } = {}) {
   const { THREE } = env;
   const mat = (c: string, o: any = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8, metalness: 0, ...o });
-  const glowM = (c: string, i = 1.6) => new THREE.MeshStandardMaterial({ color: "#000000", emissive: c, emissiveIntensity: i });
+  // (a lit lamp, a screen: dimmed by the house clock at night, home3d/scene.ts applyDayLight)
+  const glowM = (c: string, i = 1.6) => new THREE.MeshStandardMaterial({ color: "#000000", emissive: c, emissiveIntensity: i, userData: { daylight: "emit" } });
   const tex = (cv: HTMLCanvasElement, rep?: [number, number]) => {
     const t = new THREE.CanvasTexture(cv);
     t.colorSpace = THREE.SRGBColorSpace;
@@ -166,7 +167,7 @@ function makeKit(env: RoomEnv, root: any, o: { oneGlowDraw?: boolean } = {}) {
       glowParts.get(t)!.push(g);
       return null;
     }
-    const me = plane(w, h, new THREE.MeshBasicMaterial({ map: t, color: new THREE.Color(colour).multiplyScalar(k), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, userData: t === patchT ? { daylight: "patch" } : {} }), x, y, z, rx, ry);
+    const me = plane(w, h, new THREE.MeshBasicMaterial({ map: t, color: new THREE.Color(colour).multiplyScalar(k), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, userData: t === patchT ? { daylight: "patch" } : t === glowT ? { daylight: "lamp" } : {} }), x, y, z, rx, ry);
     me.renderOrder = 2;
     return me;
   };
@@ -181,7 +182,7 @@ function makeKit(env: RoomEnv, root: any, o: { oneGlowDraw?: boolean } = {}) {
   const flushGlows = (merge: (g: any[]) => any): any[] => {
     const out: any[] = [];
     glowParts.forEach((parts, t) => {
-      const me = new THREE.Mesh(merge(parts), new THREE.MeshBasicMaterial({ map: t, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, userData: t === patchT ? { daylight: "patch" } : {} }));
+      const me = new THREE.Mesh(merge(parts), new THREE.MeshBasicMaterial({ map: t, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, userData: t === patchT ? { daylight: "patch" } : t === glowT ? { daylight: "lamp" } : {} }));
       for (const p of parts) p.dispose();
       me.renderOrder = 2;
       root.add(me);
@@ -957,6 +958,7 @@ export function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, win
   k.seen(floor);
   const fshade = k.plane(plan.w, plan.d, new THREE.MeshBasicMaterial({ map: k.tex(floorShadeCanvas()), transparent: true, depthWrite: false }), 0, 0.004, 0, -Math.PI / 2);
   fshade.renderOrder = 1;
+  fshade.userData.floorShade = true; // a living room bakes its own (livingRooms.ts livingFinish, ./bakeShade.ts)
   k.seen(fshade);
   const wallM = k.mat("#ffffff", { map: k.tex(wallCanvas(look.wall ?? R.wall)), roughness: 0.92 });
   const panelM = k.mat(R.panel, { roughness: R.tier === "estate" ? 0.45 : 0.7 });

@@ -29,6 +29,7 @@ import {
   type Ctx, type Kit, type WinSpec, type Box2,
 } from "./roomBuild";
 import { viewCanvas } from "./textures";
+import { floorShade } from "./bakeShade";
 
 export interface RoomFx { on?: (v: boolean) => void; tick?: (dt: number) => void }
 export interface GuestPlan { obj: string; slot?: string }
@@ -48,7 +49,8 @@ const rnd = (seed: number) => () => { seed = (seed * 16807) % 2147483647; return
 const INTO: Record<Wall, number> = { n: 0, s: Math.PI, e: -Math.PI / 2, w: Math.PI / 2 };
 
 /** A bed: sit on it, or sleep till morning (the house's night; home3d/sleep.ts says what it does to the career). */
-function bedSleeps(b: SmartObject) {
+function bedSleeps(b: SmartObject, bed: NonNullable<SmartObject["bed"]>) {
+  b.bed = bed;
   b.prompt.more = [{ id: "sleep", label: "Sleep till morning" }];
   b.prompt.lines = ["Get your head down, or just sit a minute."];
   b.effect = { text: "Five minutes off your feet." };
@@ -196,7 +198,7 @@ function aoCorners(c: Ctx, open: Wall[] = [], ceiling = true) {
   const { THREE } = k;
   const [can, g] = cv(8, 64);
   const gr = g.createLinearGradient(0, 0, 0, 64);
-  gr.addColorStop(0, "rgba(0,0,0,0.42)"); gr.addColorStop(0.45, "rgba(0,0,0,0.12)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+  gr.addColorStop(0, "rgba(0,0,0,0.3)"); gr.addColorStop(0.45, "rgba(0,0,0,0.09)"); gr.addColorStop(1, "rgba(0,0,0,0)");
   g.fillStyle = gr; g.fillRect(0, 0, 8, 64);
   const m = new THREE.MeshBasicMaterial({ map: k.tex(can), transparent: true, depthWrite: false, color: "#3a2a1c" });
   const put = (w: number, h: number, x: number, y: number, z: number, rx: number, ry: number, rz: number) => {
@@ -208,8 +210,7 @@ function aoCorners(c: Ctx, open: Wall[] = [], ceiling = true) {
   for (const [wl, x, z, len, ry] of walls) {
     if (open.includes(wl)) continue;
     const fx = Math.sin(ry), fz = Math.cos(ry); // into the room
-    // on the floor along the wall (dark at the wall)
-    put(len, 0.5, x + fx * 0.25, 0.005, z + fz * 0.25, -Math.PI / 2, ry, Math.PI);
+    // (the floor along the wall: the baked floor shade now, ./bakeShade.ts)
     // up the wall from the floor, and down it from the ceiling
     put(len, 0.32, x + fx * 0.012, 0.16, z + fz * 0.012, 0, ry, Math.PI);
     if (ceiling) put(len, 0.4, x + fx * 0.012, H - 0.2, z + fz * 0.012, 0, ry, 0);
@@ -219,6 +220,22 @@ function aoCorners(c: Ctx, open: Wall[] = [], ceiling = true) {
       put(0.36, H, x + rx2 * side * (len / 2 - 0.18) + fx * 0.013, H / 2, z + rz2 * side * (len / 2 - 0.18) + fz * 0.013, 0, ry, side > 0 ? -Math.PI / 2 : Math.PI / 2);
     }
   }
+}
+
+/** Swap the shell's generic floor shade for one baked from this room (./bakeShade.ts): 0 ms a frame. */
+function bakeFloor(c: Ctx, open: Wall[]) {
+  const { k, plan } = c;
+  let plane: any = null;
+  k.root.traverse((o: any) => { if (!plane && o.userData?.floorShade) plane = o; });
+  if (!plane) return;
+  const sh = floorShade(plan.w, plan.d, c.solids, open);
+  const [can, g] = cv(sh.nx, sh.nz);
+  const img = g.createImageData(sh.nx, sh.nz);
+  for (let n = 0; n < sh.alpha.length; n++) { img.data[n * 4] = 20; img.data[n * 4 + 1] = 14; img.data[n * 4 + 2] = 8; img.data[n * 4 + 3] = Math.round(255 * sh.alpha[n]); }
+  g.putImageData(img, 0, 0);
+  plane.material.map?.dispose();
+  plane.material.map = k.tex(can);
+  plane.material.needsUpdate = true;
 }
 
 /** A table lamp (the kit's) that glows, and its pool of light. */
@@ -306,7 +323,7 @@ export function buildStudio(c: Ctx, h: LivingHooks) {
   F.put("rugRound", bx - 1.3, bz + 0.3, 0, { s: 0.6, solid: false, tint: { carpet: "#c9b48e" } });
   artPiece(c, W2 - 0.03, 1.55, bz, -Math.PI / 2, 1.0, 0.7, 3);
   X.things.push(seatObject({ id: "bed", label: "Bed", at: [bx - 0.35, bz + 0.95 - 0.2], facing: 0, seats: 1, y: 0.54, front: 0.15, verb: "Sit on the bed", lines: ["Five minutes off your feet."], loop: [{ clip: "sit_down", hold: 1.55, secs: 6 }], stay: [8, 14] }));
-  bedSleeps(X.things[X.things.length - 1]);
+  bedSleeps(X.things[X.things.length - 1], { at: [bx, bz], head: Math.PI / 2, top: 0.54, duvet: "#5d6f86" });
   // the kitchenette along the south wall (west of the front door): the stocked fridge, sink, hob, a coffee machine
   const kz = D2 - 0.45;
   X.things.push(drinksFridge(c, "fridge", -W2 + 0.38, D2 - 0.36, Math.PI));
@@ -429,9 +446,10 @@ export function buildBedroom(c: Ctx, h: LivingHooks) {
   }
   artPiece(c, bx, 1.75, -D2 + 0.03, 0, 1.4, 0.6, 5);
   F.put("rugRectangle", bx, bz + 0.9, 0, { s: 0.9, solid: false, tint: { carpet: R.tier === "estate" ? "#c9b48e" : "#d9cbb4" } });
-  F.put("loungeSofaOttoman", bx, bz + 1.45, 0, { s: 0.85, tint: { carpet: inp.kits.home.shirt } });
-  X.things.push(seatObject({ id: "bed", label: "Bed", at: [bx + 0.96 - 0.2, bz + 0.25], facing: Math.PI / 2, seats: 1, y: 0.54, front: 0.15, verb: "Sit on the bed", lines: ["Five minutes off your feet."], stay: [8, 14] }));
-  bedSleeps(X.things[X.things.length - 1]);
+  // you sit on the bed's FOOT, facing into the room (the side had 0.6 m to the wall: no way in on the
+  // flat, 21 Nov 2026), so the ottoman that stood there is gone
+  X.things.push(seatObject({ id: "bed", label: "Bed", at: [bx, bz + 1.125 - 0.2], facing: 0, seats: 1, y: 0.54, front: 0.15, verb: "Sit on the bed", lines: ["Five minutes off your feet."], stay: [8, 14] }));
+  bedSleeps(X.things[X.things.length - 1], { at: [bx, bz], head: Math.PI, top: 0.54, duvet });
   // a reading chair by the window, a plant, a dresser with your things
   F.put("loungeChair", W2 - 0.75, D2 - 1.1, -Math.PI * 0.75, { tint: { carpet: "#8a9a8a" } });
   standLamp(c, W2 - 0.35, D2 - 0.35, null);
@@ -474,8 +492,21 @@ export function buildBathroom(c: Ctx, _h: LivingHooks) {
   X.things[X.things.length - 1].slots[0].lift = 0.1;
   // the bath along the north wall (the grand tiers), else a towel rail there
   if (plan.w > 3.9) {
-    F.put("bathtub", -W2 + 1.22, -D2 + 0.58, 0, { s: Math.min(1, (plan.w - 1.4) / 2.4) });
+    const ts = Math.min(1, (plan.w - 1.4) / 2.4), tbx = -W2 + 1.22, tbz = -D2 + 0.58;
+    F.put("bathtub", tbx, tbz, 0, { s: ts });
     smallPlant(c, -W2 + 0.25, 0.84, -D2 + 0.25);
+    // run a bath (21 Nov 2026): the tub is 0.84 m tall (Kenney's model), so no sit or lie clip fits in
+    // it without legs through the side or feet in the air; the soak happens off screen (a short dip to
+    // dark, "Half an hour later"), and the tub is full of water when the picture comes back
+    const bw = new THREE.Mesh(new THREE.PlaneGeometry(2.0 * ts, 0.78 * ts), new THREE.MeshStandardMaterial({ color: "#7fc4dc", roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.85 }));
+    bw.rotation.x = -Math.PI / 2;
+    bw.position.set(tbx, 0.62 * ts, tbz);
+    bw.visible = false; k.add(bw); c.keep.add(bw);
+    c.X!.fx.bath = { on: (v) => { if (v) bw.visible = true; } };
+    X.things.push(standObject({
+      id: "bath", kind: "spot", label: "Bath", front: [tbx + 0.3, tbz + 0.56 * ts + 0.45], face: [tbx + 0.3, -D2], verb: "Have a long soak", lines: ["Run it hot. Bubbles optional."],
+      loop: [{ clip: "idle", secs: 3 }], effect: { mood: 1, text: "A long soak. Mood +1" }, stay: [3.2, 3.2], pickR: 0.9, pickH: 0.9,
+    }));
   } else {
     const P = painter(k, env);
     for (const y of [0.9, 1.25]) P.cyl(0.015, 0.015, 0.9, "#c9cdd2", -W2 + 1.0, y, -D2 + 0.12, 0, 0, Math.PI / 2);
@@ -668,6 +699,8 @@ export function livingFinish(c: Ctx, shell: { metalM: any; glassM: any }) {
   const open: Wall[] = id === "terrace" ? ["n", "e", "w"] : id === "gardenTerrace" ? ["s", "e", "w"] : id === "poolTerrace" ? ["s", "e", "w"] : [];
   aoCorners(c, open, !(id === "terrace" || id === "gardenTerrace" || id === "poolTerrace"));
   void shell;
+  // the floor's shade, baked from this room's walls and the things standing in it (after the dressing below)
+  const bake = () => bakeFloor(c, open);
   if (id === "hallway") {
     F.put("rugRectangle", 0, 0.2, Math.PI / 2, { s: 0.85, solid: false, tint: { carpet: R(c) === "estate" ? "#6b2a2a" : "#7d4f3a" } });
     // either side of the trophy room's door: a little table with a lamp, and a tall plant
@@ -742,6 +775,7 @@ export function livingFinish(c: Ctx, shell: { metalM: any; glassM: any }) {
   } else if (id === "nook") {
     F.put("rugRectangle", 0, 0.1, Math.PI / 2, { s: 0.5, solid: false, tint: { carpet: "#7d4f3a" } });
   }
+  bake();
 }
 const R = (c: Ctx) => c.R.tier;
 export type { Kit };

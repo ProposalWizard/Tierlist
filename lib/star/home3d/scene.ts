@@ -140,11 +140,20 @@ export function openCamYaw(px: number, pz: number, yaw: number, want: number, w2
  * by, up near the ceiling, looking over him into the room, so the room reads and he stands in the
  * lower third, never filling the frame.
  */
-export function arrivalShot(door: { x: number; z: number; nx: number; nz: number }, H: number, w2: number, d2: number): { cam: [number, number, number]; look: [number, number, number]; fov: number; outside: true } {
-  // just outside the doorway, under its top: the room seen through the door, him a few metres in
-  const reach = Math.min(w2, d2) * 1.1;
-  void H;
-  return { cam: [door.x - door.nx * 0.55, 1.95, door.z - door.nz * 0.55], look: [door.x + door.nx * reach * 2.0, 1.3, door.z + door.nz * reach * 2.0], fov: 72, outside: true };
+export function arrivalShot(door: { x: number; z: number; nx: number; nz: number }, H: number, w2: number, d2: number): { cam: [number, number, number]; look: [number, number, number]; fov: number } {
+  // (21 Nov 2026: the old shot stood just outside the doorway at head height, straight behind him: in a
+  // kitchen or a garage his back filled the frame and the island or a car hid the room.) Now: inside,
+  // in the corner beside the door he came in by, up near the ceiling, looking down across the room,
+  // so the room reads and he (2 to 2.6 m in) stands in the lower third, nothing tall in front of him.
+  const tx = -door.nz, tz = door.nx; // along the door's wall
+  const along = door.x * tx + door.z * tz;
+  const s = along > 0 ? -1 : 1; // towards the middle of that wall: the wider side
+  const off = 1.2; // along the wall from the door (kept inside the room below)
+  const clamp = (v: number, m: number) => Math.max(-m + 0.3, Math.min(m - 0.3, v));
+  const cx = clamp(door.x + door.nx * 0.3 + tx * s * off, w2), cz = clamp(door.z + door.nz * 0.3 + tz * s * off, d2);
+  const deep = (Math.abs(door.nx) > 0.5 ? w2 : d2) * 2; // the room's depth from this door
+  const lx = door.x + door.nx * deep * 0.62 - tx * s * 0.45, lz = door.z + door.nz * deep * 0.62 - tz * s * 0.45;
+  return { cam: [cx, Math.max(2.1, H - 0.25), cz], look: [clamp(lx, w2), 0.55, clamp(lz, d2)], fov: 66 };
 }
 
 export interface HomeData {
@@ -367,12 +376,14 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
 
   // ── The house clock's light: as built (day), night, the next morning (sleeping in your bed) ──
   // Only the two live lights, the sky reflections and the painted window views and sun patches change: 0 ms a frame when still.
-  type DayLight = { hemi: number; sun: number; env: number; hemiC: any; sunC: any; view: any; patch: number };
-  const DAY0 = { hemi: hemi.intensity, sun: sun.intensity, env: scene.environmentIntensity };
+  type DayLight = { hemi: number; sun: number; env: number; hemiC: any; sunC: any; view: any; patch: number; lamp: number; exp: number };
+  const DAY0 = { hemi: hemi.intensity, sun: sun.intensity, env: scene.environmentIntensity, exp: renderer.toneMappingExposure };
   const LIGHTS: Record<"day" | "night" | "morning", DayLight> = {
-    day: { hemi: 1, sun: 1, env: 1, hemiC: hemi.color.clone(), sunC: sun.color.clone(), view: new THREE.Color("#ffffff"), patch: 1 },
-    night: { hemi: 0.4, sun: 0.12, env: 0.5, hemiC: new THREE.Color("#b4c2e6"), sunC: new THREE.Color("#8ea4d8"), view: new THREE.Color("#222b44"), patch: 0 },
-    morning: { hemi: 1.06, sun: 0.92, env: 1.04, hemiC: new THREE.Color("#f6f5f0"), sunC: new THREE.Color("#fff0da"), view: new THREE.Color("#ffffff"), patch: 0.75 },
+    day: { hemi: 1, sun: 1, env: 1, hemiC: hemi.color.clone(), sunC: sun.color.clone(), view: new THREE.Color("#ffffff"), patch: 1, lamp: 1, exp: 1 },
+    // night: the lamps off, a cold blue moonlight through the window, the view outside dark
+    night: { hemi: 0.2, sun: 0.22, env: 0.22, hemiC: new THREE.Color("#8fa2d8"), sunC: new THREE.Color("#7f9ce0"), view: new THREE.Color("#141b30"), patch: 0, lamp: 0.08, exp: 0.82 },
+    // the next morning: warm, low sun through the same window, the lamps off
+    morning: { hemi: 0.95, sun: 1.12, env: 0.95, hemiC: new THREE.Color("#fff4e6"), sunC: new THREE.Color("#ffd9a8"), view: new THREE.Color("#fff1dc"), patch: 1.2, lamp: 0.35, exp: 1 },
   };
   let lightFrom: DayLight = LIGHTS.day, lightTo: DayLight = LIGHTS.day, lightK = 1;
   /** Painted things that follow the clock (roomBuild tags them: window views, skies, sun patches). */
@@ -386,10 +397,13 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     hemi.color.copy(A.hemiC).lerp(B.hemiC, k);
     sun.color.copy(A.sunC).lerp(B.sunC, k);
     scratchC.copy(A.view).lerp(B.view, k);
-    const patch = mix(A.patch, B.patch);
+    const patch = mix(A.patch, B.patch), lamp = mix(A.lamp, B.lamp);
+    renderer.toneMappingExposure = DAY0.exp * mix(A.exp, B.exp);
     for (const m of dayMats) {
-      const base = m.userData.dayBase;
-      if (m.userData.daylight === "patch") m.color.copy(base).multiplyScalar(patch);
+      const kind = m.userData.daylight, base = m.userData.dayBase;
+      if (kind === "emit") m.emissiveIntensity = base * lamp;
+      else if (kind === "patch") m.color.copy(base).multiplyScalar(patch);
+      else if (kind === "lamp") m.color.copy(base).multiplyScalar(lamp);
       else m.color.copy(base).multiply(scratchC);
     }
   };
@@ -399,7 +413,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     g.traverse((o: any) => {
       const m = o.material;
       if (!m || Array.isArray(m) || !m.userData?.daylight) return;
-      if (!m.userData.dayBase) m.userData.dayBase = m.color.clone();
+      if (m.userData.dayBase === undefined) m.userData.dayBase = m.userData.daylight === "emit" ? m.emissiveIntensity : m.color.clone();
       if (!dayMats.includes(m)) dayMats.push(m);
     });
     applyDayLight();
@@ -410,6 +424,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     const now: DayLight = {
       hemi: hemi.intensity / DAY0.hemi, sun: sun.intensity / DAY0.sun, env: scene.environmentIntensity / DAY0.env,
       hemiC: hemi.color.clone(), sunC: sun.color.clone(), view: lightFrom.view.clone().lerp(lightTo.view, lightK), patch: lightFrom.patch + (lightTo.patch - lightFrom.patch) * lightK,
+      lamp: lightFrom.lamp + (lightTo.lamp - lightFrom.lamp) * lightK, exp: renderer.toneMappingExposure / DAY0.exp,
     };
     lightFrom = now; lightTo = to; lightK = 0;
   };
@@ -756,6 +771,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       onCard: (c) => cb.onCard?.(c),
       chat: opts.living.chat, onEffect: opts.living.onEffect,
       onSleep: () => { sleepSeq = { t: 0, text: "", morning: false }; },
+      dip: (text, mid) => { dipSeq = { t: 0, text, mid }; },
     }).catch((e) => { console.error("home: living", e); return null; });
     life?.enterRoom(room);
   }
@@ -764,32 +780,53 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   // 07:00 next day (the career's night counted here), the morning light, the screen back, he gets up.
   // Stepped on game time in the loop (the same on a phone and frame by frame when filming).
   let sleepSeq: { t: number; text: string; morning: boolean } | null = null;
+  /** A short dip to dark with a caption (the bath's soak): 0.6 s down, `mid`, held, 0.6 s up. */
+  let dipSeq: { t: number; text: string; mid: () => void } | null = null;
+  const stepDip = (dt: number) => {
+    const q = dipSeq!, was = q.t;
+    if (was === 0) { fade.style.transition = "none"; caption.innerHTML = q.text; }
+    q.t += dt;
+    const t = q.t;
+    if (t < 0.6) fade.style.opacity = String(t / 0.6);
+    else if (was < 0.6) { fade.style.opacity = "1"; caption.style.opacity = "1"; q.mid(); }
+    else if (t >= 1.8 && t < 2.4) { caption.style.opacity = "0"; fade.style.opacity = String(1 - (t - 1.8) / 0.6); }
+    else if (t >= 2.4) { fade.style.opacity = "0"; fade.style.transition = "opacity 0.2s ease"; caption.innerHTML = NEXT_MORNING; dipSeq = null; }
+  };
   const caption = document.createElement("div");
   Object.assign(caption.style, { position: "absolute", left: "0", right: "0", top: "44%", textAlign: "center", color: "#f7f1e8", font: "600 22px system-ui, sans-serif", letterSpacing: "0.02em", opacity: "0", transition: "opacity 0.4s ease" });
-  caption.innerHTML = 'Next morning<div style="font:500 15px system-ui,sans-serif;opacity:.7;margin-top:6px">07:00</div>';
+  const NEXT_MORNING = 'Next morning<div style="font:500 15px system-ui,sans-serif;opacity:.7;margin-top:6px">07:00</div>';
+  caption.innerHTML = NEXT_MORNING;
   fade.appendChild(caption);
-  const SLEEP = { dusk: 1.6, dark: 0.8, hold: 1.6, light: 1.0 };
+  // the night, in game seconds from sitting on the bed: the light falls; black; he is in bed in the dark
+  // room; black; "Next morning" (the career's night counted here); up in the morning light, still in
+  // bed; a blink; standing at the foot of the bed with the card
+  const SLEEP = { dusk: 1.2, toBlack1: 1.8, nightUp: 2.6, night: 4.4, toBlack2: 5.2, morningUp: 6.6, morning: 7.4, blink: 8.8, end: 9.2 };
   const stepSleep = (dt: number) => {
-    const q = sleepSeq!;
+    const q = sleepSeq!, S = SLEEP;
     if (q.t === 0) { lightTowards(LIGHTS.night); fade.style.transition = "none"; }
+    const was = q.t;
     q.t += dt;
-    const t1 = SLEEP.dusk, t2 = t1 + SLEEP.dark, t3 = t2 + SLEEP.hold, t4 = t3 + SLEEP.light;
-    if (q.t < t1) { lightK = q.t / t1; applyDayLight(); }
-    else if (q.t < t2) { if (lightK < 1) { lightK = 1; applyDayLight(); } fade.style.opacity = String((q.t - t1) / SLEEP.dark); }
-    else if (!q.morning) {
+    const t = q.t, crossed = (k: number) => was < k && t >= k;
+    const ramp = (a: number, b: number) => Math.max(0, Math.min(1, (t - a) / (b - a)));
+    if (t < S.dusk) { lightK = t / S.dusk; applyDayLight(); }
+    else if (lightK < 1 && !q.morning) { lightK = 1; applyDayLight(); }
+    if (t < S.toBlack1) fade.style.opacity = String(ramp(S.dusk, S.toBlack1) * (t >= S.dusk ? 1 : 0));
+    if (crossed(S.toBlack1)) life?.lie(true);
+    if (t >= S.toBlack1 && t < S.nightUp) fade.style.opacity = String(1 - 0.94 * ramp(S.toBlack1, S.nightUp));
+    if (t >= S.night && t < S.toBlack2) fade.style.opacity = String(0.06 + 0.94 * ramp(S.night, S.toBlack2));
+    if (crossed(S.toBlack2)) {
       q.morning = true;
       fade.style.opacity = "1";
       caption.style.opacity = "1";
       lightFrom = LIGHTS.morning; lightTo = LIGHTS.morning; lightK = 1; applyDayLight();
       q.text = opts.living?.onSleep?.() ?? "A good night.";
       life?.newDay();
-    } else if (q.t < t3) { /* the dark holds */ }
-    else if (q.t < t4) { caption.style.opacity = "0"; fade.style.opacity = String(1 - (q.t - t3) / SLEEP.light); }
-    else {
-      fade.style.opacity = "0"; fade.style.transition = "opacity 0.2s ease";
-      sleepSeq = null;
-      life?.wake(q.text);
     }
+    if (t >= S.morningUp - 0.4 && t < S.morningUp) caption.style.opacity = "0";
+    if (t >= S.morningUp && t < S.morning) fade.style.opacity = String(1 - ramp(S.morningUp, S.morning));
+    if (t >= S.blink && t < S.end) fade.style.opacity = String(Math.sin(Math.PI * ramp(S.blink, S.end)));
+    if (crossed((S.blink + S.end) / 2)) life?.wake(q.text);
+    if (t >= S.end) { fade.style.opacity = "0"; fade.style.transition = "opacity 0.2s ease"; sleepSeq = null; }
   };
 
   const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
@@ -875,6 +912,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     // a living house: while you use something, the world kit moves you (houseLife.ts)
     life?.update(dt);
     if (sleepSeq) stepSleep(dt);
+    if (dipSeq) stepDip(dt);
     const lifeHas = !!life?.controlsYou();
     // input: the stick, else the keys, else a tap-walk
     let ix = lifeHas ? 0 : stick.x, iy = lifeHas ? 0 : stick.y;
@@ -1043,7 +1081,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     renderer.info.reset(); // counted over the whole frame (look H's passes, the mirror), for stats()
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
 
-    busy = !!sleepSeq || !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || changing || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
+    busy = !!sleepSeq || !!dipSeq || !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || changing || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       if (busy && !capAlways) dyn.frame(performance.now()); else dyn.pause();

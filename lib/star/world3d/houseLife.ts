@@ -73,6 +73,8 @@ export interface LifeOptions {
   onEffect?: (thing: string, e: NonNullable<SmartObject["effect"]>) => void;
   /** "Sleep till morning": you are down on the bed; the house plays the night (scene.ts) and then calls `wake`. */
   onSleep?: () => void;
+  /** A short dip to dark with a caption ("Half an hour later"): `mid` runs in the dark. The bath's soak. */
+  dip?: (caption: string, mid: () => void) => void;
 }
 
 export interface HouseLife {
@@ -99,6 +101,8 @@ export interface HouseLife {
   newDay: () => void;
   /** After the night: you get up off the bed and the card says what the night did. */
   wake: (text: string) => void;
+  /** The night: you lie in the bed under the duvet (true) or sit back up on it (false). */
+  lie: (on: boolean) => void;
   debug: () => Record<string, unknown>;
   dispose: () => void;
 }
@@ -140,6 +144,8 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
   /** The house clock (game minutes): mid-afternoon when you walk in; a night's sleep moves it to 07:00 next day. */
   let clockMin = 15 * 60;
   let sleeping = false;
+  /** Lying in bed: the world kit does not move you (your pose is held, under the duvet). */
+  let lying: { duvet: any; bed: NonNullable<SmartObject["bed"]>; host: SmartObject } | null = null;
   const show = (c: InteractCard | null) => { card = c; o.onCard(c); };
   const fxOn = (id: string, v: boolean) => room?.fx?.[id]?.on?.(v);
 
@@ -332,6 +338,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
           if (pr && ob.kind !== "fridge" && ob.id !== "coffee") hold(meNpc!, pr);
           if (ob.kind === "fridge" || ob.id === "coffee") hold(meNpc!, pr);
           if (sleeping) { show(null); o.onSleep?.(); return; }
+          if (ob.id === "bath") { o.dip?.("Half an hour later", () => fxOn("bath", true)); }
           if (ob.effect) o.onEffect?.(ob.id, ob.effect);
           show(quick || timed ? null : objectCard(ob, { using: true }));
         },
@@ -383,7 +390,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     seated: () => !!meNpc?.seated,
     update: (dt) => {
       t += dt;
-      if (meNpc) meNpc.update(dt, world, true);
+      if (meNpc && !lying) meNpc.update(dt, world, true);
       // seated team-mates chat: each looks at a neighbour now and then (seeded by the clock)
       for (let i = 0; i < npcs.length; i++) {
         const n = npcs[i];
@@ -405,14 +412,71 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       endTalk();
       if (room && npcs.length) seatGuests();
     },
+    lie: (on) => {
+      const n = meNpc, host = using;
+      if (on) {
+        const b = host?.bed;
+        if (!n || !host || !b || lying) return;
+        const p = n.person;
+        hold(n, null);
+        // the standing pose laid flat on its back, feet to the foot, head on the pillow
+        for (const a of Object.values(p.actions as Record<string, any>)) { a.stop(); a.setEffectiveWeight(0); }
+        const idle = (p.actions as any).idle;
+        if (idle) { idle.reset(); idle.setEffectiveWeight(1); idle.play(); }
+        p.mixer.update(0.016);
+        const hd = [Math.sin(b.head), Math.cos(b.head)];
+        p.root.position.set(b.at[0] - hd[0] * 0.85, b.top + 0.12, b.at[1] - hd[1] * 0.85);
+        p.root.rotation.set(-Math.PI / 2, b.head + Math.PI, 0, "YXZ");
+        // the duvet over him, chest to feet (a soft raised slab in the bed's own colour)
+        const duvet = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.3, 1.5), new THREE.MeshStandardMaterial({ color: b.duvet, roughness: 0.92 }));
+        duvet.position.set(b.at[0] - hd[0] * 0.3, b.top + 0.13, b.at[1] - hd[1] * 0.3);
+        duvet.rotation.y = b.head;
+        duvet.castShadow = false; duvet.receiveShadow = true;
+        o.scene.add(duvet);
+        lying = { duvet, bed: b, host };
+        return;
+      }
+      if (!lying || !n) return;
+      const L = lying;
+      lying = null;
+      L.duvet.parent?.remove(L.duvet); L.duvet.geometry.dispose(); L.duvet.material.dispose();
+      // sat back up on the edge of the bed, as before the night (the clip's held seated pose)
+      const p = n.person;
+      p.root.rotation.set(0, n.yaw, 0, "XYZ");
+      n.update(0, world, true);
+      void p;
+    },
     wake: (text) => {
       sleeping = false;
-      const done = () => { handBack(); pending = null; show({ key: "obj:bed", title: "Good morning", sub: "07:00", lines: [text], actions: [{ id: "close", label: "OK", primary: true }] }); };
-      if (meNpc) meNpc.leave(done); else done();
+      const card = () => show({ key: "obj:bed", title: "Good morning", sub: "07:00", lines: [text], actions: [{ id: "close", label: "OK", primary: true }] });
+      const n = meNpc;
+      if (lying && n) {
+        // up and standing at the bed's foot, facing the room (done in the dark: no stand-up clip from lying)
+        const L = lying;
+        lying = null;
+        L.duvet.parent?.remove(L.duvet); L.duvet.geometry.dispose(); L.duvet.material.dispose();
+        const slot = L.host.slots[0];
+        n.person.root.rotation.set(0, slot.facing, 0, "XYZ");
+        n.person.root.position.set(slot.stand[0], 0, slot.stand[1]);
+        n.place(slot.stand[0], slot.stand[1], slot.facing);
+        book.release(n.id);
+        fxOn(L.host.id, false);
+        handBack(); pending = null; card();
+        return;
+      }
+      const done = () => { handBack(); pending = null; card(); };
+      if (n) n.leave(done); else done();
     },
     useShot: () => {
       const n = meNpc;
       if (!n || !room) return null;
+      if (lying) {
+        const b = lying.bed, hd = [Math.sin(b.head), Math.cos(b.head)], rt = [hd[1], -hd[0]];
+        // a high three-quarter view: off the foot corner, up by the ceiling, the whole bed and the window side of the room
+        const cx = b.at[0] - hd[0] * 1.9 + rt[0] * 1.9, cz = b.at[1] - hd[1] * 1.9 + rt[1] * 1.9;
+        const clampX = (x: number) => Math.max(-room!.w2 + 0.25, Math.min(room!.w2 - 0.25, x)), clampZ = (z: number) => Math.max(-room!.d2 + 0.25, Math.min(room!.d2 - 0.25, z));
+        return { cam: [clampX(cx), room.h - 0.15, clampZ(cz)], look: [b.at[0] + hd[0] * 0.2, b.top, b.at[1] + hd[1] * 0.2] };
+      }
       const ob = using ?? pending?.obj ?? null;
       const front = !ob || ob.kind === "seat" || ob.kind === "tv" || ob.kind === "spot" || ob.kind === "mirror";
       const f = [Math.sin(n.yaw), Math.cos(n.yaw)], r = [Math.cos(n.yaw), -Math.sin(n.yaw)];
@@ -423,10 +487,10 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     },
     talkTo: () => (talking && card ? talking.bodyXZ() : null),
     debug: () => ({
-      room: room?.id, clock: clockMin, sleeping, things: objects.list.map((x) => x.id), using: using?.id ?? null, card: card?.title ?? null,
+      room: room?.id, clock: clockMin, sleeping, lying: !!lying, things: objects.list.map((x) => x.id), using: using?.id ?? null, card: card?.title ?? null,
       you: meNpc?.info() ?? null, people: npcs.map((n) => ({ ...n.info(), visible: n.root.visible })), book: book.all(), where,
       // the seat check (RUL-3D-005): every skin point of each seated person inside his seat's top 8 cm (cm, 0 = clear)
-      seats: [...npcs, ...(meNpc ? [meNpc] : [])].filter((p) => p.state === "use" && p.using?.slots[0]?.seat).map((p) => seatCheck(THREE, p, book)),
+      seats: [...npcs, ...(meNpc ? [meNpc] : [])].filter((p) => p.state === "use" && p.using?.slots[0]?.seat && !(lying && p === meNpc)).map((p) => seatCheck(THREE, p, book)),
     }),
     dispose: () => {
       disposed = true;
