@@ -32,14 +32,16 @@ function kindStyle(kind: ButtonKind, accent?: string): { box: ViewStyle; ink: st
   }
 }
 
-export function LookButton({ label, onPress, kind = "primary", accent, small, disabled, style, children }: {
+export function LookButton({ label, onPress, kind = "primary", accent, small, disabled, style, children, web }: {
   label?: string; onPress?: () => void; kind?: ButtonKind; accent?: string; small?: boolean; disabled?: boolean; style?: StyleProp<ViewStyle>; children?: ReactNode;
+  /** The website's own line box (16 px words on a 24 px line, 12 above and below = 48 tall; small: 11 on 16.5). */
+  web?: boolean;
 }) {
   // A coloured button that can't be pressed goes grey glass (the website's disabled cans), not a faded colour.
   const k = disabled && kind === "accent" ? { box: { backgroundColor: "rgba(255,255,255,0.22)" } as ViewStyle, ink: "#ffffff" } : kindStyle(kind, accent);
   return (
-    <Press disabled={disabled} onPress={onPress} style={[k.box, { borderRadius: small ? 8 : 12, paddingVertical: small ? 6 : 13, paddingHorizontal: 10, alignItems: "center", justifyContent: "center" }, style]}>
-      {children ?? <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: k.ink, fontSize: small ? 11 : 16, fontWeight: "900" }}>{label}</Text>}
+    <Press disabled={disabled} onPress={onPress} style={[k.box, { borderRadius: small ? 8 : 12, paddingVertical: small ? 6 : web ? 12 : 13, paddingHorizontal: 10, alignItems: "center", justifyContent: "center" }, style]}>
+      {children ?? <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={[{ color: k.ink, fontSize: small ? 11 : 16, fontWeight: "900" }, web && { lineHeight: small ? 16.5 : 24 }]}>{label}</Text>}
     </Press>
   );
 }

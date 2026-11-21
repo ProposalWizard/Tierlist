@@ -29,7 +29,7 @@ import { FAKE_FACES } from "@/lib/star/fakeFaces";
 import { kitsOf } from "@/lib/star/kits";
 import { packedPicture } from "../../data/packed";
 import { Press } from "../../ui/Press";
-import { Backdrop, Display, Glass, Kicker, LookButton, Tag, LOOK } from "../../ui/look";
+import { Backdrop, Display, Glass, Kicker, LookButton, Tag, LOOK, FONT } from "../../ui/look";
 
 type Pane = "who" | "style" | "photo";
 
@@ -67,23 +67,23 @@ export function NewCareer({ onDone, onBack }: { onDone: (p: StarPlayer) => void;
   const sub = pane === "who" ? " · your details" : pane === "style" ? " · your style" : "";
   const back = () => (pane === "photo" ? setPane("style") : pane === "style" ? setPane("who") : onBack());
   const next = pane === "who"
-    ? <LookButton label="Continue →" disabled={!canGo} onPress={() => setPane("style")} style={{ flex: 1 }} />
+    ? <LookButton web label="Continue →" disabled={!canGo} onPress={() => setPane("style")} style={{ flex: 1 }} />
     : pane === "style"
-      ? <LookButton label="Continue →" onPress={() => setPane("photo")} style={{ flex: 1 }} />
-      : <LookButton label="✓ Start Career" onPress={submit} style={{ flex: 1 }} />;
+      ? <LookButton web label="Continue →" onPress={() => setPane("photo")} style={{ flex: 1 }} />
+      : <LookButton web label="✓ Start Career" onPress={submit} style={{ flex: 1 }} />;
 
   return (
     <View style={{ flex: 1 }}>
       <Backdrop kind="green" />
-      <SafeAreaView style={{ flex: 1, paddingHorizontal: 12, paddingTop: 12 }}>
+      <SafeAreaView style={{ flex: 1, paddingHorizontal: 14, paddingTop: 12 }}>
         <Press onPress={onBack} style={{ borderRadius: 8, borderWidth: 1, borderColor: "rgba(255,255,255,0.2)", backgroundColor: "rgba(255,255,255,0.1)", paddingVertical: 6, alignItems: "center" }}>
           <Text style={{ color: "#fff", fontSize: 12, fontWeight: "900" }}>‹ Main menu</Text>
         </Press>
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: 10, paddingBottom: 16 }} keyboardShouldPersistTaps="handled">
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: 6, paddingBottom: 16 }} keyboardShouldPersistTaps="handled">
           <View style={{ alignItems: "center", marginBottom: 12 }}>
             <Tag>Road to the Golden Ball</Tag>
-            <Display size={21} style={{ marginTop: 6 }}>{title}</Display>
-            <Text style={{ color: LOOK.emerald300, fontSize: 11, fontWeight: "700", marginTop: 2 }}>{step}<Text style={{ color: "rgba(52,211,153,0.7)" }}>{sub}</Text></Text>
+            <Display size={20} style={{ marginTop: 6, lineHeight: 25, letterSpacing: 0 }}>{title}</Display>
+            <Text style={{ color: LOOK.emerald300, fontSize: 11, lineHeight: 16.5, fontWeight: "700", marginTop: 4 }}>{step}<Text style={{ color: "rgba(52,211,153,0.7)" }}>{sub}</Text></Text>
           </View>
 
           {pane === "who" && (
@@ -100,12 +100,12 @@ export function NewCareer({ onDone, onBack }: { onDone: (p: StarPlayer) => void;
               <View style={{ marginTop: 12 }}>
                 <Label>Nationality</Label>
                 {!natOpen ? (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, backgroundColor: LOOK.emerald500, paddingHorizontal: 12, paddingVertical: 9, boxShadow: "0px 8px 14px -6px rgba(6,78,59,0.6)" } as ViewStyle}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, backgroundColor: LOOK.emerald500, paddingHorizontal: 12, paddingVertical: 10, boxShadow: "0px 8px 14px -6px rgba(6,78,59,0.6)" } as ViewStyle}>
                     <NationFlag nation={nationality} width={20} />
-                    <Text numberOfLines={1} style={{ flex: 1, color: "#fff", fontSize: 16, fontWeight: "900" }}>{nationality}</Text>
-                    <Text style={{ color: "#fff", fontSize: 17, fontWeight: "900" }}>✓</Text>
+                    <Text numberOfLines={1} style={{ flex: 1, color: "#fff", fontSize: 16, lineHeight: 24, fontWeight: "900" }}>{nationality}</Text>
+                    <Text style={{ color: "#fff", fontFamily: FONT.display, fontSize: 18, lineHeight: 28 }}>✓</Text>
                     <Press onPress={() => setNatOpen(true)} style={{ borderRadius: 8, backgroundColor: "rgba(6,78,59,0.5)", paddingHorizontal: 12, paddingVertical: 6 }}>
-                      <Text style={{ color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 0.5 }}>CHANGE</Text>
+                      <Text style={{ color: "#fff", fontSize: 11, lineHeight: 16.5, fontWeight: "900", letterSpacing: 0.275 }}>CHANGE</Text>
                     </Press>
                   </View>
                 ) : (
@@ -132,15 +132,15 @@ export function NewCareer({ onDone, onBack }: { onDone: (p: StarPlayer) => void;
 
           {pane === "style" && (
             <Glass tone="green" pad={16}>
-              <Label>Skin tone</Label>
+              <Label gap={6}>Skin tone</Label>
               <Grid cols={4}>
                 {SKIN_TONES.map((t) => (
                   <Press key={t.id} onPress={() => setSkin(t.id)} style={[tile(skin === t.id, 44), { backgroundColor: t.hex }]}>
-                    {skin === t.id ? <Text style={{ color: "#fff", fontSize: 17, fontWeight: "900", textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 2, textShadowOffset: { width: 0, height: 1 } }}>✓</Text> : <View />}
+                    {skin === t.id ? <Text style={{ color: "#fff", fontFamily: FONT.display, fontSize: 18, lineHeight: 28, textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 2, textShadowOffset: { width: 0, height: 1 } }}>✓</Text> : <View />}
                   </Press>
                 ))}
               </Grid>
-              <Label top>Hair</Label>
+              <Label top gap={6}>Hair</Label>
               <Grid cols={4}>
                 {HAIR_STYLES.map((h) => <Choice key={h.id} label={h.label} on={hairStyle === h.id} onPress={() => setHair(h.id)} small />)}
               </Grid>
@@ -149,12 +149,12 @@ export function NewCareer({ onDone, onBack }: { onDone: (p: StarPlayer) => void;
                   <Press key={h.id} onPress={() => setHairColour(h.id)} style={[tile(hairColour === h.id, 36), { backgroundColor: h.hex }]}><View /></Press>
                 ))}
               </Grid>
-              <Label top>Preferred foot</Label>
+              <Label top gap={6}>Preferred foot</Label>
               <Grid cols={2}>
                 {(["left", "right"] as const).map((f) => <Choice key={f} label={f === "left" ? "Left" : "Right"} on={foot === f} onPress={() => setFoot(f)} />)}
               </Grid>
               <Note>Permanent — you can't change this later.</Note>
-              <Label top>Preferred squad number</Label>
+              <Label top gap={6}>Preferred squad number</Label>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <Press disabled={num <= MIN_SQUAD_NUMBER} onPress={() => setNum((n) => clampSquadNumber(n - 1))} style={stepper}><Text style={stepTxt}>−</Text></Press>
                 <View style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" }}>
@@ -172,8 +172,8 @@ export function NewCareer({ onDone, onBack }: { onDone: (p: StarPlayer) => void;
             </Glass>
           )}
         </ScrollView>
-        <View style={{ flexDirection: "row", gap: 12, paddingTop: 8, paddingBottom: 12 }}>
-          <LookButton kind="navy" label="← Back" onPress={back} style={{ flex: 1 }} />
+        <View style={{ flexDirection: "row", gap: 12, paddingTop: 16, paddingBottom: 12 }}>
+          <LookButton web kind="navy" label="← Back" onPress={back} style={{ flex: 1 }} />
           {next}
         </View>
       </SafeAreaView>
@@ -197,8 +197,8 @@ function PhotoPicker({ value, onChange, number }: { value?: string; onChange: (v
   return (
     <Glass tone="inset" radius={12} pad={12}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <Kicker>Your photo</Kicker>
-        <Text style={{ color: "#fff", fontSize: 10, fontWeight: "700" }}>Optional</Text>
+        <Kicker style={{ letterSpacing: 1.8, lineHeight: 15 }}>Your photo</Kicker>
+        <Text style={{ color: "#fff", fontSize: 10, lineHeight: 15, fontWeight: "700" }}>Optional</Text>
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 12 }}>
         {/* the tile as the graphics draw it: your shirt and number, or your face */}
@@ -212,18 +212,22 @@ function PhotoPicker({ value, onChange, number }: { value?: string; onChange: (v
         </Text>
       </View>
       <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-        <LookButton label={busy === "library" ? "Opening…" : own ? "Change photo" : "Add a photo"} disabled={!!busy} small onPress={() => pick("library")} style={{ flex: 1, paddingVertical: 9 }} />
-        <LookButton kind="glass" label={busy === "camera" ? "Opening…" : "Take a photo"} disabled={!!busy} small onPress={() => pick("camera")} style={{ flex: 1, paddingVertical: 9 }} />
+        <LookButton disabled={!!busy} small onPress={() => pick("library")} style={{ flex: 1, paddingVertical: 8, borderRadius: 12, backgroundImage: "linear-gradient(180deg, #4ade80, #10b981 55%, #047857)" } as ViewStyle}>
+          <Text numberOfLines={1} style={photoBtn}>{busy === "library" ? "Opening…" : own ? "Change photo" : "Add a photo"}</Text>
+        </LookButton>
+        <LookButton kind="glass" disabled={!!busy} small onPress={() => pick("camera")} style={{ flex: 1, paddingVertical: 8, borderRadius: 12 }}>
+          <Text numberOfLines={1} style={photoBtn}>{busy === "camera" ? "Opening…" : "Take a photo"}</Text>
+        </LookButton>
       </View>
-      <Text style={{ color: problem ? "#fca5a5" : "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: "700", textAlign: "center", marginTop: 4 }}>{problem ?? "Your photo stays on this phone. Taking one asks to use the camera."}</Text>
+      {problem ? <Text style={{ color: "#fca5a5", fontSize: 10, lineHeight: 15, fontWeight: "700", textAlign: "center", marginTop: 4 }}>{problem}</Text> : null}
       <Press onPress={() => { if (value) onChange(undefined); }} style={[{ marginTop: 8, borderRadius: 12, paddingVertical: 8, alignItems: "center" },
         value
           ? ({ backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05))", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.2), inset 0px 0px 0px 1px rgba(255,255,255,0.12)" } as ViewStyle)
           : ({ backgroundImage: "linear-gradient(180deg, rgba(16,185,129,0.22), rgba(16,185,129,0.08))", boxShadow: "inset 0px 0px 0px 1px rgba(52,211,153,0.7), 0px 0px 14px -4px rgba(16,185,129,0.7)" } as ViewStyle)]}>
-        <Text style={{ color: value ? "#fff" : "#a7f3d0", fontSize: 12, fontWeight: "900" }}>{value ? "Use my shirt" : "✓ Using your shirt"}</Text>
+        <Text style={{ color: value ? "#fff" : "#a7f3d0", fontSize: 12, lineHeight: 18, fontWeight: "900" }}>{value ? "Use my shirt" : "✓ Using your shirt"}</Text>
       </Press>
       <View style={{ marginTop: 12, borderTopWidth: 1, borderColor: "rgba(255,255,255,0.1)", paddingTop: 12 }}>
-        <Kicker>Or pick a face</Kicker>
+        <Kicker style={{ letterSpacing: 1.8, lineHeight: 24 }}>Or pick a face</Kicker>
         <View style={{ flexDirection: "row", gap: 6, marginTop: 8 }}>
           {FAKE_FACES.map((src) => (
             <Press key={src} onPress={() => onChange(src)} style={[{ flex: 1, aspectRatio: 1, borderRadius: 8, overflow: "hidden", borderWidth: 2, backgroundColor: kit.shirt, borderColor: value === src ? "#34d399" : "rgba(255,255,255,0.15)" },
@@ -245,16 +249,16 @@ function Face({ src }: { src: string }) {
   return <Image source={{ uri }} resizeMode="cover" fadeDuration={0} style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "115%" }} />;
 }
 
-function Label({ children, top }: { children: React.ReactNode; top?: boolean }) {
-  return <Text style={{ color: LOOK.emerald300, fontSize: 10, fontWeight: "900", letterSpacing: 0.6, textTransform: "uppercase", textAlign: "center", marginBottom: 6, marginTop: top ? 18 : 0 }}>{children}</Text>;
+function Label({ children, top, gap = 4 }: { children: React.ReactNode; top?: boolean; gap?: number }) {
+  return <Text style={{ color: LOOK.emerald300, fontSize: 10, fontWeight: "900", lineHeight: 15, letterSpacing: 0.5, textTransform: "uppercase", textAlign: "center", marginBottom: gap, marginTop: top ? 16 : 0 }}>{children}</Text>;
 }
 function Note({ children }: { children: React.ReactNode }) {
-  return <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: "700", textAlign: "center", marginTop: 4 }}>{children}</Text>;
+  return <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, lineHeight: 15, fontWeight: "700", textAlign: "center", marginTop: 4 }}>{children}</Text>;
 }
 function Field({ value, onChange, placeholder, max = 20 }: { value: string; onChange: (s: string) => void; placeholder?: string; max?: number }) {
   return (
     <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor="rgba(0,0,0,0.4)" maxLength={max}
-      style={{ backgroundColor: "#fff", color: "#000", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 12, fontSize: 16, fontWeight: "700", textAlign: "center" }} />
+      style={{ backgroundColor: "#fff", color: "#000", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 0, height: 44, fontSize: 16, fontWeight: "700", textAlign: "center" }} />
   );
 }
 function Grid({ cols, children, style }: { cols: number; children: React.ReactNode; style?: ViewStyle }) {
@@ -279,12 +283,13 @@ const tile = (on: boolean, h: number): ViewStyle => ({
 /** A choice tile (hair, foot): green when picked, dark navy when not. */
 function Choice({ label, on, onPress, small }: { label: string; on: boolean; onPress: () => void; small?: boolean }) {
   return (
-    <Press onPress={onPress} style={[{ borderRadius: 12, paddingVertical: small ? 10 : 12, alignItems: "center", backgroundColor: on ? LOOK.emerald500 : "#1f2a40" },
+    <Press onPress={onPress} style={[{ borderRadius: 12, paddingVertical: small ? 10 : 12, alignItems: "center", backgroundColor: on ? LOOK.emerald500 : "#1c2a42" },
       on && ({ boxShadow: "0px 0px 0px 2px #6ee7b7" } as ViewStyle)]}>
-      <Text style={{ color: on ? "#fff" : "rgba(255,255,255,0.7)", fontSize: small ? 12 : 14, fontWeight: "900", letterSpacing: 0.5, textTransform: "uppercase" }}>{label}</Text>
+      <Text style={{ color: on ? "#fff" : "rgba(255,255,255,0.7)", fontSize: small ? 12 : 14, lineHeight: small ? 18 : 20, fontWeight: "900", letterSpacing: small ? 0.3 : 0.35, textTransform: "uppercase" }}>{label}</Text>
     </Press>
   );
 }
 
-const stepper = { height: 48, width: 56, borderRadius: 12, backgroundColor: "#1f2a40", alignItems: "center" as const, justifyContent: "center" as const };
-const stepTxt = { color: "#fff", fontSize: 24, fontWeight: "900" as const };
+const photoBtn = { color: "#fff", fontSize: 12, lineHeight: 18, fontWeight: "900" as const };
+const stepper = { height: 48, width: 56, borderRadius: 12, backgroundColor: "#1c2a42", alignItems: "center" as const, justifyContent: "center" as const };
+const stepTxt = { color: "#fff", fontFamily: FONT.display, fontSize: 24, lineHeight: 32 };

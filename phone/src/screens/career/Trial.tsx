@@ -166,7 +166,7 @@ function ScoutTalk({ m, go }: { m: NonNullable<ReturnType<typeof flow.managerTal
       <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 16 }}>
         <PopIn style={{ alignItems: "center" }}>
           <View style={{ borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4, backgroundColor: "rgba(251,191,36,0.15)", borderWidth: 1, borderColor: "rgba(252,211,77,0.4)" }}>
-            <Text style={{ color: "#fcd34d", fontSize: 11, fontWeight: "900", letterSpacing: 2.6 }}>A SCOUT HAS SPOTTED YOU</Text>
+            <Text style={{ color: "#fcd34d", fontSize: 11, lineHeight: 14.5, fontWeight: "900", letterSpacing: 2.64 }}>A SCOUT HAS SPOTTED YOU</Text>
           </View>
         </PopIn>
         <View style={{ marginTop: 16, alignItems: "center" }}>
@@ -176,8 +176,8 @@ function ScoutTalk({ m, go }: { m: NonNullable<ReturnType<typeof flow.managerTal
             </Pulse>
             <ClubCrest club={offer.club} size={92} />
           </View>
-          <Text style={{ marginTop: 8, color: "#b4b9c1", fontFamily: FONT.display, fontSize: 28, lineHeight: 32, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 }} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.6}>{offer.club}</Text>
-          <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: "900", letterSpacing: 1.6 }}>{leagueNameFor(offer.division).toUpperCase()}</Text>
+          <Text style={{ marginTop: 8, color: "#b4b9c1", fontFamily: FONT.display, fontSize: 28, lineHeight: 35, letterSpacing: 0.34, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 }} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.6}>{offer.club}</Text>
+          <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11, lineHeight: 16.5, fontWeight: "900", letterSpacing: 1.1 }}>{leagueNameFor(offer.division).toUpperCase()}</Text>
         </View>
         {/* the scout, and what he says: a tap moves him on */}
         <Pressable onPress={() => setShown((s) => Math.min(talk.lines.length, s + 1))} disabled={done}
@@ -186,11 +186,11 @@ function ScoutTalk({ m, go }: { m: NonNullable<ReturnType<typeof flow.managerTal
             <ScoutFigure width={72} height={84} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ color: "#fcd34d", fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>{`${managerName}'s scout`.toUpperCase()}</Text>
+            <Text style={{ color: "#fcd34d", fontSize: 10, lineHeight: 15, fontWeight: "900", letterSpacing: 1 }}>{`${managerName}'s scout`.toUpperCase()}</Text>
             <View style={{ marginTop: 4, gap: 6 }}>
               {talk.lines.slice(0, shown).map((line, i) => <Text key={i} style={{ color: "#fff", fontSize: 13, fontWeight: "700", lineHeight: 18 }}>“{line}”</Text>)}
             </View>
-            {!done && <Text style={{ paddingTop: 6, color: "#fcd34d", fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>TAP TO HEAR HIM OUT →</Text>}
+            {!done && <Text style={{ paddingTop: 6, color: "#fcd34d", fontSize: 10, lineHeight: 15, fontWeight: "900", letterSpacing: 1 }}>TAP TO HEAR HIM OUT →</Text>}
           </View>
         </Pressable>
         <View style={{ flex: 1, minHeight: 12 }} />
@@ -198,21 +198,21 @@ function ScoutTalk({ m, go }: { m: NonNullable<ReturnType<typeof flow.managerTal
           <View style={{ borderRadius: 16, padding: 14, backgroundImage: "linear-gradient(180deg, rgba(6,78,59,0.92), rgba(2,44,34,0.95))", boxShadow: "inset 0px 0px 0px 1px rgba(52,211,153,0.45), 0px -10px 30px -10px rgba(0,0,0,0.8)" } as ViewStyle}>
             <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 8 }}>
               <View>
-                <Text style={{ color: "#6ee7b7", fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>THE OFFER</Text>
-                <Text style={{ color: "#fff", fontSize: 30, fontWeight: "900" }}>★{formatMoney(talk.openingWeekly)}<Text style={{ fontSize: 14 }}> a week</Text></Text>
+                <Text style={{ color: "#6ee7b7", fontSize: 10, lineHeight: 15, fontWeight: "900", letterSpacing: 1 }}>THE OFFER</Text>
+                <Text style={{ color: "#fff", fontFamily: FONT.display, fontSize: 30, lineHeight: 32, height: 32 }}>★{formatMoney(talk.openingWeekly)}<Text style={{ fontSize: 14 }}> a week</Text></Text>
               </View>
               <ClubCrest club={offer.club} size={34} />
             </View>
-            <Text style={{ marginTop: 6, color: "#fff", fontSize: 11.5, fontWeight: "700", lineHeight: 15 }}>
+            <Text style={{ marginTop: 6, color: "#fff", fontSize: 11.5, fontWeight: "700", lineHeight: 15.8 }}>
               {firstContract ? "Your first contract. Sign it and you're in the squad." : "Take it, or argue for more. Push too hard and he comes back with a worse, final offer."}
             </Text>
             <View style={{ marginTop: 10, flexDirection: "row", gap: 8 }}>
               <Pressable onPress={() => go(flow.acceptManagerOffer())} style={{ flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: "center", backgroundColor: "#10b981" }}>
-                <Text style={{ color: "#fff", fontSize: 12, fontWeight: "900", letterSpacing: 1.5 }}>ACCEPT & SIGN</Text>
+                <Text style={{ color: "#fff", fontSize: 12, lineHeight: 18, fontWeight: "900", letterSpacing: 1.2 }}>ACCEPT & SIGN</Text>
               </Pressable>
               {!firstContract && (
                 <Pressable onPress={() => go({ screen: "career-wage-talk" })} style={{ flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: "center", backgroundColor: "#fbbf24" }}>
-                  <Text style={{ color: "#030712", fontSize: 12, fontWeight: "900", letterSpacing: 1.5 }}>NEGOTIATE</Text>
+                  <Text style={{ color: "#030712", fontSize: 12, lineHeight: 18, fontWeight: "900", letterSpacing: 1.2 }}>NEGOTIATE</Text>
                 </Pressable>
               )}
             </View>
@@ -275,7 +275,7 @@ export function OffersScreen({ career, go }: { career: CareerState; go: (s: flow
         ) : (
           <>
             <View style={{ alignItems: "center" }}>
-              <Text style={{ color: "#fcd34d", fontSize: 11, fontWeight: "900", letterSpacing: 2.6 }}>A SCOUT HAS SPOTTED YOU</Text>
+              <Text style={{ color: "#fcd34d", fontSize: 11, lineHeight: 14.5, fontWeight: "900", letterSpacing: 2.64 }}>A SCOUT HAS SPOTTED YOU</Text>
             </View>
             <Text style={{ marginTop: 24, color: "#6ee7b7", fontSize: 11, fontWeight: "900", letterSpacing: 2.2 }}>{offers.length === 1 ? "ONE CLUB CAME IN" : `${offers.length} CLUBS CAME IN`}</Text>
             <View style={{ marginTop: 8, gap: 12 }}>
