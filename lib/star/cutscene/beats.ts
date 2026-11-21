@@ -518,7 +518,7 @@ export const pressQuestion: BeatDef = {
       ],
       tracks: [
         ...reps.flatMap((r, i): Track[] => [
-          { type: "clip", actor: r.id, at: 0, clip: "sit", loop: true, from: i * 0.37 },
+          { type: "clip", actor: r.id, at: 0, clip: "sit-listen", loop: true, from: i * 0.37 },
           // they watch you, a few glancing at the questioner
           { type: "look", actor: r.id, at: 0, dur: 40, target: i % 4 === 1 ? { actor: "jour", part: "head" } : { actor: Y, part: "head" }, amount: 0.7 },
         ]),
@@ -567,6 +567,8 @@ export const pressAnswer: BeatDef = {
         { type: "look", actor: Y, at: t, dur: d, target: { mark: "journalist", y: 1.2 }, amount: 0.75 },
         { type: "face", actor: Y, at: t, expression: perf.face === "elated" ? "smile" : perf.face, amount: 0.9 },
         { type: "pose", actor: Y, at: t + 0.2, dur: d, pose: "lean-in", amount: 0.15 },
+        // he talks sitting down (Quaternius UAL 1 seated talk), the reporters sit listening (pressQuestion "sit-listen")
+        { type: "clip", actor: Y, at: t, clip: "sit-talk", loop: true, blendIn: 0.5 },
         // B5c: he talks with his hands, as the real man did (ref-press-answer.mp4)
         ...(FLUID_ON.on ? [{ type: "pose", actor: Y, at: t, dur: d + 2, pose: "ref-talk-hands", blendIn: 0.6 } as Track] : []),
         { type: "fx", fx: "camera-flashes", at: t, dur: d, around: { point: [0, 1.4, 3.6] }, amount: 0.7 },

@@ -34,15 +34,18 @@ export const CLIP_ALIASES: Record<string, ClipChoice[]> = {
   hug: [{ clip: "hug" }, { clip: "idle" }],
   nod: [{ clip: "nod" }, { clip: "idle" }],
   point: [{ clip: "point" }, { clip: "boss-talk" }, { clip: "idle" }],
+  "idle-talk": [{ clip: "idle_talk" }, { clip: "talk" }, { clip: "idle" }],
   "talk-hands": [{ clip: "talk" }, { clip: "boss-talk" }, { clip: "idle" }],
   "get-up": [{ clip: "get_up_side" }, { clip: "sitdown", from: 4.3, speed: -1.1 }],
   // seated
   sit: [{ clip: "sit_idle", hold: 0.35 }, { clip: "sitidle", hold: 0.45 }, { clip: "boss-sit", hold: 0.45 }],
   "sit-boss": [{ clip: "boss-sit", hold: 0.45 }, { clip: "sitidle", hold: 0.45 }],
-  "sit-talk": [{ clip: "sit-talk" }, { clip: "sitidle", hold: 0.45 }],
+  // Quaternius UAL 1 seated loops (21 Nov 2026): talking with the hands, and sitting listening
+  "sit-talk": [{ clip: "seated_talk" }, { clip: "sit-talk" }, { clip: "sitidle", hold: 0.45 }],
+  "sit-listen": [{ clip: "seated_idle" }, { clip: "sit_idle", hold: 0.35 }, { clip: "sitidle", hold: 0.45 }, { clip: "boss-sit", hold: 0.45 }],
   /** Getting up from a chair: the sitdown clip played backwards (sat 4.3 s → stood 0.75 s). */
-  "stand-up": [{ clip: "stand-up" }, { clip: "stand_up" }, { clip: "sitdown", from: 4.3, speed: -1.1 }],
-  "sit-down": [{ clip: "sit-down" }, { clip: "sit_down" }, { clip: "sitdown", from: 0.75, speed: 1.1 }],
+  "stand-up": [{ clip: "stand-up" }, { clip: "stand_up_ual" }, { clip: "stand_up" }, { clip: "sitdown", from: 4.3, speed: -1.1 }],
+  "sit-down": [{ clip: "sit-down" }, { clip: "sit_down_ual" }, { clip: "sit_down" }, { clip: "sitdown", from: 0.75, speed: 1.1 }],
   // football
   shot: [{ clip: "shot_r" }, { clip: "kick_r" }],
   kick: [{ clip: "kick_r" }],
@@ -78,7 +81,9 @@ export const CLIP_ALIASES: Record<string, ClipChoice[]> = {
 
 /** Running speed (m/s) of a gait clip at speed 1, so a path's pace sets its speed. */
 export const GAIT_SPEED: Record<string, number> = {
-  walk: 1.35, "walk-proud": 1.3, walk_confident: 1.4, "walk-sad": 1.0, slump_walk: 1.15,
+  walk: 1.35, "walk-proud": 1.3, walk_confident: 1.4,
+  // Quaternius UAL 1 (21 Nov 2026): 0.938 m/s in the file against the walk's 1.05, on the same scale as walk's 1.35
+  walk_relaxed: 1.35 * 0.938 / 1.05, walk_formal: 1.35 * 0.938 / 1.05, "walk-sad": 1.0, slump_walk: 1.15,
   jog: 3.0, celebrate_safe: 3.4, sprint: 7.4, dribble_run: 4.6, run: 5.5,
   // the gait names the beats ask for (20 Nov 2026: "dribble" had none, so its legs ran at a walk's 1.3 m/s, 3.5x too fast)
   dribble: 4.6, "walk-confident": 1.4,
@@ -114,7 +119,7 @@ export const CLIP_QUALITY: Record<string, MoveQuality> = {
   idle: "good", "idle-boss": "good", jog: "good", run: "good", sprint: "good", dribble: "good",
   shot: "good", kick: "good", celebrate: "good", "celebrate-fist": "good", "celebrate-roar": "good", "fist-pump": "good",
   "celebrate-run": "good", "knee-slide": "good", "keeper-ready": "good", "dive-left": "good", "dive-right": "good",
-  cheer: "ok", talk: "ok", "talk-boss": "ok", "talk-hands": "ok", sit: "ok", "sit-boss": "ok", "sit-talk": "ok", nod: "ok", wave: "ok", "wave-boss": "ok",
+  cheer: "ok", talk: "ok", "talk-boss": "ok", "talk-hands": "ok", sit: "ok", "sit-boss": "ok", "sit-talk": "ok", "sit-listen": "ok", "idle-talk": "ok", nod: "ok", wave: "ok", "wave-boss": "ok",
   frustrated: "ok", despair: "ok",
   "stand-up": "weak", "sit-down": "weak", "get-up": "weak", handshake: "weak", hug: "weak", point: "weak", applaud: "weak",
   walk: "weak", "walk-proud": "weak", "walk-sad": "weak", "walk-confident": "weak", pickup: "weak",

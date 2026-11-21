@@ -111,7 +111,7 @@ const MOOD_FACE: Partial<Record<string, import("./types").Expression>> = {
   joy: "smile", pride: "proud", relief: "smile", defiance: "determined", anger: "angry", sadness: "sad", shock: "shocked",
   tension: "tense", gratitude: "smile", hunger: "focused", inspired: "focused",
 };
-const SITS = new Set(["sitidle", "boss-sit", "sitdown", "slot_sit", "sit_idle", "sit_down", "stand_up"]);
+const SITS = new Set(["sitidle", "boss-sit", "sitdown", "slot_sit", "sit_idle", "sit_down", "stand_up", "seated_idle", "seated_talk", "sit_down_ual", "stand_up_ual"]);
 /** How near the camera may come to a person (metres from his head point, body line, arm line). */
 export const PERSONAL_SPACE = { head: 0.34, body: 0.32, arm: 0.24 } as const;
 /**

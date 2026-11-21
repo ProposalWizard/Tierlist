@@ -30,7 +30,7 @@ import type { Person3D } from "../people3d";
 import { ClipPlayer, type LocoSpec } from "../three3d/footballAnims";
 import { TapWalker, findPath, freeAt, type WalkGrid, type XZ } from "../tapWalk";
 import { turnTo, angDiff } from "../three3d/animBlend";
-import { ownMotion, lifeSeed, type OwnMotion } from "../people/life";
+import { ownMotion, lifeSeed, WALK_SPEED, type OwnMotion } from "../people/life";
 import { toonFaceOf, blinkAt, wanderGaze } from "../style3d/toon/face";
 import { fwdOf, rightOf, type ClipStep, type SlotBook, type SmartObject, type SmartSlot } from "./smartObject";
 
@@ -174,10 +174,11 @@ export class Npc {
     this.own = ownMotion(opts.id);
     this.faceSeed = lifeSeed(opts.id);
     this.play = new ClipPlayer(T, person.actions);
-    // a third of people have the other walk (longer, more upright), its speed scaled so the feet still keep up
+    // each person has his own walk and standing idle (people/life.ts), the walk's speed scaled so the feet still keep up
     const acts = person.actions as Record<string, unknown>;
-    const loco = this.own.otherWalk && acts.walk_confident ? opts.loco.map((l) => (l.name === "walk" ? { ...l, name: "walk_confident", speed: l.speed * (1.4 / 1.35) } : l)) : opts.loco;
-    this.play.setLoco(loco, "idle");
+    const w = this.own.walk;
+    const loco = w !== "walk" && acts[w] ? opts.loco.map((l) => (l.name === "walk" ? { ...l, name: w, speed: l.speed * WALK_SPEED[w] } : l)) : opts.loco;
+    this.play.setLoco(loco, acts[this.own.idle] ? this.own.idle : "idle");
     this.play.loco(0, { fade: 0 });
     this.sit = opts.sit ?? null;
     this.tmp = { v: new T.Vector3(), w: new T.Vector3(), a: new T.Vector3(), b: new T.Vector3(), c: new T.Vector3(), q: new T.Quaternion(), p: new T.Quaternion(), d: new T.Quaternion() };

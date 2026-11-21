@@ -324,11 +324,15 @@ for (const [id, ev] of Object.entries(FIXTURE_EVENTS)) {
   const own = walkers.map((m) => ownMotion(m.id));
   const buckets = new Array(8).fill(0);
   for (const o of own) buckets[Math.floor(o.phase * 8) % 8]++;
-  const most = Math.max(...buckets), other = own.filter((o) => o.otherWalk).length;
-  console.log(`walk-out: ${walkers.length} men walking, at most ${most} within an eighth of a stride of each other, ${other} on the other walk, idle pace ${Math.min(...own.map((o) => o.rate)).toFixed(2)} to ${Math.max(...own.map((o) => o.rate)).toFixed(2)}`);
+  const most = Math.max(...buckets);
+  // (21 Nov 2026: four walks now, people/life.ts; was "the other walk" on a third)
+  const kinds = new Map<string, number>();
+  for (const o of own) kinds.set(o.walk, (kinds.get(o.walk) ?? 0) + 1);
+  const top = Math.max(...kinds.values());
+  console.log(`walk-out: ${walkers.length} men walking, at most ${most} within an eighth of a stride of each other, walks ${Array.from(kinds).map(([k, n]) => `${k} ${n}`).join(", ")}, idle pace ${Math.min(...own.map((o) => o.rate)).toFixed(2)} to ${Math.max(...own.map((o) => o.rate)).toFixed(2)}`);
   check(walkers.length >= 10, `walk-out: only ${walkers.length} men walk at 6 s`);
   check(most <= Math.ceil(walkers.length * 0.35), `walk-out: ${most} of ${walkers.length} men are in step`);
-  check(other >= 2 && other <= walkers.length - 2, `walk-out: ${other} men on the other walk (want a mix)`);
+  check(kinds.size >= 3 && top <= Math.ceil(walkers.length * 0.6), `walk-out: walks ${JSON.stringify(Array.from(kinds))} (want at least 3 kinds, none on over 60%)`);
   check(JSON.stringify(ownMotion("mate3")) === JSON.stringify(ownMotion("mate3")) && ownMotion("mate3").phase !== ownMotion("mate4").phase, "a man's own motion is not the same every time, or two men share it");
 }
 
