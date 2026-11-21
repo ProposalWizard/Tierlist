@@ -1201,3 +1201,15 @@ Harry: "His face looks really odd … like the new face changes are just kind of
 - **The dribble**: the ball against the toe at each touch, rolling at his pace (0.38 m ahead of his hips, was up to 0.61).
 - Not done: new clips from other libraries (UAL 1 is on this machine; UAL 2 and KayKit were not reachable; `retarget.py` reads only CMU, a glTF reader is the next step); shop and casino staff do not get the face life yet.
 - Bench: `/star-3d-bench-dev/people?set=faceids&allheads=9&views=front,34,side&heads=m3,m2`.
+
+### People round 3: suit necks, shirt collars, sleeves, fans, casino faces (21 Nov 2026)
+
+Harry on the mentor: "his skin color is bleeding into his suit … His face looks really odd"; on clothes: "you're struggling a lot with necks".
+- **Suit heads (m1-m3) under the cloth suit** (`toon/faceClean.ts`): the head file's painted suit, collar and tie round the neck are cleaned to even skin from under the jaw to 10 cm below the collar line, inside the shoulders, front and back (the nape's hair kept). The cloth suit covers the rest. Was: a pink ring, a jagged painted collar and a dark band under the chin.
+- **The suit's shirt** sits 6 mm off the skin (it sat on it and fought the neck: the "shards"). Its collar is a clean stand laid **round the neck by angle** (`build.ts addCollar`, shirt and polo kinds): a lumpy head's neck edge is several pieces, and the old walk made the collar in strips. The collar has its own normals and is a shade under the shirt. Kit crew collars are unchanged.
+- **Sleeves** (`GarmentSpec.armSmooth`, suit coat and shirt): the arm's surface under the sleeve is smoothed outwards only, still skinned to the same bones (not a rigid tube, which poked through a bent arm).
+- **Fans and family** in cut scenes wear the wardrobe (`peopleStub.ts clothKindFor`): replica shirt and jeans or a hoodie; family also a polo. Never shorts and boots.
+- **Casino staff and punters** read `people/life.ts` (start phase, idle pace) and blink and glance (`casino3d/scene.ts`). The 3D shop has no staff people.
+- Clothes decals give a blank picture without a browser, so `tests/star/propHold.mts` runs under node again.
+- Close-ups of one preset: `?castpreset=<actor id>:<preset id>` on `/star-3d-bench-dev/scene?scene=director&fixture=…`.
+- Not done: the untucked hem notch at the trouser top, the training jacket's rib hem when jogging, the Quaternius UAL 1 clips (the pack is on this machine as one FBX, CC0; `retarget.py` still reads CMU only).
