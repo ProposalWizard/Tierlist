@@ -259,7 +259,7 @@ export function resumeStep(): Step {
   if (!loadedOnce) { loadedOnce = true; void afterLoad(c); void keepSquadsInStep(c); }
   if (c.retired) return { screen: "career-legacy" };
   if (!c.player.club) return clublessStep(c);
-  if (c.placement?.kind === "youth") return { screen: "career-youth" };
+  // A youth-team player lands on Home like anyone else (page.tsx's load goes to the dashboard); PLAY is his youth week.
   return HOME;
 }
 

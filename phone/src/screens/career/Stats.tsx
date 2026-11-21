@@ -282,14 +282,30 @@ function ArcChart({ arc, peak }: { arc: { season: number; label: string; goals?:
   );
 }
 
+/** StatsTabs.tsx Fold: a card that opens and shuts on a tap of its heading (▾ open, ▸ shut). */
+function Fold({ title, right, startOpen = false, children }: { title: string; right?: string; startOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(startOpen);
+  return (
+    <Card>
+      <Press onPress={() => setOpen(!open)} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginVertical: -2 }}>
+        <Text style={{ width: 12, color: "rgba(255,255,255,0.7)", fontSize: 11 }}>{open ? "▾" : "▸"}</Text>
+        <View style={{ flex: 1 }}><Label>{title}</Label></View>
+        {right ? <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: "900" }}>{right}</Text> : null}
+      </Press>
+      {open ? <View style={{ marginTop: 6 }}>{children}</View> : null}
+    </Card>
+  );
+}
+
 function RecordsTab({ career }: { career: CareerState }) {
   const b = career.careerBests ?? {};
   const s = (n: number) => `Season ${shortSeason(career.player.startYear, n)}`;
   const vs = (o: string) => `v ${shortClub(o)}`;
   return (
     <>
-      <Card>
-        <Label>Your bests</Label>
+      {/* Open to start, folds away on a tap (StatsTabs.tsx; Mikey, 23 Oct 2026). */}
+      <Fold title="Your bests" startOpen>
+        {!career.careerBests && <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 10, fontWeight: "700", marginBottom: 6 }}>Furthest goal/assist and match bests start counting from now on this save.</Text>}
         <Row k="🚀 Furthest goal" v={b.furthestGoal ? `${b.furthestGoal.metres} m` : "—"} sub={b.furthestGoal ? `${vs(b.furthestGoal.opponent)} · ${s(b.furthestGoal.season)}` : undefined} />
         <Row k="🎯 Furthest assist (your pass)" v={b.furthestAssist ? `${b.furthestAssist.metres} m` : "—"} sub={b.furthestAssist ? `${vs(b.furthestAssist.opponent)} · ${s(b.furthestAssist.season)}` : undefined} />
         <Row k="⚽ Most goals in a game" v={b.mostGoalsMatch ? String(b.mostGoalsMatch.goals) : "—"} sub={b.mostGoalsMatch ? `${vs(b.mostGoalsMatch.opponent)} · ${s(b.mostGoalsMatch.season)}` : undefined} />
@@ -300,9 +316,8 @@ function RecordsTab({ career }: { career: CareerState }) {
         <Row k="💥 Biggest win" v={b.biggestWin ? `${b.biggestWin.us}–${b.biggestWin.them}` : "—"} sub={b.biggestWin ? `${vs(b.biggestWin.opponent)} · ${s(b.biggestWin.season)}` : undefined} />
         <Row k="🔥 Longest scoring run" v={career.feats?.bestScoringRun ? `${career.feats.bestScoringRun} game${career.feats.bestScoringRun === 1 ? "" : "s"}` : "—"} sub={career.feats?.bestScoringRunSeason ? s(career.feats.bestScoringRunSeason) : undefined} />
         <Row k="🧢 Caps" v={String(career.caps ?? 0)} sub={(career.internationalGoals ?? 0) > 0 ? `${career.internationalGoals} international goals` : undefined} />
-      </Card>
-      <Card>
-        <Label>{`Real-world records · ${RECORDS.filter((r) => r.progress(career) >= r.value).length} beaten`}</Label>
+      </Fold>
+      <Fold title="Real-world records" right={`${RECORDS.filter((r) => r.progress(career) >= r.value).length} / ${RECORDS.length}`}>
         {RECORDS.map((r) => {
           const pr = r.progress(career);
           return (
@@ -316,7 +331,7 @@ function RecordsTab({ career }: { career: CareerState }) {
             </View>
           );
         })}
-      </Card>
+      </Fold>
     </>
   );
 }

@@ -119,7 +119,6 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
   if (over && !intlDue) chips.push({ label: "End of Season", icon: "🏆", onPress: () => nav.go(flow.endSeason().screen) });
   else if (bossDue) chips.push({ label: "Boss wants a word", icon: "🗣️", onPress: bar.phone });
   if (intlDue) chips.push({ label: "Your country's manager has named his squad", icon: "📞", onPress: () => nav.go("career-callup") });
-  if (career.placement?.kind === "youth") chips.push({ label: "Youth team: this week", icon: "🎓", onPress: () => nav.go("career-youth") });
 
   return (
     <View style={{ flex: 1, backgroundColor: "#0b1a2e" }} {...swipe.panHandlers}>

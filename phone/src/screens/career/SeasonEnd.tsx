@@ -20,6 +20,10 @@ import { clubGlow } from "../../world/ui";
 import * as flow from "../../game/flow";
 import { useNav } from "../../nav";
 import { Frame, Card, Label, Row, Btn, ClubCrest, money, C } from "./kit";
+import { Rays } from "../../ui/look/Patterns";
+
+/** SeasonAwardsScreen.tsx TROPHY_ICON: the mark for a trophy with no picture. */
+const TROPHY_ICON: Record<string, string> = { "FA Cup": "🏆", "League Cup": "🏆", "Champions League": "⭐", "Europa League": "🌍", "Community Shield": "🛡️", "Super Cup": "🛡️" };
 
 export function SeasonAwardsScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
   const nav = useNav();
@@ -32,8 +36,13 @@ export function SeasonAwardsScreen({ career, go }: { career: CareerState; go: (s
   ];
   const trophies = trophyWinners(career, stats);
   return (
-    <Frame kicker={`Season ${stats.season}`} title="Season Awards"
-      footer={<Btn label="Continue" onPress={() => go(flow.continueAfterRollover())} />}>
+    <Frame bare title="Season Awards">
+      {/* SeasonAwardsScreen.tsx's head: light rays, the season in amber, SEASON AWARDS in gold italics. */}
+      <View style={{ alignItems: "center", justifyContent: "center", paddingTop: 8, paddingBottom: 6 }}>
+        <View pointerEvents="none" style={{ position: "absolute" }}><Rays size={260} color="rgba(253,230,138,0.2)" opacity={0.42} /></View>
+        <Text style={{ color: "#fcd34d", fontSize: 11, fontWeight: "900", letterSpacing: 2.6 }}>{`SEASON ${stats.season}`}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit style={{ marginTop: 8, color: "#fde68a", fontSize: 30, lineHeight: 32, fontWeight: "900", fontStyle: "italic", textShadowColor: "rgba(0,0,0,0.5)", textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 }}>SEASON AWARDS</Text>
+      </View>
       {/* SeasonAwardsScreen.tsx: trophy tiles two across (cup, competition, the winner's badge),
           then each award as its own card with the winner's head, badge and big number. */}
       <Label>Trophies</Label>
@@ -41,7 +50,7 @@ export function SeasonAwardsScreen({ career, go }: { career: CareerState; go: (s
         {trophies.map((t) => (
           <View key={t.competition} style={{ width: "48.5%", borderRadius: 12, padding: 10, gap: 6, backgroundImage: "linear-gradient(180deg, rgba(30,58,95,0.85), rgba(10,22,40,0.9))", borderWidth: 1, borderColor: t.isYou ? "rgba(52,211,153,0.7)" : "rgba(255,255,255,0.14)" } as ViewStyle}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <TrophyImage name={t.competition} height={22} fallback="🏆" />
+              <TrophyImage name={t.competition} height={22} fallback={TROPHY_ICON[t.competition] ?? "🏆"} />
               <Text numberOfLines={1} style={{ flex: 1, color: "#fcd34d", fontSize: 9.5, fontWeight: "900", letterSpacing: 1.2 }}>{t.competition.toUpperCase()}</Text>
             </View>
             {t.club ? (
@@ -88,6 +97,8 @@ export function SeasonAwardsScreen({ career, go }: { career: CareerState; go: (s
         </Card>
       )}
       {career.lastWorld && <Btn kind="plain" label="🌍 Every league and cup" onPress={() => nav.go("season-review")} />}
+      {/* at the end of the page, not pinned over the cards (SeasonAwardsScreen.tsx) */}
+      <View style={{ marginTop: 8 }}><Btn label="Continue" onPress={() => go(flow.continueAfterRollover())} /></View>
     </Frame>
   );
 }
