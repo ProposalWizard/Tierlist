@@ -14,7 +14,7 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
 import { readFileSync } from "node:fs";
 import { loadPeople3d, makePerson3d, type Person3D } from "../../lib/star/people3d";
-import { addClips, loadAnims3d } from "../../lib/star/three3d/footballAnims";
+import { addClips, clipInfo, loadAnims3d } from "../../lib/star/three3d/footballAnims";
 import { TOON_ALL_HEADS, TOON_BODIES, TOON_BUILD_SCALE, type ToonHead, type ToonBody } from "../../lib/star/style3d/toon/bodies";
 
 const problems: string[] = [];
@@ -42,8 +42,11 @@ const loader = {
   },
 };
 
-const SOURCE_TRUE = ["idle", "walk", "walk_confident", "slump_walk", "jog", "run", "sprint", "dribble_run", "sit_idle", "sitidle"];
-const LOOPS = ["walk", "walk_confident", "slump_walk", "jog", "run", "sprint", "dribble_run"];
+// Quaternius UAL 1 clips (tools/mocap3d/ual.py, 21 Nov 2026): also held to the LIBRARY's own skeleton's
+// step width (clips[name].srcFeet, measured at build time on the UAL rig, per metre of leg)
+const UAL = ["walk_relaxed", "walk_formal", "jog_easy", "idle_relaxed", "idle_relaxed_m", "idle_talk", "seated_idle", "seated_talk"];
+const SOURCE_TRUE = ["idle", "walk", "walk_confident", "slump_walk", "jog", "run", "sprint", "dribble_run", "sit_idle", "sitidle", ...UAL];
+const LOOPS = ["walk", "walk_confident", "slump_walk", "jog", "run", "sprint", "dribble_run", "walk_relaxed", "walk_formal", "jog_easy"];
 const N = 24;
 const wp = (o: THREE.Object3D) => o.getWorldPosition(new THREE.Vector3());
 
@@ -90,10 +93,13 @@ for (const head of heads) {
     const Lv: number[] = [], Rv: number[] = [];
     for (let i = 0; i < si.count; i += 3) { let best = -1, bw = 0; for (let k = 0; k < 4; k++) if (sw.getComponent(i, k) > bw) { bw = sw.getComponent(i, k); best = si.getComponent(i, k); } if (LL.has(best)) Lv.push(i); else if (RL.has(best)) Rv.push(i); }
     const v = new THREE.Vector3();
+    // Stop every action and start only this one: three's mixer only writes a bone whose value CHANGED since it
+    // last wrote it, so after the bones are put back at rest a clip holding the same still pose as the clip
+    // before (two seated loops) was silently left at rest. Restarting re-reads the bones (21 Nov 2026).
     const pose = (clip: string, t: number) => {
-      for (const a of Object.values(p.actions)) a.setEffectiveWeight(0);
-      const a = p.actions[clip]; a.enabled = true; a.setEffectiveWeight(1); a.time = Math.max(1e-4, Math.min(t, a.getClip().duration - 1e-3));
+      for (const a of Object.values(p.actions)) a.stop();
       p.rest.forEach(([pos, q], b) => { b.position.copy(pos); b.quaternion.copy(q); });
+      const a = p.actions[clip]; a.enabled = true; a.play(); a.setEffectiveWeight(1); a.time = Math.max(1e-4, Math.min(t, a.getClip().duration - 1e-3));
       p.mixer.update(0); p.root.updateMatrixWorld(true); body.skeleton.update();
     };
     pose("idle", 0.5);
@@ -121,6 +127,14 @@ for (const head of heads) {
       const leg = leg0 * wide, S = src[clip];
       rows.push(`${head} ${build}  ${clip.padEnd(15)} source ${cm(S.min * leg)} /${cm(S.mean * leg)}   ours ${cm(mn)} /${cm(sum)}${LOOPS.includes(clip) ? `   nearest skin ${cm(near)}` : ""}`);
       if (SOURCE_TRUE.includes(clip)) check(Math.abs(sum - S.mean * leg) < Math.max(0.015, 0.1 * S.mean * leg), `${head} ${build} ${clip}: feet ${cm(sum)} cm apart on average, the source's are ${cm(S.mean * leg)}`);
+      const lib = clipInfo(fb, clip)?.srcFeet;
+      if (UAL.includes(clip)) {
+        check(!!lib, `${clip}: no srcFeet in the clip file (rebuild with tools/mocap3d/build.py)`);
+        if (lib) {
+          rows.push(`${head} ${build}  ${clip.padEnd(15)} UAL rig ${cm(lib[0] * leg)} /${cm(lib[1] * leg)}`);
+          check(Math.abs(sum - lib[1] * leg) < Math.max(0.015, 0.1 * lib[1] * leg), `${head} ${build} ${clip}: feet ${cm(sum)} cm apart on average, the UAL rig's are ${cm(lib[1] * leg)}`);
+        }
+      }
       if (clip === "idle") check(sum > 0.15 && sum < 0.26, `${head} ${build}: stands with his ankles ${cm(sum)} cm apart (want 15 to 26)`);
       if (clip === "walk") check(mn > 0.06, `${head} ${build}: walks with his ankles ${cm(mn)} cm apart at the narrowest (a tightrope: want over 6)`);
       if (LOOPS.includes(clip)) {
