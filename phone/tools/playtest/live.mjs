@@ -57,6 +57,8 @@ const browser = await chromium.launch({
   args: ["--use-gl=swiftshader", "--enable-unsafe-swiftshader", "--autoplay-policy=no-user-gesture-required"],
 });
 const pages = new Map(); // name → {ctx, page, app, errors, cdp}
+// A script started with `run` and not awaited (auto.mjs) must not take the whole bench down.
+process.on("unhandledRejection", (er) => console.error("unhandled:", String(er && er.message || er).slice(0, 300)));
 
 async function findBall(p, loose = false) {
   const b64 = (await p.screenshot()).toString("base64");
