@@ -29,6 +29,14 @@ ANDROID RISK flagged on 24 rows (see the column; the common ones are listed unde
 > `FIXED (reasoned)` = built from the packed code, type-checked, not opened by hand; `PARTLY` and `OPEN` say what is left and why.
 > The counts table above is the first inventory's and is kept as it was.
 
+> **Fix round 4 (21 Nov 2026, leftovers builder).** Rows changed in this round say "round 4" or are re-marked. Found while looking:
+> the packed app no longer rises anything in (`ui/RiseIn.tsx` and `kit-rise` do nothing since 14 Oct 2026), so every "rise-in" row is SAME
+> and the rise-ins KIB had gained on Home were taken off. Seen beside packed this round: scout talk and offer, signing, Breaking News,
+> the boots beat, the welcome tour to "Tap Play", the youth page and its way in, season awards with Team of the Season, the transfer
+> hub and contract talks, season 2's Home. Still reasoned only (no save reaches them here): Unlocked pop-up, "New in your game",
+> set-piece talk, "Boss wants a word", watched-on-TV, final-season notice, farewell full time, the renewal game, ScoutOffers, the play-off bracket.
+> Sheet: `scratchpad/fix3/leftovers.jpg`.
+
 ### The 20 most important gaps (biggest first)
 
 | # | Screen | Gap | Sev |
@@ -148,16 +156,16 @@ Packed: components/star/TitleScreen.tsx. KIB: phone/src/screens/career/TitleMenu
 |---|---|---|---|---|---|---|---|
 | T-1 First launch | no save → straight to "Who are you?" | same (glue.tsx:120 `firstLaunchSeen`) | SAME | — | | page.tsx:748; glue.tsx:116 | c01-first-launch |
 | T-2 Backdrop | stadium photo by kick-off sky (day/sunset/night), vignette | same pictures (Backdrop kind="title") | SAME | — | | TitleScreen.tsx:153-167; TitleMenu.tsx:103 | c20-title-save |
-| T-3 Parallax | stadium and player drift with the finger (tilt) | none | OPEN: LOW: the parallax needs the tilt sensor; not built (was MISSING) | LOW | | TitleScreen.tsx:74-79 | — |
+| T-3 Parallax | stadium and player drift with the finger (tilt) | none | OPEN: LOW: needs the tilt sensor; not built | LOW | | TitleScreen.tsx:74-79 | — |
 | T-4 Wordmark | KNOWITBALL, dark steel gradient fill, tight tracking (-0.04em), club-glow drop shadow | paler grey (#8d949e) Anton, letter-spaced to 94 % width, no glow | FIXED (earlier, measured): the fit builder set the word from the font's own width; colour stays #8d949e (was DIFFERENT) | LOW | Anton missing → Roboto, width jumps | TitleScreen.tsx:269-300; TitleMenu.tsx:55-75 | c20-title-save |
 | T-5 Tagline | "ROAD TO THE GOLDEN BALL" amber with two fading rules | same | SAME | — | | TitleScreen.tsx:295-298; TitleMenu.tsx:66-70 | c20 |
-| T-6 "Every legend starts with a trial" | no save only, rises in at 900 ms | shown, no rise | OPEN: LOW: no rise-in on the line (was DIFFERENT) | LOW | | TitleScreen.tsx:171-175; TitleMenu.tsx:72 | — |
-| T-7 Your player | 3D player (HomePlayer where="title"), club glow under him, kit-rise in at 520 ms | HomePlayer (3D on phone, drawn on web); a square brown "pool" patch under him in the web build; no rise | OPEN: LOW: the 3D player is the phone's; no kit-rise (was DIFFERENT) | LOW | 3D start-up + crash guard | TitleScreen.tsx:181-197; TitleMenu.tsx:109-112 | c20, s360-title |
+| T-6 "Every legend starts with a trial" | no save only, rises in at 900 ms | shown, no rise | SAME: the packed app no longer rises anything in (ui/RiseIn.tsx and kit-rise do nothing since 14 Oct; read in code) | LOW | | TitleScreen.tsx:171-175; TitleMenu.tsx:72 | — |
+| T-7 Your player | 3D player (HomePlayer where="title"), club glow under him, kit-rise in at 520 ms | HomePlayer (3D on phone, drawn on web); a square brown "pool" patch under him in the web build; no rise | SAME for the rise (kit-rise does nothing in packed); the 3D player is the phone's | LOW | 3D start-up + crash guard | TitleScreen.tsx:181-197; TitleMenu.tsx:109-112 | c20, s360-title |
 | T-8 Ball | the 3D player brings his own (no drawn ball) | drawn ball beside him when drawn | SAME | — | | TitleScreen.tsx:199 | c20 |
 | T-9 Menu tabs | slanted tabs 16 px from right, 50 % wide; Continue 54 px (green, ★ badge, club crest + "ARSENAL / SEASON 1"), others 42 px; Hall of Fame gold | same sizes, colours and hint | SAME | — | | TitleScreen.tsx:203-245, 336-360; ui/look/Buttons.tsx:55 | c20, s360-title |
-| T-10 Menu entry animation | each row rises in (RiseIn, 760 ms start, staggered); Continue has a looping Shine | none | OPEN: LOW: menu rows do not rise in (was MISSING) | LOW | | TitleScreen.tsx:205-245 | — |
+| T-10 Menu entry animation | each row rises in (RiseIn, 760 ms start, staggered); Continue has a looping Shine | none | SAME: packed's RiseIn no longer moves anything (code); Continue's looping shine not built (LOW) | LOW | | TitleScreen.tsx:205-245 | — |
 | T-11 Settings before any save | shown | shown (fixed since the last findings) | SAME | — | | glue.tsx:131 | — |
-| T-12 Tutorial | with a save: closes the title, replays the coach tour on Home; no save: new game | with a save: opens "How it works · Home" list page; no save: new game | FIXED (reasoned): Tutorial with a save opens Home and the coach replays HELP_TOURS.home on it (askTour); areas/glue.tsx (was DIFFERENT) | MED | | page.tsx:2996-3000; glue.tsx:130 | — |
+| T-12 Tutorial | with a save: closes the title, replays the coach tour on Home; no save: new game | with a save: opens "How it works · Home" list page; no save: new game | FIXED (seen round 4): the welcome tour plays on the live Home, same ring, hand and words as packed, to "Tap Play" | MED | | page.tsx:2996-3000; glue.tsx:130 | — |
 | T-13 Credits link | small CREDITS, right, 12 px, tracking .16em | same | SAME | — | | TitleScreen.tsx:240-244; TitleMenu.tsx:132 | c20 |
 | T-14 Load sheet | translucent dark sheet over the title, grab handle, rows rise in; "LAST PLAYED" / "RETIRED" pills; PLAY / NEW GAME buttons in caps; DELETE → "Sure? / No" pills | opaque sheet, no handle, "· LAST PLAYED" as text, "Play" / "New game" sentence case, "SURE? / NO" plain text | FIXED (earlier): earlier (fit builder) (was DIFFERENT) | LOW | Modal: nav bar | TitleScreen.tsx:420-480; TitleMenu.tsx:137-165 | c21-load |
 | T-15 "All 3 saves are in use" | amber note card | plain amber text | FIXED (earlier): earlier (fit builder) (was DIFFERENT) | LOW | | TitleScreen.tsx:428-432; TitleMenu.tsx:139 | — |
@@ -204,15 +212,15 @@ Stills: c11-scout-talk, c12-offer. Packed: ManagerTalk.tsx, ScoutOffers.tsx, Neg
 | Element | Packed | KIB Next | Status | Sev | Android risk | Files | Stills |
 |---|---|---|---|---|---|---|---|
 | ST-1 Backdrop | night stadium photo; in the stills the stands and a green pitch are bright (the overlay looks unapplied) | same photo with the darkening overlay applied: stands dim, bottom near black | FIXED (reasoned): the dark wash now fades out by 62% of the height, as the packed still shows (bright stand and pitch below) (was DIFFERENT) | MED | | ScoutArt.tsx:17-32 (both) | c11-scout-talk |
-| ST-2 "A SCOUT HAS SPOTTED YOU" pill | amber, kicks in (scoutKick) | same, no animation | FIXED (reasoned): the pill pops in (was DIFFERENT) | LOW | | ManagerTalk.tsx:89-93; Trial.tsx:167-171 | c11 |
-| ST-3 Club badge + halo | 92 px badge, pulsing halo (scoutHalo 2.6 s) | 92 px badge, still halo | FIXED (reasoned): the halo pulses (was DIFFERENT) | LOW | | :96-100; Trial.tsx:172-176 | c11 |
-| ST-4 Club name | Title component (steel-grey metallic, 28 px) | white Anton 28 px | FIXED (reasoned): club name in steel grey #cfd3d8 (React Native has no gradient text) (was DIFFERENT) | LOW | | :101; Trial.tsx:177 | c11 |
+| ST-2 "A SCOUT HAS SPOTTED YOU" pill | amber, kicks in (scoutKick) | same, no animation | FIXED (seen round 4 beside packed) | LOW | | ManagerTalk.tsx:89-93; Trial.tsx:167-171 | c11 |
+| ST-3 Club badge + halo | 92 px badge, pulsing halo (scoutHalo 2.6 s) | 92 px badge, still halo | FIXED (seen round 4 beside packed) | LOW | | :96-100; Trial.tsx:172-176 | c11 |
+| ST-4 Club name | Title component (steel-grey metallic, 28 px) | white Anton 28 px | FIXED (seen round 4): steel grey #b4b9c1 beside packed's metal title | LOW | | :101; Trial.tsx:177 | c11 |
 | ST-5 Scout card, lines one per tap, "TAP TO HEAR HIM OUT →" | yes | yes | SAME | — | | :108-135; Trial.tsx:180-195 | c12-offer |
 | ST-6 THE OFFER card | ★35 a week, badge, line, ACCEPT & SIGN (+ NEGOTIATE / SEE OTHER CLUBS when not the story's first contract) | same | SAME | — | | :140-185; Trial.tsx:197-226 | c12 |
 | ST-7 ⚙ settings | yes | yes | SAME | — | | :80-87; Trial.tsx:162 | c11 |
-| ST-8 Rise-in animations | header, scout card and offer card rise in | none | PARTLY: pill and halo move; the scout and offer cards do not rise in (was MISSING) | LOW | | :191-200 | — |
-| ST-9 Wage talk | NegotiationScreen (drawn negotiator face) | KIB Negotiation (😐 emoji) — see §14 TH-9 | FIXED (reasoned): drawn negotiator (draw/NegotiatorFace.tsx), card centred, dark Walk Away; world/Negotiation.tsx touched in 3 places (was DIFFERENT) | MED | | page.tsx:3955; Moves.tsx:21 | c41-negotiation |
-| ST-10 Other clubs (ScoutOffers) | "The back page" cards per club, pitch quote, wage/bonuses/length, sign | plain Frame + Cards with the same rows | OPEN: MED: same rows, plain cards; not restyled (was DIFFERENT) | MED | | ScoutOffers.tsx; Trial.tsx:233-258 | — |
+| ST-8 Rise-in animations | header, scout card and offer card rise in | none | SAME: packed's kit-rise on these cards no longer moves (code); the two cards seen beside packed, same place and words | LOW | | :191-200 | — |
+| ST-9 Wage talk | NegotiationScreen (drawn negotiator face) | KIB Negotiation (😐 emoji) — see §14 TH-9 | SEEN round 4 beside packed: drawn negotiator, same words and rows; packed has a SETTINGS pill and Anton title, KIB none (world file) | MED | | page.tsx:3955; Moves.tsx:21 | c41-negotiation |
+| ST-10 Other clubs (ScoutOffers) | "The back page" cards per club, pitch quote, wage/bonuses/length, sign | plain Frame + Cards with the same rows | FIXED (reasoned, round 4): the packed look built from ScoutOffers.tsx (dark page, "N CLUBS CAME IN", glass card a club with its glow, Wage / Per goal / Years tiles, Sign for, "Not this time" with the youth club). Not opened: the test save is a first contract (no other clubs) | MED | | ScoutOffers.tsx; Trial.tsx:233-258 | — |
 
 ## 5. The signing, then the news
 
@@ -222,8 +230,8 @@ Stills: c13-signing, c14-signing-welcome-next, c15-news. Packed: TrialReward.tsx
 |---|---|---|---|---|---|---|---|
 | SG-1 Signing scene | 3D manager's office, 5 spoken lines ("Sit down, son. I watched every kick of that trial.") tap ›, SKIP | the packed app's drawn signing (two chairs, desk, contract, TAP TO SIGN) | LEFT OUT (Mikey) | — | | TrialReward.tsx:49-61; Signing.tsx | c13-signing |
 | SG-2 Manager's name | from `career.manager.name` ("Henrik Ashcroft") | `loadLineup(club)?.manager` only → "The manager" for clubs with no lineup | FIXED (reasoned): career.manager.name first (was DIFFERENT) | MED | | page.tsx:4180; Trial.tsx:268 | c13 |
-| SG-3 Drawn scene layout | top-aligned (pt-4) | centred vertically | OPEN: LOW: still centred (was DIFFERENT) | LOW | | SigningScene.tsx:291; Signing.tsx:197 | c14 |
-| SG-4 Contract paper | tilted (rotateX 12°), SVG pen, pulsing "✕ sign here" | flat, 🖊️ emoji pen, still "✕ SIGN HERE" | PARTLY: the pen is drawn (no emoji); the paper is still flat (was DIFFERENT) | LOW | emoji pen | :335-400; Signing.tsx:213-240 | c14 |
+| SG-3 Drawn scene layout | top-aligned (pt-4) | centred vertically | FIXED (seen round 4): top-aligned | LOW | | SigningScene.tsx:291; Signing.tsx:197 | c14 |
+| SG-4 Contract paper | tilted (rotateX 12°), SVG pen, pulsing "✕ sign here" | flat, 🖊️ emoji pen, still "✕ SIGN HERE" | FIXED (seen round 4): paper tilted (perspective 600, rotateX 12°), drawn pen, sign-here pulses | LOW | emoji pen | :335-400; Signing.tsx:213-240 | c14 |
 | SG-5 Handshake cheer | confetti Burst (30) + "WELCOME TO / club" pops in | words only, no confetti, no pop | FIXED (reasoned): confetti burst and the words pop in (was MISSING) | MED | | :407-420; Signing.tsx:244-249 | c14-signing-welcome-next |
 | SG-6 Continue / Signing… / Tap to sign | gold button 52 px | same | SAME | — | | :424-430; Signing.tsx:251-254 | c14 |
 | SG-7 Loan signing | straight to LoanBrief (intro) | an extra "Signed" Frame with the contract table, then the loan brief | OPEN: LOW: the extra Signed frame on a loan stays (was DIFFERENT) | LOW | | page.tsx:4176-4199; Trial.tsx:270-287 | — |
@@ -242,20 +250,20 @@ Stills: c23-home, c33-season-over-home, c46-after-news, s360-home, c31-after-dut
 | H-5 Season over line | "Season complete — the awards are next" + form | same | SAME | — | | Home.tsx:201-206 | c33 |
 | H-6 Rep / Fame / Goals / Assists tiles | glass tiles with pictures, bars on Rep/Fame | same | SAME | — | fixed 66 px | HomeHub.tsx:562-602; Home.tsx:248-280 | c23 |
 | H-7 League row | 🏆 PREMIER LEAGUE · 1st ▾, opens 5 rows + FULL TABLE › | same | SAME | — | | MiniLeague.tsx:83; Home.tsx:282-319 | c23 |
-| H-8 On international duty | the row becomes "🏴 ON DUTY · JUNE 2027 ›" (NationDropdown) and Home is lit in the nation's colours | league row stays; club colours | PARTLY: the league row becomes ON DUTY · <window> › in the nation's colours with the drawn flag; Home is not relit in the nation's colours and the row does not open a group table (was MISSING) | MED | | HomeHub.tsx:179-196; IntlKit.tsx | c31-after-duty |
+| H-8 On international duty | the row becomes "🏴 ON DUTY · JUNE 2027 ›" (NationDropdown) and Home is lit in the nation's colours | league row stays; club colours | FIXED (reasoned, round 4): the row is ON DUTY · <group> with your place and ▾; a tap drops the group table and "Full <nation> page ›"; the player's light is the nation's colour. Not opened (needs a save away on duty) | MED | | HomeHub.tsx:179-196; IntlKit.tsx | c31-after-duty |
 | H-9 Needs-you chip | "🏆 End of Season ›" (amber, chevron); "🗣️ Boss wants a word" | End of Season (no chevron), "📞 Your country's manager has named his squad", "🎓 Youth team: this week"; no Boss chip | FIXED (seen for End of Season; Boss chip reasoned): amber chip with the drawn chevron; Boss wants a word opens the manager's talk (was DIFFERENT) | MED | | HomeHub.tsx:228-271; Home.tsx:112-115 | c33-season-over-home |
-| H-10 Your player | 3D player, celebrates (arms up) after a win once per match | 3D player on the phone (blank in the web build); no win celebration | OPEN: MED: no win celebration (needs a 3D clip on the Home player) (was MISSING) | MED | 3D crash guard | HomeHub.tsx:624-650; Home.tsx:128-131 | c23 |
+| H-10 Your player | 3D player, celebrates (arms up) after a win once per match | 3D player on the phone (blank in the web build); no win celebration | SAME: with the 3D player (packed's default) packed passes no celebration to him (HomePlayer.tsx: `celebrate` goes to the old drawn figure only) | MED | 3D crash guard | HomeHub.tsx:624-650; Home.tsx:128-131 | c23 |
 | H-11 Hall chase line | 🏛️ chasing a Hall record (off in New: hallChase null) | — | SAME | — | | HomeHub.tsx:653 | — |
 | H-12 Boots line | 👟 name, Pow/Tec, matches left / "No boots: buy a pair in the Shop" | same | SAME | — | | HomeHub.tsx:604-622; Home.tsx:321-337 | c16, c23 |
 | H-13 KIB cans | three tiles, ×count, name, effect, USE / FULL / ✓, ★price | same | SAME | — | fixed widths; "Curve shots +30" wraps at 360 | HomeHub.tsx:672; Home.tsx:340-381 | s360-home |
-| H-14 Can USE pop | "+65 ⚡" float + energy bar fill animation | bar jumps, no float | OPEN: LOW: no +65 float (was MISSING) | LOW | | HomeHub.tsx CanTile | — |
+| H-14 Can USE pop | "+65 ⚡" float + energy bar fill animation | bar jumps, no float | FIXED (reasoned; can used on the web build, tick too small to read on the still): "−1" ticks off the can's count, as HomeHub's FloatText (packed has no "+65") | LOW | | HomeHub.tsx CanTile | — |
 | H-15 ‹ STATS / SHOP › | swipe pages with arrows; Stats and Shop locked on a new career ("Stats is locked · Score your first goal", "Shop is locked · After your third game") | arrows + swipe, never locked | FIXED (seen): Stats and Shop open a locked page: lock, 'Stats is locked', 'Score your first goal' (was DIFFERENT) | HIGH | | page.tsx SwipePages; Home.tsx:101-110, 147-150 | c15-news (packed text), c16 |
 | H-16 "HOME 🏠 ›" hint on Stats | swipe hint at the bottom of the Stats page | none | FIXED (seen): HOME 🏠 ▶ under the Stats page (was MISSING) | LOW | | StatsTabs.tsx | c24-stats |
 | H-17 Bottom bar | League · Training (⚡n) · Home · Phone (n) · round PLAY | same | SAME | — | | MainBar.tsx; BottomBar.tsx | c23 |
 | H-18 Bar locks | 🔒 small on locked tabs; tapping shows a 🔒 note toast above the bar | 🔒 on the tab; no note toast | FIXED (seen): the bar's lock is the drawn padlock; the lock note was already there (was DIFFERENT) | MED | | page.tsx:5596-5600; BottomBar.tsx:70-73 | c17-tour1 |
-| H-19 PLAY "today" glow | glows on match day (`matchInDays <= 0`) | never (`matchInDays: null`) | OPEN: LOW: PLAY does not glow on match day (was MISSING) | LOW | | needsYou.ts:78; BottomBar.tsx:61 | — |
+| H-19 PLAY "today" glow | glows on match day (`matchInDays <= 0`) | never (`matchInDays: null`) | FIXED (reasoned): amber ring and glow on PLAY when the match is today (MainBar PlayBtn `today`) | LOW | | needsYou.ts:78; BottomBar.tsx:61 | — |
 | H-20 Phone unread count | phoneUnreadCount | own count from Messages (equal in these saves) | SAME | — | | BottomBar.tsx:48-58 | c23 |
-| H-21 Entry animation | NextMatch and tiles rise in each time Home becomes the page | none | FIXED (reasoned): the next match and the four numbers rise in (was MISSING) | LOW | | HomeHub.tsx:195-197 | — |
+| H-21 Entry animation | NextMatch and tiles rise in each time Home becomes the page | none | SAME now: the rise-in the last round added is taken off (packed's RiseIn does nothing); seen | LOW | | HomeHub.tsx:195-197 | — |
 | H-22 After a match lands on | Home page (Mikey 17 Nov) | Home | SAME | — | | page.tsx:1985 | — |
 | H-23 Fit at 360×780 | fits | fits | SAME | — | | | s360-home |
 
@@ -273,15 +281,15 @@ Stills: c15-news, c16-home-first, c17-tour1, c18-tour-play. Packed: page.tsx:538
 | P-6 Beat "sponsor" | opens the Phone + 2-step pointer: Messages → the offer | opens the Phone only | FIXED (earlier): Phone → Messages → the offer (was DIFFERENT) | MED | | page.tsx:5470-5476; StoryBeat.tsx:79 | — |
 | P-7 Beat "stats" | wordless pointer with a swipe-right gesture to your card | opens Stats directly | FIXED (reasoned): the glove swipes right; a swipe or a tap opens your card (was DIFFERENT) | LOW | | page.tsx:5469; StoryBeat.tsx:78 | — |
 | P-8 Beat "shop" | shop-kib | `shop` | SAME | — | | page.tsx:5466; StoryBeat.tsx:77 | — |
-| P-9 Mechanic guides | "New in your game" beat (e.g. headers, "Try a header now" / Later) | none | FIXED (reasoned): 'New in your game' with 'Try a header now' / Later (was MISSING) | MED | | page.tsx:5566-5578 | — |
+| P-9 Mechanic guides | "New in your game" beat (e.g. headers, "Try a header now" / Later) | none | FIXED (reasoned) | MED | | page.tsx:5566-5578 | — |
 | P-10 Training tour / training-day pointer / one-more-drill | yes | none | FIXED (seen): training-day pointer (Power, then Technique, then the glove on Home), the Training tour, one more drill, 'tap level 1' (was MISSING) | HIGH | | page.tsx:5393-5401; tours.ts | — |
-| P-11 League-opens tour, first-game tour | yes | none | FIXED (reasoned): league-opens and first-game tours (the old order's saves) (was MISSING) | MED | | page.tsx:5402-5406 | — |
+| P-11 League-opens tour, first-game tour | yes | none | FIXED (seen round 4: first-game tour step "Your first game is next… Tap Play" beside packed) | MED | | page.tsx:5402-5406 | — |
 | P-12 Boss tour, boss-meeting tour, Relations tour | yes | none | FIXED (reasoned): boss tour, relations tour, boss-meeting pointer (was MISSING) | MED | | page.tsx:5409-5421 | — |
 | P-13 Shop tour (phone price / "★N more") and Phone tour | yes | none | FIXED (reasoned): the phone step: swipe left to the Shop, or the price and how much more; 'Your phone is open' (was MISSING) | MED | | page.tsx:5426-5438 | — |
 | P-14 First visit tours (Stats, Shop, Phone) | open by themselves the first time | none | FIXED (reasoned): first-visit tours of Stats, Shop and Phone (one host over every screen) (was MISSING) | MED | | page.tsx:5441-5443 | — |
 | P-15 "?" on Home | replays HELP_TOURS.home on the live Home | same | SAME | — | | page.tsx; Home.tsx:121 | — |
 | P-16 "?" on other screens | that screen's own tour | opens the Help list page | FIXED (seen on Home and Training): ? replays the screen's tour on the live screen; the help list page is gone (was DIFFERENT) | MED | | page.tsx:4781-4787; kit.tsx:80 | — |
-| P-17 Achievement pop (chain / earned / record broken) | big card "ACHIEVEMENT UNLOCKED" / "RECORD BROKEN", star, "See all achievements", Close | none (only the toast list below) | PARTLY: the small banner (ACHIEVEMENT UNLOCKED / RECORD BROKEN) for the first-step pops; Hall of Fame record-broken pops are not raised (the phone has no hall records feed); the phone's 'New phone' moment is the world Shop's (was MISSING) | MED | | UnlockChain.tsx:72-128 | — |
+| P-17 Achievement pop (chain / earned / record broken) | big card "ACHIEVEMENT UNLOCKED" / "RECORD BROKEN", star, "See all achievements", Close | none (only the toast list below) | FIXED (reasoned, round 4): a Hall of Fame record broken raises the RECORD BROKEN banner and the posts, once a career (game/flow.ts hallRecordCheck, the phone's own Hall) | MED | | UnlockChain.tsx:72-128 | — |
 | P-18 Achievement toasts | "ACHIEVEMENT 2 OF 3 · GOLD", tier medal, timer bar, slides up, then the star bar | plain card: 🏅 label + description list, optional star bar | FIXED (seen): 'ACHIEVEMENT 2 OF 2 · GOLD', medal, star bar, timer line, low on the screen (was DIFFERENT) | MED | | UnlockChain.tsx:241-294; Moments.tsx:155-175 | c45-season2 (packed text) |
 | P-19 UnlockPop | "Unlocked · Coming up · See all achievements" | none | FIXED (reasoned): Unlocked · <feature> · See all achievements · Close (was MISSING) | MED | | UnlockChain.tsx:158-189 | — |
 | P-20 SlotQuestion | "First steps done · Switch this button to League? · Yes, League / Keep it" | none | SAME: retired in the game itself: slotQuestionDue() always returns false, so the packed app never shows it (was MISSING) | LOW | | UnlockChain.tsx:296-321 | — |
@@ -300,7 +308,7 @@ Stills: c32-low-energy. Packed: page.tsx low-energy gate, TopHud. KIB: PreMatch.
 
 | Element | Packed | KIB Next | Status | Sev | Android risk | Files | Stills |
 |---|---|---|---|---|---|---|---|
-| E-1 Low energy gate | "⚡ LOW ENERGY", red bar with the number inside, PLAY ANYWAY, ‹ BACK; card in the upper third | same words; number right of the bar; card centred | OPEN: the pre-match screen is the match builder's (was DIFFERENT) | LOW | | page.tsx (pre-match); PreMatch.tsx | c32-low-energy |
+| E-1 Low energy gate | "⚡ LOW ENERGY", red bar with the number inside, PLAY ANYWAY, ‹ BACK; card in the upper third | same words; number right of the bar; card centred | FIXED (seen 412 and 360 beside packed): blurred ground, number in the bar, square buttons, card in the upper part | LOW | | page.tsx (pre-match); PreMatch.tsx | c32-low-energy |
 | E-2 Can offer at low energy (story) | physio beat "One on the house" | in story.ts beats | SAME | — | | story.ts | — |
 | E-3 Rest | in Relations (Phone) "Rest" | a REST card under the Training list too | OPEN: kept on purpose: it is the phone's only Rest (was DIFFERENT) | LOW | | RelationsPage.tsx; Training.tsx | c26-training |
 | E-4 Energy back after rest days | toast | none (see P-23) | FIXED (seen): see P-23 (was MISSING) | MED | | | — |
@@ -315,7 +323,7 @@ Stills: c24-stats, c25-stats-records, c25-stats-achievements, c25-stats-contract
 | S-2 Tab buttons | 📊 STATS · 🏅 RECORDS · ⭐ ACHIEVEMENTS · 📝 CONTRACT, yellow when on | same | SAME | — | | | c24 |
 | S-3 Stats tab | THIS SEASON tiles (career below), SEASON BY SEASON table, THE CABINET, GOALS & ASSISTS chart, PER CLUB, INTERNATIONAL | same blocks | SAME | — | | DashboardStats.tsx; Stats.tsx | c24 |
 | S-4 How Stats opens | swipe right from Home (page 0 of the swipe pages) | a pushed screen (◀ STATS or swipe) | OPEN: LOW: Stats is still a pushed screen (was DIFFERENT) | LOW | | page.tsx SwipePages; Home.tsx:101 | — |
-| S-5 Records | collapsible "▾ YOUR BESTS" + "Furthest goal/assist and match bests start counting from now on this save." | no chevron, no line; also lists Caps and "REAL-WORLD RECORDS · 0 BEATEN" | OPEN: LOW: records list not folded (was DIFFERENT) | LOW | | StatsTabs.tsx; Stats.tsx | c25-stats-records |
+| S-5 Records | collapsible "▾ YOUR BESTS" + "Furthest goal/assist and match bests start counting from now on this save." | no chevron, no line; also lists Caps and "REAL-WORLD RECORDS · 0 BEATEN" | FIXED (reasoned): Your bests folds (open to start, the "start counting from now" line), Real-world records folded with n / N | LOW | | StatsTabs.tsx; Stats.tsx | c25-stats-records |
 | S-6 Achievements | ring "1/67 · 1% DONE", Bronze/Silver/Gold/Legend bars, chips All/Completed/Not completed/Nearly there, medal grid by group ("GETTING STARTED 1/5") | "1 OF 67 UNLOCKED" and a plain list with locks | FIXED (seen): ring, four tier bars, Nearly there, chips, medals by group, detail sheet (was DIFFERENT) | MED | | SecondaryScreens.tsx AchievementsScreen; Stats.tsx | c25-stats-achievements |
 | S-7 Contract | paper "PROFESSIONAL CONTRACT", "between the club and Look Check", rows, CLAUSES, two handwritten signatures, "PROPOSE RENEWAL" yellow | white card, rows, "Clauses: None.", italic name, "ASK FOR A NEW DEAL" green | FIXED (seen): PROFESSIONAL CONTRACT paper, both signatures, PROPOSE RENEWAL (green, as the packed still) (was DIFFERENT) | MED | | StatsTabs.tsx; Stats.tsx | c25-stats-contract |
 | S-8 Wage format | ★6k / week | ★6,336 / week | FIXED (seen): ★6k / week (was DIFFERENT) | LOW | | | c25-stats-contract |
@@ -335,7 +343,7 @@ Stills: c26-training, c27-levels. Packed: SkillsScreen.tsx, TrainingLevelSelect.
 | TN-6 Training locked (story) | 🔒 tab + LockedPage "Training is locked · After your first game" | 🔒 tab | OPEN: LOW: the bar's lock note says it; no locked page for Training (was DIFFERENT) | LOW | | UnlockChain.tsx:50 | — |
 | TN-7 Level select | green page; header card: icon, name, description, RATING, ★ bar, "Level 1 is next"; 30 tiles 5×6 each with three stars; BACK pill | blue blur; "TRAINING / POWER" + round back; tiles with a lock only (first: "1 ☆☆☆") | FIXED (seen): BACK pill, TRAINING, the lit card (icon, name, line, RATING, ★ n/90, Level n is next, bar), 5×6 tiles with three stars (was MISSING) | HIGH | | TrainingLevelSelect.tsx; Training.tsx | c27-levels |
 | TN-8 Drill how-it-works card | "HOW IT WORKS · Power", 3 steps, "3 tries: 1st ★★★ …", Got it | [border: MATCH] see CAREER-FINDINGS #40 | MISSING | MED | | TrainingIntro.tsx | — |
-| TN-9 After a drill | "+2 POWER" pop on the row; XP bar fills | none (findings #73) | OPEN: LOW (was MISSING) | LOW | | | — |
+| TN-9 After a drill | "+2 POWER" pop on the row; XP bar fills | none (findings #73) | FIXED (reasoned): back from a drill the number pops with "+N", new stars burst with "+★N" (SkillsScreen useSeen) | LOW | | | — |
 
 ## 11. International call-ups
 
@@ -363,7 +371,7 @@ Stills: c47-renewal. Packed: ManagerMoments.tsx ContractInOffice → SecondarySc
 | CR-2 Layout | centred card on the club-glow page | top-aligned Frame | FIXED (reasoned): centred (was DIFFERENT) | MED | | SecondaryScreens.tsx:373; Misc.tsx:110 | c47-renewal |
 | CR-3 Not willing | 📝 big, "Not interested…", BACK | same words, 📝 inline | FIXED (reasoned): big 📝, centred (was DIFFERENT) | LOW | | :388-398; Misc.tsx:111-117 | c47 |
 | CR-4 Willing intro | reason chip (📈 form / ⭐ star), rules line, current terms, Decline offer / Not now + pulsing Start negotiation | same words, no pulse | SAME | — | | :400-437; Misc.tsx:118-133 | — |
-| CR-5 Higher-or-lower | big cards flip in, +12% / −% float text, confetti on a win, shake on a loss | cards, no flip, no float text, no confetti, no shake | PARTLY: the next card pops in; no float text or shake (was DIFFERENT) | MED | | :440-480; Misc.tsx:135-160 | — |
+| CR-5 Higher-or-lower | big cards flip in, +12% / −% float text, confetti on a win, shake on a loss | cards, no flip, no float text, no confetti, no shake | FIXED (reasoned): "+12%" floats with a burst on a right guess, the offer shakes and "−15%" floats on a wrong one. Not opened (the test saves' clubs will not talk) | MED | | :440-480; Misc.tsx:135-160 | — |
 | CR-6 Signed | "SIGNED" stamp + confetti before leaving | leaves straight away | FIXED (reasoned): SIGNED stamp and confetti, 0.9 s (was MISSING) | MED | | :375-381 | — |
 | CR-7 Season-end renewal (seasonsRemaining 0) | opens after the rollover | same (flow.ts:779-782) | SAME | — | | page.tsx:2167 | — |
 | CR-8 Early offer after a match | checkForContractOffer | same | SAME | — | | page.tsx:1972; flow.ts:631 | — |
@@ -375,9 +383,9 @@ Packed: DeadlineDayRoundup.tsx, KnockoutRoundup.tsx, PlayOffRoundup.tsx, CupDraw
 | Element | Packed | KIB Next | Status | Sev | Android risk | Files | Stills |
 |---|---|---|---|---|---|---|---|
 | R-1 Order after a match | deadline day → knockout round-up → tournament table → cup draw → play-off round-up → Home / call-up / contract | same order | SAME | — | | page.tsx:1834-1985; flow.ts:571-640 | — |
-| R-2 Deadline Day | outlined gold title, club-by-club incomings/outgoings with crests | Frame list | OPEN: MED: not restyled (was DIFFERENT) | MED | | DeadlineDayRoundup.tsx; Roundups.tsx:68 | — |
+| R-2 Deadline Day | outlined gold title, club-by-club incomings/outgoings with crests | Frame list | FIXED (seen on KIB, built from packed's code): gold slab, TRANSFERS tab, pill, outlined gold title, chips, in/out cards, running line. Packed's own screen not reached | MED | | DeadlineDayRoundup.tsx; Roundups.tsx:68 | — |
 | R-3 Knockout round-up | results board, bracket from the last 16, league-phase table | Board + BracketList + StageCard | OPEN: LOW (was DIFFERENT) | LOW | | KnockoutRoundup.tsx; Roundups.tsx:188 | — |
-| R-4 Play-off round-up | drawn bracket | list | OPEN: MED: list, no drawn bracket (was DIFFERENT) | MED | | PlayOffRoundup.tsx; Roundups.tsx:201 | — |
+| R-4 Play-off round-up | drawn bracket | list | FIXED (reasoned): the drawn bracket (crests, lines, scores pop, the winner's line turns gold and his crest moves on, trophy, Promoted), tap to skip. Not opened (needs a play-off save) | MED | | PlayOffRoundup.tsx; Roundups.tsx:201 | — |
 | R-5 Cup draw | [border: WORLD] | | | | | | — |
 
 ## 14. End of season: Golden Ball, transfer window, signing, awards
@@ -398,12 +406,12 @@ Stills: c33-season-over-home, c34-golden-ball-1, c35-gb-5s, c37-after-gb, c38-cl
 | TH-5 Talks | drawn negotiator face, SETTINGS, card centred, Walk Away dark brown | 😐, no settings, card at top, Walk away red full width | FIXED (reasoned): see ST-9; no SETTINGS button (was DIFFERENT) | MED | emoji | NegotiationScreen.tsx; world/Negotiation.tsx | c41-negotiation |
 | TH-6 Deal agreed → signing | 3D office signing with the new manager ("UNAI EMERY · MANAGER", 5 lines) | drawn signing, "U. Emery" plate | LEFT OUT (Mikey) | — | | TransferSigning.tsx; glue.tsx:62 | c43-after-deal |
 | TH-7 Relegation move | RelegationMove offers | RelegationMoveScreen | OPEN: LOW (was DIFFERENT) | LOW | | RelegationMove.tsx; Moves.tsx:45 | — |
-| SA-1 Season awards | gold "SEASON AWARDS" with light rays | white Anton title | OPEN: LOW (was DIFFERENT) | LOW | | SeasonAwardsScreen.tsx; SeasonEnd.tsx:24 | c44-awards |
-| SA-2 Trophy tiles | 2 columns, cup picture, winner badge (initials when the logo is missing) | 2 columns, cup picture, real crest; 🏆 for the shields (packed 🛡️) | OPEN: LOW (was DIFFERENT) | LOW | | | c44 |
+| SA-1 Season awards | gold "SEASON AWARDS" with light rays | white Anton title | FIXED (seen): rays, amber season, gold italic SEASON AWARDS (flat gold, no moving shine) | LOW | | SeasonAwardsScreen.tsx; SeasonEnd.tsx:24 | c44-awards |
+| SA-2 Trophy tiles | 2 columns, cup picture, winner badge (initials when the logo is missing) | 2 columns, cup picture, real crest; 🏆 for the shields (packed 🛡️) | FIXED (seen): 🛡️ for the shields; your wins ringed in amber on the navy card, as packed | LOW | | | c44 |
 | SA-3 Award cards | Golden Boot, Assist King, Golden Glove, PotS, YPotS with face, badge, number | same | SAME | — | | | c44 |
-| SA-4 Team of the season | 4-3-3 drawn with crests | list "GK · David Raya" | FIXED (reasoned): 4-3-3 on a pitch with heads and crests (was DIFFERENT) | MED | | | c44 (text) |
+| SA-4 Team of the season | 4-3-3 drawn with crests | list "GK · David Raya" | FIXED (seen round 4 beside packed) | MED | | | c44 (text) |
 | SA-5 "🌍 Every league and cup" | button | button | SAME | — | | | c44 |
-| SA-6 CONTINUE | at the end of the scroll | pinned at the bottom over the cards | OPEN: LOW (was DIFFERENT) | LOW | | | c44 |
+| SA-6 CONTINUE | at the end of the scroll | pinned at the bottom over the cards | FIXED (seen): Continue at the end of the page | LOW | | | c44 |
 | SA-7 Season 2 Home | news "YOUNGSTER SIGNS FOR VILLA", achievement toasts | news on Home | SAME | — | | | c45-season2, c46-after-news |
 | SA-8 Player of the Month | see P-27 | | | | | | — |
 
@@ -413,8 +421,8 @@ Stills: c56-youth. Packed: YouthTeam.tsx, LoanBrief.tsx, FreeAgentShell.tsx. KIB
 
 | Element | Packed | KIB Next | Status | Sev | Android risk | Files | Stills |
 |---|---|---|---|---|---|---|---|
-| Y-1 Way in | Home stays the normal Home (story beats, tour); PLAY → the youth week | resume lands on the youth screen; Home has "🎓 Youth team: this week" | OPEN: MED: the flow lands on the youth screen (was DIFFERENT) | MED | | page.tsx:4051-4084; flow.ts:262 | c56-youth |
-| Y-2 Youth page | dark charcoal; "Look Check / YOUTH TEAM · AFC TOTTON / NATIONAL LEAGUE SOUTH" left + SETTINGS button | blue blur; centred kicker + big name; "Settings" link at the bottom | FIXED (reasoned): navy page, name / YOUTH TEAM · CLUB / league on the left, SETTINGS on the right (was DIFFERENT) | MED | | YouthTeam.tsx; Youth.tsx:48-135 | c56 |
+| Y-1 Way in | Home stays the normal Home (story beats, tour); PLAY → the youth week | resume lands on the youth screen; Home has "🎓 Youth team: this week" | FIXED (seen beside packed): a youth player lands on Home (boots beat, tour); PLAY opens his youth week | MED | | page.tsx:4051-4084; flow.ts:262 | c56-youth |
+| Y-2 Youth page | dark charcoal; "Look Check / YOUTH TEAM · AFC TOTTON / NATIONAL LEAGUE SOUTH" left + SETTINGS button | blue blur; centred kicker + big name; "Settings" link at the bottom | FIXED (seen beside packed): charcoal page, amber / green / grey tinted cards | MED | | YouthTeam.tsx; Youth.tsx:48-135 | c56 |
 | Y-3 Youth content | bank / wage / this week, where you ended up, progress 0/100, you vs level bars, this spell, THE WEEK (6 buttons), PLAY THE YOUTH MATCH → | same words and blocks | SAME | — | | | c56 |
 | Y-4 Loan brief (intro + weekly) | LoanBrief | LoanBriefScreen (same words) | SAME | — | | LoanBrief.tsx; Youth.tsx:233 | — |
 | Y-5 Free-agent life | FreeAgentShell (home, gym, video games, mates) | FreeAgentScreen (same words, from code) | SAME | — | | FreeAgentShell.tsx; Youth.tsx:137 | — |
@@ -429,13 +437,13 @@ Stills: c50-retirement, c51-farewell-invite, c52-farewell-sheets, c53-walkout-3s
 | FW-1 Final season notice | FinalSeasonNotice (season before the last) | FinalSeasonScreen (from code) | FIXED (reasoned): FINAL / SEASON in the same shell as the final whistle (was DIFFERENT) | LOW | | CareerEnd.tsx; SeasonEnd.tsx:124 | — |
 | FW-2 The final whistle | dark page, red top glow, gold "20 SEASONS" pill, rays, "THE FINAL" white / "WHISTLE" gold (2 lines), season track, dark "A CAREER IN THE GAME" card, yellow full-width HANG THEM UP | blue blur, "THE FINAL WHISTLE" one white line, glass cards, green button | FIXED (seen): pill, rays, THE FINAL / WHISTLE, season track, A CAREER IN THE GAME, yellow HANG THEM UP bar (was DIFFERENT) | MED | | CareerEnd.tsx FinalWhistle; SeasonEnd.tsx:141 | c50-retirement |
 | FW-3 Farewell invite | "ONE LAST GAME" pill, "YOUR FAREWELL / MATCH" (gold MATCH), club line, CHECK XI and RIVALS XI as 22 face circles with names, three rule tiles, bottom bar SKIP / PLAY IT | title one line, the XIs as comma lists in cards, tiles, SKIP / PLAY IT buttons | FIXED (seen): 22 face circles (drawn heads), why-lines, three rule tiles, SKIP / PLAY IT bar (was MISSING) | HIGH | | Farewell.tsx FarewellInvite; Farewell.tsx:47-76 | c51-farewell-invite |
-| FW-4 Farewell team sheets | the match's line-up screen: both XIs on a drawn pitch with faces and flags, formation, SUBSTITUTES +7, KICK OFF | three text cards (XI, Bench, Rivals), KICK OFF | FIXED (seen): the match's own line-up screen with both XIs, flags, SUBSTITUTES +7, KICK OFF (no countdown) (was MISSING) | HIGH | | page.tsx:4600; Farewell.tsx:94-105 | c52-farewell-sheets |
+| FW-4 Farewell team sheets | the match's line-up screen: both XIs on a drawn pitch with faces and flags, formation, SUBSTITUTES +7, KICK OFF | three text cards (XI, Bench, Rivals), KICK OFF | FIXED (seen earlier); round 4: no ⚙, no boots tag, no manager's name on the farewell sheets (reasoned) | HIGH | | page.tsx:4600; Farewell.tsx:94-105 | c52-farewell-sheets |
 | FW-5 Guard of honour | 3D: you walk out of the tunnel between both teams clapping, "THE FAREWELL · GUARD OF HONOUR", KICK OFF › | crash: "Something went wrong · Requiring unknown module 7084" (web build); no fallback | FIXED (earlier): 606a37e5: one bundle, drawn version on any fault (was MISSING) | HIGH | lazy import(); verify on device | Farewell.tsx GuardOfHonour; three/Farewell3D.tsx:126 | c54-walkout-8s |
 | FW-6 Farewell match | [border: MATCH] | | | | | | — |
 | FW-7 Standing ovation | 3D greetings/claps at 85' | three/Farewell3D.tsx:204 startOvation (same lazy import) | FIXED (earlier): as FW-5 (was DIFFERENT) | HIGH | same as FW-5 | Farewell.tsx StandingOvation | — |
 | FW-8 Farewell full time | FarewellResult | FarewellResultScreen: score, scorers, goals/assists/rating, "Off at 85'", testimonial, 🥾 Hang them up (from code) | FIXED (reasoned): same shell: score, scorers, three numbers, ovation line, testimonial (was DIFFERENT) | MED | | Farewell.tsx FarewellResult; Farewell.tsx:114-146 | — |
 | FW-9 Career overview | tab strip Life · Career · Seasons · Who won · Clubs · Trophies · Records; "CAREER OVER · 20 SEASONS"; steel name; LEGACY ring (9); gold "A CAREER IN THE GAME"; SHARE PICTURE / SHARE LINK; tiles; THE JOURNEY; chart with 👑; best season; THE CABINET; bottom bar HALL OF FAME · NEW CAREER · MENU | one list: kicker, title, tiles, CLUBS, SEASON BY SEASON, RECORDS; bottom Hall of Fame · + New career · ☰ Menu; achievement card over the top | FIXED (seen): tab strip, pill, steel name, LEGACY ring, gold verdict, six numbers, journey, chart with 👑, best season, cabinet; HALL OF FAME · NEW CAREER · MENU (was MISSING) | HIGH | | CareerOverview.tsx; Farewell.tsx:148-214 | c55-after-skip |
-| FW-10 Share picture / link | LegendShare.tsx | none | PARTLY: SHARE sends the career's words through the phone's share sheet; the picture needs react-native-view-shot (not installed) and the link needs the website's share API (was MISSING) | MED | needs a share sheet | LegendShare.tsx | c55 |
+| FW-10 Share picture / link | LegendShare.tsx | none | FIXED (reasoned; Skia + expo-sharing, not run on a phone): SHARE PICTURE makes packed's own 1080×1350 card (the same drawing code on Skia) and opens the share sheet; words alone if it fails. SHARE LINK left out: the link lives in a website account and the phone has none | MED | needs a share sheet | LegendShare.tsx | c55 |
 | FW-11 Hall of Fame entry | addToHall on retirement; the overview links to it | world/hall.ts entry, link | SAME | — | | page.tsx; world/hall.ts | — |
 | FW-12 Hall of Fame browsing | [border: WORLD] | | | | | | — |
 

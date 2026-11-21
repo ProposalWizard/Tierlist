@@ -25,6 +25,35 @@ Stills: `/tmp/claude-0/-home-user/f9db4640-b55f-52a1-be6c-75264610aefd/scratchpa
 Pairs are named `pair-*.png` (packed left). The look check's own sheets at both sizes are in
 `S/look412/` and `S/look360/` (`compare.mjs` now takes `--w/--h`).
 
+## Status after round 4 (21 Nov 2026): the leftovers
+
+How I know: **seen** = on stills of both apps side by side at 412×915 (360×780 where said), the same save, driven by the live bench;
+**reasoned** = read in the packed code, built, type-checked, not on a still. Sheet: `scratchpad/fix3/leftovers.jpg`.
+
+| # | row (section) | status | how |
+|---|---|---|---|
+| 1 | "Team news" card when dropped to the bench (1) | FIXED: the manager's words on the plain card, once a fixture (packed shows its 3D office above the same words; the plain card is its own fallback) | seen beside packed, same words |
+| 1 | Low-energy gate (1) | FIXED: blurred ground, number inside the bar, card in the upper part | seen 412 and 360 beside packed |
+| 1 | Tap anywhere to kick off (1) | FIXED | reasoned |
+| 1 | Date icon (1) | FIXED: drawn calendar | reasoned |
+| 1 | First match tour (1) | FIXED: energy, play style, speed, on the same three targets; the match waits while it is up, as packed's does | seen step by step beside packed |
+| 2 | Standing ovation banner (2) | FIXED: gold strip above the scoreboard, pops in | reasoned |
+| 3 | Goal line flash in the feed (3) | FIXED | seen (caught mid-flash) |
+| 3 | Half time: can picture, no extra energy line (3) | FIXED | seen beside packed |
+| 3 | **Scoreboard ran ahead of the commentary** (new) | FIXED: the board shows the goals the feed has read out (packed's displayScore). Seen before the fix: 2-1 on KIB's board over "HALF TIME 1 - 1"; packed's board matched its line | seen (the bug); the fix reasoned + parity checks |
+| 6 | HOW TO PLAY card icon (6) | FIXED: tap / strike / run / flick drawings as packed's TeachGlyph | reasoned |
+| 7 | Pop-up fades when the feed opens (7) | open (LOW): 0.16 s, under the feed on KIB | not built |
+| 7 | Packed's own GOAL board on a still | NOT CAPTURED: the bot took 16 chances over two packed matches and scored none; packed has no test hook in the packed build (`__starMatch` is compiled out). KIB's board stays as checked against MikeyPopup's code in round 3 | not seen |
+| 8 | Shootout winner line pops (8) | FIXED | reasoned |
+| 4 | ⚡ Power shot tap on the green circle | CONFIRMED on KIB's web build: armed, wind-up, a touch on the circle gave GOOD, then ⚡ X1.43 | seen |
+| 4 | First-chance coach card | square corners as packed | seen (before), reasoned (after) |
+| 11 | Vision "Heads up · Who's free?" (11) | SAME: already in MatchVision.tsx (count, then HEADS UP / Who's free?); its how-to card now draws the tap | reasoned |
+| 13 | Kickabout rows (13) | open: the score pill's place and the replays button are the Phone shell's (world file); the six-chance summary is still the small card, not the post-match screen | not built |
+| - | Half time, full time in a real first match | SAME layout | seen beside packed |
+| - | Substitutions, captain orders, corners, an in-match dribble, red cards, injuries | NOT COMPARED on stills: none came up in the two matches played side by side (no way to force them in the packed build) | not seen |
+| - | `JUMP you 1.6 m` after a lay-off back | SAME as packed by its code: `resetForTouchOn` puts you on the ball at the catch, and the catch radius is 1.6 m (`STICK_CATCH_R`); CanvasMatch has no easing there | reasoned (no frames) |
+| - | `tools/match-parity.ts` website side (lay-off back / Touch Mode re-touch) | CORRECT: it now mirrors CanvasMatch `loadScenario` (touch continuation → `resetForTouchOn`, no new chance, the deal kept, no re-cast); before, the tool's website side was wrong, not the website | read against CanvasMatch 9776-9853 |
+
 ## Status after round 3 (21 Nov 2026): every row, FIXED or open
 
 How I know: **seen** = on a still of KIB Next's web build at 412×915 (and 360×780 where said), time stepped by
