@@ -25,6 +25,7 @@ import { tapToContact } from "../match/contactBall";
 import { matchSounds } from "../match/sound";
 import { matchFeel } from "../match/feel";
 import { isAirKind } from "@/lib/star/airDrawings";
+import { mechanicOpen, mechanicDef } from "@/lib/star/mechanics";
 import { airTapOn } from "@/lib/star/airTap";
 import { setSkia } from "../match/skiaApi";
 import { debugMatch } from "../match/debugHook";
@@ -74,12 +75,37 @@ function coachText(d: MatchDriver): string {
   }
   return aim ? "Drag back from the ball to aim and control your power, then let go" : "Tap the part of the ball you want to kick";
 }
+// ── A new career's other first times (CanvasMatch coachFirstHeader, firstUse): its first header, its first
+//    volley, steering its run, sprinting. Once each, kept on this phone (the lib's localStorage). ──
+const HEADER_KEY = "star-first-header-coached", COACHED_KEY = "star-first-coached";
+function stored(key: string): string | null { try { return globalThis.localStorage?.getItem(key) ?? null; } catch { return null; } }
+function store(key: string, v: string) { try { globalThis.localStorage?.setItem(key, v); } catch { /* fine */ } }
+function coachedNow(): Record<string, boolean> { try { return JSON.parse(stored(COACHED_KEY) ?? "{}") as Record<string, boolean>; } catch { return {}; } }
+const isStory = (d: MatchDriver) => !!d.setup.career?.unlocks?.story;
+/** The first header of a story career: its two lines, until the ball is struck. */
+function headerCoach(d: MatchDriver, firstChance: boolean): string | null {
+  if (!isStory(d) || firstChance || d.sc.kind !== "header" || d.lead || stored(HEADER_KEY) === "1") return null;
+  if (d.phase === "flight") { store(HEADER_KEY, "1"); return null; }
+  return d.phase === "aim" ? "A header! Watch him go up for the cross"
+    : d.phase === "contact" ? "A header! Tap the ball before the ring runs out. Its left side sends it right" : null;
+}
+/** The first volley, the first steered run, the first sprint (mechanics.ts firstUse words). */
+function firstUse(d: MatchDriver, blocked: boolean): { key: string; text: string } | null {
+  if (!isStory(d) || blocked) return null;
+  const c = coachedNow();
+  const runLive = !!d.playOn && d.phase === "flight";
+  if (d.sc.kind === "volley" && !d.lead && (d.phase === "aim" || d.phase === "contact") && !c.volley) return { key: "volley", text: "A volley! Tap the ball as it drops, before the ring runs out. Its left side sends it right" };
+  if (runLive && mechanicOpen(d.setup.career, "steer") && !c.steer) return { key: "steer", text: mechanicDef("steer").firstUse ?? "" };
+  if (runLive && mechanicOpen(d.setup.career, "sprint") && !c.sprint) return { key: "sprint", text: mechanicDef("sprint").firstUse ?? "" };
+  return null;
+}
+
 /** The coach card: dark glass with a yellow ring, low on the pitch while you aim, mid-left on the strike screen. */
-function CoachCard({ text, aim }: { text: string; aim: boolean }) {
+function CoachCard({ text, aim, place }: { text: string; aim: boolean; place?: ViewStyle }) {
   return (
     <View pointerEvents="none" style={[{ position: "absolute", zIndex: 40, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8,
       backgroundColor: "rgba(5,8,15,0.82)", boxShadow: "inset 0px 0px 0px 2px #fde047, 0px 8px 20px -8px rgba(0,0,0,0.9)" } as ViewStyle,
-      aim ? { left: 12, right: 12, bottom: 64 } : { left: 12, right: 56, top: "40%" }]}>
+      place ?? (aim ? { left: 12, right: 12, bottom: 64 } : { left: 12, right: 56, top: "40%" })]}>
       <Text style={{ color: "#fff", fontSize: 13, fontWeight: "900", lineHeight: 17, textAlign: "center" }}>{text}</Text>
     </View>
   );
@@ -139,6 +165,7 @@ function StrikeWords({ d, motion }: { d: MatchDriver; motion: string }) {
 export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, height, onFrame, frozen = false, coachFirst = false }: PitchProps) {
   // CanvasMatch's chance counter for its coach lines: +1 each time the aim comes up.
   const coachRef = useRef({ chances: 0, phase: "" });
+  const firstUseShown = useRef<string | null>(null);
   const capSideRef = useRef<"top" | "bottom">("top");
   const onFrameRef = useRef(onFrame); onFrameRef.current = onFrame;
   const frozenRef = useRef(frozen); frozenRef.current = frozen;
@@ -336,6 +363,18 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
       {d && size && (d.phase === "aim" || d.phase === "contact") && !d.lead && (coachFirst || firstStoryMatch(d)) && coachRef.current.chances <= 1 && (
         <CoachCard text={coachText(d)} aim={d.phase === "aim"} />
       )}
+      {d && size && !d.feature && (() => {
+        const firstChance = (coachFirst || firstStoryMatch(d)) && coachRef.current.chances <= 1;
+        const head = headerCoach(d, firstChance);
+        const use = firstUse(d, firstChance || !!head);
+        // A line that has been shown and has now gone is done for good (CanvasMatch firstUseShown).
+        const was = firstUseShown.current;
+        firstUseShown.current = use?.key ?? null;
+        if (was && was !== use?.key) store(COACHED_KEY, JSON.stringify({ ...coachedNow(), [was]: true }));
+        if (head) return <CoachCard text={head} aim place={d.phase === "aim" ? { left: 12, right: 12, bottom: 64 } : { left: 12, right: 56, bottom: 64 }} />;
+        if (use) return <CoachCard text={use.text} aim place={use.key === "volley" ? { left: 12, right: 56, bottom: 64 } : { left: 12, right: 56, top: "12%" }} />;
+        return null;
+      })()}
       {d && size && overlay?.(d, size)}
     </View>
   );

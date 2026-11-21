@@ -262,9 +262,14 @@ function Lineup({ career, matchday, clubKits, competition, date, results, canSim
   }, [held]); // eslint-disable-line react-hooks/exhaustive-deps
   const fillStyle = useAnimatedStyle(() => ({ width: `${fill.value * 100}%` }));
   const hold = () => setHeld(true);
+  // PLAY on Home sits where KICK OFF is here: the tap that opened this screen must not also kick off.
+  const shownAt = useRef(Date.now());
+  const kick = () => { if (Date.now() - shownAt.current > 400) onKickOff(); };
 
   // The pitch keeps its 3 : 4.9 shape and narrows until it fits above KICK OFF.
-  const pitchW = room ? Math.min(room.w, Math.floor((room.h - SUBS_TAB - 4) * 3 / 4.9)) : 0;
+  // (The Substitutes tab's strip is the KICK OFF bar's own top padding: taking it off here too left a 28 px
+  // gap under the tab and a pitch 17 px narrower than the packed app's at 360 wide.)
+  const pitchW = room ? Math.min(room.w, Math.floor(room.h * 3 / 4.9)) : 0;
   const pitchH = pitchW * 4.9 / 3;
   const ratio = room ? pitchW / room.w : 1;
   const chip = ratio >= 0.9 ? 34 : Math.round(34 * Math.max(0.78, ratio));
@@ -314,7 +319,7 @@ function Lineup({ career, matchday, clubKits, competition, date, results, canSim
         <View style={{ flex: 1 }} onLayout={(ev) => { const { width, height } = ev.nativeEvent.layout; if (!room || room.w !== width || room.h !== height) setRoom({ w: width, h: height }); }}>
           {room && pitchW > 0 && (
             <View style={{ width: pitchW, alignSelf: "center" }}>
-              <Pressable onPress={() => { if (showSubs) setShowSubs(false); else onKickOff(); }}>
+              <Pressable onPress={() => { if (showSubs) setShowSubs(false); else kick(); }}>
                 <View style={{ width: pitchW, height: pitchH, overflow: "hidden", borderBottomLeftRadius: 12, borderBottomRightRadius: 12, borderWidth: 1, borderTopWidth: 0, borderColor: "rgba(255,255,255,0.15)", backgroundColor: "rgba(10,40,20,0.18)", boxShadow: "inset 0px 0px 50px rgba(0,0,0,0.35)" } as ViewStyle}>
                   {Array.from({ length: 8 }, (_, k) => <View key={k} style={{ position: "absolute", left: 0, right: 0, top: (k * pitchH) / 8, height: pitchH / 8, backgroundColor: k % 2 ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.04)" }} />)}
                   <Markings w={pitchW} h={pitchH} />
@@ -358,17 +363,18 @@ function Lineup({ career, matchday, clubKits, competition, date, results, canSim
               )}
               {/* Substitutes: a tab under the pitch; open, it grows up over the pitch. */}
               <View style={{ position: "absolute", left: 0, right: 0, bottom: -SUBS_TAB, borderBottomLeftRadius: 12, borderBottomRightRadius: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)", backgroundColor: "rgba(3,7,18,0.95)", overflow: "hidden" }}>
+                {/* The tab stays on top; open, both benches hang under it and the box grows up over the pitch (VersusScreen). */}
+                <Press onPress={() => { hold(); setShowSubs((s) => !s); }} style={{ height: 28, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: "900", transform: [{ rotate: showSubs ? "90deg" : "0deg" }] }}>›</Text>
+                  <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: "900", letterSpacing: 2 }}>SUBSTITUTES</Text>
+                  <Text style={{ color: "#fcd34d", fontSize: 11, fontWeight: "900" }}>+{yours.bench.length}</Text>
+                </Press>
                 {showSubs && (
-                  <View style={{ flexDirection: "row", gap: 1, backgroundColor: "rgba(255,255,255,0.1)", maxHeight: pitchH * 0.6 }}>
+                  <View style={{ flexDirection: "row", gap: 1, backgroundColor: "rgba(255,255,255,0.1)", borderTopWidth: 1, borderColor: "rgba(255,255,255,0.1)", maxHeight: pitchH * 0.6 }}>
                     <Bench sheet={home} kit={kits.home} />
                     <Bench sheet={away} kit={kits.away} />
                   </View>
                 )}
-                <Press onPress={() => { hold(); setShowSubs((s) => !s); }} style={{ height: 28, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                  <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: "900" }}>{showSubs ? "⌄" : "›"}</Text>
-                  <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: "900", letterSpacing: 2 }}>SUBSTITUTES</Text>
-                  <Text style={{ color: "#fcd34d", fontSize: 11, fontWeight: "900" }}>+{yours.bench.length}</Text>
-                </Press>
               </View>
             </View>
           )}
@@ -378,7 +384,7 @@ function Lineup({ career, matchday, clubKits, competition, date, results, canSim
         <SafeAreaView edges={["bottom"]} style={{ paddingTop: SUBS_TAB + 4, paddingBottom: 6 }}>
           {benchNote ? <Text numberOfLines={1} style={{ color: "#fde68a", fontSize: 11, fontWeight: "800", textAlign: "center", marginBottom: 6 }}>🪑 {benchNote}</Text> : null}
           <Animated.View style={pulseStyle}>
-            <LookButton kind="primary" onPress={onKickOff} style={{ paddingVertical: 12, borderRadius: 12, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.35), 0px 0px 22px rgba(52,211,153,0.55)" } as ViewStyle}>
+            <LookButton kind="primary" onPress={kick} style={{ paddingVertical: 12, borderRadius: 12, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.35), 0px 0px 22px rgba(52,211,153,0.55)" } as ViewStyle}>
               <Text numberOfLines={1} style={{ color: "#fff", fontSize: 16, fontWeight: "900", letterSpacing: 3 }}>KICK OFF</Text>
             </LookButton>
           </Animated.View>
@@ -461,8 +467,9 @@ function Bench({ sheet, kit }: { sheet: TeamSheet; kit: Kit }) {
         : sheet.bench.map((p) => (
           <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 1 }}>
             {p.isYou && <Text style={{ color: "#fbbf24", fontSize: 9 }}>★</Text>}
-            <Text numberOfLines={1} style={{ flex: 1, color: "rgba(255,255,255,0.85)", fontSize: 9, fontWeight: "700" }}>{p.short}</Text>
-            <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 8, fontWeight: "900" }}>{p.slot}</Text>
+            <Text numberOfLines={1} style={{ flexShrink: 1, color: "rgba(255,255,255,0.85)", fontSize: 9, fontWeight: "700" }}>{p.short}</Text>
+            {p.nation ? <Text style={{ fontSize: 7 }}>{nationalityFlag(p.nation)}</Text> : null}
+            <Text style={{ marginLeft: "auto", color: "rgba(255,255,255,0.5)", fontSize: 8, fontWeight: "900" }}>{p.slot}</Text>
           </View>
         ))}
     </View>

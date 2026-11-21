@@ -109,7 +109,7 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
         {d.phase === "feed" && <View style={StyleSheet.absoluteFill}><MatchFeed d={d} kits={kits} /></View>}
         {/* No commentary written on the pitch: the website shows none over your chance in a real match
             (CanvasMatch: the overlay strip is the sandbox's only); the lines are in the feed. */}
-        {showStamina && <StaminaBox fill={stamina} cap={legs ? legs.cap : barCap(d.liveEnergyAt(d.matchMinute))} label={legs ? (legs.sprinting ? "SPRINT" : "RUN") : undefined} />}
+        {showStamina && <StaminaBox fill={stamina} cap={legs ? legs.cap : barCap(d.liveEnergyAt(d.matchMinute))} label={legs ? (legs.sprinting ? "SPRINT" : d.playOn?.stick?.autoOn ? "AUTO RUN" : "RUN") : undefined} />}
         {/* Added time on the pitch (CanvasMatch): a chance in added time says so. */}
         {d.inAddedTime && (d.phase === "aim" || d.phase === "contact" || d.phase === "flight" || d.phase === "result") && (
           <View pointerEvents="none" style={{ position: "absolute", left: 8, top: 8, zIndex: 30, borderRadius: 6, backgroundColor: "#fbbf24", paddingHorizontal: 6, paddingVertical: 2, boxShadow: "0px 6px 12px rgba(0,0,0,0.35)" } as ViewStyle}>
