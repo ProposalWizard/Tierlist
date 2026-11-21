@@ -20,7 +20,7 @@ import { nudgeFromDrag, RUNUP } from "@/lib/star/penaltyRunup";
 import { MatchDriver, FRAME_DT } from "../match/driver";
 import { drawPitch, camFor } from "../match/drawPitch";
 import { drawContact, contactBallBox, setContactBallImage } from "../match/drawContact";
-import { fromScreen, screenPull, grabMetres, type Cam } from "../match/view";
+import { fromScreen, toScreen, screenPull, grabMetres, type Cam } from "../match/view";
 import { tapToContact } from "../match/contactBall";
 import { matchSounds } from "../match/sound";
 import { matchFeel } from "../match/feel";
@@ -138,6 +138,7 @@ function StrikeWords({ d, motion }: { d: MatchDriver; motion: string }) {
 export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, height, onFrame, frozen = false, coachFirst = false }: PitchProps) {
   // CanvasMatch's chance counter for its coach lines: +1 each time the aim comes up.
   const coachRef = useRef({ chances: 0, phase: "" });
+  const capSideRef = useRef<"top" | "bottom">("top");
   const onFrameRef = useRef(onFrame); onFrameRef.current = onFrame;
   const frozenRef = useRef(frozen); frozenRef.current = frozen;
   const [size, setSize] = useState<{ W: number; H: number } | null>(null);
@@ -193,8 +194,14 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
       // A waiting pop-up comes up, or the last one goes (MikeyPopup's timers): redraw the words.
       const shown = d.bannerNow();
       const cap = leadCaption(d);
-      if (shown !== shownBanner || cap !== shownCap) { shownBanner = shown; shownCap = cap; setBannerTick((v) => v + 1); }
       const { W, H } = size;
+      // CanvasMatch bannerSideNow: the half the ball is not in; near the middle a caption already up stays put.
+      let side = capSideRef.current;
+      if (shown && camRef.current && d.phase !== "feed" && d.phase !== "done") {
+        const fy = toScreen(camRef.current, d.ball ? d.ball.pos : d.sc.ball).Y / H;
+        if (!(shown === shownBanner && fy > 0.4 && fy < 0.6)) side = fy < 0.5 ? "bottom" : "top";
+      }
+      if (shown !== shownBanner || cap !== shownCap || side !== capSideRef.current) { shownBanner = shown; shownCap = cap; capSideRef.current = side; setBannerTick((v) => v + 1); }
       if (d.phase !== "feed" && d.phase !== "done") {
         camRef.current = camFor(d, W, H);
         pitchPic.value = drawPitch(d, kits, W, H, feel.offset(camRef.current));
@@ -305,10 +312,17 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
           </View>
         </GestureDetector>
       )}
+      {d && d.phase === "runup" && d.runup?.nudge && (
+        // CanvasMatch: the run-up says what it is while it is live, on the empty grass under the arc.
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: "64%", zIndex: 20, alignItems: "center" }}>
+          <Text numberOfLines={1} style={{ borderRadius: 99, overflow: "hidden", backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: 12, paddingVertical: 4, color: "#fff", fontSize: 11, fontWeight: "900" }}>↔ Drag sideways to change your aim</Text>
+        </View>
+      )}
       {banner && banner.text !== "GOAL" && (
-        // Mikey's pop-ups: every word but a goal is a TV caption (MikeyPopup.tsx Caption).
-        <View pointerEvents="none" style={{ position: "absolute", top: "14%", left: 0, right: 0, alignItems: "center" }}>
-          <Caption text={banner.text} />
+        // Mikey's pop-ups: every word but a goal is a TV caption (MikeyPopup.tsx Caption), in the half
+        // of the pitch the ball is NOT in (14% or 74% down), so it never sits on the ball.
+        <View pointerEvents="none" style={{ position: "absolute", top: capSideRef.current === "bottom" ? "74%" : "14%", left: 0, right: 0, alignItems: "center" }}>
+          <Caption text={banner.text} id={banner} ms={banner.ms} />
         </View>
       )}
       {d && size && (d.phase === "aim" || d.phase === "contact") && !d.lead && (coachFirst || firstStoryMatch(d)) && coachRef.current.chances <= 1 && (

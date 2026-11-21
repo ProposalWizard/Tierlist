@@ -2,8 +2,11 @@
 // packed app's look): every line a bar in its team's kit, the minute in a black chip, the minute
 // and speed plate, the playstyle icons, the yellow "Get out there" bar and the energy panel with
 // the three lightning badges.
-import { useRef, type ComponentRef } from "react";
-import { View, Text, ScrollView, Image, Pressable, type ViewStyle } from "react-native";
+import { useEffect, useRef, type ComponentRef } from "react";
+import { View, Text, ScrollView, Image, Pressable, Animated, Easing, type ViewStyle } from "react-native";
+import { labelInk } from "@/lib/star/kits";
+import { shortClub } from "@/lib/star/media/grammar";
+import { ClubBadge } from "../draw/ClubBadge";
 import type { EnergyMode } from "@/lib/star/energy";
 import type { Playstyle } from "@/lib/star/types";
 import type { MatchKits } from "@/lib/star/kits";
@@ -75,6 +78,67 @@ function FeedLine({ l, d, kits }: { l: LogLine; d: MatchDriver; kits: MatchKits 
   );
 }
 
+// components/star/KickOffCard.tsx: you look out of the players' tunnel onto a floodlit pitch; "THE TEAMS
+// WALK OUT / KICK OFF" in the dark top, both crests over name bars in their shirts in the dark bottom.
+// The floodlights breathe and the words rise in, as on the website.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const KICKOFF_BG = require("../../assets/look/match/kickoff-bg.webp") as number;
+function KickOffCard({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
+  const lights = useRef(new Animated.Value(0.55)).current;
+  const rise = useRef(new Animated.Value(0)).current;
+  const glint = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const a = Animated.loop(Animated.sequence([
+      Animated.timing(lights, { toValue: 0.95, duration: 1600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      Animated.timing(lights, { toValue: 0.55, duration: 1600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+    ]));
+    const b = Animated.timing(rise, { toValue: 1, duration: 550, easing: Easing.out(Easing.ease), useNativeDriver: true });
+    const g = Animated.loop(Animated.sequence([Animated.delay(600), Animated.timing(glint, { toValue: 1, duration: 1700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }), Animated.delay(1100)]));
+    a.start(); b.start(); g.start();
+    return () => { a.stop(); b.stop(); g.stop(); };
+  }, [lights, rise, glint]);
+  const home = d.setup.fixture.home !== false;
+  const us = d.setup.career.player.club, them = d.setup.fixture.opponent;
+  const sides: [string, { shirt: string; trim: string }][] = [[home ? us : them, kits.home], [home ? them : us, kits.away]];
+  const up = { opacity: rise, transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] };
+  const shadow = { textShadowColor: "rgba(0,0,0,0.9)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 };
+  const side = ([club, kit]: [string, { shirt: string; trim: string }]) => (
+    <View key={club} style={{ flex: 1, minWidth: 0, alignItems: "center", gap: 4 }}>
+      <ClubBadge club={club} kit={kit as never} size={40} shadow />
+      <View style={{ alignSelf: "stretch", paddingHorizontal: 8, paddingVertical: 6, borderRadius: 2, backgroundColor: kit.shirt,
+        boxShadow: `inset 0px 1px 0px rgba(255,255,255,0.3), inset 0px -2px 0px ${kit.trim}, 0px 6px 14px -6px rgba(0,0,0,0.9)` } as ViewStyle}>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ textAlign: "center", color: labelInk(kit.shirt), fontSize: 12, lineHeight: 13, fontWeight: "900" }}>{shortClub(club).toUpperCase()}</Text>
+      </View>
+    </View>
+  );
+  return (
+    <View style={{ flex: 1, minHeight: 230, marginVertical: 8, marginHorizontal: 12, overflow: "hidden",
+      backgroundImage: "linear-gradient(180deg, #0a1020 0%, #0b1a14 55%, #05070d 100%)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.14), 0px 10px 24px -12px rgba(0,0,0,0.9)" } as ViewStyle}>
+      <Image source={KICKOFF_BG} resizeMode="cover" style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%" }} />
+      <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: "18%", height: "40%", opacity: lights,
+        backgroundImage: "radial-gradient(45% 55% at 50% 45%, rgba(255,236,190,0.22), transparent 70%)" } as never} />
+      <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0,
+        backgroundImage: "linear-gradient(180deg, rgba(3,6,12,0.75) 0%, rgba(3,6,12,0) 26%, rgba(3,6,12,0) 52%, rgba(3,6,12,0.85) 100%)" } as ViewStyle} />
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "space-between", padding: 12 }}>
+        <Animated.View style={[{ alignItems: "center" }, up]}>
+          <Text numberOfLines={1} style={{ color: "rgba(253,230,138,0.9)", fontSize: 9, fontWeight: "900", letterSpacing: 2.9, ...shadow }}>THE TEAMS WALK OUT</Text>
+          <View style={{ overflow: "hidden", marginTop: 4, paddingHorizontal: 4 }}>
+            <Text numberOfLines={1} style={{ color: "#fff", fontSize: 22, lineHeight: 26, fontWeight: "900", fontStyle: "italic", letterSpacing: 2.6, ...shadow }}>KICK OFF</Text>
+            <Animated.View pointerEvents="none" style={{ position: "absolute", top: 0, bottom: 0, width: 46, opacity: 0.45,
+              backgroundImage: "linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.75) 50%, transparent 100%)",
+              transform: [{ translateX: glint.interpolate({ inputRange: [0, 1], outputRange: [-60, 200] }) }] } as never} />
+          </View>
+        </Animated.View>
+        <Animated.View style={[{ alignSelf: "stretch", flexDirection: "row", alignItems: "flex-end", gap: 8 }, up]}>
+          {side(sides[0])}
+          <Text style={{ paddingBottom: 8, color: "#fff", fontSize: 18, lineHeight: 18, fontWeight: "900", fontStyle: "italic", ...shadow }}>v</Text>
+          {side(sides[1])}
+        </Animated.View>
+      </View>
+    </View>
+  );
+}
+
 export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const lines = d.log.slice(-40);
@@ -85,16 +149,25 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
   return (
     <View style={{ flex: 1, backgroundColor: G950 }}>
       <ScrollView ref={scroll} style={{ flex: 1 }} showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1 }}
         onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
         // The bottom stack grows (coming on, half time): stay on the latest line, clear of the playstyle buttons.
         onLayout={() => scroll.current?.scrollToEnd({ animated: false })}>
-        {lines.map((l) => <FeedLine key={l.id} l={l} d={d} kits={kits} />)}
-        <View style={{ height: 52 }} />
+        {/* A tap on the commentary empties the queue in one go (MatchCommentary onSkip). */}
+        <Pressable onPress={() => d.skipFeed()} disabled={!d.canSkipFeed} style={{ flexGrow: 1 }}>
+          {/* While the kick-off card shows, its "KICK OFF" replaces the feed's own kick-off row (MatchCommentary: lines ≤ 1). */}
+          {d.log.length <= 1
+            ? <KickOffCard d={d} kits={kits} />
+            : lines.map((l) => <FeedLine key={l.id} l={l} d={d} kits={kits} />)}
+          <View style={{ height: 52 }} />
+        </Pressable>
       </ScrollView>
       {/* The minute and the speed on one plate, floating over the feed's corner (tap: faster). */}
-      <Press onPress={() => d.setSpeed(d.speed >= 4 ? 1 : d.speed * 2)} style={{ position: "absolute", right: 8, top: 8, width: 56, alignItems: "center", paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", backgroundColor: "rgba(16,82,47,0.85)", boxShadow: "0px 2px 6px rgba(0,0,0,0.35)" } as ViewStyle}>
-        <Text style={{ color: minute.includes("+") ? "#fcd34d" : "#fff", fontFamily: FONT.display, fontSize: minute.includes("+") ? 14 : 17, lineHeight: 20 }}>{minute}&apos;</Text>
-        <Text style={{ marginTop: 1, color: d.speed > 1 ? "#fcd34d" : "rgba(255,255,255,0.45)", fontSize: 9, fontWeight: "900" }}>{"▶".repeat(d.speed >= 4 ? 3 : d.speed)}</Text>
+      <Press onPress={() => d.cycleSpeed()} style={{ position: "absolute", right: 8, top: 8, width: 56, alignItems: "center", paddingVertical: 4, paddingHorizontal: 2, borderRadius: 8, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", backgroundColor: "rgba(16,82,47,0.85)", boxShadow: "0px 2px 6px rgba(0,0,0,0.35)" } as ViewStyle}>
+        {/* One line whatever the minute: "90+10'" shrinks to fit the plate. */}
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ alignSelf: "stretch", textAlign: "center", color: minute.includes("+") ? "#fcd34d" : "#fff", fontFamily: FONT.display, fontSize: minute.includes("+") ? (minute.length > 4 ? 12 : 14) : 17, lineHeight: 20 }}>{minute}&apos;</Text>
+        {/* 1, 2, 4, 8: one to four arrows (MatchCommentary). */}
+        <Text numberOfLines={1} style={{ marginTop: 1, color: d.speed > 1 ? "#fcd34d" : "rgba(255,255,255,0.45)", fontSize: 9, fontWeight: "900" }}>{"▶".repeat(d.speed === 8 ? 4 : d.speed === 4 ? 3 : d.speed)}</Text>
       </Press>
       <View>
         {/* The playstyle buttons in their own strip under the last feed line (the packed app): floating, they hid "+5 MINUTES ADDED". The chosen one full size with a glow ring. */}

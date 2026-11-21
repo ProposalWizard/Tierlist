@@ -8,8 +8,8 @@
  *     with the scorer and assist, any other word as a TV caption
  *   - StaminaBox: the corner box (CanvasMatch B14), its bar moved on the UI thread
  */
-import { useMemo } from "react";
-import { View, Text, type ViewStyle } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, Animated as RNA, Easing, type ViewStyle } from "react-native";
 import { Canvas, Picture, createPicture, Skia, ClipOp, StrokeJoin, StrokeCap, PaintStyle } from "@shopify/react-native-skia";
 import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reanimated";
 import type { EnergyMode } from "@/lib/star/energy";
@@ -114,49 +114,93 @@ export function EnergyIcon({ mode, active, size = 46 }: { mode: EnergyMode; acti
   );
 }
 
-// ── Mikey's pop-ups (MikeyPopup.tsx), still: no roll, no shine ──
+// ── Mikey's pop-ups (MikeyPopup.tsx), with its motion: the board slides down, the scoring number rolls
+//    over with a gold flash, the scorer strip opens, a light sweeps across; all on one 0..1 clock (kmp-*). ──
+
+/** One clock from 0 to 1 over `ms`, restarted for each new pop-up (`id`). */
+function usePopClock(id: unknown, ms: number) {
+  const p = useRef(new RNA.Value(0)).current;
+  useEffect(() => {
+    p.setValue(0);
+    const a = RNA.timing(p, { toValue: 1, duration: Math.max(1, ms), easing: Easing.linear, useNativeDriver: true });
+    a.start();
+    return () => a.stop();
+  }, [id, ms, p]);
+  return p;
+}
 
 export interface BoardTeam { name: string; shirt: string; trim: string }
 function TeamBlock({ t, right }: { t: BoardTeam; right?: boolean }) {
   return (
     <View style={{ flex: 1, minWidth: 0, height: 34, backgroundColor: "#0d1526", flexDirection: right ? "row-reverse" : "row", alignItems: "center", overflow: "hidden" }}>
       <View style={{ width: 7, alignSelf: "stretch", backgroundColor: t.shirt, boxShadow: `inset ${right ? 2 : -2}px 0px 0px ${t.trim}` } as ViewStyle} />
-      <Text numberOfLines={1} style={{ flex: 1, paddingHorizontal: 8, fontFamily: FONT.display, fontSize: 15, letterSpacing: 0.6, color: "#f8fafc", textAlign: right ? "right" : "left", textTransform: "uppercase" }}>{t.name}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flex: 1, paddingHorizontal: 8, fontFamily: FONT.display, fontSize: 15, letterSpacing: 0.6, color: "#f8fafc", textAlign: right ? "right" : "left", textTransform: "uppercase" }}>{t.name}</Text>
     </View>
   );
 }
-export function GoalBoard({ home, away, score, scorer, assist, theirs }: {
-  home: BoardTeam; away: BoardTeam; score: [number, number]; scorer?: string; assist?: string; theirs?: boolean;
-}) {
-  const digit = { fontFamily: FONT.display, fontSize: 22, lineHeight: 34, height: 34, width: 26, textAlign: "center" as const, color: "#0b1020" };
-  const lines = [scorer ? { k: "GOAL", v: scorer } : null, assist ? { k: "ASSIST", v: assist } : null].filter((x): x is { k: string; v: string } => !!x);
+const DIGIT = { fontFamily: FONT.display, fontSize: 22, lineHeight: 34, height: 34, width: 26, textAlign: "center" as const, color: "#0b1020" };
+/** One number on the board; the one that changed rolls from old to new under a gold flash (kmp-old / kmp-new / kmp-flash). */
+function Digit({ from, to, p }: { from: number; to: number; p: RNA.Value }) {
+  if (from === to) return <Text style={DIGIT}>{to}</Text>;
   return (
-    <View style={{ width: "92%", maxWidth: 420, alignSelf: "center", boxShadow: "0px 6px 14px rgba(0,0,0,0.6)" } as ViewStyle}>
-      <View style={{ alignItems: "center" }}>
-        <View style={{ paddingHorizontal: 14, paddingVertical: 1, backgroundImage: "linear-gradient(90deg, #ffd23a, #ffb000)" } as ViewStyle}>
-          <Text style={{ fontFamily: FONT.display, fontSize: 12, letterSpacing: 3.6, color: "#0b1020" }}>{theirs ? "THEIR GOAL" : "GOAL"}</Text>
-        </View>
-      </View>
-      <View style={{ flexDirection: "row", alignItems: "stretch", borderTopWidth: 2, borderColor: "#ffc21a", overflow: "hidden" }}>
-        <TeamBlock t={home} />
-        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 3, backgroundImage: "linear-gradient(180deg, #ffffff, #dfe5ee)" } as ViewStyle}>
-          <Text style={digit}>{score[0]}</Text>
-          <Text style={{ fontFamily: FONT.display, fontSize: 18, color: "#0b1020", width: 10, textAlign: "center" }}>–</Text>
-          <Text style={digit}>{score[1]}</Text>
-        </View>
-        <TeamBlock t={away} right />
-      </View>
-      {lines.length > 0 && (
-        <View style={{ marginHorizontal: "6%", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 4, backgroundColor: "rgba(8,13,26,0.92)", borderBottomWidth: 2, borderColor: "#ffc21a" }}>
-          {lines.map((l) => (
-            <View key={l.k} style={{ flexDirection: "row", alignItems: "center", gap: 6, minWidth: 0, flexShrink: 1 }}>
-              <Text style={{ fontFamily: FONT.display, fontSize: 10, letterSpacing: 1.4, color: "#ffc21a" }}>{l.k}</Text>
-              <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: FONT.display, fontSize: 14, letterSpacing: 0.4, color: "#fff", textTransform: "uppercase" }}>{l.v}</Text>
-            </View>
-          ))}
-        </View>
-      )}
+    <View style={{ height: 34, width: 26, overflow: "hidden" }}>
+      <RNA.Text style={[DIGIT, { position: "absolute", left: 0, top: 0, opacity: p.interpolate({ inputRange: [0, 0.22, 0.34, 1], outputRange: [1, 1, 0, 0] }),
+        transform: [{ translateY: p.interpolate({ inputRange: [0, 0.22, 0.34, 1], outputRange: [0, 0, -37, -37] }) }] }]}>{from}</RNA.Text>
+      <RNA.Text style={[DIGIT, { position: "absolute", left: 0, top: 0, opacity: p.interpolate({ inputRange: [0, 0.22, 0.34, 1], outputRange: [0, 0, 1, 1] }),
+        transform: [{ translateY: p.interpolate({ inputRange: [0, 0.22, 0.30, 0.34, 1], outputRange: [37, 37, -3, 0, 0] }) }] }]}>{to}</RNA.Text>
+      <RNA.View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0, opacity: p.interpolate({ inputRange: [0, 0.24, 0.3, 0.6, 1], outputRange: [0, 0, 1, 0, 0] }),
+        backgroundImage: "radial-gradient(circle, #fff6b0 0%, rgba(255,214,0,0) 70%)" } as never} />
     </View>
+  );
+}
+export function GoalBoard({ home, away, score, from, scorer, assist, theirs, id, ms = 1500 }: {
+  home: BoardTeam; away: BoardTeam; score: [number, number]; scorer?: string; assist?: string; theirs?: boolean;
+  /** The score before this goal (its number rolls over). Absent: no roll. */
+  from?: [number, number];
+  /** This pop-up (a new one restarts the motion) and how long it is up. */
+  id?: unknown; ms?: number;
+}) {
+  const p = usePopClock(id, ms);
+  const was = from ?? score;
+  const lines = [scorer ? { k: "GOAL", v: scorer } : null, assist ? { k: "ASSIST", v: assist } : null].filter((x): x is { k: string; v: string } => !!x);
+  const openY = p.interpolate({ inputRange: [0, 0.16, 0.26, 0.82, 0.92, 1], outputRange: [0, 0, 1, 1, 0, 0] });
+  return (
+    <RNA.View style={{ width: "92%", maxWidth: 420, alignSelf: "center",
+      opacity: p.interpolate({ inputRange: [0, 0.12, 0.86, 1], outputRange: [0, 1, 1, 0] }),
+      transform: [{ translateY: p.interpolate({ inputRange: [0, 0.12, 0.18, 0.86, 1], outputRange: [-90, 4, 0, 0, -90] }) }] }}>
+      <View style={{ boxShadow: "0px 6px 14px rgba(0,0,0,0.6)" } as ViewStyle}>
+        <View style={{ alignItems: "center" }}>
+          <RNA.View style={{ paddingHorizontal: 14, paddingVertical: 1, backgroundImage: "linear-gradient(90deg, #ffd23a, #ffb000)",
+            transform: [{ scaleX: p.interpolate({ inputRange: [0, 0.08, 0.18, 0.84, 0.96, 1], outputRange: [0, 0, 1, 1, 0, 0] }) }] } as never}>
+            <Text numberOfLines={1} style={{ fontFamily: FONT.display, fontSize: 12, letterSpacing: 3.6, color: "#0b1020" }}>{theirs ? "THEIR GOAL" : "GOAL"}</Text>
+          </RNA.View>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "stretch", borderTopWidth: 2, borderColor: "#ffc21a", overflow: "hidden" }}>
+          <TeamBlock t={home} />
+          <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 3, backgroundImage: "linear-gradient(180deg, #ffffff, #dfe5ee)" } as ViewStyle}>
+            <Digit from={was[0]} to={score[0]} p={p} />
+            <Text style={{ fontFamily: FONT.display, fontSize: 18, color: "#0b1020", width: 10, textAlign: "center" }}>–</Text>
+            <Digit from={was[1]} to={score[1]} p={p} />
+          </View>
+          <TeamBlock t={away} right />
+          {/* a light sweep across the board as the score changes (kmp-shine) */}
+          <RNA.View pointerEvents="none" style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 100,
+            backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.28), rgba(255,255,255,0))",
+            transform: [{ translateX: p.interpolate({ inputRange: [0, 0.14, 0.48, 1], outputRange: [-120, -120, 460, 460] }) }, { skewX: "-20deg" }] } as never} />
+        </View>
+        {lines.length > 0 && (
+          <RNA.View style={{ marginHorizontal: "6%", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 4, backgroundColor: "rgba(8,13,26,0.92)", borderBottomWidth: 2, borderColor: "#ffc21a",
+            opacity: openY, transformOrigin: "top", transform: [{ scaleY: openY }] } as never}>
+            {lines.map((l) => (
+              <View key={l.k} style={{ flexDirection: "row", alignItems: "center", gap: 6, minWidth: 0, flexShrink: 1 }}>
+                <Text style={{ fontFamily: FONT.display, fontSize: 10, letterSpacing: 1.4, color: "#ffc21a" }}>{l.k}</Text>
+                <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: FONT.display, fontSize: 14, letterSpacing: 0.4, color: "#fff", textTransform: "uppercase" }}>{l.v}</Text>
+              </View>
+            ))}
+          </RNA.View>
+        )}
+      </View>
+    </RNA.View>
   );
 }
 
@@ -168,17 +212,33 @@ const TONE: Record<PopupTone, { tab: string; edge: string; mark: string }> = {
   plain: { tab: "linear-gradient(180deg, #cbd5e1, #64748b)", edge: "#94a3b8", mark: "!" },
   goal: { tab: "linear-gradient(180deg, #ffe066, #ff9d00)", edge: "#ffc21a", mark: "⚽" },
 };
-/** A TV caption: a coloured tab with its mark, then the word on a dark strip with a coloured underline. */
-export function Caption({ text }: { text: string }) {
+/**
+ * A TV caption: a coloured tab with its mark, then the word on a dark strip with a coloured underline.
+ * It wipes in from the left, holds, and wipes out to the right (kmp-strip), with a light sweep (kmp-shine).
+ */
+export function Caption({ text, id, ms = 900 }: { text: string; id?: unknown; ms?: number }) {
   const c = TONE[popupTone(text)];
+  const p = usePopClock(id ?? text, ms);
+  const [w, setW] = useState(0);
+  const W = w || 320;
   return (
-    <View style={{ flexDirection: "row", alignSelf: "center", boxShadow: "0px 5px 12px rgba(0,0,0,0.6)" } as ViewStyle}>
-      <View style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center", backgroundImage: c.tab } as ViewStyle}>
-        <Text style={{ fontSize: 18, fontWeight: "900", color: "#0b1020" }}>{c.mark}</Text>
-      </View>
-      <View style={{ height: 40, justifyContent: "center", paddingLeft: 12, paddingRight: 18, backgroundImage: "linear-gradient(180deg, rgba(14,22,40,0.96), rgba(6,10,20,0.96))", boxShadow: `inset 0px -3px 0px ${c.edge}` } as ViewStyle}>
-        <Text style={{ fontFamily: FONT.display, fontSize: 24, letterSpacing: 1.9, color: "#fff", textTransform: "uppercase" }}>{text}</Text>
-      </View>
+    // The window the strip slides through: it comes out from behind its left edge and leaves behind its right.
+    <View style={{ alignSelf: "center", overflow: "hidden", opacity: w ? 1 : 0, paddingBottom: 12, paddingHorizontal: 0 }}>
+      <RNA.View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ flexDirection: "row",
+        transform: [{ translateX: p.interpolate({ inputRange: [0, 0.16, 0.82, 1], outputRange: [-W, 0, 0, W] }) }] }}>
+        <View style={{ flexDirection: "row", boxShadow: "0px 5px 12px rgba(0,0,0,0.6)" } as ViewStyle}>
+          <View style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center", backgroundImage: c.tab } as ViewStyle}>
+            <Text style={{ fontSize: 18, fontWeight: "900", color: "#0b1020" }}>{c.mark}</Text>
+          </View>
+          <View style={{ height: 40, justifyContent: "center", paddingLeft: 12, paddingRight: 18, overflow: "hidden", backgroundImage: "linear-gradient(180deg, rgba(14,22,40,0.96), rgba(6,10,20,0.96))", boxShadow: `inset 0px -3px 0px ${c.edge}` } as ViewStyle}>
+            {/* One line always: a long word must never wrap under the tab. */}
+            <Text numberOfLines={1} style={{ fontFamily: FONT.display, fontSize: text.length > 14 ? 19 : 24, letterSpacing: 1.9, color: "#fff", textTransform: "uppercase" }}>{text}</Text>
+            <RNA.View pointerEvents="none" style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 70,
+              backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.18), rgba(255,255,255,0))",
+              transform: [{ translateX: p.interpolate({ inputRange: [0, 0.14, 0.48, 1], outputRange: [-90, -90, 320, 320] }) }, { skewX: "-20deg" }] } as never} />
+          </View>
+        </View>
+      </RNA.View>
     </View>
   );
 }

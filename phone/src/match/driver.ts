@@ -149,6 +149,12 @@ const POPUP_MIN_SHOW_MS = 350;
 const isGoalWord = (t: string) => t === "GOAL" || t === "SCORED";
 /** CanvasMatch's FOLLOWER_RUN_SPEED (stepCommitted). */
 const FOLLOWER_RUN_SPEED = 7.0;
+function savedSpeed(): number {
+  try {
+    const v = Number((globalThis as { localStorage?: { getItem(k: string): string | null } }).localStorage?.getItem("star-match-speed"));
+    return v === 1 || v === 2 || v === 4 || v === 8 ? v : 1;
+  } catch { return 1; }
+}
 /** The lead-in's replay clock cap (LEAD_REPLAY_MAX_DT). */
 const LEAD_REPLAY_MAX_DT = 0.25;
 
@@ -284,7 +290,8 @@ export class MatchDriver {
   log: LogLine[] = [];
   feed: string[] = [];
   pause: Pause | null = null;
-  speed = 1;
+  /** The commentary's speed: the one you left it on last match (CanvasMatch reads "star-match-speed" as it mounts). */
+  speed = savedSpeed();
   private simContinue: (() => void) | null = null;
   private feedWaitMs = 0;
   private feedWaitKey = "";
@@ -342,6 +349,13 @@ export class MatchDriver {
   private big = false;
   td: FpRunState | null = null;
   tdReady = false;
+  private tdNotes = 0;
+  /** The run's latest duel note (CanvasMatch tdNote): its words and whether it is good or bad news. */
+  get tdNote() { const e = this.td?.events; return e && e.length ? e[e.length - 1] : null; }
+  /** A chance in added time, not extra time (CanvasMatch's ⏱ chip). */
+  get inAddedTime(): boolean { return this.ADDED > 0 && this.matchMinute > this.MATCH_DURATION && this.extraTimeStage === 0; }
+  /** May the step-over be used (the dribble's how-to words change with it)? */
+  get skillMovesOpen(): boolean { return this.mechOpen("skillMoves"); }
   private fpDribble: { waveSizes: number[]; seed: number; duels?: boolean } | null = null;
   /** A live shootout kick in progress (CanvasMatch shootoutKickRef). */
   private shootoutKick: { resolve: (scored: boolean) => void } | null = null;
@@ -1048,6 +1062,27 @@ export class MatchDriver {
     }
   }
   setSpeed(s: number) { this.speed = s; this.bump(); }
+  /** CanvasMatch cycleSpeed: 1 → 2 → 4 → 8 → 1, kept between matches ("star-match-speed", the website's own key). */
+  cycleSpeed() {
+    const next = this.speed === 1 ? 2 : this.speed === 2 ? 4 : this.speed === 4 ? 8 : 1;
+    try { (globalThis as { localStorage?: { setItem(k: string, v: string): void } }).localStorage?.setItem("star-match-speed", String(next)); } catch { /* no storage */ }
+    this.setSpeed(next);
+  }
+  /** True when a tap on the commentary would skip (CanvasMatch onSkip: lines waiting and no button up). */
+  get canSkipFeed(): boolean { return this.phase === "feed" && this.queue.length > 0 && !this.pause; }
+  /** CanvasMatch onSkip: a tap on the commentary empties the queue in one go (every line shown, the clock on its last minute). */
+  skipFeed() {
+    if (!this.canSkipFeed) return;
+    const q = this.queue, last = q[q.length - 1];
+    this.log = [...this.log, ...q];
+    this.queue = [];
+    this.feedWaitKey = "";
+    if (last?.minute !== undefined) {
+      this.setClock(last.minute);
+      if (!this.halfTimeShown && last.minute > HALF_TIME_MINUTE) this.showHalfTime();
+    }
+    this.bump();
+  }
   /** The pause's button (half time, full time, extra time…). */
   continuePause() { const p = this.pause; if (p) { p.onContinue(); this.bump(); } }
 
@@ -1503,6 +1538,7 @@ export class MatchDriver {
       mates: Math.round(getTuning("dribble.mates")),
     });
     this.td = run;
+    this.tdNotes = 0;
     this.tdReady = true;
     this.viewport = this.topDownViewport(run);
     return "tdDribble";
@@ -1537,6 +1573,9 @@ export class MatchDriver {
     const vp = this.viewport, k = 1 - Math.exp(-4 * dt);
     this.viewport = { x1: vp.x1 + (want.x1 - vp.x1) * k, x2: vp.x2 + (want.x2 - vp.x2) * k, y1: vp.y1 + (want.y1 - vp.y1) * k, y2: vp.y2 + (want.y2 - vp.y2) * k };
     if (this.tdReady) return;
+    // A new duel note ("He backs off…"): the screen shows the latest (CanvasMatch tdNote).
+    const notes = run.events?.length ?? 0;
+    if (notes !== this.tdNotes) { this.tdNotes = notes; this.bump(); }
     const out = stepFpRun(run, dt);
     if (out !== "running") this.finishTopDownDribble(out);
   }

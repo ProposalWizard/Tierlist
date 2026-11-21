@@ -9,7 +9,8 @@
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { View, Text, StyleSheet, type ViewStyle } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
-import { goalInView, acceptsCaptainOrders } from "@/lib/star/canvasEngine";
+import { goalInView, acceptsCaptainOrders, orderableRunners } from "@/lib/star/canvasEngine";
+import { minuteLabel } from "@/lib/star/addedTime";
 import { mechanicOpen } from "@/lib/star/mechanics";
 import { barCap } from "@/lib/star/legs";
 import { shortClub } from "@/lib/star/media/grammar";
@@ -85,10 +86,18 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
     stamina.value = legs ? legs.stamina.v : 1;
   }, [stamina]);
 
+  const scoreWas = useRef<{ at: unknown; score: [number, number]; last: [number, number] }>({ at: null, score: [0, 0], last: [0, 0] });
   const overlay = useCallback((d: MatchDriver) => {
     const banner = d.bannerNow();
     const lastGoal = d.goalEvents[d.goalEvents.length - 1];
     const home = d.setup.fixture.home !== false;
+    // The score before a goal's pop-up (its number rolls from this): kept while no GOAL is up, pinned to the pop-up when one comes.
+    {
+      const now: [number, number] = home ? [d.userScore, d.oppScore] : [d.oppScore, d.userScore];
+      const sw = scoreWas.current;
+      if (banner && banner.text === "GOAL") { if (sw.at !== banner) scoreWas.current = { at: banner, score: sw.last, last: now }; else sw.last = now; }
+      else scoreWas.current = { at: null, score: now, last: now };
+    }
     const us = shortClub(d.setup.career.player.club), them = shortClub(d.setup.fixture.opponent);
     // CanvasMatch B14: the stamina box, on a run or on a chance with the goal in view that takes captain's orders.
     const legs = d.playOn?.stick?.legs;
@@ -100,9 +109,41 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
         {/* No commentary written on the pitch: the website shows none over your chance in a real match
             (CanvasMatch: the overlay strip is the sandbox's only); the lines are in the feed. */}
         {showStamina && <StaminaBox fill={stamina} cap={legs ? legs.cap : barCap(d.liveEnergyAt(d.matchMinute))} label={legs ? (legs.sprinting ? "SPRINT" : "RUN") : undefined} />}
-        {d.phase === "tdDribble" && d.tdReady && (
-          <View pointerEvents="none" style={{ position: "absolute", top: "40%", left: 20, right: 20, backgroundColor: "rgba(10,16,14,0.9)", borderRadius: 14, padding: 14, borderWidth: 2, borderColor: C.gold }}>
-            <Text style={{ color: C.text, fontWeight: "900", textAlign: "center", fontSize: 16 }}>Tap to start the run. Drag to steer, tap a team-mate to pass.</Text>
+        {/* Added time on the pitch (CanvasMatch): a chance in added time says so. */}
+        {d.inAddedTime && (d.phase === "aim" || d.phase === "contact" || d.phase === "flight" || d.phase === "result") && (
+          <View pointerEvents="none" style={{ position: "absolute", left: 8, top: 8, zIndex: 30, borderRadius: 6, backgroundColor: "#fbbf24", paddingHorizontal: 6, paddingVertical: 2, boxShadow: "0px 6px 12px rgba(0,0,0,0.35)" } as ViewStyle}>
+            <Text numberOfLines={1} style={{ color: "#030712", fontSize: 12, fontWeight: "900", fontVariant: ["tabular-nums"] }}>⏱ {minuteLabel(d.matchMinute, d.ADDED, d.MATCH_DURATION)}&apos;</Text>
+          </View>
+        )}
+        {/* The top-down dribble's words (CanvasMatch data-td-dribble): the duel note, the green start pill and its how-to, the moves strip. */}
+        {d.phase === "tdDribble" && (
+          <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+            {d.tdNote && !d.tdReady && (
+              <View style={{ position: "absolute", left: 12, right: 12, top: "16%", alignItems: "center" }}>
+                <Text style={{ backgroundColor: "rgba(0,0,0,0.7)", paddingHorizontal: 12, paddingVertical: 4, fontSize: 15, fontWeight: "900", letterSpacing: 0.4, textAlign: "center", textTransform: "uppercase",
+                  color: d.tdNote.tone === "good" ? "#6ee7b7" : d.tdNote.tone === "bad" ? "#fca5a5" : "#fff", boxShadow: "inset 0px 0px 0px 1.5px rgba(255,255,255,0.9)" } as never}>{d.tdNote.text}</Text>
+              </View>
+            )}
+            {d.tdReady ? (
+              <View style={{ position: "absolute", left: 24, right: 24, top: "10%", alignItems: "center", gap: 6 }}>
+                <Text numberOfLines={1} style={{ backgroundColor: "#10b981", paddingHorizontal: 24, paddingVertical: 12, fontSize: 16, fontWeight: "900", letterSpacing: 1.6, color: "#022c22", boxShadow: "inset 0px 0px 0px 1.5px rgba(255,255,255,0.92)" } as never}>TAP TO START</Text>
+                <Text style={{ backgroundColor: "rgba(0,0,0,0.7)", paddingHorizontal: 12, paddingVertical: 6, fontSize: 12, lineHeight: 16, fontWeight: "700", color: "#fff", textAlign: "center" }}>
+                  {d.td?.duels
+                    ? (d.skillMovesOpen
+                      ? "He backs off and shows you one way. Sell him a step-over or a dropped shoulder, then go the other way — or flick past him the moment he plants."
+                      : "He backs off and shows you one way. Drop a shoulder, then go the other way — or flick past him the moment he plants.")
+                    : "Drag to steer. Flick to burst past him."}
+                </Text>
+              </View>
+            ) : (
+              <View style={{ position: "absolute", left: 8, right: 8, bottom: 8 }}>
+                <Text style={{ backgroundColor: "rgba(0,0,0,0.7)", paddingHorizontal: 12, paddingVertical: 8, fontSize: 12, lineHeight: 16, fontWeight: "700", color: "#fff", textAlign: "center" }}>
+                  {d.td?.duels
+                    ? (d.skillMovesOpen ? "Tap a side: drop the shoulder. Swipe down: step-over. Flick: knock it past as he plants." : "Tap a side: drop the shoulder. Flick: knock it past as he plants.")
+                    : "Drag to steer. Flick to burst past him. Tap a team-mate to pass."}
+                </Text>
+              </View>
+            )}
           </View>
         )}
         {/* Mikey's pop-up for a goal: the scoreboard, low on the pitch, with the scorer and the assist. */}
@@ -112,6 +153,7 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
               home={{ name: home ? us : them, shirt: kits.home.shirt, trim: kits.home.trim }}
               away={{ name: home ? them : us, shirt: kits.away.shirt, trim: kits.away.trim }}
               score={home ? [d.userScore, d.oppScore] : [d.oppScore, d.userScore]}
+              from={scoreWas.current.at === banner ? scoreWas.current.score : undefined} id={banner} ms={banner.ms}
               scorer={lastGoal.scorer} assist={lastGoal.assist ?? undefined} />
           </View>
         )}
@@ -130,6 +172,7 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
           <MatchPitch make={make} kits={kits} onDone={onFullTime} overlay={overlay} frozen={frozen} onFrame={onFrame}
             onUi={watch ? (d) => { setHud(d); watch(d); } : setHud} />
         </View>
+        <CaptainSlot />
       </SafeAreaView>
     </PitchPage>
   );
@@ -141,6 +184,26 @@ let hudDriver: MatchDriver | null = null;
 let hudVersion = 0;
 const hudSubs = new Set<() => void>();
 function setHud(d: MatchDriver) { hudDriver = d; hudVersion++; hudSubs.forEach((f) => f()); }
+/** The armband's line under the pitch (CanvasMatch): what the captain can order, then what has been ordered. */
+function CaptainSlot() {
+  useSyncExternalStore((f) => { hudSubs.add(f); return () => hudSubs.delete(f); }, () => hudVersion);
+  const d = hudDriver;
+  if (!d || !d.isCaptain || d.phase !== "aim" || !acceptsCaptainOrders(d.sc.kind)) return null;
+  const sc = d.sc;
+  const runs = orderableRunners(sc).filter((r) => r.commandedTo).length + (sc.follower.commandedTo ? 1 : 0);
+  const relay = !!sc.relayTo || !!sc.relayToFollower;
+  const relayName = sc.relayTo?.who?.shortName ?? (sc.relayToFollower ? sc.follower.who?.shortName : undefined) ?? "your man";
+  return (
+    <View style={{ marginHorizontal: 12, marginTop: -2, marginBottom: 8, borderRadius: 8, borderWidth: 1, borderColor: "rgba(245,158,11,0.4)", backgroundColor: "rgba(245,158,11,0.1)", paddingHorizontal: 12, paddingVertical: 6 }}>
+      <Text numberOfLines={2} style={{ textAlign: "center", fontSize: 10, lineHeight: 14, color: "rgba(253,230,138,0.9)" }}>
+        <Text style={{ fontWeight: "900", color: "#fcd34d" }}>© CAPTAIN</Text>
+        {!runs && !relay ? " · tap a team-mate to have it laid off to him, drag to send him on a run" : null}
+        {relay ? <> · lay-off to <Text style={{ fontWeight: "900" }}>{relayName}</Text></> : null}
+        {runs ? ` · ${runs} run${runs > 1 ? "s" : ""} called` : null}
+      </Text>
+    </View>
+  );
+}
 function HudSlot({ kits }: { kits: MatchKits }) {
   useSyncExternalStore((f) => { hudSubs.add(f); return () => hudSubs.delete(f); }, () => hudVersion);
   return hudDriver ? <MatchHud d={hudDriver} kits={kits} /> : null;
