@@ -138,3 +138,7 @@ API cost note: the 50-event trial cost about $1.50 (Harry read it from the Usage
 - Necks and clothes: "you're struggling a lot with necks and skin colour into clothes. I think you need to also research fabric/clothes and how to successfully look like it."
 - The bar: "forget even being 'perfect', we cannot ship the product with cut scenes like the given." Cut scenes stay off the live game until Harry has seen them pass.
 - Earlier the same evening: "instead of using aim of rough cm why not try and find walking animations and match them to our style/bodies, same goes for standing"; cars without Higgsfield: "yea definitely not on the cars lol" (dropped).
+
+## Harry, 21 Nov 2026, ~03:10: clothes approved for houses
+
+- "yes the clothes films are better, put them in houses" (the press conference and walk-out re-filmed with cloth clothes). Next: the same cloth clothes on house and garden people (team-mates visiting, you at home), by role. The match stays on the old clothes until measured on a phone.
