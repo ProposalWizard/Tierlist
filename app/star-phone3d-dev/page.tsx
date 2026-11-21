@@ -35,6 +35,7 @@ import Home3D from "@/components/star/Home3D";
 import PhoneHome from "@/components/star/PhoneHome";
 import RelationsPage from "@/components/star/RelationsPage";
 import type { HomeController } from "@/lib/star/home3d/scene";
+import { STAGE, QUAD, SCREEN, quadMatrix } from "@/lib/star/phone3dGlass";
 import { makeInitialCareer } from "@/lib/star/careerFlow";
 import { generateSquad } from "@/lib/star/squadData";
 import { PREMIER_LEAGUE_CLUBS } from "@/lib/star/clubs";
@@ -47,11 +48,7 @@ import "./phone3d.css";
 
 if (typeof window !== "undefined") setToonYou({ name: "Player" });
 
-/** The stage is a 390x844 phone. Screen corners from fable/final2.json (780x1688 render, halved). */
-const STAGE = { w: 390, h: 844 };
-const QUAD: [number, number][] = [[96.9, 146.3], [293.95, 176.0], [265.5, 607.3], [43.25, 587.05]]; // tl, tr, br, bl
-/** The phone's screen, in CSS px (the box bent onto the glass). */
-const SCREEN = { w: 368, h: 666, radius: 46 };
+/** The stage, the glass's corners and the screen box: lib/star/phone3dGlass.ts (shared with the game's HousePhone). */
 /** How long each move takes (ms). */
 const T = { home: 320, lower: 650, pull: 1400, pullIn: 900, raise: 600 };
 /**
@@ -69,31 +66,6 @@ type Blink = "A" | "B" | "old";
 const BLINK_MS: Record<Blink, number> = { A: 1700, B: 1200, old: 900 };
 
 type Scene = "home" | "opening" | "phone" | "closing-home" | "putting-away" | "pulling-back" | "house" | "taking-out" | "raising";
-
-/** The CSS matrix3d that bends a w x h box onto four points (tl, tr, br, bl). */
-function quadMatrix(w: number, h: number, q: [number, number][]): string {
-  const src: [number, number][] = [[0, 0], [w, 0], [w, h], [0, h]];
-  const A: number[][] = [], B: number[] = [];
-  for (let i = 0; i < 4; i++) {
-    const [x, y] = src[i], [u, v] = q[i];
-    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); B.push(u);
-    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); B.push(v);
-  }
-  // Gaussian elimination
-  for (let c = 0; c < 8; c++) {
-    let p = c;
-    for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
-    [A[c], A[p]] = [A[p], A[c]]; [B[c], B[p]] = [B[p], B[c]];
-    for (let r = 0; r < 8; r++) {
-      if (r === c) continue;
-      const f = A[r][c] / A[c][c];
-      for (let k = c; k < 8; k++) A[r][k] -= f * A[c][k];
-      B[r] -= f * B[c];
-    }
-  }
-  const [a, b, c2, d, e, f, g, hh] = B.map((v, i) => v / A[i][i]);
-  return `matrix3d(${a},${d},0,${g},${b},${e},0,${hh},0,0,1,0,${c2},${f},0,1)`;
-}
 
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 

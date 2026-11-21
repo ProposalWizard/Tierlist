@@ -283,6 +283,9 @@ export interface HomeController {
    *  camera, between = on the straight line from one to the other (he fades in
    *  once the camera is clear of his head); null = off, as before. */
   setPov: (k: number | null) => void;
+  /** The 3D phone in the game (components/star/HousePhone.tsx): ease the pov to `to` over `ms` inside the
+   *  house's own loop (it runs while easing, at the moving frame rate); `done` after the last frame. setPov cancels it. */
+  easePov?: (to: number | null, ms: number, done?: () => void) => void;
   /** Hold the picture: draw one frame, then no loop at all until hold(false). */
   hold: (on: boolean) => void;
   /** Draw one frame now (a held house, or filming frame by frame). */
@@ -891,6 +894,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     }
   }
   let held = false;
+  /** easePov's move, stepped in tick (null: none). */
+  let povEase: { from: number; to: number | null; t: number; t0: number; ms: number; done?: () => void } | null = null;
   let headBone: any = null;
   const findHead = () => { headBone = null; me.person.root.traverse((o: any) => { if (!headBone && o.isBone && /head$/i.test(o.name)) headBone = o; }); };
   findHead();
@@ -938,7 +943,11 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     povEye.y = Math.min(H - 0.15, Math.max(povEye.y, eyeY + (camPos.y - eyeY) * Math.sqrt(s) + 0.35 * Math.sin(Math.PI * s)));
     camera.position.copy(povEye); camera.lookAt(povLook);
     // he shows once the camera is clear of his head, fading in over the next 0.6 m
-    setMeAlpha(Math.max(0, Math.min(1, (camera.position.distanceTo(povHead) - 0.75) / 0.6)));
+    const a = Math.max(0, Math.min(1, (camera.position.distanceTo(povHead) - 0.75) / 0.6));
+    setMeAlpha(a);
+    // fully faded: not drawn at all (the toon body's shader ignores opacity, so with the camera inside his head
+    // his skin showed as shards across the room: the 3D phone in the game, 21 Nov 2026)
+    me.person.root.visible = a > 0.001;
   };
 
   const tick = (force = false) => {
@@ -1111,6 +1120,14 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     if (!(intro as { outside?: boolean } | null)?.outside) inRoom(camPos);
     if (dbgCam) { camera.position.set(...dbgCam.pos); camera.lookAt(...dbgCam.look); }
     else { camera.position.copy(camPos); camera.lookAt(camLook); }
+    if (povEase) {
+      const e = povEase;
+      // on the wall clock (a slow frame never makes the move longer); the film clock when filming
+      e.t = opts.fixedStep ? e.t + dt * 1000 : performance.now() - e.t0;
+      const p = Math.min(1, e.t / e.ms), q = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      pov = e.from + ((e.to ?? 0) - e.from) * q;
+      if (p >= 1) { povEase = null; pov = e.to; if (e.to === null) { setMeAlpha(1); me.person.root.visible = true; } if (e.done) setTimeout(e.done, 0); }
+    }
     if (pov !== null && !dbgCam) applyPov(P);
     else if (camKey === "D") setMeAlpha(meA);
     // a card open: the picture slides up so the spot sits above the card
@@ -1133,7 +1150,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     renderer.info.reset();
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
 
-    busy = !!sleepSeq || !!dipSeq || !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || changing || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
+    busy = !!povEase || !!sleepSeq || !!dipSeq || !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || changing || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       if (busy && !capAlways) dyn.frame(performance.now()); else dyn.pause();
@@ -1232,9 +1249,17 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     rooms: () => rooms.map((id) => ({ id, label: roomPlan(data.tier, id, rooms).label })),
     goToRoom: (id) => goToRoom(id, null),
     setPov: (k) => {
+      povEase = null;
       pov = k;
-      if (k === null) setMeAlpha(1);
+      if (k === null) { setMeAlpha(1); me.person.root.visible = true; }
       else { stick = { x: 0, y: 0 }; stopWalk(); }
+    },
+    easePov: (to, ms, done) => {
+      if (disposed) return;
+      if (to !== null) { stick = { x: 0, y: 0 }; stopWalk(); }
+      povEase = { from: pov ?? 0, to, t: 0, t0: performance.now(), ms: Math.max(1, ms), done };
+      if (pov === null) pov = 0;
+      if (held && isOwner()) { held = false; clock.getDelta(); renderer.setAnimationLoop(loop); }
     },
     hold: (on) => {
       if (!isOwner() || disposed) return;

@@ -147,6 +147,7 @@ import { PHONE_SEEN_EVENT, phoneUnreadCount } from "@/lib/star/phoneUnread";
 import StatsTabs from "@/components/star/StatsTabs";
 import ShopPage from "@/components/star/ShopPage";
 import PhoneHome from "@/components/star/PhoneHome";
+import HousePhone, { phone3dCan, preloadPhone3d, type PhoneGlass } from "@/components/star/HousePhone";
 import RelationsPage from "@/components/star/RelationsPage";
 import LifeScreen from "@/components/star/LifeScreen";
 import PitchScope from "@/components/star/ui/PitchScope";
@@ -462,6 +463,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [career, setCareer] = useState<CareerState | null>(null);
   // Fetch the other screens quietly once Home is up (lib/star/lazyScreen.ts).
   useEffect(() => preloadScreens([
+    // The 3D phone's hand picture and the WebGL check first (two small pictures): the first Phone tap is instant (HousePhone.tsx).
+    { preload: preloadPhone3d },
     // The match's player sprite sheet, read and unpacked before kick-off
     // rather than on the first frame of the match (only with the 3D
     // players look, the only one that draws them).
@@ -5116,6 +5119,42 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
   if (phase === "trophies") return withBar(<TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />);
+  // Sponsors stay shut until your first offer (v0.25): every way in says how they open.
+  const openHub = (ph: StarPhase, from?: NavSpot) => {
+    if (ph === "sponsors" && !isOpen(career, "sponsors")) {
+      showLock(`Sponsors open with your first offer. ${LOCK_HINT.sponsors}.`);
+      return;
+    }
+    // Back goes back (navigation round 1): remember where it was opened from.
+    if (from) pushFrom(from, ph);
+    setPhase(ph);
+  };
+  const FROM_PHONE: NavSpot = { phase: "media", nav: "media" };
+  // The phone: flat (as before), or on the glass of the 3D phone (`glass`, HousePhone.tsx).
+  const phoneApp = (glass?: PhoneGlass) => (
+    <PhoneHome
+      career={career}
+      onToggleLike={handleToggleLike}
+      onVote={handleVote}
+      onLeave={(ph) => (ph === "relations" ? navTo("life") : openHub(ph, FROM_PHONE))}
+      // Relationships open inside the phone, like Squad (Mikey's playtest, 24 Oct 2026).
+      relations={<RelationsPage career={career} onPlayRelationshipGame={handleOpenRelationshipGame} onRest={handleRest} onOpen={(ph) => openHub(ph, FROM_PHONE)} />}
+      relationsIntro={career.unlocks && !hasSeen(career, "help-relations")
+        ? <PointerTour forced={!!career.unlocks.story} key="phone-relations" steps={[{ target: "phone-relations", text: HELP_TOURS.relations[0].text }]} onDone={() => setCareer(c => (c ? markSeen(c, "help-relations") : c))} />
+        : undefined}
+      hallChase={hallChaseLine(career, hallRecords)?.text ?? null}
+      onClose={() => handleNavigate("home")}
+      installed={career.unlocks ? (id) => appInstalled(career, id) : undefined}
+      onInstall={(id) => setCareer(c => (c ? installApp(c, id) : c))}
+      isNew={(id) => appIsNew(career, id)}
+      onOpened={(id) => setCareer(c => (c ? markAppOpened(c, id) : c))}
+      {...glass}
+    />
+  );
+  // The 3D phone (RUL-UI-008): the Phone tab opens it in your hand, your 3D house behind
+  // (HousePhone.tsx), wherever 3D runs; the first visit keeps the flat phone for its tour.
+  const phone3dUp = phase === "media" && activeNav === "media" && hasSeen(career, "help-phone") && phone3dCan();
+  const phoneFrom3d = isOpen(career, "phone") ? () => navTo("media") : undefined;
   if (phase === "garden") {
     return (
       <Garden3D
@@ -5127,20 +5166,30 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onCasino={PACKED_APP ? undefined : () => { setGardenArrive("gate"); setPhase("casino-3d"); }}
         onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
         onHouse={HOME3D_IN_CAREER ? () => { setGardenArrive("gate"); setHomeFromGarden(true); setPhase("home-3d"); } : undefined}
+        onPhone={phoneFrom3d && (() => { setGardenArrive("gate"); phoneFrom3d(); })}
       />
     );
   }
-  if (phase === "home-3d") {
-    // Your house in 3D: change clothes at the wardrobe (saved on the career), the trophy cabinet, your cars
+  if (phase === "home-3d" || phone3dUp) {
+    // Your house in 3D: change clothes at the wardrobe (saved on the career), the trophy cabinet, your cars.
+    // The 3D phone is the same screen (one house, never reloaded): up in the Phone tab, put away into the house.
     const toGarden = () => { setHomeFromGarden(false); setGardenArrive("house"); setPhase("garden"); };
     return (
-      <Home3D
+      <HousePhone
         career={career}
-        backLabel={homeFromGarden ? "Garden" : "Home"}
-        onBack={homeFromGarden ? toGarden : () => { setHomeFromGarden(false); handleBackToDashboard(); }}
-        onDoor={toGarden}
-        onOutfit={(choice) => setCareer((c) => (c ? withOutfit(c, choice) : c))}
-        onSleep={() => setCareer((c) => (c ? sleepNight(c).career : c))}
+        up={phone3dUp}
+        phone={phoneApp}
+        house={{
+          backLabel: homeFromGarden ? "Garden" : "Home",
+          onBack: homeFromGarden ? toGarden : () => { setHomeFromGarden(false); handleBackToDashboard(); },
+          onDoor: toGarden,
+          onOutfit: (choice) => setCareer((c) => (c ? withOutfit(c, choice) : c)),
+          onSleep: () => setCareer((c) => (c ? sleepNight(c).career : c)),
+        }}
+        onHome={() => handleNavigate("home")}
+        onPutAway={() => { setHomeFromGarden(false); setPhase("home-3d"); }}
+        onPhone={phoneFrom3d}
+        notice={lockNote}
       />
     );
   }
@@ -5338,17 +5387,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const helpScreen: HelpScreen | null = swipeActive ? (homePage === 0 ? "stats" : homePage === 1 ? "home" : "shop")
     : phase === "skills" ? (trainingTab === "life" ? "relations" : "training")
     : phase === "media" && activeNav === "media" ? "phone" : null;
-  // Sponsors stay shut until your first offer (v0.25): every way in says how they open.
-  const openHub = (ph: StarPhase, from?: NavSpot) => {
-    if (ph === "sponsors" && !isOpen(career, "sponsors")) {
-      showLock(`Sponsors open with your first offer. ${LOCK_HINT.sponsors}.`);
-      return;
-    }
-    // Back goes back (navigation round 1): remember where it was opened from.
-    if (from) pushFrom(from, ph);
-    setPhase(ph);
-  };
-  const FROM_PHONE: NavSpot = { phase: "media", nav: "media" };
   const FROM_RELATIONS: NavSpot = { phase: "skills", nav: "life", trainingTab: "life" };
   const FROM_SHOP_PAGE: NavSpot = { phase: "dashboard", nav: "home", homePage: 2 };
   const played1 = career.fixtures.some(f => f.played);
@@ -5652,25 +5690,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       )}
       {/* The season-over card is the "End of Season 🏆" chip on Home now
           (navigation round 1, research §6 item 13): same action, top of the list. */}
-      {phase === "media" && activeNav === "media" && (
-        <PhoneHome
-          career={career}
-          onToggleLike={handleToggleLike}
-          onVote={handleVote}
-          onLeave={(ph) => (ph === "relations" ? navTo("life") : openHub(ph, FROM_PHONE))}
-          // Relationships open inside the phone, like Squad (Mikey's playtest, 24 Oct 2026).
-          relations={<RelationsPage career={career} onPlayRelationshipGame={handleOpenRelationshipGame} onRest={handleRest} onOpen={(ph) => openHub(ph, FROM_PHONE)} />}
-          relationsIntro={career.unlocks && !hasSeen(career, "help-relations")
-            ? <PointerTour forced={!!career.unlocks.story} key="phone-relations" steps={[{ target: "phone-relations", text: HELP_TOURS.relations[0].text }]} onDone={() => setCareer(c => (c ? markSeen(c, "help-relations") : c))} />
-            : undefined}
-          hallChase={hallChaseLine(career, hallRecords)?.text ?? null}
-          onClose={() => handleNavigate("home")}
-          installed={career.unlocks ? (id) => appInstalled(career, id) : undefined}
-          onInstall={(id) => setCareer(c => (c ? installApp(c, id) : c))}
-          isNew={(id) => appIsNew(career, id)}
-          onOpened={(id) => setCareer(c => (c ? markAppOpened(c, id) : c))}
-        />
-      )}
+      {phase === "media" && activeNav === "media" && phoneApp()}
       {/* ── The swipe home screens: Stats · Home · Training ──
           Harry, 27 Sep 2026: stats on the left, training on the right, the
           next game, form, energy and you in your kit in the middle. The

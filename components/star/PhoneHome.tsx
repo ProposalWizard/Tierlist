@@ -84,7 +84,7 @@ const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const appOf = (id: AppId | "relations") => (id === "appstore" ? APP_STORE_ICON : id === "scout" ? SCOUT_APP : APPS.find((a) => a.id === (id === "relationships" ? "relations" : id))!);
 
-export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase, relations, relationsIntro, fill = false, onPhoneHome }: {
+export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase, relations, relationsIntro, fill = false, onPhoneHome, onApp }: {
   career: CareerState;
   /** The 3D phone test page: the phone fills its box exactly (it sits on the
    *  3D phone's glass, where a measured size would be the bent one). Absent: measured, as before. */
@@ -92,6 +92,9 @@ export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClo
   /** The nav bar's Home on the phone's own home screen (the 3D phone test
    *  page: back to the game's Home). Absent: dimmed there, as before. */
   onPhoneHome?: () => void;
+  /** The app open inside the phone (null: the home screen). The game's 3D phone
+   *  (HousePhone.tsx) brings the glass flat to your face for Kickabout. Absent: nothing. */
+  onApp?: (id: string | null) => void;
   /** Relationships drawn INSIDE the phone, like Squad (Mikey's playtest, 24 Oct
    *  2026). Absent: the app leaves the phone for the Relations page, as before. */
   relations?: React.ReactNode;
@@ -177,6 +180,9 @@ export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClo
     setApp(id as AppId);
   };
   const goHome = () => setApp(null);
+  const onAppRef = useRef(onApp);
+  onAppRef.current = onApp;
+  useEffect(() => { onAppRef.current?.(app); }, [app]);
 
   return (
     <div ref={boxRef} className="flex h-full w-full items-center justify-center overflow-hidden">
