@@ -191,13 +191,43 @@ A long career for save-from.mts: `npx tsx scripts/soak/careerSoak.mts 12` plays 
 
 ### Not built yet (a playtester or fixer must make these)
 
-No state file exists for: an international break in progress (called up), a renewal offer from a club that will
-talk (the test saves' clubs refuse), a loan, promotion/relegation and a play-off bracket, a cup final win, a
-long-term injury, low energy before a match, "Boss wants a word", the set-piece talk, the Unlocked pop-up,
-"New in your game", watched-on-TV, record banners, ScoutOffers (several clubs after the trial), share picture.
+No state file exists for: a renewal offer from a club that will talk (the test saves' clubs refuse), the loan
+brief itself (the `loan` state lands on Home), promotion/relegation and a play-off bracket, a cup final win,
+"Boss wants a word", the set-piece talk, the Unlocked pop-up, watched-on-TV, record banners, ScoutOffers (several
+clubs after the trial), share picture. (Made in round 2: international break called up / not picked, injury, low
+energy, long names, "New in your game" through `advance.mts` `b3c`; see "Round 2 additions".)
 The way to make each: load a state above with a patch on the career object (for example `c.energy = 20`,
 `c.injury = {...}`, `c.unlocks`, `c.contract.yearsLeft = 1`) using the field names in `lib/star/types.ts`,
 or add a state to `make-career-states.mts`. Check both apps accept it (page errors: `cmd.mjs "return errs()"`).
+
+### Round 2 additions (Opus playtest, 21 Nov 2026)
+
+New states in `make-career-states.mts` (each **ran**, loaded in both apps):
+
+| State | What | Opens on |
+|---|---|---|
+| `mid-season` | Arsenal, 18 matches played | packed: Stats (press Home); KIB: Home |
+| `injured` | mid-season, 4-week hamstring, energy 20 | Home; PLAY shows "You're injured" |
+| `low-energy` | mid-season, energy 15 | Home; PLAY shows "Not in the squad" |
+| `intl-due` | played up to the first international period, not decided | the call-up page (not selected) in both |
+| `intl-duty` | the same period, called up as a starter | Home with "ON DUTY · …", next match the international |
+| `long-names` | mid-season, "Maximiliano-Alexander Okonkwo", ★1,250,000 | Home |
+| `loan` | a Premier League offer as a loan at a League One club | Home with the boots beat (packed's `loan-brief` phase is not resumable) |
+
+New tools:
+- `advance.mts <career or localStorage dump> N [--lose] [--seen boots,training,…] [--trained]`: plays N fixtures
+  headless on a REAL career (keeps `unlocks`, so the story beats come in order), marks beats as seen (and opens what
+  they open), `--trained` = the training day's two drills done. Pipe through `save-from.mts`. Beats that a match
+  screen raises (post-match) do not come this way.
+- `bench/load.js`: the load-a-state body for `cmd.mjs` (`const FILE='…'; $(cat bench/load.js)`); waits for KIB's
+  title and presses CONTINUE until it leaves the title.
+- `bench/snap.sh NAME`: both stills as one `NAME-pair.jpg` (needs `PT_PORT` and `SHOTS`), the pngs removed.
+- `bench/diff.js` now skips text under a pop-up, reports "lines" only when the heights differ too (react-native-web
+  splits a quote into extra rects), and with `const QUIET=1` drops Anton/weight-only rows and line-height drift ≤ 12 px.
+- A free-agent career resumes on the scout's talk in KIB Next (it keeps no phase, and `offersForTrial` still finds a club);
+  open the page with `__kibNav.go('career-free-agent')`.
+- Playwright's `click()` misses KIB's full-width buttons pinned at the very foot (HANG THEM UP, KICK OFF on the sheets):
+  use `tap(N, 206, 888)`.
 
 ### Driving tips
 
