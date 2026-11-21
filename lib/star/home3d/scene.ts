@@ -400,7 +400,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     night: { hemi: 0.2, sun: 0.22, env: 0.22, hemiC: new THREE.Color("#8fa2d8"), sunC: new THREE.Color("#7f9ce0"), view: new THREE.Color("#141b30"), patch: 0, lamp: 0.08, exp: 0.82 },
     // the next morning: warm, low sun through the same window, the lamps off
     // (the room's reflections are neutral white: turned down so the warm sky light shows)
-    morning: { hemi: 1.25, sun: 1.45, env: 0.5, hemiC: new THREE.Color("#ffc98e"), sunC: new THREE.Color("#ffb468"), view: new THREE.Color("#ffd8a6"), patch: 1.5, lamp: 0.2, exp: 1.04 },
+    morning: { hemi: 1.35, sun: 1.45, env: 0.6, hemiC: new THREE.Color("#ffc98e"), sunC: new THREE.Color("#ffb468"), view: new THREE.Color("#ffd8a6"), patch: 1.5, lamp: 0.2, exp: 1.12 },
   };
   let lightFrom: DayLight = LIGHTS.day, lightTo: DayLight = LIGHTS.day, lightK = 1;
   /** Painted things that follow the clock (roomBuild tags them: window views, skies, sun patches). */
@@ -797,6 +797,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   // 07:00 next day (the career's night counted here), the morning light, the screen back, he gets up.
   // Stepped on game time in the loop (the same on a phone and frame by frame when filming).
   let sleepSeq: { t: number; text: string; morning: boolean } | null = null;
+  let sunOnBed: any = null;
   /** A short dip to dark with a caption (the bath's soak): 0.6 s down, `mid`, held, 0.6 s up. */
   let dipSeq: { t: number; text: string; mid: () => void } | null = null;
   const stepDip = (dt: number) => {
@@ -838,11 +839,28 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       lightFrom = LIGHTS.morning; lightTo = LIGHTS.morning; lightK = 1; applyDayLight();
       q.text = opts.living?.onSleep?.() ?? "A good night.";
       life?.newDay();
+      // the morning sun through the window, falling across the bed (one glow, gone when he gets up)
+      const b = life?.bedNow();
+      if (b) {
+        const cv = document.createElement("canvas"); cv.width = cv.height = 64;
+        const g = cv.getContext("2d")!, gr = g.createRadialGradient(32, 32, 2, 32, 32, 32);
+        gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.6, "rgba(255,255,255,0.45)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+        g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+        const t = new THREE.CanvasTexture(cv);
+        sunOnBed = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.5), new THREE.MeshBasicMaterial({ map: t, color: new THREE.Color("#ffb060").multiplyScalar(0.55), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+        sunOnBed.rotation.set(-Math.PI / 2, 0, b.head, "YXZ");
+        sunOnBed.position.set(b.at[0] - Math.sin(b.head) * 0.15, b.top + 0.32, b.at[1] - Math.cos(b.head) * 0.15);
+        sunOnBed.renderOrder = 3;
+        scene.add(sunOnBed);
+      }
     }
     if (t >= S.morningUp - 0.4 && t < S.morningUp) caption.style.opacity = "0";
     if (t >= S.morningUp && t < S.morning) fade.style.opacity = String(1 - ramp(S.morningUp, S.morning));
     if (t >= S.blink && t < S.end) fade.style.opacity = String(Math.sin(Math.PI * ramp(S.blink, S.end)));
-    if (crossed((S.blink + S.end) / 2)) life?.wake(q.text);
+    if (crossed((S.blink + S.end) / 2)) {
+      life?.wake(q.text);
+      if (sunOnBed) { scene.remove(sunOnBed); sunOnBed.geometry.dispose(); sunOnBed.material.map.dispose(); sunOnBed.material.dispose(); sunOnBed = null; }
+    }
     if (t >= S.end) { fade.style.opacity = "0"; fade.style.transition = "opacity 0.2s ease"; sleepSeq = null; }
   };
 

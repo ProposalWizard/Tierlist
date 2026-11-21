@@ -103,6 +103,8 @@ export interface HouseLife {
   wake: (text: string) => void;
   /** The night: you lie in the bed under the duvet (true) or sit back up on it (false). */
   lie: (on: boolean) => void;
+  /** The bed you are lying in (the morning's sun patch goes on it), else null. */
+  bedNow: () => NonNullable<SmartObject["bed"]> | null;
   debug: () => Record<string, unknown>;
   dispose: () => void;
 }
@@ -451,6 +453,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       n.update(0, world, true);
       void p;
     },
+    bedNow: () => lying?.bed ?? null,
     wake: (text) => {
       sleeping = false;
       const card = () => show({ key: "obj:bed", title: "Good morning", sub: "07:00", lines: [text], actions: [{ id: "close", label: "OK", primary: true }] });
