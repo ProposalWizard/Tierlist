@@ -39,7 +39,7 @@ export function CloseSquare({ onPress, size = 40 }: { onPress: () => void; size?
 
 /** A page heading in the website's look: Anton caps, white, with a soft shadow. */
 export function PageTitle({ children, size = 26, color = "#fff" }: { children: string; size?: number; color?: string }) {
-  return <Text numberOfLines={1} style={{ color, fontFamily: FONT.display, fontSize: size, lineHeight: Math.round(size * 1.2), letterSpacing: 0.6, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>{children}</Text>;
+  return <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color, fontFamily: FONT.display, fontSize: size, lineHeight: Math.round(size * 1.2), letterSpacing: 0.6, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>{children}</Text>;
 }
 
 /** The glass skin's screen header: ◂ BACK (glass), the kicker and title on a dark plaque in the middle, `right` on the right. */
@@ -49,7 +49,7 @@ export function ScreenHeader({ title, kicker, kickerColor = "#fcd34d", onBack, r
       <View style={{ flex: 1, alignItems: "flex-start" }}>{onBack ? <BackPill tone="glass" onPress={onBack} /> : null}</View>
       <View style={{ maxWidth: "52%", alignItems: "center", paddingHorizontal: 12, paddingTop: 2, paddingBottom: 3, borderRadius: 10, backgroundColor: "rgba(10,22,40,0.66)", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" }}>
         {kicker ? <Text numberOfLines={1} style={{ color: kickerColor, fontSize: 9, fontWeight: "900", letterSpacing: 2.2, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>{kicker}</Text> : null}
-        <Text numberOfLines={1} style={{ color: "#e2e8f0", fontFamily: FONT.display, fontSize: 21, lineHeight: 26, letterSpacing: 0.4, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.75)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 0 }}>{title}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: "#e2e8f0", fontFamily: FONT.display, fontSize: 21, lineHeight: 26, letterSpacing: 0.4, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.75)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 0 }}>{title}</Text>
       </View>
       <View style={{ flex: 1, alignItems: "flex-end" }}>{right}</View>
     </View>

@@ -59,7 +59,7 @@ export function Frame({ title, kicker, onBack, children, scroll = true, footer, 
             ) : <View style={{ width: 40 }} />}
             <View style={{ flex: 1, alignItems: "center", paddingHorizontal: 6 }}>
               {kicker ? <Text numberOfLines={1} style={[{ color: LOOK.emerald300, fontSize: 10, fontWeight: "900", letterSpacing: 1.8, textTransform: "uppercase" }, TEXT_SHADOW]}>{kicker}</Text> : null}
-              <Text numberOfLines={1} style={[{ color: "#fff", fontFamily: FONT.display, fontSize: 26, lineHeight: 31, letterSpacing: 0.4, textTransform: "uppercase" }, TEXT_SHADOW]}>{title}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[{ color: "#fff", fontFamily: FONT.display, fontSize: 26, lineHeight: 31, letterSpacing: 0.4, textTransform: "uppercase" }, TEXT_SHADOW]}>{title}</Text>
             </View>
             <View style={{ width: 40 }} />
           </View>
@@ -118,7 +118,7 @@ export function Btn({ label, onPress, kind = "primary", disabled, small }: { lab
   const ink = kind === "gold" ? "#111827" : "#fff";
   return (
     <LookButton kind={look} disabled={disabled} onPress={onPress} style={{ paddingVertical: small ? 10 : 15, borderRadius: small ? 10 : 14 }}>
-      <Text numberOfLines={1} style={{ color: ink, fontSize: small ? 13 : 16, fontWeight: "900", letterSpacing: small ? 0.3 : 1, textTransform: small ? "none" : "uppercase" }}>{label}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: ink, fontSize: small ? 13 : 16, fontWeight: "900", letterSpacing: small ? 0.3 : 1, textTransform: small ? "none" : "uppercase" }}>{label}</Text>
     </LookButton>
   );
 }

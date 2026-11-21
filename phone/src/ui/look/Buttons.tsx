@@ -9,7 +9,7 @@
  * All press with Press (shrinks on the phone's graphics thread). Nothing pulses
  * or shines at rest (the website's loops are left out on purpose: smoothness).
  */
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { Press } from "../Press";
 import { FONT } from "./fonts";
@@ -39,7 +39,7 @@ export function LookButton({ label, onPress, kind = "primary", accent, small, di
   const k = disabled && kind === "accent" ? { box: { backgroundColor: "rgba(255,255,255,0.22)" } as ViewStyle, ink: "#ffffff" } : kindStyle(kind, accent);
   return (
     <Press disabled={disabled} onPress={onPress} style={[k.box, { borderRadius: small ? 8 : 12, paddingVertical: small ? 6 : 13, paddingHorizontal: 10, alignItems: "center", justifyContent: "center" }, style]}>
-      {children ?? <Text numberOfLines={1} style={{ color: k.ink, fontSize: small ? 11 : 16, fontWeight: "900" }}>{label}</Text>}
+      {children ?? <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: k.ink, fontSize: small ? 11 : 16, fontWeight: "900" }}>{label}</Text>}
     </Press>
   );
 }
@@ -55,20 +55,23 @@ const SLANT = 14;
 export function SlantButton({ icon, label, hint, badge, primary, gold, onPress, disabled }: {
   icon: string; label: string; hint?: ReactNode; badge?: ReactNode; primary?: boolean; gold?: boolean; onPress: () => void; disabled?: boolean;
 }) {
-  const h = primary ? 54 : 42;
+  // The website: plain tabs are 42 tall; the big one is at least 54 with 6 px above and
+  // below, so it grows with its hint lines (Continue with club + season is 64).
+  const [h, setH] = useState(primary ? 54 : 42);
   const bg = primary ? "linear-gradient(180deg, #34d399, #059669)"
     : gold ? "linear-gradient(180deg, rgba(120,80,10,0.94), rgba(70,44,4,0.97))"
     : "linear-gradient(180deg, rgba(10,50,28,0.92), rgba(5,32,17,0.96))";
   const tan = SLANT / h;
   return (
-    <Press disabled={disabled} onPress={onPress} style={{ height: h, flexDirection: "row", alignItems: "center", gap: 8, paddingLeft: 20, paddingRight: 8 }}>
+    <Press disabled={disabled} onPress={onPress} onLayout={(e) => { const v = Math.round(e.nativeEvent.layout.height); if (v > 0 && v !== h) setH(v); }}
+      style={[{ flexDirection: "row", alignItems: "center", gap: 8, paddingLeft: 20, paddingRight: 8 }, primary ? { minHeight: 54, paddingVertical: 6 } : { height: 42 }]}>
       {/* the slanted end, then the body */}
       <View pointerEvents="none" style={{ position: "absolute", top: 0, bottom: 0, left: SLANT / 2, width: SLANT * 2, backgroundImage: bg, transform: [{ skewX: `${-Math.atan(tan)}rad` }] } as ViewStyle} />
       <View pointerEvents="none" style={{ position: "absolute", top: 0, bottom: 0, left: SLANT, right: 0, backgroundImage: bg, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.35), inset -1px 0px 0px rgba(255,255,255,0.2)" } as ViewStyle} />
-      <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 16, width: 20, textAlign: "center" }}>{icon}</Text>
+      <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 17, lineHeight: 20, width: 17, textAlign: "center", includeFontPadding: false }}>{icon}</Text>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={1} style={{ color: "#fff", fontFamily: FONT.display, fontSize: primary ? 22 : 18, lineHeight: primary ? 26 : 22, letterSpacing: 0.4, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.35)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 }}>{label}</Text>
-        {hint ? <View style={{ marginTop: 1 }}>{typeof hint === "string" ? <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: "900", textTransform: "uppercase" }}>{hint}</Text> : hint}</View> : null}
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: "#fff", fontFamily: FONT.display, fontSize: primary ? 22 : 18, lineHeight: primary ? 26 : 22, letterSpacing: primary ? 0.55 : 0.45, textTransform: "uppercase", includeFontPadding: false, textShadowColor: "rgba(0,0,0,0.35)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 }}>{label}</Text>
+        {hint ? <View style={{ marginTop: 2 }}>{typeof hint === "string" ? <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, lineHeight: 13, fontWeight: "900", letterSpacing: -0.3, textTransform: "uppercase" }}>{hint}</Text> : hint}</View> : null}
       </View>
       {badge}
     </Press>

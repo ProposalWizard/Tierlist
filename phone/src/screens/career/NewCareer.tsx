@@ -5,18 +5,21 @@
  *   1 "Who are you?": first and last name side by side, nickname, nationality.
  *   2 "Your style": skin tone, hair, hair colour, preferred foot, squad number.
  *   3 "Your photo" (PortraitPicker.tsx): your shirt, or one of the seven faces.
- *     Adding or taking your own photo needs the phone's photo picker, which this
+ *     "Add a photo" / "Take a photo" use the phone's own picker (./portrait.ts). Before 21 Nov 2026:
+ *     adding or taking your own photo needed the phone's photo picker, which this
  *     app does not have yet: those two buttons show, greyed, with a note.
  *     (Photo faces are off in the game for everyone, FACT-UI-015: the choice
  *     is kept on the player, as on the website.)
  * Position ST, age 16, no club (a club comes from the trial).
  */
+import { pickPortrait } from "./portrait";
 import { useMemo, useState } from "react";
 import { View, Text, TextInput, ScrollView, Image, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { StarPlayer } from "@/lib/star/types";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
-import { ALL_NATIONALITIES, nationalityFlag } from "@/lib/nationalities";
+import { ALL_NATIONALITIES } from "@/lib/nationalities";
+import { NationFlag } from "../../draw/NationFlag";
 import {
   SKIN_TONES, DEFAULT_SKIN_TONE, type SkinTone, DEFAULT_FOOT, type PreferredFoot,
   HAIR_STYLES, HAIR_COLOURS, DEFAULT_HAIR_STYLE, DEFAULT_HAIR_COLOUR, type HairStyle, type HairColour, clampSquadNumber,
@@ -98,7 +101,7 @@ export function NewCareer({ onDone, onBack }: { onDone: (p: StarPlayer) => void;
                 <Label>Nationality</Label>
                 {!natOpen ? (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, backgroundColor: LOOK.emerald500, paddingHorizontal: 12, paddingVertical: 9, boxShadow: "0px 8px 14px -6px rgba(6,78,59,0.6)" } as ViewStyle}>
-                    <Text style={{ fontSize: 16 }}>{nationalityFlag(nationality)}</Text>
+                    <NationFlag nation={nationality} width={20} />
                     <Text numberOfLines={1} style={{ flex: 1, color: "#fff", fontSize: 16, fontWeight: "900" }}>{nationality}</Text>
                     <Text style={{ color: "#fff", fontSize: 17, fontWeight: "900" }}>✓</Text>
                     <Press onPress={() => setNatOpen(true)} style={{ borderRadius: 8, backgroundColor: "rgba(6,78,59,0.5)", paddingHorizontal: 12, paddingVertical: 6 }}>
@@ -113,7 +116,7 @@ export function NewCareer({ onDone, onBack }: { onDone: (p: StarPlayer) => void;
                       {list.map((n) => (
                         <Press key={n} onPress={() => { setNat(n); setSearch(""); setNatOpen(false); }}
                           style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: n === nationality ? LOOK.emerald500 : "transparent" }}>
-                          <Text style={{ fontSize: 14 }}>{nationalityFlag(n)}</Text>
+                          <NationFlag nation={n} width={20} />
                           <Text numberOfLines={1} style={{ color: n === nationality ? "#fff" : "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: "700" }}>{n}</Text>
                         </Press>
                       ))}
@@ -181,6 +184,16 @@ export function NewCareer({ onDone, onBack }: { onDone: (p: StarPlayer) => void;
 /** The photo step (PortraitPicker.tsx, its first screen): your shirt, or a face. */
 function PhotoPicker({ value, onChange, number }: { value?: string; onChange: (v: string | undefined) => void; number: number }) {
   const kit = kitsOf("").home;
+  const [busy, setBusy] = useState<"library" | "camera" | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const own = !!value && value.startsWith("data:");
+  const pick = async (from: "library" | "camera") => {
+    setBusy(from); setProblem(null);
+    const r = await pickPortrait(from);
+    setBusy(null);
+    if (r.ok) onChange(r.dataUrl);
+    else if (r.reason !== "cancelled") setProblem(r.message ?? "That did not work. Try again, or pick a face below.");
+  };
   return (
     <Glass tone="inset" radius={12} pad={12}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -195,14 +208,14 @@ function PhotoPicker({ value, onChange, number }: { value?: string; onChange: (v
             : <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><Display size={24} color="#fff">{number}</Display></View>}
         </View>
         <Text style={{ flex: 1, color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "700", lineHeight: 15 }}>
-          {value ? "" : "Without one you'll show up as a generic face in matches, and as the back of your shirt on Player of the Month graphics."}
+          {own ? "Your photo. It shows on team sheets and on Player of the Month graphics." : value ? "" : "Without one you'll show up as a generic face in matches, and as the back of your shirt on Player of the Month graphics."}
         </Text>
       </View>
       <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-        <LookButton label="Add a photo" disabled small style={{ flex: 1, paddingVertical: 9 }} />
-        <LookButton kind="glass" label="Take a photo" disabled small style={{ flex: 1, paddingVertical: 9 }} />
+        <LookButton label={busy === "library" ? "Opening…" : own ? "Change photo" : "Add a photo"} disabled={!!busy} small onPress={() => pick("library")} style={{ flex: 1, paddingVertical: 9 }} />
+        <LookButton kind="glass" label={busy === "camera" ? "Opening…" : "Take a photo"} disabled={!!busy} small onPress={() => pick("camera")} style={{ flex: 1, paddingVertical: 9 }} />
       </View>
-      <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: "700", textAlign: "center", marginTop: 4 }}>Your own photo comes to the phone app later: pick a face below for now.</Text>
+      <Text style={{ color: problem ? "#fca5a5" : "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: "700", textAlign: "center", marginTop: 4 }}>{problem ?? "Your photo stays on this phone. Taking one asks to use the camera."}</Text>
       <Press onPress={() => { if (value) onChange(undefined); }} style={[{ marginTop: 8, borderRadius: 12, paddingVertical: 8, alignItems: "center" },
         value
           ? ({ backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05))", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.2), inset 0px 0px 0px 1px rgba(255,255,255,0.12)" } as ViewStyle)
@@ -226,7 +239,8 @@ function PhotoPicker({ value, onChange, number }: { value?: string; onChange: (v
 
 /** One of the seven faces (lib/star/fakeFaces.ts), from the app's packed pictures. */
 function Face({ src }: { src: string }) {
-  const uri = packedPicture(src);
+  // your own photo is kept as a data: line; the seven faces are the app's packed pictures
+  const uri = src.startsWith("data:") ? src : packedPicture(src);
   if (!uri) return <View style={{ flex: 1 }} />;
   return <Image source={{ uri }} resizeMode="cover" fadeDuration={0} style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "115%" }} />;
 }

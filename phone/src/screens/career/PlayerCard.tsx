@@ -69,7 +69,7 @@ export function PlayerCardView({ career, scale = 0.93 }: { career: CareerState; 
           <ClubBadge club={career.player.club} size={28} />
         </View>
         {/* Name. */}
-        <Text numberOfLines={1} style={{ position: "absolute", left: 24, right: 24, top: 156, textAlign: "center", fontFamily: FONT.display, fontSize: 19, lineHeight: 22, letterSpacing: 0.6, color: look.ink }}>{name}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ position: "absolute", left: 24, right: 24, top: 156, textAlign: "center", fontFamily: FONT.display, fontSize: 19, lineHeight: 22, letterSpacing: 0.6, color: look.ink }}>{name}</Text>
         {/* The six. */}
         <View style={{ position: "absolute", left: 0, right: 0, top: 190, flexDirection: "row", justifyContent: "center", gap: 20 }}>
           {half(CARD_STATS.slice(0, 3))}

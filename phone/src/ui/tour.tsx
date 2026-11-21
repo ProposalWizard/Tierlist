@@ -12,7 +12,7 @@
  *
  *   <PointerTour steps={welcomeTour(true, 0, true)} press={{ "nav-play": () => … }} onDone={…} />
  */
-import { useEffect, useRef, useState, useSyncExternalStore, type ComponentRef } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ComponentRef, type ReactNode } from "react";
 import { Modal, Text, View, Pressable, useWindowDimensions, type ViewStyle } from "react-native";
 import type { TourStep } from "@/lib/star/tours";
 
@@ -51,13 +51,20 @@ function Hand({ down }: { down: boolean }) {
   return <Text style={{ fontSize: 34, lineHeight: HAND_H, textShadowColor: "rgba(0,0,0,0.6)", textShadowRadius: 5, textShadowOffset: { width: 0, height: 3 } }}>{down ? "👇" : "👆"}</Text>;
 }
 
-export function PointerTour({ steps, onDone, press, skippable }: {
+/** Name a view for the tour by wrapping it: `<TourTarget name="app-messages">…</TourTarget>`. */
+export function TourTarget({ name, children, style }: { name: string; children: ReactNode; style?: ViewStyle }) {
+  return <View {...useTourTarget(name)} style={style}>{children}</View>;
+}
+
+export function PointerTour({ steps, onDone, press, skippable, chain }: {
   steps: TourStep[];
   /** Called when the tour ends (the last step pressed or tapped through). */
   onDone: () => void;
   /** What a "press" step's tap does (by target name). The tour ends with it. */
   press?: Record<string, () => void>;
   skippable?: boolean;
+  /** A pressed step goes on to the next step instead of ending the tour (Phone → Messages → the offer). */
+  chain?: boolean;
 }) {
   const [i, setI] = useState(0);
   const [bubbleH, setBubbleH] = useState(110);
@@ -69,7 +76,10 @@ export function PointerTour({ steps, onDone, press, skippable }: {
   const next = () => { if (last) onDone(); else setI(i + 1); };
   const hole = step.target === "screen" ? null : boxes.get(step.target) ?? null;
   const isPress = !!step.press;
-  const doPress = () => { onDone(); press?.[step.target]?.(); };
+  const doPress = () => {
+    if (chain && !last) { press?.[step.target]?.(); setI(i + 1); return; }
+    onDone(); press?.[step.target]?.();
+  };
 
   const bubbleW = Math.min(320, vp.width - 2 * EDGE);
   const cx = hole ? hole.x + hole.w / 2 : vp.width / 2;
@@ -89,7 +99,7 @@ export function PointerTour({ steps, onDone, press, skippable }: {
   const handLeft = Math.max(8, Math.min(vp.width - 42, cx - 17));
 
   const panel = (key: string, s: ViewStyle) => (
-    <Pressable key={key} onPress={isPress ? undefined : next} style={[{ position: "absolute", backgroundColor: DIM }, s]} />
+    <Pressable key={key} onPress={isPress ? (hole ? undefined : onDone) : next} style={[{ position: "absolute", backgroundColor: DIM }, s]} />
   );
   return (
     <Modal transparent visible animationType="fade" statusBarTranslucent onRequestClose={() => { if (skippable) onDone(); }}>

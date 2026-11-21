@@ -13,6 +13,7 @@
  * drawn glow.
  */
 import { useEffect, useState } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Modal, Pressable, Text, View, type ViewStyle } from "react-native";
 import type { CareerState } from "@/lib/star/types";
 import type { BreakingNews } from "@/lib/star/breakingNews";
@@ -23,6 +24,7 @@ import { skinToneHex } from "@/lib/star/playerIdentity";
 import { PlayerHead } from "../../draw/PlayerHead";
 import { ClubBadge } from "../../draw/ClubBadge";
 import { FONT, LookButton, rgba } from "../../ui/look";
+import { Rays, Scanlines } from "../../ui/look/Patterns";
 
 function YourHead({ career, size }: { career: CareerState; size: number }) {
   const kit = kitsOf(career.player.club, career.clubKits?.[career.player.club]).home;
@@ -36,18 +38,20 @@ export function BreakingNewsPage({ career, news, onClose }: { career: CareerStat
   const tint = kit?.shirt ?? "#1d4ed8";
   const ticker = `BREAKING NEWS  •  ${news.headline}  •  ${news.line}  •  `;
   const hasFace = !!news.face;
+  const inset = useSafeAreaInsets();
   return (
     <Modal transparent={false} visible animationType="fade" statusBarTranslucent onRequestClose={() => { if (armed) onClose(); }}>
       <Pressable onPress={() => { if (armed) onClose(); }} style={{ flex: 1, backgroundColor: "#05070d", overflow: "hidden" }}>
         <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: `radial-gradient(120% 70% at 50% 42%, ${rgba(tint, 0.4)} 0%, #0a0f1c 55%, #04060b 100%)` } as ViewStyle} />
-        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, opacity: 0.18, backgroundImage: "repeating-linear-gradient(0deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 4px)" } as ViewStyle} />
+        {/* the TV's faint lines: drawn (a phone has no repeating-linear-gradient) */}
+        <Scanlines />
 
         {/* top band, a little crooked */}
-        <View style={{ paddingTop: 34 }}>
+        <View style={{ paddingTop: Math.max(34, inset.top + 10) }}>
           <View style={{ marginLeft: -14, marginRight: 24, backgroundColor: "#dc2626", transform: [{ skewX: "-8deg" }], boxShadow: "0px 6px 0px #ffffff, 0px 10px 24px rgba(0,0,0,0.6)" } as ViewStyle}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, paddingLeft: 32, paddingRight: 24, transform: [{ skewX: "8deg" }] }}>
               <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: "#fff" }} />
-              <Text style={{ color: "#fff", fontFamily: FONT.display, fontSize: 34, lineHeight: 40, letterSpacing: 2 }}>BREAKING NEWS</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ flexShrink: 1, color: "#fff", fontFamily: FONT.display, fontSize: 34, lineHeight: 40, letterSpacing: 2 }}>BREAKING NEWS</Text>
             </View>
           </View>
           <View style={{ marginTop: 12, paddingHorizontal: 20, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -73,18 +77,18 @@ export function BreakingNewsPage({ career, news, onClose }: { career: CareerStat
             </View>
           )}
           <View style={{ width: "100%", maxWidth: 380, backgroundColor: "#fff", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 18, transform: [{ rotate: "-1.6deg" }] }}>
-            <Text style={{ color: "#000", fontFamily: FONT.display, fontSize: 40, lineHeight: 42, textTransform: "uppercase" }}>{news.headline}</Text>
+            <Text numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.55} style={{ color: "#000", fontFamily: FONT.display, fontSize: 40, lineHeight: 42, textTransform: "uppercase" }}>{news.headline}</Text>
             <View style={{ marginTop: 8, height: 5, width: 96, backgroundColor: "#dc2626" }} />
           </View>
-          <Text style={{ maxWidth: 340, textAlign: "center", color: "#fff", fontSize: 16, fontWeight: "700", lineHeight: 21, textShadowColor: "rgba(0,0,0,0.8)", textShadowRadius: 8, textShadowOffset: { width: 0, height: 2 } }}>{news.line}</Text>
+          <Text numberOfLines={4} adjustsFontSizeToFit minimumFontScale={0.75} style={{ maxWidth: 340, textAlign: "center", color: "#fff", fontSize: 16, fontWeight: "700", lineHeight: 21, textShadowColor: "rgba(0,0,0,0.8)", textShadowRadius: 8, textShadowOffset: { width: 0, height: 2 } }}>{news.line}</Text>
         </View>
 
         {/* tap hint above the ticker */}
         <View>
           <Text style={{ paddingBottom: 8, textAlign: "center", color: "#fff", fontSize: 12, fontWeight: "900", letterSpacing: 3.6, opacity: armed ? 0.85 : 0 }}>TAP TO CONTINUE</Text>
-          <View style={{ flexDirection: "row", alignItems: "stretch", overflow: "hidden", backgroundColor: "#000", borderTopWidth: 4, borderColor: "#fff", boxShadow: "0px -8px 0px #dc2626" } as ViewStyle}>
+          <View style={{ marginBottom: inset.bottom, flexDirection: "row", alignItems: "stretch", overflow: "hidden", backgroundColor: "#000", borderTopWidth: 4, borderColor: "#fff", boxShadow: "0px -8px 0px #dc2626" } as ViewStyle}>
             <View style={{ backgroundColor: "#dc2626", paddingHorizontal: 16, justifyContent: "center" }}>
-              <Text style={{ color: "#fff", fontFamily: FONT.display, fontSize: 20, letterSpacing: 1.6 }}>{shortClub(news.club ?? "NEWS").toUpperCase().slice(0, 14)}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 20, lineHeight: 26, letterSpacing: 1.6 }}>{shortClub(news.club ?? "NEWS").toUpperCase().slice(0, 14)}</Text>
             </View>
             <Text numberOfLines={1} ellipsizeMode="clip" style={{ flex: 1, color: "#fff", fontFamily: FONT.display, fontSize: 20, letterSpacing: 1, paddingVertical: 12, paddingHorizontal: 10 }}>{ticker.repeat(2)}</Text>
           </View>
@@ -102,12 +106,13 @@ export function PotmWinPage({ career, award, onClose }: { career: CareerState; a
     <Modal transparent visible animationType="fade" statusBarTranslucent onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 16, backgroundColor: "rgba(2,4,10,0.86)" }}>
         <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: `radial-gradient(70% 50% at 50% 40%, ${rgba(glow, 0.35)}, transparent 70%)` } as ViewStyle} />
-        <View pointerEvents="none" style={{ position: "absolute", width: 520, height: 520, top: "18%", borderRadius: 260, backgroundImage: "repeating-conic-gradient(from 0deg, rgba(253,230,138,0.16) 0deg 8deg, transparent 8deg 22deg)", opacity: 0.8 } as ViewStyle} />
+        {/* the gold rays: drawn (a phone has no repeating-conic-gradient) */}
+        <View pointerEvents="none" style={{ position: "absolute", top: "18%", left: 0, right: 0, alignItems: "center" }}><Rays size={520} /></View>
         <Pressable onPress={() => {}} style={{ width: "100%", maxWidth: 384 }}>
           <View style={{ alignItems: "center", marginBottom: 12 }}>
             <Text style={{ color: "#fcd34d", fontSize: 11, fontWeight: "900", letterSpacing: 3.3, textShadowColor: "rgba(251,191,36,0.5)", textShadowRadius: 10 }}>PLAYER OF THE MONTH</Text>
-            <Text style={{ color: "#fde68a", fontSize: 30, fontWeight: "900", fontStyle: "italic", marginTop: 4, textShadowColor: "rgba(0,0,0,0.5)", textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 }}>YOU WON IT</Text>
-            <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "700", marginTop: 6 }}>{award.monthName} — {n(award.goals, "goal")} and {n(award.assists, "assist")}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: "#fde68a", fontSize: 30, fontWeight: "900", fontStyle: "italic", marginTop: 4, textShadowColor: "rgba(0,0,0,0.5)", textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 }}>YOU WON IT</Text>
+            <Text numberOfLines={2} style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "700", marginTop: 6, textAlign: "center" }}>{award.monthName} — {n(award.goals, "goal")} and {n(award.assists, "assist")}</Text>
           </View>
           {/* the month's card (the feed's potmWinner graphic) */}
           {/* The feed's potmWinner card (media/Graphics.tsx): your face on the club's
@@ -121,7 +126,7 @@ export function PotmWinPage({ career, award, onClose }: { career: CareerState; a
               <View style={{ flex: 1, paddingHorizontal: 12, paddingTop: 12 }}>
                 <Text style={{ color: "#fcd34d", fontSize: 9, fontWeight: "900", letterSpacing: 1.8 }}>PLAYER OF THE MONTH</Text>
                 <Text numberOfLines={1} style={{ color: "#fff", fontSize: 13, fontWeight: "800", marginTop: 6 }}>{career.player.firstName}</Text>
-                <Text numberOfLines={1} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 26, lineHeight: 30, textTransform: "uppercase" }}>{career.player.lastName}</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 26, lineHeight: 30, textTransform: "uppercase" }}>{career.player.lastName}</Text>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
                   <ClubBadge club={career.player.club} kit={kit} size={18} />
                   <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: "900", letterSpacing: 1 }}>{career.player.club.toUpperCase()}</Text>
@@ -130,7 +135,7 @@ export function PotmWinPage({ career, award, onClose }: { career: CareerState; a
             </View>
             <View style={{ flexDirection: "row", alignItems: "stretch", borderTopWidth: 1, borderColor: "rgba(255,255,255,0.12)" }}>
               <Text style={{ backgroundColor: "#fde047", color: "#030712", fontSize: 11, fontWeight: "900", letterSpacing: 1.2, paddingHorizontal: 10, paddingVertical: 6 }}>{award.monthName.toUpperCase()}</Text>
-              <Text style={{ color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1.2, paddingHorizontal: 10, paddingVertical: 6 }}>{`${n(award.goals, "goal")} · ${n(award.assists, "assist")}`.toUpperCase()}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flex: 1, color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1.2, paddingHorizontal: 10, paddingVertical: 6 }}>{`${n(award.goals, "goal")} · ${n(award.assists, "assist")}`.toUpperCase()}</Text>
             </View>
           </View>
           <LookButton label="OK" kind="gold" onPress={onClose} style={{ marginTop: 16, paddingVertical: 14 }} />

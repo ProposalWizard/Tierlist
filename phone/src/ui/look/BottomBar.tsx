@@ -121,7 +121,7 @@ function NavBtn({ label, icon, on, locked, count, bolt, dot, onPress }: { label:
     <Press onPress={onPress} style={[{ flex: 1, height: 50, borderRadius: 14, alignItems: "center", justifyContent: "center", gap: 2 },
       on && ({ backgroundColor: "rgba(255,255,255,0.18)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.34)" } as ViewStyle)]}>
       <Text style={{ fontSize: 18, opacity: locked ? 0.3 : 1 }}>{icon}</Text>
-      <Text numberOfLines={1} style={{ color: locked ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.92)", fontSize: 12, fontWeight: "900" }}>{label}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: locked ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.92)", fontSize: 12, fontWeight: "900" }}>{label}</Text>
       {locked && <Text style={{ position: "absolute", right: 6, top: 4, fontSize: 10 }}>🔒</Text>}
       {!locked && !!count && count > 0 && (
         <View style={{ position: "absolute", right: 4, top: 3, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: bolt ? "#fbbf24" : "#ef4444", borderWidth: 2, borderColor: "#1e3a5c" }}>

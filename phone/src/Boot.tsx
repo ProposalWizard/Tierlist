@@ -68,7 +68,7 @@ function TrippedNote() {
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", top: 40, left: 12, right: 12 }}>
       <Text onPress={() => setShow(false)} style={{ backgroundColor: "#3b1d1d", color: "#fff", padding: 12, borderRadius: 12, borderWidth: 1, borderColor: "#f87171", fontWeight: "700" }}>
-        Last time KIB Next closed while showing {parts.map((p) => names[p] ?? p).join(" and ")}. That part is switched off for now. Please screenshot this for Claude. (Tap to hide.)
+        KIB Next closed twice while starting {parts.map((p) => names[p] ?? p).join(" and ")}. The simple version shows for now and the game tries again by itself in a few launches. Settings has "Turn back on". (Tap to hide.)
       </Text>
     </View>
   );

@@ -10,6 +10,7 @@
  *    and the full screen every ten (AchievementToasts, ratingChange, newStar).
  *  - Help: each screen's "?" (lib/star/tours.ts HELP_TOURS), as a page.
  */
+import { TopSpace } from "../../ui/safe";
 import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, Modal } from "react-native";
 import type { CareerState } from "@/lib/star/types";
@@ -153,7 +154,8 @@ export function Pops() {
     );
   }
   return (
-    <View pointerEvents="box-none" style={{ position: "absolute", left: 12, right: 12, top: 54 }}>
+    <View pointerEvents="box-none" style={{ position: "absolute", left: 12, right: 12, top: 0 }}>
+      <TopSpace min={54} pad={16} />
       <Press onPress={flow.dismissPop}>
         {p.kind === "rating" ? (
           <View style={{ backgroundColor: "#10b981", borderRadius: 12, padding: 10, borderWidth: 1, borderColor: "#6ee7b7" }}>

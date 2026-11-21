@@ -25,6 +25,10 @@ function robotoFiles() {
   }
   const files = Object.entries(WEIGHTS).map(([w, d]) => ({ name: `Roboto-${w}.ttf`, weight: w, italic: false, src: path.join(ROBOTO, "package", d, `Roboto_${d}.ttf`) }));
   files.push({ name: "Roboto-400i.ttf", weight: "400", italic: true, src: path.join(ROBOTO, "package/400Regular_Italic/Roboto_400Regular_Italic.ttf") });
+  // the heavy italics too (the title's KNOWITBALL is Roboto Black Italic on a phone): without
+  // them a browser fakes the slant on another weight, and the word's width is wrong
+  files.push({ name: "Roboto-700i.ttf", weight: "700", italic: true, src: path.join(ROBOTO, "package/700Bold_Italic/Roboto_700Bold_Italic.ttf") });
+  files.push({ name: "Roboto-900i.ttf", weight: "900", italic: true, src: path.join(ROBOTO, "package/900Black_Italic/Roboto_900Black_Italic.ttf") });
   return files;
 }
 
@@ -38,7 +42,12 @@ export function buildWeb(out = WEB_OUT) {
     const fonts = robotoFiles();
     fs.mkdirSync(path.join(out, "fonts"), { recursive: true });
     for (const f of fonts) fs.copyFileSync(f.src, path.join(out, "fonts", f.name));
-    const css = fonts.map((f) => `@font-face{font-family:Roboto;src:url(/fonts/${f.name}) format("truetype");font-weight:${f.weight};font-style:${f.italic ? "italic" : "normal"}}`).join("");
+    // Under two names. react-native-web asks for `-apple-system, BlinkMacSystemFont, "Segoe UI",
+    // Roboto, …`, and Chromium answers BlinkMacSystemFont with the computer's own font, so the
+    // words were never Roboto and every width was off (measured: 4.5% wider, 11% for the heavy
+    // italic). "-apple-system" is first in that list and means nothing on Linux: named here, it
+    // is Roboto, and the words are as wide as Android draws them.
+    const css = ["Roboto", "-apple-system"].map((fam) => fonts.map((f) => `@font-face{font-family:"${fam}";src:url(/fonts/${f.name}) format("truetype");font-weight:${f.weight};font-style:${f.italic ? "italic" : "normal"}}`).join("")).join("");
     const index = path.join(out, "index.html");
     fs.writeFileSync(index, fs.readFileSync(index, "utf8").replace("</head>", `<style id="look-fonts">${css}</style></head>`));
   } catch (e) {

@@ -17,7 +17,8 @@ import { partOff } from "../safety";
  * takes over 20 seconds to load, the drawn version plays instead, as on the
  * website.
  */
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { TopSpace } from "../ui/safe";
+import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Image, PixelRatio, StyleSheet } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, withDelay, Easing } from "react-native-reanimated";
 import { GLView, type ExpoWebGLRenderingContext } from "expo-gl";
@@ -37,6 +38,18 @@ import { absoluteUrl } from "../draw/offscreen";
 import { playCheer } from "../match/sound";
 import { Press } from "../ui/Press";
 import { setupPhone3d } from "./assets";
+
+/**
+ * The 3D scenes' code, loaded the first time a farewell plays. A plain `require`
+ * on purpose: `await import()` was cut into a separate file by the bundler and
+ * the farewell died with "Requiring unknown module" when that file was not
+ * there. This way the code is always inside the app's one bundle, and still
+ * only runs when the farewell starts. If it throws, the drawn version plays.
+ */
+function loadScenes(): typeof import("./farewellScenes") {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require("./farewellScenes") as typeof import("./farewellScenes");
+}
 
 const GOLD = "#fbbf24";
 /** The longest the 3D may take to load before the drawn version takes over (the website's). */
@@ -86,9 +99,12 @@ function Scene3D({ start, onFail, waiting }: { start: (gl: WebGL2RenderingContex
   const pr = Math.min(TIER_PROFILES[quality3dTier()].maxPixelRatio, dpr);
   const k = pr / dpr;
   const onContext = (gl: ExpoWebGLRenderingContext) => {
-    setupPhone3d();
     const limit = setTimeout(() => { if (!handle.current && !dead.current) { console.warn("[farewell 3D] took too long; drawn instead"); cb.current.onFail(); } }, LOAD_LIMIT_MS);
-    cb.current.start(gl as unknown as WebGL2RenderingContext).then((h) => {
+    // anything thrown while starting (not only a failed promise) goes to the drawn version
+    let going: Promise<SceneHandle>;
+    try { setupPhone3d(); going = cb.current.start(gl as unknown as WebGL2RenderingContext); }
+    catch (e) { going = Promise.reject(e); }
+    going.then((h) => {
       clearTimeout(limit);
       if (dead.current) { h.dispose(); return; }
       handle.current = h;
@@ -112,6 +128,14 @@ function Scene3D({ start, onFail, waiting }: { start: (gl: WebGL2RenderingContex
   );
 }
 
+/** A fault while DRAWING the 3D view (not only while loading it) shows the drawn version too. */
+class Safe3D extends Component<{ onFail: () => void; children: ReactNode }, { bad: boolean }> {
+  state = { bad: false };
+  static getDerivedStateFromError() { return { bad: true }; }
+  componentDidCatch(e: unknown) { console.warn("[farewell 3D] could not draw; drawn instead:", e); this.props.onFail(); }
+  render() { return this.state.bad ? null : this.props.children; }
+}
+
 // ── The guard of honour (page.tsx farewell-walkout) ─────────────────────────
 
 export function GuardOfHonour({ career, sides, onDone }: { career: CareerState; sides: FarewellSides; onDone: () => void }) {
@@ -123,7 +147,7 @@ export function GuardOfHonour({ career, sides, onDone }: { career: CareerState; 
   useEffect(() => { playCheer(); }, []);
   const kit = hostKit(career, sides.host);
   const start = useMemo(() => async (gl: WebGL2RenderingContext) => {
-    const { startGuardOfHonour } = await import("./farewellScenes");
+    const { startGuardOfHonour } = loadScenes();
     return startGuardOfHonour(gl, {
       you: youLook(career, kit), ours: kit, rivals: RIVALS_KITS.home,
       seed: (career.player.startYear ?? 0) * 31 + career.season,
@@ -134,7 +158,7 @@ export function GuardOfHonour({ career, sides, onDone }: { career: CareerState; 
   return (
     <View style={{ flex: 1, backgroundColor: "#0a1426", overflow: "hidden" }}>
       {mode === "3d"
-        ? <Scene3D start={start} onFail={() => setMode("drawn")} waiting="Walking out…" />
+        ? <Safe3D onFail={() => setMode("drawn")}><Scene3D start={start} onFail={() => setMode("drawn")} waiting="Walking out…" /></Safe3D>
         : <GuardDrawn career={career} sides={sides} kit={kit} onDone={finish} />}
       <Heading kicker="The farewell" title="Guard of honour" />
       <View pointerEvents="none" style={{ position: "absolute", top: 120, left: 12, right: 12, flexDirection: "row", justifyContent: "space-between" }}>
@@ -148,7 +172,8 @@ export function GuardOfHonour({ career, sides, onDone }: { career: CareerState; 
 
 function Heading({ kicker, title, sub }: { kicker: string; title: string; sub?: string }) {
   return (
-    <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, paddingTop: 48, paddingHorizontal: 16, alignItems: "center", backgroundColor: "rgba(0,0,0,0.28)" }}>
+    <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, paddingHorizontal: 16, alignItems: "center", backgroundColor: "rgba(0,0,0,0.28)" }}>
+      <TopSpace min={48} />
       <Text style={{ color: "#fde68a", fontSize: 11, fontWeight: "900", letterSpacing: 3.3, textTransform: "uppercase" }}>{kicker}</Text>
       <Text style={{ color: "#fff", fontSize: 30, fontWeight: "900", textTransform: "uppercase", textShadowColor: "rgba(0,0,0,.8)", textShadowRadius: 6 }}>{title}</Text>
       {sub ? <Text style={{ color: "rgba(255,255,255,.9)", fontSize: 12, fontWeight: "700", marginTop: 2, marginBottom: 6 }}>{sub}</Text> : <View style={{ height: 8 }} />}
@@ -201,7 +226,7 @@ export function StandingOvation({ career, sides, minute, onDone }: { career: Car
   const stopRef = useRef(onStop);
   stopRef.current = onStop;
   const start = useMemo(() => async (gl: WebGL2RenderingContext) => {
-    const { startOvation } = await import("./farewellScenes");
+    const { startOvation } = loadScenes();
     return startOvation(gl, {
       you: youLook(career, kit), ours: kit, rivals: RIVALS_KITS.home, plan,
       seed: (career.player.startYear ?? 0) * 37 + career.season,
@@ -213,7 +238,7 @@ export function StandingOvation({ career, sides, minute, onDone }: { career: Car
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: "#0a1426", overflow: "hidden", zIndex: 60, elevation: 60 }]}>
       {mode === "3d"
-        ? <Scene3D start={start} onFail={() => setMode("drawn")} waiting="The ground rises…" />
+        ? <Safe3D onFail={() => setMode("drawn")}><Scene3D start={start} onFail={() => setMode("drawn")} waiting="The ground rises…" /></Safe3D>
         : <OvationDrawn career={career} sides={sides} kit={kit} plan={plan} onStop={onStop} onDone={finish} />}
       <Heading kicker={`${minute}' · You come off`} title="Standing ovation" sub={`${career.player.firstName} ${career.player.lastName}`} />
       {caption && (
@@ -255,7 +280,7 @@ function FaceChip({ chip, kit, size = 42 }: { chip: Chip; kit: Kit; size?: numbe
         <Image source={{ uri: pictureUri(src) }} style={{ width: "100%", height: "100%" }} resizeMode="cover" onError={() => { if (src !== fallback) setSrc(fallback); }} />
         {chip.badge && <Text style={{ position: "absolute", right: 0, bottom: 0, fontSize: 13 }}>{chip.badge}</Text>}
       </View>
-      <Text numberOfLines={1} style={{ marginTop: 2, fontSize: 9.5, fontWeight: "900", textTransform: "uppercase", color: chip.you ? "#fde68a" : "rgba(255,255,255,.9)" }}>{chip.name}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ marginTop: 2, width: size + 22, textAlign: "center", fontSize: 9.5, fontWeight: "900", textTransform: "uppercase", color: chip.you ? "#fde68a" : "rgba(255,255,255,.9)" }}>{chip.name}</Text>
     </View>
   );
 }

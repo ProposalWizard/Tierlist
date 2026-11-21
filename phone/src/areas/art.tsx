@@ -4,6 +4,7 @@
 // drawings (lib/star) drawn on the phone through src/draw: player heads,
 // your player, club badges, and the test pictures that tools/draw-check.ts
 // compares with a real browser. Open it with nav.go("art-test").
+// Also "art-news" and "art-potm": Breaking News and Player of the Month, to check by eye.
 import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,6 +25,7 @@ import { Drawn, phoneFontFor } from "../draw/useDrawing";
 import { OffscreenCanvas2D } from "../draw/offscreen";
 import { SCENES } from "../draw/testScenes";
 import { FaceEditor, FakeFaceEditor } from "../draw/FaceEditors";
+import { BreakingNewsPage, PotmWinPage } from "../screens/career/NewsMoments";
 
 const CLUBS = ["Arsenal", "Manchester United", "Liverpool", "Chelsea", "Tottenham Hotspur", "Newcastle United",
   "Hampton & Richmond Borough", "Barnet", "Wrexham", "Sunderland", "England", "Brazil"];
@@ -105,4 +107,24 @@ function FakeFaceEditorScreen() {
   return <FakeFaceEditor career={career} onBack={() => nav.back()} />;
 }
 
-export const artScreens: ScreenMap = { "art-test": ArtTest, "face-editor": FaceEditorScreen, "fake-face-editor": FakeFaceEditorScreen };
+/**
+ * Two full-screen moments that are slow to reach by playing, to check by eye
+ * (nav.go("art-news"), nav.go("art-potm")): Breaking News (its drawn scanlines) and
+ * Player of the Month (its drawn rays), with a long headline and a long name.
+ */
+function NewsTest() {
+  const nav = useNav();
+  const saved = useCareer();
+  const [career] = useState(() => saved ?? startCareer("Sam", "Carter"));
+  return <BreakingNewsPage career={career} onClose={() => nav.back()}
+    news={{ headline: "Youngster signs for Brighton & Hove Albion", line: "The 17-year-old has agreed a three-year deal on the south coast after a trial that had three clubs watching.", club: career.player.club || "Brighton & Hove Albion", face: "you" }} />;
+}
+function PotmTest() {
+  const nav = useNav();
+  const saved = useCareer();
+  const [career] = useState(() => saved ?? startCareer("Sam", "Carter"));
+  return <PotmWinPage career={career} onClose={() => nav.back()}
+    award={{ season: 1, month: 0, monthName: "September", winner: "You", club: career.player.club, goals: 11, assists: 12, isYou: true, nominees: [] }} />;
+}
+
+export const artScreens: ScreenMap = { "art-test": ArtTest, "face-editor": FaceEditorScreen, "fake-face-editor": FakeFaceEditorScreen, "art-news": NewsTest, "art-potm": PotmTest };

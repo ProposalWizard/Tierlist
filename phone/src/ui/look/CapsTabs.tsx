@@ -25,7 +25,7 @@ export function CapsTabs<T extends string>({ value, onChange, tabs }: { value: T
         return (
           <Press key={k} onPress={() => onChange(k)} style={[{ flex: 1, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" },
             on && ({ backgroundColor: "rgba(255,255,255,0.2)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.3), inset 0px 0px 0px 1px rgba(255,255,255,0.22)" } as ViewStyle)]}>
-            <Text numberOfLines={1} style={{ color: on ? "#fff" : "rgba(255,255,255,0.62)", fontWeight: "900", fontSize: 11, letterSpacing: 1.1, textTransform: "uppercase" }}>{label}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: on ? "#fff" : "rgba(255,255,255,0.62)", fontWeight: "900", fontSize: 11, letterSpacing: 1.1, textTransform: "uppercase", paddingHorizontal: 2 }}>{label}</Text>
             {on && <View style={{ position: "absolute", bottom: 2, width: 26, height: 3, borderRadius: 2, backgroundColor: "#34d399" }} />}
           </Press>
         );

@@ -13,7 +13,7 @@
  * the website's own logic.
  */
 import { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, type ViewStyle } from "react-native";
+import { View, Text, ScrollView, Pressable, type ViewStyle, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { CareerState } from "@/lib/star/types";
 import { STAGE_LABEL, trialComplete, nextStage, adversityOn, type TrialStage } from "@/lib/star/trial";
@@ -25,7 +25,7 @@ import { TrialFreeKicksStage, TrialTechniqueStage, TrialShootoutStage, TrialDrib
 import { TrialVisionStage } from "../MatchVision";
 import { Dimensions } from "react-native";
 /** The vision box's cap (TrialVision: 64% of the screen's height). */
-const usePitchHeightOnce = () => Dimensions.get("window").height * 0.64;
+// (the pitch height is read with useWindowDimensions inside TrialScreen: it follows a rotation, a split screen, the bars going)
 import { Frame, Card, Label, Row, Btn, StandInNote, ClubCrest, money, C } from "./kit";
 import { ScoutBackdrop, ScoutFigure, clubGlow } from "./ScoutArt";
 import { SigningMoment } from "./Signing";
@@ -40,6 +40,7 @@ const COUNTDOWN_FROM = 3;
 const COUNTDOWN_STEP_MS = 550;
 
 export function TrialScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
+  const pitchH = useWindowDimensions().height * 0.64;
   const trial = career.trial;
   const [showingResult, setShowingResult] = useState<TrialStage | null>(null);
   const [count, setCount] = useState(COUNTDOWN_FROM);
@@ -123,7 +124,7 @@ export function TrialScreen({ career, go }: { career: CareerState; go: (s: flow.
   if (stage === "technique") return shell(<TrialTechniqueStage key={stage} trial={trial} skills={skills} onDone={(q) => finish("technique", q)} />);
   if (stage === "shootout") return shell(<TrialShootoutStage key={stage} trial={trial} skills={skills} penaltyRunup={careerPenaltyRunup(career)} onDone={(q, fp) => finish("shootout", q, fp)} />);
   if (stage === "dribbling") return shell(<TrialDribbleStage key={stage} trial={trial} pace={career.skills.pace} onDone={(q) => finish("dribbling", q)} />);
-  if (stage === "vision") return shell(<TrialVisionStage key={stage} trial={trial} maxHeight={Math.round(usePitchHeightOnce())} onDone={(q) => finish("vision", q)} />);
+  if (stage === "vision") return shell(<TrialVisionStage key={stage} trial={trial} maxHeight={Math.round(pitchH)} onDone={(q) => finish("vision", q)} />);
   // A stage the website no longer plays (fiveASide): scored from your skills.
   return shell(
     <View style={{ padding: 12, gap: 12 }}>
@@ -169,7 +170,7 @@ function ScoutTalk({ m, go }: { m: NonNullable<ReturnType<typeof flow.managerTal
             <View pointerEvents="none" style={{ position: "absolute", left: -18, right: -18, top: -18, bottom: -18, borderRadius: 999, backgroundImage: `radial-gradient(closest-side, ${rgba(glow, 0.67)}, transparent)` } as ViewStyle} />
             <ClubCrest club={offer.club} size={92} />
           </View>
-          <Text style={{ marginTop: 8, color: "#fff", fontFamily: FONT.display, fontSize: 28, lineHeight: 32, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.6)", textShadowRadius: 8 }}>{offer.club}</Text>
+          <Text style={{ marginTop: 8, color: "#fff", fontFamily: FONT.display, fontSize: 28, lineHeight: 32, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.6)", textShadowRadius: 8 }} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.6}>{offer.club}</Text>
           <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: "900", letterSpacing: 1.6 }}>{leagueNameFor(offer.division).toUpperCase()}</Text>
         </View>
         {/* the scout, and what he says: a tap moves him on */}

@@ -21,6 +21,7 @@
  * The still parts (wall, floor, room) are drawn once as pictures; the clock
  * runs only while the night plays and stops when it ends.
  */
+import { TopSpace } from "../../ui/safe";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Image, Pressable, type LayoutChangeEvent } from "react-native";
 import Animated, { FadeInDown, ZoomIn, useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, Easing, type SharedValue } from "react-native-reanimated";
@@ -240,7 +241,8 @@ function NightCaptions({ career, plan, t, H }: { career: CareerState; plan: Nigh
   const yours = beat === "yours" || (beat === "done" && plan.yourRank !== 1);
   return (
     <>
-      <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, paddingTop: 44, alignItems: "center" }}>
+      <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, alignItems: "center" }}>
+        <TopSpace min={44} />
         <Text style={{ color: AMBER200, fontSize: 11, fontWeight: "900", letterSpacing: 3.3, textTransform: "uppercase" }}>Season {career.season}</Text>
         <Text style={{ color: "#fff", fontSize: 30, fontWeight: "900", textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.8)", textShadowRadius: 6 }}>Golden Ball</Text>
       </View>
@@ -558,7 +560,8 @@ function AwardCaptions({ career, plan, t }: { career: CareerState; plan: AwardsP
   else line = <WinnerLine career={career} award={a} />;
   return (
     <>
-      <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, paddingTop: 44, alignItems: "center" }}>
+      <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, alignItems: "center" }}>
+        <TopSpace min={44} />
         <Text style={{ color: AMBER200, fontSize: 11, fontWeight: "900", letterSpacing: 3.3 }}>{label}</Text>
         <Text style={{ color: "#fff", fontSize: 26, fontWeight: "900", textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.8)", textShadowRadius: 6 }}>Season Awards</Text>
         <View style={{ flexDirection: "row", gap: 6, marginTop: 8 }}>

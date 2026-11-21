@@ -16,7 +16,7 @@ export function Display({ children, size = 24, color = LOOK.ink, upper = false, 
   children: ReactNode; size?: number; color?: string; upper?: boolean; shadow?: boolean; style?: StyleProp<TextStyle>; numberOfLines?: number;
 }) {
   return (
-    <Text numberOfLines={numberOfLines} style={[{ fontFamily: FONT.display, fontSize: size, lineHeight: Math.round(size * 1.18), color, letterSpacing: 0.2 }, upper && { textTransform: "uppercase" }, shadow && TEXT_SHADOW, style]}>
+    <Text numberOfLines={numberOfLines} adjustsFontSizeToFit={numberOfLines === 1} minimumFontScale={0.7} style={[{ fontFamily: FONT.display, fontSize: size, lineHeight: Math.round(size * 1.18), color, letterSpacing: 0.2 }, upper && { textTransform: "uppercase" }, shadow && TEXT_SHADOW, style]}>
       {children}
     </Text>
   );
@@ -49,7 +49,7 @@ export function Pill({ label, value, icon, style }: { label?: string; value: Rea
     <View style={[{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 7, height: 24, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.16)", borderWidth: 1, borderColor: "rgba(255,255,255,0.26)" }, style]}>
       {icon}
       {label ? <Text style={{ color: LOOK.inkSoft, fontSize: 9, fontWeight: "900", letterSpacing: 1.1 }}>{label.toUpperCase()}</Text> : null}
-      <Text style={{ color: LOOK.ink, fontSize: 13, fontWeight: "900" }}>{value}</Text>
+      <Text numberOfLines={1} style={{ color: LOOK.ink, fontSize: 13, fontWeight: "900" }}>{value}</Text>
     </View>
   );
 }

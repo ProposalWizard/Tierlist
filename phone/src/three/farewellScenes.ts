@@ -22,7 +22,9 @@ function containerFor(gl: WebGL2RenderingContext) {
 export function startGuardOfHonour(gl: WebGL2RenderingContext, opts: GuardSceneOptions): Promise<GuardSceneHandle> {
   prepareGl(gl);
   return withSceneDocument(async () => {
-    const { createGuardScene } = await import("@/lib/star/farewell3d");
+    // a plain require: always inside the one bundle (see Farewell3D.tsx loadScenes)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createGuardScene } = require("@/lib/star/farewell3d") as typeof import("@/lib/star/farewell3d");
     offerGlCanvas(sceneCanvas(gl));
     try { return await createGuardScene(containerFor(gl), opts); } finally { offerGlCanvas(null); }
   });
@@ -31,7 +33,8 @@ export function startGuardOfHonour(gl: WebGL2RenderingContext, opts: GuardSceneO
 export function startOvation(gl: WebGL2RenderingContext, opts: OvationSceneOptions): Promise<OvationSceneHandle> {
   prepareGl(gl);
   return withSceneDocument(async () => {
-    const { createOvationScene } = await import("@/lib/star/ovation3d");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createOvationScene } = require("@/lib/star/ovation3d") as typeof import("@/lib/star/ovation3d");
     offerGlCanvas(sceneCanvas(gl));
     try { return await createOvationScene(containerFor(gl), opts); } finally { offerGlCanvas(null); }
   });
