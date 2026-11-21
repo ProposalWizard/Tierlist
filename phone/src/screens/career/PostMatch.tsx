@@ -13,8 +13,8 @@
  * Reads the report flow.completeMatch saved (game/session.ts). Nothing moves
  * at rest (the website's count-ups and bursts are left out).
  */
-import { useState } from "react";
-import { View, Text, type ViewStyle } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { View, Text, Animated as RNAnimated, Easing as RNEasing, type ViewStyle } from "react-native";
 import { shortClub } from "@/lib/star/media/grammar";
 import { kitsFor, type Kit } from "@/lib/star/kits";
 import { CHANCE_KIND_LABEL, CHANCE_OUTCOME_LABEL, chanceOutcomeGood, type ChanceOutcome } from "@/lib/star/chanceLog";
@@ -76,10 +76,16 @@ export function PostMatchScreen({ career, go }: { career: CareerState; go: (s: f
   return (
     <Frame title="Full time" bare
       footer={
-        <LookButton kind="primary" disabled={!allSeen} onPress={() => go(flow.postMatchContinue())}
-          style={{ paddingVertical: 14, borderRadius: 14, boxShadow: allSeen ? "inset 0px 1px 0px rgba(255,255,255,0.4), 0px 0px 24px rgba(52,211,153,0.55)" : undefined } as ViewStyle}>
-          <Text style={{ color: "#fff", fontFamily: FONT.display, fontSize: 20, lineHeight: 24, letterSpacing: 0.6 }}>CONTINUE  →</Text>
-        </LookButton>
+        <View>
+          {/* The achievements as the packed app's toasts: one at a time over CONTINUE, each goes by itself
+              (or on a tap). CONTINUE is never shut, and nothing sits under it (at 360 wide the old card's
+              Next button was under the bar and could not be pressed). */}
+          {!allSeen && <AchievementToast key={seen} n={seen + 1} of={achs.length} label={achs[seen].label} description={achs[seen].description} onDone={() => setSeen((k) => k + 1)} />}
+          <LookButton kind="primary" onPress={() => go(flow.postMatchContinue())}
+            style={{ paddingVertical: 14, borderRadius: 14, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.4), 0px 0px 24px rgba(52,211,153,0.55)" } as ViewStyle}>
+            <Text numberOfLines={1} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 20, lineHeight: 24, letterSpacing: 0.6 }}>CONTINUE  →</Text>
+          </LookButton>
+        </View>
       }>
       {/* The competition */}
       <View style={{ alignSelf: "center", paddingHorizontal: 12, paddingVertical: 3, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)" }}>
@@ -175,19 +181,38 @@ export function PostMatchScreen({ career, go }: { career: CareerState; go: (s: f
       )}
       {report.energyBack ? <Text style={{ color: "#6ee7b7", textAlign: "center", fontWeight: "800", fontSize: 12 }}>⚡ +{report.energyBack} energy back from the rest days</Text> : null}
 
-      {/* The achievements, one at a time; Continue stays shut until each is seen. */}
-      {!allSeen && (
-        <View style={{ borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, alignItems: "center", backgroundImage: "linear-gradient(180deg, rgba(251,191,36,0.22), rgba(120,53,15,0.35))", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.25), inset 0px 0px 0px 2px rgba(251,191,36,0.7), 0px 0px 24px rgba(251,191,36,0.3)" } as ViewStyle}>
-          <Text style={{ color: "#fcd34d", fontWeight: "900", fontSize: 10, letterSpacing: 2.4 }}>ACHIEVEMENT{achs.length > 1 ? ` ${seen + 1} OF ${achs.length}` : ""}</Text>
-          <Text style={{ fontSize: 40, marginTop: 4 }}>⭐</Text>
-          <Text style={{ color: "#fff", fontWeight: "900", fontSize: 18, marginTop: 2, textAlign: "center" }}>{achs[seen].label}</Text>
-          <Text style={{ color: "rgba(255,255,255,0.85)", fontWeight: "700", fontSize: 12, textAlign: "center" }}>{achs[seen].description}</Text>
-          <LookButton kind="gold" style={{ alignSelf: "stretch", marginTop: 8, paddingVertical: 9, borderRadius: 3 }} onPress={() => setSeen((k) => k + 1)}>
-            <Text style={{ color: "#111827", fontSize: 13, fontWeight: "900" }}>{seen + 1 < achs.length ? "Next" : "Done"}</Text>
-          </LookButton>
-        </View>
-      )}
     </Frame>
+  );
+}
+
+/** How long one achievement toast stays (the packed app's toast timer). */
+const TOAST_MS = 3400;
+/** One achievement toast (page.tsx AchievementToasts): slides up, a timer bar runs down, then the next. */
+function AchievementToast({ n, of, label, description, onDone }: { n: number; of: number; label: string; description: string; onDone: () => void }) {
+  const inV = useRef(new RNAnimated.Value(0)).current;
+  const bar = useRef(new RNAnimated.Value(1)).current;
+  const done = useRef(onDone); done.current = onDone;
+  useEffect(() => {
+    RNAnimated.timing(inV, { toValue: 1, duration: 260, easing: RNEasing.out(RNEasing.back(1.4)), useNativeDriver: true }).start();
+    RNAnimated.timing(bar, { toValue: 0, duration: TOAST_MS, easing: RNEasing.linear, useNativeDriver: true }).start();
+    const t = setTimeout(() => done.current(), TOAST_MS);
+    return () => clearTimeout(t);
+  }, [inV, bar]);
+  return (
+    <RNAnimated.View style={{ marginBottom: 8, opacity: inV, transform: [{ translateY: inV.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }] }}>
+      <Press onPress={() => done.current()}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 12, overflow: "hidden", paddingHorizontal: 12, paddingVertical: 8,
+          backgroundImage: "linear-gradient(180deg, rgba(56,38,8,0.97), rgba(30,20,6,0.97))", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.2), inset 0px 0px 0px 2px rgba(251,191,36,0.7), 0px 0px 24px rgba(251,191,36,0.3)" } as ViewStyle}>
+          <Text style={{ fontSize: 30 }}>🏅</Text>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text numberOfLines={1} style={{ color: "#fcd34d", fontWeight: "900", fontSize: 10, letterSpacing: 2 }}>ACHIEVEMENT{of > 1 ? ` ${n} OF ${of}` : ""}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: "#fff", fontWeight: "900", fontSize: 16 }}>{label}</Text>
+            <Text numberOfLines={2} style={{ color: "rgba(255,255,255,0.85)", fontWeight: "700", fontSize: 11.5, lineHeight: 15 }}>{description}</Text>
+          </View>
+          <RNAnimated.View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 3, backgroundColor: "#fbbf24", transformOrigin: "left", transform: [{ scaleX: bar }] } as never} />
+        </View>
+      </Press>
+    </RNAnimated.View>
   );
 }
 

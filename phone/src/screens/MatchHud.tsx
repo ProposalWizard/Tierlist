@@ -14,7 +14,7 @@ import { LineIcon } from "./MatchLook";
 /** A crisp black outline round white club names, so they read on a light kit (NAME_OUTLINE). */
 const OUTLINE = { textShadowColor: "#000", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 2 };
 
-export function MatchHud({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
+export function MatchHud({ d, kits, onGear }: { d: MatchDriver; kits: MatchKits; onGear?: () => void }) {
   const prefs = usePrefs();
   // CanvasMatch statCell: the labels drop to 9 px under 390 px wide (ASSISTS ran into PASS at 360).
   const narrow = useWindowDimensions().width < 390;
@@ -37,12 +37,12 @@ export function MatchHud({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
   );
   const cell = (label: string, value: string, colour: string) => (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 4, borderLeftWidth: 1, borderColor: "rgba(255,255,255,0.05)" }}>
-      <Text numberOfLines={1} style={{ color: "#fff", fontSize: narrow ? 9 : 10.5, fontWeight: "700", letterSpacing: -0.2 }}>{label}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ alignSelf: "stretch", textAlign: "center", color: "#fff", fontSize: narrow ? 9 : 10.5, fontWeight: "700", letterSpacing: -0.2 }}>{label}</Text>
       <Text style={{ color: colour, fontSize: 12, fontWeight: "900" }}>{value}</Text>
     </View>
   );
   const chip = (child: React.ReactNode, onPress?: () => void, label?: string) => (
-    <Pressable onPress={onPress} disabled={!onPress} accessibilityLabel={label} style={{ minWidth: 34, paddingHorizontal: 6, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderColor: "rgba(255,255,255,0.1)" }}>
+    <Pressable onPress={onPress} disabled={!onPress} accessibilityLabel={label} accessibilityRole={onPress ? "button" : undefined} hitSlop={6} style={{ minWidth: 34, paddingHorizontal: 6, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderColor: "rgba(255,255,255,0.1)" }}>
       {child}
     </Pressable>
   );
@@ -58,7 +58,7 @@ export function MatchHud({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
       <View style={{ flexDirection: "row", alignItems: "stretch", marginBottom: 8, borderRadius: 2, borderWidth: 1, borderColor: "rgba(6,95,70,0.7)", overflow: "hidden",
         backgroundImage: "linear-gradient(90deg, rgb(12,71,38), rgb(16,82,47), rgb(12,71,38))", boxShadow: "0px 6px 12px rgba(0,0,0,0.25)" } as ViewStyle}>
         <View style={{ paddingHorizontal: 9, justifyContent: "center" }}>
-          <Text style={{ color: "rgba(110,231,183,0.9)", fontSize: 11, fontWeight: "900", letterSpacing: 0.9 }}>{comp.toUpperCase()}</Text>
+          <Text numberOfLines={1} style={{ color: "rgba(110,231,183,0.9)", fontSize: 11, fontWeight: "900", letterSpacing: 0.9 }}>{comp.toUpperCase()}</Text>
         </View>
         {cell("GOALS", String(t.goals), "#fcd34d")}
         {cell("ASSISTS", String(t.assists), "#6ee7b7")}
@@ -66,7 +66,7 @@ export function MatchHud({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
         {cell("RATING", rating.toFixed(1), "#7dd3fc")}
         {/* The players' look: the phone draws the 2D sprites (the website's toggle shows "2D" for them). */}
         {chip(<Text style={{ color: "#fff", fontSize: 11, fontWeight: "900" }}>2D</Text>)}
-        {chip(<LineIcon kind="gear" />)}
+        {chip(<LineIcon kind="gear" />, onGear, "Settings")}
         {chip(<LineIcon kind={prefs.sound ? "sound" : "muted"} />,() => setPref("sound", !prefs.sound), prefs.sound ? "Mute sound" : "Unmute sound")}
       </View>
     </View>

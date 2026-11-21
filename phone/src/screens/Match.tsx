@@ -6,7 +6,7 @@
  * adds the career match's own parts: the scoreboard, the commentary between
  * chances, the goal plate, half time.
  */
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { View, Text, StyleSheet, type ViewStyle } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { goalInView, acceptsCaptainOrders, orderableRunners } from "@/lib/star/canvasEngine";
@@ -29,7 +29,7 @@ import { C } from "../ui/theme";
 import { setMusicScene, clearMusicScene, playTurningPoint, refreshMusic } from "../match/music";
 import { isTurningPoint } from "@/lib/star/gameMusic";
 import { usePrefs } from "../game/prefs";
-import { PitchPage, GoalBoard, StaminaBox } from "./MatchLook";
+import { PitchPage, GoalBoard, StaminaBox, MatchSettingsSheet } from "./MatchLook";
 
 export function Match({ career, fixture, onFullTime, setupFor, recordGoals = true, watch, frozen = false }: {
   career: CareerState; fixture: Fixture; onFullTime: (d: MatchDriver) => void;
@@ -86,6 +86,7 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
     stamina.value = legs ? legs.stamina.v : 1;
   }, [stamina]);
 
+  const [gear, setGear] = useState(false);
   const scoreWas = useRef<{ at: unknown; score: [number, number]; last: [number, number] }>({ at: null, score: [0, 0], last: [0, 0] });
   const overlay = useCallback((d: MatchDriver) => {
     const banner = d.bannerNow();
@@ -166,13 +167,15 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
   return (
     <PitchPage>
       <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1 }}>
-        <HudSlot kits={kits} />
+        <HudSlot kits={kits} onGear={() => setGear(true)} />
         {/* The pitch in its frame (CanvasMatch: border-2 emerald-800/80, square corners in the pitch scope). */}
         <View style={{ flex: 1, marginHorizontal: 12, marginBottom: 8, borderWidth: 2, borderColor: "rgba(6,95,70,0.8)", borderRadius: 2, overflow: "hidden", backgroundColor: "#22920b", boxShadow: "0px 18px 40px -12px rgba(2,44,34,0.6)" } as ViewStyle}>
-          <MatchPitch make={make} kits={kits} onDone={onFullTime} overlay={overlay} frozen={frozen} onFrame={onFrame}
+          <MatchPitch make={make} kits={kits} onDone={onFullTime} overlay={overlay} frozen={frozen || gear} onFrame={onFrame}
             onUi={watch ? (d) => { setHud(d); watch(d); } : setHud} />
         </View>
         <CaptainSlot />
+        {/* ⚙ on the plate: the settings over the match, which stands still behind them (CanvasMatch's hold). */}
+        {gear && <MatchSettingsSheet back="Back to the match" onClose={() => setGear(false)} />}
       </SafeAreaView>
     </PitchPage>
   );
@@ -204,7 +207,7 @@ function CaptainSlot() {
     </View>
   );
 }
-function HudSlot({ kits }: { kits: MatchKits }) {
+function HudSlot({ kits, onGear }: { kits: MatchKits; onGear?: () => void }) {
   useSyncExternalStore((f) => { hudSubs.add(f); return () => hudSubs.delete(f); }, () => hudVersion);
-  return hudDriver ? <MatchHud d={hudDriver} kits={kits} /> : null;
+  return hudDriver ? <MatchHud d={hudDriver} kits={kits} onGear={onGear} /> : null;
 }

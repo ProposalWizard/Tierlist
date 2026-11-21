@@ -9,7 +9,8 @@
  *   - StaminaBox: the corner box (CanvasMatch B14), its bar moved on the UI thread
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Animated as RNA, Easing, type ViewStyle } from "react-native";
+import { View, Text, Pressable, Animated as RNA, Easing, type ViewStyle } from "react-native";
+import { usePrefs, setPref } from "../game/prefs";
 import { Canvas, Picture, createPicture, Skia, ClipOp, StrokeJoin, StrokeCap, PaintStyle } from "@shopify/react-native-skia";
 import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reanimated";
 import type { EnergyMode } from "@/lib/star/energy";
@@ -294,4 +295,36 @@ export function LineIcon({ kind, size = 14, color = "rgba(255,255,255,0.8)" }: {
     lineIconPics.set(key, pic);
   }
   return <Canvas style={{ width: size, height: size }}><Picture picture={pic} /></Canvas>;
+}
+
+// ── The small settings sheet over the match or the line-up (LineupIntro's sheet: the switches that matter
+//    here and one way back; the match stands still behind it) ──
+
+export function MatchSettingsSheet({ back, onClose }: { back: string; onClose: () => void }) {
+  const prefs = usePrefs();
+  const row = (label: string, sub: string, on: boolean, flip: () => void) => (
+    <Pressable onPress={flip} accessibilityRole="switch" accessibilityState={{ checked: on }}
+      style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderColor: "rgba(255,255,255,0.08)" }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text numberOfLines={1} style={{ color: "#fff", fontSize: 14, fontWeight: "900" }}>{label}</Text>
+        <Text numberOfLines={2} style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, lineHeight: 15, marginTop: 2 }}>{sub}</Text>
+      </View>
+      <View style={{ width: 46, height: 26, borderRadius: 13, padding: 3, backgroundColor: on ? "#10b981" : "rgba(255,255,255,0.18)", alignItems: on ? "flex-end" : "flex-start" }}>
+        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: "#fff" }} />
+      </View>
+    </Pressable>
+  );
+  return (
+    <Pressable onPress={onClose} style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0, zIndex: 80, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
+      <Pressable onPress={() => {}} style={{ borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor: "rgb(12,71,38)", borderTopWidth: 1, borderColor: "rgba(255,255,255,0.14)", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 20 }}>
+        <Text numberOfLines={1} style={{ textAlign: "center", color: "rgba(110,231,183,0.9)", fontSize: 11, fontWeight: "900", letterSpacing: 2.2, marginBottom: 4 }}>SETTINGS</Text>
+        {row("Sound effects", "The crowd, the kick, the whistle.", prefs.sound, () => setPref("sound", !prefs.sound))}
+        {row("Game music", "The match's own music.", prefs.gameMusic, () => setPref("gameMusic", !prefs.gameMusic))}
+        <Pressable onPress={onClose} accessibilityRole="button"
+          style={({ pressed }) => ({ marginTop: 14, borderRadius: 8, paddingVertical: 12, alignItems: "center", backgroundColor: pressed ? "#fcd34d" : "#fbbf24" })}>
+          <Text numberOfLines={1} style={{ color: "#030712", fontSize: 14, fontWeight: "900", letterSpacing: 1.6 }}>{back.toUpperCase()}</Text>
+        </Pressable>
+      </Pressable>
+    </Pressable>
+  );
 }

@@ -19,7 +19,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, Text, View, type ViewStyle } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withDelay, withRepeat, Easing } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { CareerState, Fixture, LeagueResult } from "@/lib/star/types";
 import type { Kit } from "@/lib/star/kits";
@@ -27,7 +27,10 @@ import { kitsFor, kitLabelOnDark } from "@/lib/star/kits";
 import { nextFixtureFor } from "@/lib/star/competitions";
 import { projectedEnergy } from "@/lib/star/week";
 import { shortClub } from "@/lib/star/media/grammar";
-import { matchdayFor, type SheetPlayer, type TeamSheet } from "@/lib/star/teamsheet";
+import { matchdayFor, offeredPositions, formationForClub, playedAsShort, type SheetPlayer, type TeamSheet } from "@/lib/star/teamsheet";
+import type { Role } from "@/lib/star/formations";
+import { setCareer } from "../../game/store";
+import { MatchSettingsSheet } from "../MatchLook";
 import { internationalCareer } from "@/lib/star/international";
 import { loadLineup, managerFor } from "@/lib/star/lineupStore";
 import { formationOf } from "@/lib/star/formations";
@@ -86,9 +89,9 @@ function MatchDay({ career, f, go, onBack }: { career: CareerState; f: Fixture; 
     try {
       if (intlCareer) return matchdayFor(intlCareer, f, true);
       const savedXI = saved && saved.xi.some(Boolean) ? { formation: formationOf(saved.formation), xi: saved.xi } : undefined;
-      return matchdayFor(career, f, status === "1st Team", undefined, saved?.bench, savedXI, status === "Substitute");
+      return matchdayFor(career, f, status === "1st Team", career.playAs ?? undefined, saved?.bench, savedXI, status === "Substitute");
     } catch (err) { console.warn("line-up: no team sheet", err); return null; }
-  }, [career.player.club, f, status, intlCareer]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [career.player.club, f, status, intlCareer, career.playAs]); // eslint-disable-line react-hooks/exhaustive-deps
   const teamsReady = !!matchday && (matchday.home.yours ? matchday.home : matchday.away).xi.length >= 9;
 
   const went = useRef(false);
@@ -112,6 +115,7 @@ function MatchDay({ career, f, go, onBack }: { career: CareerState; f: Fixture; 
         date={fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career))}
         results={career.results ?? []}
         canSim={status === "1st Team" || status === "Substitute"}
+        canPlayAs={!intlCareer && (status === "1st Team" || status === "Substitute")}
         benchNote={status === "Substitute" ? sel.reason : null}
         onBack={onBack} onKickOff={kickOff} onSim={sim} />
     );
@@ -207,9 +211,9 @@ function recentForm(club: string, results: LeagueResult[]): Result[] {
 const scouted = (s: TeamSheet) => s.xi.length >= 9;
 const OUTLINE = { textShadowColor: "#000", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 2.5 } as const;
 
-function Lineup({ career, matchday, clubKits, competition, date, results, canSim, benchNote, onBack, onKickOff, onSim }: {
+function Lineup({ career, matchday, clubKits, competition, date, results, canSim, canPlayAs, benchNote, onBack, onKickOff, onSim }: {
   career: CareerState; matchday: NonNullable<ReturnType<typeof matchdayFor>>; clubKits?: CareerState["clubKits"];
-  competition: string; date: string; results: LeagueResult[]; canSim: boolean; benchNote: string | null;
+  competition: string; date: string; results: LeagueResult[]; canSim: boolean; canPlayAs: boolean; benchNote: string | null;
   onBack: () => void; onKickOff: () => void; onSim: () => void;
 }) {
   const nav = useNav();
@@ -222,6 +226,26 @@ function Lineup({ career, matchday, clubKits, competition, date, results, canSim
   const [compHead, ...rest] = competition.split(" · ");
   const compTail = rest.join(" · ");
   const [showSubs, setShowSubs] = useState(false);
+  // "Play as" (LineupIntro's picker): your own position in this shape, and the others the shape offers.
+  const [picking, setPicking] = useState(false);
+  const [gear, setGear] = useState(false);
+  const savedShape = loadLineup(career.player.club);
+  const shape = savedShape && savedShape.xi.some(Boolean) ? formationOf(savedShape.formation) : formationForClub(career.player.club);
+  const ownShort = playedAsShort(career.player.position as Role, shape);
+  const alternates = useMemo(() => offeredPositions(career.player.position, shape).filter((a) => a.short !== ownShort),
+    [career.player.club, career.player.position, savedShape?.formation]); // eslint-disable-line react-hooks/exhaustive-deps
+  const playAs = (career.playAs ?? null) as Role | null;
+  const here = playedAsShort(playAs ?? (career.player.position as Role), shape);
+  const pickable = canPlayAs && alternates.length > 0;
+  // VS slams in and KICK OFF breathes (VersusScreen kit-slam, the button's pulse).
+  const slam = useSharedValue(0);
+  const pulse = useSharedValue(0);
+  useEffect(() => {
+    slam.value = withDelay(180, withTiming(1, { duration: 320, easing: Easing.out(Easing.back(2.2)) }));
+    pulse.value = withRepeat(withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.ease) }), -1, true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const slamStyle = useAnimatedStyle(() => ({ opacity: Math.min(1, slam.value * 2), transform: [{ scale: 2.2 - 1.2 * slam.value }] }));
+  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + 0.018 * pulse.value }] }));
   const [held, setHeld] = useState(false);
   const [room, setRoom] = useState<{ w: number; h: number } | null>(null);
 
@@ -258,10 +282,12 @@ function Lineup({ career, matchday, clubKits, competition, date, results, canSim
               <Text style={{ color: "#fff", fontSize: 12, fontWeight: "900" }}>← Back</Text>
             </Press>
             <View style={{ flex: 1, alignItems: "center" }}>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" }}>
-                <Text style={{ fontSize: 9 }}>⚽</Text>
-                <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 9.5, fontWeight: "900", letterSpacing: 1.6 }}>{compHead.toUpperCase()}</Text>
-                {compTail ? <Text style={{ color: "#fcd34d", fontSize: 9.5, fontWeight: "900", letterSpacing: 1.6 }}><Text style={{ color: "rgba(255,255,255,0.3)" }}>· </Text>{compTail.toUpperCase()}</Text> : null}
+              {/* One line at every width (VersusScreen's chip): the words shrink before they wrap. */}
+              <View style={{ maxWidth: "100%", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" }}>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: "rgba(255,255,255,0.8)", fontSize: 9.5, fontWeight: "900", letterSpacing: 1.2, textAlign: "center" }}>
+                  ⚽ {compHead.toUpperCase()}
+                  {compTail ? <Text style={{ color: "#fcd34d" }}><Text style={{ color: "rgba(255,255,255,0.3)" }}> · </Text>{compTail.toUpperCase()}</Text> : null}
+                </Text>
               </View>
             </View>
             <View style={{ width: 58 }} />
@@ -269,12 +295,12 @@ function Lineup({ career, matchday, clubKits, competition, date, results, canSim
           {/* ⏩ and ⚙, mirroring Back */}
           <View style={{ position: "absolute", right: 8, top: 10, gap: 6 }}>
             {canSim && <Square onPress={() => { hold(); onSim(); }} edge="rgba(125,211,252,0.55)"><Text style={{ color: "#e0f2fe", fontSize: 14 }}>⏩</Text></Square>}
-            <Square onPress={() => { hold(); nav.go("career-settings"); }} edge="rgba(255,255,255,0.45)"><Text style={{ color: "#fff", fontSize: 16 }}>⚙</Text></Square>
+            <Square onPress={() => { hold(); setGear(true); }} edge="rgba(255,255,255,0.45)"><Text style={{ color: "#fff", fontSize: 16 }}>⚙</Text></Square>
           </View>
           <View style={{ flexDirection: "row", alignItems: "flex-start", marginTop: 10, paddingRight: 30 }}>
             <TeamHeader club={home.club} manager={managers[home.club]} kit={kits.home} formation={home.formation.name} form={recentForm(home.club, results)} scouted={scouted(home)} />
             <View style={{ alignItems: "center", paddingTop: 10, gap: 4, width: 84 }}>
-              <Text style={{ color: "#e5e7eb", fontSize: 28, fontWeight: "900", fontStyle: "italic", letterSpacing: -1, textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 3 }}>VS</Text>
+              <Animated.Text style={[{ color: "#dfe3ea", fontSize: 28, fontWeight: "900", fontStyle: "italic", letterSpacing: -1, textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 3 }, slamStyle]}>VS</Animated.Text>
               <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: "700" }}>📅 {date}</Text>
             </View>
             <TeamHeader club={away.club} manager={managers[away.club]} kit={kits.away} formation={away.formation.name} form={recentForm(away.club, results)} scouted={scouted(away)} />
@@ -300,7 +326,31 @@ function Lineup({ career, matchday, clubKits, competition, date, results, canSim
               {bootsLeft <= 1 && (
                 <View pointerEvents="none" style={{ position: "absolute", left: 6, top: 6, height: 32, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 8, borderRadius: 2, backgroundColor: "rgba(3,32,15,0.9)", boxShadow: "inset 0px 0px 0px 1px rgba(251,191,36,0.7), 0px 3px 8px rgba(0,0,0,0.45)" } as ViewStyle}>
                   <Text style={{ fontSize: 14 }}>🥾</Text>
-                  <Text style={{ color: "#fef3c7", fontSize: 10, fontWeight: "900", lineHeight: 11 }}>{bootsLeft === 1 ? "LAST MATCH\nIN THESE BOOTS" : "NO BOOTS\nBUY IN THE SHOP"}</Text>
+                  <Text numberOfLines={2} style={{ color: "#fef3c7", fontSize: 10, fontWeight: "900", lineHeight: 12 }}>{bootsLeft === 1 ? "LAST MATCH\nIN THESE BOOTS" : "NO BOOTS\nBUY IN THE SHOP"}</Text>
+                </View>
+              )}
+              {/* Play as (LineupIntro): top-right of the pitch; the row of positions opens under it. It stops the timer. */}
+              {pickable && (
+                <View style={{ position: "absolute", right: 6, top: 6, alignItems: "flex-end", zIndex: 5 }}>
+                  <Press onPress={() => { hold(); setPicking((o) => !o); }}
+                    style={{ height: 32, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, borderRadius: 2, backgroundColor: "rgba(3,32,15,0.9)", boxShadow: `inset 0px 0px 0px 1px ${playAs ? "#fbbf24" : "rgba(255,255,255,0.45)"}, 0px 3px 8px rgba(0,0,0,0.45)` } as ViewStyle}>
+                    <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.75)", fontSize: 11, fontWeight: "900" }}>PLAY AS</Text>
+                    <Text numberOfLines={1} style={{ color: playAs ? "#fcd34d" : "#fff", fontSize: 14, fontWeight: "900" }}>{here}</Text>
+                    <Text style={{ color: "#fcd34d", fontSize: 10 }}>▾</Text>
+                  </Press>
+                  {picking && (
+                    <View style={{ marginTop: 4, flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", maxWidth: pitchW - 12, gap: 1, padding: 1, backgroundColor: "rgba(0,0,0,0.6)", boxShadow: "0px 8px 20px rgba(0,0,0,0.6)" } as ViewStyle}>
+                      {[{ role: null as Role | null, label: ownShort }, ...alternates.map((a) => ({ role: a.role as Role | null, label: a.short }))].map(({ role, label }) => {
+                        const on = playAs === role;
+                        return (
+                          <Press key={role ?? "own"} onPress={() => { setCareer((c) => ({ ...c, playAs: role })); setPicking(false); }}
+                            style={{ minWidth: 46, height: 36, paddingHorizontal: 10, alignItems: "center", justifyContent: "center", backgroundColor: on ? "#fbbf24" : "#0c2a18" }}>
+                            <Text numberOfLines={1} style={{ color: on ? "#030712" : "#fff", fontSize: 15, fontWeight: "900" }}>{label}</Text>
+                          </Press>
+                        );
+                      })}
+                    </View>
+                  )}
                 </View>
               )}
               {/* Substitutes: a tab under the pitch; open, it grows up over the pitch. */}
@@ -324,11 +374,15 @@ function Lineup({ career, matchday, clubKits, competition, date, results, canSim
         {/* KICK OFF, always under the thumb. */}
         <SafeAreaView edges={["bottom"]} style={{ paddingTop: SUBS_TAB + 4, paddingBottom: 6 }}>
           {benchNote ? <Text numberOfLines={1} style={{ color: "#fde68a", fontSize: 11, fontWeight: "800", textAlign: "center", marginBottom: 6 }}>🪑 {benchNote}</Text> : null}
-          <LookButton kind="primary" onPress={onKickOff} style={{ paddingVertical: 12, borderRadius: 12, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.35), 0px 0px 22px rgba(52,211,153,0.55)" } as ViewStyle}>
-            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "900", letterSpacing: 3 }}>KICK OFF</Text>
-          </LookButton>
+          <Animated.View style={pulseStyle}>
+            <LookButton kind="primary" onPress={onKickOff} style={{ paddingVertical: 12, borderRadius: 12, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.35), 0px 0px 22px rgba(52,211,153,0.55)" } as ViewStyle}>
+              <Text numberOfLines={1} style={{ color: "#fff", fontSize: 16, fontWeight: "900", letterSpacing: 3 }}>KICK OFF</Text>
+            </LookButton>
+          </Animated.View>
         </SafeAreaView>
       </SafeAreaView>
+      {/* ⚙: the small sheet over the line-up (LineupIntro), not the whole Settings screen. */}
+      {gear && <MatchSettingsSheet back="Back to the line-up" onClose={() => setGear(false)} />}
       {!held && (
         <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, height: 4, backgroundColor: "rgba(0,0,0,0.6)" }}>
           <Animated.View style={[{ height: 4, backgroundColor: "#34d399" }, fillStyle]} />
