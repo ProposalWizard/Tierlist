@@ -25,7 +25,7 @@ function walkers(): CutsceneScript {
     tracks.push({ type: "move", actor: `walker${i}`, at, dur: D - at, path: [[x + (i % 2 ? 0.15 : -0.1), 0, z + dist]], gait: "walk", ease: 0 });
   });
   const cam: CameraTrack = { type: "camera", at: 0, dur: D, name: "The group", cut: "cut",
-    shot: { preset: "wide", subject: { point: [0.3, 0.6, 41.5] }, fixed: { pos: [1.0, 4.4, 52.5], look: [0.3, 0.6, 41.5], lens: 30 } } };
+    shot: { preset: "wide", subject: { point: [0.3, 0.5, 39.5] }, fixed: { pos: [0.9, 3.8, 53.5], look: [0.3, 0.5, 39.5], lens: 40 } } };
   return {
     id: "test-walkers", title: "Walkers (test)", duration: D,
     set: { location: "pitch", mood: "golden-hour" }, cast, props: [], beats: [],

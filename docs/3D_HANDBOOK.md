@@ -1213,3 +1213,13 @@ Harry on the mentor: "his skin color is bleeding into his suit … His face look
 - Clothes decals give a blank picture without a browser, so `tests/star/propHold.mts` runs under node again.
 - Close-ups of one preset: `?castpreset=<actor id>:<preset id>` on `/star-3d-bench-dev/scene?scene=director&fixture=…`.
 - Not done: the untucked hem notch at the trouser top, the training jacket's rib hem when jogging, the Quaternius UAL 1 clips (the pack is on this machine as one FBX, CC0; `retarget.py` still reads CMU only).
+
+### People round 4: walks and idles from the Quaternius library (21 Nov 2026)
+
+Harry: "instead of using aim of rough cm why not try and find walking animations and match them to our style/bodies, same goes for standing", and "no variations - 22 players walking at the same pace in the same time".
+- **Ten clips from Quaternius Universal Animation Library 1 (CC0)** in `mocap.glb` / `mocap-ual.glb`: `walk_relaxed`, `walk_formal`, `jog_easy`, `idle_relaxed`, `idle_relaxed_m` (mirrored), `idle_talk`, `seated_idle`, `seated_talk`, `sit_down_ual`, `stand_up_ual`. Licence: `public/star/anims3d/LICENSE-ual.txt`.
+- **How**: `tools/mocap3d/read_ual.py` (Blender, once) dumps the FBX to `tools/mocap3d/ual/ual1.json.gz`; `ual.py` gives it the CMU shape so `retarget.py` solves it like a capture (feet pinned, hips by leg length, the library's own step width). Added to the shipped files with `merge_clips.mjs` (no CMU rebuild). Steps: `tools/mocap3d/README.md`, UAL section.
+- **Who plays what** (`lib/star/people/life.ts`): every person but you gets one of four walks (walk 34%, walk_relaxed 30%, walk_confident 20%, walk_formal 16%) and one of three standing idles (idle 40%, idle_relaxed 30%, its mirror 30%), seeded by id; `WALK_SPEED` keeps the stride clock on the ground. Cut scenes (`timeline.ts`) and world walkers (`world3d/npc.ts`) read it. Press desk: the speaker plays `seated_talk` ("sit-talk"), the reporters `seated_idle` ("sit-listen").
+- **Checks**: `tests/star/gaitWidth.mts` holds every head and build to the library rig's own step width (`clips[name].srcFeet`); `bodyOverlap.mts` includes the new clips.
+- **Test scenes** (`lib/star/cutscene/testScenes.ts`, not in any list): `?scene=director&fixture=walkers&cam=old` (eight men crossing a pitch), `solo-walk_relaxed`, `solo-idle_relaxed`. `cam=old` because the film pass cuts away from any walk.
+- Not done: `jog_easy` is a stylised, bouncy run (5.6 m/s in place) and is not picked by anyone yet; UAL 2 (arms folded, phone) is not on this machine.
