@@ -536,6 +536,14 @@ export class MatchDriver {
   }
   private bannerPending: string | null = null;
   /** The pop-up showing now (null when none): promotes a waiting word once the last has been read. */
+/**
+   * The score as SHOWN (CanvasMatch displayScore): the goal lines the commentary has read out so far, not
+   * the simulation's running total. A whole passage is simulated at once and then streamed, so the total
+   * runs ahead of the feed (seen: 2-1 on the board over "HALF TIME 1 - 1"). Your own goals and the score
+   * you come on to are written straight into the log, so they show at once.
+   */
+  get shownUserScore(): number { let n = 0; for (const l of this.log) if (l.tone === "goal") n++; return Math.min(n, this.userScore); }
+  get shownOppScore(): number { let n = 0; for (const l of this.log) if (l.tone === "oppGoal") n++; return Math.min(n, this.oppScore); }
   bannerNow(): Banner | null {
     const c = this.banner;
     if (c && this.bannerPending !== null && this.now - c.at >= POPUP_MIN_SHOW_MS) {

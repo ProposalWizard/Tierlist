@@ -103,7 +103,7 @@ function firstUse(d: MatchDriver, blocked: boolean): { key: string; text: string
 /** The coach card: dark glass with a yellow ring, low on the pitch while you aim, mid-left on the strike screen. */
 function CoachCard({ text, aim, place }: { text: string; aim: boolean; place?: ViewStyle }) {
   return (
-    <View pointerEvents="none" style={[{ position: "absolute", zIndex: 40, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8,
+    <View pointerEvents="none" style={[{ position: "absolute", zIndex: 40, borderRadius: 2, paddingHorizontal: 12, paddingVertical: 8,
       backgroundColor: "rgba(5,8,15,0.82)", boxShadow: "inset 0px 0px 0px 2px #fde047, 0px 8px 20px -8px rgba(0,0,0,0.9)" } as ViewStyle,
       place ?? (aim ? { left: 12, right: 12, bottom: 64 } : { left: 12, right: 56, top: "40%" })]}>
       <Text style={{ color: "#fff", fontSize: 13, fontWeight: "900", lineHeight: 17, textAlign: "center" }}>{text}</Text>

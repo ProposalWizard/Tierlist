@@ -176,7 +176,7 @@ function ScoutTalk({ m, go }: { m: NonNullable<ReturnType<typeof flow.managerTal
             </Pulse>
             <ClubCrest club={offer.club} size={92} />
           </View>
-          <Text style={{ marginTop: 8, color: "#cfd3d8", fontFamily: FONT.display, fontSize: 28, lineHeight: 32, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 }} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.6}>{offer.club}</Text>
+          <Text style={{ marginTop: 8, color: "#b4b9c1", fontFamily: FONT.display, fontSize: 28, lineHeight: 32, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 }} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.6}>{offer.club}</Text>
           <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: "900", letterSpacing: 1.6 }}>{leagueNameFor(offer.division).toUpperCase()}</Text>
         </View>
         {/* the scout, and what he says: a tap moves him on */}

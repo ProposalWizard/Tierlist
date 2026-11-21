@@ -207,6 +207,14 @@ export function useHomeFlow(career: CareerState): HomeFlow {
   return { announce, energyToast: toast, tour, setPiece, beat, mech };
 }
 
+// ── The first match's tour is on screen: the match waits for it ──
+let matchTourShown = false;
+const matchTourSubs = new Set<() => void>();
+function setMatchTourUp(v: boolean) { if (matchTourShown !== v) { matchTourShown = v; matchTourSubs.forEach((f) => f()); } }
+export function useMatchTourUp(): boolean {
+  return useSyncExternalStore((f) => { matchTourSubs.add(f); return () => matchTourSubs.delete(f); }, () => matchTourShown, () => matchTourShown);
+}
+
 /** Mounted once, over every screen: draws the tour that is due. */
 export function CoachHost() {
   const career = useCareer();
@@ -223,6 +231,9 @@ export function CoachHost() {
     const t = setTimeout(() => setMatchReady(true), 1500);
     return () => clearTimeout(t);
   }, [where]);
+  // The first match stands still while its pointer tour is up (seen in the packed app: the clock waits at 2').
+  const matchTourUp = !!career && where === "match" && matchReady && !asked && !!tourDue(career, "match", true, false);
+  useEffect(() => { setMatchTourUp(matchTourUp); return () => setMatchTourUp(false); }, [matchTourUp]);
   if (!career) return null;
   if (where === "match" && !matchReady && !asked) return null;
   const quiet = quietNow(career, session, pops, where === "home");

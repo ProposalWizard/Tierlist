@@ -179,18 +179,20 @@ function MatchDay({ career, f, go, onBack }: { career: CareerState; f: Fixture; 
           </View>
           {/* LineupIntro: SquareBar h-[26px], the number over the bar, centred */}
           <View style={{ marginTop: 12, flexDirection: "row", alignItems: "center" }}>
-            <Bar value={Math.max(3, e)} colors={levelColors(e)} height={26} />
+            <View style={{ flex: 1, height: 26, borderRadius: 13, backgroundColor: "rgba(0,0,0,0.45)", overflow: "hidden", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.14)" } as ViewStyle}>
+              <View style={{ width: `${Math.max(3, e)}%`, height: "100%", borderRadius: 13, backgroundImage: `linear-gradient(180deg, ${levelColors(e)[1]}, ${levelColors(e)[0]})` } as ViewStyle} />
+            </View>
             <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}>
               <Text style={{ color: "#fff", fontSize: 14, fontWeight: "900", textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 3, textShadowOffset: { width: 0, height: 1 } }}>{e}</Text>
             </View>
           </View>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
             {have > 0 && (
-              <LookButton kind="gold" style={{ flex: 1, paddingVertical: 12 }} onPress={() => flow.useCan(can.id)}>
+              <LookButton kind="gold" style={{ flex: 1, paddingVertical: 12, borderRadius: 2 }} onPress={() => flow.useCan(can.id)}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>{canIcon}<Text style={{ color: "#111827", fontSize: 14, fontWeight: "900" }}>USE A CAN ×{have}</Text></View>
               </LookButton>
             )}
-            <LookButton kind="primary" style={{ flex: 1, paddingVertical: 12 }} onPress={() => setAsked(true)}>
+            <LookButton kind="primary" style={{ flex: 1, paddingVertical: 12, borderRadius: 2 }} onPress={() => setAsked(true)}>
               <Text style={{ color: "#fff", fontSize: 14, fontWeight: "900", letterSpacing: 0.6 }}>PLAY ANYWAY</Text>
             </LookButton>
           </View>
@@ -220,12 +222,12 @@ export function ManagerSaysCard({ career, title, text, onContinue }: { career: C
 
 /** The prompt card over the night: a dark see-through panel, ‹ Back under it. */
 function PromptShell({ children, onBack, glow }: { children: React.ReactNode; onBack: () => void; glow?: string }) {
-  // LineupIntro's prompt page: navy to near-black with the club's glow at the top; the card
-  // sits in the middle of the top 70% of the screen (min-h-[70dvh], justify-center).
+  // LineupIntro's prompt page as the packed app shows it: the blurred ground behind (its pitch look
+  // paints over the page's own navy), the card in the middle of the top 70% of the screen.
+  void glow;
   return (
     <View style={{ flex: 1, backgroundColor: "#05080f" }}>
-      <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: "linear-gradient(180deg, #0a1120 0%, #05080f 60%)" } as ViewStyle} />
-      {glow ? <View style={{ position: "absolute", left: 0, right: 0, top: 0, height: "45%", backgroundImage: `radial-gradient(ellipse at 50% -18%, ${rgba(glow, 0.33)} 0%, transparent 70%)` } as ViewStyle} /> : null}
+      <Backdrop kind="stadium" />
       <SafeAreaView style={{ height: "70%", justifyContent: "center", paddingHorizontal: 16 }}>
         <View style={{ padding: 16, backgroundColor: "rgba(0,0,0,0.55)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.2)" } as ViewStyle}>
           {children}

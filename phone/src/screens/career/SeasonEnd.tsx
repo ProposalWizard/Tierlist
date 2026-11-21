@@ -48,7 +48,7 @@ export function SeasonAwardsScreen({ career, go }: { career: CareerState; go: (s
       <Label>Trophies</Label>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {trophies.map((t) => (
-          <View key={t.competition} style={{ width: "48.5%", borderRadius: 12, padding: 10, gap: 6, backgroundImage: "linear-gradient(180deg, rgba(30,58,95,0.85), rgba(10,22,40,0.9))", borderWidth: 1, borderColor: t.isYou ? "rgba(52,211,153,0.7)" : "rgba(255,255,255,0.14)" } as ViewStyle}>
+          <View key={t.competition} style={{ width: "48.5%", borderRadius: 12, padding: 10, gap: 6, backgroundImage: "linear-gradient(180deg, rgba(30,58,95,0.85), rgba(10,22,40,0.9))", borderWidth: 1, borderColor: t.isYou ? "rgba(251,191,36,0.6)" : "rgba(255,255,255,0.14)", ...(t.isYou ? { boxShadow: "0px 0px 22px rgba(251,191,36,0.25)" } : null) } as ViewStyle}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <TrophyImage name={t.competition} height={22} fallback={TROPHY_ICON[t.competition] ?? "🏆"} />
               <Text numberOfLines={1} style={{ flex: 1, color: "#fcd34d", fontSize: 9.5, fontWeight: "900", letterSpacing: 1.2 }}>{t.competition.toUpperCase()}</Text>
@@ -56,7 +56,7 @@ export function SeasonAwardsScreen({ career, go }: { career: CareerState; go: (s
             {t.club ? (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <ClubCrest club={t.club} size={18} />
-                <Text numberOfLines={1} style={{ flex: 1, color: t.isYou ? C.green : "#fff", fontSize: 13, fontWeight: "900" }}>{shortClub(t.club)}{t.isYou ? " (You)" : ""}</Text>
+                <Text numberOfLines={1} style={{ flex: 1, color: "#fff", fontSize: 13, fontWeight: "900" }}>{shortClub(t.club)}{t.isYou ? " (You)" : ""}</Text>
               </View>
             ) : <Text style={{ color: C.dim, fontSize: 11 }}>Not contested this season</Text>}
           </View>
@@ -66,7 +66,7 @@ export function SeasonAwardsScreen({ career, go }: { career: CareerState; go: (s
       {awards.map(([icon, name, w, unit]) => {
         const kit = w ? kitsOf(w.club).home : null;
         return (
-          <View key={name} style={{ borderRadius: 14, padding: 12, backgroundImage: w?.isYou ? "linear-gradient(180deg, rgba(6,78,59,0.9), rgba(2,44,34,0.92))" : "linear-gradient(180deg, rgba(30,58,95,0.85), rgba(10,22,40,0.9))", borderWidth: 1, borderColor: w?.isYou ? "rgba(52,211,153,0.6)" : "rgba(255,255,255,0.14)" } as ViewStyle}>
+          <View key={name} style={{ borderRadius: 14, padding: 12, backgroundImage: "linear-gradient(180deg, rgba(30,58,95,0.85), rgba(10,22,40,0.9))", borderWidth: 1, borderColor: w?.isYou ? "rgba(251,191,36,0.6)" : "rgba(255,255,255,0.14)", ...(w?.isYou ? { boxShadow: "0px 0px 22px rgba(251,191,36,0.25)" } : null) } as ViewStyle}>
             <Text style={{ color: "#fcd34d", fontSize: 10, fontWeight: "900", letterSpacing: 1.4 }}>{icon} {name.toUpperCase()}</Text>
             {w && kit ? (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8 }}>

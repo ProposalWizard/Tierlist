@@ -15,9 +15,11 @@ import { FAREWELL_OFF_AT, farewellDuties, farewellSeed } from "@/lib/star/farewe
 import { useNav } from "../nav";
 import type { MatchDriver } from "../match/driver";
 import { C } from "../ui/theme";
+import { useMatchTourUp } from "../screens/career/Coach";
 
 function MatchScreen() {
   const career = useCareer();
+  const tourUp = useMatchTourUp();
   const nav = useNav();
   // The fixture is read once, when the match opens: the career changing under it must not restart it.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -32,7 +34,7 @@ function MatchScreen() {
   if (!startCareer || !fixture) {
     return <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center" }}><Text style={{ color: C.text }}>No match to play.</Text></View>;
   }
-  return <Match career={startCareer} fixture={fixture} onFullTime={onFullTime} />;
+  return <Match career={startCareer} fixture={fixture} onFullTime={onFullTime} frozen={tourUp} />;
 }
 /**
  * THE FAREWELL MATCH (page.tsx farewell-match): CanvasMatch on the farewell's

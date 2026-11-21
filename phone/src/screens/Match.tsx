@@ -71,11 +71,11 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
     const id = setInterval(() => {
       const d = hudDriver;
       if (!d || d.setup !== setupRef.current) return;
-      if (isTurningPoint(score.us, score.them, d.userScore)) playTurningPoint();
-      score = { us: d.userScore, them: d.oppScore };
+      if (isTurningPoint(score.us, score.them, d.shownUserScore)) playTurningPoint();
+      score = { us: d.shownUserScore, them: d.shownOppScore };
       setMusicScene("match", d.done
-        ? { kind: "full-time", us: d.userScore, them: d.oppScore }
-        : { kind: "match", state: { us: d.userScore, them: d.oppScore, minute: d.matchMinute, duration: d.MATCH_DURATION, knockout: d.knockoutTie, dribbling: d.phase === "tdDribble" } }, 10);
+        ? { kind: "full-time", us: d.shownUserScore, them: d.shownOppScore }
+        : { kind: "match", state: { us: d.shownUserScore, them: d.shownOppScore, minute: d.matchMinute, duration: d.MATCH_DURATION, knockout: d.knockoutTie, dribbling: d.phase === "tdDribble" } }, 10);
     }, 250);
     return () => { clearInterval(id); clearMusicScene("match"); };
   }, []);

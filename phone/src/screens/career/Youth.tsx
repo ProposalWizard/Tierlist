@@ -6,7 +6,8 @@
  * Same words and the same lib calls as the website.
  */
 import { useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { CareerState, Skills } from "@/lib/star/types";
 import { actionsLeft } from "@/lib/star/week";
 import { formatMoney, formatWallet } from "@/lib/star/money";
@@ -22,7 +23,7 @@ import { Frame, Card, Label, Btn, Fill, C } from "./kit";
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <View style={{ flex: 1, backgroundColor: C.panel2, borderRadius: 10, paddingVertical: 8, alignItems: "center" }}>
+    <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 8, paddingVertical: 8, alignItems: "center" }}>
       <Text style={{ color: C.dim, fontSize: 9, fontWeight: "900", letterSpacing: 1 }}>{label.toUpperCase()}</Text>
       <Text style={{ color: C.text, fontSize: 14, fontWeight: "900", marginTop: 2 }}>{value}</Text>
     </View>
@@ -45,6 +46,11 @@ const P = ({ children, color = C.text }: { children: React.ReactNode; color?: st
 const TRAIN: [keyof Skills | "rest", string][] = [
   ["pace", "Train pace"], ["power", "Train power"], ["technique", "Train technique"], ["vision", "Train vision"], ["freeKick", "Free kicks"], ["rest", "Rest"],
 ];
+/** YouthTeam.tsx's cards: a tint and a hairline on the near-black page. */
+function YCard({ tone, children }: { tone?: "amber" | "emerald"; children: React.ReactNode }) {
+  const [edge, fill] = tone === "amber" ? ["rgba(251,191,36,0.3)", "rgba(245,158,11,0.1)"] : tone === "emerald" ? ["rgba(52,211,153,0.3)", "rgba(16,185,129,0.1)"] : ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"];
+  return <View style={{ borderRadius: 16, borderWidth: 1, borderColor: edge, backgroundColor: fill, padding: 16 }}>{children}</View>;
+}
 export function YouthScreen({ career, go, onLeague, onSettings }: { career: CareerState; go: (s: flow.Step, push?: boolean) => void; onLeague: () => void; onSettings: () => void }) {
   const p = career.placement;
   if (!p || p.kind !== "youth") return <Frame title="First team"><Btn label="Home" onPress={() => go(flow.HOME)} /></Frame>;
@@ -55,7 +61,9 @@ export function YouthScreen({ career, go, onLeague, onSettings }: { career: Care
   const last = p.last;
   const seasonOver = flow.seasonOver(career);
   return (
-    <Frame title="Youth team" bare backdrop="navy">
+    <View style={{ flex: 1, backgroundColor: "#030712" }}>
+    <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1 }}>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16, gap: 12 }} showsVerticalScrollIndicator={false}>
       {/* YouthTeam.tsx: your name, "YOUTH TEAM · CLUB" and the league on the left, SETTINGS on the right. */}
       <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -73,14 +81,14 @@ export function YouthScreen({ career, go, onLeague, onSettings }: { career: Care
         <Stat label="This week" value={`${left} left`} />
       </View>
       {p.apps === 0 && (
-        <Card tone={C.gold}>
+        <YCard tone="amber">
           <Label>{p.reason === "form" ? "You have been dropped" : "Where you have ended up"}</Label>
           <P>{p.reason === "form"
             ? `The manager has stopped picking you altogether. You are training with ${p.club}'s kids until you give him a reason not to.`
             : `Nobody put a professional contract in front of you. ${p.club} took you into their youth team instead — which is a club, a coach and a way in.`}</P>
-        </Card>
+        </YCard>
       )}
-      <Card tone={C.green}>
+      <YCard tone="emerald">
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           <Label color={C.green}>Getting into the first team</Label>
           <Text style={{ color: C.text, fontWeight: "900" }}>{Math.round(p.progress)}/{PROMOTION_AT}</Text>
@@ -92,16 +100,16 @@ export function YouthScreen({ career, go, onLeague, onSettings }: { career: Care
             <View style={{ marginTop: 10 }}><Btn label="Go up →" onPress={() => go(flow.youthPromote())} /></View>
           </>
         ) : <P color={C.dim}>Play well and it moves. Play badly and it goes back. There is no other way out of here.</P>}
-      </Card>
-      <Card>
+      </YCard>
+      <YCard>
         <Label color={C.dim}>You against this level</Label>
         <Gauge label="You" value={ability} color="#38bdf8" />
         <Gauge label={`${p.club} youth football`} value={level} color="rgba(255,255,255,0.4)" />
         <P color={C.dim}>{ability >= level + 8 ? "You are too good for this. Go and prove it every week and they cannot keep you here."
           : ability >= level ? "You can hold your own here. Small margins now." : "You are behind this standard. Training is not optional."}</P>
-      </Card>
+      </YCard>
       {last && (
-        <Card>
+        <YCard>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <Label color={C.dim}>Last youth match</Label>
             <Text style={{ color: C.text, fontWeight: "900" }}>{last.scored}–{last.conceded}</Text>
@@ -112,12 +120,12 @@ export function YouthScreen({ career, go, onLeague, onSettings }: { career: Care
             <Text style={{ color: last.progressDelta >= 0 ? C.green : C.red }}>{last.progressDelta >= 0 ? "+" : ""}{last.progressDelta}</Text>
           </Text>
           <P color={C.dim}>“{last.verdict}”</P>
-        </Card>
+        </YCard>
       )}
       <Text style={{ color: C.dim, fontSize: 11, fontWeight: "900", letterSpacing: 1 }}>
         THIS SPELL: {p.apps} APP{p.apps === 1 ? "" : "S"}, {p.goals} GOAL{p.goals === 1 ? "" : "S"}, {p.assists} ASSIST{p.assists === 1 ? "" : "S"}
       </Text>
-      <Card>
+      <YCard>
         <Label color={C.dim}>The week</Label>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           {TRAIN.map(([k, label]) => (
@@ -125,7 +133,7 @@ export function YouthScreen({ career, go, onLeague, onSettings }: { career: Care
               if (k === "rest") { flow.restDay(); return; }
               const s = flow.pickTraining(k);
               if (s) go(s, true);
-            }} style={{ width: "48%", backgroundColor: left <= 0 ? "rgba(255,255,255,0.04)" : C.panel2, borderRadius: 10, paddingVertical: 11, alignItems: "center" }}>
+            }} style={{ width: "48%", backgroundColor: left <= 0 ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.1)", borderRadius: 8, paddingVertical: 11, alignItems: "center" }}>
               <Text style={{ color: left <= 0 ? C.dim : C.text, fontWeight: "900", fontSize: 12 }}>{label.toUpperCase()}</Text>
             </Press>
           ))}
@@ -135,9 +143,11 @@ export function YouthScreen({ career, go, onLeague, onSettings }: { career: Care
         </View>
         <P color={C.dim}>{seasonOver ? "Nothing left to play. The season ends for you the same week it ends for the first team."
           : "The first team play their fixture on Saturday whether you are in it or not. You play yours."}</P>
-      </Card>
+      </YCard>
       <Btn kind="plain" small label="How the first team are doing →" onPress={onLeague} />
-    </Frame>
+    </ScrollView>
+    </SafeAreaView>
+    </View>
   );
 }
 

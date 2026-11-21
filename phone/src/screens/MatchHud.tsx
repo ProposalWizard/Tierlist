@@ -50,8 +50,8 @@ export function MatchHud({ d, kits, onGear }: { d: MatchDriver; kits: MatchKits;
     <View style={{ paddingHorizontal: 12, paddingTop: 6 }}>
       <View style={{ flexDirection: "row", alignItems: "stretch", gap: 4, marginBottom: 8 }}>
         {bar(home ? us : them, kits.home, false)}
-        {score(home ? d.userScore : d.oppScore)}
-        {score(home ? d.oppScore : d.userScore)}
+        {score(home ? d.shownUserScore : d.shownOppScore)}
+        {score(home ? d.shownOppScore : d.shownUserScore)}
         {bar(home ? them : us, kits.away, true)}
       </View>
       {/* The plate: in the pitch look gray-950/900 are its deep greens; square corners (pitch scope). */}
