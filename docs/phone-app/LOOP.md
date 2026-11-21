@@ -11,7 +11,7 @@ Mikey's instruction: keep working without his input until nothing more can be do
 4. Full playtest of both apps side by side (packed vs KIB Next), every screen and a whole season, with
    dense frames for motion. Fix everything found straight away, then playtest again. Repeat until a
    playtest finds nothing that can be fixed here.
-5. Limits: if the model hits a limit, switch builders to Opus 5.5 (`model: "opus"`). On a 5-hour limit,
+5. Models (Mikey, 21 Nov evening): Opus 5.5 (`model: "opus"`) for playtesters, findings only, no code edits. Fable 5.2 for analysis and the code changes. On a 5-hour limit,
    resume paused builders with SendMessage as soon as usage is back (a send_later check-in is armed).
 6. Only Mikey's phone can confirm: font size, camera hole, hidden bars, buzz, music, photo, 3D, speed.
 Rules: edit only `phone/**`; website match file untouched; no casino; no patch notes or merge to main
