@@ -635,7 +635,9 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         const r = rootAt(C, id, tt);
         const q = new T.Vector3().setFromMatrixPosition(toe.matrixWorld);
         // in front of his toe for a touch; for the strike, the ball's middle just ahead of the toe joint (the laces meet it)
-        const ahead = tt === end ? 0.07 : BALL_R + 0.03;
+        // (round 2, Harry: "the ball doesn't really actually go where his feet are": it ran ~0.5 m ahead between
+        // touches) the ball against the toe at each touch, never a ball's width out in front
+        const ahead = tt === end ? 0.07 : BALL_R + 0.005;
         out.t.push(tt); out.p.push([q.x + Math.sin(r.yaw) * ahead, r.pos[1] + BALL_R, q.z + Math.cos(r.yaw) * ahead]);
       }
       dribblePaths.set(pt, out.t.length ? out : null);
@@ -651,7 +653,8 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     const a = P0[i], b = P0[i + 1] ?? P0[i];
     const k = clamp((t - T0[i]) / Math.max(0.01, (T0[i + 1] ?? T0[i]) - T0[i]));
     // knocked on: a little faster off the foot, slowing as he catches it up (never far ahead of him)
-    const e = i === 0 ? smooth(k) : 1 - Math.pow(1 - k, 1.35);
+    // (at his own pace between touches, not front-loaded: a front-loaded roll put it half a metre ahead of his feet mid-stride)
+    const e = i === 0 ? smooth(k) : k;
     const pos: Vec3 = [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e, a[2] + (b[2] - a[2]) * e];
     let dist = 0;
     for (let j = 0; j < i; j++) dist += Math.hypot(P0[j + 1][0] - P0[j][0], P0[j + 1][2] - P0[j][2]);
