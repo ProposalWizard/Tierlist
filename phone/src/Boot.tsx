@@ -66,9 +66,10 @@ function TrippedNote() {
   if (!show) return null;
   const names = require("./safety").PART_NAMES as Record<string, string>;
   return (
-    <View pointerEvents="box-none" style={{ position: "absolute", top: 40, left: 12, right: 12 }}>
-      <Text onPress={() => setShow(false)} style={{ backgroundColor: "#3b1d1d", color: "#fff", padding: 12, borderRadius: 12, borderWidth: 1, borderColor: "#f87171", fontWeight: "700" }}>
-        KIB Next closed twice while starting {parts.map((p) => names[p] ?? p).join(" and ")}. The simple version shows for now and the game tries again by itself in a few launches. Settings has "Turn back on". (Tap to hide.)
+    // one small line at the foot, never over a screen's header; a tap hides it
+    <View pointerEvents="box-none" style={{ position: "absolute", bottom: 4, left: 0, right: 0, alignItems: "center" }}>
+      <Text onPress={() => setShow(false)} numberOfLines={2} style={{ maxWidth: "94%", backgroundColor: "rgba(20,24,30,0.92)", color: "rgba(255,255,255,0.85)", paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, fontSize: 11, fontWeight: "600", overflow: "hidden", textAlign: "center" }}>
+        Simple version of {parts.map((p) => names[p] ?? p).join(" and ")} for now. Settings: Turn back on.  ✕
       </Text>
     </View>
   );

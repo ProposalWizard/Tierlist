@@ -5,9 +5,10 @@
  *
  * Each risky part writes a mark before it starts and clears it once it has run
  * for a moment. If the app dies in between, the mark is still there next launch:
- * that part is left out for that launch (its plain fallback is used) and tried
- * again on the next. Twice in a row switches it off and the app says which part
- * it was; it comes back by itself after a few launches, or at once with
+ * nothing is said and the part starts again as normal (one quick close is not a
+ * crash). Only when the SAME part is still starting on the very next launch too is
+ * it switched off, and the app says which in one small line at the foot of the
+ * screen; it comes back by itself after a few launches, or at once with
  * Settings → "Turn back on". A single slow start never switches anything off
  * for good (21 Nov 2026).
  */
@@ -31,9 +32,8 @@ const STRIKES = "strikes:";
 const WAIT = "wait:";
 /**
  * ONE slow start is not a crash loop (the app closed in its first seconds for any
- * reason: swiped away, the phone was busy). The first time, the part is left out
- * for that launch only and tried again on the next one. Only when it happens on
- * the next try too is it switched off; then it is tried again by itself after
+ * reason: swiped away, the phone was busy). The first time, nothing changes and
+ * nothing is said. Only when it happens on the very next launch too is it switched off; then it is tried again by itself after
  * RETRY_AFTER launches.
  */
 const STRIKES_TO_OFF = 2;
@@ -44,14 +44,24 @@ const num = (k: string) => Number(kv.getString(k) ?? "0") || 0;
 // What was still starting when the app last closed.
 const trippedNow: RiskyPart[] = [];
 const skipThisLaunch = new Set<RiskyPart>();
+const stillStarting = new Set<RiskyPart>();
 for (const k of kv.getAllKeys()) {
   if (!k.startsWith(RUNNING)) continue;
-  const part = k.slice(RUNNING.length) as RiskyPart;
+  stillStarting.add(k.slice(RUNNING.length) as RiskyPart);
   kv.remove(k);
+}
+// Two launches IN A ROW only: a strike from an older launch is forgotten when the
+// launch after it closed with the part not starting (a normal quick close, a reload).
+for (const k of kv.getAllKeys()) {
+  if (!k.startsWith(STRIKES)) continue;
+  if (!stillStarting.has(k.slice(STRIKES.length) as RiskyPart) && kv.getString(OFF + k.slice(STRIKES.length)) !== "1") kv.remove(k);
+}
+for (const part of stillStarting) {
   const strikes = num(STRIKES + part) + 1;
   kv.set(STRIKES + part, String(strikes));
-  skipThisLaunch.add(part);
-  if (strikes >= STRIKES_TO_OFF) { kv.set(OFF + part, "1"); kv.set(WAIT + part, String(RETRY_AFTER)); trippedNow.push(part); }
+  // The first time nothing is said and nothing is left out: the part starts again as
+  // normal. If the app closes on it again on that very next launch, it is switched off.
+  if (strikes >= STRIKES_TO_OFF) { skipThisLaunch.add(part); kv.set(OFF + part, "1"); kv.set(WAIT + part, String(RETRY_AFTER)); trippedNow.push(part); }
 }
 // A part that is switched off comes back by itself after a few launches (one strike
 // left: if it closes the app again, it is off again at once).
@@ -91,6 +101,13 @@ function start(part: RiskyPart) {
 function done(part: RiskyPart) { kv.remove(RUNNING + part); }
 /** It ran for its settle time: a good start. Earlier closes are forgotten. */
 function settled(part: RiskyPart) { done(part); kv.remove(STRIKES + part); }
+// The web build: a reload or a closed tab is not a crash either.
+try {
+  const w = globalThis as unknown as { addEventListener?: (n: string, f: () => void) => void; document?: unknown };
+  if (w.document && w.addEventListener) w.addEventListener("pagehide", () => {
+    for (const k of kv.getAllKeys()) if (k.startsWith(RUNNING)) kv.remove(k);
+  });
+} catch { /* not a browser */ }
 // Leaving the app (Home button, another app) while a part is starting is not a crash.
 try {
   AppState.addEventListener("change", (s) => {
