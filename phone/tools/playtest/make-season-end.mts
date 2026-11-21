@@ -4,9 +4,13 @@
  * except the last `--left N` (default 1) is credited with mixed results, the way
  * scripts/soak/careerSoak.mts plays a season. Prints { packed: {...}, next: {...} }.
  *
- *   npx tsx phone/tools/playtest/make-season-end.mts [--left 1] > save.json
+ *   npx tsx phone/tools/playtest/make-season-end.mts [--left 1] [--season2] > save.json
+ *
+ * --tours: keep the new career's unlocks (first-visit tours of League, Phone, Shop, Sponsors).
+ * --season2: play every match, then roll into season 2 (advanceSeason): the League
+ * chooser shows "📜 Last season" (the season review) and History has a played season.
  */
-import { makeInitialCareer, creditMatchResult, simulateMissedFixture } from "../../../lib/star/careerFlow";
+import { makeInitialCareer, creditMatchResult, simulateMissedFixture, advanceSeason } from "../../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../../lib/star/clubs";
 import { nextFixtureFor } from "../../../lib/star/competitions";
 import { saveCareer, ANON_SCOPE } from "../../../lib/star/storage";
@@ -23,7 +27,8 @@ const store = new Map<string, string>();
 } as Storage;
 
 const i = process.argv.indexOf("--left");
-const LEFT = i >= 0 ? Number(process.argv[i + 1]) : 1;
+const SEASON2 = process.argv.includes("--season2");
+const LEFT = SEASON2 ? 0 : i >= 0 ? Number(process.argv[i + 1]) : 1;
 
 function stats(us: number, them: number, home: boolean, goals: number): MatchStats {
   return { chances: 5, goals, assists: 1, passes: 28, rating: 7.2, starMan: goals >= 2, bossChange: 0, teamChange: 0, fansChange: 0,
@@ -31,7 +36,8 @@ function stats(us: number, them: number, home: boolean, goals: number): MatchSta
 }
 
 const player = { firstName: "Look", lastName: "Check", age: 18, skinTone: "light", club: "Arsenal", clubBadge: null, position: "ST", nationality: "England", startYear: 2027 } as StarPlayer;
-let c: CareerState = { ...makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS]), unlocks: undefined };
+const fresh = makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS]);
+let c: CareerState = process.argv.includes("--tours") ? fresh : { ...fresh, unlocks: undefined };
 const remaining = () => c.fixtures.filter((f) => !f.played).length;
 let g = 0;
 while (g++ < 300) {
@@ -40,6 +46,7 @@ while (g++ < 300) {
   const us = (g * 7) % 4, them = (g * 5) % 3;
   c = (g % 9 === 0 ? simulateMissedFixture(c, next) : creditMatchResult(c, next, stats(us, them, next.home, Math.min(us, 2)))).career;
 }
+if (SEASON2) c = advanceSeason(c, false).career;
 c = { ...c, money: Math.max(c.money, 500000) };
 saveCareer(c, ANON_SCOPE);
 const packed = Object.fromEntries(store);
