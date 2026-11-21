@@ -77,7 +77,7 @@ export function LockerScreen() {
         <Text style={{ color: "#fde047", fontFamily: FONT.serif, fontSize: 23, lineHeight: 28, letterSpacing: 2.8, textShadowColor: "rgba(245,158,11,0.9)", textShadowOffset: { width: 0, height: 1.5 }, textShadowRadius: 0 }}>LOCKER</Text>
       </View>
       {/* one row of categories */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginTop: 12 }} contentContainerStyle={{ flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingBottom: 8 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, flexShrink: 0, marginTop: 12 }} contentContainerStyle={{ flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingBottom: 8 }}>
         {CATEGORIES.map((k) => {
           const on = k.id === shownCat;
           const n = ownedCount(k.id);
@@ -149,8 +149,8 @@ export function RewardReveal({ card, level, career, onUse, onLater }: { card: Ca
         {/* light rays turning behind it */}
         <Animated.View pointerEvents="none" style={{ position: "absolute", left: vp.width / 2 - R, top: vp.height * 0.44 - R, width: R * 2, height: R * 2, opacity: 0.9, transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] }) }] }}>
           {rays.map((i) => (
-            <View key={i} style={{ position: "absolute", left: R - 1, top: R, width: 0, height: 0, transform: [{ rotate: `${i * 22.5}deg` }] }}>
-              <View style={{ position: "absolute", left: -R * 0.06, top: 0, width: 0, height: 0, borderLeftWidth: R * 0.06, borderRightWidth: R * 0.06, borderTopWidth: R * 0.55, borderLeftColor: "transparent", borderRightColor: "transparent", borderTopColor: "rgba(253,224,71,0.11)", transform: [{ rotate: "180deg" }, { translateY: -R * 0.55 }] }} />
+            <View key={i} style={{ position: "absolute", left: R - R * 0.07, top: 0, width: R * 0.14, height: R, transform: [{ translateY: R / 2 }, { rotate: `${i * 22.5}deg` }, { translateY: -R / 2 }] }}>
+              <View style={{ flex: 1, backgroundImage: "linear-gradient(180deg, rgba(253,224,71,0), rgba(253,224,71,0.05) 45%, rgba(253,224,71,0.16))" } as ViewStyle} />
             </View>
           ))}
         </Animated.View>

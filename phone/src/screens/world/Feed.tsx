@@ -9,6 +9,11 @@
  * Goal videos play from the goal's recording on this phone (screens/MatchGoalVideo.tsx);
  * a post whose recordings are not here shows its still, as on the website.
  */
+import { Animated, Easing } from "react-native";
+import { Canvas, ImageSVG, Skia } from "@shopify/react-native-skia";
+import { SvgIcon } from "../../world/SvgIcon";
+import { AVATAR_GLYPH } from "../../world/avatarGlyphs";
+import { useEffect as useEffectT, useRef as useRefT, useState as useStateT } from "react";
 import { useMemo, useState } from "react";
 import { FlatList, ScrollView, Text, View } from "react-native";
 import type { ViewStyle } from "react-native";
@@ -70,14 +75,14 @@ export function MediaFeed({ career, mode = "browse", onContinue }: { career: Car
           ListHeaderComponent={
             <View>
               {trends.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, padding: 10 }}>
+                <Ticker>
                   {trends.map((t) => (
-                    <View key={t.label} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 }}>
+                    <View key={t.label} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, marginRight: 6 }}>
                       <Text style={{ color: C.text, fontWeight: "900", fontSize: 11 }}>{t.label}{t.hot ? " 🔥" : ""}</Text>
                       <Text style={{ color: C.dim, fontWeight: "700", fontSize: 10 }}>{formatVolume(t.volume)}</Text>
                     </View>
                   ))}
-                </ScrollView>
+                </Ticker>
               )}
               {mode === "browse" && (
                 <View style={{ flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingTop: 8, paddingBottom: 6 }}>
@@ -134,10 +139,34 @@ function EmptyFeed() {
   );
 }
 
-function Avatar({ initials, tint, tint2, size }: { initials: string; tint: string; tint2?: string; size: number }) {
+/** The trending strip scrolls by itself, round and round (MediaFeed's ticker): the row is drawn twice and slides one row's width. */
+function Ticker({ children }: { children: React.ReactNode }) {
+  const [w, setW] = useStateT(0);
+  const x = useRefT(new Animated.Value(0)).current;
+  useEffectT(() => {
+    if (w <= 0) return;
+    x.setValue(0);
+    const loop = Animated.loop(Animated.timing(x, { toValue: -w, duration: w * 38, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [w, x]);
   return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: tint, borderWidth: tint2 ? 2 : 0, borderColor: tint2, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ color: "#fff", fontWeight: "900", fontSize: size * 0.38 }}>{initials}</Text>
+    <View style={{ overflow: "hidden", paddingVertical: 10 }}>
+      <Animated.View style={{ flexDirection: "row", paddingLeft: 10, transform: [{ translateX: x }] }}>
+        <View style={{ flexDirection: "row" }} onLayout={(e) => { const v = Math.round(e.nativeEvent.layout.width); if (Math.abs(v - w) > 1) setW(v); }}>{children}</View>
+        <View style={{ flexDirection: "row" }}>{children}</View>
+      </Animated.View>
+    </View>
+  );
+}
+
+/** An account's picture (media/Avatar.tsx): a drawn glyph on a two-colour disc; a club (or an old save) keeps its letters. */
+function Avatar({ initials, tint, tint2, size, glyph }: { initials: string; tint: string; tint2?: string; size: number; glyph?: string }) {
+  const body = glyph && glyph !== "crest" && size >= 30 ? AVATAR_GLYPH[glyph] : undefined;
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.18)", backgroundImage: `linear-gradient(145deg, ${tint}, ${tint2 ?? tint})`, backgroundColor: tint } as ViewStyle}>
+      {body ? <SvgIcon body={body} size={Math.round(size * 0.62)} color="#ffffff" />
+        : <Text style={{ color: "#fff", fontWeight: "900", fontSize: size * 0.32, textShadowColor: "rgba(0,0,0,0.45)", textShadowRadius: 2 }}>{initials}</Text>}
     </View>
   );
 }
@@ -146,30 +175,67 @@ function Tick({ tick }: { tick?: keyof typeof TICK }) {
   return <Text style={{ color: TICK[tick ?? "blue"], fontSize: 13 }}>✔︎</Text>;
 }
 
+/** The action row's line icons (media/PostCard.tsx ICON): replies, reposts, like, views, share. ONE drawing per post. */
+const ACT = (d: string, color: string, fill = "none") => `<path d="${d}" fill="${fill}" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`;
+const ACT_PATH = {
+  replies: "M21 11.5a8.4 8.4 0 01-8.9 8.4 9.4 9.4 0 01-4-.9L3 20l1.1-4.2A8 8 0 013 11.5 8.5 8.5 0 0112 3a8.4 8.4 0 019 8.5z",
+  reposts: "M17 2l3 3-3 3M20 5H8a3 3 0 00-3 3v3M7 22l-3-3 3-3M4 19h12a3 3 0 003-3v-3",
+  like: "M12 20s-7-4.4-8.9-8.6A4.9 4.9 0 0112 6.3a4.9 4.9 0 018.9 5.1C19 15.6 12 20 12 20z",
+  views: "M5 20V12M10 20V6M15 20v-9M20 20V9",
+  share: "M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 002 2h10a2 2 0 002-2v-5",
+};
+const actCache = new Map<string, ReturnType<typeof Skia.SVG.MakeFromString>>();
+function actSvg(name: keyof typeof ACT_PATH, liked: boolean) {
+  const key = `${name}${liked ? "1" : "0"}`;
+  let o = actCache.get(key);
+  if (o === undefined) {
+    const c = name === "like" && liked ? "#f91880" : "#8c8f96";
+    try { o = Skia.SVG.MakeFromString(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">${ACT(ACT_PATH[name], c, name === "like" && liked ? c : "none")}</svg>`); } catch { o = null; }
+    actCache.set(key, o);
+  }
+  return o;
+}
+function Actions({ replies, reposts, likes, views, liked, onLike }: { replies: string; reposts: string; likes: string; views: string; liked: boolean; onLike?: () => void }) {
+  const [w, setW] = useStateT(0);
+  const slot = w > 0 ? (w - 17) / 4 : 0;
+  const names = ["replies", "reposts", "like", "views", "share"] as const;
+  const txt = { color: "rgba(255,255,255,0.55)", fontSize: 13, lineHeight: 17, fontVariant: ["tabular-nums" as const] };
+  const cell = (i: number, label: string, color?: string, press?: () => void) => {
+    const inner = <Text numberOfLines={1} style={[txt, color ? { color } : null]}>{label}</Text>;
+    const st = { position: "absolute" as const, left: i * slot + 23, top: 0, height: 17, justifyContent: "center" as const };
+    return press ? <Press key={i} onPress={press} hitSlop={8} style={[st, { left: i * slot, paddingLeft: 23 }]}>{inner}</Press> : <View key={i} style={st}>{inner}</View>;
+  };
+  return (
+    <View style={{ marginTop: 8, height: 17, marginRight: 4 }} onLayout={(e) => { const v = e.nativeEvent.layout.width; if (Math.abs(v - w) > 1) setW(v); }}>
+      {w > 0 ? (
+        <Canvas style={{ position: "absolute", left: 0, top: 0, width: w, height: 17 }}>
+          {names.map((n, i) => { const svg = actSvg(n, liked); return svg ? <ImageSVG key={n} svg={svg} x={i * slot} y={0} width={17} height={17} /> : null; })}
+        </Canvas>
+      ) : null}
+      {w > 0 ? <>{cell(0, replies)}{cell(1, reposts)}{cell(2, likes, liked ? "#f91880" : undefined, onLike)}{cell(3, views)}</> : null}
+    </View>
+  );
+}
+
 export function PostCard({ post, now, onLike, onVote }: { post: StoredPost; now: number; onLike?: (id: string) => void; onVote?: (id: string, i: number) => void }) {
   const likes = post.metrics.likes + (post.liked ? 1 : 0);
   const tiktok = post.author.platform === "tiktok" && !!post.sound;
   return (
     <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-      <Avatar initials={post.author.initials} tint={post.author.tint} tint2={post.author.tint2} size={40} />
+      <Avatar initials={post.author.initials} tint={post.author.tint} tint2={post.author.tint2} glyph={post.author.glyph} size={40} />
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
           <Text numberOfLines={1} style={{ color: C.text, fontWeight: "800", flexShrink: 1 }}>{post.author.name}</Text>
           {post.author.verified && <Tick tick={post.author.tick} />}
           <Text numberOfLines={1} style={{ color: C.dim, flexShrink: 1 }}>{post.author.handle} · {relativeTime(post.at, now)}</Text>
+          <Text style={{ marginLeft: "auto", paddingLeft: 6, color: "rgba(255,255,255,0.45)", fontSize: 13, lineHeight: 16, fontWeight: "900", letterSpacing: 1 }}>···</Text>
         </View>
         <Text style={{ color: C.text, fontSize: 15, lineHeight: 20, marginTop: 2 }}>{post.text}</Text>
         {post.quote && <Quote q={post.quote} />}
         {post.graphic && !(post.graphic.type === "thumbnail" && !post.graphic.clips?.length && !post.graphic.synth?.length) && <View style={{ marginTop: 8 }}><Graphic spec={post.graphic} author={{ ...post.author, persona: post.persona }} onVote={onVote ? (i) => onVote(post.id, i) : undefined} /></View>}
         {tiktok && post.sound ? <Text style={{ color: C.text, marginTop: 6, fontSize: 13 }}>♫ {post.sound}</Text> : null}
-        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8, paddingRight: 8 }}>
-          <Text style={{ color: C.dim, fontSize: 13 }}>💬 {count(post.metrics.replies)}</Text>
-          <Text style={{ color: C.dim, fontSize: 13 }}>🔁 {count(post.metrics.reposts)}</Text>
-          <Press disabled={!onLike} onPress={() => onLike?.(post.id)} style={{ flexDirection: "row" }}>
-            <Text style={{ color: post.liked ? LIKED : C.dim, fontSize: 13 }}>{post.liked ? "♥" : "♡"} {count(likes)}</Text>
-          </Press>
-          <Text style={{ color: C.dim, fontSize: 13 }}>📊 {post.metrics.views !== undefined ? count(post.metrics.views) : ""}</Text>
-        </View>
+        <Actions replies={count(post.metrics.replies)} reposts={count(post.metrics.reposts)} likes={count(likes)} views={post.metrics.views !== undefined ? count(post.metrics.views) : ""}
+          liked={!!post.liked} onLike={onLike ? () => onLike(post.id) : undefined} />
         {!!post.thread?.length && <Replies thread={post.thread} />}
       </View>
     </View>

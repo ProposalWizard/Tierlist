@@ -11,7 +11,8 @@
  * world/cupDraw.ts drawToShow for when.
  */
 import { useEffect, useRef, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Image, ScrollView, Text, View } from "react-native";
+import { SvgIcon } from "../../world/SvgIcon";
 import type { ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeIn, ZoomIn } from "react-native-reanimated";
@@ -24,6 +25,16 @@ import { C } from "../../world/lookKit";
 import { ClubBadge, Btn } from "../../world/ui";
 import { Backdrop, FONT, glassStyle } from "../../ui/look";
 import type { DrawRound } from "../../world/cupDraw";
+
+// The website's photos (public/star/cup-draw), made see-through for the phone by tools/look/make-cupdraw-pics.py.
+const TROPHY = require("../../../assets/look/cupdraw/trophy.webp");
+const CONFETTI = require("../../../assets/look/cupdraw/confetti.webp");
+const STADIUM = require("../../../assets/look/cupdraw/stadium-lights.webp");
+/** The lightning bolt either side of "Run the Draw" (CupDrawReveal.tsx Bolt). */
+const BOLT = `<path d="M8 0L0 13H5.5L4 22L14 8H8.5L8 0Z" fill="#6EE7B7"/>`;
+function Bolt({ flip }: { flip?: boolean }) {
+  return <View style={{ transform: [{ scaleX: flip ? -1 : 1 }] }}><SvgIcon body={BOLT} box={22} size={22} /></View>;
+}
 
 const AWAY_BALL_MS = 700;
 const POP_MS = 550;
@@ -70,6 +81,9 @@ export function CupDrawReveal({ competition, round, yourClub, onContinue }: { co
       <Backdrop kind="stadium" />
       {/* the website's card: glass lit blue from the top (kit-card, --kit-glow #3b82f6) */}
       <View style={[glassStyle("glass", "#3b82f6"), { flex: 1, margin: 12, marginBottom: 0, borderRadius: 18, overflow: "hidden" }]}>
+      {/* floodlights behind the whole card; gold confetti once the draw runs */}
+      <Image source={STADIUM} resizeMode="cover" fadeDuration={0} style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%", opacity: 0.32 }} />
+      {started ? <Image source={CONFETTI} resizeMode="cover" fadeDuration={0} style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%", opacity: 0.5 }} /> : null}
       <View style={{ alignItems: "center", paddingTop: 18, paddingBottom: 10 }}>
         <Text style={{ color: "rgba(125,211,252,0.75)", fontWeight: "900", fontSize: 10, letterSpacing: 3.5 }}>{competition.toUpperCase()} DRAW</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 6 }}>
@@ -81,14 +95,20 @@ export function CupDrawReveal({ competition, round, yourClub, onContinue }: { co
       <ScrollView contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 14, gap: 8, flexGrow: 1 }}>
         {!started ? (
           <View style={{ alignItems: "center", gap: 18, paddingTop: 12 }}>
-            <View style={{ alignSelf: "stretch", alignItems: "center", paddingVertical: 26, borderRadius: 12, backgroundImage: "radial-gradient(65% 90% at 50% 15%, rgba(56,132,255,0.28), rgba(56,132,255,0) 70%)" } as ViewStyle}>
-              <Text style={{ fontSize: 90, textShadowColor: "rgba(251,191,36,0.5)", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 26 }}>🏆</Text>
-              <Text style={{ fontSize: 28, marginTop: -6, transform: [{ rotate: "-8deg" }] }}>🎟️</Text>
+            <View style={{ alignSelf: "stretch", alignItems: "center", paddingVertical: 32, borderRadius: 12, overflow: "hidden", backgroundImage: "radial-gradient(65% 90% at 50% 15%, rgba(56,132,255,0.28), rgba(56,132,255,0) 70%)" } as ViewStyle}>
+              <Image source={CONFETTI} resizeMode="cover" fadeDuration={0} style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%", opacity: 0.65 }} />
+              <View pointerEvents="none" style={{ position: "absolute", top: 20, width: 150, height: 150, backgroundImage: "radial-gradient(closest-side, rgba(251,191,36,0.35), rgba(251,191,36,0))" } as ViewStyle} />
+              <Image source={TROPHY} resizeMode="contain" fadeDuration={0} style={{ height: 128, width: 70 }} />
+              <Text style={{ fontSize: 28, marginTop: -4, transform: [{ rotate: "-8deg" }] }}>🎟️</Text>
             </View>
             <Text style={{ color: "rgba(255,255,255,0.8)", fontWeight: "800", textAlign: "center", fontSize: 14, paddingHorizontal: 12 }}>
               <Text style={{ color: "#fb7185" }}>{total}</Text> {total === 1 ? "tie" : "ties"} to be drawn for the <Text style={{ color: "#fb7185" }}>{round.name}</Text>.
             </Text>
-            <Btn label="⚡ Run the Draw ⚡" tone="green" onPress={() => { setStarted(true); setRevealed(0); setHomeShown(false); }} style={{ paddingHorizontal: 30 }} />
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Bolt />
+              <Btn label="Run the Draw" tone="green" onPress={() => { setStarted(true); setRevealed(0); setHomeShown(false); }} style={{ paddingHorizontal: 28 }} />
+              <Bolt flip />
+            </View>
           </View>
         ) : (
           <>

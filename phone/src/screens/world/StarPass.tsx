@@ -182,7 +182,7 @@ export function StarPassScreen() {
             <Text numberOfLines={1} style={{ marginTop: 3, color: "#fff", fontSize: 12, fontWeight: "900", letterSpacing: 1.9, textTransform: "uppercase" }}>{starTitle(st.stars)}</Text>
             {st.gate ? <Text numberOfLines={1} style={{ marginTop: 2, color: "#fff", fontSize: 11, fontWeight: "900" }}>🔒 {st.gate.need}</Text> : null}
           </View>
-          <SquareBtn icon="🧳" label="Locker" onPress={() => nav.go("locker")} />
+          <SquareBtn icon="🎒" label="Locker" onPress={() => nav.go("locker")} />
           <SquareBtn icon="★" label="Pts" on={points} onPress={() => setPoints((v) => !v)} />
         </View>
         <View style={{ height: 1, marginHorizontal: 0, backgroundImage: "linear-gradient(90deg, rgba(253,224,71,0), rgba(253,224,71,0.85), rgba(253,224,71,0))" } as ViewStyle} />

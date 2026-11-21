@@ -97,7 +97,8 @@ function ItemArt({ item, w, wear, tryOn = true, who }: { item: StoreItem; w: num
   if (item.kind === "accessory") {
     const all = [...(wear ?? []).filter((x) => x.slot !== item.slot), item];
     const src = renderFor(item);
-    if (!src) { const h = Math.round(w * 1.05); return box(h, <StoreFigure wear={all} width={w} height={h} signature={who} />); }
+    // the drawn figure stays under 160×160 (one small drawing each: a page of them is light on any phone)
+    if (!src) { const h = Math.round(w * 1.05); const big = w > 200; return box(h, <StoreFigure wear={all} width={big ? w : Math.min(w, 150)} height={big ? h : Math.min(h, 165)} signature={who} />); }
     const h = Math.round(w * 0.75);
     return box(h, <>
       <Image source={src} resizeMode="contain" fadeDuration={0} style={{ width: w, height: h }} />
@@ -216,7 +217,7 @@ export function StoreScreen() {
         <Press onPress={() => setTab("coins")} style={pill}><CoinIcon size={16} /><Text style={pillText}>{n(state.coins)} +</Text></Press>
       </View>
       {/* ── Tabs: one row that scrolls sideways ── */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ flexDirection: "row", gap: 4, paddingHorizontal: 16, paddingBottom: 8 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, flexShrink: 0 }} contentContainerStyle={{ flexDirection: "row", gap: 4, paddingHorizontal: 16, paddingBottom: 8 }}>
         {TABS.map(([id, label]) => {
           const on = tab === id;
           return (
