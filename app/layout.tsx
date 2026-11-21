@@ -7,6 +7,9 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+// The game kit's styles (components/star/ui/kit.css), loaded once for the whole site. Imported here, not in
+// motion.tsx, so the star tests (plain node) can load motion.tsx without a CSS loader.
+import "@/components/star/ui/kit.css";
 import GlobalNav from "@/components/GlobalNav";
 import SiteFooter from "@/components/SiteFooter";
 import { PostHogProvider } from "@/components/PostHogProvider";
