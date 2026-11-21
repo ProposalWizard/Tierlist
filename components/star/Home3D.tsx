@@ -38,6 +38,7 @@ import { people3dLook, fallBackToOldPeople } from "@/lib/star/look3d";
 import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import { Stick, pill, round } from "./Shop3D";
+import { sleepNight } from "@/lib/star/home3d/sleep";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -71,6 +72,8 @@ export interface Home3DProps {
   houseCam?: "A" | "B" | "C" | "D";
   /** Test page: force the living house on or off (things you use, team-mates round; homes.ts LIVING_TIERS). Absent: the game's own choice per tier. */
   living?: boolean;
+  /** A night in your bed (lib/star/home3d/sleep.ts): the career does `sleepNight` (the week's Rest, once per gap between matches). Absent: the night passes in the house only. */
+  onSleep?: () => void;
 }
 
 type Tab = "casual" | "kit" | "boots";
@@ -109,7 +112,12 @@ function livingFor(career: CareerState) {
   return { mates, club: career.player.club };
 }
 
-export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living }: Home3DProps) {
+export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep }: Home3DProps) {
+  // the night's words come from the career as it is when you fall asleep (sleep.ts is pure: the page's setCareer gets the same result)
+  const careerRef = useRef(career);
+  careerRef.current = career;
+  const sleepRef = useRef(onSleep);
+  sleepRef.current = onSleep;
   const readyRef = useRef(onReady);
   readyRef.current = onReady;
   const holder = useRef<HTMLDivElement>(null);
@@ -183,7 +191,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           edit: approvedRef.current,
           ...(pov ? { pov: true } : {}),
           ...(houseCam && houseCam !== "D" ? { houseCam } : {}),
-          ...(alive ? { living: livingFor(career) } : {}),
+          ...(alive ? { living: { ...livingFor(career), onSleep: () => { const r = sleepNight(careerRef.current); if (r.rested) sleepRef.current?.(); return sleepRef.current ? r.text : "A good night."; } } } : {}),
         });
         let c: HomeController;
         try {

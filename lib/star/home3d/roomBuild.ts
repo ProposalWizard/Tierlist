@@ -166,7 +166,7 @@ function makeKit(env: RoomEnv, root: any, o: { oneGlowDraw?: boolean } = {}) {
       glowParts.get(t)!.push(g);
       return null;
     }
-    const me = plane(w, h, new THREE.MeshBasicMaterial({ map: t, color: new THREE.Color(colour).multiplyScalar(k), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }), x, y, z, rx, ry);
+    const me = plane(w, h, new THREE.MeshBasicMaterial({ map: t, color: new THREE.Color(colour).multiplyScalar(k), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, userData: t === patchT ? { daylight: "patch" } : {} }), x, y, z, rx, ry);
     me.renderOrder = 2;
     return me;
   };
@@ -181,7 +181,7 @@ function makeKit(env: RoomEnv, root: any, o: { oneGlowDraw?: boolean } = {}) {
   const flushGlows = (merge: (g: any[]) => any): any[] => {
     const out: any[] = [];
     glowParts.forEach((parts, t) => {
-      const me = new THREE.Mesh(merge(parts), new THREE.MeshBasicMaterial({ map: t, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+      const me = new THREE.Mesh(merge(parts), new THREE.MeshBasicMaterial({ map: t, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, userData: t === patchT ? { daylight: "patch" } : {} }));
       for (const p of parts) p.dispose();
       me.renderOrder = 2;
       root.add(me);
@@ -697,7 +697,7 @@ function buildMain(env: RoomEnv, inp: RoomInput): BuiltRoom {
   for (const h of backHoles) winFrame("x", -D2, 1, h);
   winFrame("z", W2, -1, eastHoles[0]);
   // the back windows' view: one painted plane outside
-  const viewM = new THREE.MeshBasicMaterial({ map: tex(viewCanvas(R.view)), fog: false });
+  const viewM = new THREE.MeshBasicMaterial({ map: tex(viewCanvas(R.view)), fog: false, userData: { daylight: "view" } });
   plane(R.w + 7, 7.5, viewM, 0, 2.1, -D2 - 3.4);
   // the drive: ground, the backdrop across it, the cars (loaded below)
   driveSet(k, R, W2);
@@ -706,7 +706,7 @@ function buildMain(env: RoomEnv, inp: RoomInput): BuiltRoom {
   const toNook = plan.doors[0]?.to === "nook";
   const doorView = toNook
     ? new THREE.MeshBasicMaterial({ map: tex(wallCanvas(R.wall)), color: new THREE.Color("#e6d8c2"), fog: false })
-    : new THREE.MeshBasicMaterial({ map: tex(viewCanvas("garden")), fog: false });
+    : new THREE.MeshBasicMaterial({ map: tex(viewCanvas("garden")), fog: false, userData: { daylight: "view" } });
   plane(toNook ? 2.6 : 5, toNook ? 2.6 : 4, doorView, 0, toNook ? 1.3 : 1.6, D2 + (toNook ? 1.6 : 2.2), 0, Math.PI);
   winFrame("x", D2, -1, { c: 0, w: DOOR.half * 2, y0: 0.0001, y1: DOOR.h }, false);
   const signM = new THREE.MeshBasicMaterial({ map: tex(signCanvas(toNook ? "HALLWAY" : env.doorOpen ? "GARDEN" : "HOME")), transparent: true });
@@ -1006,7 +1006,7 @@ export function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, win
     const L = wallLine(w.wall, W2, D2);
     winFrame(L.along, L.at, L.sgn, { c: w.c, w: w.w, y0: w.y0, y1: w.y1 });
     if (!w.view || w.view === "drive") continue;
-    if (!views.has(w.view)) views.set(w.view, new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas(w.view)), fog: false }));
+    if (!views.has(w.view)) views.set(w.view, new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas(w.view)), fog: false, userData: { daylight: "view" } }));
     const vm = views.get(w.view);
     const dist = 3.4;
     if (L.along === "x") k.plane(Math.max(6, w.w * 3), 7.5, vm, w.c, 2.1, L.at - L.sgn * dist, 0, L.sgn > 0 ? 0 : Math.PI);
@@ -1031,7 +1031,7 @@ export function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, win
     const ry = d.wall === "n" ? 0 : d.wall === "s" ? Math.PI : d.wall === "w" ? Math.PI / 2 : -Math.PI / 2;
     const out = (dist: number): [number, number] => [d.x - d.nx * dist, d.z - d.nz * dist];
     if (d.to === "garden") {
-      gardenM ??= new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("garden")), fog: false });
+      gardenM ??= new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("garden")), fog: false, userData: { daylight: "view" } });
       const [gx, gz] = out(2.2);
       k.plane(5, 4, gardenM, gx, 1.6, gz, 0, ry);
       k.glow(k.patchT, "#fff0d6", 0.16, L.along === "x" ? d.half * 2 : 1.4, L.along === "x" ? 1.4 : d.half * 2, d.x + d.nx * 0.75, 0.007, d.z + d.nz * 0.75, -Math.PI / 2, 0);
@@ -1261,7 +1261,7 @@ export function skyDome(k: Kit, top: string, low: string) {
     cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b;
   }
   g.setAttribute("color", new THREE.BufferAttribute(cols, 3));
-  const me = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false, toneMapped: false }));
+  const me = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false, toneMapped: false, userData: { daylight: "view" } }));
   me.renderOrder = -1;
   k.add(me);
   return me;
@@ -1421,29 +1421,53 @@ function buildGames(c: Ctx) {
   const { THREE } = k;
   const shell = shellOf(k, env, c.R, c.plan, [{ wall: "n", c: W2 * 0.4, w: 2.2, y0: 0.7, y1: Math.min(H - 0.35, 2.4), view: c.R.view }]);
   const P = painter(k, env), S = painter(k, env);
-  // the pool: still water in a stone surround along the west wall
+  // the west half (Harry, 20 Nov 2026: a games room, not an indoor pool; the pool is the terrace's):
+  // two arcade cabinets on the west wall, a dartboard and its throw line, a table football
   const px0 = -W2 + 0.75, px1 = px0 + Math.min(3.2, W2 - 1.2), pz0 = -D2 + 0.8, pz1 = D2 - 1.7;
-  const pw = px1 - px0, pd = pz1 - pz0, pcx = (px0 + px1) / 2, pcz = (pz0 + pz1) / 2;
-  const stone = "#e7dfcf";
-  P.box(pw + 0.6, 0.1, 0.3, stone, pcx, 0.05, pz0 - 0.15);
-  P.box(pw + 0.6, 0.1, 0.3, stone, pcx, 0.05, pz1 + 0.15);
-  P.box(0.3, 0.1, pd, stone, px0 - 0.15, 0.05, pcz);
-  P.box(0.3, 0.1, pd, stone, px1 + 0.15, 0.05, pcz);
-  k.plane(pw, pd, waterMat(THREE), pcx, 0.03, pcz, -Math.PI / 2).receiveShadow = true;
-  k.glow(k.glowT, "#8fe8ff", 0.35, pw * 0.8, pd * 0.6, pcx, 0.04, pcz, -Math.PI / 2, 0); // its underwater lights
-  k.glow(k.glowT, "#7fd6f0", 0.12, pw * 1.2, pd * 0.9, pcx, H - 0.02, pcz, Math.PI / 2, 0); // their shimmer on the ceiling
-  for (const sx of [-0.25, 0.25]) { S.cyl(0.02, 0.02, 0.9, "#d9dde2", pcx + sx, 0.45, pz0 + 0.05); S.ring(0.12, 0.02, "#d9dde2", pcx + sx, 0.9, pz0 + 0.17, 0, Math.PI / 2); }
-  solids.push([px0 - 0.3, px1 + 0.3, pz0 - 0.3, pz1 + 0.3]);
-  // two loungers at the pool's south end
-  const loungers = [px0 + 0.6, px0 + 1.8].filter((lx) => lx < px1);
-  for (const lx of loungers) {
-    P.at(lx, pz1 + 0.95, 0);
-    P.soft(0.62, 0.1, 1.5, 0.04, "#f2ede4", 0, 0.32, 0);
-    P.soft(0.62, 0.1, 0.6, 0.04, "#f2ede4", 0, 0.5, -0.78, -0.7);
-    for (const sx of [-0.27, 0.27]) for (const sz of [-0.6, 0.6]) P.box(0.04, 0.27, 0.04, "#4a3a2c", sx, 0.135, sz);
-    P.at();
+  const pcx = (px0 + px1) / 2, pcz = (pz0 + pz1) / 2;
+  const scr = document.createElement("canvas");
+  scr.width = 64; scr.height = 80;
+  const sx2 = scr.getContext("2d");
+  if (sx2) {
+    sx2.fillStyle = "#0a0f2a"; sx2.fillRect(0, 0, 64, 80);
+    for (let i = 0; i < 14; i++) { sx2.fillStyle = ["#ffe14a", "#ff4fa0", "#4ad8ff", "#7dff6a"][i % 4]; sx2.fillRect((i * 23) % 56 + 3, (i * 37) % 60 + 14, 4, 4); }
+    sx2.fillStyle = "#ffe14a"; sx2.fillRect(24, 64, 16, 6);
+    sx2.fillStyle = "#ff4fa0"; sx2.font = "bold 10px monospace"; sx2.fillText("1UP 4200", 4, 10);
   }
-  if (loungers.length) solids.push([px0 + 0.2, loungers[loungers.length - 1] + 0.4, pz1 + 0.2, pz1 + 1.75]);
+  const scrT = k.tex(scr); scrT.magFilter = THREE.NearestFilter;
+  const scrM = new THREE.MeshBasicMaterial({ map: scrT, toneMapped: false });
+  const arcadeZ = [-D2 + 1.05, -D2 + 2.0].filter((z) => z < pz1 - 1.2);
+  arcadeZ.forEach((az, i) => {
+    const body = i ? "#2a1c5e" : "#5e1c2a", x0 = -W2 + 0.38;
+    P.box(0.62, 1.78, 0.72, body, x0, 0.89, az);
+    P.box(0.42, 0.12, 0.66, "#141414", x0 + 0.34, 1.02, az, 0, 0, -0.35); // the control panel
+    P.ball(0.03, "#e23a3a", x0 + 0.38, 1.1, az - 0.12, 8);
+    for (const bz of [0.05, 0.13, 0.21]) P.cyl(0.018, 0.018, 0.02, ["#ffd23a", "#3ab4ff", "#3ad26a"][Math.round(bz * 10) % 3], x0 + 0.42, 1.09, az + bz - 0.05, 0, 0, -0.35, 8);
+    P.box(0.05, 0.62, 0.66, "#0c0c0c", x0 + 0.31, 1.42, az); // the screen's bezel
+    const sm = k.plane(0.5, 0.56, scrM, x0 + 0.34, 1.42, az, 0, Math.PI / 2);
+    sm.rotation.order = "YXZ"; sm.rotation.x = -0.12;
+    k.box(0.04, 0.16, 0.6, k.glowM(i ? "#4ad8ff" : "#ff4fa0", 2.0), x0 + 0.31, 1.86, az); // the marquee
+    k.glow(k.glowT, i ? "#4ad8ff" : "#ff4fa0", 0.16, 1.0, 1.2, x0 + 0.75, 0.01, az, -Math.PI / 2, 0);
+    solids.push([-W2, x0 + 0.5, az - 0.4, az + 0.4]);
+  });
+  // the dartboard on the west wall, its throw line on the floor 2.37 m out
+  const dz = Math.min(pz1, D2 - 1.4), dx = -W2 + 0.03;
+  S.box(0.03, 0.75, 0.75, "#1b1410", dx + 0.015, 1.73, dz);
+  for (const [r, col, off] of [[0.226, "#141414", 0.035], [0.17, "#c3302c", 0.04], [0.16, "#efe6cf", 0.045], [0.107, "#2a7a3a", 0.05], [0.097, "#efe6cf", 0.055], [0.032, "#2a7a3a", 0.06], [0.013, "#c3302c", 0.065]] as [number, string, number][])
+    S.cyl(r, r, 0.01, col, dx + off, 1.73, dz, 0, 0, Math.PI / 2, 20);
+  for (let i = 0; i < 3; i++) S.cyl(0.003, 0.003, 0.09, "#d8d8d8", dx + 0.11, 1.75 - i * 0.03, dz - 0.04 + i * 0.05, 0, 0, Math.PI / 2, 4);
+  S.box(0.04, 0.01, 0.6, "#d8c9a6", -W2 + 2.37, 0.005, dz);
+  // a table football in the middle of the west half
+  const fx = Math.min(px1 - 0.9, -W2 + 2.2), fz = Math.max(-D2 + 1.6, Math.min(dz - 1.4, pcz - 0.3));
+  P.box(1.4, 0.24, 0.76, "#1f3f8a", fx, 0.82, fz);
+  P.box(1.32, 0.02, 0.68, "#2f8a3a", fx, 0.86, fz);
+  for (const sx of [-0.62, 0.62]) for (const sz of [-0.3, 0.3]) P.box(0.07, 0.72, 0.07, "#14264f", fx + sx, 0.36, fz + sz);
+  for (let i = 0; i < 6; i++) {
+    const rx = fx - 0.5 + i * 0.2;
+    P.cyl(0.008, 0.008, 1.0, "#cfd3d8", rx, 0.92, fz, Math.PI / 2, 0, 0, 6);
+    for (const mz of [-0.18, 0, 0.18]) P.box(0.03, 0.09, 0.03, i % 2 ? "#d42a2a" : "#f2f2f2", rx, 0.9, fz + mz);
+  }
+  solids.push([fx - 0.78, fx + 0.78, fz - 0.45, fz + 0.45]);
   // the pool table (the hero): legs, body, cloth, cushions, rails, pockets, the balls racked, a cue
   const tx = Math.min(W2 - 1.8, Math.max(px1 + 1.6, W2 * 0.4)), tz = -0.4;
   const cw = 1.27, cl = 2.54, wood = c.wood, cloth = "#1f6b3a";
@@ -1673,7 +1697,7 @@ function buildGardenTerrace(c: Ctx) {
   k.plane(1.6, winY1 - 0.7, new THREE.MeshBasicMaterial({ color: new THREE.Color("#f0c58a").multiplyScalar(0.9), toneMapped: false }), winC, (0.7 + winY1) / 2, -D2 - 0.3);
   // the lawn below the terrace and the grounds beyond (one painted picture)
   k.plane(90, 90, k.mat("#6f8f4a", { roughness: 1 }), 0, below, 0, -Math.PI / 2).receiveShadow = true;
-  const groundsM = new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("grounds")), fog: false });
+  const groundsM = new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("grounds")), fog: false, userData: { daylight: "view" } });
   const far = 26;
   k.plane(60, 16, groundsM, 0, below + 5.5, D2 + far, 0, Math.PI);
   k.plane(60, 16, groundsM, W2 + far, below + 5.5, 0, 0, -Math.PI / 2);
@@ -1786,7 +1810,7 @@ function buildPenthouseTerrace(c: Ctx) {
   const P = painter(k, env);
   skyDome(k, "#5f8fd0", "#f2d0a8");
   // the city all round, its towers far below
-  const cityM = new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("skyline")), fog: false });
+  const cityM = new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("skyline")), fog: false, userData: { daylight: "view" } });
   // (the picture's skyline sits 80% down it: placed so the towers rise from just under the glass rail)
   const far = 9, cy = 5.6;
   k.plane(44, 22, cityM, 0, cy, -D2 - far, 0, 0);

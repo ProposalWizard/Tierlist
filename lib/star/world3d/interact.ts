@@ -50,7 +50,11 @@ export function objectCard(o: SmartObject, opts: { using?: boolean; taken?: bool
   }
   return {
     key: `obj:${o.id}`, title: o.label, lines: opts.taken ? ["Someone is using it."] : (o.prompt.lines ?? []),
-    actions: opts.taken ? [{ id: "close", label: "OK" }] : [{ id: "use", label: o.prompt.verb, primary: true }, { id: "close", label: "Not now" }],
+    // `more`: other things to do with it, first (the bed: "Sleep till morning", then "Sit on the bed")
+    actions: opts.taken ? [{ id: "close", label: "OK" }] : [
+      ...(o.prompt.more ?? []).map((m, i) => ({ id: m.id, label: m.label, primary: i === 0 })),
+      { id: "use", label: o.prompt.verb, primary: !o.prompt.more?.length }, { id: "close", label: "Not now" },
+    ],
   };
 }
 

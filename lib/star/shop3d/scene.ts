@@ -25,6 +25,7 @@
  * animated with clips from his Universal Animation Library (same skeleton) —
  * see public/star/shop3d/LICENSE.txt and tools/shop3d/build_assets.py.
  */
+import { plantMesh } from "../home3d/plants";
 import { installAssetVersions } from "../three3d/assetUrl";
 import { toonYou } from "../style3d/toon/bodies";
 import { turnTo } from "../three3d/animBlend";
@@ -459,21 +460,22 @@ async function buildShop(
   rugEdge.rotation.x = -Math.PI / 2;
   rugEdge.position.set(-1.0, 0.004, 3.6);
   scene.add(rugEdge);
-  // plants in brass pots
-  const plant = (x: number, z: number) => {
+  // plants in brass pots: the house's real-leaf plants (home3d/plants.ts), not a faceted ball
+  const plantM = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.72, envMapIntensity: 0.6 });
+  const plant = (x: number, z: number, kind: "palm" | "fiddle" | "monstera") => {
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.24, 0.6, 20), mat("#b58a45", { roughness: 0.35, metalness: 0.7 }));
     pot.position.set(x, 0.3, z);
     pot.castShadow = true;
     scene.add(pot);
-    const leaves = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), mat("#2d5a33", { flatShading: true, roughness: 0.8 }));
-    leaves.position.set(x, 1.2, z);
-    leaves.scale.set(1, 1.45, 1);
-    leaves.castShadow = true;
-    scene.add(leaves);
+    // the plant's own pot hidden inside the brass one: only its soil and leaves show over the rim
+    const p = plantMesh(THREE, kind, Math.abs(x * 31 + z * 17), { h: 1.9, pot: "#3b2a1e", material: plantM, scale: 1.25 });
+    p.position.set(x, 0.24, z);
+    p.rotation.y = (x + z) % 6.28;
+    scene.add(p);
     blob(1.1, 1.1, x, z);
   };
-  plant(-5.5, 6.1);
-  plant(5.5, -7.1);
+  plant(-5.5, 6.1, "palm");
+  plant(5.5, -7.1, "fiddle");
   // Look H: parquet, panelling, coffers, practical lights, lit wall units (./hRoom.ts); Old: as before
   const hRoom = hEnh ? await dressShopH(THREE, scene, renderer, ROOM, { floor, wallM, panelM, tier }).catch((e) => { console.error("shop look H room failed", e); return null; }) : null;
 

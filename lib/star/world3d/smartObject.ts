@@ -65,7 +65,7 @@ export interface SmartObject {
   loop: ClipStep[];
   exit?: ClipStep;
   /** The card: its main button and a line or two. */
-  prompt: { verb: string; lines?: string[] };
+  prompt: { verb: string; lines?: string[]; more?: { id: string; label: string }[] };
   effect?: SmartEffect;
   /** How long a person stays when the routine does not say (s, min..max). */
   stay: [number, number];

@@ -19,6 +19,7 @@
  * ./budget.ts (how many people animate). Camera D (three3d/followCam.ts).
  * One loop: renderer.setAnimationLoop. ?film: window.__frameStep (frameStep.ts).
  */
+import { plantMesh } from "../home3d/plants";
 import { installAssetVersions } from "../three3d/assetUrl";
 import { TIER_PROFILES, quality3dTier, shadowSizeFor, deviceKind, currentDeviceInfo, type Quality3d } from "../three3d/quality";
 import { acquireRenderer, rememberGpu, loadGltfCached } from "../three3d/perf";
@@ -354,17 +355,17 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     box(0.5, 0.04, 0.9, woodM, BX + 1.25, 0.42, BZ); for (const sz of [-1, 1]) box(0.4, 0.4, 0.04, woodM, BX + 1.25, 0.2, BZ + sz * 0.4);
     solids.push([BX + 0.95, BX + 1.55, BZ - 0.5, BZ + 0.5]);
     // planters and clipped topiary, a few trees outside the hedge
-    const leafM = mat("#3d6a2a", { roughness: 0.9 });
+    const plantM = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.75 });
     const potM = mat("#b5683f", { roughness: 0.85 });
     for (const [x, z] of [[4.8, -6.4], [-4.0, -7.0], [6.4, 4.6], [3.0, 1.2]]) {
       box(0.6, 0.5, 0.6, potM, x, 0.25, z);
-      const s = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 12), leafM); s.position.set(x, 0.85, z); s.castShadow = true; scene.add(s);
+      // real leaves (home3d/plants.ts), not a ball
+      const s = plantMesh(THREE, (["monstera", "palm", "fiddle", "monstera"] as const)[Math.abs(Math.round(x + z)) % 4], Math.abs(x * 31 + z * 17), { h: 1.4, pot: "#3b2a1e", material: plantM }); s.position.set(x, 0.38, z); scene.add(s);
       solids.push([x - 0.35, x + 0.35, z - 0.35, z + 0.35]);
     }
-    const trunkM = mat("#5a4030");
     for (const [x, z, r] of [[-11, -4, 2.2], [11, -2, 2.6], [-10.5, 6, 2], [10.5, 8, 2.3], [-3, -14, 2.8], [5, -14.5, 2.4]]) {
-      const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.25, 2.4, 8), trunkM); tr.position.set(x, 1.2, z); tr.castShadow = true; scene.add(tr);
-      const cr = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), leafM); cr.position.set(x, 2.4 + r * 0.8, z); cr.castShadow = true; scene.add(cr);
+      // a palm tree: the real-leaf palm, tree-sized, its own trunk (home3d/plants.ts), not a ball
+      const cr = plantMesh(THREE, "palm", Math.abs(x * 7 + z * 13), { h: 1.6, pot: null, material: plantM, scale: r * 1.6 }); cr.position.set(x, 0, z); scene.add(cr);
     }
     // the bench: four seats facing east (feet at the seat's front edge, hips 0.32 m back from it)
     const bench = seatObject({

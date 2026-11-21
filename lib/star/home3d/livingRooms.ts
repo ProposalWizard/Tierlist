@@ -47,6 +47,13 @@ const rnd = (seed: number) => () => { seed = (seed * 16807) % 2147483647; return
 /** The facing for a wall's inside: what a thing against it looks at. */
 const INTO: Record<Wall, number> = { n: 0, s: Math.PI, e: -Math.PI / 2, w: Math.PI / 2 };
 
+/** A bed: sit on it, or sleep till morning (the house's night; home3d/sleep.ts says what it does to the career). */
+function bedSleeps(b: SmartObject) {
+  b.prompt.more = [{ id: "sleep", label: "Sleep till morning" }];
+  b.prompt.lines = ["Get your head down, or just sit a minute."];
+  b.effect = { text: "Five minutes off your feet." };
+}
+
 /** The game's sofa against any side, its seats and (optionally) a TV watched from it. */
 function sofaSeats(c: Ctx, id: string, len: number, x: number, z: number, facing: number, o: { label?: string; fabric?: any } = {}): SmartObject {
   const f = fwdOf(facing);
@@ -299,7 +306,7 @@ export function buildStudio(c: Ctx, h: LivingHooks) {
   F.put("rugRound", bx - 1.3, bz + 0.3, 0, { s: 0.6, solid: false, tint: { carpet: "#c9b48e" } });
   artPiece(c, W2 - 0.03, 1.55, bz, -Math.PI / 2, 1.0, 0.7, 3);
   X.things.push(seatObject({ id: "bed", label: "Bed", at: [bx - 0.35, bz + 0.95 - 0.2], facing: 0, seats: 1, y: 0.54, front: 0.15, verb: "Sit on the bed", lines: ["Five minutes off your feet."], loop: [{ clip: "sit_down", hold: 1.55, secs: 6 }], stay: [8, 14] }));
-  X.things[X.things.length - 1].effect = { energy: 1, text: "Rested. Energy +1" };
+  bedSleeps(X.things[X.things.length - 1]);
   // the kitchenette along the south wall (west of the front door): the stocked fridge, sink, hob, a coffee machine
   const kz = D2 - 0.45;
   X.things.push(drinksFridge(c, "fridge", -W2 + 0.38, D2 - 0.36, Math.PI));
@@ -424,7 +431,7 @@ export function buildBedroom(c: Ctx, h: LivingHooks) {
   F.put("rugRectangle", bx, bz + 0.9, 0, { s: 0.9, solid: false, tint: { carpet: R.tier === "estate" ? "#c9b48e" : "#d9cbb4" } });
   F.put("loungeSofaOttoman", bx, bz + 1.45, 0, { s: 0.85, tint: { carpet: inp.kits.home.shirt } });
   X.things.push(seatObject({ id: "bed", label: "Bed", at: [bx + 0.96 - 0.2, bz + 0.25], facing: Math.PI / 2, seats: 1, y: 0.54, front: 0.15, verb: "Sit on the bed", lines: ["Five minutes off your feet."], stay: [8, 14] }));
-  X.things[X.things.length - 1].effect = { energy: 1, text: "Rested. Energy +1" };
+  bedSleeps(X.things[X.things.length - 1]);
   // a reading chair by the window, a plant, a dresser with your things
   F.put("loungeChair", W2 - 0.75, D2 - 1.1, -Math.PI * 0.75, { tint: { carpet: "#8a9a8a" } });
   standLamp(c, W2 - 0.35, D2 - 0.35, null);
@@ -504,7 +511,7 @@ export function buildPoolTerrace(c: Ctx, _h: LivingHooks) {
   const { THREE } = k;
   const shell = shellOf(k, env, R, plan, [], { ceiling: false, open: ["s", "e", "w"], parapet: { h: 1.0, from: 0, glass: true } });
   skyDome(k, "#5f9fd8", "#cfe2ef");
-  const seaM = new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas(R.view === "grounds" ? "grounds" : "sea")), fog: false });
+  const seaM = new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas(R.view === "grounds" ? "grounds" : "sea", { open: true })), fog: false, userData: { daylight: "view" } });
   for (const [x, z, ry] of [[0, D2 + 9, Math.PI], [W2 + 9, 0, -Math.PI / 2], [-W2 - 9, 0, Math.PI / 2]] as [number, number, number][]) k.plane(26, 12, seaM, x, 3.2, z, 0, ry);
   // the pool (water, its stone edge, steps, lights)
   const pw = Math.min(6.0, plan.w - 3.0), pd = Math.min(3.4, plan.d - 3.6), pcx = -0.4, pcz = 0.6;
@@ -707,9 +714,18 @@ export function livingFinish(c: Ctx, shell: { metalM: any; glassM: any }) {
       id: "pool", kind: "counter", label: "Pool table", front: [tx, tz + 1.27 + 0.62], face: [tx, tz], verb: "Line up a shot", lines: ["Black ball, top corner."],
       loop: [{ clip: "lean_table", or: ["idle"], secs: 3 }], effect: { mood: 1, text: "Cleared the table. Mood +1" }, stay: [5, 5], pickR: 1.0, pickH: 1.0,
     }));
-    // the loungers by the indoor pool
-    const lx0 = px0 + 0.6;
-    if (lx0 < px1) X.things.push(seatObject({ id: "lounger0", label: "Lounger", at: [lx0, pz1 + 0.95 + 0.05], facing: Math.PI, seats: 1, y: 0.42, front: 0.15, verb: "Lie back", lines: ["Feet up by the water."] }));
+    // the arcade cabinets and the darts (roomBuild buildGames' west half)
+    const az = -D2 + 1.05;
+    X.things.push(standObject({
+      id: "arcade", kind: "counter", label: "Arcade", front: [-W2 + 1.1, az], face: [-W2, az], verb: "Play a game", lines: ["Beat your own high score."],
+      loop: [{ clip: "idle", secs: 3 }], effect: { mood: 1, text: "New high score. Mood +1" }, stay: [6, 6], pickR: 0.55, pickH: 1.9,
+    }));
+    const dz = Math.min(D2 - 1.7, D2 - 1.4);
+    X.things.push(standObject({
+      id: "darts", kind: "counter", label: "Dartboard", front: [-W2 + 2.55, dz], face: [-W2, dz], verb: "Throw some darts", lines: ["Treble twenty, if you can."],
+      loop: [{ clip: "idle", secs: 3 }], effect: { mood: 1, text: "One hundred and eighty! Mood +1" }, stay: [5, 5], pickR: 0.6, pickH: 2.2,
+    }));
+    void px0; void pz1; void px1;
     X.guests.push({ obj: "pool" });
   } else if (id === "cinema") {
     // the recliners (roomBuild buildCinema): front row, either side of the aisle; the screen plays while you sit

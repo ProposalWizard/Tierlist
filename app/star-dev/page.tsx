@@ -77,6 +77,7 @@ import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/
 import { refreshXpConfig } from "@/lib/star/xpStore";
 import { DEFAULT_FORMATION, formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct, projectedEnergy, startNewWeek, trainingLeft, spendTrainingSession } from "@/lib/star/week";
+import { sleepNight } from "@/lib/star/home3d/sleep";
 import { acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { clearAfterWindow, requestOf } from "@/lib/star/transferRequest";
 import { windowInterest, withRecall, withAgreedWage, markWalkedAway } from "@/lib/star/transferInterest";
@@ -5139,6 +5140,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onBack={homeFromGarden ? toGarden : () => { setHomeFromGarden(false); handleBackToDashboard(); }}
         onDoor={toGarden}
         onOutfit={(choice) => setCareer((c) => (c ? withOutfit(c, choice) : c))}
+        onSleep={() => setCareer((c) => (c ? sleepNight(c).career : c))}
       />
     );
   }

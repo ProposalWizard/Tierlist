@@ -206,7 +206,9 @@ export interface HomeOptions {
   /** The 3D phone test page only: try walking camera A, B or C (HOUSE_CAMS). Absent = D, the game's camera (with its zoom). */
   houseCam?: HouseCam;
   /** A living house (homes.ts LIVING_TIERS, the world-kit test page): things you use, team-mates round. Absent = as before. */
-  living?: { mates: LifeMate[]; club?: string; chat?: (id: string) => { line: string; change?: string } | null; onEffect?: (thing: string, e: { mood?: number; energy?: number; text?: string }) => void };
+  living?: { mates: LifeMate[]; club?: string; chat?: (id: string) => { line: string; change?: string } | null; onEffect?: (thing: string, e: { mood?: number; energy?: number; text?: string }) => void;
+    /** "Sleep till morning" in your bed: called in the dark, once the night has passed; returns the card's words (home3d/sleep.ts). */
+    onSleep?: () => string };
 }
 
 export interface HomeController {
@@ -363,6 +365,55 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   // a living house: less flat fill, a warmer, stronger sun, so shapes read (the research demo's "real light" step)
   if (opts.living) { hemi.intensity = 0.7; hemi.groundColor.set("#4a3828"); sun.intensity = 2.1; sun.color.set("#ffd7a0"); scene.environmentIntensity = 0.45; renderer.toneMappingExposure = 0.92; }
 
+  // ── The house clock's light: as built (day), night, the next morning (sleeping in your bed) ──
+  // Only the two live lights, the sky reflections and the painted window views and sun patches change: 0 ms a frame when still.
+  type DayLight = { hemi: number; sun: number; env: number; hemiC: any; sunC: any; view: any; patch: number };
+  const DAY0 = { hemi: hemi.intensity, sun: sun.intensity, env: scene.environmentIntensity };
+  const LIGHTS: Record<"day" | "night" | "morning", DayLight> = {
+    day: { hemi: 1, sun: 1, env: 1, hemiC: hemi.color.clone(), sunC: sun.color.clone(), view: new THREE.Color("#ffffff"), patch: 1 },
+    night: { hemi: 0.4, sun: 0.12, env: 0.5, hemiC: new THREE.Color("#b4c2e6"), sunC: new THREE.Color("#8ea4d8"), view: new THREE.Color("#222b44"), patch: 0 },
+    morning: { hemi: 1.06, sun: 0.92, env: 1.04, hemiC: new THREE.Color("#f6f5f0"), sunC: new THREE.Color("#fff0da"), view: new THREE.Color("#ffffff"), patch: 0.75 },
+  };
+  let lightFrom: DayLight = LIGHTS.day, lightTo: DayLight = LIGHTS.day, lightK = 1;
+  /** Painted things that follow the clock (roomBuild tags them: window views, skies, sun patches). */
+  let dayMats: any[] = [];
+  const scratchC = new THREE.Color();
+  const applyDayLight = () => {
+    const k = lightK, A = lightFrom, B = lightTo, mix = (a: number, b: number) => a + (b - a) * k;
+    hemi.intensity = DAY0.hemi * mix(A.hemi, B.hemi);
+    sun.intensity = DAY0.sun * mix(A.sun, B.sun);
+    scene.environmentIntensity = DAY0.env * mix(A.env, B.env);
+    hemi.color.copy(A.hemiC).lerp(B.hemiC, k);
+    sun.color.copy(A.sunC).lerp(B.sunC, k);
+    scratchC.copy(A.view).lerp(B.view, k);
+    const patch = mix(A.patch, B.patch);
+    for (const m of dayMats) {
+      const base = m.userData.dayBase;
+      if (m.userData.daylight === "patch") m.color.copy(base).multiplyScalar(patch);
+      else m.color.copy(base).multiply(scratchC);
+    }
+  };
+  /** After a room is built: find its painted things and put them in the light of the hour. */
+  const collectDayMats = (g: any) => {
+    dayMats = [];
+    g.traverse((o: any) => {
+      const m = o.material;
+      if (!m || Array.isArray(m) || !m.userData?.daylight) return;
+      if (!m.userData.dayBase) m.userData.dayBase = m.color.clone();
+      if (!dayMats.includes(m)) dayMats.push(m);
+    });
+    applyDayLight();
+  };
+  /** The light to `to` (k 0..1 of the way from what it is now). */
+  const lightTowards = (to: DayLight) => {
+    // from where it is now (mid-change: frozen as it stands)
+    const now: DayLight = {
+      hemi: hemi.intensity / DAY0.hemi, sun: sun.intensity / DAY0.sun, env: scene.environmentIntensity / DAY0.env,
+      hemiC: hemi.color.clone(), sunC: sun.color.clone(), view: lightFrom.view.clone().lerp(lightTo.view, lightK), patch: lightFrom.patch + (lightTo.patch - lightFrom.patch) * lightK,
+    };
+    lightFrom = now; lightTo = to; lightK = 0;
+  };
+
   // ── Helpers (the shell's own: your number, your shadow blob) ──
   const tex = (cv: HTMLCanvasElement) => {
     const t = new THREE.CanvasTexture(cv);
@@ -402,6 +453,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   if (isLiving(rooms)) env.furniture = (await glb(FURNITURE).catch((e: unknown) => { console.error("home: furniture", e); return null; }))?.scene ?? undefined;
   let room: BuiltRoom = buildRoom(env, roomIn, rooms[0]);
   scene.add(room.group);
+  collectDayMats(room.group);
   /** The editor's key-light edit, put back after each room's sun is placed (set below). */
   let reLight = () => {};
   const fitSun = () => {
@@ -604,6 +656,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     room.dispose();
     room = buildRoom(env, roomIn, to);
     scene.add(room.group);
+    collectDayMats(room.group);
     fitSun();
     grid = null;
     framed = null; frame = 0; dwellZone = null; dwell = { timer: 0, open: false }; arrivedAt = null; spotWalk = null;
@@ -702,9 +755,42 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       setYaw: (y) => { yaw = y; yawTurn.vel = 0; me.person.root.rotation.y = y; },
       onCard: (c) => cb.onCard?.(c),
       chat: opts.living.chat, onEffect: opts.living.onEffect,
+      onSleep: () => { sleepSeq = { t: 0, text: "", morning: false }; },
     }).catch((e) => { console.error("home: living", e); return null; });
     life?.enterRoom(room);
   }
+
+  // ── Sleeping (lib/star/home3d/sleep.ts): the light goes to night, the screen to black, the clock to
+  // 07:00 next day (the career's night counted here), the morning light, the screen back, he gets up.
+  // Stepped on game time in the loop (the same on a phone and frame by frame when filming).
+  let sleepSeq: { t: number; text: string; morning: boolean } | null = null;
+  const caption = document.createElement("div");
+  Object.assign(caption.style, { position: "absolute", left: "0", right: "0", top: "44%", textAlign: "center", color: "#f7f1e8", font: "600 22px system-ui, sans-serif", letterSpacing: "0.02em", opacity: "0", transition: "opacity 0.4s ease" });
+  caption.innerHTML = 'Next morning<div style="font:500 15px system-ui,sans-serif;opacity:.7;margin-top:6px">07:00</div>';
+  fade.appendChild(caption);
+  const SLEEP = { dusk: 1.6, dark: 0.8, hold: 1.6, light: 1.0 };
+  const stepSleep = (dt: number) => {
+    const q = sleepSeq!;
+    if (q.t === 0) { lightTowards(LIGHTS.night); fade.style.transition = "none"; }
+    q.t += dt;
+    const t1 = SLEEP.dusk, t2 = t1 + SLEEP.dark, t3 = t2 + SLEEP.hold, t4 = t3 + SLEEP.light;
+    if (q.t < t1) { lightK = q.t / t1; applyDayLight(); }
+    else if (q.t < t2) { if (lightK < 1) { lightK = 1; applyDayLight(); } fade.style.opacity = String((q.t - t1) / SLEEP.dark); }
+    else if (!q.morning) {
+      q.morning = true;
+      fade.style.opacity = "1";
+      caption.style.opacity = "1";
+      lightFrom = LIGHTS.morning; lightTo = LIGHTS.morning; lightK = 1; applyDayLight();
+      q.text = opts.living?.onSleep?.() ?? "A good night.";
+      life?.newDay();
+    } else if (q.t < t3) { /* the dark holds */ }
+    else if (q.t < t4) { caption.style.opacity = "0"; fade.style.opacity = String(1 - (q.t - t3) / SLEEP.light); }
+    else {
+      fade.style.opacity = "0"; fade.style.transition = "opacity 0.2s ease";
+      sleepSeq = null;
+      life?.wake(q.text);
+    }
+  };
 
   const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
   // the shared renderer's loop is set and stopped only by its owner: a build thrown away while a
@@ -788,6 +874,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
 
     // a living house: while you use something, the world kit moves you (houseLife.ts)
     life?.update(dt);
+    if (sleepSeq) stepSleep(dt);
     const lifeHas = !!life?.controlsYou();
     // input: the stick, else the keys, else a tap-walk
     let ix = lifeHas ? 0 : stick.x, iy = lifeHas ? 0 : stick.y;
@@ -956,7 +1043,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     renderer.info.reset(); // counted over the whole frame (look H's passes, the mirror), for stats()
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
 
-    busy = !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || changing || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
+    busy = !!sleepSeq || !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || changing || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       if (busy && !capAlways) dyn.frame(performance.now()); else dyn.pause();
@@ -1017,6 +1104,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       return (hit?.object?.userData?.spot as HomeSpot | undefined) ?? null;
     },
     tap: (px, py) => {
+      if (sleepSeq) return null; // asleep: the screen is the night
       const s = ctrl.pick(px, py);
       if (s) { ctrl.walkToSpot(s); return { spot: s }; }
       ray.setFromCamera(ndc(px, py), camera);
@@ -1064,7 +1152,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       else if (held) { held = false; clock.getDelta(); renderer.setAnimationLoop(loop); }
     },
     renderOnce: () => tick(true),
-    act: (id) => life?.act(id),
+    act: (id) => { if (!sleepSeq) life?.act(id); },
     tapThing: (id) => life?.tapId(id) ?? false,
     lifeDebug: () => life?.debug() ?? {},
     dispose: () => {
