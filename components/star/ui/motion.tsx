@@ -21,7 +21,6 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { ffNow, ffSkipped, onFfSkip } from "./fastForward";
-import "./kit.css";
 
 /* The kit's classes and keyframes now live in ./kit.css, loaded once with the
    page (19 Nov 2026: a <style> tag added per screen made the browser re-check

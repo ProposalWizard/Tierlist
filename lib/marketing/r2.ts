@@ -53,13 +53,14 @@ export const mediaOf = (name: string) => MEDIA_TYPES[extOf(name)] ?? null;
 export interface R2Config { accountId: string; accessKeyId: string; secret: string; bucket: string }
 
 /** The four Vercel settings. Missing any = storage is not connected here (the page says so). */
-export function r2ConfigFrom(env: Record<string, string | undefined>): { config: R2Config | null; missing: string[] } {
-  const pick = (k: string) => env[k]?.trim() || "";
-  const v = { R2_ACCOUNT_ID: pick("R2_ACCOUNT_ID"), R2_ACCESS_KEY_ID: pick("R2_ACCESS_KEY_ID"), R2_SECRET_ACCESS_KEY: pick("R2_SECRET_ACCESS_KEY"), R2_BUCKET: pick("R2_BUCKET") };
-  const missing = Object.entries(v).filter(([, x]) => !x).map(([k]) => k);
+/** prefix "R2_" = the team's Marketing bucket; "PUBLISH_R2_" = Mikey's own bucket for Publish (lib/publish/storage.ts). */
+export function r2ConfigFrom(env: Record<string, string | undefined>, prefix = "R2_"): { config: R2Config | null; missing: string[] } {
+  const pick = (k: string) => env[prefix + k]?.trim() || "";
+  const v = { ACCOUNT_ID: pick("ACCOUNT_ID"), ACCESS_KEY_ID: pick("ACCESS_KEY_ID"), SECRET_ACCESS_KEY: pick("SECRET_ACCESS_KEY"), BUCKET: pick("BUCKET") };
+  const missing = Object.entries(v).filter(([, x]) => !x).map(([k]) => prefix + k);
   if (missing.length) return { config: null, missing };
-  if (!/^[a-f0-9]{32}$/i.test(v.R2_ACCOUNT_ID) || !/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(v.R2_BUCKET)) return { config: null, missing: ["R2_ACCOUNT_ID or R2_BUCKET looks wrong"] };
-  return { config: { accountId: v.R2_ACCOUNT_ID, accessKeyId: v.R2_ACCESS_KEY_ID, secret: v.R2_SECRET_ACCESS_KEY, bucket: v.R2_BUCKET }, missing: [] };
+  if (!/^[a-f0-9]{32}$/i.test(v.ACCOUNT_ID) || !/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(v.BUCKET)) return { config: null, missing: [`${prefix}ACCOUNT_ID or ${prefix}BUCKET looks wrong`] };
+  return { config: { accountId: v.ACCOUNT_ID, accessKeyId: v.ACCESS_KEY_ID, secret: v.SECRET_ACCESS_KEY, bucket: v.BUCKET }, missing: [] };
 }
 
 /* ── Keys ────────────────────────────────────────────────────────────── */

@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export async function DELETE(req: Request) {
   const who = await whoIs(req, ["admin"]);
-  if (!who) return NextResponse.json({ error: "Admins only." }, { status: 403 });
+  if (!who) return NextResponse.json({ error: "Only the Publish owner can use this (PUBLISH_OWNER_EMAIL), or any admin when no owner is set." }, { status: 403 });
   const p = new URL(req.url).searchParams.get("platform");
   if (!isPlatform(p)) return NextResponse.json({ error: "Unknown platform." }, { status: 400 });
   try { await removeAccount(p); return NextResponse.json({ ok: true }); }

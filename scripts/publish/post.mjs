@@ -18,7 +18,9 @@ const args = process.argv.slice(2);
 const flag = (n) => { const i = args.indexOf(`--${n}`); return i >= 0 ? args[i + 1] : undefined; };
 const has = (n) => args.includes(`--${n}`);
 const site = (flag("site") || process.env.PUBLISH_SITE || "https://knowitball.co.uk").replace(/\/$/, "");
-const headers = { "Content-Type": "application/json", "x-publish-agent": process.env.PUBLISH_AGENT_TOKEN || "set-by-proxy" };
+const key = process.env.PUBLISH_AGENT_TOKEN;
+// Locally: the key from the environment. In a cloud chat: the network proxy puts the saved key into Authorization.
+const headers = { "Content-Type": "application/json", ...(key ? { "x-publish-agent": key } : { Authorization: "Bearer set-by-proxy" }) };
 
 async function call(path, init = {}) {
   const r = await fetch(site + path, { ...init, headers: { ...headers, ...(init.headers || {}) } });

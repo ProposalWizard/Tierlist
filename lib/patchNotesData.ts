@@ -26,6 +26,253 @@ import type { PatchNote } from "./patchNotes";
 
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
+    {
+      "version": "0.141",
+      "title": "Harry's patch notes: Sleep, living houses, cloth clothes",
+      "author": "Harry",
+      "publishedAt": "2026-11-21T03:45:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/ABWmdwvNY8k9AH9aKdKpV6",
+      "summary": "Sleeping in your house now passes the night and counts as the week's Rest (energy 62 → 72, once between matches). All six houses are lived in, with team-mates in normal clothes. Clothes are real cloth, people walk and sit properly, and kick off is a little faster. Cut scenes, 60 follow-through stories and the kit man drill stay on test pages: they are not in a real career.",
+      "stats": [
+        {
+          "value": "+10",
+          "label": "energy from one night's sleep"
+        },
+        {
+          "value": "6",
+          "label": "houses lived in"
+        },
+        {
+          "value": "9.3 cm",
+          "label": "walking gap (was 0.5, real 8.0)"
+        },
+        {
+          "value": "60",
+          "label": "stories, test page only"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Sleep in your bed: the night passes and you get energy back",
+              "detail": "In a career: Phone → Your house (or Home → Garden → the house door) → bed → \"Sleep till morning\". Energy on Home before and after."
+            },
+            {
+              "title": "Sleep a second time before the next match: no more energy",
+              "detail": "Same bed again, before you play."
+            },
+            {
+              "title": "Each room opens from a high corner",
+              "detail": "Phone → Your house → walk room to room."
+            },
+            {
+              "title": "Team-mates wear normal clothes, never a kit; you wear your home set",
+              "detail": "Phone → Your house; Home → Garden (the bench)."
+            },
+            {
+              "title": "Each person walks, stands and blinks in his own way",
+              "detail": "Home → Garden and Your house."
+            },
+            {
+              "title": "Every bed works, the flat's too",
+              "detail": "Your house → bedroom."
+            },
+            {
+              "title": "Plants have real leaves",
+              "detail": "Your house → kitchen; the 3D shop's brass pots."
+            },
+            {
+              "title": "Villa: games room and a bath you can use",
+              "detail": "Only if your career owns the villa."
+            },
+            {
+              "title": "Kick off starts a little faster",
+              "detail": "Team sheets → KICK OFF."
+            },
+            {
+              "title": "Do Stats, Your house and the Garden open fast enough?",
+              "detail": "Home → Stats; Phone → Your house; Home → Garden."
+            },
+            {
+              "title": "Cut scenes with cloth clothes (test page)",
+              "detail": "knowitball.co.uk/star-scene-editor-dev?place=director&scene=press (and scene=walkout). Signed in as the team."
+            },
+            {
+              "title": "The kit man drill, six rounds in the dark (test page)",
+              "detail": "knowitball.co.uk/star-life-dev → Kit man story → ▶ Start, then stay out with Den on Thursday."
+            },
+            {
+              "title": "The 60 follow-through stories (test page)",
+              "detail": "knowitball.co.uk/star-life-dev → ▶ Play a week or +10 weeks."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Sleeping in your house passes time",
+              "detail": "Problem: the bed did nothing. Why: the career has no clock between matches, only the week. Fix: one night = the week's Rest, once between two matches; never more than Rest, never moves a fixture.",
+              "bars": [
+                {
+                  "label": "Energy after a night",
+                  "was": 62,
+                  "now": 72,
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "Clothes are cloth, not paint",
+              "detail": "Kits and clothes are a real layer of cloth. Cut scenes dress by role; houses and the garden too (approved 21 Nov). The match keeps the old kits until measured on a phone."
+            },
+            {
+              "title": "60 stories where every choice comes back",
+              "detail": "40 small, 15 medium, 5 big. Test page only: off in the real career.",
+              "pill": {
+                "text": "test page only",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "All six houses are lived in",
+              "detail": "Rooms, things to use, team-mates round; arrival shots from a high corner; every bed works; villa games room and bath; real-leaf plants; morning sun."
+            },
+            {
+              "title": "The kit man drill: six rounds in the dark",
+              "detail": "Call it, the crossbar, old tricks, Den in goal, lights out, double or nowt. A typical score is 6 of 10.",
+              "pill": {
+                "text": "test page only",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Cut scenes: better, not ready",
+              "detail": "Press conference and walk-out with cloth clothes, own walks and living faces. They stay out of the career until Harry says yes.",
+              "pill": {
+                "text": "test page only",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Feet land where a real walker's do",
+              "detail": "Hips were built too narrow (9.7 to 11.4 cm against the animations' 19.7 cm).",
+              "bars": [
+                {
+                  "label": "Walking gap",
+                  "was": 0.5,
+                  "now": 9.3,
+                  "target": 8,
+                  "state": "good",
+                  "unit": "cm"
+                }
+              ]
+            },
+            {
+              "title": "Sitting, clean faces, the ball, own walk",
+              "detail": "Thighs level and feet flat; old painted faces removed on all 12 heads; the ball 0.38 m ahead at his toe; each person his own walk and blinks; ten real free-library animations fitted."
+            },
+            {
+              "title": "The mentor's neck is clean",
+              "detail": "His face is still pale.",
+              "pill": {
+                "text": "half done",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Kick off is a little faster",
+              "detail": "0.28 → 0.23 s on the build machine. Stats, house and garden: no real change measured there.",
+              "bars": [
+                {
+                  "label": "Kick off",
+                  "was": 0.28,
+                  "now": 0.23,
+                  "state": "good",
+                  "unit": "s"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Cut scenes are not ready to ship",
+              "detail": "They stay on the test page until Harry says yes."
+            },
+            {
+              "title": "The mentor's face is pale and flat"
+            },
+            {
+              "title": "Clothes leftovers",
+              "detail": "Waist notch on untucked shirts, ragged tracksuit hem when jogging, a small hood."
+            },
+            {
+              "title": "Cars look damaged up close",
+              "detail": "Kept at a distance."
+            },
+            {
+              "title": "In bed he is a head over a flat block",
+              "detail": "No lying-down animation yet."
+            },
+            {
+              "title": "Not seen on screen yet",
+              "detail": "Fans in real clothes, the casino's living faces, the ten new animations moving on a phone."
+            },
+            {
+              "title": "Speed on a phone is unknown",
+              "detail": "The build machine cannot judge 3D speed."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "The mentor's face, then film all seven cut scenes again"
+            },
+            {
+              "title": "Build the game modes that unlock the most waiting stories"
+            },
+            {
+              "title": "Speed on a real phone"
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.138 · 13 Nov 2026 · New home, Team room, bots, admin",
+              "detail": "Still open: Cloudflare not joined up on the live site."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
   {
       "version": "0.141",
       "title": "Harry's patch notes: Sleep, living houses, cloth clothes",

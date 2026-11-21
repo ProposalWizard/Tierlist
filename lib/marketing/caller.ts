@@ -17,7 +17,7 @@ export async function getCaller(): Promise<Caller> {
     if (!user) return null;
     const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
     const full = typeof meta.full_name === "string" ? meta.full_name : typeof meta.name === "string" ? meta.name : "";
-    return { id: user.id, name: full.trim().split(/\s+/)[0] || "Admin", admin: await isAdmin(user.id) };
+    return { id: user.id, name: full.trim().split(/\s+/)[0] || "Admin", admin: await isAdmin(user.id), email: (user.email ?? "").toLowerCase() };
   } catch {
     return null;
   }

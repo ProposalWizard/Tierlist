@@ -50,20 +50,32 @@ export async function metaFinishLogin(code: string, redirect: string): Promise<M
   });
 }
 
-/* ── Facebook Page video ─────────────────────────────────────────────── */
-/** Facebook fetches the file from the link itself, so the video never passes through the site. */
+/* ── Facebook Reel (Mikey, 20 Nov 2026: "I only post Facebook Reels, YouTube Shorts and Instagram Reels") ── */
+/**
+ * Three steps, Meta's Reels publishing API: start (Meta hands back a video id), tell Meta's upload server to fetch
+ * the file from our signed link (header file_url, so the video never passes through the site), then finish with
+ * video_state PUBLISHED. Meta processes it for a minute or two before it shows. Reels must be vertical, 3-90 s.
+ */
 export async function facebookPostVideo(pageId: string, token: string, videoUrl: string, title: string, caption: string): Promise<{ id: string; link: string }> {
-  const r = await graph(`${pageId}/videos`, { file_url: videoUrl, title: title.slice(0, 255), description: caption, access_token: token }, "POST", "graph-video.facebook.com");
-  const id = String(r.id);
-  return { id, link: `https://www.facebook.com/${pageId}/videos/${id}` };
+  const start = await graph(`${pageId}/video_reels`, { upload_phase: "start", access_token: token }, "POST");
+  const id = String(start.video_id ?? "");
+  if (!id) throw new Error("Meta: no Reel id came back from the start step.");
+  const up = await fetch(`https://rupload.facebook.com/video-upload/${GRAPH()}/${id}`, { method: "POST", cache: "no-store", headers: { Authorization: `OAuth ${token}`, file_url: videoUrl } });
+  const uj = (await up.json().catch(() => ({}))) as Json;
+  const uerr = uj.error as { message?: string } | undefined;
+  if (!up.ok || uerr || uj.success === false) throw new Error(`Meta: the Reel upload failed (${uerr?.message || up.status}).`);
+  await graph(`${pageId}/video_reels`, { upload_phase: "finish", video_id: id, video_state: "PUBLISHED", description: (caption || title).slice(0, 2200), access_token: token }, "POST");
+  return { id, link: `https://www.facebook.com/reel/${id}` };
 }
 
+/** Reel numbers. Meta names them differently for Reels; whatever comes back is kept under a plain name. */
 export async function facebookStats(videoId: string, token: string): Promise<Record<string, number>> {
-  const r = await graph(`${videoId}/video_insights`, { metric: "total_video_views,total_video_impressions,total_video_reactions_by_type_total", access_token: token });
+  const r = await graph(`${videoId}/video_insights`, { access_token: token });
   const out: Record<string, number> = {};
   for (const m of (r.data as Json[]) ?? []) {
     const v = ((m.values as Json[]) ?? [])[0]?.value;
-    const name = String(m.name).replace("total_video_", "");
+    const raw = String(m.name);
+    const name = ({ blue_reels_play_count: "views", fb_reels_total_plays: "plays", post_impressions_unique: "reach", post_video_likes_by_reaction_type: "reactions", post_video_social_actions: "social" } as Record<string, string>)[raw] ?? raw.replace("total_video_", "");
     if (typeof v === "number") out[name] = v;
     else if (v && typeof v === "object") out.reactions = Object.values(v as Record<string, number>).reduce((a, b) => a + (Number(b) || 0), 0);
   }
