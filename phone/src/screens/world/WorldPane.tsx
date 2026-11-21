@@ -227,17 +227,19 @@ function Chooser({ open, onClose, glow, groups, all, current, yours, onPick, onL
 
 // ── Pieces ──────────────────────────────────────────────────────────────────
 
-const W = [24, 0, 26, 26, 26, 26, 32, 34];
+// The website's columns (WorldPane.tsx COLS): 22 · club · 24 × 4 · 28 · 30, 4 px apart, 8 px at the sides.
+// Rows are 11 px text on a 16.5 px line with 6 px above and below (28.5 px): 20 clubs fit a 412×915 phone.
+const W = [22, 0, 24, 24, 24, 24, 28, 30];
 function TableHead() {
-  return <View style={{ borderTopLeftRadius: 12, borderTopRightRadius: 12, backgroundColor: "rgba(10,22,40,0.72)", borderTopWidth: 1, borderColor: "rgba(255,255,255,0.2)" }}><Cells head cells={["#", "CLUB", "P", "W", "D", "L", "GD", "PTS"]} /></View>;
+  return <View style={{ marginBottom: -2, borderTopLeftRadius: 12, borderTopRightRadius: 12, backgroundColor: "rgba(10,22,40,0.78)", borderTopWidth: 1, borderColor: "rgba(255,255,255,0.2)" }}><Cells head cells={["#", "CLUB", "P", "W", "D", "L", "GD", "PTS"]} /></View>;
 }
 function Cells({ cells, head, bold, lead }: { cells: ReactNode[]; head?: boolean; bold?: boolean; lead?: ReactNode }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: head ? 6 : 6, paddingHorizontal: 6 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 6, paddingHorizontal: 8, gap: 4 }}>
       {cells.map((c, i) => (
-        <View key={i} style={{ width: W[i] || undefined, flex: W[i] ? undefined : 1, alignItems: i === 1 ? "flex-start" : "center", flexDirection: "row", gap: 6 }}>
+        <View key={i} style={{ width: W[i] || undefined, flex: W[i] ? undefined : 1, minWidth: 0, alignItems: "center", justifyContent: i === 1 ? "flex-start" : "center", flexDirection: "row", gap: 6 }}>
           {i === 1 && lead}
-          <Text numberOfLines={1} style={{ color: head ? "rgba(255,255,255,0.7)" : C.text, fontWeight: head ? "900" : i === 7 || bold ? "900" : "800", fontSize: head ? 9.5 : 12.5, letterSpacing: head ? 0.8 : 0, flexShrink: 1 }}>{c}</Text>
+          <Text numberOfLines={1} style={{ color: head ? (i === 7 ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.6)") : (i >= 2 && i <= 6 ? "rgba(255,255,255,0.85)" : C.text), fontWeight: head || i === 0 || i === 7 || bold ? "900" : "700", fontSize: head ? 9 : 11, lineHeight: head ? 13.5 : 16.5, letterSpacing: head ? 0.45 : 0, flexShrink: 1, includeFontPadding: false, textAlign: i === 1 ? "left" : "center" }}>{c}</Text>
         </View>
       ))}
     </View>
@@ -248,8 +250,10 @@ function tableRows(prefix: string, rows: LeagueTeam[], glow: string, you: string
     const z = zone?.(i + 1, rows.length) ?? null;
     const isYou = t.name === you;
     return row(`${prefix}-${t.name}`, (
-      <View style={[{ borderRadius: 6, backgroundColor: i % 2 === 0 ? "rgba(10,22,40,0.46)" : "rgba(10,22,40,0.36)", borderLeftWidth: 3, borderLeftColor: z ?? "transparent" }, isYou && youRow(glow)]}>
-        <Cells bold={isYou} lead={<ClubBadge club={t.name} size={16} />} cells={[String(i + 1), shortClub(t.name), t.played, t.won, t.drawn, t.lost, t.goalsFor - t.goalsAgainst, t.points]} />
+      // rows touch (the list's 2 px gap is taken back): one card, as on the website
+      <View style={[{ marginBottom: -2, backgroundColor: i % 2 === 0 ? "rgba(10,22,40,0.5)" : "rgba(10,22,40,0.4)" }, i === rows.length - 1 && { borderBottomLeftRadius: 12, borderBottomRightRadius: 12, marginBottom: 6 }, isYou && [youRow(glow), { borderRadius: 6, borderWidth: 0 }]]}>
+        {z ? <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: z }} /> : null}
+        <Cells bold={isYou} lead={<ClubBadge club={t.name} size={15} />} cells={[String(i + 1), shortClub(t.name), t.played, t.won, t.drawn, t.lost, t.goalsFor - t.goalsAgainst, t.points]} />
       </View>
     ));
   });
@@ -259,15 +263,15 @@ function goalLines(gs: NonNullable<LeagueResult["hg"]>): string[] {
   return groupedGoalLines(gs, g => g.s, g => g.m).map(({ scorer, minutes }) => `${scorer} ${minutes.map(m => (m > 90 ? `90+${m - 90}'` : `${m}'`)).join(", ")}`);
 }
 function Score({ text }: { text: string }) {
-  return <Text style={{ backgroundColor: "rgba(0,0,0,0.45)", color: C.text, fontWeight: "900", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: "hidden", minWidth: 42, textAlign: "center" }}>{text}</Text>;
+  return <Text numberOfLines={1} style={{ backgroundColor: "rgba(0,0,0,0.45)", color: C.text, fontWeight: "900", fontSize: 11, lineHeight: 16.5, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: "hidden", minWidth: 34, textAlign: "center", fontVariant: ["tabular-nums"] }}>{text}</Text>;
 }
 function MatchLine({ home, away, score, mine, glow, homeWin, awayWin, under }: { home: string; away: string; score: string; mine: boolean; glow: string; homeWin?: boolean; awayWin?: boolean; under?: ReactNode }) {
   return (
-    <View style={[{ borderRadius: 10, paddingHorizontal: 8, paddingVertical: 8, backgroundColor: "rgba(10,22,40,0.6)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }, mine && youRow(glow)]}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Text numberOfLines={1} style={{ flex: 1, textAlign: "right", color: C.text, fontWeight: homeWin ? "900" : "700", opacity: awayWin ? 0.7 : 1 }}>{home}</Text>
+    <View style={[{ borderRadius: 8, paddingHorizontal: 6, paddingVertical: 6, marginBottom: 2, backgroundColor: "rgba(10,22,40,0.6)", borderWidth: 1, borderColor: "rgba(255,255,255,0.08)" }, mine && youRow(glow)]}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <Text numberOfLines={1} style={{ flex: 1, textAlign: "right", color: homeWin ? C.text : "rgba(255,255,255,0.85)", fontSize: 11, lineHeight: 16.5, fontWeight: homeWin ? "900" : "700" }}>{home}</Text>
         <Score text={score} />
-        <Text numberOfLines={1} style={{ flex: 1, color: C.text, fontWeight: awayWin ? "900" : "700", opacity: homeWin ? 0.7 : 1 }}>{away}</Text>
+        <Text numberOfLines={1} style={{ flex: 1, color: awayWin ? C.text : "rgba(255,255,255,0.85)", fontSize: 11, lineHeight: 16.5, fontWeight: awayWin ? "900" : "700" }}>{away}</Text>
       </View>
       {under}
     </View>
@@ -277,9 +281,9 @@ function resultRows(prefix: string, results: LeagueResult[], glow: string, you: 
   return results.map(r => row(`${prefix}-${r.home}-${r.away}`, (
     <MatchLine home={shortClub(r.home)} away={shortClub(r.away)} score={`${r.hs}-${r.as}`} mine={r.home === you || r.away === you} glow={glow} homeWin={r.hs > r.as} awayWin={r.as > r.hs}
       under={(r.hg?.length || r.ag?.length) ? (
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 4 }}>
-          <View style={{ flex: 1 }}>{goalLines(r.hg ?? []).map(l => <Text key={l} style={{ color: C.dim, fontSize: 10.5, textAlign: "right", fontWeight: "700" }}>{l}</Text>)}</View>
-          <View style={{ flex: 1 }}>{goalLines(r.ag ?? []).map(l => <Text key={l} style={{ color: C.dim, fontSize: 10.5, fontWeight: "700" }}>{l}</Text>)}</View>
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
+          <View style={{ flex: 1 }}>{goalLines(r.hg ?? []).map(l => <Text key={l} numberOfLines={1} style={{ color: "rgba(255,255,255,0.8)", fontSize: 9.5, lineHeight: 14, textAlign: "right", fontWeight: "700" }}>{l}</Text>)}</View>
+          <View style={{ flex: 1 }}>{goalLines(r.ag ?? []).map(l => <Text key={l} numberOfLines={1} style={{ color: "rgba(255,255,255,0.8)", fontSize: 9.5, lineHeight: 14, fontWeight: "700" }}>{l}</Text>)}</View>
         </View>
       ) : undefined} />
   )));
@@ -288,10 +292,10 @@ function scorerRows(prefix: string, rows: ScorerRow[], glow: string, label: stri
   if (!rows.length && !youBelow) return [row(`${prefix}-empty`, <Empty text="No named players here yet." />)];
   const line = (r: ScorerRow, rank: number, mine: boolean) => (
     <View style={[{ flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: "rgba(10,22,40,0.6)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }, mine && youRow(glow)]}>
-      <Text style={{ width: 24, textAlign: "center", color: C.text, fontWeight: "900" }}>{rank}</Text>
+      <Text numberOfLines={1} style={{ width: 24, textAlign: "center", color: C.text, fontWeight: "900", fontSize: 12 }}>{rank}</Text>
       {r.club ? <ClubBadge club={r.club} size={16} /> : null}
-      <Text numberOfLines={1} style={{ flex: 1, color: C.text, fontWeight: "800" }}>{r.player}</Text>
-      <Text style={{ color: C.text, fontWeight: "900" }}>{r.n} <Text style={{ color: C.dim, fontSize: 10 }}>{label}</Text></Text>
+      <Text numberOfLines={1} style={{ flex: 1, color: C.text, fontWeight: "800", fontSize: 12.5 }}>{r.player}</Text>
+      <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 12.5 }}>{r.n} <Text style={{ color: C.dim, fontSize: 10 }}>{label}</Text></Text>
     </View>
   );
   const out = rows.map((r, i) => row(`${prefix}-${r.id}-${i}`, line(r, i + 1, false)));

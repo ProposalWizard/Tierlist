@@ -4,7 +4,7 @@ import { ClubBadge as DrawnBadge } from "../draw/ClubBadge";
  * club badge placeholder, round arrows. Solid colours, no blur, the game's
  * dark green and gold (ui/theme.ts). Every button is ui/Press.
  */
-import { type ReactNode } from "react";
+import { useEffect, useRef, type ComponentRef, type ReactNode } from "react";
 import { View, Text, ScrollView, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { kitsOf } from "@/lib/star/kits";
@@ -109,21 +109,29 @@ export function Seg<T extends string>({ value, onChange, tabs }: { value: T; onC
   return <CapsTabs value={value} onChange={onChange} tabs={tabs} />;
 }
 
-/** Chips that wrap (no sideways scrolling): glass pills, the chosen one gold. */
+/**
+ * Chips in ONE row that scrolls sideways (the website's round chips): glass pills, the
+ * chosen one gold. The row starts scrolled to the chosen chip (a cup's latest round).
+ */
 export function Chips<T extends string>({ value, onChange, items }: { value: T; onChange: (t: T) => void; items: readonly (readonly [T, string])[] }) {
+  const ref = useRef<ComponentRef<typeof ScrollView>>(null);
+  const xs = useRef<Record<string, number>>({});
+  const first = useRef(true);
+  const toChosen = () => { const x = xs.current[value]; if (x !== undefined) ref.current?.scrollTo({ x: Math.max(0, x - 40), animated: !first.current }); first.current = false; };
+  useEffect(() => { toChosen(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [value]);
   return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+    <ScrollView ref={ref} horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginHorizontal: -12 }} contentContainerStyle={{ flexDirection: "row", gap: 6, paddingHorizontal: 12 }}>
       {items.map(([k, label]) => {
         const on = value === k;
         return (
-          <Press key={k} onPress={() => onChange(k)} style={[{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: R.pill }, on
+          <Press key={k} onPress={() => onChange(k)} onLayout={(e) => { xs.current[k] = e.nativeEvent.layout.x; if (k === value && first.current) toChosen(); }} style={[{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: R.pill }, on
             ? ({ backgroundImage: "linear-gradient(180deg, #fde047, #f59e0b)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.5)" } as ViewStyle)
             : ({ backgroundColor: "rgba(10,22,40,0.6)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.22)" } as ViewStyle)]}>
-            <Text style={{ color: on ? "#111" : C.text, fontWeight: "900", fontSize: 12 }}>{label}</Text>
+            <Text numberOfLines={1} style={{ color: on ? "#111" : C.text, fontWeight: "900", fontSize: 12, lineHeight: 16 }}>{label}</Text>
           </Press>
         );
       })}
-    </View>
+    </ScrollView>
   );
 }
 

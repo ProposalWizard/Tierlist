@@ -11,6 +11,8 @@
  * Relationships and Settings open the CAREER area's "relations" / "settings"
  * screens when those exist.
  */
+import { PointerTour, TourTarget, useTourTarget } from "../../ui/tour";
+import type { TourStep } from "@/lib/star/tours";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { FlatList, ScrollView, Text, View, type ViewStyle } from "react-native";
 import type { CareerState, Fixture } from "@/lib/star/types";
@@ -66,9 +68,16 @@ const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️
 const SCOUT_APP: App = { id: "scout", label: "Scout report", icon: "🔍", hi: "#34d399", bg: "#047857", inside: "scout" };
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 
-export function PhoneScreen() {
+/** The agent's sponsor offer (the story beat "sponsor"): the finger on Messages, then on the offer (page.tsx goBeat). */
+const SPONSOR_TOUR: TourStep[] = [
+  { target: "app-messages", text: "Your agent sent the offer. Tap Messages", press: true },
+  { target: "msg-sponsors", text: "Tap the offer to see it", press: true },
+];
+
+export function PhoneScreen({ params }: { params?: Record<string, unknown> }) {
   const career = useCareer();
   const nav = useNav();
+  const [tour, setTour] = useState<TourStep[] | null>(params?.tour === "sponsor" ? SPONSOR_TOUR : null);
   const [app, setApp] = useState<App | null>(null);
   const [soon, setSoon] = useState<string | null>(null);
   const msgs = useMemo(() => (career ? buildMessages(career, null) : []), [career]);
@@ -116,6 +125,10 @@ export function PhoneScreen() {
       <GameTop career={career} help="phone" />
       <PhoneBody glow={glow} trim={kit.trim} clock={phoneClockLabel(career)} onHome={app ? () => setApp(null) : undefined} onBack={() => (app ? setApp(null) : nav.back())}>
         <View style={[{ flex: 1 }, app ? ({ borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: "hidden", backgroundImage: `radial-gradient(110% 38% at 50% 0%, ${rgba(glow, 0.24)} 0%, rgba(0,0,0,0) 70%), linear-gradient(180deg, #0b1220, #05080f)` } as ViewStyle) : null]}>{body}</View>
+        {tour && (
+          <PointerTour chain steps={tour} onDone={() => setTour(null)}
+            press={{ "app-messages": () => { const m = APPS.find((a) => a.id === "messages"); if (m) open(m); }, "msg-sponsors": () => nav.go("sponsors") }} />
+        )}
         {soon && (
           <Press onPress={() => setSoon(null)} style={{ position: "absolute", left: 14, right: 14, bottom: 110, backgroundColor: "rgba(3,7,18,0.95)", borderColor: "rgba(252,211,77,0.5)", borderWidth: 1, borderRadius: 14, padding: 14 }}>
             <Text style={{ color: C.text, fontWeight: "800", textAlign: "center" }}>{soon} is coming to the phone app.</Text>
@@ -219,9 +232,11 @@ function Soon({ text }: { text: string }) {
 }
 
 function AppIcon({ app, badge, off, fresh, onOpen, size = 50 }: { app: App; badge: number; off: boolean; fresh: boolean; onOpen: () => void; size?: number }) {
+  // named for the coach's finger, as the website's data-tour="app-<id>"
+  const target = useTourTarget(`app-${app.id}`);
   return (
     <Press onPress={onOpen} style={{ width: "25%", alignItems: "center", paddingVertical: size < 46 ? 3 : 5 }}>
-      <View style={[{ width: size, height: size, borderRadius: size * 0.28, alignItems: "center", justifyContent: "center" }, off
+      <View {...target} style={[{ width: size, height: size, borderRadius: size * 0.28, alignItems: "center", justifyContent: "center" }, off
         ? ({ backgroundImage: "linear-gradient(160deg, #0b0f17, #020304)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.07), 0px 7px 14px -6px rgba(0,0,0,0.8)" } as ViewStyle)
         : ({ backgroundImage: `linear-gradient(160deg, ${app.hi ?? app.bg}, ${app.bg})`, boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.5), inset 0px -3px 6px rgba(0,0,0,0.25), 0px 7px 14px -6px rgba(0,0,0,0.8)" } as ViewStyle)]}>
         {!off && <View pointerEvents="none" style={{ position: "absolute", left: "6%", right: "6%", top: "4%", height: "46%", borderTopLeftRadius: size * 0.22, borderTopRightRadius: size * 0.22, backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0))" } as ViewStyle} />}
@@ -419,9 +434,11 @@ function MessagesApp({ msgs, onOpen }: { msgs: Msg[]; onOpen: (to: "scout" | "sp
           <View style={{ maxWidth: "82%" }}>
             <Text style={{ color: "rgba(255,255,255,0.6)", fontWeight: "900", fontSize: 9.5, marginLeft: 4, marginBottom: 2 }}>{m.from}</Text>
             {m.open ? (
+              <TourTarget name={`msg-${m.open}`}>
               <Press onPress={() => onOpen(m.open!)} style={{ backgroundImage: "linear-gradient(180deg, rgba(52,211,153,0.32), rgba(16,185,129,0.16))", borderRadius: 16, borderBottomLeftRadius: 6, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: "rgba(52,211,153,0.4)" } as ViewStyle}>
                 <Text style={{ color: C.text, fontWeight: "700", fontSize: 11.5, lineHeight: 15 }}>{m.text} <Text style={{ color: "#a7f3d0", fontWeight: "900" }}>→</Text></Text>
               </Press>
+              </TourTarget>
             ) : (
               <View style={{ backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.07))", borderRadius: 16, borderBottomLeftRadius: 6, paddingHorizontal: 12, paddingVertical: 6 } as ViewStyle}>
                 <Text style={{ color: C.text, fontWeight: "700", fontSize: 11.5, lineHeight: 15 }}>{m.text}</Text>

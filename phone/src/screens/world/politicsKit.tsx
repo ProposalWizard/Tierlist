@@ -73,11 +73,12 @@ export function Problem({ text }: { text: string | null }) {
 
 /** A small button (the website's kit-btn pills). */
 export function SmallBtn({ label, onPress, tone = "plain", disabled, flex = true }: { label: string; onPress: () => void; tone?: "green" | "red" | "blue" | "gold" | "plain" | "purple"; disabled?: boolean; flex?: boolean }) {
-  const bg = { green: "#10b981", red: "#b91c1c", blue: "#2563eb", gold: C.gold, plain: C.panel2, purple: "#7c3aed" }[tone];
-  const ink = tone === "green" || tone === "gold" ? "#05261a" : "#fff";
+  // A button you can't use yet is GREY, not a faded colour (a faded gold or blue still read as "press me").
+  const bg = disabled ? "#3b4453" : { green: "#10b981", red: "#b91c1c", blue: "#2563eb", gold: C.gold, plain: C.panel2, purple: "#7c3aed" }[tone];
+  const ink = disabled ? "#aab2bf" : tone === "green" || tone === "gold" ? "#05261a" : "#fff";
   return (
-    <Press disabled={disabled} onPress={onPress} style={{ flex: flex ? 1 : undefined, backgroundColor: bg, opacity: disabled ? 0.4 : 1, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 10, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ color: ink, fontWeight: "900", fontSize: 12, textAlign: "center" }}>{label}</Text>
+    <Press disabled={disabled} onPress={onPress} style={{ flex: flex ? 1 : undefined, backgroundColor: bg, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 10, alignItems: "center", justifyContent: "center" }}>
+      <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: ink, fontWeight: "900", fontSize: 12, lineHeight: 16, textAlign: "center" }}>{label}</Text>
     </Press>
   );
 }

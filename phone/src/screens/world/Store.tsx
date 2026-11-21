@@ -11,7 +11,7 @@
  * on the phone yet.
  */
 import { useEffect, useState } from "react";
-import { View, Text, Image, type ViewStyle } from "react-native";
+import { View, Text, Image, ScrollView, type ViewStyle } from "react-native";
 import { StoreFigure } from "./StoreFigure";
 import { CAN } from "../../ui/look";
 import { SHOP_PIC_3D } from "../../ui/look/worldPics";
@@ -95,13 +95,14 @@ export function StoreScreen() {
   const value = coinValueLine(ctx.weeklyWage);
   return (
     <Frame kicker="The Store" title={`★${state.stars.toLocaleString("en-GB")} · 🪙 ${state.coins.toLocaleString("en-GB")}`} onBack={() => nav.back()}>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+      {/* ONE row that scrolls sideways (StoreView's tabs): "Coins" never drops to a second row. */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginHorizontal: -12 }} contentContainerStyle={{ flexDirection: "row", gap: 6, paddingHorizontal: 12 }}>
         {TABS.map(([id, label]) => (
           <Press key={id} onPress={() => { setTab(id); setNote(null); }} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 99, backgroundColor: tab === id ? C.gold : C.panel2 }}>
-            <Text style={{ color: tab === id ? "#1a1405" : C.text, fontWeight: "900", fontSize: 12 }}>{label}</Text>
+            <Text numberOfLines={1} style={{ color: tab === id ? "#1a1405" : C.text, fontWeight: "900", fontSize: 12, lineHeight: 16 }}>{label}</Text>
           </Press>
         ))}
-      </View>
+      </ScrollView>
       {note ? <Card tone={C.gold}><Text style={{ color: "#fde68a", fontWeight: "800" }}>{note}</Text></Card> : null}
       {tab === "specials" && (
         <>
@@ -244,5 +245,14 @@ function ItemPicture({ item, width, height }: { item: StoreItem; width: number; 
 function DailyCountdown() {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
-  return <Label>{`Daily specials · same for everyone today · new in ${formatCountdown(msUntilReset(now))}`}</Label>;
+  // StoreView DailyTab: two lines on the left, the countdown in a chip on the right.
+  return (
+    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 8, marginTop: 2 }}>
+      <View style={{ flexShrink: 1 }}>
+        <Text numberOfLines={1} style={{ color: C.text, fontSize: 15, lineHeight: 22, fontWeight: "900" }}>Daily specials</Text>
+        <Text numberOfLines={1} style={{ color: "#94a3b8", fontSize: 11, lineHeight: 16, fontWeight: "700" }}>Same for everyone today</Text>
+      </View>
+      <Text numberOfLines={1} style={{ color: "#fef3c7", fontSize: 12, lineHeight: 18, fontWeight: "900", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, overflow: "hidden", backgroundColor: "rgba(255,255,255,0.1)", borderWidth: 1, borderColor: "rgba(252,211,77,0.25)", fontVariant: ["tabular-nums"] }}>⏱ New in {formatCountdown(msUntilReset(now))}</Text>
+    </View>
+  );
 }

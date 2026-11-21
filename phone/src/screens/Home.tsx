@@ -87,11 +87,12 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
   const tourPress: Record<string, () => void> = {
     "nav-play": bar.play, "nav-training": bar.training, "nav-phone": bar.phone,
     rating: () => nav.go("star-pass"), "can-use-basic": () => flow.useCan("basic"),
+    "tab-0": () => nav.go("career-stats"),
   };
   const onBeat = (b: Beat) => {
     const go = goBeat(b);
     if (go.point) setPointAt(go.point);
-    else if (go.screen) nav.go(go.screen);
+    else if (go.screen && SCREENS[go.screen]) nav.go(go.screen, go.params);
   };
 
   const figH = row ? Math.round(Math.max(104, Math.min(FIG_MAX_H, row.h - 4))) : 0;
@@ -147,7 +148,7 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
         </View>
         {/* the swipe pages' arrows (SwipePages `arrows`) */}
         <View style={{ height: 34, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingRight: 78 }}>
-          <Arrow side="left" icon="📊" label="Stats" onPress={goStats} />
+          <Arrow side="left" icon="📊" label="Stats" onPress={goStats} tour="tab-0" />
           <Arrow side="right" icon="🛍️" label="Shop" onPress={goShop} />
         </View>
       </View>
@@ -380,12 +381,15 @@ function CanTile({ can: c, career }: { can: KibCan; career: CareerState }) {
 }
 
 /** ‹ 📊 STATS / SHOP 🛍️ › (ui/Nav.tsx Arrow). */
-function Arrow({ side, icon, label, onPress }: { side: "left" | "right"; icon: string; label: string; onPress: () => void }) {
+function Arrow({ side, icon, label, onPress, tour }: { side: "left" | "right"; icon: string; label: string; onPress: () => void; tour?: string }) {
+  const t = useTourTarget(tour ?? `arrow-${side}`);
   return (
+    <View {...t}>
     <Press onPress={onPress} style={{ height: 24, flexDirection: side === "left" ? "row" : "row-reverse", alignItems: "center", gap: 4, paddingHorizontal: 6, borderRadius: 2, backgroundColor: "rgba(8,20,38,0.34)", opacity: 0.8 }}>
       <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }}>{side === "left" ? "◀" : "▶"}</Text>
       <Text style={{ fontSize: 12 }}>{icon}</Text>
       <Text style={{ color: "#fff", fontSize: 10.5, fontWeight: "700", letterSpacing: 0.6 }}>{label.toUpperCase()}</Text>
     </Press>
+    </View>
   );
 }

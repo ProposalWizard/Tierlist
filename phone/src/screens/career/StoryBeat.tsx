@@ -66,20 +66,24 @@ export function StoryBeatPop({ text, onGo }: { text: BeatText; onGo: () => void 
 
 /** The beat's button was pressed (page.tsx goBeat): mark it, hand over what it gives,
  *  and say where to go next. Returns a tour target to point at, a screen to open, or nothing. */
-export function goBeat(b: Beat): { point?: string; screen?: string } {
+export function goBeat(b: Beat): { point?: string; screen?: string; params?: Record<string, unknown> } {
   const c = getCareer();
   if (!c) return {};
   const next = ackBeat(c, b);
   setCareer(next);
   flow.settle();
+  // The gaffer wants a word: his talk opens (page.tsx: handleOpenRelationshipGame("boss")).
+  if (b === "boss") return { screen: "career-relationship-game", params: { kind: "boss" } };
   if (b === "training") return { point: "nav-training" };
   if (b === "starpass") return { point: "rating" };
   // A can you can drink now: the finger shows where; at full energy there is nothing to drink it for.
   if ((b === "can" || b === "candeal") && (next.energy ?? 100) < 100) return { point: "can-use-basic" };
   if (b === "phone") return { point: "nav-phone" };
   if (b === "shop") return { screen: "shop" };
-  if (b === "stats") return { screen: "career-stats" };
-  if (b === "sponsor") return { screen: "phone" };
+  // "Got it", then the finger on the words that lead to your card (page.tsx: target "tab-0").
+  if (b === "stats") return { point: "tab-0" };
+  // The offer is in your messages: the phone, then the finger on Messages, then on the offer.
+  if (b === "sponsor") return { screen: "phone", params: { tour: "sponsor" } };
   return {};
 }
 
