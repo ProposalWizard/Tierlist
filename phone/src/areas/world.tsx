@@ -37,6 +37,7 @@ import { OwnershipScreen, ReputationScreen } from "../screens/world/Ownership";
 import { RuleBookScreen } from "../screens/world/RuleBook";
 import { VoteCeremonyScreen } from "../screens/world/VoteCeremony";
 import { LockerScreen } from "../screens/world/Locker";
+import { HallOfFameScreen } from "../screens/world/HallOfFame";
 
 function FeedScreen({ params }: { params?: Record<string, unknown> }) {
   const career = useCareer();
@@ -80,4 +81,6 @@ export const worldScreens: ScreenMap = {
   "rule-book": RuleBookScreen,
   "vote-ceremony": VoteCeremonyScreen,
   locker: LockerScreen,
+  // the Hall of Fame in the website's gold look (this entry replaces the career area's plain one: registry.ts merges world after career)
+  "hall-of-fame": HallOfFameScreen,
 };

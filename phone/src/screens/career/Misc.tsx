@@ -17,7 +17,7 @@ import { TOON_BODIES, TOON_BODY_LABEL, TOON_PLAYER_HEADS, TOON_HEAD_LABEL, yourT
 import { useCareer, setCareer } from "../../game/store";
 import { Press } from "../../ui/Press";
 import { useEffect, useRef, useState } from "react";
-import { View, Text, Platform, BackHandler, type ViewStyle } from "react-native";
+import { View, Text, Image, Platform, BackHandler, type ViewStyle } from "react-native";
 import { FONT, LOOK, LookButton } from "../../ui/look";
 import { clubGlow } from "./lookBits";
 import { listSlots, loadSlot, newInSlot, deleteSlot, activeSlot } from "../../world/slots";
@@ -176,12 +176,19 @@ function PlayingCard({ v, dark }: { v: string; dark?: boolean }) {
 }
 
 // ── Settings ──
-const PREF_ROWS: [keyof Prefs, string, string][] = [
-  ["sound", "Sound", "Sound effects in the match and on screens"],
-  ["gameMusic", "Game music", "The game's own music (off by default)"],
-  ["skipLineup", "Skip the line-up", "Straight to kick-off, no team sheets"],
-  ["playerNames", "Player names", "Names over the players in the match"],
+// QUICK, as the website's (DeviceSettings.tsx): one line each. Full screen, 3D quality and the testers'
+// switches (Texture pack, Harry changes, highlights rebuild) are left out: Mikey, "only the rows a player uses".
+const PREF_ROWS: [keyof Prefs, string][] = [
+  ["sound", "Sound effects"],
+  ["gameMusic", "Game music"],
+  ["skipLineup", "Skip the line-up"],
 ];
+/** The website's little head pictures (public/star/people3d/toon-h1…h6.webp). */
+const HEAD_PIC: Record<string, number> = {
+  h1: require("../../../assets/look/heads/toon-h1.webp"), h2: require("../../../assets/look/heads/toon-h2.webp"), h3: require("../../../assets/look/heads/toon-h3.webp"),
+  h4: require("../../../assets/look/heads/toon-h4.webp"), h5: require("../../../assets/look/heads/toon-h5.webp"), h6: require("../../../assets/look/heads/toon-h6.webp"),
+};
+const CREDIT_SOURCES = new Set(DATA_CREDITS.map((c) => c.source)).size;
 export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, onHelp, onFaceEditor, onFakeFaceEditor }: {
   /** onNewCareer: open the new-career screen (the save it goes in is already chosen and empty).
    *  onOpenSave: open the career just switched to, where it was left. */
@@ -191,8 +198,11 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
 }) {
   const prefs = usePrefs();
   const [leaving, setLeaving] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [credits, setCredits] = useState(false);
+  // MORE: one group open at a time, as on the website (opening one shuts the other)
+  const [group, setGroup] = useState<"match" | "career" | "credits" | null>(null);
+  const open = group === "career", credits = group === "credits";
+  const setOpen = (f: (o: boolean) => boolean) => setGroup((g) => (f(g === "career") ? "career" : null));
+  const setCredits = (f: (o: boolean) => boolean) => setGroup((g) => (f(g === "credits") ? "credits" : null));
   const career = useCareer();
   const glow = career ? clubGlow(career.player.club, career) : "#34d399";
   // The website's Settings (SettingsScreen.tsx): the top bar, Back · the club over SETTINGS · Main menu,
@@ -217,12 +227,9 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
 
       <Section>Quick</Section>
       <Card style={{ paddingVertical: 4, paddingHorizontal: 12 }}>
-        {PREF_ROWS.map(([k, label, line], i) => (
+        {PREF_ROWS.map(([k, label], i) => (
           <Press key={k} onPress={() => setPref(k, !prefs[k])} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 11, borderBottomWidth: i < PREF_ROWS.length - 1 ? 1 : 0, borderBottomColor: "rgba(255,255,255,0.1)" }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{label}</Text>
-              <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600" }}>{line}</Text>
-            </View>
+            <Text style={{ flex: 1, color: "#fff", fontWeight: "800", fontSize: 15 }}>{label}</Text>
             <Track on={prefs[k]} />
           </Press>
         ))}
@@ -230,13 +237,29 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
 
       <Section>More</Section>
       <Card style={{ padding: 0 }}>
+        <Press onPress={() => setGroup((g) => (g === "match" ? null : "match"))} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 12 }}>
+          <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: glow }} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: "#fff", fontWeight: "900", fontSize: 15 }}>Match</Text>
+            <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600" }}>Player names</Text>
+          </View>
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "900" }}>1 {group === "match" ? "▾" : "▸"}</Text>
+        </Press>
+        {group === "match" && (
+          <Press onPress={() => setPref("playerNames", !prefs.playerNames)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 11, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
+            <Text style={{ flex: 1, color: "#fff", fontWeight: "800", fontSize: 15 }}>Player names</Text>
+            <Track on={prefs.playerNames} />
+          </Press>
+        )}
+      </Card>
+      <Card style={{ padding: 0 }}>
         <Press onPress={() => setOpen((o) => !o)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 12 }}>
           <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: glow }} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: "#fff", fontWeight: "900", fontSize: 15 }}>Career &amp; saves</Text>
             <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600" }}>{PHOTO_FACES ? "Photo, run-ups, face editors, saves, exit" : "Your look, run-ups, saves, exit"}</Text>
           </View>
-          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>{open ? "▾" : "▸"}</Text>
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "900" }}>{open ? "▾" : "▸"}</Text>
         </Press>
       </Card>
       {open && (
@@ -282,31 +305,34 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
           <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: glow }} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: "#fff", fontWeight: "900", fontSize: 15 }}>Data credits</Text>
-            <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600" }}>Who made the data, pictures and sounds</Text>
+            <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600" }}>Where the real football data comes from</Text>
           </View>
-          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>{credits ? "▾" : "▸"}</Text>
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "900" }}>{CREDIT_SOURCES} {credits ? "▾" : "▸"}</Text>
         </Press>
         {credits && (
           <View style={{ paddingHorizontal: 12, paddingBottom: 12, gap: 10 }}>
+            <Text style={{ color: "#fff", fontSize: 12, lineHeight: 17, fontWeight: "600" }}>The game's real football data, models, voices and fonts are free to use with credit. Thank you to:</Text>
             {CREDIT_GROUPS.map((g) => {
               const list = DATA_CREDITS.filter((c) => c.use === g.use);
               if (!list.length) return null;
               return (
                 <View key={g.use} style={{ gap: 4 }}>
-                  <Text style={{ color: "#fcd34d", fontSize: 11, fontWeight: "900", letterSpacing: 1.2 }}>{g.title.toUpperCase()}</Text>
+                  <Text style={{ color: "#fff", fontSize: 13, fontWeight: "900" }}>{g.title}</Text>
+                  {g.note ? <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, lineHeight: 14, fontWeight: "600", marginBottom: 2 }}>{g.note}</Text> : null}
                   {list.map((c) => (
-                    <View key={c.id}>
-                      <Text style={{ color: "#fff", fontSize: 12, fontWeight: "800" }}>{c.source} <Text style={{ color: "rgba(255,255,255,0.6)" }}>· {c.licence}</Text></Text>
-                      <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 11 }}>{c.line}</Text>
+                    <View key={c.id} style={{ borderRadius: 8, backgroundColor: "rgba(255,255,255,0.05)", paddingHorizontal: 8, paddingVertical: 6, marginBottom: 2 }}>
+                      <Text style={{ color: "#fff", fontSize: 11, lineHeight: 15, fontWeight: "600" }}>{c.line}</Text>
+                      {c.note ? <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, lineHeight: 14, fontWeight: "500", marginTop: 2 }}>{c.note}</Text> : null}
                     </View>
                   ))}
                 </View>
               );
             })}
+            <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: "600" }}>Also on the web at knowitball.co.uk/credits.</Text>
           </View>
         )}
       </Card>
-      {onHelp && <Btn kind="plain" label="? How it works" onPress={onHelp} />}
+      {/* No "? How it works" button here: the website's Settings has none (the ? is on each screen). */}
     </Frame>
   );
 }
@@ -427,23 +453,57 @@ function Pick<T extends string>({ items, value, onPick }: { items: { id: T; labe
 }
 const small = { color: C.dim, fontSize: 11, fontWeight: "900" as const, letterSpacing: 1.2 };
 
-/** Settings → Your look (the website's YourLookPanel): head, build, skin, hair colour, saved on the career. */
+/** Settings → Your look (the website's YourLookPanel): picture tiles for the six heads, the three
+ *  builds as outlines, skin swatches and hair-colour chips. Saved on the career. */
+const BUILD_W: Record<string, number> = { c1: 14, c2: 20, c3: 16 };
+const BUILD_H: Record<string, number> = { c1: 40, c2: 40, c3: 46 };
 function YourLook({ career }: { career: CareerState }) {
   const p = career.player;
   const set = (look: Partial<CareerState["player"]>) => setCareer((c) => ({ ...c, player: { ...c.player, ...look } }));
+  const head = yourToonHead(p), body = yourToonBody(p), skin = resolveSkinTone(p.skinTone), hair = p.hairColour ?? "brown";
+  const cap = { color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "900" as const, letterSpacing: 0.8, marginBottom: 4 };
+  const tile = (on: boolean): ViewStyle => ({ width: "31.5%", alignItems: "center", borderRadius: 12, borderWidth: 2, padding: 4, borderColor: on ? "#fff" : "rgba(255,255,255,0.15)", backgroundColor: on ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.2)" });
   return (
     <Card>
       <Text style={{ color: C.text, fontWeight: "900", fontSize: 16 }}>Your look</Text>
-      <Text style={{ color: C.dim, fontSize: 12, marginBottom: 8 }}>How you look in every 3D scene (Player style: New).</Text>
-      <Text style={small}>HEAD</Text>
-      <Pick items={TOON_PLAYER_HEADS.map((h) => ({ id: h, label: TOON_HEAD_LABEL[h] }))} value={yourToonHead(p)} onPick={(h) => set({ head3d: h })} />
-      <Text style={small}>BUILD</Text>
-      <Pick items={TOON_BODIES.map((b) => ({ id: b, label: TOON_BODY_LABEL[b] }))} value={yourToonBody(p)} onPick={(b) => set({ body3d: b })} />
-      <Text style={small}>SKIN</Text>
-      <Pick items={SKIN_TONES.map((t) => ({ id: t.id, label: t.label, dot: t.hex }))} value={resolveSkinTone(p.skinTone)} onPick={(t) => set({ skinTone: t })} />
-      <Text style={small}>HAIR COLOUR</Text>
-      <Pick items={HAIR_COLOURS.map((h) => ({ id: h.id, label: h.label, dot: h.hex }))} value={p.hairColour ?? "brown"} onPick={(h) => set({ hairColour: h })} />
-      <Text style={{ color: C.dim, fontSize: 11 }}>The haircut comes with the head: the colour changes, the cut stays.</Text>
+      <Text style={{ color: C.dim, fontSize: 12, marginBottom: 8 }}>How you look in every 3D scene.</Text>
+      <Text style={cap}>HEAD</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+        {TOON_PLAYER_HEADS.map((h) => (
+          <Press key={h} onPress={() => set({ head3d: h })} style={tile(h === head)}>
+            {HEAD_PIC[h] ? <Image source={HEAD_PIC[h]} fadeDuration={0} style={{ width: 64, height: 64, borderRadius: 8 }} /> : <View style={{ width: 64, height: 64 }} />}
+            <Text style={{ marginTop: 4, color: "#fff", fontSize: 11, fontWeight: "900" }}>{TOON_HEAD_LABEL[h]}</Text>
+          </Press>
+        ))}
+      </View>
+      <Text style={cap}>BUILD</Text>
+      <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
+        {TOON_BODIES.map((b) => (
+          <Press key={b} onPress={() => set({ body3d: b })} style={[tile(b === body), { padding: 8 }]}>
+            <View style={{ width: 40, height: 50, alignItems: "center", justifyContent: "flex-end" }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#fff", marginBottom: 2 }} />
+              <View style={{ width: BUILD_W[b], height: BUILD_H[b] - 10, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.85)" }} />
+            </View>
+            <Text style={{ marginTop: 4, color: "#fff", fontSize: 11, fontWeight: "900" }}>{TOON_BODY_LABEL[b]}</Text>
+          </Press>
+        ))}
+      </View>
+      <Text style={cap}>SKIN</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+        {SKIN_TONES.map((t) => (
+          <Press key={t.id} onPress={() => set({ skinTone: t.id })} style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: t.id === skin ? "#fff" : "rgba(255,255,255,0.2)", backgroundColor: t.hex }}><View /></Press>
+        ))}
+      </View>
+      <Text style={cap}>HAIR COLOUR</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {HAIR_COLOURS.map((h) => (
+          <Press key={h.id} onPress={() => set({ hairColour: h.id })} style={{ flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 999, borderWidth: 2, paddingHorizontal: 8, paddingVertical: 4, borderColor: h.id === hair ? "#fff" : "rgba(255,255,255,0.2)", backgroundColor: h.id === hair ? "rgba(255,255,255,0.15)" : "transparent" }}>
+            <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: h.hex }} />
+            <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>{h.label}</Text>
+          </Press>
+        ))}
+      </View>
+      <Text style={{ marginTop: 4, color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: "700" }}>The haircut comes with the head: the colour changes, the cut stays.</Text>
     </Card>
   );
 }
