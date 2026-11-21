@@ -152,24 +152,33 @@ export function arrivalShot(door: { x: number; z: number; nx: number; nz: number
   const deep = (Math.abs(door.nx) > 0.5 ? w2 : d2) * 2; // the room's depth from this door
   const me = you ?? { x: door.x + door.nx * 2.2, z: door.z + door.nz * 2.2 };
   let best: { cam: [number, number, number]; s: number; score: number } | null = null;
-  for (const s of [1, -1]) {
+  // (0: straight behind him over the doorway, when furniture crowds both corners: a garage's cars)
+  for (const s of [1, -1, 0]) {
     const cam: [number, number, number] = [clamp(door.x + door.nx * 0.3 + tx * s * 1.2, w2), camY, clamp(door.z + door.nz * 0.3 + tz * s * 1.2, d2)];
     // the sight line from the camera down to his chest: count the low points over furniture
     let blocked = 0;
     for (let i = 1; i < 12; i++) {
       const t = i / 12, y = camY + (1.2 - camY) * t;
-      if (y > 1.6) continue;
       const x = cam[0] + (me.x - cam[0]) * t, z = cam[2] + (me.z - cam[2]) * t;
-      if (free && !free(x, z)) blocked++;
+      // low over furniture: in the way; high over it (right under the camera): it fills the foreground
+      if (free && !free(x, z)) blocked += y > 1.6 ? 0.5 : 1;
+    }
+    // the foreground: the floor in the wedge from under the camera out to him (a car's bonnet there fills the bottom of the frame)
+    if (free) {
+      const dx = me.x - cam[0], dz = me.z - cam[2], L = Math.hypot(dx, dz) || 1, px = -dz / L, pz = dx / L;
+      for (let i = 1; i <= 5; i++) for (const w of [-1, -0.5, 0, 0.5, 1]) {
+        const t = i / 6, half = 0.9 * t;
+        if (!free(cam[0] + dx * t + px * w * half, cam[2] + dz * t + pz * w * half)) blocked += 0.3;
+      }
     }
     const along = (cam[0] - door.x) * tx + (cam[2] - door.z) * tz;
-    const score = -blocked * 10 + Math.abs(along) - Math.abs(cam[0] * tx + cam[2] * tz) * 0.3;
+    const score = -blocked * 10 + Math.abs(along) - Math.abs(cam[0] * tx + cam[2] * tz) * 0.3 - (s === 0 ? 1.5 : 0);
     if (!best || score > best.score) best = { cam, s, score };
   }
   const { cam, s } = best!;
   // look between him and the far side of the room: he sits low in the frame, the room above him
   const rx = door.x + door.nx * deep * 0.62 - tx * s * 0.45, rz = door.z + door.nz * deep * 0.62 - tz * s * 0.45;
-  return { cam, look: [clamp(me.x * 0.45 + rx * 0.55, w2), 0.6, clamp(me.z * 0.45 + rz * 0.55, d2)], fov: 66 };
+  return { cam, look: [clamp(me.x * 0.6 + rx * 0.4, w2), 0.55, clamp(me.z * 0.6 + rz * 0.4, d2)], fov: 66 };
 }
 
 export interface HomeData {
@@ -559,6 +568,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   let near: HomeSpot | null = null;
   let dwellZone: HomeSpot | null = null;
   let dwell = { timer: 0, open: false };
+  /** Just walked in (a living house): no spot's card until he moves, so the arrival shot holds (the garage's drive spot took it over). */
+  let quietArrival = false;
   let arrivedAt: HomeSpot | null = null, spotWalk: HomeSpot | null = null;
   let framed: HomeSpot | null = null, frame = 0;
   let gameT = 0, frames = 0, fpsT0 = performance.now();
@@ -692,13 +703,14 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     fitSun();
     grid = null;
     framed = null; frame = 0; dwellZone = null; dwell = { timer: 0, open: false }; arrivedAt = null; spotWalk = null;
+    quietArrival = !!opts.living;
     const door = arrivalDoor(room.plan, from);
     // far enough in that the camera has room behind him: camera D's whole boom where the floor is
     // clear (the doorway jam: 1.5 m in left it 1.2 m, right on the back of his head), else 1.5 m
     let at = door ? arrivalAt(door, 1.5) : room.start;
     if (door && camKey === "D") at = settledArrival(door, (x, z) => roomFree(room, x, z) && Math.abs(x) < room.w2 - 0.6 && Math.abs(z) < room.d2 - 0.6, CS.back) ?? at;
     // a living house: further in (the arrival shot from the doorway then has him small, the room around him)
-    if (door && opts.living && room.id !== "garage") for (const dIn of [2.6, 2.3, 2.0]) { const a = arrivalAt(door, dIn); if (roomFree(room, a.x, a.z) && Math.abs(a.x) < room.w2 - 0.5 && Math.abs(a.z) < room.d2 - 0.5) { at = a; break; } }
+    if (door && opts.living) for (const dIn of [2.6, 2.3, 2.0]) { const a = arrivalAt(door, dIn); if (roomFree(room, a.x, a.z) && Math.abs(a.x) < room.w2 - 0.5 && Math.abs(a.z) < room.d2 - 0.5) { at = a; break; } }
     me.person.root.position.set(at.x, 0, at.z);
     yaw = at.yaw; yawTurn.vel = 0; me.person.root.rotation.y = yaw;
     camYaw = openCamYaw(at.x, at.z, yaw + Math.PI, CS.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap, CS.swing); orb.reset(); first = true;
@@ -997,7 +1009,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     }
 
     // which spot is he at? (the card opens only when he stops at it or turns to it: shop3d/dwell.ts)
-    const zn = zoneAt(P.x, P.z);
+    if (quietArrival && (speed > 0.3 || walker.active)) quietArrival = false;
+    const zn = quietArrival ? null : zoneAt(P.x, P.z);
     const zone = zn?.spot ?? null;
     if (zone !== dwellZone) { dwellZone = zone; dwell = { timer: 0, open: false }; }
     {
