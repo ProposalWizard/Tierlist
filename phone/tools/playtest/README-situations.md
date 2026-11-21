@@ -235,3 +235,24 @@ New tools:
 - KIB Next only: `await N.evaluate(() => window.__kibNav.go('career-settings'))` opens a screen by name.
 - Text fields: `await p.locator('input').nth(0).fill('Maximilian')`.
 - The trial stages and every match are played by `autoplay.mjs` / `to-fulltime.sh` (match part of this file).
+## Seed scan (round 2, 21 Nov 2026) **ran**
+
+`seed-scan.ts` plays every fixture of the `make-season-end.mts` career headless with a fixed bot (build line in its header).
+`left=N` = `make-season-end.mts --left N` gives a save at that fixture. Bot play: your own presses change what follows your first chance.
+
+| left | match | seed | what |
+|---|---|---|---|
+| 48 | Community Shield v Man City (one-off) | 1000 | bench, on at 51-53' (live: 2-0 at 53') |
+| 47 | league v Coventry | 1001 | bench, on at 53'; a **penalty** as your 3rd chance (59') with the bot |
+| 45 | league v Sunderland | 1003 | **starts**: half time, top-down **dribble** at 48', **you are replaced at 69'** |
+| 22 | FA Cup v Blackpool (away) | 1018 | bench at 52' (1-1); with the bot: **extra time + shootout**; live it ended in 90' twice |
+| 3 | league v Leeds | 1036 | starts, replaced at 66' |
+| intl | `make-intl.mts` | 1004 | Euro Qualifier Switzerland v England from kick-off |
+
+No corner or free kick of yours in 51 fixtures. Red cards and injuries do not exist in the match. In KIB,
+`__kibMatch.setPieceNext = "penalty"` works (**ran**: read once, then null). Chance pictures are salted per page visit in
+both apps (chanceMaker.ts visitSalt): the same seed gives the same kinds and minutes, not the same picture.
+The dev website's bench differs from packed only because of React Strict Mode in `next dev` (round 2, R2-1).
+
+`auto.mjs` (**ran**): auto-plays an open bench page until a regex of words appears (header). Start it un-awaited through `run`
+with an `out` file and poll that file: `pt.mjs` gives up after 300 s. On KIB the strike title is canvas-drawn; it keys on "POWER".
