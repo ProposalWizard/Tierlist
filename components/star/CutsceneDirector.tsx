@@ -21,6 +21,7 @@ import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import { directorScriptId } from "@/lib/star/sceneEdits/approval";
 import type { Overlay } from "@/lib/star/cutscene/timeline";
 import { FIXTURES, FIXTURE_LIST } from "@/lib/star/cutscene/fixtures";
+import { TEST_SCENES } from "@/lib/star/cutscene/testScenes";
 import { generateScript, scoreScript } from "@/lib/star/cutscene/generate";
 import { EVENT_KINDS_COVERED } from "@/lib/star/cutscene/beats";
 import { cutsceneSoundFor } from "@/lib/star/cutscene/sounds";
@@ -53,7 +54,7 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
-    const f = q.get("fixture"); if (f && FIXTURES[f]) { setFixture(f); setMode("fixture"); }
+    const f = q.get("fixture"); if (f && (FIXTURES[f] || TEST_SCENES[f])) { setFixture(f); setMode("fixture"); }
     const cm = q.get("cam"); if (cm === "old" || cm === "new") setCamOverride(cm);
     const e = q.get("event") as EventKind | null;
     if (e) {
@@ -65,7 +66,7 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
   }, []);
 
   const script: CutsceneScript = useMemo(
-    () => (mode === "fixture" ? FIXTURES[fixture]() : generateScript(ev, seed)),
+    () => (mode === "fixture" ? (FIXTURES[fixture] ?? TEST_SCENES[fixture])() : generateScript(ev, seed)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [mode, fixture, gen, seed],
   );

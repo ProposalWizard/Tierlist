@@ -273,9 +273,11 @@ UAL_CLIPS = {
     "walk_relaxed": dict(trial="ual:Walk_Loop:travel", cut=(0.0, 40 / 30), loop=True, floor=UAL_FLOOR),
     "walk_formal": dict(trial="ual:Walk_Formal_Loop:travel", cut=(0.0, 40 / 30), loop=True, floor=UAL_FLOOR),
     "jog_easy": dict(trial="ual:Jog_Fwd_Loop:travel", cut=(0.0, 28 / 30), loop=True, floor=UAL_FLOOR),
-    "idle_relaxed": dict(trial="ual:Idle_Loop", cut=(0.0, 75 / 30), loop=True, floor=UAL_FLOOR),
-    "idle_relaxed_m": dict(trial="ual:Idle_Loop", cut=(0.0, 75 / 30), loop=True, floor=UAL_FLOOR, mirror=True),
-    "idle_talk": dict(trial="ual:Idle_Talking_Loop", cut=(0.0, 88 / 30), loop=True, floor=UAL_FLOOR),
+    # the idles stand with the hips and chest turned 13° and the head to the front: he faces where his head and
+    # feet do (turn undoes the pelvis facing make.py would otherwise take), not 13° off to one side
+    "idle_relaxed": dict(trial="ual:Idle_Loop", cut=(0.0, 75 / 30), loop=True, floor=UAL_FLOOR, turn=np.radians(13.3)),
+    "idle_relaxed_m": dict(trial="ual:Idle_Loop", cut=(0.0, 75 / 30), loop=True, floor=UAL_FLOOR, mirror=True, turn=-np.radians(13.3)),
+    "idle_talk": dict(trial="ual:Idle_Talking_Loop", cut=(0.0, 88 / 30), loop=True, floor=UAL_FLOOR, turn=np.radians(13.3)),
     "seated_idle": dict(trial="ual:Sitting_Idle_Loop", cut=(0.0, 50 / 30), loop=True, floor=UAL_FLOOR),
     "seated_talk": dict(trial="ual:Sitting_Talking_Loop", cut=(0.0, 88 / 30), loop=True, floor=UAL_FLOOR),
     "sit_down_ual": dict(trial="ual:Sitting_Enter", cut=(0.0, 39 / 30), floor=UAL_FLOOR, end=True, hold=0.2),
