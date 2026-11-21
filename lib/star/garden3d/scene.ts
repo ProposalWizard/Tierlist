@@ -1883,12 +1883,17 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       {
         m.bones.Hips.getWorldPosition(hp);
         const pv = new THREE.Vector3();
-        const cnt = m.body.geometry.attributes.position.count;
         let under = Infinity;
-        for (let k = 0; k < cnt; k += 3) {
-          (m.body as any).getVertexPosition(k, pv);
-          pv.applyMatrix4(m.body.matrixWorld);
-          if (Math.hypot(pv.x - hp.x, pv.z - hp.z) < 0.16) under = Math.min(under, pv.y);
+        // in cloth clothes the body under the trousers is cut away: the trousers' seat is what sits on the slats
+        (m.body as any).skeleton?.update?.();
+        const cloth = m.body.parent?.getObjectByName("Cloth") as any;
+        for (const sk of cloth ? [m.body as any, cloth] : [m.body as any]) {
+          const cnt = sk.geometry.attributes.position.count;
+          for (let k = 0; k < cnt; k += 3) {
+            sk.getVertexPosition(k, pv);
+            pv.applyMatrix4(sk.matrixWorld);
+            if (Math.hypot(pv.x - hp.x, pv.z - hp.z) < 0.16) under = Math.min(under, pv.y);
+          }
         }
         if (isFinite(under)) m.root.position.y += seatH + 0.02 - under;
       }
@@ -2882,7 +2887,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         shadowRenders++;
       }
     }
+    // stats(): the whole frame (look H's passes), not only its last pass
+    renderer.info.autoReset = false; renderer.info.reset();
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
+    renderer.info.autoReset = true;
     drawn++;
 
     // busy (walking, turning, the camera swinging): full frame rate at fewer
