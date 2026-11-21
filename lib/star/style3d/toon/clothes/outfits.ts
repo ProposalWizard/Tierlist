@@ -168,8 +168,8 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
       const { LM, neckRing } = landmarks(meta);
       return [
         { ...longTop("shirt", LM, neckRing, { off: 0.006, neck: [0.064, 0.058, 0.072, -0.004, 0, 0.07, 0.02], hem: LM.tuck, wrist: LM.wrist + 0.11, collar: { kind: "shirt", h: 0.026, out: -0.004, fold: 0 }, shape: { torso: { knots: [[0, 0.95, 0.96], [0.5, 0.97, 0.98], [1, 0.99, 0.99]] } } }),
-          relax: [0, 8], ...(variant === "suit-open" ? {} : { tie: { top: LM.collarY - 0.022, bottom: LM.waist + 0.02, w: 0.022 } }) },
-        longTop("coat", LM, neckRing, { off: 0.009, wrist: LM.wrist - 0.04, neck: [0.085, 0.072, 0.1, -0.03, 0.27, 0.11], hem: LM.hips[1] - 0.13, collar: { kind: "lapel", h: 0.024, out: 0.004, fold: 0.055 }, shape: { torso: { knots: [[-0.25, 1.08, 1.06], [0.0, 1.06, 1.05], [0.32, 1.02, 1.03], [1, 1.05, 1.04]], pad: 0.02, hem: LM.hips[1] - 0.06, hold: true } } }),
+          relax: [0, 8], armSmooth: 40, ...(variant === "suit-open" ? {} : { tie: { top: LM.collarY - 0.022, bottom: LM.waist + 0.02, w: 0.022 } }) },
+        { ...longTop("coat", LM, neckRing, { off: 0.009, wrist: LM.wrist - 0.04, neck: [0.085, 0.072, 0.1, -0.03, 0.27, 0.11], hem: LM.hips[1] - 0.13, collar: { kind: "lapel", h: 0.024, out: 0.004, fold: 0.055 }, shape: { torso: { knots: [[-0.25, 1.08, 1.06], [0.0, 1.06, 1.05], [0.32, 1.02, 1.03], [1, 1.05, 1.04]], pad: 0.02, hem: LM.hips[1] - 0.06, hold: true } } }), armSmooth: 40 },
         trousers(LM, [1.05, 1.35], true, 1.03), shoes(LM),
       ];
     },

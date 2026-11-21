@@ -42,6 +42,8 @@ export interface GarmentSpec {
   tie?: { top: number; bottom: number; w: number };
   /** shell relax: point passes, normal passes */
   relax?: [number, number];
+  /** extra smoothing passes on the sleeves only (a jacket or shirt sleeve: no biceps showing through) */
+  armSmooth?: number;
   /**
    * THE GARMENT'S OWN SHAPE (Harry: "why does every type of trouser and top keep the outline and shorts outline —
    * suits shouldn't look the same as hoodies"). Not an offset of the muscular body: legs and sleeves are lofted tubes
@@ -224,6 +226,10 @@ export function buildClothes(T: Three, body: THREE.SkinnedMesh, rig: Rig, garmen
     // average the normals over welded points (no cracks where the file's UV seams split a vertex)
     o.smoothNormals();
     o.relax(gm.relax?.[0] ?? 3, 0.5, gm.relax?.[1] ?? 6);
+    // A SLEEVE FALLS AS A SLEEVE (round 3, Harry: the suit sleeves showed his biceps): the arm's surface under the
+    // sleeve smoothed (points only ever move outwards, so it never goes into the arm; still skinned to the same
+    // bones, so it bends with the arm, unlike a rigid tube that poked through a bent elbow)
+    if (gm.armSmooth) o.relax(gm.armSmooth, 0.6, 4, (i) => { let a = 0; for (let q = 0; q < 4; q++) if ((rig.part[o.si[i * 4 + q]] ?? "").startsWith("arm")) a += o.sw[i * 4 + q]; return a > 0.5; });
     if (gm.shape) shapeGarment(o, gm.shape, { rig, legL, legR, armL, armR, stats: bodyStats ??= bodyProfile() });
     if (gm.tube) {
       // per leg, per slice along the leg: the radius from the leg's own axis; each slice is raised to a smoothed
@@ -413,7 +419,7 @@ class Out {
   }
   /** Cloth bridges the body's small bumps (muscle, rib, the generated mesh's lumps): relax the shell's points and
    *  normals over their welded neighbours. Edges stay put so the cut line keeps its shape. */
-  relax(iters: number, lambda: number, normalIters: number) {
+  relax(iters: number, lambda: number, normalIters: number, only?: (i: number) => boolean) {
     const ids = Array.from(new Set(this.wid)), at = new Map(ids.map((w, k) => [w, k] as const));
     const nb: Set<number>[] = ids.map(() => new Set());
     const cnt = new Map<string, number>();
@@ -436,10 +442,15 @@ class Out {
       }
       return B;
     };
-    let Q = P; for (let i = 0; i < iters; i++) Q = step(Q, lambda, true);
+    // only: the points that may move (the sleeves' smoothing); the rest are held as they are
+    const held = only ? new Uint8Array(ids.length).fill(1) : null;
+    if (held) for (let i = 0; i < this.n; i++) if (only!(i)) held[at.get(this.wid[i])!] = 0;
+    const stepH = (A: Float64Array, lam: number) => { const B = step(A, lam, true); if (held) for (let k = 0; k < ids.length; k++) if (held[k]) for (let c = 0; c < 3; c++) B[k * 3 + c] = A[k * 3 + c]; return B; };
+    let Q = P; for (let i = 0; i < iters; i++) Q = stepH(Q, lambda);
     let M = Nn; for (let i = 0; i < normalIters; i++) M = step(M, 0.7, false);
     for (let i = 0; i < this.n; i++) {
       const k = at.get(this.wid[i])!;
+      if (held && held[k]) continue;
       const l = Math.hypot(M[k * 3], M[k * 3 + 1], M[k * 3 + 2]) || 1;
       // the relaxed point moves only along the normal (in or out): a sideways slide would drag the trim lines and
       // decals, which are drawn from each vertex's own rest point, into zigzags

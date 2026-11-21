@@ -97,7 +97,12 @@ export interface ClothSlot { color: THREE.Color; trim: THREE.Color; trim2?: THRE
 interface Decal { tex: THREE.Texture; slot: number; at: [number, number]; size: [number, number]; back?: boolean }
 
 const CREST_CACHE = new Map<string, THREE.Texture>();
+/** No browser (a test under node): a see-through 1x1 picture in place of any drawn decal, so dressing still works. */
+const noCanvas = () => typeof document === "undefined";
+let BLANK: THREE.Texture | null = null;
+function blank(T: Three): THREE.Texture { if (!BLANK) { BLANK = new T.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1); BLANK.needsUpdate = true; } return BLANK; }
 function crestOf(T: Three, a: THREE.Color, b: THREE.Color): THREE.Texture {
+  if (noCanvas()) return blank(T);
   const key = `${a.getHexString()}${b.getHexString()}`;
   let t = CREST_CACHE.get(key);
   if (t) return t;
@@ -113,6 +118,7 @@ function crestOf(T: Three, a: THREE.Color, b: THREE.Color): THREE.Texture {
 }
 let LANYARD: THREE.Texture | null = null;
 function lanyard(T: Three): THREE.Texture {
+  if (noCanvas()) return blank(T);
   if (LANYARD) return LANYARD;
   const c = document.createElement("canvas"); c.width = 256; c.height = 384;
   const x = c.getContext("2d")!;
@@ -127,6 +133,7 @@ function lanyard(T: Three): THREE.Texture {
 }
 const ZIP = new Map<string, THREE.Texture>();
 function zip(T: Three, col: THREE.Color): THREE.Texture {
+  if (noCanvas()) return blank(T);
   const k = col.getHexString(); let t = ZIP.get(k); if (t) return t;
   const c = document.createElement("canvas"); c.width = 32; c.height = 512;
   const x = c.getContext("2d")!; x.fillStyle = `#${col.clone().convertLinearToSRGB().getHexString()}`; x.fillRect(13, 0, 6, 512); x.fillRect(9, 6, 14, 30);
@@ -136,6 +143,7 @@ function zip(T: Three, col: THREE.Color): THREE.Texture {
 /** A detail drawn in metres on the front (or back) of a garment, sharp at any size; cached by key. */
 const DETAIL = new Map<string, THREE.Texture>();
 function detail(T: Three, key: string, w: number, h: number, draw: (x: CanvasRenderingContext2D, X: (m: number) => number, Y: (m: number) => number, px: number) => void): THREE.Texture {
+  if (noCanvas()) return blank(T);
   let t = DETAIL.get(key); if (t) return t;
   const px = 1024 / Math.max(w, h);
   const c = document.createElement("canvas"); c.width = Math.ceil(w * px); c.height = Math.ceil(h * px);

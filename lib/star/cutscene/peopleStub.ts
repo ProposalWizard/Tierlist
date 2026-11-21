@@ -119,13 +119,20 @@ export function createStubPeople(init: CutscenePeopleInit): CutscenePeople {
 /**
  * Which real clothes a cast member wears (Harry, 20 Nov 2026: "why would someone in the crowd be wearing … shorts"):
  * suits for the manager, chairman, agent and The Icon; shirt, trousers and a press pass for the press; the club
- * tracksuit for the player at the press desk and the staff; the match kit on the pitch. Anyone else (fans, family)
- * keeps the painted clothes for now.
+ * tracksuit for the player at the press desk and the staff; the match kit on the pitch; fans and family in
+ * the wardrobe (replica shirt and jeans, a hoodie, a polo).
  */
 function clothKindFor(spec: ActorSpec, out: string): ClothKind | null {
   const r = spec.role as string;
   if (r === "manager" || r === "chairman" || r === "agent" || r === "mentor") return "suit";
   if (r === "journalist" || r === "presenter") return "press";
+  // fans and family (round 3): off the pitch, never shorts and boots. A replica shirt and jeans for most, a hoodie
+  // and joggers for some; family in a polo or a hoodie. Picked from the id, so the same person dresses the same.
+  if (r === "fan" || r === "family") {
+    let h = 0; for (const ch of spec.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    if (r === "family") return h % 3 === 0 ? "fan" : h % 3 === 1 ? "polo" : "hoodie";
+    return h % 3 === 2 ? "hoodie" : "fan";
+  }
   if (out === "tracksuit") return "tracksuit";
   if (out === "kit" || out === "keeper") return "kit";
   return null;
