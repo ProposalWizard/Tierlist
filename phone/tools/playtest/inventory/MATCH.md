@@ -25,7 +25,75 @@ Stills: `/tmp/claude-0/-home-user/f9db4640-b55f-52a1-be6c-75264610aefd/scratchpa
 Pairs are named `pair-*.png` (packed left). The look check's own sheets at both sizes are in
 `S/look412/` and `S/look360/` (`compare.mjs` now takes `--w/--h`).
 
-## Summary
+## Status after round 3 (21 Nov 2026): every row, FIXED or open
+
+How I know: **seen** = on a still of KIB Next's web build at 412×915 (and 360×780 where said), time stepped by
+hand for motion (`live.mjs` `open {clock:true}`, `clock pause`, `steps`); **reasoned** = read in the code, not on a still.
+Sheet: `scratchpad/fix2/match3.jpg`. The tables below are the round-0 inventory, kept as written.
+
+| # | row (section) | status | how |
+|---|---|---|---|
+| 1 | Low-energy bar number beside the bar (1) | open (LOW) | not touched |
+| 1 | "Team news" card when dropped to the bench (1) | open (MED) | not built |
+| 1 | Tap anywhere to kick off (1) | open (LOW) | pitch only |
+| 1 | Competition chip one line at 360 (1) | FIXED (round 2) | seen 360 |
+| 1 | ⏩ and ⚙ place (1) | kept in the header corner (round 2: packed's float cannot be pressed at 360) | seen |
+| 1 | ⚙ opens a small sheet (1) | FIXED (round 2) | seen in the match; line-up reasoned |
+| 1 | VS slam (1) | FIXED (round 2) | seen |
+| 1 | Date icon is an emoji (1) | open (LOW) | |
+| 1 | Pitch width (1) | FIXED: full width at 412, 309 of 360 (packed 308) | seen 412; 360 measured before the fix (292), the fix reasoned |
+| 1 | Men walk out one by one (1) | SAME: the packed app's `kit-rise` no longer moves anything (ui/motion.tsx, 14 Oct) | seen: packed shows all men at 0.3 s |
+| 1 | Faces before kick-off (1) | every circle has its drawn head by ~0.5 s; three away heads are blank on the very first frame in the web build | seen 412 and 360 |
+| 1 | Play as picker (1) | FIXED (round 2) | seen |
+| 1 | Substitutes tab (1) | FIXED: tab on top, both benches under it, flags | seen 412 |
+| 1 | Bench reason line (1) | kept (extra, LOW) | |
+| 1 | KICK OFF motion (1) | pulse (round 2); the opening tap can no longer kick off | seen |
+| 1 | First match tour (1) | open (MED) | not built |
+| 2 | 2D / 3D switch (2) | button REMOVED. Packed's "2D" opens the 3D match view (Match3DLayer); it hides the button when the phone cannot draw that view. KIB Next has no 3D match view: **not built** (lib/star/style3d/engineView.ts, 2,200 lines of three.js; not in the 3D list chosen for the phone) | seen (button gone) |
+| 2 | ⚙ in the match (2) | FIXED (round 2) | seen: sheet over a held match, Back to the match |
+| 2 | Standing ovation banner (2) | open (LOW) | |
+| 3 | Kick-off card (3) | FIXED (round 2) | seen from kick-off at 412 and 360, beside packed |
+| 3 | Goal line flash in the feed (3) | open (LOW) | |
+| 3 | Speed 1/2/4/8 kept (3) | FIXED (round 2) | reasoned |
+| 3 | Scores button, score card, scores panel (3) | FIXED | button and panel seen (league match, a goal coming in at 10', bell on); the score card over the feed reasoned |
+| 3 | Tap the feed to skip (3) | FIXED (round 2) | reasoned |
+| 3 | Half time: can picture; extra "Energy NN%" (3) | open (LOW) | |
+| 4 | Set-piece camera (4) | SAME now: trial free kick goal 147 px (KIB, 24 m) against 134 px (packed, 26 m) at 412 | seen |
+| 4 | STAMINA "Auto run" word (4) | FIXED | reasoned |
+| 4 | Added-time chip (4) | FIXED (round 2) | seen |
+| 4 | TOUCH toggle and the second touch (4) | FIXED: toggle, chase, TOUCH ON, one re-touch in the same picture | toggle seen on and off; the chase reasoned (same lib calls as CanvasMatch) |
+| 4 | ⚡ Power shot, WINDING UP…, green circle (4, 6) | FIXED (shown only with "Knuckleball & power shot" New, Old by default, as packed) | seen: armed, wind-up with the defence closing, circle, MISSED, ⚡ x1.00. A tap on the circle did not register in the web build; changed to finger-down, not seen again |
+| 4 | Call for it (4) | FIXED | reasoned (button not caught on a still) |
+| 4 | Captain line (4) | FIXED (round 2) | seen |
+| 4 | Run-up line (4) | FIXED (round 2) | reasoned |
+| 4 | First-header coach; first volley / steer / sprint (4) | FIXED | reasoned |
+| 4 | Live hint "Drag back = aim · Quick flick" (4) | SAME: only with Live chances on, off by default | reasoned |
+| 5 | Dribble words (5) | FIXED (round 2) | seen: TAP TO START pill, how-to line, moves strip |
+| 6 | Strike title steel (6) | FIXED: colours measured off the packed screen | seen on HEAD IT? |
+| 6 | HOW TO PLAY card icon (6) | open (LOW) | |
+| 6 | HEAD IT? before a header (6) | SAME: opens 1.0 to 1.2 s after the cross (0.8 s + the jump), the tap strikes | seen stepped; tap seen |
+| 7 | GOAL board motion (7) | FIXED (round 2); shadow now on the board | seen frame by frame (50 ms): slide, tag, shine, strip, roll, gold flash, close |
+| 7 | Captions (7) | FIXED: place (round 2) and now the packed cut: slanted tab, drawn mark, slanted end, wipe | seen (SAVED at the foot with the ball at the top; ⚡ X1.00 in the new cut) |
+| 7 | Pop-up fades when the feed opens (7) | open (LOW) | |
+| 8 | Shootout winner line pops (8) | open (LOW) | |
+| 10 | Post-match motion (10) | FIXED: beats, slam, count-ups, burst, shake, star bar rise / empty / refill, bars slide, pay reveal + float + shine, CONTINUE pulse + shine, double tap = skip | seen stepped after a sim; the played-match pay card reasoned |
+| 10 | Achievements as toasts, CONTINUE never shut (10) | FIXED (round 2) | seen |
+| 10 | Boss/Team/Fans and energy line after a sim (10) | kept (extra, LOW) | |
+| 11 | Trial pitch height (11) | FIXED: to 846 of 915 (packed ~855), hint on screen; the banner's room kept only on its stage | seen 412 and 360 |
+| 11 | Vision "Heads up · Who's free?" card (11) | open (MED) | |
+| 12 | Drill ✕ EXIT, header band, green below (12) | FIXED (round 2) | seen at 360 |
+| 12 | Tries rings size (12) | open (LOW) | |
+| 13 | Kickabout rows (13) | open (2 MED, 2 LOW) | |
+| 16 | Keeper slow-mo on a catch (16) | open (LOW) | |
+
+Also in round 3:
+- **A lay-off back into your run keeps the same picture** (`resetForTouchOn`, CanvasMatch loadScenario): the phone
+  remade the chance there. `tools/match-parity.ts` had the same mistake in its website side; both now follow CanvasMatch.
+  `tools/match-popin.ts 10` now lists one `JUMP you 1.6 m` on that hand-over (you are put on the ball, as the website does).
+- Goal celebration: packed shows none by default (Leo's update off); KIB shows none. Not caught on a packed still this round.
+- The web build's false "Last time KIB Next closed…" card (src/safety.ts, not a match file) covers the line-up header after a reload and switches badges off: stills above show empty crest circles for that reason only.
+
+## Summary (round 0, as first counted)
 
 | | HIGH | MED | LOW | total |
 |---|---|---|---|---|

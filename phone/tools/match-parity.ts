@@ -20,7 +20,7 @@
  * strike: the check must then FAIL (proves it can see a difference).
  */
 import {
-  buildScenario, launch, stepBall, stepKeeper, stepDefenders, stepReactions, initDefenders,
+  buildScenario, launch, stepBall, stepKeeper, stepDefenders, stepReactions, initDefenders, resetForTouchOn,
   chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView, OUTCOME_TEXT, clamp, dragForFullPower,
   orderableRunners, acceptsCaptainOrders, setOffsideRuleEnabled, setClearanceRules, getClearanceRules,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Vec2, type Viewport,
@@ -530,8 +530,13 @@ function websiteMatch(setup: MatchSetup, hw: number, botSeed: number): Out {
     if (!touchOn) layOffs = MAX_LAY_OFFS;
     const carry = ch && !touchOn ? carryOn : null;
     carryOn = null;
-    if (request) lastDeal = request.deal;
+    if (request && !(ch && touchOn)) lastDeal = request.deal;
     const myStrength = career.league.find((x) => x.name === career.player.club)?.strength ?? 65;
+    // CanvasMatch loadScenario 9806: a lay-off taken back in your run (or a Touch Mode re-touch) is
+    // the same move carrying on, repositioned (resetForTouchOn), never remade.
+    if (ch && touchOn) {
+      resetForTouchOn(sc, ch.pos);
+    } else {
     const made = makeChance({
       deal: lastDeal,
       source: ch?.kind ? { from: "kind", kind: ch.kind } : ch ? { from: "chain", pos: ch.pos, ambition: ch.ambition, position: setup.position } : setPiece ? { from: "kind", kind: setPiece } : attacking ? { from: "attacking" } : request ? { from: "request", request, position: setup.position } : { from: "weighted", position: setup.position },
@@ -540,6 +545,7 @@ function websiteMatch(setup: MatchSetup, hw: number, botSeed: number): Out {
     });
     sc = made.sc;
     noteServedKind(st, sc.kind);
+    }
     if (ch) { sc.chainDepth = ch.depth; sc.touchTouches = ch.touchTouches; }
     sc.conditions = setup.conditions;
     if (!touchOn) castScenario(sc, onPitch(career.squad ?? []));

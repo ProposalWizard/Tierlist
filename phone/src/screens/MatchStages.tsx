@@ -13,7 +13,7 @@ import { mulberry32 } from "@/lib/star/season";
 import { CX, PEN_SPOT_Y } from "@/lib/star/pitch";
 import type { Skills } from "@/lib/star/types";
 import type { TrialProgress } from "@/lib/star/trial";
-import { difficultyFor } from "@/lib/star/trial";
+import { difficultyFor, adversityOn } from "@/lib/star/trial";
 import {
   REPS, ladderLevel, techniqueSetup, freeKickSetup, attemptSeed, shootoutKeeperFor, shootoutOurKeeperFor, dribbleSetup, dribbleQuality,
   shootoutQuality, shootoutTheirRating, trialInvisibleStats, teachSeen, markTeachSeen,
@@ -53,15 +53,17 @@ export function usePitchHeight(): number {
  */
 // the trial's event banner (~58 px) sits above the pitch too: leave room so the hint under the pitch stays on screen
 const TRIAL_BANNER = 58;
-export function useTrialPitchHeight(): number {
+export function useTrialPitchHeight(banner = false): number {
   const { width, height } = useWindowDimensions();
   const { top, bottom } = useSafeAreaInsets();
-  return Math.round(Math.max(width * 1.2, Math.min(width * 1.9, height - top - bottom - 118 - 60 - TRIAL_BANNER)));
+  // Only the one stage with the trial's event has the banner over it: the others take that room too
+  // (the packed app's pitch runs to ~850 of 915; holding the banner's room on every stage stopped at ~790).
+  return Math.round(Math.max(width * 1.2, Math.min(width * 1.9, height - top - bottom - 118 - 60 - (banner ? TRIAL_BANNER + 14 : 0))));
 }
 
 // ── Free kicks (stages/TrialFreeKicks.tsx) ──
 export function TrialFreeKicksStage({ trial, onDone, skills, freeKickRunup }: { trial: TrialProgress; onDone: (q: number) => void; skills: { power: number; technique: number }; freeKickRunup?: FreeKickRunupId }) {
-  const h = useTrialPitchHeight();
+  const h = useTrialPitchHeight(!!adversityOn(trial, "freeKicks"));
   const build = useCallback((rep: number, rng: () => number) => buildFreeKickScenario(trial, rep, rng), [trial]);
   return (
     <StrikeStage height={h} reps={REPS.freeKicks} build={build} skills={skills} seed={(trial.seed ^ 0x5f5e) >>> 0} drill="freeKicks"
@@ -79,7 +81,7 @@ export function TrialFreeKicksStage({ trial, onDone, skills, freeKickRunup }: { 
 
 // ── Take him on (TrialSequence.tsx's dribbling stage: FirstPersonDribble, embedded, calm camera) ──
 export function TrialDribbleStage({ trial, onDone, pace }: { trial: TrialProgress; onDone: (q: number) => void; pace: number }) {
-  const h = useTrialPitchHeight();
+  const h = useTrialPitchHeight(!!adversityOn(trial, "dribbling"));
   const dribble = useMemo(() => dribbleSetup(trial), [trial]);
   const [teachDone, setTeachDone] = useState(false);
   useEffect(() => { if (teachSeen("dribbling")) setTeachDone(true); }, []);
@@ -105,7 +107,7 @@ export function TrialDribbleStage({ trial, onDone, pace }: { trial: TrialProgres
 // ── Through the gate (stages/TrialTechnique.tsx) ──
 const repRng = (seed: number, rep: number) => mulberry32((seed ^ ((rep + 1) * 0x9e3779b1)) >>> 0);
 export function TrialTechniqueStage({ trial, onDone, skills }: { trial: TrialProgress; onDone: (q: number) => void; skills: { power: number; technique: number } }) {
-  const h = useTrialPitchHeight();
+  const h = useTrialPitchHeight(!!adversityOn(trial, "technique"));
   const seed = (trial.seed ^ 0x7e4c) >>> 0;
   const level = ladderLevel(difficultyFor(trial, "technique"));
   const setupRef = useRef<StrikeSetup | null>(null);
@@ -166,7 +168,7 @@ function takersFor(trial: TrialProgress, seed: number): { them: PenaltyTaker[]; 
   return { them: side((trial.seed ^ 0x51ee) >>> 0, SHOOTOUT_KICKS, "academy", 0), mates: side((trial.seed ^ 0x3a7e) >>> 0, MATE_KICKS, "trialist", SHOOTOUT_KICKS) };
 }
 export function TrialShootoutStage({ trial, onDone, skills, penaltyRunup }: { trial: TrialProgress; onDone: (q: number, finalPenScored: boolean) => void; skills: { power: number; technique: number }; penaltyRunup?: PenaltyRunupId }) {
-  const h = useTrialPitchHeight();
+  const h = useTrialPitchHeight(!!adversityOn(trial, "shootout"));
   const seed = attemptSeed(trial);
   const { them: takers, mates } = useMemo(() => takersFor(trial, seed), [trial, seed]);
   const script = useMemo<RigScript>(() => createRigScript(seed), [seed]);

@@ -9,7 +9,7 @@
  * (node phone/tools/look/build-web.mjs). Read ../look/README.md first.
  *
  * Commands (POST /cmd {cmd, ...}):
- *   open {app:"packed"|"next", name, w, h, save:true|false, video:true}   a fresh page (touch on, dpr 1); every page error is kept
+ *   open {app:"packed"|"next", name, w, h, save:true|false, video:true, clock:false}   a fresh page (touch on, dpr 1); every page error is kept
  *   close {name}                       closes it (and saves its video to <media>/<name>.webm)
  *   shot {name, file}                  screenshot to <media>/<file>.png
  *   text {name}                        the page's visible text
@@ -21,6 +21,9 @@
  *   ball {name, loose}                 where the ball is on the glass (the look check's finder)
  *   wait {name, ms}
  *   burst {name, n, every, file}       n screenshots every ms (a "flip book")
+ *   clock {name, op, ms}               step the page's time by hand (install, pause, run ms, resume)
+ *   steps {name, n, ms, file}          n stills with time stepped ms between each (after clock install + pause)
+ *   rate {name, rate}                  slow the page's CSS animations (0.1 = ten times slower)
  *   errors {name}                      page errors so far
  *   list                                the open pages
  */
@@ -108,8 +111,11 @@ async function mouseDrag(e, { x1, y1, x2, y2, steps = 14, ms = 18, hold = 0, sho
   return files;
 }
 
+/** Wait ms: real time, or for a page whose clock is stepped by hand (open {clock:true}) that much of ITS time. */
+async function nap(e, ms) { if (e.clock) await e.page.clock.runFor(ms); else await e.page.waitForTimeout(ms); }
+
 const H = {
-  async open({ app, name, w = 412, h = 915, save: withSave = false, video = true, url = "/" }) {
+  async open({ app, name, w = 412, h = 915, save: withSave = false, video = true, url = "/", clock = false }) {
     if (pages.has(name)) await H.close({ name });
     const ctx = await browser.newContext({
       viewport: { width: w, height: h }, deviceScaleFactor: 1, isMobile: true, hasTouch: true,
@@ -127,9 +133,11 @@ const H = {
     page.on("pageerror", (er) => errors.push({ t: Date.now(), m: `pageerror: ${String(er.message).slice(0, 300)}` }));
     page.on("console", (m) => { if (m.type() === "error") errors.push({ t: Date.now(), m: `console: ${m.text().slice(0, 300)}` }); });
     const cdp = await ctx.newCDPSession(page);
-    pages.set(name, { ctx, page, app, errors, cdp });
+    pages.set(name, { ctx, page, app, errors, cdp, clock });
+    // clock: the page's time can be stepped by hand later (clock pause, then steps); it must be installed before the page loads.
+    if (clock) await page.clock.install();
     await page.goto(servers[app].url + url, { waitUntil: "load", timeout: 120000 });
-    await page.waitForTimeout(4000);
+    await nap(pages.get(name), 4000);
     return { ok: true, url: servers[app].url };
   },
   async close({ name }) {
@@ -141,14 +149,14 @@ const H = {
   },
   async shot({ name, file }) { const f = path.join(MEDIA, `${file || name}.png`); await pages.get(name).page.screenshot({ path: f }); return { file: f }; },
   async text({ name }) { return { text: await pages.get(name).page.evaluate(() => document.body.innerText) }; },
-  async tap({ name, x, y, wait = 600 }) { const e = pages.get(name); await e.page.touchscreen.tap(x, y); await e.page.waitForTimeout(wait); return { ok: true }; },
+  async tap({ name, x, y, wait = 600 }) { const e = pages.get(name); await e.page.touchscreen.tap(x, y); await nap(e, wait); return { ok: true }; },
   async mclick({ name, x, y, wait = 600 }) { const e = pages.get(name); await e.page.mouse.click(x, y); await e.page.waitForTimeout(wait); return { ok: true }; },
   async click({ name, re, wait = 1200, nth = 0 }) {
     const p = pages.get(name).page; const rx = new RegExp(re, "i");
     let l = p.locator("button:visible, [role=button]:visible").filter({ hasText: rx }).nth(nth);
     if (!(await l.count())) l = p.getByText(rx).nth(nth);
     const bb = await l.boundingBox({ timeout: 4000 });
-    await l.click({ timeout: 5000 }); await p.waitForTimeout(wait); return { ok: true, at: bb };
+    await l.click({ timeout: 5000 }); await nap(pages.get(name), wait); return { ok: true, at: bb };
   },
   async drag(a) { const files = await touchDrag(pages.get(a.name), a); await pages.get(a.name).page.waitForTimeout(a.after ?? 400); return { files }; },
   async mdrag(a) { const files = await mouseDrag(pages.get(a.name), a); await pages.get(a.name).page.waitForTimeout(a.after ?? 400); return { files }; },
@@ -164,12 +172,29 @@ const H = {
     }), [until, max]) };
   },
   async ball({ name, loose }) { return { balls: await findBall(pages.get(name).page, loose) }; },
-  async wait({ name, ms }) { await pages.get(name).page.waitForTimeout(ms); return { ok: true }; },
+  async wait({ name, ms }) { await nap(pages.get(name), ms); return { ok: true }; },
   async burst({ name, n = 6, every = 250, file }) {
     const p = pages.get(name).page; const files = [];
     for (let i = 0; i < n; i++) { const f = path.join(MEDIA, `${file}-${String(i).padStart(2, "0")}.png`); await p.screenshot({ path: f }); files.push(f); await p.waitForTimeout(every); }
     return { files };
   },
+  /** Step time by hand (Playwright's clock: Date, timers and animation frames in the page): op install | pause | run {ms} | resume. */
+  async clock({ name, op, ms = 16 }) {
+    const c = pages.get(name).page.clock;
+    if (op === "install") await c.install();
+    else if (op === "pause") await c.pauseAt((await pages.get(name).page.evaluate(() => Date.now())) + 1500);
+    else if (op === "resume") await c.resume();
+    else await c.runFor(ms);
+    return { ok: true };
+  },
+  /** n stills, time stepped by `ms` between each (needs clock install + pause first): a true flip book. */
+  async steps({ name, n = 10, ms = 50, file }) {
+    const p = pages.get(name).page; const files = [];
+    for (let i = 0; i < n; i++) { await p.clock.runFor(ms); const f = path.join(MEDIA, `${file}-${String(i).padStart(2, "0")}.png`); await p.screenshot({ path: f }); files.push(f); }
+    return { files };
+  },
+  /** Slow (or speed up) the page's CSS animations (the packed app's pop-ups): rate 0.1 = ten times slower. */
+  async rate({ name, rate = 1 }) { await pages.get(name).cdp.send("Animation.enable"); await pages.get(name).cdp.send("Animation.setPlaybackRate", { playbackRate: rate }); return { ok: true }; },
   async errors({ name }) { return { errors: pages.get(name).errors }; },
   async list() { return { pages: [...pages.keys()] }; },
 };

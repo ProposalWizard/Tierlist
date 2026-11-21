@@ -133,9 +133,13 @@ function paintHeader(g: G, d: MatchDriver, W: number, motion: string, air: boole
   g.transform(1, 0, -0.21, 1, 0, 0);
   // The steel runs down the line box (CSS background-clip: text), in the slanted text's own space.
   const steel = g.createLinearGradient(0, -lh * 0.83, 0, lh * 0.17);
-  steel.addColorStop(0, "#ffffff");
-  steel.addColorStop(0.55, "#cfd8e6");
-  steel.addColorStop(1, "#8f9bb0");
+  // In a browser the title's own drop shadow (0 3px 6px, black 60%) is painted OVER a background-clip
+  // text fill, so the packed app's steel reads darker than its CSS colours (white → #cfd8e6 → #8f9bb0).
+  // These are the colours measured off its screen (top #d4d7dc, a third down #a3a8b0, foot #7d8698).
+  steel.addColorStop(0, "#d4d7dc");
+  steel.addColorStop(0.3, "#a3a8b0");
+  steel.addColorStop(0.55, "#8e949e");
+  steel.addColorStop(1, "#7d8698");
   g.fillStyle = steel;
   g.fillText(title, 0, 0);
   g.restore();

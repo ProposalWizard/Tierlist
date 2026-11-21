@@ -16,6 +16,7 @@ import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reani
 import type { EnergyMode } from "@/lib/star/energy";
 import { popupTone, type PopupTone } from "@/lib/star/mikeyPopups";
 import { labelInk } from "@/lib/star/kits";
+import { POWER_SHOT_PERFECT_S, POWER_SHOT_SLOW_S, powerShotQuality } from "@/lib/star/shotModel";
 import { FONT } from "../ui/look";
 
 // ── The page ──
@@ -169,14 +170,14 @@ export function GoalBoard({ home, away, score, from, scorer, assist, theirs, id,
     <RNA.View style={{ width: "92%", maxWidth: 420, alignSelf: "center",
       opacity: p.interpolate({ inputRange: [0, 0.12, 0.86, 1], outputRange: [0, 1, 1, 0] }),
       transform: [{ translateY: p.interpolate({ inputRange: [0, 0.12, 0.18, 0.86, 1], outputRange: [-90, 4, 0, 0, -90] }) }] }}>
-      <View style={{ boxShadow: "0px 6px 14px rgba(0,0,0,0.6)" } as ViewStyle}>
+      <View>
         <View style={{ alignItems: "center" }}>
           <RNA.View style={{ paddingHorizontal: 14, paddingVertical: 1, backgroundImage: "linear-gradient(90deg, #ffd23a, #ffb000)",
             transform: [{ scaleX: p.interpolate({ inputRange: [0, 0.08, 0.18, 0.84, 0.96, 1], outputRange: [0, 0, 1, 1, 0, 0] }) }] } as never}>
             <Text numberOfLines={1} style={{ fontFamily: FONT.display, fontSize: 12, letterSpacing: 3.6, color: "#0b1020" }}>{theirs ? "THEIR GOAL" : "GOAL"}</Text>
           </RNA.View>
         </View>
-        <View style={{ flexDirection: "row", alignItems: "stretch", borderTopWidth: 2, borderColor: "#ffc21a", overflow: "hidden" }}>
+        <View style={{ flexDirection: "row", alignItems: "stretch", borderTopWidth: 2, borderColor: "#ffc21a", overflow: "hidden", boxShadow: "0px 6px 14px rgba(0,0,0,0.6)" } as ViewStyle}>
           <TeamBlock t={home} />
           <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 3, backgroundImage: "linear-gradient(180deg, #ffffff, #dfe5ee)" } as ViewStyle}>
             <Digit from={was[0]} to={score[0]} p={p} />
@@ -205,41 +206,158 @@ export function GoalBoard({ home, away, score, from, scorer, assist, theirs, id,
   );
 }
 
-const TONE: Record<PopupTone, { tab: string; edge: string; mark: string }> = {
-  good: { tab: "linear-gradient(180deg, #34f5c5, #0ea5a3)", edge: "#22d3c5", mark: "→" },
-  bad: { tab: "linear-gradient(180deg, #ff6b6b, #d1142f)", edge: "#ff4d5e", mark: "✕" },
-  save: { tab: "linear-gradient(180deg, #ffcf4a, #f08a00)", edge: "#ffb020", mark: "✋" },
-  ref: { tab: "linear-gradient(180deg, #fff06a, #e6c200)", edge: "#ffe14a", mark: "!" },
-  plain: { tab: "linear-gradient(180deg, #cbd5e1, #64748b)", edge: "#94a3b8", mark: "!" },
-  goal: { tab: "linear-gradient(180deg, #ffe066, #ff9d00)", edge: "#ffc21a", mark: "⚽" },
+const TONE: Record<PopupTone, { tab: string; edge: string; top: string }> = {
+  good: { tab: "linear-gradient(180deg, #34f5c5, #0ea5a3)", edge: "#22d3c5", top: "#34f5c5" },
+  bad: { tab: "linear-gradient(180deg, #ff6b6b, #d1142f)", edge: "#ff4d5e", top: "#ff6b6b" },
+  save: { tab: "linear-gradient(180deg, #ffcf4a, #f08a00)", edge: "#ffb020", top: "#ffcf4a" },
+  ref: { tab: "linear-gradient(180deg, #fff06a, #e6c200)", edge: "#ffe14a", top: "#fff06a" },
+  plain: { tab: "linear-gradient(180deg, #cbd5e1, #64748b)", edge: "#94a3b8", top: "#cbd5e1" },
+  goal: { tab: "linear-gradient(180deg, #ffe066, #ff9d00)", edge: "#ffc21a", top: "#ffe066" },
 };
+/** MikeyPopup's Icon: a small drawn mark for each word, in a 24-unit box (stroke #0b1020). */
+type Mark = { d: string; fill?: boolean; w?: number; rot?: number }[];
+function markFor(text: string, tone: PopupTone): Mark {
+  if (text === "OFFSIDE") return [{ d: "M6 21V3" }, { d: "M6 4h11l-3 4 3 4H6Z", fill: true }];
+  if (text === "FOUL" || text === "PENALTY") return [{ d: "M8.6 3.5h6.8a1.6 1.6 0 0 1 1.6 1.6v11.8a1.6 1.6 0 0 1-1.6 1.6H8.6a1.6 1.6 0 0 1-1.6-1.6V5.1a1.6 1.6 0 0 1 1.6-1.6Z", fill: true, rot: 12 }];
+  if (tone === "good") return [{ d: "M4 12h14M13 6l6 6-6 6" }];
+  if (tone === "bad") return [{ d: "M6 6l12 12M18 6L6 18" }];
+  if (tone === "save") return [{ d: "M8 12V6.5a1.5 1.5 0 013 0V11m0-5a1.5 1.5 0 013 0v5m0-3.5a1.5 1.5 0 013 0V14a6 6 0 01-6 6h-1a6 6 0 01-5-2.7L5 14.5a1.5 1.5 0 012.5-1.6L8 13.5", w: 2.1 }];
+  if (tone === "goal") return [{ d: "M12 3.5a8.5 8.5 0 1 0 0 17a8.5 8.5 0 1 0 0-17Z" }, { d: "M12 7.5l3.4 2.5-1.3 4h-4.2l-1.3-4z", fill: true }];
+  return [{ d: "M12 3.5a8.5 8.5 0 1 0 0 17a8.5 8.5 0 1 0 0-17Z" }, { d: "M12 7.5v5.5M12 16.4v.1" }];
+}
+const markPics = new Map<string, ReturnType<typeof createPicture>>();
+function MarkIcon({ text, tone, size = 22 }: { text: string; tone: PopupTone; size?: number }) {
+  const key = `${text === "OFFSIDE" || text === "FOUL" || text === "PENALTY" ? text : tone}|${size}`;
+  let pic = markPics.get(key);
+  if (!pic) {
+    pic = createPicture((cv) => {
+      cv.scale(size / 24, size / 24);
+      for (const m of markFor(text, tone)) {
+        const path = Skia.Path.MakeFromSVGString(m.d);
+        if (!path) continue;
+        const pt = Skia.Paint(); pt.setAntiAlias(true); pt.setColor(Skia.Color("#0b1020"));
+        if (!m.fill) { pt.setStyle(PaintStyle.Stroke); pt.setStrokeWidth(m.w ?? 2.6); pt.setStrokeJoin(StrokeJoin.Round); pt.setStrokeCap(StrokeCap.Round); }
+        if (m.rot) { cv.save(); cv.rotate(m.rot, 12, 11); cv.drawPath(path, pt); cv.restore(); } else cv.drawPath(path, pt);
+      }
+    }, { width: size, height: size });
+    markPics.set(key, pic);
+  }
+  return <Canvas style={{ width: size, height: size }}><Picture picture={pic} /></Canvas>;
+}
 /**
- * A TV caption: a coloured tab with its mark, then the word on a dark strip with a coloured underline.
- * It wipes in from the left, holds, and wipes out to the right (kmp-strip), with a light sweep (kmp-shine).
+ * A TV caption (MikeyPopup.tsx Caption): a coloured tab with a slanted left edge and its drawn mark, then the
+ * word on a dark strip with a coloured underline and a slanted right end. It wipes open from the left with a
+ * 12 px slide, holds, and wipes shut to the right (kmp-strip: clip-path inset), with a light sweep (kmp-shine).
  */
 export function Caption({ text, id, ms = 900 }: { text: string; id?: unknown; ms?: number }) {
-  const c = TONE[popupTone(text)];
+  const tone = popupTone(text);
+  const c = TONE[tone];
   const p = usePopClock(id ?? text, ms);
   const [w, setW] = useState(0);
   const W = w || 320;
+  // The wipe: a window that slides across, its content sliding the other way, so the picture stays put
+  // while the window's edge uncovers it (in: left to right) and then covers it (out: left edge to the right).
+  const win = p.interpolate({ inputRange: [0, 0.16, 0.82, 1], outputRange: [-W, 0, 0, W] });
+  const back = p.interpolate({ inputRange: [0, 0.16, 0.82, 1], outputRange: [W, 0, 0, -W] });
+  const slide = p.interpolate({ inputRange: [0, 0.16, 0.82, 1], outputRange: [-12, 0, 0, 12] });
   return (
-    // The window the strip slides through: it comes out from behind its left edge and leaves behind its right.
-    <View style={{ alignSelf: "center", overflow: "hidden", opacity: w ? 1 : 0, paddingBottom: 12, paddingHorizontal: 0 }}>
-      <RNA.View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ flexDirection: "row",
-        transform: [{ translateX: p.interpolate({ inputRange: [0, 0.16, 0.82, 1], outputRange: [-W, 0, 0, W] }) }] }}>
-        <View style={{ flexDirection: "row", boxShadow: "0px 5px 12px rgba(0,0,0,0.6)" } as ViewStyle}>
-          <View style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center", backgroundImage: c.tab } as ViewStyle}>
-            <Text style={{ fontSize: 18, fontWeight: "900", color: "#0b1020" }}>{c.mark}</Text>
+    <RNA.View style={{ alignSelf: "center", opacity: w ? 1 : 0, paddingBottom: 12, transform: [{ translateX: slide }] }}>
+      <RNA.View style={{ overflow: "hidden", transform: [{ translateX: win }] }}>
+        <RNA.View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ flexDirection: "row", transform: [{ translateX: back }] }}>
+          {/* the tab: 46 wide, its left edge slanted (clip-path polygon(16% 0, …)) */}
+          <View style={{ width: 46, height: 40, overflow: "hidden" }}>
+            <View style={{ position: "absolute", left: 4, top: -2, bottom: -2, width: 50, backgroundImage: c.tab, transform: [{ skewX: "-10.4deg" }] } as ViewStyle} />
+            <View style={{ position: "absolute", left: 7.5, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}>
+              <MarkIcon text={text} tone={tone} />
+            </View>
           </View>
-          <View style={{ height: 40, justifyContent: "center", paddingLeft: 12, paddingRight: 18, overflow: "hidden", backgroundImage: "linear-gradient(180deg, rgba(14,22,40,0.96), rgba(6,10,20,0.96))", boxShadow: `inset 0px -3px 0px ${c.edge}` } as ViewStyle}>
-            {/* One line always: a long word must never wrap under the tab. */}
-            <Text numberOfLines={1} style={{ fontFamily: FONT.display, fontSize: text.length > 14 ? 19 : 24, letterSpacing: 1.9, color: "#fff", textTransform: "uppercase" }}>{text}</Text>
-            <RNA.View pointerEvents="none" style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 70,
+          {/* the strip: its right end cut back 7 px at the foot */}
+          <View style={{ height: 40, overflow: "hidden" }}>
+            <View style={{ position: "absolute", left: -8, right: 3.5, top: 0, bottom: 0, backgroundImage: "linear-gradient(180deg, rgba(14,22,40,0.96), rgba(6,10,20,0.96))", boxShadow: `inset 0px -3px 0px ${c.edge}`, transform: [{ skewX: "-9.9deg" }] } as ViewStyle} />
+            <View style={{ flex: 1, justifyContent: "center", paddingLeft: 12, paddingRight: 20 }}>
+              {/* One line always: a long word must never wrap under the tab. */}
+              <Text numberOfLines={1} style={{ fontFamily: FONT.display, fontSize: 24, letterSpacing: 1.9, color: "#fff", textTransform: "uppercase" }}>{text}</Text>
+            </View>
+            <RNA.View pointerEvents="none" style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: "33%",
               backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.18), rgba(255,255,255,0))",
-              transform: [{ translateX: p.interpolate({ inputRange: [0, 0.14, 0.48, 1], outputRange: [-90, -90, 320, 320] }) }, { skewX: "-20deg" }] } as never} />
+              transform: [{ translateX: p.interpolate({ inputRange: [0, 0.14, 0.48, 1], outputRange: [-0.4 * W, -0.4 * W, 0.87 * W, 0.87 * W] }) }, { skewX: "-20deg" }] } as never} />
           </View>
-        </View>
+        </RNA.View>
       </RNA.View>
+    </RNA.View>
+  );
+}
+
+// ── The power shot's strike screen (components/star/PowerShotContact.tsx): a green circle shows on a random
+//    part of the ball after a short random wait; tap it fast for up to 1.5x pace, slow or missed and it drifts. ──
+
+const PS_GIVE_UP_S = 1.2;
+export function PowerStrike({ power, onStrike }: { power: number; onStrike: (quality: number) => void }) {
+  const done = useRef(false);
+  const shownAt = useRef<number | null>(null);
+  const ball = useRef({ x: 0, y: 0, r: 0 });
+  const ballView = useRef<React.ComponentRef<typeof View>>(null);
+  const [spot] = useState(() => { const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * 0.55; return { x: Math.cos(a) * r, y: Math.sin(a) * r }; });
+  const [shown, setShown] = useState(false);
+  const [verdict, setVerdict] = useState<string | null>(null);
+  const ring = useRef(new RNA.Value(0)).current;
+  const onStrikeRef = useRef(onStrike); onStrikeRef.current = onStrike;
+  const finish = (q: number) => {
+    if (done.current) return;
+    done.current = true;
+    setVerdict(q >= 0.95 ? "PERFECT!" : q >= 0.6 ? "GOOD" : q > 0 ? "LATE" : "MISSED");
+    setTimeout(() => onStrikeRef.current(q), 350);
+  };
+  useEffect(() => {
+    const appear = setTimeout(() => {
+      shownAt.current = Date.now();
+      setShown(true);
+      RNA.timing(ring, { toValue: 1, duration: POWER_SHOT_PERFECT_S * 1000, easing: Easing.linear, useNativeDriver: true }).start();
+    }, 250 + Math.random() * 500);
+    const giveUp = setTimeout(() => finish(0), 750 + PS_GIVE_UP_S * 1000);
+    return () => { clearTimeout(appear); clearTimeout(giveUp); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    // A finger DOWN on the ball is the strike (the website's onPointerDown), read where it lands on the glass.
+    <View
+      onStartShouldSetResponder={() => true}
+      onResponderGrant={(e) => {
+        const b = ball.current;
+        if (done.current || !b.r) return;
+        const cx = (e.nativeEvent.pageX - (b.x + b.r)) / b.r, cy = (e.nativeEvent.pageY - (b.y + b.r)) / b.r;
+        if (!(cx * cx + cy * cy <= 1.15)) return; // off the ball entirely
+        if (shownAt.current === null) { finish(0); return; } // too early
+        const rt = (Date.now() - shownAt.current) / 1000;
+        finish(powerShotQuality(rt, Math.hypot(cx - spot.x, cy - spot.y) < 0.3));
+      }}
+      style={{ flex: 1, alignItems: "center", justifyContent: "center", overflow: "hidden", backgroundImage: "linear-gradient(180deg, #1f2937 0%, #0f172a 100%)" } as ViewStyle}>
+      <View pointerEvents="none" style={{ position: "absolute", top: 12, left: 0, right: 0, alignItems: "center" }}>
+        <Text style={{ color: "#fcd34d", fontSize: 13, fontWeight: "900", letterSpacing: 1.3 }}>POWER SHOT</Text>
+        <Text style={{ color: "#fff", fontSize: 30, lineHeight: 32, fontWeight: "900", fontStyle: "italic", marginTop: 2 }}>SMASH IT!</Text>
+        <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700", marginTop: 4 }}>Tap the green circle the moment it shows</Text>
+      </View>
+      <View pointerEvents="none" ref={ballView} onLayout={() => { ballView.current?.measureInWindow((x: number, y: number, w: number) => { ball.current = { x, y, r: w / 2 }; }); }}
+        style={{ width: "62%", aspectRatio: 1, borderRadius: 9999, backgroundImage: "radial-gradient(circle at 35% 30%, #ffffff 0%, #e5e7eb 55%, #9ca3af 100%)", boxShadow: "0px 10px 30px rgba(0,0,0,0.6)" } as ViewStyle}>
+        {shown && (
+          <View style={{ position: "absolute", width: "30%", height: "30%", left: `${50 + spot.x * 50 - 15}%`, top: `${50 + spot.y * 50 - 15}%`, borderRadius: 9999, backgroundColor: "rgba(34,197,94,0.85)", boxShadow: "0px 0px 0px 3px #bbf7d0, 0px 0px 18px #22c55e" } as ViewStyle}>
+            {/* The shrinking ring is the timing window: inside it, the strike is perfect. */}
+            <RNA.View style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0, borderRadius: 9999, borderWidth: 4, borderColor: "#a7f3d0",
+              opacity: ring.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }), transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [2.2, 1] }) }] }} />
+          </View>
+        )}
+      </View>
+      <View pointerEvents="none" style={{ position: "absolute", bottom: 16, left: 8, right: 8, alignItems: "center" }}>
+        <Text style={{ color: "#fff", fontSize: 11, lineHeight: 15, fontWeight: "900", letterSpacing: 1.1, textAlign: "center" }}>
+          AIM POWER {Math.round(power * 100)}% · PERFECT WITHIN {Math.round(POWER_SHOT_PERFECT_S * 1000)} MS · NO BONUS AFTER {Math.round(POWER_SHOT_SLOW_S * 1000)} MS
+        </Text>
+      </View>
+      {verdict && (
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: "38%", alignItems: "center" }}>
+          <Text style={{ borderRadius: 12, overflow: "hidden", backgroundColor: "rgba(0,0,0,0.7)", paddingHorizontal: 16, paddingVertical: 8, fontSize: 30, fontWeight: "900", fontStyle: "italic", letterSpacing: 1.5,
+            color: verdict === "PERFECT!" ? "#6ee7b7" : verdict === "GOOD" ? "#d9f99d" : "#fca5a5" }}>{verdict}</Text>
+        </View>
+      )}
     </View>
   );
 }
