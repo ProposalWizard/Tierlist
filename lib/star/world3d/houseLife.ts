@@ -277,7 +277,12 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     const slot = free.slice().sort((a, b) => Math.hypot(a.stand[0] - y.x, a.stand[1] - y.z) - Math.hypot(b.stand[0] - y.x, b.stand[1] - y.z))[0];
     pending = { obj: ob, slot: slot?.id ?? null };
     if (!slot) { show(objectCard(ob)); return; }
-    const spot = sitRootFor(slot, ready(o.me())).at;
+    const at = sitRootFor(slot, ready(o.me())).at;
+    // a seat: walk to a step in front of it (the house's walk keeps a body's width off anything solid,
+    // so a seat's own spot right at a bed's foot was never reached and the card never came); "use" then
+    // takes the last few centimetres (21 Nov 2026)
+    const back = slot.seat ? 0.32 : 0;
+    const spot: XZ = [at[0] + Math.sin(slot.facing) * back, at[1] + Math.cos(slot.facing) * back];
     const f: XZ = [spot[0] + Math.sin(slot.facing), spot[1] + Math.cos(slot.facing)];
     const ok = o.walkTo(spot, f, () => { if (pending?.obj === ob) show(objectCard(ob)); });
     if (!ok) show(objectCard(ob));

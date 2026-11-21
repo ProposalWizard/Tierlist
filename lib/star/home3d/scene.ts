@@ -383,7 +383,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     // night: the lamps off, a cold blue moonlight through the window, the view outside dark
     night: { hemi: 0.2, sun: 0.22, env: 0.22, hemiC: new THREE.Color("#8fa2d8"), sunC: new THREE.Color("#7f9ce0"), view: new THREE.Color("#141b30"), patch: 0, lamp: 0.08, exp: 0.82 },
     // the next morning: warm, low sun through the same window, the lamps off
-    morning: { hemi: 0.95, sun: 1.12, env: 0.95, hemiC: new THREE.Color("#fff4e6"), sunC: new THREE.Color("#ffd9a8"), view: new THREE.Color("#fff1dc"), patch: 1.2, lamp: 0.35, exp: 1 },
+    morning: { hemi: 0.95, sun: 1.45, env: 0.85, hemiC: new THREE.Color("#ffd6a0"), sunC: new THREE.Color("#ffb468"), view: new THREE.Color("#ffdcae"), patch: 1.5, lamp: 0.2, exp: 1.04 },
   };
   let lightFrom: DayLight = LIGHTS.day, lightTo: DayLight = LIGHTS.day, lightK = 1;
   /** Painted things that follow the clock (roomBuild tags them: window views, skies, sun patches). */
