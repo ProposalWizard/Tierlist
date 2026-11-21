@@ -40,6 +40,9 @@ import { Press } from "../../ui/Press";
 import { C } from "../../world/lookKit";
 import { Backdrop, PageTitle, glassStyle } from "../../ui/look";
 import { ClubBadge, Flag, Seg, Chips, RoundNav, Empty, Title, youRow, clubGlow, rgba } from "../../world/ui";
+import { EuroKnockout, KnockoutTree, CupRoundCard, cupTreeColumns, TREE_ROUNDS } from "./KnockoutTree";
+import { NationPanel, nationGlow } from "./NationPanel";
+import { NationFlag } from "../../draw/NationFlag";
 
 type Comp =
   | { key: string; kind: "league"; label: string; division: CareerDivision }
@@ -104,12 +107,12 @@ export function WorldPane({ career, final = false, last = false, onClose }: {
 }
 
 /** The list every view draws into: a header on top, its rows under it. */
-function RowList({ header, rows }: { header: ReactNode; rows: Row[] }) {
+function RowList({ header, rows, tight }: { header: ReactNode; rows: Row[]; tight?: boolean }) {
   return (
     <FlatList
       data={rows}
       keyExtractor={(r) => r.key}
-      renderItem={({ item }) => <View style={{ marginBottom: 2 }}>{item.node}</View>}
+      renderItem={({ item }) => <View style={{ marginBottom: tight ? 0 : 2 }}>{item.node}</View>}
       ListHeaderComponent={<View style={{ gap: 8, marginBottom: 8 }}>{header}</View>}
       contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 110 }}
       initialNumToRender={14}
@@ -142,13 +145,13 @@ function NowPane({ career, final, onLast }: { career: CareerState; final: boolea
   const you = career.player.club;
 
   const chooser = (
-    <Press onPress={() => setChoosing(true)} style={[glassStyle("glass", glow.startsWith("#") ? glow : undefined), { flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 }]}>
+    <Press onPress={() => setChoosing(true)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: rgba(glow, 0.28), borderWidth: 1, borderColor: rgba(glow, 0.7) }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
-        <Text style={{ fontSize: 18 }}>{comp.kind === "league" ? "🏆" : comp.kind === "euro" ? "⭐" : comp.kind === "nation" || comp.kind === "intl" || comp.kind === "ranking" ? "🌍" : "🥇"}</Text>
-        <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 16, flexShrink: 1 }}>{comp.label}</Text>
-        {comp.kind === "league" && comp.division === yours && <View style={{ backgroundImage: "linear-gradient(180deg, #fde047, #f59e0b)", paddingHorizontal: 7, paddingVertical: 1, borderRadius: 6 } as ViewStyle}><Text style={{ color: "#111", fontWeight: "900", fontSize: 10 }}>YOURS</Text></View>}
+        <Text style={{ fontSize: 17 }}>{comp.kind === "league" ? "🏆" : comp.kind === "euro" ? "⭐" : comp.kind === "nation" || comp.kind === "intl" || comp.kind === "ranking" ? "🌍" : "🥇"}</Text>
+        <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 15, flexShrink: 1 }}>{comp.label}</Text>
+        {comp.kind === "league" && comp.division === yours && <View style={{ backgroundColor: "#fcd34d", paddingHorizontal: 6, borderRadius: 999 }}><Text style={{ color: "#030712", fontWeight: "900", fontSize: 9, lineHeight: 14 }}>YOURS</Text></View>}
       </View>
-      <Text style={{ color: "rgba(255,255,255,0.85)", fontWeight: "800", fontSize: 13 }}>Change ▾</Text>
+      <Text style={{ color: "rgba(255,255,255,0.85)", fontWeight: "700", fontSize: 12 }}>Change ▾</Text>
     </Press>
   );
   const top = (
@@ -168,8 +171,8 @@ function NowPane({ career, final, onLast }: { career: CareerState; final: boolea
       return <CupView key={comp.key} top={top} career={career} name={comp.competition} cup={cup} glow={glow} you={you} />;
     }
     if (comp.kind === "shield") return <ShieldView key={comp.key} top={top} career={career} world={world} competition={comp.competition} glow={glow} />;
-    if (comp.kind === "nation") return <NationView key={comp.key} top={top} career={career} nation={nation} />;
-    if (comp.kind === "ranking") return <RowList key={comp.key} header={top} rows={rankingRows(career, nation)} />;
+    if (comp.kind === "nation") return <NationPanel key={comp.key} top={top} career={career} />;
+    if (comp.kind === "ranking") return <RowList key={comp.key} header={top} rows={rankingRows(career, nation)} tight />;
     return <IntlCompView key={comp.key} top={top} career={career} comp={comp.comp} nation={nation} />;
   })();
 
@@ -187,33 +190,33 @@ function Chooser({ open, onClose, glow, groups, all, current, yours, onPick, onL
   onPick: (k: string) => void; onLast?: () => void;
 }) {
   const inset = useSafeAreaInsets();
+  // Solid dark green, at once (no slide), as on the website. (Modal is drawn in the app's own window: src/rn.js.)
   return (
-    <Modal visible={open} animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: "#0b1a2e", paddingTop: inset.top + 8 }}>
-        <Backdrop kind="stadium" />
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, marginBottom: 8 }}>
-          <PageTitle size={22}>Every league and cup</PageTitle>
-          <Press onPress={onClose} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" }}>
+    <Modal visible={open} animationType="none" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: "#071a10", paddingTop: inset.top + 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, marginBottom: 12 }}>
+          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "900" }}>Every league and cup</Text>
+          <Press onPress={onClose} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" }}>
             <Text style={{ color: C.text, fontSize: 18, fontWeight: "900" }}>✕</Text>
           </Press>
         </View>
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 + inset.bottom }}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 110 + inset.bottom }}>
           {onLast && (
-            <Press onPress={onLast} style={{ flexDirection: "row", justifyContent: "space-between", borderRadius: 12, padding: 14, marginBottom: 12, backgroundColor: rgba("#fbbf24", 0.2), borderWidth: 1, borderColor: rgba("#fbbf24", 0.6) }}>
-              <Text style={{ color: C.text, fontWeight: "900", fontSize: 15 }}>📜 Last season</Text>
-              <Text style={{ color: "#fde68a", fontWeight: "800", fontSize: 12 }}>Tables, scorers, winners</Text>
+            <Press onPress={onLast} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12, marginBottom: 12, backgroundColor: rgba("#fbbf24", 0.2), borderWidth: 1, borderColor: rgba("#fbbf24", 0.6) }}>
+              <Text style={{ color: C.text, fontWeight: "900", fontSize: 14 }}>📜 Last season</Text>
+              <Text style={{ color: "#fde68a", fontWeight: "900", fontSize: 11 }}>Tables, scorers, winners</Text>
             </Press>
           )}
           {groups.map(g => (
             <View key={g.title} style={{ marginBottom: 12 }}>
-              <Title>{g.title}</Title>
+              <Title color="#fcd34d" style={{ marginBottom: 4, paddingHorizontal: 4 }}>{g.title}</Title>
               {g.keys.map(k => {
                 const c = all.find(x => x.key === k)!;
                 const on = c.key === current;
                 return (
-                  <Press key={k} onPress={() => onPick(k)} style={[glassStyle("glass"), { flexDirection: "row", justifyContent: "space-between", borderRadius: 12, padding: 14, marginBottom: 5 }, on && youRow(glow)]}>
-                    <Text style={{ color: C.text, fontWeight: "800", fontSize: 15 }}>{c.label}</Text>
-                    {c.kind === "league" && c.division === yours && <Text style={{ color: C.gold, fontWeight: "900", fontSize: 11 }}>YOURS</Text>}
+                  <Press key={k} onPress={() => onPick(k)} style={[{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12, marginBottom: 4, backgroundColor: "rgba(255,255,255,0.06)" }, on && [youRow(glow), { borderWidth: 0 }]]}>
+                    <Text style={{ color: C.text, fontWeight: "700", fontSize: 14, lineHeight: 20 }}>{c.label}</Text>
+                    {c.kind === "league" && c.division === yours && <Text style={{ color: "#fcd34d", fontWeight: "900", fontSize: 10 }}>YOURS</Text>}
                   </Press>
                 );
               })}
@@ -451,19 +454,6 @@ function euroTieRow(key: string, t: EuroBracket["rounds"][number]["ties"][number
     under={note ? <Text style={{ color: C.dim, fontSize: 10.5, fontWeight: "700", textAlign: "center", marginTop: 3 }}>{note}</Text> : undefined} />);
 }
 
-function EuroKnockout({ bracket, glow, you }: { bracket: EuroBracket; glow: string; you: string }) {
-  const played = bracket.rounds.filter(r => r.ties.some(t => t.a && t.b));
-  const live = played.find(r => r.ties.some(t => t.a && t.b && !t.winner)) ?? played[played.length - 1] ?? bracket.rounds[0];
-  const [pick, setPick] = useState(live?.name ?? "");
-  const r = bracket.rounds.find(x => x.name === pick) ?? live;
-  return (
-    <View style={{ gap: 6 }}>
-      <Chips value={pick} onChange={setPick} items={bracket.rounds.map(x => [x.name, x.name.replace("Round of ", "Last ")] as const)} />
-      {r ? r.ties.map((t, i) => <View key={i}>{euroTieRow(`${r.name}-${i}`, t, glow, you).node}</View>) : null}
-    </View>
-  );
-}
-
 function EuroView({ top, career, world, competition, glow, you }: { top: ReactNode; career: CareerState; world: WorldState; competition: "Champions League" | "Europa League"; glow: string; you: string }) {
   const [tab, setTab] = useState<"table" | "knockout" | "goals" | "assists" | "history">("table");
   const mine = career.euroState?.competition === competition ? career.euroState : null;
@@ -498,48 +488,54 @@ function EuroView({ top, career, world, competition, glow, you }: { top: ReactNo
 const roundChip = (name: string) => name
   .replace("Qualifying Round", "Qual").replace(" Round", "").replace("Round of ", "Last ").replace("Round ", "R");
 
-function cupRoundsRows(cup: CupState, pick: string, glow: string, you: string): Row[] {
-  const r = cup.rounds.find(x => x.name === pick) ?? cup.rounds[cup.rounds.length - 1];
-  if (!r) return [row("e", <Empty text="Not drawn yet." />)];
-  const out: Row[] = [row("title", <Title>{r.name} · {r.ties.length} ties</Title>)];
-  r.ties.forEach((t, i) => out.push(cupTieRow(`${r.name}-${i}`, t, glow, you)));
-  if (r.byes?.length) out.push(row("byes", <Text style={{ color: C.text, fontSize: 11.5, fontWeight: "700" }}><Text style={{ color: C.gold }}>Through on a bye ({r.byes.length}): </Text>{r.byes.map(shortClub).join(" · ")}</Text>));
-  return out;
+function StillToJoin({ cup, glow, you }: { cup: CupState; glow: string; you: string }) {
+  const join = Object.entries(cup.entries ?? {});
+  if (!join.length) return null;
+  return (
+    <View style={[glassStyle("glass"), { borderRadius: 14, padding: 8 }]}>
+      <Title color="#fcd34d" style={{ paddingHorizontal: 4, marginBottom: 4 }}>Still to join</Title>
+      {join.map(([rd, clubs]) => (
+        <View key={rd} style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 4, paddingVertical: 2 }}>
+          <Text style={{ color: C.text, fontWeight: "700", fontSize: 11, lineHeight: 16.5 }}>{rd}</Text>
+          <Text style={{ color: C.text, fontWeight: "700", fontSize: 11, lineHeight: 16.5 }}>{clubs.includes(you) ? `${clubs.length} clubs · you join here` : `${clubs.length} clubs`}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** A cup's rounds (the website's CupKnockout): the rounds before the last 8 as a list picked
+ *  with chips; the last chip, "Quarter-finals", is the tree from the last 8 to the final.
+ *  Opens on the round being played, or on the tree once it is reached (always at the review). */
+function useCupPick(cup: Pick<CupState, "rounds"> | undefined, review: boolean) {
+  const early = (cup?.rounds ?? []).filter(r => !TREE_ROUNDS.includes(r.name));
+  const treeStarted = (cup?.rounds ?? []).some(r => TREE_ROUNDS.includes(r.name));
+  const current = cup?.rounds.find(r => r.ties.some(t => t.hs === undefined)) ?? cup?.rounds[(cup?.rounds.length ?? 1) - 1];
+  const [pick, setPick] = useState<string>(review || treeStarted || !current ? "tree" : current.name);
+  const chips = <Chips value={pick} onChange={setPick} items={[...early.map(r => [r.name, roundChip(r.name)] as const), ["tree", "Quarter-finals"] as const]} />;
+  return { pick, chips, round: early.find(r => r.name === pick) };
 }
 
 function CupView({ top, career, name, cup, glow, you }: { top: ReactNode; career: CareerState; name: string; cup?: CupState; glow: string; you: string }) {
   const [tab, setTab] = useState<"rounds" | "goals" | "assists" | "history">("rounds");
-  const current = cup?.rounds.find(r => r.ties.some(t => t.hs === undefined)) ?? cup?.rounds[cup.rounds.length - 1];
-  const [pick, setPick] = useState(current?.name ?? "");
+  const { pick, chips, round } = useCupPick(cup, false);
   const sc = useMemo(() => cup ? cupScorers(career, name, cup.rounds.flatMap(r => r.ties.map(t => ({ round: r.name, home: t.home, away: t.away, hs: t.hs, as: t.as })))) : { goals: [], assists: [] }, [career, name, cup]);
   let body: Row[];
   if (tab === "history") body = clubHistoryRows(career, name, glow, you);
   else if (!cup) body = [row("e", <Empty text="This cup isn't being played this season." />)];
   else if (tab === "goals") body = scorerRows("g", sc.goals, glow, "goals");
   else if (tab === "assists") body = scorerRows("a", sc.assists, glow, "assists");
-  else {
-    const join = Object.entries(cup.entries ?? {});
-    body = [
-      ...(join.length ? [row("join", (
-        <View style={{ backgroundColor: C.panel, borderRadius: 12, padding: 10 }}>
-          <Title>Still to join</Title>
-          {join.map(([rd, clubs]) => (
-            <View key={rd} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 2 }}>
-              <Text style={{ color: C.text, fontWeight: "700", fontSize: 12 }}>{rd}</Text>
-              <Text style={{ color: C.text, fontWeight: "700", fontSize: 12 }}>{clubs.includes(you) ? `${clubs.length} clubs · you join here` : `${clubs.length} clubs`}</Text>
-            </View>
-          ))}
-        </View>
-      ))] : []),
-      ...cupRoundsRows(cup, pick, glow, you),
-    ];
-  }
+  else if (pick === "tree") body = [row("tree", <KnockoutTree columns={cupTreeColumns(cup)} glow={glow} you={you} />)];
+  else body = [
+    ...(Object.keys(cup.entries ?? {}).length ? [row("join", <View style={{ marginBottom: 6 }}><StillToJoin cup={cup} glow={glow} you={you} /></View>)] : []),
+    ...(round ? [row(`rd-${round.name}`, <CupRoundCard round={round} glow={glow} you={you} />)] : [row("e", <Empty text="Not drawn yet." />)]),
+  ];
   return (
     <RowList rows={body} header={<>
       {top}
       {cup?.winner ? <WinnerBar club={cup.winner} /> : null}
       <Seg value={tab} onChange={setTab} tabs={[["rounds", "Rounds"], ["goals", "Goals"], ["assists", "Assists"], ["history", "History"]] as const} />
-      {tab === "rounds" && cup && cup.rounds.length > 0 ? <Chips value={pick || cup.rounds[cup.rounds.length - 1].name} onChange={setPick} items={cup.rounds.map(r => [r.name, roundChip(r.name)] as const)} /> : null}
+      {tab === "rounds" && cup ? chips : null}
     </>} />
   );
 }
@@ -600,33 +596,25 @@ function matchRow(key: string, m: MatchView, nation: string): Row {
     under={m.pens ? <Text style={{ color: C.gold, fontSize: 10.5, textAlign: "center", fontWeight: "800" }}>{m.pens}</Text> : undefined} />);
 }
 
-/** Your nation: its group tables, last and next matches (the website's IntlWorldPanel, in short). */
-function NationView({ top, career, nation }: { top: ReactNode; career: CareerState; nation: string | null }) {
-  const rows = useMemo<Row[]>(() => {
-    if (!nation) return [row("e", <Empty text="No national team yet." />)];
-    let groups: GroupView[] = []; let ms: { last: MatchView[]; next: MatchView[] } = { last: [], next: [] };
-    try { groups = myGroups(career); ms = myMatches(career); } catch { /* no international world on this save */ }
-    const out: Row[] = [];
-    groups.forEach((g, i) => out.push(...groupRows(`g${i}`, g, nation)));
-    if (ms.next.length) { out.push(row("nt", <Title style={{ marginTop: 6 }}>Next</Title>)); ms.next.forEach((m, i) => out.push(matchRow(`n${i}`, m, nation))); }
-    if (ms.last.length) { out.push(row("lt", <Title style={{ marginTop: 6 }}>Last</Title>)); ms.last.forEach((m, i) => out.push(matchRow(`l${i}`, m, nation))); }
-    return out.length ? out : [row("e", <Empty text="No international matches yet." />)];
-  }, [career, nation]);
-  return <RowList rows={rows} header={top} />;
-}
-
+/** The whole FIFA ranking in one card (the website's RankingView): 11.5 px rows, drawn flags. */
 function rankingRows(career: CareerState, nation: string | null): Row[] {
   let rows: { name: string; points: number }[] = [];
   try { rows = fullRanking(career); } catch { rows = []; }
   if (!rows.length) return [row("e", <Empty text="No ranking yet." />)];
-  return rows.map((t, i) => row(`fifa-${t.name}`, (
-    <View style={[{ flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 8, backgroundColor: i % 2 === 0 ? "rgba(255,255,255,0.04)" : "transparent" }, t.name === nation && youRow(NATION_GLOW)]}>
-      <Text style={{ width: 30, textAlign: "center", color: C.text, fontWeight: "900" }}>{i + 1}</Text>
-      <Flag nation={t.name} size={14} />
-      <Text numberOfLines={1} style={{ flex: 1, color: C.text, fontWeight: "700" }}>{t.name}</Text>
-      <Text style={{ color: C.dim, fontWeight: "900" }}>{t.points.toLocaleString("en-GB")}</Text>
-    </View>
-  )));
+  const glow = nationGlow(nation ?? "England");
+  return rows.map((t, i) => {
+    const you = t.name === nation;
+    return row(`fifa-${t.name}`, (
+      <View style={[{ backgroundColor: "rgba(10,22,40,0.55)", paddingHorizontal: 6 }, i === 0 && { borderTopLeftRadius: 14, borderTopRightRadius: 14, paddingTop: 6 }, i === rows.length - 1 && { borderBottomLeftRadius: 14, borderBottomRightRadius: 14, paddingBottom: 6 }]}>
+        <View style={[{ flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 6 }, !you && i % 2 === 0 ? { backgroundColor: "rgba(255,255,255,0.035)" } : null, you && [youRow(glow), { borderWidth: 0 }]]}>
+          <Text style={{ width: 30, textAlign: "center", color: C.text, fontWeight: "900", fontSize: 11.5, lineHeight: 16.5 }}>{i + 1}</Text>
+          <NationFlag nation={t.name} width={18} />
+          <Text numberOfLines={1} style={{ flex: 1, color: C.text, fontWeight: "700", fontSize: 11.5, lineHeight: 16.5 }}>{t.name}</Text>
+          <Text style={{ color: "rgba(255,255,255,0.85)", fontWeight: "900", fontSize: 11.5, lineHeight: 16.5, fontVariant: ["tabular-nums"] }}>{t.points.toLocaleString("en-GB")}</Text>
+        </View>
+      </View>
+    ));
+  });
 }
 
 function IntlCompView({ top, career, comp, nation }: { top: ReactNode; career: CareerState; comp: CompKind; nation: string | null }) {
@@ -830,7 +818,7 @@ function TrophyDetail({ head, summary, trophy, glow, you }: { head: ReactNode; s
     : trophy.kind === "cup" ? [["rounds", "Rounds"], ["goals", "Goals"], ["assists", "Assists"]]
     : [["final", "Final"]];
   const [tab, setTab] = useState<Tab>(tabs[0][0]);
-  const [pick, setPick] = useState(cup?.rounds[cup.rounds.length - 1]?.name ?? "");
+  const cupPick = useCupPick(cup as unknown as Pick<CupState, "rounds"> | undefined, true);
   const finalCard = final ? <ShieldCard home={final.home} away={final.away} hs={final.hs} as={final.as} pens={final.pens} winner={final.winner} /> : null;
   let body: Row[];
   if (tab === "table") {
@@ -841,7 +829,9 @@ function TrophyDetail({ head, summary, trophy, glow, you }: { head: ReactNode; s
           ? [[ZONE.ucl, "Champions League"], [ZONE.uel, "Europa League"], [ZONE.down, "Relegated"]]
           : [[ZONE.up, "Promoted"], [ZONE.down, "Relegated"]]} />)] : [row("e", <Empty text="No table kept for this one." />)];
   } else if (tab === "knockout") body = [row("ko", bracket ? <EuroKnockout bracket={bracket} glow={glow} you={you} /> : finalCard ?? <Empty text="No knockout kept for this season." />)];
-  else if (tab === "rounds") body = cup ? cupRoundsRows({ competition: name, rounds: cup.rounds } as unknown as CupState, pick, glow, you) : [row("f", finalCard ?? <Empty text="No rounds kept for this season." />)];
+  else if (tab === "rounds") body = !cup ? [row("f", finalCard ?? <Empty text="No rounds kept for this season." />)]
+    : cupPick.pick === "tree" ? [row("tree", <KnockoutTree columns={cupTreeColumns(cup as unknown as Pick<CupState, "rounds">)} glow={glow} you={you} />)]
+    : cupPick.round ? [row(`rd-${cupPick.round.name}`, <CupRoundCard round={cupPick.round} glow={glow} you={you} />)] : [row("e", <Empty text="Not drawn yet." />)];
   else if (tab === "final") body = [row("f", finalCard ?? <Empty text="No final kept for this one." />)];
   else if (tab === "goals") body = scorerRows("g", asRows(sc?.goals ?? []), glow, "goals");
   else body = scorerRows("a", asRows(sc?.assists ?? []), glow, "assists");
@@ -850,7 +840,7 @@ function TrophyDetail({ head, summary, trophy, glow, you }: { head: ReactNode; s
       {head}
       <WinnerBar club={trophy.club} />
       {tabs.length > 1 ? <Seg value={tab} onChange={setTab} tabs={tabs} /> : null}
-      {tab === "rounds" && cup ? <Chips value={pick} onChange={setPick} items={cup.rounds.map(r => [r.name, roundChip(r.name)] as const)} /> : null}
+      {tab === "rounds" && cup ? cupPick.chips : null}
     </>} />
   );
 }

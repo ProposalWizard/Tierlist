@@ -12,7 +12,10 @@
  * screens when those exist.
  */
 import { PointerTour, TourTarget, useTourTarget } from "../../ui/tour";
-import type { TourStep } from "@/lib/star/tours";
+import { HELP_TOURS, type TourStep } from "@/lib/star/tours";
+import { hasSeen } from "@/lib/star/unlocks";
+import { RelationsApp } from "./RelationsApp";
+import { useScreenHelp, markSeenKeys } from "../../world/help";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { FlatList, ScrollView, Text, View, type ViewStyle } from "react-native";
 import type { CareerState, Fixture } from "@/lib/star/types";
@@ -44,13 +47,13 @@ import { GameTop } from "../../world/chrome";
 import { PlayerHead } from "../../draw/PlayerHead";
 import { skinToneHex } from "@/lib/star/playerIdentity";
 
-type Inside = "social" | "squad" | "fixtures" | "messages" | "appstore" | "scout" | "kickabout";
+type Inside = "social" | "squad" | "fixtures" | "messages" | "appstore" | "scout" | "kickabout" | "relations";
 interface App { id: string; label: string; icon: string; bg: string; /** The icon's lighter top colour (PhoneHome bg[0]). */ hi?: string; title?: string; /** A screen of its own (nav name), or an app inside the phone. */ screen?: string; inside?: Inside; soon?: string }
 
 const APPS: App[] = [
   { id: "social", label: "Social", icon: "💬", hi: "#34d399", bg: "#047857", inside: "social" },
   { id: "kickabout", label: "Kickabout", icon: "⚽", hi: "#a3e635", bg: "#15803d", inside: "kickabout" },
-  { id: "relations", label: "Relationships", icon: "❤️", hi: "#fb7185", bg: "#be123c", screen: "relations", soon: "Relationships" },
+  { id: "relations", label: "Relationships", icon: "❤️", hi: "#fb7185", bg: "#be123c", inside: "relations" },
   { id: "squad", label: "Squad", icon: "👥", hi: "#fcd34d", bg: "#d97706", inside: "squad" },
   { id: "fixtures", label: "Fixtures", title: "Fixtures & results", icon: "🏟️", hi: "#38bdf8", bg: "#0369a1", inside: "fixtures" },
   { id: "messages", label: "Messages", icon: "💌", hi: "#f472b6", bg: "#e11d48", inside: "messages" },
@@ -83,6 +86,8 @@ export function PhoneScreen({ params }: { params?: Record<string, unknown> }) {
   const msgs = useMemo(() => (career ? buildMessages(career, null) : []), [career]);
   const [seenMsgs, setSeenMsgs] = useState<Set<string>>(() => readSeenMsgs());
   const [socialSeen, setSocialSeen] = useState<number>(() => readSocialSeen());
+  // The "?" replays the phone's pointer tour over the real screen; it also plays on the first visit.
+  const help = useScreenHelp("phone", career, { noFirst: !!tour || !!app });
   if (!career) return null;
   const glow = clubGlow(career.player.club, career);
   const lastPostAt = Math.max(0, ...(career.media?.posts ?? []).map((p) => p.at));
@@ -112,6 +117,7 @@ export function PhoneScreen({ params }: { params?: Record<string, unknown> }) {
       {app.inside === "messages" && <MessagesApp msgs={msgs} onOpen={(to) => (to === "scout" ? setApp(SCOUT_APP) : nav.go("sponsors"))} />}
       {app.inside === "scout" && <ScoutApp career={career} />}
       {app.inside === "appstore" && <AppStoreApp career={career} />}
+      {app.inside === "relations" && <RelationsApp career={career} onPlay={(k) => nav.go("career-relationship-game", { kind: k })} onOpen={(to) => nav.go(to)} />}
       {app.inside === "kickabout" && <Kickabout onReplays={SCREENS["goal-replays"] ? () => nav.go("goal-replays") : undefined} />}
     </AppShell>
   ) : (
@@ -122,13 +128,17 @@ export function PhoneScreen({ params }: { params?: Record<string, unknown> }) {
   return (
     <View style={{ flex: 1, backgroundColor: "#0b1a2e" }}>
       <Backdrop kind="stadium" />
-      <GameTop career={career} help="phone" />
+      <GameTop career={career} help={help.open} />
       <PhoneBody glow={glow} trim={kit.trim} clock={phoneClockLabel(career)} onHome={app ? () => setApp(null) : undefined} onBack={() => (app ? setApp(null) : nav.back())}>
         <View style={[{ flex: 1 }, app ? ({ borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: "hidden", backgroundImage: `radial-gradient(110% 38% at 50% 0%, ${rgba(glow, 0.24)} 0%, rgba(0,0,0,0) 70%), linear-gradient(180deg, #0b1220, #05080f)` } as ViewStyle) : null]}>{body}</View>
         {tour && (
           <PointerTour chain steps={tour} onDone={() => setTour(null)}
             press={{ "app-messages": () => { const m = APPS.find((a) => a.id === "messages"); if (m) open(m); }, "msg-sponsors": () => nav.go("sponsors") }} />
         )}
+        {!tour && help.node}
+        {!tour && !help.showing && app?.inside === "relations" && career.unlocks && !hasSeen(career, "help-relations") ? (
+          <PointerTour key="phone-relations" steps={[{ target: "phone-relations", text: HELP_TOURS.relations[0].text }]} onDone={() => markSeenKeys("help-relations")} />
+        ) : null}
         {soon && (
           <Press onPress={() => setSoon(null)} style={{ position: "absolute", left: 14, right: 14, bottom: 110, backgroundColor: "rgba(3,7,18,0.95)", borderColor: "rgba(252,211,77,0.5)", borderWidth: 1, borderRadius: 14, padding: 14 }}>
             <Text style={{ color: C.text, fontWeight: "800", textAlign: "center" }}>{soon} is coming to the phone app.</Text>

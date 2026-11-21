@@ -15,6 +15,7 @@
 //   ownership                   the Owner app: reputation, the Rule Book, your clubs
 //   reputation                  fame and reputation, and what each unlocks
 //   rule-book                   governing bodies: influence, rule-change votes, presidencies
+//   locker                      everything you own (Star Pass → LOCKER): use it, or see what is left
 //   vote-ceremony { vote }      a vote (world/politics.ts PendingVote), then back where it came from
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,6 +36,8 @@ import { InvestmentsScreen } from "../screens/world/Investments";
 import { OwnershipScreen, ReputationScreen } from "../screens/world/Ownership";
 import { RuleBookScreen } from "../screens/world/RuleBook";
 import { VoteCeremonyScreen } from "../screens/world/VoteCeremony";
+import { LockerScreen } from "../screens/world/Locker";
+import { HallOfFameScreen } from "../screens/world/HallOfFame";
 
 function FeedScreen({ params }: { params?: Record<string, unknown> }) {
   const career = useCareer();
@@ -77,4 +80,7 @@ export const worldScreens: ScreenMap = {
   reputation: ReputationScreen,
   "rule-book": RuleBookScreen,
   "vote-ceremony": VoteCeremonyScreen,
+  locker: LockerScreen,
+  // the Hall of Fame in the website's gold look (this entry replaces the career area's plain one: registry.ts merges world after career)
+  "hall-of-fame": HallOfFameScreen,
 };

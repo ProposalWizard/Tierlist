@@ -25,6 +25,7 @@ import { gamePlayedThisWeek } from "@/lib/star/relationships";
 import { canAct } from "@/lib/star/week";
 import { ScreenFrame, Seg, Btn, Meter, Note, Title, rgba } from "../../world/ui";
 import { Negotiation } from "./Negotiation";
+import { useScreenHelp } from "../../world/help";
 
 type Tab = "deals" | "offers" | "brands";
 const FACE = { happy: "😊", neutral: "😐", angry: "😠" } as const;
@@ -169,6 +170,7 @@ export function SponsorsScreen() {
   const [tab, setTab] = useState<Tab | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [negId, setNegId] = useState<string | null>(null);
+  const help = useScreenHelp("sponsors", career); // the first-visit pointer tour (page.tsx firstHelp("sponsors"))
   if (!career) return null;
   const flash = (t: string) => { setNote(t); setTimeout(() => setNote((n) => (n === t ? null : n)), 4000); };
   const cur = () => getCareer() ?? career;
@@ -212,6 +214,7 @@ export function SponsorsScreen() {
     <ScreenFrame title="Sponsors" kicker="Your deals" onBack={() => nav.back()} bar={null}
       right={<Text style={{ color: "#fde68a", fontWeight: "900", fontSize: 12, backgroundColor: "rgba(251,191,36,0.18)", borderWidth: 1, borderColor: "rgba(253,224,71,0.3)", paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, overflow: "hidden" }}>★ {Math.round(fame)} fame</Text>}>
       <Note text={note} />
+      {help.node}
       <View style={[glassStyle("glass"), { borderRadius: 16, padding: 12, flexDirection: "row", justifyContent: "space-between", gap: 10 }]}>
         <View style={{ flex: 1 }}>
           <Title color={C.green}>Sponsor money</Title>

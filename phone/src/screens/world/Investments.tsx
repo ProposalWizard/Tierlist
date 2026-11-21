@@ -18,7 +18,7 @@
  * then the man for it (a man already on the sheet swaps with the one there).
  */
 import { useMemo, useState } from "react";
-import { Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import type { CareerState, LeagueSquad } from "@/lib/star/types";
 import {
   allInvestableClubs, clubValuation, stakeIn, isMajorityOwner, canInvestIn, MAJORITY_THRESHOLD, ownedClubState,
@@ -39,6 +39,9 @@ import { useNav } from "../../nav";
 import { Press } from "../../ui/Press";
 import { Frame, Card, Btn, ClubCrest, C } from "../../world/lookKit";
 import { Seg } from "../../world/ui";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useWindowDimensions } from "react-native";
+import { Backdrop, BackPill, glassStyle } from "../../ui/look";
 import { Negotiation } from "./Negotiation";
 import { NumBox, TextBox, Choose, Problem, SmallBtn, Line, Small, Head, KitSwatch, ColourRow, pctText } from "./politicsKit";
 import * as P from "../../world/politics";
@@ -60,7 +63,7 @@ export function InvestmentsScreen({ params }: { params?: Record<string, unknown>
   const owned = (career.investments ?? []).filter((i) => i.percent > 0);
   const majority = owned.filter((i) => isMajorityOwner(career, i.club));
   return (
-    <Frame kicker={`Balance ★${money(career.money)}`} title="Investments" onBack={() => nav.back()}>
+    <InvFrame balance={career.money} onBack={() => nav.back()}>
       <Seg value={tab} onChange={(t) => { setTab(t); setBoardClub(null); }}
         tabs={[["market", "Market"], ["portfolio", "Portfolio"], ["boardroom", `Boardroom${majority.length ? ` (${majority.length})` : ""}`]]} />
       {tab === "market" && <Market career={career} />}
@@ -70,7 +73,25 @@ export function InvestmentsScreen({ params }: { params?: Record<string, unknown>
             initialSection={boardClub === entry.club ? entry.section : undefined}
             otherOwnedClubs={owned.map((i) => i.club).filter((c) => c !== boardClub && c !== career.player.club)} />
         : <BoardroomList clubs={majority.map((i) => i.club)} career={career} onOpen={setBoardClub} />)}
-    </Frame>
+    </InvFrame>
+  );
+}
+
+/** The website's Investments header: ◂ BACK and one bar, BALANCE on the left, ★ your money in yellow on the right. */
+function InvFrame({ balance, onBack, children }: { balance: number; onBack: () => void; children: React.ReactNode }) {
+  const inset = useSafeAreaInsets();
+  return (
+    <View style={{ flex: 1, backgroundColor: "#0b1a2e", paddingTop: inset.top }}>
+      <Backdrop kind="stadium" />
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 }}>
+        <BackPill onPress={onBack} />
+        <View style={[glassStyle("glass", "#f59e0b"), { flex: 1, height: 38, borderRadius: 12, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }]}>
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "900", letterSpacing: 2 }}>BALANCE</Text>
+          <Text numberOfLines={1} style={{ color: "#fde047", fontSize: 15, fontWeight: "900", fontVariant: ["tabular-nums"] }}>★ {money(balance)}</Text>
+        </View>
+      </View>
+      <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 40 + inset.bottom, gap: 10 }}>{children}</ScrollView>
+    </View>
   );
 }
 
@@ -80,6 +101,7 @@ function Market({ career }: { career: CareerState }) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "value">("name");
   const [open, setOpen] = useState<string | null>(null);
+  const boxH = Math.round(useWindowDimensions().height * 0.6);
   const all = useMemo(() => allInvestableClubs(), []);
   const valuations = useMemo(() => new Map(all.map((c) => [c, clubValuation(c, career)])), [all, career]);
   const clubs = all.filter((c) => canInvestIn(career, c)).filter((c) => c.toLowerCase().includes(search.toLowerCase()));
@@ -91,22 +113,23 @@ function Market({ career }: { career: CareerState }) {
         <SmallBtn flex={false} tone={sortBy === "name" ? "green" : "plain"} label="A–Z" onPress={() => setSortBy("name")} />
         <SmallBtn flex={false} tone={sortBy === "value" ? "green" : "plain"} label="★ Value" onPress={() => setSortBy("value")} />
       </Line>
-      <Card style={{ padding: 0 }}>
-        {sorted.slice(0, 80).map((club, i) => {
+      {/* a fixed box (60% of the screen) that scrolls inside, names only, as on the website */}
+      <Card style={{ padding: 0, overflow: "hidden" }}>
+        <ScrollView nestedScrollEnabled style={{ maxHeight: boxH }}>
+        {sorted.map((club, i) => {
           const valuation = valuations.get(club) ?? clubValuation(club, career);
           const stake = stakeIn(career, club);
           const isOpen = open === club;
           return (
             <View key={club} style={{ borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-              <Press onPress={() => setOpen(isOpen ? null : club)} style={{ flexDirection: "row", alignItems: "center", gap: 10, padding: 12 }}>
-                <ClubCrest club={club} size={28} />
-                <View style={{ flex: 1 }}>
-                  <Text numberOfLines={1} style={{ color: C.text, fontWeight: "800" }}>{club}</Text>
+              <Press onPress={() => setOpen(isOpen ? null : club)} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 10 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ color: C.text, fontWeight: "700", fontSize: 14, lineHeight: 20 }}>{club}</Text>
                   {stake ? <Text style={{ color: "#6ee7b7", fontSize: 11, fontWeight: "800" }}>You own {pctText(stake.percent)}{stake.percent >= MAJORITY_THRESHOLD ? " · Majority" : ""}</Text> : null}
                 </View>
                 <View style={{ alignItems: "flex-end" }}>
-                  <Text style={{ color: C.gold, fontWeight: "900" }}>★{money(valuation)}</Text>
-                  <Text style={{ color: C.dim, fontSize: 10, fontWeight: "700" }}>full value</Text>
+                  <Text style={{ color: "#fde047", fontWeight: "900", fontSize: 14, lineHeight: 20, fontVariant: ["tabular-nums"] }}>★ {money(valuation)}</Text>
+                  <Text style={{ color: "#fff", fontSize: 9, lineHeight: 13, fontWeight: "600" }}>full value</Text>
                 </View>
               </Press>
               {isOpen && <StakeControls key={club} career={career} club={club} valuation={valuation} />}
@@ -114,8 +137,8 @@ function Market({ career }: { career: CareerState }) {
           );
         })}
         {clubs.length === 0 && <Text style={{ color: C.text, padding: 16, textAlign: "center" }}>No clubs match “{search}”.</Text>}
+        </ScrollView>
       </Card>
-      {sorted.length > 80 && <Small>Showing 80 of {sorted.length}. Search to find the rest.</Small>}
     </>
   );
 }

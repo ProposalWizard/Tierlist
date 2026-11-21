@@ -14,8 +14,10 @@
  * Not on the phone yet: the Locker (its button says so) and the 3D spin of a
  * reward (the still is shown).
  */
-import { useMemo, useRef, useState } from "react";
-import { Image, Modal, ScrollView, Text, View, type ImageSourcePropType, type ViewStyle } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Easing, Image, Modal, ScrollView, Text, View, type ImageSourcePropType, type ViewStyle } from "react-native";
+import { RewardReveal } from "./Locker";
+import { useNav } from "../../nav";
 import { starStatus, starTitle, STAR_GATES, ledgerOf, MAX_LEVEL } from "@/lib/star/starPoints";
 import { STAR_PASS_THEMES, rewardLevelsOf, rewardTier, themeFor } from "@/lib/star/starPassRewards";
 import { findCard, fullCatalogue, DEFAULT_PASS_LEVELS, type CatalogueItem } from "@/lib/star/rewardCatalogue";
@@ -71,6 +73,8 @@ export function StarPassScreen() {
   const stops = useMemo(() => rewardLevelsOf(levels), [levels]);
   const Y = useMemo(() => buildY(stops), [stops]);
   const [preview, setPreview] = useState<number | null>(null);
+  const [reveal, setReveal] = useState<number | null>(null);
+  const nav = useNav();
   const [points, setPoints] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [w, setW] = useState(0);
@@ -155,7 +159,7 @@ export function StarPassScreen() {
           {/* a podium and its reward at every reward level */}
           {w > 0 && stops.map((n) => (
             <RewardStop key={n} level={n} y={top(yOf(n))} width={w} card={cardAt(n)} reached={n <= st.stars} next={n === nextReward}
-              claimable={claimable.has(n)} claimed={isClaimed(career, n)} onOpen={() => setPreview(n)} />
+              claimable={claimable.has(n)} claimed={isClaimed(career, n)} onOpen={() => (claimable.has(n) && cardAt(n) ? setReveal(n) : setPreview(n))} />
           ))}
 
           {/* you */}
@@ -178,7 +182,7 @@ export function StarPassScreen() {
             <Text numberOfLines={1} style={{ marginTop: 3, color: "#fff", fontSize: 12, fontWeight: "900", letterSpacing: 1.9, textTransform: "uppercase" }}>{starTitle(st.stars)}</Text>
             {st.gate ? <Text numberOfLines={1} style={{ marginTop: 2, color: "#fff", fontSize: 11, fontWeight: "900" }}>🔒 {st.gate.need}</Text> : null}
           </View>
-          {/* The Locker (the website's 2D LockerScreen) is not built for the phone yet: no dead button. */}
+          <SquareBtn icon="🎒" label="Locker" onPress={() => nav.go("locker")} />
           <SquareBtn icon="★" label="Pts" on={points} onPress={() => setPoints((v) => !v)} />
         </View>
         <View style={{ height: 1, marginHorizontal: 0, backgroundImage: "linear-gradient(90deg, rgba(253,224,71,0), rgba(253,224,71,0.85), rgba(253,224,71,0))" } as ViewStyle} />
@@ -214,8 +218,29 @@ export function StarPassScreen() {
             onUse={() => { const c = getCareer(); if (c) setCareer(equipCard(claimLevel(c, preview, shown, starStatus(c).stars), shown)); setPreview(null); }} />
         )}
       </Modal>
+      {/* Claim: the full-screen reward reveal (LEVEL n REWARD, Later / Use now) */}
+      {reveal !== null && cardAt(reveal) ? (
+        <RewardReveal card={cardAt(reveal)!} level={reveal} career={career}
+          onLater={() => { const c = getCareer(); const cd = cardAt(reveal); if (c && cd) setCareer(claimLevel(c, reveal, cd, starStatus(c).stars)); setReveal(null); }}
+          onUse={() => { const c = getCareer(); const cd = cardAt(reveal); if (c && cd) setCareer(equipCard(claimLevel(c, reveal, cd, starStatus(c).stars), cd)); setReveal(null); }} />
+      ) : null}
     </View>
   );
+}
+
+/** The glow under the next / claimable podium breathes, and its box bobs (StarRatingSheet's pulse and bounce). */
+function usePulse(on: boolean) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!on) return;
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(t, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      Animated.timing(t, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, [on, t]);
+  return t;
 }
 
 function SquareBtn({ icon, label, on, onPress }: { icon: string; label: string; on?: boolean; onPress: () => void }) {
@@ -249,14 +274,16 @@ function RewardStop({ level, y, width, card, reached, next, claimable, claimed, 
   const h = w * aspect;
   const lit = reached || next;
   const glow = claimable ? "#fde047" : theme.accent;
+  const moving = claimable || next;
+  const pulse = usePulse(moving);
   return (
     <>
       <View pointerEvents="none" style={{ position: "absolute", left: RAIL_X + 8, width: 150, top: y - 1, height: 2, opacity: lit ? 0.85 : 0.4, backgroundImage: `linear-gradient(90deg, ${reached ? "#fde047" : theme.accent}, rgba(0,0,0,0))` } as ViewStyle} />
       <View style={{ position: "absolute", left: RAIL_X + 22, right: 8, top: y - slotH / 2, height: slotH, alignItems: "center", justifyContent: "flex-end" }}>
         <Press onPress={onOpen} style={{ width: w, height: h, opacity: lit ? 1 : 0.85 }}>
-          {lit && <View pointerEvents="none" style={{ position: "absolute", left: "5%", right: "5%", top: "30%", bottom: 0, backgroundImage: `radial-gradient(closest-side, ${glow}88, ${glow}00)` } as ViewStyle} />}
+          {lit && <Animated.View pointerEvents="none" style={{ position: "absolute", left: "5%", right: "5%", top: "30%", bottom: 0, opacity: moving ? pulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }) : 1 }}><View style={{ flex: 1, backgroundImage: `radial-gradient(closest-side, ${glow}88, ${glow}00)` } as ViewStyle} /></Animated.View>}
           {(scene ?? plinth) ? <Image source={(scene ?? plinth)!} resizeMode="contain" fadeDuration={0} style={{ width: w, height: h }} /> : null}
-          {!isTop && !scene && box ? <Image source={box} resizeMode="contain" fadeDuration={0} style={{ position: "absolute", left: (w - (great ? 92 : 70)) / 2, bottom: h * (great ? 0.52 : 0.46), width: great ? 92 : 70, height: great ? 92 : 70 }} /> : null}
+          {!isTop && !scene && box ? <Animated.Image source={box} resizeMode="contain" fadeDuration={0} style={{ position: "absolute", left: (w - (great ? 92 : 70)) / 2, bottom: h * (great ? 0.52 : 0.46), width: great ? 92 : 70, height: great ? 92 : 70, transform: [{ translateY: moving ? pulse.interpolate({ inputRange: [0, 1], outputRange: [0, -7] }) : 0 }] }} /> : null}
           {claimed && !isTop && (
             <View style={{ position: "absolute", right: "6%", top: "8%", width: 24, height: 24, borderRadius: 4, alignItems: "center", justifyContent: "center", backgroundColor: "#4ade80" }}>
               <Text style={{ color: "#030712", fontWeight: "900", fontSize: 13 }}>✓</Text>
