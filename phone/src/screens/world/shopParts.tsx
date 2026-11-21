@@ -18,6 +18,10 @@ export const RANK: ImageSourcePropType[] = [
   require("../../../assets/look/ui/rank-1.webp"), require("../../../assets/look/ui/rank-2.webp"), require("../../../assets/look/ui/rank-3.webp"),
   require("../../../assets/look/ui/rank-4.webp"), require("../../../assets/look/ui/rank-5.webp"),
 ];
+const FRAME: ImageSourcePropType[] = [
+  require("../../../assets/look/ui/frame-1.webp"), require("../../../assets/look/ui/frame-2.webp"), require("../../../assets/look/ui/frame-3.webp"),
+  require("../../../assets/look/ui/frame-4.webp"), require("../../../assets/look/ui/frame-5.webp"),
+];
 const BURST: ImageSourcePropType = require("../../../assets/look/ui/burst.webp");
 export const FX: Record<string, ImageSourcePropType> = {
   "fx-energy": require("../../../assets/look/ui/fx-energy.webp"), "fx-curve": require("../../../assets/look/ui/fx-curve.webp"),
@@ -189,7 +193,10 @@ export function ConfirmSheet({ info, money, onCancel, onConfirm }: { info: Confi
   return (
     <StoreSheet open onClose={onCancel} title={info.blackMarket ? "Black market" : "Confirm purchase"} accent={info.blackMarket ? "#ef4444" : "#fbbf24"}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-        <View style={{ width: 96, height: 128, borderRadius: 8, borderWidth: 2, borderColor: tierColour(info.level), backgroundColor: "#0a1120", alignItems: "center", justifyContent: "center", padding: 6, overflow: "hidden" }}>{info.pic}</View>
+        <View style={{ width: 96, height: 128, alignItems: "center", justifyContent: "center" }}>
+          <Image source={FRAME[Math.max(1, Math.min(5, info.level)) - 1]} resizeMode="stretch" fadeDuration={0} style={{ position: "absolute", width: 96, height: 128 }} />
+          <View style={{ width: 80, height: 104, alignItems: "center", justifyContent: "center" }}>{info.pic}</View>
+        </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ color: "#fff", fontSize: 20, lineHeight: 24, fontWeight: "900" }}>{info.title}</Text>
           {info.sub ? <Text style={{ marginTop: 2, color: "rgba(255,255,255,0.8)", fontSize: 11.5, lineHeight: 16, fontWeight: "700" }}>{info.sub}</Text> : null}

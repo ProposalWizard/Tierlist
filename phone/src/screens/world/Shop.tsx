@@ -520,7 +520,7 @@ function ForYou({ items, width, view, own, stars, onDetails, onSeeAll }: {
               <View style={{ width, height: h }}>
                 <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: `radial-gradient(60% 36% at 50% 40%, rgba(255,255,255,0.15), rgba(255,255,255,0) 70%), radial-gradient(90% 55% at 50% 44%, ${rgba(cat.accent, 0.2)}, rgba(0,0,0,0) 72%)` } as ViewStyle} />
                 <Press onPress={locked ? undefined : () => onDetails(item.cat, item.key)} style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 110, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 }}>
-                  <View style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center", transform: [{ scale: v.cat === "cans" ? 0.7 : 1.08 }] }}><Pic v={v} size={Math.min(width, h) * 0.7} grey={locked} /></View>
+                  <View style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center", transform: [{ scale: v.cat === "cans" ? 0.5 : 1.08 }] }}><Pic v={v} size={Math.min(width, h) * 0.7} grey={locked} /></View>
                   {locked ? <View style={{ position: "absolute", width: 72, height: 72, borderRadius: 36, backgroundColor: "rgba(0,0,0,0.55)", borderWidth: 2, borderColor: "rgba(252,211,77,0.6)", alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 36 }}>🔒</Text></View> : null}
                 </Press>
                 <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 64, bottom: 12, paddingHorizontal: 14 }}>
@@ -606,7 +606,7 @@ export function ShopScreen({ params }: { params?: Record<string, unknown> }) {
   // the list opens on the next item (and comes back to it after a purchase)
   useEffect(() => {
     if (view !== 5 || landing <= 0) return;
-    const id = setTimeout(() => { try { listRef.current?.scrollToIndex({ index: landing, animated: false, viewPosition: 0 }); } catch { /* not laid out yet */ } }, 60);
+    const id = setTimeout(() => { try { listRef.current?.scrollToIndex({ index: landing, animated: false, viewPosition: 0.5 }); } catch { /* not laid out yet */ } }, 60);
     return () => clearTimeout(id);
   }, [shownCat, view, bought]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!career) return null;
@@ -616,14 +616,13 @@ export function ShopScreen({ params }: { params?: Record<string, unknown> }) {
     setCareer(r.career);
     flash(r.unlocked ? `${done} ${r.unlocked}.` : done);
   };
-  const v = (c: CatId, k: string) => itemView({ career, cat: c, k, boots, level: pick[k], onAsk: (cf) => { setSheet(null); setConfirm(cf); }, onUse: (id) => apply(drinkCan(career, id), "Drunk.") });
+  const v = (c: CatId, k: string) => itemView({ career, cat: c, k, boots, level: pick[k], onAsk: (cf) => { setSheet(null); setPick({}); setConfirm(cf); }, onUse: (id) => apply(drinkCan(career, id), "Drunk.") });
   const fame = fameOf(career);
   const fl = fameLevel(fame);
   const nfl = nextFameLevel(fame);
   const sheetView = sheet ? v(sheet.cat, sheet.key) : null;
   const picFor = (c: CatId, k: string, lv: number) => { const src = picOf(c, k, lv); return src ? <Image source={src} resizeMode="contain" fadeDuration={0} style={{ width: "100%", height: "100%" }} /> : <Text style={{ fontSize: 48 }}>{SHOP_CATS.find((x) => x.id === c)!.icon}</Text>; };
   const moreLinks: { id: string; icon: string; label: string; go: () => void }[] = [
-    { id: "sponsors", icon: "🤝", label: "Sponsors", go: () => nav.go("sponsors") },
     ...(SCREENS.store ? [{ id: "store", icon: "🪙", label: "Store", go: () => nav.go("store") }] : []),
   ];
   // The coach: the story's first Shop visit (cans, then Boots), else the first-visit line, else the "?" replay.
@@ -669,8 +668,8 @@ export function ShopScreen({ params }: { params?: Record<string, unknown> }) {
             key={`list-${shownCat}`}
             data={keys}
             keyExtractor={(k) => `${shownCat}-${k}`}
-            getItemLayout={(_, i) => ({ length: 136, offset: 6 + 136 * i, index: i })}
-            contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 6, paddingBottom: 20, gap: 10 }}
+            getItemLayout={(_, i) => ({ length: 134, offset: 6 + 134 * i, index: i })}
+            contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 6, paddingBottom: 20, gap: 8 }}
             renderItem={({ item: k, index }) => {
               const iv = v(shownCat, k);
               return <ListCard v={iv} accent={accent} on={index === landing} next={index === nu && !isOwned(shownCat, k)} own={ownLabel(shownCat, k)}
@@ -717,7 +716,7 @@ export function ShopScreen({ params }: { params?: Record<string, unknown> }) {
       <BottomBar active={null} />
 
       {sheet && sheetView ? (
-        <DetailSheet v={sheetView} career={career} boots={boots} onLevel={(lv) => setPick((p) => ({ ...p, [sheet.key]: lv }))} onClose={() => setSheet(null)} />
+        <DetailSheet v={sheetView} career={career} boots={boots} onLevel={(lv) => setPick((p) => ({ ...p, [sheet.key]: lv }))} onClose={() => { setSheet(null); setPick({}); }} />
       ) : null}
       <ConfirmSheet
         info={confirm ? {

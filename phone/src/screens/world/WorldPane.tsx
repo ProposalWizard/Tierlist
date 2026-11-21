@@ -492,7 +492,7 @@ function StillToJoin({ cup, glow, you }: { cup: CupState; glow: string; you: str
   const join = Object.entries(cup.entries ?? {});
   if (!join.length) return null;
   return (
-    <View style={[glassStyle("glass", glow.startsWith("#") ? glow : undefined), { borderRadius: 14, padding: 8 }]}>
+    <View style={[glassStyle("glass"), { borderRadius: 14, padding: 8 }]}>
       <Title color="#fcd34d" style={{ paddingHorizontal: 4, marginBottom: 4 }}>Still to join</Title>
       {join.map(([rd, clubs]) => (
         <View key={rd} style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 4, paddingVertical: 2 }}>

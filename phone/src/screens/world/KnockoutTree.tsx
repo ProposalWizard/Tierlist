@@ -68,7 +68,8 @@ export function TieLine({ a, b, score, winner, note, mine, glow, badges, size = 
   );
 }
 
-const card = (glow: string): ViewStyle[] => [glassStyle("glass", glow.startsWith("#") ? glow : undefined) as ViewStyle, { borderRadius: 14, overflow: "hidden" }];
+// the website's ClubCard is frosted glass with only a faint club tint: plain navy glass here (a club-colour fill read far too strong)
+const card = (_glow: string): ViewStyle[] => [glassStyle("glass") as ViewStyle, { borderRadius: 14, overflow: "hidden" }];
 
 export function KnockoutTree({ columns, glow, you }: { columns: TreeColumn[]; glow: string; you: string }) {
   const [pick, setPick] = useState<{ c: number; t: number } | null>(null);

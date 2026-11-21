@@ -30,7 +30,7 @@ export function nationGlow(nation: string): string {
   } catch { return "#3b82f6"; }
 }
 
-const glass = (glow: string): ViewStyle[] => [glassStyle("glass", glow.startsWith("#") ? glow : undefined) as ViewStyle, { borderRadius: 16, overflow: "hidden" }];
+const glass = (_glow: string): ViewStyle[] => [glassStyle("glass") as ViewStyle, { borderRadius: 16, overflow: "hidden" }];
 
 function Card({ title, right, glow, children }: { title: string; right?: ReactNode; glow: string; children: ReactNode }) {
   return (
