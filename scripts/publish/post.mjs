@@ -6,6 +6,7 @@
  *        [--at 2026-11-12T18:30:00Z] [--ig "…"] [--fb "…"] [--yt "…"] [--site https://knowitball.co.uk]
  *   node scripts/publish/post.mjs --status          the accounts, the queue and the numbers
  *   node scripts/publish/post.mjs --tick            run the poster now instead of waiting for the 5-minute timer
+ *   node scripts/publish/post.mjs --stats           live numbers: re-read every recent post's numbers from the apps now
  *
  * Auth: every request carries the header x-publish-agent. In a cloud chat the network proxy adds it (a network
  * secret for host knowitball.co.uk, header x-publish-agent = PUBLISH_AGENT_TOKEN); locally set PUBLISH_AGENT_TOKEN.
@@ -42,6 +43,7 @@ function show(d) {
 }
 
 if (has("status")) { show(await call("/api/admin/publish")); process.exit(0); }
+if (has("stats")) { const t = await call("/api/admin/publish/tick?fresh=1", { method: "POST", body: "{}" }); console.log(`Re-read ${t.statsRefreshed} numbers from the apps.${t.errors?.length ? " Errors: " + t.errors.join(" | ") : ""}`); show(await call("/api/admin/publish")); process.exit(0); }
 if (has("tick")) { console.log(JSON.stringify(await call("/api/admin/publish/tick", { method: "POST", body: "{}" }), null, 2)); process.exit(0); }
 
 const file = args.find((a, i) => !a.startsWith("--") && !(i > 0 && args[i - 1].startsWith("--")));

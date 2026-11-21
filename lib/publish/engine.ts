@@ -34,7 +34,8 @@ const STATS_EVERY_MS = 3 * 60 * 60 * 1000;
 
 export interface TickReport { moved: { id: string; platform: Platform; stage: string; note?: string }[]; statsRefreshed: number; errors: string[] }
 
-export async function tick(api: EngineApi): Promise<TickReport> {
+/** fresh = read every recent post's numbers now, ignoring the 3-hour gap (someone asked for live numbers). */
+export async function tick(api: EngineApi, opts: { fresh?: boolean } = {}): Promise<TickReport> {
   const now = api.now();
   const report: TickReport = { moved: [], statsRefreshed: 0, errors: [] };
   let posts: PublishPost[] = [];
@@ -90,7 +91,7 @@ export async function tick(api: EngineApi): Promise<TickReport> {
       for (const p of post.platforms) {
         const r = results[p];
         if (!r || r.stage !== "done" || !r.id) continue;
-        if (r.statsAt && now.getTime() - Date.parse(r.statsAt) < STATS_EVERY_MS) continue;
+        if (!opts.fresh && r.statsAt && now.getTime() - Date.parse(r.statsAt) < STATS_EVERY_MS) continue;
         try { r.stats = await api.stats(p, r.id); r.statsError = undefined; report.statsRefreshed++; }
         catch (e) { r.statsError = (e as Error).message.slice(0, 200); }
         r.statsAt = now.toISOString(); changed = true;
