@@ -13,14 +13,15 @@ import { TrialScreen, ManagerTalkScreen, OffersScreen, SignedScreen } from "../s
 import { PostMatchScreen } from "../screens/career/PostMatch";
 import { StatsScreen } from "../screens/career/Stats";
 import { TrainingScreen, LevelSelectScreen, DrillScreen } from "../screens/career/Training";
-import { FinalSeasonScreen, RetirementScreen } from "../screens/career/SeasonEnd";
+import { FinalSeasonScreen, RetirementScreen, FarewellInviteScreen, FarewellSheetsScreen, FarewellResultScreen, LegacyScreen } from "../screens/career/EndScreens";
 import { GoldenBallNight, SeasonAwardsNight } from "../screens/career/Ceremonies";
 import { PreMatchScreen } from "../screens/career/PreMatch";
-import { WatchedScreen, CallUpScreen, ContractRenewalScreen, SettingsScreen, PlaceholderScreen } from "../screens/career/Misc";
+import { ContractRenewalScreen, SettingsScreen, PlaceholderScreen } from "../screens/career/Misc";
+import { WatchedScreen, CallUpScreen } from "../screens/career/IntlScreens";
 import { YouthScreen, FreeAgentScreen, LoanBriefScreen } from "../screens/career/Youth";
 import { DeadlineDayScreen, KnockoutRoundupScreen, PlayOffRoundupScreen, TournamentTableScreen } from "../screens/career/Roundups";
 import { WageTalkScreen, RelegationMoveScreen } from "../screens/career/Moves";
-import { FarewellInviteScreen, FarewellSheetsScreen, FarewellWalkoutScreen, FarewellResultScreen, LegacyScreen, HallOfFameScreen } from "../screens/career/Farewell";
+import { FarewellWalkoutScreen, HallOfFameScreen } from "../screens/career/Farewell";
 import { PressScreen, DilemmaScreen, SeasonReelScreen, WithPops } from "../screens/career/Moments";
 import { HelpReplay } from "../screens/career/Coach";
 import { LockedScreen } from "../screens/career/HomeMoments";

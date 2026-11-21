@@ -37,43 +37,6 @@ import { Frame, Card, Label, Row, Btn, ClubCrest, Fill, StandInNote, money, C } 
 import { DATA_CREDITS, CREDIT_GROUPS } from "@/lib/star/dataCredits";
 import { tint } from "@/lib/star/heroFigure";
 
-export function WatchedScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
-  const f: Fixture | undefined = [...career.fixtures].reverse().find((x) => x.kind === "international" && x.played && x.watch);
-  return (
-    <Frame kicker="On TV" title={f ? `${career.player.nationality} v ${f.opponent}` : "Full time"} footer={<Btn label="Continue" onPress={() => go(flow.HOME)} />}>
-      {f && <Card><Text style={{ color: C.text, fontSize: 40, fontWeight: "900", textAlign: "center" }}>{f.homeScore}–{f.awayScore}</Text></Card>}
-    </Frame>
-  );
-}
-
-// ── The international call-up ──
-export function CallUpScreen({ go }: { go: (s: flow.Step) => void }) {
-  const [d] = useState<IntlDecision | null>(() => flow.callUpDecision());
-  if (!d) return <Frame title="International break"><Btn label="Back to the club" onPress={() => go(flow.HOME)} /></Frame>;
-  const tournament = d.period.kind === "tournament";
-  return (
-    <Frame kicker={tournament ? d.period.label : `International break · ${d.period.label}`} title={d.called ? "Called up" : "Not selected"}
-      footer={<Btn label={d.called ? "Report for duty →" : "Back to the club →"} onPress={() => go(flow.answerCallUp(d))} />}>
-      <Card tone={d.called ? C.green : C.red}>
-        <Text style={{ color: C.text, fontSize: 17, fontWeight: "900" }}>
-          {d.called ? `You're in the ${d.nation} squad${tournament ? ` for the ${d.period.comp}` : ""}${d.starter ? " — as a starter" : ""}.` : `Left out of the ${d.nation} squad.`}
-        </Text>
-        <Text style={{ color: C.dim, marginTop: 6 }}>{d.reason}</Text>
-        {d.line ? <Text style={{ color: C.text, marginTop: 8, fontStyle: "italic" }}>{d.line}</Text> : null}
-        <View style={{ marginTop: 10 }}>
-          <Text style={{ color: C.dim, fontSize: 11, fontWeight: "800", marginBottom: 4 }}>THE MANAGER'S VIEW {Math.round(d.manager)} / 100</Text>
-          <Fill value={d.manager} color={C.gold} />
-        </View>
-      </Card>
-      <Card>
-        <Label>{tournament ? "Group games" : `${d.nation}'s matches`}</Label>
-        {d.period.matches.slice(0, tournament ? 3 : 6).map((m, i) => <Row key={i} k={`${m.home} v ${m.away}`} v={new Date(m.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} />)}
-        <Text style={{ color: C.dim, marginTop: 6 }}>{!d.called ? "Played without you." : tournament ? `You stay with the squad until ${d.nation} are knocked out.` : "Any club games in between are played without you."}</Text>
-      </Card>
-    </Frame>
-  );
-}
-
 // ── Contract renewal: higher or lower ──
 export function ContractRenewalScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
   const { contractReason } = useSession();

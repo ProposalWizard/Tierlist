@@ -26,20 +26,9 @@ import { Press } from "../../ui/Press";
 import { LookButton, TEXT_SHADOW, rgba } from "../../ui/look";
 import { NationFlag } from "../../draw/NationFlag";
 import { Frame } from "./kit";
+import { LockIcon } from "../../ui/LockIcon";
 
-/** The website's padlock (UnlockChain.tsx LockIcon: a 15×10 body with a 4-round shackle, 24-box). */
-export function LockIcon({ size = 14, color = "rgba(255,255,255,0.8)" }: { size?: number; color?: string }) {
-  const u = size / 24;
-  return (
-    <View style={{ width: size, height: size }}>
-      <View style={{ position: "absolute", left: 8 * u - 1.2 * u, top: 3.5 * u - 1.2 * u, width: 8 * u + 2.4 * u, height: 9 * u, borderTopLeftRadius: 5.2 * u, borderTopRightRadius: 5.2 * u, borderWidth: 2.4 * u, borderBottomWidth: 0, borderColor: color }} />
-      <View style={{ position: "absolute", left: 4.5 * u - 1.2 * u, top: 10.5 * u - 1.2 * u, width: 15 * u + 2.4 * u, height: 10 * u + 2.4 * u, borderRadius: 3.2 * u, borderWidth: 2.4 * u, borderColor: color, backgroundColor: rgbaOf(color, 0.25) }} />
-    </View>
-  );
-}
-function rgbaOf(color: string, a: number): string {
-  return /^#[0-9a-f]{6}$/i.test(color) ? rgba(color, a) : "rgba(255,255,255,0.2)";
-}
+export { LockIcon };
 
 /** A page that is not open yet (UnlockChain.tsx LockedPage), with Home one swipe or tap away. */
 export function LockedScreen({ feature, onBack }: { feature: Feature; onBack: () => void }) {
@@ -64,7 +53,7 @@ export function LockedScreen({ feature, onBack }: { feature: Feature; onBack: ()
           <Text style={[{ color: "#fff", fontSize: 18, fontWeight: "900", textAlign: "center" }, TEXT_SHADOW]}>{title} is locked</Text>
           <Text style={[{ color: "#fcd34d", fontSize: 13, fontWeight: "700", textAlign: "center" }, TEXT_SHADOW]}>{lockHint(career, feature)}</Text>
         </View>
-        <View style={{ height: 34, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", justifyContent: homeRight ? "flex-end" : "flex-start" }}>
+        <View style={{ height: 34, paddingLeft: 12, paddingRight: homeRight ? 90 : 12, flexDirection: "row", alignItems: "center", justifyContent: homeRight ? "flex-end" : "flex-start" }}>
           <Press onPress={onBack} style={{ height: 24, flexDirection: homeRight ? "row-reverse" : "row", alignItems: "center", gap: 4, paddingHorizontal: 6, borderRadius: 2, backgroundColor: "rgba(8,20,38,0.34)" }}>
             <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }}>{homeRight ? "▶" : "◀"}</Text>
             <Text style={{ fontSize: 12 }}>🏠</Text>

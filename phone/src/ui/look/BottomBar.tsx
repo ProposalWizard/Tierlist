@@ -28,6 +28,7 @@ import { readSeenMsgs, readSocialSeen } from "../../world/seen";
 import { Press } from "../Press";
 import { PlayButton } from "./Buttons";
 import { useTourTarget } from "../tour";
+import { LockIcon } from "../LockIcon";
 
 export type BarTab = "league" | "training" | "home" | "phone" | "play";
 
@@ -124,7 +125,7 @@ function NavBtn({ label, icon, on, locked, count, bolt, dot, onPress }: { label:
       on && ({ backgroundColor: "rgba(255,255,255,0.18)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.34)" } as ViewStyle)]}>
       <Text style={{ fontSize: 18, opacity: locked ? 0.3 : 1 }}>{icon}</Text>
       <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: locked ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.92)", fontSize: 12, fontWeight: "900" }}>{label}</Text>
-      {locked && <Text style={{ position: "absolute", right: 6, top: 4, fontSize: 10 }}>🔒</Text>}
+      {locked && <View style={{ position: "absolute", right: 7, top: 5 }}><LockIcon size={13} color="rgba(255,255,255,0.75)" /></View>}
       {!locked && !!count && count > 0 && (
         <View style={{ position: "absolute", right: 4, top: 3, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: bolt ? "#fbbf24" : "#ef4444", borderWidth: 2, borderColor: "#1e3a5c" }}>
           {bolt && <Text style={{ fontSize: 8, marginRight: 1 }}>⚡</Text>}

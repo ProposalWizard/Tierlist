@@ -54,7 +54,7 @@ export function useTourTarget(name: string, onPress?: () => void) {
 
 const HAND_H = 46;
 const DIM = "rgba(0,0,0,0.62)";
-const EDGE = 10;
+const EDGE = 12;
 
 /**
  * The pointing hand: the website's white glove (PointerTour.tsx `Hand`, a 34×46 drawing:
@@ -163,7 +163,7 @@ export function PointerTour({ steps, onDone, press, skippable, chain }: {
   };
 
   doPressRef.current = doPress;
-  const bubbleW = Math.min(320, vp.width - 2 * EDGE);
+  const bubbleW = Math.min(268, vp.width - 2 * EDGE);
   const cx = hole ? hole.x + hole.w / 2 : vp.width / 2;
   const left = Math.max(EDGE, Math.min(vp.width - bubbleW - EDGE, cx - bubbleW / 2));
   const need = bubbleH + HAND_H + 4;
