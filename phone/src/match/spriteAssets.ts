@@ -38,8 +38,8 @@ export function loadSpriteSheet(): Promise<boolean> {
       const a0 = await atlas(0);
       if (!a0) { loading = null; return false; }
       setSpriteSheet(INDEX, a0.color, a0.mask, atlas);
-      // The later atlases at idle (the website's preloadLaterAtlases), so the first kick never waits.
-      setTimeout(preloadLaterAtlases, 400);
+      // Every later atlas at idle, one after another (they are in the app: no download to save), so no kick, header or catch ever waits.
+      setTimeout(() => preloadLaterAtlases(true), 400);
       return true;
     } catch { loading = null; return false; }
   })();

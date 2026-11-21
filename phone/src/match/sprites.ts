@@ -108,14 +108,18 @@ function loadAtlas(n: number): Promise<boolean> {
   loadingAtlas.set(n, p);
   return p;
 }
-/** Start fetching later atlases now (the website's preloadLaterAtlases: 1, 2, 4 at idle; 3 and 5 wait for an ask). */
-export function preloadLaterAtlases() {
+/**
+ * Start fetching later atlases now (the website's preloadLaterAtlases: 1, 2, 4 at idle; 3 and 5 wait for an ask,
+ * to save a download). `all` (the phone: every sheet is in the app, nothing to download) takes 3 and 5 as well,
+ * one after another, so the first header, volley or keeper's catch never stops the match to colour a sheet:
+ * that pause came in the middle of a chance, and the men jumped on when it ended.
+ */
+export function preloadLaterAtlases(all = false) {
   if (!index) return;
   const kAtlas = index.chars.keeper?.clips.kCatchDiveR?.atlas;
-  for (const k of Object.keys(index.atlases ?? {})) {
-    const n = Number(k);
-    if (n >= 1 && n !== 3 && n !== kAtlas) void loadAtlas(n);
-  }
+  const want = Object.keys(index.atlases ?? {}).map(Number).filter((n) => n >= 1 && (all || (n !== 3 && n !== kAtlas)));
+  if (!all) { for (const n of want) void loadAtlas(n); return; }
+  void (async () => { for (const n of want) await loadAtlas(n); })();
 }
 
 /** A clip's own entry and where its cells come from (itself, or the clip it mirrors). */
@@ -290,6 +294,8 @@ function place(x: number, y: number, o: DrawSpriteOpts) {
   return { atlas, cx, cy, cw, ch, s, dx, dy, flip: r.mirror };
 }
 
+/** Men asked for whose picture could not be drawn (tools/match-popin.ts reads it: it must stay 0). */
+export const spriteMiss = { n: 0, last: "" };
 let imgPaint: SkPaint | null = null;
 const alphaPaints = new Map<number, SkPaint>();
 function paintFor(alpha?: number): SkPaint {
@@ -306,7 +312,7 @@ function paintFor(alpha?: number): SkPaint {
 /** lib/star/sprites.ts drawSprite onto a Skia canvas: (x, y) is where his boots are; `height` px is a man standing. */
 export function drawSprite(c: SkCanvas, x: number, y: number, o: DrawSpriteOpts): boolean {
   const p = place(x, y, o);
-  if (!p) return false;
+  if (!p) { spriteMiss.n++; spriteMiss.last = `${o.char ?? "player"}/${o.clip} t ${o.t.toFixed(2)}`; return false; }
   const S = sk();
   const paint = paintFor(o.alpha);
   if (o.mirror) { c.save(); c.translate(x, 0); c.scale(-1, 1); c.translate(-x, 0); }

@@ -16,7 +16,15 @@ import { matchFeelOn, feelDials, streakMetres } from "@/lib/star/matchFeel";
 import { drawSpeedStreak } from "@/lib/star/matchFeelDraw";
 import { nudgedDir, goalLineX } from "@/lib/star/penaltyRunup";
 import { sk, fill, stroke } from "./skiaApi";
-import { drawMan, drawKeeperFig, beginFigures, unitPx, type FigureRole } from "./figures";
+import { drawMan, drawKeeperFig, beginFigures, unitPx } from "./figures";
+import { drawnMen } from "./menNow";
+import { manR } from "./figures";
+import { toCanvasPx } from "./view";
+import { clearYouSpot } from "@/lib/star/youSpot";
+import { hasRunup } from "@/lib/star/penaltyRunup";
+import { isAirKind } from "@/lib/star/airDrawings";
+import { airTapOn } from "@/lib/star/airTap";
+import { goalInView } from "@/lib/star/canvasEngine";
 import { footSign } from "@/lib/star/kickFoot";
 import { drawGround } from "./drawGround";
 import { drawMatchBall } from "@/lib/star/matchBall";
@@ -86,30 +94,31 @@ export function paintPitch(c: SkCanvas, d: MatchDriver, kits: MatchKits, W: numb
   const sc = d.sc;
   const home = d.setup.fixture.home !== false;
   const ours = home ? kits.home : kits.away, theirs = home ? kits.away : kits.home;
-  // Men are drawn far to near (CanvasMatch's figure queue, sorted by screen y).
+  // Mikey, 20 Oct 2026 (CanvasMatch, lib/star/youSpot.ts): your man is drawn on every chance, so on a
+  // chance's first aim frame he is moved off the ball and the arrow's line to goal. Once per chance;
+  // penalties and free kicks keep their run-up spot, a header or volley keeps the build-up's.
+  if (!autoKickOf(sc) && d.phase === "aim" && !d.lead && !d.playOn && !hasRunup(sc.kind) && scene?.you !== false && !youPlaced.has(sc)) {
+    youPlaced.add(sc);
+    if (!(isAirKind(sc.kind) && airTapOn())) {
+      const vp = d.viewport, span = cam.facing === "up" ? vp.y2 - vp.y1 : vp.x2 - vp.x1;
+      const spot = clearYouSpot({
+        ball: sc.ball, player: sc.player, foot: footSign(d.setup.career?.player.preferredFoot),
+        toPx: (x, y) => { const q = toCanvasPx(cam, { x, y }); return { px: q.X, py: q.Y }; },
+        R: manR(cam), ballR: Math.max(3, (unitPx(cam) / BALL_DIV) * 0.5 * NEW_BALL_SCALE), arrowM: span * 0.132 * 1.05,
+      });
+      sc.player.x = spot.x; sc.player.y = spot.y;
+    }
+  }
+  // Men are drawn far to near (CanvasMatch's figure queue, sorted by screen y). Who: match/menNow.ts.
   const queue: { y: number; draw: () => void }[] = [];
-  const man = (id: string, p: { x: number; y: number }, role: FigureRole, hi = false) => {
-    queue.push({ y: toScreen(cam, p).Y, draw: () => drawMan(c, cam, id, p, role, role === "opp" ? theirs : ours, hi) });
-  };
-  sc.defenders.forEach((df, i) => man(`def${i}`, df, "opp"));
+  for (const m of drawnMen(d)) queue.push({ y: toScreen(cam, m.p).Y, draw: () => drawMan(c, cam, m.id, m.p, m.role, m.role === "opp" ? theirs : ours, m.hi, m.label) });
   {
     const kk = sc.keeper;
     // Their penalty at YOUR keeper (a shootout): he wears your keeper's kit.
     const gk = autoKickOf(sc)?.side === "them" ? keeperKit(ours.shirt, kits.keeper.shirt) : kits.keeper;
-    if (!(scene?.keeper === false)) queue.push({ y: toScreen(cam, kk).Y, draw: () => drawKeeperFig(c, cam, kk, gk) });
-  }
-  sc.teammates.forEach((m, i) => man(`mate${i}`, m, "mate"));
-  // CanvasMatch's sids (and the engine's actors, canvasEngine runnerActor): run0 the runner, then the others.
-  [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners].forEach((r, i) => man(`run${i}`, r.pos, "mate", sc.relayTo === r));
-  if (sc.follower && (sc.follower.active || sc.follower.who)) man("follower", sc.follower, "mate", !!sc.relayToFollower);
-  if (scene?.you !== false) {
-    // A penalty someone else takes (a shootout, the trial's takers): he wears his own side's kit,
-    // named over his head, no star (CanvasMatch: takerKit, label, labelBig).
-    const auto = autoKickOf(sc);
-    if (auto) {
-      const role: FigureRole = auto.side === "them" ? "opp" : "mate";
-      queue.push({ y: toScreen(cam, sc.player).Y, draw: () => drawMan(c, cam, "you", sc.player, role, auto.side === "them" ? theirs : ours, false, auto.taker.shortName) });
-    } else man("you", sc.player, "you", true);
+    // Only where there is a goal to keep (CanvasMatch keeperInView): the kind has the goal in view, or the goal line is on this camera.
+    const goalOnCamera = cam.facing === "up" && cam.vp.y1 < 1.5;
+    if ((goalInView(sc.kind) || goalOnCamera) && scene?.keeper !== false) queue.push({ y: toScreen(cam, kk).Y, draw: () => drawKeeperFig(c, cam, kk, gk) });
   }
   queue.sort((a, q) => a.y - q.y).forEach((f) => f.draw());
 
@@ -147,6 +156,8 @@ export function paintPitch(c: SkCanvas, d: MatchDriver, kits: MatchKits, W: numb
 }
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+/** The chances whose man has been stood clear of the ball (CanvasMatch youPlacedRef). */
+const youPlaced = new WeakSet<object>();
 
 /** CanvasMatch trailRef: where the ball was on each drawn frame of the flight (16 kept). */
 const trail: { x: number; y: number; z: number }[] = [];
@@ -265,10 +276,7 @@ function drawDribble(c: SkCanvas, d: MatchDriver, cam: Cam, kits: MatchKits) {
   const home = d.setup.fixture.home !== false;
   const ours = home ? kits.home : kits.away, theirs = home ? kits.away : kits.home;
   const queue: { y: number; draw: () => void }[] = [];
-  run.mates.forEach((m, i) => queue.push({ y: toScreen(cam, m).Y, draw: () => drawMan(c, cam, `mate${i}`, m, "mate", ours) }));
-  run.defenders.forEach((df, i) => { if (df.phase !== "beaten") queue.push({ y: toScreen(cam, df).Y, draw: () => drawMan(c, cam, `chase${i}`, df, "opp", theirs) }); });
-  const you = { x: run.x, y: run.y };
-  queue.push({ y: toScreen(cam, you).Y, draw: () => drawMan(c, cam, "you", you, "you", ours, true) });
+  for (const m of drawnMen(d)) queue.push({ y: toScreen(cam, m.p).Y, draw: () => drawMan(c, cam, m.id, m.p, m.role, m.role === "opp" ? theirs : ours, m.hi) });
   queue.sort((a, q) => a.y - q.y).forEach((f) => f.draw());
   paintBall(c, cam, { x: run.x + 0.3, y: run.y - 0.6 }, 0, cam.W, cam.H);
 }

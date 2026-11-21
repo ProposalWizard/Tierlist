@@ -120,7 +120,7 @@ export function unitPx(cam: Cam): number {
   return cam.W / across;
 }
 /** CanvasMatch R (a man's base radius) in flat-canvas px. */
-function manR(cam: Cam) { return (unitPx(cam) / FIG_DIV) * MATCH_FIGURE_R_MULT * NEW_FIGURE_SCALE * NEW_OUTFIELD_SHRINK; }
+export function manR(cam: Cam) { return (unitPx(cam) / FIG_DIV) * MATCH_FIGURE_R_MULT * NEW_FIGURE_SCALE * NEW_OUTFIELD_SHRINK; }
 /** figureRForHeight. */
 const rForHeight = (h: number) => Math.max(6, h / FIGURE_HEIGHT_R);
 
