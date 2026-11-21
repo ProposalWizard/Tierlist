@@ -1191,3 +1191,13 @@ Harry: "The kits look not like fabric but painted on with blobs of differing pai
   making him wider. A hidden layer sits on the skin and the outer one a few mm out; an outer garment's shaped torso
   never goes inside the body (`torso.hold`). Never shape sleeves to a straight shoulder → wrist line: a bent arm
   then pokes through.
+
+### People round 2: a clean head under the drawn face, life for everyone (21 Nov 2026)
+
+Harry: "His face looks really odd … like the new face changes are just kind of morphing over previous stuff", "no variations - 22 players walking at the same pace", "the ball doesn't really actually go where his feet are".
+- **A clean head** (`lib/star/style3d/toon/faceClean.ts`, called by `applyToonFaceId`): before a drawn face goes on, the head file's picture and mask are swapped for a copy whose whole face (under the jaw to the forehead, round to the ears; scalp hair, ears and clothes kept) is one even skin colour, built once per head file and shared (no per-frame cost, no draw call). Age comes only from the drawn system. `?faceclean=0` shows the old way; `?facecleandbg=1` paints what is cleaned (green) and why the rest is kept. Eyes sit in the head: warmer whites, a heavier lid shadow, a soft lid rim (`faceIdShader.ts`).
+- **Own motion for every person** (`lib/star/people/life.ts` `ownMotion`: phase, idle rate, which walk, arms, carriage, restlessness, pace ±8%). Cut scenes read it as before; the world's walkers (`world3d/npc.ts`) now walk at their own pace (the stride clock follows the ground: no slide), a third on `walk_confident`, and blink and glance if they have a moving face (`toonFaceOf(p)`, face.ts).
+- **The odd lean**: `walk_confident` is captured leaning back 6-9°; the director holds every standing or walking back between 3° back and 8° forward.
+- **The dribble**: the ball against the toe at each touch, rolling at his pace (0.38 m ahead of his hips, was up to 0.61).
+- Not done: new clips from other libraries (UAL 1 is on this machine; UAL 2 and KayKit were not reachable; `retarget.py` reads only CMU, a glTF reader is the next step); shop and casino staff do not get the face life yet.
+- Bench: `/star-3d-bench-dev/people?set=faceids&allheads=9&views=front,34,side&heads=m3,m2`.
