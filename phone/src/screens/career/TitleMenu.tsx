@@ -101,7 +101,12 @@ export function TitleMenu({ onContinue, onNew, onHall, onTutorial, onSettings }:
   const standIn = useNoSavePlayer();
   const [sheet, setSheet] = useState<"load" | "credits" | null>(null);
   const [armed, setArmed] = useState<number | null>(null);
-  const { width: W, height: H } = useWindowDimensions();
+  // The screen's own measured size (the whole phone, bars hidden, under the camera): the
+  // player and the menu are placed in percentages of it, as on the website. The window's
+  // size stands in for the first frame.
+  const win = useWindowDimensions();
+  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  const W = box?.w ?? win.width, H = box?.h ?? win.height;
   const inset = useSafeAreaInsets();
   const slots = sheet === "load" ? listSlots() : [];
   const full = slots.length > 0 && slots.every((s) => !s.empty);
@@ -120,7 +125,7 @@ export function TitleMenu({ onContinue, onNew, onHall, onTutorial, onSettings }:
     if (empty) { newInSlot(empty.slot); onNew(); } else setSheet("load");
   };
   return (
-    <View style={{ flex: 1, backgroundColor: "#04100a" }}>
+    <View style={{ flex: 1, backgroundColor: "#04100a" }} onLayout={(e) => { const { width, height } = e.nativeEvent.layout; if (width > 0 && height > 0 && (!box || box.w !== width || box.h !== height)) setBox({ w: width, h: height }); }}>
       <Backdrop kind="title" sky={sky} />
       <View style={{ paddingTop: Math.max(44, inset.top + 26) }}>
         <Wordmark width={W} showTrial={!career} />

@@ -42,7 +42,12 @@ export function buildWeb(out = WEB_OUT) {
     const fonts = robotoFiles();
     fs.mkdirSync(path.join(out, "fonts"), { recursive: true });
     for (const f of fonts) fs.copyFileSync(f.src, path.join(out, "fonts", f.name));
-    const css = fonts.map((f) => `@font-face{font-family:Roboto;src:url(/fonts/${f.name}) format("truetype");font-weight:${f.weight};font-style:${f.italic ? "italic" : "normal"}}`).join("");
+    // Under two names. react-native-web asks for `-apple-system, BlinkMacSystemFont, "Segoe UI",
+    // Roboto, …`, and Chromium answers BlinkMacSystemFont with the computer's own font, so the
+    // words were never Roboto and every width was off (measured: 4.5% wider, 11% for the heavy
+    // italic). "-apple-system" is first in that list and means nothing on Linux: named here, it
+    // is Roboto, and the words are as wide as Android draws them.
+    const css = ["Roboto", "-apple-system"].map((fam) => fonts.map((f) => `@font-face{font-family:"${fam}";src:url(/fonts/${f.name}) format("truetype");font-weight:${f.weight};font-style:${f.italic ? "italic" : "normal"}}`).join("")).join("");
     const index = path.join(out, "index.html");
     fs.writeFileSync(index, fs.readFileSync(index, "utf8").replace("</head>", `<style id="look-fonts">${css}</style></head>`));
   } catch (e) {
