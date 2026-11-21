@@ -21,7 +21,9 @@ import * as flow from "../../game/flow";
 import { LookButton } from "../../ui/look";
 import { SHOP_PIC } from "../../ui/look/worldPics";
 
-export function StoryBeatPop({ text, onGo }: { text: BeatText; onGo: () => void }) {
+export function StoryBeatPop({ text, onGo, onTry, tryLabel = "Try it now" }: { text: BeatText; onGo: () => void;
+  /** A second button that lets you try the new thing at once ("Try a header now"). */
+  onTry?: () => void; tryLabel?: string }) {
   const pic = text.boot ? SHOP_PIC[(text.boot.pic.match(/items\/(.+)\.webp$/)?.[1]) ?? ""] : undefined;
   return (
     <Modal transparent visible animationType="fade" statusBarTranslucent>
@@ -57,7 +59,8 @@ export function StoryBeatPop({ text, onGo }: { text: BeatText; onGo: () => void 
               </View>
             </View>
           )}
-          <LookButton label={text.button} onPress={onGo} style={{ marginTop: 12, borderRadius: 16, paddingVertical: 11 }} />
+          {onTry && <LookButton label={tryLabel} onPress={onTry} style={{ marginTop: 12, borderRadius: 16, paddingVertical: 11 }} />}
+          <LookButton kind={onTry ? "navy" : "primary"} label={text.button} onPress={onGo} style={{ marginTop: onTry ? 8 : 12, borderRadius: 16, paddingVertical: 11 }} />
         </View>
       </View>
     </Modal>
@@ -84,6 +87,7 @@ export function goBeat(b: Beat): { point?: string; screen?: string; params?: Rec
   if (b === "stats") return { point: "tab-0" };
   // The offer is in your messages: the phone, then the finger on Messages, then on the offer.
   if (b === "sponsor") return { screen: "phone", params: { tour: "sponsor" } };
+  void markSeen;
   return {};
 }
 

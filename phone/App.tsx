@@ -9,6 +9,7 @@ import { C } from "./src/ui/theme";
 import { ToonYouSync } from "./src/three/youSync";
 import { useLookFonts } from "./src/ui/look/fonts";
 import { OverlayHost } from "./src/ui/overlayHost";
+import { CoachHost } from "./src/screens/career/Coach";
 
 function Router() {
   const { stack, back } = useNav();
@@ -31,7 +32,7 @@ export default function App() {
       <SafeAreaProvider>
         <Immersive />
         <ToonYouSync />
-        <NavProvider initial={{ name: "title" }}><Router /><OverlayHost /></NavProvider>
+        <NavProvider initial={{ name: "title" }}><Router /><CoachHost /><OverlayHost /></NavProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

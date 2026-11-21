@@ -50,6 +50,8 @@ export interface Session {
   koShown: string[];
   /** Play-off round-up already shown (roundupShown). */
   roundupShown: string | null;
+  /** "+n energy (rest days)" still to show on Home, once (page.tsx energyBack). */
+  energyBack?: number | null;
   /** Drill picked on the Training screen (trainingSkill / trainingLevel). */
   training: { skill: string; level: number | null } | null;
 }

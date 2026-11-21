@@ -333,7 +333,7 @@ export function centralCheck(): string[] {
   const next = withStars({ ...unlocked, starRating: computeStarRating(unlocked) });
   setCareer(next);
   // The pop-up shows the star bar moving (page.tsx offMatchAch).
-  pushPop({ kind: "achievements", items: achievementCards(ids), star: { from: starsNow(career), to: starsNow(next), toNext: starStatus(next).toNext } });
+  pushPop({ kind: "achievements", items: achievementCards(ids), star: { from: starsNow(career), to: starsNow(next), toNext: starStatus(next).toNext, fromNext: starStatus(career).toNext } });
   return ids;
 }
 
@@ -410,6 +410,8 @@ export function completeTraining(skill: keyof Skills, level: number, stars: numb
   setCareer(dayDrill ? recordTrainingDayDrill(drilled, skill) : drilled);
   noteRating(starsNow(career), starsNow(updated));
   const shopOpened = gameFirst(career) && !isStory(career) && career.unlocks!.drills + 1 === DRILLS_TO_OPEN_SHOP;
+  // page.tsx chainPop: the first drill is a first step, and opens the Shop.
+  if (shopOpened) pushPop({ kind: "toast", label: "Complete a training drill", unlocked: "Shop unlocked" });
   setSession({ training: null });
   settle();
   return { step: career.placement?.kind === "youth" ? { screen: "career-youth" } : { screen: "career-training" }, shopOpened };
@@ -493,7 +495,7 @@ export function completeMatch(stats: MatchStats): void {
     knockout: next.knockoutMessage ?? null,
     competition: fixture.kind && fixture.kind !== "league" ? fixtureLabel(fixture) : null,
   };
-  setSession({ report, ...(potmAwarded?.isYou ? { potmWin: potmAwarded } : {}) });
+  setSession({ report, energyBack, ...(potmAwarded?.isYou ? { potmWin: potmAwarded } : {}) });
   setCareer(next);
   noteRating(starsNow(career), starNext.stars, false);
   settle();
@@ -987,7 +989,13 @@ export function relationshipGameDone(kind: RelKind, res: RelGameResult): Step {
   };
   if (kind === "happiness") updated.happiness = applyGameGain(career.happiness, res.gain);
   else updated.relationships = { ...career.relationships, [kind]: applyGameGain(career.relationships[kind] as number, res.gain) };
-  if (kind === "boss" && career.unlocks && !career.achievements.includes("boss-meeting")) updated = recordBossMeeting(updated);
+  if (kind === "boss" && career.unlocks && !career.achievements.includes("boss-meeting")) {
+    updated = recordBossMeeting(updated);
+    // page.tsx chainPop after the first meeting (the story goes Home with no pop-up).
+    if (!isStory(career)) pushPop(gameFirst(career)
+      ? { kind: "toast", label: "The manager's penalties", unlocked: "Relations unlocked" }
+      : { kind: "toast", label: "Have a meeting with your boss", unlocked: "Next: buy your first phone" });
+  }
   setCareer(spendAction(updated));
   settle();
   return isStory(career) && kind === "boss" ? HOME : { screen: "career-relations" };
@@ -1010,7 +1018,9 @@ export function advertShot(dealId: string, gain: number): Step {
 // ═══════════════════════════════════════════════════════════════════
 
 export type Pop =
-  | { kind: "achievements"; items: { label: string; description: string }[]; star?: { from: number; to: number; toNext: number } }
+  | { kind: "achievements"; items: { label: string; description: string }[]; star?: { from: number; to: number; toNext: number; fromNext?: number } }
+  /** The small banner at the top: a first step done ("Shop unlocked") or a record broken (page.tsx chainPop / earnPops). */
+  | { kind: "toast"; label: string; unlocked: string; record?: boolean }
   | { kind: "rating"; from: number; to: number }
   | { kind: "milestone"; level: number };
 let pops: Pop[] = [];

@@ -21,7 +21,10 @@ import { YouthScreen, FreeAgentScreen, LoanBriefScreen } from "../screens/career
 import { DeadlineDayScreen, KnockoutRoundupScreen, PlayOffRoundupScreen, TournamentTableScreen } from "../screens/career/Roundups";
 import { WageTalkScreen, RelegationMoveScreen } from "../screens/career/Moves";
 import { FarewellInviteScreen, FarewellSheetsScreen, FarewellWalkoutScreen, FarewellResultScreen, LegacyScreen, HallOfFameScreen } from "../screens/career/Farewell";
-import { PressScreen, DilemmaScreen, SeasonReelScreen, HelpScreen, WithPops } from "../screens/career/Moments";
+import { PressScreen, DilemmaScreen, SeasonReelScreen, WithPops } from "../screens/career/Moments";
+import { HelpReplay } from "../screens/career/Coach";
+import { LockedScreen } from "../screens/career/HomeMoments";
+import type { Feature } from "@/lib/star/unlocks";
 import { RelationsScreen, RelGameScreen, AdvertShootScreen } from "../screens/career/Relations";
 import { brandsOf } from "@/lib/star/sponsorDeals";
 import type { Roundup } from "@/lib/star/knockoutView";
@@ -79,7 +82,7 @@ export const careerScreens: ScreenMap = {
   "career-prematch": withCareer((c, go, nav) => <PreMatchScreen career={c} go={go} onBack={() => nav.back()} />),
   "post-match": withCareer((c, go) => <PostMatchScreen career={c} go={go} />),
   "career-watched": withCareer((c, go) => <WatchedScreen career={c} go={go} />),
-  "career-stats": withCareer((c, go, nav) => <StatsScreen career={c} onBack={() => nav.back()} onRenew={() => go({ screen: "career-contract-renewal" }, true)} />),
+  "career-stats": withCareer((c, go, nav, p) => <StatsScreen career={c} start={p?.tab as "achievements" | undefined} onBack={() => nav.back()} onRenew={() => go({ screen: "career-contract-renewal" }, true)} />),
   "career-training": withCareer((c, go, nav) => <TrainingScreen career={c} go={go} onBack={() => nav.back()} />),
   "career-training-levels": withCareer((c, go, nav, p) => <LevelSelectScreen career={c} skill={p?.skill as keyof Skills} go={go} onBack={() => nav.back()} />),
   "career-drill": withCareer((c, go, nav, p) => <DrillScreen career={c} skill={p?.skill as keyof Skills} level={Number(p?.level ?? 1)} go={(s) => { if (s.screen === "career-training") nav.back(); else go(s); }} />),
@@ -140,7 +143,9 @@ export const careerScreens: ScreenMap = {
     if (!deal) return <PlaceholderScreen what="" go={go} />;
     return <AdvertShootScreen deal={deal} onCancel={() => nav.back()} go={(s) => { if (s.screen === "sponsors") nav.back(); else go(s); }} />;
   }),
-  "career-help": function Help({ params }) { const nav = useNav(); return <HelpScreen screen={params?.topic as HelpName | undefined} onBack={() => nav.back()} />; },
+  // The "?" replays the screen's tour on the live screen (page.tsx setHelpTour), not a list page.
+  "career-help": function Help({ params }) { return <HelpReplay topic={params?.topic as HelpName | undefined} />; },
+  "career-locked": function Locked({ params }) { const nav = useNav(); return <LockedScreen feature={(params?.feature as Feature) ?? "stats"} onBack={() => nav.back()} />; },
   settings: withCareer((_c, _go, nav) => (
     <SettingsScreen onBack={() => nav.back()} onMainMenu={() => nav.replace("title")} onHelp={() => nav.go("career-help")} onOpenSave={() => openResumed(nav)}
       onFaceEditor={() => nav.go("face-editor")} onFakeFaceEditor={() => nav.go("fake-face-editor")}

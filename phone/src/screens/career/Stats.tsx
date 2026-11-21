@@ -22,6 +22,7 @@ import { Frame, Card, Label, Row, Btn, ClubCrest, Fill, money, C, R } from "./ki
 import { PlayerCardView } from "./PlayerCard";
 import { Heading, Blank, clubGlow } from "./lookBits";
 
+import { AchievementWall, ContractPaper } from "./Achievements";
 type View_ = "stats" | "records" | "achievements" | "contract";
 const VIEWS: { id: View_; label: string; icon: string }[] = [
   { id: "stats", label: "Stats", icon: "📊" }, { id: "records", label: "Records", icon: "🏅" },
@@ -54,8 +55,8 @@ export function StatsScreen({ career, onBack, onRenew, start }: { career: Career
       </View>
       {view === "stats" && <StatsTab career={career} />}
       {view === "records" && <RecordsTab career={career} />}
-      {view === "achievements" && <AchievementsTab career={career} />}
-      {view === "contract" && <ContractTab career={career} onRenew={onRenew} />}
+      {view === "achievements" && <AchievementWall career={career} />}
+      {view === "contract" && <ContractPaper career={career} onRenew={onRenew} />}
     </Frame>
   );
 }
@@ -310,64 +311,5 @@ function RecordsTab({ career }: { career: CareerState }) {
         })}
       </Card>
     </>
-  );
-}
-
-function AchievementsTab({ career }: { career: CareerState }) {
-  const done = new Set(career.achievements);
-  const got = ACHIEVEMENTS.filter((a) => done.has(a.id)).length;
-  // A plain list, group by group: it sits inside the page's own scroll (a
-  // FlatList inside a ScrollView would fight it for the finger).
-  return (
-    <Card>
-      <Label>{`${got} of ${ACHIEVEMENTS.length} unlocked`}</Label>
-      {ACHIEVEMENT_GROUPS.map((g) => (
-        <View key={g}>
-          <Text style={{ color: C.gold, fontWeight: "900", marginTop: 12, marginBottom: 4 }}>{g}</Text>
-          {ACHIEVEMENTS.filter((a) => a.group === g).map((a) => {
-            const on = done.has(a.id);
-            return (
-              <View key={a.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6, opacity: on ? 1 : 0.5 }}>
-                <Text style={{ fontSize: 22, width: 30 }}>{on ? a.icon : "🔒"}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: on ? C.text : C.dim, fontWeight: "900" }}>{a.label}</Text>
-                  <Text style={{ color: C.dim, fontSize: 12 }}>{a.description}</Text>
-                </View>
-              </View>
-            );
-          })}
-        </View>
-      ))}
-    </Card>
-  );
-}
-
-function ContractTab({ career, onRenew }: { career: CareerState; onRenew: () => void }) {
-  const c = career.contract;
-  const clauses = clauseSummary(c);
-  return (
-    <Card style={{ backgroundColor: "#f4efe2", borderRadius: R.card }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 }}>
-        <ClubCrest club={c.club} size={34} />
-        <View>
-          <Text style={{ color: "#1c1917", fontWeight: "900", fontSize: 17 }}>{c.club}</Text>
-          <Text style={{ color: "#57534e", fontSize: 12 }}>Player contract</Text>
-        </View>
-      </View>
-      {([
-        ["League", leagueNameFor(divisionOf(career))], ["Position", career.player.position],
-        ["Shirt", career.squadNumber ? `No. ${career.squadNumber}` : "—"], ["Seasons left", String(c.seasonsRemaining)],
-        ["Wage", `${money(c.wage)} / week`], ["Goal bonus", money(c.goalBonus)], ["Assist bonus", money(c.assistBonus)],
-      ] as [string, string][]).map(([k, v]) => (
-        <View key={k} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: "rgba(120,90,40,0.25)" }}>
-          <Text style={{ color: "#57534e", fontWeight: "800", fontSize: 12 }}>{k.toUpperCase()}</Text>
-          <Text style={{ color: "#1c1917", fontWeight: "900" }}>{v}</Text>
-        </View>
-      ))}
-      <Text style={{ color: "#57534e", fontWeight: "900", marginTop: 10, fontSize: 12 }}>CLAUSES</Text>
-      {clauses.length ? clauses.map((cl) => <Text key={cl.label} style={{ color: "#1c1917", marginTop: 4 }}>• {cl.label}: {cl.detail}</Text>) : <Text style={{ color: "#57534e", marginTop: 4 }}>None.</Text>}
-      <Text style={{ color: "#1c1917", fontStyle: "italic", fontSize: 18, marginTop: 14 }}>{career.player.firstName} {career.player.lastName}</Text>
-      <View style={{ marginTop: 12 }}><Btn label="Ask for a new deal" onPress={onRenew} /></View>
-    </Card>
   );
 }

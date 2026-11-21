@@ -27,6 +27,7 @@ import { intlOf, managerLine, SQUAD_AT, START_AT } from "@/lib/star/intl/career"
 import { talkFor, talkGain, talkHits, TALK_ROUNDS, type TalkReply, type Grade } from "@/lib/star/bossTalk";
 import * as flow from "../../game/flow";
 import { Press } from "../../ui/Press";
+import { TourTarget } from "../../ui/tour";
 import { Frame, Card, Btn, Fill, StandInNote, C } from "./kit";
 import { BossPenalties, BossExtraSession, WoodworkChallenge } from "../MatchRelGames";
 
@@ -71,10 +72,12 @@ export function RelationsScreen({ career, go, onBack }: { career: CareerState; g
             <Press onPress={() => setHelp(help === k ? null : k)}><Text style={{ color: C.text, fontWeight: "900", marginBottom: 4 }}>{name} <Text style={{ color: C.dim }}>?</Text></Text></Press>
             <Bar value={value} />
           </View>
+          <TourTarget name={`rel-${k}`} onPress={() => { if (canPlay && !done) go({ screen: "career-relationship-game", params: { kind: k } }, true); }}>
           <Press disabled={!canPlay || done} onPress={() => go({ screen: "career-relationship-game", params: { kind: k } }, true)}
             style={{ width: 48, height: 48, borderRadius: 6, alignItems: "center", justifyContent: "center", backgroundColor: !canPlay || done ? "rgba(255,255,255,0.06)" : TONE[k] }}>
             <Text style={{ color: "#fff", fontSize: 20, fontWeight: "900" }}>{done ? "✓" : "▶"}</Text>
           </Press>
+          </TourTarget>
         </View>
         <Text style={{ color: C.dim, fontSize: 11, marginTop: 6 }}>{done ? `${GAME_LABEL[k]} · done this week` : tired ? `${GAME_LABEL[k]} · not enough energy` : `${GAME_LABEL[k]} · 1 day, ${cost} energy`}</Text>
         {help === k && <Text style={{ color: C.text, fontSize: 12, marginTop: 6 }}>{HELP[k]}</Text>}

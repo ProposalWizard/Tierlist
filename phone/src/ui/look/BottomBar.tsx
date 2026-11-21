@@ -39,7 +39,8 @@ export function useMainBarActions(): Record<BarTab, () => void> {
     league: () => { nav.home(); nav.replace("tabs", { tab: "league" }); },
     home: () => nav.home(),
     training: () => nav.go("career-training"),
-    phone: () => nav.go("phone"),
+    // The manager's word comes through the Phone while it is due (page.tsx navTo).
+    phone: () => { if (career && managerTalkDue(career)) nav.go("career-relationship-game", { kind: "boss" }); else nav.go("phone"); },
     play: () => { if (career && flow.seasonOver(career)) nav.go(flow.endSeason().screen); else nav.go("career-prematch"); },
   };
 }
@@ -81,6 +82,7 @@ export function BottomBar({ active, on }: { active?: BarTab | null; on?: Partial
   const [note, setNote] = useState<{ label: string; hint: string } | null>(null);
   // Named for the coach tour (ui/tour.tsx), as the website's data-tour names.
   const trainingT = useTourTarget("nav-training"), phoneT = useTourTarget("nav-phone"), playT = useTourTarget("nav-play");
+  const leagueT = useTourTarget("nav-league"), homeT = useTourTarget("home");
   // worked out again only when the career changes
   const badges = useMemo<BarBadges>(() => (career ? badgesFor(career) : {}), [career]);
   const locks = useMemo<Partial<Record<BarTab, string>>>(() => (career ? locksFor(career) : {}), [career]);
@@ -103,9 +105,9 @@ export function BottomBar({ active, on }: { active?: BarTab | null; on?: Partial
           <Text style={{ color: "#fcd34d", fontSize: 12, fontWeight: "700" }}>{note.hint}</Text>
         </View>
       )}
-      <NavBtn label="League" icon="🏆" on={active === "league"} locked={!!locks.league} onPress={() => tap("league", "League")} />
+      <View {...leagueT} style={{ flex: 1 }}><NavBtn label="League" icon="🏆" on={active === "league"} locked={!!locks.league} onPress={() => tap("league", "League")} /></View>
       <View {...trainingT} style={{ flex: 1 }}><NavBtn label="Training" icon="⚽" on={active === "training"} locked={!!locks.training} count={badges.skills} bolt onPress={() => tap("training", "Training")} /></View>
-      <NavBtn label="Home" icon="🏠" on={active === "home"} locked={false} onPress={() => { if (active !== "home") tap("home", "Home"); }} />
+      <View {...homeT} style={{ flex: 1 }}><NavBtn label="Home" icon="🏠" on={active === "home"} locked={false} onPress={() => { if (active !== "home") tap("home", "Home"); }} /></View>
       <View {...phoneT} style={{ flex: 1 }}><NavBtn label="Phone" icon="📱" on={active === "phone"} locked={!!locks.phone} count={badges.media} dot={badges.life === "dot" && !badges.media} onPress={() => tap("phone", "Phone")} /></View>
       <View style={{ flex: 1, alignItems: "center", height: 50 }}>
         <View {...playT} style={{ position: "absolute", top: -22 }}>
