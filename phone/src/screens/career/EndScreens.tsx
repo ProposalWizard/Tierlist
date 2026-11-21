@@ -16,6 +16,7 @@
  *                         HALL OF FAME · NEW CAREER · MENU at the bottom
  */
 import { useMemo, useRef, useState, type ReactNode } from "react";
+import { shareCareerPicture } from "./sharePicture";
 import { PanResponder, ScrollView, Share, Text, View, type ViewStyle } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Canvas, Path, Skia, LinearGradient, vec } from "@shopify/react-native-skia";
@@ -492,9 +493,11 @@ function CareerPage({ o, onOpen }: { o: CareerOverviewData; onOpen: (p: PageId) 
         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ marginTop: 8, color: "#fbbf24", fontFamily: FONT.display, fontSize: 28, lineHeight: 32, textAlign: "center", textTransform: "uppercase" }}>{o.verdict.title}</Text>
         <Text style={{ marginTop: 6, alignSelf: "center", maxWidth: 300, color: "rgba(255,255,255,0.85)", fontSize: 12, lineHeight: 16, fontWeight: "600", textAlign: "center" }}>{o.verdict.summary}</Text>
       </View>
-      <Press onPress={() => { void Share.share({ message: shareText(o) }).catch(() => {}); }} style={{ marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: 2, backgroundColor: GOLD }}>
+      {/* The picture (ShareCard.tsx) through the phone's share sheet; the words alone if no picture can be made.
+          No SHARE LINK: a career's link lives in a website account, and the phone app has none. */}
+      <Press onPress={() => { void shareCareerPicture(o, fw, shareText(o)).then((ok) => { if (!ok) void Share.share({ message: shareText(o) }).catch(() => {}); }); }} style={{ marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: 2, backgroundColor: GOLD }}>
         <Text style={{ fontSize: 13 }}>📸</Text>
-        <Text style={{ color: "#030712", fontSize: 12.5, fontWeight: "900", letterSpacing: 0.4 }}>SHARE</Text>
+        <Text style={{ color: "#030712", fontSize: 12.5, fontWeight: "900", letterSpacing: 0.4 }}>SHARE PICTURE</Text>
       </Press>
       {fw && fw.yourScore !== undefined && fw.theirScore !== undefined && (
         <View style={{ marginTop: 12, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 10, paddingVertical: 8, backgroundImage: "linear-gradient(90deg, rgba(251,191,36,0.2), rgba(255,255,255,0.03))", boxShadow: "inset 0px 0px 0px 1px rgba(251,191,36,0.4)" } as ViewStyle}>

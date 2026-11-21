@@ -56,7 +56,7 @@ const AMBER300 = "#fcd34d";
 // ── Small shared pieces ─────────────────────────────────────────────────────
 
 /** lib/star/trophyArt.ts's pictures, kept in the app. */
-const TROPHY_ART: Record<string, number> = {
+export const TROPHY_ART: Record<string, number> = {
   "Premier League": require("../../../assets/trophies/premier-league.webp"),
   "Championship": require("../../../assets/trophies/championship.webp"),
   "League One": require("../../../assets/trophies/league-one.webp"),
