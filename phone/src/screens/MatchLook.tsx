@@ -16,6 +16,7 @@ import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reani
 import type { EnergyMode } from "@/lib/star/energy";
 import { popupTone, type PopupTone } from "@/lib/star/mikeyPopups";
 import { labelInk } from "@/lib/star/kits";
+import { POWER_SHOT_PERFECT_S, POWER_SHOT_SLOW_S, powerShotQuality } from "@/lib/star/shotModel";
 import { FONT } from "../ui/look";
 
 // ── The page ──
@@ -241,6 +242,77 @@ export function Caption({ text, id, ms = 900 }: { text: string; id?: unknown; ms
         </View>
       </RNA.View>
     </View>
+  );
+}
+
+// ── The power shot's strike screen (components/star/PowerShotContact.tsx): a green circle shows on a random
+//    part of the ball after a short random wait; tap it fast for up to 1.5x pace, slow or missed and it drifts. ──
+
+const PS_GIVE_UP_S = 1.2;
+export function PowerStrike({ power, onStrike }: { power: number; onStrike: (quality: number) => void }) {
+  const done = useRef(false);
+  const shownAt = useRef<number | null>(null);
+  const ball = useRef({ x: 0, y: 0, r: 0 });
+  const [spot] = useState(() => { const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * 0.55; return { x: Math.cos(a) * r, y: Math.sin(a) * r }; });
+  const [shown, setShown] = useState(false);
+  const [verdict, setVerdict] = useState<string | null>(null);
+  const ring = useRef(new RNA.Value(0)).current;
+  const onStrikeRef = useRef(onStrike); onStrikeRef.current = onStrike;
+  const finish = (q: number) => {
+    if (done.current) return;
+    done.current = true;
+    setVerdict(q >= 0.95 ? "PERFECT!" : q >= 0.6 ? "GOOD" : q > 0 ? "LATE" : "MISSED");
+    setTimeout(() => onStrikeRef.current(q), 350);
+  };
+  useEffect(() => {
+    const appear = setTimeout(() => {
+      shownAt.current = Date.now();
+      setShown(true);
+      RNA.timing(ring, { toValue: 1, duration: POWER_SHOT_PERFECT_S * 1000, easing: Easing.linear, useNativeDriver: true }).start();
+    }, 250 + Math.random() * 500);
+    const giveUp = setTimeout(() => finish(0), 750 + PS_GIVE_UP_S * 1000);
+    return () => { clearTimeout(appear); clearTimeout(giveUp); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <Pressable
+      onPressIn={(e) => {
+        const b = ball.current;
+        if (done.current || !b.r) return;
+        const cx = (e.nativeEvent.locationX - (b.x + b.r)) / b.r, cy = (e.nativeEvent.locationY - (b.y + b.r)) / b.r;
+        if (cx * cx + cy * cy > 1.15) return; // off the ball entirely
+        if (shownAt.current === null) { finish(0); return; } // too early
+        const rt = (Date.now() - shownAt.current) / 1000;
+        finish(powerShotQuality(rt, Math.hypot(cx - spot.x, cy - spot.y) < 0.3));
+      }}
+      style={{ flex: 1, alignItems: "center", justifyContent: "center", overflow: "hidden", backgroundImage: "linear-gradient(180deg, #1f2937 0%, #0f172a 100%)" } as ViewStyle}>
+      <View pointerEvents="none" style={{ position: "absolute", top: 12, left: 0, right: 0, alignItems: "center" }}>
+        <Text style={{ color: "#fcd34d", fontSize: 13, fontWeight: "900", letterSpacing: 1.3 }}>POWER SHOT</Text>
+        <Text style={{ color: "#fff", fontSize: 30, lineHeight: 32, fontWeight: "900", fontStyle: "italic", marginTop: 2 }}>SMASH IT!</Text>
+        <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700", marginTop: 4 }}>Tap the green circle the moment it shows</Text>
+      </View>
+      <View pointerEvents="none" onLayout={(e) => { const l = e.nativeEvent.layout; ball.current = { x: l.x, y: l.y, r: l.width / 2 }; }}
+        style={{ width: "62%", aspectRatio: 1, borderRadius: 9999, backgroundImage: "radial-gradient(circle at 35% 30%, #ffffff 0%, #e5e7eb 55%, #9ca3af 100%)", boxShadow: "0px 10px 30px rgba(0,0,0,0.6)" } as ViewStyle}>
+        {shown && (
+          <View style={{ position: "absolute", width: "30%", height: "30%", left: `${50 + spot.x * 50 - 15}%`, top: `${50 + spot.y * 50 - 15}%`, borderRadius: 9999, backgroundColor: "rgba(34,197,94,0.85)", boxShadow: "0px 0px 0px 3px #bbf7d0, 0px 0px 18px #22c55e" } as ViewStyle}>
+            {/* The shrinking ring is the timing window: inside it, the strike is perfect. */}
+            <RNA.View style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0, borderRadius: 9999, borderWidth: 4, borderColor: "#a7f3d0",
+              opacity: ring.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }), transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [2.2, 1] }) }] }} />
+          </View>
+        )}
+      </View>
+      <View pointerEvents="none" style={{ position: "absolute", bottom: 16, left: 8, right: 8, alignItems: "center" }}>
+        <Text style={{ color: "#fff", fontSize: 11, lineHeight: 15, fontWeight: "900", letterSpacing: 1.1, textAlign: "center" }}>
+          AIM POWER {Math.round(power * 100)}% · PERFECT WITHIN {Math.round(POWER_SHOT_PERFECT_S * 1000)} MS · NO BONUS AFTER {Math.round(POWER_SHOT_SLOW_S * 1000)} MS
+        </Text>
+      </View>
+      {verdict && (
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: "38%", alignItems: "center" }}>
+          <Text style={{ borderRadius: 12, overflow: "hidden", backgroundColor: "rgba(0,0,0,0.7)", paddingHorizontal: 16, paddingVertical: 8, fontSize: 30, fontWeight: "900", fontStyle: "italic", letterSpacing: 1.5,
+            color: verdict === "PERFECT!" ? "#6ee7b7" : verdict === "GOOD" ? "#d9f99d" : "#fca5a5" }}>{verdict}</Text>
+        </View>
+      )}
+    </Pressable>
   );
 }
 

@@ -7,7 +7,7 @@
  * chances, the goal plate, half time.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { View, Text, StyleSheet, type ViewStyle } from "react-native";
+import { View, Text, Pressable, StyleSheet, type ViewStyle } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { goalInView, acceptsCaptainOrders, orderableRunners } from "@/lib/star/canvasEngine";
 import { minuteLabel } from "@/lib/star/addedTime";
@@ -145,6 +145,43 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
                 </Text>
               </View>
             )}
+          </View>
+        )}
+        {/* Touch Mode (CanvasMatch: Boot.extraTouch or the can): a corner toggle you flip mid-match. Its own
+            touch, above the pitch, so a tap never starts an aim-drag underneath. */}
+        {d.touchButtonShown && (
+          <Pressable onPress={() => d.toggleTouchMode()} accessibilityRole="button" accessibilityLabel={d.touchModeOn ? "Turn off Touch Mode" : "Turn on Touch Mode"} hitSlop={6}
+            style={{ position: "absolute", top: 8, right: 8, zIndex: 30, flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 6, minHeight: 36, borderRadius: 8,
+              backgroundColor: d.touchModeOn ? "#d946ef" : "rgba(3,7,18,0.7)", borderWidth: d.touchModeOn ? 0 : 1, borderColor: "rgba(217,70,239,0.5)", boxShadow: "0px 6px 12px rgba(0,0,0,0.35)" } as ViewStyle}>
+            <View style={{ width: 13, height: 13, borderRadius: 7, borderWidth: 1.5, borderColor: d.touchModeOn ? "#fff" : "#f0abfc", alignItems: "center", justifyContent: "center" }}>
+              {d.touchModeOn && <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: "#fff" }} />}
+            </View>
+            <Text numberOfLines={1} style={{ color: d.touchModeOn ? "#fff" : "#f0abfc", fontSize: 10, fontWeight: "900", letterSpacing: 0.25 }}>TOUCH</Text>
+          </Pressable>
+        )}
+        {/* The captain's call while his pass plays on (playOn.ts callForIt). */}
+        {d.callForItShown && (
+          <Pressable onPress={() => d.callForIt()} accessibilityRole="button"
+            style={({ pressed }) => ({ position: "absolute", bottom: "30%", right: 12, zIndex: 30, borderRadius: 99, backgroundColor: "#fbbf24", paddingHorizontal: 16, paddingVertical: 10, transform: [{ scale: pressed ? 0.95 : 1 }], boxShadow: "0px 6px 12px rgba(0,0,0,0.35)" } as ViewStyle)}>
+            <Text numberOfLines={1} style={{ color: "#030712", fontSize: 13, fontWeight: "900" }}>Call for it</Text>
+          </Pressable>
+        )}
+        {d.callMsg && (
+          <View pointerEvents="none" style={{ position: "absolute", bottom: "38%", right: 12, zIndex: 30, borderRadius: 99, backgroundColor: "rgba(0,0,0,0.7)", paddingHorizontal: 12, paddingVertical: 4 }}>
+            <Text numberOfLines={1} style={{ color: "#fff", fontSize: 12, fontWeight: "900" }}>{d.callMsg}</Text>
+          </View>
+        )}
+        {/* ⚡ Power shot (lib/star/shotModel.ts; only with "Knuckleball & power shot" New, which is Old by default): arms the next shot at goal. */}
+        {d.powerShotShown && (
+          <Pressable onPress={() => d.togglePowerShot()} accessibilityRole="button"
+            style={{ position: "absolute", left: 8, bottom: showStamina ? 44 : 8, zIndex: 30, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, minHeight: 36, justifyContent: "center", borderWidth: 2,
+              backgroundColor: d.powerArmed ? "#fbbf24" : "rgba(3,7,18,0.7)", borderColor: d.powerArmed ? "#fde68a" : "rgba(251,191,36,0.6)", boxShadow: "0px 6px 12px rgba(0,0,0,0.35)" } as ViewStyle}>
+            <Text numberOfLines={1} style={{ color: d.powerArmed ? "#030712" : "#fcd34d", fontSize: 11, fontWeight: "900", letterSpacing: 0.6 }}>⚡ POWER SHOT{d.powerArmed ? " — ON" : ""}</Text>
+          </Pressable>
+        )}
+        {d.windingUp && (
+          <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: "12%", zIndex: 30, alignItems: "center" }}>
+            <Text numberOfLines={1} style={{ borderRadius: 12, overflow: "hidden", backgroundColor: "rgba(0,0,0,0.7)", paddingHorizontal: 16, paddingVertical: 8, color: "#fcd34d", fontSize: 24, fontWeight: "900", fontStyle: "italic", letterSpacing: 1.2 }}>WINDING UP…</Text>
           </View>
         )}
         {/* Mikey's pop-up for a goal: the scoreboard, low on the pitch, with the scorer and the assist. */}

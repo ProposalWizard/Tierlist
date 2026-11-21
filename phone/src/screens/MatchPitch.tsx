@@ -27,6 +27,7 @@ import { matchFeel } from "../match/feel";
 import { isAirKind } from "@/lib/star/airDrawings";
 import { airTapOn } from "@/lib/star/airTap";
 import { setSkia } from "../match/skiaApi";
+import { debugMatch } from "../match/debugHook";
 import { setFigureFonts } from "../match/figures";
 import { phoneFontFor } from "../draw/useDrawing";
 import { loadSpriteSheet } from "../match/spriteAssets";
@@ -34,7 +35,7 @@ import { warmSpriteKits } from "../match/sprites";
 import { installWebStorage } from "../match/webStorage";
 import { C } from "../ui/theme";
 import { ICON } from "../ui/look";
-import { Caption } from "./MatchLook";
+import { Caption, PowerStrike } from "./MatchLook";
 
 setSkia(Skia);
 // The takers' names over their heads are drawn with the phone's own fonts.
@@ -169,6 +170,7 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
     const d = make(size.H / size.W);
     d.start();
     dRef.current = d;
+    debugMatch(d);
   }
 
   useEffect(() => {
@@ -304,7 +306,13 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
           </View>
         </GestureDetector>
       )}
-      {d && size && d.phase === "contact" && (
+      {d && size && d.phase === "contact" && d.powerStrike && (
+        // The power shot's green circle (PowerShotContact.tsx) in place of the strike screen.
+        <View style={{ position: "absolute", left: 0, top: 0, width: size.W, height: size.H }}>
+          <PowerStrike power={d.aim?.power ?? 0} onStrike={(q) => d.powerStrikeDone(q)} />
+        </View>
+      )}
+      {d && size && d.phase === "contact" && !d.powerStrike && (
         <GestureDetector gesture={tap}>
           <View style={{ position: "absolute", left: 0, top: 0, width: size.W, height: size.H }}>
             <Canvas style={{ width: size.W, height: size.H }}><Picture picture={contactPic} /></Canvas>
