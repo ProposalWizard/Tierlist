@@ -7,7 +7,7 @@
  * So seek(t) gives the same picture whichever frame came before, and the
  * frame-by-frame filming tool can step through it.
  */
-import { hashStr } from "./math";
+import { ownMotion, type OwnMotion } from "../people/life";
 import type {
   CameraTrack, CaptionTrack, CareerContext, CastMember, ClipTrack, Cond, CutsceneScript, LetterboxTrack,
   MoveTrack, PlaceTrack, SoundTrack, StoryEvent, Target, Track, TransitionTrack, TurnTrack, Vec3,
@@ -194,21 +194,8 @@ function clipTime(tr: ClipTrack, t: number, dur: number, from?: number, speedK =
   return tt;
 }
 
-/**
- * EACH PERSON'S OWN MOTION (Harry, 20 Nov 2026: "no variations - 22 players walking at the same pace in the same
- * time"). From his id alone, the same every time: where in a stride or an idle he starts, how fast his idle
- * runs, which of the two walks he has, how much his arms swing, how he carries himself (a little taller or
- * rounder, a little lean), how often he blinks and looks about. "you" is the middle of every range.
- */
-export interface OwnMotion { phase: number; rate: number; otherWalk: boolean; arms: number; lean: number; side: number; head: number; restless: number }
-export function ownMotion(id: string): OwnMotion {
-  if (id === "you") return { phase: 0, rate: 1, otherWalk: false, arms: 1, lean: 0, side: 0, head: 0, restless: 1 };
-  const h = (k: string) => (hashStr(`${id}#${k}`) >>> 0) / 4294967296;
-  return {
-    phase: h("phase"), rate: 0.88 + 0.24 * h("rate"), otherWalk: h("walk") < 0.34, arms: 0.75 + 0.5 * h("arms"),
-    lean: (h("lean") - 0.5) * 0.07, side: (h("side") - 0.5) * 0.03, head: (h("head") - 0.5) * 0.12, restless: 0.6 + 0.9 * h("restless"),
-  };
-}
+/** EACH PERSON'S OWN MOTION now lives in people/life.ts (every Person3D reads it, not only the cut scenes). */
+export { ownMotion, type OwnMotion };
 
 /**
  * Body clips for an actor at t: [real clip, time, weight][]. `has` / `dur`

@@ -67,6 +67,10 @@ export const TOON_EXPRESSIONS: Record<string, Partial<Record<ExpressionName, num
   emotional: { emotional: 1 }, effort: { effort: 1 }, talk: { talk: 1 },
 };
 
+/** The moving face added to this person (addToonFace), if any: anyone who animates him can give it life. */
+const RIGS = new WeakMap<object, ToonFaceRig>();
+export const toonFaceOf = (p: Person3D): ToonFaceRig | null => RIGS.get(p) ?? null;
+
 /** A face for this person, or null (not a Style A head, or no measured face for it). */
 export function addToonFace(T: Three, p: Person3D): ToonFaceRig | null {
   // a body file being judged (bodies.ts TOON_BODY_SETS) has its own face; else the head's
@@ -128,7 +132,7 @@ export function addToonFace(T: Three, p: Person3D): ToonFaceRig | null {
     u.uTfGaze.value.set(state.gaze[0], state.gaze[1], Math.min(1, Math.max(0, 1 + (f.lid - 1) * 0.6)), Math.min(0.6, f.lidLow * 0.5 + f.cheek * 0.2));
   };
   push();
-  return {
+  const rig: ToonFaceRig = {
     landmarks: lm,
     set(s) {
       if (s.face) state.face = s.face;
@@ -142,8 +146,11 @@ export function addToonFace(T: Three, p: Person3D): ToonFaceRig | null {
       p.outline.geometry = shared;
       geo.dispose();
       u.uTfOn.value.set(0, 0, 0, 0);
+      RIGS.delete(p);
     },
   };
+  RIGS.set(p, rig);
+  return rig;
 }
 
 /** A blend of the game's named looks (types.ts Expression) → the face's numbers. */

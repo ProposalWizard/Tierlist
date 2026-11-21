@@ -30,6 +30,8 @@ import type { Person3D } from "../people3d";
 import { ClipPlayer, type LocoSpec } from "../three3d/footballAnims";
 import { TapWalker, findPath, freeAt, type WalkGrid, type XZ } from "../tapWalk";
 import { turnTo, angDiff } from "../three3d/animBlend";
+import { ownMotion, lifeSeed, type OwnMotion } from "../people/life";
+import { toonFaceOf, blinkAt, wanderGaze } from "../style3d/toon/face";
 import { fwdOf, rightOf, type ClipStep, type SlotBook, type SmartObject, type SmartSlot } from "./smartObject";
 
 type Three = typeof import("three");
@@ -162,11 +164,20 @@ export class Npc {
   private posed = new Map<THREE.Object3D, THREE.Quaternion>();
   private tmp: Record<string, any>;
 
+  /** His own motion (people/life.ts): his pace, which walk he has; the same from his id every time. */
+  readonly own: OwnMotion;
+  private faceSeed: number;
+
   constructor(private T: Three, readonly person: Person3D, opts: { id: string; name?: string; loco: LocoSpec[]; sit?: SitFit | null }) {
     this.id = opts.id;
     this.name = opts.name ?? opts.id;
+    this.own = ownMotion(opts.id);
+    this.faceSeed = lifeSeed(opts.id);
     this.play = new ClipPlayer(T, person.actions);
-    this.play.setLoco(opts.loco, "idle");
+    // a third of people have the other walk (longer, more upright), its speed scaled so the feet still keep up
+    const acts = person.actions as Record<string, unknown>;
+    const loco = this.own.otherWalk && acts.walk_confident ? opts.loco.map((l) => (l.name === "walk" ? { ...l, name: "walk_confident", speed: l.speed * (1.4 / 1.35) } : l)) : opts.loco;
+    this.play.setLoco(loco, "idle");
     this.play.loco(0, { fade: 0 });
     this.sit = opts.sit ?? null;
     this.tmp = { v: new T.Vector3(), w: new T.Vector3(), a: new T.Vector3(), b: new T.Vector3(), c: new T.Vector3(), q: new T.Quaternion(), p: new T.Quaternion(), d: new T.Quaternion() };
@@ -419,6 +430,14 @@ export class Npc {
       }
     }
     if (this.state === "stand" || this.state === "walk" || this.state === "turn") this.play.loco(this.speed);
+    // ── his face's life: blinks and glances at his own times (only if he has a moving face; a few uniforms) ──
+    if (animate) {
+      const rig = toonFaceOf(this.person);
+      if (rig) {
+        const g = wanderGaze(this.clock * 0.6 * this.own.restless + this.own.phase * 40, this.faceSeed);
+        rig.set({ blink: blinkAt(this.clock, this.faceSeed), gaze: g });
+      }
+    }
     // ── the object's loop ──
     const j = this.job;
     if (j && this.state === "use") {
@@ -485,7 +504,8 @@ export class Npc {
       this.speed = Math.max(0, this.speed - dt * 4);
       return;
     }
-    let want = this.goal?.run ? NPC_JOG : NPC_WALK * Math.min(1, s.push / 0.9);
+    // (his own pace, 8% either way: the stride clock follows the ground, so his feet keep up)
+    let want = this.goal?.run ? NPC_JOG * this.own.pace : NPC_WALK * this.own.pace * Math.min(1, s.push / 0.9);
     let dirYaw = s.yaw;
     // ── people ahead: slow down and step aside ──
     const fx = Math.sin(s.yaw), fz = Math.cos(s.yaw);
@@ -498,7 +518,7 @@ export class Npc {
       const ahead = (dx * fx + dz * fz) / d;
       if (ahead < 0.25) continue;
       const gap = d - b.r - BODY_R;
-      want = Math.min(want, NPC_WALK * Math.max(0, Math.min(1, (gap - 0.05) / 0.6)));
+      want = Math.min(want, NPC_WALK * this.own.pace * Math.max(0, Math.min(1, (gap - 0.05) / 0.6)));
       // which side: away from him
       side += (dx * fz - dz * fx) > 0 ? -1 : 1;
     }
