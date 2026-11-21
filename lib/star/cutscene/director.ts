@@ -357,6 +357,20 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       // his own carriage and arm swing (timeline.ts ownMotion), and his breathing: a line of men is not one man copied
       const own = ownMotion(c.id);
       if (sitW < 0.5) a.lean(own.lean + 0.012 * Math.sin(t * 1.5 * own.rate + seed * 3), own.side);
+      // THE ODD LEAN (round 2, Harry on the walk-out's low shot): the brisker walk (walk_confident) is captured
+      // leaning back 6 to 9 degrees, and his own carriage could add to it: a man walking out leaning back reads
+      // as odd. Standing or walking, the back is kept between 3 degrees back and 8 forward.
+      if (sitW < 0.5 && !(tracksOf(c.id, "pose") as PoseTrack[]).some((pt) => KNEELS.has(pt.pose) && trackWeight(pt, t, 0.3, 0.35) > 0)) {
+        const nk = a.bone("neck"), hp = a.bone("Hips");
+        if (nk && hp) {
+          a.root.updateMatrixWorld(true);
+          const f = new T.Vector3(Math.sin(r.yaw), 0, Math.cos(r.yaw));
+          const d = new T.Vector3().setFromMatrixPosition(nk.matrixWorld).sub(new T.Vector3().setFromMatrixPosition(hp.matrixWorld));
+          const bend = Math.atan2(d.dot(f), d.y);
+          if (bend < -0.052) a.lean(-0.052 - bend);
+          else if (bend > 0.14) a.lean(0.14 - bend);
+        }
+      }
       liveArms(a, ctx, own.arms);
       for (const pt of tracksOf(c.id, "pose") as PoseTrack[]) {
         const amt = pt.amount ?? 1;
