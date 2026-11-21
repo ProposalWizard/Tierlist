@@ -474,7 +474,7 @@ async function buildShop(
     scene.add(p);
     blob(1.1, 1.1, x, z);
   };
-  plant(-5.5, 6.1, "palm");
+  plant(-5.5, 6.1, "monstera");
   plant(5.5, -7.1, "fiddle");
   // Look H: parquet, panelling, coffers, practical lights, lit wall units (./hRoom.ts); Old: as before
   const hRoom = hEnh ? await dressShopH(THREE, scene, renderer, ROOM, { floor, wallM, panelM, tier }).catch((e) => { console.error("shop look H room failed", e); return null; }) : null;
