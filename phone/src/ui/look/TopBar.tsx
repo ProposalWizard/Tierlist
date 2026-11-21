@@ -46,7 +46,7 @@ export function TopBar({ career, onHelp, onSettings, onStarPass, left = "star" }
     } as ViewStyle}>
       {/* row 1 */}
       <View style={{ height: 40, flexDirection: "row", alignItems: "center", gap: 6 }}>
-        <Text numberOfLines={1} style={{ flex: 1, color: "#fff", fontFamily: FONT.display, fontSize: 17, letterSpacing: 0.4, textTransform: "uppercase" }}>{`${p.firstName} ${p.lastName}`}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flex: 1, color: "#fff", fontFamily: FONT.display, fontSize: 17, letterSpacing: 0.4, textTransform: "uppercase" }}>{`${p.firstName} ${p.lastName}`}</Text>
         <Pill label="Age" value={p.age} />
         <View {...moneyT}><Pill icon={<Text style={{ color: LOOK.amber, fontSize: 12 }}>★</Text>} value={formatWallet(Math.round(career.money))} /></View>
         {onHelp ? <SquareBtn onPress={onHelp}><Text style={{ color: "#fff", fontSize: 17, fontWeight: "900" }}>?</Text></SquareBtn> : <View style={{ width: 32 }} />}

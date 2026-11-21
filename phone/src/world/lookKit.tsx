@@ -45,7 +45,7 @@ export function Btn({ label, onPress, kind = "primary", disabled, small }: { lab
   const k = kind === "plain" ? "glass" : kind;
   return (
     <LookButton kind={k} disabled={disabled} onPress={onPress} style={{ borderRadius: 14, paddingVertical: small ? 10 : 15, opacity: disabled ? 0.5 : 1 }}>
-      <Text numberOfLines={1} style={{ color: k === "gold" ? "#111827" : "#fff", fontSize: small ? 14 : 17, fontWeight: "900" }}>{label}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: k === "gold" ? "#111827" : "#fff", fontSize: small ? 14 : 17, fontWeight: "900" }}>{label}</Text>
     </LookButton>
   );
 }

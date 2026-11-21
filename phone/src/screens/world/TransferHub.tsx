@@ -290,14 +290,14 @@ export function TransferHubScreen() {
       {league ? (
         <>
           <Chooser label="League" glow="#fbbf24" onPress={() => setPage("league")}>
-            <Text numberOfLines={1} style={{ color: C.text, fontFamily: FONT.display, fontSize: 18, lineHeight: 24, letterSpacing: 0.4, flex: 1 }}>{leagueNameFor(league.division).toUpperCase()}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: C.text, fontFamily: FONT.display, fontSize: 18, lineHeight: 24, letterSpacing: 0.4, flex: 1 }}>{leagueNameFor(league.division).toUpperCase()}</Text>
             <Text style={{ backgroundColor: "#fbbf24", color: "#000", fontWeight: "900", fontSize: 11, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, overflow: "hidden" }}>{league.clubs.length}</Text>
           </Chooser>
           <Chooser label="Club" glow={clubGlowNow} onPress={() => { setBrowsing(league.division); setPage("club"); }}>
             {club ? (
               <>
                 <ClubBadge club={club.club} size={30} career={career} />
-                <Text numberOfLines={1} style={{ color: C.text, fontFamily: FONT.display, fontSize: 18, lineHeight: 24, letterSpacing: 0.4, flex: 1 }}>{club.club.toUpperCase()}</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: C.text, fontFamily: FONT.display, fontSize: 18, lineHeight: 24, letterSpacing: 0.4, flex: 1 }}>{club.club.toUpperCase()}</Text>
                 {club.europe ? <EuroTag comp={club.europe} /> : null}
               </>
             ) : <Text style={{ color: "rgba(255,255,255,0.7)", fontFamily: FONT.display, fontSize: 18, lineHeight: 24, letterSpacing: 0.4 }}>CHOOSE</Text>}

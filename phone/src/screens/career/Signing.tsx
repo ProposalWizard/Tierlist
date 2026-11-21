@@ -190,7 +190,7 @@ export function SigningMoment({ career, club, managerName, onDone, terms, number
     <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: "#030712" }}>
       <View style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 16, alignItems: "center", justifyContent: "center" }}>
         <View style={{ width: SW * k, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <Text numberOfLines={1} style={{ flex: 1, color: "#fcd34d", fontSize: 13, fontWeight: "900", letterSpacing: 1.8 }}>{`Signing for ${club}`.toUpperCase()}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flex: 1, color: "#fcd34d", fontSize: 13, fontWeight: "900", letterSpacing: 1.8 }}>{`Signing for ${club}`.toUpperCase()}</Text>
           <Pressable onPress={onDone} disabled={beat === "done"} style={{ minHeight: 36, borderRadius: 999, paddingHorizontal: 12, justifyContent: "center", backgroundColor: "rgba(255,255,255,0.1)", opacity: beat === "done" ? 0 : 1 }}>
             <Text style={{ color: "#fff", fontSize: 12, fontWeight: "900", letterSpacing: 0.6 }}>SKIP</Text>
           </Pressable>

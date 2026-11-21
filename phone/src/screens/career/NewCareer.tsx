@@ -18,7 +18,8 @@ import { View, Text, TextInput, ScrollView, Image, type ViewStyle } from "react-
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { StarPlayer } from "@/lib/star/types";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
-import { ALL_NATIONALITIES, nationalityFlag } from "@/lib/nationalities";
+import { ALL_NATIONALITIES } from "@/lib/nationalities";
+import { NationFlag } from "../../draw/NationFlag";
 import {
   SKIN_TONES, DEFAULT_SKIN_TONE, type SkinTone, DEFAULT_FOOT, type PreferredFoot,
   HAIR_STYLES, HAIR_COLOURS, DEFAULT_HAIR_STYLE, DEFAULT_HAIR_COLOUR, type HairStyle, type HairColour, clampSquadNumber,
@@ -100,7 +101,7 @@ export function NewCareer({ onDone, onBack }: { onDone: (p: StarPlayer) => void;
                 <Label>Nationality</Label>
                 {!natOpen ? (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, backgroundColor: LOOK.emerald500, paddingHorizontal: 12, paddingVertical: 9, boxShadow: "0px 8px 14px -6px rgba(6,78,59,0.6)" } as ViewStyle}>
-                    <Text style={{ fontSize: 16 }}>{nationalityFlag(nationality)}</Text>
+                    <NationFlag nation={nationality} width={20} />
                     <Text numberOfLines={1} style={{ flex: 1, color: "#fff", fontSize: 16, fontWeight: "900" }}>{nationality}</Text>
                     <Text style={{ color: "#fff", fontSize: 17, fontWeight: "900" }}>✓</Text>
                     <Press onPress={() => setNatOpen(true)} style={{ borderRadius: 8, backgroundColor: "rgba(6,78,59,0.5)", paddingHorizontal: 12, paddingVertical: 6 }}>
@@ -115,7 +116,7 @@ export function NewCareer({ onDone, onBack }: { onDone: (p: StarPlayer) => void;
                       {list.map((n) => (
                         <Press key={n} onPress={() => { setNat(n); setSearch(""); setNatOpen(false); }}
                           style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: n === nationality ? LOOK.emerald500 : "transparent" }}>
-                          <Text style={{ fontSize: 14 }}>{nationalityFlag(n)}</Text>
+                          <NationFlag nation={n} width={20} />
                           <Text numberOfLines={1} style={{ color: n === nationality ? "#fff" : "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: "700" }}>{n}</Text>
                         </Press>
                       ))}

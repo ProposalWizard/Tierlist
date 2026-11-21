@@ -39,7 +39,7 @@ export function LookButton({ label, onPress, kind = "primary", accent, small, di
   const k = disabled && kind === "accent" ? { box: { backgroundColor: "rgba(255,255,255,0.22)" } as ViewStyle, ink: "#ffffff" } : kindStyle(kind, accent);
   return (
     <Press disabled={disabled} onPress={onPress} style={[k.box, { borderRadius: small ? 8 : 12, paddingVertical: small ? 6 : 13, paddingHorizontal: 10, alignItems: "center", justifyContent: "center" }, style]}>
-      {children ?? <Text numberOfLines={1} style={{ color: k.ink, fontSize: small ? 11 : 16, fontWeight: "900" }}>{label}</Text>}
+      {children ?? <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: k.ink, fontSize: small ? 11 : 16, fontWeight: "900" }}>{label}</Text>}
     </Press>
   );
 }

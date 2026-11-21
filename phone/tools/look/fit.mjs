@@ -60,15 +60,16 @@ const names = async (p) => { await fill(p, 0, "Look"); await fill(p, 1, "Check")
 
 // save: false (new phone) | true (Arsenal career) | "late" (six games from the end) | "title" (career, packed shows its title)
 const SCENES = [
-  { id: "title-new", save: false, packed: async (p) => { await click(p, /Main menu/i); }, next: async () => {} },
+  // a brand-new phone opens on "Who are you?" in both apps; its "Main menu" shows the title
+  { id: "title-new", save: false, packed: async (p) => { await click(p, /Main menu/i); }, next: async (p) => { await click(p, /Main menu/i); } },
   { id: "title", save: "title", packed: async () => {}, next: async () => {} },
   { id: "load", save: "title", packed: async (p) => { await click(p, /Load game/i); }, next: async (p) => { await click(p, /Load game/i); } },
   { id: "credits", save: "title", packed: async (p) => { await click(p, /^Credits$/i); }, next: async (p) => { await click(p, /^Credits$/i); } },
-  { id: "nc1", save: false, packed: async () => {}, next: async (p) => { await click(p, /new game/i); } },
-  { id: "nc2", save: false, packed: async (p) => { await names(p); }, next: async (p) => { await click(p, /new game/i); await names(p); } },
+  { id: "nc1", save: false, packed: async () => {}, next: async () => {} },
+  { id: "nc2", save: false, packed: async (p) => { await names(p); }, next: async (p) => { await names(p); } },
   { id: "nc3", save: false,
     packed: async (p) => { await names(p); await click(p, /^RIGHT$/); await click(p, /Continue/i); },
-    next: async (p) => { await click(p, /new game/i); await names(p); await click(p, /^Right$/); await click(p, /Continue/i); } },
+    next: async (p) => { await names(p); await click(p, /^Right$/); await click(p, /Continue/i); } },
   { id: "home", save: true, packed: async () => {}, next: async (p) => { await kibContinue(p); } },
   { id: "league", save: true, packed: async (p) => { await click(p, /^League$/); }, next: async (p) => { await kibContinue(p); await click(p, /^League$/); } },
   { id: "late-table", save: "late", packed: async (p) => { await click(p, /^League$/); }, next: async (p) => { await kibContinue(p); await click(p, /^League$/); } },

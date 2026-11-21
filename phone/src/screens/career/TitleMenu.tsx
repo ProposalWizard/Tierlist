@@ -35,7 +35,7 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
         <Press onPress={() => {}} style={{ backgroundImage: "linear-gradient(180deg, #0f172a, #070b14)", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 16, paddingBottom: Math.max(16, inset.bottom), borderTopWidth: 1, borderColor: "rgba(255,255,255,0.1)" } as ViewStyle}>
           <View style={{ alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.2)", marginBottom: 12 }} />
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-            <Text numberOfLines={1} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 18, lineHeight: 24, letterSpacing: 0.45, flex: 1, textTransform: "uppercase" }}>{title}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 18, lineHeight: 24, letterSpacing: 0.45, flex: 1, textTransform: "uppercase" }}>{title}</Text>
             <Press onPress={onClose} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.1)", alignItems: "center", justifyContent: "center" }}><Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 14 }}>✕</Text></Press>
           </View>
           {children}
@@ -66,11 +66,12 @@ function useNoSavePlayer(): CareerState {
 /**
  * KNOWITBALL on one line, filling the width (TitleScreen Wordmark), the tagline under it.
  * The website's word is the phone's own heavy italic sans (Roboto Black Italic on Android),
- * tracked in by 0.04 em and sized so it fills 94% of the width: "KNOWITBALL" is 6.156 em
- * wide in that font (measured). `adjustsFontSizeToFit` keeps it on one line on a phone
+ * tracked in by 0.04 em and sized so it fills 94% of the width: "KNOWITBALL" is 5.644 em
+ * wide in Roboto Black Italic with that tracking (measured from the font file: 68 px on a
+ * 412-wide phone, what the website's own fit gives in an Android WebView). `adjustsFontSizeToFit` keeps it on one line on a phone
  * whose own font is wider.
  */
-const WORD_EM = 6.156;
+const WORD_EM = 5.644;
 function Wordmark({ width, showTrial }: { width: number; showTrial: boolean }) {
   const size = Math.max(36, Math.min(120, Math.floor((width * 0.94) / WORD_EM)));
   const line = (dir: string) => <View style={{ height: 1, width: 32, backgroundImage: `linear-gradient(${dir}, rgba(252,211,77,0), rgba(252,211,77,0.8))` } as ViewStyle} />;

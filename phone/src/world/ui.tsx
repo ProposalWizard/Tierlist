@@ -1,4 +1,5 @@
 import { ClubBadge as DrawnBadge } from "../draw/ClubBadge";
+import { NationFlag } from "../draw/NationFlag";
 /**
  * THE WORLD SCREENS' SHARED PIECES: header with back, tab rows, cards, the
  * club badge placeholder, round arrows. Solid colours, no blur, the game's
@@ -50,12 +51,9 @@ export function ClubBadge({ club, size = 20 }: { club: string; size?: number; ca
 }
 
 /** A nation's flag stand-in: the nation's initials on a dark chip. */
+/** A nation's drawn flag, `size` tall (the website's NationFlag; it was a grey three-letter tag). */
 export function Flag({ nation, size = 18 }: { nation: string; size?: number }) {
-  return (
-    <View style={{ width: size * 1.4, height: size, borderRadius: 3, backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ color: C.text, fontSize: size * 0.45, fontWeight: "900" }}>{nation.slice(0, 3).toUpperCase()}</Text>
-    </View>
-  );
+  return <NationFlag nation={nation} width={Math.round(size * 1.5)} />;
 }
 
 // ── Layout ──────────────────────────────────────────────────────────────────
@@ -124,7 +122,7 @@ export function Chips<T extends string>({ value, onChange, items }: { value: T; 
       {items.map(([k, label]) => {
         const on = value === k;
         return (
-          <Press key={k} onPress={() => onChange(k)} onLayout={(e) => { xs.current[k] = e.nativeEvent.layout.x; if (k === value && first.current) toChosen(); }} style={[{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: R.pill }, on
+          <Press key={k} onPress={() => onChange(k)} onLayout={(e) => { xs.current[k] = e.nativeEvent.layout.x; if (k === value && first.current) requestAnimationFrame(toChosen); }} style={[{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: R.pill }, on
             ? ({ backgroundImage: "linear-gradient(180deg, #fde047, #f59e0b)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.5)" } as ViewStyle)
             : ({ backgroundColor: "rgba(10,22,40,0.6)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.22)" } as ViewStyle)]}>
             <Text numberOfLines={1} style={{ color: on ? "#111" : C.text, fontWeight: "900", fontSize: 12, lineHeight: 16 }}>{label}</Text>
@@ -165,7 +163,7 @@ export function Btn({ label, onPress, tone = "gold", disabled, style }: { label:
   const kind = tone === "gold" ? "gold" : tone === "green" ? "primary" : tone === "red" ? "danger" : "glass";
   return (
     <LookButton kind={kind} disabled={disabled} onPress={onPress} style={[{ borderRadius: 14, paddingVertical: 13, paddingHorizontal: 12, opacity: disabled ? 0.55 : 1 }, style]}>
-      <Text style={{ color: kind === "gold" ? "#111827" : "#fff", fontWeight: "900", fontSize: 14, textAlign: "center" }}>{label}</Text>
+      <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: kind === "gold" ? "#111827" : "#fff", fontWeight: "900", fontSize: 14, textAlign: "center" }}>{label}</Text>
     </LookButton>
   );
 }

@@ -196,7 +196,7 @@ function ListCard({ v, accent, on, onTap }: { v: ItemView; accent: string; on: b
       </View>
       <View style={{ flex: 1, minWidth: 0, justifyContent: "center", gap: 3 }}>
         {own ? <Text style={{ alignSelf: "flex-start", color: "#a7f3d0", backgroundColor: "rgba(6,95,70,0.9)", fontSize: 9.5, fontWeight: "900", letterSpacing: 0.6, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: "hidden", textTransform: "uppercase" }}>{own}</Text> : null}
-        <Text numberOfLines={1} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 19, lineHeight: 24 }}>{v.title}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 19, lineHeight: 24 }}>{v.title}</Text>
         <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.7)", fontSize: 11.5, fontWeight: "700" }}>{v.sub}</Text>
         {locked ? (
           <Text style={{ color: "#fcd34d", fontSize: 12, fontWeight: "900", letterSpacing: 0.6 }}>HIGHER STAR RATING</Text>
@@ -285,7 +285,7 @@ function Page({ v, accent, w, h, prev, next, pos, nextCat, onOpen }: { v: ItemVi
           <Text style={{ color: accent, fontSize: 11, fontWeight: "900", letterSpacing: 1.8 }}>{SHOP_CATS.find((c) => c.id === v.cat)!.label.toUpperCase()} · {pos}</Text>
           {nextCat ? <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: "900", letterSpacing: 1.8 }}>⌃ {nextCat.toUpperCase()}</Text> : null}
         </View>
-        <Text numberOfLines={1} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 26, lineHeight: 32 }}>{v.title}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 26, lineHeight: 32 }}>{v.title}</Text>
         <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: "700" }}>{v.sub}</Text>
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 8, marginTop: 6 }}>
           <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", columnGap: 10 }}>
@@ -355,7 +355,7 @@ function DetailSheet({ v, accent, catLabel, onLevel, onClose }: { v: ItemView; a
           <View pointerEvents="none" style={{ position: "absolute", bottom: 14, width: "70%", height: 34, borderRadius: 999, backgroundImage: "radial-gradient(closest-side, rgba(0,0,0,0.75), rgba(0,0,0,0))" } as ViewStyle} />
           <Pic v={v} size={220} grey={v.locked !== null} />
         </View>
-        <Text numberOfLines={1} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 28, lineHeight: 34 }}>{v.title}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 28, lineHeight: 34 }}>{v.title}</Text>
         <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: "700" }}>{v.sub}</Text>
         <Pips level={v.level} of={v.levels} onPick={onLevel} />
         {v.badges.length > 0 && (
@@ -519,7 +519,7 @@ function ConfirmSheet({ c, money, onClose, onRun }: { c: Confirm | null; money: 
       <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.65)" }}>
         {c && (
           <View style={{ backgroundImage: "linear-gradient(180deg, #0b1222, #05080f)", borderTopLeftRadius: 22, borderTopRightRadius: 22, borderTopWidth: 1, borderColor: "rgba(255,255,255,0.15)", padding: 18, paddingBottom: 34, gap: 10 } as ViewStyle}>
-            <Text style={{ color: C.text, fontFamily: FONT.display, fontSize: 24, lineHeight: 30 }}>{c.title}</Text>
+            <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: C.text, fontFamily: FONT.display, fontSize: 24, lineHeight: 30 }}>{c.title}</Text>
             <Text style={{ color: C.dim, fontWeight: "700" }}>{c.sub}</Text>
             {c.note ? <Text style={{ color: C.text, fontWeight: "700" }}>{c.note}</Text> : null}
             {c.black && (

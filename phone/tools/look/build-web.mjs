@@ -25,6 +25,10 @@ function robotoFiles() {
   }
   const files = Object.entries(WEIGHTS).map(([w, d]) => ({ name: `Roboto-${w}.ttf`, weight: w, italic: false, src: path.join(ROBOTO, "package", d, `Roboto_${d}.ttf`) }));
   files.push({ name: "Roboto-400i.ttf", weight: "400", italic: true, src: path.join(ROBOTO, "package/400Regular_Italic/Roboto_400Regular_Italic.ttf") });
+  // the heavy italics too (the title's KNOWITBALL is Roboto Black Italic on a phone): without
+  // them a browser fakes the slant on another weight, and the word's width is wrong
+  files.push({ name: "Roboto-700i.ttf", weight: "700", italic: true, src: path.join(ROBOTO, "package/700Bold_Italic/Roboto_700Bold_Italic.ttf") });
+  files.push({ name: "Roboto-900i.ttf", weight: "900", italic: true, src: path.join(ROBOTO, "package/900Black_Italic/Roboto_900Black_Italic.ttf") });
   return files;
 }
 

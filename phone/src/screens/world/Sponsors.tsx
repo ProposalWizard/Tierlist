@@ -215,7 +215,7 @@ export function SponsorsScreen() {
       <View style={[glassStyle("glass"), { borderRadius: 16, padding: 12, flexDirection: "row", justifyContent: "space-between", gap: 10 }]}>
         <View style={{ flex: 1 }}>
           <Title color={C.green}>Sponsor money</Title>
-          <Text style={{ color: "#fcd34d", fontFamily: FONT.display, fontSize: 30, lineHeight: 36 }}>★{formatMoney(total)}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: "#fcd34d", fontFamily: FONT.display, fontSize: 30, lineHeight: 36 }}>★{formatMoney(total)}</Text>
           <Text style={{ color: C.text, fontWeight: "700", fontSize: 11 }}>a week, paid with your wage</Text>
         </View>
         <View style={{ width: "46%", alignItems: "flex-end" }}>

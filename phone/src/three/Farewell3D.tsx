@@ -17,6 +17,7 @@ import { partOff } from "../safety";
  * takes over 20 seconds to load, the drawn version plays instead, as on the
  * website.
  */
+import { TopSpace } from "../ui/safe";
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Image, PixelRatio, StyleSheet } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, withDelay, Easing } from "react-native-reanimated";
@@ -171,7 +172,8 @@ export function GuardOfHonour({ career, sides, onDone }: { career: CareerState; 
 
 function Heading({ kicker, title, sub }: { kicker: string; title: string; sub?: string }) {
   return (
-    <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, paddingTop: 48, paddingHorizontal: 16, alignItems: "center", backgroundColor: "rgba(0,0,0,0.28)" }}>
+    <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, paddingHorizontal: 16, alignItems: "center", backgroundColor: "rgba(0,0,0,0.28)" }}>
+      <TopSpace min={48} />
       <Text style={{ color: "#fde68a", fontSize: 11, fontWeight: "900", letterSpacing: 3.3, textTransform: "uppercase" }}>{kicker}</Text>
       <Text style={{ color: "#fff", fontSize: 30, fontWeight: "900", textTransform: "uppercase", textShadowColor: "rgba(0,0,0,.8)", textShadowRadius: 6 }}>{title}</Text>
       {sub ? <Text style={{ color: "rgba(255,255,255,.9)", fontSize: 12, fontWeight: "700", marginTop: 2, marginBottom: 6 }}>{sub}</Text> : <View style={{ height: 8 }} />}
@@ -278,7 +280,7 @@ function FaceChip({ chip, kit, size = 42 }: { chip: Chip; kit: Kit; size?: numbe
         <Image source={{ uri: pictureUri(src) }} style={{ width: "100%", height: "100%" }} resizeMode="cover" onError={() => { if (src !== fallback) setSrc(fallback); }} />
         {chip.badge && <Text style={{ position: "absolute", right: 0, bottom: 0, fontSize: 13 }}>{chip.badge}</Text>}
       </View>
-      <Text numberOfLines={1} style={{ marginTop: 2, fontSize: 9.5, fontWeight: "900", textTransform: "uppercase", color: chip.you ? "#fde68a" : "rgba(255,255,255,.9)" }}>{chip.name}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ marginTop: 2, width: size + 22, textAlign: "center", fontSize: 9.5, fontWeight: "900", textTransform: "uppercase", color: chip.you ? "#fde68a" : "rgba(255,255,255,.9)" }}>{chip.name}</Text>
     </View>
   );
 }

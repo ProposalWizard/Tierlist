@@ -88,7 +88,7 @@ export function BreakingNewsPage({ career, news, onClose }: { career: CareerStat
           <Text style={{ paddingBottom: 8, textAlign: "center", color: "#fff", fontSize: 12, fontWeight: "900", letterSpacing: 3.6, opacity: armed ? 0.85 : 0 }}>TAP TO CONTINUE</Text>
           <View style={{ marginBottom: inset.bottom, flexDirection: "row", alignItems: "stretch", overflow: "hidden", backgroundColor: "#000", borderTopWidth: 4, borderColor: "#fff", boxShadow: "0px -8px 0px #dc2626" } as ViewStyle}>
             <View style={{ backgroundColor: "#dc2626", paddingHorizontal: 16, justifyContent: "center" }}>
-              <Text numberOfLines={1} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 20, lineHeight: 26, letterSpacing: 1.6 }}>{shortClub(news.club ?? "NEWS").toUpperCase().slice(0, 14)}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 20, lineHeight: 26, letterSpacing: 1.6 }}>{shortClub(news.club ?? "NEWS").toUpperCase().slice(0, 14)}</Text>
             </View>
             <Text numberOfLines={1} ellipsizeMode="clip" style={{ flex: 1, color: "#fff", fontFamily: FONT.display, fontSize: 20, letterSpacing: 1, paddingVertical: 12, paddingHorizontal: 10 }}>{ticker.repeat(2)}</Text>
           </View>
