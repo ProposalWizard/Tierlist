@@ -9,6 +9,7 @@
  *  - Settings: only real preferences.
  *  - Placeholder: a screen still to come, saying so.
  */
+import { partsSwitchedOff, turnPartBackOn, PART_NAMES } from "../../safety";
 import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { ownedPenaltyRunups, ownedFreeKickRunups, careerPenaltyRunup, careerFreeKickRunup } from "@/lib/star/runupStyles";
 import { SKIN_TONES, HAIR_COLOURS, resolveSkinTone } from "@/lib/star/playerIdentity";
@@ -273,6 +274,7 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
           )}
         </View>
       )}
+      <SwitchedOffCard />
       {/* The website's More → Data credits (lib/star/dataCredits.ts): who made the data,
           pictures and sounds the game uses, under the licence each asks for. */}
       <Card style={{ padding: 0 }}>
@@ -306,6 +308,28 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
       </Card>
       {onHelp && <Btn kind="plain" label="? How it works" onPress={onHelp} />}
     </Frame>
+  );
+}
+
+/**
+ * Parts the crash guard switched off (src/safety.ts): shown only when there is one.
+ * "Turn back on" tries the part again at once.
+ */
+function SwitchedOffCard() {
+  const [, bump] = useState(0);
+  const off = partsSwitchedOff();
+  if (!off.length) return null;
+  return (
+    <Card tone="#f59e0b">
+      <Text style={{ color: C.text, fontWeight: "900", fontSize: 15 }}>Switched off on this phone</Text>
+      <Text style={{ color: C.dim, fontSize: 12, marginBottom: 8 }}>The game closed twice while starting these, so it shows the simple version for now. It tries again by itself after a few launches.</Text>
+      {off.map((p) => (
+        <View key={p} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 6 }}>
+          <Text numberOfLines={2} style={{ flex: 1, color: C.text, fontSize: 13, fontWeight: "800", textTransform: "capitalize" }}>{PART_NAMES[p]}</Text>
+          <View style={{ width: 120 }}><Btn small label="Turn back on" onPress={() => { turnPartBackOn(p); bump((n) => n + 1); }} /></View>
+        </View>
+      ))}
+    </Card>
   );
 }
 
