@@ -5,7 +5,7 @@
  * Each platform's progress lives in post.results[platform], so a tick can stop anywhere and the next one
  * carries on:
  *   instagram  pending → processing (Instagram is processing the container) → done
- *   facebook   pending → done (Facebook fetches and processes the file itself)
+ *   facebook   pending → processing (Meta fetches, processes and publishes the Reel) → done, or failed with its reason
  *   youtube    pending → done (the site streams the file to YouTube in the same tick)
  * A failure on one platform never stops the others. Nothing is retried blindly: a failed platform stays
  * failed with its reason until someone presses Try again.
@@ -25,6 +25,8 @@ export interface EngineApi {
   instagramPublish(container: string): Promise<{ id: string; link: string }>;
   facebookPost(videoUrl: string, title: string, caption: string): Promise<{ id: string; link: string }>;
   youtubeUpload(video: { url: string; size: number; type: string }, title: string, caption: string): Promise<{ id: string; link: string; privacy?: string }>;
+  /** Where a Facebook Reel has got to after the publish request (optional: without it a Reel counts as posted at once). */
+  facebookState?(id: string): Promise<{ phase: "published" | "processing" | "error"; why: string; link: string | null }>;
   stats(p: Platform, id: string): Promise<Record<string, number>>;
 }
 
@@ -67,8 +69,17 @@ export async function tick(api: EngineApi, opts: { fresh?: boolean } = {}): Prom
             }
           }
         } else if (p === "facebook") {
-          const out = await api.facebookPost((await getVideo()).url, post.title, caption(p));
-          Object.assign(r, { stage: "done", id: out.id, link: out.link, startedAt: now.toISOString(), doneAt: now.toISOString() });
+          if (r.stage === "pending") {
+            const out = await api.facebookPost((await getVideo()).url, post.title, caption(p));
+            // Meta fetches, processes and publishes the Reel by itself afterwards: only "done" once it says so.
+            Object.assign(r, { stage: api.facebookState ? "processing" : "done", id: out.id, link: out.link, startedAt: now.toISOString(), ...(api.facebookState ? {} : { doneAt: now.toISOString() }) });
+          } else if (r.id && api.facebookState) {
+            const st = await api.facebookState(r.id);
+            r.note = st.why;
+            if (st.phase === "published") Object.assign(r, { stage: "done", link: st.link || r.link, doneAt: now.toISOString() });
+            else if (st.phase === "error") Object.assign(r, { stage: "failed", error: `Facebook could not publish the Reel: ${st.why}` });
+            else if (r.startedAt && now.getTime() - Date.parse(r.startedAt) > IG_WAIT_MS) Object.assign(r, { stage: "failed", error: `Facebook was still processing after 50 minutes (${st.why}). Press Try again.` });
+          }
         } else if (p === "youtube") {
           const out = await api.youtubeUpload(await getVideo(), post.title, caption(p));
           Object.assign(r, { stage: "done", id: out.id, link: out.link, startedAt: now.toISOString(), doneAt: now.toISOString() });
@@ -92,11 +103,19 @@ export async function tick(api: EngineApi, opts: { fresh?: boolean } = {}): Prom
         const r = results[p];
         if (!r || r.stage !== "done" || !r.id) continue;
         if (!opts.fresh && r.statsAt && now.getTime() - Date.parse(r.statsAt) < STATS_EVERY_MS) continue;
+        // A Facebook Reel already marked posted: check it really is on the Page (older posts were never checked).
+        if (p === "facebook" && api.facebookState) {
+          try {
+            const st = await api.facebookState(r.id); r.note = st.why;
+            if (st.phase === "error") { Object.assign(r, { stage: "failed", error: `Facebook did not publish the Reel: ${st.why}` }); r.statsAt = now.toISOString(); changed = true; continue; }
+            if (st.link) r.link = st.link;
+          } catch (e) { r.note = `Could not read the Reel's state: ${(e as Error).message.slice(0, 160)}`; }
+        }
         try { r.stats = await api.stats(p, r.id); r.statsError = undefined; report.statsRefreshed++; }
         catch (e) { r.statsError = (e as Error).message.slice(0, 200); }
         r.statsAt = now.toISOString(); changed = true;
       }
-      if (changed) await api.save(post.id, { results });
+      if (changed) await api.save(post.id, { results, status: overallStatus({ platforms: post.platforms, results, status: post.status }) });
     }
   } catch (e) { report.errors.push((e as Error).message); }
   return report;

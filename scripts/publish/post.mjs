@@ -37,7 +37,7 @@ function show(d) {
     for (const pl of p.platforms) {
       const r = p.results?.[pl] || {};
       const stats = r.stats ? Object.entries(r.stats).map(([k, v]) => `${v} ${k}`).join(", ") : "";
-      console.log(`   ${pl}: ${r.stage || "pending"}${r.link ? " " + r.link : ""}${stats ? " · " + stats : ""}${r.error ? " · " + r.error : ""}`);
+      console.log(`   ${pl}: ${r.stage || "pending"}${r.link ? " " + r.link : ""}${stats ? " · " + stats : ""}${r.error ? " · " + r.error : ""}${r.note ? " · [" + r.note + "]" : ""}`);
     }
   }
 }
