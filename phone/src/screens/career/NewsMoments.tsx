@@ -26,6 +26,7 @@ import { PlayerHead } from "../../draw/PlayerHead";
 import { ClubBadge } from "../../draw/ClubBadge";
 import { FONT, LookButton, rgba } from "../../ui/look";
 import { Rays, Scanlines } from "../../ui/look/Patterns";
+import { Burst } from "./lookBits";
 
 function YourHead({ career, size }: { career: CareerState; size: number }) {
   const kit = kitsOf(career.player.club, career.clubKits?.[career.player.club]).home;
@@ -133,6 +134,8 @@ export function PotmWinPage({ career, award, onClose }: { career: CareerState; a
         <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: `radial-gradient(70% 50% at 50% 40%, ${rgba(glow, 0.35)}, transparent 70%)` } as ViewStyle} />
         {/* the gold rays: drawn (a phone has no repeating-conic-gradient) */}
         <View pointerEvents="none" style={{ position: "absolute", top: "18%", left: 0, right: 0, alignItems: "center" }}><Rays size={520} /></View>
+        {/* the confetti as the page opens (PotmWinModal.tsx) */}
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: "30%", height: 10 }}><Burst count={36} spread={1.6} colors={[glow, "#fde047", "#fbbf24", "#ffffff"]} /></View>
         <Pressable onPress={() => {}} style={{ width: "100%", maxWidth: 384 }}>
           <View style={{ alignItems: "center", marginBottom: 12 }}>
             <Text style={{ color: "#fcd34d", fontSize: 11, fontWeight: "900", letterSpacing: 3.3, textShadowColor: "rgba(251,191,36,0.5)", textShadowRadius: 10 }}>PLAYER OF THE MONTH</Text>

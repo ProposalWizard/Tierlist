@@ -19,7 +19,7 @@ import { Press } from "../../ui/Press";
 import { useEffect, useRef, useState } from "react";
 import { View, Text, Platform, BackHandler, type ViewStyle } from "react-native";
 import { FONT, LOOK, LookButton } from "../../ui/look";
-import { clubGlow, PopIn } from "./lookBits";
+import { clubGlow, PopIn, Burst } from "./lookBits";
 import { listSlots, loadSlot, newInSlot, deleteSlot, activeSlot } from "../../world/slots";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { nextFixtureFor, fixtureLabel } from "@/lib/star/competitions";
@@ -87,6 +87,7 @@ export function ContractRenewalScreen({ career, go }: { career: CareerState; go:
      <View style={{ flex: 1, justifyContent: "center", padding: 12, gap: 10, width: "100%", maxWidth: 400, alignSelf: "center" }}>
       {stamp && (
         <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, zIndex: 20, alignItems: "center", justifyContent: "center" }}>
+          <Burst count={30} spread={1.4} colors={["#34d399", "#fde047", "#ffffff"]} />
           <PopIn>
             <View style={{ borderRadius: 12, borderWidth: 4, borderColor: "#34d399", backgroundColor: "rgba(2,44,34,0.85)", paddingHorizontal: 20, paddingVertical: 8, transform: [{ rotate: "-6deg" }], boxShadow: "0px 0px 40px rgba(52,211,153,0.5)" } as never}>
               <Text style={{ color: "#6ee7b7", fontSize: 30, fontWeight: "900", letterSpacing: 3 }}>SIGNED</Text>

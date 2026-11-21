@@ -155,6 +155,7 @@ function ScoutTalk({ m, go }: { m: NonNullable<ReturnType<typeof flow.managerTal
   const done = shown >= talk.lines.length;
   const glow = clubGlow(offer.club);
   const managerName = loadLineup(offer.club)?.manager || "The manager";
+  // (the scout speaks for a club you have not joined yet: its manager comes from the club's saved line-up)
   const nav = useNav();
   return (
     <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: "#05070d" }}>
@@ -263,7 +264,7 @@ export function SignedScreen({ career, go }: { career: CareerState; go: (s: flow
   // drawn one (Signing.tsx), then straight on (a loan first says where you go).
   if (!signed) {
     const done = () => (onLoan ? setSigned(true) : go(flow.finishSigning()));
-    return <SigningMoment career={career} club={c.club} managerName={loadLineup(c.club)?.manager || "The manager"} onDone={done} />;
+    return <SigningMoment career={career} club={c.club} managerName={career.manager?.name || loadLineup(c.club)?.manager || "The manager"} onDone={done} />;
   }
   return (
     <Frame kicker="Signed" title={c.club} footer={<Btn label="Let's go" onPress={() => go(flow.finishSigning())} />}>

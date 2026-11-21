@@ -102,3 +102,29 @@ export function Pulse({ children, style, min = 0.55, ms = 1300, scale = 1 }: { c
   }, [a, ms]);
   return <Animated.View style={[style, { opacity: a.interpolate({ inputRange: [0, 1], outputRange: [min, 1] }), transform: [{ scale: a.interpolate({ inputRange: [0, 1], outputRange: [1, scale] }) }] }]}>{children}</Animated.View>;
 }
+
+/**
+ * A burst of confetti from the middle of its parent, once (components/star/ui Burst):
+ *   <Burst colors={["#fde047", "#fff"]} count={30} />
+ * Bits fly out, turn and fade in about a second; nothing is left behind.
+ */
+export function Burst({ colors = ["#fde047", "#fbbf24", "#ffffff"], count = 24, spread = 1 }: { colors?: string[]; count?: number; spread?: number }) {
+  const a = useRef(new Animated.Value(0)).current;
+  const bits = useRef(Array.from({ length: count }, (_, i) => {
+    const ang = (i / count) * Math.PI * 2 + ((i * 37) % 10) / 10;
+    const far = (70 + ((i * 53) % 90)) * spread;
+    return { dx: Math.cos(ang) * far, dy: Math.sin(ang) * far - 30, size: 5 + ((i * 7) % 5), color: colors[i % colors.length], spin: `${(i % 2 ? 1 : -1) * (180 + ((i * 41) % 360))}deg` };
+  })).current;
+  useEffect(() => {
+    Animated.timing(a, { toValue: 1, duration: 1100, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [a]);
+  return (
+    <View pointerEvents="none" style={{ position: "absolute", left: "50%", top: "50%", width: 0, height: 0 }}>
+      {bits.map((b, i) => (
+        <Animated.View key={i} style={{ position: "absolute", left: -b.size / 2, top: -b.size / 2, width: b.size, height: b.size * 0.6, borderRadius: 1, backgroundColor: b.color,
+          opacity: a.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 1, 0] }),
+          transform: [{ translateX: a.interpolate({ inputRange: [0, 1], outputRange: [0, b.dx] }) }, { translateY: a.interpolate({ inputRange: [0, 1], outputRange: [0, b.dy + 60] }) }, { rotate: a.interpolate({ inputRange: [0, 1], outputRange: ["0deg", b.spin] }) }] }} />
+      ))}
+    </View>
+  );
+}

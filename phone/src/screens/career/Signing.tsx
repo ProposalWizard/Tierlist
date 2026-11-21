@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing } from "react-native-reanimated";
 import { Canvas, Group, Path, Skia } from "@shopify/react-native-skia";
 import type { CareerState } from "@/lib/star/types";
+import { Burst, PopIn } from "./lookBits";
 import { kitsOf } from "@/lib/star/kits";
 import { skinToneHex } from "@/lib/star/playerIdentity";
 import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
@@ -242,8 +243,12 @@ export function SigningMoment({ career, club, managerName, onDone, terms, number
             </Animated.View>
             {shake && (
               <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 22, alignItems: "center" }}>
-                <Text style={[{ color: "#fcd34d", fontSize: 20, fontWeight: "900", letterSpacing: -0.4 }, outline]}>WELCOME TO</Text>
-                <Text style={[{ marginTop: 4, color: "#fff", fontSize: 26, fontWeight: "900", textTransform: "uppercase" }, outline]}>{club}</Text>
+                {/* the handshake's cheer: confetti, and the words pop in (SigningScene.tsx) */}
+                <Burst count={30} spread={1.3} />
+                <PopIn style={{ alignItems: "center" }}>
+                  <Text style={[{ color: "#fcd34d", fontSize: 20, fontWeight: "900", letterSpacing: -0.4 }, outline]}>WELCOME TO</Text>
+                  <Text style={[{ marginTop: 4, color: "#fff", fontSize: 26, fontWeight: "900", textTransform: "uppercase" }, outline]}>{club}</Text>
+                </PopIn>
               </View>
             )}
           </View>
