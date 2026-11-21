@@ -19,7 +19,8 @@ import type { CareerState } from "@/lib/star/types";
 import { FEATURE_INFO, lockHint, type Feature } from "@/lib/star/unlocks";
 import { captainLine } from "@/lib/star/managerMoments";
 import { nationKits } from "@/lib/star/international";
-import type { DutyView } from "@/lib/star/intl/career";
+import { groupOf, type DutyView, type GroupView } from "@/lib/star/intl/career";
+import { glowOf } from "./lookBits";
 import type { Need } from "@/lib/star/needsYou";
 import { useCareer } from "../../game/store";
 import { Press } from "../../ui/Press";
@@ -227,18 +228,65 @@ export function Chevron({ color, size = 10 }: { color: string; size?: number }) 
   );
 }
 
-/** Away with your country (IntlKit.tsx NationDropdown): the league row becomes "ON DUTY · JUNE 2027 ›". */
-export function DutyRow({ duty, onOpen }: { duty: DutyView; onOpen?: () => void }) {
+/**
+ * Away with your country (IntlKit.tsx NationDropdown): the league row becomes "ON DUTY · <group> ▾" in
+ * the nation's colours, with your place in the group. A tap drops the group's live table over Home
+ * (NationTable) with "Full <nation> page ›" under it; with no group it opens the nation's page.
+ */
+export function DutyRow({ career, duty, onOpen }: { career: CareerState; duty: DutyView; onOpen?: () => void }) {
+  const [open, setOpen] = useState(false);
   let glow = "#38bdf8";
-  try { glow = nationKits(duty.nation).home.shirt; } catch { /* the default */ }
+  try { const k = nationKits(duty.nation).home; glow = glowOf(k.shirt, k.trim); } catch { /* the default */ }
   if (!/^#[0-9a-f]{6}$/i.test(glow)) glow = "#38bdf8";
+  let g: GroupView | null = null;
+  try { const m = duty.period.matches.find((x) => x.group); g = m ? groupOf(career, m) : null; } catch { g = null; }
+  const pos = g ? g.rows.findIndex((r) => r.name === duty.nation) + 1 : 0;
+  const cell = (w: number, t: string | number, strong?: boolean, color = "rgba(255,255,255,0.85)") => <Text style={{ width: w, textAlign: "center", color, fontSize: 11, fontWeight: strong ? "900" : "700" }}>{t}</Text>;
   return (
-    <Press onPress={onOpen} style={{ marginTop: 4, height: 24, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, backgroundImage: `linear-gradient(90deg, ${rgba(glow, 0.45)}, rgba(0,0,0,0.2))` } as ViewStyle}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1, minWidth: 0 }}>
-        <NationFlag nation={duty.nation} width={16} />
-        <Text numberOfLines={1} style={[{ flex: 1, color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1.3 }, TEXT_SHADOW]}>ON DUTY · {duty.period.label.toUpperCase()}</Text>
-      </View>
-      <Text style={[{ color: "#fff", fontSize: 12, fontWeight: "900" }, TEXT_SHADOW]}>›</Text>
-    </Press>
+    <View style={{ marginTop: 4, zIndex: 20 }}>
+      <Press onPress={() => (g ? setOpen((o) => !o) : onOpen?.())} style={{ height: 24, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, backgroundImage: `linear-gradient(90deg, ${rgba(glow, 0.45)}, rgba(0,0,0,0.2))` } as ViewStyle}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1, minWidth: 0 }}>
+          <NationFlag nation={duty.nation} width={16} />
+          <Text numberOfLines={1} style={[{ flex: 1, color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1.3 }, TEXT_SHADOW]}>ON DUTY · {(g ? g.title : duty.period.label).toUpperCase()}</Text>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          {pos > 0 && <Text style={[{ color: "#fef08a", fontSize: 13, fontWeight: "900" }, TEXT_SHADOW]}>{pos}<Text style={{ fontSize: 9 }}>{pos === 1 ? "st" : pos === 2 ? "nd" : pos === 3 ? "rd" : "th"}</Text></Text>}
+          <Text style={[{ color: "#fff", fontSize: 12, fontWeight: "900" }, TEXT_SHADOW]}>{g ? (open ? "▴" : "▾") : "›"}</Text>
+        </View>
+      </Press>
+      {open && g && (
+        <View style={{ position: "absolute", left: 0, right: 0, top: 24, paddingHorizontal: 8, paddingTop: 4, backgroundColor: "rgba(4,10,16,0.9)", boxShadow: "0px 8px 18px rgba(0,0,0,0.5)" } as ViewStyle}>
+          <View style={{ borderRadius: 12, overflow: "hidden", backgroundImage: `radial-gradient(120% 140% at 0% 0%, ${rgba(glow, 0.28)} 0%, transparent 55%), linear-gradient(180deg, rgba(31,41,55,0.92), rgba(12,17,28,0.96))`, boxShadow: `inset 0px 0px 0px 1px ${rgba(glow, 0.22)}` } as ViewStyle}>
+            <View style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: "rgba(0,0,0,0.3)", borderBottomWidth: 1, borderColor: "rgba(255,255,255,0.1)" }}>
+              <Text style={{ color: "#fcd34d", fontSize: 10.5, fontWeight: "900", letterSpacing: 1.6 }}>{g.title.toUpperCase()}</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 6, gap: 4, backgroundColor: "rgba(0,0,0,0.3)", borderBottomWidth: 1, borderColor: "rgba(255,255,255,0.1)" }}>
+              {(["#", "NATION", "P", "W", "D", "GD", "PTS"] as const).map((h, i) => <Text key={h} style={[{ color: i === 6 ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.55)", fontSize: 9, fontWeight: "900", letterSpacing: 0.6, textAlign: i === 1 ? "left" : "center" }, i === 1 ? { flex: 1 } : { width: [24, 0, 26, 26, 26, 30, 32][i] }]}>{h}</Text>)}
+            </View>
+            {g.rows.map((r, i) => {
+              const you = r.name === duty.nation;
+              const band = i < 2 ? (i === 0 ? "#fbbf24" : "#22c55e") : null;
+              return (
+                <View key={r.name} style={[{ flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 6, gap: 4, backgroundColor: i % 2 === 0 ? "rgba(255,255,255,0.035)" : "transparent" },
+                  you ? ({ borderRadius: 6, backgroundImage: `linear-gradient(90deg, ${rgba(glow, 0.85)}, ${rgba(glow, 0.5)} 55%, ${rgba(glow, 0.3)})`, boxShadow: "inset 0px 0px 0px 1.5px rgba(255,255,255,0.6), inset 0px 1px 0px rgba(255,255,255,0.25)" } as ViewStyle) : null]}>
+                  {band && <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: band }} />}
+                  {cell(24, i + 1, true, "#fff")}
+                  <View style={{ flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <NationFlag nation={r.name} width={18} />
+                    <Text numberOfLines={1} style={{ flex: 1, color: "#fff", fontSize: 11, fontWeight: you ? "900" : "700" }}>{r.name}</Text>
+                  </View>
+                  {cell(26, r.p)}{cell(26, r.w)}{cell(26, r.d)}{cell(30, r.gd > 0 ? `+${r.gd}` : r.gd)}{cell(32, r.pts, true, you ? "#fef08a" : "#fff")}
+                </View>
+              );
+            })}
+          </View>
+          {onOpen && (
+            <Press onPress={onOpen} style={{ marginVertical: 4, borderRadius: 8, paddingVertical: 5, alignItems: "center", backgroundColor: "rgba(255,255,255,0.1)" }}>
+              <Text style={{ color: "#fff", fontSize: 10.5, fontWeight: "900" }}>{`FULL ${duty.nation.toUpperCase()} PAGE ›`}</Text>
+            </Press>
+          )}
+        </View>
+      )}
+    </View>
   );
 }

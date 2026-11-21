@@ -5,7 +5,8 @@
  * played on the match engine on the website (TrainingMinigame): on the phone
  * it is a STAND-IN until the match area has the drills.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { PopIn, FloatUp, Burst } from "./lookBits";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DrillStrike, DrillPace, DrillVision } from "../MatchStages";
 import { DrillShell } from "./DrillShell";
@@ -33,6 +34,33 @@ export const SKILL_LABELS: [keyof Skills, string, string, string][] = [
   ["aerial", "Aerial & Acrobatics", "🤸", "Headers and volleys"],
 ];
 const SKILL_COLOR: Record<keyof Skills, string> = { pace: "#facc15", power: "#f97316", technique: "#38bdf8", vision: "#a78bfa", freeKick: "#f472b6", aerial: "#2dd4bf" };
+
+/**
+ * The skill's number and its stars, remembered between visits (SkillsScreen SkillCard useSeen): back from
+ * a drill, a point gained pops the number, and stars gained burst with "+★N" floating off them.
+ */
+const seenSkill = new Map<string, { value: number; stars: number }>();
+function SkillNumbers({ scope, value, stars, c1, c2 }: { scope: string; value: number; stars: number; c1: string; c2: string }) {
+  const was = useRef(seenSkill.get(scope)).current;
+  seenSkill.set(scope, { value, stars });
+  const rose = !!was && value > was.value;
+  const starsRose = !!was && stars > was.stars;
+  const num = <Text style={{ color: c2, fontSize: 24, lineHeight: 26, fontWeight: "900", textShadowColor: rgba(c1, 0.7), textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }}>{value}</Text>;
+  const st = <Text style={{ color: "#fcd34d", fontSize: 10, fontWeight: "900", marginTop: 2 }}>★ {stars}/90</Text>;
+  return (
+    <View style={{ alignItems: "center" }}>
+      {rose ? <PopIn delay={250}>{num}</PopIn> : num}
+      {starsRose ? <PopIn delay={350}>{st}</PopIn> : st}
+      {rose && was && <FloatUp trigger={1} text={`+${value - was.value}`} color={c2} size={17} style={{ top: -14, alignSelf: "center" }} />}
+      {!rose && starsRose && was && (
+        <>
+          <View pointerEvents="none" style={{ position: "absolute", left: "50%", top: 16 }}><Burst colors={["#fde047", "#ffffff", c1]} count={12} spread={0.4} /></View>
+          <FloatUp trigger={1} text={`+★${stars - was.stars}`} color="#fde047" size={17} style={{ top: -16, alignSelf: "center" }} />
+        </>
+      )}
+    </View>
+  );
+}
 
 export function TrainingScreen({ career, onBack, go }: { career: CareerState; onBack: () => void; go: (s: flow.Step, push?: boolean) => void }) {
   const left = trainingLeft(career);
@@ -72,10 +100,7 @@ export function TrainingScreen({ career, onBack, go }: { career: CareerState; on
               </View>
               {/* The name only; what it does is on the skill's own page (Mikey's playtest, 24 Oct 2026). */}
               <Text style={{ flex: 1, color: "#fff", fontWeight: "900", fontSize: 15 }}>{label}</Text>
-              <View style={{ alignItems: "center" }}>
-                <Text style={{ color: c2, fontSize: 24, lineHeight: 26, fontWeight: "900", textShadowColor: rgba(c1, 0.7), textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }}>{value}</Text>
-                <Text style={{ color: "#fcd34d", fontSize: 10, fontWeight: "900", marginTop: 2 }}>★ {totalStars(starsOf(career, key))}/90</Text>
-              </View>
+              <SkillNumbers scope={`${career.player.firstName}${career.player.lastName}${career.player.startYear}:${key}`} value={value} stars={totalStars(starsOf(career, key))} c1={c1} c2={c2} />
             </View>
             <View style={{ marginTop: 10, flexDirection: "row" }}><Bar value={value} colors={[c1, c2]} height={12} /></View>
             {/* SkillsScreen: a shut drill says when it opens ("Opens after your third game"). */}

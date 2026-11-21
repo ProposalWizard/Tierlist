@@ -298,7 +298,7 @@ export function FarewellSheetsScreen({ career, go, onBack }: { career: CareerSta
     return <EndShell glow={clubGlow(f.sides.host, career)} bar={<EndBar><BarButton label="Back" onPress={onBack} /><BarButton label="Kick off" primary flex={1.6} onPress={kickOff} /></EndBar>}><View /></EndShell>;
   }
   return <Lineup career={f.career} matchday={md} clubKits={f.career.clubKits} competition="Farewell match" date="One last game" results={[]}
-    canSim={false} canPlayAs={false} benchNote={null} noTimer onBack={onBack} onKickOff={kickOff} onSim={() => {}} />;
+    canSim={false} canPlayAs={false} benchNote={null} noTimer bare onBack={onBack} onKickOff={kickOff} onSim={() => {}} />;
 }
 
 export function FarewellResultScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {

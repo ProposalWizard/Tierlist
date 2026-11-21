@@ -19,14 +19,14 @@ import { Press } from "../../ui/Press";
 import { useEffect, useRef, useState } from "react";
 import { View, Text, Platform, BackHandler, type ViewStyle } from "react-native";
 import { FONT, LOOK, LookButton } from "../../ui/look";
-import { clubGlow, PopIn, Burst } from "./lookBits";
+import { clubGlow, PopIn, Burst, FloatUp, ShakeX } from "./lookBits";
 import { listSlots, loadSlot, newInSlot, deleteSlot, activeSlot } from "../../world/slots";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { nextFixtureFor, fixtureLabel } from "@/lib/star/competitions";
 import { projectedEnergy } from "@/lib/star/week";
 import { shortClub } from "@/lib/star/media/grammar";
 import { willingToRenegotiate } from "@/lib/star/careerFlow";
-import { renewalWage, renewalMultiplier, RENEWAL_RAISE_PER_WIN } from "@/lib/star/economy";
+import { renewalWage, renewalMultiplier, RENEWAL_RAISE_PER_WIN, RENEWAL_SOURED_CUT } from "@/lib/star/economy";
 import { offerClauses } from "@/lib/star/contracts";
 import { mulberry32 } from "@/lib/star/season";
 import type { IntlDecision } from "@/lib/star/intl/career";
@@ -48,6 +48,9 @@ export function ContractRenewalScreen({ career, go }: { career: CareerState; go:
   const [wins, setWins] = useState(0);
   const [locked, setLocked] = useState(false);
   const [message, setMessage] = useState("");
+  // The juice (SecondaryScreens.tsx): a right guess bursts and floats the raise, a wrong one shakes the offer.
+  const [wonAt, setWonAt] = useState(0);
+  const [lostAt, setLostAt] = useState(0);
   const signed = useRef(false);
   const willing = !!offerReason || willingToRenegotiate(career);
   const c = career.contract;
@@ -59,6 +62,7 @@ export function ContractRenewalScreen({ career, go }: { career: CareerState; go:
     setRounds((r) => r + 1);
     const correct = higher ? n > current : n < current;
     setTimeout(() => {
+      if (correct) setWonAt((n) => n + 1); else setLostAt((n) => n + 1);
       if (correct) { setWins((w) => w + 1); setMessage("✓ Correct! Your offer just improved — take it, or push again."); }
       else { setLocked(true); setMessage("✗ Wrong — talks sour and the offer drops. This is now their final position."); }
       setCurrent(n);
@@ -126,12 +130,17 @@ export function ContractRenewalScreen({ career, go }: { career: CareerState; go:
             <PopIn key={`${rounds}-${next === null ? "q" : next}`}><PlayingCard v={face(next)} dark={next === null} /></PopIn>
           </View>
           {message ? <Text style={{ color: message.startsWith("✓") ? C.green : C.red, fontWeight: "900", textAlign: "center" }}>{message}</Text> : null}
-          <Card tone={locked ? C.red : C.green}>
-            <Label color={locked ? C.red : C.green}>{locked ? "Final offer" : "Current offer"}</Label>
-            <Row k="Wage" v={`${money(offeredWage)}/week`} />
-            <Row k="Goal bonus" v={money(offer(c.goalBonus))} />
-            <Row k="Assist bonus" v={money(offer(c.assistBonus))} />
-          </Card>
+          <ShakeX trigger={lostAt}>
+            <Card tone={locked ? C.red : C.green}>
+              <Label color={locked ? C.red : C.green}>{locked ? "Final offer" : "Current offer"}</Label>
+              <Row k="Wage" v={`${money(offeredWage)}/week`} />
+              <Row k="Goal bonus" v={money(offer(c.goalBonus))} />
+              <Row k="Assist bonus" v={money(offer(c.assistBonus))} />
+            </Card>
+            {wonAt > 0 && <View key={`b${wonAt}`} pointerEvents="none" style={{ position: "absolute", left: "75%", top: "50%" }}><Burst colors={["#34d399", "#fde047", "#ffffff"]} count={16} spread={0.7} /></View>}
+            <FloatUp trigger={wonAt} text={`+${Math.round(RENEWAL_RAISE_PER_WIN * 100)}%`} color="#34d399" style={{ left: "72%", top: 8 }} />
+            <FloatUp trigger={lostAt} text={`−${Math.round(RENEWAL_SOURED_CUT * 100)}%`} color="#f87171" style={{ left: "72%", top: 8 }} />
+          </ShakeX>
           {!locked ? (
             <>
               <View style={{ flexDirection: "row", gap: 10 }}>

@@ -25,12 +25,13 @@ function rgba(hex: string, a: number): string {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }
 
-export function HomePlayer({ career, width, height, where, ball }: { career: CareerState; width: number; height: number; where: "home" | "title"; /** The ball at his feet when he is DRAWN (the 3D player brings his own). */ ball?: boolean }) {
+export function HomePlayer({ career, width, height, where, ball, glow }: { career: CareerState; width: number; height: number; where: "home" | "title"; /** His light in another colour (away with your country: the nation's, HomeHub `glow`). */ glow?: string; /** The ball at his feet when he is DRAWN (the 3D player brings his own). */ ball?: boolean }) {
   const style = usePlayerStyleLook();
   // 3D starts a moment after the rest of Home, so a crash in it is named on its own (safety.ts)
   const ok3d = useRiskyPart("3d", { delayMs: 2500, settleMs: 6000 });
   const club = career.player.club;
   const kit = kitsOf(club, career.clubKits?.[club]).home;
+  const lit = glow && /^#[0-9a-f]{6}$/i.test(glow) ? glow : kit.shirt;
   const figure = <PlayerFigure career={career} width={width} height={height} />;
   // the ball: beside him on the title (TitleScreen TitleBall), at his feet on Home
   const bs = Math.round(height * (where === "title" ? 0.145 : 0.11));
@@ -42,11 +43,11 @@ export function HomePlayer({ career, width, height, where, ball }: { career: Car
       <Canvas pointerEvents="none" style={{ position: "absolute", left: -(poolW - width) / 2, top: 0, width: poolW, height: height + poolH / 2 }}>
         {/* the soft glow behind his chest */}
         <Circle cx={poolW / 2} cy={height * 0.18 + gh / 2} r={Math.max(gw, gh) / 2}>
-          <RadialGradient c={vec(poolW / 2, height * 0.18 + gh / 2)} r={Math.max(gw, gh) / 2} colors={[rgba(kit.shirt, 0.55), rgba(kit.shirt, 0)]} />
+          <RadialGradient c={vec(poolW / 2, height * 0.18 + gh / 2)} r={Math.max(gw, gh) / 2} colors={[rgba(lit, 0.55), rgba(lit, 0)]} />
         </Circle>
         {/* the pool of light he stands in */}
         <Oval x={0} y={height - poolH / 2} width={poolW} height={poolH}>
-          <RadialGradient c={vec(poolW / 2, height)} r={poolW / 2} colors={[rgba("#ffffff", 0.5), rgba(kit.shirt, 0.45), rgba(kit.shirt, 0)]} positions={[0, 0.55, 1]} />
+          <RadialGradient c={vec(poolW / 2, height)} r={poolW / 2} colors={[rgba("#ffffff", 0.5), rgba(lit, 0.45), rgba(lit, 0)]} positions={[0, 0.55, 1]} />
         </Oval>
       </Canvas>
       {style === "new" && ok3d

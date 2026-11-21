@@ -49,8 +49,9 @@ import { trainingLeft } from "@/lib/star/week";
 import { loadLineup } from "@/lib/star/lineupStore";
 import { getCareer, setCareer } from "../game/store";
 import { useHomeFlow, useHomeIsShown, daysToNext } from "./career/Coach";
-import { RiseIn } from "./career/lookBits";
+import { FloatUp } from "./career/lookBits";
 import { UnlockPop, EnergyBackToast, ManagerChat, DugoutBanner, CaptainMoment, NeedsChip, DutyRow } from "./career/HomeMoments";
+import { nationGlow } from "./career/IntlScreens";
 
 /** The player's box shape (HomeHub FIG_ASPECT) and tallest size. */
 const FIG_ASPECT = 172 / 204;
@@ -127,14 +128,14 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
         onHelp={() => askTour(HELP_TOURS.home)}
         onSettings={() => nav.go("career-settings")}
         onStarPass={SCREENS["star-pass"] ? () => nav.go("star-pass") : undefined} />
-      {/* The next match and the four numbers rise in each time Home opens (HomeHub RiseIn). */}
-      <RiseIn index={0}><NextMatch career={career} next={next} /></RiseIn>
-      <RiseIn index={1}><StatTiles career={career} /></RiseIn>
-      {duty ? <DutyRow duty={duty} onOpen={onLeague} /> : <LeagueStrip career={career} onOpen={onLeague} />}
+      {/* There on the first frame: the website's RiseIn no longer moves anything (ui/RiseIn.tsx, 14 Oct 2026). */}
+      <NextMatch career={career} next={next} />
+      <StatTiles career={career} />
+      {duty ? <DutyRow career={career} duty={duty} onOpen={onLeague} /> : <LeagueStrip career={career} onOpen={onLeague} />}
 
       {/* You, centre stage (HomeHub HeroNew). */}
       <View style={{ flex: 1, alignItems: "center", justifyContent: "flex-end", zIndex: 1 }} onLayout={(e) => { const { y, height } = e.nativeEvent.layout; if (!row || row.y !== y || row.h !== height) setRow({ y, h: height }); }}>
-        {figH > 0 && <HomePlayer career={career} where="home" width={figW} height={figH} ball />}
+        {figH > 0 && <HomePlayer career={career} where="home" width={figW} height={figH} ball glow={duty ? nationGlow(duty.nation) : undefined} />}
         {chips.length > 0 && (
           <View style={{ position: "absolute", left: 10, top: 6, gap: 4, alignItems: "flex-start", maxWidth: "80%" }}>
             {chips.map((c) => <NeedsChip key={c.label} need={c} onPress={c.onPress} />)}
@@ -367,6 +368,10 @@ function CanTile({ can: c, career }: { can: KibCan; career: CareerState }) {
   const canUse = count > 0 && !ready && !full;
   const effect = c.effect === "curve" ? `Curve shots${c.restore ? ` +${c.restore}` : ""}` : c.effect === "extraTouch" ? `Extra touch${c.restore ? ` +${c.restore}` : ""}` : `+${c.restore} energy`;
   const name = c.name.replace(" KIB Can", "");
+  // A can drunk: "−1" ticks up off its count (HomeHub FloatText trigger={drinking}).
+  const had = useRef(count);
+  const [drank, setDrank] = useState(0);
+  useEffect(() => { if (count < had.current) setDrank((n) => n + 1); had.current = count; }, [count]);
   return (
     <View style={{
       flex: 1, borderRadius: 12, padding: 6, overflow: "hidden",
@@ -379,6 +384,7 @@ function CanTile({ can: c, career }: { can: KibCan; career: CareerState }) {
           <View style={{ position: "absolute", right: -9, top: -4, minWidth: 22, paddingHorizontal: 4, borderRadius: 999, backgroundImage: `linear-gradient(180deg, ${rgba(accent, 0.75)}, ${accent})` } as ViewStyle}>
             <Text style={{ color: "#030712", fontSize: 10.5, fontWeight: "900", lineHeight: 15, textAlign: "center" }}>×{count}</Text>
           </View>
+          <FloatUp trigger={drank} text="−1" color="#fff" size={12} rise={16} ms={800} style={{ left: 4, top: 0 }} />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text numberOfLines={1} style={{ color: "#fff", fontSize: name.length > 5 ? 10.5 : 12.5, fontWeight: "900", paddingLeft: 4 }}>{name}</Text>

@@ -104,6 +104,35 @@ export function Pulse({ children, style, min = 0.55, ms = 1300, scale = 1 }: { c
 }
 
 /**
+ * Words that float up and fade, once each time `trigger` changes to a number above 0
+ * (components/star/ui FloatText: "+12%", "+65", "+2 POWER"). Sits where its style puts it.
+ */
+export function FloatUp({ trigger, text, color = "#34d399", size = 15, style, rise = 34, ms = 1100 }: { trigger: number; text: string; color?: string; size?: number; style?: StyleProp<ViewStyle>; rise?: number; ms?: number }) {
+  const a = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (!trigger) return;
+    a.setValue(0);
+    Animated.timing(a, { toValue: 1, duration: ms, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [a, trigger, ms]);
+  if (!trigger) return null;
+  return (
+    <Animated.View pointerEvents="none" style={[{ position: "absolute", zIndex: 5 }, style, { opacity: a.interpolate({ inputRange: [0, 0.12, 0.7, 1], outputRange: [0, 1, 1, 0] }), transform: [{ translateY: a.interpolate({ inputRange: [0, 1], outputRange: [0, -rise] }) }, { scale: a.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0.7, 1.15, 1] }) }] }]}>
+      <Text numberOfLines={1} style={{ color, fontSize: size, fontWeight: "900", textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>{text}</Text>
+    </Animated.View>
+  );
+}
+/** Shakes its children side to side each time `trigger` changes to a number above 0 (kit-shake-x). */
+export function ShakeX({ trigger, children, style }: { trigger: number; children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  const a = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!trigger) return;
+    a.setValue(0);
+    Animated.timing(a, { toValue: 1, duration: 420, easing: Easing.linear, useNativeDriver: true }).start();
+  }, [a, trigger]);
+  return <Animated.View style={[style, { transform: [{ translateX: a.interpolate({ inputRange: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1], outputRange: [0, -7, 7, -6, 6, -3, 3, 0] }) }] }]}>{children}</Animated.View>;
+}
+
+/**
  * A burst of confetti from the middle of its parent, once (components/star/ui Burst):
  *   <Burst colors={["#fde047", "#fff"]} count={30} />
  * Bits fly out, turn and fade in about a second; nothing is left behind.

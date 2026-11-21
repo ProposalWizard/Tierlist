@@ -249,12 +249,14 @@ function recentForm(club: string, results: LeagueResult[]): Result[] {
 const scouted = (s: TeamSheet) => s.xi.length >= 9;
 const OUTLINE = { textShadowColor: "#000", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 2.5 } as const;
 
-export function Lineup({ career, matchday, clubKits, competition, date, results, canSim, canPlayAs, benchNote, onBack, onKickOff, onSim, noTimer }: {
+export function Lineup({ career, matchday, clubKits, competition, date, results, canSim, canPlayAs, benchNote, onBack, onKickOff, onSim, noTimer, bare }: {
   career: CareerState; matchday: NonNullable<ReturnType<typeof matchdayFor>>; clubKits?: CareerState["clubKits"];
   competition: string; date: string; results: LeagueResult[]; canSim: boolean; canPlayAs: boolean; benchNote: string | null;
   onBack: () => void; onKickOff: () => void; onSim: () => void;
   /** No countdown: it waits for KICK OFF (the farewell's team sheets). */
   noTimer?: boolean;
+  /** The farewell's team sheets (page.tsx: VersusScreen on its own): no ⚙, no boots tag, no manager's name from the career. */
+  bare?: boolean;
 }) {
   const nav = useNav();
   const { home, away } = matchday;
@@ -262,7 +264,7 @@ export function Lineup({ career, matchday, clubKits, competition, date, results,
   const yours = home.yours ? home : away;
   const homeGlow = glowOf(kits.home.shirt, kits.home.trim);
   const awayGlow = glowOf(kits.away.shirt, kits.away.trim);
-  const managers: Record<string, string> = career.manager ? { [career.player.club]: career.manager.name } : {};
+  const managers: Record<string, string> = career.manager && !bare ? { [career.player.club]: career.manager.name } : {};
   const [compHead, ...rest] = competition.split(" · ");
   const compTail = rest.join(" · ");
   // A long competition name on a narrow phone: smaller, tighter letters, so the round stays on the line.
@@ -344,7 +346,7 @@ export function Lineup({ career, matchday, clubKits, competition, date, results,
           {/* ⏩ and ⚙, mirroring Back */}
           <View style={{ position: "absolute", right: 8, top: 10, gap: 6, zIndex: 6 }}>
             {canSim && <Square onPress={() => { hold(); onSim(); }} edge="rgba(125,211,252,0.55)"><Text style={{ color: "#e0f2fe", fontSize: 14 }}>⏩</Text></Square>}
-            <Square onPress={() => { hold(); setGear(true); }} edge="rgba(255,255,255,0.45)"><Text style={{ color: "#fff", fontSize: 16 }}>⚙</Text></Square>
+            {!bare && <Square onPress={() => { hold(); setGear(true); }} edge="rgba(255,255,255,0.45)"><Text style={{ color: "#fff", fontSize: 16 }}>⚙</Text></Square>}
           </View>
           <View style={{ flexDirection: "row", alignItems: "flex-start", marginTop: 10, paddingRight: 30 }}>
             <TeamHeader club={home.club} manager={managers[home.club]} kit={kits.home} formation={home.formation.name} form={recentForm(home.club, results)} scouted={scouted(home)} />
@@ -381,7 +383,7 @@ export function Lineup({ career, matchday, clubKits, competition, date, results,
                     : <Unscouted bottom />}
                 </View>
               </Pressable>
-              {bootsLeft <= 1 && (
+              {bootsLeft <= 1 && !bare && (
                 <View pointerEvents="none" style={{ position: "absolute", left: 6, top: 6, height: 32, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 8, borderRadius: 2, backgroundColor: "rgba(3,32,15,0.9)", boxShadow: "inset 0px 0px 0px 1px rgba(251,191,36,0.7), 0px 3px 8px rgba(0,0,0,0.45)" } as ViewStyle}>
                   <Text style={{ fontSize: 14 }}>🥾</Text>
                   <Text numberOfLines={2} style={{ color: "#fef3c7", fontSize: 10, fontWeight: "900", lineHeight: 12 }}>{bootsLeft === 1 ? "LAST MATCH\nIN THESE BOOTS" : "NO BOOTS\nBUY IN THE SHOP"}</Text>

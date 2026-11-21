@@ -228,30 +228,88 @@ function ScoutTalk({ m, go }: { m: NonNullable<ReturnType<typeof flow.managerTal
   );
 }
 
-/** The clubs that came in (ScoutOffers). Nobody: a youth team or the free-agent life. */
-export function OffersScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
-  const offers = flow.offersWithAgreedTerms(career, flow.offersForTrial(career));
+/**
+ * The clubs that came in (components/star/ScoutOffers.tsx): the dark page with a pitch-green
+ * glow, "A SCOUT HAS SPOTTED YOU", "N CLUBS CAME IN", one glass card a club (badge in its
+ * glow, league, what they said, Wage / Per goal / Years tiles, Sign for …). No rise-in: the website's kit-rise and RiseIn no longer move anything (ui/motion.tsx, 14 Oct 2026).
+ * Nobody: "Not this time" and the youth team that will take you (or the way home).
+ */
+const PITCH_GREEN = "#2F6F4E";
+function OfferTerm({ label, value }: { label: string; value: string }) {
   return (
-    <Frame kicker="The back page" title={offers.length ? "The clubs that came in" : "Nobody came in"}
-      footer={offers.length ? undefined : <Btn label="Carry on" onPress={() => go(flow.youthOrFreeAgent())} />}>
-      {offers.map((o) => (
-        <Card key={o.club}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 }}>
-            <ClubCrest club={o.club} size={46} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: C.text, fontSize: 18, fontWeight: "900" }}>{o.club}</Text>
-              <Text style={{ color: C.dim }}>{leagueNameFor(o.division)}</Text>
+    <View style={{ flex: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 8, alignItems: "center", backgroundColor: "rgba(255,255,255,0.06)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.08)" } as ViewStyle}>
+      <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 9, fontWeight: "900", letterSpacing: 1.5 }}>{label.toUpperCase()}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: "#fff", fontSize: 12, fontWeight: "900", fontVariant: ["tabular-nums"] }}>{value}</Text>
+    </View>
+  );
+}
+const offerCard = (glow: string): ViewStyle => ({ borderRadius: 16, padding: 16,
+  backgroundImage: `radial-gradient(120% 140% at 0% 0%, ${rgba(glow, 0.28)} 0%, transparent 55%), linear-gradient(180deg, rgba(31,41,55,0.92), rgba(12,17,28,0.96))`,
+  boxShadow: `inset 0px 1px 0px rgba(255,255,255,0.10), inset 0px 0px 0px 1px ${rgba(glow, 0.22)}, 0px 10px 24px -12px rgba(0,0,0,0.8)` } as ViewStyle);
+export function OffersScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
+  const nav = useNav();
+  const offers = flow.offersWithAgreedTerms(career, flow.offersForTrial(career));
+  const youthClub = offers.length ? null : flow.youthTakerName(career);
+  const name = career.player.firstName;
+  return (
+    <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: "#05080f" }}>
+      <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: `radial-gradient(90% 45% at 50% -8%, ${rgba(PITCH_GREEN, 0.33)} 0%, transparent 70%), linear-gradient(180deg, #0a1120 0%, #05080f 60%)` } as ViewStyle} />
+      <Pressable onPress={() => nav.go("career-settings")} hitSlop={6} style={{ position: "absolute", right: 16, top: 16, zIndex: 2, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: "rgba(255,255,255,0.1)" }}>
+        <Text style={{ color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1.6 }}>SETTINGS</Text>
+      </Pressable>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: offers.length ? 24 : 32 }} showsVerticalScrollIndicator={false}>
+        {!offers.length ? (
+          <>
+            <View style={[offerCard(PITCH_GREEN), { marginTop: 24, padding: 20 }]}>
+              <Text style={{ color: "#fcd34d", fontSize: 14, fontWeight: "900", letterSpacing: 1.6 }}>NOT THIS TIME</Text>
+              <Text style={{ marginTop: 8, color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: "700", lineHeight: 19 }}>
+                {youthClub
+                  ? `Nobody put professional terms in front of you, ${name}. But somebody watched: ${youthClub} will take you into their youth team. Scholarship money, and a coach who will look at you every week. Play well enough and you go up.`
+                  : `They thanked you and said they'd be in touch. They won't be. No club, no contract, not even an academy — just you, a garden and whatever you can make of the next few months, ${name}.`}
+              </Text>
             </View>
-          </View>
-          <Text style={{ color: C.text, fontStyle: "italic", marginBottom: 8 }}>“{o.pitch}”</Text>
-          <Row k="Wage" v={`${money(o.wage)} a week`} />
-          <Row k="Goal bonus" v={money(o.goalBonus)} />
-          <Row k="Assist bonus" v={money(o.assistBonus)} />
-          <Row k="Contract" v={`${o.seasons} seasons`} />
-          <View style={{ marginTop: 8 }}><Btn label={`Sign for ${o.club}`} onPress={() => go(flow.signTrialOffer(o))} /></View>
-        </Card>
-      ))}
-    </Frame>
+            <Pressable onPress={() => go(flow.youthOrFreeAgent())} style={{ marginTop: 20, borderRadius: 12, paddingVertical: 14, alignItems: "center", backgroundColor: "rgba(255,255,255,0.1)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.2)" } as ViewStyle}>
+              <Text style={{ color: "#fff", fontSize: 14, fontWeight: "900", letterSpacing: 1.6 }}>{youthClub ? `REPORT TO ${youthClub.toUpperCase()} →` : "GO HOME →"}</Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <View style={{ alignItems: "center" }}>
+              <Text style={{ color: "#fcd34d", fontSize: 11, fontWeight: "900", letterSpacing: 2.6 }}>A SCOUT HAS SPOTTED YOU</Text>
+            </View>
+            <Text style={{ marginTop: 24, color: "#6ee7b7", fontSize: 11, fontWeight: "900", letterSpacing: 2.2 }}>{offers.length === 1 ? "ONE CLUB CAME IN" : `${offers.length} CLUBS CAME IN`}</Text>
+            <View style={{ marginTop: 8, gap: 12 }}>
+              {offers.map((o) => {
+                const glow = clubGlow(o.club);
+                return (
+                  <View key={o.club} style={offerCard(glow)}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <View style={{ width: 40, height: 40 }}>
+                        <View pointerEvents="none" style={{ position: "absolute", left: -8, right: -8, top: -8, bottom: -8, borderRadius: 999, backgroundImage: `radial-gradient(closest-side, ${rgba(glow, 0.5)}, transparent)` } as ViewStyle} />
+                        <ClubCrest club={o.club} size={40} />
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text numberOfLines={1} style={{ color: "#fff", fontSize: 14, fontWeight: "900" }}>{o.club}</Text>
+                        <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: "900", letterSpacing: 1.6 }}>{leagueNameFor(o.division).toUpperCase()}</Text>
+                      </View>
+                    </View>
+                    <Text style={{ marginTop: 8, color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: "700", fontStyle: "italic", lineHeight: 17 }}>“{o.pitch}”</Text>
+                    <View style={{ marginTop: 12, flexDirection: "row", gap: 8 }}>
+                      <OfferTerm label="Wage" value={`${formatMoney(o.wage)}/wk`} />
+                      <OfferTerm label="Per goal" value={formatMoney(o.goalBonus)} />
+                      <OfferTerm label="Years" value={`${o.seasons}`} />
+                    </View>
+                    <Pressable onPress={() => go(flow.signTrialOffer(o))} style={{ marginTop: 12, borderRadius: 12, paddingVertical: 12, alignItems: "center", backgroundImage: "linear-gradient(180deg, #34d399, #059669)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.35), 0px 6px 14px -6px rgba(16,185,129,0.7)" } as ViewStyle}>
+                      <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: "#fff", fontSize: 14, fontWeight: "900", letterSpacing: 1.6 }}>{`SIGN FOR ${o.club.toUpperCase()}`}</Text>
+                    </Pressable>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

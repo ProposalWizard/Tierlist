@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing } from "react-native-reanimated";
 import { Canvas, Group, Path, Skia } from "@shopify/react-native-skia";
 import type { CareerState } from "@/lib/star/types";
-import { Burst, PopIn } from "./lookBits";
+import { Burst, PopIn, Pulse } from "./lookBits";
 import { kitsOf } from "@/lib/star/kits";
 import { skinToneHex } from "@/lib/star/playerIdentity";
 import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
@@ -200,7 +200,7 @@ export function SigningMoment({ career, club, managerName, onDone, terms, number
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: "#030712" }}>
-      <View style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 16, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 16, alignItems: "center" }}>
         <View style={{ width: SW * k, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
           <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flex: 1, color: "#fcd34d", fontSize: 13, fontWeight: "900", letterSpacing: 1.8 }}>{`Signing for ${club}`.toUpperCase()}</Text>
           <Pressable onPress={onDone} disabled={beat === "done"} style={{ minHeight: 36, borderRadius: 999, paddingHorizontal: 12, justifyContent: "center", backgroundColor: "rgba(255,255,255,0.1)", opacity: beat === "done" ? 0 : 1 }}>
@@ -221,7 +221,7 @@ export function SigningMoment({ career, club, managerName, onDone, terms, number
                 <Text style={{ color: "#2a1c08", fontSize: 6.5, fontWeight: "700", letterSpacing: 0.8, textAlign: "center", opacity: 0.8 }}>MANAGER</Text>
               </View>
               {/* the contract on the desk */}
-              <View style={{ position: "absolute", left: PAPER.x, top: PAPER.y, width: PAPER.w, height: PAPER.h, borderRadius: 3, paddingHorizontal: 12, paddingTop: 8, backgroundImage: "linear-gradient(180deg,#fbf8f0,#efe9da)", boxShadow: "0px 10px 18px -6px rgba(0,0,0,0.75), inset 0px 0px 0px 1px rgba(160,120,40,0.35)" } as ViewStyle}>
+              <View style={{ position: "absolute", left: PAPER.x, top: PAPER.y, width: PAPER.w, height: PAPER.h, borderRadius: 3, transform: [{ perspective: 600 }, { rotateX: "12deg" }], transformOrigin: "50% 100%", paddingHorizontal: 12, paddingTop: 8, backgroundImage: "linear-gradient(180deg,#fbf8f0,#efe9da)", boxShadow: "0px 10px 18px -6px rgba(0,0,0,0.75), inset 0px 0px 0px 1px rgba(160,120,40,0.35)" } as ViewStyle}>
                 <Text style={{ color: "#8a6a23", fontSize: 7, fontWeight: "700", letterSpacing: 2.1, textAlign: "center", fontFamily: "serif" }}>PROFESSIONAL CONTRACT</Text>
                 <View style={{ marginTop: 4, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
                   <ClubBadge club={club} kit={kit} size={20} />
@@ -239,7 +239,7 @@ export function SigningMoment({ career, club, managerName, onDone, terms, number
                   <View style={{ height: SIG.h + 6 }}>
                     <View style={{ position: "absolute", left: 2, top: 2 }}><Signature d={CLUB_SIG_D} width={72} height={20} progress={1} color="#1e3a8a" /></View>
                     <View style={{ position: "absolute", left: SIG.x - 14, top: 0 }}><Signature d={SIGNATURE_D} width={SIG.w + 4} height={SIG.h + 2} progress={beat === "idle" || beat === "zoom" ? 0 : beat === "sign" ? ink : 1} color="#0f172a" /></View>
-                    {beat === "idle" && <Text style={{ position: "absolute", left: SIG.x - 12, top: 6, color: "#b45309", fontSize: 8, fontWeight: "900", letterSpacing: 0.4 }}>✕ SIGN HERE</Text>}
+                    {beat === "idle" && <Pulse min={0.55} ms={600} style={{ position: "absolute", left: SIG.x - 12, top: 6 }}><Text style={{ color: "#b45309", fontSize: 8, fontWeight: "900", letterSpacing: 0.4 }}>✕ SIGN HERE</Text></Pulse>}
                   </View>
                   <View style={{ flexDirection: "row", gap: 12 }}>
                     <Text numberOfLines={1} style={{ flex: 1, borderTopWidth: 1, borderColor: "rgba(59,47,28,0.7)", color: "#5b4a2c", fontSize: 6.5, fontWeight: "700", letterSpacing: 0.4 }}>{`For ${club}`.toUpperCase()}</Text>

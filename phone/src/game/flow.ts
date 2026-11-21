@@ -39,6 +39,8 @@ import { acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { clearAfterWindow, requestOf } from "@/lib/star/transferRequest";
 import { windowInterest, withRecall } from "@/lib/star/transferInterest";
 import { retirementCheck, retire } from "@/lib/star/retirement";
+import { hallRecordBook, freshHallRecords, amount as hallAmount } from "@/lib/star/hallRecords";
+import { phoneHall } from "../world/hall";
 import { generateForMatch, generateForInternational, generateForCallUp, generateForCareer, generateForLeagueWeek, generateForRollover, applyGoalOfMonthBoost, hasFreshMedia } from "@/lib/star/media/feed";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 import { checkNewAchievements, ACHIEVEMENTS } from "@/lib/star/achievements";
@@ -277,6 +279,11 @@ export function finishSigning(): Step {
 }
 
 /** Nobody offered terms: a youth team, or the free-agent life (page.tsx youthOrFreeAgent). */
+/** The club whose youth team takes you when nobody offers terms, or null (page.tsx youthClub; the same roll youthOrFreeAgent makes). */
+export function youthTakerName(career: CareerState): string | null {
+  if (!career.trial) return null;
+  return youthTakerFor(trialScore(career.trial), mulberry32(career.trial.seed ^ 0x9e11))?.club ?? null;
+}
 export function youthOrFreeAgent(): Step {
   const career = need();
   if (!career.trial) return { screen: "career-free-agent" };
@@ -310,7 +317,34 @@ export function settle(): string[] {
   if (c) { const synced = withIntl(c); if (synced !== c) setCareer(synced); }
   // page.tsx's squad effects: missing division squads, your club's full roster, free agents.
   void keepSquadsInStep();
+  hallRecordCheck();
   return ids;
+}
+
+/**
+ * YOUR LEGEND LIVES ON (page.tsx, lib/star/hallRecords.ts): a record from one of your own
+ * retired careers (the phone's Hall of Fame), broken by this career. Each one once a career:
+ * the RECORD BROKEN banner, and the posts about it.
+ */
+function hallRecordCheck() {
+  try {
+    const career = getCareer();
+    if (!career || career.retired) return;
+    const entries = phoneHall().entries;
+    if (!entries.length) return;
+    const broken = freshHallRecords(career, hallRecordBook(entries));
+    if (!broken.length) return;
+    let next: CareerState = { ...career, hallRecordsBroken: Array.from(new Set([...(career.hallRecordsBroken ?? []), ...broken.map((b) => b.record.def.id)])) };
+    for (const b of broken) {
+      try {
+        next = { ...next, media: generateForCareer(next, { kind: "hall-record", record: b.record.def.label, holder: b.record.holder.name, was: b.record.holder.value, now: b.you, unit: b.record.def.unit }, `hall-${b.record.def.id}`) };
+      } catch { /* the posts are extra: the record still counts */ }
+    }
+    setCareer(next);
+    for (const b of broken) {
+      pushPop({ kind: "toast", record: true, label: "Hall of Fame record broken", unlocked: `${b.record.def.label}: ${hallAmount(b.record.def, b.you)} — beating ${b.record.holder.name} (${b.record.holder.value})` });
+    }
+  } catch { /* no Hall to chase */ }
 }
 
 // ═══════════════════════════════════════════════════════════════════

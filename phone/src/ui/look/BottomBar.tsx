@@ -15,7 +15,9 @@
 import { useMemo, useState } from "react";
 import { Text, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { CareerState } from "@/lib/star/types";
+import type { CareerState, Fixture } from "@/lib/star/types";
+import { nextFixtureFor } from "@/lib/star/competitions";
+import { fixtureTimestamp, divisionOf } from "@/lib/star/calendar";
 import { barBadges, type BarBadges } from "@/lib/star/needsYou";
 import { appInstalled, isOpen, lockHint, managerTalkDue, newAppCount } from "@/lib/star/unlocks";
 import { trainingLeft } from "@/lib/star/week";
@@ -47,6 +49,20 @@ export function useMainBarActions(): Record<BarTab, () => void> {
 }
 
 /** What still needs you, from the career (lib/star/needsYou.ts barBadges, the phone's own "seen" store). */
+/** Days to the next match, 0 = today (HomeHub daysToNext: the day after your last game is "today"); null with none ahead. */
+function daysToMatch(career: CareerState): number | null {
+  try {
+    const next = nextFixtureFor(career);
+    if (!next) return null;
+    const div = divisionOf(career);
+    const ts = (f: Fixture) => fixtureTimestamp(career.player.startYear, career.season, f.week, f.kind, div);
+    const nextTs = ts(next);
+    const before = career.fixtures.filter((f) => f.played).map(ts).filter((t) => t <= nextTs);
+    const lastTs = before.length ? Math.max(...before) : nextTs - 5 * 86400000;
+    const today = Number.isFinite(lastTs) ? lastTs + 86400000 : nextTs - 5 * 86400000;
+    return Math.max(0, Math.round((nextTs - today) / 86400000));
+  } catch { return null; }
+}
 function badgesFor(career: CareerState) {
   let unread = 0;
   try {
@@ -60,7 +76,7 @@ function badgesFor(career: CareerState) {
   return barBadges({
     seasonOver: flow.seasonOver(career), bossTalkDue: managerTalkDue(career), sponsorOffers: offers,
     sponsorsOpen: isOpen(career, "sponsors"), trainingLeft: trainingLeft(career), trainingOpen: isOpen(career, "training"),
-    phoneOpen: isOpen(career, "phone"), phoneUnread: unread, playOpen: isOpen(career, "play"), matchInDays: null,
+    phoneOpen: isOpen(career, "phone"), phoneUnread: unread, playOpen: isOpen(career, "play"), matchInDays: daysToMatch(career),
   });
 }
 
@@ -112,7 +128,7 @@ export function BottomBar({ active, on }: { active?: BarTab | null; on?: Partial
       <View {...phoneT} style={{ flex: 1 }}><NavBtn label="Phone" icon="📱" on={active === "phone"} locked={!!locks.phone} count={badges.media} dot={badges.life === "dot" && !badges.media} onPress={() => tap("phone", "Phone")} /></View>
       <View style={{ flex: 1, alignItems: "center", height: 50 }}>
         <View {...playT} style={{ position: "absolute", top: -22 }}>
-          <PlayButton locked={!!locks.play} onPress={() => tap("play", "Play")} />
+          <PlayButton locked={!!locks.play} today={!!badges.play} onPress={() => tap("play", "Play")} />
         </View>
       </View>
     </View>

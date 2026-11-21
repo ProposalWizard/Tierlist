@@ -79,7 +79,7 @@ export function SlantButton({ icon, label, hint, badge, primary, gold, onPress, 
 }
 
 /** The round PLAY that rises out of the bottom bar, glowing green (glassLook 6, MainBar PlayBtn). */
-export function PlayButton({ onPress, locked, size = 66 }: { onPress: () => void; locked?: boolean; size?: number }) {
+export function PlayButton({ onPress, locked, size = 66, today }: { onPress: () => void; locked?: boolean; size?: number; /** A match today (MainBar PlayBtn `today`): an amber ring. */ today?: boolean }) {
   return (
     <Press onPress={onPress} style={{
       width: size, height: size, borderRadius: size / 2, alignItems: "center", justifyContent: "center",
@@ -87,8 +87,8 @@ export function PlayButton({ onPress, locked, size = 66 }: { onPress: () => void
         ? { backgroundColor: "#374151", borderWidth: 3, borderColor: "#1f2937" }
         : {
           backgroundImage: "radial-gradient(circle at 50% 35%, #5cff9a, #14c45a 60%, #0c8f3f)",
-          borderWidth: 1, borderColor: "rgba(200,255,220,0.9)",
-          boxShadow: "0px 0px 26px 6px rgba(34,227,107,0.6)",
+          borderWidth: today ? 3 : 1, borderColor: today ? "#fcd34d" : "rgba(200,255,220,0.9)",
+          boxShadow: today ? "0px 0px 30px 9px rgba(252,211,77,0.55), 0px 0px 26px 6px rgba(34,227,107,0.6)" : "0px 0px 26px 6px rgba(34,227,107,0.6)",
         }),
     } as ViewStyle}>
       {locked ? <Text style={{ fontSize: 18 }}>🔒</Text> : <Text style={{ color: "#fff", fontSize: 22, marginLeft: 3, marginBottom: -2, textShadowColor: "rgba(0,60,25,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>▶</Text>}
