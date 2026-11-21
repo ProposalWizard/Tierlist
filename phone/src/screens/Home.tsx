@@ -26,7 +26,7 @@ import { shortClub } from "@/lib/star/media/grammar";
 import { fameOf } from "@/lib/star/fame";
 import { KIB_CANS, kibCanPrice, type KibCan } from "@/lib/star/shopData";
 import { formatMoney } from "@/lib/star/money";
-import { periodDue } from "@/lib/star/intl/career";
+import { periodDue, dutyNow } from "@/lib/star/intl/career";
 import * as flow from "../game/flow";
 import { useSession, setSession } from "../game/session";
 import { useNav } from "../nav";
@@ -36,13 +36,21 @@ import { Backdrop, TopBar, LookButton, CAN, ICON, LOOK, rgba, TEXT_SHADOW } from
 import { ClubCrest, ordinal } from "./career/kit";
 import { HomePlayer } from "../three/HomePlayer";
 import { useMainBarActions } from "../ui/look/BottomBar";
-import { PointerTour, useTourTarget } from "../ui/tour";
-import { StoryBeatPop, goBeat, markTourSeen, pointStep } from "./career/StoryBeat";
+import { useTourTarget, askTour } from "../ui/tour";
+import { StoryBeatPop, goBeat, pointStep } from "./career/StoryBeat";
 import { BreakingNewsPage, PotmWinPage } from "./career/NewsMoments";
-import { isStory, storyBeat, beatText, type Beat } from "@/lib/star/story";
-import { hasSeen, gameFirst } from "@/lib/star/unlocks";
-import { starsNow } from "@/lib/star/starPoints";
-import { welcomeTour, HELP_TOURS, type TourStep } from "@/lib/star/tours";
+import { beatText, trainingDayOn, type Beat } from "@/lib/star/story";
+import { isOpen, managerTalkDue, markAnnounced, markSeen } from "@/lib/star/unlocks";
+import { HELP_TOURS } from "@/lib/star/tours";
+import { mechanicDef } from "@/lib/star/mechanics";
+import { markSetPieceTold } from "@/lib/star/setPieceTalk";
+import { captainMomentDue } from "@/lib/star/managerMoments";
+import { trainingLeft } from "@/lib/star/week";
+import { loadLineup } from "@/lib/star/lineupStore";
+import { getCareer, setCareer } from "../game/store";
+import { useHomeFlow, useHomeIsShown, daysToNext } from "./career/Coach";
+import { RiseIn } from "./career/lookBits";
+import { UnlockPop, EnergyBackToast, ManagerChat, DugoutBanner, CaptainMoment, NeedsChip, DutyRow } from "./career/HomeMoments";
 
 /** The player's box shape (HomeHub FIG_ASPECT) and tallest size. */
 const FIG_ASPECT = 172 / 204;
@@ -70,39 +78,34 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
   }, [intlKey]);
   void onQuit; // the main menu is in Settings (as on the website)
 
-  // ── The first hour as a story, and the coach (page.tsx `tour` and `beat`) ──
-  // One at a time, only when nothing else is showing on Home.
-  const pops = flow.usePops();
+  // ── What waits on Home, one at a time (page.tsx:5352-5480; the coach's tour itself is
+  //    drawn by CoachHost): unlock pop-up → energy toast → tour → story beat → the
+  //    manager's set-piece word → "New in your game". ──
+  useHomeIsShown();
   const bar = useMainBarActions();
-  const [helpTour, setHelpTour] = useState<TourStep[] | null>(null);
-  const [pointAt, setPointAt] = useState<string | null>(null);
-  const quiet = !session.news[0] && !session.potmWin && pops.length === 0 && !intlDue;
-  const welcomeDue = quiet && !!career.unlocks && !hasSeen(career, "tutorial") && (!isStory(career) || hasSeen(career, "beat-boots"));
-  const tour: { key: string; steps: TourStep[]; skippable?: boolean; onDone: () => void } | null =
-    helpTour ? { key: "help", steps: helpTour, onDone: () => setHelpTour(null) }
-    : pointAt ? { key: `point-${pointAt}`, steps: pointStep(pointAt), onDone: () => setPointAt(null) }
-    : welcomeDue ? { key: "welcome", steps: welcomeTour(gameFirst(career), next ? daysToNext(career, next) : 0, isStory(career)), skippable: !gameFirst(career), onDone: () => markTourSeen("tutorial", "help-home", "play-tip") }
-    : null;
-  const beat: Beat | null = quiet && !tour ? storyBeat(career, starsNow(career)) : null;
-  const tourPress: Record<string, () => void> = {
-    "nav-play": bar.play, "nav-training": bar.training, "nav-phone": bar.phone,
-    rating: () => nav.go("star-pass"), "can-use-basic": () => flow.useCan("basic"),
-    "tab-0": () => nav.go("career-stats"),
-  };
+  const home = useHomeFlow(career);
+  const beat = home.beat;
+  const patch = (fn: (c: CareerState) => CareerState) => { const c = getCareer(); if (c) setCareer(fn(c)); };
+  const seeAchievements = () => nav.go("career-stats", { tab: "achievements" });
   const onBeat = (b: Beat) => {
     const go = goBeat(b);
-    if (go.point) setPointAt(go.point);
+    // "Got it", then the glove swipes right to your card (page.tsx: target "tab-0", swipe "right").
+    if (go.point === "tab-0") askTour([{ target: "tab-0", text: "", press: true, swipe: "right" }]);
+    else if (go.point) askTour(pointStep(go.point));
     else if (go.screen && SCREENS[go.screen]) nav.go(go.screen, go.params);
   };
+  const duty = dutyNow(career);
+  const bossDue = managerTalkDue(career);
 
   const figH = row ? Math.round(Math.max(104, Math.min(FIG_MAX_H, row.h - 4))) : 0;
   const figW = Math.round(figH * FIG_ASPECT);
   // The stadium's hoardings sit just behind his knees (HomeHub goalBoxFor().hoardings).
   const lineY = row ? row.y + row.h - Math.round(figH * 0.48) : undefined;
 
-  // Stats ‹ › Shop: a sideways swipe anywhere on the pitch.
-  const goStats = () => nav.go("career-stats");
-  const goShop = () => { if (SCREENS.shop) nav.go("shop"); };
+  // Stats ‹ › Shop: a sideways swipe anywhere on the pitch. A new career has both locked
+  // (page.tsx LockedPage: "Stats is locked · Score your first goal").
+  const goStats = () => (isOpen(career, "stats") ? nav.go("career-stats") : nav.go("career-locked", { feature: "stats" }));
+  const goShop = () => { if (!isOpen(career, "shop")) nav.go("career-locked", { feature: "shop" }); else if (SCREENS.shop) nav.go("shop"); };
   const swipe = useRef(PanResponder.create({
     onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 24 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
     onPanResponderRelease: (_e, g) => { if (g.dx > 60) swipeTo.current("stats"); else if (g.dx < -60) swipeTo.current("shop"); },
@@ -110,8 +113,10 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
   const swipeTo = useRef<(s: "stats" | "shop") => void>(() => {});
   swipeTo.current = (s) => (s === "stats" ? goStats() : goShop());
 
+  // One chip, most urgent first (HomeHub urgentOnly: only the season's end and the boss's word).
   const chips: { label: string; icon: string; onPress: () => void }[] = [];
   if (over && !intlDue) chips.push({ label: "End of Season", icon: "🏆", onPress: () => nav.go(flow.endSeason().screen) });
+  else if (bossDue) chips.push({ label: "Boss wants a word", icon: "🗣️", onPress: bar.phone });
   if (intlDue) chips.push({ label: "Your country's manager has named his squad", icon: "📞", onPress: () => nav.go("career-callup") });
   if (career.placement?.kind === "youth") chips.push({ label: "Youth team: this week", icon: "🎓", onPress: () => nav.go("career-youth") });
 
@@ -119,26 +124,25 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
     <View style={{ flex: 1, backgroundColor: "#0b1a2e" }} {...swipe.panHandlers}>
       <Backdrop kind="home" sky={sky} lineY={lineY} />
       <TopBar career={career}
-        onHelp={() => setHelpTour(HELP_TOURS.home)}
+        onHelp={() => askTour(HELP_TOURS.home)}
         onSettings={() => nav.go("career-settings")}
         onStarPass={SCREENS["star-pass"] ? () => nav.go("star-pass") : undefined} />
-      <NextMatch career={career} next={next} />
-      <StatTiles career={career} />
-      <LeagueStrip career={career} onOpen={onLeague} />
+      {/* The next match and the four numbers rise in each time Home opens (HomeHub RiseIn). */}
+      <RiseIn index={0}><NextMatch career={career} next={next} /></RiseIn>
+      <RiseIn index={1}><StatTiles career={career} /></RiseIn>
+      {duty ? <DutyRow duty={duty} onOpen={onLeague} /> : <LeagueStrip career={career} onOpen={onLeague} />}
 
       {/* You, centre stage (HomeHub HeroNew). */}
       <View style={{ flex: 1, alignItems: "center", justifyContent: "flex-end", zIndex: 1 }} onLayout={(e) => { const { y, height } = e.nativeEvent.layout; if (!row || row.y !== y || row.h !== height) setRow({ y, h: height }); }}>
         {figH > 0 && <HomePlayer career={career} where="home" width={figW} height={figH} ball />}
         {chips.length > 0 && (
           <View style={{ position: "absolute", left: 10, top: 6, gap: 4, alignItems: "flex-start", maxWidth: "80%" }}>
-            {chips.map((c) => (
-              <Press key={c.label} onPress={c.onPress} style={{ flexDirection: "row", alignItems: "center", gap: 6, height: 30, borderRadius: 4, paddingLeft: 6, paddingRight: 10, backgroundColor: "#fbbf24" }}>
-                <Text style={{ fontSize: 14 }}>{c.icon}</Text>
-                <Text numberOfLines={1} style={{ color: "#030712", fontSize: 12, fontWeight: "900" }}>{c.label}</Text>
-              </Press>
-            ))}
+            {chips.map((c) => <NeedsChip key={c.label} need={c} onPress={c.onPress} />)}
           </View>
         )}
+        {/* "In the dugout": the new manager's news, until its ✕ (page.tsx:5621). */}
+        {career.managerNews ? <DugoutBanner text={career.managerNews} onDismiss={() => patch((c) => (c.managerNews ? { ...c, managerNews: null } : c))} /> : null}
+        {home.energyToast !== null && <EnergyBackToast amount={home.energyToast} onDone={() => setSession({ energyBack: null })} />}
       </View>
 
       <View style={{ paddingHorizontal: 12, zIndex: 2 }}>
@@ -149,7 +153,7 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
         {/* the swipe pages' arrows (SwipePages `arrows`) */}
         <View style={{ height: 34, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingRight: 78 }}>
           <Arrow side="left" icon="📊" label="Stats" onPress={goStats} tour="tab-0" />
-          <Arrow side="right" icon="🛍️" label="Shop" onPress={goShop} />
+          <Arrow side="right" icon="🛍️" label="Shop" onPress={goShop} tour="tab-2" />
         </View>
       </View>
 
@@ -158,8 +162,34 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
       {session.potmWin ? <PotmWinPage career={career} award={session.potmWin} onClose={() => setSession({ potmWin: null })} />
         : session.news[0] ? <BreakingNewsPage key={session.news[0].headline} career={career} news={session.news[0]} onClose={flow.dismissNews} />
         : null}
-      {tour && <PointerTour key={tour.key} steps={tour.steps} skippable={tour.skippable} press={tourPress} onDone={tour.onDone} />}
+      {/* Something opened: say what, then lead to it through Achievements. */}
+      {home.announce.length > 0 && (
+        <UnlockPop key={home.announce.join()} features={home.announce}
+          onSeeAll={() => { patch((c) => markAnnounced(c, home.announce)); seeAchievements(); }}
+          onClose={() => patch((c) => markAnnounced(c, home.announce))} />
+      )}
       {beat && <StoryBeatPop key={beat} text={beatText(career, beat)} onGo={() => onBeat(beat)} />}
+      {home.setPiece && (
+        <ManagerChat key={home.setPiece.duties.join()} name={career.manager?.name || loadLineup(career.player.club)?.manager || "The manager"}
+          lines={home.setPiece.lines} onDone={() => { const d = home.setPiece!.duties; patch((c) => markSetPieceTold(c, d)); }} />
+      )}
+      {home.mech && (() => {
+        const m = home.mech!;
+        const g = mechanicDef(m).guide;
+        const seenIt = () => patch((c) => markSeen(c, `mech-${m}`));
+        // Headers and volleys: try them straight away in the Aerial drill (page.tsx tryAerial).
+        const tryAerial = m === "aerial" ? () => {
+          seenIt();
+          const s = trainingLeft(career) > 0 || trainingDayOn(career) ? flow.pickTraining("aerial") : null;
+          if (s) nav.go(s.screen, s.params); else nav.go("career-training");
+        } : undefined;
+        return <StoryBeatPop key={`mech-${m}`} text={{ who: "New in your game", icon: g.icon, title: g.title, line: g.line, button: tryAerial ? "Later" : "Got it" }}
+          onTry={tryAerial} tryLabel="Try a header now" onGo={seenIt} />;
+      })()}
+      {/* Made captain: the manager tells you, once. */}
+      {!career.managerNews && captainMomentDue(career) && !home.tour && !beat && home.announce.length === 0 && !session.news[0] && !session.potmWin && (
+        <CaptainMoment career={career} onDone={() => patch((c) => ({ ...c, captainMomentPending: false }))} />
+      )}
     </View>
   );
 }
@@ -171,17 +201,6 @@ function lastFive(career: CareerState, international: boolean) {
     .sort(byFixtureDate(career)).slice(-5)
     .map((f) => { const us = f.home ? f.homeScore! : f.awayScore!, them = f.home ? f.awayScore! : f.homeScore!; return us > them ? "W" : us === them ? "D" : "L"; });
 }
-/** HomeHub's daysToNext. */
-function daysToNext(career: CareerState, next: Fixture): number {
-  const div = divisionOf(career);
-  const ts = (f: Fixture) => fixtureTimestamp(career.player.startYear, career.season, f.week, f.kind, div);
-  const played = career.fixtures.filter((f) => f.played);
-  const nextTs = ts(next);
-  const lastTs = played.length ? Math.max(...played.map(ts).filter((t) => t <= nextTs)) : nextTs - 5 * 86400000;
-  const today = Number.isFinite(lastTs) ? lastTs + 86400000 : nextTs - 5 * 86400000;
-  return Math.max(0, Math.round((nextTs - today) / 86400000));
-}
-
 const shadow = TEXT_SHADOW;
 
 /** The next match: faint, so the sky shows through (HomeHub NextMatch). */
@@ -382,7 +401,7 @@ function CanTile({ can: c, career }: { can: KibCan; career: CareerState }) {
 
 /** ‹ 📊 STATS / SHOP 🛍️ › (ui/Nav.tsx Arrow). */
 function Arrow({ side, icon, label, onPress, tour }: { side: "left" | "right"; icon: string; label: string; onPress: () => void; tour?: string }) {
-  const t = useTourTarget(tour ?? `arrow-${side}`);
+  const t = useTourTarget(tour ?? `arrow-${side}`, onPress);
   return (
     <View {...t}>
     <Press onPress={onPress} style={{ height: 24, flexDirection: side === "left" ? "row" : "row-reverse", alignItems: "center", gap: 4, paddingHorizontal: 6, borderRadius: 2, backgroundColor: "rgba(8,20,38,0.34)", opacity: 0.8 }}>

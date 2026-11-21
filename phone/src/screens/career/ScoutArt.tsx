@@ -32,7 +32,7 @@ export function ScoutBackdrop({ glow = "#10b981" }: { glow?: string }) {
     <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, overflow: "hidden", backgroundColor: "#05070d" }}>
       <Image source={NIGHT} resizeMode="cover" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, width: "100%", height: "100%" }} />
       <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0,
-        backgroundImage: `radial-gradient(90% 55% at 50% 30%, ${rgba(glow, 0.33)} 0%, transparent 65%), linear-gradient(180deg, rgba(5,7,13,0.35) 0%, rgba(5,7,13,0.55) 40%, rgba(5,7,13,0.93) 72%, #05070d 100%)` } as ViewStyle} />
+        backgroundImage: `radial-gradient(90% 55% at 50% 30%, ${rgba(glow, 0.33)} 0%, transparent 65%), linear-gradient(180deg, rgba(5,7,13,0.35) 0%, rgba(5,7,13,0.5) 34%, rgba(5,7,13,0.12) 50%, rgba(5,7,13,0) 62%)` } as ViewStyle} />
     </View>
   );
 }

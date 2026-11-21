@@ -211,10 +211,12 @@ function recentForm(club: string, results: LeagueResult[]): Result[] {
 const scouted = (s: TeamSheet) => s.xi.length >= 9;
 const OUTLINE = { textShadowColor: "#000", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 2.5 } as const;
 
-function Lineup({ career, matchday, clubKits, competition, date, results, canSim, canPlayAs, benchNote, onBack, onKickOff, onSim }: {
+export function Lineup({ career, matchday, clubKits, competition, date, results, canSim, canPlayAs, benchNote, onBack, onKickOff, onSim, noTimer }: {
   career: CareerState; matchday: NonNullable<ReturnType<typeof matchdayFor>>; clubKits?: CareerState["clubKits"];
   competition: string; date: string; results: LeagueResult[]; canSim: boolean; canPlayAs: boolean; benchNote: string | null;
   onBack: () => void; onKickOff: () => void; onSim: () => void;
+  /** No countdown: it waits for KICK OFF (the farewell's team sheets). */
+  noTimer?: boolean;
 }) {
   const nav = useNav();
   const { home, away } = matchday;
@@ -249,7 +251,7 @@ function Lineup({ career, matchday, clubKits, competition, date, results, canSim
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const slamStyle = useAnimatedStyle(() => ({ opacity: Math.min(1, slam.value * 2), transform: [{ scale: 2.2 - 1.2 * slam.value }] }));
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + 0.018 * pulse.value }] }));
-  const [held, setHeld] = useState(false);
+  const [held, setHeld] = useState(!!noTimer);
   const [room, setRoom] = useState<{ w: number; h: number } | null>(null);
 
   // The timer along the top; at the end it kicks off by itself (not once held).

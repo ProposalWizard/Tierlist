@@ -16,6 +16,9 @@ import type { CareerState } from "@/lib/star/types";
 import { starStatus } from "@/lib/star/starPoints";
 import { formatWallet } from "@/lib/star/money";
 import { happinessOf } from "@/lib/star/relationships";
+import { claimableLevels } from "@/lib/star/starPassClaim";
+import { DEFAULT_PASS_LEVELS } from "@/lib/star/rewardCatalogue";
+import { hasSeen } from "@/lib/star/unlocks";
 import { Press } from "../Press";
 import { useTourTarget } from "../tour";
 import { FONT } from "./fonts";
@@ -103,7 +106,16 @@ function StarCell({ career, onPress }: { career: CareerState; onPress?: () => vo
     <Meter value={pct} colors={GOLD} icon={<FillStar fraction={pct / 100} level={st.stars} />}
       after={st.gate ? <Text style={{ fontSize: 10 }}>🔒</Text> : undefined} />
   );
-  return onPress ? <Press onPress={onPress} style={{ flex: 1 }}>{cell}</Press> : <View style={{ flex: 1 }}>{cell}</View>;
+  // A round "!" on the star while a Star Pass reward waits to be claimed (TopHud.tsx RatingCell).
+  let waiting = false;
+  try { waiting = !!onPress && hasSeen(career, "tutorial") && claimableLevels(career, DEFAULT_PASS_LEVELS, st.stars).length > 0; } catch { waiting = false; }
+  const dot = waiting ? (
+    <View pointerEvents="none" style={{ position: "absolute", left: 34, top: -6, width: 15, height: 15, borderRadius: 8, alignItems: "center", justifyContent: "center",
+      backgroundImage: "radial-gradient(circle at 35% 30%, #fca5a5 0%, #ef4444 45%, #b91c1c 100%)", boxShadow: "0px 0px 0px 1.5px #fff, 0px 0px 8px rgba(239,68,68,0.9)" } as ViewStyle}>
+      <Text style={{ color: "#fff", fontSize: 10, lineHeight: 12, fontWeight: "900" }}>!</Text>
+    </View>
+  ) : null;
+  return onPress ? <Press onPress={onPress} style={{ flex: 1 }}>{cell}{dot}</Press> : <View style={{ flex: 1 }}>{cell}</View>;
 }
 
 /**

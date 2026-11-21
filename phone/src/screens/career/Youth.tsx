@@ -55,8 +55,18 @@ export function YouthScreen({ career, go, onLeague, onSettings }: { career: Care
   const last = p.last;
   const seasonOver = flow.seasonOver(career);
   return (
-    <Frame kicker={`${placementLabel(career)} · ${p.club}`} title={`${career.player.firstName} ${career.player.lastName}`}>
-      <Text style={{ color: C.dim, fontSize: 11, fontWeight: "900", letterSpacing: 1, textAlign: "center" }}>{leagueNameFor(p.division).toUpperCase()}</Text>
+    <Frame title="Youth team" bare backdrop="navy">
+      {/* YouthTeam.tsx: your name, "YOUTH TEAM · CLUB" and the league on the left, SETTINGS on the right. */}
+      <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text numberOfLines={1} style={{ color: "#fff", fontSize: 18, lineHeight: 22, fontWeight: "900" }}>{career.player.firstName} {career.player.lastName}</Text>
+          <Text numberOfLines={1} style={{ color: "#fcd34d", fontSize: 11, fontWeight: "900", letterSpacing: 1.1 }}>{`${placementLabel(career)} · ${p.club}`.toUpperCase()}</Text>
+          <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, fontWeight: "900", letterSpacing: 1 }}>{leagueNameFor(p.division).toUpperCase()}</Text>
+        </View>
+        <Press onPress={onSettings} style={{ borderRadius: 8, backgroundColor: "rgba(255,255,255,0.1)", paddingHorizontal: 12, paddingVertical: 6 }}>
+          <Text style={{ color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1.1 }}>SETTINGS</Text>
+        </Press>
+      </View>
       <View style={{ flexDirection: "row", gap: 8 }}>
         <Stat label="In the bank" value={formatWallet(career.money)} />
         <Stat label="Wage" value={`${formatMoney(career.contract.wage)}/wk`} />
@@ -127,7 +137,6 @@ export function YouthScreen({ career, go, onLeague, onSettings }: { career: Care
           : "The first team play their fixture on Saturday whether you are in it or not. You play yours."}</P>
       </Card>
       <Btn kind="plain" small label="How the first team are doing →" onPress={onLeague} />
-      <Btn kind="plain" small label="Settings" onPress={onSettings} />
     </Frame>
   );
 }

@@ -12,6 +12,8 @@ import * as flow from "../game/flow";
 import { setTransferHandlers } from "../world/transferHandlers";
 import { coreScreens } from "./core";
 import { getCareer } from "../game/store";
+import { askTour } from "../ui/tour";
+import { HELP_TOURS } from "@/lib/star/tours";
 import { TitleMenu } from "../screens/career/TitleMenu";
 import { WithPops } from "../screens/career/Moments";
 import { SigningMoment } from "../screens/career/Signing";
@@ -81,7 +83,13 @@ function TitleWithMenu() {
       onContinue={open}
       onNew={() => nav.go("career-new")}
       onHall={() => nav.go("hall-of-fame")}
-      onTutorial={() => (getCareer() ? nav.go("career-help", { topic: "home" }) : nav.go("career-new"))}
+      // With a save: the title closes and the coach replays his tour on Home (page.tsx handleTitleTutorial).
+      onTutorial={() => {
+        if (!getCareer()) { nav.go("career-new"); return; }
+        const s = flow.resumeStep();
+        open();
+        if (s.screen === "tabs") askTour(HELP_TOURS.home);
+      }}
       onSettings={() => nav.go("career-settings")}
     />
   );

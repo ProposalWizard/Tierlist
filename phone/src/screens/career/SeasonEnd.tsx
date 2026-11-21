@@ -80,12 +80,7 @@ export function SeasonAwardsScreen({ career, go }: { career: CareerState; go: (s
           </View>
         );
       })}
-      {stats.teamOfSeason.length > 0 && (
-        <Card>
-          <Label>Team of the Season</Label>
-          {stats.teamOfSeason.map((m, i) => <Row key={i} k={`${m.label ?? m.role} · ${m.name}`} v={shortClub(m.club)} color={m.isYou ? C.green : C.text} />)}
-        </Card>
-      )}
+      {stats.teamOfSeason.length > 0 && <TeamOfSeasonPitch career={career} team={stats.teamOfSeason} />}
       {(career.lastSeasonRecords?.length ?? 0) > 0 && (
         <Card tone={C.gold}>
           <Label>Your records broken</Label>
@@ -97,73 +92,40 @@ export function SeasonAwardsScreen({ career, go }: { career: CareerState; go: (s
   );
 }
 
-/** The career as bars, one per season, in each club's colour; the last season gold (CareerEnd.tsx SeasonTrack). */
-function SeasonTrack({ career, endLabel }: { career: CareerState; endLabel?: string }) {
-  const played = career.season;
-  const cap = CAREER_SEASONS ?? Math.max(played + 1, 1);
-  const o = useMemo(() => careerOverview(career), [career]);
-  const firstAge = o.seasons[0]?.age ?? career.player.age - (career.season - 1);
+/** The Team of the Season on a pitch, 4-3-3 (SeasonAwardsScreen.tsx TeamOfSeasonPitch): each man's head, his club's crest, his name. */
+function TeamOfSeasonPitch({ career, team }: { career: CareerState; team: NonNullable<CareerState["lastSeasonAwardStats"]>["teamOfSeason"] }) {
+  const [w, setW] = useState(0);
+  const h = Math.round((w * 4) / 3);
+  const line = "rgba(255,255,255,0.3)";
   return (
-    <Card>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 3 }}>
-        {Array.from({ length: cap }, (_, k) => {
-          const season = k + 1, last = season === cap, done = season <= played;
-          const club = o.seasons[k]?.club;
-          return <View key={season} style={{ flex: 1, height: last ? 30 : 22, borderRadius: 2, opacity: done || last ? 1 : 0.6,
-            backgroundColor: last ? C.gold : done ? (club ? clubGlow(club) : "rgba(255,255,255,0.35)") : "rgba(255,255,255,0.08)" }} />;
+    <View>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
+        <Text style={{ color: "rgba(252,211,77,0.9)", fontSize: 10, fontWeight: "900", letterSpacing: 1.1 }}>TEAM OF THE SEASON</Text>
+        <Text style={{ color: "#fff", fontSize: 9, fontWeight: "700" }}>4-3-3</Text>
+      </View>
+      <View onLayout={(e) => setW(Math.floor(e.nativeEvent.layout.width))} style={{ height: h || undefined, aspectRatio: h ? undefined : 0.75, borderRadius: 16, overflow: "hidden", backgroundColor: "#1a6d33", borderWidth: 1, borderColor: "rgba(255,255,255,0.12)" }}>
+        {Array.from({ length: 11 }, (_, k) => <View key={k} style={{ position: "absolute", left: 0, right: 0, top: `${k * 9}%`, height: "9%", backgroundColor: k % 2 ? "#1a6d33" : "#1f7a3a" }} />)}
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: "50%", height: 1, backgroundColor: line }} />
+        <View pointerEvents="none" style={{ position: "absolute", left: "38%", top: "43.5%", width: "24%", height: "13%", borderRadius: 999, borderWidth: 1, borderColor: line }} />
+        <View pointerEvents="none" style={{ position: "absolute", left: "24%", top: -1, width: "52%", height: "13%", borderWidth: 1, borderColor: line }} />
+        <View pointerEvents="none" style={{ position: "absolute", left: "24%", bottom: -1, width: "52%", height: "13%", borderWidth: 1, borderColor: line }} />
+        {w > 0 && team.map((m, i) => {
+          const kit = kitsOf(m.club, career.clubKits?.[m.club]).home;
+          const bw = w * 0.26;
+          return (
+            <View key={`${m.role}-${i}`} style={{ position: "absolute", left: m.x * w - bw / 2, top: m.y * h - 26, width: bw, alignItems: "center" }}>
+              <View>
+                <View style={{ width: 36, height: 36, borderRadius: 18, overflow: "hidden", borderWidth: 2, borderColor: m.isYou ? "#fcd34d" : "rgba(255,255,255,0.8)", backgroundColor: kit.shirt, alignItems: "center", justifyContent: "flex-end" }}>
+                  <PlayerHead id={m.isYou ? "you" : m.name} shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={32} skin={m.isYou ? skinToneHex(career.player.skinTone) : undefined} />
+                </View>
+                <View style={{ position: "absolute", right: -3, bottom: -2 }}><ClubCrest club={m.club} size={14} /></View>
+              </View>
+              <Text numberOfLines={1} style={{ marginTop: 2, color: m.isYou ? "#fcd34d" : "#fff", fontSize: 9, fontWeight: "900", textShadowColor: "rgba(0,0,0,0.95)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>{m.isYou ? "YOU" : m.name}</Text>
+              <Text numberOfLines={1} style={{ color: "#fff", fontSize: 7, fontWeight: "700", textShadowColor: "rgba(0,0,0,0.95)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>{shortClub(m.club)}</Text>
+            </View>
+          );
         })}
       </View>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-        <Text style={{ color: C.dim, fontSize: 11, fontWeight: "900" }}>Age {firstAge}</Text>
-        <Text style={{ color: "#fde68a", fontSize: 11, fontWeight: "900" }}>{endLabel ?? `Last season · age ${firstAge + cap - 1}`}</Text>
-      </View>
-    </Card>
-  );
-}
-
-export function FinalSeasonScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
-  const cap = CAREER_SEASONS ?? career.season + 1;
-  return (
-    <Frame kicker={`Season ${career.season} is over`} title="Final season" footer={<Btn label="Continue" onPress={() => go(flow.playOn())} />}>
-      <Card tone={C.gold}>
-        <Text style={{ color: C.text, fontSize: 18, fontWeight: "900" }}>Season {cap} is your last before retirement.</Text>
-        <Text style={{ color: "#fde68a", fontSize: 16, fontWeight: "800", marginTop: 4 }}>End your career the right way.</Text>
-      </Card>
-      <SeasonTrack career={career} />
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
-        <ClubCrest club={career.player.club} size={22} />
-        <Text style={{ color: C.text, fontWeight: "700", flexShrink: 1 }}>Stay at {shortClub(career.player.club)}, or choose a club for the last one.</Text>
-      </View>
-    </Frame>
-  );
-}
-
-export function RetirementScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
-  const v = careerVerdict(career);
-  const t = testimonialFor(career);
-  const s = career.careerStats;
-  return (
-    <Frame kicker={`${CAREER_SEASONS ?? career.season} seasons`} title="The final whistle" footer={<Btn label="🥾 Hang them up" onPress={() => go(flow.retireNow())} />}>
-      <Text style={{ color: C.text, fontSize: 16, fontWeight: "800", textAlign: "center" }}>That was your last season. Time to hang them up.</Text>
-      <SeasonTrack career={career} endLabel={`Age ${career.player.age} · the end`} />
-      <Card tone={C.gold}>
-        <Text style={{ color: C.gold, fontSize: 22, fontWeight: "900", textAlign: "center" }}>{v.title}</Text>
-        <View style={{ flexDirection: "row", gap: 6, marginTop: 10 }}>
-          {([["Apps", s.appearances], ["Goals", s.goals], ["Trophies", career.trophies.length]] as const).map(([label, value]) => (
-            <View key={label} style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 6, paddingVertical: 8, alignItems: "center" }}>
-              <Text style={{ color: C.text, fontSize: 24, fontWeight: "900" }}>{value}</Text>
-              <Text style={{ color: C.dim, fontSize: 10, fontWeight: "900", letterSpacing: 1 }}>{label.toUpperCase()}</Text>
-            </View>
-          ))}
-        </View>
-      </Card>
-      {t && (
-        <Card tone={C.gold} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <ClubCrest club={t.club} size={26} />
-          <Text style={{ flex: 1, color: C.text, fontWeight: "800" }}>{shortClub(t.club)} put on a testimonial for you</Text>
-          <Text style={{ color: "#fde68a", fontSize: 18, fontWeight: "900" }}>{money(t.payout)}</Text>
-        </Card>
-      )}
-    </Frame>
+    </View>
   );
 }

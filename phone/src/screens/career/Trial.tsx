@@ -27,6 +27,7 @@ import { Dimensions } from "react-native";
 /** The vision box's cap (TrialVision: 64% of the screen's height). */
 // (the pitch height is read with useWindowDimensions inside TrialScreen: it follows a rotation, a split screen, the bars going)
 import { Frame, Card, Label, Row, Btn, StandInNote, ClubCrest, money, C } from "./kit";
+import { RiseIn, PopIn, Pulse } from "./lookBits";
 import { ScoutBackdrop, ScoutFigure, clubGlow } from "./ScoutArt";
 import { SigningMoment } from "./Signing";
 import { FONT, rgba } from "../../ui/look";
@@ -100,12 +101,14 @@ export function TrialScreen({ career, go }: { career: CareerState; go: (s: flow.
         <Pressable onPress={() => go(flow.afterTrial())} style={{ flex: 1, backgroundColor: "#05070d", alignItems: "center", justifyContent: "center", paddingHorizontal: 24, overflow: "hidden" }}>
           {/* TrialSequence: the floodlit stand at night and the drawn scout (ScoutArt.tsx). */}
           <ScoutBackdrop />
-          <ScoutFigure width={192} height={224} />
-          <Text style={{ marginTop: 16, color: "#fff", fontFamily: FONT.display, fontSize: 34, lineHeight: 36, textAlign: "center" }}>A SCOUT HAS{"\n"}SPOTTED YOU</Text>
-          <Text style={{ marginTop: 10, color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "700" }}>Somebody was watching. He wants a word.</Text>
-          <View style={{ marginTop: 30, backgroundColor: "#10b981", borderRadius: 99, paddingHorizontal: 24, paddingVertical: 12 }}>
+          <RiseIn style={{ alignItems: "center" }}>
+            <ScoutFigure width={192} height={224} />
+            <Text style={{ marginTop: 16, color: "#fff", fontFamily: FONT.display, fontSize: 34, lineHeight: 36, textAlign: "center" }}>A SCOUT HAS{"\n"}SPOTTED YOU</Text>
+            <Text style={{ marginTop: 10, color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "700" }}>Somebody was watching. He wants a word.</Text>
+          </RiseIn>
+          <Pulse style={{ marginTop: 30, backgroundColor: "#10b981", borderRadius: 99, paddingHorizontal: 24, paddingVertical: 12 }}>
             <Text style={{ color: "#fff", fontSize: 12, fontWeight: "900", letterSpacing: 1.5 }}>TAP TO CARRY ON</Text>
-          </View>
+          </Pulse>
         </Pressable>
       );
     }
@@ -113,7 +116,7 @@ export function TrialScreen({ career, go }: { career: CareerState; go: (s: flow.
       <View style={{ margin: 12, marginTop: 16, alignItems: "center", borderRadius: 12, paddingVertical: 32, backgroundColor: "rgba(8,14,28,0.85)" }}>
         <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: "900", letterSpacing: 1.5 }}>NEXT UP</Text>
         <Text style={{ marginTop: 4, color: "#fff", fontSize: 20, fontWeight: "900" }}>{stage ? STAGE_LABEL[stage].toUpperCase() : ""}</Text>
-        <Text style={{ marginTop: 16, color: "#6ee7b7", fontSize: 72, fontWeight: "900" }}>{Math.max(1, count)}</Text>
+        <PopIn key={count}><Text style={{ marginTop: 16, color: "#6ee7b7", fontSize: 72, fontWeight: "900" }}>{Math.max(1, count)}</Text></PopIn>
       </View>,
     );
   }
@@ -152,6 +155,7 @@ function ScoutTalk({ m, go }: { m: NonNullable<ReturnType<typeof flow.managerTal
   const done = shown >= talk.lines.length;
   const glow = clubGlow(offer.club);
   const managerName = loadLineup(offer.club)?.manager || "The manager";
+  // (the scout speaks for a club you have not joined yet: its manager comes from the club's saved line-up)
   const nav = useNav();
   return (
     <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: "#05070d" }}>
@@ -160,17 +164,19 @@ function ScoutTalk({ m, go }: { m: NonNullable<ReturnType<typeof flow.managerTal
         <Text style={{ color: "#fff", fontSize: 16 }}>⚙</Text>
       </Pressable>
       <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 16 }}>
-        <View style={{ alignItems: "center" }}>
+        <PopIn style={{ alignItems: "center" }}>
           <View style={{ borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4, backgroundColor: "rgba(251,191,36,0.15)", borderWidth: 1, borderColor: "rgba(252,211,77,0.4)" }}>
             <Text style={{ color: "#fcd34d", fontSize: 11, fontWeight: "900", letterSpacing: 2.6 }}>A SCOUT HAS SPOTTED YOU</Text>
           </View>
-        </View>
+        </PopIn>
         <View style={{ marginTop: 16, alignItems: "center" }}>
           <View style={{ width: 104, height: 104, alignItems: "center", justifyContent: "center" }}>
-            <View pointerEvents="none" style={{ position: "absolute", left: -18, right: -18, top: -18, bottom: -18, borderRadius: 999, backgroundImage: `radial-gradient(closest-side, ${rgba(glow, 0.67)}, transparent)` } as ViewStyle} />
+            <Pulse min={0.6} scale={1.12} style={{ position: "absolute", left: -18, right: -18, top: -18, bottom: -18 }}>
+              <View pointerEvents="none" style={{ flex: 1, borderRadius: 999, backgroundImage: `radial-gradient(closest-side, ${rgba(glow, 0.67)}, transparent)` } as ViewStyle} />
+            </Pulse>
             <ClubCrest club={offer.club} size={92} />
           </View>
-          <Text style={{ marginTop: 8, color: "#fff", fontFamily: FONT.display, fontSize: 28, lineHeight: 32, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.6)", textShadowRadius: 8 }} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.6}>{offer.club}</Text>
+          <Text style={{ marginTop: 8, color: "#cfd3d8", fontFamily: FONT.display, fontSize: 28, lineHeight: 32, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 }} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.6}>{offer.club}</Text>
           <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: "900", letterSpacing: 1.6 }}>{leagueNameFor(offer.division).toUpperCase()}</Text>
         </View>
         {/* the scout, and what he says: a tap moves him on */}
@@ -258,7 +264,7 @@ export function SignedScreen({ career, go }: { career: CareerState; go: (s: flow
   // drawn one (Signing.tsx), then straight on (a loan first says where you go).
   if (!signed) {
     const done = () => (onLoan ? setSigned(true) : go(flow.finishSigning()));
-    return <SigningMoment career={career} club={c.club} managerName={loadLineup(c.club)?.manager || "The manager"} onDone={done} />;
+    return <SigningMoment career={career} club={c.club} managerName={career.manager?.name || loadLineup(c.club)?.manager || "The manager"} onDone={done} />;
   }
   return (
     <Frame kicker="Signed" title={c.club} footer={<Btn label="Let's go" onPress={() => go(flow.finishSigning())} />}>

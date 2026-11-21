@@ -12,9 +12,10 @@
  * Nothing moves at rest (ui/look README): the ticker is still, the rays are a
  * drawn glow.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Modal, Pressable, Text, View, type ViewStyle } from "react-native";
+import { Animated, Easing, Modal, Pressable, Text, View, type ViewStyle } from "react-native";
+import { Headshot3D } from "../../three/Headshot3D";
 import type { CareerState } from "@/lib/star/types";
 import type { BreakingNews } from "@/lib/star/breakingNews";
 import type { MonthAward } from "@/lib/star/potm";
@@ -25,10 +26,35 @@ import { PlayerHead } from "../../draw/PlayerHead";
 import { ClubBadge } from "../../draw/ClubBadge";
 import { FONT, LookButton, rgba } from "../../ui/look";
 import { Rays, Scanlines } from "../../ui/look/Patterns";
+import { Burst } from "./lookBits";
 
 function YourHead({ career, size }: { career: CareerState; size: number }) {
   const kit = kitsOf(career.player.club, career.clubKits?.[career.player.club]).home;
-  return <PlayerHead id="you" shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={size} skin={skinToneHex(career.player.skinTone)} />;
+  const drawn = <PlayerHead id="you" shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={size} skin={skinToneHex(career.player.skinTone)} />;
+  // Your 3D face, as the awards show it (three/Headshot3D); the drawn head until it lands, or with 3D off.
+  return <Headshot3D id="you" you position={career.player.position} skin={skinToneHex(career.player.skinTone)} kit={{ shirt: kit.shirt, trim: kit.trim }} size={size} zoom={1.1} fallback={drawn} />;
+}
+
+/** The ticker's words running right to left for ever (BreakingNews.tsx bn-tick-run, 14 s a lap). */
+function Ticker({ text }: { text: string }) {
+  const x = useRef(new Animated.Value(0)).current;
+  const [w, setW] = useState(0);
+  useEffect(() => {
+    if (w <= 0) return;
+    x.setValue(0);
+    const loop = Animated.loop(Animated.timing(x, { toValue: -w, duration: 14000, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [w, x]);
+  const words = { color: "#fff", fontFamily: FONT.display, fontSize: 20, letterSpacing: 1 } as const;
+  return (
+    <View style={{ flex: 1, overflow: "hidden", paddingVertical: 12 }}>
+      <Animated.View style={{ flexDirection: "row", width: 100000, transform: [{ translateX: x }] }}>
+        <Text numberOfLines={1} onLayout={(e) => { const n = Math.round(e.nativeEvent.layout.width); if (n > 0 && n !== w) setW(n); }} style={words}>{text.repeat(3)}</Text>
+        <Text numberOfLines={1} style={words}>{text.repeat(3)}</Text>
+      </Animated.View>
+    </View>
+  );
 }
 
 export function BreakingNewsPage({ career, news, onClose }: { career: CareerState; news: BreakingNews; onClose: () => void }) {
@@ -47,7 +73,7 @@ export function BreakingNewsPage({ career, news, onClose }: { career: CareerStat
         <Scanlines />
 
         {/* top band, a little crooked */}
-        <View style={{ paddingTop: Math.max(34, inset.top + 10) }}>
+        <View style={{ paddingTop: Math.max(12, inset.top + 4) }}>
           <View style={{ marginLeft: -14, marginRight: 24, backgroundColor: "#dc2626", transform: [{ skewX: "-8deg" }], boxShadow: "0px 6px 0px #ffffff, 0px 10px 24px rgba(0,0,0,0.6)" } as ViewStyle}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, paddingLeft: 32, paddingRight: 24, transform: [{ skewX: "8deg" }] }}>
               <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: "#fff" }} />
@@ -90,7 +116,7 @@ export function BreakingNewsPage({ career, news, onClose }: { career: CareerStat
             <View style={{ backgroundColor: "#dc2626", paddingHorizontal: 16, justifyContent: "center" }}>
               <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: "#fff", fontFamily: FONT.display, fontSize: 20, lineHeight: 26, letterSpacing: 1.6 }}>{shortClub(news.club ?? "NEWS").toUpperCase().slice(0, 14)}</Text>
             </View>
-            <Text numberOfLines={1} ellipsizeMode="clip" style={{ flex: 1, color: "#fff", fontFamily: FONT.display, fontSize: 20, letterSpacing: 1, paddingVertical: 12, paddingHorizontal: 10 }}>{ticker.repeat(2)}</Text>
+            <Ticker text={ticker} />
           </View>
         </View>
       </Pressable>
@@ -108,6 +134,8 @@ export function PotmWinPage({ career, award, onClose }: { career: CareerState; a
         <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: `radial-gradient(70% 50% at 50% 40%, ${rgba(glow, 0.35)}, transparent 70%)` } as ViewStyle} />
         {/* the gold rays: drawn (a phone has no repeating-conic-gradient) */}
         <View pointerEvents="none" style={{ position: "absolute", top: "18%", left: 0, right: 0, alignItems: "center" }}><Rays size={520} /></View>
+        {/* the confetti as the page opens (PotmWinModal.tsx) */}
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: "30%", height: 10 }}><Burst count={36} spread={1.6} colors={[glow, "#fde047", "#fbbf24", "#ffffff"]} /></View>
         <Pressable onPress={() => {}} style={{ width: "100%", maxWidth: 384 }}>
           <View style={{ alignItems: "center", marginBottom: 12 }}>
             <Text style={{ color: "#fcd34d", fontSize: 11, fontWeight: "900", letterSpacing: 3.3, textShadowColor: "rgba(251,191,36,0.5)", textShadowRadius: 10 }}>PLAYER OF THE MONTH</Text>
