@@ -1,7 +1,7 @@
 /**
  * THE LOOK CHECK: the packed app and KIB Next side by side, screen by screen.
  *
- *   node phone/tools/look/compare.mjs [--build] [--only home,shop] [--packed <dir>] [--out <dir>]
+ *   node phone/tools/look/compare.mjs [--build] [--only home,shop] [--packed <dir>] [--out <dir>] [--w 412 --h 915]
  *
  * Opens the PACKED app (mobile/www: the website's own screens) and KIB Next
  * (phone/, built for a browser by build-web.mjs) in Chromium at the same phone
@@ -28,6 +28,8 @@ const argv = process.argv.slice(2);
 const val = (f, d) => { const i = argv.indexOf(f); return i >= 0 && argv[i + 1] ? argv[i + 1] : d; };
 const OUT = path.resolve(val("--out", path.join(HERE, "out")));
 const ONLY = (val("--only", "") || "").split(",").filter(Boolean);
+/** The phone size (--w/--h): 390×844 by default; 412×915 is Mikey's Galaxy S20+ with the bars hidden. */
+const VW = Number(val("--w", 390)), VH = Number(val("--h", 844));
 
 /** The packed app's built files: --packed, else <repo>/mobile/www, else the first mobile/www above the repo (a worktree). */
 function packedDir() {
@@ -258,7 +260,7 @@ const scene = (id) => SCENES.find((s) => s.id === id);
 
 // ── run ─────────────────────────────────────────────────────────────────────
 async function shoot(browser, app, url, scene, save) {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  const ctx = await browser.newContext({ viewport: { width: VW, height: VH }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
   const errors = [];
   if (scene.save) {
     const kv = { ...save[app] };
@@ -290,9 +292,9 @@ async function sheet(browser, scene, a, b, file) {
   const img = (f) => (f && fs.existsSync(f) ? `data:image/png;base64,${fs.readFileSync(f).toString("base64")}` : "");
   const col = (label, r) => `<div class="c"><div class="l">${label}${r && !r.ok ? ` <span class="w">(did not reach: ${r.note.replace(/</g, "&lt;").slice(0, 90)})</span>` : ""}</div>${r ? `<img src="${img(r.file)}">` : `<div class="none">no such screen in this app</div>`}</div>`;
   const html = `<html><body style="margin:0;background:#222;font:600 15px system-ui,sans-serif;color:#fff">
-    <style>.h{padding:10px 14px;font-size:18px}.row{display:flex;gap:12px;padding:0 12px 12px}.c{width:390px}.l{height:26px;color:#ccc}.w{color:#f87171;font-size:11px}img{display:block;width:390px;height:844px}.none{width:390px;height:844px;display:grid;place-items:center;background:#333;color:#999}</style>
+    <style>.h{padding:10px 14px;font-size:18px}.row{display:flex;gap:12px;padding:0 12px 12px}.c{width:${VW}px}.l{height:26px;color:#ccc}.w{color:#f87171;font-size:11px}img{display:block;width:${VW}px;height:${VH}px}.none{width:${VW}px;height:${VH}px;display:grid;place-items:center;background:#333;color:#999}</style>
     <div class="h">${scene.title}</div><div class="row">${col("PACKED APP (website screens)", a)}${col("KIB NEXT (phone-built, in a browser)", b)}</div></body></html>`;
-  const p = await browser.newPage({ viewport: { width: 816, height: 920 } });
+  const p = await browser.newPage({ viewport: { width: 2 * VW + 36, height: VH + 76 } });
   await p.setContent(html); await p.waitForTimeout(150);
   await p.screenshot({ path: file, fullPage: true });
   await p.close();
