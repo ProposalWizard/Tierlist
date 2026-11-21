@@ -19,7 +19,7 @@ import { Press } from "../../ui/Press";
 import { useEffect, useRef, useState } from "react";
 import { View, Text, Platform, BackHandler, type ViewStyle } from "react-native";
 import { FONT, LOOK, LookButton } from "../../ui/look";
-import { clubGlow } from "./lookBits";
+import { clubGlow, PopIn } from "./lookBits";
 import { listSlots, loadSlot, newInSlot, deleteSlot, activeSlot } from "../../world/slots";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { nextFixtureFor, fixtureLabel } from "@/lib/star/competitions";
@@ -68,23 +68,37 @@ export function ContractRenewalScreen({ career, go }: { career: CareerState; go:
   const offeredWage = renewalWage(c.wage, wins, locked);
   const factor = c.wage > 0 ? offeredWage / c.wage : renewalMultiplier(wins, locked);
   const offer = (base: number) => Math.round(base * factor);
+  const [stamp, setStamp] = useState(false);
   const finalise = () => {
     if (signed.current) return;
     signed.current = true;
-    go(flow.contractComplete({
+    // The website's SIGNED stamp (SecondaryScreens.tsx), seen for a moment before the screen moves on.
+    setStamp(true);
+    setTimeout(() => go(flow.contractComplete({
       club: c.club, wage: offeredWage, goalBonus: offer(c.goalBonus), assistBonus: offer(c.assistBonus), seasonsRemaining: 3,
       ...offerClauses(career, offeredWage, mulberry32(career.season * 71 + wins * 13 + rounds)),
-    }));
+    })), 900);
   };
   const back = () => go(flow.contractComplete(null));
   const face = (v: number | null) => (v === null ? "?" : v === 1 ? "A" : v === 11 ? "J" : v === 12 ? "Q" : v === 13 ? "K" : String(v));
 
   return (
-    <Frame kicker="Contract renewal" title={c.club}>
+    <Frame kicker="Contract renewal" title={c.club} scroll={false}>
+     <View style={{ flex: 1, justifyContent: "center", padding: 12, gap: 10, width: "100%", maxWidth: 400, alignSelf: "center" }}>
+      {stamp && (
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, zIndex: 20, alignItems: "center", justifyContent: "center" }}>
+          <PopIn>
+            <View style={{ borderRadius: 12, borderWidth: 4, borderColor: "#34d399", backgroundColor: "rgba(2,44,34,0.85)", paddingHorizontal: 20, paddingVertical: 8, transform: [{ rotate: "-6deg" }], boxShadow: "0px 0px 40px rgba(52,211,153,0.5)" } as never}>
+              <Text style={{ color: "#6ee7b7", fontSize: 30, fontWeight: "900", letterSpacing: 3 }}>SIGNED</Text>
+            </View>
+          </PopIn>
+        </View>
+      )}
       {phase === "intro" && !willing && (
-        <Card>
-          <Text style={{ color: C.text, fontWeight: "900", fontSize: 16 }}>📝 Not interested in renegotiating right now.</Text>
-          <Text style={{ color: C.dim, marginTop: 6, marginBottom: 14 }}>You haven't done enough lately to earn a better deal — a real hot streak of form, or a genuine jump in your game, and they'll be a lot more willing to talk.</Text>
+        <Card style={{ alignItems: "center" }}>
+          <Text style={{ fontSize: 40 }}>📝</Text>
+          <Text style={{ color: C.text, fontWeight: "900", fontSize: 16, textAlign: "center", marginTop: 6 }}>Not interested in renegotiating right now.</Text>
+          <Text style={{ color: C.dim, marginTop: 6, marginBottom: 14, textAlign: "center" }}>You haven't done enough lately to earn a better deal — a real hot streak of form, or a genuine jump in your game, and they'll be a lot more willing to talk.</Text>
           <Btn label="Back" onPress={back} />
         </Card>
       )}
@@ -107,7 +121,8 @@ export function ContractRenewalScreen({ career, go }: { career: CareerState; go:
         <>
           <Text style={{ color: C.dim, textAlign: "center" }}>Round {rounds + 1} · <Text style={{ color: C.green }}>{wins} correct</Text></Text>
           <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 16 }}>
-            <PlayingCard v={face(current)} /><Text style={{ color: C.dim, fontSize: 24 }}>→</Text><PlayingCard v={face(next)} dark={next === null} />
+            <PlayingCard v={face(current)} /><Text style={{ color: C.dim, fontSize: 24 }}>→</Text>
+            <PopIn key={`${rounds}-${next === null ? "q" : next}`}><PlayingCard v={face(next)} dark={next === null} /></PopIn>
           </View>
           {message ? <Text style={{ color: message.startsWith("✓") ? C.green : C.red, fontWeight: "900", textAlign: "center" }}>{message}</Text> : null}
           <Card tone={locked ? C.red : C.green}>
@@ -127,6 +142,7 @@ export function ContractRenewalScreen({ career, go }: { career: CareerState; go:
           ) : <Btn label="Sign Contract →" onPress={finalise} />}
         </>
       )}
+     </View>
     </Frame>
   );
 }

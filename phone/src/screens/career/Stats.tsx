@@ -33,9 +33,16 @@ let lastView: View_ = "stats";
 export function StatsScreen({ career, onBack, onRenew, start }: { career: CareerState; onBack: () => void; onRenew: () => void; start?: View_ }) {
   const [view, setV] = useState<View_>(start ?? lastView);
   const setView = (v: View_) => { lastView = v; setV(v); };
-  void onBack; // the website's Stats has no Back: Home is in the bottom bar
   return (
-    <Frame title="Stats" top bar bare>
+    <Frame title="Stats" top bar bare
+      // The swipe hint back to Home (the website's SwipePages arrow on the Stats page).
+      footer={<View style={{ height: 22, flexDirection: "row", justifyContent: "flex-end", alignItems: "center", paddingRight: 84 }}>
+        <Press onPress={onBack} style={{ flexDirection: "row", alignItems: "center", gap: 4, opacity: 0.85 }}>
+          <Text style={{ color: "#fff", fontSize: 10.5, fontWeight: "700", letterSpacing: 0.6 }}>HOME</Text>
+          <Text style={{ fontSize: 12 }}>🏠</Text>
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }}>▶</Text>
+        </Press>
+      </View>}>
       {/* Your card, whole, with the four tabs stacked in the gap to its right. */}
       <View style={{ flexDirection: "row", gap: 8, alignItems: "stretch" }}>
         <PlayerCardView career={career} />

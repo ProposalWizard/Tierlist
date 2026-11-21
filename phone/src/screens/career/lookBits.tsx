@@ -3,8 +3,8 @@
  * (round 2): a club's glow colour, the gold section heading, the blacked-out
  * blank, the website's Kicker over a screen.
  */
-import type { ReactNode } from "react";
-import { Text, View, type ViewStyle } from "react-native";
+import { useEffect, useRef, type ReactNode } from "react";
+import { Animated, Easing, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { kitsOf } from "@/lib/star/kits";
 import { luminance } from "@/lib/star/heroFigure";
 import type { CareerState } from "@/lib/star/types";
@@ -67,4 +67,38 @@ export function NavyBackdrop() {
 /** The website's Kicker over a screen ("FULL TIME", the competition): small capitals in a colour. */
 export function ScreenKicker({ children, color = "#fcd34d" }: { children: ReactNode; color?: string }) {
   return <Text style={[{ color, fontSize: 11, fontWeight: "900", letterSpacing: 3, textAlign: "center", textTransform: "uppercase" }, TEXT_SHADOW]}>{children}</Text>;
+}
+
+
+/**
+ * The website's small movements (components/star/ui RiseIn, kit-slam, the pulses), once each:
+ *   <RiseIn index={2}>…</RiseIn>     fades in and rises 14 px, 70 ms later per index
+ *   <PopIn>…</PopIn>                 pops in from small with a little overshoot (a count, a stamp)
+ *   <Pulse>…</Pulse>                 breathes for ever (a halo, "TAP TO CARRY ON")
+ */
+export function RiseIn({ children, index = 0, style, from = 14 }: { children: ReactNode; index?: number; style?: StyleProp<ViewStyle>; from?: number }) {
+  const a = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(a, { toValue: 1, duration: 420, delay: 60 + index * 70, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [a, index]);
+  return <Animated.View style={[style, { opacity: a, transform: [{ translateY: a.interpolate({ inputRange: [0, 1], outputRange: [from, 0] }) }] }]}>{children}</Animated.View>;
+}
+export function PopIn({ children, style, delay = 0 }: { children: ReactNode; style?: StyleProp<ViewStyle>; delay?: number }) {
+  const a = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(a, { toValue: 1, duration: 320, delay, easing: Easing.out(Easing.back(2.2)), useNativeDriver: true }).start();
+  }, [a, delay]);
+  return <Animated.View style={[style, { opacity: a.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] }), transform: [{ scale: a.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }] }]}>{children}</Animated.View>;
+}
+export function Pulse({ children, style, min = 0.55, ms = 1300, scale = 1 }: { children?: ReactNode; style?: StyleProp<ViewStyle>; min?: number; ms?: number; scale?: number }) {
+  const a = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(a, { toValue: 1, duration: ms, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      Animated.timing(a, { toValue: 0, duration: ms, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, [a, ms]);
+  return <Animated.View style={[style, { opacity: a.interpolate({ inputRange: [0, 1], outputRange: [min, 1] }), transform: [{ scale: a.interpolate({ inputRange: [0, 1], outputRange: [1, scale] }) }] }]}>{children}</Animated.View>;
 }

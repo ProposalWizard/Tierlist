@@ -91,7 +91,7 @@ function GoldPill({ children }: { children: string }) {
 function BigTitle({ a, b, size = 46, rays = 260 }: { a: string; b: string; size?: number; rays?: number }) {
   return (
     <View style={{ marginTop: 16, height: size * 2.6, alignItems: "center", justifyContent: "center" }}>
-      <View pointerEvents="none" style={{ position: "absolute" }}><Rays size={rays} color="rgba(253,230,138,0.22)" /></View>
+      <View pointerEvents="none" style={{ position: "absolute" }}><Rays size={rays} color="rgba(253,230,138,0.2)" opacity={0.42} /></View>
       <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: "#fff", fontFamily: FONT.display, fontSize: size, lineHeight: size * 1.02, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.7)", textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 10 }}>{a}</Text>
       <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: "#fcd34d", fontFamily: FONT.display, fontSize: size, lineHeight: size * 1.02, textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.7)", textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 10 }}>{b}</Text>
     </View>
@@ -387,7 +387,7 @@ function LegacyRing({ score }: { score: number }) {
   }, [shown]);
   return (
     <View style={{ alignSelf: "center", width: S, height: S, alignItems: "center", justifyContent: "center" }}>
-      <View pointerEvents="none" style={{ position: "absolute" }}><Rays size={230} color="rgba(253,230,138,0.22)" /></View>
+      <View pointerEvents="none" style={{ position: "absolute" }}><Rays size={230} color="rgba(253,230,138,0.2)" opacity={0.42} /></View>
       <View style={{ position: "absolute", width: r * 2, height: r * 2, borderRadius: r, backgroundColor: "rgba(5,8,15,0.82)" }} />
       <Canvas style={{ position: "absolute", left: 0, top: 0, width: S, height: S }}>
         <Path path={track} style="stroke" strokeWidth={11} color="rgba(255,255,255,0.1)" />

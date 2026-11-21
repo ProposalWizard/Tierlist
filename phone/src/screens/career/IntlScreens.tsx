@@ -8,7 +8,9 @@
  *   WatchedScreen  not picked: the match you watched on TV (flags, score, WIN / DRAW / DEFEAT),
  *                  the manager's card, CONTINUE →.
  */
-import { useState } from "react";
+import { useMemo } from "react";
+import { useCareer } from "../../game/store";
+import { PitchBackdrop } from "./lookBits";
 import { ScrollView, Text, View, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { CareerState, Fixture } from "@/lib/star/types";
@@ -29,7 +31,7 @@ export function nationGlow(nation: string): string {
 /** The night stadium behind the announcement (ui/Stadium.tsx, `big`, no pitch): sky, roof line, two floodlight banks with their beams. */
 function Stadium({ glow }: { glow: string }) {
   const bank = (side: "left" | "right") => (
-    <View style={{ position: "absolute", top: 24, [side]: "14%", width: 0, height: 0 } as ViewStyle}>
+    <View style={{ position: "absolute", top: 86, [side]: "14%", width: 0, height: 0 } as ViewStyle}>
       <View style={{ position: "absolute", left: -112, top: -96, width: 224, height: 224, borderRadius: 112, backgroundImage: "radial-gradient(closest-side, rgba(220,235,255,0.40), rgba(220,235,255,0))" } as ViewStyle} />
       {/* the beam: narrow at the lamp, wide below */}
       <View style={{ position: "absolute", left: -18, top: 4, width: 36, height: 520, transformOrigin: "top", transform: [{ rotate: side === "left" ? "-30deg" : "30deg" }, { scaleX: 3.4 }],
@@ -43,7 +45,7 @@ function Stadium({ glow }: { glow: string }) {
   );
   return (
     <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, height: 420, overflow: "hidden" }}>
-      <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: `radial-gradient(80% 60% at 50% 78%, ${rgba(glow, 0.55)} 0%, rgba(0,0,0,0) 70%), linear-gradient(180deg, #060a14 0%, #0b1322 55%, #05080f 100%)` } as ViewStyle} />
+      <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundImage: `radial-gradient(80% 60% at 50% 78%, ${rgba(glow, 0.55)} 0%, rgba(0,0,0,0) 70%), linear-gradient(180deg, #060a14 0%, #0b1322 55%, rgba(11,19,34,0.9) 100%)` } as ViewStyle} />
       <View style={{ position: "absolute", left: 0, right: 0, top: "8%", height: 2, backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.2), rgba(255,255,255,0))" } as ViewStyle} />
       {bank("left")}
       {bank("right")}
@@ -120,7 +122,13 @@ export function ManagerCard({ value, nation, line }: { value: number; nation: st
 }
 
 export function CallUpScreen({ go }: { go: (s: flow.Step) => void }) {
-  const [d] = useState<IntlDecision | null>(() => flow.callUpDecision());
+  // Worked out again whenever the real squads land (page.tsx decides on every draw). Decided once,
+  // on a Home that had only just opened, it was made before the real players were in the save:
+  // "their squad is picked at about 81" where the website, a moment later, says 87.
+  const career = useCareer();
+  const d: IntlDecision | null = useMemo(() => flow.callUpDecision(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [career?.leagueSquads, career?.externalSquads, career?.squad, career?.season, career?.intl]);
   if (!d) {
     return (
       <View style={{ flex: 1, backgroundColor: "#05080f", justifyContent: "center", padding: 16 }}>
@@ -134,6 +142,9 @@ export function CallUpScreen({ go }: { go: (s: flow.Step) => void }) {
   const glow = called ? nationGlow(nation) : "#64748b";
   return (
     <View style={{ flex: 1, backgroundColor: "#05080f" }}>
+      {/* under the night stadium the page is the pitch look (the website's Training and League pages) */}
+      <PitchBackdrop />
+      <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, height: "62%", backgroundImage: "linear-gradient(180deg, #05080f 0%, rgba(5,8,15,0.96) 70%, rgba(5,8,15,0) 100%)" } as ViewStyle} />
       <Stadium glow={glow} />
       <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 32, paddingTop: 24, width: "100%", maxWidth: 448, alignSelf: "center" }}>

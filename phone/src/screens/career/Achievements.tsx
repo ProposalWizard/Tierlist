@@ -19,7 +19,7 @@ import { achievementXp } from "@/lib/star/xpConfig";
 import { clauseSummary } from "@/lib/star/contracts";
 import { divisionOf, leagueNameFor } from "@/lib/star/calendar";
 import { Press } from "../../ui/Press";
-import { LookButton } from "../../ui/look";
+import { FONT, LookButton } from "../../ui/look";
 import { TopSpace } from "../../ui/safe";
 import { ClubCrest } from "./kit";
 
@@ -389,14 +389,14 @@ export function ContractPaper({ career, onRenew }: { career: CareerState; onRene
         <Text style={[serif, { color: "#8a6a23", fontSize: 9, fontWeight: "700", letterSpacing: 2.7, textAlign: "center" }]}>PROFESSIONAL CONTRACT</Text>
         <View style={{ marginTop: 6, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
           <ClubCrest club={c.club} size={30} />
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[serif, { color: INK, fontSize: 22, lineHeight: 26, fontWeight: "900", flexShrink: 1 }]}>{c.club}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ color: INK, fontFamily: FONT.display, fontSize: 22, lineHeight: 27, flexShrink: 1 }}>{c.club}</Text>
         </View>
         <Text style={[serif, { marginTop: 4, color: SOFT, fontSize: 11, fontStyle: "italic", textAlign: "center" }]}>between the club and {playerName}</Text>
         <View style={{ marginTop: 12, gap: 4 }}>
           {terms.map(([label, value]) => (
             <View key={label} style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8, paddingBottom: 2, borderBottomWidth: 1, borderBottomColor: RULE }}>
-              <Text style={[serif, { color: SOFT, fontSize: 10, fontWeight: "700", letterSpacing: 0.3 }]}>{label.toUpperCase()}</Text>
-              <Text numberOfLines={1} style={[serif, { color: INK, fontSize: 14, fontWeight: "900", flexShrink: 1 }]}>{value}</Text>
+              <Text style={{ color: SOFT, fontSize: 10, fontWeight: "900", letterSpacing: 0.3 }}>{label.toUpperCase()}</Text>
+              <Text numberOfLines={1} style={{ color: INK, fontSize: 14, fontWeight: "900", flexShrink: 1 }}>{value}</Text>
             </View>
           ))}
         </View>
@@ -415,9 +415,8 @@ export function ContractPaper({ career, onRenew }: { career: CareerState; onRene
           </View>
         </View>
       </View>
-      {/* PressButton variant "primary" on the Stats page is the yellow one in the pitch look. */}
-      <LookButton kind="gold" onPress={onRenew} style={{ marginTop: 12, borderRadius: 12 }}>
-        <Text style={{ color: "#111827", fontSize: 16, fontWeight: "900" }}>PROPOSE RENEWAL</Text>
+      <LookButton onPress={onRenew} style={{ marginTop: 12, borderRadius: 12 }}>
+        <Text style={{ color: "#fff", fontSize: 14, fontWeight: "900", letterSpacing: 0.6 }}>PROPOSE RENEWAL</Text>
       </LookButton>
     </View>
   );
