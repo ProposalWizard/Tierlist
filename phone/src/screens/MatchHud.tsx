@@ -11,8 +11,22 @@ import { usePrefs, setPref } from "../game/prefs";
 import { FONT } from "../ui/look";
 import { LineIcon } from "./MatchLook";
 
-/** A crisp black outline round white club names, so they read on a light kit (NAME_OUTLINE). */
-const OUTLINE = { textShadowColor: "#000", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 2 };
+/** A crisp black outline round white club names, so they read on a light kit: CanvasMatch's NAME_OUTLINE,
+ *  `text-shadow: -1px -1px 1.5px #000, 1px -1px 1.5px #000, -1px 1px 1.5px #000, 1px 1px 1.5px #000`.
+ *  React Native's Text takes ONE shadow, so the name is drawn four times on the same spot, one shadow each
+ *  (one faint glow, as before, left "ENGLAND" invisible on England's white bar). */
+const OUTLINE_AT = [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const;
+function OutlinedName({ name, right }: { name: string; right: boolean }) {
+  const base = { color: "#fff", fontWeight: "900" as const, fontSize: 12, lineHeight: 16, textAlign: right ? "right" as const : "left" as const, textShadowColor: "#000", textShadowRadius: 1.5 };
+  return (
+    <View>
+      {OUTLINE_AT.map(([x, y], i) => (
+        <Text key={i} numberOfLines={1} accessible={i === 3} importantForAccessibility={i === 3 ? "auto" : "no"}
+          style={[base, { textShadowOffset: { width: x, height: y } }, i < 3 ? { position: "absolute", left: 0, right: 0, top: 0 } : null]}>{name}</Text>
+      ))}
+    </View>
+  );
+}
 
 export function MatchHud({ d, kits, onGear }: { d: MatchDriver; kits: MatchKits; onGear?: () => void }) {
   const prefs = usePrefs();
@@ -22,12 +36,12 @@ export function MatchHud({ d, kits, onGear }: { d: MatchDriver; kits: MatchKits;
   const us = shortClub(d.setup.career.player.club), them = shortClub(d.setup.fixture.opponent);
   const t = d.tally;
   const passPct = t.passes > 0 ? Math.round((t.passesCompleted / t.passes) * 100) : 0;
-  const rating = d.ratingSoFar();
+  const rating = d.shownRating();
   const comp = d.setup.farewell ? "Farewell" : competitionAbbrev(d.setup.fixture, divisionOf(d.setup.career));
   const bar = (name: string, kit: { shirt: string; trim: string }, right: boolean) => (
     <View style={{ flex: 1, minWidth: 0, justifyContent: "center", paddingHorizontal: 8, paddingVertical: 6, backgroundColor: kit.shirt, borderWidth: 1, borderColor: kit.trim,
       borderTopLeftRadius: right ? 0 : 8, borderBottomLeftRadius: right ? 0 : 8, borderTopRightRadius: right ? 8 : 0, borderBottomRightRadius: right ? 8 : 0 }}>
-      <Text numberOfLines={1} style={{ color: "#fff", fontWeight: "900", fontSize: 12, textAlign: right ? "right" : "left", ...OUTLINE }}>{name.toUpperCase()}</Text>
+      <OutlinedName name={name.toUpperCase()} right={right} />
     </View>
   );
   const score = (n: number) => (
