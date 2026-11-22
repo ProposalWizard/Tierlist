@@ -10,7 +10,7 @@
  * with no save yet), and the menu as slanted tabs stacked on the right.
  * Settings shows with or without a save (page.tsx always passes onSettings).
  */
-import { useMemo, useState } from "react";
+import { Component, useMemo, useState, type ReactNode } from "react";
 import { View, Text, Modal, useWindowDimensions, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CareerState, StarPlayer } from "@/lib/star/types";
@@ -56,6 +56,14 @@ function SheetBtn({ label, onPress, kind = "primary" }: { label: string; onPress
 const pill = (bg: string, ink: string) => ({ backgroundColor: bg, color: ink, fontSize: 8.5, lineHeight: 12, fontWeight: "900" as const, letterSpacing: 0.85, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8, overflow: "hidden" as const, textTransform: "uppercase" as const });
 
 /** With no save yet: a trialist in the game's neutral green (TitleScreen NO_SAVE_PLAYER). */
+/** If the title's player picture fails, the title stays up without him instead of closing the app. */
+class Quiet extends Component<{ children: ReactNode }, { bad: boolean }> {
+  state = { bad: false };
+  static getDerivedStateFromError() { return { bad: true }; }
+  componentDidCatch(e: unknown) { console.warn("title player", e); }
+  render() { return this.state.bad ? null : this.props.children; }
+}
+
 function useNoSavePlayer(): CareerState {
   return useMemo(() => {
     const p = { firstName: "Your", lastName: "Player", age: 17, club: "", clubBadge: null, position: "ST", nationality: "England", startYear: 2026 } as unknown as StarPlayer;
@@ -132,7 +140,7 @@ export function TitleMenu({ onContinue, onNew, onHall, onTutorial, onSettings }:
       </View>
       {/* You, standing on the pitch (TitleScreen's HomePlayer, where="title"), the ball at your feet. */}
       <View pointerEvents="none" style={{ position: "absolute", bottom: H * 0.19, left: -W * 0.13, width: stageW, height: stageH, alignItems: "center", justifyContent: "flex-end" }}>
-        <HomePlayer career={career ?? standIn} where="title" height={avH} width={avW} ball />
+        <Quiet><HomePlayer career={career ?? standIn} where="title" height={avH} width={avW} ball /></Quiet>
       </View>
 
       {/* The menu: slanted tabs, 16 px in from the right edge. */}

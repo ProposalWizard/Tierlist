@@ -18,3 +18,9 @@ boot, popin). Fit fixes, hidden bars, font size fixed, farewell crash fixed, pla
 3. Release setup: real package uk.co.knowitball.game, upload key, remove extra permissions, 32-bit phones, move saves from the packed app;
 4. Merge to main needs Harry's OK (one-engine guard + root tsconfig must skip `phone/`).
 Only a real phone can confirm: font size, camera hole, hidden bars, buzz, music, photo, 3D, smoothness.
+
+## Mikey's playtest of test app 4 (22 Nov)
+- FIXED (not yet in an app): title "Main menu" from "Who are you?" closed the app → the title's player is now inside a safety net (TitleMenu `Quiet`); real cause unknown without the error screen. Cans "FULL" wrapped to FUL/L → one line, shrinks to fit. Phone → Social: less gap above the ticker and the ALL/ENGLAND/CLUB chips.
+- OPEN: trial dribble ignores taps (MatchFirstPerson gesture inside Trial's ScrollView; code reads fine, needs a device run). Mikey unsure the dribble stage should stay.
+- OPEN: trial free kick: after the ball leaves the screen the player chases it and it takes a while to move on.
+- NOTE: photo has no face scan like the website (known). A deflection up into the air looked great.

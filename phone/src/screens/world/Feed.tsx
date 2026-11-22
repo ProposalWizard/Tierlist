@@ -57,7 +57,7 @@ export function MediaFeed({ career, mode = "browse", onContinue }: { career: Car
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.1)" }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingTop: 4, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.1)" }}>
         <View style={{ width: 28, height: 28, borderRadius: 9, alignItems: "center", justifyContent: "center", backgroundImage: "linear-gradient(160deg, #34d399, #047857)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.45), 0px 4px 8px -3px rgba(0,0,0,0.7)" } as ViewStyle}><Text style={{ fontSize: 14 }}>⚽</Text></View>
         <Text style={{ flex: 1, color: C.text, fontWeight: "900", fontSize: 14 }}>{mode === "moment" ? "Post Match Reactions" : "Matchday"}</Text>
         {mode === "moment" && onContinue && (
@@ -85,7 +85,7 @@ export function MediaFeed({ career, mode = "browse", onContinue }: { career: Car
                 </Ticker>
               )}
               {mode === "browse" && (
-                <View style={{ flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingTop: 8, paddingBottom: 6 }}>
+                <View style={{ flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingTop: 4, paddingBottom: 4 }}>
                   {FILTERS.map(f => (
                     <Press key={f.id} onPress={() => setFilter(f.id)} style={[{ borderRadius: 999, paddingHorizontal: 13, paddingVertical: 5 }, filter === f.id
                       ? ({ backgroundImage: "linear-gradient(180deg, #34d399, #059669)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.35), 0px 0px 10px rgba(52,211,153,0.45)" } as ViewStyle)
@@ -151,7 +151,7 @@ function Ticker({ children }: { children: React.ReactNode }) {
     return () => loop.stop();
   }, [w, x]);
   return (
-    <View style={{ overflow: "hidden", paddingVertical: 10 }}>
+    <View style={{ overflow: "hidden", paddingTop: 6, paddingBottom: 4 }}>
       <Animated.View style={{ flexDirection: "row", paddingLeft: 10, transform: [{ translateX: x }] }}>
         <View style={{ flexDirection: "row" }} onLayout={(e) => { const v = Math.round(e.nativeEvent.layout.width); if (Math.abs(v - w) > 1) setW(v); }}>{children}</View>
         <View style={{ flexDirection: "row" }}>{children}</View>
