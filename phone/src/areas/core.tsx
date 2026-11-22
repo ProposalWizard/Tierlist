@@ -5,7 +5,7 @@
 // (ui/look/BottomBar: League, Training, Home, Phone, PLAY). Open it on the
 // League with params { tab: "league" }.
 import { useEffect, useState } from "react";
-import { View } from "react-native";
+import { View, type ViewStyle } from "react-native";
 import type { ScreenMap } from "./types";
 import { Title } from "../screens/Title";
 import { Home } from "../screens/Home";
@@ -34,7 +34,10 @@ function Tabs({ params }: { params?: Record<string, unknown> }) {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ flex: 1 }}>{tab === "home" ? <Home career={career} onQuit={() => nav.replace("title")} onLeague={() => setTab("league")} /> : <League career={career} />}</View>
-      <BottomBar active={tab} on={{ league: () => setTab("league"), home: () => setTab("home") }} />
+      {/* the website's bar is see-through over the foot of the page (the pitch): a dark grass colour under it here */}
+      <View style={{ backgroundImage: "linear-gradient(180deg, #1c3e06, #0e2a08)" } as ViewStyle}>
+        <BottomBar active={tab} plain={tab === "league"} on={{ league: () => setTab("league"), home: () => setTab("home") }} />
+      </View>
     </View>
   );
 }

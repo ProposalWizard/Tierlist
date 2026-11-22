@@ -13,12 +13,12 @@ import { useNav } from "../nav";
 import { SCREENS } from "../areas/registry";
 import { TopBar } from "../ui/look";
 
-export function GameTop({ career, help = "home" }: { career: CareerState; help?: string | (() => void) | null }) {
+export function GameTop({ career, help = "home", under }: { career: CareerState; help?: string | (() => void) | null; under?: string }) {
   const nav = useNav();
   return (
-    <TopBar career={career}
+    <TopBar career={career} under={under}
       onHelp={help === null ? undefined : typeof help === "function" ? help : SCREENS["career-help"] ? () => nav.go("career-help", { topic: help }) : undefined}
       onSettings={() => nav.go("career-settings")}
-      onStarPass={SCREENS["star-pass"] ? () => nav.go("star-pass") : undefined} />
+      onStarPass={() => nav.go("star-pass")} />
   );
 }

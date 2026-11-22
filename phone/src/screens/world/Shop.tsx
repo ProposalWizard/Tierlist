@@ -713,7 +713,7 @@ export function ShopScreen({ params }: { params?: Record<string, unknown> }) {
       </View>
 
       <ShopBar active={tab} onPick={(t) => { setTab(t); setMoreOpen(false); setFameOpen(false); }} onSponsors={() => nav.go("sponsors")} />
-      <BottomBar active={null} />
+      <BottomBar active={null} plain />
 
       {sheet && sheetView ? (
         <DetailSheet v={sheetView} career={career} boots={boots} onLevel={(lv) => setPick((p) => ({ ...p, [sheet.key]: lv }))} onClose={() => { setSheet(null); setPick({}); }} />

@@ -1,6 +1,6 @@
 // The look kit: the website's (packed app's) look for KIB Next. Read README.md here.
 export { FONT, useLookFonts } from "./fonts";
-export { LOOK, rgba, vgrad, GLASS_EDGE, TEXT_SHADOW } from "./tokens";
+export { LOOK, rgba, vgrad, GLASS_EDGE, TEXT_SHADOW, NO_SHADOW } from "./tokens";
 export { TITLE_STADIUM, HOME_SCENE, HOME_SCENE_LINE, STADIUM_BLUR, ICON, CAN } from "./pictures";
 export { Backdrop, type BackdropKind } from "./Backdrop";
 export { Glass, glassStyle, type GlassTone } from "./Glass";

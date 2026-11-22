@@ -37,11 +37,11 @@ export function League({ career }: { career: CareerState }) {
   return (
     <View style={{ flex: 1, backgroundColor: "#0b1a2e" }}>
       <Backdrop kind="stadium" />
-      <GameTop career={career} help={null} />
+      <GameTop career={career} help={null} under="#05070d" />
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 8, paddingBottom: 8 }}>
         <Text style={{ color: "#fff", fontSize: 15, lineHeight: 22, fontWeight: "900", letterSpacing: 0.4 }}>LEAGUE</Text>
         <Square onPress={() => setBell(true)}>
-          <Text style={{ fontSize: 12, lineHeight: 16 }}>🔔</Text>
+          <Text style={{ fontSize: 13, lineHeight: 16 }}>🔔</Text>
           {rung ? <View style={{ position: "absolute", right: -4, top: -4, width: 8, height: 8, borderRadius: 4, backgroundColor: "#ef4444" }} /> : null}
         </Square>
         <Square onPress={help.open}><Text style={{ color: "#fcd34d", fontWeight: "900", fontSize: 14, lineHeight: 17 }}>?</Text></Square>

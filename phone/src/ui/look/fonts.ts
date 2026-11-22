@@ -10,6 +10,7 @@
  * fails, words fall back to the body font and the app still runs.
  */
 import { useEffect, useState } from "react";
+import { Platform } from "react-native";
 import * as Font from "expo-font";
 
 export const FONT = {
@@ -19,6 +20,8 @@ export const FONT = {
   serif: "Cinzel-Black",
   /** The phone's own sans: leave fontFamily unset. */
   body: undefined as string | undefined,
+  /** The phone's own sans BY NAME: for a bold word of 16 px or more that must NOT become Anton (ui/look/globalText.js rule 2). */
+  sans: Platform.OS === "android" ? "sans-serif" : "System",
 };
 
 const FILES = {

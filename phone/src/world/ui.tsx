@@ -77,7 +77,7 @@ export function ScreenFrame({ title, kicker, onBack, right, children, scroll = t
         <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: (bar !== undefined ? 30 : 40 + inset.bottom), gap: 10 }}>{children}</ScrollView>
       ) : <View style={{ flex: 1 }}>{children}</View>}
       {footer ? <View style={[{ paddingBottom: bar !== undefined ? 8 : Math.max(inset.bottom, 8), paddingTop: 8 }, { backgroundImage: "linear-gradient(180deg, rgba(10,22,40,0.85), rgba(6,14,26,0.96))", borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.18)" } as ViewStyle]}>{footer}</View> : null}
-      {bar !== undefined ? <BottomBar active={bar} /> : null}
+      {bar !== undefined ? <BottomBar active={bar} plain /> : null}
     </View>
   );
 }

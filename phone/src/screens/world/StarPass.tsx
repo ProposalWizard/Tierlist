@@ -209,7 +209,7 @@ export function StarPassScreen() {
         )}
       </View>
 
-      <BottomBar active={null} />
+      <BottomBar active={null} plain />
 
       <Modal visible={preview !== null && !!shown} transparent animationType="fade" onRequestClose={() => setPreview(null)}>
         {shown && preview !== null && (
