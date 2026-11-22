@@ -29,8 +29,12 @@ import { formatMoneyPrecise } from "@/lib/star/money";
 import { setCareer, getCareer } from "../../game/store";
 import { Press } from "../../ui/Press";
 import { C } from "../../world/lookKit";
-import { ClubBadge, Empty, Title } from "../../world/ui";
+import { ClubBadge, Title } from "../../world/ui";
 import { GoalVideo } from "../MatchGoalVideo";
+import { kitsOf } from "@/lib/star/kits";
+import { ordinal } from "@/lib/star/media/grammar";
+import { shortClub } from "@/lib/star/media/grammar";
+import { PlayerHead } from "../../draw/PlayerHead";
 import { clipStyleFor, clipVariantFor, type PostAuthor } from "@/lib/star/media/clipStyle";
 import type { ClipStyle } from "@/lib/star/goalClip/edit";
 import { isColdStyle } from "@/lib/star/goalClip/editCold";
@@ -66,37 +70,35 @@ export function MediaFeed({ career, mode = "browse", onContinue }: { career: Car
           </Press>
         )}
       </View>
+      {/* The trend ticker and the All / England / Club chips are NOT part of the scrolling list
+          (MediaFeed.tsx: both are shrink-0 above the post list): they stay under "Matchday". */}
+      {tab === "feed" && trends.length > 0 && (
+        <Ticker>
+          {trends.map((t) => (
+            <View key={t.label} style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04))", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.1)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginRight: 6 } as ViewStyle}>
+              <Text style={{ color: C.text, fontWeight: "900", fontSize: 10.5, lineHeight: 15.75 }}>{t.label}{t.hot ? " 🔥" : ""}</Text>
+              <Text style={{ color: "rgba(255,255,255,0.5)", fontWeight: "700", fontSize: 9, lineHeight: 13.5, fontVariant: ["tabular-nums"] }}>{formatVolume(t.volume)}</Text>
+            </View>
+          ))}
+        </Ticker>
+      )}
+      {tab === "feed" && mode === "browse" && (
+        <View style={{ flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingTop: 8, paddingBottom: 4 }}>
+          {FILTERS.map(f => (
+            <Press key={f.id} onPress={() => setFilter(f.id)} style={[{ borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 }, filter === f.id
+              ? ({ backgroundImage: "linear-gradient(180deg, #6ee7b7, #059669)", boxShadow: "0px 10px 15px -3px rgba(6,78,59,0.5)" } as ViewStyle)
+              : ({ backgroundColor: "rgba(255,255,255,0.08)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.1)" } as ViewStyle)]}>
+              <Text style={{ color: filter === f.id ? "#022c22" : "rgba(255,255,255,0.8)", fontWeight: "900", fontSize: 11, lineHeight: 16.5, letterSpacing: 0.275 }}>{f.label.toUpperCase()}</Text>
+            </Press>
+          ))}
+        </View>
+      )}
       {tab === "transfers" ? <TransfersPanel career={career} /> : (
         <FlatList
           data={shown}
           keyExtractor={(p) => p.id}
           initialNumToRender={6}
           windowSize={5}
-          ListHeaderComponent={
-            <View>
-              {trends.length > 0 && (
-                <Ticker>
-                  {trends.map((t) => (
-                    <View key={t.label} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, marginRight: 6 }}>
-                      <Text style={{ color: C.text, fontWeight: "900", fontSize: 11 }}>{t.label}{t.hot ? " 🔥" : ""}</Text>
-                      <Text style={{ color: C.dim, fontWeight: "700", fontSize: 10 }}>{formatVolume(t.volume)}</Text>
-                    </View>
-                  ))}
-                </Ticker>
-              )}
-              {mode === "browse" && (
-                <View style={{ flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingTop: 8, paddingBottom: 6 }}>
-                  {FILTERS.map(f => (
-                    <Press key={f.id} onPress={() => setFilter(f.id)} style={[{ borderRadius: 999, paddingHorizontal: 13, paddingVertical: 5 }, filter === f.id
-                      ? ({ backgroundImage: "linear-gradient(180deg, #34d399, #059669)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.35), 0px 0px 10px rgba(52,211,153,0.45)" } as ViewStyle)
-                      : ({ backgroundColor: "rgba(255,255,255,0.08)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.12)" } as ViewStyle)]}>
-                      <Text style={{ color: filter === f.id ? "#022c22" : "rgba(255,255,255,0.85)", fontWeight: "900", fontSize: 10.5, letterSpacing: 0.4 }}>{f.label.toUpperCase()}</Text>
-                    </Press>
-                  ))}
-                </View>
-              )}
-            </View>
-          }
           ListEmptyComponent={<EmptyFeed />}
           ListFooterComponent={shown.length > 0 ? (
             <View style={{ padding: 24, alignItems: "center" }}>
@@ -151,7 +153,7 @@ function Ticker({ children }: { children: React.ReactNode }) {
     return () => loop.stop();
   }, [w, x]);
   return (
-    <View style={{ overflow: "hidden", paddingVertical: 10 }}>
+    <View style={{ overflow: "hidden", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.1)" }}>
       <Animated.View style={{ flexDirection: "row", paddingLeft: 10, transform: [{ translateX: x }] }}>
         <View style={{ flexDirection: "row" }} onLayout={(e) => { const v = Math.round(e.nativeEvent.layout.width); if (Math.abs(v - w) > 1) setW(v); }}>{children}</View>
         <View style={{ flexDirection: "row" }}>{children}</View>
@@ -171,8 +173,25 @@ function Avatar({ initials, tint, tint2, size, glyph }: { initials: string; tint
   );
 }
 const TICK = { blue: "#1d9bf0", gold: "#e2b719", grey: "#829aab" } as const;
-function Tick({ tick }: { tick?: keyof typeof TICK }) {
-  return <Text style={{ color: TICK[tick ?? "blue"], fontSize: 13 }}>✔︎</Text>;
+/**
+ * The verified badge (PostCard.tsx Tick): a filled twelve-point rosette with a white tick in it.
+ * Built from plain boxes (three squares turned 0°, 30° and 60° make the rosette; two white bars the
+ * tick), not a Skia drawing: a feed shows dozens, and one drawing surface each is too many.
+ */
+function Tick({ tick, size = 15 }: { tick?: keyof typeof TICK; size?: number }) {
+  const col = TICK[tick ?? "blue"];
+  const sq = size * 0.69;
+  const off = (size - sq) / 2;
+  const t = Math.max(1.4, size * 0.115);
+  return (
+    <View style={{ width: size, height: size, flexShrink: 0 }}>
+      {[0, 30, 60].map((r) => (
+        <View key={r} style={{ position: "absolute", left: off, top: off, width: sq, height: sq, borderRadius: size * 0.1, backgroundColor: col, transform: [{ rotate: `${r}deg` }] }} />
+      ))}
+      {/* the tick: a short bar down-right and a long bar up-right, meeting at the bottom */}
+      <View style={{ position: "absolute", left: size * 0.39, top: size * 0.3, width: size * 0.2 + t, height: size * 0.36 + t, borderRightWidth: t, borderBottomWidth: t, borderColor: "#fff", transform: [{ rotate: "45deg" }] }} />
+    </View>
+  );
 }
 
 /** The action row's line icons (media/PostCard.tsx ICON): replies, reposts, like, views, share. ONE drawing per post. */
@@ -264,7 +283,7 @@ function Replies({ thread }: { thread: PostReply[] }) {
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
               <Text numberOfLines={1} style={{ color: C.text, fontWeight: "800", fontSize: 13, flexShrink: 1 }}>{r.name}</Text>
-              {r.verified && <Tick tick={r.tick} />}
+              {r.verified && <Tick tick={r.tick} size={12} />}
               <Text numberOfLines={1} style={{ color: C.dim, fontSize: 12, flexShrink: 1 }}>{r.handle}</Text>
             </View>
             {r.to ? <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}>Replying to <Text style={{ color: "#1d9bf0" }}>{r.to}</Text></Text> : null}
@@ -277,7 +296,13 @@ function Replies({ thread }: { thread: PostReply[] }) {
   );
 }
 
-/** The picture under a post, drawn plainly (the website's media/Graphics.tsx, in short). */
+/** Graphics.tsx PANEL: rounded-xl, a white 15% rim, dark slate 70%. */
+const PANEL = { borderRadius: 12, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.15)", backgroundColor: "rgba(17,24,39,0.7)" } as const;
+/** White club-name text stays readable on a light kit: a black edge all round (Graphics.tsx NAME_OUTLINE). */
+const OUTLINE = { textShadowColor: "#000", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 2.5 } as const;
+const SMALL = { color: "rgba(255,255,255,0.8)", fontSize: 10, lineHeight: 15, fontWeight: "700" } as const;
+
+/** The picture under a post (the website's media/Graphics.tsx). */
 function Graphic({ spec, author, onVote }: { spec: GraphicSpec; author?: PostAuthor; onVote?: (i: number) => void }) {
   const box = { backgroundColor: "#111a2b", borderRadius: 16, padding: 12, gap: 4 } as const;
   const rowsOf = (rows: { label: string; value: string; highlight?: boolean }[]) => rows.map((r, i) => (
@@ -287,21 +312,39 @@ function Graphic({ spec, author, onVote }: { spec: GraphicSpec; author?: PostAut
     </View>
   ));
   switch (spec.type) {
-    case "scoreline":
-      return (
-        <View style={box}>
-          <Text style={{ color: C.dim, fontSize: 10, fontWeight: "900", letterSpacing: 1.5, textAlign: "center" }}>{spec.competition.toUpperCase()} · FULL TIME</Text>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
-            <View style={{ flex: 1, alignItems: "center", gap: 4 }}><ClubBadge club={spec.home} size={34} /><Text numberOfLines={1} style={{ color: C.text, fontWeight: "800" }}>{spec.home}</Text></View>
-            <Text style={{ color: C.text, fontWeight: "900", fontSize: 26 }}>{spec.hs} - {spec.as}</Text>
-            <View style={{ flex: 1, alignItems: "center", gap: 4 }}><ClubBadge club={spec.away} size={34} /><Text numberOfLines={1} style={{ color: C.text, fontWeight: "800" }}>{spec.away}</Text></View>
-          </View>
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <Text style={{ flex: 1, color: C.dim, fontSize: 11, textAlign: "center" }}>{(spec.homeScorers ?? []).join("\n")}</Text>
-            <Text style={{ flex: 1, color: C.dim, fontSize: 11, textAlign: "center" }}>{(spec.awayScorers ?? spec.scorers ?? []).join("\n")}</Text>
-          </View>
+    case "scoreline": {
+      // Graphics.tsx Scoreline: the match scoreboard's look. Each side's name on a plate in its own
+      // kit colour (trim as the rim), the two scores in white boxes between; scorers under their side.
+      // `scorers` is the old single list (always printed under the left-hand team).
+      const homeScorers = spec.homeScorers ?? spec.scorers ?? [];
+      const awayScorers = spec.awayScorers ?? [];
+      const hk = kitsOf(spec.home).home, ak = kitsOf(spec.away).home;
+      const plate = (name: string, kit: { shirt: string; trim: string }, left: boolean) => (
+        <View style={[{ flex: 1, minWidth: 0, justifyContent: "center", borderWidth: 1, borderColor: kit.trim, backgroundColor: kit.shirt, paddingHorizontal: 8, paddingVertical: 6 },
+          left ? { borderTopLeftRadius: 8, borderBottomLeftRadius: 8 } : { borderTopRightRadius: 8, borderBottomRightRadius: 8 }]}>
+          <Text numberOfLines={1} ellipsizeMode="clip" style={[{ color: "#fff", fontSize: 12, lineHeight: 16, fontWeight: "900", textAlign: left ? "right" : "left" }, OUTLINE]}>{shortClub(name).toUpperCase()}</Text>
         </View>
       );
+      const num = (n: number) => <View style={{ backgroundColor: "#fff", borderRadius: 4, paddingHorizontal: 8, paddingVertical: 4 }}><Text style={{ color: "#000", fontSize: 16, lineHeight: 24, fontWeight: "900", fontVariant: ["tabular-nums"] }}>{n}</Text></View>;
+      return (
+        <View style={PANEL}>
+          <View style={{ backgroundColor: "rgba(255,255,255,0.1)", paddingHorizontal: 12, paddingVertical: 4 }}>
+            <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.85)", fontSize: 9, lineHeight: 13.5, fontWeight: "900", letterSpacing: 1.8 }}>{spec.competition.toUpperCase()}</Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "stretch", gap: 4, paddingHorizontal: 12, paddingVertical: 10 }}>
+            {plate(spec.home, hk, true)}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>{num(spec.hs)}{num(spec.as)}</View>
+            {plate(spec.away, ak, false)}
+          </View>
+          {homeScorers.length > 0 || awayScorers.length > 0 ? (
+            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)", paddingHorizontal: 12, paddingVertical: 6 }}>
+              <View style={{ flex: 1, gap: 2 }}>{homeScorers.map((g) => <Text key={g} style={SMALL}>{g}</Text>)}</View>
+              <View style={{ flex: 1, gap: 2 }}>{awayScorers.map((g) => <Text key={g} style={[SMALL, { textAlign: "right" }]}>{g}</Text>)}</View>
+            </View>
+          ) : null}
+        </View>
+      );
+    }
     case "breaking":
       return <View style={[box, { backgroundColor: "#7f1d1d" }]}><Text style={{ color: "#fecaca", fontWeight: "900", fontSize: 11, letterSpacing: 2 }}>{spec.strapline.toUpperCase()}</Text><Text style={{ color: "#fff", fontWeight: "900", fontSize: 18 }}>{spec.headline}</Text></View>;
     case "playerCard":
@@ -310,20 +353,31 @@ function Graphic({ spec, author, onVote }: { spec: GraphicSpec; author?: PostAut
       return <View style={box}><Text style={{ color: C.gold, fontWeight: "900" }}>{spec.title}</Text>{rowsOf(spec.rows)}{spec.context ? <Text style={{ color: C.dim, fontSize: 11 }}>{spec.context}</Text> : null}</View>;
     case "topScorers":
       return <View style={box}><Text style={{ color: C.gold, fontWeight: "900" }}>{spec.title}</Text>{rowsOf(spec.rows.map(r => ({ ...r, highlight: r.highlight || r.label === spec.highlight })))}</View>;
-    case "tableSnippet":
+    case "tableSnippet": {
+      // Graphics.tsx TableSnippet: a head row (# · TEAM · P · GD · PTS), then 11 px rows, each name on ONE line; yours on green.
+      const head = { color: "rgba(255,255,255,0.85)", fontSize: 9, lineHeight: 13.5, fontWeight: "900", letterSpacing: 0.45 } as const;
       return (
-        <View style={box}>
-          {spec.rows.map((r) => (
-            <View key={r.pos} style={{ flexDirection: "row", gap: 8 }}>
-              <Text style={{ width: 22, color: C.dim, fontWeight: "900" }}>{r.pos}</Text>
-              <Text style={{ flex: 1, color: r.name === spec.highlight ? C.gold : C.text, fontWeight: "800" }}>{r.name}</Text>
-              <Text style={{ width: 28, color: C.dim, textAlign: "right" }}>{r.played}</Text>
-              <Text style={{ width: 34, color: C.dim, textAlign: "right" }}>{r.gd > 0 ? `+${r.gd}` : r.gd}</Text>
-              <Text style={{ width: 30, color: C.text, fontWeight: "900", textAlign: "right" }}>{r.points}</Text>
-            </View>
-          ))}
+        <View style={PANEL}>
+          <View style={{ flexDirection: "row", backgroundColor: "rgba(255,255,255,0.1)", paddingHorizontal: 12, paddingVertical: 4 }}>
+            <Text style={[head, { width: 24 }]}>#</Text><Text style={[head, { flex: 1 }]}>TEAM</Text>
+            <Text style={[head, { width: 28, textAlign: "right" }]}>P</Text><Text style={[head, { width: 32, textAlign: "right" }]}>GD</Text><Text style={[head, { width: 32, textAlign: "right" }]}>PTS</Text>
+          </View>
+          {spec.rows.map((r) => {
+            const mine = r.name === spec.highlight;
+            const cell = { color: mine ? "#fff" : "rgba(255,255,255,0.85)", fontSize: 11, lineHeight: 16.5, fontWeight: "700", fontVariant: ["tabular-nums"] } as const;
+            return (
+              <View key={r.name} style={[{ flexDirection: "row", paddingHorizontal: 12, paddingVertical: 6 }, mine && { backgroundColor: "rgba(5,150,105,0.25)" }]}>
+                <Text style={[cell, { width: 24 }]}>{r.pos}</Text>
+                <Text numberOfLines={1} style={[cell, { flex: 1, minWidth: 0, fontWeight: "900" }]}>{r.name}</Text>
+                <Text style={[cell, { width: 28, textAlign: "right" }]}>{r.played}</Text>
+                <Text style={[cell, { width: 32, textAlign: "right" }]}>{r.gd > 0 ? `+${r.gd}` : r.gd}</Text>
+                <Text style={[cell, { width: 32, textAlign: "right", fontWeight: "900", color: "#fff" }]}>{r.points}</Text>
+              </View>
+            );
+          })}
         </View>
       );
+    }
     case "teamOfTheWeek":
       return <View style={box}><Text style={{ color: C.gold, fontWeight: "900" }}>Team of the Week · {spec.formation}</Text>{spec.players.map((p, i) => <Text key={i} style={{ color: p.isYou ? C.gold : C.text, fontWeight: p.isYou ? "900" : "700" }}>{p.position} {p.name} <Text style={{ color: C.dim }}>{p.note}</Text></Text>)}</View>;
     case "hatTrick":
@@ -338,8 +392,28 @@ function Graphic({ spec, author, onVote }: { spec: GraphicSpec; author?: PostAut
     case "trophy":
       return <View style={[box, { alignItems: "center" }]}><Text style={{ fontSize: 36 }}>🏆</Text><Text style={{ color: C.gold, fontWeight: "900" }}>{spec.competition}</Text><Text style={{ color: C.text, fontWeight: "800" }}>{spec.club} · Season {spec.season}</Text></View>;
     case "poll": {
+      // Graphics.tsx Poll: each answer a bar filled to its share, the number of votes under.
       const total = Math.max(1, spec.votes.reduce((a, b) => a + b, 0));
-      return <View style={box}><Text style={{ color: C.text, fontWeight: "900" }}>{spec.question}</Text>{spec.options.map((o, i) => <Text key={i} style={{ color: C.text }}>{o} — {Math.round((spec.votes[i] / total) * 100)}%</Text>)}</View>;
+      return (
+        <View style={PANEL}>
+          <Text style={{ paddingHorizontal: 12, paddingTop: 8, color: "#fff", fontSize: 11, lineHeight: 16.5, fontWeight: "900" }}>{spec.question}</Text>
+          <View style={{ gap: 4, paddingHorizontal: 12, paddingVertical: 8 }}>
+            {spec.options.map((o, i) => {
+              const pct = Math.round((spec.votes[i] / total) * 100);
+              return (
+                <View key={o} style={{ borderRadius: 6, overflow: "hidden", backgroundColor: "rgba(255,255,255,0.1)" }}>
+                  <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, backgroundColor: "rgba(5,150,105,0.5)" }} />
+                  <View style={{ flexDirection: "row", paddingHorizontal: 8, paddingVertical: 4 }}>
+                    <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, color: "#fff", fontSize: 11, lineHeight: 16.5, fontWeight: "700" }}>{o}</Text>
+                    <Text style={{ color: "#fff", fontSize: 11, lineHeight: 16.5, fontWeight: "900", fontVariant: ["tabular-nums"] }}>{pct}%</Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+          <Text style={{ paddingHorizontal: 12, paddingBottom: 8, color: "rgba(255,255,255,0.7)", fontSize: 9, lineHeight: 13.5, fontWeight: "700" }}>{total.toLocaleString("en-GB")} votes</Text>
+        </View>
+      );
     }
     case "gotmPoll": {
       const votes = spec.fanVotes.map((v, i) => v + (spec.userVote === i ? spec.userWeight : 0));
@@ -363,8 +437,39 @@ function Graphic({ spec, author, onVote }: { spec: GraphicSpec; author?: PostAut
     }
     case "potmNominees":
       return <View style={box}><Text style={{ color: C.gold, fontWeight: "900" }}>Player of the Month · {spec.month}</Text>{spec.nominees.map((n, i) => <Text key={i} style={{ color: n.isYou ? C.gold : C.text, fontWeight: "800" }}>{n.name} ({n.club}) {n.goals}G {n.assists}A{spec.winner === n.name ? " 🏆" : ""}</Text>)}</View>;
-    case "potmWinner":
-      return <View style={[box, { alignItems: "center" }]}><Text style={{ color: C.gold, fontWeight: "900" }}>PLAYER OF THE MONTH · {spec.month.toUpperCase()}</Text><Text style={{ color: C.text, fontWeight: "900", fontSize: 18 }}>{spec.firstName} {spec.lastName}</Text><Text style={{ color: C.dim }}>{spec.club} · {spec.goals}G {spec.assists}A</Text></View>;
+    case "potmWinner": {
+      // Graphics.tsx PotmWinner: his drawn head on a plate in his club's colours (a trim stripe behind),
+      // the award, his name big, his club; under it the month on yellow and his goals and assists.
+      const kit = kitsOf(spec.club).home;
+      const strip = { color: "rgba(255,255,255,0.85)", fontSize: 9, lineHeight: 13.5, fontWeight: "900", letterSpacing: 0.45, fontVariant: ["tabular-nums"] } as const;
+      return (
+        <View style={PANEL}>
+          <View style={{ flexDirection: "row" }}>
+            <View style={{ width: "40%", height: 112, overflow: "hidden", backgroundColor: kit.shirt }}>
+              <View pointerEvents="none" style={{ position: "absolute", top: -8, bottom: -8, left: 8, width: 36, backgroundColor: kit.trim, transform: [{ skewX: "-14deg" }] }} />
+              <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "center" }}>
+                <PlayerHead id={spec.isYou ? "you" : spec.id ?? `${spec.club}|${spec.lastName}`} shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={104} round={false} />
+              </View>
+              {spec.isYou ? <Text style={{ position: "absolute", left: 0, top: 0, backgroundColor: "#fcd34d", color: "#111827", fontSize: 8, lineHeight: 12, fontWeight: "900", letterSpacing: 0.4, paddingHorizontal: 6, paddingVertical: 2 }}>YOU</Text> : null}
+            </View>
+            <View style={{ flex: 1, minWidth: 0, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 10 }}>
+              <Text numberOfLines={1} style={{ color: "#fde68a", fontSize: 9, lineHeight: 9, fontWeight: "900", letterSpacing: 1.62 }}>PLAYER OF THE MONTH</Text>
+              {spec.firstName ? <Text numberOfLines={1} style={{ marginTop: 8, color: "rgba(255,255,255,0.85)", fontSize: 11, lineHeight: 11, fontWeight: "700" }}>{spec.firstName}</Text> : null}
+              <Text numberOfLines={1} style={{ marginTop: 4, color: "#fff", fontSize: 24, lineHeight: 24, fontWeight: "900", letterSpacing: -0.6, textTransform: "uppercase" }}>{spec.lastName}</Text>
+              <Text numberOfLines={1} style={{ marginTop: 6, color: "rgba(255,255,255,0.8)", fontSize: 9, lineHeight: 9, fontWeight: "700", letterSpacing: 0.45 }}>{shortClub(spec.club).toUpperCase()}</Text>
+              {spec.yourPlace !== undefined && !spec.isYou ? <Text numberOfLines={1} style={{ marginTop: 8, color: "rgba(255,255,255,0.7)", fontSize: 9, lineHeight: 9, fontWeight: "700" }}>You finished {ordinal(spec.yourPlace)}</Text> : null}
+            </View>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "stretch", borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
+            <View style={{ backgroundColor: "#fcd34d", paddingHorizontal: 10, paddingVertical: 6 }}><Text style={{ color: "#111827", fontSize: 9, lineHeight: 13.5, fontWeight: "900", letterSpacing: 1.35 }}>{spec.month.toUpperCase()}</Text></View>
+            <View style={{ flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "rgba(17,24,39,0.8)", paddingHorizontal: 10 }}>
+              <Text style={strip}><Text style={{ color: "#fde68a" }}>{spec.goals}</Text> GOAL{spec.goals === 1 ? "" : "S"}</Text>
+              <Text style={strip}><Text style={{ color: "#fde68a" }}>{spec.assists}</Text> ASSIST{spec.assists === 1 ? "" : "S"}</Text>
+            </View>
+          </View>
+        </View>
+      );
+    }
     case "goalVideo":
       // The goal's recording (Graphics.tsx → GoalVideo): drawn from the frames recorded as it was played.
       return (
@@ -421,7 +526,11 @@ function TransfersPanel({ career }: { career: CareerState }) {
           {spent > 0 ? <Text style={{ backgroundColor: C.green, color: "#05261a", fontWeight: "900", fontSize: 11, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, overflow: "hidden" }}>£{formatMoneyPrecise(spent)} SPENT</Text> : null}
         </View>
       }
-      ListEmptyComponent={<Empty text="No business yet. The rest of the division deals in the summer and again in January — check back once a window has opened and closed." />}
+      ListEmptyComponent={
+        <View style={{ borderRadius: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.12)", backgroundColor: "rgba(255,255,255,0.04)", paddingHorizontal: 12, paddingVertical: 24 }}>
+          <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, lineHeight: 16.5, fontWeight: "700", textAlign: "center" }}>No business yet. The rest of the division deals in the summer and again in January — check back once a window has opened and closed.</Text>
+        </View>
+      }
       renderItem={({ item: r }) => (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: r.mine ? "rgba(52,211,153,0.6)" : C.line, backgroundColor: r.mine ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.03)" }}>
           <View style={{ flex: 1 }}>

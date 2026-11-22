@@ -27,8 +27,9 @@ function lighten(hex: string, f: number): string {
   const m = (v: number) => Math.round(v + (255 - v) * f);
   return `rgb(${m((n >> 16) & 255)},${m((n >> 8) & 255)},${m(n & 255)})`;
 }
-/** A colour with transparency, from "#rrggbb". */
+/** A colour with transparency, from "#rrggbb" or "rgb(r,g,b)" (a dark kit's lifted glow is written the second way). */
 export function rgba(hex: string, a: number): string {
+  if (hex.startsWith("rgb(")) return heroRgba(hex, a);
   if (!hex.startsWith("#")) return hex;
   const n = parseInt(hex.slice(1, 7).padEnd(6, "0"), 16);
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
@@ -129,8 +130,8 @@ export function Seg<T extends string>({ value, onChange, tabs }: { value: T; onC
 }
 
 /**
- * Chips in ONE row that scrolls sideways (the website's round chips): glass pills, the
- * chosen one gold. The row starts scrolled to the chosen chip (a cup's latest round).
+ * Chips in ONE row that scrolls sideways (the website's cup round chips, KnockoutTree.tsx): flat pills,
+ * white 10%, 11 px words, 29 px tall, no ring; the chosen one flat yellow (#fde047). The row starts scrolled to the chosen chip (a cup's latest round).
  */
 export function Chips<T extends string>({ value, onChange, items }: { value: T; onChange: (t: T) => void; items: readonly (readonly [T, string])[] }) {
   const ref = useRef<ComponentRef<typeof ScrollView>>(null);
@@ -143,10 +144,8 @@ export function Chips<T extends string>({ value, onChange, items }: { value: T; 
       {items.map(([k, label]) => {
         const on = value === k;
         return (
-          <Press key={k} onPress={() => onChange(k)} onLayout={(e) => { xs.current[k] = e.nativeEvent.layout.x; if (k === value && first.current) requestAnimationFrame(toChosen); }} style={[{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: R.pill }, on
-            ? ({ backgroundImage: "linear-gradient(180deg, #fde047, #f59e0b)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.5)" } as ViewStyle)
-            : ({ backgroundColor: "rgba(10,22,40,0.6)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.22)" } as ViewStyle)]}>
-            <Text numberOfLines={1} style={{ color: on ? "#111" : C.text, fontWeight: "900", fontSize: 12, lineHeight: 16 }}>{label}</Text>
+          <Press key={k} onPress={() => onChange(k)} onLayout={(e) => { xs.current[k] = e.nativeEvent.layout.x; if (k === value && first.current) requestAnimationFrame(toChosen); }} style={[{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: R.pill }, { backgroundColor: on ? "#fde047" : "rgba(255,255,255,0.1)" }]}>
+            <Text numberOfLines={1} style={{ color: on ? "#111" : C.text, fontWeight: "900", fontSize: 11, lineHeight: 16.5 }}>{label}</Text>
           </Press>
         );
       })}

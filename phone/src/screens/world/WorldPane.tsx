@@ -41,7 +41,7 @@ import { C } from "../../world/lookKit";
 import { glassStyle, FONT } from "../../ui/look";
 import { ClubBadge, Flag, Seg, Chips, RoundNav, Empty, Title, youRow, clubGlow, rgba } from "../../world/ui";
 import { EuroKnockout, KnockoutTree, CupRoundCard, cupTreeColumns, TREE_ROUNDS } from "./KnockoutTree";
-import { NationPanel, nationGlow } from "./NationPanel";
+import { NationPanel, NationTable, nationGlow } from "./NationPanel";
 import { NationFlag } from "../../draw/NationFlag";
 
 type Comp =
@@ -209,7 +209,7 @@ function Chooser({ open, onClose, glow, groups, all, current, yours, onPick, onL
   // Solid dark green, at once (no slide), as on the website. (Modal is drawn in the app's own window: src/rn.js.)
   return (
     <Modal visible={open} animationType="none" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: "#071a10", paddingTop: inset.top + 16 }}>
+      <View style={{ flex: 1, backgroundColor: "#071a10", paddingTop: inset.top + 24 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, marginBottom: 12 }}>
           <Text style={{ color: "#fff", fontSize: 18, lineHeight: 27, fontFamily: FONT.display, letterSpacing: 0.2 }}>Every league and cup</Text>
           <Press onPress={onClose} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" }}>
@@ -466,8 +466,8 @@ function cupTieRow(key: string, t: CupTie, glow: string, you: string): Row {
   const w = !done ? undefined : t.pens ? (t.pens.home > t.pens.away ? t.home : t.away) : t.hs! > t.as! ? t.home : t.as! > t.hs! ? t.away : undefined;
   return row(key, <MatchLine home={shortClub(t.home)} away={shortClub(t.away)} score={done ? `${t.hs}-${t.as}` : "v"} mine={t.home === you || t.away === you} glow={glow}
     homeWin={w === t.home} awayWin={w === t.away}
-    under={t.pens ? <Text style={{ color: C.gold, fontSize: 10.5, fontWeight: "800", textAlign: "center", marginTop: 3 }}>{t.pens.home}-{t.pens.away} on penalties</Text>
-      : t.legs && t.legs.length > 1 ? <Text style={{ color: C.dim, fontSize: 10.5, fontWeight: "700", textAlign: "center", marginTop: 3 }}>Legs {t.legs.map(l => `${l.hs}-${l.as}`).join(" · ")}</Text> : undefined} />);
+    under={t.pens ? <Text style={{ color: "#fcd34d", fontSize: 9.5, lineHeight: 14.25, fontWeight: "700", textAlign: "center", marginTop: 6 }}>{t.pens.home}-{t.pens.away} on penalties</Text>
+      : t.legs && t.legs.length > 1 ? <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 9.5, lineHeight: 14.25, fontWeight: "700", textAlign: "center", marginTop: 6 }}>Legs {t.legs.map(l => `${l.hs}-${l.as}`).join(" · ")}</Text> : undefined} />);
 }
 function euroTieRow(key: string, t: EuroBracket["rounds"][number]["ties"][number], glow: string, you: string): Row {
   const agg = koAggregate(t);
@@ -476,7 +476,7 @@ function euroTieRow(key: string, t: EuroBracket["rounds"][number]["ties"][number
   const note = [legs && `Legs ${legs}`, pens].filter(Boolean).join(" · ");
   return row(key, <MatchLine home={t.a ? shortClub(t.a) : "?"} away={t.b ? shortClub(t.b) : "?"} score={agg ? `${agg.a}-${agg.b}` : "v"} mine={t.a === you || t.b === you} glow={glow}
     homeWin={!!t.winner && t.winner === t.a} awayWin={!!t.winner && t.winner === t.b}
-    under={note ? <Text style={{ color: C.dim, fontSize: 10.5, fontWeight: "700", textAlign: "center", marginTop: 3 }}>{note}</Text> : undefined} />);
+    under={note ? <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 9.5, lineHeight: 14.25, fontWeight: "700", textAlign: "center", marginTop: 6 }}>{note}</Text> : undefined} />);
 }
 
 function EuroView({ top, career, world, competition, glow, you }: { top: ReactNode; career: CareerState; world: WorldState; competition: "Champions League" | "Europa League"; glow: string; you: string }) {
@@ -606,26 +606,18 @@ function ShieldView({ top, career, world, competition, glow }: { top: ReactNode;
 
 // ── International ───────────────────────────────────────────────────────────
 
-const NATION_GLOW = "#3b82f6";
-
+/** One group = ONE glass card (the website's IntlCompPane draws IntlKit's NationTable for each group). */
 function groupRows(prefix: string, g: GroupView, nation: string): Row[] {
-  return [
-    row(`${prefix}-t`, <Title style={{ marginTop: 6 }}>{g.title}</Title>),
-    row(`${prefix}-h`, <Cells head cells={["#", "NATION", "P", "W", "D", "GD", "PTS"]} />),
-    ...g.rows.map((r, i) => row(`${prefix}-${r.name}`, (
-      <View style={[{ borderRadius: 8, backgroundColor: i % 2 === 0 ? "rgba(255,255,255,0.04)" : "transparent", borderLeftWidth: 3, borderLeftColor: i === 0 ? "#fbbf24" : "transparent" }, r.name === nation && youRow(NATION_GLOW)]}>
-        <Cells lead={<Flag nation={r.name} size={13} />} cells={[String(i + 1), r.name, r.p, r.w, r.d, r.gd > 0 ? `+${r.gd}` : r.gd, r.pts]} />
-      </View>
-    ))),
-  ];
+  return [row(`${prefix}-t`, <View style={{ marginBottom: 8 }}><NationTable group={g} nation={nation} glow={nationGlow(nation || "England")} through={1} /></View>)];
 }
 function matchRow(key: string, m: MatchView, nation: string): Row {
+  const NATION_GLOW = nationGlow(nation || "England");
   const mine = m.mine || m.home === nation || m.away === nation;
   const done = m.hs !== undefined && m.as !== undefined;
   const [ph, pa] = m.pens ? m.pens.split(" ")[0].split("-").map(Number) : [0, 0];
   return row(key, <MatchLine home={m.home} away={m.away} score={done ? `${m.hs}-${m.as}` : "v"} mine={mine} glow={NATION_GLOW}
     homeWin={done && (m.hs! > m.as! || (m.hs === m.as && ph > pa))} awayWin={done && (m.as! > m.hs! || (m.hs === m.as && pa > ph))}
-    under={m.pens ? <Text style={{ color: C.gold, fontSize: 10.5, textAlign: "center", fontWeight: "800" }}>{m.pens}</Text> : undefined} />);
+    under={m.pens ? <Text style={{ color: "#fcd34d", fontSize: 9.5, lineHeight: 14.25, marginTop: 6, textAlign: "center", fontWeight: "700" }}>{m.pens}</Text> : undefined} />);
 }
 
 /** The whole FIFA ranking in one card (the website's RankingView): 11.5 px rows, drawn flags. */
@@ -689,7 +681,7 @@ function IntlCompView({ top, career, comp, nation }: { top: ReactNode; career: C
       };
     });
     const lines = joinHistory(mine, realHistory(comp), careerFirstYear(career.player.startYear) + 1);
-    body = lines.length ? historyRows(`ih-${comp}`, lines, NATION_GLOW, (x) => x === nation, (c, size) => <Flag nation={c} size={size - 2} />, (c) => c)
+    body = lines.length ? historyRows(`ih-${comp}`, lines, nationGlow(nation ?? "England"), (x) => x === nation, (c, size) => <Flag nation={c} size={size - 2} />, (c) => c)
       : [row("e", <Empty text="No final played yet. Each one is added here once it is played." />)];
   }
   return (
@@ -770,6 +762,13 @@ function trophiesOf(career: CareerState, summary: WorldSummary): Trophy[] {
   return out;
 }
 
+/** A lighter shade of a trophy's colour for the small word on its row (the website's tint: 45% to white). */
+function lightOf(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  const mix = (c: number) => Math.round(c + (255 - c) * 0.45);
+  return `rgb(${mix((n >> 16) & 255)},${mix((n >> 8) & 255)},${mix(n & 255)})`;
+}
+
 function CloseBtn({ onPress }: { onPress: () => void }) {
   return (
     <Press onPress={onPress} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "#b91c1c", alignItems: "center", justifyContent: "center" }}>
@@ -802,22 +801,27 @@ function LastSeason({ career, summary, onNow, onClose }: { career: CareerState; 
   const groups: string[] = [];
   for (const t of trophies) if (!groups.includes(groupOf(t))) groups.push(groupOf(t));
   for (const g of groups) {
-    rows.push(row(`g-${g}`, <Title style={{ marginTop: 6 }}>{g}</Title>));
+    // the website's CardTitle in amber: 10 px, 2 px apart, 4 px in from the side
+    rows.push(row(`g-${g}`, <Title color="#fcd34d" style={{ marginTop: 6, fontSize: 10, lineHeight: 15, letterSpacing: 2, paddingHorizontal: 4 }}>{g}</Title>));
     for (const t of trophies.filter(x => groupOf(x) === g)) {
       const tone = TROPHY_TONE[t.kind];
       const mine = t.club === you;
       rows.push(row(`t-${t.competition}`, (
-        <Press onPress={() => setOpen(t)} style={{ flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 6, backgroundColor: rgba(tone, 0.2), borderWidth: 1, borderColor: rgba(tone, mine ? 0.95 : 0.5) }}>
-          <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: rgba(tone, 0.28), alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 18 }}>🏆</Text></View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: C.dim, fontSize: 10.5, fontWeight: "900", letterSpacing: 1 }}>{t.competition.toUpperCase()}</Text>
+        <Press onPress={() => setOpen(t)} style={{ flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 6,
+          backgroundImage: `linear-gradient(90deg, ${rgba(tone, 0.32)}, ${rgba(tone, 0.12)} 60%, rgba(255,255,255,0.04))`,
+          boxShadow: `inset 0px 0px 0px 1px ${rgba(tone, mine ? 0.95 : 0.5)}${mine ? `, 0px 0px 16px -4px ${rgba(tone, 0.9)}` : ""}` } as ViewStyle}>
+          <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: rgba(tone, 0.28), alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 18, lineHeight: 27 }}>🏆</Text></View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text numberOfLines={1} style={{ color: lightOf(tone), fontSize: 10.5, lineHeight: 15.75, fontWeight: "900", letterSpacing: 0.525 }}>{t.competition.toUpperCase()}</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
               {t.kind === "intl" ? <Flag nation={t.club} size={14} /> : <ClubBadge club={t.club} size={20} />}
-              <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 15, flexShrink: 1 }}>{t.kind === "intl" ? t.club : shortClub(t.club)}</Text>
-              {mine && <Text style={{ backgroundColor: C.gold, color: "#111", fontSize: 9, fontWeight: "900", paddingHorizontal: 5, borderRadius: 6, overflow: "hidden" }}>YOU</Text>}
+              <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 15, lineHeight: 22.5, flexShrink: 1 }}>{t.kind === "intl" ? t.club : shortClub(t.club)}</Text>
+              {mine && <Text style={{ backgroundColor: "#fcd34d", color: "#030712", fontSize: 9, lineHeight: 13.5, fontWeight: "900", paddingHorizontal: 6, borderRadius: 999, overflow: "hidden" }}>YOU</Text>}
             </View>
           </View>
-          <Text style={{ color: C.text, fontSize: 22, fontWeight: "900" }}>›</Text>
+          <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: rgba(tone, 0.4), alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: C.text, fontSize: 20, lineHeight: 30, fontWeight: "900" }}>›</Text>
+          </View>
         </Press>
       )));
     }
@@ -825,10 +829,11 @@ function LastSeason({ career, summary, onNow, onClose }: { career: CareerState; 
   return (
     <RowList rows={rows} header={<>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <Text style={{ color: C.text, fontFamily: FONT.display, fontSize: 22, lineHeight: 33, letterSpacing: 0.26 }}>Season {summary.season}</Text>
+        {/* the packed app draws this in its body font, weight 400: its display font is not set on this page */}
+        <Text style={{ color: C.text, fontWeight: "400", fontSize: 22, lineHeight: 33 }}>Season {summary.season}</Text>
         {onClose ? <CloseBtn onPress={onClose} /> : onNow ? (
-          <Press onPress={onNow} style={{ borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: rgba(glow, 0.3) }}>
-            <Text style={{ color: C.text, fontWeight: "900" }}>← This season</Text>
+          <Press onPress={onNow} style={{ borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: rgba(glow, 0.3) }}>
+            <Text style={{ color: C.text, fontWeight: "900", fontSize: 12, lineHeight: 18 }}>← This season</Text>
           </Press>
         ) : null}
       </View>

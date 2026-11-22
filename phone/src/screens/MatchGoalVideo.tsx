@@ -216,10 +216,13 @@ export function GoalVideo({ clipIds, synth, standIn, style, variant = 0, credit,
     try { await Sharing.shareAsync(saved.uri, { mimeType: "video/mp4", dialogTitle: title }); } catch { /* closed */ }
   };
 
-  if (tracks === null) return <View style={{ height: 120, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.05)" }} />;
+  if (tracks === null) return <View key="wait" style={{ height: 120, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.05)" }} />;
   if (!edit) return <>{fallback}</>;
+  // key: a NEW box, not the waiting one re-used. In a browser a box that gains onLayout after it
+  // was first drawn is never measured (react-native-web starts watching at mount only), so the
+  // video's width stayed 0 and the picture was never drawn (world playtest R2-16).
   return (
-    <View onLayout={(e) => { const w = e.nativeEvent.layout.width; if (w > 0 && Math.abs(w - boxW) > 1) setBoxW(w); }} style={{ width: "100%", alignItems: tall ? "center" : "stretch" }}>
+    <View key="video" onLayout={(e) => { const w = e.nativeEvent.layout.width; if (w > 0 && Math.abs(w - boxW) > 1) setBoxW(w); }} style={{ width: "100%", alignItems: tall ? "center" : "stretch" }}>
       {dispW > 0 && (
         <Pressable onPress={() => setPlaying((p) => !p)} style={{ width: dispW, height: dispH, borderRadius: 12, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.15)", backgroundColor: "#000" }}>
           <Canvas style={{ width: dispW, height: dispH }}>
@@ -256,8 +259,8 @@ export function GoalVideo({ clipIds, synth, standIn, style, variant = 0, credit,
           <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: "800" }}>⤓</Text>
           <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "800" }}>{making !== null ? `Making ${Math.round(making * 100)}%` : "Save video"}</Text>
         </Pressable>
-        <Text numberOfLines={1} style={{ flex: 1, color: C.dim, fontSize: 12, fontWeight: "700" }}>{title}</Text>
-        <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontVariant: ["tabular-nums"] }}>{mmss(editDuration(edit))}</Text>
+        <View style={{ flex: 1 }} />
+        <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: "700", fontVariant: ["tabular-nums"] }}>{mmss(editDuration(edit))}</Text>
       </View>
       {note ? (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4, width: dispW || undefined }}>

@@ -14,19 +14,18 @@ import { NationFlag } from "../../draw/NationFlag";
 import { Press } from "../../ui/Press";
 import { FONT, glassStyle } from "../../ui/look";
 import { Seg, youRow, rgba } from "../../world/ui";
+import { luminance, tint } from "@/lib/star/heroFigure";
 
 const AMBER = "#fcd34d";
 const day = (t: number) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
-function lum(hex: string): number {
-  const n = parseInt(hex.replace("#", "").slice(0, 6).padEnd(6, "0"), 16);
-  return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
-}
+/** The colour a nation lights its rows with: IntlKit's nationGlow = glowOf(shirt, trim). A white shirt
+ *  falls back to its trim; a very dark one is lifted 35% toward white (England: navy trim, lit grey-violet). */
 export function nationGlow(nation: string): string {
   try {
     const k = nationKits(nation).home;
-    const base = lum(k.shirt) > 0.85 ? k.trim : k.shirt;
-    return lum(base) < 0.14 ? "#3b82f6" : base;
+    const base = luminance(k.shirt) > 0.85 ? k.trim : k.shirt;
+    return luminance(base) < 0.12 ? tint(base, 0.35) : base;
   } catch { return "#3b82f6"; }
 }
 
@@ -36,7 +35,7 @@ function Card({ title, right, glow, children }: { title: string; right?: ReactNo
   return (
     <View style={glass(glow)}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "rgba(0,0,0,0.3)", borderBottomWidth: 1, borderColor: "rgba(255,255,255,0.1)", paddingHorizontal: 10, paddingVertical: 6 }}>
-        <Text style={{ color: AMBER, fontSize: 10, lineHeight: 14, fontWeight: "900", letterSpacing: 1.2, textTransform: "uppercase" }}>{title}</Text>
+        <Text style={{ color: AMBER, fontSize: 10, lineHeight: 15, fontWeight: "900", letterSpacing: 2, textTransform: "uppercase" }}>{title}</Text>
         {right}
       </View>
       <View style={{ padding: 6 }}>{children}</View>
@@ -50,7 +49,10 @@ function ManagerCard({ value, nation, line }: { value: number; nation: string; l
   const [c1, c2] = v >= START_AT ? ["#f59e0b", "#fde68a"] : v >= SQUAD_AT ? ["#38bdf8", "#a5f3fc"] : ["#94a3b8", "#e2e8f0"];
   const verdict = v >= START_AT ? "Starter" : v >= SQUAD_AT ? "In the squad" : "Not picked";
   return (
-    <View style={{ borderRadius: 16, padding: 12, overflow: "hidden", borderWidth: 1, borderColor: rgba(c1, 0.32), backgroundImage: `linear-gradient(135deg, ${rgba(c1, 0.3)} 0%, rgba(31,41,55,0.92) 45%, rgba(12,17,28,0.96) 100%)` } as ViewStyle}>
+    <View style={{ borderRadius: 16, padding: 12, overflow: "hidden",
+      // IntlKit ManagerCard: the colour glows from the top-left corner over the see-through card glass; an inset rim, no border (108 px tall)
+      backgroundImage: `radial-gradient(120% 140% at 0% 0%, ${rgba(c1, 0.3)} 0%, ${rgba(c1, 0)} 55%), linear-gradient(180deg, rgba(14,30,52,0.6), rgba(14,30,52,0.6))`,
+      boxShadow: `inset 0px 1px 0px rgba(255,255,255,0.10), inset 0px 0px 0px 1px ${rgba(c1, 0.32)}, 0px 10px 24px -12px rgba(0,0,0,0.8)` } as ViewStyle}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         <View style={{ width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: rgba(c1, 0.3), borderWidth: 1, borderColor: rgba(c1, 0.5) }}>
           <NationFlag nation={nation} width={30} />
@@ -64,12 +66,12 @@ function ManagerCard({ value, nation, line }: { value: number; nation: string; l
           <Text style={{ color: c2, fontSize: 10, lineHeight: 13, fontWeight: "900", letterSpacing: 0.3, textTransform: "uppercase", marginTop: 2 }}>{verdict}</Text>
         </View>
       </View>
-      <View style={{ marginTop: 10, height: 16, justifyContent: "center" }}>
+      <View style={{ marginTop: 10, height: 12 }}>
         <View style={{ height: 12, borderRadius: 6, backgroundColor: "rgba(0,0,0,0.5)", borderWidth: 1, borderColor: "rgba(255,255,255,0.18)", overflow: "hidden" }}>
           <View style={{ width: `${Math.max(0, Math.min(100, v))}%`, height: "100%", borderRadius: 6, backgroundImage: `linear-gradient(90deg, ${c1}, ${c2})` } as ViewStyle} />
         </View>
-        <View pointerEvents="none" style={{ position: "absolute", top: 0, left: `${SQUAD_AT}%`, width: 2, height: 16, backgroundColor: "#fff" }} />
-        <View pointerEvents="none" style={{ position: "absolute", top: 0, left: `${START_AT}%`, width: 2, height: 16, backgroundColor: AMBER }} />
+        <View pointerEvents="none" style={{ position: "absolute", top: -2, left: `${SQUAD_AT}%`, width: 2, height: 16, backgroundColor: "#fff" }} />
+        <View pointerEvents="none" style={{ position: "absolute", top: -2, left: `${START_AT}%`, width: 2, height: 16, backgroundColor: AMBER }} />
       </View>
       <View style={{ marginTop: 4, height: 14 }}>
         <Text numberOfLines={1} style={{ position: "absolute", left: `${SQUAD_AT}%`, width: 80, marginLeft: -40, textAlign: "center", color: "rgba(255,255,255,0.85)", fontSize: 9.5, lineHeight: 14, fontWeight: "900", letterSpacing: 0.3 }}>SQUAD {SQUAD_AT}</Text>
@@ -96,7 +98,7 @@ export function NationTable({ group, nation, glow, through = 2 }: { group: Group
   return (
     <View style={glass(glow)}>
       <View style={{ backgroundColor: "rgba(0,0,0,0.3)", borderBottomWidth: 1, borderColor: "rgba(255,255,255,0.1)", paddingHorizontal: 10, paddingVertical: 6 }}>
-        <Text style={{ color: AMBER, fontSize: 10, lineHeight: 14, fontWeight: "900", letterSpacing: 1.2, textTransform: "uppercase" }}>{group.title}</Text>
+        <Text style={{ color: AMBER, fontSize: 10, lineHeight: 15, fontWeight: "900", letterSpacing: 2, textTransform: "uppercase" }}>{group.title}</Text>
       </View>
       <View style={{ backgroundColor: "rgba(0,0,0,0.3)", borderBottomWidth: 1, borderColor: "rgba(255,255,255,0.1)" }}>
         <TCells head cells={["#", "NATION", "P", "W", "D", "GD", "PTS"]} />

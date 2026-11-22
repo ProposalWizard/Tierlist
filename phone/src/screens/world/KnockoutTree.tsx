@@ -28,7 +28,7 @@ const label = (name: string) =>
   name === "Round of 16" ? "Last 16" : name === "Quarter-Final" ? "Quarters" : name === "Semi-Final" ? "Semis" : name;
 
 function CardTitle({ children }: { children: ReactNode }) {
-  return <Text style={{ color: AMBER, fontSize: 10, lineHeight: 14, fontWeight: "900", letterSpacing: 1.2, textTransform: "uppercase" }}>{children}</Text>;
+  return <Text style={{ color: AMBER, fontSize: 10, lineHeight: 15, fontWeight: "900", letterSpacing: 2, textTransform: "uppercase" }}>{children}</Text>;
 }
 
 function Side({ club, score, won }: { club?: string; score?: number; won: boolean }) {
@@ -45,10 +45,13 @@ function Side({ club, score, won }: { club?: string; score?: number; won: boolea
 }
 
 /** One tie as a full-width line: names, score pill, note under. */
-export function TieLine({ a, b, score, winner, note, mine, glow, badges, size = 11, noteColor = "rgba(255,255,255,0.7)" }: {
+export function TieLine({ a, b, score, winner, note, mine, glow, badges, size = 11, noteColor = "rgba(255,255,255,0.7)", detail }: {
   a: string; b: string; score: string; winner?: string; note?: string; mine: boolean; glow: string; badges?: boolean; size?: number; noteColor?: string;
+  /** The tree's tie card (KnockoutTree.tsx `picked`): the side that has not won is white 75%, the note 10 px. */
+  detail?: boolean;
 }) {
-  const col = (c: string) => (winner === c ? "#fff" : winner ? "rgba(255,255,255,0.6)" : "#fff");
+  const col = (c: string) => (winner === c ? "#fff" : detail ? "rgba(255,255,255,0.75)" : winner ? "rgba(255,255,255,0.6)" : "#fff");
+  const noteSize = detail ? 10 : 9.5;
   const wt = (c: string) => (winner === c ? "900" : "700") as "900" | "700";
   return (
     <View style={[{ borderRadius: 8, paddingHorizontal: 6, paddingVertical: 6, backgroundColor: "rgba(255,255,255,0.04)" }, mine && [youRow(glow), { borderWidth: 0 }]]}>
@@ -63,7 +66,8 @@ export function TieLine({ a, b, score, winner, note, mine, glow, badges, size = 
           <Text numberOfLines={1} style={{ flexShrink: 1, color: col(b), fontSize: size, lineHeight: size * 1.5, fontWeight: wt(b) }}>{shortClub(b)}</Text>
         </View>
       </View>
-      {note ? <Text style={{ color: noteColor, fontSize: 9.5, lineHeight: 14, fontWeight: "700", textAlign: "center" }}>{note}</Text> : null}
+      {/* the website's grid: the note is its own row, 6 px under the names (gap-1.5), on a 1.5 line */}
+      {note ? <Text style={{ color: noteColor, fontSize: noteSize, lineHeight: noteSize * 1.5, marginTop: 6, fontWeight: "700", textAlign: "center" }}>{note}</Text> : null}
     </View>
   );
 }
@@ -134,7 +138,7 @@ export function KnockoutTree({ columns, glow, you }: { columns: TreeColumn[]; gl
         <View style={[...card(glow), { padding: 6 }]}>
           <View style={{ paddingHorizontal: 4, paddingBottom: 4 }}><CardTitle>{columns[pick!.c].name}</CardTitle></View>
           <TieLine a={picked.a} b={picked.b} score={picked.sa !== undefined ? `${picked.sa}-${picked.sb}` : "v"} winner={picked.winner} note={picked.note}
-            mine={picked.a === you || picked.b === you} glow={glow} badges size={12} noteColor="#fde68a" />
+            mine={picked.a === you || picked.b === you} glow={glow} badges size={12} noteColor="#fde68a" detail />
         </View>
       ) : null}
     </View>
