@@ -140,7 +140,10 @@ console.log("UK clock (the job runs at the UK hour, winter and summer)");
   const sched = (p: string) => vercel.crons.filter((c: { path: string }) => c.path === p).map((c: { schedule: string }) => c.schedule).sort();
   ok(JSON.stringify(sched("/api/cron/backup")) === JSON.stringify(["0 2 * * *", "0 3 * * *"]), "vercel.json: backup at 02:00 and 03:00 UTC");
   ok(JSON.stringify(sched("/api/cron/limits")) === JSON.stringify(["0 7 * * *", "0 8 * * *"]), "vercel.json: limits at 07:00 and 08:00 UTC");
-  ok(sched("/api/admin/patch-notes/media-sync").length === 1 && vercel.git?.deploymentEnabled?.main === true && vercel.git?.deploymentEnabled?.["**"] === false, "the old cron and the main-only deploy block are kept");
+  // The every-5-minute media sync now runs from Supabase (supabase/migrations/frequent_jobs_cron.sql):
+  // Vercel's free plan refuses any cron that runs more than once a day.
+  ok(sched("/api/admin/patch-notes/media-sync").length === 0 && vercel.git?.deploymentEnabled?.main === true && vercel.git?.deploymentEnabled?.["**"] === false, "media sync is off Vercel's crons, and the main-only deploy block is kept");
+  ok((vercel.crons ?? []).every((c: { schedule: string }) => /^\d+ \d+ \* \* \*$/.test(c.schedule)), "every Vercel cron runs once a day (the free plan allows no more)");
 }
 
 console.log("Both jobs refuse without CRON_SECRET");
