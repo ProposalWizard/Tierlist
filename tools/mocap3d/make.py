@@ -37,6 +37,10 @@ def motion(cmu_dir, trial):
         import video
         _, name, person = trial.split(":")
         _cache[trial] = video.motion(os.path.join(VIDEO_DIR, name + ".npz"), person)
+    if trial.startswith("ual:") and trial not in _cache:
+        # Quaternius Universal Animation Library 1 (CC0), read out of its FBX by read_ual.py (ual.py)
+        import ual
+        _cache[trial] = ual.motion(trial)
     if trial not in _cache:
         subj = trial.split("_")[0]
         sk = Skeleton(f"{cmu_dir}/{subj}.asf")
@@ -102,6 +106,7 @@ def bake_clip(rig, cmu_dir, name, spec):
     m["duration"] = round(total, 4)
     m["loop"] = loop
     src_name = (f"reference video {spec['trial'][6:]} (Higgsfield, read by MediaPipe)" if spec["trial"].startswith("video:")
+                else f"Quaternius UAL1 {spec['trial'].split(':')[1]} (CC0)" if spec["trial"].startswith("ual:")
                 else f"CMU {spec['trial']}")
     m["source"] = src_name + (" (mirrored)" if spec.get("mirror") else "") + (f", {spec['adapted']}" if spec.get("adapted") else "")
     if info.get("speed") is not None and loop and info["speed"] > 0.3:
@@ -144,6 +149,13 @@ def bake_clip(rig, cmu_dir, name, spec):
             c = ctx_at(tt2)
             p = instep(c, s) + np.array([0, 0.12, 0.03])
             m["touches"].append([tt2, s, [round(float(v), 3) for v in p]])
+    if spec["trial"].startswith("ual:"):
+        # the SOURCE's own step width (the library's skeleton, ankles, per metre of leg):
+        # tests/star/gaitWidth.mts holds every body's feet to it
+        sk = src.sk.bones
+        leg = sk["lfemur"].length + sk["ltibia"].length
+        w = (src.P["ltibia"][:, 0] - src.P["rtibia"][:, 0]) / leg
+        m["srcFeet"] = [round(float(w.min()), 4), round(float(w.mean()), 4)]
     if spec.get("end"):
         hp = frames[-1][5][rig.b["hips"]]
         h0 = rig.restP[rig.b["hips"]]

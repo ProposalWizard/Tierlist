@@ -14,6 +14,7 @@ import { divisionOf, leagueNameFor } from "@/lib/star/calendar";
 import { awardWhen } from "@/lib/star/awardText";
 import { ClubCard, StatBar, PressButton, RiseIn, CountUp, rgba, useClubTheme } from "./ui";
 import { SegTabs, CardTitle } from "./screenKit";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 /**
  * Stats · Contract · Status — under the League card on the Stats page.
@@ -150,14 +151,14 @@ export default function DashboardStats({ career, onRenew, view }: Props) {
               ["Club", career.contract.club],
               ["League", leagueNameFor(divisionOf(career))],
               ["Position", career.player.position],
-              ["Wage", `★ ${career.contract.wage} / week`],
-              ["Goal Bonus", `★ ${career.contract.goalBonus}`],
-              ["Assist Bonus", `★ ${career.contract.assistBonus}`],
+              ["Wage", `${MONEY_SIGN}${career.contract.wage} / week`],
+              ["Goal Bonus", `${MONEY_SIGN}${career.contract.goalBonus}`],
+              ["Assist Bonus", `${MONEY_SIGN}${career.contract.assistBonus}`],
               ["Seasons Left", career.contract.seasonsRemaining],
             ].map(([label, val], i) => (
               <div key={String(label)} className={`flex items-center px-3 py-2 ${i % 2 === 0 ? "bg-white/[0.04]" : ""}`}>
                 <div className="flex-1 text-xs font-bold text-white/80">{label}</div>
-                <div className={`text-xs font-black ${String(val).startsWith("★") ? "text-yellow-200" : "text-white"}`}>{val}</div>
+                <div className={`text-xs font-black ${String(val).startsWith(MONEY_SIGN) ? "text-yellow-200" : "text-white"}`}>{val}</div>
               </div>
             ))}
             {/* A contract was a wage, two bonuses and a number of seasons — every
@@ -215,7 +216,7 @@ export default function DashboardStats({ career, onRenew, view }: Props) {
                 shown to the player who was earning it. Sponsors is the screen
                 that actually spends this number (sponsorEligible). */}
             <ClubCard glow="#d946ef" className="col-span-2 flex items-center justify-between px-3 py-2">
-              <CardTitle tone="text-fuchsia-200">★ Fame</CardTitle>
+              <CardTitle tone="text-fuchsia-200">👑 Fame</CardTitle>
               <span className="text-sm font-black text-white">{fameOf(career)} · {fameLevel(fameOf(career)).name}</span>
             </ClubCard>
           </RiseIn>

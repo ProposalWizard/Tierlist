@@ -46,6 +46,13 @@ export interface ScenePicture {
    * never passes a scene.
    */
   ownFrame?: boolean;
+  /**
+   * true: the strike screen ("Where do you strike it?") is a night sky over
+   * dark turf, for a feature played under one light (the kit man's drill,
+   * Harry: the story is at night). Look only — the ball, the tap and the
+   * strike are unchanged. Off by default; the real match never passes a scene.
+   */
+  night?: boolean;
 }
 
 /**

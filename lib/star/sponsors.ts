@@ -5,6 +5,7 @@ import { clubExpectation, type Ambition } from "./expectations";
 import { getTuning } from "./tuningStore";
 import { clubNameSeed } from "./squadData";
 import { WAGE_FLOOR } from "./economy";
+import { MONEY_SIGN } from "./money";
 
 /**
  * SPONSORS WITH SOMETHING TO ASK
@@ -388,7 +389,7 @@ export function progressObjectives(
 
     if (progress >= o.target) {
       earned += o.bonus;
-      completed.push(`${s.category}: ${objectiveLabel(o)} — ★${o.bonus}`);
+      completed.push(`${s.category}: ${objectiveLabel(o)} — ${MONEY_SIGN}${o.bonus}`);
       // The upgrade: this deal's own fee (see sponsorFee) is permanently
       // higher from here on, capped at upgradeMaxLevel so it can't run away
       // over a very long career. `level` starts at 1 (or is absent, on a

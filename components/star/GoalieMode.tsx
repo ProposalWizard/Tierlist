@@ -11,7 +11,7 @@ import { GOAL_W, GOAL_H, NET_DEPTH } from "@/lib/star/pitch";
 import { drawFigureAt, drawKeeperAt, BALL_MIN_R, type FigureLook, type BodyPose } from "@/lib/star/fiveASide/render";
 import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { mulberry32 } from "@/lib/star/season";
 import { casinoCall, playOrLocal, newPlayKey } from "@/lib/star/casinoClient";
 
@@ -575,7 +575,7 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet, 
           <div className="flex-1 grid grid-cols-3 gap-1">
             <div className="bg-gray-700 rounded px-2 py-1.5 flex flex-col items-center justify-center border border-gray-600">
               <span className="font-black text-[9px] text-white/70">BANK</span>
-              <span className="font-black text-yellow-300 text-xs">★{formatMoney(bank)}</span>
+              <span className="font-black text-yellow-300 text-xs">{MONEY_SIGN}{formatMoney(bank)}</span>
             </div>
             <div className="bg-gray-700 rounded px-2 py-1.5 flex flex-col items-center justify-center border border-gray-600">
               <span className="font-black text-[9px] text-white/70">STREAK</span>
@@ -616,7 +616,7 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet, 
                 <span className="font-black text-xs text-white/80">Stake</span>
                 <div className="flex items-center gap-2">
                   <button onClick={() => onChangeBet(-1)} className="text-red-400 font-black text-base px-1">▼</button>
-                  <span className="font-black text-yellow-300 text-sm">★{formatMoney(bet)}</span>
+                  <span className="font-black text-yellow-300 text-sm">{MONEY_SIGN}{formatMoney(bet)}</span>
                   <button onClick={() => onChangeBet(1)} className="text-emerald-400 font-black text-base px-1">▲</button>
                 </div>
               </div>
@@ -639,14 +639,14 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet, 
                 <div className="font-black text-emerald-300 text-sm">
                   {animRef.current?.shot.offTarget ? "OFF TARGET —" : "SAVED! —"} Streak {streak}
                 </div>
-                <div className="font-black text-yellow-300 text-xs">Cash out now: ★{formatMoney(potentialPayout)}</div>
+                <div className="font-black text-yellow-300 text-xs">Cash out now: {MONEY_SIGN}{formatMoney(potentialPayout)}</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <button disabled={busy} onClick={cashOut} className="py-3 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 rounded-xl font-black text-sm">
                   {busy ? "…" : "CASH OUT"}
                 </button>
                 <button disabled={busy} onClick={keepGoing} className="py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 rounded-xl font-black text-sm">
-                  {busy ? "…" : `KEEP GOING ★${formatMoney(nextPayout)}`}
+                  {busy ? "…" : `KEEP GOING ${MONEY_SIGN}${formatMoney(nextPayout)}`}
                 </button>
               </div>
             </div>
@@ -656,7 +656,7 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet, 
             <div className="space-y-2">
               <div className="bg-red-900/60 border border-red-600 rounded-xl px-3 py-2 text-center">
                 <div className="font-black text-red-300 text-sm">CONCEDED — streak ended at {streak}</div>
-                <div className="font-black text-white/70 text-xs">Lost the ★{formatMoney(stakedRef.current)} stake</div>
+                <div className="font-black text-white/70 text-xs">Lost the {MONEY_SIGN}{formatMoney(stakedRef.current)} stake</div>
               </div>
               <button onClick={() => setPhase("stake")} className="w-full py-4 bg-gray-700 hover:bg-gray-600 rounded-xl font-black text-lg">
                 BACK TO STAKE
@@ -668,7 +668,7 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet, 
             <div className="space-y-2">
               <div className="bg-yellow-900/60 border border-yellow-600 rounded-xl px-3 py-2 text-center">
                 <div className="font-black text-yellow-300 text-sm">Cashed out at streak {streak}</div>
-                <div className="font-black text-white text-xs">★{formatMoney(lastPayout)}</div>
+                <div className="font-black text-white text-xs">{MONEY_SIGN}{formatMoney(lastPayout)}</div>
               </div>
               <button onClick={() => setPhase("stake")} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-black text-lg">
                 PLAY AGAIN

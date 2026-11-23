@@ -1,0 +1,294 @@
+{
+ "id": "arc-tickets-for-the-street",
+ "title": "Fourteen tickets",
+ "owner": "mum",
+ "summary": "Your mum wants fourteen tickets for the street for Saturday. That's a lot of tickets. What you do decides who's in the stand, and a season later the street makes a banner.",
+ "size": "small",
+ "about": {
+  "who": [
+   "mum"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-banner",
+   "title": "The banner",
+   "text": "Fourteen people from your mum's street came to watch you, and now there's a bedsheet banner with your name on it at every home game."
+  },
+  {
+   "id": "just-mum",
+   "title": "Just Mum",
+   "text": "You got two tickets, not fourteen. Mum still comes. The street watches on the telly."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "tix-1-call",
+   "title": "Fourteen tickets",
+   "n": 1,
+   "event": {
+    "id": "arc-tix-1-call",
+    "title": "Fourteen tickets",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Mum, on the phone, with a list."
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "mum",
+       "say": [
+        "\"So that's me, your dad, your auntie, the couple at number four, the lady at number nine and her lad, the man from the corner shop… fourteen. Is fourteen all right?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Fourteen. I'll sort it.\"",
+         "tone": "kind",
+         "end": "fourteen",
+         "cost": {
+          "moneyWeeks": 1
+         }
+        },
+        {
+         "id": "haggle",
+         "label": "\"Mum, I get two free.\"",
+         "tone": "honest",
+         "goto": "m2"
+        },
+        {
+         "id": "no",
+         "label": "\"Mum. No.\"",
+         "tone": "cold",
+         "end": "two"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "m2"
+        }
+       ]
+      },
+      "m2": {
+       "who": "mum",
+       "say": [
+        "\"Two. Right. Well, I'll tell the corner shop man, he'll understand. He's already bought a scarf.\""
+       ],
+       "replies": [
+        {
+         "id": "fine",
+         "label": "\"Fine. Fourteen. I'll pay for them.\"",
+         "tone": "kind",
+         "end": "fourteen",
+         "cost": {
+          "moneyWeeks": 1
+         }
+        },
+        {
+         "id": "two",
+         "label": "\"You and Dad, then.\"",
+         "tone": "calm",
+         "end": "two"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "fourteen": [
+       {
+        "text": "They sit together in the corner of the stand, all in new scarves. When you score, the man from the corner shop falls over the seat in front.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "got-tickets-for-the-whole-street",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "street"
+         }
+        }
+       }
+      ],
+      "two": [
+       {
+        "text": "Mum and Dad come. Mum tells you the corner shop man watched it in the pub and cried.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "only-got-two-tickets",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "two"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Mum needs tickets"
+  },
+  {
+   "id": "tix-2-banner",
+   "title": "A bedsheet",
+   "after": {
+    "beat": "tix-1-call",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-tix-2-banner",
+    "title": "A bedsheet",
+    "category": "family",
+    "place": "stadium:pitch",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "walkout",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "{if arc.path=='street'}As you walk out, there's a bedsheet hanging off the front of the stand in the corner. Your name is painted on it in gloss, and fourteen people are holding it up.{/if}",
+     "{if arc.path=='two'}Mum's in her usual seat. Next to her there's a gap, and on the gap there's a carrier bag with a home-made cake in it, for you.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "wave",
+      "label": "Wave at them.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='street'",
+        "text": "The corner of the stand goes mad. The bedsheet stays up all season, getting greyer.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-banner"
+        }
+       },
+       {
+        "text": "She waves back with the carrier bag.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "just-mum"
+        }
+       }
+      ]
+     },
+     {
+      "id": "score",
+      "label": "Get your head down and play.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='street'",
+        "text": "You score in the second half, and run to the bedsheet. Mum's on the local news that night.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "the-banner"
+        }
+       },
+       {
+        "text": "You eat the cake on the bus home.",
+        "arc": {
+         "end": "just-mum"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, something in the stand"
+  }
+ ]
+}

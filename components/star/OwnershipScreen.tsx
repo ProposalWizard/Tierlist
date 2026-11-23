@@ -5,7 +5,7 @@ import type { CareerState } from "@/lib/star/types";
 import { MAJORITY_THRESHOLD, clubValuation } from "@/lib/star/investments";
 import { GOVERNING_BODIES, influenceIn, canProposeRuleChange } from "@/lib/star/governingBodies";
 import { isBodyPresident } from "@/lib/star/leadership";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import { CountUp, Glow, PressButton, Shine, StatBar, clubTheme } from "./ui";
 import { Screen, ScreenHeader, SectionLabel, useLater } from "./ui/Screen";
@@ -42,9 +42,11 @@ function RepBar({ label, value }: { label: string; value: number }) {
 }
 
 export default function OwnershipScreen({
-  career, onBack, onReputation, onRuleBook, onOpenMarket, onOpenBoardroom,
+  career, onBack, onReputation, onRuleBook, onOpenMarket, onOpenBoardroom, hud,
 }: {
   career: CareerState;
+  /** The top bars: Money + Reputation (RUL-UI-011). */
+  hud?: React.ReactNode;
   onBack: () => void;
   onReputation: () => void;
   onRuleBook: () => void;
@@ -60,6 +62,7 @@ export default function OwnershipScreen({
 
   return (
     <Screen glow={theme.glow}>
+      {hud && <div className="sticky top-0 z-30 -mx-3 -mt-3 mb-2">{hud}</div>}
       <div className="w-full">
         <ScreenHeader title="Ownership" kicker="Your empire" onBack={onBack} />
 
@@ -146,7 +149,7 @@ export default function OwnershipScreen({
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="text-[12px] font-black text-yellow-300 tabular-nums">★<CountUp value={countIn ? holdingValue : 0} ms={800} format={(n) => money(Math.round(n))} /></div>
+                    <div className="text-[12px] font-black text-yellow-300 tabular-nums">{MONEY_SIGN}<CountUp value={countIn ? holdingValue : 0} ms={800} format={(n) => money(Math.round(n))} /></div>
                     <div className="text-[9px] font-bold text-white/80">{majority ? "Boardroom →" : "Portfolio →"}</div>
                   </div>
                 </button>

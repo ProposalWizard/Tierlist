@@ -21,7 +21,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { HomeController, HomeData, HomeSpot } from "@/lib/star/home3d/scene";
-import { homeTierOf, homeNameOf, roomPreset, cabinetSize, roomsFor, type HomeTier, type RoomId } from "@/lib/star/home3d/homes";
+import type { InteractCard } from "@/lib/star/world3d/interact";
+import { homeTierOf, homeNameOf, roomPreset, cabinetSize, roomsFor, livingOn, type HomeTier, type RoomId } from "@/lib/star/home3d/homes";
 import { homeStuffOf, carsIn, ROOM_LABEL, BIKE_LOD } from "@/lib/star/home3d/rooms";
 import { badgeSvg } from "@/lib/star/clubBadge";
 import { houseLook, type HouseLook } from "@/lib/star/home3d/look";
@@ -37,6 +38,7 @@ import { people3dLook, fallBackToOldPeople } from "@/lib/star/look3d";
 import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import { Stick, pill, round } from "./Shop3D";
+import { sleepNight } from "@/lib/star/home3d/sleep";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -60,6 +62,18 @@ export interface Home3DProps {
   where?: "career" | "test";
   /** Test page: fill its box on the admin frame instead of the whole screen. */
   embedded?: boolean;
+  /** The 3D phone test page (/star-phone3d-dev): open in his eyes (HomeController.setPov eases out). Absent: as before. */
+  pov?: boolean;
+  /** False: the 3D only, no buttons, stick or cards, and taps go through (the phone is up). Default true. */
+  chrome?: boolean;
+  /** The house is ready: its controller (the 3D phone test page drives the camera with it). */
+  onReady?: (c: HomeController) => void;
+  /** Test page only: the walking camera to try (lib/star/home3d/scene.ts HOUSE_CAMS). Absent or "D": the game's camera (D, with its zoom). */
+  houseCam?: "A" | "B" | "C" | "D";
+  /** Test page: force the living house on or off (things you use, team-mates round; homes.ts LIVING_TIERS). Absent: the game's own choice per tier. */
+  living?: boolean;
+  /** A night in your bed (lib/star/home3d/sleep.ts): the career does `sleepNight` (the week's Rest, once per gap between matches). Absent: the night passes in the house only. */
+  onSleep?: () => void;
 }
 
 type Tab = "casual" | "kit" | "boots";
@@ -68,9 +82,9 @@ type Tab = "casual" | "kit" | "boots";
  * What the 3D house is built from, off a career (the screen below, and the
  * 3D Scene Editor's house on /star-scene-editor-dev).
  */
-export function homeSceneData(career: CareerState, tier: HomeTier, house: HouseLook | undefined, choice: OutfitChoice): HomeData {
+export function homeSceneData(career: CareerState, tier: HomeTier, house: HouseLook | undefined, choice: OutfitChoice, living?: boolean): HomeData {
   const room = roomPreset(tier);
-  const rooms = roomsFor(tier, house ?? houseLook());
+  const rooms = roomsFor(tier, house ?? houseLook(), livingOn(tier, living));
   const stuff = homeStuffOf(career);
   return {
     tier,
@@ -92,7 +106,20 @@ export function homeSceneData(career: CareerState, tier: HomeTier, house: HouseL
   };
 }
 
-export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false }: Home3DProps) {
+/** Who drops round (the first outfield team-mates of your squad) and the living world's chat with them. */
+function livingFor(career: CareerState) {
+  const mates = (career.squad ?? []).filter((p) => p.position !== "GK").slice(0, 4).map((p, i) => ({ id: p.id, name: p.shortName || p.name, number: [8, 14, 21, 6][i] }));
+  return { mates, club: career.player.club };
+}
+
+export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep }: Home3DProps) {
+  // the night's words come from the career as it is when you fall asleep (sleep.ts is pure: the page's setCareer gets the same result)
+  const careerRef = useRef(career);
+  careerRef.current = career;
+  const sleepRef = useRef(onSleep);
+  sleepRef.current = onSleep;
+  const readyRef = useRef(onReady);
+  readyRef.current = onReady;
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<HomeController | null>(null);
   const doorRef = useRef(onDoor);
@@ -111,12 +138,14 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const room = roomPreset(tier);
   const kits = kitsOf(career.player.club);
   const slots = useMemo(() => cabinetSlots(career, cabinetSize(tier)), [career, tier]);
-  const rooms = useMemo(() => roomsFor(tier, house ?? houseLook()), [tier, house]);
+  const alive = livingOn(tier, living) && (house ?? houseLook()) === "new";
+  const rooms = useMemo(() => roomsFor(tier, house ?? houseLook(), alive), [tier, house, alive]);
+  const [lifeCard, setLifeCard] = useState<InteractCard | null>(null);
   const cars = useMemo(() => carsOnDrive(career, Math.max(room.cars, rooms.includes("garage") ? carsIn("garage", tier) : 0)), [career, room.cars, rooms, tier]);
   const boots = useMemo(() => bootChoices(career), [career]);
   const homeName = tierProp ? room.label : homeNameOf(career.ownedItems);
 
-  const data: HomeData = useMemo(() => homeSceneData(career, tier, house, choice),
+  const data: HomeData = useMemo(() => homeSceneData(career, tier, house, choice, alive),
     // built once per visit
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tier, rooms]);
@@ -144,6 +173,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         const start = () => startHome(el, {
           onNear: (s) => setNear(s),
           onRoom: (id) => setRoomNow(id),
+          onCard: (c) => setLifeCard(c),
           onFps: (f) => { (window as unknown as { __home3dFps?: number }).__home3dFps = f; },
           ...(onDoor ? { onDoor: () => { if (dead) return; setLeaving(true); doorRef.current?.(); } } : {}),
           onContextLost: () => {
@@ -159,6 +189,9 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           lookH,
           fixedStep: q.get("film") === "1" ? 1 / 30 : undefined,
           edit: approvedRef.current,
+          ...(pov ? { pov: true } : {}),
+          ...(houseCam && houseCam !== "D" ? { houseCam } : {}),
+          ...(alive ? { living: { ...livingFor(career), onSleep: () => { const r = sleepNight(careerRef.current); if (r.rested) sleepRef.current?.(); return sleepRef.current ? r.text : "A good night."; } } } : {}),
         });
         let c: HomeController;
         try {
@@ -174,6 +207,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         ctrlRef.current = c;
         (window as unknown as { __home3d?: HomeController }).__home3d = c;
         setStatus("ready");
+        readyRef.current?.(c);
       } catch (e) {
         console.error("3D home failed to load", e);
         if (!dead) { setErrText(e instanceof Error ? `${e.name}: ${e.message}` : String(e)); setStatus("error"); }
@@ -218,11 +252,12 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
     <div style={{ position: embedded ? "absolute" : "fixed", inset: 0, zIndex: embedded ? 1 : 80, background: "#1a1612", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-home3d>
       <div
         ref={holder}
-        style={{ position: "absolute", inset: 0 }}
+        style={{ position: "absolute", inset: 0, ...(chrome ? null : { pointerEvents: "none" as const }) }}
         onPointerDown={(e) => { drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0 }; (e.target as Element).setPointerCapture?.(e.pointerId); }}
         onPointerMove={(e) => {
           const d = drag.current;
           if (!d || d.id !== e.pointerId) return;
+          if (holder.current?.dataset.pinching) { d.moved += 99; d.x = e.clientX; d.y = e.clientY; return; } // two fingers: the zoom (three3d/followCam.ts), not a look-round
           d.moved += Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y);
           ctrlRef.current?.orbit(e.clientX - d.x, e.clientY - d.y);
           d.x = e.clientX; d.y = e.clientY;
@@ -231,8 +266,26 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         onPointerCancel={() => { drag.current = null; }}
       />
 
+      {/* a living house: the card of a thing or a team-mate (lib/star/world3d/interact.ts) */}
+      {chrome && lifeCard && (
+        <div data-home3d-card style={{ position: "absolute", left: 12, right: 12, bottom: "max(16px, env(safe-area-inset-bottom))", maxWidth: 460, margin: "0 auto", padding: "12px 14px", borderRadius: 14, background: "rgba(8,10,16,.9)", color: "#f8fafc", borderTop: `3px solid ${GOLD}`, boxShadow: "0 10px 30px rgba(0,0,0,.4)", zIndex: 5 }}>
+          {lifeCard.sub && <div style={{ fontSize: 11, fontWeight: 900, color: GOLD, textTransform: "uppercase", letterSpacing: 0.5 }}>{lifeCard.sub}</div>}
+          <div style={{ fontSize: 18, fontWeight: 900 }}>{lifeCard.title}</div>
+          {lifeCard.lines.map((l, i) => <div key={i} style={{ fontSize: 14, lineHeight: 1.35, marginTop: 4, color: i ? "#cbd5e1" : "#f8fafc" }}>{l}</div>)}
+          {lifeCard.change && <div style={{ fontSize: 12, fontWeight: 800, color: "#86efac", marginTop: 6 }}>{lifeCard.change}</div>}
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            {lifeCard.actions.map((a) => (
+              <button key={a.id} onClick={() => ctrlRef.current?.act?.(a.id)} data-act={a.id}
+                style={{ flex: a.primary ? 2 : 1, height: 40, borderRadius: 10, border: a.primary ? "none" : "1px solid rgba(255,255,255,.25)", background: a.primary ? GOLD : "transparent", color: a.primary ? "#111" : "#f8fafc", fontWeight: 900, fontSize: 14, cursor: "pointer" }}>
+                {a.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* top bar */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", gap: 8, padding: "max(12px, env(safe-area-inset-top)) 12px 0", pointerEvents: "none" }}>
+      {chrome && <div style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", gap: 8, padding: "max(12px, env(safe-area-inset-top)) 12px 0", pointerEvents: "none" }}>
         <button onClick={onBack} aria-label={`Back to ${backLabel}`} style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 4, paddingLeft: 10 }} data-home3d-back>
           <span style={{ fontSize: 20, lineHeight: 1, marginTop: -2 }}>&#8249;</span>{backLabel}
         </button>
@@ -243,7 +296,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         <div style={{ ...pill, gap: 6 }} aria-label="Trophies">
           <span aria-hidden style={{ fontSize: 15 }}>🏆</span><b style={{ color: GOLD }}>{slots.filter((s) => s.won).reduce((n, s) => n + s.count, 0)}</b>
         </div>
-      </div>
+      </div>}
 
       {status !== "ready" && (
         <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: 24, textAlign: "center", background: "#1a1612" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }}>
@@ -263,13 +316,13 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         </div>
       )}
 
-      {status === "ready" && !open && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
-      {status === "ready" && !open && (
+      {status === "ready" && chrome && !open && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
+      {status === "ready" && chrome && !open && (
         <div style={{ position: "absolute", bottom: 40, right: 16, maxWidth: 180, textAlign: "right", fontSize: 12.5, fontWeight: 800, lineHeight: 1.4, pointerEvents: "none", textShadow: "0 1px 6px rgba(0,0,0,.8)" }}>
           {ROOM_HINT[roomNow ?? "main"] ?? ""}
         </div>
       )}
-      {status === "ready" && rooms.length > 1 && roomNow && (
+      {status === "ready" && chrome && rooms.length > 1 && roomNow && (
         <div style={{ position: "absolute", top: "calc(max(12px, env(safe-area-inset-top)) + 48px)", left: 0, right: 0, display: "grid", justifyItems: "center", gap: 6, pointerEvents: "none" }} data-home3d-room={roomNow}>
           <div style={{ ...pill, fontWeight: 900, fontSize: 13, height: 30 }}>{ROOM_LABEL[roomNow]}</div>
           <div style={{ display: "flex", gap: 2, pointerEvents: "auto" }} aria-label="Rooms">
@@ -283,7 +336,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         </div>
       )}
 
-      {open && (
+      {open && chrome && (
         <div style={card} data-home3d-card={open}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase", color: MUTED }}>

@@ -1,0 +1,310 @@
+{
+ "id": "arc-the-tackle",
+ "title": "Late",
+ "owner": "rival",
+ "summary": "You go in late on their centre half and he comes off on a stretcher. It wasn't meant. What you do in the days after decides whether he's an enemy for life. A season on, he's fit, and you play them again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "rival player"
+  ],
+  "tone": [
+   "tense",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "rival",
+   "pick": "rival"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-visit",
+   "title": "You visited",
+   "text": "You hurt a man by accident and went to see him. You've had a drink with him every season since."
+  },
+  {
+   "id": "the-grudge",
+   "title": "The grudge",
+   "text": "He came back from the injury with your name in his head."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "tck-1-tackle",
+   "title": "Late",
+   "n": 1,
+   "event": {
+    "id": "arc-tck-1-tackle",
+    "title": "Late",
+    "category": "rivals",
+    "place": "stadium:pitch",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "You went in late in the fifty-fifth minute. {rival.name} went off on a stretcher with an oxygen mask, and you got a yellow. It's his knee.",
+     "{if mem(rival,'squared-up-in-the-tunnel')}He's the one from the tunnel. Everyone will say you meant it.{/if}"
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "rival",
+       "say": [
+        "After the game, your phone has a message from a number you don't know. \"This is his wife. He wants you to know he doesn't think you meant it. He's in for surgery on Monday.\""
+       ],
+       "replies": [
+        {
+         "id": "visit",
+         "label": "\"Can I come and see him?\"",
+         "tone": "kind",
+         "end": "visit"
+        },
+        {
+         "id": "sorry",
+         "label": "\"Tell him I'm sorry. I'm so sorry.\"",
+         "tone": "honest",
+         "end": "sorry"
+        },
+        {
+         "id": "nothing",
+         "label": "Don't reply.",
+         "tone": "cold",
+         "end": "nothing"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "nothing"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "visit": [
+       {
+        "text": "You sit by his bed on Monday night with a bag of grapes. He's on morphine and he tells you about his allotment for an hour.",
+        "effects": {
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 14,
+          "respect": 6,
+          "grudge": -10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "came-to-see-me-in-hospital",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "visited"
+         }
+        }
+       }
+      ],
+      "sorry": [
+       {
+        "text": "She sends back a thumbs up.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4,
+          "respect": 2,
+          "grudge": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "said-sorry-for-the-tackle",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "sorry"
+         }
+        }
+       }
+      ],
+      "nothing": [
+       {
+        "text": "A photo of you laughing in the tunnel after the game turns up on his club's fans' forum. You were laughing at something else.",
+        "effects": {
+         "fans": -2,
+         "reputation": -2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": -6,
+          "grudge": 14
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "never-said-sorry-for-the-tackle",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "nothing"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     }
+    ]
+   },
+   "hint": "A tackle goes wrong"
+  },
+  {
+   "id": "tck-2-back",
+   "title": "He's back",
+   "after": {
+    "beat": "tck-1-tackle",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-tck-2-back",
+    "title": "He's back",
+    "category": "rivals",
+    "place": "stadium:tunnel",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on. {rival.name} is in the tunnel again. There's a long scar down the side of his knee and he's in the starting eleven."
+    ],
+    "choices": [
+     {
+      "id": "knee",
+      "label": "\"How's the knee?\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "!arc.path=='nothing'",
+        "text": "\"Better than my allotment.\" He shakes your hand in front of everyone.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 6,
+          "respect": 4,
+          "grudge": -4
+         }
+        ],
+        "arc": {
+         "end": "the-visit"
+        }
+       },
+       {
+        "text": "He looks at you for a long time. \"Ask me at full time.\" He kicks you at the first corner.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": -2,
+          "grudge": 6
+         }
+        ],
+        "arc": {
+         "end": "the-grudge"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ignore",
+      "label": "Look straight ahead.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='visited'",
+        "text": "He taps you on the back as you walk out. You don't know what it means until the bar after, when he buys you a drink.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-visit"
+        }
+       },
+       {
+        "text": "He goes through you in the first minute. Yellow card. He doesn't mind.",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 6
+         }
+        ],
+        "arc": {
+         "end": "the-grudge"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     }
+    ]
+   },
+   "hint": "A season on, you play them again"
+  }
+ ]
+}

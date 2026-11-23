@@ -30,7 +30,7 @@ check(/trial/i.test(signingLines({ seasons: 2 })[0].text), "the first contract s
 // The contract: only rows with a value, in the printed order.
 const rows = contractRows({ seasons: 2, wage: 1250, number: 39, position: "ST", season: null });
 check(rows.map((r) => r[0]).join(",") === "Length,Wage,Shirt,Position", `rows in order, empty "From" left out (${rows.map((r) => r[0])})`);
-check(rows[1][1] === "★1,250 / wk", `wage printed with the star (${rows[1][1]})`);
+check(rows[1][1] === "£1,250 / wk", `wage printed with the money sign (${rows[1][1]})`);
 check(contractRows({}).length === 0, "no terms, no rows");
 
 // Accessories: worn ones only, celebrations never, an id in the wrong slot ignored.

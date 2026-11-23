@@ -124,7 +124,10 @@ export function shotPose(spec: ShotSpec, A: Anchor, B: Anchor | null, o: { aspec
     const back = v3.norm([B.pos[0] - A.pos[0], 0, B.pos[2] - A.pos[2]]);
     const bLeft: Vec3 = [-left[0], 0, -left[2]]; // B faces −fwd: his left is our right
     look = v3.add(aimPoint(A, P.aim), [0, -0.02, 0]);
-    pos = v3.add(B.head, v3.add(v3.scale(back, 0.62), v3.add(v3.scale(bLeft, -0.34 * side), [0, 0.06 + (spec.rise ?? 0), 0])));
+    // a tall phone (20 Nov 2026): further out to the side and a little higher, so the near man is a
+    // shoulder and an ear at the frame's edge, not a blurred head across a third of the picture
+    const tall = PHONE_FRAMING_ON.on && o.aspect < 0.8;
+    pos = v3.add(B.head, v3.add(v3.scale(back, tall ? 0.5 : 0.62), v3.add(v3.scale(bLeft, (tall ? -0.5 : -0.34) * side), [0, (tall ? 0.12 : 0.06) + (spec.rise ?? 0), 0])));
     fov = lensToFov(lens, o.aspect);
   } else if (spec.preset === "pov" && B) {
     pos = v3.add(B.head, [0, -0.02, 0]);

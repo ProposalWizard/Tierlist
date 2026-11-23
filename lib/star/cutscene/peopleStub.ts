@@ -12,6 +12,7 @@
  * face moves (style3d/toon/face.ts): blinks, eyes that look where he looks and
  * wander a little, the expression of the beat, lips that move as he speaks.
  */
+import { dressCloth, type ClothKind } from "../style3d/toon/clothes";
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { ActorSpec, BodyPart, CutsceneActor, CutscenePeople, CutscenePeopleInit, Expression, HandPose, ReachLag, Vec3 } from "./types";
@@ -26,6 +27,8 @@ import { solveArm, handWorldQuat, setBoneWorldQuat, rotateBoneWorld, type HandAx
 import { basisTurn } from "./hold";
 import { newNumberCanvas, drawShirtNumber } from "../signing3dTextures";
 import { addToonFace, toonFaceFor, type ToonFaceRig } from "../style3d/toon/face";
+import { applyToonFaceId } from "../style3d/toon/faceIdApply";
+import { wearToonHair, type ToonHairOn } from "../style3d/toon/hair";
 
 type Three = typeof import("three");
 
@@ -80,24 +83,72 @@ export function createStubPeople(init: CutscenePeopleInit): CutscenePeople {
       const [a, fb, cs] = await anims();
       const body = (spec.look.body ?? "player") as PersonModel;
       const out = spec.look.outfit ?? (body === "manager" ? "suit" : "kit");
+      // a people preset (casting.ts castAll: everyone but you): his own head, build, clothes, drawn face and modelled hair
+      const L = spec.look.people ?? null;
       // only this person's head (Style A; lag pass 4): the files are cached, so the cast shares them
-      const model = await loadPeople3d(loader, body, init.body, toonHeadsFor([{ who: spec.id, you: spec.role === "you", suit: out === "suit" }]));
+      const model = await loadPeople3d(loader, L ? "player" : body, init.body, L ? [L.head] : toonHeadsFor([{ who: spec.id, you: (spec.role === "you" || spec.id === "you"), suit: out === "suit" }]));
+      const preset = !!L && !!(model as { toonBodies?: unknown }).toonBodies;
       const p = makePerson3d(T, init.SkeletonUtils, model, a, {
         outline: spec.outline, castShadow: spec.castShadow, outlineNear: 2.5,
-        who: spec.id, you: spec.role === "you", suit: out === "suit",
+        who: spec.id, you: (spec.role === "you" || spec.id === "you"), suit: out === "suit",
+        ...(preset ? { toonHead: L!.head, toonBody: L!.build } : {}),
       });
       if (fb) addClips(T, p, fb);
       if (cs) addClips(T, p, cs);
       for (const act of Object.values(p.actions)) { act.enabled = true; act.play(); act.setEffectiveWeight(0); }
-      dress(T, p, spec);
+      let hair: ToonHairOn | null = null;
+      // real clothes (style3d/toon/clothes): cut from the body, by role; a body it cannot dress keeps the painted ones
+      const kind = clothKindFor(spec, out);
+      if (preset && p.toonHead === L!.head) {
+        dressPreset(T, p, spec, L!);
+        if (kind) dressCloth(T, p, kind, spec.id);
+        applyToonFaceId(T, p, L!.faceId, { detail: spec.look.detail ?? 1 });
+        if (L!.hairMesh) hair = await wearToonHair(T, loader, p, L!.hairMesh, { outline: spec.outline ? 0.0045 : 0, castShadow: spec.castShadow }).catch(() => null);
+      } else { dress(T, p, spec); if (kind) dressCloth(T, p, kind, spec.id); }
       const actor = new StubActor(T, spec.id, p);
       // the face that moves (a Style A head with measured spots; anything else stays as painted)
       actor.face = addToonFace(T, p);
+      actor.hair = hair;
       made.push(actor);
       return actor;
     },
     dispose() { for (const a of made) a.dispose(); made.length = 0; },
   };
+}
+
+/**
+ * Which real clothes a cast member wears (Harry, 20 Nov 2026: "why would someone in the crowd be wearing … shorts"):
+ * suits for the manager, chairman, agent and The Icon; shirt, trousers and a press pass for the press; the club
+ * tracksuit for the player at the press desk and the staff; the match kit on the pitch; fans and family in
+ * the wardrobe (replica shirt and jeans, a hoodie, a polo).
+ */
+function clothKindFor(spec: ActorSpec, out: string): ClothKind | null {
+  const r = spec.role as string;
+  if (r === "manager" || r === "chairman" || r === "agent" || r === "mentor") return "suit";
+  if (r === "journalist" || r === "presenter") return "press";
+  // fans and family (round 3): off the pitch, never shorts and boots. A replica shirt and jeans for most, a hoodie
+  // and joggers for some; family in a polo or a hoodie. Picked from the id, so the same person dresses the same.
+  if (r === "fan" || r === "family") {
+    let h = 0; for (const ch of spec.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    if (r === "family") return h % 3 === 0 ? "fan" : h % 3 === 1 ? "polo" : "hoodie";
+    return h % 3 === 2 ? "hoodie" : "fan";
+  }
+  if (out === "tracksuit") return "tracksuit";
+  if (out === "kit" || out === "keeper") return "kit";
+  return null;
+}
+
+/** A people preset's clothes (presets.ts `dress`), plus the scene's kit and shirt number. */
+function dressPreset(T: Three, p: Person3D, spec: ActorSpec, L: NonNullable<ActorSpec["look"]["people"]>) {
+  const look = spec.look;
+  let number: THREE.Texture | null = null;
+  if (L.kit && look.number != null) {
+    const c = newNumberCanvas(); drawShirtNumber(c, look.number);
+    number = new T.CanvasTexture(c); number.colorSpace = T.SRGBColorSpace;
+  }
+  const acc = [...L.dress.accessories, ...(look.accessories ?? [])];
+  if (spec.role === "keeper") acc.push({ slot: "hands", color: "#f5f5f5", color2: "#16a34a" } as never);
+  dressPerson3d(T, p, { ...L.dress, kit: L.kit ? { ...L.kit, ...(look.kit ?? {}) } : undefined, number, accessories: acc } as never);
 }
 
 function dress(T: Three, p: Person3D, spec: ActorSpec) {
@@ -122,7 +173,10 @@ function dress(T: Three, p: Person3D, spec: ActorSpec) {
     const c = newNumberCanvas(); drawShirtNumber(c, L.number);
     number = new T.CanvasTexture(c); number.colorSpace = T.SRGBColorSpace;
   }
-  dressPerson3d(T, p, { skin: L.skin, hair: L.hair, grey: L.grey, kit, number, accessories: acc, face: (L.face as never) ?? null });
+  // a tracksuit on a Style A kit head is the whole set, as the people presets wear it: long sleeves AND trousers
+  // (it was sleeves painted over a kit, so he sat at the press desk in a top and shorts, bare knees showing)
+  const suit = out === "tracksuit" && p.toonHead && kit ? { coat: kit.shirt, trousers: kit.shirt, shirt: kit.shirt, tie: kit.shirt, shoes: "#141416" } : undefined;
+  dressPerson3d(T, p, { skin: L.skin, hair: L.hair, grey: L.grey, kit, number, accessories: suit ? acc.filter((a) => a.slot !== "arms" && a.slot !== "neck") : acc, face: (L.face as never) ?? null, ...(suit ? { suit } : {}) } as never);
 }
 
 /** Lighten (+) or darken (−) a hex colour. */
@@ -143,6 +197,8 @@ class StubActor implements CutsceneActor {
   private exprTilt = 0;
   /** The moving face (null: a head with no measured face). */
   face: ToonFaceRig | null = null;
+  /** A modelled hairstyle worn on top (a people preset's): kept at rest, the director poses from t alone. */
+  hair: ToonHairOn | null = null;
   private exprW: Record<string, number> = {};
   private blink = 0;
   private talk = 0;
@@ -453,5 +509,5 @@ class StubActor implements CutsceneActor {
     this.root.updateMatrixWorld(true);
   }
 
-  dispose() { this.face?.dispose(); this.root.parent?.remove(this.root); }
+  dispose() { this.face?.dispose(); this.hair?.dispose(); this.root.parent?.remove(this.root); }
 }

@@ -1,0 +1,365 @@
+{
+ "id": "arc-keep-ups",
+ "title": "Bet you can't do fifty",
+ "owner": "kidfan",
+ "summary": "At the club's open training day, a girl with a ball under her arm bets you can't do fifty keep-ups. She can do sixty. A season on, she's back.",
+ "size": "small",
+ "about": {
+  "who": [
+   "young fan"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "needsActivity": "two-touch",
+ "cast": [
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "keepy-rivals",
+   "title": "Keepy rivals",
+   "text": "A kid beat you at keep-ups in front of a crowd. Every open day since, she's beaten you again."
+  },
+  {
+   "id": "you-won-once",
+   "title": "You won once",
+   "text": "You beat a ten-year-old at keep-ups and you never let her forget it."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "kup-1-bet",
+   "title": "Open training day",
+   "n": 1,
+   "event": {
+    "id": "arc-kup-1-bet",
+    "title": "Open training day",
+    "category": "fans",
+    "place": "compound:pitch-1",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "fans>=0"
+     ]
+    },
+    "setup": [
+     "Open training day. There are four hundred kids on the side of the pitch. One of them, {kidfan.name}, has a ball under her arm and is staring at you.",
+     "{if mem(kidfan,'gave-her-the-birthday-shirt')}She's wearing the shirt you gave her on her birthday. It's a bit smaller on her now.{/if}"
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "kidfan",
+       "say": [
+        "\"Bet you can't do fifty keep-ups. I can do sixty-two. Mum filmed it.\""
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "\"You're on.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "show",
+         "label": "\"Show me sixty-two first.\"",
+         "tone": "kind",
+         "goto": "play"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm not allowed. Insurance.\"",
+         "tone": "lie",
+         "end": "ducked"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "ducked"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "two-touch",
+        "name": "Keep-ups",
+        "intro": "Keep it up as long as you can, then she goes. Four hundred kids are counting.",
+        "dials": {
+         "target": 50,
+         "opponent": {
+          "slot": "kidfan"
+         }
+        },
+        "score": "keep-ups, against hers",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -2
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "k-drop"
+        ],
+        [
+         "activity.won",
+         "k-won"
+        ],
+        [
+         "",
+         "k-lost"
+        ]
+       ]
+      },
+      "k-won": {
+       "who": "kidfan",
+       "say": [
+        "She folds her arms. \"I want a rematch next year. I'll be older.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Next year.\"",
+         "tone": "kind",
+         "end": "won"
+        }
+       ]
+      },
+      "k-lost": {
+       "who": "kidfan",
+       "say": [
+        "Four hundred kids chant her name. She does a little bow."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Bow back.",
+         "tone": "humble",
+         "end": "lost"
+        }
+       ]
+      },
+      "k-drop": {
+       "who": "kidfan",
+       "say": [
+        "You drop it on six. Four hundred kids go \"Ohhhh.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"That was practice.\"",
+         "tone": "confident",
+         "end": "lost"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "won": [
+       {
+        "text": "You do seventy-one. She does sixty-eight, and blames the wind.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "beat-me-at-keep-ups",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "won"
+         }
+        }
+       }
+      ],
+      "lost": [
+       {
+        "text": "Her mum's video gets more views than the club's own channel has ever had.",
+        "effects": {
+         "fans": 3,
+         "fame": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "lost-to-me-at-keep-ups",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lost"
+         }
+        }
+       }
+      ],
+      "ducked": [
+       {
+        "text": "\"Insurance,\" she says, very loudly, to everyone.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -2,
+          "respect": -4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lost"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "A young fan has a challenge"
+  },
+  {
+   "id": "kup-2-back",
+   "title": "She's back",
+   "after": {
+    "beat": "kup-1-bet",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-kup-2-back",
+    "title": "She's back",
+    "category": "fans",
+    "place": "compound:pitch-1",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on, the open day. {kidfan.short} is at the front with a ball and a sign: \"REMATCH.\""
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go over.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='lost'",
+        "text": "She does ninety. You do forty and fall over. She tells everyone you let her win, and you let her tell them.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "keepy-rivals"
+        }
+       },
+       {
+        "text": "You win again, by four. She writes your number on her hand and says \"next year\", like it's a threat.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "you-won-once"
+        }
+       }
+      ]
+     },
+     {
+      "id": "wave",
+      "label": "Wave and point at the sign.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "She does them on her own at the front, and the kids count her.",
+        "arc": {
+         "end": "keepy-rivals"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "A season on, the open day"
+  }
+ ]
+}

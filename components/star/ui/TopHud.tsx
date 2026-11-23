@@ -10,6 +10,8 @@ import { usePassLayout } from "@/lib/star/starPassStore";
 import { claimableLevels } from "@/lib/star/starPassClaim";
 import { levelColors } from "./StatBar";
 import { TopMeter, HudIcon, FillStar } from "./TopMeter";
+import { fameOf } from "@/lib/star/fame";
+import { formatWallet, MONEY_SIGN } from "@/lib/star/money";
 
 /**
  * THE TOP HUD (Harry, 1 Oct 2026, P80/P81/P86: "your energy never leaves").
@@ -45,23 +47,32 @@ import { TopMeter, HudIcon, FillStar } from "./TopMeter";
  *  - the star bar fills within the level, and a level-up fills it to the
  *    end, empties it and fills it again (P2: "it will never really be full").
  */
-export type HudScreen = "home" | "stats" | "training" | "shop" | "style" | "relations" | "league" | "other" | "casino" | "settings";
+export type HudScreen = "home" | "stats" | "training" | "shop" | "style" | "relations" | "league" | "other" | "casino" | "settings" | "phone" | "sponsors" | "investments";
 
 /**
- * WHICH BAR SITS ON THE LEFT, PER SCREEN (Harry, P13: "when you go to
- * relationship, one of them swaps out for … happiness; or if you go to style
- * it'll swap out for reputation … so you always have the relevant bars for
- * whatever you're looking at"). Energy is the right-hand cell on EVERY screen,
- * so it is not listed. Add a screen here to give it its own.
+ * THE TWO BARS, PER SCREEN (Harry, P13, 1 Oct 2026: "you always have the
+ * relevant bars for whatever you're looking at"; widened to BOTH bars on
+ * 19 Nov 2026, RUL-UI-009: "we need to do this for every page (have the
+ * relevant stats as the top 2 bars)"). Left cell, right cell. Add a screen
+ * here to give it its own pair. "none" on both hides the block.
  */
-export type HudLeft = "star" | "happiness" | "reputation";
-export const HUD_SPEC: Record<HudScreen, HudLeft> = {
-  home: "star", stats: "star", training: "star", shop: "star", league: "star", other: "star", casino: "star", settings: "star",
-  relations: "happiness",
-  style: "reputation",
+export type HudCell = "star" | "energy" | "happiness" | "reputation" | "fame" | "money" | "none";
+export const HUD_SPEC: Record<HudScreen, [HudCell, HudCell]> = {
+  home: ["star", "energy"], stats: ["star", "energy"], training: ["star", "energy"],
+  league: ["star", "energy"], other: ["star", "energy"],
+  shop: ["fame", "money"],
+  style: ["reputation", "fame"],
+  relations: ["happiness", "reputation"],
+  sponsors: ["fame", "money"],
+  phone: ["star", "money"],
+  investments: ["money", "reputation"],
+  casino: ["money", "happiness"],
+  settings: ["none", "none"],
 };
+/** Kept for anything that still reads only the left bar. */
+export type HudLeft = "star" | "happiness" | "reputation";
 
-export default function TopHud({ career, screen, onCareer, onStarPass, passBar, className = "" }: {
+export default function TopHud({ career, screen, onCareer, onStarPass, passBar, pick, className = "" }: {
   career: CareerState;
   screen: HudScreen;
   /** Kept for callers: the can left the HUD in v0.24 (it lives on Home). */
@@ -74,9 +85,12 @@ export default function TopHud({ career, screen, onCareer, onStarPass, passBar, 
   onStarPass?: (open: boolean) => void;
   /** The game's bottom bar, drawn inside the Star Pass (StarRatingSheet `bar`). */
   passBar?: (close: () => void) => React.ReactNode;
+  /** The shop's selected item: Fame shows what it adds, Money what it costs (RUL-UI-009). */
+  pick?: { price: number; fameGain: number };
   className?: string;
 }) {
   const [starPass, setStarPassRaw] = useState(false);
+  if (HUD_SPEC[screen].every((c) => c === "none")) return null;
   const setStarPass = (open: boolean) => { setStarPassRaw(open); onStarPass?.(open); };
   return (
     // Room on top for the icons that rise above the bars.
@@ -84,8 +98,7 @@ export default function TopHud({ career, screen, onCareer, onStarPass, passBar, 
       {starPass && <StarRatingSheet career={career} onCareer={onCareer} bar={passBar} onClose={() => setStarPass(false)} />}
       {/* One block, rating | energy, on the light grey: no frame (P4, P7). */}
       <div data-hud-block className="relative grid grid-cols-2">
-        {HUD_SPEC[screen] === "happiness" ? <HappinessCell career={career} /> : HUD_SPEC[screen] === "reputation" ? <ReputationCell career={career} /> : <RatingCell career={career} onOpen={() => setStarPass(true)} claimable={!!onCareer} />}
-        <EnergyCell career={career} />
+        {HUD_SPEC[screen].map((cell, i) => <Cell key={i} cell={cell} career={career} pick={pick} onOpen={() => setStarPass(true)} claimable={!!onCareer} />)}
         {/* The divider between the two cells. */}
         <span aria-hidden className="pointer-events-none absolute bottom-[7px] left-1/2 top-[7px] w-px" style={{ background: "rgba(31,42,53,.14)" }} />
       </div>
@@ -94,6 +107,47 @@ export default function TopHud({ career, screen, onCareer, onStarPass, passBar, 
 }
 
 const CELL_H = "h-[36px]";
+
+function Cell({ cell, career, pick, onOpen, claimable }: { cell: HudCell; career: CareerState; pick?: { price: number; fameGain: number }; onOpen: () => void; claimable: boolean }) {
+  switch (cell) {
+    case "star": return <RatingCell career={career} onOpen={onOpen} claimable={claimable} />;
+    case "energy": return <EnergyCell career={career} />;
+    case "happiness": return <HappinessCell career={career} />;
+    case "reputation": return <ReputationCell career={career} />;
+    case "fame": return <FameCell career={career} gain={pick?.fameGain} />;
+    case "money": return <MoneyCell career={career} price={pick?.price} />;
+    default: return <span />;
+  }
+}
+
+/** Fame, 0-100 (fame.ts fameOf). In the shop, a lighter piece shows what the picked item would add. */
+function FameCell({ career, gain }: { career: CareerState; gain?: number }) {
+  const f = fameOf(career);
+  const add = Math.max(0, Math.min(100 - f, gain ?? 0));
+  return (
+    <span className="relative block">
+      <TopMeter tour="fame" label={`Fame ${f}`} className={CELL_H} icon={<HudIcon name="fame" />} value={Math.max(3, f)} colors={["#a855f7", "#e9b6ff"]} />
+      {add > 0 && <span aria-hidden data-fame-gain className="pointer-events-none absolute top-1/2 h-[16px] -translate-y-1/2 rounded-sm" style={{ left: `calc(30px + (100% - 38px) * ${f / 100})`, width: `calc((100% - 38px) * ${add / 100})`, background: "rgba(240,220,255,.65)" }} />}
+    </span>
+  );
+}
+
+/** Money with the 3D dollar bill (RUL-UI-009). Fills to a year's wages; in the
+ *  shop it fills to what you have and stripes the picked item's cost. */
+function MoneyCell({ career, price }: { career: CareerState; price?: number }) {
+  const m = Math.max(0, career.money);
+  const year = Math.max(1, (career.contract?.wage ?? 0) * 52);
+  const fill = price !== undefined ? 100 : Math.min(100, (m / year) * 100);
+  const cost = price !== undefined && m > 0 ? Math.min(100, (price / m) * 100) : 0;
+  return (
+    <span className="relative block">
+      <TopMeter tour="money" label={`Money ${formatWallet(m)}`} className={CELL_H} icon={<HudIcon name="cash" />} value={Math.max(3, fill)} colors={["#16a34a", "#86efac"]}>
+        <span className="rounded-md bg-black/55 px-1.5 text-[11px] font-black text-white">{MONEY_SIGN}{formatWallet(m)}</span>
+      </TopMeter>
+      {cost > 0 && <span aria-hidden data-money-cost className="pointer-events-none absolute top-1/2 h-[16px] -translate-y-1/2" style={{ right: 8, width: `calc((100% - 38px) * ${cost / 100})`, background: "repeating-linear-gradient(135deg,rgba(0,0,0,.42) 0 5px,rgba(0,0,0,.12) 5px 10px)" }} />}
+    </span>
+  );
+}
 const GOLD: [string, string] = ["#f59e0b", "#fde047"];
 
 function RatingCell({ career, onOpen, claimable }: { career: CareerState; onOpen: () => void; claimable: boolean }) {

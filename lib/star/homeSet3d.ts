@@ -31,6 +31,53 @@ export function juggleSpot(info: ClipInfo | null | undefined, t: number): V3 | n
   return [pa[0] + (pb[0] - pa[0]) * u, pa[1] + (pb[1] - pa[1]) * u + ((9.8 * T * T) / 2) * u * (1 - u), pa[2] + (pb[2] - pa[2]) * u];
 }
 
+/**
+ * WHERE HIS BALL IS AT ANY MOMENT OF THE HOME LOOP (Harry, 20 Nov 2026: "sometimes the
+ * ball physics are still a bit weird"). Seen frame by frame: at the start of the
+ * keepy-uppies the ball floated up off the grass with no touch, and at the end it
+ * drifted slowly down through his shorts and slid to his foot. It used to slide
+ * between "at rest" and "in the air" over the fade. Now it only moves like a ball:
+ *  - at rest by his right foot;
+ *  - the flick: a gravity arc from rest up to the first touch, launched just before it;
+ *  - the keepy-uppies: the clip's own touches (juggleSpot);
+ *  - the drop: from the last touch it pops up, falls under gravity to the grass by his
+ *    foot, bounces once and rests.
+ * Pure: depends on t only, so stills (window.__homeT) and the live loop agree.
+ */
+const G = 9.8;
+/** Gravity flight from a to b in time T: the point at time s (0..T). */
+function flight(a: V3, b: V3, T: number, s: number): V3 {
+  const u = Math.max(0, Math.min(1, s / T));
+  const vy = (b[1] - a[1]) / T + (G * T) / 2;
+  return [a[0] + (b[0] - a[0]) * u, a[1] + vy * s - (G * s * s) / 2, a[2] + (b[2] - a[2]) * u];
+}
+export function homeBallAt(info: ClipInfo | null | undefined, t: number, beat: { from: number; dur: number; round: number }): V3 {
+  const rest = HOME_BALL_REST;
+  const tch = (info as { touches?: [number, string, V3][] } | null | undefined)?.touches;
+  if (!info || !tch || tch.length < 2) return rest;
+  const per = info.duration;
+  const tt = ((t % beat.round) + beat.round) % beat.round;
+  const into = tt - beat.from;
+  if (into < -0.4 || into > beat.dur + 1.2) return rest;
+  // the first touch in the beat, and the last touch before the beat ends
+  const first = tch[0][0];
+  let last = first;
+  for (let k = 0; k * per <= beat.dur; k++) for (const c of tch) { const at = k * per + c[0]; if (at <= beat.dur - 0.15) last = Math.max(last, at); }
+  const firstSpot = tch[0][2];
+  const lastSpot = juggleSpot(info, last) ?? firstSpot;
+  const FLICK = 0.32;
+  if (into < first - FLICK) return rest;
+  if (into < first) return flight(rest, firstSpot, FLICK, into - (first - FLICK));
+  if (into <= last) return juggleSpot(info, into) ?? rest;
+  // the drop: up a little off the last touch, down to the grass by his foot, one bounce
+  const land: V3 = [rest[0] + 0.04, rest[1], rest[2] + 0.06];
+  const DROP = 0.62, BOUNCE = 0.26;
+  const s = into - last;
+  if (s < DROP) return flight(lastSpot, land, DROP, s);
+  if (s < DROP + BOUNCE) return flight(land, [rest[0], rest[1], rest[2]], BOUNCE, s - DROP);
+  return rest;
+}
+
 export function makeHomeSet(T: Three, scene: THREE.Scene) {
   const c = document.createElement("canvas");
   c.width = c.height = 64;
@@ -50,16 +97,20 @@ export function makeHomeSet(T: Three, scene: THREE.Scene) {
   ball.add(realBall);
   scene.add(shadow, ballShadow, ball);
   const hp = new T.Vector3();
+  let spinAngle = 0, lastT = 0;
   return {
     /** Each frame, after he is posed: his shadow under his hips, the ball `juggle` (0 rest … 1 kept up) of the way to `up`. */
-    place(p: Person3D, yaw: number, juggle: number, up: V3, t: number) {
+    place(p: Person3D, yaw: number, juggle: number, up: V3, t: number, spin?: number) {
       const r = HOME_BALL_REST, k = Math.max(0, Math.min(1, juggle));
       // the flick up and the drop: an arc between the ground and the touches
       const arc = k > 0 && k < 1 ? Math.sin(k * Math.PI) * 0.25 : 0;
       const lx = r[0] + (up[0] - r[0]) * k, ly = r[1] + (up[1] - r[1]) * k + arc, lz = r[2] + (up[2] - r[2]) * k;
       const cy = Math.cos(yaw), sy = Math.sin(yaw);
       ball.position.set(p.root.position.x + lx * cy + lz * sy, Math.max(0.11, ly), p.root.position.z - lx * sy + lz * cy);
-      ball.rotation.x = t * (1.5 + 7 * k);
+      // spin builds up while it flies and stops when it rests (no jump in the angle)
+      const dt = Math.max(0, Math.min(0.1, t - lastT)); lastT = t;
+      spinAngle += dt * 8.5 * (spin ?? k);
+      ball.rotation.x = spinAngle;
       ballShadow.position.set(ball.position.x, 0.004, ball.position.z);
       ballShadow.scale.setScalar(Math.max(0.45, 1.1 - (ball.position.y - 0.11) * 0.8));
       p.bones.Hips?.getWorldPosition(hp);

@@ -1,0 +1,920 @@
+{
+ "id": "arc-legends-boots",
+ "title": "First to three",
+ "owner": "legend",
+ "summary": "A club legend is sitting on the bench by the training pitch, and he challenges you to a one-on-one in front of the squad, first to three. His boots against your car. Win or lose, he doesn't forget it: he's on the radio about you, he asks a favour a season on, and years later his boots turn up, or your car doesn't come back.",
+ "size": "big",
+ "about": {
+  "who": [
+   "club legend",
+   "squad"
+  ],
+  "tone": [
+   "funny",
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.2
+ },
+ "needsActivity": "duel-1v1",
+ "cast": [
+  {
+   "slot": "legend",
+   "pick": "legend"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "stake": "none",
+  "won": 0,
+  "favour": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "his-boots",
+   "title": "His boots",
+   "text": "You beat a legend at his own game, and his boots are in a case in your house."
+  },
+  {
+   "id": "the-car",
+   "title": "The car",
+   "text": "You bet your car against a legend and lost. He still drives it to the club on matchdays."
+  },
+  {
+   "id": "the-circle",
+   "title": "The circle",
+   "text": "Years after he took you on, a kid took you on, and you knew exactly what to say."
+  }
+ ],
+ "promises": {
+  "p-cage": {
+   "id": "p-cage",
+   "to": "legend",
+   "text": "Open {legend.short}'s cage pitch on Saturday",
+   "due": {
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "keptBy": {
+    "beat": "lgb-4-opening",
+    "ends": [
+     "go"
+    ]
+   },
+   "dueText": "Saturday at nine",
+   "kept": {
+    "text": "You said you'd open his cage, and you did.",
+    "npc": [
+     {
+      "slot": "legend",
+      "bond": 4,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd be at the cage at nine.",
+    "npc": [
+     {
+      "slot": "legend",
+      "bond": -8,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "legend",
+      "tag": "broke-the-cage-promise",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "lgb-1-ring",
+   "title": "First to three",
+   "n": 1,
+   "event": {
+    "id": "arc-lgb-1-ring",
+    "title": "First to three",
+    "category": "legend",
+    "place": "compound:pitch-1",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "clubApps>=10"
+     ]
+    },
+    "setup": [
+     "{legend.name} is sitting on the bench by pitch one in a club coat. He scored a hundred and forty goals here, and there's a mural of him on the side of the stand. The whole squad has stopped to look at him."
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "legend",
+       "say": [
+        "\"So you're the one they're all on about. One against one, in the box, first to three. I'll go easy, I'm sixty-one.\""
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "\"You're on.\"",
+         "tone": "confident",
+         "goto": "r-stake"
+        },
+        {
+         "id": "respect",
+         "label": "\"I'd be honoured.\"",
+         "tone": "humble",
+         "goto": "r-stake"
+        },
+        {
+         "id": "no",
+         "label": "\"I'll leave it, thanks. I'd hate to hurt you.\"",
+         "tone": "cold",
+         "end": "declined"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "r-stake"
+        }
+       ]
+      },
+      "r-stake": {
+       "who": "legend",
+       "say": [
+        "\"Let's make it interesting. My boots from the cup final against your car keys. The lads can hold them.\""
+       ],
+       "replies": [
+        {
+         "id": "car",
+         "label": "Throw him your car keys.",
+         "tone": "reckless",
+         "goto": "r-ready",
+         "var": {
+          "stake": "car"
+         }
+        },
+        {
+         "id": "pride",
+         "label": "\"Just for pride.\"",
+         "tone": "calm",
+         "goto": "r-ready",
+         "var": {
+          "stake": "pride"
+         }
+        }
+       ]
+      },
+      "r-ready": {
+       "who": "legend",
+       "say": [
+        "He takes his coat off. Underneath he's wearing the old home shirt. The lads go mad."
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Step into the box.",
+         "tone": "brave",
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "duel-1v1",
+        "name": "First to three",
+        "intro": "You against him in the box, first to three goals. The squad is watching.",
+        "dials": {
+         "goals": 3,
+         "opponent": {
+          "slot": "legend"
+         },
+         "watchers": "squad"
+        },
+        "score": "goals scored, first to three",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -8
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "r-stop"
+        ],
+        [
+         "activity.won",
+         "r-won"
+        ],
+        [
+         "",
+         "r-lost"
+        ]
+       ]
+      },
+      "r-won": {
+       "who": "legend",
+       "say": [
+        "He's bent double with his hands on his knees. \"{activity.score} to {activity.oppScore}. I'd have had you at thirty.\" He unties his boots."
+       ],
+       "replies": [
+        {
+         "id": "take",
+         "label": "Take the boots.",
+         "tone": "confident",
+         "end": "won-boots"
+        },
+        {
+         "id": "give",
+         "label": "\"Keep them. Play me again next year.\"",
+         "tone": "kind",
+         "end": "won-gave"
+        }
+       ]
+      },
+      "r-lost": {
+       "who": "legend",
+       "say": [
+        "\"{activity.oppScore} to {activity.score}.\" He holds his hand out for the keys, or for a handshake, depending."
+       ],
+       "replies": [
+        {
+         "id": "keys",
+         "label": "Give him what you bet.",
+         "tone": "honest",
+         "end": "lost-paid"
+        },
+        {
+         "id": "again",
+         "label": "\"Double or nothing.\"",
+         "tone": "reckless",
+         "end": "lost-again"
+        }
+       ]
+      },
+      "r-stop": {
+       "who": "legend",
+       "say": [
+        "\"Pulled up? At your age?\" The lads are crying laughing."
+       ],
+       "replies": [
+        {
+         "id": "hamstring",
+         "label": "\"Hamstring. Honestly.\"",
+         "tone": "honest",
+         "end": "stopped"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "won-boots": [
+       {
+        "text": "The lads chant his name and then yours. His boots are size nine and smell of 1994.",
+        "effects": {
+         "team": 6,
+         "fans": 4
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 8,
+          "respect": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "beat-me-first-to-three",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "won": 1
+         }
+        },
+        "give": "item:legends-boots",
+        "giveWords": [
+         "The legend's boots",
+         "The boots from his cup final, in a box with his name on."
+        ],
+        "noteSquad": "beat-the-legend"
+       }
+      ],
+      "won-gave": [
+       {
+        "text": "\"Next year.\" He laces them back up. \"And I'll have been practising.\"",
+        "effects": {
+         "team": 5,
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 14,
+          "respect": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "beat-me-and-let-me-keep-the-boots",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "won": 1
+         }
+        },
+        "noteSquad": "beat-the-legend"
+       }
+      ],
+      "lost-paid": [
+       {
+        "text": "{if arc.stake=='car'}He drives your car round the training ground twice with the window down, then parks it in the gaffer's space.{/if}{if !arc.stake=='car'}He shakes your hand. \"Not bad. Not good, but not bad.\"{/if}",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "beat-the-young-lad",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "won": 0
+         }
+        }
+       }
+      ],
+      "lost-again": [
+       {
+        "text": "\"Next season. I'll hold onto these.\" He spins your keys round his finger.",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "wants-double-or-nothing",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "won": 0
+         }
+        }
+       }
+      ],
+      "stopped": [
+       {
+        "text": "He tells everyone at the bar that night that you pulled up. It's in the club newsletter by Friday.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": -2,
+          "respect": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "pulled-up-against-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "won": 0
+         }
+        }
+       }
+      ],
+      "declined": [
+       {
+        "text": "\"Sensible lad.\" He says it in a way that means the opposite.",
+        "effects": {
+         "team": -3
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": -4,
+          "respect": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "wouldnt-take-me-on",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "won": 0,
+          "stake": "none"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "There's a legend sitting by the training pitch"
+  },
+  {
+   "id": "lgb-2-radio",
+   "title": "On the radio",
+   "after": {
+    "beat": "lgb-1-ring",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-lgb-2-radio",
+    "title": "On the radio",
+    "category": "legend",
+    "place": "driving",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "driving",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "You're in the car with the local radio on and {legend.name} is the guest.",
+     "{if arc.won==1}\"The young lad beat me fair and square. I'd like it known I had a cold.\"{/if}{if arc.won==0}\"I took him to school. He'll be better for it.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "ring",
+      "label": "Ring in to the show.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "text": "They put you straight on. You and him argue about it for ten minutes, live, and it's the best thing on the station all year.",
+        "effects": {
+         "fans": 4,
+         "fame": 2
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "rang-in-to-the-radio",
+          "strength": 2
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "off",
+      "label": "Turn it off.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "You hear about it at training anyway.",
+        "npc": [
+         {
+          "slot": "legend"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     }
+    ]
+   },
+   "hint": "He's been talking about you"
+  },
+  {
+   "id": "lgb-3-favour",
+   "title": "The cage",
+   "after": {
+    "beat": "lgb-1-ring",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-lgb-3-favour",
+    "title": "The cage",
+    "category": "legend",
+    "place": "town:cage-pitch",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {legend.short} has paid for a cage pitch on the estate where he grew up, and he's asked you to open it."
+    ],
+    "talk": {
+     "start": "f1",
+     "nodes": {
+      "f1": {
+       "who": "legend",
+       "say": [
+        "\"Saturday morning. Cut the ribbon, kick a ball about with the kids. They don't know who I am. They'll know who you are.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll be there at nine.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-cage"
+        },
+        {
+         "id": "rematch",
+         "label": "\"Only if you play me again after.\"",
+         "tone": "confident",
+         "end": "yes-rematch",
+         "promise": "p-cage"
+        },
+        {
+         "id": "no",
+         "label": "\"Saturday's a game day.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "\"Nine. Bring a pen. They'll want you on their arms.\"",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "favour": 1
+         }
+        }
+       }
+      ],
+      "yes-rematch": [
+       {
+        "text": "\"Deal. I've been practising.\" He sounds about twenty-five.",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "favour": 1
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Course. Another time.\" He gets the mayor instead.",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": -4,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "wouldnt-open-the-cage",
+          "strength": 2
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     }
+    ]
+   },
+   "hint": "A season on, he needs a favour"
+  },
+  {
+   "id": "lgb-4-opening",
+   "title": "Saturday at nine",
+   "after": {
+    "beat": "lgb-3-favour",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-lgb-4-opening",
+    "title": "Saturday at nine",
+    "category": "legend",
+    "place": "town:cage-pitch",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "arc.favour==1"
+     ]
+    },
+    "setup": [
+     "Saturday, nine o'clock. There are about forty kids at the cage and a ribbon tied between the posts."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Be there.",
+      "tone": "kind",
+      "cost": {
+       "weekAction": 1
+      },
+      "outcomes": [
+       {
+        "text": "You sign forty arms. {legend.short} watches you play three-and-in with the kids and doesn't say a word for an hour, which for him is a record.",
+        "effects": {
+         "fans": 6
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 12,
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "opened-my-cage",
+          "strength": 3
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "late",
+      "label": "Send a message: you've been kept at the club.",
+      "tone": "lie",
+      "outcomes": [
+       {
+        "text": "The kids wait till half ten. {legend.short} cuts the ribbon on his own.",
+        "effects": {
+         "fans": -3
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": -12,
+          "respect": -8,
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "left-the-kids-waiting",
+          "strength": 3
+         }
+        ],
+        "promiseBroken": [
+         "p-cage"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     }
+    ]
+   },
+   "hint": "The cage pitch opening"
+  },
+  {
+   "id": "lgb-5-parcel",
+   "title": "His boots",
+   "after": {
+    "beat": "lgb-3-favour",
+    "seasons": [
+     2,
+     6
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-lgb-5-parcel",
+    "title": "His boots",
+    "category": "legend",
+    "place": "home",
+    "size": "big",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "followUp"
+     ]
+    },
+    "setup": [
+     "{if arc.won==1}A box arrives with a club postmark. Inside are the boots, the pair he wore in the cup final, and a note in capitals: \"I PRACTISED. NEVER GOT ROUND TO THE REMATCH. THEY'RE YOURS.\"{/if}",
+     "{if arc.won==0}On matchday you see your old car in the car park, polished, with his scarf on the back seat. He's still driving it, years on.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "keep",
+      "label": "{if arc.won==1}Put them in a case.{/if}{if arc.won==0}Leave a note on the windscreen.{/if}",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.won==1",
+        "text": "They go in a glass case in your hallway, still muddy.",
+        "effects": {
+         "fans": 3,
+         "reputation": 4
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 10,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "kept-my-boots",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "his-boots"
+        }
+       },
+       {
+        "text": "Your note says \"Rematch?\". His reply is under your wiper the next week: \"Bring your keys.\"",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "the-car"
+        }
+       }
+      ]
+     },
+     {
+      "id": "kid",
+      "label": "Take them, or the memory, to pitch one, where a kid is staring at you.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "A kid from the academy walks up to you after training with his chest out. \"One against one. First to three.\" You know what to say, because somebody said it to you.",
+        "effects": {
+         "team": 4,
+         "reputation": 4
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "passed-on-first-to-three",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-circle"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     }
+    ]
+   },
+   "hint": "Years later, something from him",
+   "look": {
+    "chip": "Years later"
+   }
+  }
+ ]
+}

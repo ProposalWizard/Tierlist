@@ -1,5 +1,6 @@
 import Link from "next/link";
 import FeedbackForm from "./FeedbackForm";
+import DiscordButton from "./DiscordButton";
 
 export default function SiteFooter() {
   return (
@@ -7,6 +8,9 @@ export default function SiteFooter() {
       <div className="mx-auto max-w-7xl px-4 py-6">
         <div className="mb-4">
           <FeedbackForm />
+        </div>
+        <div className="mb-4">
+          <DiscordButton from="footer" sub="Feedback, bugs, events and first looks at new updates" />
         </div>
         <div className="flex items-center justify-between">
           <p className="text-xs text-white">

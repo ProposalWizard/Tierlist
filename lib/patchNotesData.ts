@@ -27,6 +27,672 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.142",
+      "title": "Harry's patch notes: 3D phone, real clothes at home",
+      "author": "Harry",
+      "publishedAt": "2026-11-21T05:25:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/RtSxn6BtEpLzYaQup2K27F",
+      "summary": "The Phone tab now opens onto your own hand holding the phone in your house, and every app works on the glass. BACK puts it away into your house; a Phone button in the house and the garden brings it back. At home nobody wears a match kit any more: you wear your home outfit in real cloth, team-mates wear casual or club training clothes. Weak phones keep the flat phone.",
+      "stats": [
+        {
+          "value": "0.6 s",
+          "label": "eyes open onto the phone"
+        },
+        {
+          "value": "6",
+          "label": "houses in real clothes, plus the garden"
+        },
+        {
+          "value": "74 / 120",
+          "label": "draws in the busiest room (was 68)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The Phone tab opens onto your hand holding the phone",
+              "detail": "Home → Phone (bottom bar). A tap skips the move."
+            },
+            {
+              "title": "Open two apps and tap something in each",
+              "detail": "On the 3D phone: Messages → a message; Relationships → scroll."
+            },
+            {
+              "title": "BACK puts the phone away and you are in your house",
+              "detail": "BACK, bottom right of the phone."
+            },
+            {
+              "title": "The Phone button in the house",
+              "detail": "In your house: \"Phone\", top right."
+            },
+            {
+              "title": "The Phone button in the garden",
+              "detail": "Home → Garden → \"Phone\", top right."
+            },
+            {
+              "title": "HOME on the phone goes straight to Home",
+              "detail": "HOME, bottom left of the phone."
+            },
+            {
+              "title": "Kickabout turns the phone flat to your face",
+              "detail": "On the 3D phone: Kickabout."
+            },
+            {
+              "title": "A team-mate on the sofa wears casual clothes, not a kit",
+              "detail": "Phone → Your house → the lounge."
+            },
+            {
+              "title": "You wear your own home outfit, in cloth",
+              "detail": "Home → House; then change it in the wardrobe and look again."
+            },
+            {
+              "title": "The garden bench and the pitch",
+              "detail": "Home → Garden → the gazebo bench, then the training pitch."
+            },
+            {
+              "title": "Can you read the phone's text?",
+              "detail": "Any app on the 3D phone. Say yes or \"too small\"."
+            },
+            {
+              "title": "How smooth is the camera move?",
+              "detail": "Phone tab in, BACK out, Phone button in again."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "The 3D phone is in the real game",
+              "detail": "Problem: the 3D phone only lived on a test page. Why: the Phone tab still opened the flat phone, and the house and phone were two screens. Fix: one screen, so the house never reloads; every app works on the glass. Weak phones (no 3D, quality Low, reduce motion, the first visit's phone tour) keep the flat phone."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Real clothes in the houses and the garden",
+              "detail": "You: your saved home outfit in cloth. Team-mates: about 1 in 4 in club training wear, the rest a tee, hoodie, shirt or polo; the same man always wears the same. Garden pitch: training tracksuits. Match and training: still the kit."
+            },
+            {
+              "title": "No outfit picked? A hoodie, not the kit",
+              "detail": "At home, in the garden and in the shop."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The house behind the phone can stall while it loads",
+              "detail": "It loads after 2.5 s, or on BACK."
+            },
+            {
+              "title": "Garden → phone took about 3 s on the build machine"
+            },
+            {
+              "title": "Phone text is about 55% of its flat size",
+              "detail": "Judge it on your phone.",
+              "pill": {
+                "text": "your call",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The eyes open in 0.6 s, not the approved 1.2 s blink B"
+            },
+            {
+              "title": "Clothes leftovers",
+              "detail": "A notch at the tee's hem, the hood is a lump, the first team-mate wears the same slate hoodie in every house."
+            },
+            {
+              "title": "The shop in cloth not looked at"
+            },
+            {
+              "title": "Carried from 0.141",
+              "detail": "Cut scenes not ready; the mentor's face; cars up close; the bed pose; speed on a phone."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Your phone test: text size, smoothness, load time"
+            },
+            {
+              "title": "Fix the clothes leftovers and give team-mates more variety"
+            },
+            {
+              "title": "Look at the shop in cloth"
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.141 · 21 Nov 2026 · Sleep, living houses, cloth clothes",
+              "detail": "Sleep passes the night (+10 energy); six lived-in houses; cloth in cut scenes; feet land apart; kick off faster. Still open: cut scenes, the mentor's face, cars up close, the bed pose, speed on a phone."
+            },
+            {
+              "title": "v0.138 · 13 Nov 2026 · New home, Team room, bots, admin",
+              "detail": "Still open: Cloudflare not joined up on the live site."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
+      "version": "0.141",
+      "title": "Harry's patch notes: Sleep, living houses, cloth clothes",
+      "author": "Harry",
+      "publishedAt": "2026-11-21T03:45:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/ABWmdwvNY8k9AH9aKdKpV6",
+      "summary": "Sleeping in your house now passes the night and counts as the week's Rest (energy 62 → 72, once between matches). All six houses are lived in, with team-mates in normal clothes. Clothes are real cloth, people walk and sit properly, and kick off is a little faster. Cut scenes, 60 follow-through stories and the kit man drill stay on test pages: they are not in a real career.",
+      "stats": [
+        {
+          "value": "+10",
+          "label": "energy from one night's sleep"
+        },
+        {
+          "value": "6",
+          "label": "houses lived in"
+        },
+        {
+          "value": "9.3 cm",
+          "label": "walking gap (was 0.5, real 8.0)"
+        },
+        {
+          "value": "60",
+          "label": "stories, test page only"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Sleep in your bed: the night passes and you get energy back",
+              "detail": "In a career: Phone → Your house (or Home → Garden → the house door) → bed → \"Sleep till morning\". Energy on Home before and after."
+            },
+            {
+              "title": "Sleep a second time before the next match: no more energy",
+              "detail": "Same bed again, before you play."
+            },
+            {
+              "title": "Each room opens from a high corner",
+              "detail": "Phone → Your house → walk room to room."
+            },
+            {
+              "title": "Team-mates wear normal clothes, never a kit; you wear your home set",
+              "detail": "Phone → Your house; Home → Garden (the bench)."
+            },
+            {
+              "title": "Each person walks, stands and blinks in his own way",
+              "detail": "Home → Garden and Your house."
+            },
+            {
+              "title": "Every bed works, the flat's too",
+              "detail": "Your house → bedroom."
+            },
+            {
+              "title": "Plants have real leaves",
+              "detail": "Your house → kitchen; the 3D shop's brass pots."
+            },
+            {
+              "title": "Villa: games room and a bath you can use",
+              "detail": "Only if your career owns the villa."
+            },
+            {
+              "title": "Kick off starts a little faster",
+              "detail": "Team sheets → KICK OFF."
+            },
+            {
+              "title": "Do Stats, Your house and the Garden open fast enough?",
+              "detail": "Home → Stats; Phone → Your house; Home → Garden."
+            },
+            {
+              "title": "Cut scenes with cloth clothes (test page)",
+              "detail": "knowitball.co.uk/star-scene-editor-dev?place=director&scene=press (and scene=walkout). Signed in as the team."
+            },
+            {
+              "title": "The kit man drill, six rounds in the dark (test page)",
+              "detail": "knowitball.co.uk/star-life-dev → Kit man story → ▶ Start, then stay out with Den on Thursday."
+            },
+            {
+              "title": "The 60 follow-through stories (test page)",
+              "detail": "knowitball.co.uk/star-life-dev → ▶ Play a week or +10 weeks."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Sleeping in your house passes time",
+              "detail": "Problem: the bed did nothing. Why: the career has no clock between matches, only the week. Fix: one night = the week's Rest, once between two matches; never more than Rest, never moves a fixture.",
+              "bars": [
+                {
+                  "label": "Energy after a night",
+                  "was": 62,
+                  "now": 72,
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "Clothes are cloth, not paint",
+              "detail": "Kits and clothes are a real layer of cloth. Cut scenes dress by role; houses and the garden too (approved 21 Nov). The match keeps the old kits until measured on a phone."
+            },
+            {
+              "title": "60 stories where every choice comes back",
+              "detail": "40 small, 15 medium, 5 big. Test page only: off in the real career.",
+              "pill": {
+                "text": "test page only",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "All six houses are lived in",
+              "detail": "Rooms, things to use, team-mates round; arrival shots from a high corner; every bed works; villa games room and bath; real-leaf plants; morning sun."
+            },
+            {
+              "title": "The kit man drill: six rounds in the dark",
+              "detail": "Call it, the crossbar, old tricks, Den in goal, lights out, double or nowt. A typical score is 6 of 10.",
+              "pill": {
+                "text": "test page only",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Cut scenes: better, not ready",
+              "detail": "Press conference and walk-out with cloth clothes, own walks and living faces. They stay out of the career until Harry says yes.",
+              "pill": {
+                "text": "test page only",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Feet land where a real walker's do",
+              "detail": "Hips were built too narrow (9.7 to 11.4 cm against the animations' 19.7 cm).",
+              "bars": [
+                {
+                  "label": "Walking gap",
+                  "was": 0.5,
+                  "now": 9.3,
+                  "target": 8,
+                  "state": "good",
+                  "unit": "cm"
+                }
+              ]
+            },
+            {
+              "title": "Sitting, clean faces, the ball, own walk",
+              "detail": "Thighs level and feet flat; old painted faces removed on all 12 heads; the ball 0.38 m ahead at his toe; each person his own walk and blinks; ten real free-library animations fitted."
+            },
+            {
+              "title": "The mentor's neck is clean",
+              "detail": "His face is still pale.",
+              "pill": {
+                "text": "half done",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Kick off is a little faster",
+              "detail": "0.28 → 0.23 s on the build machine. Stats, house and garden: no real change measured there.",
+              "bars": [
+                {
+                  "label": "Kick off",
+                  "was": 0.28,
+                  "now": 0.23,
+                  "state": "good",
+                  "unit": "s"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Cut scenes are not ready to ship",
+              "detail": "They stay on the test page until Harry says yes."
+            },
+            {
+              "title": "The mentor's face is pale and flat"
+            },
+            {
+              "title": "Clothes leftovers",
+              "detail": "Waist notch on untucked shirts, ragged tracksuit hem when jogging, a small hood."
+            },
+            {
+              "title": "Cars look damaged up close",
+              "detail": "Kept at a distance."
+            },
+            {
+              "title": "In bed he is a head over a flat block",
+              "detail": "No lying-down animation yet."
+            },
+            {
+              "title": "Not seen on screen yet",
+              "detail": "Fans in real clothes, the casino's living faces, the ten new animations moving on a phone."
+            },
+            {
+              "title": "Speed on a phone is unknown",
+              "detail": "The build machine cannot judge 3D speed."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "The mentor's face, then film all seven cut scenes again"
+            },
+            {
+              "title": "Build the game modes that unlock the most waiting stories"
+            },
+            {
+              "title": "Speed on a real phone"
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.138 · 13 Nov 2026 · New home, Team room, bots, admin",
+              "detail": "Still open: Cloudflare not joined up on the live site."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+  {
+      "version": "0.140",
+      "title": "Leo's patch notes: The Knowitball Discord",
+      "author": "Leo",
+      "publishedAt": "2026-11-19T18:14:34Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "A full plan and kit for a Knowitball Discord aimed at one thing: more people playing. Built: a script that makes the whole server in one go (10 roles, 21 channels, rules, welcome posts, the 2 joining questions), Join our Discord buttons on the site footer and game Settings, and new updates posting themselves to the server. Nothing shows on the site yet: it waits for the server to exist (5 minutes for Leo).",
+      "discord": "Knowitball has its own Discord: report bugs, vote on ideas, join weekly challenges and see every new update first.",
+      "stats": [
+        {
+          "value": "21",
+          "label": "channels in the plan"
+        },
+        {
+          "value": "10",
+          "label": "roles"
+        },
+        {
+          "value": "2",
+          "label": "questions when you join"
+        },
+        {
+          "value": "0",
+          "label": "buttons live until the invite is set"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "The server, in one script",
+              "detail": "scripts/discord: roles, channels, who can write where, welcome/rules/play posts, Community and the joining questions. Running it again adds only what's missing."
+            },
+            {
+              "title": "Join our Discord buttons",
+              "detail": "Site footer and game Settings (first screen). Hidden until there is an invite, so no dead links. Each press is counted (discord_click)."
+            },
+            {
+              "title": "Updates post themselves",
+              "detail": "A patch note with a player line goes to #updates once, when the Patch bot announces it. Never pings everyone."
+            },
+            {
+              "title": "Growth plan",
+              "detail": "docs/DISCORD.md: getting people in, Discord to game, the feedback loop, week one."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Needs Leo",
+          "items": [
+            {
+              "title": "Make the server + bot (5 min)",
+              "detail": "Steps in scripts/discord/README.md. Then a chat builds it."
+            },
+            {
+              "title": "Two Vercel settings",
+              "detail": "NEXT_PUBLIC_DISCORD_INVITE (buttons) and DISCORD_UPDATES_WEBHOOK (auto posts)."
+            },
+            {
+              "title": "Not run on real Discord yet",
+              "detail": "Tested against a fake Discord only."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
+      "version": "0.139",
+      "title": "Mikey's patch notes: Getting the app ready for phones",
+      "author": "Mikey",
+      "publishedAt": "2026-11-19T16:18:51Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/6yuGfXVSuSWYN3i6Jrc7nP",
+      "summary": "The packed app is signed and its Google Play page is done (86 languages, icon, feature graphic, screenshots, privacy policy). It still felt laggy, so KIB Next was built: a separate app made for the phone that plays the same game with the same rules (100 of 100 test matches identical). Honest: KIB Next has never run on a real phone yet.",
+      "stats": [
+        {
+          "value": "86",
+          "label": "languages on the Play Store page"
+        },
+        {
+          "value": "100 / 100",
+          "label": "phone matches identical to the website"
+        },
+        {
+          "value": "0",
+          "label": "changes to the website's game rules"
+        },
+        {
+          "value": "14 days",
+          "label": "closed test before the public launch"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The privacy policy's phone app section",
+              "detail": "knowitball.co.uk/legal → \"Our Phone App\"."
+            },
+            {
+              "title": "Store listing text in 86 languages",
+              "detail": "Play Console → Store presence → Store listings."
+            },
+            {
+              "title": "Icon, feature graphic, 8 screenshots, AI labels",
+              "detail": "Play Console → Default store listing."
+            },
+            {
+              "title": "App 1.1: no frosted-glass blur",
+              "detail": "Install the 1.1 APK, compare scrolling with 1.0."
+            },
+            {
+              "title": "KIB Next: start a career, play a full match",
+              "detail": "Install KIB Next → New game → Play."
+            },
+            {
+              "title": "KIB Next: League, Phone, Shop, Star Pass, transfers",
+              "detail": "KIB Next → bottom bar and Home links."
+            },
+            {
+              "title": "KIB Next: your 3D player, Save video, the farewell walk-out",
+              "detail": "KIB Next → Home; Kickabout → Goal replays; your last match."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Google Play",
+          "items": [
+            {
+              "title": "Developer account",
+              "detail": "Personal, non-trader, ID verified."
+            },
+            {
+              "title": "A signed app ready to upload",
+              "detail": "app-release.aab (about 158 MB), signed with Knowitball's own upload key."
+            },
+            {
+              "title": "Store page in 86 languages",
+              "detail": "Inside every length limit; not checked by native speakers."
+            },
+            {
+              "title": "Icon, feature graphic, screenshots",
+              "detail": "Mikey's 8 screenshots made Play-ready (1080 × 1920), plus 8 captioned ones."
+            },
+            {
+              "title": "Play's forms",
+              "detail": "No data collected, no ads, 13+, no gambling, AI labels on 3 pictures."
+            },
+            {
+              "title": "Privacy policy covers the phone app",
+              "detail": "Live at knowitball.co.uk/legal."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: the packed app",
+          "items": [
+            {
+              "title": "App 1.1: no frosted-glass blur",
+              "detail": "In the app only; Mikey: not a huge change for the lag."
+            },
+            {
+              "title": "No Card Night in the phone app",
+              "detail": "Keeps Play's age rating low."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Found: why the app lags",
+          "items": [
+            {
+              "title": "Hidden work stutters untouched screens",
+              "detail": "Mikey's phone: 2D match 171 stutters in 40 s, garden 90 and feed 87 in 30 s; the Home 3D player redrew 30 times a second."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: KIB Next, the phone-built app",
+          "items": [
+            {
+              "title": "A separate app built for the phone",
+              "detail": "Reads the game's rules from the same files as the website, never changes them."
+            },
+            {
+              "title": "Matches exactly as on the website",
+              "detail": "100 of 100 test matches identical."
+            },
+            {
+              "title": "The whole career and everything around it",
+              "detail": "Trial to Hall of Fame, every league and cup, phone, shop, Owner app; no casino."
+            },
+            {
+              "title": "Real players offline, the website's drawings",
+              "detail": "Same squads and photos as the packed app."
+            },
+            {
+              "title": "Goal videos with Save video, 3D player, farewell walk-out",
+              "detail": "Not yet seen on a phone."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "KIB Next has never run on a phone (HIGH)",
+              "detail": "All checks headless or in a browser."
+            },
+            {
+              "title": "Save video untested on a device (HIGH)",
+              "detail": "iPhone has no video maker yet."
+            },
+            {
+              "title": "Extra permissions in the KIB Next test build (LOW)",
+              "detail": "Remove before any release."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Closed test of the packed app",
+              "detail": "12+ testers, 14 days."
+            },
+            {
+              "title": "Playtest KIB Next on real phones",
+              "detail": "Mikey, Harry, Leo."
+            },
+            {
+              "title": "KIB Next as version 2.0",
+              "detail": "Mikey: keep testing first."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+    {
       "version": "0.138",
       "title": "Harry's patch notes: New home, Team room, bots, admin",
       "author": "Harry",
@@ -12263,7 +12929,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "label": "sounds remade, and sounds now played outside the match"
         },
         {
-          "value": "23",
+          "value": "21",
           "label": "before and after clips of the game, plus shop stills"
         }
       ],

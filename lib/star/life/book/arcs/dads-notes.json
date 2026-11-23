@@ -1,0 +1,351 @@
+{
+ "id": "arc-dads-notes",
+ "title": "Dad's notes",
+ "owner": "dad",
+ "summary": "Your dad rings after every game with notes. Tonight he's got eleven. How you take it decides whether the phone calls stop, and a season later he says something he's never said.",
+ "size": "small",
+ "about": {
+  "who": [
+   "dad"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "dad",
+   "pick": "dad"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "he-said-it",
+   "title": "He said it",
+   "text": "Your dad rang with notes for years. Then one night he rang to say he was proud of you."
+  },
+  {
+   "id": "the-calls-stopped",
+   "title": "The calls stopped",
+   "text": "You told him to stop ringing with notes, and he did. You still check your phone on the coach."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "dad-1-notes",
+   "title": "Eleven notes",
+   "n": 1,
+   "event": {
+    "id": "arc-dad-1-notes",
+    "title": "Eleven notes",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastRating<7"
+     ]
+    },
+    "setup": [
+     "Dad rings while you're still on the coach. He's got the game on the laptop and he's paused it."
+    ],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "dad",
+       "say": [
+        "\"Right. Sixty-third minute. Your first touch. Why are you taking it on your left when you're facing that way?\""
+       ],
+       "replies": [
+        {
+         "id": "listen",
+         "label": "\"Go on. What else?\"",
+         "tone": "humble",
+         "goto": "d2"
+        },
+        {
+         "id": "tired",
+         "label": "\"Dad, I've just played ninety minutes.\"",
+         "tone": "calm",
+         "goto": "d-tired"
+        },
+        {
+         "id": "stop",
+         "label": "\"Stop ringing me with notes. Just watch it.\"",
+         "tone": "fiery",
+         "end": "stopped"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "d2"
+        }
+       ]
+      },
+      "d2": {
+       "who": "dad",
+       "say": [
+        "He goes through ten more. Some are right. The ninth one is really right."
+       ],
+       "replies": [
+        {
+         "id": "thanks",
+         "label": "\"The ninth one's good. Thanks, Dad.\"",
+         "tone": "kind",
+         "end": "listened"
+        },
+        {
+         "id": "ok",
+         "label": "\"Okay. Bye, Dad.\"",
+         "tone": "calm",
+         "end": "endured"
+        }
+       ]
+      },
+      "d-tired": {
+       "who": "dad",
+       "say": [
+        "\"I know. I'm only saying because nobody else will.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Go on, then. Quick.\"",
+         "tone": "humble",
+         "goto": "d2"
+        },
+        {
+         "id": "tomorrow",
+         "label": "\"Tomorrow, Dad.\"",
+         "tone": "calm",
+         "end": "endured"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "listened": [
+       {
+        "text": "He sounds pleased for the first time in the call. On Saturday you take it on your right.",
+        "effects": {
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "listened-to-my-notes",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "listened"
+         }
+        }
+       }
+      ],
+      "endured": [
+       {
+        "text": "\"Bye, son.\" He rings again on Sunday with a twelfth.",
+        "npc": [
+         {
+          "slot": "dad"
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "listened"
+         }
+        }
+       }
+      ],
+      "stopped": [
+       {
+        "text": "There's a silence. \"Right you are.\" He doesn't ring after the next game, or the one after.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -10,
+          "respect": -2,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "told-me-to-stop-ringing",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stopped"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Dad's on the phone after the game"
+  },
+  {
+   "id": "dad-2-later",
+   "title": "A different call",
+   "after": {
+    "beat": "dad-1-notes",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-dad-2-later",
+    "title": "A different call",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastRating>=6.5"
+     ]
+    },
+    "setup": [
+     "A season on. You've had a good game. Your phone goes on the coach, and it's Dad."
+    ],
+    "choices": [
+     {
+      "id": "answer",
+      "label": "Answer.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='listened'",
+        "text": "\"No notes,\" he says. \"I just wanted to say I'm proud of you. Your first touch was better.\" He hangs up before you can answer.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 10,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "said-he-was-proud",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "he-said-it"
+        }
+       },
+       {
+        "text": "\"I wasn't going to ring,\" he says. \"I just wanted to say well played.\" He doesn't mention the notes.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8,
+          "respect": 2,
+          "grudge": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "said-he-was-proud",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "he-said-it"
+        }
+       }
+      ]
+     },
+     {
+      "id": "later",
+      "label": "Let it ring. Call him tomorrow.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='listened'",
+        "text": "When you ring back he's at the allotment and just says, \"Good game.\"",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "he-said-it"
+        }
+       },
+       {
+        "text": "He doesn't leave a message. When you ring back he says it was nothing.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "end": "the-calls-stopped"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A season on, Dad rings"
+  }
+ ]
+}

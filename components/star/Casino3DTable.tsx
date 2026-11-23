@@ -26,7 +26,7 @@ import { type Card, type RouletteChoice, isRed, handValue, SLOTS_SYMBOLS } from 
 import { rouletteRound, slotsRound, blackjackDeal, blackjackHit, blackjackStand, horseBetRound } from "@/lib/star/casinoRounds";
 import { playOrLocal } from "@/lib/star/casinoClient";
 import { getTuning } from "@/lib/star/tuningStore";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { useCasinoBet, generateRaceHorses, type RaceHorse } from "./Casino";
 
 const GOLD = "#facc15";
@@ -81,7 +81,7 @@ export default function Casino3DTable({ game, ctrl, bankStart, onBank, onLeave, 
     await ctrl.games.roulette(winner);
     if (!alive.current) return;
     const col = winner === 0 ? "green" : isRed(winner) ? "red" : "black";
-    if (win > 0) { setBank(bank0 - stake + win); setResult({ text: `${winner} ${col} — WIN +★${formatMoney(win - stake)}`, tone: "win" }); }
+    if (win > 0) { setBank(bank0 - stake + win); setResult({ text: `${winner} ${col} — WIN +${MONEY_SIGN}${formatMoney(win - stake)}`, tone: "win" }); }
     else setResult({ text: `${winner} ${col} — lost`, tone: "lose" });
     setBusy(false);
   };
@@ -106,7 +106,7 @@ export default function Casino3DTable({ game, ctrl, bankStart, onBank, onLeave, 
     if (win > 0) {
       setBank(bank0 - stake + win);
       if (win > stake) ctrl.games.slotsWin(win >= stake * 10);
-      setResult(win > stake ? { text: `WIN +★${formatMoney(win - stake)}`, tone: "win" } : { text: "A pair — stake back", tone: "even" });
+      setResult(win > stake ? { text: `WIN +${MONEY_SIGN}${formatMoney(win - stake)}`, tone: "win" } : { text: "A pair — stake back", tone: "even" });
     } else setResult({ text: "No luck", tone: "lose" });
     setBusy(false);
   };
@@ -173,8 +173,8 @@ export default function Casino3DTable({ game, ctrl, bankStart, onBank, onLeave, 
     await sleep(300);
     if (!alive.current) return;
     const b = bankRef.current;
-    if (s.verdict === "dealer-bust") { setBank(b + s.payout); setResult({ text: `Dealer busts — WIN +★${formatMoney(s.payout - stake)}`, tone: "win" }); }
-    else if (s.verdict === "win") { setBank(b + s.payout); setResult({ text: `YOU WIN +★${formatMoney(s.payout - stake)}`, tone: "win" }); }
+    if (s.verdict === "dealer-bust") { setBank(b + s.payout); setResult({ text: `Dealer busts — WIN +${MONEY_SIGN}${formatMoney(s.payout - stake)}`, tone: "win" }); }
+    else if (s.verdict === "win") { setBank(b + s.payout); setResult({ text: `YOU WIN +${MONEY_SIGN}${formatMoney(s.payout - stake)}`, tone: "win" }); }
     else if (s.verdict === "push") { setBank(b + s.payout); setResult({ text: "Push — stake back", tone: "even" }); }
     else setResult({ text: "Dealer wins", tone: "lose" });
     setPhase("done");
@@ -204,7 +204,7 @@ export default function Casino3DTable({ game, ctrl, bankStart, onBank, onLeave, 
     await ctrl.games.race(scores, SILKS, p);
     if (!alive.current) return;
     const w = scores.indexOf(Math.max(...scores));
-    if (payout > 0) { setBank(bankRef.current + payout); setResult({ text: `${field[w].name} wins — +★${formatMoney(payout - stake)}`, tone: "win" }); }
+    if (payout > 0) { setBank(bankRef.current + payout); setResult({ text: `${field[w].name} wins — +${MONEY_SIGN}${formatMoney(payout - stake)}`, tone: "win" }); }
     else setResult({ text: `${field[w].name} (#${w + 1}) wins — your horse lost`, tone: "lose" });
     setRaced(true);
     setBusy(false);
@@ -306,7 +306,7 @@ export default function Casino3DTable({ game, ctrl, bankStart, onBank, onLeave, 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(253,230,138,0.85)" }}>Bet</span>
             <button aria-label="Lower bet" disabled={busy} onClick={() => changeBet(-1)} style={{ ...btn("rgba(255,255,255,0.12)", "#fca5a5"), width: 40, height: 36, padding: 0 }}>▼</button>
-            <b style={{ minWidth: 76, textAlign: "center", color: "#fde047", fontSize: 17 }}>★{formatMoney(bet)}</b>
+            <b style={{ minWidth: 76, textAlign: "center", color: "#fde047", fontSize: 17 }}>{MONEY_SIGN}{formatMoney(bet)}</b>
             <button aria-label="Raise bet" disabled={busy || bet >= bank} onClick={() => changeBet(1)} style={{ ...btn("rgba(255,255,255,0.12)", "#86efac"), width: 40, height: 36, padding: 0 }}>▲</button>
           </div>
         )}
@@ -318,17 +318,17 @@ export default function Casino3DTable({ game, ctrl, bankStart, onBank, onLeave, 
             style={{ ...btn("rgba(255,255,255,0.12)", INK), flex: "0 0 auto", opacity: midRound ? 0.4 : 1 }}>‹ Leave</button>
           {game === "roulette" && (
             <button disabled={busy || choice === null || !canAfford} onClick={() => void spinRoulette()} style={{ ...btn(GOLD), flex: 1, opacity: busy || !canAfford ? 0.6 : 1 }}>
-              {busy ? "Spinning…" : `Spin — ★${formatMoney(bet)}`}
+              {busy ? "Spinning…" : `Spin — ${MONEY_SIGN}${formatMoney(bet)}`}
             </button>
           )}
           {game === "slots" && (
             <button disabled={busy || !canAfford} onClick={() => void spinSlots()} style={{ ...btn(GOLD), flex: 1, opacity: busy || !canAfford ? 0.6 : 1 }}>
-              {busy ? "Spinning…" : `Pull — ★${formatMoney(bet)}`}
+              {busy ? "Spinning…" : `Pull — ${MONEY_SIGN}${formatMoney(bet)}`}
             </button>
           )}
           {game === "blackjack" && phase === "bet" && (
             <button disabled={busy || !canAfford} onClick={() => void deal()} style={{ ...btn(GOLD), flex: 1, opacity: busy || !canAfford ? 0.6 : 1 }}>
-              {busy ? "Dealing…" : `Deal — ★${formatMoney(bet)}`}
+              {busy ? "Dealing…" : `Deal — ${MONEY_SIGN}${formatMoney(bet)}`}
             </button>
           )}
           {game === "blackjack" && phase === "play" && (
@@ -343,7 +343,7 @@ export default function Casino3DTable({ game, ctrl, bankStart, onBank, onLeave, 
           )}
           {game === "horses" && !raced && (
             <button disabled={busy || pick === null || !canAfford} onClick={() => void race()} style={{ ...btn(GOLD), flex: 1, opacity: busy || pick === null || !canAfford ? 0.6 : 1 }}>
-              {busy ? "They're off…" : pick === null ? "Pick a horse" : `Bet ★${formatMoney(bet)} on #${pick + 1}`}
+              {busy ? "They're off…" : pick === null ? "Pick a horse" : `Bet ${MONEY_SIGN}${formatMoney(bet)} on #${pick + 1}`}
             </button>
           )}
           {game === "horses" && raced && <button onClick={nextRace} style={{ ...btn(GOLD), flex: 1 }}>Next race</button>}

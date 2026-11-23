@@ -261,5 +261,29 @@ CLIPS = {
     "celebrate_pump": dict(trial="82_08", cut=(2.0, 4.2), src_edit=fist_pump(0.1, 2.1), adapted="a real stand with three right-fist pumps"),
 }
 
+# ── Quaternius Universal Animation Library 1 (CC0 1.0, quaternius.com; read
+# out of UAL1_Standard.fbx by read_ual.py, ual.py). Harry, 21 Nov 2026: "find
+# walking animations and match them to our style/bodies, same goes for
+# standing". Its loops are made in place; ":travel" gives a walk its travel back
+# (the planted foot's own speed) so the retarget can pin the feet. floor = the
+# library's flat-foot ankle height. The life of each person (people/life.ts)
+# picks among these, seeded by id.
+UAL_FLOOR = 0.1037
+UAL_CLIPS = {
+    "walk_relaxed": dict(trial="ual:Walk_Loop:travel", cut=(0.0, 40 / 30), loop=True, floor=UAL_FLOOR),
+    "walk_formal": dict(trial="ual:Walk_Formal_Loop:travel", cut=(0.0, 40 / 30), loop=True, floor=UAL_FLOOR),
+    "jog_easy": dict(trial="ual:Jog_Fwd_Loop:travel", cut=(0.0, 28 / 30), loop=True, floor=UAL_FLOOR),
+    # the idles stand with the hips and chest turned 13° and the head to the front: he faces where his head and
+    # feet do (turn undoes the pelvis facing make.py would otherwise take), not 13° off to one side
+    "idle_relaxed": dict(trial="ual:Idle_Loop", cut=(0.0, 75 / 30), loop=True, floor=UAL_FLOOR, turn=np.radians(13.3)),
+    "idle_relaxed_m": dict(trial="ual:Idle_Loop", cut=(0.0, 75 / 30), loop=True, floor=UAL_FLOOR, mirror=True, turn=-np.radians(13.3)),
+    "idle_talk": dict(trial="ual:Idle_Talking_Loop", cut=(0.0, 88 / 30), loop=True, floor=UAL_FLOOR, turn=np.radians(13.3)),
+    "seated_idle": dict(trial="ual:Sitting_Idle_Loop", cut=(0.0, 50 / 30), loop=True, floor=UAL_FLOOR),
+    "seated_talk": dict(trial="ual:Sitting_Talking_Loop", cut=(0.0, 88 / 30), loop=True, floor=UAL_FLOOR),
+    "sit_down_ual": dict(trial="ual:Sitting_Enter", cut=(0.0, 39 / 30), floor=UAL_FLOOR, end=True, hold=0.2),
+    "stand_up_ual": dict(trial="ual:Sitting_Exit", cut=(0.0, 31 / 30), floor=UAL_FLOOR, end=True, hold=0.2),
+}
+CLIPS.update(UAL_CLIPS)
+
 # the old footballer (shop/garden) calls its loops by these names
 UAL_NAMES = {"idle": ["Idle_Loop"], "jog": ["Jog_Fwd_Loop"], "walk": ["Walk_Loop"]}

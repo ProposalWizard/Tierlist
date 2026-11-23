@@ -38,9 +38,9 @@ export const SFX_CATALOG: SfxCatalogEntry[] = [
   { name: "match-pass", label: "Live match: a pass or a team-mate's kick", group: "The match", wired: true, where: "In the live match when a team-mate passes, lays it off or shoots. Arcade texture pack only (made by scripts/sfx/arcade.py)." },
   { name: "match-goal", label: "Live match: goal sting", group: "The match", wired: true, where: "In the live match the moment your team scores, with the net and the crowd. Arcade texture pack only." },
   { name: "match-crowd", label: "Live match: crowd swell", group: "The crowd", wired: true, where: "In the live match after your goal or their miss, and on Golden Ball night. Arcade texture pack only." },
-  { name: "crowd-cheer-small", label: "Goal at a small non-league ground", group: "The crowd", wired: false, where: "Not played yet. The match makes its own crowd noise." },
+  { name: "crowd-cheer-small", label: "Goal at a small non-league ground", group: "The crowd", wired: true, where: "Applause in the cut scenes. The match makes its own crowd noise." },
   { name: "crowd-cheer-stadium", label: "Goal in a big stadium", group: "The crowd", wired: true, where: "In goal videos in the feed (and a saved video). The live match still makes its own sound." },
-  { name: "crowd-groan", label: "A near miss or a save", group: "The crowd", wired: false, where: "Not played yet. The match makes its own crowd noise." },
+  { name: "crowd-groan", label: "A near miss or a save", group: "The crowd", wired: true, where: "The crowd's gasp in the cut scenes. The match makes its own crowd noise." },
   { name: "whistle-start", label: "Kick-off", group: "The referee", wired: false, where: "Not played yet. The match makes its own whistle." },
   { name: "whistle-half", label: "Half time", group: "The referee", wired: false, where: "Not played yet. The match makes its own whistle." },
   { name: "whistle-full", label: "Full time", group: "The referee", wired: false, where: "Not played yet. The match makes its own whistle." },
@@ -55,6 +55,13 @@ export const SFX_CATALOG: SfxCatalogEntry[] = [
       ? "In TV, highlights and TikTok goal videos, as the goal goes in (or just after, for what it means for the score)."
       : "In TV and highlights goal videos, over the slow-motion replay.",
   })),
+  // The cut scenes' own sounds (lib/star/cutscene/sounds.ts, made by scripts/sfx/cutscene_cues.py). The kick, net and crowd cues use the match's sounds above.
+  { name: "cut-pen-scratch", label: "Cut scene: the pen on the contract", group: "Cut-scene music", wired: true, where: "When you sign in the contract-signing cut scene." },
+  { name: "cut-camera-shutters", label: "Cut scene: the press cameras", group: "Cut-scene music", wired: true, where: "When the cameras go off in the press and trophy cut scenes." },
+  // The spoken lines (scripts/cutscene/voice.py, the offline Kokoro voice; lib/star/cutscene/voiceLines.ts)
+  { name: "cut-mentor-line", label: "Cut scene: The Icon's word", group: "Cut-scene music", wired: true, where: "The Icon's one line on the training ground (the mentor cut scene)." },
+  { name: "cut-press-question", label: "Cut scene: the reporter's question", group: "Cut-scene music", wired: true, where: "The reporter's question in the press-conference cut scene." },
+  { name: "cut-press-answer", label: "Cut scene: your answer to the press", group: "Cut-scene music", wired: true, where: "Your answer in the press-conference cut scene." },
   // The cut-scene music beds (lib/star/cutscene/music.ts, made by tools/cutscene-music/make_beds.py).
   { name: "cut-music-signing", label: "Music: signing a contract (warm, hopeful)", group: "Cut-scene music", wired: true, where: "Under the contract-signing cut scene (Settings → Look → Cut-scene camera: New)." },
   { name: "cut-music-trophy", label: "Music: a trophy, a goal, an award (triumphant)", group: "Cut-scene music", wired: true, where: "Under the trophy lift, goal, award and promotion cut scenes (Cut-scene camera: New)." },

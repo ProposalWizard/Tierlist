@@ -23,11 +23,11 @@ import { people3dLook } from "../look3d";
 import { createStyleKit, type StyleKit } from "../style3d/kit";
 import { resolveStyle, type StyleDef, type StyleId } from "../style3d/styles";
 import { applyMood, MOODS } from "./presets/moods";
-import { compileScript, rootAt, clipsAt, trackWeight, cameraAt, overlayAt, soundsBetween, type Compiled, type Overlay } from "./timeline";
+import { compileScript, rootAt, clipsAt, trackWeight, cameraAt, overlayAt, soundsBetween, ownMotion, type Compiled, type Overlay } from "./timeline";
 import { shotPose, mixPose, keepInside, PHONE_FRAMING_ON, type Anchor, type ShotPose } from "./presets/camera";
 import { resolvePoint } from "./presets/locations";
 import { createCutscenePeople } from "./peopleAdapter";
-import { castLook, DEFAULT_CLUB } from "./casting";
+import { castAll, DEFAULT_CLUB } from "./casting";
 import { buildSet, type BuiltSet } from "./locations3d";
 import { buildProp, type PropObj, type PropText } from "./props3d";
 import { createFx, type FxActive } from "./fx3d";
@@ -104,9 +104,28 @@ export interface DirectorEdit {
 
 interface Cast { id: string; role: string; body: string; actor: CutsceneActor; clipSet: Set<string> }
 
-const SITS = new Set(["sitidle", "boss-sit", "sitdown", "slot_sit"]);
+// (sit_idle, sit_down and stand_up are the motion-capture sits the "sit" stand-ins ask for first: missing here,
+// a seated man was pulled down to put his hanging feet on the floor, into the seat, knees up: "scrunched")
+/** The face a scene's feeling gives anyone with no expression of his own set. */
+const MOOD_FACE: Partial<Record<string, import("./types").Expression>> = {
+  joy: "smile", pride: "proud", relief: "smile", defiance: "determined", anger: "angry", sadness: "sad", shock: "shocked",
+  tension: "tense", gratitude: "smile", hunger: "focused", inspired: "focused",
+};
+const SITS = new Set(["sitidle", "boss-sit", "sitdown", "slot_sit", "sit_idle", "sit_down", "stand_up", "seated_idle", "seated_talk", "sit_down_ual", "stand_up_ual"]);
 /** How near the camera may come to a person (metres from his head point, body line, arm line). */
 export const PERSONAL_SPACE = { head: 0.34, body: 0.32, arm: 0.24 } as const;
+/**
+ * THE CAMERA-CLEAR RULE (20 Nov 2026). `near`: a still camera is never inside a solid thing of the
+ * set or a prop, or this close to one (m). `sight`: its line to the subject must be free of them up to
+ * this far short of him (m). People have their own distances (PERSONAL_SPACE).
+ */
+export const CAMERA_CLEAR = { near: 0.3, sight: 0.35 } as const;
+/** Holds with his knees on the floor (ground contact puts the knees on it). */
+const KNEELS = new Set(["kneel", "kneel-pray", "knee-slide"]);
+/** A knee's front from its joint, a toe's underside from its joint (m). */
+export const GROUND = { knee: 0.055, toe: 0.018 } as const;
+/** The cut scenes' softer light (multipliers on the style; contrast pulled towards flat; shadows lifted). */
+export const CUT_LIGHT = { key: 0.82, fill: 1.3, rim: 0.6, flatten: 0.04, exposure: 0.93, poster: 0.75, lift: 0.025 } as const;
 const IN_PLACE = new Set(["sitdown", "sitidle", "boss-sit", "slump_walk", "jog", "sprint", "dribble_run", "celebrate_safe"]);
 
 export async function createDirector(container: HTMLElement, written: CutsceneScript, o: DirectorOptions = {}): Promise<Director> {
@@ -135,6 +154,18 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     if (newCam) { d.post.bloom *= 0.35; d.post.bloomThresh = Math.max(d.post.bloomThresh, 0.95); }
     // indoors the sky's fill is mostly walled off: the set's own lamps and the window do the lighting
     if (C.loc.indoor) d.hemi = { ...d.hemi, intensity: d.hemi.intensity * 0.6 };
+    // SOFTER LIGHT (20 Nov 2026, Harry: "the lighting and contrast is a bit much at times"): every cut scene
+    // the same way, the key down, the shadow side lifted, the grade flatter, highlights held under white
+    if (newCam) {
+      d.sun = { ...d.sun, intensity: d.sun.intensity * CUT_LIGHT.key };
+      d.hemi = { ...d.hemi, intensity: d.hemi.intensity * CUT_LIGHT.fill };
+      if (d.rim) d.rim = { ...d.rim, intensity: d.rim.intensity * CUT_LIGHT.rim };
+      d.post.contrast = 1 + (d.post.contrast - 1) * 0.5 - CUT_LIGHT.flatten;
+      d.post.exposure *= CUT_LIGHT.exposure;
+      d.post.posterMix *= CUT_LIGHT.poster;
+      d.post.lift = [d.post.lift[0] + CUT_LIGHT.lift, d.post.lift[1] + CUT_LIGHT.lift, d.post.lift[2] + CUT_LIGHT.lift];
+      d.post.vignette *= 0.7;
+    }
     return d;
   };
   let edit: DirectorEdit | null = null;
@@ -145,23 +176,75 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   // ── the set ──
   let set: BuiltSet = buildSet(T, kit, tier, script.set.location, { shirt: club.shirt, trim: club.trim, club: club.name, lamps: mood.lamps, seed: script.seed ?? 1, night: script.set.mood.includes("night") });
   root.add(set.group);
+  /**
+   * THE CAMERA-CLEAR RULE'S VIEW OF THE SET (20 Nov 2026: the signing's handshake insert sat inside the
+   * pot plant, the next shot looked through a chair back). Every solid thing in the set that is not
+   * the floor, a wall-sized plane, glass or the far stadium: the camera may not sit inside one or
+   * within CAMERA_CLEAR.near of it, and must see its subject past them (clearShot, clearOfPeople).
+   */
+  const setSolids: { mesh: any; box: any; small: boolean }[] = [];
+  const measureSolids = () => {
+    setSolids.length = 0;
+    set.group.updateMatrixWorld(true);
+    const walk = (o: any) => {
+      if (o === set.stadium?.group || o.userData?.cameraPass) return;
+      if (o.isMesh && !o.isInstancedMesh && o.visible) {
+        const mt = Array.isArray(o.material) ? o.material[0] : o.material;
+        const box = new T.Box3().setFromObject(o);
+        const sz = box.getSize(new T.Vector3());
+        const big = Math.max(sz.x, sz.y, sz.z);
+        // not the floor or a rug (flat and low), not glass or a painted backdrop, not a light strip
+        const flat = sz.y < 0.06 && box.max.y < 0.3;
+        if (!box.isEmpty() && !flat && big < 40 && !(mt?.transparent && (mt.opacity ?? 1) < 0.9) && mt?.side !== T.BackSide) setSolids.push({ mesh: o, box, small: big < 3 && Math.min(sz.x, sz.y, sz.z) > 0.015 });
+      }
+      for (const c of o.children) walk(c);
+    };
+    walk(set.group);
+  };
+  measureSolids();
+  const sightRay = new T.Raycaster();
 
   // ── the cast ──
   const people = createCutscenePeople({ T, SkeletonUtils: SkU.default ?? SkU, loader, body: people3dLook() });
   const cast = new Map<string, Cast>();
+  // everyone but you is cast from the people presets (casting.ts castAll): same id, same look
+  const looks = castAll(C.cast, career);
   await Promise.all(C.cast.map(async (m) => {
-    const look = castLook(m, career);
+    const look = looks.get(m.id)!;
     const actor = await people.create({ id: m.id, role: m.role, look, outline: prof.outlines ? 0.006 : 0, castShadow: prof.shadows });
     root.add(actor.root);
     cast.set(m.id, { id: m.id, role: m.role, body: look.body, actor, clipSet: new Set(actor.clips()) });
   }));
   const persons = () => Array.from(cast.values()).map((c) => c.actor.person).filter(Boolean) as any[];
+  /**
+   * CONTACT SHADOWS (20 Nov 2026: the knee slide read as floating, its sun shadow a metre off to the side at
+   * golden hour): a soft dark patch on the floor under everyone's body, from t alone, so a man on the ground
+   * is ON it whatever the sun does.
+   */
+  const blobCanvas = document.createElement("canvas"); blobCanvas.width = blobCanvas.height = 64;
+  { const g = blobCanvas.getContext("2d")!; const gr = g.createRadialGradient(32, 32, 2, 32, 32, 31); gr.addColorStop(0, "rgba(0,0,0,0.5)"); gr.addColorStop(0.6, "rgba(0,0,0,0.22)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }
+  const blobTex = new T.CanvasTexture(blobCanvas);
+  const blobGeo = new T.PlaneGeometry(1, 1); blobGeo.rotateX(-Math.PI / 2);
+  const blobMat = new T.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, toneMapped: false });
+  const blobs = new Map<string, any>();
+  for (const id of Array.from(cast.keys())) { const b = new T.Mesh(blobGeo, blobMat); b.renderOrder = 1; b.userData.cameraPass = true; root.add(b); blobs.set(id, b); }
+  const placeBlobs = (t: number) => {
+    for (const [id, b] of Array.from(blobs)) {
+      const c = cast.get(id)!;
+      const hips = c.actor.point("hips"), floor = rootAt(C, id, t).pos[1];
+      // wider and darker the nearer his hips are to the floor (on his knees, sitting on the grass)
+      const low = clamp(1 - (hips.y - floor - 0.35) / 0.6);
+      b.position.set(hips.x, floor + 0.006, hips.z);
+      b.scale.setScalar(0.72 + 0.3 * low);
+      b.visible = c.actor.root.visible !== false;
+    }
+  };
 
   // ── props ──
   const txt: PropText = {
     club: club.name, player: career?.player?.name ?? "The New Signing", surname: career?.player?.surname ?? career?.player?.name?.split(" ").slice(-1)[0] ?? "Signing",
     manager: career?.manager?.name ?? "The Manager", number: career?.player?.number ?? 9, shirt: club.shirt, trim: club.trim,
-    rows: [["Seasons", String(script.text?.seasons ?? "3")], ["Weekly wage", script.text?.wage ?? "★2,500"], ["Shirt number", String(career?.player?.number ?? 9)]],
+    rows: [["Seasons", String(script.text?.seasons ?? "3")], ["Weekly wage", script.text?.wage ?? "£2,500"], ["Shirt number", String(career?.player?.number ?? 9)]],
   };
   const sig = makeSignature(txt.player);
   const props = new Map<string, PropObj>();
@@ -271,7 +354,24 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       const seed = actorSeed(c.id);
       const ctx: PoseCtx = { T, t, local: 0, yaw: r.yaw, root: [a.root.position.x, a.root.position.y, a.root.position.z], seed, floorY: r.pos[1] };
       // a few degrees of sway with overlap on every arm, so nobody stands with dead arms (fluid.ts)
-      liveArms(a, ctx);
+      // his own carriage and arm swing (timeline.ts ownMotion), and his breathing: a line of men is not one man copied
+      const own = ownMotion(c.id);
+      if (sitW < 0.5) a.lean(own.lean + 0.012 * Math.sin(t * 1.5 * own.rate + seed * 3), own.side);
+      // THE ODD LEAN (round 2, Harry on the walk-out's low shot): the brisker walk (walk_confident) is captured
+      // leaning back 6 to 9 degrees, and his own carriage could add to it: a man walking out leaning back reads
+      // as odd. Standing or walking, the back is kept between 3 degrees back and 8 forward.
+      if (sitW < 0.5 && !(tracksOf(c.id, "pose") as PoseTrack[]).some((pt) => KNEELS.has(pt.pose) && trackWeight(pt, t, 0.3, 0.35) > 0)) {
+        const nk = a.bone("neck"), hp = a.bone("Hips");
+        if (nk && hp) {
+          a.root.updateMatrixWorld(true);
+          const f = new T.Vector3(Math.sin(r.yaw), 0, Math.cos(r.yaw));
+          const d = new T.Vector3().setFromMatrixPosition(nk.matrixWorld).sub(new T.Vector3().setFromMatrixPosition(hp.matrixWorld));
+          const bend = Math.atan2(d.dot(f), d.y);
+          if (bend < -0.052) a.lean(-0.052 - bend);
+          else if (bend > 0.14) a.lean(0.14 - bend);
+        }
+      }
+      liveArms(a, ctx, own.arms);
       for (const pt of tracksOf(c.id, "pose") as PoseTrack[]) {
         const amt = pt.amount ?? 1;
         const w = trackWeight(pt, t, 0.3, 0.35) * amt;
@@ -280,6 +380,11 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         if (w > 0 || (lag && lag.lower > 0)) applyPose(a, pt.pose, w, { ...ctx, local: t - pt.at, lag, prop: heldProp(pt.prop) });
       }
       if (cs.upright > 0) a.lookAt(actorLocal(c.id, t, [0, 1.62, 6]), 0.8 * cs.upright);
+      // GROUND CONTACT (20 Nov 2026: the knee slide floated off the grass, and sank through it as it blended in)
+      let kneelW = 0;
+      for (const pt of tracksOf(c.id, "pose") as PoseTrack[]) if (KNEELS.has(pt.pose)) kneelW = Math.max(kneelW, trackWeight(pt, t, 0.3, 0.35) * (pt.amount ?? 1));
+      if (sitW < 0.5) groundContact(a, r.pos[1], Math.min(1, kneelW * 1.5));
+      else seatedFeet(a, r.yaw, r.pos[1] < 0.15 ? 0 : r.pos[1], smooth((sitW - 0.5) / 0.4));
     }
     // 2. props at rest / placed (so reaches for them see where they are)
     placeProps(t, "rest");
@@ -319,8 +424,27 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     // props in hands, so a look at one sees where it is now (placed again at 5., after the fingers)
     placeProps(t, "held");
     // 4. look, face, talk; blinks
+    // who has the line now (everyone else's attention goes to him), and the scene's own feeling for a face with none set
+    let speakerId: string | null = null;
+    for (const c of Array.from(cast.values())) if ((tracksOf(c.id, "speak") as SpeakTrack[]).some((sp) => t >= sp.at && t <= sp.at + sp.dur)) speakerId = c.id;
+    const speakerHead = speakerId ? cast.get(speakerId)!.actor.point("eyes").clone() : null;
+    const moodFace = MOOD_FACE[script.source?.event?.emotion ?? "calm"] ?? null;
     for (const c of Array.from(cast.values())) {
       const a = c.actor;
+      const own = ownMotion(c.id);
+      // LIFE (Harry, 20 Nov 2026: "no life in their faces, everyone static"): with no look of his own set, a listener
+      // turns to whoever is speaking (his own delay and amount); otherwise the head follows his wandering eyes a
+      // little, at his own restless pace. From t and his id alone.
+      if (!(tracksOf(c.id, "look") as LookTrack[]).some((lt) => trackWeight(lt, t, 0.35, 0.35) > 0.05)) {
+        if (speakerHead && speakerId !== c.id) a.lookAt(speakerHead, 0.3 + 0.3 * (own.restless - 0.6) / 0.9);
+        else {
+          const [hx, hy] = wanderGaze(t * 0.6 * own.restless + own.phase * 40, actorSeed(c.id) * 13 + 5);
+          const hd = a.point("head");
+          const yw = rootAt(C, c.id, t).yaw + hx * 0.35 + own.head;
+          a.lookAt(new T.Vector3(hd.x + Math.sin(yw) * 3, hd.y + hy * 0.5, hd.z + Math.cos(yw) * 3), 0.4);
+        }
+      }
+      if (moodFace && !(tracksOf(c.id, "face") as FaceTrack[]).some((ft) => t >= ft.at && t <= ft.at + (ft.dur ?? 999))) a.setExpression(moodFace, 0.55);
       for (const lt of tracksOf(c.id, "look") as LookTrack[]) {
         const w = trackWeight(lt, t, 0.35, 0.35) * (lt.amount ?? 1);
         if (w > 0) a.lookAt(targetPoint(lt.target, t), w);
@@ -334,8 +458,9 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       // a recorded line: the mouth follows its loudness; otherwise a talking rhythm
       a.setMouth(!sp ? 0 : vl ? vl.env[Math.min(vl.env.length - 1, Math.max(0, Math.floor((t - sp.at) * 30)))] ?? 0 : 0.5 + 0.5 * noise1(t * 9, c.id.length));
       // blinks at uneven times, and the eyes wander a little between looks (less while he talks or looks at someone)
-      const seed = (script.seed ?? 1) * 31 + c.id.length * 7 + c.id.charCodeAt(0);
-      a.setBlink(blinkAt(t, seed));
+      // (his own blink times: an id's length and first letter gave every "mate…" the same blinks)
+      const seed = (script.seed ?? 1) * 31 + actorSeed(c.id) * 97;
+      a.setBlink(blinkAt(t * own.restless, seed));
       const looking = (tracksOf(c.id, "look") as LookTrack[]).some((lt) => trackWeight(lt, t, 0.35, 0.35) > 0.3);
       const [gx, gy] = wanderGaze(t, seed);
       a.setGaze?.(gx, gy, sp || looking ? 0.3 : 0.75);
@@ -343,6 +468,68 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     }
     // 5. props in hands
     placeProps(t, "held");
+    placeBlobs(t);
+  };
+
+  /**
+   * GROUND CONTACT: nobody's knees or toes go through the floor (a hold blending in lowered him before his
+   * legs had bent), and on his knees (a kneel, a knee slide) his knees and shins rest ON it, not above it.
+   * Measured on the joints: a knee's front is KNEE_R in front of its joint, a toe's underside TOE_R.
+   */
+  const groundContact = (a: CutsceneActor, floorY: number, kneelW: number) => {
+    a.root.updateMatrixWorld(true);
+    const jy = (n: string, r: number) => { const b = a.bone(n); return b ? new T.Vector3().setFromMatrixPosition(b.matrixWorld).y - r : Infinity; };
+    const knee = Math.min(jy("LeftLeg", GROUND.knee), jy("RightLeg", GROUND.knee));
+    const low = Math.min(knee, jy("LeftToeBase", GROUND.toe), jy("RightToeBase", GROUND.toe));
+    if (!isFinite(low)) return;
+    let dy = 0;
+    if (low < floorY - 0.004) dy = floorY - low;
+    else if (kneelW > 0 && isFinite(knee) && knee > floorY + 0.004) dy = -(knee - floorY) * kneelW;
+    if (dy) { a.root.position.y += dy; a.root.updateMatrixWorld(true); }
+  };
+
+  /**
+   * SEATED LEGS (Harry, 20 Nov 2026: "in the press conference, his legs are scrunched up when he sits down").
+   * Whatever the chair's height, each foot goes flat on the floor and the leg is laid out as a seated man's:
+   * a chair at least his shin's height, the shin straight down and the thigh sloping down to the knee; a lower
+   * one, the thigh level and the foot forward. The clip's hip stays where it sat; only the legs move.
+   */
+  const seatedFeet = (a: CutsceneActor, yaw: number, floorY: number, w: number) => {
+    if (w <= 0) return;
+    a.root.updateMatrixWorld(true);
+    const P = (n: string) => { const b = a.bone(n); return b ? new T.Vector3().setFromMatrixPosition(b.matrixWorld) : null; };
+    const fwd = new T.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+    for (const [S, sg] of [["Left", 1], ["Right", -1]] as const) {
+      const hip = P(`${S}UpLeg`), knee = P(`${S}Leg`), ank = P(`${S}Foot`), toe = P(`${S}ToeBase`);
+      if (!hip || !knee || !ank || !toe) continue;
+      const thigh = hip.distanceTo(knee), shin = knee.distanceTo(ank);
+      // the ankle's height over the floor when the foot is flat (its toe joint just off the floor)
+      const ankleH = Math.max(0.06, ank.y - toe.y) + GROUND.toe;
+      const D = hip.y - (floorY + ankleH);
+      let ahead: number;
+      if (D >= shin) ahead = Math.sqrt(Math.max(0, thigh * thigh - (D - shin) * (D - shin)));
+      else ahead = thigh + Math.sqrt(Math.max(0, shin * shin - D * D)) * 0.6;
+      const side = new T.Vector3(fwd.z, 0, -fwd.x).multiplyScalar(sg);
+      // across: as the clip had it, a little outside the hip (knees apart as a seated man's are)
+      const across = Math.max(0.02, ank.clone().sub(hip).dot(side)) * 0.5 + 0.03;
+      const want = hip.clone().add(fwd.clone().multiplyScalar(ahead)).add(side.clone().multiplyScalar(across));
+      want.y = floorY + ankleH;
+      a.reachFoot(S === "Left" ? "L" : "R", want, w, fwd.clone().add(new T.Vector3(0, 0.6, 0)).normalize());
+      // the foot flat: turned about his left-right line until the toe joint is down on the floor
+      a.root.updateMatrixWorld(true);
+      const fb = a.bone(`${S}Foot`), A2 = P(`${S}Foot`), T2 = P(`${S}ToeBase`);
+      if (fb && A2 && T2) {
+        const len = A2.distanceTo(T2);
+        const drop = Math.asin(clamp((T2.y - (floorY + GROUND.toe)) / Math.max(len, 0.05), -1, 1));
+        const axis = new T.Vector3(fwd.z, 0, -fwd.x);
+        const wq = new T.Quaternion(); fb.getWorldQuaternion(wq);
+        const pq = new T.Quaternion(); fb.parent!.getWorldQuaternion(pq);
+        // + about (fwd.z, 0, -fwd.x) tips the toe down
+        const r = new T.Quaternion().setFromAxisAngle(axis, drop * w);
+        fb.quaternion.copy(pq.invert().multiply(r.multiply(wq)));
+        fb.updateMatrixWorld(true);
+      }
+    }
   };
 
   const traceOne = (c: Cast, tr: TraceTrack, t: number) => {
@@ -404,9 +591,95 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     for (const pt of tracksOf(id, "pose") as PoseTrack[]) if (pt.prop && trackWeight(pt, t) > 0) { out.L = true; out.R = true; }
     return out;
   };
+  /** Is this prop in someone's hands at t (attached, or a two-hand hold)? */
+  const propHeldAt = (pid: string, t: number): boolean => {
+    let held = false;
+    for (const pt of propTracks) {
+      if (pt.prop !== pid || pt.at > t) continue;
+      if (pt.action === "attach") held = true;
+      else if (pt.action === "detach" || pt.action === "place") held = false;
+    }
+    if (held) return true;
+    for (const c of Array.from(cast.values())) for (const pt of tracksOf(c.id, "pose") as PoseTrack[]) if (pt.prop === pid && trackWeight(pt, t) > 0) return true;
+    return false;
+  };
+  // ── THE BALL AT HIS FEET (Harry, 20 Nov 2026: "the ball doesn't really actually go where his feet are") ──
+  // A dribble track's touches are measured once, before the first frame, from the dribbler's own pose: each
+  // time the touching foot swings furthest forward the ball is against its toe, and at the end (the strike's
+  // contact) against the striking foot. Between touches it rolls ahead, slowing. A real-size ball (RUL-3D-006).
+  const BALL_R = 0.11;
+  const dribblePaths = new Map<PropTrack, { t: number[]; p: Vec3[] } | null>();
+  const toeOf = (actor: string, foot: "L" | "R") => {
+    const a = cast.get(actor)?.actor;
+    const S = foot === "R" ? "Right" : "Left";
+    return a?.bone(`${S}ToeBase`) ?? a?.bone(`${S}Foot`) ?? null;
+  };
+  const measureDribbles = () => {
+    for (const pt of propTracks) {
+      if (pt.action !== "dribble" || !pt.actor || !cast.has(pt.actor)) continue;
+      const foot = pt.foot ?? "R", dur = pt.dur ?? 1, id = pt.actor, end = pt.at + dur;
+      // each foot's reach forward of him, every frame of the run
+      const ts: number[] = [], fw: Record<"L" | "R", number[]> = { L: [], R: [] };
+      const fwOf = (f: "L" | "R", tt: number) => {
+        const toe = toeOf(id, f), r = rootAt(C, id, tt);
+        if (!toe) return 0;
+        const q = new T.Vector3().setFromMatrixPosition(toe.matrixWorld);
+        return (q.x - r.pos[0]) * Math.sin(r.yaw) + (q.z - r.pos[2]) * Math.cos(r.yaw);
+      };
+      for (let k = 0; k <= Math.ceil(dur * 30); k++) {
+        const tt = Math.min(end, pt.at + k / 30);
+        poseActors(tt);
+        ts.push(tt); fw.L.push(fwOf("L", tt)); fw.R.push(fwOf("R", tt));
+      }
+      // a touch: a foot furthest forward in its swing, every step, either foot (close control; not in the
+      // last 0.3 s: the strike is next)
+      const touches: [number, "L" | "R"][] = [];
+      for (const f of ["L", "R"] as const) {
+        const w = fw[f];
+        for (let k = 1; k < w.length - 1; k++) if (w[k] >= w[k - 1] && w[k] > w[k + 1] && ts[k] < end - 0.3) touches.push([ts[k], f]);
+      }
+      touches.sort((a, b) => a[0] - b[0]);
+      const out = { t: [] as number[], p: [] as Vec3[] };
+      // the strike: the ball against the striking foot at `end` itself (the beat's contact is the shot clip's
+      // own measured contact, beats.ts STRIKE_CONTACT)
+      for (const [tt, f] of [...touches, [end, foot] as [number, "L" | "R"]]) {
+        poseActors(tt);
+        const toe = toeOf(id, f);
+        if (!toe) continue;
+        const r = rootAt(C, id, tt);
+        const q = new T.Vector3().setFromMatrixPosition(toe.matrixWorld);
+        // in front of his toe for a touch; for the strike, the ball's middle just ahead of the toe joint (the laces meet it)
+        // (round 2, Harry: "the ball doesn't really actually go where his feet are": it ran ~0.5 m ahead between
+        // touches) the ball against the toe at each touch, never a ball's width out in front
+        const ahead = tt === end ? 0.07 : BALL_R + 0.005;
+        out.t.push(tt); out.p.push([q.x + Math.sin(r.yaw) * ahead, r.pos[1] + BALL_R, q.z + Math.cos(r.yaw) * ahead]);
+      }
+      dribblePaths.set(pt, out.t.length ? out : null);
+    }
+  };
+  /** Where a dribbled ball is at t (null: no path), and its roll (axis + angle). */
+  const dribbleAt = (pt: PropTrack, t: number, from: Vec3): { pos: Vec3; roll: [number, number, number, number] } | null => {
+    const path = dribblePaths.get(pt);
+    if (!path) return null;
+    const T0 = [pt.at, ...path.t], P0: Vec3[] = [[from[0], (path.p[0]?.[1] ?? BALL_R), from[2]], ...path.p];
+    let i = 0;
+    while (i < T0.length - 2 && t >= T0[i + 1]) i++;
+    const a = P0[i], b = P0[i + 1] ?? P0[i];
+    const k = clamp((t - T0[i]) / Math.max(0.01, (T0[i + 1] ?? T0[i]) - T0[i]));
+    // knocked on: a little faster off the foot, slowing as he catches it up (never far ahead of him)
+    // (at his own pace between touches, not front-loaded: a front-loaded roll put it half a metre ahead of his feet mid-stride)
+    const e = i === 0 ? smooth(k) : k;
+    const pos: Vec3 = [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e, a[2] + (b[2] - a[2]) * e];
+    let dist = 0;
+    for (let j = 0; j < i; j++) dist += Math.hypot(P0[j + 1][0] - P0[j][0], P0[j + 1][2] - P0[j][2]);
+    dist += Math.hypot(b[0] - a[0], b[2] - a[2]) * e;
+    const dx = b[0] - a[0], dz = b[2] - a[2], L = Math.hypot(dx, dz) || 1;
+    return { pos, roll: [dz / L, 0, -dx / L, dist / BALL_R] };
+  };
+
   const placeProps = (t: number, phase: "rest" | "held") => {
     for (const [id, p] of Array.from(props)) {
-      let st = { ...propRest.get(id)! };
+      let st: { pos: Vec3; yaw: number; visible: boolean; roll?: [number, number, number, number] } = { ...propRest.get(id)! };
       let held: { actor: string; hand?: "L" | "R"; part?: string; at: number; dur: number; from?: any } | null = null;
       for (const pt of propTracks) {
         if (pt.prop !== id || pt.at > t) continue;
@@ -420,6 +693,10 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
             const kk = pt.arc ? clamp((t - pt.at) / Math.max(0.01, pt.dur ?? 0.01)) : k;
             st = { pos: [st.pos[0] + (to[0] - st.pos[0]) * kk, st.pos[1] + (to[1] - st.pos[1]) * kk + (pt.arc ? Math.sin(kk * Math.PI) * pt.arc : 0), st.pos[2] + (to[2] - st.pos[2]) * kk], yaw: lerpAngle(st.yaw, yaw, k), visible: true };
           }
+        } else if (pt.action === "dribble") {
+          held = null;
+          const d = dribbleAt(pt, t, st.pos);
+          if (d) st = { pos: d.pos, yaw: st.yaw, visible: true, roll: d.roll };
         } else if (pt.action === "show") st.visible = true;
         else if (pt.action === "hide") st.visible = false;
       }
@@ -430,6 +707,8 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         if (!held && !both) {
           p.group.visible = st.visible;
           p.group.position.set(...st.pos); p.group.quaternion.setFromAxisAngle(new T.Vector3(0, 1, 0), st.yaw);
+          // a ball rolled along the ground turns as it goes (dribble)
+          if (st.roll) p.group.quaternion.premultiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(st.roll[0], st.roll[1], st.roll[2]).normalize(), st.roll[3]));
         }
       } else if (held || both) {
         p.group.visible = true;
@@ -511,7 +790,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   });
   /** A shot whose camera is inside someone, or has someone right in front of the lens, swings round until it is clear. */
   const clearShot = (spec: CameraTrack["shot"], a: Anchor, b: Anchor | null, t: number, span?: { at: number; dur: number }): CameraTrack["shot"] => {
-    if (spec.fixed || spec.preset === "ots" || spec.preset === "pov" || spec.preset === "insert") return spec;
+    if (spec.fixed) return spec;
     // a still camera on a tall phone (B5): checked at the phone's own (wider) framing through its whole
     // shot (heads near the lens), and the second subject counts too unless the shot is of both of
     // them (in "Watches him go" the mentor, the second subject, stood in front of the wider phone camera
@@ -551,9 +830,81 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         return w.clone().sub(seg.clone().multiplyScalar(along)).length() < S.side;
       });
     });
-    if (!blocked(spec)) return spec;
-    for (const dy of [28, -28, 55, -55, 85, -85]) { const s2 = { ...spec, yaw: (spec.yaw ?? 0) + dy }; if (!blocked(s2)) return s2; }
-    return { ...spec, rise: (spec.rise ?? 0) + 0.8 };
+    // the set and the props (CAMERA_CLEAR): not inside or right against a solid thing, and the subject in
+    // sight past the furniture. A still camera only (a following camera is steered by its subject); an
+    // over-the-shoulder shot keeps its shoulder but still may not look through a chair or a plant.
+    const subjProp = "prop" in spec.subject ? spec.subject.prop : null;
+    const things = (): { mesh: any; box: any; small: boolean }[] => {
+      const out = setSolids.slice();
+      for (const [pid, pr] of Array.from(props)) {
+        if (pid === subjProp || !pr.group?.visible || propHeldAt(pid, t)) continue;
+        const box = new T.Box3().setFromObject(pr.group);
+        const sz = box.getSize(new T.Vector3());
+        // a thing in someone's hands at this moment belongs to the action (the pen, the cup, the shirt)
+        if (box.isEmpty() || Math.max(sz.x, sz.y, sz.z) > 3 || Math.max(sz.x, sz.y, sz.z) < 0.3) continue;
+        out.push({ mesh: pr.group, box, small: true });
+      }
+      return out;
+    };
+    const setBlocked = (sp: CameraTrack["shot"]): number => {
+      if (!span || sp.preset === "pov") return 0;
+      const TH = things();
+      let worst = 0;
+      for (const k of [0, 0.5, 1]) {
+        const p = shotPose(sp, a, b, { aspect: asp, k, t, seed: 0, bounds: C.loc.bounds });
+        const cam = v(p.pos);
+        // inside a solid thing
+        for (const s of TH) if (s.small && s.box.clone().expandByScalar(0.05).containsPoint(cam)) worst = Math.max(worst, 2);
+        // sight lines: to where it looks, and to the subject's head. A thing within `near` of the lens on
+        // either line is a blur across the picture; one further out hides the subject.
+        const ends = [v(p.look)];
+        if (!a.thing) ends.push(v(a.head), v(a.chest));
+        const meshes = TH.map((x) => x.mesh);
+        for (const e of ends) {
+          const d = e.clone().sub(cam); const L = d.length();
+          if (L < 0.2) continue;
+          sightRay.set(cam, d.normalize()); sightRay.near = 0; sightRay.far = L - CAMERA_CLEAR.sight;
+          const hit = sightRay.far > 0.05 ? sightRay.intersectObjects(meshes, true)[0] : null;
+          if (hit) worst = Math.max(worst, hit.distance < CAMERA_CLEAR.near ? 2 : 1);
+        }
+      }
+      return worst;
+    };
+    // LINE OF SIGHT (20 Nov 2026: in the walk-out's stadium shot a rival stood between the lens and you): from
+    // a still camera to its subject's chest, nobody else's body within 0.28 m of the line anywhere between
+    // (a man near the lens is the check above; here the whole way)
+    const hidden = (sp: CameraTrack["shot"]): boolean => {
+      if (a.thing || !span) return false;
+      return [0.15, 0.5, 0.85].some((f) => {
+        const ts = span.at + span.dur * f;
+        const p = shotPose(sp, a, b, { aspect: asp, k: f, t: ts, seed: 0 });
+        const cam = v(p.pos);
+        const now = subj ? rootAt(C, subj, ts).pos : null;
+        const tgt = v(a.chest).add(now && p0 ? v([now[0] - p0[0], 0, now[2] - p0[2]]) : new T.Vector3());
+        const seg = tgt.clone().sub(cam); const L = seg.length(); seg.normalize();
+        return [...bodiesAt(ts, except), ...bodiesAt(ts, except, true)].some((q) => {
+          const w = v(q).sub(cam); const along = w.dot(seg);
+          if (along < 0.4 || along > L - 0.6) return false;
+          return w.clone().sub(seg.clone().multiplyScalar(along)).length() < 0.28;
+        });
+      });
+    };
+    // (an insert of a point between people, a handshake, must see it past them too)
+    const people = !(spec.preset === "ots" || spec.preset === "pov" || (spec.preset === "insert" && !("point" in spec.subject)));
+    const bad = (sp: CameraTrack["shot"]) => (people && blocked(sp) ? 4 : 0) + (people && hidden(sp) ? 3 : 0) + setBlocked(sp);
+    let best = spec, bestBad = bad(spec);
+    if (!bestBad) return spec;
+    // swing round (the near angles first), then a little higher, and take the first clear view; if none is
+    // clear, the least blocked (people in the lens count most)
+    const turns = spec.preset === "ots" ? [12, -12, 22, -22] : [14, -14, 28, -28, 42, -42, 55, -55, 85, -85, 120, -120];
+    for (const rise of [0, 0.3, 0.6]) for (const dy of rise ? [0, ...turns] : turns) {
+      const s2 = { ...spec, yaw: (spec.yaw ?? 0) + dy, rise: (spec.rise ?? 0) + rise };
+      const bd = bad(s2);
+      if (!bd) return s2;
+      if (bd < bestBad) { best = s2; bestBad = bd; }
+    }
+    // people still in the lens from every side: over their heads (as before)
+    return bestBad >= 4 ? { ...spec, rise: (spec.rise ?? 0) + 0.8 } : best;
   };
   const anchors = new Map<CameraTrack, { a: Anchor; b: Anchor | null; shot: CameraTrack["shot"] }>();
   const measureAnchors = () => {
@@ -578,6 +929,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   // camera); a later resize to a different tall shape measures them again
   camera.aspect = (container.clientWidth || 1) / (container.clientHeight || 1);
   let measuredAspect = camera.aspect;
+  measureDribbles();
   measureAnchors();
 
   const camPose = (cam: CameraTrack, k: number, t: number): ShotPose => {
@@ -621,6 +973,8 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       const b = new T.Box3().setFromObject(pr.group);
       if (!b.isEmpty() && Math.max(...b.getSize(new T.Vector3()).toArray()) < 2.5) boxes.push(b.expandByScalar(0.06));
     }
+    // the set's furniture (CAMERA_CLEAR): never inside a desk, a plant, a board
+    for (const s of setSolids) if (s.small) boxes.push(s.box.clone().expandByScalar(0.1));
     const S = PERSONAL_SPACE;
     const clear = (c: any) => parts.every((q) => c.distanceTo(q.head) > S.head && segD(c, q.chest, q.hips) > S.body && segD(c, q.sl, q.hl) > S.arm && segD(c, q.sr, q.hr) > S.arm)
       && boxes.every((b) => !b.containsPoint(c));
@@ -685,7 +1039,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         faceRim.target.position.copy(head);
       }
     }
-    faceFill.intensity = 0.9 * closeK; faceRim.intensity = (newCam ? 0.5 : 1.8) * closeK;
+    faceFill.intensity = (newCam ? 1.1 : 0.9) * closeK; faceRim.intensity = (newCam ? 0.3 : 1.8) * closeK;
     def.post.posterMix = basePoster * (1 - 0.65 * closeK);
     // lights
     let expo = 1, sunK = 1;
@@ -726,7 +1080,9 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     barTop.visible = barBot.visible = lb > 0.001;
     fadeMat.opacity = ov.fade; fadeMat.color.set(ov.fadeColor); fadeQ.visible = ov.fade > 0.001;
     o.onOverlay?.({ ...ov, t });
-    if (o.onSound && lastT >= 0 && t > lastT && t - lastT < 0.5) for (const s of soundsBetween(C, lastT, t)) o.onSound(s.cue, s.volume ?? 1);
+    // the cues since the last frame; at the start (or a replay) the ones at t = 0 too (the tunnel's crowd was never heard)
+    const from = lastT >= 0 && t > lastT && t - lastT < 0.5 ? lastT : t < 0.5 && (lastT < 0 || t < lastT) ? -1 : null;
+    if (o.onSound && from !== null) for (const s of soundsBetween(C, from, t)) o.onSound(s.cue, s.volume ?? 1);
     lastT = t;
     focus.x = camera.position.x; focus.z = camera.position.z;
   };
@@ -747,6 +1103,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     keyBase.clear(); keyCol.clear(); baseSun = null;
     root.remove(set.group); set.dispose();
     set = buildSet(T, kit, tier, script.set.location, { shirt: club.shirt, trim: club.trim, club: club.name, lamps: mood.lamps, seed: script.seed ?? 1, night: (edit?.mood ?? script.set.mood).includes("night") });
+    measureSolids();
     root.add(set.group);
     buildProps();
     kit.stylePeople(persons());
@@ -833,6 +1190,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       renderer.setAnimationLoop(null);
       governed.dispose();
       fx.dispose(); people.dispose();
+      blobGeo.dispose(); blobMat.dispose(); blobTex.dispose();
       for (const p of Array.from(props.values())) p.dispose();
       set.dispose(); kit.dispose();
       release(root);
@@ -843,6 +1201,28 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   // the frame-by-frame filming hook: seek(t) draws exactly that moment
   (window as any).__frameStep = { owner: api, duration, seek: (s: number) => api.frameSeek(s) };
   (window as any).__cutscene = api;
-  (window as any).__cutsceneDebug = { camera, cast, props, rootAt: (id: string, t: number) => rootAt(C, id, t), pose: (s: number) => poseActors(clamp(s, 0, duration)) };
+  let dbgGrid: any = null;
+  (window as any).__cutsceneDebug = {
+    camera, cast, props, rootAt: (id: string, t: number) => rootAt(C, id, t), pose: (s: number) => poseActors(clamp(s, 0, duration)),
+    // a still from any camera at second s (the bench's close-ups: front / side / back of one actor); the script's own camera is not changed
+    shoot(s: number, pos: Vec3, look: Vec3, fov = 30, hide: string[] = []) {
+      renderer.setAnimationLoop(null); held = clamp(s, 0, duration);
+      evaluate(held);
+      const hidden = hide.map((id) => cast.get(id)?.actor.root).filter(Boolean) as any[];
+      for (const r of hidden) r.visible = false;
+      // a floor grid under the looked-at spot: 10 cm squares, a bold line every 50 cm (step width can be read off a still)
+      if (hide.includes("#grid")) {
+        if (!dbgGrid) { dbgGrid = new T.Group(); const a = new T.GridHelper(4, 40, 0xffffff, 0xffffff), b = new T.GridHelper(4, 8, 0xffe14a, 0xffe14a); for (const g of [a, b]) { (g.material as any).depthTest = false; (g.material as any).transparent = true; (g.material as any).opacity = g === a ? 0.45 : 0.9; g.renderOrder = 999; dbgGrid.add(g); } scene.add(dbgGrid); }
+        dbgGrid.visible = true; dbgGrid.position.set(Math.round(look[0] * 2) / 2, (cast.values().next().value?.actor.root.position.y ?? 0) + 0.012, Math.round(look[2] * 2) / 2);
+      } else if (dbgGrid) dbgGrid.visible = false;
+      camera.position.set(pos[0], pos[1], pos[2]); camera.fov = fov; camera.updateProjectionMatrix(); camera.lookAt(look[0], look[1], look[2]);
+      focus.x = look[0]; focus.z = look[2];
+      kit.update(1 / 30, camera, focus); set.update(held, 1 / 30); kit.render(scene, camera);
+      for (const r of hidden) r.visible = true;
+    },
+    part: (id: string, part: string) => { const a = cast.get(id)?.actor; if (!a) return null; const p = a.point(part as never); return [p.x, p.y, p.z]; },
+    yaw: (id: string) => { const a = cast.get(id)?.actor; return a ? a.root.rotation.y : 0; },
+    dribbles: () => Array.from(dribblePaths.values()),
+  };
   return api;
 }

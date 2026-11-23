@@ -3,12 +3,14 @@ import {
   HOME_TIERS, HOME_FAMILY_TIER, roomPreset, homeTierOf, homeNameOf, parseHomeTier, cabinetSize, bestHome,
   roomsFor, type HomeTier, type RoomId,
 } from "../../lib/star/home3d/homes";
+import { guestRooms, GUESTS_BY_TIER } from "../../lib/star/world3d/houseLife";
 import { roomPlan, spotsOf, trophySlotsByRoom, arrivalAt, arrivalDoor, homeStuffOf } from "../../lib/star/home3d/rooms";
 import { cabinetSlots, winsOf, CABINET_TARGETS } from "../../lib/star/home3d/trophies";
 import {
   outfitOf, withOutfit, wornAt, DEFAULT_OUTFIT, CASUAL_SETS, carsOnDrive, bootChoices, CAR_LOD, BOOT_LOD,
 } from "../../lib/star/home3d/outfits";
 import { STARTER_APPS, appInstalled } from "../../lib/star/unlocks";
+import { offPitchWear, homeSetCloth } from "../../lib/star/style3d/toon/clothes/casual";
 import type { CareerState } from "../../lib/star/types";
 
 /**
@@ -92,8 +94,29 @@ check(tiny.length === 3 && tiny.every((s) => s.won), "small cabinet: only wins, 
 // ── Outfit saving ───────────────────────────────────────────────────────
 type Wear = Pick<CareerState, "outfit" | "currentBoot">;
 const none: Wear = { outfit: undefined, currentBoot: null } as unknown as Wear;
-check(JSON.stringify(outfitOf(none)) === JSON.stringify(DEFAULT_OUTFIT), "no choice yet: the default (kit)");
-check(wornAt(none, "garden").kind === "kit", "no choice yet: the garden shows the kit, as before");
+check(JSON.stringify(outfitOf(none)) === JSON.stringify(DEFAULT_OUTFIT), "no choice yet: the default (casual hoodie)");
+check(wornAt(none, "home").kind === "casual" && wornAt(none, "garden").kind === "casual", "no choice yet: casual at home and in the garden (21 Nov 2026)");
+check(wornAt(none, "training").kind === "kit", "no choice yet: the kit at training");
+
+// ── Off-pitch cloth clothes (style3d/toon/clothes/casual.ts) ────────────
+{
+  const kit = { shirt: "#c8102e", trim: "#ffffff" };
+  const kinds = new Map<string, number>();
+  for (let i = 0; i < 400; i++) {
+    const w = offPitchWear(`world-mate-${i}`, "mate", kit);
+    kinds.set(w.kind, (kinds.get(w.kind) ?? 0) + 1);
+    if (w.kind === "kit" || w.kind === "fan") { check(false, `a team-mate at home in ${w.kind}`); break; }
+  }
+  check(kinds.size >= 4, `team-mates at home vary: ${[...kinds].map(([k, n]) => `${k} ${n}`).join(", ")}`);
+  check(JSON.stringify(offPitchWear("world-mate-7", "mate", kit)) === JSON.stringify(offPitchWear("world-mate-7", "mate", kit)), "the same team-mate always dresses the same");
+  check([...Array(200).keys()].every((i) => ["tee", "hoodie", "shirt"].includes(offPitchWear(`fam-${i}`, "family", kit).kind)), "family: muted casual only");
+  check([...Array(20).keys()].every((i) => offPitchWear(`garden-bench-${i}`, "training", kit).kind === "tracksuit"), "a garden kick-about: club training wear");
+  const want: Record<string, string> = { hoodie: "hoodie", tee: "tee", shirt: "shirt", tracksuit: "tracksuit", coat: "suit" };
+  for (const set of CASUAL_SETS) {
+    const c = set.colours(kit), w = homeSetCloth(set.id, c);
+    check(w.kind === want[set.id] && w.colours.top === c.main && w.colours.trousers === c.trousers && w.colours.shoes === c.shoes, `your home set ${set.id}: cloth ${w.kind}, its own colours`);
+  }
+}
 
 const c1 = withOutfit(none, { wear: "casual", casual: "coat" });
 check(c1.outfit?.wear === "casual" && c1.outfit?.casual === "coat", "picking the coat saves it on the career");
@@ -162,8 +185,9 @@ for (const t of HOME_TIERS) for (const look of ["new", "old"] as const) {
   check(Object.keys(by).length === 1, `${t} (${look}): one room keeps the cabinet`);
 }
 // doorways: every door to a room has a door back; the first room has the front door; doors sit on their walls and never overlap
-for (const t of HOME_TIERS) {
-  const rs = roomsFor(t);
+// (and the living houses' too: homes.ts LIVING_ROOMS)
+for (const [t, living] of HOME_TIERS.flatMap((x) => [[x, false], [x, true]] as [HomeTier, boolean][])) {
+  const rs = roomsFor(t, "new", living);
   const plans = new Map(rs.map((r) => [r, roomPlan(t, r, rs)]));
   check(plans.get(rs[0])!.doors.some((d) => d.to === "garden"), `${t}: the first room has the front door`);
   check(rs.slice(1).every((r) => !plans.get(r)!.doors.some((d) => d.to === "garden")), `${t}: only the first room has the front door`);
@@ -192,6 +216,17 @@ for (const t of HOME_TIERS) {
   check(seenR.size === rs.length, `${t}: every room can be walked to from the front door`);
 }
 check(arrivalDoor(roomPlan("house", "lounge", roomsFor("house")), "hallway")?.to === "hallway", "from the hallway you arrive at the lounge's hallway door");
+// the living houses: one cabinet room, a wardrobe, a bed and a bathroom (but the starter's one room), team-mates by size
+for (const t of HOME_TIERS) {
+  const rs = roomsFor(t, "new", true);
+  const spots = rs.flatMap((r) => spotsOf(r, rs));
+  check(spots.filter((x) => x === "cabinet").length === 1, `${t} (living): one room keeps the cabinet`);
+  check(spots.includes("wardrobe"), `${t} (living): a wardrobe`);
+  check(t === "starter" || (rs.includes("bedroom") && rs.includes("bathroom")), `${t} (living): a bedroom and a bathroom`);
+  const g = guestRooms(rs, GUESTS_BY_TIER[t]);
+  check(g.length === GUESTS_BY_TIER[t], `${t} (living): ${GUESTS_BY_TIER[t]} team-mates have a room to be in (${g.join(", ")})`);
+}
+check(GUESTS_BY_TIER.starter === 1 && GUESTS_BY_TIER.estate === 4, "1 team-mate round at the starter flat, 4 at the estate");
 
 // your things, from the shop
 const stuffCareer = { ownedItems: [lvl("rolex", 1), lvl("smartwatch", 1), lvl("diamond", 1), lvl("tv", 1), lvl("bike", 1)], kibCans: { basic: 2, premium: 1, elite: 0 } } as unknown as CareerState;

@@ -127,6 +127,8 @@ export interface PatchNote {
   updateNote?: string;
   /** Every update, oldest first (see PatchUpdate). */
   updates?: PatchUpdate[];
+  /** For players: one plain sentence posted to the Discord's #updates when the note is first announced (lib/discord.ts). None = not posted. */
+  discord?: string;
 }
 
 /* ── Colours ──────────────────────────────────────────────────────────────

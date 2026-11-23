@@ -1,0 +1,431 @@
+{
+ "id": "arc-the-referee",
+ "title": "Cheat",
+ "owner": "referee",
+ "summary": "You call the referee a cheat in the tunnel after a penalty goes against you. He hears it. What you do next decides what he thinks of you, and he's in the middle the next time it matters.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "referee",
+   "gaffer"
+  ],
+  "tone": [
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "referee",
+   "pick": "referee"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "said": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "a-fair-hearing",
+   "title": "A fair hearing",
+   "text": "You owned what you said to a referee. When it mattered, he gave you a fair hearing."
+  },
+  {
+   "id": "marked-man",
+   "title": "A marked man",
+   "text": "He never forgot the word. Neither did any of the referees he had a drink with."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "ref-1-tunnel",
+   "title": "The tunnel",
+   "n": 1,
+   "event": {
+    "id": "arc-ref-1-tunnel",
+    "title": "The tunnel",
+    "category": "match",
+    "place": "stadium:tunnel",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastLost"
+     ]
+    },
+    "setup": [
+     "A penalty against you in the ninetieth minute, and you lost. In the tunnel you say \"cheat\" louder than you meant to. {referee.name} stops and turns round."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "referee",
+       "say": [
+        "\"Say that again, son.\""
+       ],
+       "replies": [
+        {
+         "id": "again",
+         "label": "\"You heard.\"",
+         "tone": "fiery",
+         "end": "doubled"
+        },
+        {
+         "id": "sorry",
+         "label": "\"That came out wrong. I'm sorry.\"",
+         "tone": "humble",
+         "goto": "t2"
+        },
+        {
+         "id": "explain",
+         "label": "\"He dived. You were ten yards away.\"",
+         "tone": "honest",
+         "goto": "t2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "walked"
+        }
+       ]
+      },
+      "t2": {
+       "who": "referee",
+       "say": [
+        "\"I'll see the replay tonight like everyone else. If I got it wrong, I got it wrong. But you don't call me that.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Fair enough. It won't happen again.\"",
+         "tone": "calm",
+         "end": "apologised"
+        },
+        {
+         "id": "watch",
+         "label": "\"Watch the replay, then.\"",
+         "tone": "confident",
+         "end": "half-sorry"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "doubled": [
+       {
+        "text": "It's in his report. You get a two-match ban and a fine, and the gaffer has to read it out.",
+        "effects": {
+         "boss": -6,
+         "moneyWeeks": -1
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "respect": -10,
+          "grudge": 14
+         },
+         {
+          "slot": "manager",
+          "respect": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "called-me-a-cheat-twice",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "doubled"
+         }
+        }
+       }
+      ],
+      "walked": [
+       {
+        "text": "He writes something in his book. A warning letter comes on Thursday.",
+        "effects": {
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "respect": -4,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "called-me-a-cheat",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "walked"
+         }
+        }
+       }
+      ],
+      "apologised": [
+       {
+        "text": "He nods and goes. It isn't in his report.",
+        "npc": [
+         {
+          "slot": "referee",
+          "respect": 6,
+          "grudge": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "apologised-in-the-tunnel",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "sorry"
+         }
+        }
+       }
+      ],
+      "half-sorry": [
+       {
+        "text": "He doesn't answer. On Monday the referees' body says the penalty was wrong, and nobody apologises to anybody.",
+        "npc": [
+         {
+          "slot": "referee",
+          "respect": 2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "sorry"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The referee heard what you said"
+  },
+  {
+   "id": "ref-2-next",
+   "title": "Him again",
+   "after": {
+    "beat": "ref-1-tunnel",
+    "weeks": [
+     3,
+     8
+    ]
+   },
+   "event": {
+    "id": "arc-ref-2-next",
+    "title": "Him again",
+    "category": "match",
+    "place": "stadium:tunnel",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "The referee for today is {referee.name}. He checks your studs in the tunnel himself."
+    ],
+    "choices": [
+     {
+      "id": "hand",
+      "label": "Shake his hand.",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "text": "{if arc.said=='sorry'}He shakes it. \"Behave today.\" You do.{/if}{if !arc.said=='sorry'}He takes it, briefly.{/if}",
+        "npc": [
+         {
+          "slot": "referee",
+          "respect": 3,
+          "grudge": -2
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "look",
+      "label": "Look straight ahead.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "He checks your studs for longer than anyone else's.",
+        "npc": [
+         {
+          "slot": "referee",
+          "respect": -1,
+          "grudge": 2
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "The same referee, weeks later"
+  },
+  {
+   "id": "ref-3-cup",
+   "title": "The ninetieth minute",
+   "after": {
+    "beat": "ref-1-tunnel",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-ref-3-cup",
+    "title": "The ninetieth minute",
+    "category": "match",
+    "place": "stadium:pitch",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. Ninetieth minute, a big game, and you go down in the box. It was a foul. {referee.name} is running over."
+    ],
+    "choices": [
+     {
+      "id": "stay",
+      "label": "Stay down and let him decide.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.said=='sorry'",
+        "text": "He points at the spot. Afterwards, in the tunnel, he says \"Fair hearing\" as he walks past.",
+        "effects": {
+         "boss": 3
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "respect": 6,
+          "grudge": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "gave-me-a-fair-hearing",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "a-fair-hearing"
+        }
+       },
+       {
+        "text": "He waves play on. The replay says it was a foul. He doesn't watch the replay.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "marked-man"
+        }
+       }
+      ]
+     },
+     {
+      "id": "shout",
+      "label": "Jump up and shout at him.",
+      "tone": "fiery",
+      "outcomes": [
+       {
+        "text": "Yellow card, for dissent. No penalty.",
+        "effects": {
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "respect": -4,
+          "grudge": 6
+         }
+        ],
+        "arc": {
+         "end": "marked-man"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "Next season, a big one with him in the middle"
+  }
+ ]
+}

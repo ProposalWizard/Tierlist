@@ -1,0 +1,540 @@
+{
+ "id": "arc-her-sisters-wedding",
+ "title": "Her sister's wedding",
+ "owner": "partner",
+ "summary": "Your partner's sister is getting married on a Saturday in the middle of the season. You can promise to be there, or not. When the day comes, the gaffer has you starting. A season later, she brings it up.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "partner",
+   "gaffer"
+  ],
+  "tone": [
+   "awkward",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "partner",
+   "pick": "partner"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "went": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "she-remembers-you-came",
+   "title": "You came",
+   "text": "You missed a match for her sister's wedding, and her family have treated you like a son since."
+  },
+  {
+   "id": "the-empty-seat",
+   "title": "The empty seat",
+   "text": "There was a seat with your name on it at the top table. Her family haven't forgotten."
+  }
+ ],
+ "promises": {
+  "p-wedding": {
+   "id": "p-wedding",
+   "to": "partner",
+   "text": "Be at {partner.short}'s sister's wedding",
+   "due": {
+    "weeks": [
+     3,
+     6
+    ]
+   },
+   "keptBy": {
+    "beat": "wed-2-saturday",
+    "ends": [
+     "wedding"
+    ]
+   },
+   "dueText": "A Saturday in March",
+   "kept": {
+    "text": "You said you'd be at the wedding, and you were.",
+    "npc": [
+     {
+      "slot": "partner",
+      "bond": 6,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You promised you'd be there.",
+    "npc": [
+     {
+      "slot": "partner",
+      "bond": -8,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "partner",
+      "tag": "broke-the-wedding-promise",
+      "strength": 3
+     }
+    ]
+   },
+   "remind": "\"Suit's back from the cleaners. Just saying.\""
+  }
+ },
+ "beats": [
+  {
+   "id": "wed-1-date",
+   "title": "The date",
+   "n": 1,
+   "event": {
+    "id": "arc-wed-1-date",
+    "title": "The date",
+    "category": "family",
+    "place": "home",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "hasPartner"
+     ]
+    },
+    "setup": [
+     "{partner.short} is on the sofa with her phone, looking pleased and worried at the same time."
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "partner",
+       "say": [
+        "\"My sister's set the date. It's a Saturday in March. I've already checked, and you're at home that day.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll be there. I'll talk to the gaffer.\"",
+         "tone": "kind",
+         "goto": "p2",
+         "promise": "p-wedding"
+        },
+        {
+         "id": "try",
+         "label": "\"I'll try. You know what he's like.\"",
+         "tone": "honest",
+         "goto": "p-try"
+        },
+        {
+         "id": "no",
+         "label": "\"I can't miss a game for a wedding.\"",
+         "tone": "cold",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "p-try"
+        }
+       ]
+      },
+      "p2": {
+       "who": "partner",
+       "say": [
+        "\"You promise? Because she's already done the seating plan and you're on the top table.\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"I promise.\"",
+         "tone": "honest",
+         "end": "promised"
+        }
+       ]
+      },
+      "p-try": {
+       "who": "partner",
+       "say": [
+        "\"Try means no. Everyone in my family knows that's what try means.\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"Then I'll be there.\"",
+         "tone": "brave",
+         "end": "promised",
+         "promise": "p-wedding"
+        },
+        {
+         "id": "evening",
+         "label": "\"I'll come to the evening do, straight after the game.\"",
+         "tone": "calm",
+         "end": "evening"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "promised": [
+       {
+        "text": "She texts her sister straight away. The reply is a row of hearts and \"FINALLY\".",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "promised-the-wedding",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": "promised"
+         }
+        }
+       }
+      ],
+      "evening": [
+       {
+        "text": "\"The evening do.\" She says it the way you'd say \"a bag of crisps\".",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "only-the-evening-do",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": "evening"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "She doesn't argue. She goes to bed at nine and leaves the landing light off.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -10,
+          "respect": -4,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "put-a-game-before-the-wedding",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "Your partner has news"
+  },
+  {
+   "id": "wed-2-saturday",
+   "title": "The Saturday in March",
+   "after": {
+    "beat": "wed-1-date",
+    "weeks": [
+     2,
+     5
+    ]
+   },
+   "event": {
+    "id": "arc-wed-2-saturday",
+    "title": "The Saturday in March",
+    "category": "family",
+    "place": "compound:office",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Friday. The team sheet goes up and you're starting. The wedding is at two. Kick-off is at three."
+    ],
+    "choices": [
+     {
+      "id": "wedding",
+      "label": "Tell the gaffer you're going to the wedding.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "{manager.short} stares at you for a long time. \"Family. Fine. Don't make a habit of it.\" At the wedding her nan makes you dance twice.",
+        "effects": {
+         "boss": -4
+        },
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 14,
+          "respect": 6
+         },
+         {
+          "slot": "manager",
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "came-to-the-wedding",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": "yes"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "game",
+      "label": "Play.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "You score. On the way to the reception you check your phone: forty messages and none of them from her.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -10,
+          "respect": -6,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "missed-the-wedding",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": "no"
+         }
+        },
+        "promiseBroken": [
+         "p-wedding"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "both",
+      "label": "Play, then drive to the evening do in your kit.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "You get there at eight with your hair still wet. Her sister hugs you. {partner.short} doesn't, for an hour, then does.",
+        "effects": {
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": "evening"
+         }
+        },
+        "promiseBroken": [
+         "p-wedding"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "The wedding is the same day as a match",
+   "look": {
+    "chip": "Friday"
+   }
+  },
+  {
+   "id": "wed-3-photos",
+   "title": "The photos",
+   "after": {
+    "beat": "wed-1-date",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-wed-3-photos",
+    "title": "The photos",
+    "category": "family",
+    "place": "home",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "hasPartner"
+     ]
+    },
+    "setup": [
+     "A year on. Her sister has had the wedding album printed, and {partner.short} has it open on the coffee table."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Sit down and look through it with her.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.went=='yes'",
+        "text": "You're on four pages. Her nan has written \"OUR FOOTBALLER\" next to one of them.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "looked-at-the-wedding-photos",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "she-remembers-you-came"
+        }
+       },
+       {
+        "text": "{if arc.went=='evening'}You're in one photo, at the back, in a tracksuit.{/if}{if !arc.went=='evening'}There's a photo of the top table. There's an empty chair.{/if}",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "end": "the-empty-seat"
+        }
+       }
+      ]
+     },
+     {
+      "id": "tv",
+      "label": "Put the telly on.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.went=='yes'",
+        "text": "She closes the album. \"You were in it, you know. Page six.\"",
+        "npc": [
+         {
+          "slot": "partner"
+         }
+        ],
+        "arc": {
+         "end": "she-remembers-you-came"
+        }
+       },
+       {
+        "text": "She closes the album and puts it on the shelf, where you can see the empty chair on the cover.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -4
+         }
+        ],
+        "arc": {
+         "end": "the-empty-seat"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "A season on, the wedding photos"
+  }
+ ]
+}

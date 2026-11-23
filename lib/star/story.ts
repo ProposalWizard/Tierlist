@@ -24,7 +24,7 @@
 import type { CareerState, CareerUnlocks } from "./types";
 import type { Feature } from "./unlocks";
 import { BOOTS_CATALOGUE, KIB_CANS, kibCanPrice } from "./shopData";
-import { formatMoney } from "./money";
+import { formatMoney, MONEY_SIGN } from "./money";
 
 export type Beat = "boots" | "boss" | "training" | "ready" | "candeal" | "can" | "phone" | "shop" | "stats" | "starpass" | "sponsor";
 
@@ -165,7 +165,7 @@ export function beatText(c: CareerState, b: Beat): BeatText {
     }
     case "boss": return { who: gaffer, icon: "🧢", title: "Come and see me", line: "Good first game, son. Come to my office, I want a word.", button: "Go to his office" };
     case "training": return { who: gaffer, icon: "🧢", title: "Time to train", line: "Training's open. Do two drills for me now, Power and Technique, so I can see what you've got.", button: "Go to training" };
-    case "candeal": return { who: "The club shop", icon: "🥫", title: "Half price for you", line: "Training's tiring. Your first KIB can is half price today. A KIB can tops your energy up.", button: `Buy it for ★${formatMoney(firstCanDealPrice(c))}` };
+    case "candeal": return { who: "The club shop", icon: "🥫", title: "Half price for you", line: "Training's tiring. Your first KIB can is half price today. A KIB can tops your energy up.", button: `Buy it for ${MONEY_SIGN}${formatMoney(firstCanDealPrice(c))}` };
     case "ready": return { who: gaffer, icon: "🧢", title: "You're ready", line: "Great work. You're ready for the next game.", button: "Play" };
     // "Claim your reward" once the Star Pass has a reward at level 2 (the
     // level ladder is the next build); until then it shows the Pass.

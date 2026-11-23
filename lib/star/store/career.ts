@@ -4,7 +4,7 @@
  * Harry, 28 Sep 2026: "add store aswell". The store (/star-store-dev) keeps
  * its own wallet; in the career the wallet IS the career:
  *
- *   ★                 career.money
+ *   £                 career.money
  *   Coins             career.coins                 (new, 0 on older saves)
  *   run-ups owned     career.ownedAnimations       (Settings → Run-ups reads it)
  *   run-ups in use    career.penaltyRunup / freeKickRunup (the match reads them)
@@ -135,7 +135,7 @@ function wrap(c: CareerState, r: { ok: boolean; state: StoreState; reason?: stri
   return r.ok ? { ok: true, career: applyStoreState(c, r.state) } : { ok: false, career: c, reason: r.reason };
 }
 
-/** Buy one of something with ★ or Coins. */
+/** Buy one of something with £ or Coins. */
 export function careerStoreBuy(
   c: CareerState, itemId: string, currency: Currency, dateKey: string, now = Date.now(),
 ): CareerStoreResult {
@@ -162,7 +162,7 @@ export function careerBuyCoinPack(c: CareerState, packId: string, now = Date.now
   return wrap(c, buyCoinPack(careerStoreState(c), packId, now));
 }
 
-/** Swap Coins for ★ at this career's wage. */
+/** Swap Coins for £ at this career's wage. */
 export function careerConvertCoins(c: CareerState, coins: number, now = Date.now()): CareerStoreResult {
   return wrap(c, convertCoins(careerStoreState(c), coins, careerPriceContext(c).weeklyWage, now));
 }

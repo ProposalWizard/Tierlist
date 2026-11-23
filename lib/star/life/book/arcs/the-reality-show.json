@@ -1,0 +1,283 @@
+{
+ "id": "arc-the-reality-show",
+ "title": "Eight weeks in a villa",
+ "owner": "agent",
+ "summary": "Your agent has been offered a lot of money for you to go on a reality show in the summer, eight weeks in a villa with cameras. A season on, the show is back on telly, and you're in it or you aren't.",
+ "size": "small",
+ "about": {
+  "who": [
+   "agent"
+  ],
+  "tone": [
+   "funny",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "agent",
+   "pick": "agent"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-villa",
+   "title": "The villa",
+   "text": "You did the reality show. People still shout your catchphrase at you in the street."
+  },
+  {
+   "id": "kept-it-football",
+   "title": "Kept it football",
+   "text": "You said no to the villa. Your agent still mentions the money."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "tvs-1-offer",
+   "title": "The villa",
+   "n": 1,
+   "event": {
+    "id": "arc-tvs-1-offer",
+    "title": "The villa",
+    "category": "agent",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "fame>=10"
+     ]
+    },
+    "setup": [
+     "{agent.name} rings, very excited, which is never good."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "agent",
+       "say": [
+        "\"A reality show. Summer, eight weeks in a villa, cameras everywhere. They'll pay six weeks of your wages. You'd miss two weeks of pre-season, tops.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Sign me up.\"",
+         "tone": "reckless",
+         "end": "yes"
+        },
+        {
+         "id": "gaffer",
+         "label": "\"The gaffer will kill me.\"",
+         "tone": "honest",
+         "goto": "t2"
+        },
+        {
+         "id": "no",
+         "label": "\"No. I'm a footballer.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "t2"
+        }
+       ]
+      },
+      "t2": {
+       "who": "agent",
+       "say": [
+        "\"The gaffer doesn't need to know till it airs.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Fine. Do it.\"",
+         "tone": "reckless",
+         "end": "yes"
+        },
+        {
+         "id": "no",
+         "label": "\"He does. No.\"",
+         "tone": "honest",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "You spend the summer in a villa arguing about a hammock. You're back in pre-season a fortnight late and very brown.",
+        "effects": {
+         "moneyWeeks": 2,
+         "fame": 3,
+         "boss": -3,
+         "matchFitness": -6
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 8
+         },
+         {
+          "slot": "manager",
+          "respect": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "went-on-the-reality-show",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "villa"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Your loss. Literally.\" He sends you the figure in a text anyway.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your agent has an offer"
+  },
+  {
+   "id": "tvs-2-repeat",
+   "title": "The repeat",
+   "after": {
+    "beat": "tvs-1-offer",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-tvs-2-repeat",
+    "title": "The repeat",
+    "category": "agent",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{if arc.path=='villa'}A season on. The show is being repeated. The dressing room watches your hammock argument on the coach to an away game, twice.{/if}",
+     "{if arc.path=='no'}A season on. The show is back, and the man who took your place in the villa is now more famous than you.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "own",
+      "label": "{if arc.path=='villa'}Do the catchphrase for them.{/if}{if arc.path=='no'}Watch it with the lads.{/if}",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='villa'",
+        "text": "The coach goes up. Somebody prints it on a T-shirt.",
+        "effects": {
+         "team": 2,
+         "fame": 1
+        },
+        "arc": {
+         "end": "the-villa"
+        }
+       },
+       {
+        "text": "He's got a clothing line now, and a podcast about the hammock.",
+        "arc": {
+         "end": "kept-it-football"
+        }
+       }
+      ]
+     },
+     {
+      "id": "hide",
+      "label": "{if arc.path=='villa'}Put your hood up.{/if}{if arc.path=='no'}Turn it off.{/if}",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='villa'",
+        "text": "They do the catchphrase for you.",
+        "arc": {
+         "end": "the-villa"
+        }
+       },
+       {
+        "text": "You turn it off and go to bed at ten.",
+        "arc": {
+         "end": "kept-it-football"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     }
+    ]
+   },
+   "hint": "A season on, the show is back on telly"
+  }
+ ]
+}

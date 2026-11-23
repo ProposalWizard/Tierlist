@@ -11,7 +11,9 @@
 import { spawnSync } from "node:child_process";
 
 const CLIPS = ["idle", "walk", "jog", "run", "sprint", "handshake", "applause", "talk", "point", "nod", "wave", "shirt_hold", "celebrate_fist", "celebrate_pump", "celebrate_roar",
-  "celebrate_corner_flag", "celebrate_backflip", "celebrate_own_name", "celebrate_statue", "dejected", "frustrated", "slump_walk", "walk_confident"];
+  "celebrate_corner_flag", "celebrate_backflip", "celebrate_own_name", "celebrate_statue", "dejected", "frustrated", "slump_walk", "walk_confident",
+  // Quaternius UAL 1 (21 Nov 2026)
+  "walk_relaxed", "walk_formal", "idle_relaxed", "idle_relaxed_m", "idle_talk", "seated_idle", "seated_talk"];
 const r = spawnSync("npx", ["tsx", "tools/motionref/body_overlap.mts", "--gate", "--fps=10", `--clips=${CLIPS.join(",")}`, "public/star/people3d/toon-p1.glb"], { encoding: "utf8", timeout: 240000 });
 const out = `${r.stdout ?? ""}${r.stderr ?? ""}`;
 if (r.status !== 0) { console.error(`✗ body overlap gate failed:\n${out.split("\n").filter((l) => l.includes("✗") || l.includes("cm") && l.includes(":")).slice(0, 30).join("\n")}`); process.exit(1); }

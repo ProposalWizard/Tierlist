@@ -1,0 +1,336 @@
+{
+ "id": "arc-the-long-read",
+ "title": "Six thousand words",
+ "owner": "broadsheet",
+ "summary": "The broadsheet writer wants a long interview: your childhood, your family, the bad bits. How much you give him decides what the country reads. A season on, the piece wins a prize, or it doesn't exist.",
+ "size": "small",
+ "about": {
+  "who": [
+   "broadsheet writer",
+   "dad"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "broadsheet",
+   "pick": "broadsheet"
+  },
+  {
+   "slot": "dad",
+   "pick": "dad"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-piece",
+   "title": "The piece",
+   "text": "You told a writer the truth about where you came from. Your dad has it framed."
+  },
+  {
+   "id": "the-stock-answers",
+   "title": "Stock answers",
+   "text": "You gave him the usual. He wrote six hundred words instead of six thousand."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "lrd-1-ask",
+   "title": "The long read",
+   "n": 1,
+   "event": {
+    "id": "arc-lrd-1-ask",
+    "title": "The long read",
+    "category": "press",
+    "place": "town:cafe",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "broadsheet",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ],
+     "requires": [
+      "fame>=5"
+     ]
+    },
+    "setup": [
+     "{broadsheet.name} from the {broadsheet.outlet} has bought you a coffee and put his phone on the table to record. He's read everything ever written about you."
+    ],
+    "talk": {
+     "start": "l1",
+     "nodes": {
+      "l1": {
+       "who": "broadsheet",
+       "say": [
+        "\"Not football. I want the estate, your dad working nights, the academy letter. The bits nobody's asked about.\""
+       ],
+       "replies": [
+        {
+         "id": "open",
+         "label": "Tell him about your dad working nights.",
+         "tone": "honest",
+         "goto": "l2"
+        },
+        {
+         "id": "usual",
+         "label": "\"Hard work, a great family, the gaffer believed in me.\"",
+         "tone": "calm",
+         "end": "usual"
+        },
+        {
+         "id": "off",
+         "label": "\"I don't talk about my family.\"",
+         "tone": "cold",
+         "end": "usual"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "l2"
+        }
+       ]
+      },
+      "l2": {
+       "who": "broadsheet",
+       "say": [
+        "He doesn't write anything. He just lets you talk. After an hour he says, \"Can I use the bit about the boots he bought you with his overtime?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Use it.\"",
+         "tone": "brave",
+         "end": "open"
+        },
+        {
+         "id": "ask",
+         "label": "\"Let me ask him first.\"",
+         "tone": "kind",
+         "end": "asked"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "open": [
+       {
+        "text": "Six thousand words on a Saturday. Your dad reads it four times and doesn't ring you, and then he rings you.",
+        "effects": {
+         "fans": 3,
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "bond": 6,
+          "respect": 6
+         },
+         {
+          "slot": "dad",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "told-them-about-the-overtime-boots",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "open"
+         }
+        }
+       }
+      ],
+      "asked": [
+       {
+        "text": "You ring your dad from the café toilet. He's quiet for a while. \"Go on, then.\"",
+        "effects": {
+         "fans": 3,
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "bond": 4,
+          "respect": 6
+         },
+         {
+          "slot": "dad",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "asked-me-before-the-interview",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "open"
+         }
+        }
+       }
+      ],
+      "usual": [
+       {
+        "text": "He writes it down, politely, and switches the phone off after twenty minutes.",
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "bond": -2,
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "usual"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "broadsheet",
+      "pick": "broadsheet"
+     },
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A writer wants a proper interview"
+  },
+  {
+   "id": "lrd-2-prize",
+   "title": "The prize",
+   "after": {
+    "beat": "lrd-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-lrd-2-prize",
+    "title": "The prize",
+    "category": "press",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "broadsheet",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{if arc.path=='open'}A season on. {broadsheet.short} texts: the piece about you has won sports feature of the year. He wants you and your dad at the dinner.{/if}",
+     "{if arc.path=='usual'}A season on. {broadsheet.short} has written a long piece about a team-mate of yours instead. Everyone's talking about it.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "{if arc.path=='open'}Take your dad to the dinner.{/if}{if arc.path=='usual'}Read it.{/if}",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='open'",
+        "text": "Your dad wears a suit for the first time since your nan's funeral. He tells the man from the next table about the overtime.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8,
+          "respect": 2
+         },
+         {
+          "slot": "broadsheet",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-piece"
+        }
+       },
+       {
+        "text": "It's very good. You read it twice.",
+        "arc": {
+         "end": "the-stock-answers"
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Leave it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='open'",
+        "text": "Your dad goes on his own and brings you back the menu.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-piece"
+        }
+       },
+       {
+        "text": "You leave it.",
+        "arc": {
+         "end": "the-stock-answers"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "broadsheet",
+      "pick": "broadsheet"
+     },
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A season on, the writer gets in touch"
+  }
+ ]
+}
