@@ -1035,6 +1035,31 @@ export function relationshipGameDone(kind: RelKind, res: RelGameResult): Step {
   return isStory(career) && kind === "boss" ? HOME : { screen: "career-relations" };
 }
 
+/**
+ * A 3D training drill finished (page.tsx, the `training-3d` phase's onFinish): the garden's Training gate. It counts as the Team
+ * game of the week, with the training session's energy and the same Team bar move as the Woodwork challenge. Pace Sprint
+ * (`train`) also banks its stars on the pace ladder, like a 2D pace drill. The screen goes back to the Garden.
+ */
+export interface TrainingGateResult extends RelGameResult { train?: { skill: keyof Skills; level: number; stars: number } }
+export function trainingGateDone(res: TrainingGateResult): void {
+  const career = need();
+  const trained: CareerState = res.train ? {
+    ...applyLevelResult(career, res.train.skill, res.train.level, res.train.stars).career,
+    lastTrainedWeek: { ...career.lastTrainedWeek, [res.train.skill]: career.week },
+  } : career;
+  const p = career.relGamesPlayed;
+  const same = p && p.season === career.season && p.week === career.week;
+  const updated: CareerState = {
+    ...trained,
+    energy: Math.max(0, career.energy - TRAINING_ENERGY_COST),
+    relationships: { ...career.relationships, team: applyGameGain(career.relationships.team as number, res.gain) },
+    relGamesPlayed: { season: career.season, week: career.week, kinds: [...(same ? p!.kinds : []), "team"] },
+  };
+  if (res.train) updated.starRating = computeStarRating(updated);
+  setCareer(spendAction(updated));
+  settle();
+}
+
 /** A sponsor's advert shot (page.tsx advert-shoot onFinish): the brand's happiness, one day, once a week. */
 export function advertShot(dealId: string, gain: number): Step {
   const career = need();

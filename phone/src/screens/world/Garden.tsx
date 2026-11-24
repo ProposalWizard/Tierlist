@@ -13,7 +13,7 @@
  * card when you stand at something (pictures and numbers, no sentences).
  *
  *   shop door      → the 3D shop (screens/world/Shop3D.tsx; its plain card offers the normal Shop if the 3D cannot start)
- *   training gate  → the Training screen (TODO WP4: the 3D pitch)
+ *   training gate  → the 3D training pitch (screens/world/Training3D.tsx); the app's Training screen when the 3D is off
  *   house door     → your 3D house (screens/world/House3D.tsx; its front door and Back lead out here)
  *   casino door    → shut: "Casino · Locked" (this app has no casino)
  * Back goes to where you came from (the Phone).
@@ -114,8 +114,8 @@ function Garden({ career, params }: { career: CareerState; params?: Record<strin
 
   /** The 3D shop, stepping in at its doors; the app's own Shop when the 3D is off (the crash guard) or cannot open. */
   const onShop = () => { comeBack = "shop"; if (partOff("3d") || !SCREENS["shop-3d"]) nav.go("shop"); else nav.go("shop-3d", { from: "garden", atDoor: true }); };
-  /** TODO(WP4): the 3D training pitch. Until it exists, the Training screen. */
-  const onTraining = () => { comeBack = "training"; nav.go("career-training"); };
+  /** The 3D training pitch (the website's training gate); the app's own Training screen when the crash guard has the 3D off. */
+  const onTraining = () => { comeBack = "training"; if (partOff("3d") || !SCREENS["training-3d"]) nav.go("career-training"); else nav.go("training-3d"); };
   /** Your 3D house; its front door and Back bring you out at its door. Shut when the crash guard has the 3D off. */
   const onHouse = () => { if (partOff("3d") || !SCREENS["house"]) return; comeBack = "house"; nav.go("house", { from: "garden" }); };
   const hooks = useRef({ onShop, onTraining, onHouse });

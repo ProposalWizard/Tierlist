@@ -34,7 +34,7 @@ export interface GameResult { won: boolean; gain: number; cost?: number; line?: 
 const toneOf = (v: number) => (v >= 70 ? "#10b981" : v >= 40 ? "#eab308" : "#ef4444");
 
 /** relgames/Shell.tsx GameShell: Back, the game's name, the bar it moves, the game. Not scrollable (the pitch takes the drags). */
-function GameShell({ title, who, current, tone, onBack, children }: { title: string; who: string; current: number; tone: string; onBack?: () => void; children: ReactNode }) {
+export function GameShell({ title, who, current, tone, onBack, children }: { title: string; who: string; current: number; tone: string; onBack?: () => void; children: ReactNode }) {
   return (
     <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: "#0b1220", paddingHorizontal: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8 }}>
@@ -53,7 +53,7 @@ function GameShell({ title, who, current, tone, onBack, children }: { title: str
   );
 }
 /** relgames/Shell.tsx ResultPanel. */
-function ResultPanel({ result, who, current, onContinue }: { result: GameResult; who: string; current: number; onContinue: () => void }) {
+export function ResultPanel({ result, who, current, onContinue }: { result: GameResult; who: string; current: number; onContinue: () => void }) {
   const after = Math.max(0, Math.min(100, current + result.gain));
   const sign = result.gain > 0 ? `+${result.gain}` : `${result.gain}`;
   return (
@@ -69,7 +69,7 @@ function ResultPanel({ result, who, current, onContinue }: { result: GameResult;
     </View>
   );
 }
-function Flash({ text, size = 26 }: { text: string | null; size?: number }) {
+export function Flash({ text, size = 26 }: { text: string | null; size?: number }) {
   if (!text) return null;
   return <Text pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: "33%", textAlign: "center", color: "#fff", fontSize: size, fontWeight: "900", textTransform: "uppercase", textShadowColor: "#000", textShadowRadius: 6 }}>{text}</Text>;
 }

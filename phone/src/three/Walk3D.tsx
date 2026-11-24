@@ -93,6 +93,11 @@ export interface Walk3DProps<D, CB, C extends WalkController> {
   fallback?: { label: string; onPress: () => void };
   /** Draw only: no touch layer and no stick, so every touch goes to what is over the picture (the 3D phone's house behind the glass). */
   inert?: boolean;
+  /**
+   * For a picture that is only a layer over something that works without it (the Crossbar Challenge's 3D pitch over the
+   * engine's own): when the 3D cannot start (or the crash guard has it off), show nothing and say why here, instead of the plain card.
+   */
+  onFail?: (why: string) => void;
   /** Buttons and cards over the picture. */
   children?: ReactNode;
 }
@@ -266,13 +271,17 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
     }
   };
 
+  const failWhy = failed ?? (!allowed ? "The 3D is switched off" : null);
+  const onFailNow = p.onFail;
+  useEffect(() => { if (failWhy && onFailNow) onFailNow(failWhy); }, [failWhy]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (failWhy && onFailNow) return null;
   if (failed || !allowed) return <PlainCard what={p.name ?? "3D"} why={failed} onBack={p.onBack} cover={p.cover} fallback={p.fallback} />;
 
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: p.cover ?? "#0d1420", overflow: "hidden" }]} onLayout={(e) => { const { width, height } = e.nativeEvent.layout; if (!size || Math.abs(size.w - width) > 1 || Math.abs(size.h - height) > 1) setSize({ w: width, h: height }); }}>
       {size && (
         <View style={[StyleSheet.absoluteFill, { overflow: "hidden" }]} pointerEvents="none">
-          <GLView key={`${attempt}`} msaaSamples={0} onContextCreate={onContext}
+          <GLView key={`${attempt}`} msaaSamples={0} onContextCreate={onContext} pointerEvents="none"
             style={{ position: "absolute", width: size.w * k, height: size.h * k, left: (size.w - size.w * k) / 2, top: (size.h - size.h * k) / 2, transform: [{ scale: 1 / k }] }} />
         </View>
       )}

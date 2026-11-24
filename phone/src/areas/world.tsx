@@ -6,6 +6,7 @@
 //   house       { from? }       your house in 3D: change clothes, the trophy cabinet, your cars (screens/world/House3D.tsx; from: "garden" | "phone")
 //   garden      { arrive? }     your garden in 3D (stable, cars, trophies, doors; screens/world/Garden.tsx)
 //   feed        { moment?, onContinue? }  the social feed (moment: post-match reactions)
+//   training-3d { drill?, mode? }  the garden's Training gate in 3D: Crossbar Challenge, Two Touch, Free Roam, Headers and Volleys, Wembley, Pace Sprint (screens/world/Training3D.tsx)
 //   shop-3d     { from?, atDoor? }  the 3D shop: walk round it, "See it in the shop" opens an item in `shop` (screens/world/Shop3D.tsx)
 //   shop        { cat?, focus? } the shop ("cans" | "boots" | "drip" | "gadgets" | "cars" | "homes" | "holiday")
 //   sponsors                    deals, offers and brands
@@ -30,6 +31,7 @@ import { PhoneRoute, HouseRoute } from "../screens/world/HousePhone";
 import { MediaFeed } from "../screens/world/Feed";
 import { ShopScreen } from "../screens/world/Shop";
 import { Shop3DScreen } from "../screens/world/Shop3D";
+import { Training3DScreen } from "../screens/world/Training3D";
 import { SponsorsScreen } from "../screens/world/Sponsors";
 import { StarPassScreen } from "../screens/world/StarPass";
 import { TransferHubScreen } from "../screens/world/TransferHub";
@@ -77,6 +79,7 @@ export const worldScreens: ScreenMap = {
   feed: FeedScreen,
   shop: ShopScreen,
   "shop-3d": Shop3DScreen,
+  "training-3d": Training3DScreen,
   sponsors: SponsorsScreen,
   "star-pass": StarPassScreen,
   transfers: TransferHubScreen,
