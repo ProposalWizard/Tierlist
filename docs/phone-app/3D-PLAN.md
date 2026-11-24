@@ -63,6 +63,14 @@ What the next packages reuse (all in `phone/src/three/`):
   (the six cars and the garden props are done). A `.json` is kept as `.bin`.
 - Check with `phone/tools/walk-check.ts` (a Web Worker: no document, like Hermes): add the new place's start to
   `walk-worker-entry.ts`. It lists every file the place read (each must be in `assetList.ts`).
+Measured (24 Nov, software GL, so only draws/triangles and JS time mean anything): garden at Medium, 412x915:
+67 to 253 draw calls and 103k to 232k triangles by spot (gate 241/164k, horse 67/103k, cars 76 to 253/203k to 228k, shop 107/107k);
+the scene's JavaScript costs about 3 to 6 ms a frame in V8 (Hermes has no JIT: expect several times that, so the phone's
+fps is the open question). Start: 13 s in the worker (software GL), 23 s in the web build. Files added to the app: 9.9 MB
+(the 6 cars unpacked from Draco are 6.6 MB of it; gltfpack-style quantising would cut them to about a third).
+Only a real phone can say: fps and heat at Medium on the S20+, whether expo-gl gives the extensions the scene asks for
+(half-float targets, 3D texture for the baked light: the scene drops each to plain light if missing), touch feel, memory,
+start time, the GL surviving a trip to the background.
 Not done on purpose: the web's "still 2.5x / moving 1.5x" pixel ratios (the GL buffer is one fixed size per tier),
 KTX2 packed textures (need WebAssembly; `window.__ktx2Off` is set), the 3D phone in your hand.
 

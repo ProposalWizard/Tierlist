@@ -52,7 +52,7 @@ const spots = [
   { name: "gate", at: [0, 15.5, Math.PI] },
   { name: "fountain", at: [0, 0.8, Math.PI], want: "fountain" },
   { name: "horse", at: [-5.6, 6.5, -Math.PI / 2], want: "horse" },
-  { name: "cars", at: [9.5, 10.2, Math.PI], want: "cars" },
+  { name: "cars", at: [9.5, 9.6, 0], want: "cars" },
   { name: "shop", at: [0, -7.9, 0], want: "shop" },
   { name: "trophies", at: [-5.4, -5.8, -Math.PI / 2], want: "trophies" },
   { name: "mates", at: [8.2, 2.2, Math.PI / 2], want: "mates" },
