@@ -326,7 +326,8 @@ function Preview({ card, level, claimable, claimed, reached, onClose, onLater, o
     if (card.art?.live) { const k = Math.min(boxW / live.w, boxH / live.h); return { ...live, w: Math.round(live.w * k), h: Math.round(live.h * k) }; }
     return { ...live, w: boxW, h: boxH };
   }, [card.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  const show3d = !!cfg && !fail3d;
+  // Settings → Live 3D scenes is OFF by default: then the still stays and no 3D view is made
+  const show3d = !!cfg && !fail3d && prefs.live3dScenes;
   return (
     <View style={{ flex: 1, backgroundColor: "rgba(3,5,10,0.92)", justifyContent: "center", padding: 20 }}>
       <View style={{ borderRadius: 4, padding: 16, gap: 10, backgroundColor: "#0b0f1a", borderWidth: 1, borderColor: "rgba(253,224,71,0.45)" }}>

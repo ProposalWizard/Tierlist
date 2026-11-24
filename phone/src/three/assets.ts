@@ -8,6 +8,7 @@ import { Asset } from "expo-asset";
 import { readAssetBytes } from "./readAsset";
 import { phoneFontFor } from "../draw/useDrawing";
 import { setThreePlatform } from "./platform";
+import { markStepHere } from "../safety";
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const FILES: Record<string, number> = {
@@ -237,10 +238,14 @@ const FILES: Record<string, number> = {
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 const bytes = new Map<string, Promise<ArrayBuffer>>();
+// crash breadcrumbs (../safety.ts): how far the files of the scene now starting have got
+let askedFiles = 0, doneFiles = 0;
 /** A bundled 3D file's bytes (read once per run of the app). */
 export function bundledBytes(url: string): Promise<ArrayBuffer> {
   let p = bytes.get(url);
   if (!p) {
+    askedFiles++;
+    markStepHere(`reading file ${askedFiles}: ${url.split("/").pop()} (${doneFiles} of ${askedFiles} before it)`);
     const mod = FILES[url];
     if (mod === undefined) return Promise.reject(new Error(`3D: ${url} is not in the app (phone/src/three/assetList.ts)`));
     p = (async () => {
@@ -248,7 +253,10 @@ export function bundledBytes(url: string): Promise<ArrayBuffer> {
       if (!a.localUri) await a.downloadAsync();
       const u8 = await readAssetBytes(a.localUri ?? a.uri);
       // a plain ArrayBuffer of exactly the file (three checks `instanceof ArrayBuffer` and reads from byte 0)
-      return u8.byteOffset === 0 && u8.byteLength === u8.buffer.byteLength && u8.buffer instanceof ArrayBuffer ? u8.buffer : u8.slice().buffer;
+      const out = u8.byteOffset === 0 && u8.byteLength === u8.buffer.byteLength && u8.buffer instanceof ArrayBuffer ? u8.buffer : u8.slice().buffer;
+      doneFiles++;
+      markStepHere(`assets loaded ${doneFiles} of ${askedFiles}`);
+      return out;
     })();
     p.catch(() => bytes.delete(url));
     bytes.set(url, p);

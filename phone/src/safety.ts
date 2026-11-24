@@ -138,3 +138,73 @@ export function useRiskyPart(part: RiskyPart, opts: { settleMs?: number; delayMs
   }, [off, part, opts.delayMs, opts.settleMs]);
   return !off && go;
 }
+
+// ── CRASH BREADCRUMBS (24 Nov 2026) ────────────────────────────────────────────────
+// The guard above only knows THAT a part was starting when the app closed. Mikey's app closed after the trial's accept-offer
+// and we cannot run Android here, so each 3D place also writes the LAST STEP it reached ("mounted", "gl context created",
+// "scene starting", "assets loaded 3 of 9" …). MMKV is memory-mapped: a synchronous write survives a native crash. The trail is
+// cleared after 10 s of running well, on a clean close, on a handled failure and when the app goes to the background. If it is
+// still there on the next launch, the app closed mid-step: it is kept (Settings shows it until "Clear") and logged to the console.
+// None of this changes the crash-loop rules above.
+const TRAIL = "trail:";
+const CLOSED = "closed-while";
+const MAX_STEPS = 8;
+export interface ClosedWhile { place: string; steps: { step: string; at: number }[] }
+const trails = new Map<string, { step: string; at: number }[]>();
+let activePlace: string | null = null;
+let closedWhile: ClosedWhile | null = null;
+
+function trailLine(c: ClosedWhile): string {
+  const last = c.steps[c.steps.length - 1];
+  const when = new Date(last?.at ?? Date.now()).toISOString().replace("T", " ").slice(0, 19);
+  const path = c.steps.map((s) => s.step).join(" > ");
+  return `Last time the app closed while: ${c.place} at ${last?.step ?? "the start"} (${when} UTC). Steps: ${path}`;
+}
+/** The one plain line that says where the app last closed (Settings shows it; copy it as it is). */
+export function closedWhileLine(): string | null { return closedWhile ? trailLine(closedWhile) : null; }
+export function closedWhileInfo(): ClosedWhile | null { return closedWhile; }
+/** Settings → Clear. */
+export function clearClosedWhile() { closedWhile = null; try { kv.remove(CLOSED); } catch { /* nothing to clear */ } }
+
+try {
+  // a trail left by the last run = the app closed in the middle of that step; the newest one is kept
+  let newest: ClosedWhile | null = null;
+  for (const k of kv.getAllKeys()) {
+    if (!k.startsWith(TRAIL)) continue;
+    try {
+      const steps = JSON.parse(kv.getString(k) ?? "[]") as ClosedWhile["steps"];
+      const c: ClosedWhile = { place: k.slice(TRAIL.length), steps };
+      if (steps.length && (!newest || steps[steps.length - 1].at >= (newest.steps[newest.steps.length - 1]?.at ?? 0))) newest = c;
+    } catch { /* a half-written trail */ }
+    kv.remove(k);
+  }
+  if (newest) kv.set(CLOSED, JSON.stringify(newest));
+  const raw = kv.getString(CLOSED);
+  if (raw) closedWhile = JSON.parse(raw) as ClosedWhile;
+  if (closedWhile) console.warn("[safety] " + trailLine(closedWhile));
+} catch { /* breadcrumbs must never stop the app */ }
+
+/** The last step this place reached (cheap: one MMKV write). Safe to call from anywhere; never throws. */
+export function markStep(place: string, step: string) {
+  try {
+    activePlace = place;
+    const t = trails.get(place) ?? [];
+    t.push({ step, at: Date.now() });
+    if (t.length > MAX_STEPS) t.shift();
+    trails.set(place, t);
+    kv.set(TRAIL + place, JSON.stringify(t));
+  } catch { /* never stop the app */ }
+}
+/** Mark a step on the place that is starting now (for code that does not know which place asked, e.g. the asset reader). */
+export function markStepHere(step: string) { if (activePlace && trails.has(activePlace)) markStep(activePlace, step); }
+/** The place ran well (10 s), closed cleanly, or failed in a way the app caught: no crash, so no trail. */
+export function clearTrail(place: string) {
+  try {
+    trails.delete(place);
+    kv.remove(TRAIL + place);
+    if (activePlace === place) activePlace = null;
+  } catch { /* nothing to clear */ }
+}
+function clearAllTrails() { for (const p of Array.from(trails.keys())) clearTrail(p); }
+// leaving the app (Home button, swiping it away) is not a crash either
+try { AppState.addEventListener("change", (s) => { if (s !== "active") clearAllTrails(); }); } catch { /* no app state here (a test) */ }

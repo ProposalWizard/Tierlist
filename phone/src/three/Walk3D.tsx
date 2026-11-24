@@ -28,7 +28,7 @@ import { ActivityIndicator, AppState, Dimensions, PixelRatio, StyleSheet, Text, 
 import { GLView, type ExpoWebGLRenderingContext } from "expo-gl";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TIER_PROFILES, quality3dSetting, quality3dTier, type Quality3d } from "@/lib/star/three3d/quality";
-import { useRiskyPart } from "../safety";
+import { useRiskyPart, markStep, clearTrail } from "../safety";
 import { Press } from "../ui/Press";
 import { setupPhone3d } from "./assets";
 import { glCounts } from "./gl";
@@ -110,6 +110,10 @@ export interface Walk3DProps<D, CB, C extends WalkController> {
 
 export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>) {
   const allowed = useRiskyPart("3d", { settleMs: 10000 });
+  // crash breadcrumbs (../safety.ts): the last step this place reached survives a native crash and is shown in Settings next launch
+  const place = p.name ?? "3D place";
+  const marked = useRef(false);
+  if (allowed && !marked.current) { marked.current = true; markStep(place, "mounted (view being made)"); }
   const [failed, setFailed] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [ready, setReady] = useState(false);
@@ -131,6 +135,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
   // Each GL view's own scene goes when the view is made again or the screen closes.
   useEffect(() => () => {
     const l = live.current;
+    clearTrail(place); // a clean close (or a restart) is not a crash
     if (!l) return;
     l.dead = true;
     l.host?.dispose();
@@ -141,6 +146,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
   // A plain card means the scene is let go now (not when the screen closes).
   useEffect(() => {
     if (!failed) return;
+    clearTrail(place); // a failure the app caught is not a crash
     const l = live.current;
     if (!l) return;
     l.dead = true;
@@ -172,6 +178,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
     if (!size) return;
     const me = { dead: false, host: null as WalkHost<C> | null, gl: gl as unknown as WebGL2RenderingContext, tier, pr };
     live.current = me;
+    markStep(place, `gl context created (attempt ${attempt}, ${tier}, ${size.w}x${size.h})`);
     const api: WalkApi = { restart: () => { if (!me.dead) restartOnce(); }, fail: (why) => { if (!me.dead) { console.warn("[walk 3D] failed:", why); setFailed(why); } }, dead: () => me.dead };
     const limit = setTimeout(() => { if (!me.host && !me.dead) { console.warn("[walk 3D] took too long; plain card instead"); setFailed("It took too long to load"); } }, cur.current.loadLimitMs ?? WALK_LOAD_LIMIT_MS);
     (async () => {
@@ -181,6 +188,8 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
         const start = q.load();
         const host = await startWalkScene<D, CB, C>({
           start, data: q.data, callbacks: q.callbacks(api), gl: me.gl, width: size.w, height: size.h, pixelRatio: pr, quality: tier,
+          onStep: (t) => { if (!me.dead) markStep(place, t); },
+          onFrameError: (e) => { if (!me.dead) { console.warn("[walk 3D] a frame failed; plain card instead:", e); setFailed("A frame failed: " + (e instanceof Error ? e.message : String(e))); } },
         });
         clearTimeout(limit);
         if (me.dead) { host.dispose(); return; }
@@ -188,6 +197,12 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
         if (AppState.currentState !== "active") host.pause();
         cur.current.onController?.(host.controller);
         setReady(true);
+        // first frame handed to the screen, then 10 s of running well clears the trail
+        const poll = setInterval(() => {
+          if (me.dead) { clearInterval(poll); return; }
+          try { if (glCounts(me.gl).frames > 0) { markStep(place, "first frame"); clearInterval(poll); } } catch { clearInterval(poll); }
+        }, 200);
+        setTimeout(() => { clearInterval(poll); if (!me.dead) clearTrail(place); }, 10000);
         cur.current.onReady?.();
       } catch (e) {
         clearTimeout(limit);
@@ -195,7 +210,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
         if (!me.dead) setFailed(e instanceof Error ? e.message : String(e));
       }
     })();
-  }, [size, tier, pr, restartOnce]);
+  }, [size, tier, pr, restartOnce, place, attempt]);
 
   // The speed readout: frames handed to the screen a second, draw calls, triangles.
   useEffect(() => {

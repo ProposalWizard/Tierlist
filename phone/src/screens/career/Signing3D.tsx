@@ -39,9 +39,12 @@ export function Signing3D({ career, club, managerName, onDone, terms, number, ki
   kind?: "trial" | "transfer";
 }) {
   const [failed, setFailed] = useState(false);
+  // Settings → Live 3D scenes is OFF by default (24 Nov 2026: the app closed after the trial's accept-offer): then this is the drawn signing
+  // and nothing here touches Walk3D or the GL.
+  const live = usePrefs().live3dScenes;
   // the room is built from the career once: a later change to the save (a new face arriving) does not rebuild it
-  const plan = useMemo(() => signingPlan(career, club, managerName, { kind, terms, number }), []); // eslint-disable-line react-hooks/exhaustive-deps
-  if (failed) return <SigningMoment career={career} club={club} managerName={managerName} onDone={onDone} terms={terms} number={number} />;
+  const plan = useMemo(() => (live ? signingPlan(career, club, managerName, { kind, terms, number }) : null), []); // eslint-disable-line react-hooks/exhaustive-deps
+  if (failed || !plan) return <SigningMoment career={career} club={club} managerName={managerName} onDone={onDone} terms={terms} number={number} />;
   return <Signing3DView plan={plan} onDone={onDone} onFail={() => setFailed(true)} />;
 }
 

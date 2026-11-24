@@ -9,7 +9,7 @@
  *  - Settings: only real preferences.
  *  - Placeholder: a screen still to come, saying so.
  */
-import { partsSwitchedOff, turnPartBackOn, PART_NAMES } from "../../safety";
+import { partsSwitchedOff, turnPartBackOn, PART_NAMES, closedWhileInfo, closedWhileLine, clearClosedWhile } from "../../safety";
 import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { ownedPenaltyRunups, ownedFreeKickRunups, careerPenaltyRunup, careerFreeKickRunup } from "@/lib/star/runupStyles";
 import { SKIN_TONES, HAIR_COLOURS, resolveSkinTone } from "@/lib/star/playerIdentity";
@@ -177,11 +177,12 @@ function PlayingCard({ v, dark }: { v: string; dark?: boolean }) {
 // ── Settings ──
 // QUICK, as the website's (DeviceSettings.tsx): one line each. Full screen, 3D quality and the testers'
 // switches (Texture pack, Harry changes, highlights rebuild) are left out: Mikey, "only the rows a player uses".
-const PREF_ROWS: [keyof Prefs, string][] = [
+const PREF_ROWS: [keyof Prefs, string, string?][] = [
   ["sound", "Sound effects"],
   ["gameMusic", "Game music"],
   ["skipLineup", "Skip the line-up"],
   ["show3dSpeed", "Show 3D speed"],
+  ["live3dScenes", "Live 3D scenes (testing)", "The signing, the manager's office, the awards nights and Star Pass rewards play in 3D. Turn this off if the app ever closes."],
 ];
 /** The website's little head pictures (public/star/people3d/toon-h1…h6.webp). */
 const HEAD_PIC: Record<string, number> = {
@@ -227,9 +228,12 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
 
       <Section>Quick</Section>
       <Card style={{ paddingVertical: 4, paddingHorizontal: 12 }}>
-        {PREF_ROWS.map(([k, label], i) => (
+        {PREF_ROWS.map(([k, label, sub], i) => (
           <Press key={k} onPress={() => setPref(k, !prefs[k])} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 11, borderBottomWidth: i < PREF_ROWS.length - 1 ? 1 : 0, borderBottomColor: "rgba(255,255,255,0.1)" }}>
-            <Text style={{ flex: 1, color: "#fff", fontWeight: "800", fontSize: 15 }}>{label}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{label}</Text>
+              {sub ? <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600", marginTop: 2 }}>{sub}</Text> : null}
+            </View>
             <Track on={prefs[k]} />
           </Press>
         ))}
@@ -302,6 +306,7 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
         </View>
       )}
       <SwitchedOffCard />
+      <ClosedWhileCard />
       {/* The website's More → Data credits (lib/star/dataCredits.ts): who made the data,
           pictures and sounds the game uses, under the licence each asks for. */}
       <Card style={{ padding: 0 }}>
@@ -359,6 +364,26 @@ function SwitchedOffCard() {
           <View style={{ width: 120 }}><Btn small label="Turn back on" onPress={() => { turnPartBackOn(p); bump((n) => n + 1); }} /></View>
         </View>
       ))}
+    </Card>
+  );
+}
+
+/**
+ * "Last time the app closed while: <place> at <step>" (src/safety.ts breadcrumbs): shown only when the app closed in the middle of
+ * a 3D place on its last run. The line is plain text you can press and hold to copy; Clear removes it.
+ */
+function ClosedWhileCard() {
+  const [, bump] = useState(0);
+  const info = closedWhileInfo();
+  const line = closedWhileLine();
+  if (!info || !line) return null;
+  const last = info.steps[info.steps.length - 1];
+  return (
+    <Card tone="#ef4444">
+      <Text style={{ color: C.text, fontWeight: "900", fontSize: 15 }}>{`Last time the app closed while: ${info.place} at ${last?.step ?? "the start"}`}</Text>
+      <Text style={{ color: C.dim, fontSize: 12, marginTop: 4, marginBottom: 8 }}>Send this line to the team (press and hold it to copy). It stays until you clear it.</Text>
+      <Text selectable style={{ color: C.text, fontSize: 11, lineHeight: 15, fontWeight: "600", marginBottom: 8 }}>{line}</Text>
+      <View style={{ width: 120 }}><Btn small label="Clear" onPress={() => { clearClosedWhile(); bump((n) => n + 1); }} /></View>
     </Card>
   );
 }

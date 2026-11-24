@@ -18,6 +18,7 @@ import { DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP } from "@/lib/star/runup
 import { ACCESSORIES } from "@/lib/star/store/catalogue";
 import { signatureOf } from "@/lib/star/signatureBoots";
 import { useCareer, setCareer } from "../../game/store";
+import { usePrefs } from "../../game/prefs";
 import { useNav } from "../../nav";
 import { Press } from "../../ui/Press";
 import { FONT } from "../../ui/look";
@@ -39,13 +40,14 @@ export function RewardArt({ card, w, h, career, live = false }: { card: Catalogu
   const src = pic(a.scene) ?? pic(a.image);
   const [fail3d, setFail3d] = useState(false);
   const [up3d, setUp3d] = useState(false);
+  const live3d = usePrefs().live3dScenes; // Settings → Live 3D scenes (off by default: the still stays)
   // `live` (the claim reveal, one at a time): the website's live 3D podium you spin (RewardArt.tsx `a.live && live`); the still is under it until it is up, and stays if the 3D cannot start.
   const cfg = useMemo(() => {
     if (!live || !a.live) return null;
     const k = Math.min(w / a.live.w, h / a.live.h);
     return { ...a.live, w: Math.round(a.live.w * k), h: Math.round(a.live.h * k) };
   }, [live, card.id, w, h]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (cfg && !fail3d) {
+  if (cfg && !fail3d && live3d) {
     return (
       <View style={{ width: w, height: h, alignItems: "center", justifyContent: "center" }}>
         {src && !up3d ? <Image source={src} resizeMode="contain" fadeDuration={0} style={{ width: w, height: h }} /> : null}

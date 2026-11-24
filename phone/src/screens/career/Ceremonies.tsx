@@ -46,7 +46,7 @@ import { playerOf } from "@/lib/star/potm";
 import { playCheer } from "../../match/sound";
 import { setMusicScene, clearMusicScene } from "../../match/music";
 import { partOff } from "../../safety";
-import { usePrefs } from "../../game/prefs";
+import { live3dScenesOn, usePrefs } from "../../game/prefs";
 import { AwardsStage3D, BallonStage3D, type NightHandle } from "./Night3D";
 import * as flow from "../../game/flow";
 import { ClubCrest } from "./kit";
@@ -232,7 +232,7 @@ function GoldenBallCeremony({ career, result, onDone }: { career: CareerState; r
   const yourRank = result.playerNominated ? result.playerRank : 0;
   const plan = useMemo(() => nightPlan(result.entries, yourRank, (career.player.startYear ?? 0) * 31 + career.season), [result, yourRank, career.player.startYear, career.season]);
   // The website's New night: the 3D stage when the phone can, the drawn stage (same beats) when it can't or the 3D takes too long.
-  const [mode, setMode] = useState<"3d" | "drawn">(() => (partOff("3d") ? "drawn" : "3d"));
+  const [mode, setMode] = useState<"3d" | "drawn">(() => (partOff("3d") || !live3dScenesOn() ? "drawn" : "3d"));
   const [ready3d, setReady3d] = useState(false);
   const ready = mode === "drawn" || ready3d;
   const { t, now, freeze, isFrozen } = useNightClock(plan.end + 1.5, ready, mode === "3d" ? 10 : 30);
@@ -575,7 +575,7 @@ export function SeasonAwardsNight({ career, go }: { career: CareerState; go: (s:
 
 function AwardsCeremony({ career, plan, onDone }: { career: CareerState; plan: AwardsPlan; onDone: () => void }) {
   // The 3D room when the phone can (the website's), the drawn room (same beats) when it can't or the 3D takes too long.
-  const [mode, setMode] = useState<"3d" | "drawn">(() => (partOff("3d") ? "drawn" : "3d"));
+  const [mode, setMode] = useState<"3d" | "drawn">(() => (partOff("3d") || !live3dScenesOn() ? "drawn" : "3d"));
   const [ready3d, setReady3d] = useState(false);
   const ready = mode === "drawn" || ready3d;
   const { t, now, jump, freeze, isFrozen } = useNightClock(plan.end + 1.0, ready, mode === "3d" ? 10 : 30);

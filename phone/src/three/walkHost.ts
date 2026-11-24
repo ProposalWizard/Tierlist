@@ -64,7 +64,7 @@ export interface WalkHost<C extends WalkController> {
  * frame asked for is kept and handed on at `resume()`. (three.js and the scenes ask
  * `self.requestAnimationFrame` every frame, so holding the request stops the whole loop.)
  */
-export function installFrameGate() {
+export function installFrameGate(onError?: (e: unknown) => void) {
   const g = globalThis as unknown as Record<string, unknown> & {
     requestAnimationFrame?: (cb: (t: number) => void) => number;
     cancelAnimationFrame?: (id: number) => void;
@@ -76,8 +76,13 @@ export function installFrameGate() {
   let seq = 1_000_000_000;
   const held = new Map<number, (t: number) => void>();
   const moved = new Map<number, number>();
+  // A scene's frame that throws must never reach the phone's global error handler: in a release app that closes the app with no
+  // error screen (expo-gl's stubs throw, e.g. renderbufferStorageMultisample). It is caught here and the place is let go instead.
+  const guard = (cb: (t: number) => void) => (t: number) => {
+    try { cb(t); } catch (e) { console.warn("[walk 3D] a frame threw:", e); try { onError?.(e); } catch { /* nothing more to do */ } }
+  };
   g.requestAnimationFrame = (cb) => {
-    if (!paused) return real.call(g, cb);
+    if (!paused) return real.call(g, guard(cb));
     const id = ++seq;
     held.set(id, cb);
     return id;
@@ -93,7 +98,7 @@ export function installFrameGate() {
     resume() {
       if (!paused) return;
       paused = false;
-      for (const [id, cb] of Array.from(held)) { held.delete(id); moved.set(id, real.call(g, (t: number) => { moved.delete(id); cb(t); })); }
+      for (const [id, cb] of Array.from(held)) { held.delete(id); moved.set(id, real.call(g, guard((t: number) => { moved.delete(id); cb(t); }))); }
     },
     paused: () => paused,
     restore() {
@@ -167,10 +172,16 @@ export interface StartWalkOptions<D, CB, C extends WalkController> {
   /** The GL buffer's pixels per point (the view was laid out so drawingBufferWidth = width × this). */
   pixelRatio: number;
   quality?: Quality3d;
+  /** A frame of the scene threw (caught: the app stays open). The place should be let go and its plain card shown. */
+  onFrameError?: (e: unknown) => void;
+  /** Crash breadcrumbs (../safety.ts markStep): called with the step reached; never throws into the host. */
+  onStep?: (step: string) => void;
 }
 
 export async function startWalkScene<D, CB, C extends WalkController>(o: StartWalkOptions<D, CB, C>): Promise<WalkHost<C>> {
   const g = globalThis as unknown as { devicePixelRatio?: number; __ktx2Off?: boolean };
+  const step = (t: string) => { try { o.onStep?.(t); } catch { /* breadcrumbs never stop a scene */ } };
+  step("host: surroundings set");
   const hadDpr = Object.prototype.hasOwnProperty.call(g, "devicePixelRatio");
   const oldDpr = g.devicePixelRatio;
   const oldKtx = g.__ktx2Off;
@@ -179,13 +190,14 @@ export async function startWalkScene<D, CB, C extends WalkController>(o: StartWa
   // the packed-texture copies (KTX2) need a WebAssembly transcoder: the phone uses the plain pictures
   g.__ktx2Off = true;
   const releaseDoc = holdSceneDocument();
-  const gate = installFrameGate();
+  const gate = installFrameGate((e) => { step("a frame threw"); o.onFrameError?.(e); });
   const unFetch = installBundledFetch();
   // a scene watches its container's size; here the container is hollow and never resizes (a real browser's observer would refuse it)
   const gr = globalThis as unknown as { ResizeObserver?: unknown };
   const oldRO = gr.ResizeObserver;
   gr.ResizeObserver = class { observe() { /* never resizes */ } unobserve() { /* nothing */ } disconnect() { /* nothing */ } };
   prepareGl(o.gl);
+  step("host: gl prepared");
   const canvas = walkCanvas(o.gl, o.width, o.height);
   fitViewport(o.gl, canvas);
   const cont = makeContainer(o.width, o.height);
@@ -205,6 +217,7 @@ export async function startWalkScene<D, CB, C extends WalkController>(o: StartWa
   };
   try {
     offerGlCanvas(canvas);
+    step("scene starting");
     controller = await withSceneDocument(() => o.start(cont.el, o.callbacks, o.data, { quality: o.quality }));
   } catch (e) {
     offerGlCanvas(null);
@@ -214,6 +227,7 @@ export async function startWalkScene<D, CB, C extends WalkController>(o: StartWa
     throw e;
   }
   offerGlCanvas(null);
+  step("scene started");
   gr.ResizeObserver = oldRO; // only the build watches the container: the page's own observer is back for the page
   const ctrl = controller;
   return {

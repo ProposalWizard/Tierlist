@@ -123,6 +123,22 @@ export function prepareGl(glIn: WebGL2RenderingContext, opts: { present?: boolea
     g.getShaderPrecisionFormat = () => ({ precision: 23, rangeMin: 127, rangeMax: 127 });
   }
 
+  // expo-gl has no multisampled renderbuffers: its renderbufferStorageMultisample is a stub that THROWS ("EXGL: ... isn't implemented
+  // yet!", expo-gl common/EXWebGLMethods.cpp). three calls it for any render target with samples > 0 (the signing / office scene's
+  // 4-sample backdrop bake, lib/star/signing3dScene.ts bakeBack), and a throw in a frame or timer closes a release app with no
+  // error screen. So: try the real call once; if it throws, a plain renderbuffer of the same size and format takes its place
+  // (three's resolve is then a same-size blit, which is fine: the backdrop just has no antialiasing, as the whole phone).
+  if (typeof g.renderbufferStorageMultisample === "function") {
+    const native = g.renderbufferStorageMultisample.bind(gl);
+    let nativeOk = true;
+    g.renderbufferStorageMultisample = (target: unknown, samples: unknown, format: unknown, w: unknown, h: unknown) => {
+      if (nativeOk) {
+        try { return native(target, samples, format, w, h); } catch { nativeOk = false; console.warn("[gl] no multisampled renderbuffers here: plain ones are used"); }
+      }
+      return g.renderbufferStorage(target, format, w, h);
+    };
+  }
+
   // a frame is handed to the screen once, after the JavaScript that drew it
   let queued = false;
   const end = () => { queued = false; st.frames++; if (st.present) gl.endFrameEXP?.(); };

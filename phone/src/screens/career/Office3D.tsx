@@ -22,7 +22,18 @@ import { LookButton } from "../../ui/look";
 export type OfficeSpeaker = "boss" | "you" | null;
 
 /** The office with your career's look: your skin, hair, kit, accessories and aviators; the camera follows whoever speaks. */
-export function OfficeStage({ career, speaker, onFail, style }: {
+export function OfficeStage(p: {
+  career: CareerState; speaker: OfficeSpeaker; onFail: () => void; style?: StyleProp<ViewStyle>;
+}) {
+  // Settings → Live 3D scenes is OFF by default: then no stage is made (nothing touches Walk3D or the GL) and the screen is told, as for any failed start.
+  const live = usePrefs().live3dScenes;
+  const failRef0 = useRef(p.onFail);
+  failRef0.current = p.onFail;
+  useEffect(() => { if (!live) failRef0.current(); }, [live]);
+  return live ? <OfficeStageLive {...p} /> : null;
+}
+
+function OfficeStageLive({ career, speaker, onFail, style }: {
   career: CareerState; speaker: OfficeSpeaker; onFail: () => void; style?: StyleProp<ViewStyle>;
 }) {
   const prefs = usePrefs();
@@ -60,8 +71,13 @@ export function OfficeMoment({ career, title, text, onContinue, continueLabel = 
   onFail?: () => void;
 }) {
   const [failed, setFailed] = useState(false);
+  const live = usePrefs().live3dScenes;
   const boss = career.manager?.name ?? "The manager";
-  const flat = plain || failed;
+  const flat = plain || failed || !live;
+  // off: the old plain card, and the screen is told as for a failed start (the dugout goes back to its banner)
+  const onFailRef = useRef(onFail);
+  onFailRef.current = onFail;
+  useEffect(() => { if (!live && !plain) onFailRef.current?.(); }, [live, plain]);
   const stageH = Math.round(useWindowDimensions().height * 0.46); // the website's 46vh
   return (
     <View style={{ flex: 1, backgroundColor: "#0b1220", justifyContent: flat ? "center" : "flex-start", paddingHorizontal: 12, paddingBottom: 24, paddingTop: 12 }}>
