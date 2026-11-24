@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mikey's Brain</title>
+<title>Mikey&#39;s Brain</title>
 <style>
 :root{--bg:#f7f4ee;--card:#fff;--ink:#1f1d1a;--ink2:#5d5850;--ink3:#948d82;--line:#ebe5da;--soft:#f2ede4;
   --green:#2f9e5b;--greenbg:#e5f5ea;--amber:#c98a12;--amberbg:#fbf1dc;--greybg:#f0ede8;--blue:#3a6fd8;--bluebg:#e6eefc;--red:#d0453a;
@@ -68,12 +68,17 @@ button.ghost{font:inherit;font-weight:700;font-size:13px;border:0;background:non
 .todo .w{font-weight:800}.todo .d{color:var(--ink2);font-size:15px}.todo ol{margin:6px 0 0;padding-left:20px;color:var(--ink2);font-size:15px}.todo li{margin:3px 0}
 details summary{cursor:pointer;font-weight:800;color:var(--ink2);padding:6px 0}
 h3{font-size:18px;margin:4px 0 8px}
+.libc{padding:12px 14px}.libhead{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;font:inherit;font-weight:900;font-size:17px;background:none;border:0;color:var(--ink);cursor:pointer;padding:2px 0;text-align:left}
+.libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:10px;max-height:70vh;overflow-y:auto;padding:2px}
+.lt{font:inherit;color:inherit;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px;cursor:pointer;min-width:0}.lt .t{font-weight:800;font-size:13px;line-height:1.25;margin-top:5px}
+.lp{position:relative;aspect-ratio:9/16;border-radius:10px;overflow:hidden;background:#000}.lp img{width:100%;height:100%;object-fit:cover;display:block}
+.ll{position:absolute;right:5px;bottom:5px;background:rgba(0,0,0,.7);color:#fff;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:700}.lin{position:absolute;left:5px;top:5px;background:var(--green);color:#fff;border-radius:6px;padding:1px 6px;font-size:10px;font-weight:800}
 .phoneonly{display:none}@media (max-width:720px){.phoneonly{display:block}}
 </style></head>
 <body><div class="wrap">
 <div class="top"><div><div class="muted">Updated <span id="upd"></span></div><h1>Mikey's Brain</h1></div><div class="pills" id="pills"></div></div>
 <div class="tabs" id="tabs"></div>
-<div id="t-post"></div>
+<div id="t-post"><div id="libbox"></div><div id="t-postm"></div></div>
 <div id="t-acc" class="hide"></div>
 <div id="t-res" class="hide"></div>
 <div id="t-next" class="hide"></div>
@@ -82,13 +87,16 @@ h3{font-size:18px;margin:4px 0 8px}
 <script>
 // ======== WHAT THE PAGE SHOWS (Claude rewrites this block when things change) ========
 const RAW="https://raw.githubusercontent.com/ProposalWizard/Tierlist/1e5019658e462869651d9a95d6829abf78cb44ac/docs/marketing/videos/";
+// each video's file in the posting tool's storage (Mikey's own bucket). Claude adds every new video here when it adds it to the library.
+const PKEY={"ex15":"own:videos/publish/20261124-133047-bf32-knowitball-ex15-hardest-records.mp4","ex02b":"own:videos/publish/20261120-231314-89ca-ex02b-most-goals-in-a-year.mp4","ex06b":"own:videos/publish/20261120-182355-ad13-ex06b-leicester-5000-1.mp4","v16":"own:videos/publish/20261124-171143-ad23-v16-knowitball-v16-next-club-vinicius-sim.mp4","v14":"own:videos/publish/20261124-171145-ffb2-v14-knowitball-v14-replace-alisson.mp4","v13":"own:videos/publish/20261124-171147-e561-v13-knowitball-v13-replace-van-dijk-short.mp4","0a15408154":"own:videos/publish/20261124-171149-4333-0a15408154-27-jamal-musiala-2324.mp4","c061d5ac16":"own:videos/publish/20261124-171150-9fdf-c061d5ac16-26-manuel-neuer-1920.mp4","bd57d4cc95":"own:videos/publish/20261124-171151-5ff1-bd57d4cc95-25-pierre-emerick-aubameyang-1819.mp4","6ebb36c228":"own:videos/publish/20261124-171153-9fd2-6ebb36c228-24-toni-kroos-2324.mp4","7b668b91bf":"own:videos/publish/20261124-171154-3ab7-7b668b91bf-23-gareth-bale-1718.mp4","9c83ccd600":"own:videos/publish/20261124-171156-a458-9c83ccd600-22-heung-min-son-2122.mp4","0260b4d1b5":"own:videos/publish/20261124-171158-004b-0260b4d1b5-21-vitinha-2425.mp4","90138fbee8":"own:videos/publish/20261124-171200-da69-90138fbee8-20-bruno-fernandes-2021.mp4","b023442c32":"own:videos/publish/20261124-171201-a8d4-b023442c32-19-alisson-becker-1819.mp4","56f8f37abe":"own:videos/publish/20261124-171203-aa59-56f8f37abe-18-sergio-aguero-1819.mp4","c69fee22af":"own:videos/publish/20261124-171204-ab1c-c69fee22af-17-lamine-yamal-2425.mp4","07ae346564":"own:videos/publish/20261124-171206-e12e-07ae346564-16-trent-alexander-arnold-1920.mp4","605182fa4e":"own:videos/publish/20261124-171207-2b89-605182fa4e-15-cole-palmer-2324.mp4","3b0e278d8a":"own:videos/publish/20261124-171209-deb9-3b0e278d8a-14-robert-lewandowski-2021.mp4","77370c5602":"own:videos/publish/20261124-171210-d6e8-77370c5602-13-eden-hazard-1819.mp4","5d0311a7e4":"own:videos/publish/20261124-171211-30b9-5d0311a7e4-12-n-golo-kante-1617.mp4","bac8098598":"own:videos/publish/20261124-171212-ff00-bac8098598-11-cristiano-ronaldo-2021.mp4","86f5c7124c":"own:videos/publish/20261124-171215-c969-86f5c7124c-10-jude-bellingham-2324.mp4","89c2bc2ed2":"own:videos/publish/20261124-171217-8101-89c2bc2ed2-09-luka-modric-1718.mp4","19aeef009a":"own:videos/publish/20261124-171218-0876-19aeef009a-08-harry-kane-2324.mp4","87f3f42ff4":"own:videos/publish/20261124-171220-a6cb-87f3f42ff4-07-virgil-van-dijk-1819.mp4","dd8f6807d9":"own:videos/publish/20261124-171221-abcc-dd8f6807d9-06-declan-rice-2324.mp4","815708def1":"own:videos/publish/20261124-171223-1f20-815708def1-05-sadio-mane-2021.mp4","1ee9b5e91d":"own:videos/publish/20261124-171224-bfa1-1ee9b5e91d-04-kevin-de-bruyne-1920.mp4","7b69abd845":"own:videos/publish/20261124-171226-1c3e-7b69abd845-03-kylian-mbappe-2324.mp4","b24059be4e":"own:videos/publish/20261124-171228-8a52-b24059be4e-02-lionel-messi-2223.mp4","78f689855c":"own:videos/publish/20261124-171230-0e5c-78f689855c-01-karim-benzema-2122.mp4","9780b50caf":"own:videos/publish/20261124-171232-3662-9780b50caf-knowitball-v08-palmer-2627-twin-motion.mp4","2bf8f5dd81":"own:videos/publish/20261124-171238-86e4-2bf8f5dd81-knowitball-v08-palmer-2627-twin.mp4","b74bb8f5c8":"own:videos/publish/20261124-171240-ef19-b74bb8f5c8-knowitball-v07-replace-hall.mp4","0895786994":"own:videos/publish/20261124-171242-0a7a-0895786994-knowitball-v05-neymar-twin.mp4","faabfc79b4":"own:videos/publish/20261124-171244-740c-faabfc79b4-knowitball-v06-kane-twin.mp4","a892f62fb3":"own:videos/publish/20261124-171246-c43b-a892f62fb3-knowitball-v02-salah-twin-45s.mp4","a9fb2ccede":"own:videos/publish/20261124-171247-2514-a9fb2ccede-knowitball-v02-salah-twin.mp4","4b763b4c04":"own:videos/publish/20261124-171249-db53-4b763b4c04-knowitball-v04-haaland-twin.mp4","d0162271cd":"own:videos/publish/20261124-171251-1372-d0162271cd-knowitball-v03-palmer-10-years.mp4","d9ca5f413c":"own:videos/publish/20261124-171252-4c8c-d9ca5f413c-knowitball-ch03-mourinho-pep-2010.mp4","fa8518a1dd":"own:videos/publish/20261124-171254-2030-fa8518a1dd-knowitball-v01-patch-0-1-0-3.mp4"};
+const PID="cagkgfketucousksgtbk";
 const DATA={
-updated:"18 Nov 2026",
+updated:"24 Nov 2026",
 // where each account can be posted from today. via: "chat" = Claude posts it from the chat; "site" = the site's Publish tool (once set up); null = can't yet
 dest:[
- {id:"ig-foot",group:"football",p:"Instagram",n:"knowitballjr",can:"yes",via:"Claude posts it"},
- {id:"fb-foot",group:"football",p:"Facebook",n:"Football page",can:"setup",via:"Needs the site's Publish tool switched on (Next steps 1)"},
- {id:"yt-foot",group:"football",p:"YouTube",n:"Football channel",can:"setup",via:"Publish tool, and private until Google's check (Next steps 1 + 3)"},
+ {id:"ig-foot",group:"football",p:"Instagram",n:"knowitballjr",can:"yes",via:"Posts by itself when you press Send"},
+ {id:"fb-foot",group:"football",p:"Facebook",n:"Knowit Balljr (your profile)",can:"no",via:"You post this one: Meta only lets apps post to Pages, and the Page gets no views. Step 8 gives you the video and the caption."},
+ {id:"yt-foot",group:"football",p:"YouTube",n:"KnowItBall",can:"yes",via:"Posts by itself when you press Send. If one shows as private, switch it to Public in YouTube Studio"},
  {id:"tt-foot",group:"football",p:"TikTok",n:"BallKnowledgeFC",can:"no",via:"Not in any posting tool yet (Next steps 4)"},
  {id:"ig-cont",group:"content",p:"Instagram",n:"cutcutthings",can:"yes",via:"Claude posts it"},
  {id:"fb-cont",group:"content",p:"Facebook",n:"Content page",can:"no",via:"The Publish tool holds one page for now"},
@@ -125,12 +133,97 @@ lessons:["Each account had one break-out (Kane 1,245 and ice cream 1,676 views).
  "People watch about 15 seconds on average. Next to test: cuts under 60 seconds, with a strong first 2 seconds."],
 rules:[
  ["Titles (YouTube, Facebook)","Under 70 characters. The question the video answers, the player's name early, one emoji at most. Capital Letters On YouTube."],
+ ["YouTube Shorts: 100 characters","A Short's title is the one line people see, and YouTube allows 100 characters at most, hashtags included if you put any there. Aim for under 70. The description is separate (up to 5,000); the Publish tool adds #Shorts to it by itself. Facebook and Instagram Reels only use the caption."],
  ["Captions","Line 1 is the question (that's all most people see). Line 2 is how we worked it out. The last line asks the viewer something, so they comment."],
  ["Hashtags","Instagram: 8 to 10 (players, clubs, #football #footballstats #knowitball). YouTube: 3 to 4, always #shorts. Facebook: 3 to 4. TikTok: 4 to 5, plus #fyp."],
  ["Which video goes where","Football videos go on football accounts only. Cutting videos and other viral tests go on content accounts only. Never mixed."],
  ["Before posting","Claude checks the video plays, the words have no wrong numbers, and you ticked every step."],
  ["After posting","Claude checks each post is really live before saying it's done, so nothing is posted twice. Then it marks the step green here."]]
 };
+// ======== ALL OUR VIDEOS (the video library): tap "All our videos", search, tap one to start posting it ========
+const LR="https://raw.githubusercontent.com/proposalwizard/tierlist/ccr-e4ceba58-g6sz6t/docs/marketing/videos/";
+const LIB=[
+["ex15","Four football records that might never be beaten","Explainer",76,"2026-11-24"],
+["ex02b","Most goals in a year: Messi v Chitalu","Explainer",66,"2026-11-18"],
+["ex06b","How did a 5,000-1 shot win the league? (Leicester)","Explainer",61,"2026-11-17"],
+["ex14","Pochettino at United in 20 seconds","Explainer",13,"2026-11-17"],
+["ex13","The 2030 World Cup: three continents (first style)","Explainer",25,"2026-11-17"],
+["ex12","The new rules this season (first style)","Explainer",25,"2026-11-17"],
+["ex11","Guess the club in four clues","Explainer",24,"2026-11-17"],
+["ex10","Why is it called a hat-trick? (first style)","Explainer",23,"2026-11-17"],
+["ex09","Fastest Premier League goal: 7.69 s (first style)","Explainer",13,"2026-11-17"],
+["ex08","Most Ballon d'Ors: the top 5 (first style)","Explainer",26,"2026-11-17"],
+["ex07","Five offside myths, busted (first style)","Explainer",32,"2026-11-17"],
+["ex06","How did a 5,000-1 shot win the league? (first style)","Explainer",37,"2026-11-17"],
+["ex05","Youngest Premier League scorer (first style)","Explainer",36,"2026-11-17"],
+["ex04","How many goals did Pelé really score? (first style)","Explainer",37,"2026-11-17"],
+["ex03","Why do Juventus wear black and white? (first style)","Explainer",40,"2026-11-17"],
+["ex02","Most goals in a single year (first style)","Explainer",41,"2026-11-17"],
+["ex01","How will Pochettino change Man United?","Explainer",54,"2026-11-17"],
+["0a15408154","Stat twin: Jamal Musiala 23/24 → Christian Pulisic 25/26 (83%)","Stat Twins",67,"2026-11-11","twins-batch-01/27-jamal-musiala-2324.mp4"],
+["c061d5ac16","Stat twin: Manuel Neuer 19/20 → Yann Sommer 23/24 (92%)","Stat Twins",62,"2026-11-11","twins-batch-01/26-manuel-neuer-1920.mp4"],
+["bd57d4cc95","Stat twin: Pierre-Emerick Aubameyang 18/19 → Ollie Watkins 25/26 (88%)","Stat Twins",62,"2026-11-11","twins-batch-01/25-pierre-emerick-aubameyang-1819.mp4"],
+["6ebb36c228","Stat twin: Toni Kroos 23/24 → Joshua Kimmich 24/25 (84%)","Stat Twins",57,"2026-11-11","twins-batch-01/24-toni-kroos-2324.mp4"],
+["7b668b91bf","Stat twin: Gareth Bale 17/18 → Christopher Nkunku 22/23 (87%)","Stat Twins",64,"2026-11-11","twins-batch-01/23-gareth-bale-1718.mp4"],
+["9c83ccd600","Stat twin: Heung-Min Son 21/22 → Roberto Firmino 22/23 (82%)","Stat Twins",65,"2026-11-11","twins-batch-01/22-heung-min-son-2122.mp4"],
+["0260b4d1b5","Stat twin: Vítinha 24/25 → Aleksandar Pavlović 25/26 (81%)","Stat Twins",65,"2026-11-11","twins-batch-01/21-vitinha-2425.mp4"],
+["90138fbee8","Stat twin: Bruno Fernandes 20/21 → Kevin De Bruyne 24/25 (82%)","Stat Twins",64,"2026-11-11","twins-batch-01/20-bruno-fernandes-2021.mp4"],
+["b023442c32","Stat twin: Alisson Becker 18/19 → Gianluigi Donnarumma 25/26 (84%)","Stat Twins",65,"2026-11-11","twins-batch-01/19-alisson-becker-1819.mp4"],
+["56f8f37abe","Stat twin: Sergio Agüero 18/19 → Alexander Isak 24/25 (79%)","Stat Twins",67,"2026-11-11","twins-batch-01/18-sergio-aguero-1819.mp4"],
+["c69fee22af","Stat twin: Lamine Yamal 24/25 → Edon Zhegrova 22/23 (86%)","Stat Twins",69,"2026-11-11","twins-batch-01/17-lamine-yamal-2425.mp4"],
+["07ae346564","Stat twin: Trent Alexander-Arnold 19/20 → Kieran Trippier 23/24 (78%)","Stat Twins",65,"2026-11-11","twins-batch-01/16-trent-alexander-arnold-1920.mp4"],
+["605182fa4e","Stat twin: Cole Palmer 23/24 → Michael Olise 23/24 (83%)","Stat Twins",62,"2026-11-11","twins-batch-01/15-cole-palmer-2324.mp4"],
+["3b0e278d8a","Stat twin: Robert Lewandowski 20/21 → Kylian Mbappé 23/24 (80%)","Stat Twins",68,"2026-11-11","twins-batch-01/14-robert-lewandowski-2021.mp4"],
+["77370c5602","Stat twin: Eden Hazard 18/19 → Jérémy Doku 25/26 (77%)","Stat Twins",63,"2026-11-11","twins-batch-01/13-eden-hazard-1819.mp4"],
+["5d0311a7e4","Stat twin: N'Golo Kanté 16/17 → Moisés Caicedo 22/23 (88%)","Stat Twins",58,"2026-11-11","twins-batch-01/12-n-golo-kante-1617.mp4"],
+["bac8098598","Stat twin: Cristiano Ronaldo 20/21 → Dušan Vlahović 23/24 (85%)","Stat Twins",62,"2026-11-11","twins-batch-01/11-cristiano-ronaldo-2021.mp4"],
+["86f5c7124c","Stat twin: Jude Bellingham 23/24 → Phil Foden 23/24 (85%)","Stat Twins",63,"2026-11-11","twins-batch-01/10-jude-bellingham-2324.mp4"],
+["89c2bc2ed2","Stat twin: Luka Modrić 17/18 → Angelo Stiller 24/25 (86%)","Stat Twins",66,"2026-11-11","twins-batch-01/09-luka-modric-1718.mp4"],
+["19aeef009a","Stat twin: Harry Kane 23/24 → Robert Lewandowski 22/23 (89%)","Stat Twins",58,"2026-11-11","twins-batch-01/08-harry-kane-2324.mp4"],
+["87f3f42ff4","Stat twin: Virgil van Dijk 18/19 → Thiago Silva 23/24 (84%)","Stat Twins",66,"2026-11-11","twins-batch-01/07-virgil-van-dijk-1819.mp4"],
+["dd8f6807d9","Stat twin: Declan Rice 23/24 → Douglas Luiz 22/23 (89%)","Stat Twins",62,"2026-11-11","twins-batch-01/06-declan-rice-2324.mp4"],
+["815708def1","Stat twin: Sadio Mané 20/21 → Mohamed Salah 25/26 (83%)","Stat Twins",59,"2026-11-11","twins-batch-01/05-sadio-mane-2021.mp4"],
+["1ee9b5e91d","Stat twin: Kevin De Bruyne 19/20 → Bruno Fernandes 25/26 (84%)","Stat Twins",64,"2026-11-11","twins-batch-01/04-kevin-de-bruyne-1920.mp4"],
+["7b69abd845","Stat twin: Kylian Mbappé 23/24 → Harry Kane 25/26 (82%)","Stat Twins",63,"2026-11-11","twins-batch-01/03-kylian-mbappe-2324.mp4"],
+["b24059be4e","Stat twin: Lionel Messi 22/23 → Lamine Yamal 26/27 (82%)","Stat Twins",60,"2026-11-11","twins-batch-01/02-lionel-messi-2223.mp4"],
+["78f689855c","Stat twin: Karim Benzema 21/22 → Kylian Mbappé 22/23 (82%)","Stat Twins",65,"2026-11-11","twins-batch-01/01-karim-benzema-2122.mp4"],
+["9780b50caf","Current Cole Palmer (26/27)'s statistical twin","Stat Twins",66,"2026-11-11","v08-palmer-2627-twin/knowitball-v08-palmer-2627-twin-motion.mp4"],
+["2bf8f5dd81","Cole Palmer 26/27 twin (first style)","Stat Twins",66,"2026-11-11","v08-palmer-2627-twin/knowitball-v08-palmer-2627-twin.mp4"],
+["b74bb8f5c8","How do you replace Lewis Hall?","Replace him",52,"2026-11-10","v07-replace-hall/knowitball-v07-replace-hall.mp4"],
+["0895786994","Neymar 17/18's statistical twin","Stat Twins",57,"2026-11-10","v05-neymar-twin/knowitball-v05-neymar-twin.mp4"],
+["faabfc79b4","Kane 25/26's statistical twin","Stat Twins",62,"2026-11-09","v06-kane-twin/knowitball-v06-kane-twin.mp4"],
+["a892f62fb3","Salah's statistical twin (45 s cut)","Stat Twins",49,"2026-11-09","v02-salah-twin/short-45s/knowitball-v02-salah-twin-45s.mp4"],
+["a9fb2ccede","Salah's statistical twin","Stat Twins",84,"2026-11-09","v02-salah-twin/knowitball-v02-salah-twin.mp4"],
+["4b763b4c04","Haaland's statistical twin","Stat Twins",80,"2026-11-08","v04-haaland-twin/knowitball-v04-haaland-twin.mp4"],
+["d0162271cd","Palmer 10 years ago","Other",82,"2026-11-07","v03-palmer-10-years/knowitball-v03-palmer-10-years.mp4"],
+["d9ca5f413c","Mourinho v Pep 2010 (chess)","Other",72,"2026-11-05","ch03-mourinho-pep-2010/knowitball-ch03-mourinho-pep-2010.mp4"],
+["fa8518a1dd","Patch notes 0.1 to 0.3","Other",45,"2026-10-21","v01-patch-0.1-0.3/knowitball-v01-patch-0.1-0.3.mp4"]
+].map(([id,name,kind,secs,date,f])=>({id,name,kind,secs,date,cover:"lib/p/"+id+".jpg",video:f?LR+f:"lib/v/"+id+".mp4"}));
+const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+const clean=t=>t.replace(/^Stat twin: /,'').replace(/ \((first style|45 s cut)\)$/,'');
+function libVideo(L){const q=clean(L.name),twin=L.kind==='Stat Twins'&&q.includes(' → '),ask=L.kind==='Stat Twins'?'Who is the better player? 👇':'What do you think? 👇';
+  const first=twin?`${q.split(' → ')[0]}'s statistical twin is… ${q.split(' → ')[1]} 👀`:(/\?$/.test(q)?q+' 🤔':q+' 👀');
+  const kw=L.kind==='Stat Twins'?'#statistics #footballstats':'#footballhistory #footballfacts';
+  return {id:L.id,name:L.name,len:fmt(L.secs),made:new Date(L.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}),group:"football",cover:L.cover,video:L.video,fromLib:1,
+    why:"From the video library ("+L.kind+"). The words below are a first draft: check each one.",
+    title:{yt:q.slice(0,70),fb:q.slice(0,70)},
+    cap:{ig:first+"\n\n"+ask,fb:first+" "+ask,yt:first+"\n\nComment below 👇",tt:first},
+    tags:{ig:"#football #premierleague "+kw+" #soccer #knowitball",fb:"#football "+kw,yt:"#shorts #football "+kw.split(' ')[0],tt:"#football #fyp "+kw.split(' ')[0]}}}
+function addLib(id){if(DATA.videos.some(v=>v.id===id))return;const L=LIB.find(x=>x.id===id);if(L)DATA.videos.push(libVideo(L))}
+function syncLib(){Object.keys(ST).forEach(k=>{if(ST[k]&&ST[k].lib)addLib(k)})}
+let LIBOPEN=false,LIBK='all';
+function libUI(){const kinds=['all',...new Set(LIB.map(x=>x.kind))];
+  $('libbox').innerHTML=`<div class="card libc"><button class="libhead" id="libtog"><span>📚 All our videos <span class="muted">(${LIB.length})</span></span><span class="muted">${LIBOPEN?'Close ▴':'Search and pick ▾'}</span></button>
+  ${LIBOPEN?`<input type="text" id="libq" placeholder="Search a player, club or video, e.g. Leicester, Kane, Messi" autocomplete="off" style="margin-top:10px">
+  <div class="ptabs" style="margin-top:8px">${kinds.map(k=>`<button class="ptab${LIBK===k?' on':''}" data-lk="${k}">${k==='all'?'All':k}</button>`).join('')}</div><div class="muted" id="libn" style="margin-top:8px"></div><div class="libgrid" id="libgrid"></div>`:''}</div>`;
+  $('libtog').onclick=()=>{LIBOPEN=!LIBOPEN;libUI();if(LIBOPEN)$('libq').focus()};
+  if(!LIBOPEN)return;document.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{LIBK=b.dataset.lk;const q=$('libq').value;libUI();$('libq').value=q;libGrid()});
+  $('libq').oninput=libGrid;libGrid()}
+function libGrid(){const n=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(),q=n($('libq').value.trim());
+  const L=LIB.filter(x=>(LIBK==='all'||x.kind===LIBK)&&(!q||n(x.name+' '+x.kind).includes(q)));
+  $('libn').textContent=L.length+' of '+LIB.length+' videos. Tap one to post it.';
+  $('libgrid').innerHTML=L.map(x=>{const inList=DATA.videos.some(v=>v.id===x.id);return `<button class="lt" data-lv="${x.id}"><div class="lp"><img loading="lazy" src="${x.cover}" alt=""><span class="ll">${fmt(x.secs)}</span>${inList?'<span class="lin">In your list</span>':''}</div><div class="t">${esc(x.name)}</div><div class="muted" style="font-size:11px">${esc(x.kind)} · ${x.date.slice(5).split('-').reverse().join('/')}</div></button>`}).join('')||'<div class="muted">No video matches.</div>';
+  document.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{const id=b.dataset.lv;addLib(id);const x=s(id);x.lib=1;save(id);SEL=id;OPEN=-1;LIBOPEN=false;libUI();post();window.scrollTo({top:0,behavior:'smooth'})})}
 // ======== DRAWING ========
 const $=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const PF={Instagram:"#d6336c",TikTok:"#111",YouTube:"#e02a1f",Facebook:"#1f6fe0"},PS={Instagram:"IG",TikTok:"TT",YouTube:"YT",Facebook:"FB"},PK={Instagram:"ig",Facebook:"fb",YouTube:"yt",TikTok:"tt"};
@@ -152,7 +245,7 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelect
 function pills(){const waiting=DATA.videos.filter(v=>!s(v.id).sent).length,can=DATA.dest.filter(d=>d.can==="yes").length;
   $('pills').innerHTML=`<span class="pill"><b>${waiting}</b> videos to post</span><span class="pill"><b>${can}/8</b> accounts ready</span>`}
 // ---------- the chain ----------
-function post(){const v=vid(SEL);if(!v){$('t-post').innerHTML='<div class="card muted">No videos waiting. Claude adds them here when they are ready.</div>';return}
+function post(){const v=vid(SEL);if(!v){$('t-postm').innerHTML='<div class="card muted">No videos waiting. Claude adds them here when they are ready.</div>';return}
   const x=s(v.id),n=doneCount(v.id),firstOpen=[0,1,2,3,4,5,6].find(i=>!x.ticks[i]);
   const pickHtml=`<div class="picker">${DATA.videos.map(q=>{const c=doneCount(q.id),sent=s(q.id).sent;return `<button class="pick${q.id===SEL?' on':''}" data-v="${q.id}"><img src="${q.cover}" alt=""><div class="t">${esc(q.name)}</div>
     <div class="s" style="color:${sent?'var(--green)':'var(--ink3)'}">${sent?'✓ Sent to Claude':c+' of 8 steps'}</div></button>`}).join('')}</div>`;
@@ -162,7 +255,7 @@ function post(){const v=vid(SEL);if(!v){$('t-post').innerHTML='<div class="card 
   const ptabs=(k,list)=>`<div class="ptabs">${list.map(p=>`<button class="ptab${(PT[k]||list[0])===p?' on':''}" data-pt="${k}" data-p="${p}">${({ig:'Instagram',fb:'Facebook',yt:'YouTube',tt:'TikTok'})[p]}</button>`).join('')}</div>`;
   const tp=PT.title||'yt',cp=PT.cap||'ig',gp=PT.tags||'ig';
   const dests=DATA.dest.filter(d=>d.group===v.group);
-  const chosen=dests.filter(d=>x.to[d.id]);
+  const chosen=dests.filter(d=>x.to[d.id]&&d.can==='yes');
   const L=LIVE[v.id]||{};
   const steps=[
    step(0,"Watch it","Plays to the end, looks right",`<div class="muted">${esc(v.why)}</div><video controls playsinline preload="none" poster="${v.cover}" src="${v.video}" style="width:160px;aspect-ratio:9/16;border-radius:12px;background:#000;margin-top:8px;display:block" class="phoneonly"></video>${tick(0,'It looks good')}`),
@@ -170,11 +263,11 @@ function post(){const v=vid(SEL);if(!v){$('t-post').innerHTML='<div class="card 
    step(2,"Caption","Written for each app",`<div class="muted">The first line is all most people see. Each app gets its own length.</div>${ptabs('cap',['ig','fb','yt','tt'])}<textarea data-e="cap" data-p="${cp}">${esc(val(v,'cap',cp))}</textarea>${tick(2,'Captions are good')}`),
    step(3,"Hashtags",esc(val(v,'tags','ig').split(' ').slice(0,3).join(' '))+'…',`<div class="muted">Instagram 8 to 10, YouTube always #shorts, TikTok #fyp.</div>${ptabs('tags',['ig','fb','yt','tt'])}<textarea data-e="tags" data-p="${gp}" style="min-height:60px">${esc(val(v,'tags',gp))}</textarea>${tick(3,'Hashtags are good')}`),
    step(4,"Where it goes",chosen.map(d=>PS[d.p]).join(' + ')||'nothing picked',`<div class="muted">${v.group==='football'?'Football':'Content'} accounts only. Grey ones can't be posted to yet.</div>${dests.map(d=>`<div class="dest"><div class="pf" style="background:${PF[d.p]}">${PS[d.p]}</div><div><b>${esc(d.n)}</b><div class="muted">${esc(d.via)}</div></div><button class="tg${x.to[d.id]?' on':''}" data-d="${d.id}" ${d.can==='yes'?'':'disabled'}></button></div>`).join('')}${tick(4,'These accounts')}`),
-   step(5,"When",x.when==="now"?"As soon as Claude gets it":new Date(x.when).toLocaleString(),`<div class="ptabs"><button class="ptab${x.when==='now'?' on':''}" data-w="now">Now</button><button class="ptab${x.when!=='now'?' on':''}" data-w="later">Pick a time</button></div>${x.when!=='now'?`<input type="datetime-local" data-wt="1" value="${x.when&&x.when!=='later'?x.when.slice(0,16):''}" style="margin-top:8px">`:''}${tick(5,'That time')}`),
-   step(6,"Send to Claude",x.sent?'Sent '+new Date(x.sent).toLocaleString():'Ticks 1 to 6 first',x.sent?`<div class="good">✓ Sent. Now say <b>"post my videos"</b> to Claude in the chat. It posts exactly what you ticked and turns step 8 green.</div><button class="ghost" data-unsend="1">Take it back</button>`
-     :`<div class="muted">Claude posts exactly these words to exactly these accounts.</div><button class="ok" data-send="1" ${[0,1,2,3,4,5].some(k=>!x.ticks[k])?'disabled':''}>✓ Send to Claude</button>`),
-   step(7,"Live",Object.keys(L).length?Object.values(L).filter(q=>q.stage==='live').length+' of '+Object.keys(L).length+' live':'Waiting',chosen.map(d=>{const q=L[d.id]||{};return `<div class="live"><div class="pf" style="background:${PF[d.p]}">${PS[d.p]}</div><div><b>${esc(d.n)}</b>${q.note?`<div class="muted">${esc(q.note)}</div>`:''}</div>${q.stage==='live'?`<a class="chip c-ok" href="${esc(q.link)}" target="_blank">✓ Live · open</a>`:q.stage==='failed'?'<span class="chip c-no" style="color:var(--red)">Failed</span>':q.stage==='posting'?'<span class="chip c-half">Posting…</span>':'<span class="chip c-no">Waiting</span>'}</div>`}).join('')||'<div class="muted">No account picked.</div>')];
-  $('t-post').innerHTML=pickHtml+`<div class="chainhead"><div class="tt">${esc(v.name)}</div><span class="chip ${n===8?'c-ok':'c-blue'}">${n} of 8 done</span></div><div class="prog"><i style="width:${100*n/8}%"></i></div>
+   step(5,"When",x.when==="now"?"Straight away":new Date(x.when).toLocaleString(),`<div class="ptabs"><button class="ptab${x.when==='now'?' on':''}" data-w="now">Now</button><button class="ptab${x.when!=='now'?' on':''}" data-w="later">Pick a time</button></div>${x.when!=='now'?`<input type="datetime-local" data-wt="1" value="${x.when&&x.when!=='later'?x.when.slice(0,16):''}" style="margin-top:8px">`:''}${tick(5,'That time')}`),
+   step(6,"Send to Claude",x.sent?'Sent '+new Date(x.sent).toLocaleString():'Ticks 1 to 6 first',x.sent?`<div class="good">✓ Sent. ${x.pubId?(x.when&&x.when!=='now'&&x.when!=='later'?'It posts by itself at '+when2(x.when)+'.':'It posts by itself within 5 minutes.')+' Step 8 updates on its own, and you can close the page.':'Handing it to the posting tool…'}</div><button class="ghost" data-unsend="1">Take it back</button>`
+     :`<div class="muted">Posts exactly these words to exactly these accounts, by itself. The first time, claude.ai asks to let the page use Supabase: press Allow.</div><button class="ok" data-send="1" ${[0,1,2,3,4,5].some(k=>!x.ticks[k])?'disabled':''}>✓ Send to Claude</button>`),
+   step(7,"Live",Object.keys(L).length?Object.values(L).filter(q=>q.stage==='live').length+' of '+Object.keys(L).length+' live':'Waiting',(chosen.map(d=>{const q=L[d.id]||{};return `<div class="live"><div class="pf" style="background:${PF[d.p]}">${PS[d.p]}</div><div><b>${esc(d.n)}</b>${q.note?`<div class="muted">${esc(q.note)}</div>`:''}</div>${q.stage==='live'?`<a class="chip c-ok" href="${esc(q.link)}" target="_blank">✓ Live · open</a>`:q.stage==='failed'?'<span class="chip c-no" style="color:var(--red)">Failed</span>':q.stage==='posting'?'<span class="chip c-half">Posting…</span>':'<span class="chip c-no">Waiting</span>'}</div>`}).join('')||'<div class="muted">No account picked.</div>')+extra8(v,x))];
+  $('t-postm').innerHTML=pickHtml+`<div class="chainhead"><div class="tt">${esc(v.name)}</div><span class="chip ${n===8?'c-ok':'c-blue'}">${n} of 8 done</span>${n?`<button class="ghost" data-reset="1" style="margin-left:8px">↺ Start again</button>`:''}</div><div class="prog"><i style="width:${100*n/8}%"></i></div>
    <div class="layout"><div class="side"><video controls playsinline preload="none" poster="${v.cover}" src="${v.video}"></video><div class="muted" style="margin-top:6px">${v.len} · made ${v.made} · ${v.group}</div></div><div class="steps">${steps.join('')}</div></div>`;
   wire();pills()}
 function wire(){const id=SEL,x=s(id);
@@ -186,16 +279,94 @@ function wire(){const id=SEL,x=s(id);
   document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{x.to[b.dataset.d]=!x.to[b.dataset.d];save(id);post()});
   document.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{x.when=b.dataset.w==='now'?'now':(x.when!=='now'?x.when:'later');save(id);post()});
   document.querySelectorAll('[data-wt]').forEach(el=>el.onchange=()=>{x.when=el.value?new Date(el.value).toISOString():'later';save(id)});
-  document.querySelectorAll('[data-send]').forEach(b=>b.onclick=()=>{const v=vid(id);x.final={};['ig','fb','yt','tt'].forEach(p=>x.final[p]={title:val(v,'title',p),caption:val(v,'cap',p),tags:val(v,'tags',p)});x.ticks[6]=true;x.sent=new Date().toISOString();save(id);post()});
-  document.querySelectorAll('[data-unsend]').forEach(b=>b.onclick=()=>{x.ticks[6]=false;delete x.sent;delete x.final;save(id);post()});}
+  document.querySelectorAll('[data-send]').forEach(b=>b.onclick=()=>{b.disabled=true;sendNow(id)});
+  document.querySelectorAll('[data-unsend]').forEach(b=>b.onclick=async()=>{const pid=x.pubId;x.ticks[6]=false;delete x.sent;delete x.final;delete x.err;delete x.pubId;save(id);post();
+    if(pid){try{const r=await sql(`update publish_posts set status='cancelled' where id=${sq(pid)} and status='scheduled' returning id`);if(!r.length)x.err='Too late to stop it: it had already started posting. Check your accounts.';else{delete LIVE[id];if(DB)DB.doc('live/'+id).delete().catch(()=>{})}}catch(e){x.err="Couldn't cancel it in the posting tool: "+errMsg(e)}save(id);post()}});
+  document.querySelectorAll('[data-copyfb]').forEach(b=>b.onclick=()=>{const f=x.final&&x.final.fb||{};const t=((f.caption||'')+(f.tags?'\n\n'+f.tags:'')).trim();const ok=()=>{b.textContent='✓ Copied'};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,()=>{window.prompt('Copy the caption:',t)});else window.prompt('Copy the caption:',t)});
+  document.querySelectorAll('[data-reset]').forEach(b=>b.onclick=()=>{if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='Tap again to start again';b.style.color='var(--red)';setTimeout(()=>{if(b.isConnected){b.dataset.armed='';b.textContent='↺ Start again';b.style.color=''}},4000);return}x.ticks=[];delete x.sent;delete x.final;x.when='now';OPEN=-1;save(id);post()});}
+// ---------- posting by itself (Mikey, 24 Nov 2026): Send puts the post in the site's Publish queue through your Supabase connection, and the site's 5-minute timer posts it. No chat needed. ----------
+let MCP=null,STATS_ERR='',REFRESHING=false;const POLLS={};
+const PLATOF={"ig-foot":"instagram","fb-foot":"facebook","yt-foot":"youtube"},DOF={instagram:"ig-foot",facebook:"fb-foot",youtube:"yt-foot"};
+const sq=t=>"'"+String(t??'').replace(/'/g,"''")+"'";
+const when2=t=>new Date(t).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+async function sql(q){if(!MCP)MCP=await window.claude.use('mcp');if(!MCP)throw {code:'not_granted',message:'This view cannot use your connectors. Open the page on claude.ai.'};
+  const r=await MCP.callTool('Supabase','execute_sql',{project_id:PID,query:q},{cache:false});
+  let p=r.payload;if(p&&typeof p==='object'&&typeof p.result==='string')p=p.result;if(typeof p!=='string')p=(r.content||[]).map(c=>c.text||'').join('');
+  try{const j=JSON.parse(p);if(j&&typeof j.result==='string')p=j.result;else if(Array.isArray(j))return j}catch(e){}
+  const m=p.match(/<untrusted-data-[^>]*>\s*([\s\S]*?)\s*<\/untrusted-data/);const body=m?m[1]:p;
+  try{return JSON.parse(body)}catch(e){throw {code:'tool_error',message:body.slice(0,300)}}}
+const KICK=f=>`do $$ declare c text; begin select ${f?"replace(command, '/api/admin/publish/tick'||chr(39), '/api/admin/publish/tick?fresh=1'||chr(39))":"command"} into c from cron.job where jobname='publish-tick'; execute c; end $$; select 1 as ok`;
+const errMsg=e=>({needs_reauth:'Reconnect Supabase in claude.ai Settings → Connectors.',server_not_connected:'Add the Supabase connector in claude.ai Settings → Connectors.',not_in_manifest:'The page is not allowed to use Supabase yet. Allow it when claude.ai asks.',approval_required:'Press Allow when claude.ai asks to let the page use Supabase.',not_granted:'Open the page on claude.ai to post from it.'})[e&&e.code]||String((e&&e.message)||e).slice(0,200);
+async function sendNow(id){const v=vid(id),x=s(id),key=PKEY[id];
+  x.final={};['ig','fb','yt','tt'].forEach(p=>x.final[p]={title:val(v,'title',p),caption:val(v,'cap',p),tags:val(v,'tags',p)});x.ticks[6]=true;x.sent=new Date().toISOString();delete x.err;
+  const plats=Object.keys(x.to).filter(d=>x.to[d]&&PLATOF[d]&&DATA.dest.some(q=>q.id===d&&q.can==='yes')).map(d=>PLATOF[d]);
+  if(!key){x.err='This video is not in your posting storage yet. Ask Claude in the chat to add it, then press Take it back and Send again.';save(id);post();return}
+  if(!plats.length){x.err='No account picked in step 5.';save(id);post();return}
+  save(id);post();
+  const caps={};plats.forEach(p=>{const f=x.final[{instagram:'ig',facebook:'fb',youtube:'yt'}[p]];caps[p]=(f.caption+(f.tags?'\n\n'+f.tags:'')).trim()});
+  const when=x.when&&x.when!=='now'&&x.when!=='later'?x.when:null;
+  try{
+    let rows=await sql(`insert into publish_posts (video_key,title,captions,platforms,scheduled_at,created_by) select ${sq(key)},${sq((x.final.yt.title||x.final.fb.title||v.name).slice(0,100))},${sq(JSON.stringify(caps))}::jsonb,${sq('{'+plats.join(',')+'}')}::text[],${when?sq(when)+'::timestamptz':'now()'},'Brain page' where not exists (select 1 from publish_posts where video_key=${sq(key)} and status<>'cancelled' and created_at>now()-interval '1 day') returning id`);
+    if(!rows.length)rows=await sql(`select id from publish_posts where video_key=${sq(key)} and status<>'cancelled' order by created_at desc limit 1`);
+    x.pubId=rows[0]&&rows[0].id;save(id);
+    const L={};plats.forEach(p=>L[DOF[p]]={stage:'posting',note:when?'Posts at '+when2(when):'Posting now: the site posts it within 5 minutes'});LIVE[id]=L;if(DB)DB.doc('live/'+id).set(L).catch(()=>{});post();
+    if(!when)await sql(KICK(false)).catch(()=>{});
+    setTimeout(()=>poll(id),8000);
+  }catch(e){x.err="Couldn't hand it to the posting tool: "+errMsg(e)+" Look at step 8 first: if nothing shows there, press Take it back and Send again.";save(id);post()}}
+async function poll(id){const x=s(id);if(!x.pubId||POLLS[id])return;POLLS[id]=1;let n=0;
+  const step=async()=>{try{const r=(await sql(`select status,scheduled_at,platforms,results from publish_posts where id=${sq(x.pubId)}`))[0];if(!r){POLLS[id]=0;return}
+    const L={},R=r.results||{};
+    for(const p of (r.platforms||[])){const q=R[p]||{},d=DOF[p];if(!d)continue;
+      L[d]=q.stage==='done'?{stage:'live',link:q.link||'',note:''}:q.stage==='failed'?{stage:'failed',note:String(q.error||'Failed').slice(0,200)}:{stage:'posting',note:r.status==='scheduled'?'Posts at '+when2(r.scheduled_at):'Posting'+(q.note?': '+String(q.note).slice(0,90):'…')}}
+    LIVE[id]=L;if(DB)DB.doc('live/'+id).set(L).catch(()=>{});const a=document.activeElement;if(!a||!['TEXTAREA','INPUT'].includes(a.tagName))post();
+    if(Object.values(L).some(q=>q.stage==='posting')&&++n<150)setTimeout(step,r.status==='scheduled'?60000:20000);else POLLS[id]=0;
+  }catch(e){POLLS[id]=0}};step()}
+function resumePolls(){Object.keys(ST).forEach(id=>{const x=ST[id];if(x&&x.pubId&&x.sent){const L=LIVE[id]||{};if(!Object.keys(L).length||Object.values(L).some(q=>q.stage==='posting'))poll(id)}})}
+async function refreshStats(){if(REFRESHING)return;REFRESHING=true;STATS_ERR='';res();
+  try{await sql(KICK(true));await new Promise(r=>setTimeout(r,15000));
+    const rows=await sql(`select id,title,scheduled_at,results from publish_posts where status in ('done','partial','posting') order by created_at desc limit 60`);
+    const g=(o,k)=>o&&o[k]!=null?Number(o[k]):null;
+    for(const r of rows){const old=STATS[r.id]||{},R=r.results||{},p=Object.assign({},old.p||{});
+      if(R.instagram&&R.instagram.stage==='done'){const t=R.instagram.stats||{};p.ig=Object.assign({},p.ig,{link:R.instagram.link,views:g(t,'views'),likes:g(t,'likes'),comments:g(t,'comments'),shares:g(t,'shares'),saves:g(t,'saved'),reach:g(t,'reach')})}
+      if(R.facebook&&R.facebook.stage==='done'){const t=R.facebook.stats||{};p.fb=Object.assign({},p.fb,{link:R.facebook.link,views:g(t,'views'),watch:t.post_video_avg_time_watched!=null?Math.round(t.post_video_avg_time_watched/100)/10:null})}
+      if(R.youtube&&R.youtube.stage==='done'){const t=R.youtube.stats||{};p.yt=Object.assign({},p.yt,{link:R.youtube.link,views:g(t,'views'),likes:g(t,'likes'),comments:g(t,'comments')})}
+      const doc={title:r.title||old.title||'',posted:old.posted||r.scheduled_at,video:old.video||Object.keys(ST).find(k=>ST[k]&&ST[k].pubId===r.id)||'',p,updated:new Date().toISOString()};
+      STATS[r.id]=doc;if(DB)DB.doc('stats/'+r.id).set(doc).catch(()=>{})}
+  }catch(e){STATS_ERR="Couldn't refresh: "+errMsg(e)}REFRESHING=false;res()}
+function extra8(v,x){let h='';
+  if(x.sent){h+=`<div class="live"><div class="pf" style="background:${PF.Facebook}">FB</div><div><b>Knowit Balljr (your profile)</b><div class="muted">Meta won't let any app post to a personal profile, so this one is yours: open the video, save it, post it as a Reel and paste the caption.</div><div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><a class="chip c-blue" href="${esc(v.video)}" target="_blank">Open the video</a><button class="ghost" data-copyfb="1">Copy the caption</button></div></div></div>`}
+  if(x.err)h+=`<div class="muted" style="color:var(--red);margin-top:8px">${esc(x.err)}</div>`;return h}
 // ---------- other tabs ----------
 function acc(){const g=(k,lab,col)=>`<div class="card"><div class="grp"><i style="background:${col}"></i>${lab}</div>${DATA.dest.filter(d=>d.group===k).map(d=>`<div class="acc"><div class="pf" style="background:${PF[d.p]};width:34px;height:34px">${PS[d.p]}</div><div><div class="nm">${esc(d.n)}</div><div class="ms">${esc(d.via)}</div></div><span class="chip ${d.can==='yes'?'c-ok':d.can==='setup'?'c-half':'c-no'}">${d.can==='yes'?'Ready':d.can==='setup'?'Almost':'Not yet'}</span></div>`).join('')}</div>`;
   $('t-acc').innerHTML=`<div class="muted" style="margin-bottom:10px">Green = Claude can post there today. Amber = built, needs switching on. Grey = not possible yet.</div><div class="two">${g('football','Football accounts','var(--foot)')}${g('content','Content accounts','var(--cont)')}</div>`}
+// ---------- every post, every app (Claude writes the numbers into the page's database: collection "stats", one doc per post) ----------
+let STATS={},SSORT='new';
+const N=n=>n==null?'–':Number(n)>=1e4?(Number(n)/1e3).toFixed(Number(n)>=1e5?0:1)+'k':Number(n).toLocaleString();
+const PLAT=[['ig','Instagram'],['fb','Facebook'],['yt','YouTube']];
+function postCards(){const L=Object.values(STATS).filter(x=>x&&x.title);
+  if(!L.length)return `<div class="card"><h3>Every post, every app</h3><div class="muted">Nothing posted through the Publish tool yet. Once a post is up, press Refresh and each post appears here with Instagram, Facebook and YouTube side by side.</div><button class="ok" data-refresh="1" style="margin-top:8px">${REFRESHING?'Refreshing… (about 20 s)':'↻ Refresh numbers'}</button></div>`;
+  const tv=x=>PLAT.reduce((a,[k])=>a+(Number(x.p?.[k]?.views)||0),0);
+  L.sort((a,b)=>SSORT==='views'?tv(b)-tv(a):String(b.posted).localeCompare(String(a.posted)));
+  const tot={};PLAT.forEach(([k])=>tot[k]=L.reduce((a,x)=>a+(Number(x.p?.[k]?.views)||0),0));const all=PLAT.reduce((a,[k])=>a+tot[k],0)||1;
+  const upd=L.map(x=>x.updated).sort().pop();
+  const head=`<div class="card"><div class="grp" style="justify-content:space-between"><span>Every post, every app</span><span class="muted" style="font-weight:600">${upd?'Numbers from '+new Date(upd).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span></div>
+   <div class="muted" style="margin-bottom:8px">${L.length} post${L.length>1?'s':''}, ${N(all)} views in total.</div><button class="ok" data-refresh="1" ${REFRESHING?'disabled':''} style="margin:4px 0 8px">${REFRESHING?'Refreshing… asking each app for live numbers (about 20 s)':'↻ Refresh numbers now'}</button>${STATS_ERR?`<div class="muted" style="color:var(--red)">${esc(STATS_ERR)}</div>`:''}
+   ${PLAT.map(([k,l])=>`<div class="bar"><div><div class="l">${l}</div><div class="track"><i style="width:${Math.max(2,100*tot[k]/all)}%;background:${PF[l]}"></i></div></div><b>${N(tot[k])}</b></div>`).join('')}
+   <div class="ptabs" style="margin-top:8px"><button class="ptab${SSORT==='new'?' on':''}" data-ss="new">Newest first</button><button class="ptab${SSORT==='views'?' on':''}" data-ss="views">Most views</button></div></div>`;
+  const cols=[['views','Views'],['likes','Likes'],['comments','Comments'],['shares','Shares'],['saves','Saves'],['reach','Reach'],['watch','Avg watch']];
+  const card=x=>{const t=tv(x);const best=PLAT.filter(([k])=>x.p?.[k]).sort((a,b)=>(Number(x.p[b[0]].views)||0)-(Number(x.p[a[0]].views)||0))[0];
+    return `<div class="card"><div style="display:flex;gap:12px;align-items:flex-start"><div style="flex:1;min-width:0"><div style="font-weight:900;font-size:17px">${esc(x.title)}</div><div class="muted">${x.posted?new Date(x.posted).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}${best&&t?' · best on '+best[1]:''}</div></div><div style="text-align:right"><div style="font-weight:900;font-size:24px">${N(t)}</div><div class="muted">views, all apps</div><button class="ghost" data-refresh="1" ${REFRESHING?'disabled':''} style="margin-top:4px">${REFRESHING?'…':'↻ Refresh'}</button></div></div>
+     <div style="overflow-x:auto;margin-top:8px"><table style="width:100%;border-collapse:collapse;font-size:14px;min-width:520px"><tr>${['App',...cols.map(c=>c[1]),''].map(h=>`<th style="text-align:left;color:var(--ink3);font-size:12px;padding:4px 6px">${h}</th>`).join('')}</tr>
+     ${PLAT.filter(([k])=>x.p?.[k]).map(([k,l])=>{const s=x.p[k];return `<tr style="border-top:1px solid var(--line)"><td style="padding:7px 6px"><span class="pf" style="background:${PF[l]};display:inline-flex;width:26px;height:26px">${PS[l]}</span></td>${cols.map(([c])=>`<td style="padding:7px 6px;font-weight:${c==='views'?800:500}">${c==='watch'?(s.watch!=null?s.watch+' s':'–'):N(s[c])}</td>`).join('')}<td>${s.link?`<a class="chip c-ok" href="${esc(s.link)}" target="_blank">open</a>`:''}</td></tr>`}).join('')}</table></div></div>`};
+  return head+L.map(card).join('')}
 function res(){const mx=Math.max(...Object.values(DATA.results).flat().map(r=>r[1]));
-  $('t-res').innerHTML=`<div class="muted" style="margin-bottom:10px">Instagram, last 30 days. Views on each Reel.</div><div class="two">${Object.entries(DATA.results).map(([a,rows],k)=>`<div class="card"><div class="grp"><i style="background:${k?'var(--cont)':'var(--foot)'}"></i>${a}</div>${rows.map(r=>`<div class="bar"><div><div class="l">${esc(r[0])}</div><div class="track"><i style="width:${Math.max(3,100*r[1]/mx)}%;background:${k?'var(--cont)':'var(--foot)'}"></i></div></div><b>${r[1].toLocaleString()}</b></div>`).join('')}</div>`).join('')}</div>
-   <div class="card"><h3>What it tells us</h3>${DATA.lessons.map(l=>`<div class="lesson">${esc(l)}</div>`).join('')}</div>`}
+  $('t-res').innerHTML=postCards()+`<h3 style="margin:18px 0 6px">Before the Publish tool</h3><div class="muted" style="margin-bottom:10px">Instagram only, last 30 days. Views on each Reel.</div><div class="two">${Object.entries(DATA.results).map(([a,rows],k)=>`<div class="card"><div class="grp"><i style="background:${k?'var(--cont)':'var(--foot)'}"></i>${a}</div>${rows.map(r=>`<div class="bar"><div><div class="l">${esc(r[0])}</div><div class="track"><i style="width:${Math.max(3,100*r[1]/mx)}%;background:${k?'var(--cont)':'var(--foot)'}"></i></div></div><b>${r[1].toLocaleString()}</b></div>`).join('')}</div>`).join('')}</div>
+   <div class="card"><h3>What it tells us</h3>${DATA.lessons.map(l=>`<div class="lesson">${esc(l)}</div>`).join('')}</div>`;
+  document.querySelectorAll('[data-ss]').forEach(b=>b.onclick=()=>{SSORT=b.dataset.ss;res()});
+  document.querySelectorAll('[data-refresh]').forEach(b=>b.onclick=()=>refreshStats())}
 function next(){const T=[
- {w:"Switch on the site's Publish tool",d:"Built on 11 Nov in another chat: Admin → Marketing → Publish on knowitball.co.uk. It posts to Instagram, Facebook and YouTube. It's on the live site, but these are still needed (the page lists what's missing):",
+ {w:"✓ Done 20 Nov: the site's Publish tool is switched on",d:"Facebook (Knowitballjr Page), Instagram (@knowitballjr) and YouTube (KnowItBall) are connected in Admin → Marketing → Publish. Videos upload to your own Cloudflare storage with ⬆ Upload a video. Still worth doing: add PUBLISH_OWNER_EMAIL in Vercel so only you can use the page. What was done:",
   li:["Supabase → SQL Editor: run supabase/migrations/publishing.sql once (it asks for a secret word: make one up and use it again in the next step).",
       "Vercel → Settings → Environment Variables: add PUBLISH_TOKEN_KEY, PUBLISH_CRON_SECRET (the same secret word) and PUBLISH_AGENT_TOKEN (any long random text). Then redeploy.",
       "Meta: make an app at developers.facebook.com, copy its ID and secret into Vercel as META_APP_ID and META_APP_SECRET. Your Instagram must be a Professional account linked to the Facebook Page.",
@@ -204,14 +375,15 @@ function next(){const T=[
  {w:"Let Claude use it from the chat",d:"Give the chat the PUBLISH_AGENT_TOKEN from step 1. Claude asks for it with a secure box; you paste it there, never in the chat. After that Claude can post to Facebook and YouTube too."},
  {w:"YouTube's special check",d:"Until Google approves an audit of the app, YouTube keeps every video posted this way private. Apply from the Google Cloud project: YouTube API Services → audit and quota extension form. It takes days to weeks. Until then, a video posted to YouTube needs you to switch it to Public in YouTube Studio."},
  {w:"TikTok and your second accounts",d:"The Publish tool holds one Facebook page, one Instagram and one YouTube channel (the football ones). TikTok and the content accounts on Facebook and YouTube aren't in it yet: Claude can add them to the tool next. Tell Claude the names of your content accounts on TikTok, YouTube and Facebook."},
- {w:"Then, every time you post",d:"Pick a video in ① Post a video, tick the 6 steps, press Send to Claude, and say \"post my videos\" in the chat. Step 8 turns green when each post is live."}];
+ {w:"Then, every time you post",d:"Pick a video in ① Post a video, tick the 6 steps and press Send. Instagram and YouTube post by themselves (now, or at the time you picked), and step 8 turns green when each is live. Facebook you post yourself on your profile, with the video and caption from step 8. For fresh numbers, press Refresh in How posts are doing."}];
  $('t-next').innerHTML=`<div class="card">${T.map((t,i)=>`<div class="todo"><div class="k">${i+1}</div><div><div class="w">${esc(t.w)}</div><div class="d">${esc(t.d)}</div>${t.li?`<ol>${t.li.map(l=>`<li>${esc(l)}</li>`).join('')}</ol>`:''}</div></div>`).join('')}</div>`}
 function rules(){$('t-rules').innerHTML=`<div class="card">${DATA.rules.map(r=>`<details><summary>${esc(r[0])}</summary><div style="color:var(--ink2);padding:0 0 8px">${esc(r[1])}</div></details>`).join('')}</div>`}
 // ---------- saving: your ticks and words go to the page's database, so Claude reads exactly what you approved ----------
 try{ST=JSON.parse(localStorage.getItem('brain2')||'{}')}catch(e){}
-post();acc();res();next();rules();
+syncLib();libUI();post();acc();res();next();rules();
 (async()=>{try{if(!window.claude||!window.claude.use)return;DB=await window.claude.use('db');if(!DB)return;
   const typing=()=>{const a=document.activeElement;return a&&['TEXTAREA','INPUT'].includes(a.tagName)};
-  DB.collection('drafts').onSnapshot(snap=>{if(snap.metadata&&snap.metadata.hasPendingWrites)return;snap.docs.forEach(d=>{if(d.exists)ST[d.id]=JSON.parse(JSON.stringify(d.data()))});if(!typing())post()},()=>{});
+  let resumed=false;DB.collection('drafts').onSnapshot(snap=>{if(snap.metadata&&snap.metadata.hasPendingWrites)return;snap.docs.forEach(d=>{if(d.exists)ST[d.id]=JSON.parse(JSON.stringify(d.data()))});syncLib();if(!typing())post();if(!resumed){resumed=true;setTimeout(resumePolls,3000)}},()=>{});
+  DB.collection('stats').onSnapshot(snap=>{const o={};snap.docs.forEach(d=>{if(d.exists)o[d.id]=d.data()});STATS=o;res()},()=>{});
   DB.collection('live').onSnapshot(snap=>{const o={};snap.docs.forEach(d=>{if(d.exists)o[d.id]=d.data()});LIVE=o;if(!typing())post()},()=>{});}catch(e){}})();
 </script></body></html>
