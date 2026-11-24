@@ -147,7 +147,7 @@ def main():
                 t1 = at + (nxt["t0"] if nxt else d - 0.1)
                 chunks.append({"t0": round(cur[0]["t0"] - 0.03, 3), "t1": round(t1, 3), "words": cur}); cur = []
         scenes.append({"t0": scene_t0, "scene": {**ln["scene"], "lead": lead}, "words": [{"w": w["w"], "t0": round(at + w["t0"], 3)} for w in timed], "vo1": round(at + d, 3)})
-        at += d + 0.28
+        at += d + 0.28 + float(ln.get("hold", 0))   # hold: extra seconds on this line's picture after the voice
     vo_end = at - 0.28
     for i, s in enumerate(scenes): s["t1"] = scenes[i + 1]["t0"] if i + 1 < len(scenes) else round(vo_end + 0.4, 3)
     end_card = round(vo_end + 0.4, 3); total = end_card + 2.4

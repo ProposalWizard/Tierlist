@@ -96,7 +96,7 @@ window.draw = async (f) => {
     g.save(); g.beginPath(); g.rect(0, 0, 1080, 1920); g.moveTo(cx + r, cy); g.arc(cx, cy, r, 0, Math.PI * 2, true); g.closePath(); g.clip(); g.drawImage(off, 0, 0); g.restore();
     g.save(); g.strokeStyle = "#fff"; g.lineWidth = 14 * (1 - k); g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke(); g.restore();
   }
-  X.finish(g, t); mark(g); if (s !== end) captions(t, s);
+  X.finish(g, t); mark(g); if (s !== end && !s.scene.noCaption) captions(t, s);   // noCaption: the words are already big on screen
   return cv.toDataURL("image/jpeg", 0.9);
 };
 </script></body></html>

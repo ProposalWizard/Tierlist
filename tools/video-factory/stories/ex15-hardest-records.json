@@ -71,56 +71,7 @@
  },
  "lines": [
   {
-   "text": "Four football records that might never be beaten.",
-   "scene": {
-    "bg": "navy",
-    "type": "picture",
-    "steps": [
-     {
-      "type": "picture",
-      "image": "lewa_five",
-      "w": 0,
-      "blur": 26,
-      "big": "?",
-      "bigSize": 420,
-      "bigY": 1300
-     },
-     {
-      "type": "picture",
-      "image": "messi_2012",
-      "w": 2,
-      "blur": 26,
-      "big": "?",
-      "bigSize": 420,
-      "bigY": 1300,
-      "tr": "cut"
-     },
-     {
-      "type": "picture",
-      "image": "pele_1970",
-      "w": 4,
-      "blur": 26,
-      "big": "?",
-      "bigSize": 420,
-      "bigY": 1300,
-      "tr": "cut"
-     },
-     {
-      "type": "picture",
-      "image": "mane_hattrick",
-      "w": 6,
-      "blur": 26,
-      "big": "?",
-      "bigSize": 420,
-      "bigY": 1300,
-      "tr": "cut"
-     }
-    ],
-    "hook": true
-   }
-  },
-  {
-   "text": "Which is the hardest? You decide.",
+   "text": "Four records that might never be broken.",
    "scene": {
     "bg": "navy",
     "type": "quad",
@@ -128,8 +79,8 @@
      {
       "type": "quad",
       "w": 0,
-      "text": "WHICH IS HARDEST?",
-      "textAt": 0.5,
+      "text": "WHICH IS THE HARDEST?",
+      "textAt": 1.0,
       "blur": 14,
       "items": [
        {
@@ -140,22 +91,28 @@
        {
         "image": "messi_2012",
         "motion": "messi_2012",
-        "d": 0.35
+        "d": 0.2
        },
        {
         "image": "pele_1970",
         "motion": "pele_1970",
-        "d": 0.7
+        "d": 0.4
        },
        {
         "image": "mane_hattrick",
         "motion": "mane_hattrick",
-        "d": 1.05
+        "d": 0.6000000000000001
        }
-      ]
+      ],
+      "text2": "4 RECORDS THAT|MIGHT NEVER|BE BROKEN",
+      "text2At": 0.05,
+      "text2Y": 470
      }
-    ]
-   }
+    ],
+    "noCaption": true,
+    "cut": true
+   },
+   "hold": 0.9
   },
   {
    "text": "Number one. September 2015. Bayern Munich are losing one-nil to Wolfsburg at half-time.",

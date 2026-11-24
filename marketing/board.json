@@ -385,11 +385,12 @@
   "script": "docs/marketing/videos/ex15-hardest-records/story.json",
   "cover": "docs/marketing/videos/ex15-hardest-records/cover.png",
   "video": "docs/marketing/videos/ex15-hardest-records/knowitball-ex15-hardest-records.mp4",
-  "seconds": 76.0,
+  "seconds": 74.7,
   "links": [],
   "log": [
    "2026-11-24 Built: 12 Higgsfield pictures, 7 Kling 3.0 clips, Hugo voice. Engine: picture steps can play a clip (motion) and blur. Waiting for Mikey's look.",
-   "2026-11-24 v3 after Mikey's notes: real Guardiola (bald, head in hands), each goal drawn as it was scored, game-style scoreboard, no flat screens, four-quarter ending, voice no longer reads what the screen shows. 28 pictures, 18 clips in total."
+   "2026-11-24 v3 after Mikey's notes: real Guardiola (bald, head in hands), each goal drawn as it was scored, game-style scoreboard, no flat screens, four-quarter ending, voice no longer reads what the screen shows. 28 pictures, 18 clips in total.",
+   "2026-11-24 New opening (Mikey): the blurred hook is gone; starts on the four quarters with '4 records that might never be broken' and 'Which is the hardest?' on screen."
   ]
  }
 ]

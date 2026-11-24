@@ -528,6 +528,8 @@ S.quad = (g, t, dur, sc) => {
       const top = i < 2; T(g, it.label, 0, top ? hh / 2 - 150 : hh / 2 - 60, 64, { color: "#fff", stroke: 8, maxW: hw - 50 }); if (it.sub) T(g, it.sub, 0, top ? hh / 2 - 90 : hh / 2 - 6, 40, { color: YEL, maxW: hw - 50 }); }
     if (it.big) T(g, it.big, 0, 60, 260, { shadow: true, stroke: 14 });
     g.restore(); });
+  if (sc.text2) { const k = pop(cl((t - (sc.text2At ?? 0.2)) * 4)); if (k > 0) { const ls = String(sc.text2).split("|"); g.save(); g.translate(540, sc.text2Y || 560); g.scale(k, k); g.rotate(0.02);
+      ls.forEach((l, i) => T(g, l, 0, (i - (ls.length - 1) / 2) * 150 + 50, 140, { shadow: true, stroke: 16, color: i === ls.length - 1 ? YEL : "#fff", maxW: 1000 })); g.restore(); } }
   if (sc.text) { const k = pop(cl((t - (sc.textAt ?? 1.5)) * 4)); if (k > 0) { g.save(); g.translate(540, 960); g.scale(k, k); g.rotate(-0.03); g.fillStyle = YEL; g.strokeStyle = INK; g.lineWidth = 10; g.font = "120px Anton"; const w = Math.min(1000, g.measureText(sc.text).width + 80); rr(g, -w / 2, -95, w, 190, 24); g.fill(); g.stroke(); T(g, sc.text, 0, 44, 120, { color: INK, maxW: w - 50 }); g.restore(); } }
 };
 window.EXPLAINER = { S, bg, setBG, finish, T, rr, INK, YEL, IMG, MOT, cl, ez, pop };
