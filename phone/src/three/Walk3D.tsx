@@ -83,6 +83,8 @@ export interface Walk3DProps<D, CB, C extends WalkController> {
   name?: string;
   /** Settings → "Show 3D speed". */
   showSpeed?: boolean;
+  /** Put the speed readout at the top left (a screen with its own bar at the bottom). */
+  speedTop?: boolean;
   /** A short tap on the picture. Default: the place's own `tap` (walk there), else its `pick`. The 3D shop picks first, then walks. */
   onTap?: (c: C, x: number, y: number) => void;
   /** Hide the stick (a card is open over it): a finger there looks round instead. */
@@ -100,6 +102,8 @@ export interface Walk3DProps<D, CB, C extends WalkController> {
   onFail?: (why: string) => void;
   /** How long the place may take to start before the plain card (or `onFail`) takes over; default WALK_LOAD_LIMIT_MS. The nights use the website's 20 s. */
   loadLimitMs?: number;
+  /** The tier this place opens at, in place of `walkTier` (the match view never opens above Medium). A second start after the GL was lost is always Low. */
+  tierFor?: (attempt: number) => Quality3d;
   /** Buttons and cards over the picture. */
   children?: ReactNode;
 }
@@ -119,7 +123,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
   const touches = useRef(new Map<number, { kind: "stick" | "look"; x: number; y: number; x0: number; y0: number; t0: number; moved: number }>());
   const lastFps = useRef(0);
 
-  const tier = useMemo(() => walkTier(attempt), [attempt]);
+  const tier = useMemo(() => (attempt > 0 ? "low" : p.tierFor ? p.tierFor(attempt) : walkTier(attempt)), [attempt]); // eslint-disable-line react-hooks/exhaustive-deps
   const dpr = PixelRatio.get() || 1;
   const pr = Math.min(dpr, TIER_PROFILES[tier].movePixelRatio);
   const k = pr / dpr;
@@ -196,18 +200,19 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
   // The speed readout: frames handed to the screen a second, draw calls, triangles.
   useEffect(() => {
     if (!p.showSpeed || !ready) { setSpeed(null); return; }
-    let f0 = 0, d0 = 0, t0 = Date.now();
+    let f0 = 0, d0 = 0, r0 = 0, t0 = Date.now();
     const id = setInterval(() => {
       const l = live.current;
       if (!l?.host || !l.gl) return;
-      const now = Date.now(), { frames, draws } = glCounts(l.gl);
+      const now = Date.now(), { frames, draws, tris } = glCounts(l.gl);
       const fps = f0 ? ((frames - f0) * 1000) / Math.max(1, now - t0) : 0;
       // draw calls a frame as the GL counted them (every pass: shadows, the picture, the finishing pass); a scene's own count can be the last pass alone
       const perFrame = f0 && frames > f0 ? Math.round((draws - d0) / (frames - f0)) : 0;
-      f0 = frames; d0 = draws; t0 = now;
+      const triPerFrame = f0 && frames > f0 ? Math.round((tris - r0) / (frames - f0)) : 0;
+      f0 = frames; d0 = draws; r0 = tris; t0 = now;
       lastFps.current = fps;
       const st = l.host.controller.stats?.();
-      setSpeed({ fps, calls: perFrame || (st?.calls ?? 0), triangles: st?.triangles ?? 0, tier: String(st?.quality ?? l.tier), pixelRatio: l.pr, loaded: Number(st?.loaded ?? 0) });
+      setSpeed({ fps, calls: perFrame || (st?.calls ?? 0), triangles: (st?.triangles ?? 0) >= 1000 ? st!.triangles : triPerFrame, tier: String(st?.quality ?? l.tier), pixelRatio: l.pr, loaded: Number(st?.loaded ?? 0) });
     }, 1000);
     return () => clearInterval(id);
   }, [p.showSpeed, ready]);
@@ -291,7 +296,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
       {!p.inert && <View collapsable={false} style={StyleSheet.absoluteFill} onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={(e) => onEnd(e, false)} onTouchCancel={(e) => onEnd(e, true)} />}
       {ready && !p.hideStick && !p.inert && <Stick ref={stick} bottom={Math.max(28, insets.bottom + 16)} />}
       {speed && (
-        <View pointerEvents="none" style={{ position: "absolute", left: 6, bottom: Math.max(4, insets.bottom + 2), backgroundColor: "rgba(0,0,0,0.62)", paddingHorizontal: 5, paddingVertical: 3, borderRadius: 5 }}>
+        <View pointerEvents="none" style={{ position: "absolute", left: 6, ...(p.speedTop ? { top: 4 } : { bottom: Math.max(4, insets.bottom + 2) }), backgroundColor: "rgba(0,0,0,0.62)", paddingHorizontal: 5, paddingVertical: 3, borderRadius: 5 }}>
           <Text style={{ color: "#d1fae5", fontSize: 10, lineHeight: 12.5, fontWeight: "700", fontFamily: "monospace" }}>
             {`${speed.fps.toFixed(0)} fps  ${speed.calls} draws  ${speed.triangles < 1000 ? "?" : (speed.triangles / 1000).toFixed(0) + "k"} tris\npx ${speed.pixelRatio.toFixed(2)}  ${speed.tier}`}
           </Text>

@@ -132,6 +132,10 @@ export interface PitchProps {
   onFrame?: (d: MatchDriver, cam: Cam) => void;
   /** The match stands still (the observer's `hold`): no more frames stepped, the last picture stays. */
   frozen?: boolean;
+  /** Drawn right over the pitch's picture and under every word, card and touch layer (the 3D match view). */
+  under?: ReactNode;
+  /** The 3D picture covers the 2D one: the 2D picture is still recorded (it moves your man off the ball, it animates the men) but not handed to the screen. */
+  hide2d?: boolean;
   /** Coach the first chance (CanvasMatch coachFirstChance): the website's Kickabout (its stand-in career is new to the story). */
   coachFirst?: boolean;
 }
@@ -162,13 +166,14 @@ function StrikeWords({ d, motion }: { d: MatchDriver; motion: string }) {
   );
 }
 
-export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, height, onFrame, frozen = false, coachFirst = false }: PitchProps) {
+export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, height, onFrame, frozen = false, coachFirst = false, under, hide2d = false }: PitchProps) {
   // CanvasMatch's chance counter for its coach lines: +1 each time the aim comes up.
   const coachRef = useRef({ chances: 0, phase: "" });
   const firstUseShown = useRef<string | null>(null);
   const capSideRef = useRef<"top" | "bottom">("top");
   const onFrameRef = useRef(onFrame); onFrameRef.current = onFrame;
   const frozenRef = useRef(frozen); frozenRef.current = frozen;
+  const hide2dRef = useRef(hide2d); hide2dRef.current = hide2d;
   const [size, setSize] = useState<{ W: number; H: number } | null>(null);
   const [, setUi] = useState(0);
   const [, setBannerTick] = useState(0);
@@ -235,7 +240,7 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
       if (shown !== shownBanner || cap !== shownCap || side !== capSideRef.current) { shownBanner = shown; shownCap = cap; capSideRef.current = side; setBannerTick((v) => v + 1); }
       if (d.phase !== "feed" && d.phase !== "done") {
         camRef.current = camFor(d, W, H);
-        pitchPic.value = drawPitch(d, kits, W, H, feel.offset(camRef.current));
+        { const pic = drawPitch(d, kits, W, H, feel.offset(camRef.current)); if (!hide2dRef.current) pitchPic.value = pic; }
         onFrameRef.current?.(d, camRef.current);
         if (d.phase === "contact") contactPic.value = drawContact(d, W, H);
       }
@@ -335,6 +340,8 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
           </View>
         </GestureDetector>
       )}
+      {/* the 3D match view: over the pitch's picture, under the strike screen and every word; always mounted, so the commentary does not rebuild it */}
+      {d && size ? under : null}
       {d && size && d.phase === "contact" && d.powerStrike && (
         // The power shot's green circle (PowerShotContact.tsx) in place of the strike screen.
         <View style={{ position: "absolute", left: 0, top: 0, width: size.W, height: size.H }}>

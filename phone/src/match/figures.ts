@@ -108,6 +108,15 @@ export function beginFigures(key: unknown, f: FigureFrame) {
   }
 }
 
+/**
+ * What a man is doing with the ball right now, for a picture drawn from the same match (the 3D match view:
+ * CanvasMatch's actOf). Read only: nothing here changes a figure or the match.
+ */
+export function actorAct(id: string): { kind: string; mode?: string; save?: string; start: number } | undefined {
+  const a = anims.get(id);
+  return a && a.scene === (frame.sc ?? sceneKey) ? { kind: a.kind, mode: a.mode, save: a.save, start: a.start } : undefined;
+}
+
 function spriteSeed(id: string) { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; return (Math.abs(h) % 997) / 97; }
 function kitOf(look: FigureLook): SpriteKit { return { shirt: look.shirt, shorts: look.trim, socks: look.shirt }; }
 function familyOf(a: ActorAnim): AnimFamily {

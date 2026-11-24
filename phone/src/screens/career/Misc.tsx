@@ -241,15 +241,19 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
           <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: glow }} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: "#fff", fontWeight: "900", fontSize: 15 }}>Match</Text>
-            <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600" }}>Player names</Text>
+            <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600" }}>Player names, match view 3D, match radar</Text>
           </View>
-          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "900" }}>1 {group === "match" ? "▾" : "▸"}</Text>
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "900" }}>3 {group === "match" ? "▾" : "▸"}</Text>
         </Press>
         {group === "match" && (
-          <Press onPress={() => setPref("playerNames", !prefs.playerNames)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 11, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
-            <Text style={{ flex: 1, color: "#fff", fontWeight: "800", fontSize: 15 }}>Player names</Text>
-            <Track on={prefs.playerNames} />
-          </Press>
+          <>
+            {([["playerNames", "Player names"], ["matchView3d", "Match view 3D"], ["matchRadar", "Match radar (testing)"]] as [keyof Prefs, string][]).map(([k, label]) => (
+              <Press key={k} onPress={() => setPref(k, !prefs[k])} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 11, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
+                <Text style={{ flex: 1, color: "#fff", fontWeight: "800", fontSize: 15 }}>{label}</Text>
+                <Track on={prefs[k]} />
+              </Press>
+            ))}
+          </>
         )}
       </Card>
       <Card style={{ padding: 0 }}>

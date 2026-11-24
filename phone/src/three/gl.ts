@@ -18,7 +18,7 @@
 import { rgbaOf } from "./platform";
 
 type GL = WebGL2RenderingContext & { endFrameEXP?: () => void; __kib?: KibGl };
-interface KibGl { draws: number; frames: number; present: boolean }
+interface KibGl { draws: number; tris: number; frames: number; present: boolean }
 
 const FLIP_Y = 0x9240, PREMULTIPLY = 0x9241, COLORSPACE_CONV = 0x9243;
 
@@ -59,7 +59,7 @@ function premultiply(data: Uint8Array): Uint8Array {
 export function prepareGl(glIn: WebGL2RenderingContext, opts: { present?: boolean } = {}): WebGL2RenderingContext {
   const gl = glIn as GL;
   if (gl.__kib) return gl;
-  const st: KibGl = { draws: 0, frames: 0, present: opts.present !== false };
+  const st: KibGl = { draws: 0, tris: 0, frames: 0, present: opts.present !== false };
   gl.__kib = st;
   const g = gl as unknown as Record<string, (...a: unknown[]) => unknown>;
   let flipY = false, premul = false;
@@ -130,8 +130,13 @@ export function prepareGl(glIn: WebGL2RenderingContext, opts: { present?: boolea
     const f = g[name];
     if (typeof f !== "function") continue;
     const bound = f.bind(gl);
+    // where the vertex count (and the instance count) sit in each call's arguments
+    const at = name === "drawArrays" ? [2, -1] : name === "drawArraysInstanced" ? [2, 3] : name === "drawElementsInstanced" ? [1, 4] : name === "drawRangeElements" ? [3, -1] : [1, -1];
     g[name] = (...a: unknown[]) => {
       st.draws++;
+      // triangles (for "Show 3D speed" and the checks): TRIANGLES = 4, STRIP = 5, FAN = 6
+      const mode = a[0] as number, n = Number(a[at[0]]) || 0, inst = at[1] >= 0 ? Number(a[at[1]]) || 1 : 1;
+      st.tris += (mode === 4 ? n / 3 : mode === 5 || mode === 6 ? Math.max(0, n - 2) : 0) * inst;
       if (!queued) { queued = true; void Promise.resolve().then(end); }
       return bound(...a);
     };
@@ -142,9 +147,9 @@ export function prepareGl(glIn: WebGL2RenderingContext, opts: { present?: boolea
 function safe<T>(f: () => T): T | null { try { return f(); } catch { return null; } }
 
 /** Draw calls and frames handed to the screen so far on this context (the frame meter). */
-export function glCounts(gl: WebGL2RenderingContext): { draws: number; frames: number } {
+export function glCounts(gl: WebGL2RenderingContext): { draws: number; tris: number; frames: number } {
   const k = (gl as GL).__kib;
-  return { draws: k?.draws ?? 0, frames: k?.frames ?? 0 };
+  return { draws: k?.draws ?? 0, tris: Math.round(k?.tris ?? 0), frames: k?.frames ?? 0 };
 }
 
 /**

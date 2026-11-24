@@ -10,12 +10,14 @@ import type { MatchDriver } from "../match/driver";
 import { usePrefs, setPref } from "../game/prefs";
 import { FONT } from "../ui/look";
 import { LineIcon } from "./MatchLook";
+import { useViewStatus, viewRetry } from "./MatchView3D";
 
 /** A crisp black outline round white club names, so they read on a light kit (NAME_OUTLINE). */
 const OUTLINE = { textShadowColor: "#000", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 2 };
 
 export function MatchHud({ d, kits, onGear }: { d: MatchDriver; kits: MatchKits; onGear?: () => void }) {
   const prefs = usePrefs();
+  const view = useViewStatus();
   // CanvasMatch statCell: the labels drop to 9 px under 390 px wide (ASSISTS ran into PASS at 360).
   const narrow = useWindowDimensions().width < 390;
   const home = d.setup.fixture.home !== false;
@@ -64,8 +66,12 @@ export function MatchHud({ d, kits, onGear }: { d: MatchDriver; kits: MatchKits;
         {cell("ASSISTS", String(t.assists), "#6ee7b7")}
         {cell("PASS", `${passPct}%`, "#c4b5fd")}
         {cell("RATING", rating.toFixed(1), "#7dd3fc")}
-        {/* No 2D | 3D switch: the packed app's (Match3DLayer `can3d`) is only there when the phone can draw
-            the 3D match view; KIB Next draws the match in the one look, so there is no choice to offer. */}
+        {/* The 3D | 2D switch (Match3DLayer): flips the picture at once, mid-chance, and writes the same switch as Settings → Match view 3D.
+            It is not there when the phone cannot draw the 3D; amber "3D ↻" when the 3D was taken away: a tap builds it again. */}
+        {view === "lost" && prefs.matchView3d
+          ? chip(<Text style={{ color: "#fcd34d", fontSize: 10, fontWeight: "900", letterSpacing: 0.4 }}>3D ↻</Text>, () => viewRetry(), "3D paused: tap to try 3D again")
+          : view !== "off" && chip(<Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 10, fontWeight: "900", letterSpacing: 0.4 }}>{prefs.matchView3d ? "3D" : "2D"}</Text>,
+            () => { if (view === "lost") viewRetry(); setPref("matchView3d", !prefs.matchView3d); }, prefs.matchView3d ? "Switch to the 2D view" : "Switch to the 3D view")}
         {chip(<LineIcon kind="gear" />, onGear, "Settings")}
         {chip(<LineIcon kind={prefs.sound ? "sound" : "muted"} />,() => setPref("sound", !prefs.sound), prefs.sound ? "Mute sound" : "Unmute sound")}
       </View>

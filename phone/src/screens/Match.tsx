@@ -31,6 +31,8 @@ import { isTurningPoint } from "@/lib/star/gameMusic";
 import { usePrefs } from "../game/prefs";
 import { PitchPage, GoalBoard, StaminaBox, MatchSettingsSheet } from "./MatchLook";
 import { PopIn } from "./career/lookBits";
+import { MatchView3DLayer, feedMatchView, resetMatchView, useViewShown } from "./MatchView3D";
+import { matchTodFor } from "@/lib/star/style3d/matchTod";
 
 export function Match({ career, fixture, onFullTime, setupFor, recordGoals = true, watch, frozen = false }: {
   career: CareerState; fixture: Fixture; onFullTime: (d: MatchDriver) => void;
@@ -82,10 +84,15 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
 
   // The stamina bar's fill, moved on the UI thread every frame (no React work).
   const stamina = useSharedValue(1);
-  const onFrame = useCallback((d: MatchDriver) => {
+  const view3dShown = useViewShown();
+  useEffect(() => { resetMatchView(); return () => resetMatchView(); }, []);
+  const tod = useMemo(() => matchTodFor(career.season, fixture.week, career.homeCity), [career.season, career.homeCity, fixture.week]);
+  const onFrame = useCallback((d: MatchDriver, cam: { W: number; H: number }) => {
     const legs = d.playOn?.stick?.legs;
     stamina.value = legs ? legs.stamina.v : 1;
-  }, [stamina]);
+    // the 3D match view (off by default): hands it this frame; nothing happens while it is off
+    feedMatchView(d, kits, cam.W, cam.H);
+  }, [stamina, kits]);
 
   const [gear, setGear] = useState(false);
   const scoreWas = useRef<{ at: unknown; score: [number, number]; last: [number, number] }>({ at: null, score: [0, 0], last: [0, 0] });
@@ -209,7 +216,8 @@ export function Match({ career, fixture, onFullTime, setupFor, recordGoals = tru
         <HudSlot kits={kits} onGear={() => setGear(true)} />
         {/* The pitch in its frame (CanvasMatch: border-2 emerald-800/80, square corners in the pitch scope). */}
         <View style={{ flex: 1, marginHorizontal: 12, marginBottom: 8, borderWidth: 2, borderColor: "rgba(6,95,70,0.8)", borderRadius: 2, overflow: "hidden", backgroundColor: "#22920b", boxShadow: "0px 18px 40px -12px rgba(2,44,34,0.6)" } as ViewStyle}>
-          <MatchPitch make={make} kits={kits} onDone={onFullTime} overlay={overlay} frozen={frozen || gear} onFrame={onFrame}
+          <MatchPitch make={make} kits={kits} onDone={onFullTime} overlay={overlay} frozen={frozen || gear} onFrame={onFrame} hide2d={view3dShown}
+            under={<MatchView3DLayer tod={tod} showSpeed={prefs.show3dSpeed} />}
             onUi={watch ? (d) => { setHud(d); watch(d); } : setHud} />
         </View>
         <CaptainSlot />

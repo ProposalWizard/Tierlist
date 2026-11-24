@@ -39,7 +39,7 @@ import {
 } from "@/lib/star/canvasEngine";
 import {
   newMatch, advanceTo, resolveScenario, lateSubQuota, noteServedKind,
-  type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
+  type HiddenMatchState, type RadarTick, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
 } from "@/lib/star/hiddenMatch";
 import { makeChance, pictureMemory } from "@/lib/star/chanceMaker";
 import { separateBodies } from "@/lib/star/spacing";
@@ -244,6 +244,8 @@ export class MatchDriver {
 
   // ── the match ──
   st: HiddenMatchState;
+  /** The live radar: every minute the unseen match plays, by minute (hiddenMatch.ts radarTrace; CanvasMatch radarTraceRef). Read only: it draws no random number. */
+  readonly radarTrace = new Map<number, RadarTick>();
   seed: number;
   rng: () => number = Math.random;
   rngCalls = { current: 0 };
@@ -439,6 +441,7 @@ export class MatchDriver {
       this.matchCeiling = this.MATCH_DURATION;
       this.seed = setup.seed;
       this.st = newMatch(mulberry32(setup.seed));
+      this.st.radarTrace = this.radarTrace; // the live radar reads every minute the unseen match plays, from the first (read only)
       this.startingXI = [] as unknown as ReturnType<typeof startingTeammateRoles>;
       this.oppXI = null as unknown as ReturnType<typeof opponentStartingXI>;
       this.oppXIForCast = null;
@@ -463,6 +466,7 @@ export class MatchDriver {
     this.matchCeiling = this.MATCH_DURATION + this.ADDED;
     this.seed = setup.seed;
     this.st = newMatch(mulberry32(setup.seed));
+    this.st.radarTrace = this.radarTrace; // the live radar reads every minute the unseen match plays, from the first (read only)
     this.startingXI = startingTeammateRoles(career, fixture);
     this.oppXI = opponentStartingXI(career, fixture);
     this.oppXIForCast = this.oppXI
@@ -774,6 +778,8 @@ export class MatchDriver {
     const st = this.st;
     st.userScore = this.userScore;
     st.oppScore = this.oppScore;
+    // The live radar reads every minute played from here on (read-only; CanvasMatch does the same, always).
+    st.radarTrace = this.radarTrace;
 
     if (!prior) this.playstyleChanges = [];
     const baseInputs: HiddenMatchInputs = prior

@@ -20,6 +20,8 @@ import { Press } from "../ui/Press";
 import { FONT, CAN } from "../ui/look";
 import { TourTarget } from "../ui/tour";
 import { EnergyIcon, kitRow } from "./MatchLook";
+import { MatchRadarFeed } from "./MatchRadar";
+import { usePrefs } from "../game/prefs";
 
 // MatchCommentary's three playstyles, in its order, with PlaystyleIcon's glow colours and pictures.
 const PLAYSTYLES: Playstyle[] = ["defensive", "balanced", "attacking"];
@@ -256,6 +258,10 @@ function LiveScoresPanel({ rows, minute, followed, onToggleFollow, onClose }: { 
 export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
   const live = useMemo(() => liveFor(d), [d]);
   const [scoresOpen, setScoresOpen] = useState(false);
+  // Settings → Match radar (off by default, as on the website): the small pitch over the commentary
+  const radarOn = usePrefs().matchRadar;
+  const [radarH, setRadarH] = useState(0);
+  const top = radarOn && d.log.length > 1 ? radarH : 0;
   const [following, setFollowing] = useState<string[]>(() => { try { return followedTeams(); } catch { return []; } });
   const [, setPopTick] = useState(0);
   liveStep(d, live);
@@ -271,6 +277,7 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
   const p = d.pause;
   return (
     <View style={{ flex: 1, backgroundColor: G950 }}>
+      {radarOn && d.log.length > 1 && <MatchRadarFeed d={d} kits={kits} onHeight={setRadarH} />}
       <ScrollView ref={scroll} style={{ flex: 1 }} showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
         onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
@@ -286,7 +293,7 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
         </Pressable>
       </ScrollView>
       {/* The minute and the speed on one plate, floating over the feed's corner (tap: faster). */}
-      <TourTarget name="match-speed" style={{ position: "absolute", right: 8, top: 8, width: 56 }}>
+      <TourTarget name="match-speed" style={{ position: "absolute", right: 8, top: 8 + top, width: 56 }}>
       <Press onPress={() => d.cycleSpeed()} style={{ width: 56, alignItems: "center", paddingVertical: 4, paddingHorizontal: 2, borderRadius: 8, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", backgroundColor: "rgba(16,82,47,0.85)", boxShadow: "0px 2px 6px rgba(0,0,0,0.35)" } as ViewStyle}>
         {/* One line whatever the minute: "90+10'" shrinks to fit the plate. */}
         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ alignSelf: "stretch", textAlign: "center", color: minute.includes("+") ? "#fcd34d" : "#fff", fontFamily: FONT.display, fontSize: minute.includes("+") ? (minute.length > 4 ? 12 : 14) : 17, lineHeight: 20 }}>{minute}&apos;</Text>
@@ -296,7 +303,7 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
       </TourTarget>
       {/* Every other score in the division, right now (MatchCommentary: under the clock). */}
       {live.week.fixtures.length > 0 && (
-        <Press onPress={() => setScoresOpen(true)} style={{ position: "absolute", right: 8, top: 50, width: 56, alignItems: "center", justifyContent: "center", paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", backgroundColor: "rgba(16,82,47,0.85)", boxShadow: "0px 2px 6px rgba(0,0,0,0.35)" } as ViewStyle}>
+        <Press onPress={() => setScoresOpen(true)} style={{ position: "absolute", right: 8, top: 50 + top, width: 56, alignItems: "center", justifyContent: "center", paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", backgroundColor: "rgba(16,82,47,0.85)", boxShadow: "0px 2px 6px rgba(0,0,0,0.35)" } as ViewStyle}>
           <Text numberOfLines={1} style={{ color: "#fff", fontSize: 10, lineHeight: 11, fontWeight: "900" }}>SCORES</Text>
         </Press>
       )}
