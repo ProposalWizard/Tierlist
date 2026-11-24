@@ -77,6 +77,16 @@ window.draw = async (f) => {
   const end = { t0: TL.endCard, t1: TL.total, scene: { type: "cta" } };
   const all = TL.scenes.concat([end]);
   let i = all.findIndex((x) => t >= x.t0 && t < x.t1); if (i < 0) i = all.length - 1; const s = all[i];
+  // moving pictures: load this moment's frame of every clip on screen (this scene, and the one the wipe is leaving)
+  const MO = STORY.motions || {}; const want = [];
+  const motionOf = (sc, at) => { if (!sc || !sc.scene) return; const st = sc.scene.steps;
+    if (!st) { if (sc.scene.motion && MO[sc.scene.motion]) want.push([sc.scene.motion, at - sc.t0]); return; }
+    const T0 = stepTimes(sc); let k = 0; for (let j = 0; j < T0.length; j++) if (at >= T0[j]) k = j;
+    for (const j of [k, k - 1]) { if (j < 0) continue; const sp = st[j]; if (sp.motion && MO[sp.motion]) want.push([sp.motion, at - T0[j]]); } };
+  motionOf(s, t); if (i > 0) motionOf(all[i - 1], s.t0 - 0.001);
+  for (const [key, lt] of want) { const n = MO[key].n, fr = Math.max(1, Math.min(n, Math.floor(lt * FPS) + 1));
+    const src = "file://" + MO[key].dir + "/m" + String(fr).padStart(5, "0") + ".jpg";
+    if (!X.MOT[key] || X.MOT[key].dataset.src !== src) { const im = new Image(); im.dataset.src = src; im.src = src; await im.decode().catch(() => {}); X.MOT[key] = im; } }
   drawScene(g, s, t);
   const lt = t - s.t0, W0 = 0.36;
   if (i > 0 && lt < W0 && !s.scene.cut) {   // the circle wipe: the old idea stays, the new one opens out of the middle

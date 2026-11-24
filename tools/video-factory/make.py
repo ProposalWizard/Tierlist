@@ -116,6 +116,16 @@ def main():
             p = os.path.join(work, f"l{i:02d}-s{seed}.wav"); heard, words = transcribe(p); s = sim(lines[i].get("say", lines[i]["text"]), heard)
             if s > best.get(i, (-1,))[0]: best[i] = (s, p, words)
         log(f"voice round {round_ + 1}: " + ", ".join(f"{i}:{best[i][0]:.2f}" for i in sorted(best)))
+    # 1b. moving pictures (24 Nov 2026): story["motions"] = {key: "clip.mp4"} (a clip made from one of the pictures);
+    #     each is cut into frames once, and a picture step with "motion": key plays them (engine/athletic.js S.picture)
+    for key, src in list((story.get("motions") or {}).items()):
+        if isinstance(src, dict): continue
+        d = os.path.join(work, "motion", key); fr = os.path.join(d, "m00001.jpg")
+        if not os.path.exists(fr):
+            os.makedirs(d, exist_ok=True)
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", src.replace("file://", ""), "-vf", f"fps={FPS},scale=1080:-2", "-q:v", "3", os.path.join(d, "m%05d.jpg")], check=True)
+        story["motions"][key] = {"dir": d, "n": len([f for f in os.listdir(d) if f.endswith(".jpg")])}
+        log(f"motion {key}: {story['motions'][key]['n']} frames")
     # 2. finish, place, caption
     at, scenes, chunks, plan = 0.35, [], [], []
     for i, ln in enumerate(lines):
@@ -150,7 +160,7 @@ def main():
     env = np.round(np.convolve(np.clip(env / ref, 0, 1), [0.25, 0.5, 0.25], "same"), 3)
     tl = {"total": round(total, 3), "end": round(vo_end, 3), "endCard": end_card, "scenes": scenes, "chunks": chunks, "env": env.tolist()}
     with open(os.path.join(work, "timeline.js"), "w") as f:
-        f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels", "layoutScale", "theme")}) + ";\n")
+        f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels", "layoutScale", "theme", "motions")}) + ";\n")
         f.write("window.TL = " + json.dumps(tl) + ";\n")
     eng = os.path.join(HERE, "engine")
     page = {"chess": "chess.html", "explainer": "athletic.html"}.get(story.get("layout"), "edit.html")
@@ -178,7 +188,7 @@ def main():
                 fx[i0:i0 + len(aud)] += aud[:max(0, len(fx) - i0)]; clip_t[i] = got_before + len(aud) / SR
             s["clipDir"] = outd; s["clipFrames"] = got
         with open(os.path.join(work, "timeline.js"), "w") as f:
-            f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels", "layoutScale", "theme")}) + ";\n")
+            f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels", "layoutScale", "theme", "motions")}) + ";\n")
             f.write("window.TL = " + json.dumps(tl) + ";\n")
     # 3. render
     frames = os.path.join(work, "eframes"); shutil.rmtree(frames, ignore_errors=True)

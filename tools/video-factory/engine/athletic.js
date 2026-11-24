@@ -43,7 +43,7 @@ const rr = (g, x, y, w, h, r) => { g.beginPath(); g.roundRect(x, y, w, h, r); };
 function card(g, x, y, w, h, fill = "#fff", r = 26) { g.save(); g.fillStyle = "rgba(0,0,0,.25)"; rr(g, x + 10, y + 14, w, h, r); g.fill(); g.fillStyle = fill; g.lineWidth = 6; g.strokeStyle = INK; rr(g, x, y, w, h, r); g.fill(); g.stroke(); g.restore(); }
 
 // ── drawn people: a dark silhouette with a light rim (the faceless style), or a portrait image ──
-const IMG = {};
+const IMG = {}, MOT = {};
 function person(g, x, y, s, o = {}) {
   const im = o.image && IMG[o.image] && IMG[o.image].naturalWidth ? IMG[o.image] : null;
   if (im) { const w = 760 * s, h = w * im.height / im.width; g.drawImage(im, x - w / 2, y - h, w, h); return; }
@@ -321,10 +321,15 @@ S.ledger = (g, t, dur, sc) => {
 };
 
 // a full-screen illustration (STORY.images[sc.image]) with a slow push and drift
+// motion (24 Nov 2026, Mikey: "make the explainer pictures move"): sc.motion names a clip made from the same picture
+// (STORY.motions[key] = {n}); athletic.html loads the frame for this moment into MOT[key] before drawing. The clip
+// plays at its own speed and holds its last frame; with no clip the still is used. sc.blur blurs it (the hook).
 S.picture = (g, t, dur, sc) => {
-  bg(g, sc.bg || "navy", t); const im = IMG[sc.image] && IMG[sc.image].naturalWidth ? IMG[sc.image] : null;
-  if (im) { const z = 1.04 + 0.08 * (t / dur), w = W * z, h = w * im.height / im.width; const dx = (sc.drift || 0) * 60 * (t / dur);
-    g.drawImage(im, 540 - w / 2 + dx, Math.min(0, (H - h) / 2), w, Math.max(h, H * z)); g.fillStyle = "rgba(0,0,0,.12)"; g.fillRect(0, 0, W, H); }
+  bg(g, sc.bg || "navy", t); const mv = sc.motion && MOT[sc.motion] && MOT[sc.motion].naturalWidth ? MOT[sc.motion] : null;
+  const im = mv || (IMG[sc.image] && IMG[sc.image].naturalWidth ? IMG[sc.image] : null);
+  if (im) { const z = mv ? 1.0 + 0.03 * (t / dur) : 1.04 + 0.08 * (t / dur), w = W * z, h = w * im.height / im.width; const dx = (sc.drift || 0) * 60 * (t / dur);
+    if (sc.blur) { const b = sc.unblurAt != null ? sc.blur * (1 - cl((t - sc.unblurAt) * 3)) : sc.blur; g.filter = `blur(${b}px)`; }
+    g.drawImage(im, 540 - w / 2 + dx, Math.min(0, (H - h) / 2), w, Math.max(h, H * z)); g.filter = "none"; g.fillStyle = "rgba(0,0,0,.12)"; g.fillRect(0, 0, W, H); }
   else { g.save(); g.setLineDash([24, 18]); g.strokeStyle = "rgba(255,255,255,.6)"; g.lineWidth = 8; rr(g, 70, 380, 940, 1160, 30); g.stroke(); g.restore(); T(g, "IMAGE: " + sc.image, 540, 980, 60, { color: "rgba(255,255,255,.8)", maxW: 880 }); }
   if (sc.label) nameTag(g, sc.label, 540, 300, cl((t - 0.3) * 3));
   if (sc.big) T(g, sc.big, 540, sc.bigY || 1250, sc.bigSize || 200, { shadow: true, stroke: 14, color: sc.bigCol || "#fff", alpha: cl((t - 0.15) * 4), maxW: 980 });
@@ -395,7 +400,7 @@ S.clues = (g, t, dur, sc) => {
 };
 S.statement = (g, t, dur, sc) => {
   bg(g, sc.bg || "navy", t); const lines = String(sc.text).split("|"); const n = lines.length;
-  lines.forEach((l, i) => { const k = ez((t - i * 0.25) * 3); T(g, l, 540 + 80 * (1 - k), 820 + (i - (n - 1) / 2) * 150, sc.size || 130, { alpha: k, shadow: true, stroke: 12, color: i === (sc.hi ?? -1) ? YEL : "#fff", maxW: 960 }); });
+  lines.forEach((l, i) => { const k = ez((t - i * 0.25) * 3); T(g, l, 540 + 80 * (1 - k), 820 + (i - (n - 1) / 2) * (sc.lineGap || 150), sc.size || 130, { alpha: k, shadow: true, stroke: 12, color: i === (sc.hi ?? -1) ? YEL : "#fff", maxW: 960 }); });
 };
 S.stopwatch = (g, t, dur, sc) => {
   bg(g, sc.bg || "red", t); const v = Math.min(sc.to, sc.to * cl(t / Math.max(0.5, dur * 0.7)));
@@ -403,7 +408,7 @@ S.stopwatch = (g, t, dur, sc) => {
   rr(g, -50, -420, 100, 80, 14); g.fillStyle = INK; g.fill();
   for (let i = 0; i < 60; i++) { const a = i / 60 * Math.PI * 2; g.strokeStyle = INK; g.lineWidth = i % 5 ? 4 : 10; g.beginPath(); g.moveTo(Math.sin(a) * 300, -Math.cos(a) * 300); g.lineTo(Math.sin(a) * (i % 5 ? 280 : 260), -Math.cos(a) * (i % 5 ? 280 : 260)); g.stroke(); }
   const a = v / 60 * Math.PI * 2; g.strokeStyle = "#e2384a"; g.lineWidth = 12; g.lineCap = "round"; g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.sin(a) * 250, -Math.cos(a) * 250); g.stroke(); g.restore();
-  T(g, v.toFixed(2) + "s", 540, 1330, 190, { shadow: true, stroke: 12 }); if (sc.word) T(g, sc.word, 540, 1440, 64, { color: YEL, alpha: cl((t - 0.4) * 3) });
+  T(g, sc.mmss ? Math.floor(v / 60) + ":" + String(Math.floor(v % 60)).padStart(2, "0") : v.toFixed(2) + "s", 540, 1330, 190, { shadow: true, stroke: 12 });   // mmss: minutes:seconds (8:59) if (sc.word) T(g, sc.word, 540, 1440, 64, { color: YEL, alpha: cl((t - 0.4) * 3) });
 };
 
 // ── full-screen beats (17 Nov 2026 redo) ──
@@ -484,7 +489,7 @@ S.x5_bars = (g, t, dur, sc) => {
     card(g, 60, y + 80, w, rh - 120, x.hi ? YEL : (x.col || "#fff"), 18); T(g, x.val, 60 + w - 26, y + rh - 62, Math.min(110, rh - 150), { align: "right", color: INK }); g.restore(); });
 };
 
-window.EXPLAINER = { S, bg, finish, T, rr, INK, YEL, IMG, cl, ez, pop };
+window.EXPLAINER = { S, bg, finish, T, rr, INK, YEL, IMG, MOT, cl, ez, pop };
 })();
 
 // ── x7_ scenes (17 Nov 2026, explainer redo: offside / hat-trick / rules / World Cup 2030). Added, not edits. ──

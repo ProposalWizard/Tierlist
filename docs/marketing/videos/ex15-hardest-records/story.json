@@ -1,0 +1,562 @@
+{
+ "id": "ex15-hardest-records",
+ "series": "Explainer",
+ "variant": "v2 steps + moving pictures (Higgsfield Kling 3.0)",
+ "title": "Football records that might never be beaten",
+ "layout": "explainer",
+ "music": "02-working-it-out.mp3",
+ "voice": {
+  "provider": "elevenlabs",
+  "voiceId": "WAppqUXeqDqXjNTaQxG9"
+ },
+ "sources": [
+  "https://www.espn.com/soccer/bayern-munich/story/2625497/bayern-robert-lewandowski-scores-five-in-nine-minutes",
+  "https://www.aljazeera.com/sports/2015/9/22/bayerns-lewandowski-scores-five-goals-in-nine-minutes",
+  "https://www.bundesliga.com/en/news/Bundesliga/noblsp-watch-robert-lewandowskis-record-breaking-five-goal-haul-against-vfl-wolfsburg.jsp",
+  "https://guinnessworldrecords.com/world-records/106274-most-football-goals-scored-in-a-calendar-year",
+  "https://www.goal.com/en/news/cristiano-ronaldo-vs-lionel-messi-goals-calendar-year/blt26caedd3d816d104",
+  "https://www.skysports.com/football/news/9852435/southamptons-sadio-mane-breaks-robbie-fowlers-record-with-fastest-ever-premier-league-hat-trick",
+  "https://www.guinnessworldrecords.com/news/2015/5/sadio-mane-beats-robbie-fowler%E2%80%99s-fastest-premier-league-hat-trick-record-379040",
+  "https://www.espn.com/soccer/story/_/id/37635141/pele-incredible..."
+ ],
+ "facts": {
+  "lewandowski": "22 Sep 2015, Bayern 5-1 Wolfsburg; on at half-time at 0-1; goals 51', 52', 55', 57', 60'; 8 min 59 s; fastest Bundesliga hat-trick; first substitute to score five in the Bundesliga; fifth goal a volley/scissor kick",
+  "messi": "91 in 2012: 79 Barcelona + 12 Argentina; next best 69 (Ronaldo 2013, Lewandowski 2021)",
+  "pele": "World Cups 1958 (aged 17), 1962 (injured in the 2nd group game; medal given by FIFA in 2007), 1970; only player with three",
+  "mane": "16 May 2015, Southampton 6-1 Aston Villa, hat-trick in 2 min 56 s; beat Robbie Fowler's 4 min 33 s (Aug 1994, 20 years)"
+ },
+ "images": {
+  "lewa_portrait": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/lewa_portrait.png",
+  "lewa_bench": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/lewa_bench.png",
+  "lewa_volley": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/lewa_volley.png",
+  "lewa_five": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/lewa_five.png",
+  "messi_2012": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi_2012.png",
+  "messi_back": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi_back.png",
+  "pele_portrait": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_portrait.png",
+  "pele_1958": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_1958.png",
+  "pele_1962": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_1962.png",
+  "pele_1970": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_1970.png",
+  "mane_portrait": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mane_portrait.png",
+  "mane_hattrick": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mane_hattrick.png"
+ },
+ "motions": {
+  "lewa_bench": "file:///home/user/Tierlist/tools/video-factory/work/clips/lewa_bench.mp4",
+  "lewa_volley": "file:///home/user/Tierlist/tools/video-factory/work/clips/lewa_volley.mp4",
+  "lewa_five": "file:///home/user/Tierlist/tools/video-factory/work/clips/lewa_five.mp4",
+  "messi_2012": "file:///home/user/Tierlist/tools/video-factory/work/clips/messi_2012.mp4",
+  "pele_1958": "file:///home/user/Tierlist/tools/video-factory/work/clips/pele_1958.mp4",
+  "pele_1970": "file:///home/user/Tierlist/tools/video-factory/work/clips/pele_1970.mp4",
+  "mane_hattrick": "file:///home/user/Tierlist/tools/video-factory/work/clips/mane_hattrick.mp4"
+ },
+ "lines": [
+  {
+   "text": "Four football records that might never be beaten.",
+   "scene": {
+    "bg": "navy",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "lewa_five",
+      "w": 0,
+      "blur": 26,
+      "big": "?",
+      "bigSize": 420,
+      "bigY": 1300
+     },
+     {
+      "type": "picture",
+      "image": "messi_2012",
+      "w": 2,
+      "blur": 26,
+      "big": "?",
+      "bigSize": 420,
+      "bigY": 1300,
+      "tr": "cut"
+     },
+     {
+      "type": "picture",
+      "image": "pele_1970",
+      "w": 4,
+      "blur": 26,
+      "big": "?",
+      "bigSize": 420,
+      "bigY": 1300,
+      "tr": "cut"
+     },
+     {
+      "type": "picture",
+      "image": "mane_hattrick",
+      "w": 6,
+      "blur": 26,
+      "big": "?",
+      "bigSize": 420,
+      "bigY": 1300,
+      "tr": "cut"
+     }
+    ],
+    "hook": true
+   }
+  },
+  {
+   "text": "But which one is the hardest to beat? You decide.",
+   "scene": {
+    "bg": "purple",
+    "type": "statement",
+    "steps": [
+     {
+      "type": "statement",
+      "text": "WHICH IS|THE HARDEST?",
+      "hi": 1,
+      "size": 150,
+      "w": 0
+     }
+    ]
+   }
+  },
+  {
+   "text": "Number one. September 2015. Bayern Munich are losing one-nil to Wolfsburg at half-time.",
+   "scene": {
+    "bg": "red",
+    "type": "statement",
+    "steps": [
+     {
+      "type": "statement",
+      "text": "RECORD|#1",
+      "hi": 1,
+      "size": 220,
+      "w": 0,
+      "lineGap": 246
+     },
+     {
+      "type": "score",
+      "top": "22 SEPT 2015 · HALF-TIME",
+      "home": "BAYERN",
+      "homeCol": "#dc052d",
+      "homeInk": "#fff",
+      "away": "WOLFSBURG",
+      "awayCol": "#65b32e",
+      "awayInk": "#fff",
+      "score": "0-1",
+      "w": 4
+     }
+    ]
+   }
+  },
+  {
+   "text": "Pep Guardiola sends on Robert Lewandowski.",
+   "scene": {
+    "bg": "red",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "lewa_bench",
+      "w": 0,
+      "motion": "lewa_bench"
+     },
+     {
+      "type": "portrait",
+      "person": {
+       "image": "lewa_portrait"
+      },
+      "name": "ROBERT LEWANDOWSKI",
+      "w": 4
+     }
+    ]
+   }
+  },
+  {
+   "text": "Fifty-one minutes. Fifty-two. Fifty-five. Fifty-seven. Sixty.",
+   "scene": {
+    "bg": "red",
+    "type": "tally",
+    "steps": [
+     {
+      "type": "tally",
+      "n": 5,
+      "cols": 3,
+      "icon": "ball",
+      "labels": [
+       "51'",
+       "52'",
+       "55'",
+       "57'",
+       "60'"
+      ],
+      "title": "5 GOALS",
+      "w": 0
+     },
+     {
+      "type": "picture",
+      "image": "lewa_volley",
+      "w": 5,
+      "motion": "lewa_volley",
+      "label": "GOAL 5: A SCISSOR KICK"
+     }
+    ]
+   }
+  },
+  {
+   "text": "Five goals in eight minutes and fifty-nine seconds. Off the bench.",
+   "scene": {
+    "bg": "red",
+    "type": "stopwatch",
+    "steps": [
+     {
+      "type": "stopwatch",
+      "to": 539,
+      "mmss": true,
+      "word": "5 GOALS",
+      "w": 0
+     },
+     {
+      "type": "picture",
+      "image": "lewa_five",
+      "w": 8,
+      "motion": "lewa_five",
+      "big": "8:59",
+      "bigSize": 300,
+      "bigY": 1300
+     }
+    ]
+   }
+  },
+  {
+   "text": "Number two. In 2012, Lionel Messi scored ninety-one goals in one calendar year.",
+   "scene": {
+    "bg": "navy",
+    "type": "statement",
+    "steps": [
+     {
+      "type": "statement",
+      "text": "RECORD|#2",
+      "hi": 1,
+      "size": 220,
+      "w": 0,
+      "lineGap": 246
+     },
+     {
+      "type": "picture",
+      "image": "messi_2012",
+      "w": 2,
+      "motion": "messi_2012",
+      "label": "LIONEL MESSI · 2012"
+     },
+     {
+      "type": "counter",
+      "from": 0,
+      "to": 91,
+      "word": "GOALS IN 2012",
+      "size": 420,
+      "w": 7
+     }
+    ]
+   }
+  },
+  {
+   "text": "Seventy-nine for Barcelona. Twelve for Argentina.",
+   "scene": {
+    "bg": "navy",
+    "type": "grid",
+    "steps": [
+     {
+      "type": "grid",
+      "legend": true,
+      "groups": [
+       {
+        "n": 79,
+        "col": "#a50044",
+        "label": "BARCELONA"
+       },
+       {
+        "n": 12,
+        "col": "#75aadb",
+        "label": "ARGENTINA"
+       }
+      ],
+      "w": 0
+     }
+    ]
+   }
+  },
+  {
+   "text": "The most anyone has scored in a year since is sixty-nine. Ronaldo in 2013, Lewandowski in 2021.",
+   "scene": {
+    "bg": "navy",
+    "type": "x2_bars",
+    "steps": [
+     {
+      "type": "x2_bars",
+      "title": "MOST IN A YEAR",
+      "items": [
+       {
+        "label": "MESSI · 2012",
+        "v": 91,
+        "col": "#a50044"
+       },
+       {
+        "label": "RONALDO · 2013",
+        "v": 69,
+        "col": "#ffffff"
+       },
+       {
+        "label": "LEWANDOWSKI · 2021",
+        "v": 69,
+        "col": "#dc052d"
+       }
+      ],
+      "w": 0
+     }
+    ]
+   }
+  },
+  {
+   "text": "Number three. Pelé is the only player ever to win three World Cups.",
+   "scene": {
+    "bg": "green",
+    "type": "statement",
+    "steps": [
+     {
+      "type": "statement",
+      "text": "RECORD|#3",
+      "hi": 1,
+      "size": 220,
+      "w": 0,
+      "lineGap": 246
+     },
+     {
+      "type": "portrait",
+      "person": {
+       "image": "pele_portrait"
+      },
+      "name": "PELÉ",
+      "w": 2
+     },
+     {
+      "type": "statement",
+      "text": "3|WORLD CUPS",
+      "hi": 0,
+      "size": 220,
+      "w": 10,
+      "lineGap": 246
+     }
+    ]
+   }
+  },
+  {
+   "text": "The first in 1958, in Sweden, when he was just seventeen.",
+   "scene": {
+    "bg": "green",
+    "type": "years",
+    "steps": [
+     {
+      "type": "years",
+      "items": [
+       {
+        "year": "1958",
+        "top": "SWEDEN",
+        "label": "aged 17",
+        "tick": true,
+        "head": "#f2c230"
+       }
+      ],
+      "w": 0
+     },
+     {
+      "type": "picture",
+      "image": "pele_1958",
+      "w": 4,
+      "motion": "pele_1958",
+      "label": "SWEDEN 1958"
+     }
+    ]
+   }
+  },
+  {
+   "text": "In 1962, he was injured in the second game, but Brazil won it anyway.",
+   "scene": {
+    "bg": "green",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "pele_1962",
+      "w": 0,
+      "label": "CHILE 1962"
+     },
+     {
+      "type": "statement",
+      "text": "INJURED|STILL CHAMPION",
+      "hi": 1,
+      "size": 140,
+      "w": 9
+     }
+    ]
+   }
+  },
+  {
+   "text": "And in 1970, in Mexico, he won it again.",
+   "scene": {
+    "bg": "green",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "pele_1970",
+      "w": 0,
+      "motion": "pele_1970",
+      "label": "MEXICO 1970"
+     }
+    ]
+   }
+  },
+  {
+   "text": "No other player has won more than two.",
+   "scene": {
+    "bg": "green",
+    "type": "years",
+    "steps": [
+     {
+      "type": "years",
+      "items": [
+       {
+        "year": "1958",
+        "top": "SWEDEN",
+        "tick": true,
+        "head": "#f2c230"
+       },
+       {
+        "year": "1962",
+        "top": "CHILE",
+        "tick": true,
+        "head": "#f2c230"
+       },
+       {
+        "year": "1970",
+        "top": "MEXICO",
+        "tick": true,
+        "head": "#f2c230"
+       }
+      ],
+      "w": 0
+     }
+    ]
+   }
+  },
+  {
+   "text": "Number four. May 2015. Sadio Mané, for Southampton against Aston Villa.",
+   "scene": {
+    "bg": "red",
+    "type": "statement",
+    "steps": [
+     {
+      "type": "statement",
+      "text": "RECORD|#4",
+      "hi": 1,
+      "size": 220,
+      "w": 0,
+      "lineGap": 246
+     },
+     {
+      "type": "portrait",
+      "person": {
+       "image": "mane_portrait"
+      },
+      "name": "SADIO MANÉ",
+      "w": 4
+     },
+     {
+      "type": "score",
+      "top": "16 MAY 2015",
+      "home": "SOUTHAMPTON",
+      "homeCol": "#d71920",
+      "homeInk": "#fff",
+      "away": "ASTON VILLA",
+      "awayCol": "#7a003c",
+      "awayInk": "#fff",
+      "score": "6-1",
+      "w": 7
+     }
+    ]
+   }
+  },
+  {
+   "text": "He scored three goals in two minutes and fifty-six seconds.",
+   "scene": {
+    "bg": "red",
+    "type": "stopwatch",
+    "steps": [
+     {
+      "type": "stopwatch",
+      "to": 176,
+      "mmss": true,
+      "word": "HAT-TRICK",
+      "w": 0
+     }
+    ]
+   }
+  },
+  {
+   "text": "The fastest hat-trick in Premier League history. It beat Robbie Fowler's record, which had stood for twenty years.",
+   "scene": {
+    "bg": "red",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "mane_hattrick",
+      "w": 0,
+      "motion": "mane_hattrick",
+      "big": "2:56",
+      "bigSize": 300,
+      "bigY": 1300
+     },
+     {
+      "type": "years",
+      "items": [
+       {
+        "year": "1994",
+        "top": "FOWLER",
+        "label": "4 min 33 s",
+        "cross": true
+       },
+       {
+        "year": "2015",
+        "top": "MANÉ",
+        "label": "2 min 56 s",
+        "tick": true,
+        "head": "#1ea85a"
+       }
+      ],
+      "w": 7
+     }
+    ]
+   }
+  },
+  {
+   "text": "So which is the hardest to beat? Or is there one we missed? Tell us in the comments.",
+   "scene": {
+    "bg": "purple",
+    "type": "statement",
+    "steps": [
+     {
+      "type": "statement",
+      "text": "WHICH IS|THE HARDEST?",
+      "hi": 1,
+      "size": 170,
+      "w": 0,
+      "lineGap": 190
+     },
+     {
+      "type": "statement",
+      "text": "5 GOALS IN 9 MIN|91 IN A YEAR|3 WORLD CUPS|HAT-TRICK IN 2:56",
+      "hi": -1,
+      "size": 110,
+      "w": 7
+     }
+    ]
+   }
+  }
+ ]
+}
