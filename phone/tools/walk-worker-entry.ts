@@ -8,6 +8,9 @@ import { JsiSkApi } from "@shopify/react-native-skia/lib/commonjs/skia/web/JsiSk
 import { setThreePlatform } from "../src/three/platform";
 import { startWalkScene, type WalkHost } from "../src/three/walkHost";
 import { loadGardenStart } from "../src/three/gardenScene";
+import { loadShopStart, type ShopData } from "../src/three/shopScene";
+import { shopDisplays } from "@/lib/star/shop3d/catalogue";
+import type { ShopCallbacks, ShopController } from "@/lib/star/shop3d/scene";
 import { glCounts } from "../src/three/gl";
 import { setToonYou } from "@/lib/star/style3d/toon/bodies";
 import { kitsOf } from "@/lib/star/kits";
@@ -20,7 +23,7 @@ g.window = g;
 const store = new Map<string, string>();
 g.localStorage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => { store.set(k, String(v)); }, removeItem: (k: string) => { store.delete(k); }, clear: () => store.clear() };
 const requested: string[] = [];
-let host: WalkHost<GardenController> | null = null;
+let host: WalkHost<GardenController | ShopController> | null = null;
 let gl: WebGL2RenderingContext | null = null;
 let near: string | null = null;
 let doors: string[] = [];
@@ -69,6 +72,15 @@ function gardenData(arrive: GardenData["arrive"], sky: GardenData["sky"]): Garde
   };
 }
 
+/** What the website's test page /star-shop3d-dev builds the shop from (list prices, the new player, look H's displays). */
+let STEP: number | undefined;
+function shopData(atDoor: boolean): ShopData {
+  return {
+    kit: kitsOf("Arsenal").home, displays: shopDisplays({}, { h: true }), atDoor, number: 9, fixedStep: STEP,
+    player: { look: "new", skin: "#c68642", hair: "#2b1d14", hairStyle: "short" },
+  };
+}
+
 self.onmessage = async (ev: MessageEvent) => {
   const m = ev.data as { id: number; op: string; [k: string]: unknown };
   const reply = (v: unknown) => g.postMessage({ id: m.id, ok: true, v });
@@ -89,6 +101,19 @@ self.onmessage = async (ev: MessageEvent) => {
       self.fetch = () => Promise.reject(new TypeError("Network request failed"));
       setToonYou(YOU);
       const t0 = performance.now();
+      if (m.place === "shop") {
+        STEP = (m.step as number | undefined) || undefined;
+        const scbs: ShopCallbacks = {
+          onNear: (s) => { near = s; },
+          onFps: () => {},
+          onDoor: () => { doors.push("door"); },
+          onContextLost: () => { doors.push("lost"); },
+        };
+        host = await startWalkScene<ShopData, ShopCallbacks, ShopController>({
+          start: loadShopStart(), data: shopData(m.arrive === "door"), callbacks: scbs,
+          gl, width: m.w as number, height: m.h as number, pixelRatio: m.pr as number, quality: m.quality as Quality3d,
+        });
+      } else {
       const cbs: GardenCallbacks = {
         onNear: (s) => { near = s; },
         onFps: () => {},
@@ -100,14 +125,17 @@ self.onmessage = async (ev: MessageEvent) => {
         start: loadGardenStart(), data: gardenData(m.arrive as GardenData["arrive"], m.sky as GardenData["sky"]), callbacks: cbs,
         gl, width: m.w as number, height: m.h as number, pixelRatio: m.pr as number, quality: m.quality as Quality3d,
       });
+      }
       (self as unknown as { __host: unknown }).__host = host;
       reply({ ms: performance.now() - t0, requested: Array.from(new Set(requested)), log });
     } else if (m.op === "cmd") {
-      const c = host!.controller;
+      const c = host!.controller as unknown as GardenController & ShopController;
       const a = m.args as number[];
       const fn = m.fn as string;
       let out: unknown = null;
-      if (fn === "place") c.place(a[0], a[1], a[2]);
+      // any other method of the place's controller by name (the shop's select, setLevel, setCardOpen, pick, walkToItem ...)
+      if (fn === "call") out = ((c as unknown as Record<string, (...x: unknown[]) => unknown>)[m.name as string])(...(m.args as unknown[]));
+      else if (fn === "place") c.place(a[0], a[1], a[2]);
       else if (fn === "stick") c.setStick(a[0], a[1]);
       else if (fn === "tap") out = c.tap?.(a[0], a[1]);
       else if (fn === "orbit") c.orbit(a[0], a[1]);
@@ -117,10 +145,12 @@ self.onmessage = async (ev: MessageEvent) => {
       else if (fn === "pointer") host!.pointer(m.type as never, a[0], a[1], a[2]);
       reply(out);
     } else if (m.op === "state") {
-      const c = host!.controller;
+      const c = host!.controller as GardenController;
       const js = jsMs.slice().sort((a, b) => a - b);
       if (m.reset) jsMs.length = 0;
       reply({ where: c.where(), near, doors, stats: c.stats(), frames: gl ? glCounts(gl).frames : 0, pinching: host!.pinching(), log, walking: c.walking?.(), js: { n: js.length, median: js[Math.floor(js.length / 2)] ?? 0, p95: js[Math.floor(js.length * 0.95)] ?? 0 } });
+    } else if (m.op === "asked") {
+      reply(Array.from(new Set(requested)));
     } else if (m.op === "dispose") {
       host?.dispose(); host = null;
       reply({ document: typeof (globalThis as { document?: unknown }).document, dpr: (globalThis as { devicePixelRatio?: number }).devicePixelRatio, log });

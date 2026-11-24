@@ -74,5 +74,52 @@ start time, the GL surviving a trip to the background.
 Not done on purpose: the web's "still 2.5x / moving 1.5x" pixel ratios (the GL buffer is one fixed size per tier),
 KTX2 packed textures (need WebAssembly; `window.__ktx2Off` is set), the 3D phone in your hand.
 
+## WP2 notes (the 3D Shop, 24 Nov 2026)
+What it is: `phone/src/screens/world/Shop3D.tsx` (screen name `shop-3d`) runs the website's own `lib/star/shop3d/scene.ts` (not touched) through
+`Walk3D` and `walkHost`. Same look as the web: look H room, the motorbike / six cars / jet on the turntable, seven boots on plinths, the KIB can fridge,
+five watches and jewels in lit niches, the homes' model table, the new player in your skin, hair and club kit. The screen copies the web's
+`Shop3D.tsx`: top bar, stick, tap (pick first, then walk), drag to look round, pinch, and the item card (items, five levels, what each gives, price).
+Nothing is bought in 3D, as on the web: "See it in the shop" opens that item's sheet in the app's own Shop (`Shop.tsx` now reads params
+`{ cat?, focus?: { id, level } }`), so buying and saving are exactly the 2D Shop's (`world/shop.ts`); there is no second set of rules.
+- Ways in: the Garden's shop door (`from: "garden", atDoor: true`: steps in at the doors; Back and the doorway return to the Garden outside the door)
+  and a new big "3D" button in the middle of the Shop's bar (as the web's; greyed when the crash guard has the 3D off). The doorway from a Shop-opened
+  3D shop leads out to the Garden when the Garden app is installed.
+- Fallback: the Garden's door goes straight to the 2D Shop when the guard has `3d` off; if the 3D cannot start the plain card now has a second button
+  "Open the normal shop" (new `fallback` prop on Walk3D); Back from a Shop-opened 3D shop is the 2D Shop. No crash path closes the app: a tap that makes the
+  scene throw (the check saw the scene throw on a tap near himself; the cause is read from its path code, not proven) is caught in Walk3D.
+- Walk3D additions, all backward compatible: `onTap` (the shop picks, then walks), `hideStick` (a card is open), `fallback`, `loading` words, the screen's
+  buttons now sit above the loading cover (Back works while it loads), and "Show 3D speed" counts draw calls from the GL itself (the shop's own count is
+  only its last pass: it said 1 draw). The triangle count shows "?" when the scene's count is only the last pass.
+- Shared files changed in the app: `Garden.tsx` (shop door), `Shop.tsx` (3D button, focus params), `areas/world.tsx` (screen), `assetList.ts` / `assets.ts`.
+- Not done on purpose: the casual clothes from the house's wardrobe (the shop player wears the club kit; they come with WP3), the old-body retry (the old
+  character files are not bundled; if the new body fails the plain card shows), approved 3D Scene Editor edits, the test page's club switch / pretend Buy.
+Files added to the app: **9.3 MB** (30 generated models `*-hf.glb` 9.05 MB, the room's four maps and the baked light 0.27 MB) + 0.11 MB for the website's
+newer `mocap.glb` (the phone copy was stale: `three-check` now passes that file). The website's shop folder is 26.6 MB because it also holds the packed
+`*.ktx2.glb` twins (need WebAssembly: off on the phone), the older Blender models and the Draco decoder: none of those are bundled. The `-hf` models are
+meshopt-packed (not Draco), so none needed unpacking; the six `car-N.glb` already in the app (WP1) are not used by this look and not read by the shop.
+Every file the scene read is in `assetList.ts`: `walk-check --place shop` lists 40 files (the 10.1 MB above includes the player and clips that were already in).
+What was checked:
+- SEEN (web build of the app, 412x915 and 360x780 at 2x, real Chromium touches, software GL): from the Garden: stand at the shop door, the "Shop ›" card,
+  tap it, the shop opens at the doors (z 4.6 of 8); stood at each of the six displays (start, boots, cars, cans, counter, homes) and every card opens by itself with
+  its levels and prices; stick moves him (2.8 to 3.8 m in 5 s), a tap on the floor starts a walk, a drag turns the camera, a real tap on the turntable opens the
+  car card; "See it in the shop" lands on the Shop's Cars tab with the Motorbike sheet open at L5 (the card's level); the Shop's 3D button opens it (starts
+  mid-room); the doorway leads out to the Garden; Back returns to the Shop and leaves no GL canvas behind. Stills are in `phone/tools/look/shop-shots.mjs`
+  (`node phone/tools/look/shop-shots.mjs --sizes 412x915,360x780 [--speed]`, needs `build-web.mjs` first).
+- SEEN (no-DOM run, `cd phone && npx tsx tools/walk-check.ts --place shop`; a Web Worker, so no document, like Hermes): starts in 12 s; all 40 files bundled; the
+  buy gesture, camera-in on a card, five picks, the doorway calls `onDoor`; pause holds frames (0 in 1.5 s), resume brings them back; everything is put back on leaving.
+  `--step 0.1` makes each frame move the game 0.1 s (software GL draws 1 to 2 frames a second, the dwell timer needs game time). The garden check still passes.
+- Checks: match-parity 12/12 identical, career-flow, screens, world, boot, match-features pass; tsc 9 errors (the old 9 in ../lib); Android Metro export OK (Hermes bytecode 17 MB).
+  `three-check` has one failure that is not from this work (`tools/three-interp-bench.ts` is missing, so its no-JIT run cannot start).
+- Numbers (software GL, so only draw counts and JS time mean anything): 68 draw calls a frame at the start spot at Low (GL-counted, 360x780); the scene's JavaScript
+  costs about 2 to 3 ms a frame in V8 (Hermes has no JIT: several times that). 22 to 27 s from the door to a walking shop in the web build (software GL: most of it is
+  shader work a phone's GPU does faster). Quality: the phone rule from WP1 (a small screen opens one step lower: Low on the 412 and 360 wide stills).
+- REASONED, not seen: that Hermes runs the scene as the worker did (the worker has no document/WebAssembly like Hermes but is still V8); frame rate and heat.
+Only a real phone can say: fps and heat at each tier on the S20+ (the shop is heavier than the garden: look H bloom and 2 to 3 lights), start time from the Garden's
+door, whether expo-gl gives the half-float targets the H pass wants (the web check warned "HALF_FLOAT_OES" once, as before), memory with 9 MB of models decoded
+(a car and a home are held at most two at a time by the scene), touch feel of tap-versus-drag (a 10 point wobble limit), Back and the doorway while it loads.
+
 ## Needs from Mikey (collected, asked at the end)
-(none yet)
+- The 3D shop draws prices with a pound sign (the website's scene paints "£" on every tag and card) while the app's 2D Shop shows "★". Same as the website;
+  say if you want the card at least to use the app's sign (the tags inside the picture cannot change without touching the website's scene).
+- The "BETA" tag on the 3D shop's top bar is copied from the website. Keep or drop?
+- The casual clothes from your wardrobe in the shop come with WP3 (your house).

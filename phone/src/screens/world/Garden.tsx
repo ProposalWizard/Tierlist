@@ -12,7 +12,7 @@
  * website's gardenSceneData), the doors' callbacks, the top bar and the small
  * card when you stand at something (pictures and numbers, no sentences).
  *
- *   shop door      → the shop (TODO WP2: the 3D shop; for now the app's own Shop screen)
+ *   shop door      → the 3D shop (screens/world/Shop3D.tsx; its plain card offers the normal Shop if the 3D cannot start)
  *   training gate  → the Training screen (TODO WP4: the 3D pitch)
  *   house door     → stays shut (TODO WP3: your 3D house)
  *   casino door    → shut: "Casino · Locked" (this app has no casino)
@@ -37,6 +37,8 @@ import { useCareer } from "../../game/store";
 import { usePrefs } from "../../game/prefs";
 import { useNav } from "../../nav";
 import { Press } from "../../ui/Press";
+import { partOff } from "../../safety";
+import { SCREENS } from "../../areas/registry";
 import { packedPicture } from "../../data/packed";
 import { absoluteUrl } from "../../draw/offscreen";
 import { Walk3D, type WalkApi } from "../../three/Walk3D";
@@ -110,8 +112,8 @@ function Garden({ career, params }: { career: CareerState; params?: Record<strin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** TODO(WP2): the 3D shop (screen "shop-3d"). Until it exists, the app's own Shop screen. */
-  const onShop = () => { comeBack = "shop"; nav.go("shop"); };
+  /** The 3D shop, stepping in at its doors; the app's own Shop when the 3D is off (the crash guard) or cannot open. */
+  const onShop = () => { comeBack = "shop"; if (partOff("3d") || !SCREENS["shop-3d"]) nav.go("shop"); else nav.go("shop-3d", { from: "garden", atDoor: true }); };
   /** TODO(WP4): the 3D training pitch. Until it exists, the Training screen. */
   const onTraining = () => { comeBack = "training"; nav.go("career-training"); };
   const hooks = useRef({ onShop, onTraining });

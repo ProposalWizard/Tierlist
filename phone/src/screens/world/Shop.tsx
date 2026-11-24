@@ -12,8 +12,9 @@
  * the shop's own bar (Shop · For You · 3D · Boots · Sponsors) over the game's
  * bottom bar. Tap an item for its sheet: big picture, level pips, what it
  * gives, Buy. For You is every item, one per screen, mixed.
- * The 3D shop is not in this app (its button is greyed, as the website greys
- * it where there is no 3D shop).
+ * The 3D shop (screens/world/Shop3D.tsx) opens from the bar's big "3D" button (as the
+ * website's), and "See it in the shop" there comes back here on that item: params
+ * { cat?, focus?: { id, level } } open its sheet. Buying is only ever here.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Image, Modal, ScrollView, Text, View, type ImageSourcePropType, type ViewStyle } from "react-native";
@@ -37,6 +38,7 @@ import { SvgIcon, SHOP_BAR_ICON } from "../../world/SvgIcon";
 import { markSeenKeys } from "../../world/help";
 import { PointerTour, TourTarget } from "../../ui/tour";
 import { SCREENS } from "../../areas/registry";
+import { partOff } from "../../safety";
 import { StoreSheet, PicBox, LevelLadder, GiveChips, SaveUp, GoldButton, GreyButton, ConfirmSheet, PurchaseMoment, weeksText, type Moment } from "./shopParts";
 import { starsNow } from "@/lib/star/starPoints";
 import { SHOP_TIERS } from "@/lib/star/economy";
@@ -546,11 +548,28 @@ function ForYou({ items, width, view, own, stars, onDetails, onSeeAll }: {
   );
 }
 
+/**
+ * Opened from the 3D shop's "See it in the shop" (the website's shopFocus): the category the item is in,
+ * and its sheet open at the level that was on the card. A locked item only lands on its category.
+ */
+function focusOf(career: CareerState | null, params?: Record<string, unknown>): { cat: CatId; sheet: { cat: CatId; key: string; level: number } | null } | null {
+  const f = params?.focus as { id: string; level: number } | undefined;
+  if (!f || !career) return null;
+  if (KIB_CANS.some((c) => c.id === f.id) || f.id === "kib") return { cat: "cans", sheet: null };
+  if (BOOT_ORDER.includes(f.id)) return { cat: "boots", sheet: { cat: "boots", key: f.id, level: f.level } };
+  const bases = STYLE_BASES.get(f.id);
+  if (!bases) return params?.cat ? { cat: params.cat as CatId, sheet: null } : null;
+  const group = styleGroupOf(bases[0]);
+  const locked = !!career.unlocks && starsNow(career) < styleUnlockStar(f.id);
+  return { cat: group, sheet: locked ? null : { cat: group, key: f.id, level: f.level } };
+}
+
 export function ShopScreen({ params }: { params?: Record<string, unknown> }) {
   const career = useCareer();
   const nav = useNav();
   const inset = useSafeAreaInsets();
-  const start = (params?.cat as CatId | undefined) ?? "cans";
+  const focus = useMemo(() => focusOf(career, params), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const start = focus?.cat ?? (params?.cat as CatId | undefined) ?? "cans";
   const [cat, setCat] = useState<CatId>(start === "boots" ? "cans" : start);
   const [tab, setTab] = useState<Tab>(start === "boots" ? "boots" : "shop");
   // 1 | 3 | 5 is kept on this phone, as the website keeps it (star-shop-items-view; 5 by default)
@@ -559,8 +578,8 @@ export function ShopScreen({ params }: { params?: Record<string, unknown> }) {
   const [note, setNote] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [moment, setMoment] = useState<Moment | null>(null);
-  const [sheet, setSheet] = useState<{ cat: CatId; key: string } | null>(null);
-  const [pick, setPick] = useState<Record<string, number>>({});
+  const [sheet, setSheet] = useState<{ cat: CatId; key: string } | null>(focus?.sheet ? { cat: focus.sheet.cat, key: focus.sheet.key } : null);
+  const [pick, setPick] = useState<Record<string, number>>(focus?.sheet ? { [focus.sheet.key]: focus.sheet.level } : {});
   const [width, setWidth] = useState(0);
   const [moreOpen, setMoreOpen] = useState(false);
   const [fameOpen, setFameOpen] = useState(false);
@@ -712,7 +731,8 @@ export function ShopScreen({ params }: { params?: Record<string, unknown> }) {
         ) : null}
       </View>
 
-      <ShopBar active={tab} onPick={(t) => { setTab(t); setMoreOpen(false); setFameOpen(false); }} onSponsors={() => nav.go("sponsors")} />
+      <ShopBar active={tab} onPick={(t) => { setTab(t); setMoreOpen(false); setFameOpen(false); }} onSponsors={() => nav.go("sponsors")}
+        on3D={SCREENS["shop-3d"] && !partOff("3d") ? () => nav.go("shop-3d", { from: "shop" }) : undefined} />
       <BottomBar active={null} />
 
       {sheet && sheetView ? (
@@ -765,8 +785,8 @@ function ViewSwitch({ view, onPick }: { view: ItemsView; onPick: (v: ItemsView) 
 }
 
 /** The shop's own bar, TikTok-style: Shop · For You · Boots · Sponsors, in the website's white line icons
- *  (the 3D shop's centre button is left out: it is not in this app). */
-function ShopBar({ active, onPick, onSponsors }: { active: Tab; onPick: (t: Tab) => void; onSponsors: () => void }) {
+ *  with the 3D shop's big centre button (greyed when the 3D is off, as the website greys it). */
+function ShopBar({ active, onPick, onSponsors, on3D }: { active: Tab; onPick: (t: Tab) => void; onSponsors: () => void; on3D?: () => void }) {
   const tab = (t: Tab | "sponsors", label: string, on: boolean, onPress: () => void) => {
     const color = on ? "#ffffff" : "#999b9f";
     const body = <>
@@ -781,6 +801,11 @@ function ShopBar({ active, onPick, onSponsors }: { active: Tab; onPick: (t: Tab)
     <View style={{ height: 52, flexDirection: "row", alignItems: "stretch", backgroundColor: "#05080f", borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
       {tab("shop", "Shop", active === "shop", () => onPick("shop"))}
       {tab("foryou", "For You", active === "foryou", () => onPick("foryou"))}
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <Press onPress={on3D ?? (() => undefined)} style={{ width: 54, height: 36, borderRadius: 11, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", opacity: on3D ? 1 : 0.3, boxShadow: "-4px 0px 0px #22d3ee, 4px 0px 0px #f43f5e" } as ViewStyle}>
+          <Text style={{ color: "#05080f", fontSize: 15, fontWeight: "900" }}>3D</Text>
+        </Press>
+      </View>
       {tab("boots", "Boots", active === "boots", () => onPick("boots"))}
       {tab("sponsors", "Sponsors", false, onSponsors)}
     </View>

@@ -83,6 +83,14 @@ export interface Walk3DProps<D, CB, C extends WalkController> {
   name?: string;
   /** Settings → "Show 3D speed". */
   showSpeed?: boolean;
+  /** A short tap on the picture. Default: the place's own `tap` (walk there), else its `pick`. The 3D shop picks first, then walks. */
+  onTap?: (c: C, x: number, y: number) => void;
+  /** Hide the stick (a card is open over it): a finger there looks round instead. */
+  hideStick?: boolean;
+  /** Words under the spinner while the place loads ("Opening the shop…"). */
+  loading?: { title: string; sub?: string };
+  /** A second way out on the plain card, when the 3D could not start ("Open the normal shop"). */
+  fallback?: { label: string; onPress: () => void };
   /** Buttons and cards over the picture. */
   children?: ReactNode;
 }
@@ -179,16 +187,18 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
   // The speed readout: frames handed to the screen a second, draw calls, triangles.
   useEffect(() => {
     if (!p.showSpeed || !ready) { setSpeed(null); return; }
-    let f0 = 0, t0 = Date.now();
+    let f0 = 0, d0 = 0, t0 = Date.now();
     const id = setInterval(() => {
       const l = live.current;
       if (!l?.host || !l.gl) return;
-      const now = Date.now(), frames = glCounts(l.gl).frames;
+      const now = Date.now(), { frames, draws } = glCounts(l.gl);
       const fps = f0 ? ((frames - f0) * 1000) / Math.max(1, now - t0) : 0;
-      f0 = frames; t0 = now;
+      // draw calls a frame as the GL counted them (every pass: shadows, the picture, the finishing pass); a scene's own count can be the last pass alone
+      const perFrame = f0 && frames > f0 ? Math.round((draws - d0) / (frames - f0)) : 0;
+      f0 = frames; d0 = draws; t0 = now;
       lastFps.current = fps;
       const st = l.host.controller.stats?.();
-      setSpeed({ fps, calls: st?.calls ?? 0, triangles: st?.triangles ?? 0, tier: String(st?.quality ?? l.tier), pixelRatio: l.pr, loaded: Number(st?.loaded ?? 0) });
+      setSpeed({ fps, calls: perFrame || (st?.calls ?? 0), triangles: st?.triangles ?? 0, tier: String(st?.quality ?? l.tier), pixelRatio: l.pr, loaded: Number(st?.loaded ?? 0) });
     }, 1000);
     return () => clearInterval(id);
   }, [p.showSpeed, ready]);
@@ -203,7 +213,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
     for (const t of e.nativeEvent.changedTouches) {
       const { x, y } = pt(t as never);
       const c = ringCentre();
-      const onRing = Math.hypot(x - c.x, y - c.y) <= RING / 2 + 22;
+      const onRing = !cur.current.hideStick && Math.hypot(x - c.x, y - c.y) <= RING / 2 + 22;
       const hasStick = Array.from(touches.current.values()).some((v) => v.kind === "stick");
       const kind = onRing && !hasStick ? "stick" : "look";
       touches.current.set(t.identifier as number, { kind, x, y, x0: x, y0: y, t0: stamp(e), moved: 0 });
@@ -245,12 +255,16 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
       // a tap, not a drag of the view: walk there (the place's tap), else its pick
       if (!cancelled && host && v.moved < 10 && stamp(e) - v.t0 < 800) {
         const c = host.controller;
-        if (c.tap) c.tap(x, y); else c.pick?.(x, y);
+        // a scene's own tap may throw (the shop's, on a tap exactly under his feet): never let that close the app
+        try {
+          if (cur.current.onTap) cur.current.onTap(c, x, y);
+          else if (c.tap) c.tap(x, y); else c.pick?.(x, y);
+        } catch (err) { console.warn("[walk 3D] a tap failed:", err); }
       }
     }
   };
 
-  if (failed || !allowed) return <PlainCard what={p.name ?? "3D"} why={failed} onBack={p.onBack} cover={p.cover} />;
+  if (failed || !allowed) return <PlainCard what={p.name ?? "3D"} why={failed} onBack={p.onBack} cover={p.cover} fallback={p.fallback} />;
 
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: p.cover ?? "#0d1420", overflow: "hidden" }]} onLayout={(e) => { const { width, height } = e.nativeEvent.layout; if (!size || Math.abs(size.w - width) > 1 || Math.abs(size.h - height) > 1) setSize({ w: width, h: height }); }}>
@@ -262,20 +276,27 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
       )}
       {/* the touch layer: under the buttons and cards, over the picture */}
       <View collapsable={false} style={StyleSheet.absoluteFill} onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={(e) => onEnd(e, false)} onTouchCancel={(e) => onEnd(e, true)} />
-      {ready && <Stick ref={stick} bottom={Math.max(28, insets.bottom + 16)} />}
-      {p.children}
+      {ready && !p.hideStick && <Stick ref={stick} bottom={Math.max(28, insets.bottom + 16)} />}
       {speed && (
         <View pointerEvents="none" style={{ position: "absolute", left: 6, bottom: Math.max(4, insets.bottom + 2), backgroundColor: "rgba(0,0,0,0.62)", paddingHorizontal: 5, paddingVertical: 3, borderRadius: 5 }}>
           <Text style={{ color: "#d1fae5", fontSize: 10, lineHeight: 12.5, fontWeight: "700", fontFamily: "monospace" }}>
-            {`${speed.fps.toFixed(0)} fps  ${speed.calls} draws  ${(speed.triangles / 1000).toFixed(0)}k tris\npx ${speed.pixelRatio.toFixed(2)}  ${speed.tier}`}
+            {`${speed.fps.toFixed(0)} fps  ${speed.calls} draws  ${speed.triangles < 1000 ? "?" : (speed.triangles / 1000).toFixed(0) + "k"} tris\npx ${speed.pixelRatio.toFixed(2)}  ${speed.tier}`}
           </Text>
         </View>
       )}
       {!ready && (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: p.cover ?? "#0d1420", alignItems: "center", justifyContent: "center" }]} pointerEvents="none">
           <ActivityIndicator color={GOLD} size="large" />
+          {p.loading ? (
+            <View style={{ marginTop: 14, alignItems: "center" }}>
+              <Text style={{ color: "#f7f1e8", fontWeight: "900", fontSize: 17 }}>{p.loading.title}</Text>
+              {p.loading.sub ? <Text style={{ color: "#c9bba8", fontWeight: "700", fontSize: 13, marginTop: 6 }}>{p.loading.sub}</Text> : null}
+            </View>
+          ) : null}
         </View>
       )}
+      {/* the screen's own buttons and cards: above the loading cover, so Back is there while it loads */}
+      {p.children}
     </View>
   );
 }
@@ -295,15 +316,20 @@ const Stick = forwardRef<StickHandle, { bottom: number }>(function Stick({ botto
 
 // ── the plain card ──────────────────────────────────────────────────────────
 
-function PlainCard({ what, why, onBack, cover }: { what: string; why: string | null; onBack: () => void; cover?: string }) {
+function PlainCard({ what, why, onBack, cover, fallback }: { what: string; why: string | null; onBack: () => void; cover?: string; fallback?: { label: string; onPress: () => void } }) {
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: cover ?? "#0d1420", alignItems: "center", justifyContent: "center", padding: 24 }]}>
       <View style={{ backgroundColor: "rgba(14,12,10,0.86)", borderRadius: 18, borderWidth: 1, borderColor: "rgba(250,204,21,0.25)", padding: 18, alignItems: "center", gap: 10, maxWidth: 320 }}>
         <Text style={{ fontSize: 30 }}>🛠️</Text>
         <Text style={{ color: "#f7f1e8", fontSize: 17, fontWeight: "900" }}>3D could not start</Text>
         <Text style={{ color: "rgba(247,241,232,0.7)", fontSize: 12, fontWeight: "600", textAlign: "center" }}>{`${what} needs the phone's 3D.${why ? `\n${why}` : ""}`}</Text>
-        <Press onPress={onBack} style={{ height: 40, paddingHorizontal: 22, borderRadius: 12, backgroundColor: GOLD, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: "#111", fontWeight: "900", fontSize: 15 }}>Back</Text>
+        {fallback && (
+          <Press onPress={fallback.onPress} style={{ height: 40, paddingHorizontal: 22, borderRadius: 12, backgroundColor: GOLD, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: "#111", fontWeight: "900", fontSize: 15 }}>{fallback.label}</Text>
+          </Press>
+        )}
+        <Press onPress={onBack} style={{ height: 40, paddingHorizontal: 22, borderRadius: 12, backgroundColor: fallback ? "rgba(255,255,255,0.1)" : GOLD, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ color: fallback ? "#f7f1e8" : "#111", fontWeight: "900", fontSize: 15 }}>Back</Text>
         </Press>
       </View>
     </View>

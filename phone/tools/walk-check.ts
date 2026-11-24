@@ -1,9 +1,9 @@
 /**
- * CHECKS THE PHONE'S WALK-AROUND 3D (src/three/walkHost.ts + the garden) WITHOUT A PHONE.
+ * CHECKS THE PHONE'S WALK-AROUND 3D (src/three/walkHost.ts + the garden, the 3D shop) WITHOUT A PHONE.
  *
- *   cd phone && npx tsx tools/walk-check.ts [--out DIR] [--sizes 412x915,360x780] [--sky day|sunset|night] [--quality low|medium|high] [--dpr 2]
+ *   cd phone && npx tsx tools/walk-check.ts [--place garden|shop] [--out DIR] [--sizes 412x915,360x780] [--sky day|sunset|night] [--quality low|medium|high] [--dpr 2]
  *
- * The garden is started through the phone's host inside a Web Worker in headless Chromium.
+ * The place (the garden, or with --place shop the 3D shop) is started through the phone's host inside a Web Worker in headless Chromium.
  * A worker has no `document`, no `window`, no storage and no DOM, like the phone's JavaScript
  * engine (Hermes), so the stand-ins (src/three/standIn.ts, env.ts) are what the scene meets;
  * the GL is an OffscreenCanvas's, the pictures are unpacked by Skia (CanvasKit), the 3D files
@@ -24,6 +24,9 @@ const SIZES = arg("--sizes", "412x915,360x780").split(",").map((s) => s.split("x
 const SKY = arg("--sky", "day");
 const QUALITY = arg("--quality", "medium");
 const DPR = Number(arg("--dpr", "2"));
+const PLACE = arg("--place", "garden") as "garden" | "shop";
+/** Shop only: every frame moves the game on by this many seconds (software GL draws about 1 frame a second; 0 = real time). */
+const STEP = Number(arg("--step", PLACE === "shop" ? "0.1" : "0"));
 const PHONE = path.join(__dirname, "..");
 const ROOT = path.join(PHONE, "..");
 let failed = 0;
@@ -93,14 +96,14 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
     const t0 = Date.now();
     let started: { ms: number; requested: string[]; log: string[] };
     try {
-      started = await page.evaluate(async ([W, H, pr, q, sky]) => {
+      started = await page.evaluate(async ([W, H, pr, q, sky, place, step]) => {
         const w = window as unknown as { call: (o: string, e: object, t?: Transferable[]) => Promise<unknown>; __off: OffscreenCanvas };
-        return w.call("start", { canvas: w.__off, w: W, h: H, pr, quality: q, arrive: "gate", sky }, [w.__off]);
-      }, [W, H, pr, QUALITY, SKY] as const) as { ms: number; requested: string[]; log: string[] };
+        return w.call("start", { canvas: w.__off, w: W, h: H, pr, quality: q, arrive: place === "shop" ? "start" : "gate", sky, place, step }, [w.__off]);
+      }, [W, H, pr, QUALITY, SKY, PLACE, STEP] as const) as { ms: number; requested: string[]; log: string[] };
     } catch (e) {
-      console.log("   the garden did not start:", (e as Error).message.split("\n").slice(0, 6).join("\n   "));
+      console.log(`   the ${PLACE} did not start:`, (e as Error).message.split("\n").slice(0, 6).join("\n   "));
       console.log("   page errors:", errors.slice(0, 5));
-      ok(false, "the garden did not start");
+      ok(false, `the ${PLACE} did not start`);
       await ctx.close();
       continue;
     }
@@ -113,7 +116,14 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
     if (started.log.length) console.log("   log:", started.log.slice(0, 8));
     await sleep(2500);
 
-    const spots: { name: string; at: [number, number, number]; want?: string }[] = [
+    const spots: { name: string; at: [number, number, number]; want?: string }[] = PLACE === "shop" ? [
+      { name: "start", at: [-0.5, 3.7, Math.PI] },
+      { name: "boots", at: [-3.2, 0, -Math.PI / 2], want: "boots" },
+      { name: "car", at: [2.35, 1.6, Math.PI], want: "car" },
+      { name: "cans", at: [3.9, 4.3, Math.PI / 2], want: "cans" },
+      { name: "counter", at: [-1.2, -4.95, Math.PI], want: "counter" },
+      { name: "homes", at: [2.7, 5.2, 0], want: "homes" },
+    ] : [
       { name: "gate", at: [0, 15.5, Math.PI] },
       { name: "fountain", at: [0, 0.8, Math.PI], want: "fountain" },
       { name: "horse", at: [-5.6, 6.5, -Math.PI / 2], want: "horse" },
@@ -136,16 +146,19 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
       await shot(s.name);
     }
     // touch paths: a tap on the ground walks, the stick walks, a drag looks round
-    await call("cmd", { fn: "place", args: [0, 15.5, Math.PI] });
+    const home: [number, number, number] = PLACE === "shop" ? [-0.5, 3.7, Math.PI] : [0, 15.5, Math.PI];
+    await call("cmd", { fn: "place", args: home });
     await sleep(800);
     const w0 = (await call("state") as { where: { x: number; z: number; yaw: number } }).where;
     await call("cmd", { fn: "stick", args: [0, 1] });
-    await sleep(2500);
+    // software GL draws about a frame a second (less when the machine is busy): wait until he has moved, up to 20 s
+    const tStick = Date.now();
+    let w1 = w0;
+    while (Date.now() - tStick < 20000 && Math.hypot(w1.x - w0.x, w1.z - w0.z) <= 0.5) { await sleep(1000); w1 = (await call("state") as { where: { x: number; z: number; yaw: number } }).where; }
     await call("cmd", { fn: "stick", args: [0, 0] });
-    const w1 = (await call("state") as { where: { x: number; z: number; yaw: number } }).where;
-    console.log(`   stick forward 2.5 s: moved ${Math.hypot(w1.x - w0.x, w1.z - w0.z).toFixed(2)} m`);
+    console.log(`   stick forward ${((Date.now() - tStick) / 1000).toFixed(1)} s: moved ${Math.hypot(w1.x - w0.x, w1.z - w0.z).toFixed(2)} m`);
     ok(Math.hypot(w1.x - w0.x, w1.z - w0.z) > 0.5, "the stick did not walk him");
-    await call("cmd", { fn: "tap", args: [W * 0.5, H * 0.62] });
+    await call("cmd", { fn: "tap", args: [W * 0.5, PLACE === "shop" ? H * 0.3 : H * 0.62] });
     await sleep(2500);
     const st = (await call("state")) as { walking: { to: [number, number] | null; active: boolean } | undefined; where: { x: number; z: number } };
     console.log(`   tap on the ground: walking=${JSON.stringify(st.walking)} now at ${st.where.x.toFixed(1)}, ${st.where.z.toFixed(1)}`);
@@ -157,6 +170,48 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
     await call("cmd", { fn: "pointer", type: "pointerup", args: [1, 100, 400] });
     await call("cmd", { fn: "pointer", type: "pointerup", args: [2, 300, 400] });
     ok(pin.pinching, "two fingers did not start the scene's pinch");
+    if (PLACE === "shop") {
+      // a card: a display's item picked, its level shown, the camera moved in, the buy gesture; a pick under a tap; the doorway
+      // every car, bike, jet and home is shown once, so every file the shop can ask for is in the list below
+      for (let i = 0; i < 8; i++) { await call("cmd", { fn: "call", name: "select", args: ["car", i] }); await sleep(900); }
+      for (let i = 0; i < 9; i++) { await call("cmd", { fn: "call", name: "select", args: ["homes", i] }); await sleep(900); }
+      const all = (await call("state")) as { log: string[] };
+      const asked2 = (await call("asked")) as string[];
+      const missing2 = asked2.filter((u) => !THREE_ASSET_URLS.includes(u));
+      ok(missing2.length === 0, `after every car and home: not bundled: ${missing2.join(", ")}`);
+      console.log(`   after showing every car and home the scene has read ${asked2.length} files`);
+      void all;
+      await call("cmd", { fn: "place", args: [2.35, 1.6, Math.PI] });
+      await sleep(1200);
+      await call("cmd", { fn: "call", name: "select", args: ["car", 2] });
+      await call("cmd", { fn: "call", name: "setLevel", args: ["car", 2, 3] });
+      await call("cmd", { fn: "call", name: "setCardOpen", args: [true] });
+      await sleep(3500);
+      await shot("card-car");
+      await call("cmd", { fn: "call", name: "playBuy", args: [] });
+      await sleep(1500);
+      await call("cmd", { fn: "call", name: "setCardOpen", args: [false] });
+      await call("cmd", { fn: "call", name: "select", args: ["boots", 3] });
+      await call("cmd", { fn: "call", name: "setCardOpen", args: [true] });
+      await sleep(3000);
+      await shot("card-boots");
+      await call("cmd", { fn: "call", name: "setCardOpen", args: [false] });
+      await sleep(800);
+      const picks: string[] = [];
+      for (const [fx, fy] of [[0.5, 0.5], [0.2, 0.5], [0.8, 0.5], [0.5, 0.3], [0.5, 0.7]]) {
+        const pk = await call("cmd", { fn: "call", name: "pick", args: [W * fx, H * fy] });
+        picks.push(JSON.stringify(pk));
+      }
+      console.log(`   pick under five taps: ${picks.join(" ")}`);
+      await call("cmd", { fn: "place", args: [0, 7.1, 0] });
+      await sleep(600);
+      await call("cmd", { fn: "stick", args: [0, 1] });
+      await sleep(2500);
+      await call("cmd", { fn: "stick", args: [0, 0] });
+      const door = (await call("state")) as { doors: string[]; where: { x: number; z: number } };
+      console.log(`   walked at the doorway: doors=${JSON.stringify(door.doors)} now at ${door.where.x.toFixed(1)}, ${door.where.z.toFixed(1)}`);
+      ok(door.doors.includes("door"), "walking through the doorway did not call onDoor");
+    }
     // pause holds the frames, resume goes on
     await call("cmd", { fn: "pause" });
     await sleep(300);
@@ -176,7 +231,9 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
     ok(gone.dpr === undefined || gone.dpr === 1, "devicePixelRatio was not put back");
     const bad = fin.log.concat(errors).filter((l) => !/Failed to load resource|WEBGL_debug|GPU stall|ReadPixels/i.test(l));
     if (bad.length) console.log("   messages:", Array.from(new Set(bad)).slice(0, 10));
-    const asked = Array.from(new Set(started.requested));
+    const asked = Array.from(new Set(((await call("asked")) as string[]).concat(started.requested)));
+    const bytes = asked.reduce((n, u) => { const f = u.startsWith("/star/trophies/") ? path.join(PHONE, "assets/trophies", path.basename(u)) : path.join(PHONE, "assets/3d", u.replace(/^\/star\//, "").replace(/\.json$/, ".bin")); return n + (fs.existsSync(f) ? fs.statSync(f).size : 0); }, 0);
+    console.log(`   the files it read add up to ${(bytes / 1048576).toFixed(1)} MB in the app`);
     console.log(`   files read through the phone's reader (${asked.length}): ${asked.map((u) => u.replace("/star/", "")).join(", ")}`);
     await ctx.close();
   }

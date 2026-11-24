@@ -5,7 +5,8 @@
 //   phone                       the phone's home screen of apps
 //   garden      { arrive? }     your garden in 3D (stable, cars, trophies, doors; screens/world/Garden.tsx)
 //   feed        { moment?, onContinue? }  the social feed (moment: post-match reactions)
-//   shop        { cat? }        the shop ("cans" | "boots" | "drip" | "gadgets" | "cars" | "homes" | "holiday")
+//   shop-3d     { from?, atDoor? }  the 3D shop: walk round it, "See it in the shop" opens an item in `shop` (screens/world/Shop3D.tsx)
+//   shop        { cat?, focus? } the shop ("cans" | "boots" | "drip" | "gadgets" | "cars" | "homes" | "holiday")
 //   sponsors                    deals, offers and brands
 //   star-pass                   your star level and its rewards
 //   transfers                   the summer window (League → Club → Negotiate)
@@ -27,6 +28,7 @@ import { C } from "../ui/theme";
 import { PhoneScreen } from "../screens/world/Phone";
 import { MediaFeed } from "../screens/world/Feed";
 import { ShopScreen } from "../screens/world/Shop";
+import { Shop3DScreen } from "../screens/world/Shop3D";
 import { SponsorsScreen } from "../screens/world/Sponsors";
 import { StarPassScreen } from "../screens/world/StarPass";
 import { TransferHubScreen } from "../screens/world/TransferHub";
@@ -72,6 +74,7 @@ export const worldScreens: ScreenMap = {
   garden: GardenScreen,
   feed: FeedScreen,
   shop: ShopScreen,
+  "shop-3d": Shop3DScreen,
   sponsors: SponsorsScreen,
   "star-pass": StarPassScreen,
   transfers: TransferHubScreen,
