@@ -7,7 +7,8 @@
  * icon, and the App Store leaves it out).
  *
  * Kickabout plays on the phone's match (screens/MatchKickabout.tsx).
- * The Garden opens its 3D place (screens/world/Garden.tsx); Your house is not on the phone yet.
+ * The Garden opens its 3D place (screens/world/Garden.tsx); Your house opens the 3D house (screens/world/House3D.tsx).
+ * Where the phone can, this phone is on the glass of the hand's phone with your house behind it (HousePhone.tsx: `glass` below).
  * Relationships and Settings open the CAREER area's "relations" / "settings"
  * screens when those exist.
  */
@@ -63,9 +64,10 @@ const APPS: App[] = [
   // No casino: the packed phone app has none (Mikey, 5 Nov 2026).
   { id: "sponsors", label: "Sponsors", icon: "🤝", hi: "#2dd4bf", bg: "#0f766e", screen: "sponsors" },
   { id: "ownership", label: "Owner", icon: "🏛️", hi: "#818cf8", bg: "#4338ca", screen: "ownership" },
-  // The Garden is a 3D place (the website's Garden app: bought in the App Store, ★5,000). Your house is
-  // still left off until its 3D version is in (no "coming soon" dead end).
+  // The Garden is a 3D place (the website's Garden app: bought in the App Store, ★5,000).
   { id: "garden", label: "Garden", icon: "🌳", hi: "#4ade80", bg: "#166534", screen: "garden" },
+  // Your house (the website's "home-3d" app): 3D, so it is left off the grid when the crash guard has the 3D off (Grid below)
+  { id: "home-3d", label: "Your house", icon: "🏠", hi: "#f59e0b", bg: "#92400e", screen: "house" },
   { id: "settings", label: "Settings", icon: "⚙️", hi: "#9ca3af", bg: "#4b5563", screen: "settings", soon: "Settings" },
 ];
 const DOCK = new Set(["social", "messages", "fixtures", "kickabout"]);
@@ -79,7 +81,20 @@ const SPONSOR_TOUR: TourStep[] = [
   { target: "msg-sponsors", text: "Tap the offer to see it", press: true },
 ];
 
-export function PhoneScreen({ params }: { params?: Record<string, unknown> }) {
+/**
+ * The 3D phone's glass (the website's PhoneHome props `fill`, `onClose`, `onPhoneHome`, `onApp`): this same phone,
+ * drawn to fill the glass of the hand's phone (screens/world/HousePhone.tsx), with no backdrop, top bar or tab bar.
+ * BACK on its home screen puts the phone away (`onClose`), HOME leaves for the Home screen (`onPhoneHome`),
+ * "Your house" puts it away into the house (`onHouse`), and `onApp` says which app is open (Kickabout brings the glass flat).
+ */
+export interface PhoneGlass {
+  onClose: () => void;
+  onPhoneHome: () => void;
+  onHouse: () => void;
+  onApp: (id: string | null) => void;
+}
+
+export function PhoneScreen({ params, glass }: { params?: Record<string, unknown>; glass?: PhoneGlass }) {
   const career = useCareer();
   const nav = useNav();
   const [tour, setTour] = useState<TourStep[] | null>(params?.tour === "sponsor" ? SPONSOR_TOUR : null);
@@ -88,8 +103,11 @@ export function PhoneScreen({ params }: { params?: Record<string, unknown> }) {
   const msgs = useMemo(() => (career ? buildMessages(career, null) : []), [career]);
   const [seenMsgs, setSeenMsgs] = useState<Set<string>>(() => readSeenMsgs());
   const [socialSeen, setSocialSeen] = useState<number>(() => readSocialSeen());
-  // The "?" replays the phone's pointer tour over the real screen; it also plays on the first visit.
-  const help = useScreenHelp("phone", career, { noFirst: !!tour || !!app });
+  // The "?" replays the phone's pointer tour over the real screen; it also plays on the first visit (not on the glass: the 3D phone only opens once the tour has been seen).
+  const help = useScreenHelp("phone", career, { noFirst: !!tour || !!app || !!glass });
+  const onAppRef = useRef(glass?.onApp);
+  onAppRef.current = glass?.onApp;
+  useEffect(() => { onAppRef.current?.(app?.id ?? null); }, [app]);
   if (!career) return null;
   const glow = clubGlow(career.player.club, career);
   const lastPostAt = Math.max(0, ...(career.media?.posts ?? []).map((p) => p.at));
@@ -108,6 +126,7 @@ export function PhoneScreen({ params }: { params?: Record<string, unknown> }) {
       setApp(a);
       return;
     }
+    if (a.id === "home-3d") { if (glass) glass.onHouse(); else if (SCREENS.house) nav.go("house", { from: "phone" }); return; }
     if (a.screen && SCREENS[a.screen]) { nav.go(a.screen); return; }
     setSoon(a.soon ?? a.label);
   };
@@ -128,10 +147,11 @@ export function PhoneScreen({ params }: { params?: Record<string, unknown> }) {
 
   const kit = kitsOf(career.player.club, career.clubKits?.[career.player.club]).home;
   return (
-    <View style={{ flex: 1, backgroundColor: "#0b1a2e" }}>
-      <Backdrop kind="stadium" />
-      <GameTop career={career} help={help.open} />
-      <PhoneBody glow={glow} trim={kit.trim} clock={phoneClockLabel(career)} onHome={app ? () => setApp(null) : undefined} onBack={() => (app ? setApp(null) : nav.back())}>
+    <View style={{ flex: 1, backgroundColor: glass ? "transparent" : "#0b1a2e" }}>
+      {!glass && <Backdrop kind="stadium" />}
+      {!glass && <GameTop career={career} help={help.open} />}
+      <PhoneBody fill={!!glass} glow={glow} trim={kit.trim} clock={phoneClockLabel(career)}
+        onHome={app ? () => setApp(null) : glass ? glass.onPhoneHome : undefined} onBack={() => (app ? setApp(null) : glass ? glass.onClose() : nav.back())}>
         <View style={[{ flex: 1 }, app ? ({ borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: "hidden", backgroundImage: `radial-gradient(110% 38% at 50% 0%, ${rgba(glow, 0.24)} 0%, rgba(0,0,0,0) 70%), linear-gradient(180deg, #0b1220, #05080f)` } as ViewStyle) : null]}>{body}</View>
         {tour && (
           <PointerTour chain steps={tour} onDone={() => setTour(null)}
@@ -147,7 +167,7 @@ export function PhoneScreen({ params }: { params?: Record<string, unknown> }) {
           </Press>
         )}
       </PhoneBody>
-      <BottomBar active="phone" />
+      {!glass && <BottomBar active="phone" />}
     </View>
   );
 }
@@ -159,12 +179,13 @@ export function PhoneScreen({ params }: { params?: Record<string, unknown> }) {
  * dynamic island, and the nav bar: ⌂ HOME on the left, BACK ‹ on the right.
  * Sized as the website: as tall as the room, at most 0.6 as wide as tall.
  */
-function PhoneBody({ glow, trim, clock, onHome, onBack, children }: { glow: string; trim: string; clock: string; onHome?: () => void; onBack: () => void; children: ReactNode }) {
+function PhoneBody({ glow, trim, clock, onHome, onBack, children, fill = false }: { glow: string; trim: string; clock: string; onHome?: () => void; onBack: () => void; children: ReactNode; fill?: boolean }) {
   const [room, setRoom] = useState<{ w: number; h: number } | null>(null);
   const g = glow.startsWith("#") ? glow : "#10b981";
   const second = trim.startsWith("#") && lum(trim) < 0.85 && lum(trim) > 0.04 ? trim : g;
-  const h = room ? room.h - 12 : 0;
-  const w = room ? Math.min(room.w - 16, Math.round(h * 0.6)) : 0;
+  // on the 3D phone's glass (`fill`) the phone is the whole box, edge to edge (the hand's own phone is the bezel)
+  const h = room ? (fill ? room.h : room.h - 12) : 0;
+  const w = room ? (fill ? room.w : Math.min(room.w - 16, Math.round(h * 0.6))) : 0;
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }} onLayout={(e) => { const { width, height } = e.nativeEvent.layout; if (!room || room.w !== width || room.h !== height) setRoom({ w: width, h: height }); }}>
       {room && (
@@ -268,7 +289,7 @@ function AppIcon({ app, badge, off, fresh, onOpen, size = 50 }: { app: App; badg
 function Grid({ career, glow, badges, installed, onOpen }: { career: CareerState; glow: string; badges: Record<string, number>; installed: (id: string) => boolean; onOpen: (a: App) => void }) {
   const next = nextFixtureFor(career);
   // the Garden is a 3D place: when the crash guard has switched the 3D off it is left off the grid (no dead button)
-  const shown = APPS.filter((a) => !(a.id === "garden" && partOff("3d")));
+  const shown = APPS.filter((a) => !((a.id === "garden" || a.id === "home-3d") && partOff("3d")));
   const grid = career.unlocks ? [...shown.filter((a) => !DOCK.has(a.id)), APP_STORE_ICON] : shown.filter((a) => !DOCK.has(a.id));
   const dock = APPS.filter((a) => DOCK.has(a.id));
   // The phone shrinks to fit (PhoneFrame): every app and the dock stay above HOME/BACK

@@ -14,7 +14,7 @@
  *
  *   shop door      → the 3D shop (screens/world/Shop3D.tsx; its plain card offers the normal Shop if the 3D cannot start)
  *   training gate  → the Training screen (TODO WP4: the 3D pitch)
- *   house door     → stays shut (TODO WP3: your 3D house)
+ *   house door     → your 3D house (screens/world/House3D.tsx; its front door and Back lead out here)
  *   casino door    → shut: "Casino · Locked" (this app has no casino)
  * Back goes to where you came from (the Phone).
  */
@@ -116,15 +116,18 @@ function Garden({ career, params }: { career: CareerState; params?: Record<strin
   const onShop = () => { comeBack = "shop"; if (partOff("3d") || !SCREENS["shop-3d"]) nav.go("shop"); else nav.go("shop-3d", { from: "garden", atDoor: true }); };
   /** TODO(WP4): the 3D training pitch. Until it exists, the Training screen. */
   const onTraining = () => { comeBack = "training"; nav.go("career-training"); };
-  const hooks = useRef({ onShop, onTraining });
-  hooks.current = { onShop, onTraining };
+  /** Your 3D house; its front door and Back bring you out at its door. Shut when the crash guard has the 3D off. */
+  const onHouse = () => { if (partOff("3d") || !SCREENS["house"]) return; comeBack = "house"; nav.go("house", { from: "garden" }); };
+  const hooks = useRef({ onShop, onTraining, onHouse });
+  hooks.current = { onShop, onTraining, onHouse };
 
   const callbacks = (api: WalkApi): GardenCallbacks => ({
     onNear: (s) => { if (!api.dead()) setNear(s); },
     onFps: () => { /* the speed readout (Settings → Show 3D speed) counts frames itself */ },
     onShopDoor: () => { if (!api.dead()) hooks.current.onShop(); },
     onTrainingGate: () => { if (!api.dead()) hooks.current.onTraining(); },
-    // no onHouseDoor (TODO WP3: your 3D house) and no onCasinoDoor: both doors stay shut
+    onHouseDoor: () => { if (!api.dead()) hooks.current.onHouse(); },
+    // no onCasinoDoor: the casino's door stays shut (not in this app)
     onContextLost: () => { if (!api.dead()) { console.warn("3D garden: the phone took the 3D away"); api.restart(); } },
   });
 
@@ -157,7 +160,7 @@ function Garden({ career, params }: { career: CareerState; params?: Record<strin
         </SafeAreaView>
         {ctrl && near && near !== "fountain" && (
           <SafeAreaView edges={["bottom"]} pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "flex-end", justifyContent: "flex-end", paddingRight: 12, paddingBottom: 24 }}>
-            <SpotCard spot={near} career={career} info={info} visitors={visitors} onShop={onShop} onTraining={onTraining} />
+            <SpotCard spot={near} career={career} info={info} visitors={visitors} onShop={onShop} onTraining={onTraining} onHouse={onHouse} />
           </SafeAreaView>
         )}
       </Walk3D>
@@ -172,8 +175,8 @@ const goBtn = { height: 38, paddingHorizontal: 16, borderRadius: 12, backgroundC
 const pictureUri = (url: string) => packedPicture(url) ?? absoluteUrl(url);
 
 /** The small card for wherever you are standing (components/star/Garden3D.tsx SpotCard). */
-function SpotCard({ spot, career, info, visitors, onShop, onTraining }: {
-  spot: GardenSpot; career: CareerState; info: ReturnType<typeof gardenData>; visitors: CareerState["squad"]; onShop: () => void; onTraining: () => void;
+function SpotCard({ spot, career, info, visitors, onShop, onTraining, onHouse }: {
+  spot: GardenSpot; career: CareerState; info: ReturnType<typeof gardenData>; visitors: CareerState["squad"]; onShop: () => void; onTraining: () => void; onHouse: () => void;
 }) {
   if (spot === "shop") {
     return (
@@ -183,8 +186,14 @@ function SpotCard({ spot, career, info, visitors, onShop, onTraining }: {
       </View>
     );
   }
-  // your house: the door stays shut for now (WP3), so no card
-  if (spot === "house") return null;
+  if (spot === "house") {
+    return (
+      <View style={[card, { flexDirection: "row", alignItems: "center", gap: 10 }]}>
+        <Text style={{ fontSize: 24 }}>🏠</Text>
+        <Press onPress={onHouse} style={goBtn}><Text style={{ color: "#111", fontWeight: "900", fontSize: 15 }}>Your house ›</Text></Press>
+      </View>
+    );
+  }
   if (spot === "casino") {
     // the casino is shut in this app: said on the door (the website's app version says the same)
     return (

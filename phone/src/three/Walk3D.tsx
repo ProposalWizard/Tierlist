@@ -91,6 +91,8 @@ export interface Walk3DProps<D, CB, C extends WalkController> {
   loading?: { title: string; sub?: string };
   /** A second way out on the plain card, when the 3D could not start ("Open the normal shop"). */
   fallback?: { label: string; onPress: () => void };
+  /** Draw only: no touch layer and no stick, so every touch goes to what is over the picture (the 3D phone's house behind the glass). */
+  inert?: boolean;
   /** Buttons and cards over the picture. */
   children?: ReactNode;
 }
@@ -275,8 +277,8 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
         </View>
       )}
       {/* the touch layer: under the buttons and cards, over the picture */}
-      <View collapsable={false} style={StyleSheet.absoluteFill} onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={(e) => onEnd(e, false)} onTouchCancel={(e) => onEnd(e, true)} />
-      {ready && !p.hideStick && <Stick ref={stick} bottom={Math.max(28, insets.bottom + 16)} />}
+      {!p.inert && <View collapsable={false} style={StyleSheet.absoluteFill} onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={(e) => onEnd(e, false)} onTouchCancel={(e) => onEnd(e, true)} />}
+      {ready && !p.hideStick && !p.inert && <Stick ref={stick} bottom={Math.max(28, insets.bottom + 16)} />}
       {speed && (
         <View pointerEvents="none" style={{ position: "absolute", left: 6, bottom: Math.max(4, insets.bottom + 2), backgroundColor: "rgba(0,0,0,0.62)", paddingHorizontal: 5, paddingVertical: 3, borderRadius: 5 }}>
           <Text style={{ color: "#d1fae5", fontSize: 10, lineHeight: 12.5, fontWeight: "700", fontFamily: "monospace" }}>
@@ -284,7 +286,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
           </Text>
         </View>
       )}
-      {!ready && (
+      {!ready && !p.inert && (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: p.cover ?? "#0d1420", alignItems: "center", justifyContent: "center" }]} pointerEvents="none">
           <ActivityIndicator color={GOLD} size="large" />
           {p.loading ? (

@@ -24,9 +24,13 @@ const SIZES = arg("--sizes", "412x915,360x780").split(",").map((s) => s.split("x
 const SKY = arg("--sky", "day");
 const QUALITY = arg("--quality", "medium");
 const DPR = Number(arg("--dpr", "2"));
-const PLACE = arg("--place", "garden") as "garden" | "shop";
+const PLACE = arg("--place", "garden") as "garden" | "shop" | "house";
+/** House only: which home (starter|flat|penthouse|house|villa|estate), the living rooms on/off, and whether to start in his eyes (the 3D phone). */
+const TIER = arg("--tier", "house");
+const LIVING = arg("--living", "on") !== "off";
+const POV = args.includes("--pov");
 /** Shop only: every frame moves the game on by this many seconds (software GL draws about 1 frame a second; 0 = real time). */
-const STEP = Number(arg("--step", PLACE === "shop" ? "0.1" : "0"));
+const STEP = Number(arg("--step", PLACE === "garden" ? "0" : "0.1"));
 const PHONE = path.join(__dirname, "..");
 const ROOT = path.join(PHONE, "..");
 let failed = 0;
@@ -94,12 +98,12 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
     const call = (op: string, extra: object = {}) => page.evaluate(([op, extra]) => (window as unknown as { call: (o: string, e: object) => Promise<unknown> }).call(op as string, extra as object), [op, extra]);
     console.log(`\n== ${W}x${H} css, dpr ${DPR}, GL buffer ${bw}x${bh} (${pr} per point), tier ${QUALITY}, sky ${SKY}`);
     const t0 = Date.now();
-    let started: { ms: number; requested: string[]; log: string[] };
+    let started: { ms: number; requested: string[]; log: string[]; rooms?: string[] };
     try {
-      started = await page.evaluate(async ([W, H, pr, q, sky, place, step]) => {
+      started = await page.evaluate(async ([W, H, pr, q, sky, place, step, tier, living, pov]) => {
         const w = window as unknown as { call: (o: string, e: object, t?: Transferable[]) => Promise<unknown>; __off: OffscreenCanvas };
-        return w.call("start", { canvas: w.__off, w: W, h: H, pr, quality: q, arrive: place === "shop" ? "start" : "gate", sky, place, step }, [w.__off]);
-      }, [W, H, pr, QUALITY, SKY, PLACE, STEP] as const) as { ms: number; requested: string[]; log: string[] };
+        return w.call("start", { canvas: w.__off, w: W, h: H, pr, quality: q, arrive: place === "shop" ? "start" : "gate", sky, place, step, tier, living, pov }, [w.__off]);
+      }, [W, H, pr, QUALITY, SKY, PLACE, STEP, TIER, LIVING, POV] as const) as { ms: number; requested: string[]; log: string[]; rooms?: string[] };
     } catch (e) {
       console.log(`   the ${PLACE} did not start:`, (e as Error).message.split("\n").slice(0, 6).join("\n   "));
       console.log("   page errors:", errors.slice(0, 5));
@@ -116,7 +120,7 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
     if (started.log.length) console.log("   log:", started.log.slice(0, 8));
     await sleep(2500);
 
-    const spots: { name: string; at: [number, number, number]; want?: string }[] = PLACE === "shop" ? [
+    const spots: { name: string; at: [number, number, number]; want?: string }[] = PLACE === "house" ? [] : PLACE === "shop" ? [
       { name: "start", at: [-0.5, 3.7, Math.PI] },
       { name: "boots", at: [-3.2, 0, -Math.PI / 2], want: "boots" },
       { name: "car", at: [2.35, 1.6, Math.PI], want: "car" },
@@ -133,6 +137,60 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
       { name: "mates", at: [8.2, 2.2, Math.PI / 2], want: "mates" },
     ];
     const shot = async (name: string) => { await page.locator("#c").screenshot({ path: path.join(OUT, `${name}-${W}x${H}.jpg`), type: "jpeg", quality: 82 }); };
+    /** The house: every room of the home (the fade, the swap, his stats), the three cards, the wardrobe's change, the eyes, the front door. */
+    const houseFlow = async (rooms: string[]) => {
+      console.log(`   rooms of the ${TIER}: ${rooms.join(", ") || "(the one room)"}`);
+      for (const id of rooms.length ? rooms : ["main"]) {
+        if (id !== (await call("state") as { room?: string }).room) { const went = await call("cmd", { fn: "call", name: "goToRoom", args: [id] }); ok(went !== false, `could not go to the ${id}`); }
+        await sleep(2500);
+        const b = await call("state") as { room: string; stats: { calls: number; triangles: number; pixelRatio: number; quality?: string; swapMs?: number }; js: { median: number; p95: number; n: number } };
+        console.log(`   ${id.padEnd(12)} room=${String(b.room).padEnd(10)} ${b.stats.calls} draws, ${(b.stats.triangles / 1000).toFixed(0)}k tris, JS/frame median ${b.js.median.toFixed(1)} ms p95 ${b.js.p95.toFixed(1)} ms, swap ${b.stats.swapMs ?? "?"} ms`);
+        ok(b.room === id, `in the ${b.room}, wanted the ${id}`);
+        await shot(`room-${TIER}-${id}`);
+        const plan = (await call("cmd", { fn: "call", name: "plan", args: [] })) as { spots?: string[] };
+        for (const sp of plan.spots ?? []) {
+          if (sp !== "wardrobe" && sp !== "cabinet" && sp !== "drive") continue;
+          const shown = await call("cmd", { fn: "call", name: "showView", args: [sp] });
+          // a living house keeps the arrival shot (no card) until he moves: a tap-walk to the spot moves him, and its card opens as he arrives
+          await call("cmd", { fn: "call", name: "walkToSpot", args: [sp] });
+          // software GL draws a frame or two a second, and the dwell that opens a card counts game time: wait for it
+          const tNear = Date.now();
+          let nr = (await call("state")) as { near: string | null };
+          while (nr.near !== sp && Date.now() - tNear < 45000) { await sleep(1000); nr = (await call("state")) as { near: string | null }; }
+          await sleep(1200);
+          console.log(`   ${sp} in the ${id}: near=${nr.near} after ${((Date.now() - tNear) / 1000).toFixed(1)} s`);
+          if (nr.near !== sp) console.log("   debug:", JSON.stringify(await call("cmd", { fn: "call", name: "lifeDebug", args: [] })).slice(0, 600), JSON.stringify(await call("state")).slice(0, 300));
+          ok(nr.near === sp, `after showView(${sp}) in the ${id} the scene says near=${nr.near}`);
+          await shot(`card-${TIER}-${id}-${sp}`);
+          ok(shown === true, `no ${sp} in the ${id}`);
+          await call("cmd", { fn: "call", name: "setCardOpen", args: [null] });
+        }
+      }
+      // the wardrobe's change: into the club's away kit and into a tracksuit (resolves once he wears it), and back
+      const t1 = Date.now();
+      await call("cmd", { fn: "wear", what: "kit" });
+      await call("cmd", { fn: "wear", what: "tracksuit" });
+      console.log(`   changed clothes twice in ${Date.now() - t1} ms`);
+      await shot(`wear-${TIER}`);
+      // the 3D phone: in his eyes, HELD (one frame, then no loop at all), then eased out and drawing again
+      await call("cmd", { fn: "call", name: "setPov", args: [1] });
+      await call("cmd", { fn: "call", name: "hold", args: [true] });
+      await sleep(1500);
+      const h0 = (await call("state") as { frames: number }).frames;
+      await sleep(2500);
+      const h1 = (await call("state") as { frames: number }).frames;
+      await shot(`pov-held-${TIER}`);
+      console.log(`   in his eyes and held: ${h1 - h0} frames in 2.5 s`);
+      ok(h1 - h0 <= 1, "the held house kept drawing (the phone in your hand must cost nothing)");
+      await call("cmd", { fn: "call", name: "hold", args: [false] });
+      await call("cmd", { fn: "call", name: "setPov", args: [null] });
+      await sleep(2500);
+      const h2 = (await call("state") as { frames: number }).frames;
+      await sleep(2500);
+      const h3 = (await call("state") as { frames: number }).frames;
+      console.log(`   released: ${h3 - h2} frames in 2.5 s`);
+      ok(h3 - h2 >= 1, "the house did not draw again after it was let go");
+    };
     for (const s of spots) {
       await call("cmd", { fn: "place", args: s.at });
       await sleep(1800);
@@ -145,11 +203,13 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
       if (s.want) ok(b.near === s.want, `at the ${s.name}: expected near=${s.want}, got ${b.near}`);
       await shot(s.name);
     }
+    if (PLACE === "house") await houseFlow(started.rooms ?? []);
     // touch paths: a tap on the ground walks, the stick walks, a drag looks round
     const home: [number, number, number] = PLACE === "shop" ? [-0.5, 3.7, Math.PI] : [0, 15.5, Math.PI];
     await call("cmd", { fn: "place", args: home });
     await sleep(800);
     const w0 = (await call("state") as { where: { x: number; z: number; yaw: number } }).where;
+    if (PLACE !== "house") {
     await call("cmd", { fn: "stick", args: [0, 1] });
     // software GL draws about a frame a second (less when the machine is busy): wait until he has moved, up to 20 s
     const tStick = Date.now();
@@ -163,6 +223,7 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
     const st = (await call("state")) as { walking: { to: [number, number] | null; active: boolean } | undefined; where: { x: number; z: number } };
     console.log(`   tap on the ground: walking=${JSON.stringify(st.walking)} now at ${st.where.x.toFixed(1)}, ${st.where.z.toFixed(1)}`);
     ok(!!st.walking, "no tap-walk in the controller");
+    }
     // a pinch: two pointers handed to the scene's own listeners
     await call("cmd", { fn: "pointer", type: "pointerdown", args: [1, 100, 400] });
     await call("cmd", { fn: "pointer", type: "pointerdown", args: [2, 300, 400] });

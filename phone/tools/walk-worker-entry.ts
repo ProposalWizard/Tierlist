@@ -9,6 +9,11 @@ import { setThreePlatform } from "../src/three/platform";
 import { startWalkScene, type WalkHost } from "../src/three/walkHost";
 import { loadGardenStart } from "../src/three/gardenScene";
 import { loadShopStart, type ShopData } from "../src/three/shopScene";
+import { loadHouseStart, type HouseData } from "../src/three/houseScene";
+import { houseSceneData } from "../src/three/houseData";
+import type { HomeController, HomeCallbacks } from "@/lib/star/home3d/scene";
+import type { HomeTier } from "@/lib/star/home3d/homes";
+import { DEFAULT_OUTFIT, CASUAL_SETS, wornAt } from "@/lib/star/home3d/outfits";
 import { shopDisplays } from "@/lib/star/shop3d/catalogue";
 import type { ShopCallbacks, ShopController } from "@/lib/star/shop3d/scene";
 import { glCounts } from "../src/three/gl";
@@ -23,7 +28,9 @@ g.window = g;
 const store = new Map<string, string>();
 g.localStorage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => { store.set(k, String(v)); }, removeItem: (k: string) => { store.delete(k); }, clear: () => store.clear() };
 const requested: string[] = [];
-let host: WalkHost<GardenController | ShopController> | null = null;
+let host: WalkHost<GardenController | ShopController | HomeController> | null = null;
+let rooms: string[] = [];
+let cards: unknown[] = [];
 let gl: WebGL2RenderingContext | null = null;
 let near: string | null = null;
 let doors: string[] = [];
@@ -77,8 +84,25 @@ let STEP: number | undefined;
 function shopData(atDoor: boolean): ShopData {
   return {
     kit: kitsOf("Arsenal").home, displays: shopDisplays({}, { h: true }), atDoor, number: 9, fixedStep: STEP,
-    player: { look: "new", skin: "#c68642", hair: "#2b1d14", hairStyle: "short" },
+    // the clothes from the wardrobe, as the screen passes them (a career that never opened the wardrobe: the hoodie)
+    player: { look: "new", skin: "#c68642", hair: "#2b1d14", hairStyle: "short", worn: wornAt({ outfit: undefined, currentBoot: null } as never, "shop") },
   };
+}
+
+/** A career with every car, the bike, the jet, a horse, watches and some trophies, so every room of every home has its models. */
+function houseData(tier: HomeTier, wear: "casual" | "kit", living: boolean | undefined, pov: boolean, step: number | undefined): HouseData & { tier: HomeTier; alive: boolean } {
+  const item = (id: string) => ({ id, name: id, category: "item", price: 1, lifestyleValue: 1, level: 3 });
+  const career = {
+    player: { club: "Arsenal", skinTone: "medium", hairColour: "black", hairStyle: "short" },
+    squadNumber: 9, currentBoot: null,
+    ownedItems: ["car-1", "car-2", "suv", "car-3", "classic", "car-4", "bike", "jet", "tv", "smartwatch", "gold", "rolex", "silver", "diamond"].map(item),
+    trophies: [{ competition: "Premier League", season: "2027/28" }, { competition: "FA Cup", season: "2027/28" }, { competition: "Champions League", season: "2028/29" }],
+    awards: [{ kind: "Golden Boot", season: "2027/28" }], ballonDorWins: 1,
+    squad: [1, 2, 3, 4, 5].map((n) => ({ id: `p${n}`, name: `Mate ${n}`, shortName: `Mate ${n}`, position: "CM" })),
+    kibCans: { basic: 2, premium: 1, elite: 1 }, horse: { name: "Comet" },
+    outfit: undefined, lastSleep: undefined, season: 1, week: 1,
+  } as never;
+  return houseSceneData(career, { ...DEFAULT_OUTFIT, wear }, { pov, tier, living, fixedStep: step, sleep: () => ({ rested: true, text: "A good night." }) });
 }
 
 self.onmessage = async (ev: MessageEvent) => {
@@ -101,7 +125,23 @@ self.onmessage = async (ev: MessageEvent) => {
       self.fetch = () => Promise.reject(new TypeError("Network request failed"));
       setToonYou(YOU);
       const t0 = performance.now();
-      if (m.place === "shop") {
+      if (m.place === "house") {
+        STEP = (m.step as number | undefined) || undefined;
+        const d = houseData((m.tier as HomeTier) ?? "starter", (m.wear as "casual" | "kit") ?? "casual", m.living as boolean | undefined, !!m.pov, STEP);
+        rooms = d.home.rooms ?? ["main"];
+        const hcbs: HomeCallbacks = {
+          onNear: (s) => { near = s; },
+          onFps: () => {},
+          onDoor: () => { doors.push("door"); },
+          onContextLost: () => { doors.push("lost"); },
+          onRoom: (id) => { doors.push(`room:${id}`); },
+          onCard: (c) => { cards.push(c); },
+        };
+        host = await startWalkScene<HouseData, HomeCallbacks, HomeController>({
+          start: loadHouseStart(), data: d, callbacks: hcbs,
+          gl, width: m.w as number, height: m.h as number, pixelRatio: m.pr as number, quality: m.quality as Quality3d,
+        });
+      } else if (m.place === "shop") {
         STEP = (m.step as number | undefined) || undefined;
         const scbs: ShopCallbacks = {
           onNear: (s) => { near = s; },
@@ -127,14 +167,15 @@ self.onmessage = async (ev: MessageEvent) => {
       });
       }
       (self as unknown as { __host: unknown }).__host = host;
-      reply({ ms: performance.now() - t0, requested: Array.from(new Set(requested)), log });
+      reply({ ms: performance.now() - t0, requested: Array.from(new Set(requested)), log, rooms });
     } else if (m.op === "cmd") {
-      const c = host!.controller as unknown as GardenController & ShopController;
+      const c = host!.controller as unknown as GardenController & ShopController & HomeController;
       const a = m.args as number[];
       const fn = m.fn as string;
       let out: unknown = null;
       // any other method of the place's controller by name (the shop's select, setLevel, setCardOpen, pick, walkToItem ...)
-      if (fn === "call") out = ((c as unknown as Record<string, (...x: unknown[]) => unknown>)[m.name as string])(...(m.args as unknown[]));
+      if (fn === "call") out = await ((c as unknown as Record<string, (...x: unknown[]) => unknown>)[m.name as string])(...(m.args as unknown[]));
+      else if (fn === "wear") await c.wear(m.what === "kit" ? { kind: "kit", kit: "away", boots: "#141416" } : { kind: "casual", set: CASUAL_SETS.find((x) => x.id === m.what) ?? CASUAL_SETS[0] });
       else if (fn === "place") c.place(a[0], a[1], a[2]);
       else if (fn === "stick") c.setStick(a[0], a[1]);
       else if (fn === "tap") out = c.tap?.(a[0], a[1]);
@@ -148,7 +189,7 @@ self.onmessage = async (ev: MessageEvent) => {
       const c = host!.controller as GardenController;
       const js = jsMs.slice().sort((a, b) => a - b);
       if (m.reset) jsMs.length = 0;
-      reply({ where: c.where(), near, doors, stats: c.stats(), frames: gl ? glCounts(gl).frames : 0, pinching: host!.pinching(), log, walking: c.walking?.(), js: { n: js.length, median: js[Math.floor(js.length / 2)] ?? 0, p95: js[Math.floor(js.length * 0.95)] ?? 0 } });
+      reply({ where: c.where(), near, doors, cards: cards.length, room: (c as unknown as HomeController).room?.(), stats: c.stats(), frames: gl ? glCounts(gl).frames : 0, pinching: host!.pinching(), log, walking: c.walking?.(), js: { n: js.length, median: js[Math.floor(js.length / 2)] ?? 0, p95: js[Math.floor(js.length * 0.95)] ?? 0 } });
     } else if (m.op === "asked") {
       reply(Array.from(new Set(requested)));
     } else if (m.op === "dispose") {

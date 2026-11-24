@@ -108,7 +108,8 @@ export function makeElement(tag = "div"): HollowElement {
     appendChild<T>(c: T): T {
       el.children.push(c); el.childNodes.push(c);
       const k = c as { parentNode?: unknown; parentElement?: unknown };
-      if (k && typeof k === "object") { k.parentNode = el; k.parentElement = el; }
+      // (a real browser node, as the web build's page makes for a caption, has these as read-only: it is not in the page either way)
+      if (k && typeof k === "object") { try { k.parentNode = el; k.parentElement = el; } catch { /* a real DOM node */ } }
       return c;
     },
     append(...c: unknown[]) { c.forEach((x) => el.appendChild(x)); },
@@ -117,7 +118,7 @@ export function makeElement(tag = "div"): HollowElement {
     removeChild<T>(c: T): T {
       el.children = el.children.filter((x) => x !== c); el.childNodes = el.children.slice();
       const k = c as { parentNode?: unknown; parentElement?: unknown };
-      if (k && typeof k === "object") { k.parentNode = null; k.parentElement = null; }
+      if (k && typeof k === "object") { try { k.parentNode = null; k.parentElement = null; } catch { /* a real DOM node */ } }
       return c;
     },
     replaceChildren(...c: unknown[]) { el.children = []; el.childNodes = []; c.forEach((x) => el.appendChild(x)); },

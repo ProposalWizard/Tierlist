@@ -35,6 +35,7 @@ import { divisionOf } from "@/lib/star/calendar";
 import { shop3dPlayerLook } from "@/lib/star/signing3d";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { appInstalled } from "@/lib/star/unlocks";
+import { wornAt } from "@/lib/star/home3d/outfits";
 import { useCareer } from "../../game/store";
 import { usePrefs } from "../../game/prefs";
 import { useNav } from "../../nav";
@@ -69,7 +70,8 @@ export function shopSceneData(career: CareerState, atDoor: boolean): ShopData {
       skin: skinToneHex(career.player.skinTone),
       hair: hairColourHex(career.player.hairColour),
       hairStyle: resolveHairStyle(career.player.hairStyle),
-      // no `worn`: the casual sets come from the house's wardrobe (not in this app yet); he wears the club kit
+      // the clothes from your home's wardrobe (the website's: wornAt "shop"); the club kit when you chose a kit
+      worn: wornAt(career, "shop"),
     },
   };
 }

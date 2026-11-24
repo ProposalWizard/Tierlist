@@ -2,7 +2,8 @@
 // the phone (feed, messages, apps), the shop, sponsors, the Star Pass and the
 // summer transfer window. Open any of them with useNav().go(name, params).
 //
-//   phone                       the phone's home screen of apps
+//   phone                       the phone's home screen of apps (in your hand in 3D, your house behind it, when the phone can: screens/world/HousePhone.tsx)
+//   house       { from? }       your house in 3D: change clothes, the trophy cabinet, your cars (screens/world/House3D.tsx; from: "garden" | "phone")
 //   garden      { arrive? }     your garden in 3D (stable, cars, trophies, doors; screens/world/Garden.tsx)
 //   feed        { moment?, onContinue? }  the social feed (moment: post-match reactions)
 //   shop-3d     { from?, atDoor? }  the 3D shop: walk round it, "See it in the shop" opens an item in `shop` (screens/world/Shop3D.tsx)
@@ -25,7 +26,7 @@ import type { ScreenMap } from "./types";
 import { useCareer } from "../game/store";
 import { useNav } from "../nav";
 import { C } from "../ui/theme";
-import { PhoneScreen } from "../screens/world/Phone";
+import { PhoneRoute, HouseRoute } from "../screens/world/HousePhone";
 import { MediaFeed } from "../screens/world/Feed";
 import { ShopScreen } from "../screens/world/Shop";
 import { Shop3DScreen } from "../screens/world/Shop3D";
@@ -70,7 +71,8 @@ function SeasonReviewScreen({ params }: { params?: Record<string, unknown> }) {
 }
 
 export const worldScreens: ScreenMap = {
-  phone: PhoneScreen,
+  phone: PhoneRoute,
+  house: HouseRoute,
   garden: GardenScreen,
   feed: FeedScreen,
   shop: ShopScreen,

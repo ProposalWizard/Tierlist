@@ -118,8 +118,61 @@ Only a real phone can say: fps and heat at each tier on the S20+ (the shop is he
 door, whether expo-gl gives the half-float targets the H pass wants (the web check warned "HALF_FLOAT_OES" once, as before), memory with 9 MB of models decoded
 (a car and a home are held at most two at a time by the scene), touch feel of tap-versus-drag (a 10 point wobble limit), Back and the doorway while it loads.
 
+## WP3 notes (your 3D house and the 3D phone in your hand, 24 Nov 2026)
+What it is: `phone/src/screens/world/House3D.tsx` (`HouseView`) runs the website's own `lib/star/home3d/scene.ts` (not touched) through `Walk3D` and `walkHost`,
+with the website's `Home3D.tsx` screen copied line for line: Back pill, the home's name, trophy count, room name and dots, the hint, and the cards (wardrobe with
+Clothes / Kits / Boots, trophy cabinet, drive window, a living house's thing and team-mate cards, "Sleep till morning"). `phone/src/three/houseScene.ts` (the start),
+`houseDeps.ts` (the scene's `import()`s named for the bundler) and `houseData.ts` (the website's `homeSceneData`, `livingFor`, sleep; no React, so the checks use it).
+- Ways in: the Garden's house door (a "Your house ›" card, then the door; Back and the front door both go back out at the house's door: `comeBack = "house"`), the phone's
+  new "Your house" app (hidden when the crash guard has `3d` off), and the nav screen `house` (`{ from?: "garden" | "phone" }`).
+- The wardrobe saves on the career (`withOutfit`) as on the web: the Shop 3D now passes `worn: wornAt(career, "shop")` (the WP2 gap) and the Garden already did.
+- The 3D phone in your hand (`screens/world/HousePhone.tsx`, as the web's `HousePhone.tsx`): the Phone tab (nav `phone`, now `PhoneRoute`) opens the hand holding the phone with the
+  app's REAL phone screen (`Phone.tsx`, new `glass` prop: no backdrop, top bar or tab bar, fills the box) on the glass, your house loading behind it after 2.5 s in idle time and HELD
+  (`HomeController.hold`: one frame, then no loop, so the phone costs nothing to run). Same moves as the web: eye-opening (0.6 s), BACK on the phone's home screen = hand lowers, camera
+  eases out of your eyes into the house; "📱 Phone" pill takes it out again; "Your house" app = put away into the house; HOME = Home screen; a tap during a move skips it;
+  Kickabout brings the glass flat. The web only opens it where `phone3dCan()`: here the 3D not off by the crash guard, not the Low tier, and the first-visit phone tour seen;
+  else the flat phone as before (so the 2D fallback is the phone that was already there). A house that fails to start while the phone is up leaves the blurred room picture behind it.
+- Walk3D additions (backward compatible): `inert` (no touch layer, no stick, no spinner: the house behind the glass), and `standIn.ts` now ignores a real browser node's read-only `parentNode`.
+- Files added to the app: **3.5 MB** in 51 files (home3d: 8 boots, 6 cars, bike, jet, furniture, terrace props = 2.1 MB; the people-clip file `anims3d/casino.glb` 0.07 MB (a clip file the living
+  rooms sit and cheer with, NOT the casino game); team-mate bodies toon-p7 to p9 0.84 MB; 30 hair files 0.72 MB) + 0.07 MB for the hand and the blurred room picture. Hermes bytecode 18 MB (was 17).
+  The team-mates' bodies and hair are seeded per squad id, so all of them are bundled (a missing one would only lose that team-mate: the scene catches it and the house goes on without people).
+- Differences from the web, on purpose: the web bends the phone onto the glass with a CSS matrix3d (full perspective); the phone's views take a turn and a scale only, because RN's
+  hit-testing on Android follows a 2D matrix (a bent view would take taps in the wrong place). `glassFit()` is the best flat fit to the four corners: 6.8 degrees, x 0.574, y 0.657, worst
+  corner 11.8 points out of a 390 x 844 picture (the phone's own edge-lit frame covers it; SEEN in the stills, it sits on the hand's phone). The house behind the phone is dimmed
+  (a dark layer at 42%), not blurred (no cheap blur on the GL view). The club badge on the living room's cinema screen is missing (the scene draws an SVG `<img>`; the phone's canvas
+  stand-in says "not supported yet", a warning only).
+- SEEN, no-DOM run (`cd phone && npx tsx tools/walk-check.ts --place house [--tier starter|flat|penthouse|house|villa|estate] [--living off] [--sizes 412x915]`; a Web Worker like Hermes):
+  the `house` home starts in 5 to 7.5 s; all 7 rooms visited (hallway, lounge, kitchen, bedroom, bathroom, trophy, garage); every file read is in `assetList.ts` and the bundled copy is used
+  (11 at start, 16 after the rooms); the two clothes changes (kit, tracksuit) resolve; in his eyes and HELD = 0 frames in 2.5 s, then 2 to 3 frames in 2.5 s once released; pause 0 frames,
+  resume brings them back; everything put back on leaving. The old one-room house (`--living off`): the wardrobe, cabinet and drive cards open by walking to them (near= each, 2 to 3 s).
+  Software GL numbers (relative only): hallway 35 draws / 24k triangles, lounge 55 / 71k, kitchen 43 / 26k, bedroom 40 / 23k, bathroom 37 / 22k, trophy 37 / 30k, garage 46 / 125k;
+  JS 2.5 to 3.8 ms a frame in V8 (Hermes has no JIT: several times that); a room swap 1.1 to 4.1 s here (the fade hides it).
+- SEEN, web build (`node phone/tools/look/build-web.mjs`, then `node phone/tools/look/house-shots.mjs --sizes 412x915,360x780`; real Chromium touches, software GL, 3D quality set to Medium as an
+  Android phone gets on Auto): Garden door card -> "Your house ›" -> the house up on top of the Garden (22 to 29 s here); a real finger tap on the wardrobe opens its card, a tap on "Club tracksuit" changes
+  him and saves `career.outfit`; the cabinet card; the stick (2.2 to 2.7 m in 5 s), a tap on the floor, a drag; the front door walked out of with the stick -> back in the Garden at the house's door (x 16.2 of 18);
+  the Phone tab: eye-opening, the hand and the real phone on the glass, a real tap on Squad opens the Squad app, BACK inside an app returns to the grid, the house loads behind it (`houseReady`), BACK on the
+  grid lowers the hand and the house shows with the Phone pill, the pill brings the phone up again, "Your house" on the grid puts it away, HOME leaves for the Home screen; no big GL canvas is left after.
+  The Shop 3D wears the hoodie from the wardrobe (walk-check --place shop still). Stills for 412x915 and 360x780 were looked at; they are in the session's scratchpad, not the repo.
+  A web-only error is logged ("house: team-mates ... drawImage"): the web build mixes a real canvas with the stand-in's pictures, so the living rooms' team-mates are missing in the web build; the
+  no-DOM run (the phone's own path) shows them seated in the lounge. REASONED, not seen on the phone.
+- Checks: match-parity 12/12 identical, match-features, career-flow, screens, world, boot-sim pass; tsc 9 errors (the old 9 in ../lib), none new; Android Metro export OK (hbc 18 MB).
+  `walk-check` now has `--place house` (every room, the wardrobe change, hold) and `--step` defaults to 0.1 for the shop and house.
+- REASONED, not seen: that Hermes runs the house as the worker did (same as the garden and shop); that the held house costs nothing on the phone (the loop stops: seen as 0 frames in the worker);
+  that Android's hit-testing follows the flat turn and scale exactly (it does for 2D matrices; seen only in the web build, where the browser does it); the touch feel of dragging the phone UI at 0.57 scale.
+- In a living house a card for the wardrobe or cabinet does not open when he is only placed there by the check (the scene keeps the arrival shot until he moves, `quietArrival`); walking there with a
+  finger or the stick does open it (SEEN in the web build).
+Only a real phone can say: fps and heat in the house at each tier (the house is lighter than the shop: 22 to 125k triangles a room; the garage's cars are the heaviest), the time from the Garden door and
+from the Phone tab to a house behind the glass, memory with the house, the phone's apps and the GL all alive at once (the Phone tab holds a house in memory while you use the phone), whether taps land right on the
+turned glass on Android, scroll lists (Squad, Fixtures) dragging inside the turned box, the 0.6 s eye-opening's smoothness (it animates only opacity and a transform), expo-gl's Reflector (the mirror) and
+half-float targets, the GL surviving a trip to the background with the house behind the phone.
+Not done on purpose: the website's CSS blur behind the phone, the true perspective bend of the glass, a 2D house (the website has none either: its error card says the phone may not run 3D),
+the 3D Scene Editor edits for the house, the test page's tier / cam switches.
+
 ## Needs from Mikey (collected, asked at the end)
 - The 3D shop draws prices with a pound sign (the website's scene paints "£" on every tag and card) while the app's 2D Shop shows "★". Same as the website;
   say if you want the card at least to use the app's sign (the tags inside the picture cannot change without touching the website's scene).
 - The "BETA" tag on the 3D shop's top bar is copied from the website. Keep or drop?
 - The casual clothes from your wardrobe in the shop come with WP3 (your house).
+- Your house and the 3D phone (WP3): keep the dim behind the glass or do you want a blur? (a blur needs a still picture of the house made once and blurred: a small extra job).
+- The "Your house" app is on the phone's grid for everyone, as on the website (shown from the start, like the Garden). Say if it should come from the App Store like the Garden.
+- The phone's glass is a flat fit (see WP3 notes). If the corner at the bottom right looks off on the real phone, the hand picture can be redrawn flatter (a design job).
