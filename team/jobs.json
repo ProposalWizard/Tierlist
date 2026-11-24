@@ -238,5 +238,13 @@
     "added": "2026-11-23T19:54:00Z",
     "title": "Progress 23 Nov: ready for Vercel free plan, jobs move to Supabase",
     "prompt": "Daily progress update, 22 Nov 19:54 to 23 Nov 19:54 (UK).\nNothing reached main on 22 Nov.\n\nMikey (his branch merged into main this evening):\n- Ready for Vercel's free plan: only daily jobs stay on Vercel (the free plan refuses more frequent ones). The patch-notes media sync (every 5 minutes) and the Team room quarter-hour bots now run from Supabase. They need the CRON_SECRET saved in the Supabase Vault as cron_secret before they make any call.\n- The morning limits post in #health now shows Vercel processor time over the last 30 days against the free plan's 4 hours (amber at 75%, red at 90%). Needs VERCEL_TOKEN.\n- Tests updated to follow the move.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- No new patch note today. Latest is 0.142 Harry: 3D phone, real clothes at home: https://claude.ai/artifact/RtSxn6BtEpLzYaQup2K27F"
+  },
+  {
+    "id": "progress-2026-11-24",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-11-24T19:54:00Z",
+    "title": "Progress 24 Nov: One Knowitball plan, faster Draft, Patch notes page fixed",
+    "prompt": "Daily progress update, 23 Nov 19:54 to 24 Nov 19:54 (UK).\n\nLeo:\n- PR #838: One Knowitball, the whole-site plan (plan only, nothing on the site changed). One frame and one look on every page, 10 faults found, Tic Tac Toe and Ten-A-Ball brought up to date, and Draft in three waves. About 15 working days in 7 steps, with 5 decisions for Leo.\n- Draft: faster clubs and squads, keeper stat names, full surnames. The Patch notes page no longer crashes.\n- Build: the type check runs on its own before the build, not inside it.\n\nTeam:\n- Brain note: Vercel is back on the Hobby plan (23 Nov).\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.143 Leo: One Knowitball, the whole-site plan (no page link yet; read it in Admin, Patch notes)."
   }
 ]
