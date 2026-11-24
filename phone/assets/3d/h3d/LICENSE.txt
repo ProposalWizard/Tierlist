@@ -1,0 +1,18 @@
+Look H (Console Realism) files — where each came from
+
+env-day.hdr, sky-day.webp        Poly Haven "Kloppenheim 06 (Pure Sky)" by Greg Zaal — CC0
+env-golden.hdr, sky-golden.webp  Poly Haven "Belfast Sunset (Pure Sky)" — CC0
+env-night.hdr, sky-night.webp    Poly Haven "Dikhololo Night" by Greg Zaal — CC0
+                                 https://polyhaven.com (CC0: no attribution needed; credited anyway)
+                                 Shrunk to 256 x 128 (light) and 2048 x 640 (the sky above the horizon).
+
+grass-col.webp, grass-nrm.webp,  ambientCG "Grass004" — CC0 (https://ambientcg.com)
+grass-orh.webp                   colour as brightness detail; normal; R = occlusion, G = roughness, B = height. 512 px.
+
+crowd.webp                       Our own picture (made with Higgsfield for Knowitball): a grey-and-white
+                                 cheering crowd, tinted per club in the game's shader.
+led.webp                         Our own picture (Higgsfield): pitch-side LED boards. Every brand on it is
+                                 invented (Volta Energy, Northstar Bank, Kinetic Boots, Brightwave) apart from
+                                 Knowitball itself. Never put a real brand on these boards.
+
+Made by tools/h3d/prep.py (sources: Poly Haven 2k HDRs, ambientCG Grass004_2K-JPG, the two pictures).

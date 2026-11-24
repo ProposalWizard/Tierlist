@@ -16,6 +16,7 @@
  */
 import { OffscreenCanvas2D } from "../draw/offscreen";
 import { threePlatform } from "./platform";
+import { makeElement, StandInImage } from "./standIn";
 
 let done = false;
 export function ensureThreeEnv() {
@@ -69,16 +70,61 @@ export const sceneBuildActive = () => depth > 0;
 function standIn() {
   const Skia = threePlatform().Skia;
   const canvas2d = () => new OffscreenCanvas2D(Skia, 300, 150, threePlatform().fontFor);
+  const body = makeElement("body"), head = makeElement("head"), root = makeElement("html");
   return {
     __kib3d: true,
+    hidden: false,
+    visibilityState: "visible",
+    body, head, documentElement: root,
     createElement(tag: string) {
-      if (String(tag).toLowerCase() === "canvas") return canvas2d();
-      throw new Error(`3D: document.createElement("${tag}") is not available on the phone`);
+      const t = String(tag).toLowerCase();
+      if (t === "canvas") return canvas2d();
+      if (t === "img") return new StandInImage();
+      // the walk-around places build captions, fades and a speed readout from plain elements
+      return makeElement(t);
     },
     createElementNS(_ns: string, tag: string) {
-      if (String(tag).toLowerCase() !== "canvas") throw new Error(`3D: document.createElementNS("${tag}") is not available on the phone`);
-      return takeGlCanvas() ?? canvas2d();
+      const t = String(tag).toLowerCase();
+      if (t === "canvas") return takeGlCanvas() ?? canvas2d();
+      if (t === "img") return new StandInImage();
+      return makeElement(t);
     },
+    createTextNode(text: string) { const e = makeElement("#text"); e.textContent = text; return e; },
+    getElementById: () => null,
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    addEventListener() { /* no page events on a phone */ },
+    removeEventListener() { /* no page events on a phone */ },
+  };
+}
+
+/** Where a real document exists (the web build of the app): the renderer's canvas is still the offered GL one. */
+function patchRealDocument(): () => void {
+  const d = (globalThis as { document?: { createElementNS: (ns: string, tag: string) => unknown } }).document;
+  if (!d) return () => {};
+  const own = d.createElementNS;
+  d.createElementNS = function (ns: string, tag: string) {
+    if (String(tag).toLowerCase() === "canvas" && nextGlCanvas) return takeGlCanvas();
+    return own.call(d, ns, tag);
+  };
+  return () => { d.createElementNS = own; };
+}
+
+/**
+ * Keep the stand-in `document` for as long as a walk-around place is on screen (its frame
+ * loop and its late canvases still ask for one). Returns the call that lets it go.
+ * Where a real document exists (the web build) nothing is changed.
+ */
+export function holdSceneDocument(): () => void {
+  ensureThreeEnv();
+  const g = globalThis as { document?: unknown };
+  const real = g.document !== undefined && !(g.document as { __kib3d?: boolean }).__kib3d;
+  if (depth++ === 0 && !real) g.document = standIn();
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    if (--depth === 0 && !real) delete g.document;
   };
 }
 
@@ -92,7 +138,9 @@ export async function withSceneDocument<T>(fn: () => Promise<T>): Promise<T> {
   const g = globalThis as { document?: unknown };
   const real = g.document !== undefined && !(g.document as { __kib3d?: boolean }).__kib3d;
   if (depth++ === 0 && !real) g.document = standIn();
+  const unpatch = real ? patchRealDocument() : () => {};
   try { return await fn(); } finally {
+    unpatch();
     if (--depth === 0 && !real) delete g.document;
   }
 }

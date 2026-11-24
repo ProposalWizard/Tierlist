@@ -35,14 +35,17 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
 (async () => {
   console.log("1. bundled 3D files");
   let total = 0;
+  // two kinds of copy differ from the website's file on purpose: Draco files unpacked for the phone
+  // (tools/garden-props-unpack.mjs), and a .json kept as .bin (the bundler would read .json as code)
+  const UNPACKED = (u: string) => u === "/star/garden3d/props.glb" || /^\/star\/shop3d\/items\/car-[^/]+\.glb$/.test(u);
   for (const u of THREE_ASSET_URLS) {
-    const mine = path.join(PHONE, "assets/3d", u.replace(/^\/star\//, ""));
+    const mine = path.join(PHONE, "assets/3d", u.replace(/^\/star\//, "").replace(/\.json$/, ".bin"));
     const web = path.join(ROOT, "public", u);
     const has = fs.existsSync(mine);
     ok(has, `${u} not in phone/assets/3d`);
     if (!has) continue;
     total += fs.statSync(mine).size;
-    ok(fs.readFileSync(mine).equals(fs.readFileSync(web)), `${u} differs from the website's copy`);
+    if (!UNPACKED(u)) ok(fs.readFileSync(mine).equals(fs.readFileSync(web)), `${u} differs from the website's copy`);
   }
   console.log(`   ${THREE_ASSET_URLS.length} files, ${(total / 1024).toFixed(0)} KB`);
 

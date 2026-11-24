@@ -20,7 +20,7 @@ config.resolver.extraNodeModules = {
 // importer (lib/star included): three's GLTFLoader (files from the app, pictures through
 // Skia) and lib/star/three3d/meshopt.ts (the same files, a plain-JavaScript decoder:
 // the phone has no WebAssembly). Everything else in three and lib/star runs as is.
-config.resolver.assetExts = [...config.resolver.assetExts, "glb"];
+config.resolver.assetExts = [...config.resolver.assetExts, "glb", "hdr", "bin"];
 const PHONE_GLTF = path.join(__dirname, "src/three/GLTFLoader.ts");
 const PHONE_MESHOPT = path.join(__dirname, "src/three/meshopt.ts");
 const LIB_MESHOPT = path.join(root, "lib/star/three3d/meshopt");

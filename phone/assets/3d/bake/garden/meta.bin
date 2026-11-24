@@ -1,0 +1,64 @@
+{
+ "tods": [
+  "day",
+  "golden",
+  "night"
+ ],
+ "aoRadius": 0,
+ "bounce": {
+  "floor": {
+   "day": 0.05325,
+   "golden": 0.04973,
+   "night": 0.07259
+  },
+  "volume": {
+   "day": 0.11806,
+   "golden": 0.07577,
+   "night": 0.23709
+  }
+ },
+ "files": {
+  "day-floor.webp": 217268,
+  "golden-floor.webp": 211056,
+  "night-floor.webp": 216004,
+  "day-vol.webp": 259242,
+  "golden-vol.webp": 268708,
+  "night-vol.webp": 251450
+ },
+ "floor": {
+  "min": [
+   -23,
+   0,
+   -23
+  ],
+  "max": [
+   23,
+   0,
+   23
+  ],
+  "dims": [
+   461,
+   1,
+   461
+  ],
+  "y": 0.03
+ },
+ "volume": {
+  "min": [
+   -24,
+   0,
+   -24
+  ],
+  "max": [
+   24,
+   10,
+   24
+  ],
+  "dims": [
+   97,
+   21,
+   97
+  ],
+  "y": 0.03
+ }
+}
