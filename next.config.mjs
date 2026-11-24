@@ -9,6 +9,14 @@ try { writeAssetVersions(); } catch (e) { console.warn("asset versions not refre
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // The type check runs as its own step in `npm run build`, just before
+  // `next build` (package.json), so a type error still stops every deploy.
+  // Next's built-in copy of the same check ran inside the build while the
+  // compile already held most of the memory: on Vercel's free plan (8 GB,
+  // 2 CPUs) it took 35+ minutes and the 45-minute limit cut the deploy off
+  // (24 Nov 2026, dpl_CRwkhVAruFN48amsirpWgu6u7tar). On its own it takes
+  // about 2.5 minutes here.
+  typescript: { ignoreBuildErrors: true },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "upload.wikimedia.org" },
