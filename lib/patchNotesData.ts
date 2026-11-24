@@ -26,6 +26,86 @@ import type { PatchNote } from "./patchNotes";
 
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
+  {
+      "version": "0.143",
+      "title": "Leo's patch notes: One Knowitball, the whole-site plan",
+      "author": "Leo",
+      "publishedAt": "2026-11-24T16:19:34Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Plan only, nothing on the site changed. Today the home is cream and green and every other page is dark navy and purple. The plan: one frame (green top bar with one menu, a game bar, green footer) and one look on every page, 10 faults fixed, Tic Tac Toe and Ten-A-Ball brought up to date, and Draft in three waves (faces back, Daily Draft with rankings and a share grid, links between players, Challenge Draft, play a friend). About 15 working days in 7 steps. 5 decisions for Leo.",
+      "stats": [
+        {
+          "value": "22",
+          "label": "live pages checked, phone + computer"
+        },
+        {
+          "value": "2",
+          "label": "looks on the site today"
+        },
+        {
+          "value": "10",
+          "label": "faults found"
+        },
+        {
+          "value": "~15 days",
+          "label": "to do all of it, 7 steps"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Before and after pictures",
+              "detail": "Draft, Tic Tac Toe and Ten-A-Ball now, and drawn in the home's look."
+            },
+            {
+              "title": "The 5 decisions at the bottom",
+              "detail": "Cream everywhere; one menu; Tierlists back or gone; Daily Draft first; Ten-A-Ball challenge of the day."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "The plan",
+          "items": [
+            {
+              "title": "One frame, one look",
+              "detail": "Green top bar with one menu, a game bar, the green footer, the home's colours and cards everywhere; a build check stops the old look coming back."
+            },
+            {
+              "title": "Old games",
+              "detail": "Tic Tac Toe: today's grid first, rarity, streaks, share. Ten-A-Ball: a real daily challenge, topics, best scores."
+            },
+            {
+              "title": "Draft, three waves",
+              "detail": "Faces, clean clubs, faster picks; Daily Draft with ranking and share grid, links between players; Challenge Draft, beat-my-XI, season story, levels."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Faults found (not fixed yet)",
+          "items": [
+            {
+              "title": "Look",
+              "detail": "Two menu buttons on phones; sign-in says Football Tierlist; titles say Knowitball twice; Objectives badge covers Sign in on a computer."
+            },
+            {
+              "title": "Ten-A-Ball",
+              "detail": "Says daily but is a fixed 33; one listed twice; menu says ten lives, game gives 3."
+            },
+            {
+              "title": "Draft",
+              "detail": "All silhouettes; a French club in the PL reel; a keeper can play up front with no warning."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
     {
       "version": "0.142",
       "title": "Harry's patch notes: 3D phone, real clothes at home",

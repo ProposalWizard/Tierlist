@@ -22,6 +22,7 @@ FACT-UI-019 | The phone app is a separate packed build of the game only (mobile/
 FACT-UI-020 | The game is named Road to the Golden Ball, its award the Golden Ball; players reach it at /road-to-the-golden-ball. | ui
 FACT-UI-021 | The admin's default look is "Knowitball": calm tiles on the admin home, a dark green menu and rows everywhere else; the four older looks stay as skins. | ui,admin
 FACT-UI-022 | The new public home is on the test page /home-new-dev in three looks (a Stadium night, b Friv Classic, c Clean arcade); the live home is unchanged until Harry picks. | ui
+FACT-UI-023 | Whole-site plan (Leo, 24 Nov 2026, not built): every public page gets the home's cream/green look and one frame (green top bar with one menu, a game bar, green footer); old games refreshed; Draft in three waves. Today only the home and All games have that look (home.css overrides). | ui,team
 RUL-UI-001 | [SUPERSEDED] Decide, don't toggle: a new look or gameplay change is built as THE game, with no new New/Old row in Settings. | ui
 RUL-UI-002 | Unfinished work lives on a test page (a /star-*-dev page), not behind a switch in the real game. | ui,admin
 RUL-UI-003 | Existing switches stay until someone decides each one; never delete one unasked. | rule,ui
