@@ -11,11 +11,11 @@
  * Tap a reward to see it big; claim it the moment you reach it ("Use it" or
  * "Later": the game's own starPassClaim). The layout is the one built into
  * the game (rewardCatalogue DEFAULT_PASS_LEVELS): the phone works offline.
- * Not on the phone yet: the Locker (its button says so) and the 3D spin of a
- * reward (the still is shown).
+ * The tapped reward is live 3D you drag round (../../podium/Podium3D.tsx, the website's Podium3D; WP6), the still
+ * picture under it until it is up and for good if the 3D cannot start.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, Image, Modal, ScrollView, Text, View, type ImageSourcePropType, type ViewStyle } from "react-native";
+import { Animated, Easing, Image, Modal, ScrollView, Text, View, useWindowDimensions, type ImageSourcePropType, type ViewStyle } from "react-native";
 import { RewardReveal } from "./Locker";
 import { useNav } from "../../nav";
 import { starStatus, starTitle, STAR_GATES, ledgerOf, MAX_LEVEL } from "@/lib/star/starPoints";
@@ -29,6 +29,8 @@ import { packedPicture } from "../../data/packed";
 import { Press } from "../../ui/Press";
 import { BottomBar, FONT, LookButton } from "../../ui/look";
 import { STAR_PASS_PIC } from "../../ui/look/worldPics";
+import { Podium3D } from "../../podium/Podium3D";
+import { usePrefs } from "../../game/prefs";
 
 const ART = "/star/star-pass";
 const fmt = (n: number) => Math.round(n).toLocaleString("en-GB");
@@ -311,6 +313,20 @@ function Preview({ card, level, claimable, claimed, reached, onClose, onLater, o
 }) {
   const theme = themeFor(level);
   const big = pic(card.art?.scene) ?? pic(card.art?.image) ?? pic(`${ART}/plinth-${theme.key}-${rewardTier(level)}.webp`);
+  // The reward as live 3D you drag round (the website's RewardPreview: `art.live ?? art.spin`), the still picture under it
+  // until it is up and for good if the 3D cannot start (crash guard off, no GL, over 20 s).
+  const vp = useWindowDimensions();
+  const prefs = usePrefs();
+  const [up3d, setUp3d] = useState(false);
+  const [fail3d, setFail3d] = useState(false);
+  const boxW = Math.min(340, vp.width - 72), boxH = 260;
+  const live = card.art?.live ?? card.art?.spin;
+  const cfg = useMemo(() => {
+    if (!live) return null;
+    if (card.art?.live) { const k = Math.min(boxW / live.w, boxH / live.h); return { ...live, w: Math.round(live.w * k), h: Math.round(live.h * k) }; }
+    return { ...live, w: boxW, h: boxH };
+  }, [card.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const show3d = !!cfg && !fail3d;
   return (
     <View style={{ flex: 1, backgroundColor: "rgba(3,5,10,0.92)", justifyContent: "center", padding: 20 }}>
       <View style={{ borderRadius: 4, padding: 16, gap: 10, backgroundColor: "#0b0f1a", borderWidth: 1, borderColor: "rgba(253,224,71,0.45)" }}>
@@ -318,10 +334,12 @@ function Preview({ card, level, claimable, claimed, reached, onClose, onLater, o
           <Text style={{ flex: 1, color: "#fde047", fontFamily: FONT.serif, fontSize: 15, letterSpacing: 1.6 }}>LEVEL {level}</Text>
           <Press onPress={onClose} style={{ width: 40, height: 40, borderRadius: 4, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.1)" }}><Text style={{ color: "#fff", fontSize: 18, fontWeight: "900" }}>✕</Text></Press>
         </View>
-        <View style={{ height: 240, alignItems: "center", justifyContent: "center" }}>
+        <View style={{ height: show3d ? boxH : 240, alignItems: "center", justifyContent: "center" }}>
           <View pointerEvents="none" style={{ position: "absolute", left: "8%", right: "8%", top: "30%", bottom: "6%", backgroundImage: `radial-gradient(closest-side, ${theme.accent}55, ${theme.accent}00)` } as ViewStyle} />
-          {big ? <Image source={big} resizeMode="contain" style={{ width: "100%", height: "100%" }} /> : null}
+          {big && !(show3d && up3d) ? <Image source={big} resizeMode="contain" style={{ width: "100%", height: "100%" }} /> : null}
+          {show3d && <View style={{ position: "absolute" }}><Podium3D cfg={cfg!} showSpeed={prefs.show3dSpeed} onReady={() => setUp3d(true)} onFail={() => setFail3d(true)} /></View>}
         </View>
+        {show3d && up3d ? <Text style={{ textAlign: "center", color: "rgba(255,255,255,0.7)", fontSize: 11, fontWeight: "900", letterSpacing: 2.2, textTransform: "uppercase" }}>Drag to spin it</Text> : null}
         <Text style={{ color: "#fff", fontWeight: "900", fontSize: 22, textAlign: "center" }}>{card.name}</Text>
         {card.note ? <Text style={{ color: "rgba(255,255,255,0.75)", fontWeight: "700", textAlign: "center" }}>{card.note}</Text> : null}
         {claimable ? (

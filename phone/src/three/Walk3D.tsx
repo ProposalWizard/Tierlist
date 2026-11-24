@@ -98,6 +98,8 @@ export interface Walk3DProps<D, CB, C extends WalkController> {
    * engine's own): when the 3D cannot start (or the crash guard has it off), show nothing and say why here, instead of the plain card.
    */
   onFail?: (why: string) => void;
+  /** How long the place may take to start before the plain card (or `onFail`) takes over; default WALK_LOAD_LIMIT_MS. The nights use the website's 20 s. */
+  loadLimitMs?: number;
   /** Buttons and cards over the picture. */
   children?: ReactNode;
 }
@@ -167,7 +169,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
     const me = { dead: false, host: null as WalkHost<C> | null, gl: gl as unknown as WebGL2RenderingContext, tier, pr };
     live.current = me;
     const api: WalkApi = { restart: () => { if (!me.dead) restartOnce(); }, fail: (why) => { if (!me.dead) { console.warn("[walk 3D] failed:", why); setFailed(why); } }, dead: () => me.dead };
-    const limit = setTimeout(() => { if (!me.host && !me.dead) { console.warn("[walk 3D] took too long; plain card instead"); setFailed("It took too long to load"); } }, WALK_LOAD_LIMIT_MS);
+    const limit = setTimeout(() => { if (!me.host && !me.dead) { console.warn("[walk 3D] took too long; plain card instead"); setFailed("It took too long to load"); } }, cur.current.loadLimitMs ?? WALK_LOAD_LIMIT_MS);
     (async () => {
       try {
         setupPhone3d();

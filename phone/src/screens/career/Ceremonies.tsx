@@ -22,7 +22,7 @@
  * runs only while the night plays and stops when it ends.
  */
 import { TopSpace } from "../../ui/safe";
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Image, Pressable, type LayoutChangeEvent } from "react-native";
 import Animated, { FadeInDown, ZoomIn, useAnimatedStyle, useSharedValue, withTiming, withRepeat, withSequence, Easing, type SharedValue } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -44,6 +44,10 @@ import { PlayerHead } from "../../draw/PlayerHead";
 import { Headshot3D } from "../../three/Headshot3D";
 import { playerOf } from "@/lib/star/potm";
 import { playCheer } from "../../match/sound";
+import { setMusicScene, clearMusicScene } from "../../match/music";
+import { partOff } from "../../safety";
+import { usePrefs } from "../../game/prefs";
+import { AwardsStage3D, BallonStage3D, type NightHandle } from "./Night3D";
 import * as flow from "../../game/flow";
 import { ClubCrest } from "./kit";
 import { Backdrop, glassStyle } from "../../ui/look";
@@ -91,9 +95,10 @@ function Face({ name, club, isYou, career, size, ring }: { name: string; club: s
   const kit = isYou ? kitsOf(career.player.club, career.clubKits?.[career.player.club]).home : kitsOf(club).home;
   const id = headshotIdFor(name, club, isYou, isYou ? undefined : playerOf(career, name, club)?.id);
   const skin = isYou ? skinToneHex(career.player.skinTone) : undefined;
+  const still = useContext(NightStill);
   return (
     <View style={{ width: size + 6, height: size + 6, borderRadius: (size + 6) / 2, borderWidth: 3, borderColor: ring, backgroundColor: kit.shirt, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
-      <Headshot3D id={id} you={isYou} kit={{ shirt: kit.shirt, trim: kit.trim }} size={size} zoom={size >= 60 ? 1.1 : 1.4}
+      <Headshot3D id={id} you={isYou} kit={{ shirt: kit.shirt, trim: kit.trim }} size={size} zoom={size >= 60 ? 1.1 : 1.4} cacheOnly={still}
         fallback={<PlayerHead id={id} shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={size} skin={skin} />} />
     </View>
   );
@@ -126,22 +131,54 @@ function Bit({ p, b, round }: { p: SharedValue<number>; b: { vx: number; vy: num
  * The night's clock (seconds), ticking about 30 times a second while it plays
  * and stopping once it is over. `jump` moves it (a skip). `frozen` holds it.
  */
-function useNightClock(end: number) {
-  const startRef = useRef(Date.now());
+function useNightClock(end: number, run = true, hz = 30) {
+  const startRef = useRef<number | null>(null);
+  const frozen = useRef<number | null>(null);
   const [t, setT] = useState(0);
-  const now = useCallback(() => (Date.now() - startRef.current) / 1000, []);
+  // Not started (the 3D stage is still loading): second 0. `run` starts it, the drawn night at once.
+  const now = useCallback(() => (frozen.current ?? (startRef.current === null ? 0 : (Date.now() - startRef.current) / 1000)), []);
   useEffect(() => {
+    if (!run) return;
+    if (startRef.current === null) startRef.current = Date.now();
     let raf = 0, last = -1;
     const f = () => {
       const s = now();
-      if (s - last >= 1 / 30) { last = s; setT(s); }
+      if (s - last >= 1 / hz) { last = s; setT(s); }
       raf = s < end + 2 ? requestAnimationFrame(f) : 0;
     };
     raf = requestAnimationFrame(f);
     return () => cancelAnimationFrame(raf);
-  }, [end, now]);
-  const jump = useCallback((to: number) => { startRef.current -= (to - now()) * 1000; setT(to); }, [now]);
-  return { t, now, jump };
+  }, [end, now, run, hz]);
+  const jump = useCallback((to: number) => {
+    if (frozen.current !== null) frozen.current = to;
+    else if (startRef.current !== null) startRef.current -= (to - now()) * 1000;
+    setT(to);
+  }, [now]);
+  /** Hold the night at second `to` (the web build's stills: window.__kibNight.seek). */
+  const freeze = useCallback((to: number) => { frozen.current = to; setT(to); }, []);
+  const isFrozen = useCallback(() => frozen.current !== null, []);
+  return { t, now, jump, freeze, isFrozen };
+}
+
+/** In the 3D night the nominee cards show only headshots already made (a new one would shoot on a second GL while the room plays). */
+const NightStill = createContext(false);
+
+/** The website's `window.__bdorNight` / `__awardsNight`: hold the night at second t, for stills. */
+function useSeekHook(plan: unknown, mode: string, freeze: (t: number) => void, handle: { current: NightHandle | null }) {
+  useEffect(() => {
+    const w = globalThis as unknown as { __kibNight?: unknown };
+    w.__kibNight = { plan, mode, seek(at: number) { freeze(at); handle.current?.debugSeek(at); } };
+    return () => { delete w.__kibNight; };
+  }, [plan, mode, freeze, handle]);
+}
+
+/** The words while the 3D room loads (the website's "The doors open"). */
+function LoadingLine({ small, text }: { small: string; text: string }) {
+  return (
+    <View pointerEvents="none" style={{ position: "absolute", left: 16, right: 16, bottom: 84, alignItems: "center" }}>
+      <Lower small={small}>{text}</Lower>
+    </View>
+  );
 }
 
 function Lower({ small, children, size = 30 }: { small: string; children: ReactNode; size?: number }) {
@@ -179,6 +216,11 @@ function TopShade({ W, h, alpha }: { W: number; h: number; alpha: number }) {
 export function GoldenBallNight({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
   const result = useMemo(() => computeBallonDorShortlist(career), [career]);
   const [stage, setStage] = useState<"ceremony" | "result">("ceremony");
+  // Game music (BallonDorNight.tsx): suspense while the names are read, then win or loss (the ceremony says when the winner is named).
+  const youWon = result.playerNominated && result.playerRank === 1;
+  const ceremonyShown = stage === "ceremony" && result.entries.length >= 3;
+  useEffect(() => { setMusicScene("bdor", { kind: "ballon-dor", won: ceremonyShown ? null : youWon }, 10); }, [ceremonyShown, youWon]);
+  useEffect(() => () => clearMusicScene("bdor"), []);
   if (stage === "result" || result.entries.length < 3) return <GoldenBallResult career={career} result={result} go={go} />;
   return <GoldenBallCeremony career={career} result={result} onDone={() => setStage("result")} />;
 }
@@ -189,18 +231,33 @@ const xPct = (x: number) => 50 + x * 14;
 function GoldenBallCeremony({ career, result, onDone }: { career: CareerState; result: BallonDorResult; onDone: () => void }) {
   const yourRank = result.playerNominated ? result.playerRank : 0;
   const plan = useMemo(() => nightPlan(result.entries, yourRank, (career.player.startYear ?? 0) * 31 + career.season), [result, yourRank, career.player.startYear, career.season]);
-  const { t } = useNightClock(plan.end + 1.5);
+  // The website's New night: the 3D stage when the phone can, the drawn stage (same beats) when it can't or the 3D takes too long.
+  const [mode, setMode] = useState<"3d" | "drawn">(() => (partOff("3d") ? "drawn" : "3d"));
+  const [ready3d, setReady3d] = useState(false);
+  const ready = mode === "drawn" || ready3d;
+  const { t, now, freeze, isFrozen } = useNightClock(plan.end + 1.5, ready, mode === "3d" ? 10 : 30);
+  const prefs = usePrefs();
+  const handle = useRef<NightHandle | null>(null);
+  useSeekHook(plan, mode, freeze, handle);
   const { size, onLayout } = useSize();
   const finished = useRef(false);
   const finish = useCallback(() => { if (!finished.current) { finished.current = true; onDone(); } }, [onDone]);
-  useEffect(() => { if (t >= plan.end + 1.5) finish(); }, [t, plan.end, finish]);
+  useEffect(() => { if (ready && !isFrozen() && t >= plan.end + 1.5) finish(); }, [ready, t, plan.end, finish, isFrozen]);
   const revealed = t >= plan.revealAt;
-  useEffect(() => { if (revealed) playCheer(); }, [revealed]);
+  useEffect(() => { if (revealed && !isFrozen()) playCheer(); }, [revealed, isFrozen]);
+  // Game music (off unless Settings has it on): suspense while the names are read, then win or loss (lib/star/gameMusic.ts, as the website).
+  const youWon = result.playerNominated && result.playerRank === 1;
+  useEffect(() => {
+    setMusicScene("bdor", { kind: "ballon-dor", won: revealed ? youWon : null }, 10);
+  }, [revealed, youWon]);
   return (
+    <NightStill.Provider value={mode === "3d"}>
     <View style={{ flex: 1, backgroundColor: "#070912" }} onLayout={onLayout}>
-      {size && <StageDrawn career={career} plan={plan} t={t} W={size.W} H={size.H} />}
+      {mode === "3d" && <BallonStage3D career={career} plan={plan} clock={now} handle={handle} showSpeed={prefs.show3dSpeed} onReady={() => setReady3d(true)} onFail={() => setMode("drawn")} />}
+      {mode === "3d" && !ready && <LoadingLine small="The doors open" text="Taking your seats…" />}
+      {mode === "drawn" && size && <StageDrawn career={career} plan={plan} t={t} W={size.W} H={size.H} />}
       {size && <TopShade W={size.W} h={120} alpha={0.6} />}
-      {size && <NightCaptions career={career} plan={plan} t={t} H={size.H} />}
+      {size && <NightCaptions career={career} plan={plan} t={t} H={size.H} loading={!ready} />}
       {revealed && size && (
         <>
           <Burst colors={["#fde047", "#fbbf24", "#ffffff", "#f59e0b", "#fef3c7"]} count={44} spread={2.3} x={size.W / 2} y={size.H * 0.34} />
@@ -213,10 +270,11 @@ function GoldenBallCeremony({ career, result, onDone }: { career: CareerState; r
         </Pressable>
       </SafeAreaView>
     </View>
+    </NightStill.Provider>
   );
 }
 
-function NightCaptions({ career, plan, t, H }: { career: CareerState; plan: NightPlan; t: number; H: number }) {
+function NightCaptions({ career, plan, t, H, loading = false }: { career: CareerState; plan: NightPlan; t: number; H: number; loading?: boolean }) {
   const beat = beatAt(plan, t);
   const winner = plan.finalists[0];
   const calling = callingAt(plan, t);
@@ -247,7 +305,7 @@ function NightCaptions({ career, plan, t, H }: { career: CareerState; plan: Nigh
         <Text style={{ color: "#fff", fontSize: 30, fontWeight: "900", textTransform: "uppercase", textShadowColor: "rgba(0,0,0,0.8)", textShadowRadius: 6 }}>Golden Ball</Text>
       </View>
       <View pointerEvents="none" style={{ position: "absolute", left: 16, right: 16, bottom: Math.max(76, H * 0.02 + 76), alignItems: "center", gap: 12 }}>
-        <Animated.View key={`${beat}-${calling?.rank ?? 0}`} entering={FadeInDown.duration(450)}>{line}</Animated.View>
+        {!loading && <Animated.View key={`${beat}-${calling?.rank ?? 0}`} entering={FadeInDown.duration(450)}>{line}</Animated.View>}
         {yours && (
           <Animated.View entering={FadeInDown.duration(450)} style={{ backgroundColor: "rgba(0,0,0,0.65)", borderRadius: 2, borderWidth: 1, borderColor: "rgba(251,191,36,0.5)", paddingHorizontal: 12, paddingVertical: 6 }}>
             <Text style={{ color: "#fff", fontSize: 15, fontWeight: "900", textTransform: "uppercase" }}>
@@ -505,18 +563,31 @@ export function SeasonAwardsNight({ career, go }: { career: CareerState; go: (s:
   const stats = career.lastSeasonAwardStats;
   const plan = useMemo(() => (stats ? awardsPlan(stats, (career.player.startYear ?? 0) * 37 + (stats.season ?? career.season)) : null), [stats, career.player.startYear, career.season]);
   const [stage, setStage] = useState<"night" | "result">("night");
+  // Game music (SeasonAwardsNight.tsx): suspense while the awards are read, then a win if any of them was yours.
+  const night = stage === "night" && !!plan && plan.awards.length > 0;
+  const won = (plan?.yourWins ?? 0) > 0;
+  useEffect(() => { setMusicScene("awards-night", { kind: "ballon-dor", won: night ? null : won }, 10); }, [night, won]);
+  useEffect(() => () => clearMusicScene("awards-night"), []);
   // page.tsx: the awards night is Leo's update only (leoUpdateOn("awardsNight")); off, the awards page as before.
   if (!leoUpdateOn("awardsNight") || stage !== "night" || !plan || plan.awards.length === 0) return <SeasonAwardsScreen career={career} go={go} />;
   return <AwardsCeremony career={career} plan={plan} onDone={() => setStage("result")} />;
 }
 
 function AwardsCeremony({ career, plan, onDone }: { career: CareerState; plan: AwardsPlan; onDone: () => void }) {
-  const { t, now, jump } = useNightClock(plan.end + 1.0);
+  // The 3D room when the phone can (the website's), the drawn room (same beats) when it can't or the 3D takes too long.
+  const [mode, setMode] = useState<"3d" | "drawn">(() => (partOff("3d") ? "drawn" : "3d"));
+  const [ready3d, setReady3d] = useState(false);
+  const ready = mode === "drawn" || ready3d;
+  const { t, now, jump, freeze, isFrozen } = useNightClock(plan.end + 1.0, ready, mode === "3d" ? 10 : 30);
+  const prefs = usePrefs();
+  const handle = useRef<NightHandle | null>(null);
+  useSeekHook(plan, mode, freeze, handle);
   const { size, onLayout } = useSize();
   const finished = useRef(false);
   const finish = useCallback(() => { if (!finished.current) { finished.current = true; onDone(); } }, [onDone]);
-  useEffect(() => { if (t >= plan.end + 1.0) finish(); }, [t, plan.end, finish]);
+  useEffect(() => { if (ready && !isFrozen() && t >= plan.end + 1.0) finish(); }, [ready, t, plan.end, finish, isFrozen]);
   const skip = () => {
+    if (!ready) return;
     const n = now();
     const to = skipTarget(plan, n);
     if (to >= plan.end) { finish(); return; }
@@ -525,15 +596,18 @@ function AwardsCeremony({ career, plan, onDone }: { career: CareerState; plan: A
   const a = awardAt(plan, t);
   const revealed = !!a && t >= a.revealAt;
   const revealKey = revealed ? a!.key : "";
-  useEffect(() => { if (revealKey) playCheer(); }, [revealKey]);
+  useEffect(() => { if (revealKey && !isFrozen()) playCheer(); }, [revealKey, isFrozen]);
   const ownKit = kitsOf(career.player.club, career.clubKits?.[career.player.club]).home;
   const youWonThis = revealed && a!.winner.isYou;
   const last = !a || a === plan.awards[plan.awards.length - 1];
   return (
+    <NightStill.Provider value={mode === "3d"}>
     <Pressable style={{ flex: 1, backgroundColor: "#120a07" }} onPress={skip} onLayout={onLayout}>
-      {size && <RoomDrawn career={career} plan={plan} t={t} W={size.W} H={size.H} />}
+      {mode === "3d" && <AwardsStage3D career={career} plan={plan} clock={now} handle={handle} showSpeed={prefs.show3dSpeed} onReady={() => setReady3d(true)} onFail={() => setMode("drawn")} />}
+      {mode === "3d" && !ready && <LoadingLine small="The doors open" text="Finding your table…" />}
+      {mode === "drawn" && size && <RoomDrawn career={career} plan={plan} t={t} W={size.W} H={size.H} />}
       {size && <TopShade W={size.W} h={130} alpha={0.65} />}
-      {size && <AwardCaptions career={career} plan={plan} t={t} />}
+      {size && <AwardCaptions career={career} plan={plan} t={t} loading={!ready} />}
       {youWonThis && size && <Burst key={a!.key} colors={["#fde047", "#fbbf24", "#ffffff", ownKit.shirt, ownKit.trim]} count={36} spread={2} x={size.W / 2} y={size.H * 0.38} />}
       <SafeAreaView edges={["bottom"]} pointerEvents="box-none" style={{ position: "absolute", left: 16, right: 16, bottom: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Pressable onPress={finish} style={{ backgroundColor: "rgba(0,0,0,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.3)", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 2 }}>
@@ -544,10 +618,11 @@ function AwardsCeremony({ career, plan, onDone }: { career: CareerState; plan: A
         </Pressable>
       </SafeAreaView>
     </Pressable>
+    </NightStill.Provider>
   );
 }
 
-function AwardCaptions({ career, plan, t }: { career: CareerState; plan: AwardsPlan; t: number }) {
+function AwardCaptions({ career, plan, t, loading = false }: { career: CareerState; plan: AwardsPlan; t: number; loading?: boolean }) {
   const a = awardAt(plan, t);
   const beat = awardBeatAt(plan, t);
   const idx = a ? plan.awards.indexOf(a) : -1;
@@ -571,7 +646,7 @@ function AwardCaptions({ career, plan, t }: { career: CareerState; plan: AwardsP
         </View>
       </View>
       <View pointerEvents="none" style={{ position: "absolute", left: 12, right: 12, bottom: 84, alignItems: "center" }}>
-        <Animated.View key={`${beat}-${a?.key ?? ""}`} entering={FadeInDown.duration(400)} style={{ width: "100%" }}>{line}</Animated.View>
+        {!loading && <Animated.View key={`${beat}-${a?.key ?? ""}`} entering={FadeInDown.duration(400)} style={{ width: "100%" }}>{line}</Animated.View>}
       </View>
     </>
   );

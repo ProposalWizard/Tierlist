@@ -51,11 +51,11 @@ function keepOnly(d: Directory, added: string) {
 }
 
 /** His picture's file address: kept on this phone, else made now. Null: the drawn head stays. */
-export function headshotUri(id: string, look: HeadshotLook, frame: HeadshotFrame): Promise<string | null> {
+export function headshotUri(id: string, look: HeadshotLook, frame: HeadshotFrame, cacheOnly = false): Promise<string | null> {
   const key = headshotKey(id, look, frame);
   const mem = memory.get(key);
   if (mem) return Promise.resolve(mem);
-  let p = going.get(key);
+  let p = cacheOnly ? undefined : going.get(key);
   if (p) return p;
   p = (async () => {
     try {
@@ -63,7 +63,7 @@ export function headshotUri(id: string, look: HeadshotLook, frame: HeadshotFrame
       if (!dir.exists) dir.create({ intermediates: true, idempotent: true });
       const f = new File(dir, fileName(key));
       if (f.exists) { memory.set(key, f.uri); return f.uri; }
-      if (failedOnce) return null;
+      if (cacheOnly || failedOnce) return null;
       setupPhone3d();
       const { shootHeadshot, setHeadshotGl, headshotsPossible } = await import("./headshotMaker");
       const { GLView } = await import("expo-gl");
@@ -87,14 +87,16 @@ export function headshotUri(id: string, look: HeadshotLook, frame: HeadshotFrame
       console.warn("headshot", e);
       return null;
     } finally {
-      going.delete(key);
+      if (!cacheOnly) going.delete(key);
     }
   })();
-  going.set(key, p);
+  if (!cacheOnly) going.set(key, p);
   return p;
 }
 
-export function Headshot3D({ id, you, position, skin, kit, size, frame = "head", zoom = 1, fallback }: {
+export function Headshot3D({ id, you, position, skin, kit, size, frame = "head", zoom = 1, fallback, cacheOnly = false }: {
+  /** Show only a picture that is already made (in memory or kept on the phone); never start the GL to make one (a 3D night is playing on it). */
+  cacheOnly?: boolean;
   id: string;
   you?: boolean;
   position?: string;
@@ -121,7 +123,7 @@ export function Headshot3D({ id, you, position, skin, kit, size, frame = "head",
     if (m) { setUri(m); return; }
     setUri(null);
     let alive = true;
-    void headshotUri(id, look, frame).then((u) => { if (alive && u) setUri(u); });
+    void headshotUri(id, look, frame, cacheOnly).then((u) => { if (alive && u) setUri(u); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);

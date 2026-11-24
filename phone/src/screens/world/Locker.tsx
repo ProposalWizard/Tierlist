@@ -23,6 +23,7 @@ import { Press } from "../../ui/Press";
 import { FONT } from "../../ui/look";
 import { STAR_PASS_PIC } from "../../ui/look/worldPics";
 import { StoreFigure } from "./StoreFigure";
+import { Podium3D } from "../../podium/Podium3D";
 
 const pic = (url?: string): ImageSourcePropType | undefined => (url ? STAR_PASS_PIC[url] : undefined);
 
@@ -33,9 +34,25 @@ const STANDARDS: CatalogueItem[] = [
 ];
 
 /** A catalogue card's picture (RewardArt.tsx): its scene or image, a run-up's man at the ball, the player wearing an accessory, else its icon tile. */
-export function RewardArt({ card, w, h, career }: { card: CatalogueItem; w: number; h: number; career?: CareerState | null }) {
+export function RewardArt({ card, w, h, career, live = false }: { card: CatalogueItem; w: number; h: number; career?: CareerState | null; live?: boolean }) {
   const a = card.art;
   const src = pic(a.scene) ?? pic(a.image);
+  const [fail3d, setFail3d] = useState(false);
+  const [up3d, setUp3d] = useState(false);
+  // `live` (the claim reveal, one at a time): the website's live 3D podium you spin (RewardArt.tsx `a.live && live`); the still is under it until it is up, and stays if the 3D cannot start.
+  const cfg = useMemo(() => {
+    if (!live || !a.live) return null;
+    const k = Math.min(w / a.live.w, h / a.live.h);
+    return { ...a.live, w: Math.round(a.live.w * k), h: Math.round(a.live.h * k) };
+  }, [live, card.id, w, h]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (cfg && !fail3d) {
+    return (
+      <View style={{ width: w, height: h, alignItems: "center", justifyContent: "center" }}>
+        {src && !up3d ? <Image source={src} resizeMode="contain" fadeDuration={0} style={{ width: w, height: h }} /> : null}
+        <View style={{ position: "absolute" }}><Podium3D cfg={cfg} onReady={() => setUp3d(true)} onFail={() => setFail3d(true)} /></View>
+      </View>
+    );
+  }
   if (src) return <Image source={src} resizeMode="contain" fadeDuration={0} style={{ width: w, height: h }} />;
   const g = card.grant;
   if (g.kind === "penaltyRunup" || g.kind === "freeKickRunup") return <StoreFigure wear={[]} width={w} height={h} runup />;
@@ -158,7 +175,7 @@ export function RewardReveal({ card, level, career, onUse, onLater }: { card: Ca
         <Text style={{ color: "#fcd34d", fontSize: 12, fontWeight: "900", letterSpacing: 3.6, textTransform: "uppercase" }}>Level {level} reward</Text>
         <Animated.View style={{ width: artW, height: artH, marginVertical: 12, alignItems: "center", justifyContent: "center", opacity: rise.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 1, 1] }), transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }, { scale: rise.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }] }}>
           <View pointerEvents="none" style={{ position: "absolute", left: "12%", right: "12%", top: "12%", bottom: "12%", backgroundImage: "radial-gradient(closest-side, rgba(253,224,71,0.35), rgba(253,224,71,0))" } as ViewStyle} />
-          <RewardArt card={card} w={artW} h={artH} career={career} />
+          <RewardArt card={card} w={artW} h={artH} career={career} live />
         </Animated.View>
         <Animated.View style={{ paddingHorizontal: 24, alignItems: "center", opacity: name, transform: [{ translateY: name.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }}>
           <Text style={{ color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 2.8, textTransform: "uppercase" }}>{cat}</Text>
