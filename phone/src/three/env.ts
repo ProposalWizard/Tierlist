@@ -17,6 +17,7 @@
 import { OffscreenCanvas2D } from "../draw/offscreen";
 import { threePlatform } from "./platform";
 import { makeElement, StandInImage } from "./standIn";
+import { svgPathMethods } from "./svgPath";
 
 let done = false;
 export function ensureThreeEnv() {
@@ -87,6 +88,8 @@ function standIn() {
       const t = String(tag).toLowerCase();
       if (t === "canvas") return takeGlCanvas() ?? canvas2d();
       if (t === "img") return new StandInImage();
+      // the signing scene measures its signature along an SVG path (./svgPath.ts)
+      if (t === "path") { const el = makeElement(t); Object.assign(el, svgPathMethods(() => el.getAttribute("d") ?? "")); return el; }
       return makeElement(t);
     },
     createTextNode(text: string) { const e = makeElement("#text"); e.textContent = text; return e; },

@@ -27,6 +27,7 @@ import { Press } from "../../ui/Press";
 import { LookButton, TEXT_SHADOW, rgba } from "../../ui/look";
 import { NationFlag } from "../../draw/NationFlag";
 import { Frame } from "./kit";
+import { OfficeMoment } from "./Office3D";
 import { LockIcon } from "../../ui/LockIcon";
 
 export { LockIcon };
@@ -188,22 +189,23 @@ export function DugoutBanner({ text, onDismiss }: { text: string; onDismiss: () 
   );
 }
 
-/** Made captain: full screen, once (ManagerMoments.tsx CaptainInOffice, the plain card: the phone has no 3D office). */
+/** Made captain: full screen, once (ManagerMoments.tsx CaptainInOffice: the armband in his 3D office; the same words on a plain card if the phone cannot run it). */
 export function CaptainMoment({ career, onDone }: { career: CareerState; onDone: () => void }) {
   return (
     <Modal visible animationType="fade" statusBarTranslucent onRequestClose={onDone}>
-      <View style={{ flex: 1, backgroundColor: "#0b1220", justifyContent: "center", paddingHorizontal: 12, paddingBottom: 24, paddingTop: 12 }}>
-        <View style={{ width: "100%", maxWidth: 384, alignSelf: "center" }}>
-          <Text style={{ color: "#93c5fd", fontSize: 18, fontWeight: "900", letterSpacing: 0.5, textAlign: "right", marginBottom: 8 }}>THE ARMBAND</Text>
-          <View style={{ backgroundColor: "#334155", borderRadius: 4, paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 0.6 }}>{(career.manager?.name ?? "The manager").toUpperCase()}</Text>
-            <Text style={{ color: "#fff", fontSize: 15, fontWeight: "700", lineHeight: 21 }}>{captainLine(career)}</Text>
-          </View>
-          <LookButton onPress={onDone} style={{ marginTop: 12, borderRadius: 4, paddingVertical: 12 }}>
-            <Text style={{ color: "#fff", fontSize: 14, fontWeight: "900" }}>CONTINUE →</Text>
-          </LookButton>
-        </View>
-      </View>
+      <OfficeMoment career={career} title="The armband" text={captainLine(career)} onContinue={onDone} />
+    </Modal>
+  );
+}
+
+/** "In the dugout" in his office (ManagerMoments.tsx ManagerNewsInOffice): full screen, his words, Continue = the banner's own dismiss. */
+export function DugoutMoment({ career, text, onDismiss }: { career: CareerState; text: string; onDismiss: () => void }) {
+  const [failed, setFailed] = useState(false);
+  // a phone that cannot run the 3D keeps the banner as it was
+  if (failed) return <DugoutBanner text={text} onDismiss={onDismiss} />;
+  return (
+    <Modal visible animationType="fade" statusBarTranslucent onRequestClose={onDismiss}>
+      <OfficeMoment career={career} title="In the dugout" text={text} onContinue={onDismiss} onFail={() => setFailed(true)} />
     </Modal>
   );
 }

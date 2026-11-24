@@ -36,11 +36,14 @@ import { usePrefs, setPref, type Prefs } from "../../game/prefs";
 import { Frame, Card, Label, Row, Btn, ClubCrest, Fill, StandInNote, money, C } from "./kit";
 import { DATA_CREDITS, CREDIT_GROUPS } from "@/lib/star/dataCredits";
 import { tint } from "@/lib/star/heroFigure";
+import { OfficeMoment } from "./Office3D";
 
 // ── Contract renewal: higher or lower ──
 export function ContractRenewalScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
   const { contractReason } = useSession();
   const offerReason = contractReason ?? undefined;
+  const [heard, setHeard] = useState(false);
+  const [officeFailed, setOfficeFailed] = useState(false);
   const [phase, setPhase] = useState<"intro" | "playing">("intro");
   const [current, setCurrent] = useState(7);
   const [next, setNext] = useState<number | null>(null);
@@ -84,6 +87,13 @@ export function ContractRenewalScreen({ career, go }: { career: CareerState; go:
     })), 900);
   };
   const back = () => go(flow.contractComplete(null));
+  // ManagerMoments.tsx ContractInOffice: a club's offer is said in his 3D office first, then the talks as before (a phone that cannot run the 3D goes straight to the talks)
+  if (offerReason && !heard && !officeFailed) {
+    const line = offerReason === "form"
+      ? `Outstanding form! Your performances have been exceptional — ${c.club} want to lock you in with an improved deal early.`
+      : "You've improved! The club recognise how much you have improved and are offering improved terms to reflect your standing.";
+    return <OfficeMoment career={career} title="Contract talks" text={line} onContinue={() => setHeard(true)} onFail={() => setOfficeFailed(true)} />;
+  }
   const face = (v: number | null) => (v === null ? "?" : v === 1 ? "A" : v === 11 ? "J" : v === 12 ? "Q" : v === 13 ? "K" : String(v));
 
   return (

@@ -16,7 +16,7 @@
  * Every result goes through flow.relationshipGameDone (handleRelationshipGameComplete).
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, useWindowDimensions } from "react-native";
 import type { CareerState } from "@/lib/star/types";
 import { actionsLeft } from "@/lib/star/week";
 import { getTuning } from "@/lib/star/tuningStore";
@@ -30,6 +30,7 @@ import { Press } from "../../ui/Press";
 import { TourTarget } from "../../ui/tour";
 import { Frame, Card, Btn, Fill, StandInNote, C } from "./kit";
 import { BossPenalties, BossExtraSession, WoodworkChallenge } from "../MatchRelGames";
+import { OfficeStage } from "./Office3D";
 
 type Kind = flow.RelKind;
 const GAME_LABEL: Record<Kind, string> = { boss: "The manager's penalties", team: "Woodwork challenge", fans: "Signing session", happiness: "Day off" };
@@ -190,6 +191,9 @@ function OfficeTalk({ career, onFinish, onCancel }: { career: CareerState; onFin
   const [grades, setGrades] = useState<Grade[]>([]);
   const [last, setLast] = useState<string | null>(null);
   const [result, setResult] = useState<flow.RelGameResult | null>(null);
+  // BossChat.tsx: his office in 3D above the talk (30vh), the camera on whoever speaks; a phone that cannot run it keeps the talk as it was
+  const [room3dFailed, setRoom3dFailed] = useState(false);
+  const roomH = Math.round(useWindowDimensions().height * 0.3);
   const r = talk.rounds[Math.min(round, TALK_ROUNDS - 1)];
   const pick = (rep: TalkReply) => {
     if (picked || result) return;
@@ -214,6 +218,7 @@ function OfficeTalk({ career, onFinish, onCancel }: { career: CareerState; onFin
   );
   return (
     <Shell title="Office talk" who="Boss" current={current} tone={TONE.boss} onBack={round === 0 && !picked ? onCancel : undefined}>
+      {!room3dFailed && <OfficeStage career={career} speaker={picked && !result ? "you" : "boss"} onFail={() => setRoom3dFailed(true)} style={{ width: "100%", height: roomH, borderRadius: 4 }} />}
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
         <Text style={{ color: C.text, fontWeight: "900" }}>QUESTION {Math.min(round + 1, TALK_ROUNDS)} / {TALK_ROUNDS}</Text>
         <Text>{grades.map((g, i) => <Text key={i} style={{ color: g === "best" ? "#6ee7b7" : g === "clash" ? "#f87171" : C.dim }}>● </Text>)}</Text>

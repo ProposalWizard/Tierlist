@@ -16,7 +16,8 @@ import { askTour } from "../ui/tour";
 import { HELP_TOURS } from "@/lib/star/tours";
 import { TitleMenu } from "../screens/career/TitleMenu";
 import { WithPops } from "../screens/career/Moments";
-import { SigningMoment } from "../screens/career/Signing";
+import { Signing3D } from "../screens/career/Signing3D";
+import { POSITION_NAMES } from "@/lib/star/teamsheet";
 import { listSlots } from "../world/slots";
 import { makeManager } from "@/lib/star/manager";
 import type { TransferOffer } from "@/lib/star/transfers";
@@ -50,7 +51,7 @@ function SeasonTransfer() {
   void nav;
   return <Transfers />;
 }
-/** The move signed across the desk (TransferSigning, drawn: Signing.tsx), then into the next season. */
+/** The move signed across the desk (TransferSigning: the 3D office, Signing3D.tsx; the drawn signing, Signing.tsx, if the 3D cannot start), then into the next season. */
 function TransferSigningStep({ params }: { params?: Record<string, unknown> }) {
   const nav = useNav();
   const career = getCareer();
@@ -58,8 +59,9 @@ function TransferSigningStep({ params }: { params?: Record<string, unknown> }) {
   if (!career || !offer) return null;
   const done = () => { const s = flow.signTransfer(offer); nav.replace(s.screen, s.params); };
   return (
-    <SigningMoment career={career} club={offer.club} managerName={makeManager(career, offer.club, career.season + 1).name} onDone={done} number={null}
-      terms={{ wage: offer.wage, seasonsRemaining: offer.seasons, goalBonus: offer.goalBonus, assistBonus: offer.assistBonus, appearanceFee: offer.clauses?.appearanceFee, loyaltyBonus: offer.clauses?.loyaltyBonus }} />
+    <Signing3D career={career} club={offer.club} managerName={makeManager(career, offer.club, career.season + 1).name} onDone={done} number={null} kind="transfer"
+      terms={{ wage: offer.wage, seasonsRemaining: offer.seasons, goalBonus: offer.goalBonus, assistBonus: offer.assistBonus, appearanceFee: offer.clauses?.appearanceFee, loyaltyBonus: offer.clauses?.loyaltyBonus,
+        position: (POSITION_NAMES as Record<string, string>)[career.player.position] ?? career.player.position }} />
   );
 }
 /**

@@ -50,6 +50,7 @@ import { Press } from "../../ui/Press";
 import { PlayerHead } from "../../draw/PlayerHead";
 import { Backdrop, Bar, FONT, LOOK, LookButton, CAN, glassStyle, levelColors, rgba } from "../../ui/look";
 import { ClubCrest } from "./kit";
+import { OfficeMoment, OfficeStage } from "./Office3D";
 import { glowOf, clubGlow } from "./lookBits";
 
 /** How long the line-up shows before it kicks off by itself (LineupIntro LINEUP_MS). */
@@ -86,6 +87,9 @@ function MatchDay({ career, f, go, onBack }: { career: CareerState; f: Fixture; 
   const [asked, setAsked] = useState(false);
   // LineupIntro: dropped to the bench after starting the last one = "Team news" first, once a fixture.
   const [benchHeard, setBenchHeard] = useState(false);
+  // LineupIntro: "Not in the squad" is said in his office in 3D (34vh above the words); a phone that cannot run it shows the card as it was.
+  const [room3dFailed, setRoom3dFailed] = useState(false);
+  const roomH = Math.round(useWindowDimensions().height * 0.34);
   const benchMoment = useMemo(() => { try { return benchMomentFor(career, sel, f, e); } catch { return null; } },
     [career.season, f.week, f.kind, status]); // eslint-disable-line react-hooks/exhaustive-deps
   const benchHold = !!benchMoment && !benchHeard;
@@ -149,6 +153,7 @@ function MatchDay({ career, f, go, onBack }: { career: CareerState; f: Fixture; 
     <PromptShell onBack={onBack} glow={clubGlow(career.player.club, career)}>
       {watching ? (
         <>
+          {status === "Squad" && !room3dFailed && <OfficeStage career={career} speaker="boss" onFail={() => setRoom3dFailed(true)} style={{ width: "100%", height: roomH, borderRadius: 4, marginBottom: 12 }} />}
           <Text style={{ fontSize: 34, textAlign: "center" }}>{status === "Injured" ? "🩹" : sel.away ? "✈️" : f.watch ? "📺" : "📋"}</Text>
           <Text style={{ color: "#fff", fontSize: 20, fontWeight: "900", textAlign: "center", letterSpacing: 0.6, marginTop: 8 }}>
             {(status === "Injured" ? "You're injured" : sel.away ? "Away with your country" : f.watch ? "On TV" : "Not in the squad").toUpperCase()}
@@ -202,22 +207,9 @@ function MatchDay({ career, f, go, onBack }: { career: CareerState; f: Fixture; 
   );
 }
 
-/** The manager's words on the plain card (ManagerMoments.tsx OfficeMoment, plain): title right, slate box, Continue. */
+/** The manager's words in his office (ManagerMoments.tsx ManagerSays: the 3D office, the same words on a plain card if the phone cannot run it): title right, slate box, Continue. */
 export function ManagerSaysCard({ career, title, text, onContinue }: { career: CareerState; title: string; text: string; onContinue: () => void }) {
-  return (
-    <View style={{ flex: 1, backgroundColor: "#0b1220", justifyContent: "center", paddingHorizontal: 12, paddingBottom: 24, paddingTop: 12 }}>
-      <View style={{ width: "100%", maxWidth: 384, alignSelf: "center" }}>
-        <Text style={{ color: "#93c5fd", fontSize: 18, fontWeight: "900", letterSpacing: 0.5, textAlign: "right", marginBottom: 8 }}>{title.toUpperCase()}</Text>
-        <View style={{ backgroundColor: "#334155", borderRadius: 4, paddingHorizontal: 12, paddingVertical: 8 }}>
-          <Text style={{ color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 0.6 }}>{(career.manager?.name ?? "The manager").toUpperCase()}</Text>
-          <Text style={{ color: "#fff", fontSize: 15, fontWeight: "700", lineHeight: 21 }}>{text}</Text>
-        </View>
-        <LookButton onPress={onContinue} style={{ marginTop: 12, borderRadius: 4, paddingVertical: 12 }}>
-          <Text style={{ color: "#fff", fontSize: 14, fontWeight: "900" }}>CONTINUE →</Text>
-        </LookButton>
-      </View>
-    </View>
-  );
+  return <OfficeMoment career={career} title={title} text={text} onContinue={onContinue} />;
 }
 
 /** The prompt card over the night: a dark see-through panel, ‹ Back under it. */

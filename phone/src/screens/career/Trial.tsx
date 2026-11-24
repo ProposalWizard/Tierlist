@@ -29,7 +29,7 @@ import { Dimensions } from "react-native";
 import { Frame, Card, Label, Row, Btn, StandInNote, ClubCrest, money, C } from "./kit";
 import { RiseIn, PopIn, Pulse } from "./lookBits";
 import { ScoutBackdrop, ScoutFigure, clubGlow } from "./ScoutArt";
-import { SigningMoment } from "./Signing";
+import { Signing3D } from "./Signing3D";
 import { FONT, rgba } from "../../ui/look";
 import { formatMoney } from "@/lib/star/money";
 import { loadLineup } from "@/lib/star/lineupStore";
@@ -318,11 +318,11 @@ export function SignedScreen({ career, go }: { career: CareerState; go: (s: flow
   const c = career.contract;
   const onLoan = career.placement?.kind === "loan";
   const [signed, setSigned] = useState(false);
-  // The packed app signs in its 3D office; the phone's signing is the website's
-  // drawn one (Signing.tsx), then straight on (a loan first says where you go).
+  // The signing is the website's 3D office (Signing3D.tsx: you and the manager at a desk, TAP TO SIGN, the handshake); if the 3D cannot
+  // start it is the website's drawn one (Signing.tsx), then straight on (a loan first says where you go).
   if (!signed) {
     const done = () => (onLoan ? setSigned(true) : go(flow.finishSigning()));
-    return <SigningMoment career={career} club={c.club} managerName={career.manager?.name || loadLineup(c.club)?.manager || "The manager"} onDone={done} />;
+    return <Signing3D career={career} club={c.club} managerName={career.manager?.name || loadLineup(c.club)?.manager || "The manager"} onDone={done} />;
   }
   return (
     <Frame kicker="Signed" title={c.club} footer={<Btn label="Let's go" onPress={() => go(flow.finishSigning())} />}>

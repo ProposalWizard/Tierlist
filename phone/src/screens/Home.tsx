@@ -50,7 +50,7 @@ import { loadLineup } from "@/lib/star/lineupStore";
 import { getCareer, setCareer } from "../game/store";
 import { useHomeFlow, useHomeIsShown, daysToNext } from "./career/Coach";
 import { FloatUp } from "./career/lookBits";
-import { UnlockPop, EnergyBackToast, ManagerChat, DugoutBanner, CaptainMoment, NeedsChip, DutyRow } from "./career/HomeMoments";
+import { UnlockPop, EnergyBackToast, ManagerChat, DugoutMoment, CaptainMoment, NeedsChip, DutyRow } from "./career/HomeMoments";
 import { nationGlow } from "./career/IntlScreens";
 
 /** The player's box shape (HomeHub FIG_ASPECT) and tallest size. */
@@ -141,7 +141,7 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
           </View>
         )}
         {/* "In the dugout": the new manager's news, until its ✕ (page.tsx:5621). */}
-        {career.managerNews ? <DugoutBanner text={career.managerNews} onDismiss={() => patch((c) => (c.managerNews ? { ...c, managerNews: null } : c))} /> : null}
+        {career.managerNews ? <DugoutMoment career={career} text={career.managerNews} onDismiss={() => patch((c) => (c.managerNews ? { ...c, managerNews: null } : c))} /> : null}
         {home.energyToast !== null && <EnergyBackToast amount={home.energyToast} onDone={() => setSession({ energyBack: null })} />}
       </View>
 

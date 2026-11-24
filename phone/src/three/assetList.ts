@@ -148,6 +148,12 @@ export const THREE_ASSET_URLS: readonly string[] = [
   "/star/people3d/hair/hair-m2-thinning.glb",
   "/star/people3d/hair/hair-m2-twists.glb",
   // the trophy cabinet's pictures: the app's own trophy files (phone/assets/trophies), no extra size
+  // the signing and the office (WP5): the manager's two suit heads
+  "/star/people3d/toon-mgr.glb",
+  "/star/people3d/toon-mgr2.glb",
+  // the signing's window view and the Star Pass aviators
+  "/star/signing3d/room-golden-hour.webp",
+  "/star/signing3d/aviators.glb",
   "/star/trophies/ballon-dor.webp",
   "/star/trophies/champions-league.webp",
   "/star/trophies/championship.webp",
