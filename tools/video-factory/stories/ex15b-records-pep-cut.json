@@ -432,13 +432,14 @@
         "head": "#f2c230"
        }
       ],
-      "w": 6,
+      "w": 3,
       "bgImage": "pele_1958",
       "bgBlur": 12,
       "bgDim": 0.55
      }
     ]
-   }
+   },
+   "hold": 0.8
   },
   {
    "text": "Which one falls first? Tell me in the comments.",
@@ -459,7 +460,8 @@
       "bgDim": 0.5
      }
     ]
-   }
+   },
+   "hold": 0.6
   }
  ]
 }
