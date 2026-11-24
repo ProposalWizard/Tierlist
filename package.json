@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/patch-notes/build-headlines.mjs && node scripts/brain/bundle-for-site.mjs && next dev",
-    "build": "node scripts/build-start.mjs && node scripts/patch-notes/build-headlines.mjs && node scripts/brain/bundle-for-site.mjs && node scripts/one-engine-guard.mjs && node scripts/admin-look-guard.mjs && node scripts/marketing/private-names-guard.mjs && node --max-old-space-size=6144 node_modules/next/dist/bin/next build",
+    "build": "node scripts/build-start.mjs && node scripts/patch-notes/build-headlines.mjs && node scripts/brain/bundle-for-site.mjs && node scripts/one-engine-guard.mjs && node scripts/admin-look-guard.mjs && node scripts/marketing/private-names-guard.mjs && node --max-old-space-size=4096 node_modules/typescript/bin/tsc --noEmit -p . && node --max-old-space-size=6144 node_modules/next/dist/bin/next build",
     "guard:engine": "node scripts/one-engine-guard.mjs",
     "start": "next start",
     "lint": "next lint",

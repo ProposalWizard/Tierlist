@@ -23,6 +23,16 @@ type Status = {
   error?: string;
 };
 
+/** The site can answer with only an error (e.g. Cloudflare refusing the keys,
+ *  24 Nov 2026): fill the counts with 0 so the card shows the reason instead of
+ *  crashing the whole Patch notes page ("reading 'toLocaleString'"). */
+const whole = (j: Partial<Status>): Status => ({
+  ...j,
+  totalFiles: j.totalFiles ?? 0, totalBytes: j.totalBytes ?? 0,
+  doneFiles: j.doneFiles ?? 0, doneBytes: j.doneBytes ?? 0,
+  connected: j.error ? false : j.connected,
+});
+
 const mb = (b: number) => `${(b / 1024 / 1024).toFixed(b < 10 * 1024 * 1024 ? 1 : 0)} MB`;
 
 export default function MediaSyncPanel() {
@@ -35,7 +45,7 @@ export default function MediaSyncPanel() {
   const load = useCallback(async () => {
     try {
       const r = await fetch("/api/admin/patch-notes/media-sync", { cache: "no-store" });
-      const j = (await r.json()) as Status;
+      const j = whole((await r.json()) as Partial<Status>);
       setS(j);
       if (j.error) setErr(j.error);
     } catch {
@@ -58,7 +68,7 @@ export default function MediaSyncPanel() {
     try {
       for (let i = 0; i < 200 && !stop.current; i++) {
         const r = await fetch("/api/admin/patch-notes/media-sync", { method: "POST", cache: "no-store" });
-        const j = (await r.json()) as Status;
+        const j = whole((await r.json()) as Partial<Status>);
         if (!r.ok || j.error) { setErr(j.error ?? `The site answered ${r.status}.`); break; }
         setS(j);
         for (const f of j.failed ?? []) seen.push(f);
@@ -81,7 +91,9 @@ export default function MediaSyncPanel() {
         <div className="min-w-0 flex-1">
           <div className="text-[15px] font-extrabold">Patch-note pictures in Cloudflare</div>
           <div className="text-[13px] text-[#9fb6aa]">
-            {!s.connected
+            {s.error
+              ? "Cloudflare would not let the site in. Check the R2 keys in Vercel."
+              : !s.connected
               ? "Works on the live site only (the Cloudflare keys are in Vercel)."
               : done
                 ? `Done: all ${s.totalFiles.toLocaleString()} files (${mb(s.totalBytes)}) are in Cloudflare. Nothing to do.`

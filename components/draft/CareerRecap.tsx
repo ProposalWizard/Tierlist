@@ -1,4 +1,5 @@
 "use client";
+import { shortName } from "@/lib/draft/shortName";
 import { useMemo, useState } from "react";
 import type { SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
@@ -870,7 +871,7 @@ export default function CareerRecap({ allSeasons, roomPlayers, allRoomPlayerSeas
                             {p ? (
                               <>
                                 <span className="text-[8px] sm:text-[10px] font-bold text-white truncate w-full text-center leading-tight">
-                                  {p.name.split(" ").pop()}
+                                  {shortName(p.name)}
                                 </span>
                                 <span className={`text-[8px] sm:text-[10px] font-black leading-tight ${p.bestRating >= 7.5 ? "text-emerald-400" : p.bestRating >= 7.0 ? "text-yellow-400" : "text-white"}`}>
                                   {p.bestRating.toFixed(1)}

@@ -147,7 +147,7 @@ export async function readLimits(sb: SupabaseClient, now: Date) {
     try { backup = await readManifest(config, day); } catch { notes.push("could not read last night's backup manifest"); }
   }
   const cpu = await vercelCpuLast30Days(now);
-  const vercelCpuMs = "cpuMs" in cpu ? cpu.cpuMs : cpu.note.startsWith("Vercel usage is not connected") ? undefined : null;
+  const vercelCpuMs = "cpuMs" in cpu ? cpu.cpuMs : /^(Vercel usage is not connected|Vercel.s free plan)/.test(cpu.note) ? undefined : null;
   if ("note" in cpu) notes.push(cpu.note);
   return { day, post: limitsPost({ day, dbBytes: sizes.dbBytes, storageBytes: sizes.storageBytes, r2, backup, notes, vercelCpuMs }) };
 }

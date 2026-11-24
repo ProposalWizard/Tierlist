@@ -16,6 +16,7 @@ import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
 import { shuffle } from "@/lib/shuffle";
+import { prefetchDraftClubs } from "@/lib/draft/clubList";
 
 export interface DraftSettings {
   formation: string;
@@ -402,6 +403,10 @@ export default function DraftPage() {
     const code = new URLSearchParams(window.location.search).get("room");
     return code ? code.toUpperCase() : null;
   });
+
+  // Start fetching the club list while the player reads the setup screen, so
+  // the first spin is not held up by "Loading clubs..." (lib/draft/clubList.ts).
+  useEffect(() => { prefetchDraftClubs(); }, []);
 
   // Update URL to reflect room code when playing online (so it's shareable/bookmarkable)
   useEffect(() => {
