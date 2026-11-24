@@ -4,6 +4,7 @@ import type { CareerState } from "@/lib/star/types";
 import dynamic from "next/dynamic";
 import SigningScene from "./SigningScene";
 import { useSigning3d } from "@/lib/star/signing3d";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 // The live 3D signing (Settings → Look → "Signing scene: 3D | Drawn", 3D by default). Loaded only
 // when it is switched on, so three.js never reaches anyone who hasn't.
@@ -209,7 +210,7 @@ export interface ContractTerms {
   season?: string;
 }
 
-const starMoney = (n: number) => `★${Math.round(n).toLocaleString("en-GB")}`;
+const starMoney = (n: number) => `${MONEY_SIGN}${Math.round(n).toLocaleString("en-GB")}`;
 const seasonsText = (n: number) => `${n} season${n === 1 ? "" : "s"}`;
 
 /** Laid over public/star/contract.webp (1024x1536), in % measured off the file. */

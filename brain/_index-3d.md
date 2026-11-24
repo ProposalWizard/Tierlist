@@ -11,3 +11,5 @@ RUL-3D-005 | No body part may pass into another in any 3D clip or pose; measure 
 RUL-3D-006 | 3D sizes never change: every man, the keeper and the goal keep ONE fixed scale in every chance and frame. | three-d,rule
 RUL-3D-007 | Every GLTFLoader must call withMeshopt(loader) or it fails on the packed GLB files. | three-d,rule
 RUL-3D-008 | 3D games take shared basics (ball size, gravity, how skills scale a kick) from one shared file. | three-d
+RUL-3D-009 | Realistic people doesn't mean changing the style: it means body proportions, no bugs, pitches, sponsor boards, proportions in general, views, hands, picking things up, interacting. | three-d
+RUL-3D-010 | Mixed race and darker skinned characters must have features of those ethnicities (e.g. no black assistant manager with a quiff); research black hair and black hairstyles; the player's hair is good, managers' hair gets cooked. | rule,three-d

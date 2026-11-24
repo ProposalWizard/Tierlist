@@ -22,7 +22,7 @@ import { FAREWELL_OFF_AT, RIVALS_KITS, YOU_ID } from "@/lib/star/farewell";
 import { testimonialFor } from "@/lib/star/retirement";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf, type Kit } from "@/lib/star/kits";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { fakeFaceFor, DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { shortNameOf } from "@/lib/star/realSquad";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
@@ -277,7 +277,7 @@ export function FarewellResult({ career, sides, stats, onDone }: {
             <div className="mt-2 flex items-center gap-2.5 px-2.5 py-2 text-left" style={{ background: "rgba(255,255,255,.05)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.12)" }} data-farewell-testimonial>
               <ClubBadge club={t.club} kit={kitsOf(t.club).home} size={26} />
               <div className="min-w-0 flex-1 text-[12.5px] font-bold text-white">{short(t.club)} pay your testimonial</div>
-              <div className="sk-num shrink-0 text-[18px] leading-none text-amber-200">★{formatMoney(t.payout)}</div>
+              <div className="sk-num shrink-0 text-[18px] leading-none text-amber-200">{MONEY_SIGN}{formatMoney(t.payout)}</div>
             </div>
           </RiseIn>
         )}

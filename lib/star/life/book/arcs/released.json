@@ -1,0 +1,365 @@
+{
+ "id": "arc-released",
+ "title": "Released",
+ "owner": "lad",
+ "summary": "An eighteen-year-old has just been told he's being released. You find him in the boot room. What you say to him matters more than you think, and years later you find out how much.",
+ "size": "small",
+ "about": {
+  "who": [
+   "academy kid"
+  ],
+  "tone": [
+   "dark",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "lad",
+   "pick": "squad",
+   "where": [
+    "age<=19"
+   ],
+   "order": "youngest"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "he-found-his-way",
+   "title": "He found his way",
+   "text": "You told a released kid the truth and gave him your number. He made a life out of it."
+  },
+  {
+   "id": "one-more-kid",
+   "title": "One more kid",
+   "text": "You walked past him in the boot room. He was one of hundreds that year, and he knows it."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "rel-1-bootroom",
+   "title": "The boot room",
+   "n": 1,
+   "event": {
+    "id": "arc-rel-1-bootroom",
+    "title": "The boot room",
+    "category": "teammates",
+    "place": "compound:boot-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "lad",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "squad.any(age<=19)"
+     ]
+    },
+    "setup": [
+     "You go into the boot room for your trainers. {lad.name} is sitting on the floor under the pegs with his boots in his lap. He's been told this morning he isn't getting a contract."
+    ],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "lad",
+       "say": [
+        "He wipes his face quickly. \"Sorry. I'll go. I just didn't want to go out there yet.\""
+       ],
+       "replies": [
+        {
+         "id": "sit",
+         "label": "Sit down on the floor next to him.",
+         "tone": "kind",
+         "goto": "b2"
+        },
+        {
+         "id": "truth",
+         "label": "\"It happens to most of us. It nearly happened to me.\"",
+         "tone": "honest",
+         "goto": "b2"
+        },
+        {
+         "id": "go",
+         "label": "Get your trainers and go.",
+         "tone": "cold",
+         "end": "walked"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "b2"
+        }
+       ]
+      },
+      "b2": {
+       "who": "lad",
+       "say": [
+        "\"I've been here since I was nine. I don't know how to do anything else.\""
+       ],
+       "replies": [
+        {
+         "id": "number",
+         "label": "\"Here's my number. Ring me when you get a trial.\"",
+         "tone": "kind",
+         "end": "number"
+        },
+        {
+         "id": "other",
+         "label": "\"Then learn. There's more to football than this club.\"",
+         "tone": "honest",
+         "end": "straight"
+        },
+        {
+         "id": "dream",
+         "label": "\"You'll be back here one day, in another shirt.\"",
+         "tone": "confident",
+         "end": "hope"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "number": [
+       {
+        "text": "He puts your number in his phone with his hands shaking. He doesn't ring for a month, then he rings twice in one night.",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 14,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "lad",
+          "tag": "gave-me-his-number-when-i-was-released",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "straight": [
+       {
+        "text": "He nods for a long time. \"Nobody's said that. They all said I'll be fine.\"",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 8,
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "lad",
+          "tag": "told-me-straight-when-i-was-released",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "hope": [
+       {
+        "text": "He laughs, which is something. He leaves with his boots over his shoulder.",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "lad",
+          "tag": "said-id-be-back",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "hope"
+         }
+        }
+       }
+      ],
+      "walked": [
+       {
+        "text": "When you come back past, the boot room is empty and his boots are in the bin.",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "lad",
+          "tag": "walked-past-me-in-the-boot-room",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "walked"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "lad",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "Someone's in the boot room"
+  },
+  {
+   "id": "rel-2-years",
+   "title": "A message",
+   "after": {
+    "beat": "rel-1-bootroom",
+    "seasons": [
+     2,
+     5
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-rel-2-years",
+    "title": "A message",
+    "category": "teammates",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "lad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A long message from a name you half remember.",
+     "{if !arc.path=='walked'}\"It's me from the boot room. I'm a physio now, at a club two leagues down. I tell every lad who gets released what you told me. Thought you should know.\"{/if}",
+     "{if arc.path=='walked'}\"You won't remember me. Boot room, the day I got released. I'm a coach now. I make a point of sitting down with the ones who get let go.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "reply",
+      "label": "Write back properly.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "!arc.path=='walked'",
+        "text": "He replies with a photo of his lads. You recognise the look on one of their faces.",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "lad",
+          "tag": "wrote-back-years-later",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "he-found-his-way"
+        }
+       },
+       {
+        "text": "You write back that you're sorry. He says it's fine, and tells you about his under-18s.",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "one-more-kid"
+        }
+       }
+      ]
+     },
+     {
+      "id": "like",
+      "label": "Like it and put the phone down.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "!arc.path=='walked'",
+        "text": "He sees it. That's enough for him, he says, a week later.",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "he-found-his-way"
+        }
+       },
+       {
+        "text": "A like. He doesn't write again.",
+        "arc": {
+         "end": "one-more-kid"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "lad",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "Years later, you'll hear from him",
+   "look": {
+    "chip": "Years later"
+   }
+  }
+ ]
+}

@@ -1,4 +1,5 @@
 import { getTuning } from "./tuningStore";
+import { MONEY_SIGN } from "./money";
 
 /**
  * PLAYER TRANSFER NEGOTIATION.
@@ -109,8 +110,8 @@ export function startNegotiation(marketValue: number, mode: NegotiationMode, rng
     marketValue, mode, round: 0, yourPosition, theirPosition,
     moodScore: 60, status: "negotiating",
     log: [mode === "buying"
-      ? `Their agent opens at ★${theirPosition.toLocaleString()}.`
-      : `An interested buyer opens at ★${theirPosition.toLocaleString()}.`],
+      ? `Their agent opens at ${MONEY_SIGN}${theirPosition.toLocaleString()}.`
+      : `An interested buyer opens at ${MONEY_SIGN}${theirPosition.toLocaleString()}.`],
   };
 }
 
@@ -158,8 +159,8 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
   if (meets(mode, yourNewPosition, state.theirPosition)) {
     const finalPrice = yourNewPosition;
     log.push(mode === "buying"
-      ? `Deal — they accept your ★${finalPrice.toLocaleString()} offer.`
-      : `Deal — the buyer accepts your ★${finalPrice.toLocaleString()} asking price.`);
+      ? `Deal — they accept your ${MONEY_SIGN}${finalPrice.toLocaleString()} offer.`
+      : `Deal — the buyer accepts your ${MONEY_SIGN}${finalPrice.toLocaleString()} asking price.`);
     return { ...state, yourPosition: yourNewPosition, status: "accepted", finalPrice, log };
   }
 
@@ -194,7 +195,7 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
   // Close enough that they'll just take it, no further haggling needed.
   if (!pastLimit && relativeGap <= getTuning("negotiation.acceptTolerance")) {
     const finalPrice = yourNewPosition;
-    log.push(`Close enough — they accept ★${finalPrice.toLocaleString()}.`);
+    log.push(`Close enough — they accept ${MONEY_SIGN}${finalPrice.toLocaleString()}.`);
     return { ...state, yourPosition: yourNewPosition, status: "accepted", finalPrice, log };
   }
 
@@ -206,7 +207,7 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
   let moodScore = state.moodScore + (insult ? -40 : pastLimit ? (movedToward ? -4 : -15) : (movedToward ? 6 : -12));
   moodScore = Math.max(0, Math.min(100, moodScore));
   const round = state.round + 1;
-  const you = `${mode === "buying" ? "You offer" : "You ask"} ★${yourNewPosition.toLocaleString()}`;
+  const you = `${mode === "buying" ? "You offer" : "You ask"} ${MONEY_SIGN}${yourNewPosition.toLocaleString()}`;
 
   // ── The roll ──
   const baseRisk = insult ? 1 - getTuning("negotiation.insultCounterChance")
@@ -230,8 +231,8 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
     const dropToWorst = r < walkShare + worstShare && worst !== state.theirPosition;
     const final = dropToWorst ? worst : state.theirPosition;
     log.push(dropToWorst
-      ? `${you} — ${insult ? "insulted. " : "annoyed. "}${mode === "buying" ? "Final price" : "Final offer"}: ★${final.toLocaleString()}, take it or leave it.`
-      : `${you} — they won't budge. ★${final.toLocaleString()} is final, take it or leave it.`);
+      ? `${you} — ${insult ? "insulted. " : "annoyed. "}${mode === "buying" ? "Final price" : "Final offer"}: ${MONEY_SIGN}${final.toLocaleString()}, take it or leave it.`
+      : `${you} — they won't budge. ${MONEY_SIGN}${final.toLocaleString()} is final, take it or leave it.`);
     return { ...state, yourPosition: yourNewPosition, theirPosition: final, moodScore: Math.min(moodScore, 30), round, opening, finalOffer: true, log };
   }
 
@@ -260,12 +261,12 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
   const theyActuallyMoved = theirPosition !== state.theirPosition;
   if (theyActuallyMoved) {
     log.push(mode === "buying"
-      ? `You offer ★${yourNewPosition.toLocaleString()} — they come down to ★${theirPosition.toLocaleString()}.`
-      : `You ask ★${yourNewPosition.toLocaleString()} — they raise their offer to ★${theirPosition.toLocaleString()}.`);
+      ? `You offer ${MONEY_SIGN}${yourNewPosition.toLocaleString()} — they come down to ${MONEY_SIGN}${theirPosition.toLocaleString()}.`
+      : `You ask ${MONEY_SIGN}${yourNewPosition.toLocaleString()} — they raise their offer to ${MONEY_SIGN}${theirPosition.toLocaleString()}.`);
   } else {
     log.push(mode === "buying"
-      ? `You offer ★${yourNewPosition.toLocaleString()} — they're standing firm at ★${theirPosition.toLocaleString()}.`
-      : `You ask ★${yourNewPosition.toLocaleString()} — they're standing firm at ★${theirPosition.toLocaleString()}.`);
+      ? `You offer ${MONEY_SIGN}${yourNewPosition.toLocaleString()} — they're standing firm at ${MONEY_SIGN}${theirPosition.toLocaleString()}.`
+      : `You ask ${MONEY_SIGN}${yourNewPosition.toLocaleString()} — they're standing firm at ${MONEY_SIGN}${theirPosition.toLocaleString()}.`);
   }
 
   if (round >= getTuning("negotiation.maxRounds")) {
@@ -281,7 +282,7 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
     const finalRelativeGap = finalGap / Math.max(1, theirPosition);
     if (!pastLimit && finalRelativeGap <= getTuning("negotiation.acceptTolerance")) {
       const finalPrice = yourNewPosition;
-      log.push(`Final round — close enough, they accept ★${finalPrice.toLocaleString()}.`);
+      log.push(`Final round — close enough, they accept ${MONEY_SIGN}${finalPrice.toLocaleString()}.`);
       return { ...state, yourPosition: yourNewPosition, theirPosition, moodScore, round, opening, status: "accepted", finalPrice, log };
     }
     log.push("Talks run out of time with no deal.");

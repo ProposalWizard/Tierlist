@@ -1,6 +1,7 @@
 "use client";
 import type { CareerState } from "@/lib/star/types";
 import { careerVerdict, retirementCheck, testimonialFor, TESTIMONIAL_APPEARANCES } from "@/lib/star/retirement";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 /**
  * Two screens that share their numbers: the decision, and what it added up to.
@@ -33,7 +34,7 @@ export function RetirementChoice({ career, onRetire, onPlayOn }: {
           <div className="mt-3 rounded-xl border border-amber-400/50 bg-amber-500/10 p-3 text-left">
             <div className="text-[10px] font-black uppercase tracking-widest text-amber-200">Testimonial</div>
             <div className="mt-0.5 text-xs text-white">
-              {career.player.club} will put on a testimonial for you. ★{testimonialFor(career)!.payout}.
+              {career.player.club} will put on a testimonial for you. {MONEY_SIGN}{testimonialFor(career)!.payout}.
             </div>
           </div>
         ) : (
@@ -121,7 +122,7 @@ export function LegacyScreen({ career, onNewCareer }: {
           <div className="mt-3 rounded-xl border border-amber-400/60 bg-amber-500/15 p-3">
             <div className="text-[10px] font-black uppercase tracking-widest text-amber-200">Testimonial</div>
             <div className="mt-1 text-xs font-bold text-white">
-              A full house at {career.testimonial.club} to say goodbye. ★{career.testimonial.payout}.
+              A full house at {career.testimonial.club} to say goodbye. {MONEY_SIGN}{career.testimonial.payout}.
             </div>
             <div className="mt-0.5 text-[10px] text-gray-200">
               {career.clubAppearances} appearances for one club will do that.

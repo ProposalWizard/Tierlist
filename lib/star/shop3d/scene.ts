@@ -25,6 +25,7 @@
  * animated with clips from his Universal Animation Library (same skeleton) —
  * see public/star/shop3d/LICENSE.txt and tools/shop3d/build_assets.py.
  */
+import { plantMesh } from "../home3d/plants";
 import { installAssetVersions } from "../three3d/assetUrl";
 import { toonYou } from "../style3d/toon/bodies";
 import { turnTo } from "../three3d/animBlend";
@@ -32,7 +33,7 @@ import type { Display, DisplayId } from "./catalogue";
 import { CAN_COLOURS } from "./catalogue";
 import { kitMasks, type V3 } from "./kit";
 import { floorCanvas, numberCanvas, labelCanvas, blobCanvas, neonCanvas, poolCanvas } from "./textures";
-import { formatMoney } from "../money";
+import { formatMoney, MONEY_SIGN } from "../money";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
@@ -51,6 +52,7 @@ import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { look3dStyle } from "../look3dStyle";
 import { dressShopH } from "./hRoom";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
+import { FOLLOW_CAM_D, FollowBoom, FollowCarry, FollowZoom, attachFollowZoom, boxRoom, capOnLine, loadFollowZoom, riseForMin, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
 import { safeCompileAsync } from "../three3d/safeCompile";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
 
@@ -458,21 +460,22 @@ async function buildShop(
   rugEdge.rotation.x = -Math.PI / 2;
   rugEdge.position.set(-1.0, 0.004, 3.6);
   scene.add(rugEdge);
-  // plants in brass pots
-  const plant = (x: number, z: number) => {
+  // plants in brass pots: the house's real-leaf plants (home3d/plants.ts), not a faceted ball
+  const plantM = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.72, envMapIntensity: 0.6 });
+  const plant = (x: number, z: number, kind: "palm" | "fiddle" | "monstera") => {
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.24, 0.6, 20), mat("#b58a45", { roughness: 0.35, metalness: 0.7 }));
     pot.position.set(x, 0.3, z);
     pot.castShadow = true;
     scene.add(pot);
-    const leaves = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), mat("#2d5a33", { flatShading: true, roughness: 0.8 }));
-    leaves.position.set(x, 1.2, z);
-    leaves.scale.set(1, 1.45, 1);
-    leaves.castShadow = true;
-    scene.add(leaves);
+    // the plant's own pot hidden inside the brass one: only its soil and leaves show over the rim
+    const p = plantMesh(THREE, kind, Math.abs(x * 31 + z * 17), { h: 1.9, pot: "#3b2a1e", material: plantM, scale: 1.25 });
+    p.position.set(x, 0.24, z);
+    p.rotation.y = (x + z) % 6.28;
+    scene.add(p);
     blob(1.1, 1.1, x, z);
   };
-  plant(-5.5, 6.1);
-  plant(5.5, -7.1);
+  plant(-5.5, 6.1, "monstera");
+  plant(5.5, -7.1, "fiddle");
   // Look H: parquet, panelling, coffers, practical lights, lit wall units (./hRoom.ts); Old: as before
   const hRoom = hEnh ? await dressShopH(THREE, scene, renderer, ROOM, { floor, wallM, panelM, tier }).catch((e) => { console.error("shop look H room failed", e); return null; }) : null;
 
@@ -483,7 +486,7 @@ async function buildShop(
   const fromPrice = (display: DisplayId, index: number) => {
     const it = displays[display].items[index];
     const p = Math.min(...it.levels.map((l) => l.price));
-    return `${it.levels.length > 1 ? "from " : ""}★${formatMoney(p)}`;
+    return `${it.levels.length > 1 ? "from " : ""}${MONEY_SIGN}${formatMoney(p)}`;
   };
   const tagText = (display: DisplayId, index: number) => {
     const it = displays[display].items[index];
@@ -1170,6 +1173,13 @@ async function buildShop(
   let camYaw = 0; // camera looks along -z at 0
   let orbitHold = 0;
   const orb = new OrbitCam(); // the look-around drag, eased (shared with the garden)
+  // the walking camera is camera D (../three3d/followCam.ts): close, centred behind him; pinch / wheel
+  // zooms out to about the shop's camera before it (4.6 m), remembered per device. The boom eases off the walls.
+  const zoom = new FollowZoom(loadFollowZoom());
+  const CS: FollowCam = zoomedFollowCam(zoom.now, FOLLOW_CAM_D);
+  const detachZoom = attachFollowZoom(container, zoom);
+  const boom = new FollowBoom();
+  const carry = new FollowCarry(); // his steps go straight into the camera (only turning is eased)
   let near: DisplayId | null = null;
   /** The card's dwell (./dwell.ts): the display area he is in, its timer, a tap-walk that just arrived. */
   let dwellZone: DisplayId | null = null;
@@ -1216,7 +1226,7 @@ async function buildShop(
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     // a tall phone screen sees more of the room with a wider lens
-    camera.fov = w / h < 0.7 ? 60 : 54;
+    camera.fov = w / h < 0.7 ? CS.fov : 54;
     baseFov = camera.fov;
     lastOff = -1;
     camera.updateProjectionMatrix();
@@ -1451,15 +1461,31 @@ async function buildShop(
     }
 
     // camera: follows behind him; with a card open it moves in on the item
+    zoom.step(dt);
+    zoomedFollowCam(zoom.now, FOLLOW_CAM_D, CS);
+    if (!edit?.views && container.clientWidth / (container.clientHeight || 1) < 0.7 && Math.abs(camera.fov - CS.fov) > 1e-3) { camera.fov = baseFov = CS.fov; camera.updateProjectionMatrix(); }
     camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
-    else if (speed > 0.3) camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * 1.6);
+    else if (speed > 0.3) {
+      // walking straight at the camera, it holds its side and backs off (never swings over his head)
+      // until a wall stops it backing off (as the house: ../three3d/followCam.ts)
+      const back0 = boxRoom(player.position.x, player.position.z, Math.sin(camYaw), Math.cos(camYaw), -ROOM.x + 0.3, ROOM.x - 0.3, -ROOM.z + 0.3, ROOM.z - 0.35);
+      const toCam = back0 < CS.back * 0.6 ? 0 : Math.max(0, Math.min(1, (Math.cos(angDiff(yaw, camYaw)) - 0.3) / 0.5));
+      camYaw += angDiff(camYaw, yaw + Math.PI) * Math.min(1, dt * CS.yawK) * (1 - toCam);
+    }
     frame += ((shot && orbitHold <= 0 ? 1 : 0) - frame) * Math.min(1, dt * 2.6);
     const cf = scratchCf.set(-Math.sin(camYaw), 0, -Math.cos(camYaw));
     const cr = scratchCr.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
-    const [camUp, camBack] = orb.lift(2.85, 4.6, 0.95); // the drag's tilt, same distance from him
-    want.set(player.position.x, camUp, player.position.z).addScaledVector(cf, -camBack).addScaledVector(cr, 0.3);
-    wantLook.set(player.position.x, 0.95, player.position.z).addScaledVector(cf, 2.4).addScaledVector(cr, 0.15);
+    const [camUp, camBack] = orb.lift(CS.height, CS.back, CS.lookY); // the drag's tilt, same distance from him
+    // the room free behind him along the camera's line (inside the walls): the boom eases in and out, never through
+    const px = player.position.x, pz = player.position.z;
+    const freeAt = (dx: number, dz: number) => boxRoom(px, pz, dx, dz, -ROOM.x + 0.3, ROOM.x - 0.3, -ROOM.z + 0.3, ROOM.z - 0.35);
+    if (first) boom.reset();
+    const len = boom.step(camBack, freeAt(-cf.x, -cf.z), dt);
+    want.set(px, riseForMin(len, camUp + (camBack - len) * CS.riseIfShort, ROOM.h - 0.25), pz).addScaledVector(cf, -len).addScaledVector(cr, CS.side);
+    // close in (a wall behind him), it looks down at him rather than past him
+    const closeK = Math.max(0, Math.min(1, (1.6 - len) / 1.2));
+    wantLook.set(px, CS.lookY + (1.2 - CS.lookY) * closeK, pz).addScaledVector(cf, (CS.lookAhead + (camBack - len) * 0.3) * (1 - closeK)).addScaledVector(cr, CS.lookSide);
     // the editor's view edits (none = as written): walking, and the card shot of what is picked
     if (edit?.views) {
       if (edit.views.follow) want.set(...editCamera([want.x, want.y, want.z], [wantLook.x, wantLook.y, wantLook.z], edit.views.follow));
@@ -1474,9 +1500,12 @@ async function buildShop(
     want.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, want.x));
     want.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, want.z));
     // walking out of the door: the camera stays inside, looking out
+    carry.step(px, pz, camPos, camLook, !first && frame < 0.5);
     if (first) { camPos.copy(want); camLook.copy(wantLook); first = false; }
     else { camPos.lerp(want, Math.min(1, dt * 5)); camLook.lerp(wantLook, Math.min(1, dt * 6)); }
-    // the eased camera stays inside the room too (it used to cut a corner through the wall while catching up)
+    // the eased camera stays inside the room too (it used to cut a corner through the wall while catching up):
+    // walking, shortened along its own line from him and risen over him, never slid round onto his head
+    if (frame < 0.5) camPos.y = riseForMin(capOnLine(camPos, px, pz, freeAt), camPos.y, ROOM.h - 0.25);
     camPos.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, camPos.x));
     camPos.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, camPos.z));
     camPos.y = Math.max(CAM_MIN_Y, Math.min(ROOM.h - 0.25, camPos.y));
@@ -1552,7 +1581,7 @@ async function buildShop(
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
     drawn++;
     // busy (walking, turning, the camera moving): every frame, fewer pixels
-    busy = speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
+    busy = zoom.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       // dynamic resolution: judged only while moving at the full cap
@@ -1664,6 +1693,7 @@ async function buildShop(
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, shadowRenders, frames: drawn, merged: frozen, quality: tier }),
     dispose: () => {
       disposed = true;
+      detachZoom();
       gov.dispose();
       savings.dispose();
       hEnh?.dispose();

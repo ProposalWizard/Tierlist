@@ -1,0 +1,821 @@
+{
+ "id": "arc-the-watch",
+ "title": "The watch in the wash bag",
+ "owner": "kid",
+ "summary": "A veteran's watch goes missing from the dressing room and you saw the youngest lad by the bags. What you say decides who gets the blame. Weeks later the kid tells you why he took it, and the season after, the truth comes out one way or another.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "veteran team-mate",
+   "academy kid",
+   "gaffer"
+  ],
+  "tone": [
+   "dark",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "vet",
+   "pick": "squad",
+   "where": [
+    "veteran"
+   ],
+   "order": "best"
+  },
+  {
+   "slot": "kid",
+   "pick": "squad",
+   "where": [
+    "age<=19"
+   ],
+   "order": "youngest"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "said": "none",
+  "helped": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "second-chance",
+   "title": "Second chance",
+   "text": "You kept the kid's secret and got him out of it. He deleted the app, and he's still in the first team."
+  },
+  {
+   "id": "the-dressing-room-knows",
+   "title": "The dressing room knows",
+   "text": "It came out, and everybody remembers which way you went."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "wat-1-missing",
+   "title": "The watch",
+   "n": 1,
+   "event": {
+    "id": "arc-wat-1-missing",
+    "title": "The watch",
+    "category": "teammates",
+    "place": "compound:changing-room",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "squad.any(veteran)",
+      "squad.any(age<=19)"
+     ]
+    },
+    "setup": [
+     "{vet.name} has emptied his bag onto the bench twice. His watch is gone, the one his wife bought him when they won the league. You came in early this morning, and so did {kid.short}."
+    ],
+    "talk": {
+     "start": "w1",
+     "nodes": {
+      "w1": {
+       "who": "vet",
+       "say": [
+        "\"You were in first. Did you see anyone near my peg?\""
+       ],
+       "replies": [
+        {
+         "id": "kid",
+         "label": "\"{kid.short} was in here before me.\"",
+         "tone": "honest",
+         "goto": "w-kid"
+        },
+        {
+         "id": "nobody",
+         "label": "\"Nobody. I was in the gym.\"",
+         "tone": "lie",
+         "end": "covered"
+        },
+        {
+         "id": "check",
+         "label": "\"Have you looked in your car?\"",
+         "tone": "calm",
+         "goto": "w2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "w2"
+        }
+       ]
+      },
+      "w2": {
+       "who": "vet",
+       "say": [
+        "\"I've looked in my car. I've looked in the bin. Somebody in this room has it.\" He's looking at the youngest lad."
+       ],
+       "replies": [
+        {
+         "id": "kid",
+         "label": "\"He was in here before me, but that doesn't mean anything.\"",
+         "tone": "honest",
+         "goto": "w-kid"
+        },
+        {
+         "id": "defend",
+         "label": "\"Leave the kid alone. You don't know it was anyone.\"",
+         "tone": "brave",
+         "end": "defended"
+        },
+        {
+         "id": "out",
+         "label": "Get changed and stay out of it.",
+         "tone": "cold",
+         "end": "stayed-out"
+        }
+       ]
+      },
+      "w-kid": {
+       "who": "vet",
+       "say": [
+        "He's across the room before you've finished. {kid.short} goes red and says he was only getting his shin pads."
+       ],
+       "replies": [
+        {
+         "id": "stop",
+         "label": "\"Hang on. I said he was here. I didn't say he took it.\"",
+         "tone": "brave",
+         "end": "told-then-stopped"
+        },
+        {
+         "id": "watch",
+         "label": "Watch.",
+         "tone": "cold",
+         "end": "told"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "covered": [
+       {
+        "text": "Nobody finds the watch. {vet.short} goes to the gaffer, and the gaffer says he'll have the cameras checked.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "lied-about-the-watch",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "lied"
+         }
+        }
+       }
+      ],
+      "defended": [
+       {
+        "text": "{vet.short} calls you soft. {kid.short} doesn't look at you all morning, but he sits next to you at lunch.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": -4,
+          "grudge": 4
+         },
+         {
+          "slot": "kid",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "stood-up-for-him-over-the-watch",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "defended"
+         }
+        }
+       }
+      ],
+      "stayed-out": [
+       {
+        "text": "It goes quiet in the way dressing rooms do. Everyone has picked a side by the warm-up.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": -1
+         },
+         {
+          "slot": "kid",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "nothing"
+         }
+        }
+       }
+      ],
+      "told-then-stopped": [
+       {
+        "text": "{vet.short} backs off, just. {kid.short} spends the rest of the day with his head down.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 2,
+          "respect": 2
+         },
+         {
+          "slot": "kid",
+          "bond": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "pointed-at-him-over-the-watch",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "told"
+         }
+        }
+       }
+      ],
+      "told": [
+       {
+        "text": "He empties the kid's bag on the floor in front of everyone. The watch isn't in it. Nobody apologises to the kid.",
+        "effects": {
+         "team": -3
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 4,
+          "respect": 2
+         },
+         {
+          "slot": "kid",
+          "bond": -10,
+          "respect": -2,
+          "grudge": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "pointed-at-him-over-the-watch",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "told"
+         }
+        },
+        "noteSquad": "the-kids-bag-on-the-floor"
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "A watch has gone missing from the dressing room"
+  },
+  {
+   "id": "wat-2-confess",
+   "title": "In the car park",
+   "after": {
+    "beat": "wat-1-missing",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-wat-2-confess",
+    "title": "In the car park",
+    "category": "teammates",
+    "place": "compound:car-park",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "{kid.name} is waiting by your car. He's been crying, or he's been not sleeping, or both."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "kid",
+       "say": [
+        "{if arc.said=='told'}\"You were right, it was me. I sold it. I owe a lad money from the betting app, and he said he'd come to my mum's.\"{/if}",
+        "{if !arc.said=='told'}\"It was me. I sold it to a man on the market. I owe a lad money from the betting app, and he said he'd come to my mum's.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "help",
+         "label": "\"How much? We'll get it back.\"",
+         "tone": "kind",
+         "goto": "c2"
+        },
+        {
+         "id": "gaffer",
+         "label": "\"You're going to tell the gaffer. Now.\"",
+         "tone": "brave",
+         "goto": "c-gaffer"
+        },
+        {
+         "id": "walk",
+         "label": "\"That's your problem.\"",
+         "tone": "cold",
+         "end": "walked"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "c2"
+        }
+       ]
+      },
+      "c2": {
+       "who": "kid",
+       "say": [
+        "\"Four hundred to get it back off the market man. The rest I'll sort. I swear I'll stop. Please don't tell {vet.short}.\""
+       ],
+       "replies": [
+        {
+         "id": "pay",
+         "label": "Lend him the money and get the watch back.",
+         "tone": "kind",
+         "end": "paid",
+         "cost": {
+          "moneyWeeks": 1
+         }
+        },
+        {
+         "id": "both",
+         "label": "\"I'll lend it. You put it back and delete the app in front of me.\"",
+         "tone": "honest",
+         "end": "paid-strict",
+         "cost": {
+          "moneyWeeks": 1
+         }
+        },
+        {
+         "id": "no",
+         "label": "\"I'm not paying for this. Tell the gaffer.\"",
+         "tone": "cold",
+         "end": "gaffer"
+        }
+       ]
+      },
+      "c-gaffer": {
+       "who": "kid",
+       "say": [
+        "\"He'll sack me. My contract's up in May.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"I'll come in with you.\"",
+         "tone": "brave",
+         "end": "gaffer-with-him"
+        },
+        {
+         "id": "alone",
+         "label": "\"Then you should've thought of that.\"",
+         "tone": "cold",
+         "end": "gaffer"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "paid": [
+       {
+        "text": "The watch is back on {vet.short}'s peg by Friday. He thinks he dropped it in the car after all.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 14,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "got-him-out-of-the-watch",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "helped": 1
+         }
+        }
+       }
+      ],
+      "paid-strict": [
+       {
+        "text": "He deletes it in front of you. His hands are shaking. The watch is back on the peg by Friday.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 12,
+          "respect": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "got-him-out-of-the-watch",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "helped": 2
+         }
+        }
+       }
+      ],
+      "gaffer-with-him": [
+       {
+        "text": "You sit outside the office for an hour. The gaffer fines him two weeks and gets the club's welfare officer in. He keeps his contract.",
+        "effects": {
+         "boss": 4,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 10,
+          "respect": 8
+         },
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "went-in-with-him",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "helped": 3
+         }
+        }
+       }
+      ],
+      "gaffer": [
+       {
+        "text": "He goes in on his own. He's not at training the next day, or the day after.",
+        "effects": {
+         "boss": 2,
+         "team": -3
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -10,
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "sent-him-in-alone",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "helped": 0
+         }
+        }
+       }
+      ],
+      "walked": [
+       {
+        "text": "He's still standing there when you pull out of the car park.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -8,
+          "respect": -2,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "walked-off-when-he-needed-help",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "helped": 0
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     },
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The kid wants to tell you something"
+  },
+  {
+   "id": "wat-3-truth",
+   "title": "The camera in the corridor",
+   "after": {
+    "beat": "wat-2-confess",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-wat-3-truth",
+    "title": "The camera in the corridor",
+    "category": "teammates",
+    "place": "compound:changing-room",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The club finally fixed the camera in the corridor. Somebody went back through last season's recordings for a laugh, and now {vet.name} knows exactly who was at his peg that morning."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "vet",
+       "say": [
+        "{if arc.helped>=1}\"The kid took it, and it came back. I'm not thick. Somebody paid for that.\" He looks at you. \"Was it you?\"{/if}",
+        "{if arc.helped==0}\"The kid took my watch. And I'm hearing you knew.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "own",
+         "label": "\"It was me. He was in trouble. He's out of it now.\"",
+         "tone": "honest",
+         "goto": "t2"
+        },
+        {
+         "id": "lie",
+         "label": "\"No idea what you're on about.\"",
+         "tone": "lie",
+         "end": "denied"
+        },
+        {
+         "id": "kid",
+         "label": "\"Ask him, not me.\"",
+         "tone": "cold",
+         "end": "passed-it-on"
+        }
+       ]
+      },
+      "t2": {
+       "who": "vet",
+       "say": [
+        "He looks at the watch on his wrist for a long time. \"He could have asked me. I'd have lent it him.\""
+       ],
+       "replies": [
+        {
+         "id": "tell",
+         "label": "\"He was eighteen and frightened. He didn't think anyone would.\"",
+         "tone": "kind",
+         "end": "vet-softens"
+        },
+        {
+         "id": "drop",
+         "label": "\"Then let it go.\"",
+         "tone": "calm",
+         "end": "vet-softens"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "vet-softens": [
+       {
+        "if": "arc.helped>=1",
+        "text": "{vet.short} takes the kid for a drink that Friday. Nobody else in the squad hears about it.",
+        "effects": {
+         "team": 5
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 8,
+          "respect": 8
+         },
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "covered-for-the-kid",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "second-chance"
+        }
+       },
+       {
+        "text": "{vet.short} nods, but the story's already round the room.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "the-dressing-room-knows"
+        }
+       }
+      ],
+      "denied": [
+       {
+        "text": "He finds out the rest from the kid that afternoon. He doesn't speak to you again that season.",
+        "effects": {
+         "team": -4
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": -10,
+          "respect": -8,
+          "grudge": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "lied-to-him-about-the-watch",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-dressing-room-knows"
+        }
+       }
+      ],
+      "passed-it-on": [
+       {
+        "text": "He does ask him, in front of everyone. It's worse than the first time.",
+        "effects": {
+         "team": -5
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": -4,
+          "respect": -4,
+          "grudge": 4
+         },
+         {
+          "slot": "kid",
+          "bond": -8,
+          "grudge": 8
+         }
+        ],
+        "arc": {
+         "end": "the-dressing-room-knows"
+        },
+        "noteSquad": "the-watch-came-out"
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Next season the truth comes out"
+  }
+ ]
+}

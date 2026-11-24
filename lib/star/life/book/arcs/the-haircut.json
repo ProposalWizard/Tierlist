@@ -1,0 +1,360 @@
+{
+ "id": "arc-the-haircut",
+ "title": "Same haircut",
+ "owner": "kid",
+ "summary": "The youngest lad turns up with your haircut, exactly. The dressing room loves it. What you say to him decides whether it's a laugh or a scar, and next season he's got a new one.",
+ "size": "small",
+ "about": {
+  "who": [
+   "academy kid"
+  ],
+  "tone": [
+   "funny",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "kid",
+   "pick": "squad",
+   "where": [
+    "age<=20"
+   ],
+   "order": "youngest"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-twins",
+   "title": "The twins",
+   "text": "He copied your haircut, you took it as a compliment, and the lads still call you the twins."
+  },
+  {
+   "id": "his-own-look",
+   "title": "His own look",
+   "text": "You laughed at him in front of everyone. He's had his own look ever since."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "hcut-1-cut",
+   "title": "Monday morning",
+   "n": 1,
+   "event": {
+    "id": "arc-hcut-1-cut",
+    "title": "Monday morning",
+    "category": "teammates",
+    "place": "compound:changing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{kid.name} walks into the dressing room with your haircut. Exactly yours, down to the line shaved in on the left. The room goes quiet for one second and then it goes up."
+    ],
+    "talk": {
+     "start": "h1",
+     "nodes": {
+      "h1": {
+       "who": "kid",
+       "say": [
+        "He's gone red to the ears. \"It's a coincidence. My barber just does this one.\""
+       ],
+       "replies": [
+        {
+         "id": "praise",
+         "label": "\"Looks better on you.\"",
+         "tone": "kind",
+         "end": "praised"
+        },
+        {
+         "id": "joke",
+         "label": "\"My barber charges extra for that line, you know.\"",
+         "tone": "confident",
+         "end": "joked"
+        },
+        {
+         "id": "mock",
+         "label": "\"Do you want my boots as well?\"",
+         "tone": "cold",
+         "goto": "h2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "nothing"
+        }
+       ]
+      },
+      "h2": {
+       "who": "kid",
+       "say": [
+        "The room laughs harder. He's looking at the floor."
+       ],
+       "replies": [
+        {
+         "id": "back",
+         "label": "\"I'm joking. It's a good cut.\"",
+         "tone": "kind",
+         "end": "joked"
+        },
+        {
+         "id": "more",
+         "label": "\"Next week he'll be wearing my aftershave.\"",
+         "tone": "cold",
+         "end": "mocked"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "praised": [
+       {
+        "text": "He sits a bit taller for the rest of the day.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "said-the-haircut-looked-good",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "nice"
+         }
+        }
+       }
+      ],
+      "joked": [
+       {
+        "text": "He laughs with everyone else. By lunch they're calling you two the twins.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "made-the-haircut-a-joke",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "nice"
+         }
+        }
+       }
+      ],
+      "mocked": [
+       {
+        "text": "He wears a beanie for the rest of the week, indoors.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -8,
+          "respect": -2,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "laughed-at-my-haircut",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "mean"
+         }
+        }
+       }
+      ],
+      "nothing": [
+       {
+        "text": "Somebody puts a photo of the two of you side by side in the group chat.",
+        "npc": [
+         {
+          "slot": "kid"
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "nice"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=20"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "The kid has a new haircut"
+  },
+  {
+   "id": "hcut-2-new",
+   "title": "A new look",
+   "after": {
+    "beat": "hcut-1-cut",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-hcut-2-new",
+    "title": "A new look",
+    "category": "teammates",
+    "place": "compound:changing-room",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{if arc.path=='nice'}{kid.short} comes in with bleached hair. He goes straight to your peg. \"Don't. I know. You first next time, though?\"{/if}",
+     "{if arc.path=='mean'}{kid.short} has grown his hair long and tied it back. He walks past your peg without looking.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "matching",
+      "label": "{if arc.path=='nice'}\"Book us both in.\"{/if}{if arc.path=='mean'}\"It suits you, that.\"{/if}",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='nice'",
+        "text": "You both turn up bleached on the Monday. The gaffer looks at the pair of you and goes back into his office.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "got-matching-hair",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "the-twins"
+        }
+       },
+       {
+        "text": "He stops. \"Cheers.\" It's the first thing he's said to you in a year.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 2,
+          "grudge": -6
+         }
+        ],
+        "arc": {
+         "end": "his-own-look"
+        }
+       }
+      ]
+     },
+     {
+      "id": "nothing",
+      "label": "Say nothing.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='nice'",
+        "text": "{if arc.path=='nice'}He bleaches it on his own and you get it done the week after anyway.{/if}",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-twins"
+        }
+       },
+       {
+        "text": "He sits at the other end of the dressing room, where he's sat all season.",
+        "npc": [
+         {
+          "slot": "kid"
+         }
+        ],
+        "arc": {
+         "end": "his-own-look"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=20"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "Next season, he's got a new look"
+  }
+ ]
+}

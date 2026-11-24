@@ -1,0 +1,543 @@
+{
+ "id": "arc-unsettled",
+ "title": "Unsettled",
+ "owner": "agent",
+ "summary": "Your agent wants to tell the papers you're unsettled, to push your wages up. If you go along with it, the gaffer reads it on Sunday. In the summer you find out who the agent was really working for.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "agent",
+   "gaffer",
+   "tabloid reporter"
+  ],
+  "tone": [
+   "tense",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "agent",
+   "pick": "agent"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "leak": 0,
+  "gaffer": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "sacked-the-agent",
+   "title": "You sacked him",
+   "text": "He tried to sell you to the highest bidder for his own cut, and you ended it."
+  },
+  {
+   "id": "kept-him",
+   "title": "You kept him",
+   "text": "He's still your agent. You still don't know everything he does."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "agl-1-call",
+   "title": "Unsettled",
+   "n": 1,
+   "event": {
+    "id": "arc-agl-1-call",
+    "title": "Unsettled",
+    "category": "agent",
+    "place": "driving",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "driving",
+      "home:evening"
+     ],
+     "requires": [
+      "clubApps>=8"
+     ]
+    },
+    "setup": [
+     "{agent.name} on the phone, on speaker. You can hear he's in a car as well."
+    ],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "agent",
+       "say": [
+        "\"Two clubs have asked about you. Neither's serious yet. If I tell the {tabloid.outlet} you're unsettled, your club panics and gives you a new deal. Easy money.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Do it.\"",
+         "tone": "reckless",
+         "end": "leak",
+         "var": {
+          "leak": 1
+         }
+        },
+        {
+         "id": "think",
+         "label": "\"And if the gaffer reads it?\"",
+         "tone": "honest",
+         "goto": "a2"
+        },
+        {
+         "id": "no",
+         "label": "\"No. I'm happy here.\"",
+         "tone": "calm",
+         "end": "no-leak"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "a2"
+        }
+       ]
+      },
+      "a2": {
+       "who": "agent",
+       "say": [
+        "\"He'll be annoyed for a week, then the chairman gives you twenty per cent more. That's how it works, mate.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Go on, then.\"",
+         "tone": "reckless",
+         "end": "leak",
+         "var": {
+          "leak": 1
+         }
+        },
+        {
+         "id": "tellhim",
+         "label": "\"I'm going to tell the gaffer it wasn't me.\"",
+         "tone": "brave",
+         "end": "leak-warned",
+         "var": {
+          "leak": 1
+         }
+        },
+        {
+         "id": "no",
+         "label": "\"Leave it.\"",
+         "tone": "calm",
+         "end": "no-leak"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "leak": [
+       {
+        "text": "Sunday's {tabloid.outlet}: \"STAR UNSETTLED.\" There's a photo of you looking at your phone, from last season.",
+        "effects": {
+         "boss": -4,
+         "fans": -3
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 4,
+          "respect": 2
+         },
+         {
+          "slot": "manager",
+          "respect": -3,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "read-that-i-was-unsettled",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "gaffer": "annoyed"
+         }
+        }
+       }
+      ],
+      "leak-warned": [
+       {
+        "text": "You tell the gaffer on Saturday that something might come out, and it isn't you. He looks at you a long time. \"Then it isn't you.\"",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 2
+         },
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "gaffer": "warned"
+         }
+        }
+       }
+      ],
+      "no-leak": [
+       {
+        "text": "\"Your money,\" he says. \"Or not, as it goes.\"",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -4,
+          "respect": -2,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "wouldnt-play-the-game",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "gaffer": "fine"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     }
+    ]
+   },
+   "hint": "Your agent has a plan"
+  },
+  {
+   "id": "agl-2-office",
+   "title": "Sunday paper",
+   "after": {
+    "beat": "agl-1-call",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-agl-2-office",
+    "title": "Sunday paper",
+    "category": "manager",
+    "place": "compound:office",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "arc.gaffer=='annoyed'"
+     ]
+    },
+    "setup": [
+     "The paper is on {manager.name}'s desk, opened at the page."
+    ],
+    "talk": {
+     "start": "o1",
+     "nodes": {
+      "o1": {
+       "who": "manager",
+       "say": [
+        "\"Are you unsettled?\""
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"No, gaffer. That's my agent, not me.\"",
+         "tone": "humble",
+         "end": "blamed-agent"
+        },
+        {
+         "id": "calm",
+         "label": "\"I want a new deal. That's all it is.\"",
+         "tone": "calm",
+         "end": "honest-want"
+        },
+        {
+         "id": "fiery",
+         "label": "\"Maybe I am.\"",
+         "tone": "fiery",
+         "end": "defiant"
+        },
+        {
+         "id": "quiet",
+         "label": "… Say nothing",
+         "silent": true,
+         "end": "defiant"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "blamed-agent": [
+       {
+        "text": "\"Then sack your agent.\" He bins the paper.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "blamed-the-agent",
+          "strength": 1
+         }
+        ]
+       }
+      ],
+      "honest-want": [
+       {
+        "text": "\"Then come and ask me. Don't send the papers.\" You get a new deal in March, smaller than the agent said.",
+        "effects": {
+         "boss": 1,
+         "moneyWeeks": 1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ]
+       }
+      ],
+      "defiant": [
+       {
+        "text": "The team sheet goes up on Friday without your name in the eleven.",
+        "effects": {
+         "boss": -6
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -4,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "said-maybe-i-am-unsettled",
+          "strength": 3
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "agent",
+      "pick": "agent"
+     }
+    ]
+   },
+   "hint": "The gaffer has seen the paper"
+  },
+  {
+   "id": "agl-3-summer",
+   "title": "The summer",
+   "after": {
+    "beat": "agl-1-call",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-agl-3-summer",
+    "title": "The summer",
+    "category": "agent",
+    "place": "home",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "season-end",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{tabloid.name} from the {tabloid.outlet} rings you, not your agent. \"Off the record. Did you know your agent was taking a fee from one of the clubs that asked about you? A big one. If you'd moved, he'd have been paid twice.\""
+    ],
+    "choices": [
+     {
+      "id": "sack",
+      "label": "Ring {agent.short} and end it.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "He shouts for four minutes, then sends a bill. You pay half of it.",
+        "effects": {
+         "moneyWeeks": -1,
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -14,
+          "respect": -8,
+          "grudge": 16
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "sacked-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "sacked-the-agent"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ask",
+      "label": "Ring {agent.short} and ask him straight.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "chance": 0.5,
+        "text": "\"That's how it works, mate.\" He doesn't even deny it. You end it there and then.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -10,
+          "respect": -6,
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "sacked-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "sacked-the-agent"
+        }
+       },
+       {
+        "chance": 0.5,
+        "text": "He swears it's lies and gets you a boot deal by the end of the week. You keep him. You check everything now.",
+        "effects": {
+         "moneyWeeks": 1
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 2,
+          "respect": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "had-to-explain-himself",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "kept-him"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Leave it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "You leave it. He takes you out for dinner in August and picks up the bill, which he's never done before.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "kept-him"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "In the summer you'll find out what he was up to"
+  }
+ ]
+}

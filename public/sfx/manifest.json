@@ -935,6 +935,46 @@
       "kb": 19.7,
       "purpose": "Co-commentator: They'll be talking about that one for years.",
       "prompt": "(Kokoro bm_fable, speed 1.0) They'll be talking about that one for years."
+    },
+    {
+      "name": "cut-pen-scratch",
+      "file": "/sfx/cut-pen-scratch.mp3",
+      "duration": 1.33,
+      "kb": 10.7,
+      "purpose": "Cut scenes: the pen on the contract (signing)",
+      "prompt": "Made in code: scripts/sfx/cutscene_cues.py (own work, CC0)."
+    },
+    {
+      "name": "cut-camera-shutters",
+      "file": "/sfx/cut-camera-shutters.mp3",
+      "duration": 1.83,
+      "kb": 14.5,
+      "purpose": "Cut scenes: the press cameras (press, trophy)",
+      "prompt": "Made in code: scripts/sfx/cutscene_cues.py (own work, CC0)."
+    },
+    {
+      "name": "cut-mentor-line",
+      "file": "/sfx/cut-mentor-line.mp3",
+      "duration": 3.12,
+      "kb": 25.0,
+      "purpose": "Cut scenes: a spoken line (Talent gets you here. Hunger keeps you here.)",
+      "prompt": "(Kokoro bm_george, speed 0.88) Talent gets you here. Hunger keeps you here. — scripts/cutscene/voice.py"
+    },
+    {
+      "name": "cut-press-question",
+      "file": "/sfx/cut-press-question.mp3",
+      "duration": 3.15,
+      "kb": 25.4,
+      "purpose": "Cut scenes: a spoken line (Two goals on your debut. What's going through your head?)",
+      "prompt": "(Kokoro bm_lewis, speed 1.0) Two goals on your debut. What's going through your head? — scripts/cutscene/voice.py"
+    },
+    {
+      "name": "cut-press-answer",
+      "file": "/sfx/cut-press-answer.mp3",
+      "duration": 2.79,
+      "kb": 22.5,
+      "purpose": "Cut scenes: a spoken line (Honestly? I've dreamt about this since I was six.)",
+      "prompt": "(Kokoro bm_daniel, speed 0.95) Honestly? I've dreamt about this since I was six. — scripts/cutscene/voice.py"
     }
   ]
 }

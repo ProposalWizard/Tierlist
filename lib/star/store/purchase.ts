@@ -1,5 +1,5 @@
 /**
- * THE STORE'S RULES — buying, equipping, Coin packs and swapping Coins for ★.
+ * THE STORE'S RULES — buying, equipping, Coin packs and swapping Coins for £.
  *
  * Pure reducers over a small wallet-and-locker state. The test page
  * (/star-store-dev) keeps this state in its own browser storage and never
@@ -14,6 +14,7 @@ import {
 } from "./catalogue";
 import { COIN_PACKS, coinsToStars, packCoinsNow } from "./coins";
 import { dailySpecials } from "./daily";
+import { MONEY_SIGN } from "../money";
 
 export type Currency = "stars" | "coins";
 
@@ -88,7 +89,7 @@ export function buy(
   const cost = currency === "stars" ? price.stars : price.coins;
   const have = currency === "stars" ? state.stars : state.coins;
   if (cost > have) {
-    return { ok: false, state, reason: currency === "stars" ? "Not enough ★." : "Not enough Coins." };
+    return { ok: false, state, reason: currency === "stars" ? "Not enough money." : "Not enough Coins." };
   }
 
   const name = item.kind === "boot" ? item.boot.name : item.name;
@@ -101,7 +102,7 @@ export function buy(
     specialsBought: percentOff > 0
       ? { ...state.specialsBought, [dateKey]: [...(state.specialsBought[dateKey] ?? []), item.id] }
       : state.specialsBought,
-    log: addLog(state, `${name} — ${currency === "stars" ? `★${cost.toLocaleString()}` : `${cost.toLocaleString()} Coins`}${percentOff ? ` (${percentOff}% off)` : ""}`, now),
+    log: addLog(state, `${name} — ${currency === "stars" ? `${MONEY_SIGN}${cost.toLocaleString()}` : `${cost.toLocaleString()} Coins`}${percentOff ? ` (${percentOff}% off)` : ""}`, now),
   };
   return { ok: true, state: next };
 }
@@ -150,7 +151,7 @@ export function buyCoinPack(state: StoreState, packId: string, now = Date.now())
   };
 }
 
-/** Swap Coins for ★ at this player's rate. */
+/** Swap Coins for £ at this player's rate. */
 export function convertCoins(state: StoreState, coins: number, weeklyWage: number, now = Date.now()): Result {
   const n = Math.floor(coins);
   if (!(n > 0)) return { ok: false, state, reason: "Pick an amount." };
@@ -162,7 +163,7 @@ export function convertCoins(state: StoreState, coins: number, weeklyWage: numbe
       ...state,
       coins: state.coins - n,
       stars: state.stars + stars,
-      log: addLog(state, `Swapped ${n.toLocaleString()} Coins → ★${stars.toLocaleString()}`, now),
+      log: addLog(state, `Swapped ${n.toLocaleString()} Coins → ${MONEY_SIGN}${stars.toLocaleString()}`, now),
     },
   };
 }

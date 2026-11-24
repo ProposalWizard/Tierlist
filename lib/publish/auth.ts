@@ -25,7 +25,11 @@ export function ownerOk(email: string | undefined, env: Record<string, string | 
 
 export async function whoIs(req: Request, allow: Who["kind"][]): Promise<Who | null> {
   const h = req.headers;
-  if (allow.includes("agent")) { const want = secret("PUBLISH_AGENT_TOKEN"), got = h.get("x-publish-agent"); if (want && got && same(got, want)) return { kind: "agent", name: "chat" }; }
+  if (allow.includes("agent")) {
+    // The chat's key comes as x-publish-agent, or as "Authorization: Bearer <key>" (the form cloud chats save keys with).
+    const want = secret("PUBLISH_AGENT_TOKEN"), got = h.get("x-publish-agent"), auth = h.get("authorization");
+    if (want && ((got && same(got, want)) || (auth && same(auth, `Bearer ${want}`)))) return { kind: "agent", name: "chat" };
+  }
   if (allow.includes("cron")) {
     const want = secret("PUBLISH_CRON_SECRET"), got = h.get("x-publish-cron");
     if (want && got && same(got, want)) return { kind: "cron", name: "timer" };

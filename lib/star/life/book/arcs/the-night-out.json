@@ -1,0 +1,340 @@
+{
+ "id": "arc-the-night-out",
+ "title": "Thursday night",
+ "owner": "manager",
+ "summary": "A photo of you out on a Thursday night, two days before a game, reaches the gaffer's desk. How you answer for it decides how much rope he gives you next season.",
+ "size": "small",
+ "about": {
+  "who": [
+   "gaffer",
+   "tabloid reporter"
+  ],
+  "tone": [
+   "tense",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "trusted",
+   "title": "Trusted",
+   "text": "You owned up to the night out, and he gave you the benefit of the doubt next time."
+  },
+  {
+   "id": "on-a-short-lead",
+   "title": "On a short lead",
+   "text": "You lied about the photo, and he hasn't let you out of his sight since."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "nit-1-photo",
+   "title": "The photo",
+   "n": 1,
+   "event": {
+    "id": "arc-nit-1-photo",
+    "title": "The photo",
+    "category": "manager",
+    "place": "compound:office",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "fame>=0"
+     ]
+    },
+    "setup": [
+     "{manager.name} has his phone face up on the desk. It's a photo from the {tabloid.outlet}'s website: you, in a bar, on Thursday, at what the clock behind you says is ten to one."
+    ],
+    "talk": {
+     "start": "n1",
+     "nodes": {
+      "n1": {
+       "who": "manager",
+       "say": [
+        "\"Two days before a game. Tell me that's an old photo.\""
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"It's not. I'm sorry, gaffer. It was a mate's birthday.\"",
+         "tone": "humble",
+         "end": "owned"
+        },
+        {
+         "id": "calm",
+         "label": "\"I was on water all night. You can ask anyone.\"",
+         "tone": "calm",
+         "end": "explained"
+        },
+        {
+         "id": "confident",
+         "label": "\"It's an old photo.\"",
+         "tone": "lie",
+         "end": "lied"
+        },
+        {
+         "id": "fiery",
+         "label": "\"What I do on a Thursday is my business.\"",
+         "tone": "fiery",
+         "end": "defiant"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "owned": [
+       {
+        "text": "He fines you a week and doesn't drop you. You score on Saturday and he says nothing about it.",
+        "effects": {
+         "boss": -1,
+         "moneyWeeks": -1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "owned-up-to-the-night-out",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "honest"
+         }
+        }
+       }
+      ],
+      "explained": [
+       {
+        "text": "\"Water.\" He looks at the photo again. \"Fine. Not again before a game.\"",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "honest"
+         }
+        }
+       }
+      ],
+      "lied": [
+       {
+        "text": "He turns the phone round. There's a date on the clock behind you. \"Try again.\"",
+        "effects": {
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -6,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "lied-about-the-photo",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lied"
+         }
+        }
+       }
+      ],
+      "defiant": [
+       {
+        "text": "\"Not when it's two days before my game.\" You're on the bench on Saturday.",
+        "effects": {
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "said-thursdays-were-my-business",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lied"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "There's a photo going round"
+  },
+  {
+   "id": "nit-2-again",
+   "title": "Another Thursday",
+   "after": {
+    "beat": "nit-1-photo",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-nit-2-again",
+    "title": "Another Thursday",
+    "category": "manager",
+    "place": "compound:office",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "variants": [
+     {
+      "if": "!sameClub",
+      "template": "phone-call",
+      "place": "home",
+      "setupSwap": "Your old gaffer rings. Your new gaffer has asked him what you're like on a Thursday."
+     }
+    ],
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. It's the team-mate's leaving do on Thursday night and the whole squad is going. {manager.short} catches you in the corridor."
+    ],
+    "choices": [
+     {
+      "id": "ask",
+      "label": "\"Can I go for an hour?\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='honest'",
+        "text": "\"Go. Be home by ten. I'll know if you're not.\"",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 3
+         }
+        ],
+        "arc": {
+         "end": "trusted"
+        }
+       },
+       {
+        "text": "\"No.\" He doesn't explain.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 1
+         }
+        ],
+        "arc": {
+         "end": "on-a-short-lead"
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Say you're not going.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='honest'",
+        "text": "He nods. You go to bed at ten. Somebody else ends up in the paper.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "trusted"
+        }
+       },
+       {
+        "text": "\"Good.\" He's not sure he believes you, and he texts you at half ten to check.",
+        "npc": [
+         {
+          "slot": "manager"
+         }
+        ],
+        "arc": {
+         "end": "on-a-short-lead"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Next season, another night out"
+  }
+ ]
+}

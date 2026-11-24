@@ -20,7 +20,7 @@
  *     only "the price I saw", so a changed price charges nothing.
  *   - Signed out: no gems, nothing owned, and the screens say "Sign in".
  *
- * Match money (★, career.money) can never buy a paid item: nothing here takes
+ * Match money (£, career.money) can never buy a paid item: nothing here takes
  * it, and the buy route does not accept it. See PAID_ITEMS.md.
  *
  * No React here (the hook is lib/star/useWallet.ts). Tested in

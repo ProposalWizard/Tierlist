@@ -1,0 +1,432 @@
+{
+ "id": "arc-the-tunnel",
+ "title": "What he said in the tunnel",
+ "owner": "rival",
+ "summary": "A defender from the other side says something in the tunnel before kick-off. How you take it decides what he is to you. Next season you're in the same tunnel again, and he hasn't forgotten.",
+ "size": "small",
+ "about": {
+  "who": [
+   "rival player"
+  ],
+  "tone": [
+   "tense",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "rival",
+   "pick": "rival"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-nemesis",
+   "title": "Him again",
+   "text": "Every time you play his lot, you know where he is on the pitch."
+  },
+  {
+   "id": "the-nod",
+   "title": "A nod in the tunnel",
+   "text": "You started off badly and ended up nodding to each other. These days you nod to each other in the tunnel."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "tun-1-tunnel",
+   "title": "In the tunnel",
+   "n": 1,
+   "event": {
+    "id": "arc-tun-1-tunnel",
+    "title": "In the tunnel",
+    "category": "rivals",
+    "place": "stadium:tunnel",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "walkout"
+     ],
+     "requires": [
+      "clubApps>=3"
+     ]
+    },
+    "setup": [
+     "You're in the tunnel, waiting to go out. {rival.name}, their centre half, is a head taller than you and standing too close."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "rival",
+       "say": [
+        "\"You're the one who fell over in the box last time. You going to do that again today, or are you going to stand up?\""
+       ],
+       "replies": [
+        {
+         "id": "bite",
+         "label": "\"Get your hands off me when I'm in the box, and I'll stay up.\"",
+         "tone": "fiery",
+         "goto": "t2"
+        },
+        {
+         "id": "laugh",
+         "label": "Laugh at him.",
+         "tone": "confident",
+         "goto": "t-laugh"
+        },
+        {
+         "id": "hand",
+         "label": "Hold your hand out to shake.",
+         "tone": "calm",
+         "end": "shook"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "ignored"
+        }
+       ]
+      },
+      "t2": {
+       "who": "rival",
+       "say": [
+        "He grins. \"See you at the first corner, then.\""
+       ],
+       "replies": [
+        {
+         "id": "see",
+         "label": "\"I'll be there.\"",
+         "tone": "brave",
+         "end": "bit"
+        },
+        {
+         "id": "ref",
+         "label": "Look at the referee and say nothing.",
+         "tone": "calm",
+         "end": "bit-soft"
+        }
+       ]
+      },
+      "t-laugh": {
+       "who": "rival",
+       "say": [
+        "That throws him. \"What's funny?\""
+       ],
+       "replies": [
+        {
+         "id": "you",
+         "label": "\"You've been practising that line all week.\"",
+         "tone": "confident",
+         "end": "laughed"
+        },
+        {
+         "id": "nothing",
+         "label": "\"Nothing. Good luck today.\"",
+         "tone": "kind",
+         "end": "shook"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "bit": [
+       {
+        "text": "He's on you at the first corner, and every corner after.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": -4,
+          "respect": 2,
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "squared-up-in-the-tunnel",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "bit"
+         }
+        }
+       }
+      ],
+      "bit-soft": [
+       {
+        "text": "He laughs and goes back to his place in the line.",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "squared-up-in-the-tunnel",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "bit"
+         }
+        }
+       }
+      ],
+      "laughed": [
+       {
+        "text": "Two of his own team-mates laugh as well. He doesn't like that.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": -2,
+          "respect": 4,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "laughed-at-him-in-the-tunnel",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "bit"
+         }
+        }
+       }
+      ],
+      "shook": [
+       {
+        "text": "He looks at your hand for a second, then shakes it.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4,
+          "respect": 4,
+          "grudge": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "shook-hands-in-the-tunnel",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "shook"
+         }
+        }
+       }
+      ],
+      "ignored": [
+       {
+        "text": "He tries twice more and then gives up.",
+        "npc": [
+         {
+          "slot": "rival",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "ignored"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     }
+    ]
+   },
+   "hint": "Their centre half has something to say"
+  },
+  {
+   "id": "tun-2-again",
+   "title": "Him again",
+   "after": {
+    "beat": "tun-1-tunnel",
+    "seasons": [
+     1,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-tun-2-again",
+    "title": "Him again",
+    "category": "rivals",
+    "place": "stadium:tunnel",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "Same tunnel, a season on. {rival.name} is in the line again, two places down."
+    ],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "rival",
+       "say": [
+        "{if arc.path=='bit'}\"First corner,\" he says, without looking at you.{/if}",
+        "{if arc.path=='shook'}He gives you a nod. \"Still standing up, then?\"{/if}",
+        "{if arc.path=='ignored'}\"You're the quiet one,\" he says. \"I'd forgotten.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "nod",
+         "label": "Nod back.",
+         "tone": "calm",
+         "end": "nod"
+        },
+        {
+         "id": "go",
+         "label": "\"First corner.\"",
+         "tone": "fiery",
+         "end": "feud"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "quiet-again"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "nod": [
+       {
+        "text": "He nods back and goes to his place in the line.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4,
+          "respect": 4,
+          "grudge": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "nodded-in-the-tunnel",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "the-nod"
+        }
+       }
+      ],
+      "feud": [
+       {
+        "text": "He takes you out at the first corner, and gets booked for it. You both enjoy it more than you should.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": -4,
+          "respect": 4,
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "first-corner-every-time",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-nemesis"
+        }
+       }
+      ],
+      "quiet-again": [
+       {
+        "if": "arc.path=='bit'",
+        "text": "{if arc.path=='bit'}He takes it as you being scared, which you aren't, and he's on you all game.{/if}{if !arc.path=='bit'}He leaves you to it.{/if}",
+        "npc": [
+         {
+          "slot": "rival",
+          "respect": 2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "the-nemesis"
+        }
+       },
+       {
+        "text": "He leaves you to it. You never really fall out.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-nod"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     }
+    ]
+   },
+   "hint": "You'll see him again next season"
+  }
+ ]
+}

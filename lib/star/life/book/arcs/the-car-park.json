@@ -1,0 +1,340 @@
+{
+ "id": "arc-the-car-park",
+ "title": "Forty quid a week",
+ "owner": "tabloid",
+ "summary": "After a bad defeat a fan screams at you in the car park and somebody films it. What you do in the next ten seconds is the clip. A season on, the clip comes back.",
+ "size": "small",
+ "about": {
+  "who": [
+   "a fan in the car park",
+   "tabloid reporter"
+  ],
+  "tone": [
+   "tense",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "man",
+   "pick": "stranger"
+  },
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-good-clip",
+   "title": "The good clip",
+   "text": "A man screamed at you and you kept your head. The clip of you shaking his hand gets played every time there's trouble."
+  },
+  {
+   "id": "the-bad-clip",
+   "title": "The bad clip",
+   "text": "You lost your head in a car park, and the clip follows you around."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "cpk-1-man",
+   "title": "The car park",
+   "n": 1,
+   "event": {
+    "id": "arc-cpk-1-man",
+    "title": "The car park",
+    "category": "fans",
+    "place": "stadium:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "man",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastLost"
+     ]
+    },
+    "setup": [
+     "You lost four-nil. A man in a home shirt is by the barrier at the players' car park, and he's been waiting for you. Somebody behind him has their phone up."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "man",
+       "say": [
+        "\"Forty quid a week I pay to watch that! Forty quid! You don't even care!\" He's crying, a bit. He's very red."
+       ],
+       "replies": [
+        {
+         "id": "talk",
+         "label": "Walk over and talk to him.",
+         "tone": "brave",
+         "goto": "c2"
+        },
+        {
+         "id": "walk",
+         "label": "Get in your car.",
+         "tone": "calm",
+         "end": "drove"
+        },
+        {
+         "id": "back",
+         "label": "\"Then don't come!\"",
+         "tone": "fiery",
+         "end": "shouted"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "drove"
+        }
+       ]
+      },
+      "c2": {
+       "who": "man",
+       "say": [
+        "He wasn't expecting that. \"I just… I've been coming since I was six.\""
+       ],
+       "replies": [
+        {
+         "id": "hand",
+         "label": "\"So have I, nearly. We were rubbish. I'm sorry.\" Hold out your hand.",
+         "tone": "honest",
+         "end": "shook"
+        },
+        {
+         "id": "ticket",
+         "label": "\"Next home game's on me.\"",
+         "tone": "kind",
+         "end": "ticket"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "shook": [
+       {
+        "text": "He shakes it. The clip is up in an hour. A million people have seen you apologise to a man in a car park by the morning.",
+        "effects": {
+         "fans": 3,
+         "fame": 2
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "shook-hands-with-the-angry-fan",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "good"
+         }
+        }
+       }
+      ],
+      "ticket": [
+       {
+        "text": "He doesn't know what to say. The clip goes round, mostly the bit where he hugs you.",
+        "effects": {
+         "fans": 3,
+         "moneyWeeks": -0.2
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "shook-hands-with-the-angry-fan",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "good"
+         }
+        }
+       }
+      ],
+      "drove": [
+       {
+        "text": "The clip is ten seconds of you not looking at him. People argue about it in the comments for a week.",
+        "effects": {
+         "fans": -1
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "drove-past-the-angry-fan",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "drove"
+         }
+        }
+       }
+      ],
+      "shouted": [
+       {
+        "text": "\"Then don't come!\" is on the {tabloid.outlet}'s back page. The club makes you apologise in a statement you didn't write.",
+        "effects": {
+         "fans": -3,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "shouted-at-a-fan",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "bad"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "man",
+      "pick": "stranger"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Someone's waiting by the players' cars"
+  },
+  {
+   "id": "cpk-2-clip",
+   "title": "The clip",
+   "after": {
+    "beat": "cpk-1-man",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-cpk-2-clip",
+    "title": "The clip",
+    "category": "press",
+    "place": "stadium:car-park",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. {tabloid.name} from the {tabloid.outlet} catches you by the bus. \"Another fan was screaming at your lot today. Remember your car park clip?\""
+    ],
+    "choices": [
+     {
+      "id": "own",
+      "label": "\"I remember. He had a point.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='good'",
+        "text": "It's a nice piece. They use the photo of the handshake.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-good-clip"
+        }
+       },
+       {
+        "text": "\"So you'd say it again?\" He prints that, not the rest.",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-bad-clip"
+        }
+       }
+      ]
+     },
+     {
+      "id": "walk",
+      "label": "Get on the bus.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='good'",
+        "text": "He runs the handshake clip again anyway, with a headline about how it used to be.",
+        "arc": {
+         "end": "the-good-clip"
+        }
+       },
+       {
+        "text": "He runs the old clip again, next to today's.",
+        "effects": {
+         "fans": -1
+        },
+        "arc": {
+         "end": "the-bad-clip"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "A season on, the clip comes back"
+  }
+ ]
+}

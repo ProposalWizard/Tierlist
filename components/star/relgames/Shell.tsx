@@ -8,6 +8,7 @@
 import type React from "react";
 import { FlatPanel, SquareBar, PressButton } from "../ui";
 import BackButton from "../ui/BackButton";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 export interface GameResult {
   won: boolean;
@@ -57,7 +58,7 @@ export function ResultPanel({ result, who, current, onContinue }: { result: Game
       <div className="mt-2 text-[15px] font-black text-white">
         {result.gain === 0 ? `${who} stays at ${Math.round(current)}.${result.won ? " The higher it is, the harder it moves." : ""}` : `${who} ${sign}: ${Math.round(current)} → ${Math.round(after)}`}
       </div>
-      {!!result.cost && <div className="mt-1 text-[13px] font-bold text-amber-200">Cost ★{result.cost.toLocaleString("en-GB")}</div>}
+      {!!result.cost && <div className="mt-1 text-[13px] font-bold text-amber-200">Cost {MONEY_SIGN}{result.cost.toLocaleString("en-GB")}</div>}
       <PressButton variant="primary" size="none" onClick={onContinue} className="mt-3 w-full rounded py-3 text-[14px] font-black uppercase">Continue →</PressButton>
     </div>
   );

@@ -21,7 +21,7 @@ import { careerVerdict, testimonialFor, CAREER_SEASONS } from "@/lib/star/retire
 import { careerOverview } from "@/lib/star/careerOverview";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import { ScreenShell, FlatPanel, CountUp, RiseIn, BottomBar, BarButton, clubTheme, rgba } from "./ui";
 import { Rays } from "./ui/Screen";
@@ -197,7 +197,7 @@ export function FinalWhistle({ career, onRetire }: { career: CareerState; onReti
               <div className="min-w-0 flex-1 text-[12.5px] font-bold text-white">
                 {short(t.club)} put on a testimonial for you
               </div>
-              <div className="sk-num shrink-0 text-[18px] leading-none text-amber-200">★{formatMoney(t.payout)}</div>
+              <div className="sk-num shrink-0 text-[18px] leading-none text-amber-200">{MONEY_SIGN}{formatMoney(t.payout)}</div>
             </div>
           </RiseIn>
         )}

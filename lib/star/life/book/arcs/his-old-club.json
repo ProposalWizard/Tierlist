@@ -1,0 +1,319 @@
+{
+ "id": "arc-his-old-club",
+ "title": "Not in front of my old lot",
+ "owner": "mate",
+ "summary": "Saturday's opponents are a team-mate's old club, and he asks you not to celebrate in front of their fans if you score. Next season it's the same fixture, and he's watching what you do.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "where": [
+    "age>=24"
+   ],
+   "order": "random"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "respect-in-the-away-end",
+   "title": "Respect",
+   "text": "You kept your word in front of his old fans. He bought you dinner and told the story at every club he went to."
+  },
+  {
+   "id": "the-knee-slide",
+   "title": "The knee slide",
+   "text": "You went to the away end. He laughed in the end, but his old fans never did."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "occ-1-ask",
+   "title": "His old club",
+   "n": 1,
+   "event": {
+    "id": "arc-occ-1-ask",
+    "title": "His old club",
+    "category": "teammates",
+    "place": "compound:changing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.name} played six seasons for the side you play on Saturday. He's quiet while he does his boots up."
+    ],
+    "talk": {
+     "start": "o1",
+     "nodes": {
+      "o1": {
+       "who": "mate",
+       "say": [
+        "\"Do us a favour. If you score Saturday, don't go to their end. I've got mates in there. My dad's mates. It's not like that for me.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I won't. I'll come and find you.\"",
+         "tone": "kind",
+         "end": "agreed"
+        },
+        {
+         "id": "ask",
+         "label": "\"Would you celebrate, if it was you?\"",
+         "tone": "honest",
+         "goto": "o2"
+        },
+        {
+         "id": "no",
+         "label": "\"If I score, I'm going wherever I want.\"",
+         "tone": "fiery",
+         "end": "refused"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "shrugged"
+        }
+       ]
+      },
+      "o2": {
+       "who": "mate",
+       "say": [
+        "\"No. That's sort of the point. You don't do it to people who sang your name.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Fair enough. I won't.\"",
+         "tone": "humble",
+         "end": "agreed"
+        },
+        {
+         "id": "no",
+         "label": "\"They never sang mine.\"",
+         "tone": "cold",
+         "end": "refused"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "agreed": [
+       {
+        "text": "He nods. You score with ten minutes left, and you jog back to the halfway line with your arm up. He's the first one to reach you.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 10,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "didnt-celebrate-at-my-old-club",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kept"
+         }
+        }
+       }
+      ],
+      "refused": [
+       {
+        "text": "You score and slide on your knees in front of their end. Coins come down. He doesn't come over.",
+        "effects": {
+         "fans": 2,
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -8,
+          "respect": -2,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "slid-in-front-of-my-old-club",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "slid"
+         }
+        }
+       }
+      ],
+      "shrugged": [
+       {
+        "text": "You don't score. He thanks you anyway on the coach, for not making a promise you might break.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "none"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age>=24"
+      ],
+      "order": "random"
+     }
+    ]
+   },
+   "hint": "A team-mate has an odd request"
+  },
+  {
+   "id": "occ-2-again",
+   "title": "Same fixture",
+   "after": {
+    "beat": "occ-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-occ-2-again",
+    "title": "Same fixture",
+    "category": "teammates",
+    "place": "stadium:pitch",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastGoals>=1"
+     ]
+    },
+    "setup": [
+     "Same fixture, a season on. You score in front of the away end again."
+    ],
+    "choices": [
+     {
+      "id": "quiet",
+      "label": "Jog back with your arm up.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "{if arc.path=='slid'}You don't slide this time. {mate.short} notices, and nods.{/if}{if !arc.path=='slid'}Their fans clap you, which nobody expected.{/if}",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "didnt-celebrate-at-my-old-club",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "respect-in-the-away-end"
+        }
+       }
+      ]
+     },
+     {
+      "id": "slide",
+      "label": "Knee slide.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "{if arc.path=='kept'}{mate.short} stares at you. \"Last year you didn't.\" You did this year.{/if}{if !arc.path=='kept'}Coins again. You get a booking for it.{/if}",
+        "effects": {
+         "fans": 3,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -6,
+          "grudge": 6
+         }
+        ],
+        "arc": {
+         "end": "the-knee-slide"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age>=24"
+      ],
+      "order": "random"
+     }
+    ]
+   },
+   "hint": "Same fixture next season"
+  }
+ ]
+}

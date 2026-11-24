@@ -1,0 +1,332 @@
+{
+ "id": "arc-the-alibi",
+ "title": "Tell her I was at yours",
+ "owner": "mate",
+ "summary": "A team-mate asks you to tell his girlfriend he was at yours last night. He wasn't. What you say to her becomes something you both have to live with. A season later, she brings it up.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate"
+  ],
+  "tone": [
+   "awkward",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "where": [
+    "age>=21"
+   ],
+   "order": "random"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "kept-out-of-it",
+   "title": "Kept out of it",
+   "text": "You didn't lie for him, and you didn't drop him in it. Everybody knew where they stood."
+  },
+  {
+   "id": "the-lie",
+   "title": "The lie",
+   "text": "You lied for him. It came back, the way lies do in a dressing room."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "ali-1-ask",
+   "title": "Last night",
+   "n": 1,
+   "event": {
+    "id": "arc-ali-1-ask",
+    "title": "Last night",
+    "category": "teammates",
+    "place": "compound:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.name} catches you in the car park before you've got your bag out of the boot."
+    ],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "mate",
+       "say": [
+        "\"If my girlfriend rings, I was at yours last night playing the computer. Till two. Yeah?\""
+       ],
+       "replies": [
+        {
+         "id": "where",
+         "label": "\"Where were you, then?\"",
+         "tone": "honest",
+         "goto": "a2"
+        },
+        {
+         "id": "yes",
+         "label": "\"Fine. Mine, till two.\"",
+         "tone": "lie",
+         "end": "lied"
+        },
+        {
+         "id": "no",
+         "label": "\"Don't put me in that.\"",
+         "tone": "brave",
+         "end": "refused"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "a2"
+        }
+       ]
+      },
+      "a2": {
+       "who": "mate",
+       "say": [
+        "\"Does it matter? Out. Just out. Look, she'll ring you. Please.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Mine, till two. Once.\"",
+         "tone": "lie",
+         "end": "lied"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm not lying to her. I'll just not answer.\"",
+         "tone": "calm",
+         "end": "dodged"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "lied": [
+       {
+        "text": "She rings at lunch. You tell her. She says \"thanks\" in a voice that knows exactly what you've done.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "lied-to-my-girlfriend-for-me",
+          "strength": 3
+         },
+         {
+          "slot": "you",
+          "tag": "lied-for-a-team-mate",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lied"
+         }
+        }
+       }
+      ],
+      "dodged": [
+       {
+        "text": "Your phone rings four times. You don't pick up. He's furious, then grateful, then furious.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "wouldnt-answer-her-calls",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "dodged"
+         }
+        }
+       }
+      ],
+      "refused": [
+       {
+        "text": "\"Thanks a lot.\" He's in a mood all session.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -6,
+          "respect": 4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "wouldnt-cover-for-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "refused"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age>=21"
+      ],
+      "order": "random"
+     }
+    ]
+   },
+   "hint": "A team-mate needs a favour, quickly"
+  },
+  {
+   "id": "ali-2-her",
+   "title": "Her",
+   "after": {
+    "beat": "ali-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-ali-2-her",
+    "title": "Her",
+    "category": "teammates",
+    "place": "stadium:players-lounge",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "In the players' lounge after the game, {mate.short}'s girlfriend sits down next to you. They split up in the summer."
+    ],
+    "choices": [
+     {
+      "id": "truth",
+      "label": "Tell her the truth about that night.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='lied'",
+        "text": "\"I knew,\" she says. \"I wanted to see if you'd say it.\" She thanks you, and goes.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -6,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "told-her-the-truth-in-the-end",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "the-lie"
+        }
+       },
+       {
+        "text": "\"You never lied to me,\" she says. \"I always liked that about you.\"",
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "kept-out-of-it"
+        }
+       }
+      ]
+     },
+     {
+      "id": "change",
+      "label": "Change the subject.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='lied'",
+        "text": "{if arc.path=='lied'}She lets you. At the door she says, \"Two in the morning, was it?\"{/if}{if !arc.path=='lied'}She lets you.{/if}",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-lie"
+        }
+       },
+       {
+        "text": "She lets you. You talk about the game, and she leaves before {mate.short} comes up.",
+        "arc": {
+         "end": "kept-out-of-it"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age>=21"
+      ],
+      "order": "random"
+     }
+    ]
+   },
+   "hint": "A season later, she wants to talk"
+  }
+ ]
+}

@@ -157,7 +157,7 @@ export async function createPeopleBench(container: HTMLElement, init: BenchState
       actors.push(boss);
     }
     if (s.proof === "sign") {
-      const contract = cast.prop("contract", { contract: { club: "Knowitball FC", playerName: "Your Player", managerName: "The Boss", rows: [["Seasons", "2"], ["Wage", "★35 a week"], ["Shirt", "#9"]], shirt: KIT.shirt, trim: KIT.trim }, signature: sig });
+      const contract = cast.prop("contract", { contract: { club: "Knowitball FC", playerName: "Your Player", managerName: "The Boss", rows: [["Seasons", "2"], ["Wage", "£35 a week"], ["Shirt", "#9"]], shirt: KIT.shirt, trim: KIT.trim }, signature: sig });
       contract.obj.position.set(0.02, 0.762, 0.47); contract.obj.rotation.y = Math.PI;
       const pen = cast.prop("pen");
       props.push(contract, pen);

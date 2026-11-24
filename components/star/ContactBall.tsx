@@ -40,6 +40,9 @@ export function ballMotionAt(motion: BallMotion, t: number, period: number): { x
 
 interface Props {
   power: number;
+  /** Look only: a night sky and dark turf behind the ball (a feature played under lights, the kit man's
+   *  drill). The ball, the tap and the strike are unchanged. Absent: the day sky. */
+  night?: boolean;
   /** `lift` (0 grass … 1 top of the arc) only for a ball in the air
    *  (float/bounce): how high it was when you hit it (lib/star/airborneChance.ts). */
   onContact: (contact: { cx: number; cy: number; lift?: number; late?: boolean }) => void;
@@ -100,7 +103,7 @@ const AIR_VERDICT_MS = 300;
 export const STRIKE_ZONE_R = 1.18;
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, aerial, ballZ, hold = false, grades = false, knuckles = false, field = false, aimFromTap = false }: Props) {
+export default function ContactBall({ night = false, power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, aerial, ballZ, hold = false, grades = false, knuckles = false, field = false, aimFromTap = false }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
   const shadowRef = useRef<HTMLDivElement>(null);
@@ -258,7 +261,9 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       className="absolute inset-0 z-30 flex flex-col overflow-hidden"
       onPointerDown={handleTap}
       style={{
-        background: "linear-gradient(to bottom, #4a71b8 0%, #a8c4e8 100%)",
+        background: night
+          ? "radial-gradient(ellipse 70% 45% at 78% 4%, rgba(255,214,140,.32), rgba(255,214,140,0) 70%), linear-gradient(to bottom, #050a16 0%, #14203a 100%)"
+          : "linear-gradient(to bottom, #4a71b8 0%, #a8c4e8 100%)",
         touchAction: "none",
         // Its own flat layer, lifted in front: the match canvas under it is
         // tipped back in 3D, and iOS Safari can otherwise draw or hit-test
@@ -275,7 +280,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       {/* Grass strip */}
       <div
         className="absolute bottom-0 left-0 right-0"
-        style={{ height: "24%", background: "linear-gradient(to bottom, #16a34a, #15803d)" }}
+        style={{ height: "24%", background: night ? "linear-gradient(to bottom, #145a2e, #0a2b17)" : "linear-gradient(to bottom, #16a34a, #15803d)" }}
       />
 
       {/* No way back. You have chosen your angle and your power; all that is

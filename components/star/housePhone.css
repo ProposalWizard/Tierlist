@@ -1,0 +1,74 @@
+/* The 3D phone in the game (components/star/HousePhone.tsx, RUL-UI-008).
+   The look is the test page's (app/star-phone3d-dev/phone3d.css): eye-opening B
+   ("Resident Evil 7", Harry 20 Nov 2026), played in 0.6 s here (the instant-feel rule). */
+
+.hp-layer { position: fixed; inset: 0; z-index: 82; overflow: hidden; touch-action: manipulation; }
+/* the room while the house is still loading: a blurred picture, gone once the real house is behind */
+.hp-back { position: absolute; inset: 0; background: #1a1612 url(/star/phone3d/room-blur.webp) center / cover no-repeat; transition: opacity 400ms ease-out; }
+.hp-ready .hp-back { opacity: 0; pointer-events: none; }
+/* the 390 x 844 picture, scaled to fit the screen, standing on the bottom edge */
+.hp-box { position: absolute; left: 50%; bottom: 0; width: 390px; height: 844px; transform-origin: 50% 100%; }
+.hp-held { position: absolute; inset: 0; }
+.hp-hand { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; pointer-events: none; transition: opacity 220ms ease-out; }
+.hp-screen { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; background: #000; transition: transform 240ms cubic-bezier(.2, .8, .2, 1); }
+/* Kickabout (the real match, drawn on a canvas that reads taps by its box): the phone comes flat to your face */
+.hp-flat .hp-hand { opacity: 0; }
+/* the bars' drifting light and glow repaint the bent layer every frame (test page, 20 Nov 2026): off on the glass */
+.hp-screen .sk-liq-flow, .hp-screen .sk-liq-glow { display: none; }
+
+/* your house behind the phone: one still frame, blurred (nothing redraws) */
+.hp [data-home3d] canvas { transition: filter 450ms ease-in-out; }
+.hp-opening [data-home3d] canvas, .hp-phone [data-home3d] canvas, .hp-raising [data-home3d] canvas { filter: blur(7px) brightness(.9); }
+
+/* ── Opening: eye-opening B, 0.6 s ── */
+@property --hp-eye { syntax: "<length>"; inherits: false; initial-value: 0px; }
+.hp-eyes {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background: #0d0504;
+  --hp-eye: 0px;
+  -webkit-mask-image:
+    radial-gradient(circle 760px at 50% calc(47% + 760px - var(--hp-eye)), transparent 690px, #000 760px),
+    radial-gradient(circle 760px at 50% calc(47% - 760px + var(--hp-eye)), transparent 690px, #000 760px);
+  mask-image:
+    radial-gradient(circle 760px at 50% calc(47% + 760px - var(--hp-eye)), transparent 690px, #000 760px),
+    radial-gradient(circle 760px at 50% calc(47% - 760px + var(--hp-eye)), transparent 690px, #000 760px);
+  animation: hp-eye 600ms linear both;
+}
+@keyframes hp-eye {
+  0% { --hp-eye: 0px; animation-timing-function: cubic-bezier(.3, 0, .5, 1); }
+  30% { --hp-eye: 120px; animation-timing-function: ease-in-out; }
+  40% { --hp-eye: 95px; animation-timing-function: cubic-bezier(.3, .1, .3, 1); }
+  88% { --hp-eye: 700px; opacity: 1; }
+  100% { --hp-eye: 760px; opacity: 0; }
+}
+.hp-glare { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; background: radial-gradient(ellipse 70% 45% at 50% 45%, #fff8ec, rgba(255, 244, 225, .55) 55%, rgba(255, 240, 220, 0) 100%); mix-blend-mode: screen; animation: hp-glare 600ms ease-out both; }
+@keyframes hp-glare { 0% { opacity: .45; } 100% { opacity: 0; } }
+.hp-opening .hp-back { animation: hp-focus 600ms ease-out both; }
+@keyframes hp-focus { 0% { filter: brightness(1.5); transform: rotate(2.5deg) scale(1.05); } 100% { filter: none; transform: none; } }
+.hp-opening .hp-held { animation: hp-raise-open 600ms cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes hp-raise-open { 0% { transform: translateY(28%) rotate(-4deg); filter: blur(8px); } 70% { filter: blur(0); } 100% { transform: none; filter: none; } }
+
+/* back from the house: the camera went into your eyes; the phone comes up (no blink) */
+.hp-raising .hp-held { animation: hp-raise 300ms cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes hp-raise { 0% { transform: translate(12%, 95%) rotate(14deg); } 100% { transform: none; } }
+
+/* BACK = put the phone away: the hand lowers out of view, the room sharpens; then the camera pulls back */
+.hp-putting-away .hp-held { animation: hp-lower 300ms cubic-bezier(.45, 0, .2, 1) both; }
+.hp-putting-away .hp-back { animation: hp-fade 300ms ease-in both; }
+@keyframes hp-lower { 0% { transform: none; } 100% { transform: translate(12%, 95%) rotate(14deg); } }
+@keyframes hp-fade { to { opacity: 0; } }
+
+/* a tap during a move skips to its end */
+.hp-skip { position: fixed; inset: 0; z-index: 90; background: transparent; }
+
+/* in the house: take the phone out */
+.hp-pickup {
+  position: fixed; z-index: 81; right: 12px; top: calc(max(12px, env(safe-area-inset-top)) + 48px); height: 36px; padding: 0 14px;
+  border-radius: 999px; border: 1px solid rgba(255, 255, 255, .25); background: rgba(10, 8, 6, .72); color: #f7f1e8;
+  font-weight: 900; font-size: 14px; cursor: pointer;
+}
+/* a locked app's line (Sponsors before they open) */
+.hp-note {
+  position: absolute; z-index: 6; left: 16px; right: 16px; top: max(16px, env(safe-area-inset-top)); padding: 10px 12px; border-radius: 14px;
+  background: rgba(10, 8, 6, .9); color: #f7f1e8; font-weight: 800; font-size: 13px; text-align: center; pointer-events: none;
+}

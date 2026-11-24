@@ -35,7 +35,7 @@ import { SCENARIO_KINDS, type Scenario } from "@/lib/star/canvasEngine";
 import { withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { nextHighlight, newSimMemory, buildSimScenario, pictureKey } from "@/lib/star/gallerySim";
 import { mulberry32 } from "@/lib/star/season";
-import { formatMoney, formatWallet } from "@/lib/star/money";
+import { formatMoney, formatWallet, MONEY_SIGN } from "@/lib/star/money";
 import { SOCIAL_SEEN, MSGS_SEEN, readLS, writeLS, buildMessages, msgKey, socialUnread, type Msg } from "@/lib/star/phoneUnread";
 import { brandsOf } from "@/lib/star/sponsorDeals";
 import PhoneFrame from "./PhoneFrame";
@@ -84,8 +84,17 @@ const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const appOf = (id: AppId | "relations") => (id === "appstore" ? APP_STORE_ICON : id === "scout" ? SCOUT_APP : APPS.find((a) => a.id === (id === "relationships" ? "relations" : id))!);
 
-export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase, relations, relationsIntro }: {
+export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase, relations, relationsIntro, fill = false, onPhoneHome, onApp }: {
   career: CareerState;
+  /** The 3D phone test page: the phone fills its box exactly (it sits on the
+   *  3D phone's glass, where a measured size would be the bent one). Absent: measured, as before. */
+  fill?: boolean;
+  /** The nav bar's Home on the phone's own home screen (the 3D phone test
+   *  page: back to the game's Home). Absent: dimmed there, as before. */
+  onPhoneHome?: () => void;
+  /** The app open inside the phone (null: the home screen). The game's 3D phone
+   *  (HousePhone.tsx) brings the glass flat to your face for Kickabout. Absent: nothing. */
+  onApp?: (id: string | null) => void;
   /** Relationships drawn INSIDE the phone, like Squad (Mikey's playtest, 24 Oct
    *  2026). Absent: the app leaves the phone for the Relations page, as before. */
   relations?: React.ReactNode;
@@ -171,14 +180,17 @@ export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClo
     setApp(id as AppId);
   };
   const goHome = () => setApp(null);
+  const onAppRef = useRef(onApp);
+  onAppRef.current = onApp;
+  useEffect(() => { onAppRef.current?.(app); }, [app]);
 
   return (
     <div ref={boxRef} className="flex h-full w-full items-center justify-center overflow-hidden">
-      {size && (
-        <div style={{ width: size.w, height: size.h }}>
+      {(size || fill) && (
+        <div style={fill ? { width: "100%", height: "100%" } : { width: size!.w, height: size!.h }}>
           <PhoneFrame statusLabel={dateLabel} wallpaper={wallpaper(theme.glow, theme.trim)} rim={theme.glow} ownHomeBar
             onBack={app !== null ? goHome : onClose} backLabel={app !== null ? "Back to home screen" : "Close phone"}
-            onHome={app !== null ? goHome : undefined}>
+            onHome={app !== null ? goHome : onPhoneHome}>
             <div ref={screenRef} className="relative flex min-h-0 flex-1 flex-col">
               {app === null && <Grid career={career} glow={theme.glow} badges={badges} onOpen={open} onClose={onClose} installed={installed} isNew={isNew} />}
               {app !== null && (
@@ -288,7 +300,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed, isNew }: {
       {next ? <NextMatchWidget career={career} next={next} /> : (
         <ClubCard glow={glow} className="rounded-[20px] px-3 py-2">
           <div className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-200">Season complete</div>
-          <div className="text-[11px] font-bold text-white/75">★ {formatWallet(career.money)} in the bank</div>
+          <div className="text-[11px] font-bold text-white/75">{MONEY_SIGN}{formatWallet(career.money)} in the bank</div>
         </ClubCard>
       )}
       <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-2.5">
@@ -333,7 +345,7 @@ function NextMatchWidget({ career, next }: { career: CareerState; next: CareerSt
         <Crest club={away} kit={ak} />
       </div>
       <div className="mt-1 text-center text-[10px] font-bold text-white/65">
-        ★ <CountUp value={career.money} format={(n) => formatMoney(Math.round(n))} className="font-black text-yellow-200" /> in the bank
+        {MONEY_SIGN}<CountUp value={career.money} format={(n) => formatMoney(Math.round(n))} className="font-black text-yellow-200" /> in the bank
       </div>
     </ClubCard>
   );

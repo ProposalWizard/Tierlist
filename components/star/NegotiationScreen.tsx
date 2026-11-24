@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { niceMoneyStep, formatMoneyPrecise } from "@/lib/star/money";
+import { niceMoneyStep, formatMoneyPrecise, MONEY_SIGN } from "@/lib/star/money";
 import {
   startNegotiation, makeOffer, moodToFace,
   type NegotiationMode, type NegotiationState, type CounterpartMood,
@@ -33,8 +33,8 @@ import { Screen } from "./ui/Screen";
  */
 
 // Requested directly: this whole screen is about real, non-round numbers
-// being haggled over — a rounded "★2m" reads as a different deal from the
-// "★2,500,000" the negotiation was actually conducted in. formatMoneyPrecise
+// being haggled over — a rounded "£2m" reads as a different deal from the
+// "£2,500,000" the negotiation was actually conducted in. formatMoneyPrecise
 // (money.ts) keeps one real decimal digit instead of flooring it away, only
 // here — every other screen's own money() still uses the coarser
 // formatMoney, which was a deliberate revert for balances/valuations.
@@ -302,7 +302,7 @@ export default function NegotiationScreen({
             {kicker ?? (mode === "buying" ? "Negotiating a Signing" : "Negotiating a Sale")}
           </div>
           <div className="mt-1 font-black uppercase text-white text-2xl leading-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">{playerName}</div>
-          <div className="text-[11px] font-bold text-white/70">{valueLabel ?? "Estimated value"}: <span className="text-amber-300">★{money(valueIsTheirOffer ? state.theirPosition : marketValue)}</span></div>
+          <div className="text-[11px] font-bold text-white/70">{valueLabel ?? "Estimated value"}: <span className="text-amber-300">{MONEY_SIGN}{money(valueIsTheirOffer ? state.theirPosition : marketValue)}</span></div>
           {note && <div className="mt-0.5 text-[11px] font-bold text-white">{note}</div>}
         </div>
 
@@ -341,14 +341,14 @@ export default function NegotiationScreen({
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sky-500/20 text-lg">🤝</div>
             <div className="min-w-0 flex-1">
               <div className="text-[9px] font-black uppercase tracking-widest text-sky-300/80">{verb}</div>
-              <div className="tabular-nums text-white font-black text-lg leading-tight">{asked ? <Pop value={state.yourPosition}>★{money(state.yourPosition)}</Pop> : <span className="text-white/60">Nothing yet</span>}</div>
+              <div className="tabular-nums text-white font-black text-lg leading-tight">{asked ? <Pop value={state.yourPosition}>{MONEY_SIGN}{money(state.yourPosition)}</Pop> : <span className="text-white/60">Nothing yet</span>}</div>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-amber-950/70 to-amber-900/30 border border-amber-500/30 px-3 py-2.5">
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-amber-500/20 text-lg">💬</div>
             <div className="min-w-0 flex-1">
               <div className="text-[9px] font-black uppercase tracking-widest text-amber-300/80">{theirVerb}</div>
-              <div className="tabular-nums text-white font-black text-lg leading-tight"><Pop value={state.theirPosition}>★{money(state.theirPosition)}</Pop></div>
+              <div className="tabular-nums text-white font-black text-lg leading-tight"><Pop value={state.theirPosition}>{MONEY_SIGN}{money(state.theirPosition)}</Pop></div>
             </div>
             <div className="shrink-0 rounded-full bg-black/30 px-2 py-0.5 text-[9px] font-bold text-white/60">
               Round {state.round + (finished ? 0 : 1)}
@@ -369,7 +369,7 @@ export default function NegotiationScreen({
             {/* Insulted: one last offer, no haggling (Leo, 5 Oct 2026). */}
             <div className="kit-shake-x mb-2.5 rounded-xl border border-red-500/40 bg-gradient-to-b from-red-800/40 to-red-950/50 p-3 text-center">
               <div className="text-[10px] font-black uppercase tracking-widest text-red-300">Final offer</div>
-              <div className="text-sm font-black text-white">Take ★{money(state.theirPosition)} or leave it</div>
+              <div className="text-sm font-black text-white">Take {MONEY_SIGN}{money(state.theirPosition)} or leave it</div>
             </div>
             <div className="grid grid-cols-2 gap-2 mb-2">
               <button
@@ -393,7 +393,7 @@ export default function NegotiationScreen({
             <div className="mb-1.5 text-[9px] font-black uppercase tracking-widest text-white/50">Your Offer</div>
             <div className="flex items-center gap-1.5 mb-2">
               <div className="kit-input flex flex-1 min-w-0 items-center gap-1.5 rounded-xl px-2.5 py-2">
-                <span className="text-amber-300 font-black text-sm">★</span>
+                <span className="text-amber-300 font-black text-sm">{MONEY_SIGN}</span>
                 <input
                   type="text" inputMode="numeric"
                   value={typed ?? formatAmountInput(amount)}
@@ -428,7 +428,7 @@ export default function NegotiationScreen({
                 +
               </button>
             </div>
-            <div className="text-[9px] font-bold text-white/50 text-right -mt-1 mb-2.5">± ★{niceMoneyStep(amount).toLocaleString()} per press</div>
+            <div className="text-[9px] font-bold text-white/50 text-right -mt-1 mb-2.5">± {MONEY_SIGN}{niceMoneyStep(amount).toLocaleString()} per press</div>
 
             {/* Requested directly: down from four buttons (small move, meet
                 halfway, meet their price, make offer) to exactly two — your
@@ -498,7 +498,7 @@ export default function NegotiationScreen({
               {state.status === "accepted" && <Shine trigger={1} />}
               <span className="text-lg">{state.status === "accepted" ? "🤝" : "🚪"}</span>
               <span>
-                {state.status === "accepted" && `Deal agreed — ★${money(state.finalPrice ?? 0)}`}
+                {state.status === "accepted" && `Deal agreed — ${MONEY_SIGN}${money(state.finalPrice ?? 0)}`}
                 {state.status === "rejected" && "No deal — talks broke down"}
                 {state.status === "walked_away" && (mode === "buying" ? "They walked away, angry" : "The buyer walked away, angry")}
               </span>

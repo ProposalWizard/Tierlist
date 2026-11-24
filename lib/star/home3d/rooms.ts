@@ -46,6 +46,7 @@ export const ROOM_LABEL: Record<RoomId, string> = {
   main: "Home", hallway: "Hallway", lounge: "Lounge", dressing: "Dressing room", trophy: "Trophy room",
   terrace: "Terrace", garage: "Garage", games: "Games room", cinema: "Cinema", gym: "Gym", gardenTerrace: "Garden terrace",
   nook: "Hallway",
+  studio: "Home", kitchen: "Kitchen", bedroom: "Bedroom", bathroom: "Bathroom", poolTerrace: "Pool terrace",
 };
 
 /**
@@ -67,7 +68,38 @@ const DOOR_AT: Record<RoomId, Partial<Record<RoomId | "garden", [Wall, number]>>
   cinema: { lounge: ["s", 0] },
   gym: { hallway: ["e", 0.24] },
   gardenTerrace: { lounge: ["n", -0.2] },
+  studio: { garden: ["s", 0] },
+  kitchen: {}, bedroom: {}, bathroom: {}, poolTerrace: {},
 };
+
+/**
+ * The living houses' doorways (homes.ts LIVING_ROOMS, recognised by their bedroom). The
+ * hallway is the hub of a house (kitchen and lounge west, bedroom, gym and garage east, the
+ * trophy room ahead); the bedroom leads on to its bathroom (north) and, on the grand tiers,
+ * the dressing room (east). The flat and the penthouse have no hallway: the lounge is the hub.
+ */
+const DOOR_LIVING: Record<RoomId, Partial<Record<RoomId | "garden", [Wall, number]>>> = {
+  main: { garden: ["s", 0] },
+  studio: { garden: ["s", 0.22] },
+  nook: { garden: ["s", 0], lounge: ["n", 0] },
+  hallway: { garden: ["s", 0], lounge: ["w", 0.26], kitchen: ["w", -0.26], bedroom: ["e", 0.28], gym: ["e", 0], garage: ["e", -0.28], trophy: ["n", 0] },
+  lounge: { hallway: ["e", 0.3], nook: ["s", 0], garden: ["s", 0.3], bedroom: ["e", 0.3], terrace: ["n", 0.36], games: ["n", -0.22], cinema: ["n", 0.22], poolTerrace: ["s", 0.25], gardenTerrace: ["s", -0.25] },
+  kitchen: { hallway: ["e", 0] },
+  // the wardrobe has the west wall and the bed the north: in from the south, on through the east
+  bedroom: { hallway: ["s", -0.1], lounge: ["s", -0.1], bathroom: ["e", -0.25], dressing: ["e", 0.25] },
+  bathroom: { bedroom: ["s", -0.2] },
+  dressing: { bedroom: ["s", 0.3] },
+  trophy: { hallway: ["s", 0] },
+  terrace: { lounge: ["s", 0.25] },
+  garage: { hallway: ["w", 0.3] },
+  games: { lounge: ["s", 0] },
+  cinema: { lounge: ["s", 0] },
+  gym: { hallway: ["w", 0] },
+  poolTerrace: { lounge: ["n", 0.2] },
+  gardenTerrace: { lounge: ["n", -0.2] },
+};
+/** A living house (its rooms come from homes.ts LIVING_ROOMS: they always have a bedroom). */
+export const isLiving = (rooms: RoomId[]) => rooms.includes("bedroom") || rooms.includes("studio");
 
 /** Which room each room's doorway leads to, per tier. The first room holds the front door. */
 const LINKS: [RoomId, RoomId][] = [
@@ -77,6 +109,9 @@ const LINKS: [RoomId, RoomId][] = [
   ["lounge", "dressing"], ["lounge", "terrace"],
   // the flat: its nook by the front door, then the one room
   ["nook", "main"],
+  // the living houses
+  ["hallway", "kitchen"], ["hallway", "bedroom"], ["nook", "lounge"], ["lounge", "bedroom"],
+  ["bedroom", "bathroom"], ["bedroom", "dressing"], ["lounge", "poolTerrace"],
 ];
 
 /** Room size at the house tier, metres (w along x, d along z). Grand tiers grow them. */
@@ -85,6 +120,7 @@ const BASE: Record<RoomId, [number, number]> = {
   hallway: [3.4, 6.4], lounge: [6.6, 6.2], dressing: [4.8, 5.6], trophy: [5.6, 6.0], terrace: [6.4, 4.4],
   garage: [9.4, 6.8], games: [8.6, 7.4], cinema: [5.6, 6.6], gym: [5.8, 6.0], gardenTerrace: [7.2, 6.0],
   nook: [2.6, 3.4],
+  studio: [6.6, 7.4], kitchen: [5.4, 5.2], bedroom: [5.6, 5.8], bathroom: [3.6, 3.8], poolTerrace: [9.6, 8.4],
 };
 
 export interface DoorPlan {
@@ -130,6 +166,9 @@ export function linksOf(id: RoomId, rooms: RoomId[]): (RoomId | "garden")[] {
     if (!rooms.includes(a) || !rooms.includes(b)) continue;
     // with a hallway, the dressing room is off the hallway, not the lounge
     if (hub === "hallway" && a === "lounge" && b === "dressing") continue;
+    // a living house: the dressing room is off the bedroom; the bedroom is off the hub
+    if (rooms.includes("bedroom") && b === "dressing" && a !== "bedroom") continue;
+    if (hub === "hallway" && a === "lounge" && b === "bedroom") continue;
     if (a === id) out.push(b);
     else if (b === id) out.push(a);
   }
@@ -140,6 +179,8 @@ export function linksOf(id: RoomId, rooms: RoomId[]): (RoomId | "garden")[] {
 export function spotsOf(id: RoomId, rooms: RoomId[]): HomeSpot[] {
   if (id === "main") return ["wardrobe", "cabinet", "drive"];
   if (id === "dressing") return ["wardrobe"];
+  if (id === "studio") return ["wardrobe", "cabinet"];
+  if (id === "bedroom") return rooms.includes("dressing") ? [] : ["wardrobe"];
   if (id === "trophy") return ["cabinet"];
   if (id === "lounge") return rooms.includes("trophy") ? ["drive"] : ["cabinet", "drive"];
   return [];
@@ -161,11 +202,14 @@ export function roomPlan(tier: HomeTier, id: RoomId, rooms: RoomId[]): RoomPlan 
   const P = roomPreset(tier);
   const k = grow(tier);
   const [bw, bd] = BASE[id];
-  const w = id === "main" ? P.w : Math.round(bw * k * 100) / 100;
-  const d = id === "main" ? P.d : Math.round(bd * k * 100) / 100;
-  const h = id === "garage" ? Math.max(3.0, P.h) : id === "hallway" ? P.h + 0.3 : P.h;
+  const living = isLiving(rooms);
+  // the living houses' own sizes: the penthouse's open plan, the flat's smaller rooms, the estate's trophy hall
+  const [lw, ld] = living && id === "lounge" && tier === "penthouse" ? [9.6, 7.8] : living && tier === "flat" && (id === "lounge" || id === "bedroom") ? [bw * 0.92, bd * 0.92] : living && id === "trophy" && tier === "estate" ? [bw * 1.12, bd * 1.1] : [bw, bd];
+  const w = id === "main" ? P.w : Math.round(lw * k * 100) / 100;
+  const d = id === "main" ? P.d : Math.round(ld * k * 100) / 100;
+  const h = id === "garage" ? Math.max(3.0, P.h) : id === "hallway" ? P.h + 0.3 : id === "bathroom" || id === "studio" ? Math.min(P.h, 2.7) : P.h;
   const doors: DoorPlan[] = linksOf(id, rooms).map((to) => {
-    const [wall, f] = DOOR_AT[id][to] ?? ["s", 0];
+    const [wall, f] = (living ? DOOR_LIVING : DOOR_AT)[id][to] ?? ["s", 0];
     const len = wall === "n" || wall === "s" ? w : d;
     const at = f * len;
     const [nx, nz] = NORMAL[wall];
@@ -229,6 +273,7 @@ export function carsIn(id: RoomId, tier: HomeTier): number {
   if (id === "garage") return 4;
   if (id === "terrace") return 1; // the penthouse terrace: your best car, through the glass
   if (id === "main" || id === "lounge") return roomPreset(tier).cars;
+  if (id === "studio") return 1;
   return 0;
 }
 
@@ -265,11 +310,14 @@ export const BIKE_LOD = "/star/home3d/bike-lod.glb";
 export const JET_LOD = "/star/home3d/jet-lod.glb";
 export const TERRACE_PROPS = "/star/home3d/terrace-props.glb";
 export const HORSE_MODEL = "/star/garden3d/horse.glb";
+/** The house furniture: Kenney Furniture Kit pieces (CC0), one file (tools/home3d/make_furniture.py). */
+export const FURNITURE = "/star/home3d/furniture.glb";
 
 /** The model files a room loads (so they can be fetched while you walk to its door). */
 export function roomFiles(id: RoomId, tier: HomeTier, cars: { model: string }[], boots: { model: string | null }[], bikeModel: string | null, stuff: HomeStuff = NO_STUFF): string[] {
   const out = (id === "garage" ? garageCars(cars.slice(0, carsIn(id, tier)).map((c) => ({ id: (c as { id?: string }).id ?? "", model: c.model }))) : cars.slice(0, carsIn(id, tier))).map((c) => c.model);
-  if (id === "main" || id === "dressing" || id === "nook") for (const b of boots.slice(0, 2)) if (b.model) out.push(b.model);
+  if (id === "main" || id === "dressing" || id === "nook" || id === "studio" || id === "bedroom") for (const b of boots.slice(0, 2)) if (b.model) out.push(b.model);
+  if (id !== "main") out.push(FURNITURE);
   if (id === "garage" && bikeModel) out.push(bikeModel);
   if (id === "gardenTerrace") {
     out.push(TERRACE_PROPS);

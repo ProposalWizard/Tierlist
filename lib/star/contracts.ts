@@ -1,5 +1,6 @@
 import type { CareerState, Contract } from "./types";
 import { getTuning } from "./tuningStore";
+import { MONEY_SIGN } from "./money";
 
 /**
  * CONTRACT CLAUSES
@@ -112,13 +113,13 @@ export function rescaleClauses(
 export function clauseSummary(contract: Contract): ClauseSummary[] {
   const out: ClauseSummary[] = [];
   if (contract.appearanceFee) {
-    out.push({ label: "Appearance fee", detail: `★${contract.appearanceFee} every match you play` });
+    out.push({ label: "Appearance fee", detail: `${MONEY_SIGN}${contract.appearanceFee} every match you play` });
   }
   if (contract.loyaltyBonus) {
-    out.push({ label: "Loyalty bonus", detail: `★${contract.loyaltyBonus} at the end of every season you stay` });
+    out.push({ label: "Loyalty bonus", detail: `${MONEY_SIGN}${contract.loyaltyBonus} at the end of every season you stay` });
   }
   if (contract.releaseClause) {
-    out.push({ label: "Release clause", detail: `★${contract.releaseClause} — at that price the club cannot refuse` });
+    out.push({ label: "Release clause", detail: `${MONEY_SIGN}${contract.releaseClause} — at that price the club cannot refuse` });
   }
   return out;
 }

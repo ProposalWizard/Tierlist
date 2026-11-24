@@ -65,6 +65,65 @@ await finishes("compile throws", fake(new Map(), { compileThrows: true }), 5000,
   check(calls >= 3, `waits for a program that becomes ready (asked ${calls} times)`);
 }
 
+// No parallel compile (speed fix 3, 20 Nov 2026): each program's first use
+// (getUniforms) is done before the first frame, once per program, and the page
+// gets a turn between slow ones (never one block for every shader).
+{
+  const order: string[] = [];
+  const prog = (name: string, ms: number) => ({ isReady: () => true, getUniforms: () => { order.push(name); const t = Date.now(); while (Date.now() - t < ms) { /* a slow driver */ } return {}; } });
+  const shared = prog("shared", 0);
+  const props = new Map<unknown, { currentProgram?: { isReady?: () => boolean } } | undefined>([
+    [{ id: "a" }, { currentProgram: prog("a", 20) }],
+    [{ id: "b" }, { currentProgram: shared }],
+    [{ id: "c" }, { currentProgram: shared }], // two materials, one program: asked once
+    [{ id: "d" }, { currentProgram: prog("d", 20) }],
+    [{ id: "e" }, { currentProgram: { isReady: () => true, getUniforms: () => { throw new Error("lost"); } } }],
+  ]);
+  let turns = 0;
+  let on = true;
+  const tick = () => { if (!on) return; turns++; setTimeout(tick, 0); };
+  setTimeout(tick, 0);
+  await finishes("finishes each program (no extension)", fake(props), 5000, 400);
+  on = false;
+  check(order.join(",") === "a,shared,d", `each program's first use once, in order (got ${order.join(",")})`);
+  check(turns >= 2, `the page got a turn between slow programs (${turns} turns)`);
+  // with the extension: never asked for its first use here (built in the background)
+  const asked: string[] = [];
+  const props2 = new Map([[{}, { currentProgram: { isReady: () => true, getUniforms: () => { asked.push("x"); return {}; } } }]]);
+  await finishes("parallel: only asks ready", fake(props2, { parallel: true }), 5000, 300);
+  check(asked.length === 0, "with the extension, first use is left to the draw");
+}
+
+// A full renderer, no extension: built a piece at a time, each piece under the
+// render target the caller had set WHEN IT CALLED (it puts its own back at once).
+{
+  const made = new Map<unknown, { currentProgram: { isReady: () => boolean; getUniforms: () => unknown } }>();
+  const seenTargets: unknown[] = [];
+  let target: unknown = "screen";
+  const matA = { uuid: "A" }, matB = { uuid: "B" };
+  const mesh = (m: unknown) => ({ isMesh: true, material: m, children: [] as unknown[], receiveShadow: false, geometry: { attributes: { position: 1 } }, traverse(f: (o: unknown) => void) { f(this); } });
+  const meshes = [mesh(matA), mesh(matA), mesh(matB)];
+  const root = { traverse(f: (o: unknown) => void) { f(root); meshes.forEach((m) => f(m)); }, children: meshes };
+  const full = {
+    compile: (s: { material?: unknown; traverse: (f: (o: unknown) => void) => void }) => {
+      seenTargets.push(target);
+      const out = new Set<unknown>();
+      s.traverse((o) => { const m = (o as { material?: unknown }).material; if (m) { out.add(m); if (!made.has(m)) made.set(m, { currentProgram: { isReady: () => true, getUniforms: () => ({}) } }); } });
+      return out;
+    },
+    properties: { get: (m: unknown) => made.get(m) },
+    extensions: { get: () => null },
+    getRenderTarget: () => target, setRenderTarget: (t: unknown) => { target = t; }, toneMapping: 4,
+  };
+  target = "picture";
+  const job = safeCompileAsync(full as unknown as CompileRenderer, root as unknown as THREE.Object3D, camera, 5000);
+  target = "screen"; full.toneMapping = 0; // the caller puts its own back straight away
+  await job;
+  check(seenTargets.length === 3, `one piece per new material, then the whole scene (got ${seenTargets.length} compiles)`);
+  check(seenTargets.every((t) => t === "picture"), `every piece under the caller's target (${seenTargets.join(",")})`);
+  check(target === "screen" && full.toneMapping === 0, "the caller's own target and tone mapping are left as it set them");
+}
+
 if (problems.length) {
   console.error("FAIL safeCompile\n  " + problems.join("\n  "));
   process.exit(1);

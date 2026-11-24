@@ -129,7 +129,7 @@ export function patchCanvas(): HTMLCanvasElement {
 }
 
 /** What a window looks out on, painted (a plane a few metres outside the glass). */
-export function viewCanvas(view: WindowView): HTMLCanvasElement {
+export function viewCanvas(view: WindowView, o: { open?: boolean } = {}): HTMLCanvasElement {
   const [c, g] = canvas(1024, 512);
   const r = rng(view.length * 131 + 7);
   const sky = (top: string, low: string, horizon = 0.62) => {
@@ -180,7 +180,9 @@ export function viewCanvas(view: WindowView): HTMLCanvasElement {
     g.fillStyle = sea; g.fillRect(0, 280, 1024, 232);
     for (let i = 0; i < 260; i++) { g.fillStyle = `rgba(255,255,255,${0.1 + r() * 0.25})`; g.fillRect(r() * 1024, 285 + r() * 200, 10 + r() * 30, 2); }
     g.fillStyle = "rgba(255,240,200,0.5)"; g.fillRect(480, 282, 120, 3);
-    // a terrace rail and a palm on one side
+    // a terrace rail and a palm on one side (not round an open terrace: it has its own rail, and the
+    // painted palm stood against the house wall's edge on the villa's pool terrace)
+    if (o.open) return c;
     g.fillStyle = "#efe6d6"; g.fillRect(0, 470, 1024, 42);
     for (let x = 10; x < 1024; x += 34) g.fillRect(x, 420, 8, 52);
     g.fillRect(0, 414, 1024, 10);
