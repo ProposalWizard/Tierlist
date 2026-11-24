@@ -379,16 +379,17 @@
   "title": "ex15 · Four records that might never be beaten (moving pictures)",
   "stage": "final-check",
   "owner": "Claude",
-  "updated": "2026-11-24T05:00:00Z",
+  "updated": "2026-11-24T06:00:00Z",
   "postOn": null,
   "line": "Mikey's four: Lewandowski 5 goals in 8:59, Messi 91 in 2012, Pelé 3 World Cups, Mané hat-trick in 2:56. Blurred hook, viewer decides. First explainer with moving Higgsfield clips (7 shots).",
   "script": "docs/marketing/videos/ex15-hardest-records/story.json",
   "cover": "docs/marketing/videos/ex15-hardest-records/cover.png",
   "video": "docs/marketing/videos/ex15-hardest-records/knowitball-ex15-hardest-records.mp4",
-  "seconds": 75.0,
+  "seconds": 76.0,
   "links": [],
   "log": [
-   "2026-11-24 Built: 12 Higgsfield pictures, 7 Kling 3.0 clips, Hugo voice. Engine: picture steps can play a clip (motion) and blur. Waiting for Mikey's look."
+   "2026-11-24 Built: 12 Higgsfield pictures, 7 Kling 3.0 clips, Hugo voice. Engine: picture steps can play a clip (motion) and blur. Waiting for Mikey's look.",
+   "2026-11-24 v3 after Mikey's notes: real Guardiola (bald, head in hands), each goal drawn as it was scored, game-style scoreboard, no flat screens, four-quarter ending, voice no longer reads what the screen shows. 28 pictures, 18 clips in total."
   ]
  }
 ]

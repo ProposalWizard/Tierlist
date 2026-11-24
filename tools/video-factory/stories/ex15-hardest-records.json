@@ -1,7 +1,7 @@
 {
  "id": "ex15-hardest-records",
  "series": "Explainer",
- "variant": "v2 steps + moving pictures (Higgsfield Kling 3.0)",
+ "variant": "v3 (24 Nov, Mikey's notes): real moments drawn accurately, no flat screens, no reading out what's on screen",
  "title": "Football records that might never be beaten",
  "layout": "explainer",
  "music": "02-working-it-out.mp3",
@@ -17,36 +17,57 @@
   "https://www.goal.com/en/news/cristiano-ronaldo-vs-lionel-messi-goals-calendar-year/blt26caedd3d816d104",
   "https://www.skysports.com/football/news/9852435/southamptons-sadio-mane-breaks-robbie-fowlers-record-with-fastest-ever-premier-league-hat-trick",
   "https://www.guinnessworldrecords.com/news/2015/5/sadio-mane-beats-robbie-fowler%E2%80%99s-fastest-premier-league-hat-trick-record-379040",
-  "https://www.espn.com/soccer/story/_/id/37635141/pele-incredible..."
+  "https://www.espn.com/soccer/story/_/id/37635141/pele-incredible...",
+  "https://fcbayern.com/en/news/matchreports/2015/09/match-report-fc-bayern---vfl-wolfsburg-220915",
+  "https://www.tntsports.co.uk/football/bundesliga/2015-2016/bayern-munich-v-wolfsburg-live_sto4921769/story.shtml",
+  "https://www.sportsmole.co.uk/football/bayern-munich/news/guardiola-shocked-by-lewandowski-display_247959.html",
+  "https://sportsmole.co.uk/football/southampton/result/mane-nets-hat-trick-as-saints-crush-villa_223121.html"
  ],
  "facts": {
-  "lewandowski": "22 Sep 2015, Bayern 5-1 Wolfsburg; on at half-time at 0-1; goals 51', 52', 55', 57', 60'; 8 min 59 s; fastest Bundesliga hat-trick; first substitute to score five in the Bundesliga; fifth goal a volley/scissor kick",
+  "lewandowski": "22 Sep 2015, Bayern 5-1 Wolfsburg; on at half-time at 0-1; goals 51', 52', 55', 57', 60'; 8 min 59 s; fastest Bundesliga hat-trick; first substitute to score five in the Bundesliga; fifth goal a volley/scissor kick; goals: 51' tap-in after Dante's tackle on Müller fell to him, 52' low shot from 20 yards, 55' hit the post then scored the rebound (Götze pass), 57' volley from Douglas Costa's cross, 60' scissor kick from Götze's cross; Guardiola held his head in disbelief",
   "messi": "91 in 2012: 79 Barcelona + 12 Argentina; next best 69 (Ronaldo 2013, Lewandowski 2021)",
   "pele": "World Cups 1958 (aged 17), 1962 (injured in the 2nd group game; medal given by FIFA in 2007), 1970; only player with three",
-  "mane": "16 May 2015, Southampton 6-1 Aston Villa, hat-trick in 2 min 56 s; beat Robbie Fowler's 4 min 33 s (Aug 1994, 20 years)"
+  "mane": "16 May 2015, Southampton 6-1 Aston Villa, hat-trick in 2 min 56 s; beat Robbie Fowler's 4 min 33 s (Aug 1994, 20 years); goals: 13' rebound after Given saved his first shot, 14' tap-in after Vlaar's back-pass was intercepted, 16' curled into the top corner from Shane Long's pass"
  },
  "images": {
   "lewa_portrait": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/lewa_portrait.png",
-  "lewa_bench": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/lewa_bench.png",
-  "lewa_volley": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/lewa_volley.png",
   "lewa_five": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/lewa_five.png",
   "messi_2012": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi_2012.png",
-  "messi_back": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi_back.png",
+  "messi_arg": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi_arg.png",
   "pele_portrait": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_portrait.png",
   "pele_1958": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_1958.png",
   "pele_1962": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_1962.png",
   "pele_1970": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pele_1970.png",
   "mane_portrait": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mane_portrait.png",
-  "mane_hattrick": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mane_hattrick.png"
+  "mane_hattrick": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mane_hattrick.png",
+  "pep_bench": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pep_bench.png",
+  "pep_shock": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/pep_shock.png",
+  "goal1": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/goal1.png",
+  "goal2": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/goal2.png",
+  "goal3": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/goal3.png",
+  "goal4": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/goal4.png",
+  "goal5": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/goal5.png",
+  "mane_g1": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mane_g1.png",
+  "mane_g2": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mane_g2.png",
+  "mane_g3": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/mane_g3.png"
  },
  "motions": {
-  "lewa_bench": "file:///home/user/Tierlist/tools/video-factory/work/clips/lewa_bench.mp4",
-  "lewa_volley": "file:///home/user/Tierlist/tools/video-factory/work/clips/lewa_volley.mp4",
   "lewa_five": "file:///home/user/Tierlist/tools/video-factory/work/clips/lewa_five.mp4",
   "messi_2012": "file:///home/user/Tierlist/tools/video-factory/work/clips/messi_2012.mp4",
+  "messi_arg": "file:///home/user/Tierlist/tools/video-factory/work/clips/messi_arg.mp4",
   "pele_1958": "file:///home/user/Tierlist/tools/video-factory/work/clips/pele_1958.mp4",
   "pele_1970": "file:///home/user/Tierlist/tools/video-factory/work/clips/pele_1970.mp4",
-  "mane_hattrick": "file:///home/user/Tierlist/tools/video-factory/work/clips/mane_hattrick.mp4"
+  "mane_hattrick": "file:///home/user/Tierlist/tools/video-factory/work/clips/mane_hattrick.mp4",
+  "pep_bench": "file:///home/user/Tierlist/tools/video-factory/work/clips/pep_bench.mp4",
+  "pep_shock": "file:///home/user/Tierlist/tools/video-factory/work/clips/pep_shock.mp4",
+  "goal1": "file:///home/user/Tierlist/tools/video-factory/work/clips/goal1.mp4",
+  "goal2": "file:///home/user/Tierlist/tools/video-factory/work/clips/goal2.mp4",
+  "goal3": "file:///home/user/Tierlist/tools/video-factory/work/clips/goal3.mp4",
+  "goal4": "file:///home/user/Tierlist/tools/video-factory/work/clips/goal4.mp4",
+  "goal5": "file:///home/user/Tierlist/tools/video-factory/work/clips/goal5.mp4",
+  "mane_g1": "file:///home/user/Tierlist/tools/video-factory/work/clips/mane_g1.mp4",
+  "mane_g2": "file:///home/user/Tierlist/tools/video-factory/work/clips/mane_g2.mp4",
+  "mane_g3": "file:///home/user/Tierlist/tools/video-factory/work/clips/mane_g3.mp4"
  },
  "lines": [
   {
@@ -99,17 +120,39 @@
    }
   },
   {
-   "text": "But which one is the hardest to beat? You decide.",
+   "text": "Which is the hardest? You decide.",
    "scene": {
-    "bg": "purple",
-    "type": "statement",
+    "bg": "navy",
+    "type": "quad",
     "steps": [
      {
-      "type": "statement",
-      "text": "WHICH IS|THE HARDEST?",
-      "hi": 1,
-      "size": 150,
-      "w": 0
+      "type": "quad",
+      "w": 0,
+      "text": "WHICH IS HARDEST?",
+      "textAt": 0.5,
+      "blur": 14,
+      "items": [
+       {
+        "image": "lewa_five",
+        "motion": "lewa_five",
+        "d": 0.0
+       },
+       {
+        "image": "messi_2012",
+        "motion": "messi_2012",
+        "d": 0.35
+       },
+       {
+        "image": "pele_1970",
+        "motion": "pele_1970",
+        "d": 0.7
+       },
+       {
+        "image": "mane_hattrick",
+        "motion": "mane_hattrick",
+        "d": 1.05
+       }
+      ]
      }
     ]
    }
@@ -117,90 +160,118 @@
   {
    "text": "Number one. September 2015. Bayern Munich are losing one-nil to Wolfsburg at half-time.",
    "scene": {
-    "bg": "red",
+    "bg": "navy",
     "type": "statement",
     "steps": [
      {
       "type": "statement",
       "text": "RECORD|#1",
       "hi": 1,
-      "size": 220,
+      "size": 230,
+      "lineGap": 250,
       "w": 0,
-      "lineGap": 246
+      "bgMotion": "lewa_five",
+      "bgImage": "lewa_five",
+      "bgBlur": 8,
+      "bgDim": 0.45
      },
      {
-      "type": "score",
-      "top": "22 SEPT 2015 · HALF-TIME",
-      "home": "BAYERN",
+      "type": "scorebug",
+      "w": 2,
+      "tag": "22 SEPT 2015",
+      "home": "BAYERN MUNICH",
       "homeCol": "#dc052d",
-      "homeInk": "#fff",
       "away": "WOLFSBURG",
       "awayCol": "#65b32e",
-      "awayInk": "#fff",
       "score": "0-1",
-      "w": 4
+      "clock": "45:00",
+      "note": "HALF-TIME",
+      "bgImage": "pep_bench",
+      "bgBlur": 12,
+      "bgDim": 0.5
      }
     ]
    }
   },
   {
-   "text": "Pep Guardiola sends on Robert Lewandowski.",
+   "text": "So Pep Guardiola sends on Robert Lewandowski.",
    "scene": {
-    "bg": "red",
+    "bg": "navy",
     "type": "picture",
     "steps": [
      {
       "type": "picture",
-      "image": "lewa_bench",
+      "image": "pep_bench",
       "w": 0,
-      "motion": "lewa_bench"
-     },
-     {
-      "type": "portrait",
-      "person": {
-       "image": "lewa_portrait"
-      },
-      "name": "ROBERT LEWANDOWSKI",
-      "w": 4
+      "motion": "pep_bench",
+      "label": "46' · LEWANDOWSKI COMES ON"
      }
     ]
    }
   },
   {
-   "text": "Fifty-one minutes. Fifty-two. Fifty-five. Fifty-seven. Sixty.",
+   "text": "A tap-in. A drive from twenty yards. A rebound off the post. A first-time volley. And then, a scissor kick.",
    "scene": {
-    "bg": "red",
-    "type": "tally",
+    "bg": "navy",
+    "type": "picture",
     "steps": [
      {
-      "type": "tally",
-      "n": 5,
-      "cols": 3,
-      "icon": "ball",
-      "labels": [
-       "51'",
-       "52'",
-       "55'",
-       "57'",
-       "60'"
-      ],
-      "title": "5 GOALS",
-      "w": 0
+      "type": "picture",
+      "image": "goal1",
+      "w": 0,
+      "motion": "goal1",
+      "label": "GOAL 1 · TAP-IN",
+      "big": "51'",
+      "bigSize": 300,
+      "bigY": 1330
      },
      {
       "type": "picture",
-      "image": "lewa_volley",
-      "w": 5,
-      "motion": "lewa_volley",
-      "label": "GOAL 5: A SCISSOR KICK"
+      "image": "goal2",
+      "w": 2,
+      "motion": "goal2",
+      "label": "GOAL 2 · FROM 20 YARDS",
+      "big": "52'",
+      "bigSize": 300,
+      "bigY": 1330
+     },
+     {
+      "type": "picture",
+      "image": "goal3",
+      "w": 7,
+      "motion": "goal3",
+      "label": "GOAL 3 · REBOUND",
+      "big": "55'",
+      "bigSize": 300,
+      "bigY": 1330
+     },
+     {
+      "type": "picture",
+      "image": "goal4",
+      "w": 12,
+      "motion": "goal4",
+      "label": "GOAL 4 · VOLLEY",
+      "big": "57'",
+      "bigSize": 300,
+      "bigY": 1330
+     },
+     {
+      "type": "picture",
+      "image": "goal5",
+      "w": 17,
+      "motion": "goal5",
+      "label": "GOAL 5 · SCISSOR KICK",
+      "big": "60'",
+      "bigSize": 300,
+      "bigY": 1330
      }
     ]
    }
   },
   {
-   "text": "Five goals in eight minutes and fifty-nine seconds. Off the bench.",
+   "text": "Five goals in eight minutes and fifty-nine seconds.",
    "scene": {
-    "bg": "red",
+    "bg": "navy",
     "type": "stopwatch",
     "steps": [
      {
@@ -208,16 +279,27 @@
       "to": 539,
       "mmss": true,
       "word": "5 GOALS",
-      "w": 0
-     },
+      "w": 0,
+      "bgImage": "lewa_five",
+      "bgMotion": "lewa_five",
+      "bgBlur": 6,
+      "bgDim": 0.45
+     }
+    ]
+   }
+  },
+  {
+   "text": "Even his own manager couldn't believe it.",
+   "scene": {
+    "bg": "navy",
+    "type": "picture",
+    "steps": [
      {
       "type": "picture",
-      "image": "lewa_five",
-      "w": 8,
-      "motion": "lewa_five",
-      "big": "8:59",
-      "bigSize": 300,
-      "bigY": 1300
+      "image": "pep_shock",
+      "w": 0,
+      "motion": "pep_shock",
+      "label": "PEP GUARDIOLA"
      }
     ]
    }
@@ -232,24 +314,25 @@
       "type": "statement",
       "text": "RECORD|#2",
       "hi": 1,
-      "size": 220,
+      "size": 230,
+      "lineGap": 250,
       "w": 0,
-      "lineGap": 246
-     },
-     {
-      "type": "picture",
-      "image": "messi_2012",
-      "w": 2,
-      "motion": "messi_2012",
-      "label": "LIONEL MESSI · 2012"
+      "bgMotion": "messi_2012",
+      "bgImage": "messi_2012",
+      "bgBlur": 8,
+      "bgDim": 0.45
      },
      {
       "type": "counter",
       "from": 0,
       "to": 91,
       "word": "GOALS IN 2012",
-      "size": 420,
-      "w": 7
+      "size": 460,
+      "w": 2,
+      "bgImage": "messi_2012",
+      "bgMotion": "messi_2012",
+      "bgBlur": 3,
+      "bgDim": 0.4
      }
     ]
    }
@@ -258,30 +341,33 @@
    "text": "Seventy-nine for Barcelona. Twelve for Argentina.",
    "scene": {
     "bg": "navy",
-    "type": "grid",
+    "type": "picture",
     "steps": [
      {
-      "type": "grid",
-      "legend": true,
-      "groups": [
-       {
-        "n": 79,
-        "col": "#a50044",
-        "label": "BARCELONA"
-       },
-       {
-        "n": 12,
-        "col": "#75aadb",
-        "label": "ARGENTINA"
-       }
-      ],
-      "w": 0
+      "type": "picture",
+      "image": "messi_2012",
+      "w": 0,
+      "motion": "messi_2012",
+      "label": "BARCELONA",
+      "big": "79",
+      "bigSize": 420,
+      "bigY": 1330
+     },
+     {
+      "type": "picture",
+      "image": "messi_arg",
+      "w": 3,
+      "motion": "messi_arg",
+      "label": "ARGENTINA",
+      "big": "12",
+      "bigSize": 420,
+      "bigY": 1330
      }
     ]
    }
   },
   {
-   "text": "The most anyone has scored in a year since is sixty-nine. Ronaldo in 2013, Lewandowski in 2021.",
+   "text": "Since then, nobody has got past sixty-nine.",
    "scene": {
     "bg": "navy",
     "type": "x2_bars",
@@ -306,7 +392,10 @@
         "col": "#dc052d"
        }
       ],
-      "w": 0
+      "w": 0,
+      "bgImage": "messi_arg",
+      "bgBlur": 12,
+      "bgDim": 0.6
      }
     ]
    }
@@ -314,16 +403,20 @@
   {
    "text": "Number three. Pelé is the only player ever to win three World Cups.",
    "scene": {
-    "bg": "green",
+    "bg": "navy",
     "type": "statement",
     "steps": [
      {
       "type": "statement",
       "text": "RECORD|#3",
       "hi": 1,
-      "size": 220,
+      "size": 230,
+      "lineGap": 250,
       "w": 0,
-      "lineGap": 246
+      "bgMotion": "pele_1970",
+      "bgImage": "pele_1970",
+      "bgBlur": 8,
+      "bgDim": 0.45
      },
      {
       "type": "portrait",
@@ -331,15 +424,22 @@
        "image": "pele_portrait"
       },
       "name": "PELÉ",
-      "w": 2
+      "w": 2,
+      "bgImage": "pele_1958",
+      "bgBlur": 10,
+      "bgDim": 0.35
      },
      {
       "type": "statement",
       "text": "3|WORLD CUPS",
       "hi": 0,
-      "size": 220,
+      "size": 230,
+      "lineGap": 250,
       "w": 10,
-      "lineGap": 246
+      "bgImage": "pele_1970",
+      "bgMotion": "pele_1970",
+      "bgBlur": 6,
+      "bgDim": 0.45
      }
     ]
    }
@@ -347,28 +447,18 @@
   {
    "text": "The first in 1958, in Sweden, when he was just seventeen.",
    "scene": {
-    "bg": "green",
-    "type": "years",
+    "bg": "navy",
+    "type": "picture",
     "steps": [
-     {
-      "type": "years",
-      "items": [
-       {
-        "year": "1958",
-        "top": "SWEDEN",
-        "label": "aged 17",
-        "tick": true,
-        "head": "#f2c230"
-       }
-      ],
-      "w": 0
-     },
      {
       "type": "picture",
       "image": "pele_1958",
-      "w": 4,
+      "w": 0,
       "motion": "pele_1958",
-      "label": "SWEDEN 1958"
+      "label": "SWEDEN 1958",
+      "big": "AGED 17",
+      "bigSize": 220,
+      "bigY": 1330
      }
     ]
    }
@@ -376,7 +466,7 @@
   {
    "text": "In 1962, he was injured in the second game, but Brazil won it anyway.",
    "scene": {
-    "bg": "green",
+    "bg": "navy",
     "type": "picture",
     "steps": [
      {
@@ -386,11 +476,13 @@
       "label": "CHILE 1962"
      },
      {
-      "type": "statement",
-      "text": "INJURED|STILL CHAMPION",
-      "hi": 1,
-      "size": 140,
-      "w": 9
+      "type": "picture",
+      "image": "pele_1962",
+      "w": 9,
+      "label": "CHILE 1962",
+      "stamp": "CHAMPIONS",
+      "stampY": 1250,
+      "tr": "cut"
      }
     ]
    }
@@ -398,7 +490,7 @@
   {
    "text": "And in 1970, in Mexico, he won it again.",
    "scene": {
-    "bg": "green",
+    "bg": "navy",
     "type": "picture",
     "steps": [
      {
@@ -414,7 +506,7 @@
   {
    "text": "No other player has won more than two.",
    "scene": {
-    "bg": "green",
+    "bg": "navy",
     "type": "years",
     "steps": [
      {
@@ -439,7 +531,10 @@
         "head": "#f2c230"
        }
       ],
-      "w": 0
+      "w": 0,
+      "bgImage": "pele_1958",
+      "bgBlur": 12,
+      "bgDim": 0.55
      }
     ]
    }
@@ -447,16 +542,20 @@
   {
    "text": "Number four. May 2015. Sadio Mané, for Southampton against Aston Villa.",
    "scene": {
-    "bg": "red",
+    "bg": "navy",
     "type": "statement",
     "steps": [
      {
       "type": "statement",
       "text": "RECORD|#4",
       "hi": 1,
-      "size": 220,
+      "size": 230,
+      "lineGap": 250,
       "w": 0,
-      "lineGap": 246
+      "bgMotion": "mane_hattrick",
+      "bgImage": "mane_hattrick",
+      "bgBlur": 8,
+      "bgDim": 0.45
      },
      {
       "type": "portrait",
@@ -464,27 +563,71 @@
        "image": "mane_portrait"
       },
       "name": "SADIO MANÉ",
-      "w": 4
+      "w": 4,
+      "bgImage": "mane_g3",
+      "bgBlur": 10,
+      "bgDim": 0.35
      },
      {
-      "type": "score",
-      "top": "16 MAY 2015",
+      "type": "scorebug",
+      "w": 7,
+      "tag": "16 MAY 2015",
       "home": "SOUTHAMPTON",
       "homeCol": "#d71920",
-      "homeInk": "#fff",
       "away": "ASTON VILLA",
       "awayCol": "#7a003c",
-      "awayInk": "#fff",
-      "score": "6-1",
-      "w": 7
+      "score": "0-0",
+      "clock": "12:00",
+      "bgImage": "mane_g3",
+      "bgBlur": 12,
+      "bgDim": 0.5
      }
     ]
    }
   },
   {
-   "text": "He scored three goals in two minutes and fifty-six seconds.",
+   "text": "First, a rebound. Then a tap-in. Then a curler into the top corner.",
    "scene": {
-    "bg": "red",
+    "bg": "navy",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "mane_g1",
+      "w": 0,
+      "motion": "mane_g1",
+      "label": "GOAL 1 · REBOUND",
+      "big": "13'",
+      "bigSize": 300,
+      "bigY": 1330
+     },
+     {
+      "type": "picture",
+      "image": "mane_g2",
+      "w": 3,
+      "motion": "mane_g2",
+      "label": "GOAL 2 · TAP-IN",
+      "big": "14'",
+      "bigSize": 300,
+      "bigY": 1330
+     },
+     {
+      "type": "picture",
+      "image": "mane_g3",
+      "w": 6,
+      "motion": "mane_g3",
+      "label": "GOAL 3 · TOP CORNER",
+      "big": "16'",
+      "bigSize": 300,
+      "bigY": 1330
+     }
+    ]
+   }
+  },
+  {
+   "text": "Three goals in two minutes and fifty-six seconds.",
+   "scene": {
+    "bg": "navy",
     "type": "stopwatch",
     "steps": [
      {
@@ -492,15 +635,19 @@
       "to": 176,
       "mmss": true,
       "word": "HAT-TRICK",
-      "w": 0
+      "w": 0,
+      "bgImage": "mane_hattrick",
+      "bgMotion": "mane_hattrick",
+      "bgBlur": 6,
+      "bgDim": 0.45
      }
     ]
    }
   },
   {
-   "text": "The fastest hat-trick in Premier League history. It beat Robbie Fowler's record, which had stood for twenty years.",
+   "text": "The fastest hat-trick in Premier League history. It beat a Robbie Fowler record that had stood for twenty years.",
    "scene": {
-    "bg": "red",
+    "bg": "navy",
     "type": "picture",
     "steps": [
      {
@@ -509,8 +656,8 @@
       "w": 0,
       "motion": "mane_hattrick",
       "big": "2:56",
-      "bigSize": 300,
-      "bigY": 1300
+      "bigSize": 320,
+      "bigY": 1330
      },
      {
       "type": "years",
@@ -529,31 +676,55 @@
         "head": "#1ea85a"
        }
       ],
-      "w": 7
+      "w": 7,
+      "bgImage": "mane_g1",
+      "bgBlur": 12,
+      "bgDim": 0.55
      }
     ]
    }
   },
   {
-   "text": "So which is the hardest to beat? Or is there one we missed? Tell us in the comments.",
+   "text": "So which is the hardest to beat? Or is there one we missed?",
    "scene": {
-    "bg": "purple",
-    "type": "statement",
+    "bg": "navy",
+    "type": "quad",
     "steps": [
      {
-      "type": "statement",
-      "text": "WHICH IS|THE HARDEST?",
-      "hi": 1,
-      "size": 170,
+      "type": "quad",
       "w": 0,
-      "lineGap": 190
-     },
-     {
-      "type": "statement",
-      "text": "5 GOALS IN 9 MIN|91 IN A YEAR|3 WORLD CUPS|HAT-TRICK IN 2:56",
-      "hi": -1,
-      "size": 110,
-      "w": 7
+      "text": "WHICH IS HARDEST?",
+      "textAt": 1.4,
+      "items": [
+       {
+        "image": "lewa_five",
+        "motion": "lewa_five",
+        "d": 0.0,
+        "label": "5 GOALS IN 9 MIN",
+        "sub": "LEWANDOWSKI"
+       },
+       {
+        "image": "messi_2012",
+        "motion": "messi_2012",
+        "d": 0.35,
+        "label": "91 IN A YEAR",
+        "sub": "MESSI"
+       },
+       {
+        "image": "pele_1970",
+        "motion": "pele_1970",
+        "d": 0.7,
+        "label": "3 WORLD CUPS",
+        "sub": "PELÉ"
+       },
+       {
+        "image": "mane_hattrick",
+        "motion": "mane_hattrick",
+        "d": 1.05,
+        "label": "HAT-TRICK IN 2:56",
+        "sub": "MANÉ"
+       }
+      ]
      }
     ]
    }
