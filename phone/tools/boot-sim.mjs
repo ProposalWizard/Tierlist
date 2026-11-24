@@ -8,7 +8,7 @@ const stub = path.resolve("tools/boot-stub.cjs");
 const out = "/tmp/claude-0/-home-user/f9db4640-b55f-52a1-be6c-75264610aefd/scratchpad/boot-sim.cjs";
 await build({
   entryPoints: ["tools/boot-entry.js"], bundle: true, platform: "neutral", mainFields: ["module","main"], format: "cjs", outfile: out, logLevel: "error",
-  jsx: "automatic", loader: { ".png": "empty", ".webp": "empty", ".jpg": "empty", ".glb": "empty", ".wav": "empty", ".mp3": "empty", ".ttf": "empty" },
+  jsx: "automatic", loader: { ".png": "empty", ".webp": "empty", ".jpg": "empty", ".glb": "empty", ".hdr": "empty", ".bin": "empty", ".wav": "empty", ".mp3": "empty", ".ttf": "empty" },
   alias: { "@": root },
   plugins: [{ name: "natives", setup(b) {
     b.onResolve({ filter: /^(react-native($|\/|-)|expo($|-)|@shopify\/|@react-navigation\/|@expo\/|expo-modules-core)/ }, () => ({ path: stub }));

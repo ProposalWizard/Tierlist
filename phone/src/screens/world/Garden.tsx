@@ -104,7 +104,9 @@ function Garden({ career, params }: { career: CareerState; params?: Record<strin
   const data = useMemo<GardenData>(() => {
     const arrive = (params?.arrive as GardenData["arrive"] | undefined) ?? comeBack ?? "gate";
     comeBack = null;
-    return gardenSceneData(career, arrive);
+    // params.sky: the look check's way to ask for a time of day ("day" | "sunset" | "night"); the game leaves it to your next match
+    const sky = params?.sky === "day" || params?.sky === "sunset" || params?.sky === "night" ? params.sky : undefined;
+    return gardenSceneData(career, arrive, sky);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

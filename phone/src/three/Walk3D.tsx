@@ -194,6 +194,8 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
   }, [p.showSpeed, ready]);
 
   // ── touches ──
+  /** When the touch happened (the event's own time, so a busy moment between the events does not turn a tap into a press). */
+  const stamp = (e: GestureResponderEvent) => { const n = e.nativeEvent as { timestamp?: number; timeStamp?: number }; return Number(n.timestamp ?? n.timeStamp) || Date.now(); };
   const ringCentre = () => ({ x: RING_LEFT + RING / 2, y: (size?.h ?? 0) - Math.max(28, insets.bottom + 16) - RING / 2 });
   const pt = (t: { locationX?: number; locationY?: number; pageX?: number; pageY?: number }) => ({ x: t.locationX ?? t.pageX ?? 0, y: t.locationY ?? t.pageY ?? 0 });
   const onStart = (e: GestureResponderEvent) => {
@@ -204,7 +206,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
       const onRing = Math.hypot(x - c.x, y - c.y) <= RING / 2 + 22;
       const hasStick = Array.from(touches.current.values()).some((v) => v.kind === "stick");
       const kind = onRing && !hasStick ? "stick" : "look";
-      touches.current.set(t.identifier as number, { kind, x, y, x0: x, y0: y, t0: Date.now(), moved: 0 });
+      touches.current.set(t.identifier as number, { kind, x, y, x0: x, y0: y, t0: stamp(e), moved: 0 });
       if (kind === "stick") moveStick(x, y);
       else host?.pointer("pointerdown", t.identifier as number, x, y);
     }
@@ -241,7 +243,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
       if (v.kind === "stick") { stick.current?.set(0, 0); host?.controller.setStick(0, 0); continue; }
       host?.pointer(cancelled ? "pointercancel" : "pointerup", t.identifier as number, x, y);
       // a tap, not a drag of the view: walk there (the place's tap), else its pick
-      if (!cancelled && host && v.moved < 10 && Date.now() - v.t0 < 600) {
+      if (!cancelled && host && v.moved < 10 && stamp(e) - v.t0 < 800) {
         const c = host.controller;
         if (c.tap) c.tap(x, y); else c.pick?.(x, y);
       }
