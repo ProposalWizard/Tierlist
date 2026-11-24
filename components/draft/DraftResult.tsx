@@ -1,4 +1,5 @@
 "use client";
+import { shortName } from "@/lib/draft/shortName";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { simulateSeason, positionFitness } from "@/lib/seasonSimulator";
 import type { SeasonResult, UCLMatch, UCLResult, FaCupMatch, SuperCupResult, CharityShieldResult } from "@/lib/seasonSimulator";
@@ -34,7 +35,7 @@ function formatGoalScorers(scorers: { player: string; minute: number }[]): strin
   if (scorers.length === 0) return "";
   const groups = new Map<string, number[]>();
   for (const g of scorers) {
-    const lastName = g.player.split(" ").pop() ?? g.player;
+    const lastName = shortName(g.player);
     if (!groups.has(lastName)) groups.set(lastName, []);
     groups.get(lastName)!.push(g.minute);
   }

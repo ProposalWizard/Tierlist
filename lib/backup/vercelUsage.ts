@@ -35,6 +35,9 @@ export async function vercelCpuLast30Days(now: Date = new Date()): Promise<Verce
       }),
       signal: AbortSignal.timeout(25_000),
     });
+    // 402: Vercel only answers this query on paid plans (Observability Plus).
+    // On the free plan, measured 24 Nov 2026, it always says 402.
+    if (res.status === 402) return { note: "Vercel's free plan does not share processor time here: check vercel.com → Usage" };
     if (!res.ok) return { note: `could not read Vercel usage (${res.status})` };
     const j = (await res.json()) as { summary?: Record<string, number>[]; result?: { summary?: Record<string, number>[] } };
     const v = (j.summary ?? j.result?.summary)?.[0]?.[KEY];

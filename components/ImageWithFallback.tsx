@@ -7,7 +7,7 @@
  * when the image fails to load (e.g. missing storage object).
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Props extends React.ImgHTMLAttributes<HTMLImageElement> {
   /** Fallback text shown when the image cannot be loaded */
@@ -37,9 +37,20 @@ export default function ImageWithFallback({
   ...rest
 }: Props) {
   const [failed, setFailed] = useState(false);
+  // Until the real picture arrives, the fallback picture sits behind it
+  // (24 Nov 2026): a slow portrait showed as an empty dark circle for a second
+  // or more ("faces take time to load"). Taken away once loaded, because
+  // portraits are cut-outs and the silhouette would show through them.
+  const [loaded, setLoaded] = useState(false);
+
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     setFailed(false);
+    // Already in the browser cache (or loaded before this page woke up): no
+    // load event will come, so check the picture itself.
+    const img = imgRef.current;
+    setLoaded(!!img && img.complete && img.naturalWidth > 0);
   }, [src]);
 
   if (failed && fallbackSrc) {
@@ -72,13 +83,15 @@ export default function ImageWithFallback({
     // eslint-disable-next-line @next/next/no-img-element
     <img
       {...rest}
+      ref={imgRef}
       src={src}
       alt={alt}
       className={className}
-      style={style}
+      style={!loaded && fallbackSrc ? { backgroundImage: `url(${fallbackSrc})`, backgroundSize: "cover", backgroundPosition: "center", ...style } : style}
       loading="lazy"
       referrerPolicy="no-referrer"
       decoding="async"
+      onLoad={(e) => { setLoaded(true); rest.onLoad?.(e); }}
       onError={() => setFailed(true)}
     />
   );
