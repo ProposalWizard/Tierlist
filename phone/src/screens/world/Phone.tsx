@@ -7,7 +7,7 @@
  * icon, and the App Store leaves it out).
  *
  * Kickabout plays on the phone's match (screens/MatchKickabout.tsx).
- * Placeholders: Garden and Your house (3D) — each shows "coming".
+ * The Garden opens its 3D place (screens/world/Garden.tsx); Your house is not on the phone yet.
  * Relationships and Settings open the CAREER area's "relations" / "settings"
  * screens when those exist.
  */
@@ -35,6 +35,7 @@ import { scoutReportFor } from "@/lib/star/scoutReport";
 import { useCareer, setCareer, getCareer } from "../../game/store";
 import { useNav } from "../../nav";
 import { SCREENS } from "../../areas/registry";
+import { partOff } from "../../safety";
 import { Press } from "../../ui/Press";
 import { C } from "../../world/lookKit";
 import { Kickabout } from "../MatchKickabout";
@@ -62,8 +63,9 @@ const APPS: App[] = [
   // No casino: the packed phone app has none (Mikey, 5 Nov 2026).
   { id: "sponsors", label: "Sponsors", icon: "🤝", hi: "#2dd4bf", bg: "#0f766e", screen: "sponsors" },
   { id: "ownership", label: "Owner", icon: "🏛️", hi: "#818cf8", bg: "#4338ca", screen: "ownership" },
-  // Garden and Your house are 3D places on the website; Mikey left them off the phone,
-  // so they are not on its home screen (no "coming soon" dead end).
+  // The Garden is a 3D place (the website's Garden app: bought in the App Store, ★5,000). Your house is
+  // still left off until its 3D version is in (no "coming soon" dead end).
+  { id: "garden", label: "Garden", icon: "🌳", hi: "#4ade80", bg: "#166534", screen: "garden" },
   { id: "settings", label: "Settings", icon: "⚙️", hi: "#9ca3af", bg: "#4b5563", screen: "settings", soon: "Settings" },
 ];
 const DOCK = new Set(["social", "messages", "fixtures", "kickabout"]);
@@ -265,7 +267,9 @@ function AppIcon({ app, badge, off, fresh, onOpen, size = 50 }: { app: App; badg
 
 function Grid({ career, glow, badges, installed, onOpen }: { career: CareerState; glow: string; badges: Record<string, number>; installed: (id: string) => boolean; onOpen: (a: App) => void }) {
   const next = nextFixtureFor(career);
-  const grid = career.unlocks ? [...APPS.filter((a) => !DOCK.has(a.id)), APP_STORE_ICON] : APPS.filter((a) => !DOCK.has(a.id));
+  // the Garden is a 3D place: when the crash guard has switched the 3D off it is left off the grid (no dead button)
+  const shown = APPS.filter((a) => !(a.id === "garden" && partOff("3d")));
+  const grid = career.unlocks ? [...shown.filter((a) => !DOCK.has(a.id)), APP_STORE_ICON] : shown.filter((a) => !DOCK.has(a.id));
   const dock = APPS.filter((a) => DOCK.has(a.id));
   // The phone shrinks to fit (PhoneFrame): every app and the dock stay above HOME/BACK
   // on a small phone (360 x 640) instead of the dock falling under the nav bar.

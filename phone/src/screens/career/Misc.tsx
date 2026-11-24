@@ -171,6 +171,7 @@ const PREF_ROWS: [keyof Prefs, string][] = [
   ["sound", "Sound effects"],
   ["gameMusic", "Game music"],
   ["skipLineup", "Skip the line-up"],
+  ["show3dSpeed", "Show 3D speed"],
 ];
 /** The website's little head pictures (public/star/people3d/toon-h1…h6.webp). */
 const HEAD_PIC: Record<string, number> = {

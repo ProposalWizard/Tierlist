@@ -16,8 +16,10 @@ export interface Prefs {
   skipLineup: boolean;
   /** Player names over the players in the match. */
   playerNames: boolean;
+  /** Settings → Show 3D speed: frames a second, draw calls and triangles in a corner of the 3D places (off by default). */
+  show3dSpeed: boolean;
 }
-const DEFAULTS: Prefs = { sound: true, gameMusic: false, skipLineup: false, playerNames: true };
+const DEFAULTS: Prefs = { sound: true, gameMusic: false, skipLineup: false, playerNames: true, show3dSpeed: false };
 const KEY = "prefs-v1";
 let current: Prefs = { ...DEFAULTS, ...(loadJson<Partial<Prefs>>(KEY) ?? {}) };
 const subs = new Set<() => void>();

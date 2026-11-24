@@ -3,6 +3,7 @@
 // summer transfer window. Open any of them with useNav().go(name, params).
 //
 //   phone                       the phone's home screen of apps
+//   garden      { arrive? }     your garden in 3D (stable, cars, trophies, doors; screens/world/Garden.tsx)
 //   feed        { moment?, onContinue? }  the social feed (moment: post-match reactions)
 //   shop        { cat? }        the shop ("cans" | "boots" | "drip" | "gadgets" | "cars" | "homes" | "holiday")
 //   sponsors                    deals, offers and brands
@@ -38,6 +39,7 @@ import { RuleBookScreen } from "../screens/world/RuleBook";
 import { VoteCeremonyScreen } from "../screens/world/VoteCeremony";
 import { LockerScreen } from "../screens/world/Locker";
 import { HallOfFameScreen } from "../screens/world/HallOfFame";
+import { GardenScreen } from "../screens/world/Garden";
 
 function FeedScreen({ params }: { params?: Record<string, unknown> }) {
   const career = useCareer();
@@ -67,6 +69,7 @@ function SeasonReviewScreen({ params }: { params?: Record<string, unknown> }) {
 
 export const worldScreens: ScreenMap = {
   phone: PhoneScreen,
+  garden: GardenScreen,
   feed: FeedScreen,
   shop: ShopScreen,
   sponsors: SponsorsScreen,
