@@ -20,6 +20,11 @@
  *   crash guard (../safety.ts, part "3d") marks the start so a crash while
  *   starting switches the 3D off for the next launch.
  *
+ * - while a place is mounted, a JavaScript error (a frame, a callback out of the scene, a timer, a promise) never reaches the
+ *   app's global handler: ./crashNet.ts writes it to storage, fails the place over to its plain version and switches the Live 3D
+ *   scenes off; the scene's `onEvent` is handed to the screen after the frame, not inside it. A view that is gone makes every
+ *   GL call a no-op (neutralizeGl).
+ *
  * The screen puts its own buttons and cards in `children`; they sit above the
  * touch layer, so a tap on a button is the button's.
  */
@@ -28,10 +33,11 @@ import { ActivityIndicator, AppState, Dimensions, PixelRatio, StyleSheet, Text, 
 import { GLView, type ExpoWebGLRenderingContext } from "expo-gl";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TIER_PROFILES, quality3dSetting, quality3dTier, type Quality3d } from "@/lib/star/three3d/quality";
-import { useRiskyPart, markStep, clearTrail } from "../safety";
+import { useRiskyPart, markStep, clearTrail, notePulse } from "../safety";
 import { Press } from "../ui/Press";
 import { setupPhone3d } from "./assets";
 import { glCounts } from "./gl";
+import { neutralizeGl, registerPlace, type PlaceNet } from "./crashNet";
 import { startWalkScene, type WalkController, type WalkHost, type WalkStart } from "./walkHost";
 
 /** The longest the scene may take to start before the plain card takes over. */
@@ -126,34 +132,49 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
   const stick = useRef<StickHandle>(null);
   const touches = useRef(new Map<number, { kind: "stick" | "look"; x: number; y: number; x0: number; y0: number; t0: number; moved: number }>());
   const lastFps = useRef(0);
+  // the crash net (./crashNet.ts): this place counts as mounted from its first draw to its close
+  const net = useRef<PlaceNet | null>(null);
+  const unmounted = useRef(false);
 
   const tier = useMemo(() => (attempt > 0 ? "low" : p.tierFor ? p.tierFor(attempt) : walkTier(attempt)), [attempt]); // eslint-disable-line react-hooks/exhaustive-deps
   const dpr = PixelRatio.get() || 1;
   const pr = Math.min(dpr, TIER_PROFILES[tier].movePixelRatio);
   const k = pr / dpr;
 
+  // The crash net: while this place is mounted, a JavaScript error fails it over to its plain version (./crashNet.ts).
+  useEffect(() => {
+    if (!allowed) return;
+    unmounted.current = false;
+    const n = registerPlace(place, (why) => setFailed((f) => f ?? why));
+    net.current = n;
+    return () => { unmounted.current = true; n.unregister(); if (net.current === n) net.current = null; };
+  }, [allowed, place]);
+
+  /** Let the scene go, then make every later GL call a no-op (a late timer or frame of the scene must not reach the native side). */
+  const letGo = (l: NonNullable<typeof live.current>) => {
+    l.dead = true;
+    try { l.host?.dispose(); } catch (e) { console.warn("[walk 3D] dispose", e); }
+    l.host = null;
+    if (l.gl) neutralizeGl(l.gl);
+    try { cur.current.onController?.(null); } catch (e) { console.warn("[walk 3D] onController", e); }
+  };
+
   // Each GL view's own scene goes when the view is made again or the screen closes.
   useEffect(() => () => {
     const l = live.current;
     clearTrail(place); // a clean close (or a restart) is not a crash
     if (!l) return;
-    l.dead = true;
-    l.host?.dispose();
-    l.host = null;
-    cur.current.onController?.(null);
-  }, [attempt]);
+    letGo(l);
+  }, [attempt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // A plain card means the scene is let go now (not when the screen closes).
   useEffect(() => {
     if (!failed) return;
-    clearTrail(place); // a failure the app caught is not a crash
+    clearTrail(place); // a failure the app caught is not a crash (its error is kept apart: Settings → "Last error")
     const l = live.current;
     if (!l) return;
-    l.dead = true;
-    l.host?.dispose();
-    l.host = null;
-    cur.current.onController?.(null);
-  }, [failed]);
+    letGo(l);
+  }, [failed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Frames stop in the background and go on in front.
   useEffect(() => {
@@ -175,11 +196,14 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
   }, []);
 
   const onContext = useCallback((gl: ExpoWebGLRenderingContext) => {
-    if (!size) return;
+    // the view was closed (or let go after a failure) before the phone gave it a GL: nothing to start, and the GL is left alone
+    if (!size || unmounted.current) { neutralizeGl(gl); return; }
     const me = { dead: false, host: null as WalkHost<C> | null, gl: gl as unknown as WebGL2RenderingContext, tier, pr };
     live.current = me;
     markStep(place, `gl context created (attempt ${attempt}, ${tier}, ${size.w}x${size.h})`);
     const api: WalkApi = { restart: () => { if (!me.dead) restartOnce(); }, fail: (why) => { if (!me.dead) { console.warn("[walk 3D] failed:", why); setFailed(why); } }, dead: () => me.dead };
+    // every scene callback goes through the net: `onEvent` is noted (a step: "event stamp") and handed on after the frame
+    const wrap = <T,>(cb: T): T => (net.current ? net.current.wrapCallbacks(cb, () => me.dead || unmounted.current) : cb);
     const limit = setTimeout(() => { if (!me.host && !me.dead) { console.warn("[walk 3D] took too long; plain card instead"); setFailed("It took too long to load"); } }, cur.current.loadLimitMs ?? WALK_LOAD_LIMIT_MS);
     (async () => {
       try {
@@ -187,22 +211,29 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
         const q = cur.current;
         const start = q.load();
         const host = await startWalkScene<D, CB, C>({
-          start, data: q.data, callbacks: q.callbacks(api), gl: me.gl, width: size.w, height: size.h, pixelRatio: pr, quality: tier,
+          start, data: q.data, callbacks: wrap(q.callbacks(api)), gl: me.gl, width: size.w, height: size.h, pixelRatio: pr, quality: tier,
           onStep: (t) => { if (!me.dead) markStep(place, t); },
-          onFrameError: (e) => { if (!me.dead) { console.warn("[walk 3D] a frame failed; plain card instead:", e); setFailed("A frame failed: " + (e instanceof Error ? e.message : String(e))); } },
+          onFrame: () => { if (!me.dead) notePulse(place); },
+          onFrameError: (e) => {
+            if (me.dead) return;
+            console.warn("[walk 3D] a frame failed; plain card instead:", e);
+            // written to storage, the switch turned off and this place failed over (./crashNet.ts); without the net, the plain card as before
+            if (!net.current?.onFrameError(e)) setFailed("A frame failed: " + (e instanceof Error ? e.message : String(e)));
+          },
         });
         clearTimeout(limit);
-        if (me.dead) { host.dispose(); return; }
+        if (me.dead) { host.dispose(); neutralizeGl(me.gl); return; }
         me.host = host;
         if (AppState.currentState !== "active") host.pause();
+        // the scene's own calls that move it along (shots, the signing) are steps too: "setShot(shake)", "sign()"
+        traceCalls(host.controller, place, () => me.dead);
         cur.current.onController?.(host.controller);
         setReady(true);
-        // first frame handed to the screen, then 10 s of running well clears the trail
+        // first frame handed to the screen; the trail then stays until the place closes cleanly, or has run 10 s after its LAST step
         const poll = setInterval(() => {
           if (me.dead) { clearInterval(poll); return; }
           try { if (glCounts(me.gl).frames > 0) { markStep(place, "first frame"); clearInterval(poll); } } catch { clearInterval(poll); }
         }, 200);
-        setTimeout(() => { clearInterval(poll); if (!me.dead) clearTrail(place); }, 10000);
         cur.current.onReady?.();
       } catch (e) {
         clearTimeout(limit);
@@ -332,6 +363,23 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
       {p.children}
     </View>
   );
+}
+
+/** The calls on a scene's controller that move a scene along are written as steps ("setShot(shake)", "sign()", "skip()"): the trail follows the whole scene. */
+const TRACED = ["setShot", "sign", "skip", "setYou"] as const;
+function traceCalls(c: unknown, place: string, dead: () => boolean) {
+  const o = c as Record<string, unknown> | null;
+  if (!o) return;
+  for (const k of TRACED) {
+    const f = o[k];
+    if (typeof f !== "function") continue;
+    try {
+      o[k] = (...a: unknown[]) => {
+        if (!dead()) markStep(place, `${k}(${a.map((x) => (typeof x === "object" ? "…" : String(x))).join(",")})`);
+        return (f as (...x: unknown[]) => unknown).apply(o, a);
+      };
+    } catch { /* a read-only controller: no step for this call */ }
+  }
 }
 
 // ── the stick ───────────────────────────────────────────────────────────────

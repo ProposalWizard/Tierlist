@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import type { CareerState } from "@/lib/star/types";
 import { usePrefs } from "../../game/prefs";
+import { markStep } from "../../safety";
 import { Walk3D } from "../../three/Walk3D";
 import { loadSigningStart, type SigningCallbacks, type SigningData, type SigningWalk } from "../../three/signingScene";
 import { signingPlan } from "../../three/signingData";
@@ -29,6 +30,8 @@ import { SigningMoment, type SigningTerms as DrawnTerms } from "./Signing";
 export type SigningTerms = DrawnTerms & { position?: string; season?: string | null };
 
 const INK = "#f8fafc";
+/** The Walk3D's name: the breadcrumb trail is kept under it. */
+const PLACE = "The signing";
 type Stage = "loading" | "talk" | "contract" | "signing" | "done";
 
 export function Signing3D({ career, club, managerName, onDone, terms, number, kind = "trial" }: {
@@ -55,6 +58,8 @@ function Signing3DView({ plan, onDone, onFail }: { plan: ReturnType<typeof signi
   const [stage, setStageState] = useState<Stage>("loading");
   const stageRef = useRef<Stage>("loading");
   const setStage = (s: Stage) => { stageRef.current = s; setStageState(s); };
+  // the trail (../../safety.ts): where the SCREEN is, next to the scene's own steps (the app closed in the handshake: which of the two was it?)
+  useEffect(() => { if (stage !== "loading") markStep(PLACE, `screen: stage ${stage}`); }, [stage]);
   const [line, setLine] = useState(0);
   const lineRef = useRef(0);
   const [typed, setTyped] = useState(0);
@@ -108,18 +113,24 @@ function Signing3DView({ plan, onDone, onFail }: { plan: ReturnType<typeof signi
 
   const callbacks = (): SigningCallbacks => ({
     onEvent: (e) => {
-      if (e === "stamp") { setStamp(true); timers.current.push(setTimeout(() => setStamp(false), 1500)); }
+      if (e === "stamp") { setStamp(true); timers.current.push(setTimeout(() => { markStep(PLACE, "screen: stamp hidden"); setStamp(false); }, 1500)); }
       if (e === "done") setStage("done");
     },
   });
   const stampScale = useSharedValue(2.2);
-  useEffect(() => { if (stamp) { stampScale.value = 2.2; stampScale.value = withSpring(1, { damping: 9, stiffness: 160 }); } }, [stamp, stampScale]);
-  const stampStyle = useAnimatedStyle(() => ({ opacity: Math.min(1, 1.6 - 0.6 * stampScale.value), transform: [{ rotate: "-8deg" }, { scale: stampScale.value }] }));
+  const stampShown = useSharedValue(0);
+  // (24 Nov 2026) The SIGNED stamp stays MOUNTED and only fades: it used to be put in and taken out of the tree, and the taking out
+  // came at the very moment the handshake starts (the app closed there). No view is added or removed while the two stand up.
+  useEffect(() => {
+    if (stamp) { stampScale.value = 2.2; stampShown.value = 1; stampScale.value = withSpring(1, { damping: 9, stiffness: 160 }); }
+    else stampShown.value = 0;
+  }, [stamp, stampScale, stampShown]);
+  const stampStyle = useAnimatedStyle(() => ({ opacity: stampShown.value * Math.min(1, 1.6 - 0.6 * stampScale.value), transform: [{ rotate: "-8deg" }, { scale: stampScale.value }] }));
 
   return (
     <View style={{ flex: 1, backgroundColor: "#120c08" }}>
       <Walk3D<SigningData, SigningCallbacks, SigningWalk>
-        name="The signing" cover="#120c08" load={loadSigningStart} data={plan.data} callbacks={callbacks}
+        name={PLACE} cover="#120c08" load={loadSigningStart} data={plan.data} callbacks={callbacks}
         onBack={onDone} onFail={onFail} hideStick showSpeed={prefs.show3dSpeed}
         onTap={() => tapScene()}
         onController={(c) => {
@@ -156,13 +167,11 @@ function Signing3DView({ plan, onDone, onFail }: { plan: ReturnType<typeof signi
           </View>
         )}
 
-        {stamp && (
-          <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: "15%", alignItems: "center" }}>
-            <Animated.View style={[{ paddingHorizontal: 18, paddingVertical: 8, borderWidth: 3, borderColor: "#fde047", backgroundColor: "rgba(0,0,0,0.45)" }, stampStyle]}>
-              <Text style={{ color: "#fde047", fontSize: 32, fontWeight: "900", letterSpacing: 3 }}>SIGNED</Text>
-            </Animated.View>
-          </View>
-        )}
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: "15%", alignItems: "center" }}>
+          <Animated.View style={[{ paddingHorizontal: 18, paddingVertical: 8, borderWidth: 3, borderColor: "#fde047", backgroundColor: "rgba(0,0,0,0.45)" }, stampStyle]}>
+            <Text style={{ color: "#fde047", fontSize: 32, fontWeight: "900", letterSpacing: 3 }}>SIGNED</Text>
+          </Animated.View>
+        </View>
 
         {stage === "done" && (
           <View style={{ position: "absolute", left: 12, right: 12, bottom }}>

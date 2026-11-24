@@ -64,7 +64,7 @@ export interface WalkHost<C extends WalkController> {
  * frame asked for is kept and handed on at `resume()`. (three.js and the scenes ask
  * `self.requestAnimationFrame` every frame, so holding the request stops the whole loop.)
  */
-export function installFrameGate(onError?: (e: unknown) => void) {
+export function installFrameGate(onError?: (e: unknown) => void, onFrame?: () => void) {
   const g = globalThis as unknown as Record<string, unknown> & {
     requestAnimationFrame?: (cb: (t: number) => void) => number;
     cancelAnimationFrame?: (id: number) => void;
@@ -79,6 +79,7 @@ export function installFrameGate(onError?: (e: unknown) => void) {
   // A scene's frame that throws must never reach the phone's global error handler: in a release app that closes the app with no
   // error screen (expo-gl's stubs throw, e.g. renderbufferStorageMultisample). It is caught here and the place is let go instead.
   const guard = (cb: (t: number) => void) => (t: number) => {
+    try { onFrame?.(); } catch { /* a pulse never stops a frame */ }
     try { cb(t); } catch (e) { console.warn("[walk 3D] a frame threw:", e); try { onError?.(e); } catch { /* nothing more to do */ } }
   };
   g.requestAnimationFrame = (cb) => {
@@ -176,6 +177,8 @@ export interface StartWalkOptions<D, CB, C extends WalkController> {
   onFrameError?: (e: unknown) => void;
   /** Crash breadcrumbs (../safety.ts markStep): called with the step reached; never throws into the host. */
   onStep?: (step: string) => void;
+  /** A frame of the scene is about to run (the pulse in ../safety.ts: frames were still running when the app closed). */
+  onFrame?: () => void;
 }
 
 export async function startWalkScene<D, CB, C extends WalkController>(o: StartWalkOptions<D, CB, C>): Promise<WalkHost<C>> {
@@ -190,7 +193,7 @@ export async function startWalkScene<D, CB, C extends WalkController>(o: StartWa
   // the packed-texture copies (KTX2) need a WebAssembly transcoder: the phone uses the plain pictures
   g.__ktx2Off = true;
   const releaseDoc = holdSceneDocument();
-  const gate = installFrameGate((e) => { step("a frame threw"); o.onFrameError?.(e); });
+  const gate = installFrameGate((e) => { step("a frame threw"); o.onFrameError?.(e); }, o.onFrame);
   const unFetch = installBundledFetch();
   // a scene watches its container's size; here the container is hollow and never resizes (a real browser's observer would refuse it)
   const gr = globalThis as unknown as { ResizeObserver?: unknown };

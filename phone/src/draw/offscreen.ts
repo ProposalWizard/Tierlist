@@ -54,6 +54,16 @@ export class OffscreenCanvas2D {
     this.snap = { v: this.ctx.version, img };
     return img;
   }
+  /**
+   * The picture was handed on (uploaded to the GL: src/three/gl.ts): let go of the snapshot now. Each redraw of the canvas takes a
+   * new one (a copy of its pixels, 2.3 MB for the signing's contract) and the old ones were only freed when the JavaScript engine
+   * next collected, which it does not do for native memory it cannot see (the contract is redrawn every frame while the name is written).
+   */
+  __release() {
+    const s = this.snap;
+    this.snap = null;
+    try { s?.img.dispose?.(); } catch { /* already gone */ }
+  }
   addEventListener() { /* no events offscreen */ }
   removeEventListener() { /* no events offscreen */ }
 }

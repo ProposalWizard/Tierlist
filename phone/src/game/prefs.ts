@@ -6,6 +6,7 @@
  */
 import { useSyncExternalStore } from "react";
 import { loadJson, saveJson } from "./save";
+import { closedWhileFresh, closedWhileInfo } from "../safety";
 
 export interface Prefs {
   /** Sound effects in the match and on screens. */
@@ -34,6 +35,15 @@ const DEFAULTS: Prefs = { sound: true, gameMusic: false, skipLineup: false, play
 const KEY = "prefs-v1";
 let current: Prefs = { ...DEFAULTS, ...(loadJson<Partial<Prefs>>(KEY) ?? {}) };
 const subs = new Set<() => void>();
+// 24 Nov 2026: the last run closed in the middle of a live 3D scene (the signing, the office, a night, a reward: src/safety.ts left a
+// trail). The switch goes OFF now, so the same scene cannot close the app again on the next try (the signing used to replay and close at
+// the same moment every time). Settings → Live 3D scenes turns it back on. Only the launch that FOUND the trail does this.
+try {
+  if (current.live3dScenes && closedWhileFresh() && /signing|office|night|reward/i.test(closedWhileInfo()?.place ?? "")) {
+    current = { ...current, live3dScenes: false };
+    saveJson(KEY, current);
+  }
+} catch { /* the switch stays as it was */ }
 
 export function getPrefs(): Prefs { return current; }
 export function setPref<K extends keyof Prefs>(k: K, v: Prefs[K]) {

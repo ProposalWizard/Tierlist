@@ -24,11 +24,14 @@ const FLIP_Y = 0x9240, PREMULTIPLY = 0x9241, COLORSPACE_CONV = 0x9243;
 
 /** Pixels of a picture source three hands to texImage2D (null: not one of ours). */
 function pixelsOf(src: unknown): { width: number; height: number; data: Uint8Array } | null {
-  const s = src as { __skiaImage?: () => unknown; data?: unknown; width?: number; height?: number } | null;
+  const s = src as { __skiaImage?: () => unknown; __release?: () => void; data?: unknown; width?: number; height?: number } | null;
   if (!s) return null;
   if (typeof s.__skiaImage === "function") {
     const img = s.__skiaImage();
-    return img ? rgbaOf(img as never) : null;
+    const px = img ? rgbaOf(img as never) : null;
+    // the pixels are copied out: a canvas of ours lets its snapshot go now (see OffscreenCanvas2D.__release)
+    try { s.__release?.(); } catch { /* freed later instead */ }
+    return px;
   }
   if (s.data && ArrayBuffer.isView(s.data) && typeof s.width === "number" && typeof s.height === "number") {
     const d = s.data as ArrayBufferView;

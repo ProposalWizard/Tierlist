@@ -3,7 +3,12 @@
 // Renders the real Signing3D / OfficeMoment with react-dom/server, every native piece replaced by a stand-in, and the
 // Walk3D screen (the only thing that makes a GL view) replaced by a counter. Proves: with the switch OFF (the default) the trial's
 // signing is the drawn one and Walk3D is never mounted; ON, the 3D one starts. Also proves the breadcrumb trail survives a "launch".
+// Second round (24 Nov 2026): the crash net (src/three/crashNet.ts) with the real frame gate (src/three/walkHost.ts): an error thrown in a
+// scene frame, in a scene callback and in a timer while a 3D place is mounted never reaches the previous global handler, fails the place
+// over, turns the switch off and leaves a note in storage; with no place mounted the previous handler still runs. The trail now lasts the
+// whole scene (cleared only 10 s after its LAST step), and the live scenes go off after a launch that finds a trail.
 import { createRequire } from "node:module";
+import fs from "node:fs";
 import path from "node:path";
 const req = createRequire(import.meta.url);
 const root = path.resolve("..");
@@ -47,7 +52,9 @@ const entry = `
   const { OfficeMoment } = require("@/phone/src/screens/career/Office3D");
   const prefs = require("@/phone/src/game/prefs");
   const safety = require("@/phone/src/safety");
-  exports.run = { React, renderToStaticMarkup, Signing3D, OfficeMoment, prefs, safety };
+  const crashNet = require("@/phone/src/three/crashNet");
+  const { installFrameGate } = require("@/phone/src/three/walkHost");
+  exports.run = { React, renderToStaticMarkup, Signing3D, OfficeMoment, prefs, safety, crashNet, installFrameGate };
 `;
 await build({
   stdin: { contents: entry, resolveDir: path.resolve("."), loader: "js" },
@@ -113,5 +120,171 @@ r.safety.clearTrail("The signing");
 r = fresh();
 ok(r.safety.closedWhileLine() === null, "a place that ran ok / closed cleanly leaves no trail");
 
-console.log(bad ? `\n${bad} FAILED` : "\nPASS: live 3D switch and breadcrumbs");
+
+// ── second round ──────────────────────────────────────────────────────────────────────────────────────────────
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+const kv = () => globalThis.__kvStore;
+const lastErr = () => { const raw = kv().get("last-error"); return raw ? JSON.parse(raw) : null; };
+// the phone's global handler, as Boot.tsx leaves it; React Native reports every uncaught error to it (a timer's throw too)
+let reached = [];
+let handler = (err, fatal) => { reached.push({ err, fatal }); };
+globalThis.ErrorUtils = { getGlobalHandler: () => handler, setGlobalHandler: (h) => { handler = h; } };
+let rejection = null;
+globalThis.HermesInternal = { enablePromiseRejectionTracker: (o) => { rejection = o; } };
+const rnReports = (fn) => { try { fn(); } catch (err) { handler(err, true); } };
+const fakeRaf = () => {
+  const q = []; const g = globalThis;
+  const saved = { raf: g.requestAnimationFrame, caf: g.cancelAnimationFrame };
+  g.requestAnimationFrame = (cb) => q.push(cb);
+  g.cancelAnimationFrame = () => {};
+  return { runAll: () => { const n = q.splice(0); n.forEach((cb) => cb(0)); }, restore: () => { g.requestAnimationFrame = saved.raf; g.cancelAnimationFrame = saved.caf; } };
+};
+
+console.log("== the crash net: with no 3D place, the previous handler runs as before");
+r = fresh();
+r.prefs.setPref("live3dScenes", true);
+reached = [];
+r.crashNet.ensureInstalled();
+ok(handler.__kibNet === true, "the net sits in front of the previous handler");
+rnReports(() => { throw new Error("outside any 3D place"); });
+ok(reached.length === 1 && /outside any 3D place/.test(reached[0].err.message), "no place mounted: the error reaches the previous handler (Boot's)");
+ok(lastErr() === null && r.prefs.getPrefs().live3dScenes === true, "no place mounted: nothing recorded, the switch is untouched");
+
+console.log("== the crash net: a frame of the scene throws (the real frame gate)");
+let failedOver = [];
+let net = r.crashNet.registerPlace("The signing", (why) => failedOver.push(why));
+net.event("event stamp");
+let raf = fakeRaf();
+let gate = r.installFrameGate((e) => { net.onFrameError(e); }, () => r.safety.notePulse("The signing"));
+globalThis.requestAnimationFrame(() => { throw new Error("frame boom"); });
+reached = [];
+raf.runAll();
+gate.restore(); raf.restore();
+ok(reached.length === 0, "frame throw: the previous handler was NOT reached");
+ok(failedOver.length === 1 && /frame boom/.test(failedOver[0]), "frame throw: the place was failed over to its plain version");
+ok(r.prefs.getPrefs().live3dScenes === false, "frame throw: the Live 3D scenes switch is off again");
+let le = lastErr();
+ok(le && le.message === "frame boom" && le.place === "The signing" && le.lastEvent === "event stamp" && le.stack.length > 0, "frame throw: message, stack, place and the scene's last event are in storage: " + JSON.stringify(le && { m: le.message, p: le.place, e: le.lastEvent, s: le.stack.length }));
+ok(r.crashNet.mountedPlaces().length === 0, "frame throw: the failed-over place no longer counts as mounted");
+
+console.log("== the crash net: the scene's onEvent callback throws (and runs after the frame, not inside it)");
+r.prefs.setPref("live3dScenes", true); failedOver = [];
+net = r.crashNet.registerPlace("The signing", (why) => failedOver.push(why));
+let ran = 0;
+const cbs = net.wrapCallbacks({ onEvent: (e) => { ran++; throw new Error("event boom " + e); }, other: 7 }, () => false);
+ok(cbs.other === 7, "the other callbacks are kept");
+reached = [];
+cbs.onEvent("shake");
+ok(ran === 0, "onEvent did not run inside the call that fired it (it is handed on after the frame)");
+await sleep(30);
+ok(ran === 1, "onEvent ran after the frame");
+ok(reached.length === 0 && failedOver.length === 1, "event throw: previous handler NOT reached, the place failed over");
+ok(r.prefs.getPrefs().live3dScenes === false, "event throw: the switch is off");
+le = lastErr();
+ok(le && /event boom shake/.test(le.message) && le.lastEvent === "event shake", "event throw: the note names the error and the last event (event shake)");
+// a dead place's late event is dropped, not run
+r.prefs.setPref("live3dScenes", true);
+net = r.crashNet.registerPlace("The signing", () => {});
+ran = 0;
+const late = net.wrapCallbacks({ onEvent: () => { ran++; } }, () => true);
+late.onEvent("done"); await sleep(20);
+ok(ran === 0, "an event that arrives after the place closed is dropped");
+net.unregister();
+
+console.log("== the crash net: a timer of the scene throws");
+r.prefs.setPref("live3dScenes", true); failedOver = []; reached = [];
+net = r.crashNet.registerPlace("The signing", (why) => failedOver.push(why));
+net.event("setShot(shake)");
+setTimeout(() => rnReports(() => { throw new Error("timer boom"); }), 1);
+await sleep(30);
+ok(reached.length === 0 && failedOver.length === 1, "timer throw: previous handler NOT reached, the place failed over");
+ok(r.prefs.getPrefs().live3dScenes === false, "timer throw: the switch is off");
+le = lastErr();
+ok(le && le.message === "timer boom" && le.lastEvent === "setShot(shake)", "timer throw: the note has the message and the last event");
+
+console.log("== the crash net: an unhandled promise rejection (Hermes' tracker)");
+r.prefs.setPref("live3dScenes", true); failedOver = []; reached = [];
+net = r.crashNet.registerPlace("The signing", (why) => failedOver.push(why));
+ok(rejection && typeof rejection.onUnhandled === "function", "the rejection tracker is hooked");
+rejection.onUnhandled(1, new Error("promise boom"));
+ok(reached.length === 0 && failedOver.length === 1 && lastErr().message === "promise boom", "promise: previous handler NOT reached, the place failed over, the note is written");
+
+console.log("== the crash net: covered a moment after the fail-over, then the previous handler again");
+reached = [];
+rnReports(() => { throw new Error("a late timer of the scene"); });
+ok(reached.length === 0, "inside the grace after a fail-over a late error is still taken");
+await sleep(r.crashNet.GRACE_MS + 150);
+rnReports(() => { throw new Error("much later"); });
+ok(reached.length === 1 && /much later/.test(reached[0].err.message), "after it, with no place mounted, the previous handler runs again");
+// a place that closed cleanly leaves nothing behind
+net = r.crashNet.registerPlace("The signing", () => {}); net.unregister(); reached = [];
+rnReports(() => { throw new Error("after a clean close"); });
+ok(reached.length === 1, "a place closed cleanly: the previous handler runs as before");
+
+console.log("== the crash net: GL calls after the view is gone are no-ops");
+const fakeGl = { drawingBufferWidth: 100, clear: () => { throw new Error("native call after destroy"); }, isContextLost: () => false, getError: () => 5, endFrameEXP: () => { throw new Error("native"); } };
+r.crashNet.neutralizeGl(fakeGl);
+let threw = false; try { fakeGl.clear(); fakeGl.endFrameEXP(); } catch { threw = true; }
+ok(!threw && fakeGl.isContextLost() === true && fakeGl.getError() === 0 && fakeGl.drawingBufferWidth === 100, "after neutralizeGl: calls do nothing, the context reads as lost, values are kept");
+
+console.log("== the breadcrumbs last the whole scene");
+// timers recorded here so no real 10 s is waited
+const realST = globalThis.setTimeout, realCT = globalThis.clearTimeout; const armed = [];
+r = fresh();
+globalThis.setTimeout = (fn, ms) => { const t = { fn, ms, off: false }; armed.push(t); return t; };
+globalThis.clearTimeout = (t) => { if (t && typeof t === "object" && "off" in t) t.off = true; else realCT(t); };
+r.safety.markStep("The signing", "mounted");
+r.safety.markStep("The signing", "event stamp");
+r.safety.markStep("The signing", "event shake");
+const quiet = armed.filter((t) => t.ms === r.safety.TRAIL_QUIET_MS);
+ok(quiet.length === 3 && quiet.slice(0, 2).every((t) => t.off) && !quiet[2].off, "every step starts the 10 s quiet count again (only the last one stays armed)");
+ok(kv().has("trail:The signing"), "10 s have not passed since the last step: the trail is still there");
+r.safety.notePulse("The signing");
+ok(kv().has("pulse:The signing"), "the frame pulse is written");
+quiet[2].fn();
+ok(!kv().has("trail:The signing") && !kv().has("pulse:The signing"), "10 s after the last step with no crash: the trail is cleared");
+globalThis.setTimeout = realST; globalThis.clearTimeout = realCT;
+for (let i = 1; i <= 12; i++) r.safety.markStep("The signing", "step " + i);
+r.safety.notePulse("The signing");
+r = fresh();
+const info = r.safety.closedWhileInfo();
+ok(info && info.steps.length === 10 && info.steps[9].step === "step 12" && info.pulse && info.pulse.n >= 1, "next launch: the last 10 steps and the frame pulse are kept");
+ok(/Frames were still running/.test(r.safety.closedWhileLine()), "the line says frames were still running when the app closed");
+
+console.log("== a launch that finds a trail in a live scene turns the switch off (so the replay cannot loop)");
+kv().clear(); r = fresh();
+r.prefs.setPref("live3dScenes", true);
+r.safety.markStep("The signing", "event shake");
+r = fresh();
+ok(r.safety.closedWhileFresh() === true && r.prefs.getPrefs().live3dScenes === false, "the app closed in the signing: next launch the Live 3D scenes switch is off");
+r.prefs.setPref("live3dScenes", true);
+r = fresh();
+ok(r.safety.closedWhileFresh() === false && r.prefs.getPrefs().live3dScenes === true, "the launch after that (no new trail) leaves the switch as the player set it");
+kv().clear(); r = fresh();
+r.prefs.setPref("live3dScenes", true);
+r.safety.markStep("The garden", "gl context created");
+r = fresh();
+ok(r.prefs.getPrefs().live3dScenes === true, "a place walked into on purpose (the garden) does not turn the switch off");
+
+console.log("== the Settings card");
+kv().clear(); r = fresh(); r.prefs.setPref("live3dScenes", true);
+const net2 = r.crashNet.registerPlace("The signing", () => {});
+net2.event("event shake");
+r.crashNet.reportPlaceError("a frame threw", new Error("card boom"));
+r = fresh();
+const li = r.safety.lastErrorInfo();
+ok(li && li.message === "card boom" && li.lastEvent === "event shake", "next launch: Settings has the last error (" + (li && li.message) + ")");
+ok(/Last error: card boom/.test(r.safety.lastErrorLine(li)), "the copyable line starts: " + r.safety.lastErrorLine(li).slice(0, 60));
+r.safety.clearClosedWhile(); r = fresh();
+ok(r.safety.lastErrorInfo() === null && r.safety.closedWhileInfo() === null, "Clear removes the error and the trail");
+const miscSrc = fs.readFileSync(path.resolve("src/screens/career/Misc.tsx"), "utf8");
+ok(/Last error: \$\{err\.message\}/.test(miscSrc) && /info\.steps\.slice\(-5\)/.test(miscSrc), "the card shows the last error and the last 5 steps");
+
+console.log("== Walk3D is wired to the net");
+const walkSrc = fs.readFileSync(path.resolve("src/three/Walk3D.tsx"), "utf8");
+for (const [re, what] of [[/registerPlace\(place/, "registers the place while mounted"], [/wrapCallbacks\(cb/, "wraps the scene's callbacks (onEvent after the frame)"], [/onFrameError\(e\)/, "frame errors go to the net"], [/onFrame: \(\) => \{ if \(!me\.dead\) notePulse/, "frames pulse"], [/neutralizeGl\(/, "the GL is neutralised when the view goes"], [/unmounted\.current\) \{ neutralizeGl\(gl\)/, "onContextCreate after unmount does nothing"], [/traceCalls\(host\.controller/, "setShot/sign/skip are steps"]]) ok(re.test(walkSrc), "Walk3D " + what);
+ok(!/setTimeout\(\(\) => \{ clearInterval\(poll\)/.test(walkSrc), "Walk3D no longer clears the trail after 10 s of running");
+
+console.log(bad ? `\n${bad} FAILED` : "\nPASS: live 3D switch, breadcrumbs and the crash net");
 process.exit(bad ? 1 : 0);
+

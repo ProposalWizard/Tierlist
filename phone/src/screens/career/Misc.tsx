@@ -9,7 +9,7 @@
  *  - Settings: only real preferences.
  *  - Placeholder: a screen still to come, saying so.
  */
-import { partsSwitchedOff, turnPartBackOn, PART_NAMES, closedWhileInfo, closedWhileLine, clearClosedWhile } from "../../safety";
+import { partsSwitchedOff, turnPartBackOn, PART_NAMES, closedWhileInfo, closedWhileLine, clearClosedWhile, lastErrorInfo, lastErrorLine } from "../../safety";
 import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { ownedPenaltyRunups, ownedFreeKickRunups, careerPenaltyRunup, careerFreeKickRunup } from "@/lib/star/runupStyles";
 import { SKIN_TONES, HAIR_COLOURS, resolveSkinTone } from "@/lib/star/playerIdentity";
@@ -369,20 +369,31 @@ function SwitchedOffCard() {
 }
 
 /**
- * "Last time the app closed while: <place> at <step>" (src/safety.ts breadcrumbs): shown only when the app closed in the middle of
- * a 3D place on its last run. The line is plain text you can press and hold to copy; Clear removes it.
+ * "Last time the app closed while: <place> at <step>" and "Last error: <message>" (src/safety.ts breadcrumbs, src/three/crashNet.ts):
+ * shown only when the app closed in the middle of a 3D place on its last run, or an error failed a 3D place over to its plain
+ * version. The last 5 steps are listed; the text is plain and can be copied (press and hold); Clear removes it.
  */
 function ClosedWhileCard() {
   const [, bump] = useState(0);
   const info = closedWhileInfo();
-  const line = closedWhileLine();
-  if (!info || !line) return null;
-  const last = info.steps[info.steps.length - 1];
+  const err = lastErrorInfo();
+  if (!info && !err) return null;
+  const last = info?.steps[info.steps.length - 1];
+  const time = (at: number) => new Date(at).toISOString().slice(11, 19);
+  // the last 5 steps: of the place the app closed in, else of the one the last error failed over
+  const five = info ? info.steps.slice(-5).map((x) => `${time(x.at)}  ${x.step}`) : (err?.steps ?? []);
   return (
     <Card tone="#ef4444">
-      <Text style={{ color: C.text, fontWeight: "900", fontSize: 15 }}>{`Last time the app closed while: ${info.place} at ${last?.step ?? "the start"}`}</Text>
-      <Text style={{ color: C.dim, fontSize: 12, marginTop: 4, marginBottom: 8 }}>Send this line to the team (press and hold it to copy). It stays until you clear it.</Text>
-      <Text selectable style={{ color: C.text, fontSize: 11, lineHeight: 15, fontWeight: "600", marginBottom: 8 }}>{line}</Text>
+      {info && <Text style={{ color: C.text, fontWeight: "900", fontSize: 15 }}>{`Last time the app closed while: ${info.place} at ${last?.step ?? "the start"}`}</Text>}
+      {err && <Text style={{ color: C.text, fontWeight: "900", fontSize: 15, marginTop: info ? 6 : 0 }}>{`Last error: ${err.message}`}</Text>}
+      <Text style={{ color: C.dim, fontSize: 12, marginTop: 4, marginBottom: 8 }}>Send this to the team (press and hold the text to copy). It stays until you clear it.</Text>
+      {five.length > 0 && (
+        <Text selectable style={{ color: C.text, fontSize: 11, lineHeight: 15, fontWeight: "600", marginBottom: 8 }}>
+          {`Last ${five.length} steps (UTC):\n` + five.join("\n")}
+          {info?.pulse ? `\nFrames were still running: frame ${info.pulse.n} at ${time(info.pulse.at)}` : ""}
+        </Text>
+      )}
+      <Text selectable style={{ color: C.text, fontSize: 11, lineHeight: 15, fontWeight: "600", marginBottom: 8 }}>{closedWhileLine() ?? (err ? lastErrorLine(err) : "")}</Text>
       <View style={{ width: 120 }}><Btn small label="Clear" onPress={() => { clearClosedWhile(); bump((n) => n + 1); }} /></View>
     </Card>
   );

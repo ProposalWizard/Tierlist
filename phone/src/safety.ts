@@ -142,29 +142,55 @@ export function useRiskyPart(part: RiskyPart, opts: { settleMs?: number; delayMs
 // ── CRASH BREADCRUMBS (24 Nov 2026) ────────────────────────────────────────────────
 // The guard above only knows THAT a part was starting when the app closed. Mikey's app closed after the trial's accept-offer
 // and we cannot run Android here, so each 3D place also writes the LAST STEP it reached ("mounted", "gl context created",
-// "scene starting", "assets loaded 3 of 9" …). MMKV is memory-mapped: a synchronous write survives a native crash. The trail is
-// cleared after 10 s of running well, on a clean close, on a handled failure and when the app goes to the background. If it is
-// still there on the next launch, the app closed mid-step: it is kept (Settings shows it until "Clear") and logged to the console.
+// "scene starting", "event stamp", "setShot(shake)" …). MMKV is memory-mapped: a synchronous write survives a native crash.
+// 24 Nov, second round (the app closed again, in the handshake, after a quiet 10 s had already cleared the trail): the trail is now
+// kept through the WHOLE scene. It is cleared only when the place closes cleanly, fails in a way the app caught, the app goes to
+// the background, or the place has run well for 10 s AFTER ITS LAST STEP (every new step starts that count again). A "pulse"
+// (frame number and time, written at most twice a second) says whether frames were still running when the app closed.
+// If a trail is still there on the next launch, the app closed mid-step: it is kept (Settings shows it until "Clear") and logged.
 // None of this changes the crash-loop rules above.
 const TRAIL = "trail:";
+const PULSE = "pulse:";
 const CLOSED = "closed-while";
-const MAX_STEPS = 8;
-export interface ClosedWhile { place: string; steps: { step: string; at: number }[] }
-const trails = new Map<string, { step: string; at: number }[]>();
+const LAST_ERROR = "last-error";
+const MAX_STEPS = 10;
+/** A place that has run this long after its last step ran well: no crash, so no trail. */
+export const TRAIL_QUIET_MS = 10000;
+export interface TrailStep { step: string; at: number }
+export interface ClosedWhile { place: string; steps: TrailStep[]; pulse?: { n: number; at: number } }
+/** The JavaScript error that failed a 3D place over to its plain version (src/three/crashNet.ts), kept until "Clear". */
+export interface LastError { place: string; source: string; message: string; stack: string[]; lastEvent: string | null; at: number; /** the last 5 steps before it, "HH:MM:SS step" */ steps?: string[] }
+const trails = new Map<string, TrailStep[]>();
+const quiet = new Map<string, ReturnType<typeof setTimeout>>();
+const pulses = new Map<string, { n: number; last: number }>();
 let activePlace: string | null = null;
 let closedWhile: ClosedWhile | null = null;
+let closedFresh = false;
+let lastError: LastError | null = null;
 
+const clock = (at: number) => new Date(at).toISOString().replace("T", " ").slice(0, 19);
 function trailLine(c: ClosedWhile): string {
   const last = c.steps[c.steps.length - 1];
-  const when = new Date(last?.at ?? Date.now()).toISOString().replace("T", " ").slice(0, 19);
   const path = c.steps.map((s) => s.step).join(" > ");
-  return `Last time the app closed while: ${c.place} at ${last?.step ?? "the start"} (${when} UTC). Steps: ${path}`;
+  const pulse = c.pulse ? ` Frames were still running: frame ${c.pulse.n}, ${last && c.pulse.at >= last.at ? ((c.pulse.at - last.at) / 1000).toFixed(1) + " s after the last step" : "before the last step"}.` : "";
+  return `Last time the app closed while: ${c.place} at ${last?.step ?? "the start"} (${clock(last?.at ?? Date.now())} UTC). Steps: ${path}.${pulse}`;
 }
 /** The one plain line that says where the app last closed (Settings shows it; copy it as it is). */
-export function closedWhileLine(): string | null { return closedWhile ? trailLine(closedWhile) : null; }
+export function closedWhileLine(): string | null { return closedWhile ? trailLine(closedWhile) + (lastError ? " " + lastErrorLine(lastError) : "") : null; }
 export function closedWhileInfo(): ClosedWhile | null { return closedWhile; }
+/** True only on the launch that found a trail left behind (not on later launches that still show it). */
+export function closedWhileFresh(): boolean { return closedFresh; }
+export function lastErrorLine(e: LastError): string {
+  return `Last error: ${e.message} (${e.source}, in ${e.place}${e.lastEvent ? `, after ${e.lastEvent}` : ""}, ${clock(e.at)} UTC). ${e.stack.slice(0, 3).join(" | ")}`;
+}
+/** The last error that failed a 3D place over (or null). */
+export function lastErrorInfo(): LastError | null { return lastError; }
 /** Settings → Clear. */
-export function clearClosedWhile() { closedWhile = null; try { kv.remove(CLOSED); } catch { /* nothing to clear */ } }
+export function clearClosedWhile() { closedWhile = null; lastError = null; try { kv.remove(CLOSED); kv.remove(LAST_ERROR); } catch { /* nothing to clear */ } }
+/** Written at once (MMKV is synchronous) when a 3D place is failed over because of an error. */
+export function recordLastError(e: LastError) {
+  try { lastError = e; kv.set(LAST_ERROR, JSON.stringify(e)); } catch { /* never stop the app */ }
+}
 
 try {
   // a trail left by the last run = the app closed in the middle of that step; the newest one is kept
@@ -172,19 +198,32 @@ try {
   for (const k of kv.getAllKeys()) {
     if (!k.startsWith(TRAIL)) continue;
     try {
-      const steps = JSON.parse(kv.getString(k) ?? "[]") as ClosedWhile["steps"];
-      const c: ClosedWhile = { place: k.slice(TRAIL.length), steps };
+      const steps = JSON.parse(kv.getString(k) ?? "[]") as TrailStep[];
+      const place = k.slice(TRAIL.length);
+      const c: ClosedWhile = { place, steps };
+      try { const raw = kv.getString(PULSE + place); if (raw) c.pulse = JSON.parse(raw) as { n: number; at: number }; } catch { /* no pulse */ }
       if (steps.length && (!newest || steps[steps.length - 1].at >= (newest.steps[newest.steps.length - 1]?.at ?? 0))) newest = c;
     } catch { /* a half-written trail */ }
     kv.remove(k);
   }
-  if (newest) kv.set(CLOSED, JSON.stringify(newest));
+  for (const k of kv.getAllKeys()) if (k.startsWith(PULSE)) kv.remove(k);
+  if (newest) { kv.set(CLOSED, JSON.stringify(newest)); closedFresh = true; }
   const raw = kv.getString(CLOSED);
   if (raw) closedWhile = JSON.parse(raw) as ClosedWhile;
+  const rawErr = kv.getString(LAST_ERROR);
+  if (rawErr) lastError = JSON.parse(rawErr) as LastError;
   if (closedWhile) console.warn("[safety] " + trailLine(closedWhile));
+  if (lastError) console.warn("[safety] " + lastErrorLine(lastError));
 } catch { /* breadcrumbs must never stop the app */ }
 
-/** The last step this place reached (cheap: one MMKV write). Safe to call from anywhere; never throws. */
+function armQuiet(place: string) {
+  const old = quiet.get(place);
+  if (old) clearTimeout(old);
+  const t = setTimeout(() => { quiet.delete(place); clearTrail(place); }, TRAIL_QUIET_MS);
+  (t as unknown as { unref?: () => void }).unref?.();
+  quiet.set(place, t);
+}
+/** The last step this place reached (cheap: one MMKV write). Safe to call from anywhere; never throws. Starts the 10 quiet seconds again. */
 export function markStep(place: string, step: string) {
   try {
     activePlace = place;
@@ -193,15 +232,33 @@ export function markStep(place: string, step: string) {
     if (t.length > MAX_STEPS) t.shift();
     trails.set(place, t);
     kv.set(TRAIL + place, JSON.stringify(t));
+    armQuiet(place);
   } catch { /* never stop the app */ }
 }
 /** Mark a step on the place that is starting now (for code that does not know which place asked, e.g. the asset reader). */
 export function markStepHere(step: string) { if (activePlace && trails.has(activePlace)) markStep(activePlace, step); }
-/** The place ran well (10 s), closed cleanly, or failed in a way the app caught: no crash, so no trail. */
+/** A frame was drawn: the frame number and time are written at most twice a second (not a step: it does not start the quiet count). */
+export function notePulse(place: string) {
+  try {
+    if (!trails.has(place)) return;
+    const p = pulses.get(place) ?? { n: 0, last: 0 };
+    p.n++;
+    pulses.set(place, p);
+    const now = Date.now();
+    if (now - p.last >= 500) { p.last = now; kv.set(PULSE + place, JSON.stringify({ n: p.n, at: now })); }
+  } catch { /* never stop the app */ }
+}
+/** The last steps of the place that is running now (Settings shows the last 5 of the one that closed the app). */
+export function currentTrail(place: string): TrailStep[] { return (trails.get(place) ?? []).slice(); }
+/** The place closed cleanly, ran well for 10 s after its last step, or failed in a way the app caught: no crash, so no trail. */
 export function clearTrail(place: string) {
   try {
     trails.delete(place);
+    pulses.delete(place);
+    const q = quiet.get(place);
+    if (q) { clearTimeout(q); quiet.delete(place); }
     kv.remove(TRAIL + place);
+    kv.remove(PULSE + place);
     if (activePlace === place) activePlace = null;
   } catch { /* nothing to clear */ }
 }
