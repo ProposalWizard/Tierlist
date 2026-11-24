@@ -5,7 +5,7 @@ client: kib
 tags: [team, style, brain, client-kib]
 status: live
 date: 2026-11-24
-source: "marketing/brain/index.html:1-5"
+source: "marketing/brain/index.html:288-308"
 summary: The Brain page posts by itself: Send writes the post into publish_posts through Mikey's Supabase connector and the site's 5-minute timer posts Instagram and YouTube; Facebook is by hand on his profile. A video posts only if its file is in PKEY.
 ---
 - Send (step 7) inserts a row into publish_posts (created_by "Brain page") and runs the publish-tick cron command once; step 8 reads the row every 20 s. Take it back cancels a row that is still scheduled.
