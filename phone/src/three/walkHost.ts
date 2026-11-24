@@ -181,6 +181,10 @@ export async function startWalkScene<D, CB, C extends WalkController>(o: StartWa
   const releaseDoc = holdSceneDocument();
   const gate = installFrameGate();
   const unFetch = installBundledFetch();
+  // a scene watches its container's size; here the container is hollow and never resizes (a real browser's observer would refuse it)
+  const gr = globalThis as unknown as { ResizeObserver?: unknown };
+  const oldRO = gr.ResizeObserver;
+  gr.ResizeObserver = class { observe() { /* never resizes */ } unobserve() { /* nothing */ } disconnect() { /* nothing */ } };
   prepareGl(o.gl);
   const canvas = walkCanvas(o.gl, o.width, o.height);
   fitViewport(o.gl, canvas);
@@ -204,11 +208,13 @@ export async function startWalkScene<D, CB, C extends WalkController>(o: StartWa
     controller = await withSceneDocument(() => o.start(cont.el, o.callbacks, o.data, { quality: o.quality }));
   } catch (e) {
     offerGlCanvas(null);
+    gr.ResizeObserver = oldRO;
     disposed = true;
     undo();
     throw e;
   }
   offerGlCanvas(null);
+  gr.ResizeObserver = oldRO; // only the build watches the container: the page's own observer is back for the page
   const ctrl = controller;
   return {
     controller: ctrl,

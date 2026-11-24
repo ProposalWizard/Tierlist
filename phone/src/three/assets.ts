@@ -5,7 +5,7 @@
  */
 import { Skia } from "@shopify/react-native-skia";
 import { Asset } from "expo-asset";
-import { File } from "expo-file-system";
+import { readAssetBytes } from "./readAsset";
 import { phoneFontFor } from "../draw/useDrawing";
 import { setThreePlatform } from "./platform";
 
@@ -53,6 +53,20 @@ const FILES: Record<string, number> = {
   "/star/shop3d/items/car-3.glb": require("../../assets/3d/shop3d/items/car-3.glb"),
   "/star/shop3d/items/car-classic.glb": require("../../assets/3d/shop3d/items/car-classic.glb"),
   "/star/shop3d/items/car-4.glb": require("../../assets/3d/shop3d/items/car-4.glb"),
+  "/star/trophies/ballon-dor.webp": require("../../assets/trophies/ballon-dor.webp"),
+  "/star/trophies/champions-league.webp": require("../../assets/trophies/champions-league.webp"),
+  "/star/trophies/championship.webp": require("../../assets/trophies/championship.webp"),
+  "/star/trophies/europa-league.webp": require("../../assets/trophies/europa-league.webp"),
+  "/star/trophies/fa-cup.webp": require("../../assets/trophies/fa-cup.webp"),
+  "/star/trophies/golden-boot.webp": require("../../assets/trophies/golden-boot.webp"),
+  "/star/trophies/league-cup.webp": require("../../assets/trophies/league-cup.webp"),
+  "/star/trophies/league-one.webp": require("../../assets/trophies/league-one.webp"),
+  "/star/trophies/league-two.webp": require("../../assets/trophies/league-two.webp"),
+  "/star/trophies/national-league.webp": require("../../assets/trophies/national-league.webp"),
+  "/star/trophies/player-of-the-month.webp": require("../../assets/trophies/player-of-the-month.webp"),
+  "/star/trophies/player-of-the-season.webp": require("../../assets/trophies/player-of-the-season.webp"),
+  "/star/trophies/premier-league.webp": require("../../assets/trophies/premier-league.webp"),
+  "/star/trophies/world-cup.webp": require("../../assets/trophies/world-cup.webp"),
 };
 /* eslint-enable @typescript-eslint/no-require-imports */
 
@@ -66,7 +80,7 @@ export function bundledBytes(url: string): Promise<ArrayBuffer> {
     p = (async () => {
       const a = Asset.fromModule(mod);
       if (!a.localUri) await a.downloadAsync();
-      const u8 = await new File(a.localUri ?? a.uri).bytes();
+      const u8 = await readAssetBytes(a.localUri ?? a.uri);
       // a plain ArrayBuffer of exactly the file (three checks `instanceof ArrayBuffer` and reads from byte 0)
       return u8.byteOffset === 0 && u8.byteLength === u8.buffer.byteLength && u8.buffer instanceof ArrayBuffer ? u8.buffer : u8.slice().buffer;
     })();

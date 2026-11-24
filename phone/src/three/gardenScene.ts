@@ -10,6 +10,8 @@ export type GardenStart = WalkStart<GardenData, GardenCallbacks, GardenControlle
 
 export function loadGardenStart(): GardenStart {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require("./gardenDeps"); // what the scene loads later (see that file)
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const m = require("@/lib/star/garden3d/scene") as typeof import("@/lib/star/garden3d/scene");
   return (container, cb, data, opts) => m.startGarden(container, cb, data, { quality: opts.quality });
 }

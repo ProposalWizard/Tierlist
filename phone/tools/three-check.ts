@@ -39,7 +39,8 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
   // (tools/garden-props-unpack.mjs), and a .json kept as .bin (the bundler would read .json as code)
   const UNPACKED = (u: string) => u === "/star/garden3d/props.glb" || /^\/star\/shop3d\/items\/car-[^/]+\.glb$/.test(u);
   for (const u of THREE_ASSET_URLS) {
-    const mine = path.join(PHONE, "assets/3d", u.replace(/^\/star\//, "").replace(/\.json$/, ".bin"));
+    // (the trophy pictures are the app's own, phone/assets/trophies)
+    const mine = u.startsWith("/star/trophies/") ? path.join(PHONE, "assets/trophies", path.basename(u)) : path.join(PHONE, "assets/3d", u.replace(/^\/star\//, "").replace(/\.json$/, ".bin"));
     const web = path.join(ROOT, "public", u);
     const has = fs.existsSync(mine);
     ok(has, `${u} not in phone/assets/3d`);

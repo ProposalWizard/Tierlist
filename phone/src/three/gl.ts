@@ -80,12 +80,19 @@ export function prepareGl(glIn: WebGL2RenderingContext, opts: { present?: boolea
     return d;
   };
 
+  // A browser's own <canvas> or <img> (only the web build of the app has them: a phone's pictures are Skia's)
+  // is uploaded by the browser itself, which flips and premultiplies only if told to just for this call.
+  const asBrowser = (f: () => unknown) => {
+    if (!flipY && !premul) return f();
+    pixelStorei(FLIP_Y, flipY ? 1 : 0); pixelStorei(PREMULTIPLY, premul ? 1 : 0);
+    try { return f(); } finally { pixelStorei(FLIP_Y, 0); pixelStorei(PREMULTIPLY, 0); }
+  };
   const texImage2D = g.texImage2D.bind(gl);
   g.texImage2D = (...a: unknown[]) => {
     if (a.length === 6) {
       // (target, level, internalformat, format, type, source): a picture, not raw pixels
       const px = pixelsOf(a[5]);
-      if (!px) return texImage2D(...a); // a browser's own <canvas>/<img> (the headless check only)
+      if (!px) return asBrowser(() => texImage2D(...a)); // a browser's own <canvas>/<img> (the web build, the headless check)
       return texImage2D(a[0], a[1], a[2], px.width, px.height, 0, a[3], a[4], fix(px.data, px.width, px.height, a[3] as number, a[4] as number));
     }
     if (a.length >= 9 && a[8] && ArrayBuffer.isView(a[8]) && (flipY || premul)) {
@@ -99,7 +106,7 @@ export function prepareGl(glIn: WebGL2RenderingContext, opts: { present?: boolea
     if (a.length === 7) {
       // (target, level, x, y, format, type, source)
       const px = pixelsOf(a[6]);
-      if (!px) return texSubImage2D(...a); // a browser's own <canvas>/<img> (the headless check only)
+      if (!px) return asBrowser(() => texSubImage2D(...a)); // a browser's own <canvas>/<img> (the web build, the headless check)
       return texSubImage2D(a[0], a[1], a[2], a[3], px.width, px.height, a[4], a[5], fix(px.data, px.width, px.height, a[4] as number, a[5] as number));
     }
     if (a.length >= 9 && a[8] && ArrayBuffer.isView(a[8]) && (flipY || premul)) {

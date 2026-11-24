@@ -62,8 +62,8 @@ function gardenData(arrive: GardenData["arrive"], sky: GardenData["sky"]): Garde
     kit: kitsOf("Arsenal").home,
     number: 9, tier: 3, stable: 3,
     horse: { name: "Comet" },
-    trophies: [{ name: "Premier League", count: 2, art: null }, { name: "FA Cup", count: 1, art: null }, { name: "Golden Boot", count: 1, art: null }],
-    cars: ["/star/shop3d/items/car-1.glb", "/star/shop3d/items/car-2.glb", "/star/shop3d/items/classic.glb".replace("classic", "car-classic")],
+    trophies: [{ name: "Premier League", count: 2, art: "/star/trophies/premier-league.webp" }, { name: "FA Cup", count: 1, art: "/star/trophies/fa-cup.webp" }, { name: "Golden Boot", count: 1, art: "/star/trophies/golden-boot.webp" }, { name: "Community Shield", count: 1, art: null }],
+    cars: ["/star/shop3d/items/car-1.glb", "/star/shop3d/items/car-2.glb", "/star/shop3d/items/car-classic.glb"],
     sky, mates: [7, 4, 11], arrive,
     player: { look: "new", skin: "#c68642", hair: "#2b1d14", hairStyle: "short" },
   };

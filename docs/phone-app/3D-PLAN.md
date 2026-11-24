@@ -48,5 +48,23 @@ No casino (Play rule).
 Frame rate and heat on the S20+, touch feel of the stick and orbit, memory (a 2020 phone), load times.
 Each test app comes with a short list of what to check, and a "Show 3D speed" switch (Settings).
 
+## WP1 notes (the Walk3D host and the Garden, 24 Nov 2026)
+What the next packages reuse (all in `phone/src/three/`):
+- `walkHost.ts` `startWalkScene({start, data, callbacks, gl, width, height, pixelRatio, quality})`: runs any
+  `start*(container, cb, data, opts)` scene; gives it a stand-in container/canvas/document/fetch (`standIn.ts`,
+  `env.ts`, `bundledFetch.ts`), holds frames while paused, stretches whatever pixel ratio the scene picks to the
+  fixed GL buffer, and puts everything back on `dispose()` (also drops the shared renderer: its GL goes with the view).
+- `Walk3D.tsx` `<Walk3D load data callbacks onBack onController showSpeed>`: the screen: GL view at the tier's pixel
+  count, stick (lower left ring), look-round drag, tap (`controller.tap`, else `pick`), pinch (the scene's own
+  listeners get pointer events), pause on AppState, plain "3D could not start" card, `useRiskyPart("3d")`.
+  A new place = a `load` function (a plain `require` of its `start*`), its data builder, its callbacks, its screen.
+- Files: add each file's website address to `assetList.ts` + `assets.ts`, copy it to `phone/assets/3d/`. A Draco file
+  (Hermes has no WebAssembly) is unpacked first with `node phone/tools/garden-props-unpack.mjs /star/x.glb`
+  (the six cars and the garden props are done). A `.json` is kept as `.bin`.
+- Check with `phone/tools/walk-check.ts` (a Web Worker: no document, like Hermes): add the new place's start to
+  `walk-worker-entry.ts`. It lists every file the place read (each must be in `assetList.ts`).
+Not done on purpose: the web's "still 2.5x / moving 1.5x" pixel ratios (the GL buffer is one fixed size per tier),
+KTX2 packed textures (need WebAssembly; `window.__ktx2Off` is set), the 3D phone in your hand.
+
 ## Needs from Mikey (collected, asked at the end)
 (none yet)

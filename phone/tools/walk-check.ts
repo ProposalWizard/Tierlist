@@ -59,7 +59,7 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
       if (p === "/font-bold.ttf") return route.fulfill({ body: fs.readFileSync("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf") });
       if (p === "/canvaskit.wasm") return route.fulfill({ contentType: "application/wasm", body: fs.readFileSync(path.join(PHONE, "node_modules/canvaskit-wasm/bin/full/canvaskit.wasm")) });
       // the phone reads the copies in phone/assets/3d (some unpacked: tools/garden-props-unpack.mjs)
-      const mine = path.join(PHONE, "assets/3d", p.replace(/^\/star\//, "").replace(/\.json$/, ".bin"));
+      const mine = p.startsWith("/star/trophies/") ? path.join(PHONE, "assets/trophies", path.basename(p)) : path.join(PHONE, "assets/3d", p.replace(/^\/star\//, "").replace(/\.json$/, ".bin"));
       if (p.startsWith("/star/") && fs.existsSync(mine)) { served.set(p, "app"); return route.fulfill({ body: fs.readFileSync(mine) }); }
       const pub = path.join(ROOT, "public", p);
       if (fs.existsSync(pub)) { served.set(p, "public"); return route.fulfill({ body: fs.readFileSync(pub) }); }

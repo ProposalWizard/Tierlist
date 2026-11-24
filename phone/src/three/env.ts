@@ -104,7 +104,10 @@ function patchRealDocument(): () => void {
   if (!d) return () => {};
   const own = d.createElementNS;
   d.createElementNS = function (ns: string, tag: string) {
-    if (String(tag).toLowerCase() === "canvas" && nextGlCanvas) return takeGlCanvas();
+    const t = String(tag).toLowerCase();
+    if (t === "canvas" && nextGlCanvas) return takeGlCanvas();
+    // pictures come from the app's own files, as on the phone (the browser would ask the page's server)
+    if (t === "img") return new StandInImage();
     return own.call(d, ns, tag);
   };
   return () => { d.createElementNS = own; };
