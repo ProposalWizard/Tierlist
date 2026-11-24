@@ -47,6 +47,7 @@ import { benchMomentFor } from "@/lib/star/managerMoments";
 import { ManagerSays } from "./ManagerMoments";
 import { useLeoUpdate } from "@/lib/star/leoUpdate";
 import { matchDials, weatherLine } from "@/lib/star/matchWeather";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 // Left out of the squad: told in the manager's office when Settings → Look →
 // "Talk to your manager" is "3D office" (MANAGER_PLAN.md §2). The card's own
@@ -354,7 +355,7 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
                     </PressButton>
                   ) : onBuyAndUseCan ? (
                     <PressButton variant="gold" size="none" disabled={career.money < price} onClick={() => onBuyAndUseCan(can)} className="mt-2 flex w-full items-center justify-center gap-2 py-3 text-[14px] font-black uppercase tracking-wide">
-                      <KibCanIcon can={can} className="h-7 w-[18px]" />{career.money < price ? `Can ★${price}: not enough money` : `Buy & drink a can ★${price}`}
+                      <KibCanIcon can={can} className="h-7 w-[18px]" />{career.money < price ? `Can ${MONEY_SIGN}${price}: not enough money` : `Buy & drink a can ${MONEY_SIGN}${price}`}
                     </PressButton>
                   ) : null}
                 </div>

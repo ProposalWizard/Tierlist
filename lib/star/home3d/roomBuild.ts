@@ -22,10 +22,14 @@ import { freezeStatic } from "../freezeStatic";
 import { blobCanvas } from "../shop3d/textures";
 import type { Quality3d } from "../three3d/quality";
 import { roomPreset, type HomeTier, type RoomId, type RoomPreset, type WindowView } from "./homes";
-import { roomPlan, carsIn, garageCars, NO_STUFF, ROOM_LABEL, TERRACE_PROPS, JET_LOD, HORSE_MODEL, type DoorPlan, type HomeSpot, type HomeStuff, type RoomPlan, type Wall } from "./rooms";
+import { isLiving, roomPlan, carsIn, garageCars, NO_STUFF, ROOM_LABEL, TERRACE_PROPS, JET_LOD, HORSE_MODEL, type DoorPlan, type HomeSpot, type HomeStuff, type RoomPlan, type Wall } from "./rooms";
 import type { CabinetSlot, TrophyShape } from "./trophies";
 import type { BootChoice, CasualSet, Kit2 } from "./outfits";
 import type { XZ } from "../tapWalk";
+import type { SmartObject } from "../world3d/smartObject";
+import { buildLivingLounge, buildStudio, buildKitchen, buildBedroom, buildBathroom, buildPoolTerrace, livingFinish, type RoomFx, type GuestPlan, type LivingExtras } from "./livingRooms";
+import { furnisher, type Furnisher } from "./furniture";
+import { plantParts, plantAt, type PlantKind } from "./plants";
 import {
   floorCanvas, wallCanvas, floorShadeCanvas, glowCanvas, patchCanvas, viewCanvas,
   driveBackCanvas, driveCanvas, platesCanvas, signCanvas,
@@ -67,6 +71,10 @@ export interface RoomEnv {
   glb: (url: string) => Promise<any>;
   /** Clone a skinned model (SkeletonUtils.clone): the horse on the grounds. */
   cloneSkinned?: (o: any) => any;
+  /** The house furniture file's scene (./furniture.ts), loaded before the first room. Unset: no furniture. */
+  furniture?: any;
+  /** BufferGeometryUtils.toCreasedNormals (a living house smooths its cars' shading with it). */
+  creased?: (g: any, angle: number) => any;
 }
 
 export type Box2 = [number, number, number, number];
@@ -104,13 +112,20 @@ export interface BuiltRoom {
   loadProps: () => Promise<void>;
   /** Free everything the room made. */
   dispose: () => void;
+  /** A living house (homes.ts LIVING_ROOMS): the things in this room you can use (lib/star/world3d). */
+  things?: SmartObject[];
+  /** What a thing does to the room while it is used (the TV comes on, the fridge door opens, the shower runs), by its id. */
+  fx?: Record<string, RoomFx>;
+  /** Where team-mates who drop round sit or stand in this room (a thing and its slot). */
+  guests?: GuestPlan[];
 }
 
 /** The helpers every room builds with, all hanging under `root`. */
 function makeKit(env: RoomEnv, root: any, o: { oneGlowDraw?: boolean } = {}) {
   const { THREE } = env;
   const mat = (c: string, o: any = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8, metalness: 0, ...o });
-  const glowM = (c: string, i = 1.6) => new THREE.MeshStandardMaterial({ color: "#000000", emissive: c, emissiveIntensity: i });
+  // (a lit lamp, a screen: dimmed by the house clock at night, home3d/scene.ts applyDayLight)
+  const glowM = (c: string, i = 1.6) => new THREE.MeshStandardMaterial({ color: "#000000", emissive: c, emissiveIntensity: i, userData: { daylight: "emit" } });
   const tex = (cv: HTMLCanvasElement, rep?: [number, number]) => {
     const t = new THREE.CanvasTexture(cv);
     t.colorSpace = THREE.SRGBColorSpace;
@@ -152,7 +167,7 @@ function makeKit(env: RoomEnv, root: any, o: { oneGlowDraw?: boolean } = {}) {
       glowParts.get(t)!.push(g);
       return null;
     }
-    const me = plane(w, h, new THREE.MeshBasicMaterial({ map: t, color: new THREE.Color(colour).multiplyScalar(k), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }), x, y, z, rx, ry);
+    const me = plane(w, h, new THREE.MeshBasicMaterial({ map: t, color: new THREE.Color(colour).multiplyScalar(k), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, userData: t === patchT ? { daylight: "patch" } : t === glowT ? { daylight: "lamp" } : {} }), x, y, z, rx, ry);
     me.renderOrder = 2;
     return me;
   };
@@ -167,7 +182,7 @@ function makeKit(env: RoomEnv, root: any, o: { oneGlowDraw?: boolean } = {}) {
   const flushGlows = (merge: (g: any[]) => any): any[] => {
     const out: any[] = [];
     glowParts.forEach((parts, t) => {
-      const me = new THREE.Mesh(merge(parts), new THREE.MeshBasicMaterial({ map: t, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+      const me = new THREE.Mesh(merge(parts), new THREE.MeshBasicMaterial({ map: t, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, userData: t === patchT ? { daylight: "patch" } : t === glowT ? { daylight: "lamp" } : {} }));
       for (const p of parts) p.dispose();
       me.renderOrder = 2;
       root.add(me);
@@ -176,18 +191,30 @@ function makeKit(env: RoomEnv, root: any, o: { oneGlowDraw?: boolean } = {}) {
     glowParts.clear();
     return out;
   };
-  return { THREE, root, add, flushGlows, mat, glowM, tex, seen, box, plane, glow, glowT, patchT, blob };
+  /** The room's plants (./plants.ts): every leaf, stem and pot painted in vertex colours, joined into ONE draw. */
+  const plantBin: any[] = [];
+  const flushPlants = (merge: (g: any[]) => any): any | null => {
+    if (!plantBin.length) return null;
+    const me = new THREE.Mesh(merge(plantBin), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.72, envMapIntensity: 0.6 }));
+    for (const g of plantBin) g.dispose();
+    plantBin.length = 0;
+    me.material.userData.keep = true;
+    me.castShadow = true; me.receiveShadow = true;
+    root.add(me);
+    return me;
+  };
+  return { THREE, root, add, flushGlows, flushPlants, plantBin, mat, glowM, tex, seen, box, plane, glow, glowT, patchT, blob };
 }
-type Kit = ReturnType<typeof makeKit>;
+export type Kit = ReturnType<typeof makeKit>;
 
 /** An opening in a wall: its middle along the wall, its width, its bottom and top. */
-type Hole = { c: number; w: number; y0: number; y1: number };
+export type Hole = { c: number; w: number; y0: number; y1: number };
 
 /**
  * One wall, with openings: `along` x or z, at `at`, from -len/2..len/2,
  * holes as { c (centre along), w, y0, y1 }. Pieces between and round the holes.
  */
-function wallWith(k: Kit, H: number, along: "x" | "z", at: number, len: number, holes: Hole[], m: any, y0 = 0, y1 = H, thick = 0.12, inset = 0) {
+export function wallWith(k: Kit, H: number, along: "x" | "z", at: number, len: number, holes: Hole[], m: any, y0 = 0, y1 = H, thick = 0.12, inset = 0) {
   const out: any[] = [];
   const put = (a0: number, a1: number, b0: number, b1: number) => {
     if (a1 - a0 < 0.01 || b1 - b0 < 0.01) return;
@@ -538,6 +565,8 @@ export function carPaint(m: any, envTex: any): any {
 }
 
 /** Your cars on the drive (best first), loaded after the room shows. */
+/** Creased copies made for cars (freed with their room by disposeGroup). */
+const creasedOf = new WeakSet<any>();
 function loadCars(env: RoomEnv, cars: RoomInput["cars"], n: number, place: (i: number, n: number, len: number) => [number, number, number], props: any, fitLen: ReturnType<typeof fitLenWith>, alive: () => boolean, seen: (o: any) => any) {
   const { THREE } = env;
   return cars.slice(0, n).map((car, i) => env.glb(car.model).then((g: any) => {
@@ -545,6 +574,8 @@ function loadCars(env: RoomEnv, cars: RoomInput["cars"], n: number, place: (i: n
     const holder = new THREE.Group();
     const root = g.scene.clone(true);
     root.traverse((o: any) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; if (o.material) o.material = carPaint(o.material, env.envTex); } });
+    // smooth shading with hard edges only at real creases (the generated meshes' own normals read dented)
+    if (env.creased) root.traverse((o: any) => { if (o.isMesh && !o.isSkinnedMesh && o.geometry?.attributes?.position) { const was = o.geometry; o.geometry = env.creased!(was, 0.75); if (o.geometry !== was) creasedOf.add(o.geometry); } });
     fitLen(root, car.length, false); // nose towards the house
     holder.add(root);
     const [x, z, ry] = place(i, Math.min(n, cars.length), car.length);
@@ -667,7 +698,7 @@ function buildMain(env: RoomEnv, inp: RoomInput): BuiltRoom {
   for (const h of backHoles) winFrame("x", -D2, 1, h);
   winFrame("z", W2, -1, eastHoles[0]);
   // the back windows' view: one painted plane outside
-  const viewM = new THREE.MeshBasicMaterial({ map: tex(viewCanvas(R.view)), fog: false });
+  const viewM = new THREE.MeshBasicMaterial({ map: tex(viewCanvas(R.view)), fog: false, userData: { daylight: "view" } });
   plane(R.w + 7, 7.5, viewM, 0, 2.1, -D2 - 3.4);
   // the drive: ground, the backdrop across it, the cars (loaded below)
   driveSet(k, R, W2);
@@ -676,7 +707,7 @@ function buildMain(env: RoomEnv, inp: RoomInput): BuiltRoom {
   const toNook = plan.doors[0]?.to === "nook";
   const doorView = toNook
     ? new THREE.MeshBasicMaterial({ map: tex(wallCanvas(R.wall)), color: new THREE.Color("#e6d8c2"), fog: false })
-    : new THREE.MeshBasicMaterial({ map: tex(viewCanvas("garden")), fog: false });
+    : new THREE.MeshBasicMaterial({ map: tex(viewCanvas("garden")), fog: false, userData: { daylight: "view" } });
   plane(toNook ? 2.6 : 5, toNook ? 2.6 : 4, doorView, 0, toNook ? 1.3 : 1.6, D2 + (toNook ? 1.6 : 2.2), 0, Math.PI);
   winFrame("x", D2, -1, { c: 0, w: DOOR.half * 2, y0: 0.0001, y1: DOOR.h }, false);
   const signM = new THREE.MeshBasicMaterial({ map: tex(signCanvas(toNook ? "HALLWAY" : env.doorOpen ? "GARDEN" : "HOME")), transparent: true });
@@ -729,7 +760,7 @@ function buildMain(env: RoomEnv, inp: RoomInput): BuiltRoom {
   const leafM = mat("#2f5a35", { flatShading: true, roughness: 0.85 });
   const plantAt = [[W2 - 0.4, D2 - 0.4], [W2 - 0.4, -D2 + 0.4], [-W2 + 0.4, MIRROR.z + 0.9], [cabW / 2 + 0.25, -D2 + 0.35]].slice(0, R.plants)
     .filter(([x, z]) => !(x > SOFA.x0 - 0.3 && x < SOFA.x1 + 0.3 && z > SOFA.z - 0.6) && z < D2 - 0.2 && Math.abs(x) < W2);
-  for (const [x, z] of plantAt) solids.push(plant(k, potM, leafM, x, z));
+  for (const [x, z] of plantAt) solids.push(plantOld(k, potM, leafM, x, z));
 
   // ── The wardrobe (west wall) and the mirror ──
   const ward = wardrobeSet(k, env, R, inp, W2, H, metalM, WP);
@@ -808,7 +839,7 @@ function pickWith(k: Kit, pickables: any[]) {
 }
 
 /** A chandelier: a brass ring of glowing crystals (no real light) and its glow on the ceiling. */
-function chandelier(k: Kit, metalM: any, H: number, x: number, z: number) {
+export function chandelier(k: Kit, metalM: any, H: number, x: number, z: number) {
   const { THREE } = k;
   k.box(0.02, 0.6, 0.02, metalM, x, H - 0.3, z);
   const root = k.root;
@@ -828,7 +859,7 @@ function chandelier(k: Kit, metalM: any, H: number, x: number, z: number) {
 }
 
 /** A floor lamp and the pools of light it paints on the walls near it. Its footprint. */
-function floorLamp(k: Kit, metalM: any, x: number, z: number, pools: [number, number, number, number, number][]): Box2 {
+export function floorLamp(k: Kit, metalM: any, x: number, z: number, pools: [number, number, number, number, number][]): Box2 {
   const { THREE } = k;
   k.box(0.3, 0.03, 0.3, metalM, x, 0.015, z);
   const pole = k.box(0.03, 1.45, 0.03, metalM, x, 0.75, z);
@@ -841,7 +872,32 @@ function floorLamp(k: Kit, metalM: any, x: number, z: number, pools: [number, nu
 }
 
 /** A potted plant. Its footprint. */
-function plant(k: Kit, potM: any, leafM: any, x: number, z: number): Box2 {
+export function plant(k: Kit, potM: any, leafM: any, x: number, z: number, o: { kind?: PlantKind; h?: number; pot?: string; y?: number } = {}): Box2 {
+  void potM; void leafM;
+  const { THREE } = k;
+  const kind = o.kind ?? plantAt(x, z);
+  const h = o.h ?? (kind === "snake" ? 0.95 : kind === "fiddle" ? 1.6 : kind === "palm" ? 1.55 : 1.15);
+  const seed = Math.abs(x * 31 + z * 17);
+  const m = new THREE.Matrix4().compose(new THREE.Vector3(x, o.y ?? 0, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, seed % 6.28, 0)), new THREE.Vector3(1, 1, 1));
+  for (const p of plantParts(THREE, kind, seed, h, o.pot ?? "#e9e4da")) {
+    const g = p.geo.index ? p.geo.toNonIndexed() : p.geo;
+    if (g !== p.geo) p.geo.dispose();
+    g.applyMatrix4(m);
+    if (g.attributes.uv) g.deleteAttribute("uv");
+    const c = new THREE.Color(p.colour);
+    const n = g.attributes.position.count;
+    const cols = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b; }
+    g.setAttribute("color", new THREE.BufferAttribute(cols, 3));
+    if (!g.attributes.normal) g.computeVertexNormals();
+    k.plantBin.push(g);
+  }
+  if (!o.y) k.blob(0.75, 0.75, x, z, 0.6);
+  return [x - 0.25, x + 0.25, z - 0.25, z + 0.25];
+}
+
+/** The old faceted plant: the one-room home (House: Old) only, frozen as it was. */
+export function plantOld(k: Kit, potM: any, leafM: any, x: number, z: number): Box2 {
   const { THREE } = k;
   const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.17, 0.42, 16), potM);
   const root = k.root;
@@ -855,7 +911,7 @@ function plant(k: Kit, potM: any, leafM: any, x: number, z: number): Box2 {
 // ── The new rooms (House: New) ───────────────────────────────────────────
 
 /** A window in a new room: which wall, its middle along it, its width, and what is outside. */
-interface WinSpec { wall: Wall; c: number; w: number; y0: number; y1: number; view?: WindowView | "drive" | null }
+export interface WinSpec { wall: Wall; c: number; w: number; y0: number; y1: number; view?: WindowView | "drive" | null }
 
 /** Wall → its line, its length and which way is in. */
 function wallLine(wall: Wall, W2: number, D2: number) {
@@ -877,6 +933,9 @@ const ROOM_LOOK: Partial<Record<RoomId, { wall?: string; floor?: RoomPreset["flo
   garage: { wall: "#bfc3c6", floor: "stone", rough: 0.14 },
   terrace: { floor: "boards" },
   gardenTerrace: { floor: "stone" },
+  bathroom: { floor: "stone", wall: "#d6dcdc" },
+  kitchen: { floor: "stone" },
+  poolTerrace: { floor: "stone" },
 };
 
 /**
@@ -884,7 +943,10 @@ const ROOM_LOOK: Partial<Record<RoomId, { wall?: string; floor?: RoomPreset["flo
  * ceiling, skirting, cornice, panelling on the grand tiers, frames and glass,
  * what is beyond each doorway (the garden, or the next room's sign).
  */
-function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, wins: WinSpec[], o: { ceiling?: boolean; open?: Wall[]; parapet?: { h: number; from: number; glass?: boolean } } = {}) {
+/** The rooms a plan was made for (its doors' rooms and itself): enough to tell a living house. */
+function inpRoomsOf(plan: RoomPlan): RoomId[] { return [plan.id, ...plan.doors.map((d) => d.to).filter((t): t is RoomId => t !== "garden")]; }
+
+export function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, wins: WinSpec[], o: { ceiling?: boolean; open?: Wall[]; parapet?: { h: number; from: number; glass?: boolean } } = {}) {
   const { THREE } = k;
   const W2 = plan.w / 2, D2 = plan.d / 2, H = plan.h;
   const look = ROOM_LOOK[plan.id] ?? {};
@@ -896,6 +958,7 @@ function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, wins: WinS
   k.seen(floor);
   const fshade = k.plane(plan.w, plan.d, new THREE.MeshBasicMaterial({ map: k.tex(floorShadeCanvas()), transparent: true, depthWrite: false }), 0, 0.004, 0, -Math.PI / 2);
   fshade.renderOrder = 1;
+  fshade.userData.floorShade = true; // a living room bakes its own (livingRooms.ts livingFinish, ./bakeShade.ts)
   k.seen(fshade);
   const wallM = k.mat("#ffffff", { map: k.tex(wallCanvas(look.wall ?? R.wall)), roughness: 0.92 });
   const panelM = k.mat(R.panel, { roughness: R.tier === "estate" ? 0.45 : 0.7 });
@@ -937,14 +1000,15 @@ function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, wins: WinS
       wallWith(k, H, L.along, L.at, L.len, holes[wl].map((h) => ({ ...h, y0: Math.min(h.y0, 1.04) })), trimM, 1.0, 1.04, 0.05, L.sgn * 0.045);
     }
   }
-  if (o.ceiling !== false) k.plane(plan.w, plan.d, k.mat(look.dark ? "#191512" : R.trim, { roughness: 0.95 }), 0, H, 0, Math.PI / 2);
+  // (a living penthouse: a pale ceiling, not its black trim: the dark lid filled the top of every shot)
+  if (o.ceiling !== false) k.plane(plan.w, plan.d, k.mat(look.dark ? "#191512" : R.tier === "penthouse" && isLiving(plan.id === "main" ? [] : inpRoomsOf(plan)) ? "#ebe8e2" : R.trim, { roughness: 0.95 }), 0, H, 0, Math.PI / 2);
   // windows: frame, glass, the view outside (one painted plane per wall)
   const views = new Map<string, any>();
   for (const w of wins) {
     const L = wallLine(w.wall, W2, D2);
     winFrame(L.along, L.at, L.sgn, { c: w.c, w: w.w, y0: w.y0, y1: w.y1 });
     if (!w.view || w.view === "drive") continue;
-    if (!views.has(w.view)) views.set(w.view, new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas(w.view)), fog: false }));
+    if (!views.has(w.view)) views.set(w.view, new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas(w.view)), fog: false, userData: { daylight: "view" } }));
     const vm = views.get(w.view);
     const dist = 3.4;
     if (L.along === "x") k.plane(Math.max(6, w.w * 3), 7.5, vm, w.c, 2.1, L.at - L.sgn * dist, 0, L.sgn > 0 ? 0 : Math.PI);
@@ -969,7 +1033,7 @@ function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, wins: WinS
     const ry = d.wall === "n" ? 0 : d.wall === "s" ? Math.PI : d.wall === "w" ? Math.PI / 2 : -Math.PI / 2;
     const out = (dist: number): [number, number] => [d.x - d.nx * dist, d.z - d.nz * dist];
     if (d.to === "garden") {
-      gardenM ??= new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("garden")), fog: false });
+      gardenM ??= new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("garden")), fog: false, userData: { daylight: "view" } });
       const [gx, gz] = out(2.2);
       k.plane(5, 4, gardenM, gx, 1.6, gz, 0, ry);
       k.glow(k.patchT, "#fff0d6", 0.16, L.along === "x" ? d.half * 2 : 1.4, L.along === "x" ? 1.4 : d.half * 2, d.x + d.nx * 0.75, 0.007, d.z + d.nz * 0.75, -Math.PI / 2, 0);
@@ -1005,14 +1069,14 @@ function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, wins: WinS
 }
 
 /** An empty plinth (something you have not bought yet), or one with a thing on it. Its footprint. */
-function plinth(k: Kit, m: any, x: number, z: number, w = 0.5, h = 0.9): Box2 {
+export function plinth(k: Kit, m: any, x: number, z: number, w = 0.5, h = 0.9): Box2 {
   k.box(w, h, w, m, x, h / 2, z, { cast: true });
   k.box(w + 0.06, 0.04, w + 0.06, m, x, h + 0.02, z);
   return [x - w / 2 - 0.03, x + w / 2 + 0.03, z - w / 2 - 0.03, z + w / 2 + 0.03];
 }
 
 /** A football shirt in a frame on a wall (your kits): one mesh painted by vertex colour, the frame apart. */
-function framedShirt(k: Kit, env: RoomEnv, kit: Kit2, number: string, frameM: any, x: number, y: number, z: number, ry: number) {
+export function framedShirt(k: Kit, env: RoomEnv, kit: Kit2, number: string, frameM: any, x: number, y: number, z: number, ry: number) {
   const { THREE } = k;
   const parts: any[] = [];
   const at = (g: any, colour: string, lx: number, ly: number, lz: number, rz = 0) => {
@@ -1087,7 +1151,7 @@ export function roundedBox(THREE: any, w: number, h: number, d: number, r: numbe
  * cushions leaning on it. All in the fabric (one draw once frozen), the legs
  * in `legM`. Its footprint.
  */
-function sofa(k: Kit, fabricM: any, len: number, x: number, z: number, facing: "w" | "n" | "s", legM?: any): Box2 {
+export function sofa(k: Kit, fabricM: any, len: number, x: number, z: number, facing: "w" | "n" | "s" | "e", legM?: any): Box2 {
   const { THREE } = k;
   const d = 0.88;
   const g = new THREE.Group();
@@ -1112,10 +1176,10 @@ function sofa(k: Kit, fabricM: any, len: number, x: number, z: number, facing: "
     soft(cw, 0.44, 0.17, 0.08, cx, 0.66, d / 2 - 0.27, 0.16);
   }
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) k.box(0.05, 0.08, 0.05, legM ?? fabricM, sx * (len / 2 - 0.08), 0.04, sz * (d / 2 - 0.08), { cast: true, parent: g });
-  g.rotation.y = facing === "n" ? 0 : facing === "s" ? Math.PI : Math.PI / 2;
+  g.rotation.y = facing === "n" ? 0 : facing === "s" ? Math.PI : facing === "e" ? -Math.PI / 2 : Math.PI / 2;
   g.position.set(x, 0, z);
   flattenInto(k, g);
-  const along = facing === "w";
+  const along = facing === "w" || facing === "e";
   return along ? [x - d / 2, x + d / 2, z - len / 2, z + len / 2] : [x - len / 2, x + len / 2, z - d / 2, z + d / 2];
 }
 
@@ -1125,7 +1189,7 @@ function sofa(k: Kit, fabricM: any, len: number, x: number, z: number, facing: "
  * gym, the seats, the tool wall). `at(x, z, ry)` places the next pieces in a
  * turned frame (a seat's own left/right, front/back); `at()` goes back.
  */
-function painter(k: Kit, env: RoomEnv) {
+export function painter(k: Kit, env: RoomEnv) {
   const { THREE } = k;
   const parts: any[] = [];
   let frame = new THREE.Matrix4();
@@ -1169,15 +1233,15 @@ function painter(k: Kit, env: RoomEnv) {
     },
   };
 }
-type Painter = ReturnType<typeof painter>;
+export type Painter = ReturnType<typeof painter>;
 
 /** Still water: a flat sheet that shines (the pool, the fountain). */
-function waterMat(THREE: any) {
+export function waterMat(THREE: any) {
   return new THREE.MeshStandardMaterial({ color: "#2b93bd", roughness: 0.04, metalness: 0.15, envMapIntensity: 1.8, emissive: "#0b4660", emissiveIntensity: 0.55 });
 }
 
 /** A flat disc of a material, lying on the floor at height y. */
-function disc(k: Kit, r: number, m: any, x: number, y: number, z: number, seg = 28) {
+export function disc(k: Kit, r: number, m: any, x: number, y: number, z: number, seg = 28) {
   const me = new k.THREE.Mesh(new k.THREE.CircleGeometry(r, seg), m);
   me.rotation.x = -Math.PI / 2;
   me.position.set(x, y, z);
@@ -1187,7 +1251,7 @@ function disc(k: Kit, r: number, m: any, x: number, y: number, z: number, seg = 
 }
 
 /** A sky over an open terrace: a big dome, light at the horizon, blue above (one draw). */
-function skyDome(k: Kit, top: string, low: string) {
+export function skyDome(k: Kit, top: string, low: string) {
   const { THREE } = k;
   const g = new THREE.SphereGeometry(60, 18, 10);
   const p = g.attributes.position;
@@ -1199,14 +1263,14 @@ function skyDome(k: Kit, top: string, low: string) {
     cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b;
   }
   g.setAttribute("color", new THREE.BufferAttribute(cols, 3));
-  const me = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false, toneMapped: false }));
+  const me = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false, toneMapped: false, userData: { daylight: "view" } }));
   me.renderOrder = -1;
   k.add(me);
   return me;
 }
 
 /** What the room-building pieces share inside one room. */
-interface Ctx {
+export interface Ctx {
   k: Kit;
   env: RoomEnv;
   inp: RoomInput;
@@ -1230,10 +1294,14 @@ interface Ctx {
   plinthM: any;
   /** Set by a room: its opening shot. */
   intro?: { cam: [number, number, number]; look: [number, number, number] };
+  /** A living house: the furniture placer, the things, and whether it is one. */
+  F?: Furnisher;
+  X?: LivingExtras;
+  living?: boolean;
 }
 
 /** A shelf of your watches and cans on a wall (an empty stand for each you have not bought). */
-function showShelf(c: Ctx, P: Painter, S: Painter, x: number, z: number, ry: number) {
+export function showShelf(c: Ctx, P: Painter, S: Painter, x: number, z: number, ry: number) {
   P.at(x, z, ry);
   S.at(x, z, ry);
   for (const y of [1.1, 1.55]) P.box(1.4, 0.04, 0.26, c.wood, 0, y, 0);
@@ -1253,7 +1321,7 @@ function showShelf(c: Ctx, P: Painter, S: Painter, x: number, z: number, ry: num
 }
 
 /** Load a model, fit it to a length and stand it at (x, y, z) turned ry (after the room shows). */
-function propModel(c: Ctx, url: string, len: number, x: number, y: number, z: number, ry: number, o: { skinned?: boolean } = {}) {
+export function propModel(c: Ctx, url: string, len: number, x: number, y: number, z: number, ry: number, o: { skinned?: boolean } = {}) {
   const { THREE } = c.k;
   c.propJobs.push(() => [c.env.glb(url).then((g: any) => {
     if (!c.alive()) return;
@@ -1355,29 +1423,53 @@ function buildGames(c: Ctx) {
   const { THREE } = k;
   const shell = shellOf(k, env, c.R, c.plan, [{ wall: "n", c: W2 * 0.4, w: 2.2, y0: 0.7, y1: Math.min(H - 0.35, 2.4), view: c.R.view }]);
   const P = painter(k, env), S = painter(k, env);
-  // the pool: still water in a stone surround along the west wall
+  // the west half (Harry, 20 Nov 2026: a games room, not an indoor pool; the pool is the terrace's):
+  // two arcade cabinets on the west wall, a dartboard and its throw line, a table football
   const px0 = -W2 + 0.75, px1 = px0 + Math.min(3.2, W2 - 1.2), pz0 = -D2 + 0.8, pz1 = D2 - 1.7;
-  const pw = px1 - px0, pd = pz1 - pz0, pcx = (px0 + px1) / 2, pcz = (pz0 + pz1) / 2;
-  const stone = "#e7dfcf";
-  P.box(pw + 0.6, 0.1, 0.3, stone, pcx, 0.05, pz0 - 0.15);
-  P.box(pw + 0.6, 0.1, 0.3, stone, pcx, 0.05, pz1 + 0.15);
-  P.box(0.3, 0.1, pd, stone, px0 - 0.15, 0.05, pcz);
-  P.box(0.3, 0.1, pd, stone, px1 + 0.15, 0.05, pcz);
-  k.plane(pw, pd, waterMat(THREE), pcx, 0.03, pcz, -Math.PI / 2).receiveShadow = true;
-  k.glow(k.glowT, "#8fe8ff", 0.35, pw * 0.8, pd * 0.6, pcx, 0.04, pcz, -Math.PI / 2, 0); // its underwater lights
-  k.glow(k.glowT, "#7fd6f0", 0.12, pw * 1.2, pd * 0.9, pcx, H - 0.02, pcz, Math.PI / 2, 0); // their shimmer on the ceiling
-  for (const sx of [-0.25, 0.25]) { S.cyl(0.02, 0.02, 0.9, "#d9dde2", pcx + sx, 0.45, pz0 + 0.05); S.ring(0.12, 0.02, "#d9dde2", pcx + sx, 0.9, pz0 + 0.17, 0, Math.PI / 2); }
-  solids.push([px0 - 0.3, px1 + 0.3, pz0 - 0.3, pz1 + 0.3]);
-  // two loungers at the pool's south end
-  const loungers = [px0 + 0.6, px0 + 1.8].filter((lx) => lx < px1);
-  for (const lx of loungers) {
-    P.at(lx, pz1 + 0.95, 0);
-    P.soft(0.62, 0.1, 1.5, 0.04, "#f2ede4", 0, 0.32, 0);
-    P.soft(0.62, 0.1, 0.6, 0.04, "#f2ede4", 0, 0.5, -0.78, -0.7);
-    for (const sx of [-0.27, 0.27]) for (const sz of [-0.6, 0.6]) P.box(0.04, 0.27, 0.04, "#4a3a2c", sx, 0.135, sz);
-    P.at();
+  const pcx = (px0 + px1) / 2, pcz = (pz0 + pz1) / 2;
+  const scr = document.createElement("canvas");
+  scr.width = 64; scr.height = 80;
+  const sx2 = scr.getContext("2d");
+  if (sx2) {
+    sx2.fillStyle = "#0a0f2a"; sx2.fillRect(0, 0, 64, 80);
+    for (let i = 0; i < 14; i++) { sx2.fillStyle = ["#ffe14a", "#ff4fa0", "#4ad8ff", "#7dff6a"][i % 4]; sx2.fillRect((i * 23) % 56 + 3, (i * 37) % 60 + 14, 4, 4); }
+    sx2.fillStyle = "#ffe14a"; sx2.fillRect(24, 64, 16, 6);
+    sx2.fillStyle = "#ff4fa0"; sx2.font = "bold 10px monospace"; sx2.fillText("1UP 4200", 4, 10);
   }
-  if (loungers.length) solids.push([px0 + 0.2, loungers[loungers.length - 1] + 0.4, pz1 + 0.2, pz1 + 1.75]);
+  const scrT = k.tex(scr); scrT.magFilter = THREE.NearestFilter;
+  const scrM = new THREE.MeshBasicMaterial({ map: scrT, toneMapped: false });
+  const arcadeZ = [-D2 + 1.05, -D2 + 2.0].filter((z) => z < pz1 - 1.2);
+  arcadeZ.forEach((az, i) => {
+    const body = i ? "#2a1c5e" : "#5e1c2a", x0 = -W2 + 0.38;
+    P.box(0.62, 1.78, 0.72, body, x0, 0.89, az);
+    P.box(0.42, 0.12, 0.66, "#141414", x0 + 0.34, 1.02, az, 0, 0, -0.35); // the control panel
+    P.ball(0.03, "#e23a3a", x0 + 0.38, 1.1, az - 0.12, 8);
+    for (const bz of [0.05, 0.13, 0.21]) P.cyl(0.018, 0.018, 0.02, ["#ffd23a", "#3ab4ff", "#3ad26a"][Math.round(bz * 10) % 3], x0 + 0.42, 1.09, az + bz - 0.05, 0, 0, -0.35, 8);
+    P.box(0.05, 0.62, 0.66, "#0c0c0c", x0 + 0.31, 1.42, az); // the screen's bezel
+    const sm = k.plane(0.5, 0.56, scrM, x0 + 0.34, 1.42, az, 0, Math.PI / 2);
+    sm.rotation.order = "YXZ"; sm.rotation.x = -0.12;
+    k.box(0.04, 0.16, 0.6, k.glowM(i ? "#4ad8ff" : "#ff4fa0", 2.0), x0 + 0.31, 1.86, az); // the marquee
+    k.glow(k.glowT, i ? "#4ad8ff" : "#ff4fa0", 0.16, 1.0, 1.2, x0 + 0.75, 0.01, az, -Math.PI / 2, 0);
+    solids.push([-W2, x0 + 0.5, az - 0.4, az + 0.4]);
+  });
+  // the dartboard on the west wall, its throw line on the floor 2.37 m out
+  const dz = Math.min(pz1, D2 - 1.4), dx = -W2 + 0.03;
+  S.box(0.03, 0.75, 0.75, "#1b1410", dx + 0.015, 1.73, dz);
+  for (const [r, col, off] of [[0.226, "#141414", 0.035], [0.17, "#c3302c", 0.04], [0.16, "#efe6cf", 0.045], [0.107, "#2a7a3a", 0.05], [0.097, "#efe6cf", 0.055], [0.032, "#2a7a3a", 0.06], [0.013, "#c3302c", 0.065]] as [number, string, number][])
+    S.cyl(r, r, 0.01, col, dx + off, 1.73, dz, 0, 0, Math.PI / 2, 20);
+  for (let i = 0; i < 3; i++) S.cyl(0.003, 0.003, 0.09, "#d8d8d8", dx + 0.11, 1.75 - i * 0.03, dz - 0.04 + i * 0.05, 0, 0, Math.PI / 2, 4);
+  S.box(0.04, 0.01, 0.6, "#d8c9a6", -W2 + 2.37, 0.005, dz);
+  // a table football in the middle of the west half
+  const fx = Math.min(px1 - 0.9, -W2 + 2.2), fz = Math.max(-D2 + 1.6, Math.min(dz - 1.4, pcz - 0.3));
+  P.box(1.4, 0.24, 0.76, "#1f3f8a", fx, 0.82, fz);
+  P.box(1.32, 0.02, 0.68, "#2f8a3a", fx, 0.86, fz);
+  for (const sx of [-0.62, 0.62]) for (const sz of [-0.3, 0.3]) P.box(0.07, 0.72, 0.07, "#14264f", fx + sx, 0.36, fz + sz);
+  for (let i = 0; i < 6; i++) {
+    const rx = fx - 0.5 + i * 0.2;
+    P.cyl(0.008, 0.008, 1.0, "#cfd3d8", rx, 0.92, fz, Math.PI / 2, 0, 0, 6);
+    for (const mz of [-0.18, 0, 0.18]) P.box(0.03, 0.09, 0.03, i % 2 ? "#d42a2a" : "#f2f2f2", rx, 0.9, fz + mz);
+  }
+  solids.push([fx - 0.78, fx + 0.78, fz - 0.45, fz + 0.45]);
   // the pool table (the hero): legs, body, cloth, cushions, rails, pockets, the balls racked, a cue
   const tx = Math.min(W2 - 1.8, Math.max(px1 + 1.6, W2 * 0.4)), tz = -0.4;
   const cw = 1.27, cl = 2.54, wood = c.wood, cloth = "#1f6b3a";
@@ -1607,7 +1699,7 @@ function buildGardenTerrace(c: Ctx) {
   k.plane(1.6, winY1 - 0.7, new THREE.MeshBasicMaterial({ color: new THREE.Color("#f0c58a").multiplyScalar(0.9), toneMapped: false }), winC, (0.7 + winY1) / 2, -D2 - 0.3);
   // the lawn below the terrace and the grounds beyond (one painted picture)
   k.plane(90, 90, k.mat("#6f8f4a", { roughness: 1 }), 0, below, 0, -Math.PI / 2).receiveShadow = true;
-  const groundsM = new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("grounds")), fog: false });
+  const groundsM = new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("grounds")), fog: false, userData: { daylight: "view" } });
   const far = 26;
   k.plane(60, 16, groundsM, 0, below + 5.5, D2 + far, 0, Math.PI);
   k.plane(60, 16, groundsM, W2 + far, below + 5.5, 0, 0, -Math.PI / 2);
@@ -1720,7 +1812,7 @@ function buildPenthouseTerrace(c: Ctx) {
   const P = painter(k, env);
   skyDome(k, "#5f8fd0", "#f2d0a8");
   // the city all round, its towers far below
-  const cityM = new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("skyline")), fog: false });
+  const cityM = new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("skyline")), fog: false, userData: { daylight: "view" } });
   // (the picture's skyline sits 80% down it: placed so the towers rise from just under the glass rail)
   const far = 9, cy = 5.6;
   k.plane(44, 22, cityM, 0, cy, -D2 - far, 0, 0);
@@ -1728,15 +1820,20 @@ function buildPenthouseTerrace(c: Ctx) {
   k.plane(44, 22, cityM, -W2 - far, cy, 0, 0, Math.PI / 2);
   // the car gallery behind the glass: a dark polished floor, a lit back wall, your best car (an empty plinth without)
   const gz = D2 + 2.0;
-  k.plane(gw + 1.2, 4.2, k.mat("#1d1f24", { roughness: 0.18, metalness: 0.3, envMapIntensity: 1.5 }), gc, 0.0, D2 + 2.1, -Math.PI / 2);
-  const galleryM = new THREE.MeshBasicMaterial({ color: "#2a2c31" });
-  k.plane(gw + 1.2, H, new THREE.MeshBasicMaterial({ map: k.tex(wallCanvas("#3a3d44")), color: new THREE.Color("#c9ccd2"), fog: false }), gc, H / 2, D2 + 4.1, 0, Math.PI);
+  // (a living penthouse: a LIT showroom bay, pale walls and floor, not a dark box)
+  const lit = !!c.living;
+  k.plane(gw + 1.2, 4.2, k.mat(lit ? "#8d9096" : "#1d1f24", { roughness: 0.18, metalness: 0.3, envMapIntensity: 1.5 }), gc, 0.0, D2 + 2.1, -Math.PI / 2);
+  const galleryM = new THREE.MeshBasicMaterial({ color: lit ? "#cfccc6" : "#2a2c31" });
+  k.plane(gw + 1.2, H, new THREE.MeshBasicMaterial({ map: k.tex(wallCanvas(lit ? "#e4e1db" : "#3a3d44")), color: new THREE.Color("#c9ccd2"), fog: false }), gc, H / 2, D2 + 4.1, 0, Math.PI);
   for (const sx of [-1, 1]) k.plane(4.2, H, galleryM, gc + sx * (gw / 2 + 0.6), H / 2, D2 + 2.1, 0, sx > 0 ? -Math.PI / 2 : Math.PI / 2);
   k.plane(gw + 1.2, 4.2, galleryM, gc, H, D2 + 2.1, Math.PI / 2);
   k.box(gw * 0.8, 0.03, 0.12, k.glowM("#f4fbff", 2.6), gc, H - 0.05, gz);
   k.glow(k.patchT, "#fff4e0", 0.3, Math.min(gw, 4.6), 2.4, gc, 0.01, gz, -Math.PI / 2, 0);
   k.glow(k.glowT, "#e8f0ff", 0.22, gw + 1, 2.4, gc, 1.4, D2 + 4.05, 0, Math.PI);
-  if (inp.cars.length) c.propJobs.push(() => loadCars(env, inp.cars, 1, () => [gc, gz, 0], c.props, c.fitLen, c.alive, k.seen));
+  // the car behind the glass: the light copy (4k triangles; the shop's full model is ~23k and still shows the
+  // generated texture's crack this near, so it is not worth the frame cost), smooth-shaded at load
+  const best = inp.cars.slice(0, 1);
+  if (best.length) c.propJobs.push(() => loadCars(env, best, 1, () => [gc, gz, 0], c.props, c.fitLen, c.alive, k.seen));
   else plinth(k, c.plinthM, gc, gz, 0.6, 0.6);
   // the outdoor sofa facing the view, a low table, a rug
   const sx = -0.6, sz = 0.35;
@@ -1879,6 +1976,16 @@ function buildNew(env: RoomEnv, inp: RoomInput, id: RoomId): BuiltRoom {
   const leafM = k.mat("#2f5a35", { flatShading: true, roughness: 0.85 });
   const plinthM = k.mat("#ece6dc", { roughness: 0.6 });
 
+  // a living house (homes.ts LIVING_ROOMS): its furniture, the things you can use, where visitors sit
+  const L = isLiving(inp.rooms);
+  const X: LivingExtras = { things: [], fx: {}, guests: [] };
+  // the kit's own colours are pale: its wood takes the home's wood, its fabric a soft grey-blue, its metal a brushed steel
+  const F = furnisher(THREE, group, L ? env.furniture ?? null : null, solids, env.envTex, { wood: wood === "#1e1e22" ? "#3a3530" : wood, carpet: "#6d7b8a", metal: "#a9b0b8", metalDark: "#3a3d42" }, (b) => { const w = b[1] - b[0], d = b[3] - b[2]; k.blob(w * 1.3 + 0.15, d * 1.3 + 0.15, (b[0] + b[1]) / 2, (b[2] + b[3]) / 2, 0.55); });
+  const ctx: Ctx = {
+    k, env, inp, R, plan, W2, D2, H, stuff, solids, props, keep, fitLen, propJobs, alive: () => alive,
+    wood, woodM, fabricM, potM, leafM, plinthM, F, X, living: L,
+  };
+
   /** A drive window on the east wall: the cars outside, the "drive" spot. */
   const driveWindow = (zc: number, w: number) => {
     const DRIVE = { z: zc, w, y0: 0.55, y1: Math.min(H - 0.3, 2.4) };
@@ -1907,6 +2014,25 @@ function buildNew(env: RoomEnv, inp: RoomInput, id: RoomId): BuiltRoom {
     return cab;
   };
 
+  /** The wardrobe and its full-length mirror on the west wall: the "wardrobe" spot. */
+  const wardrobe = (metalM: any, len: number) => {
+    const WP = wardPlan(W2, D2, H, len);
+    const ward = wardrobeSet(k, env, R, inp, W2, H, metalM, WP);
+    solids.push(...ward.solids);
+    keep.add(ward.garments);
+    mirror = ward.mirror;
+    if (mirror) keep.add(mirror);
+    mirrorSpot = ward.mirrorSpot; mirrorFace = ward.mirrorFace;
+    const { WARD, MIRROR } = WP;
+    mirrorNear = (x, z) => x < -W2 + 3.2 && Math.abs(z - MIRROR.z) < 3.2;
+    pickBox("wardrobe", WARD.depth + 0.1, WARD.h, MIRROR.z + MIRROR.w / 2 - WARD.z0 + 0.1, ward.wx, WARD.h / 2, (WARD.z0 + MIRROR.z + MIRROR.w / 2) / 2);
+    zones.push((x, z) => (x < -W2 + 1.75 && z > WARD.z0 - 0.3 && z < MIRROR.z + 0.8 ? { spot: "wardrobe", front: [-W2 + WARD.depth, Math.max(WARD.z0, Math.min(MIRROR.z, z))] } : null));
+    stands.wardrobe = () => ({ at: ward.mirrorSpot, face: ward.mirrorFace });
+    shots.wardrobe = { cam: [Math.min(W2 - 0.35, -W2 + 3.4), 1.55, Math.min(D2 - 0.35, MIRROR.z + 1.0)], look: [-W2 + 0.3, 1.1, MIRROR.z + 0.15] };
+    propJobs.push(() => ward.loadBoots(props, fitLen, () => alive));
+    return WP;
+  };
+
   let shell: ReturnType<typeof shellOf>;
   let intro: BuiltRoom["intro"];
 
@@ -1916,17 +2042,20 @@ function buildNew(env: RoomEnv, inp: RoomInput, id: RoomId): BuiltRoom {
     // a runner down the middle, a doormat at the front door
     k.seen(k.plane(1.3, plan.d - 1.4, k.mat(R.tier === "estate" ? "#6b2a2a" : "#7d4f3a", { roughness: 1 }), 0, 0.006, 0.2, -Math.PI / 2));
     k.plane(1.0, 0.6, k.mat("#3b3128", { roughness: 1 }), 0, 0.007, D2 - 0.45, -Math.PI / 2);
+    // a console table on the west wall, north end, a lamp on it, your home shirt framed above (a living house: its kitchen door is there)
+    if (!L) {
     // a console table on the west wall, north end, a lamp on it, your home shirt framed above
-    const cz = -D2 + 1.05;
-    k.box(0.4, 0.05, 1.2, woodM, -W2 + 0.22, 0.82, cz, { cast: true });
-    for (const sz of [-1, 1]) k.box(0.36, 0.8, 0.04, woodM, -W2 + 0.22, 0.4, cz + sz * 0.56);
-    const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.2, 14, 1, true), k.glowM("#ffd9a0", 1.3));
-    lamp.position.set(-W2 + 0.22, 1.1, cz - 0.35); group.add(lamp);
-    k.box(0.02, 0.22, 0.02, metalM, -W2 + 0.22, 0.95, cz - 0.35);
-    k.box(0.16, 0.05, 0.16, k.mat("#d8cfc0", { roughness: 0.5 }), -W2 + 0.22, 0.87, cz + 0.25); // a bowl for your keys
-    k.glow(k.glowT, "#ffcf8a", 0.24, 1.4, 1.8, -W2 + 0.02, 1.3, cz - 0.3, 0, Math.PI / 2);
-    framedShirt(k, env, inp.kits.home, "", woodM, -W2 + 0.04, 1.75, cz, Math.PI / 2);
-    solids.push([-W2, -W2 + 0.45, cz - 0.65, cz + 0.65]);
+      const cz = -D2 + 1.05;
+      k.box(0.4, 0.05, 1.2, woodM, -W2 + 0.22, 0.82, cz, { cast: true });
+      for (const sz of [-1, 1]) k.box(0.36, 0.8, 0.04, woodM, -W2 + 0.22, 0.4, cz + sz * 0.56);
+      const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.2, 14, 1, true), k.glowM("#ffd9a0", 1.3));
+      lamp.position.set(-W2 + 0.22, 1.1, cz - 0.35); group.add(lamp);
+      k.box(0.02, 0.22, 0.02, metalM, -W2 + 0.22, 0.95, cz - 0.35);
+      k.box(0.16, 0.05, 0.16, k.mat("#d8cfc0", { roughness: 0.5 }), -W2 + 0.22, 0.87, cz + 0.25); // a bowl for your keys
+      k.glow(k.glowT, "#ffcf8a", 0.24, 1.4, 1.8, -W2 + 0.02, 1.3, cz - 0.3, 0, Math.PI / 2);
+      framedShirt(k, env, inp.kits.home, "", woodM, -W2 + 0.04, 1.75, cz, Math.PI / 2);
+      solids.push([-W2, -W2 + 0.45, cz - 0.65, cz + 0.65]);
+    }
     // a coat stand by the front door, a plant in the far corner
     const csx = W2 - 0.35, csz = D2 - 0.4;
     k.box(0.04, 1.75, 0.04, woodM, csx, 0.875, csz, { cast: true });
@@ -1940,6 +2069,8 @@ function buildNew(env: RoomEnv, inp: RoomInput, id: RoomId): BuiltRoom {
     k.box(0.015, 0.6, 0.015, metalM, 0, H - 0.3, -0.3);
     k.glow(k.glowT, "#ffe2b0", 0.18, 2.2, 2.2, 0, H - 0.02, -0.3, Math.PI / 2, 0);
     if (R.chandelier) chandelier(k, metalM, H, 0, 1.4);
+  } else if (id === "lounge" && L) {
+    shell = buildLivingLounge(ctx, { wardrobe, cabinet, driveWindow });
   } else if (id === "lounge") {
     const hasCab = plan.spots.includes("cabinet");
     // the drive window on the east wall, north of the doorway; a big window south onto the garden
@@ -2039,20 +2170,7 @@ function buildNew(env: RoomEnv, inp: RoomInput, id: RoomId): BuiltRoom {
   } else if (id === "dressing") {
     shell = shellOf(k, env, R, plan, [{ wall: "e", c: -0.6, w: 1.2, y0: 0.9, y1: Math.min(H - 0.35, 2.3), view: R.view }]);
     const { metalM, glassM } = shell;
-    const WP = wardPlan(W2, D2, H, Math.min(R.wardrobe, plan.d - 2.2));
-    const ward = wardrobeSet(k, env, R, inp, W2, H, metalM, WP);
-    solids.push(...ward.solids);
-    keep.add(ward.garments);
-    mirror = ward.mirror;
-    if (mirror) keep.add(mirror);
-    mirrorSpot = ward.mirrorSpot; mirrorFace = ward.mirrorFace;
-    const { WARD, MIRROR } = WP;
-    mirrorNear = (x, z) => x < -W2 + 3.2 && Math.abs(z - MIRROR.z) < 3.2;
-    pickBox("wardrobe", WARD.depth + 0.1, WARD.h, MIRROR.z + MIRROR.w / 2 - WARD.z0 + 0.1, ward.wx, WARD.h / 2, (WARD.z0 + MIRROR.z + MIRROR.w / 2) / 2);
-    zones.push((x, z) => (x < -W2 + 1.75 && z > WARD.z0 - 0.3 && z < MIRROR.z + 0.8 ? { spot: "wardrobe", front: [-W2 + WARD.depth, Math.max(WARD.z0, Math.min(MIRROR.z, z))] } : null));
-    stands.wardrobe = () => ({ at: ward.mirrorSpot, face: ward.mirrorFace });
-    shots.wardrobe = { cam: [Math.min(W2 - 0.35, -W2 + 3.4), 1.55, Math.min(D2 - 0.35, MIRROR.z + 1.0)], look: [-W2 + 0.3, 1.1, MIRROR.z + 0.15] };
-    propJobs.push(() => ward.loadBoots(props, fitLen, () => alive));
+    wardrobe(metalM, Math.min(R.wardrobe, plan.d - 2.2));
     // the glass island: your watches and jewellery under glass (empty cushions for what you have not bought)
     const ix = 0.75, iz = -0.5, iw = 0.8, il = 1.6;
     k.box(iw, 0.82, il, woodM, ix, 0.41, iz, { cast: true });
@@ -2118,12 +2236,13 @@ function buildNew(env: RoomEnv, inp: RoomInput, id: RoomId): BuiltRoom {
     solids.push(plant(k, potM, leafM, -W2 + 0.4, -D2 + 0.4));
     solids.push(plant(k, potM, leafM, W2 - 0.4, -D2 + 0.4));
     if (R.chandelier) chandelier(k, metalM, H, -0.6, 0.5);
+  } else if (id === "studio" || id === "kitchen" || id === "bedroom" || id === "bathroom" || id === "poolTerrace") {
+    // the living houses' own rooms (./livingRooms.ts)
+    const make = { studio: buildStudio, kitchen: buildKitchen, bedroom: buildBedroom, bathroom: buildBathroom, poolTerrace: buildPoolTerrace }[id];
+    shell = make(ctx, { wardrobe, cabinet, driveWindow });
+    intro = ctx.intro;
   } else {
     // the villa's and estate's rooms, the penthouse terrace, the flat's nook
-    const ctx: Ctx = {
-      k, env, inp, R, plan, W2, D2, H, stuff, solids, props, keep, fitLen, propJobs, alive: () => alive,
-      wood, woodM, fabricM, potM, leafM, plinthM,
-    };
     const make: Partial<Record<RoomId, (c: Ctx) => ReturnType<typeof shellOf>>> = {
       garage: buildGarage, games: buildGames, cinema: buildCinema, gym: buildGym,
       gardenTerrace: buildGardenTerrace, terrace: buildPenthouseTerrace, nook: buildNook,
@@ -2138,7 +2257,10 @@ function buildNew(env: RoomEnv, inp: RoomInput, id: RoomId): BuiltRoom {
     // (no chandelier in these: it hung in front of the cinema screen and over the gym's rack)
   }
 
+  if (L) livingFinish(ctx, shell!);
   for (const gl of k.flushGlows(env.mergeGeometries)) keep.add(gl);
+  const plants = k.flushPlants(env.mergeGeometries);
+  if (plants) keep.add(plants);
   const frozen = freezeStatic(THREE, env.mergeGeometries, group, new Set(Array.from(keep).concat(pickables).filter(Boolean)));
   const front = plan.doors[0];
   const start = front ? { x: front.x + front.nx * 1.0, z: front.z + front.nz * 1.0, yaw: Math.atan2(front.nx, front.nz) } : { x: 0, z: 0, yaw: Math.PI };
@@ -2158,6 +2280,7 @@ function buildNew(env: RoomEnv, inp: RoomInput, id: RoomId): BuiltRoom {
     intro,
     loadProps: async () => { await Promise.all(propJobs.flatMap((f) => f())); },
     dispose: () => { alive = false; disposeGroup(group); mirror = null; },
+    things: X.things, fx: X.fx, guests: X.guests,
   } as BuiltRoom;
   return room;
 }

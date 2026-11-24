@@ -3,7 +3,7 @@ import { appInstalled } from "./unlocks";
 import type { CareerState } from "@/lib/star/types";
 import { nextFixtureFor } from "./competitions";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { hasFreshMedia, unreadCount } from "@/lib/star/media/feed";
 import { brandsOf } from "@/lib/star/sponsorDeals";
 import { RECORDS } from "@/lib/star/records";
@@ -76,13 +76,13 @@ export function buildMessages(career: CareerState, hallChase?: string | null): M
   for (const o of brandsOf(career).offers) {
     msgs.push({
       from: o.brand, icon: "🤝",
-      text: o.kind === "milestone" ? `${o.brand} want a one-off deal with you. Take a look.` : `${o.brand} want you on a ${o.seasons}-season deal at ★${formatMoney(o.weekly)} a week.`,
+      text: o.kind === "milestone" ? `${o.brand} want a one-off deal with you. Take a look.` : `${o.brand} want you on a ${o.seasons}-season deal at ${MONEY_SIGN}${formatMoney(o.weekly)} a week.`,
       tone: ["#2dd4bf", "#0f766e"], open: "sponsors", key: `offer|${o.id}`,
     });
   }
   const chase = recordChaseText(career, hallChase);
   if (chase) msgs.push({ from: teamMate(career), icon: "🔥", text: chase, tone: ["#fb923c", "#c2410c"] });
-  msgs.push({ from: "Agent", icon: "💼", text: `${career.contract.seasonsRemaining} season${career.contract.seasonsRemaining === 1 ? "" : "s"} left on your deal at ★${formatMoney(career.contract.wage)} a week.`, tone: ["#fbbf24", "#b45309"] });
+  msgs.push({ from: "Agent", icon: "💼", text: `${career.contract.seasonsRemaining} season${career.contract.seasonsRemaining === 1 ? "" : "s"} left on your deal at ${MONEY_SIGN}${formatMoney(career.contract.wage)} a week.`, tone: ["#fbbf24", "#b45309"] });
   if (career.energy < 60) msgs.push({ from: "Physio", icon: "🩺", text: `Energy's at ${Math.round(career.energy)}%. Rest up or drink a can.`, tone: ["#f87171", "#b91c1c"] });
   msgs.push({ from: "Mum", icon: "❤️", text: "Proud of you. Eat something green.", tone: ["#f472b6", "#be185d"] });
   return msgs;

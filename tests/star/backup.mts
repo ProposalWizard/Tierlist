@@ -117,6 +117,17 @@ console.log("The morning post");
   const blind = limitsPost({ day: "2026-11-12", dbBytes: null, storageBytes: null, r2: null, backup: m, notes: ["run supabase/migrations/ops_limits.sql"] });
   ok(blind.level === "unknown" && /could not read/.test(blind.body) && /ops_limits\.sql/.test(blind.body), "missing readings say so, never green");
   ok(green.body.length <= 2000 && green.title.length <= 200, "fits team_bot_posts (title 200, body 2000)");
+  // Vercel's free plan: 4 hours of processor time a month (Mikey, 20 Nov 2026).
+  ok(!/Vercel/.test(green.body), "no Vercel line when Vercel usage was not read");
+  const h = 3600_000;
+  const vGreen = limitsPost({ day: "2026-11-12", dbBytes: 1, storageBytes: 1, r2, backup: m, vercelCpuMs: 1.5 * h });
+  ok(vGreen.level === "green" && /Vercel processor time \(last 30 days\): 1\.5 h of 4\.0 h free \(38%\)/.test(vGreen.body), "Vercel at 1.5 of 4 hours: green, with hours and %");
+  const vAmber = limitsPost({ day: "2026-11-12", dbBytes: 1, storageBytes: 1, r2, backup: m, vercelCpuMs: 3.1 * h });
+  ok(vAmber.level === "amber" && /go Pro/.test(vAmber.body), "Vercel at 78 %: amber, says what to do");
+  const vRed = limitsPost({ day: "2026-11-12", dbBytes: 1, storageBytes: 1, r2, backup: m, vercelCpuMs: 3.7 * h });
+  ok(vRed.red, "Vercel at 92 %: red (buzzes phones)");
+  const vBlind = limitsPost({ day: "2026-11-12", dbBytes: 1, storageBytes: 1, r2, backup: m, vercelCpuMs: null });
+  ok(vBlind.level === "unknown" && /Vercel processor time: could not read/.test(vBlind.body), "Vercel not readable: says so, never green");
 }
 
 console.log("UK clock (the job runs at the UK hour, winter and summer)");
@@ -129,7 +140,10 @@ console.log("UK clock (the job runs at the UK hour, winter and summer)");
   const sched = (p: string) => vercel.crons.filter((c: { path: string }) => c.path === p).map((c: { schedule: string }) => c.schedule).sort();
   ok(JSON.stringify(sched("/api/cron/backup")) === JSON.stringify(["0 2 * * *", "0 3 * * *"]), "vercel.json: backup at 02:00 and 03:00 UTC");
   ok(JSON.stringify(sched("/api/cron/limits")) === JSON.stringify(["0 7 * * *", "0 8 * * *"]), "vercel.json: limits at 07:00 and 08:00 UTC");
-  ok(sched("/api/admin/patch-notes/media-sync").length === 1 && vercel.git?.deploymentEnabled?.main === true && vercel.git?.deploymentEnabled?.["**"] === false, "the old cron and the main-only deploy block are kept");
+  // The every-5-minute media sync now runs from Supabase (supabase/migrations/frequent_jobs_cron.sql):
+  // Vercel's free plan refuses any cron that runs more than once a day.
+  ok(sched("/api/admin/patch-notes/media-sync").length === 0 && vercel.git?.deploymentEnabled?.main === true && vercel.git?.deploymentEnabled?.["**"] === false, "media sync is off Vercel's crons, and the main-only deploy block is kept");
+  ok((vercel.crons ?? []).every((c: { schedule: string }) => /^\d+ \d+ \* \* \*$/.test(c.schedule)), "every Vercel cron runs once a day (the free plan allows no more)");
 }
 
 console.log("Both jobs refuse without CRON_SECRET");

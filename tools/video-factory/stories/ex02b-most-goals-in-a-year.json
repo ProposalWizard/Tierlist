@@ -1,0 +1,534 @@
+{
+  "id": "ex02b-most-goals-in-a-year",
+  "series": "Explainer",
+  "variant": "v2: steps every 1-2 s",
+  "title": "Who has scored the most goals in a single year?",
+  "layout": "explainer",
+  "music": "02-working-it-out.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.fcbarcelona.com/en/news/1146881/messi-ends-2012-with-91-goals",
+    "https://www.si.com/soccer/2012/12/09/messi-goal-record",
+    "https://www.uefa.com/uefachampionsleague/news/01fb-0e7c4364f288-34adad46f792-1000/",
+    "https://www.guinnessworldrecords.com/news/2012/12/barcelona-star-lionel-messi-sets-new-goalscoring-record-46285/",
+    "https://www.irishtimes.com/sport/zambia-claim-striker-godfrey-chitalu-scored-107-goals-in-1972-1.2751",
+    "https://www.eluniverso.com/2012/12/14/1/1372/fifa-descarta-vaya-validar-107-goles-habria-marcado-chitalu.html",
+    "https://bleacherreport.com/articles/1443385-lionel-messi-v-godfrey-chitalu-why-zambias-case-for-goals-record-is-legitimate",
+    "https://en.wikipedia.org/wiki/Godfrey_Chitalu",
+    "https://inside.fifa.com/news/tragedy-spurs-fairytale-story-for-zambia-2064751"
+  ],
+  "facts": {
+    "messi": "91 in 2012: 79 Barcelona (59 La Liga, 13 CL, 5 Copa, 2 Super Cup) + 12 Argentina; 5 v Leverkusen 7 Mar 2012 (7-1, first 5-goal CL game); 86th at Real Betis 9 Dec 2012 (Betis 1-2 Barca, both his); 91st at Valladolid 22 Dec 2012",
+    "muller": "85 in 1972: 72 Bayern + 13 West Germany",
+    "chitalu": "Zambian FA/researchers: 107 in 1972 (49 league, 58 cup + internationals); FIFA said it could not verify",
+    "death": "Chitalu was Zambia's coach in the 27 April 1993 plane crash off Gabon"
+  },
+  "images": {
+    "messi": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi.png",
+    "muller": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/muller.png",
+    "messi_2012": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi_2012.png",
+    "messi_leverkusen": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi_leverkusen.png",
+    "messi_betis": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi_betis.png",
+    "guinness_cert": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/guinness_cert.png",
+    "zambia_1972": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/zambia_1972.png",
+    "chitalu_goal": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/chitalu_goal.png",
+    "old_records": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/old_records.png",
+    "memorial": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/memorial.png",
+    "chitalu": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/chitalu.png",
+    "chitalu_coach": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/chitalu_coach.png"
+  },
+  "lines": [
+    {
+      "text": "Who has scored the most goals in a single year?",
+      "scene": {
+        "hook": true,
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "messi_2012",
+            "big": "?",
+            "bigSize": 420,
+            "bigY": 1300,
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "Most people would say Lionel Messi. In 2012, he scored ninety-one.",
+      "scene": {
+        "bg": "navy",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "messi"
+            },
+            "name": "LIONEL MESSI",
+            "w": 0
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 91,
+            "word": "GOALS IN 2012",
+            "size": 420,
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "Seventy-nine for Barcelona. Twelve for Argentina.",
+      "scene": {
+        "bg": "navy",
+        "type": "grid",
+        "steps": [
+          {
+            "type": "grid",
+            "legend": true,
+            "groups": [
+              {
+                "n": 79,
+                "col": "#a50044",
+                "label": "BARCELONA"
+              },
+              {
+                "n": 12,
+                "col": "#75aadb",
+                "label": "ARGENTINA"
+              }
+            ],
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "How? Fifty-nine in La Liga. Thirteen in the Champions League, five of them in one night against Leverkusen.",
+      "scene": {
+        "bg": "navy",
+        "type": "x2_bars",
+        "steps": [
+          {
+            "type": "x2_bars",
+            "title": "HOW HE GOT TO 91",
+            "items": [
+              {
+                "label": "LA LIGA",
+                "v": 59,
+                "col": "#a50044"
+              },
+              {
+                "label": "CHAMPIONS LEAGUE",
+                "v": 13,
+                "col": "#1d3fa0"
+              },
+              {
+                "label": "ARGENTINA",
+                "v": 12,
+                "col": "#75aadb"
+              },
+              {
+                "label": "COPA DEL REY",
+                "v": 5,
+                "col": "#f2c230"
+              },
+              {
+                "label": "SUPER CUP",
+                "v": 2,
+                "col": "#ffffff"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "messi_leverkusen",
+            "label": "BARCELONA 7-1 LEVERKUSEN",
+            "big": "5 GOALS",
+            "bigSize": 230,
+            "bigY": 1300,
+            "w": 15
+          }
+        ]
+      }
+    },
+    {
+      "text": "On the ninth of December, at Real Betis, he scored number eighty-six.",
+      "scene": {
+        "bg": "navy",
+        "type": "counter",
+        "steps": [
+          {
+            "type": "counter",
+            "prop": "calendar",
+            "top": "DECEMBER",
+            "from": 1,
+            "to": 9,
+            "w": 0,
+            "calScale": 2.6,
+            "calY": 760
+          },
+          {
+            "type": "picture",
+            "image": "messi_betis",
+            "label": "REAL BETIS 1-2 BARCELONA",
+            "w": 6
+          },
+          {
+            "type": "picture",
+            "image": "messi_betis",
+            "big": "86",
+            "bigSize": 420,
+            "bigY": 1250,
+            "tr": "cut",
+            "w": 11
+          }
+        ]
+      }
+    },
+    {
+      "text": "That broke a record that had stood for forty years. Gerd Müller's eighty-five, in 1972.",
+      "scene": {
+        "bg": "purple",
+        "type": "years",
+        "steps": [
+          {
+            "type": "years",
+            "items": [
+              {
+                "year": "1972",
+                "top": "RECORD",
+                "label": "85 goals",
+                "cross": true
+              },
+              {
+                "year": "2012",
+                "top": "NEW",
+                "label": "86 and counting",
+                "tick": true,
+                "head": "#1ea85a"
+              }
+            ],
+            "w": 0
+          },
+          {
+            "type": "portrait",
+            "person": {
+              "image": "muller"
+            },
+            "name": "GERD MÜLLER",
+            "bg": "red",
+            "w": 10
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 85,
+            "word": "GOALS IN 1972",
+            "size": 420,
+            "bg": "red",
+            "w": 12
+          }
+        ]
+      }
+    },
+    {
+      "text": "Seventy-two for Bayern Munich, thirteen for West Germany.",
+      "scene": {
+        "bg": "red",
+        "type": "statbars",
+        "steps": [
+          {
+            "type": "statbars",
+            "person": {
+              "image": "muller"
+            },
+            "stats": [
+              {
+                "v": 72,
+                "label": "BAYERN MUNICH",
+                "col": "#dc052d"
+              },
+              {
+                "v": 13,
+                "label": "WEST GERMANY",
+                "col": "#111"
+              }
+            ],
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "Messi's last goal came at Valladolid, three days before Christmas. Ninety-one.",
+      "scene": {
+        "bg": "navy",
+        "type": "counter",
+        "steps": [
+          {
+            "type": "counter",
+            "prop": "calendar",
+            "top": "DECEMBER",
+            "from": 9,
+            "to": 22,
+            "w": 0,
+            "calScale": 2.6,
+            "calY": 760
+          },
+          {
+            "type": "grid",
+            "instant": true,
+            "legend": true,
+            "groups": [
+              {
+                "n": 79,
+                "col": "#a50044",
+                "label": "BARCELONA"
+              },
+              {
+                "n": 12,
+                "col": "#75aadb",
+                "label": "ARGENTINA"
+              }
+            ],
+            "w": 10
+          }
+        ]
+      }
+    },
+    {
+      "text": "Guinness made it the official world record.",
+      "scene": {
+        "bg": "navy",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "guinness_cert",
+            "stamp": "WORLD RECORD",
+            "stampY": 1350,
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "But in Zambia, they tell a very different story.",
+      "scene": {
+        "bg": "green",
+        "type": "flag",
+        "steps": [
+          {
+            "type": "flag",
+            "flag": {
+              "base": "#198a00",
+              "emblem": "#ef7d00",
+              "stripes": [
+                {
+                  "x0": 0.62,
+                  "x1": 0.75,
+                  "col": "#de2010",
+                  "top": 0.38
+                },
+                {
+                  "x0": 0.75,
+                  "x1": 0.875,
+                  "col": "#111111",
+                  "top": 0.38
+                },
+                {
+                  "x0": 0.875,
+                  "x1": 1.0,
+                  "col": "#ef7d00",
+                  "top": 0.38
+                }
+              ]
+            },
+            "label": "ZAMBIA",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "zambia_1972",
+            "label": "ZAMBIA · 1972",
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "Godfrey Chitalu. A striker for Kabwe Warriors, and for Zambia.",
+      "scene": {
+        "bg": "green",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "chitalu"
+            },
+            "name": "GODFREY CHITALU",
+            "w": 0
+          },
+          {
+            "type": "statement",
+            "text": "KABWE WARRIORS|+ ZAMBIA",
+            "hi": 1,
+            "size": 140,
+            "w": 5
+          }
+        ]
+      }
+    },
+    {
+      "text": "Researchers there say that in 1972, Müller's year, he scored a hundred and seven.",
+      "scene": {
+        "bg": "green",
+        "type": "picture",
+        "steps": [
+          {
+            "type": "picture",
+            "image": "chitalu_goal",
+            "label": "THE SAME YEAR AS MÜLLER",
+            "w": 0
+          },
+          {
+            "type": "counter",
+            "from": 0,
+            "to": 107,
+            "word": "GOALS IN 1972",
+            "size": 420,
+            "w": 11
+          }
+        ]
+      }
+    },
+    {
+      "text": "Forty-nine in the league. Fifty-eight in cups and for his country.",
+      "scene": {
+        "bg": "navy",
+        "type": "grid",
+        "steps": [
+          {
+            "type": "grid",
+            "legend": true,
+            "cols": 12,
+            "groups": [
+              {
+                "n": 49,
+                "col": "#198a00",
+                "label": "LEAGUE"
+              },
+              {
+                "n": 58,
+                "col": "#ef7d00",
+                "label": "CUPS + ZAMBIA"
+              }
+            ],
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "So why isn't that the record? FIFA said it couldn't check it.",
+      "scene": {
+        "bg": "purple",
+        "type": "versus",
+        "steps": [
+          {
+            "type": "versus",
+            "left": {
+              "image": "messi"
+            },
+            "leftNum": "91",
+            "leftName": "MESSI",
+            "right": {
+              "image": "chitalu"
+            },
+            "rightNum": "107",
+            "rightName": "CHITALU",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "old_records",
+            "stamp": "UNVERIFIED",
+            "stampY": 1350,
+            "w": 6
+          }
+        ]
+      }
+    },
+    {
+      "text": "A lot of the match reports from back then are patchy, or lost.",
+      "scene": {
+        "bg": "orange",
+        "type": "ledger",
+        "steps": [
+          {
+            "type": "ledger",
+            "title": "1972",
+            "title2": "RESULTS",
+            "w": 0
+          }
+        ]
+      }
+    },
+    {
+      "text": "And Chitalu can't tell his side. He died in 1993, coaching Zambia, when the team's plane crashed off Gabon.",
+      "scene": {
+        "bg": "navy",
+        "type": "portrait",
+        "steps": [
+          {
+            "type": "portrait",
+            "person": {
+              "image": "chitalu_coach"
+            },
+            "name": "GODFREY CHITALU · ZAMBIA COACH",
+            "w": 0
+          },
+          {
+            "type": "picture",
+            "image": "memorial",
+            "label": "27 APRIL 1993",
+            "w": 7
+          }
+        ]
+      }
+    },
+    {
+      "text": "So who really holds the record? Ninety-one, or a hundred and seven?",
+      "scene": {
+        "bg": "purple",
+        "type": "versus",
+        "steps": [
+          {
+            "type": "versus",
+            "left": {
+              "image": "messi"
+            },
+            "leftNum": "91",
+            "leftName": "MESSI · 2012",
+            "right": {
+              "image": "chitalu"
+            },
+            "rightNum": "107",
+            "rightName": "CHITALU · 1972",
+            "w": 0
+          }
+        ]
+      }
+    }
+  ]
+}

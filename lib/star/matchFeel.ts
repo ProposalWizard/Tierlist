@@ -27,6 +27,7 @@
  * it is tested. The dials (sizes) live here too and are edited on
  * /star-animations-dev → Feel.
  */
+import { vibrationOn } from "./tapFeel";
 import { useSyncExternalStore } from "react";
 
 // ── The switch ───────────────────────────────────────────────────────────
@@ -324,7 +325,7 @@ export function keeperDiveArc(lunge: number, low: boolean, D: FeelDials = DEFAUL
 
 /** Phone buzz, where the phone has one. Never throws. */
 export function feelHaptic(ms: number): void {
-  if (!(ms > 0)) return;
+  if (!(ms > 0) || !vibrationOn()) return; // Settings → Vibration (lib/star/tapFeel.ts)
   try {
     const nav = typeof navigator !== "undefined" ? (navigator as Navigator & { vibrate?: (p: number | number[]) => boolean }) : null;
     if (nav && typeof nav.vibrate === "function") nav.vibrate(Math.round(ms));

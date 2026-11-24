@@ -11,6 +11,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
+import { sendUpdate } from "@/lib/discord";
 import type { TeamPerson } from "./config";
 import type { TeamAck } from "./extras";
 import type { BotRow } from "./channels";
@@ -47,7 +48,7 @@ export async function saveBotSettings(sb: SupabaseClient, bot: string, s: Pick<B
   return botSettings([data as BotRow], bot);
 }
 
-export interface PatchBotRun { ok: boolean; off?: boolean; posted: string[]; nudged: string[]; removed: number; error?: string }
+export interface PatchBotRun { ok: boolean; off?: boolean; posted: string[]; nudged: string[]; removed: number; discord?: string[]; error?: string }
 
 /** One run: announce what is new, send due reminders, tidy doubles. Never throws. */
 export async function runPatchBot(sb: SupabaseClient, now: Date = new Date()): Promise<PatchBotRun> {
@@ -59,9 +60,11 @@ export async function runPatchBot(sb: SupabaseClient, now: Date = new Date()): P
     if (!settings.enabled) return { ...out, off: true };
 
     const posts = announcePlan({ notes, rows });
+    const mineIds = new Map<number, string>();
     for (const p of posts) {
-      const { error } = await sb.from("team_bot_posts").insert(p);
+      const { data, error } = await sb.from("team_bot_posts").insert(p).select("id").single();
       if (error) throw new Error(error.message);
+      mineIds.set((data as { id: number }).id, String(p.meta.version));
       out.posted.push(String(p.meta.version));
     }
     if (posts.length) {
@@ -72,6 +75,13 @@ export async function runPatchBot(sb: SupabaseClient, now: Date = new Date()): P
         await sb.from("team_bot_posts").delete().in("id", extra);
         out.removed = extra.length;
         rows = rows.filter((r) => !extra.includes(r.id));
+      }
+      // Once per version: only the run whose post survived the tidy sends a note with a
+      // player-facing `discord` line to the server's #updates (lib/discord.ts).
+      for (const [id, version] of Array.from(mineIds)) {
+        if (extra.includes(id)) continue;
+        const note = BUILT_IN_PATCH_NOTES.find((n) => n.version === version);
+        if (note) (out.discord ??= []).push(`${version}: ${await sendUpdate(note)}`);
       }
     }
 

@@ -52,6 +52,7 @@ import { PACKED_APP } from "../app/packed";
 import type { CareerState, CareerUnlocks } from "./types";
 import { LIFESTYLE_ITEMS, LIFESTYLE_ALL_LEVELS } from "./shopData";
 import { storyLockHint } from "./story";
+import { MONEY_SIGN } from "./money";
 
 export type Feature = "league" | "stats" | "play" | "shop" | "achievements" | "relations" | "phone" | "sponsors" | "training";
 
@@ -374,8 +375,8 @@ export function phoneShortfall(c: Pick<CareerState, "money">): number {
 export function phoneStepLine(c: Pick<CareerState, "money">): string {
   const need = phoneShortfall(c);
   return need > 0
-    ? `A phone costs ★${phonePrice()}. You need ★${need} more. Matches pay you`
-    : `A phone costs ★${phonePrice()}. You can buy it now`;
+    ? `A phone costs ${MONEY_SIGN}${phonePrice()}. You need ${MONEY_SIGN}${need} more. Matches pay you`
+    : `A phone costs ${MONEY_SIGN}${phonePrice()}. You can buy it now`;
 }
 
 export function stepDone(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">, id: StepId): boolean {

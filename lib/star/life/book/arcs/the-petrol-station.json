@@ -1,0 +1,338 @@
+{
+ "id": "arc-the-petrol-station",
+ "title": "Two in the morning",
+ "owner": "tabloid",
+ "summary": "The tabloid has a photo of you at a petrol station at two in the morning, buying sweets, and they ring for a comment. What you say becomes the story. A season on, the same reporter wants another one.",
+ "size": "small",
+ "about": {
+  "who": [
+   "tabloid reporter"
+  ],
+  "tone": [
+   "funny",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-sweets-story",
+   "title": "The sweets story",
+   "text": "You laughed off a two a.m. photo, and now you're the footballer who likes fizzy cola bottles."
+  },
+  {
+   "id": "no-comment-man",
+   "title": "No comment",
+   "text": "You said no comment, and the story wrote itself the worst way."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "pet2-1-call",
+   "title": "For a comment",
+   "n": 1,
+   "event": {
+    "id": "arc-pet2-1-call",
+    "title": "For a comment",
+    "category": "press",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{tabloid.name} from the {tabloid.outlet} rings your mobile, which he shouldn't have. They've got a photo of you at a petrol station at two in the morning in a dressing gown."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "tabloid",
+       "say": [
+        "\"We're running it tomorrow. Two a.m., two days before a game. What were you doing?\""
+       ],
+       "replies": [
+        {
+         "id": "truth",
+         "label": "\"Buying fizzy cola bottles. I couldn't sleep.\"",
+         "tone": "honest",
+         "goto": "t2"
+        },
+        {
+         "id": "joke",
+         "label": "\"Petrol. It's a petrol station.\"",
+         "tone": "confident",
+         "goto": "t2"
+        },
+        {
+         "id": "angry",
+         "label": "\"How did you get this number?\"",
+         "tone": "fiery",
+         "end": "angry"
+        },
+        {
+         "id": "quiet",
+         "label": "\"No comment.\"",
+         "silent": true,
+         "end": "no-comment"
+        }
+       ]
+      },
+      "t2": {
+       "who": "tabloid",
+       "say": [
+        "He laughs, despite himself. \"Cola bottles. Can I use that?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Use it. And the dressing gown was a present.\"",
+         "tone": "confident",
+         "end": "sweets"
+        },
+        {
+         "id": "no",
+         "label": "\"Just say I was getting petrol.\"",
+         "tone": "calm",
+         "end": "petrol"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "sweets": [
+       {
+        "text": "\"STAR'S 2AM SWEET TOOTH.\" A sweet company sends you forty bags of cola bottles. The lads eat them on the coach.",
+        "effects": {
+         "fans": 3,
+         "fame": 2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "tabloid",
+          "tag": "gave-me-the-cola-bottles",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "laughed"
+         }
+        }
+       }
+      ],
+      "petrol": [
+       {
+        "text": "It's a small story on page thirty. Nobody reads page thirty.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "laughed"
+         }
+        }
+       }
+      ],
+      "angry": [
+       {
+        "text": "\"STAR IN 2AM RAGE.\" They use the dressing gown photo as big as they can.",
+        "effects": {
+         "fans": -2,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": -4,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "tabloid",
+          "tag": "shouted-down-the-phone",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cold"
+         }
+        }
+       }
+      ],
+      "no-comment": [
+       {
+        "text": "\"NO COMMENT FROM 2AM STAR.\" It reads like you were doing something worse.",
+        "effects": {
+         "fans": -2,
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cold"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "The tabloid wants a comment"
+  },
+  {
+   "id": "pet2-2-again",
+   "title": "Another call",
+   "after": {
+    "beat": "pet2-1-call",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-pet2-2-again",
+    "title": "Another call",
+    "category": "press",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {tabloid.short} again. \"We've got you leaving a restaurant at eleven. Before you say anything, I'm ringing you first this time.\""
+    ],
+    "choices": [
+     {
+      "id": "laugh",
+      "label": "\"What did I have?\"",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='laughed'",
+        "text": "\"Sticky toffee pudding, the waiter says.\" It runs as a funny little piece with a photo of a pudding.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-sweets-story"
+        }
+       },
+       {
+        "text": "He tells you, and then runs it as \"STAR'S LATE NIGHT AGAIN\", because last time you gave him nothing.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "no-comment-man"
+        }
+       }
+      ]
+     },
+     {
+      "id": "none",
+      "label": "\"No comment.\"",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "if": "arc.path=='laughed'",
+        "text": "He sighs. \"You were all right last time.\" It runs anyway, small.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "end": "the-sweets-story"
+        }
+       },
+       {
+        "text": "It runs big.",
+        "effects": {
+         "fans": -2
+        },
+        "arc": {
+         "end": "no-comment-man"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "A season on, the same reporter"
+  }
+ ]
+}

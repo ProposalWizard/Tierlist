@@ -24,7 +24,7 @@ import type { CareerState, Boot } from "@/lib/star/types";
 import { baseIdOf } from "@/lib/star/shopData";
 import { weeksOfWallet } from "@/lib/star/economy";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import BootPicture, { BOOT_LOOK } from "./BootPicture";
 import ShopSheet, { weeksText } from "./ShopSheet";
 import { PressButton, Shine, rgba } from "./ui";
@@ -120,7 +120,7 @@ export default function BootShelf({ career, boots, banned, homeLevel, soldOut, o
                           {isBanned && <span className="rounded bg-red-600 px-1 py-0.5 text-[8px] font-black leading-none text-white">BANNED</span>}
                         </div>
                         <div className="text-[10px] font-bold text-white/80">Pow +{shown.power} · Tec +{shown.technique}</div>
-                        <div className="text-[11px] font-black text-yellow-300">★{formatMoney(shown.price)} <span className="text-[9px] font-bold text-white/60">L{shown.level}</span></div>
+                        <div className="text-[11px] font-black text-yellow-300">{MONEY_SIGN}{formatMoney(shown.price)} <span className="text-[9px] font-bold text-white/60">L{shown.level}</span></div>
                       </div>
                       {wearing === id && <span className="absolute left-1 top-1 rounded-full bg-emerald-400 px-1.5 py-0.5 text-[9px] font-black text-emerald-950">WEARING</span>}
                     </button>
@@ -274,7 +274,7 @@ function BootSheet({ career, levels, level, banned, soldOut, pairsInBasket, setL
       {b.curve && <div className="mt-2 rounded-xl bg-sky-500/15 p-2 text-[11px] font-bold text-sky-100 ring-1 ring-sky-400/40">Swipe while a shot is in the air to bend, lift or dip it.</div>}
       {b.extraTouch && <div className="mt-2 rounded-xl bg-fuchsia-500/15 p-2 text-[11px] font-bold text-fuchsia-100 ring-1 ring-fuchsia-400/40">Touch Mode: after you strike it, chase it down for a second touch.</div>}
       <div className="mt-2 flex items-center justify-between px-1">
-        <div className="text-[18px] font-black text-yellow-300">★{formatMoney(b.price)}</div>
+        <div className="text-[18px] font-black text-yellow-300">{MONEY_SIGN}{formatMoney(b.price)}</div>
         <div className="text-[10px] font-bold text-white/70">{weeksText(weeksOfWallet(b.price, career.contract.wage))} of your income</div>
       </div>
       {banned ? (
@@ -282,12 +282,12 @@ function BootSheet({ career, levels, level, banned, soldOut, pairsInBasket, setL
           <div className="mb-2 text-center text-[11px] font-bold text-red-200">Banned by the FA — a real chance of getting caught buying it anyway.</div>
           <label className="mb-2 flex items-center gap-2 text-[10px] font-bold text-white/85">
             <input type="checkbox" checked={lawyers} onChange={(e) => setLawyers(e.target.checked)} />
-            Hire lawyers first (★{formatMoney(LAWYER_FEE)} — cuts the risk a lot, doesn&apos;t remove it)
+            Hire lawyers first ({MONEY_SIGN}{formatMoney(LAWYER_FEE)} — cuts the risk a lot, doesn&apos;t remove it)
           </label>
           <PressButton variant="danger" size="none" disabled={sold || career.money < blackMarketPrice(b.price) + (lawyers ? LAWYER_FEE : 0)}
             onClick={() => { const r = onBlackMarket(b, lawyers); setMsg(r.ok ? "Bought — nobody official noticed. This time." : (r.reason ?? "Failed")); }}
             className="w-full rounded-xl py-3 font-black">
-            {sold ? "Sold out — back next visit" : `Buy from shady guys — ★${formatMoney(blackMarketPrice(b.price))}`}
+            {sold ? "Sold out — back next visit" : `Buy from shady guys — ${MONEY_SIGN}${formatMoney(blackMarketPrice(b.price))}`}
           </PressButton>
           {msg && <div className="mt-2 text-center text-[10px] font-bold text-white/85">{msg}</div>}
         </div>
@@ -307,7 +307,7 @@ function BootSheet({ career, levels, level, banned, soldOut, pairsInBasket, setL
             onClick={() => { if (canBuy) onBuy(b); }}
             className="relative min-w-0 flex-1 overflow-hidden rounded-2xl py-3 text-[14px] font-black">
             {canBuy && <Shine loop every={4.5} />}
-            {canBuy ? `Buy now — ★${formatMoney(b.price)}` : "Not enough money"}
+            {canBuy ? `Buy now — ${MONEY_SIGN}${formatMoney(b.price)}` : "Not enough money"}
           </PressButton>
         </div>
       )}

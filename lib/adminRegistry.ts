@@ -133,6 +133,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-guest-dev", "Guest accounts", "Play without signing in: the ad landing pages and the save-your-career prompt", "rbd", "career", "Harry", "live", "own", "team"),
   P("/star-awards-night-dev", "Season awards night", "The awards read out in a small 3D hall, made-up results", "rbd", "career", "Leo", "live", "none", "team"),
   P("/star-relgames-dev", "Relationship games", "Play the boss, team-mate and fan mini-games", "rbd", "career", "Mikey", "live", "none", "team"),
+  P("/star-life-dev", "Living world", "People who remember, events with weight, time with team-mates (phase 1, off in the game)", "rbd", "career", "Harry", "live", "none", "team"),
   P("/star-goals-gallery-dev", "Career goals", "Stats → Goals with a made-up career; Hall of Fame best goals", "rbd", "career", "Leo", "live", "browser", "team"),
   P("/star-aerials-dev", "Headers and volleys", "Force any aerial move (header, volley, bicycle, scorpion) on a real chance", "rbd", "chances", "Harry", "live", "none", "team"),
   P("/star-goal-clips-dev", "Goal videos", "Record a goal and turn it into a video with sound", "rbd", "career", "Leo", "live", "browser", "team"),
@@ -174,6 +175,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-shop3d-dev", "3D shop", "Walk-around 3D shop", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-garden3d-dev", "3D garden", "Walk round the 3D garden", "rbd", "places3d", "Mikey", "live", "none", "team"),
   P("/star-home3d-dev", "3D house", "Walk round the 3D house", "rbd", "places3d", "Harry", "live", "none", "team"),
+  P("/star-world3d-dev", "3D world kit", "People who use things: sofa, TV, fridge, a bench, a visitor at the gate, tap to talk", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-training3d-dev", "3D training", "3D training pitch", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-scene-editor-dev", "3D scene editor", "Camera and light for every 3D scene (director, signing, office, shop, garden, house); Approve; Commit to game", "rbd", "places3d", "Harry", "live", "repo", "team"),
   P("/star-animations-dev", "2D animations", "2D New vs Old animations", "rbd", "players", "Leo", "live", "browser", "team"),
@@ -183,6 +185,8 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-sprites-dev", "3D match figures", "Every baked 3D match figure", "rbd", "players", "Leo", "live", "none", "team"),
   P("/admin/star-pass", "Star Pass", "Which reward sits at each Star Pass level", "rbd", "money", "Mikey", "live", "shared", "admin"),
   P("/admin/star-xp", "Career XP book", "How much career XP everything gives", "rbd", "money", "Mikey", "live", "shared", "admin"),
+  P("/star-phone3d-dev", "3D phone", "The 3D phone flow in pictures: tap Phone, an eye-blink opens on your hand holding the phone; HOME or put it away into your house", "rbd", "places3d", "Harry", "live", "none", "team"),
+  P("/star-shop-dev", "Menu shop", "The new menu shop (big picture, thumbnails, item sheet) on a sample career: look and try buying", "rbd", "money", "Harry", "live", "none", "team"),
   P("/star-store-dev", "Store test", "Try the store and paid items", "rbd", "money", "Harry", "live", "browser", "team"),
   P("/star-wallet-dev", "Gems test", "Gems on the server", "rbd", "money", "Harry", "live", "own", "team"),
   P("/star-tuning-dev", "Balance numbers", "Change the game's balance numbers on this device", "rbd", "money", "Harry", "live", "browser", "team"),
@@ -309,10 +313,11 @@ export const TEST_PAGES = new Set<string>([
   "/star-real-moments-dev", "/star-real-shots-dev", "/star-real-goals-dev", "/star-intl-dev", "/star-tournament-dev",
   "/star-3d-area-dev", "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev", "/star-garden3d-dev",
   "/star-home3d-dev", "/star-training3d-dev", "/star-anim3d-dev", "/star-people-dev", "/star-sprites-dev",
+  "/star-shop-dev", "/star-phone3d-dev",
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev",
   "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev", "/star-shootout-dev", "/star-weather-dev", "/star-live-chances-dev",
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev", "/star-awards-night-dev",
-  "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev",
+  "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev", "/star-life-dev",
 ]);
 export const isTestPage = (url: string) => TEST_PAGES.has(url);
 

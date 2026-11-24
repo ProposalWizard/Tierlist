@@ -15,3 +15,10 @@ come from free (CC0 1.0, public domain) packs, used unchanged:
 The old footballer's resting finger curl is copied from Quaternius
 "Universal Animation Library" Idle_Loop (CC0 1.0), https://quaternius.com.
 CC0 asks for no credit; this note is for our own records.
+
+mocap.glb, mocap-ual.glb (21 Nov 2026): besides the CMU motion capture
+(LICENSE-mocap.txt), ten clips come from Quaternius "Universal Animation
+Library" 1 (CC0 1.0, https://quaternius.com): walk_relaxed, walk_formal,
+jog_easy, idle_relaxed, idle_relaxed_m, idle_talk, seated_idle, seated_talk,
+sit_down_ual, stand_up_ual. The CC0 1.0 text and which UAL clip each one is:
+LICENSE-ual.txt (next to this file).

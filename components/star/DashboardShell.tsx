@@ -1,4 +1,5 @@
 "use client";
+import "./ui/kit.css";
 import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { HomeFxStyles } from "./HomeFx";
@@ -72,6 +73,9 @@ interface Props {
 
 export type { NavTab };
 
+/** The last measured shell height, kept between screens (see below). */
+let lastShellH: number | null = null;
+
 export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, fullBleed = false, compact = false, onHome, atHome = false, locked, hud, swipe = false, mediaUnread = false, onHelp, badges }: Props) {
   // A new message on the phone pings (lib/star/sfx.ts).
   useEffect(() => { preloadSfx(); }, []);
@@ -84,14 +88,19 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
   // always on screen (no page scroll — only the middle content area scrolls).
   // Measuring ourselves (not the nav) avoids grabbing the wrong element — the
   // page contains a second, viewport-tall <nav> inside the sidebar drawer.
+  // Tap speed (19 Nov 2026): the height is remembered between screens
+  // (lastShellH), so a new screen starts at the right size and the measure
+  // below finds nothing to change: one draw per tap, not two.
   const shellRef = useRef<HTMLDivElement>(null);
-  const [shellH, setShellH] = useState<number | null>(null);
+  const [shellH, setShellH] = useState<number | null>(lastShellH);
   useEffect(() => {
     const update = () => {
       const rect = shellRef.current?.getBoundingClientRect();
       if (!rect) return;
       const docTop = rect.top + window.scrollY;
-      setShellH(Math.max(400, window.innerHeight - docTop));
+      const h = Math.max(400, window.innerHeight - docTop);
+      lastShellH = h;
+      setShellH((prev) => (prev === h ? prev : h));
     };
     update();
     window.addEventListener("resize", update);
@@ -122,10 +131,6 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
             Cans card grew taller in its own redesign — the content itself
             still scrolls, only the track/thumb chrome is hidden. */}
         <HomeFxStyles />
-        <style>{`
-          .kib-shell-noscroll::-webkit-scrollbar { display: none; }
-          .kib-shell-noscroll { scrollbar-width: none; -ms-overflow-style: none; }
-        `}</style>
         <div data-tour="screen" className={`kib-shell-noscroll flex-1 min-h-0 overflow-y-auto ${fullBleed ? "" : swipe ? "pt-2" : "px-3 py-2"}`}>
           {children}
         </div>

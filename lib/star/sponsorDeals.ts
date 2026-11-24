@@ -6,6 +6,7 @@ import { wageShareFor } from "./wages";
 import { WAGE_FLOOR, bootPriceForWage } from "./economy";
 import { mulberry32 } from "./season";
 import { starLevel } from "./starPoints";
+import { MONEY_SIGN } from "./money";
 
 /**
  * SPONSORS, REBUILT — brands come to you (Mikey, 30 Sep 2026).
@@ -471,7 +472,7 @@ function progressTargets(d: BrandDeal, before: CareerState, after: CareerState, 
       case "rating": case "promotion": break; // judged at the end of the season
     }
     const done = t.kind !== "rating" && t.kind !== "promotion" && progress >= t.target;
-    if (done) { bonus += t.bonus; hit.push(`${d.brand}: ${targetLabel(t)} — bonus ★${t.bonus.toLocaleString("en-GB")}`); }
+    if (done) { bonus += t.bonus; hit.push(`${d.brand}: ${targetLabel(t)} — bonus ${MONEY_SIGN}${t.bonus.toLocaleString("en-GB")}`); }
     return { ...t, progress, run, done };
   });
   const mood = (stats.rating >= 7.5 ? 1 : stats.rating <= 5.5 ? -1 : 0) + (wonTrophy ? HAPPY.trophy : 0) + hit.length * HAPPY.hit;
@@ -515,7 +516,7 @@ export function brandsAfterSeason(before: CareerState, after: CareerState, promo
       let t = t0;
       if (!t.done && t.kind === "rating") t = { ...t, progress: avg10, done: avg10 >= t.target };
       if (!t.done && t.kind === "promotion" && promoted) t = { ...t, progress: 1, done: true };
-      if (t.done && !t0.done) { bonus += t.bonus; happiness += HAPPY.hit; say(`${d.brand}: ${targetLabel(t)} — bonus ★${t.bonus.toLocaleString("en-GB")}`); }
+      if (t.done && !t0.done) { bonus += t.bonus; happiness += HAPPY.hit; say(`${d.brand}: ${targetLabel(t)} — bonus ${MONEY_SIGN}${t.bonus.toLocaleString("en-GB")}`); }
       const over = t.period === "season" || d.seasonsLeft <= 1;
       if (!t.done && over) { happiness += HAPPY.miss; say(`${d.brand}: you missed "${targetLabel(t)}". No money lost; they are a little less happy.`); }
       targets.push(t);
@@ -561,8 +562,8 @@ export function signOffer(career: CareerState, offerId: string): BrandResult {
   const rest = s.offers.filter(x => x.id !== o.id && x.id !== o.rival);
 
   if (o.kind === "milestone") {
-    const brands = { ...s, offers: rest, paid: [...s.paid, o.id.replace(/^m-/, "")], news: push(s, `${o.brand} paid ★${o.signingOn.toLocaleString("en-GB")} for a one-off advert.`) };
-    return { ok: true, career: withBrands(career, brands, career.money + o.signingOn), message: `${o.brand} paid you ★${o.signingOn.toLocaleString("en-GB")}.` };
+    const brands = { ...s, offers: rest, paid: [...s.paid, o.id.replace(/^m-/, "")], news: push(s, `${o.brand} paid ${MONEY_SIGN}${o.signingOn.toLocaleString("en-GB")} for a one-off advert.`) };
+    return { ok: true, career: withBrands(career, brands, career.money + o.signingOn), message: `${o.brand} paid you ${MONEY_SIGN}${o.signingOn.toLocaleString("en-GB")}.` };
   }
 
   const replaced = o.replaces ? s.deals.find(d => d.id === o.replaces) : undefined;
@@ -576,10 +577,10 @@ export function signOffer(career: CareerState, offerId: string): BrandResult {
     happiness: o.kind === "renewal" ? Math.max(HAPPY.start, replaced?.happiness ?? HAPPY.start) : HAPPY.start,
     targets: o.targets.map(t => ({ ...t, progress: 0, done: false, run: 0 })), clause: o.clause,
   };
-  let news = push(s, `Signed with ${o.brand}: ★${o.weekly.toLocaleString("en-GB")} a week for ${o.seasons} season${o.seasons === 1 ? "" : "s"}. Signing-on payment ★${o.signingOn.toLocaleString("en-GB")}.`);
+  let news = push(s, `Signed with ${o.brand}: ${MONEY_SIGN}${o.weekly.toLocaleString("en-GB")} a week for ${o.seasons} season${o.seasons === 1 ? "" : "s"}. Signing-on payment ${MONEY_SIGN}${o.signingOn.toLocaleString("en-GB")}.`);
   if (replaced && o.kind === "poach") news = [`${o.brand} bought you out of your ${replaced.brand} deal.`, ...news].slice(0, 12);
   const brands: BrandsState = { ...s, seq: s.seq + 1, deals: [...others, deal], offers: rest, news };
-  return { ok: true, career: withBrands(career, brands, career.money + o.signingOn), message: `Here's your signing-on payment: ★${o.signingOn.toLocaleString("en-GB")}.` };
+  return { ok: true, career: withBrands(career, brands, career.money + o.signingOn), message: `Here's your signing-on payment: ${MONEY_SIGN}${o.signingOn.toLocaleString("en-GB")}.` };
 }
 
 export function declineOffer(career: CareerState, offerId: string): CareerState {
@@ -646,7 +647,7 @@ export function counterPoach(career: CareerState, offerId: string, roll: number)
   if (!o || !d || o.kind !== "poach") return { career, matched: false };
   const matched = roll < clamp(d.happiness / 100 + 0.1, 0.2, 0.9);
   const deals = s.deals.map(x => (x.id === d.id && matched ? { ...x, weekly: Math.max(x.weekly, o.weekly), guaranteed: Math.max(x.weekly, o.weekly) * WEEKS_PER_SEASON * x.seasonsTotal } : x));
-  const news = push(s, matched ? `${d.brand} matched ${o.brand}'s offer: ★${o.weekly.toLocaleString("en-GB")} a week.` : `${d.brand} would not match ${o.brand}'s offer. It is still on the table.`);
+  const news = push(s, matched ? `${d.brand} matched ${o.brand}'s offer: ${MONEY_SIGN}${o.weekly.toLocaleString("en-GB")} a week.` : `${d.brand} would not match ${o.brand}'s offer. It is still on the table.`);
   return { matched, career: withBrands(career, { ...s, deals, news, offers: matched ? s.offers.filter(x => x.id !== o.id) : s.offers }) };
 }
 
@@ -655,9 +656,9 @@ export function walkAway(career: CareerState, dealId: string): BrandResult {
   const s = brandsOf(career);
   const d = s.deals.find(x => x.id === dealId);
   if (!d) return { ok: false, reason: "That deal has gone." };
-  if (career.money < d.guaranteed) return { ok: false, reason: `Walking away costs ★${d.guaranteed.toLocaleString("en-GB")}. You can't afford it.` };
-  const brands = { ...s, deals: s.deals.filter(x => x.id !== dealId), news: push(s, `You bought yourself out of the ${d.brand} deal for ★${d.guaranteed.toLocaleString("en-GB")}.`) };
-  return { ok: true, career: withBrands(career, brands, career.money - d.guaranteed), message: `You paid ★${d.guaranteed.toLocaleString("en-GB")} to leave ${d.brand}.` };
+  if (career.money < d.guaranteed) return { ok: false, reason: `Walking away costs ${MONEY_SIGN}${d.guaranteed.toLocaleString("en-GB")}. You can't afford it.` };
+  const brands = { ...s, deals: s.deals.filter(x => x.id !== dealId), news: push(s, `You bought yourself out of the ${d.brand} deal for ${MONEY_SIGN}${d.guaranteed.toLocaleString("en-GB")}.`) };
+  return { ok: true, career: withBrands(career, brands, career.money - d.guaranteed), message: `You paid ${MONEY_SIGN}${d.guaranteed.toLocaleString("en-GB")} to leave ${d.brand}.` };
 }
 
 /** A scandal (a corruption story, a casino story). Behaviour-clause deals end; the rest are unhappy. */

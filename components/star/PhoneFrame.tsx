@@ -1,4 +1,5 @@
 "use client";
+import "./ui/kit.css";
 
 /**
  * A PHONE, ON SCREEN.
@@ -65,10 +66,6 @@ export default function PhoneFrame({
           all." A real phone doesn't show one either; the content still
           scrolls, this only hides the track/thumb chrome. Same pattern
           MatchCommentary.tsx's own feed already uses. */}
-      <style>{`
-        .kib-noscroll::-webkit-scrollbar { display: none; }
-        .kib-noscroll { scrollbar-width: none; -ms-overflow-style: none; }
-      `}</style>
       {/* The screen — a hair inset from the outer bezel, everything else
           (status bar, app chrome, content) lives inside this. */}
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2.3rem] bg-black" style={wallpaper}>

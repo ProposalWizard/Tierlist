@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type React from "react";
 import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
 import { useGameMusicOn, setGameMusicOn } from "@/lib/star/gameMusic";
+import { useVibrationOn, setVibrationOn } from "@/lib/star/tapFeel";
 import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { useMatchView3d, setMatchView3d } from "@/lib/star/matchView3d";
@@ -17,6 +18,7 @@ import FhrSwitchRow from "./FhrSwitchRow";
 import LiveChancesSettings from "./LiveChancesSettings";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import DataCredits, { DATA_CREDIT_SOURCES } from "./DataCredits";
+import DiscordButton from "@/components/DiscordButton";
 
 /**
  * THE SETTINGS THAT BELONG TO THIS DEVICE, NOT TO A SAVE.
@@ -119,6 +121,7 @@ export function QuickSwitches({ glow, fullscreen }: {
 }) {
   const sfxNow = useSfxOn();
   const musicNow = useGameMusicOn();
+  const vibrationNow = useVibrationOn();
   const [skipLineup, setSkipLineupState] = useState(() => getSkipLineup());
   const flipSkipLineup = () => { const next = !skipLineup; setSkipLineupState(next); setSkipLineup(next); };
   return (
@@ -127,6 +130,8 @@ export function QuickSwitches({ glow, fullscreen }: {
       <SetToggle label="Sound effects" on={sfxNow} onClick={() => { const on = !sfxNow; setSfxOn(on); if (on) sfx("ui-confirm"); }} />
       {/* Mikey, 21 Oct 2026: off by default; music for the home screens, matches and results (lib/star/gameMusic.ts). */}
       <SetToggle label="Game music" on={musicNow} onClick={() => setGameMusicOn(!musicNow)} />
+      {/* 19 Nov 2026: the light tick on every tap (app) and the match's buzz. On by default. */}
+      <SetToggle label="Vibration" on={vibrationNow} onClick={() => setVibrationOn(!vibrationNow)} />
       <div className="border-b border-white/10 py-2.5"><Quality3dRow /></div>
       <SetToggle label="Skip the line-up" on={skipLineup} onClick={flipSkipLineup} />
       {/* Harry, 20 Oct 2026: a toggle with a "?", on the first screen (also in the match's ⚙ and before kick-off). */}
@@ -308,6 +313,8 @@ export function SettingsTop({ glow, fullscreen }: {
     <>
       <SetSection className="mb-1.5 mt-1">Quick</SetSection>
       <QuickSwitches glow={glow} fullscreen={fullscreen} />
+      {/* Leo, 19 Nov 2026: the community link (draws nothing until lib/discord.ts has an invite). */}
+      <DiscordButton from="game-settings" sub="Report bugs, suggest features, see updates first" className="mt-2 w-full justify-center" />
     </>
   );
 }

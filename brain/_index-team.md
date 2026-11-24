@@ -46,3 +46,6 @@ RUL-TEAM-027 | When Mikey asks to measure, report or discuss something, report b
 RUL-TEAM-028 | "Every patch note: author, real date and time, every update with time and where, its own number (no base shared with anyone's, search all branches), a menu name saying what it is about, and the one standard page; checked by rules.mjs." | team,process
 RUL-TEAM-029 | Leo's chats: start with a plan as progress bars (steps, time each, % done), update them and the admin board often; end every task with yes/no lines (works? patch notes made/updated? live on admin page? merged into the game?), then at most 5 lines; ask for every approval together at the start or end. | admin,team,process,deploy
 RUL-TEAM-030 | A Team room bot never changes anything. A person's bot turns a bigger ask into a card only its owner can Accept; Accept adds one job to the owner's own to-do for their own Claude chat. | team,process,rule
+RUL-TEAM-031 | Propose designs to Harry throughout, tell him if Higgsfield is ever used, and show updates every 5 mins using images and visuals. | three-d,team
+RUL-TEAM-032 | Tell Harry when the connector for Supabase is needed, before starting a task that needs it (the connector is linked to another project, not Knowitball). | team
+RUL-TEAM-033 | Put all images and videos into this chat, even with the test pages. | ui,process,team

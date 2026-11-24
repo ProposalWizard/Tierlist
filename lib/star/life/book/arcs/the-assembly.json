@@ -1,0 +1,483 @@
+{
+ "id": "arc-the-assembly",
+ "title": "Her grandson's school",
+ "owner": "canteen",
+ "summary": "The woman who runs the canteen asks if you'd come to her grandson's school assembly. He's been telling everyone he knows you. Say yes and it's a promise. A season later the grandson turns up at the club.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "canteen"
+  ],
+  "tone": [
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "canteen",
+   "pick": "canteen"
+  }
+ ],
+ "vars": {
+  "went": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-grandson",
+   "title": "Her grandson",
+   "text": "You turned up at a school assembly, and the boy who said he knew you is in the academy now."
+  },
+  {
+   "id": "he-was-lying",
+   "title": "He was lying",
+   "text": "You didn't turn up. The grandson told the school you were stuck in traffic."
+  }
+ ],
+ "promises": {
+  "p-assembly": {
+   "id": "p-assembly",
+   "to": "canteen",
+   "text": "Go to her grandson's school assembly",
+   "due": {
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "keptBy": {
+    "beat": "sch-2-thursday",
+    "ends": [
+     "go"
+    ]
+   },
+   "dueText": "Thursday after next, at nine",
+   "kept": {
+    "text": "You said you'd go to the school, and you went.",
+    "npc": [
+     {
+      "slot": "canteen",
+      "bond": 4,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd be at the school.",
+    "npc": [
+     {
+      "slot": "canteen",
+      "bond": -8,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "canteen",
+      "tag": "broke-the-school-promise",
+      "strength": 3
+     }
+    ]
+   },
+   "remind": "\"Nine o'clock Thursday. He doesn't know. Don't be late.\""
+  }
+ },
+ "beats": [
+  {
+   "id": "sch-1-ask",
+   "title": "He says he knows you",
+   "n": 1,
+   "event": {
+    "id": "arc-sch-1-ask",
+    "title": "He says he knows you",
+    "category": "staff",
+    "place": "compound:canteen",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{canteen.name} gives you an extra potato, then leans on the hatch.",
+     "{if mem(canteen,'saved-the-crumble')}\"After the crumble business I feel I can ask you anything.\"{/if}"
+    ],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "canteen",
+       "say": [
+        "\"My grandson is nine. He's told his whole school he knows you, which he doesn't. Would you come to his assembly? Before half the class calls him a liar.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Tell me when and I'll be there.\"",
+         "tone": "kind",
+         "goto": "a2",
+         "promise": "p-assembly"
+        },
+        {
+         "id": "ask",
+         "label": "\"What do they want me to do?\"",
+         "tone": "honest",
+         "goto": "a-what"
+        },
+        {
+         "id": "no",
+         "label": "\"I don't really do schools.\"",
+         "tone": "cold",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "a-what"
+        }
+       ]
+      },
+      "a-what": {
+       "who": "canteen",
+       "say": [
+        "\"Stand at the front, say work hard and eat your vegetables. Ten minutes, Thursday after next.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Thursday after next.\"",
+         "tone": "kind",
+         "goto": "a2",
+         "promise": "p-assembly"
+        },
+        {
+         "id": "maybe",
+         "label": "\"I'll see what training's doing.\"",
+         "tone": "calm",
+         "end": "maybe"
+        }
+       ]
+      },
+      "a2": {
+       "who": "canteen",
+       "say": [
+        "\"Don't say anything to him. I want to see his face.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"I won't.\"",
+         "tone": "calm",
+         "end": "promised"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "promised": [
+       {
+        "text": "She puts a second potato on your plate without asking.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "said-id-come-to-the-school",
+          "strength": 3
+         }
+        ]
+       }
+      ],
+      "maybe": [
+       {
+        "text": "\"That means no,\" she says. She's not wrong, usually.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": -2
+         }
+        ]
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fair enough.\" The potatoes are smaller for a week.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": -4,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "wouldnt-do-the-school",
+          "strength": 2
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     }
+    ]
+   },
+   "hint": "The canteen has a favour"
+  },
+  {
+   "id": "sch-2-thursday",
+   "title": "Thursday after next",
+   "after": {
+    "beat": "sch-1-ask",
+    "weeks": [
+     1,
+     2
+    ]
+   },
+   "event": {
+    "id": "arc-sch-2-thursday",
+    "title": "Thursday after next",
+    "category": "staff",
+    "place": "town:school",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ],
+     "requires": [
+      "promise(p-assembly)"
+     ]
+    },
+    "setup": [
+     "Thursday after next. The assembly is at nine. Training starts at ten."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go to the school first.",
+      "tone": "kind",
+      "cost": {
+       "weekAction": 1
+      },
+      "outcomes": [
+       {
+        "text": "Her grandson sees you walk in and goes white, then red, then stands up on his chair. You tell three hundred children to eat their vegetables. You're late for training and you don't care.",
+        "effects": {
+         "boss": -1,
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 14,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "came-to-her-grandsons-school",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Go straight to training.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "{canteen.short} serves you at lunch without looking up. Her grandson's drawing of you is taped to the hatch, with the date crossed out.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": -12,
+          "respect": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "didnt-come-to-the-school",
+          "strength": 3
+         }
+        ],
+        "promiseBroken": [
+         "p-assembly"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     }
+    ]
+   },
+   "hint": "The school assembly",
+   "look": {
+    "chip": "Thursday"
+   }
+  },
+  {
+   "id": "sch-3-academy",
+   "title": "The academy trial",
+   "after": {
+    "beat": "sch-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-sch-3-academy",
+    "title": "The academy trial",
+    "category": "staff",
+    "place": "compound:pitch-2",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "canteen",
+    "variants": [
+     {
+      "if": "!sameClub",
+      "template": "text-thread",
+      "place": "home",
+      "setupSwap": "A text from {canteen.short} at your old club. A photo of a boy in a training top."
+     }
+    ],
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. There's a trial for the under-10s on pitch two, and one of the boys keeps looking at the first-team building. It's her grandson, in his big brother's boots."
+    ],
+    "choices": [
+     {
+      "id": "wave",
+      "label": "Go over and say hello.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.went==1",
+        "text": "\"He knows you,\" you tell the coach running the trial. He doesn't stop talking about it for a year.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "looked-after-her-grandson",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-grandson"
+        }
+       },
+       {
+        "text": "The boy looks at you and then away. \"You were stuck in traffic,\" he says. He says it like a question.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "he-was-lying"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Let him get on with it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.went==1",
+        "text": "He scores twice. {canteen.short} tells you at lunch, and she doesn't stop smiling all day.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-grandson"
+        }
+       },
+       {
+        "text": "He doesn't get picked. {canteen.short} says it's for the best.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "end": "he-was-lying"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     }
+    ]
+   },
+   "hint": "A season on, a small boy at the club"
+  }
+ ]
+}

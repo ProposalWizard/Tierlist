@@ -26,7 +26,7 @@ import {
 import { leagueNameFor } from "@/lib/star/calendar";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import TrophyImage from "./TrophyImage";
 import StylePicture from "./StylePicture";
@@ -358,7 +358,7 @@ function Journey({ o }: { o: CareerOverviewData }) {
             {k < o.spells.length - 1 && (
               <div className="flex w-[28px] flex-col items-center pt-[18px]">
                 <svg width="22" height="10" viewBox="0 0 22 10" aria-hidden><path d="M0 5h17M13 1l5 4-5 4" stroke="rgba(255,255,255,.55)" strokeWidth="1.6" fill="none" /></svg>
-                {sp.feeOut !== undefined && sp.feeOut > 0 && <span className="mt-0.5 text-[9.5px] font-black tabular-nums text-amber-200">★{formatMoney(sp.feeOut)}</span>}
+                {sp.feeOut !== undefined && sp.feeOut > 0 && <span className="mt-0.5 text-[9.5px] font-black tabular-nums text-amber-200">{MONEY_SIGN}{formatMoney(sp.feeOut)}</span>}
               </div>
             )}
           </div>
@@ -480,7 +480,7 @@ function SeasonDetail({ s, o, won }: { s: OverviewSeason; o: CareerOverviewData;
         <div className="mb-1.5 flex gap-3 text-[10.5px] font-bold text-white/75">
           <span><b className="text-white">{s.stats.apps}</b> apps</span>
           <span><b className="text-white">{s.stats.motm}</b> Star Man</span>
-          {s.arrivedFrom && <span>from <b className="text-white">{short(s.arrivedFrom.club)}</b>{s.arrivedFrom.fee > 0 ? ` · ★${formatMoney(s.arrivedFrom.fee)}` : ""}</span>}
+          {s.arrivedFrom && <span>from <b className="text-white">{short(s.arrivedFrom.club)}</b>{s.arrivedFrom.fee > 0 ? ` · ${MONEY_SIGN}${formatMoney(s.arrivedFrom.fee)}` : ""}</span>}
         </div>
       )}
       {won && won.length > 0 && (
@@ -604,11 +604,11 @@ function ClubsPage({ o }: { o: CareerOverviewData }) {
                     <div className="truncate text-[21px] uppercase leading-tight text-white sk-display">{short(cl.club)}</div>
                     <div className="text-[11.5px] font-bold text-white/80">{cl.years} · {cl.seasons} season{cl.seasons === 1 ? "" : "s"}</div>
                     <div className="mt-1 flex flex-wrap gap-1">
-                      {cl.feeIn !== undefined && <Chip>Signed ★{formatMoney(cl.feeIn)}</Chip>}
-                      {cl.feeOut !== undefined && <Chip>Sold ★{formatMoney(cl.feeOut)}</Chip>}
+                      {cl.feeIn !== undefined && <Chip>Signed {MONEY_SIGN}{formatMoney(cl.feeIn)}</Chip>}
+                      {cl.feeOut !== undefined && <Chip>Sold {MONEY_SIGN}{formatMoney(cl.feeOut)}</Chip>}
                       {cl.feeIn === undefined && k === 0 && <Chip>Academy</Chip>}
                       {cl.last && <Chip gold>Finished here</Chip>}
-                      {cl.testimonial !== undefined && <Chip gold>Testimonial ★{formatMoney(cl.testimonial)}</Chip>}
+                      {cl.testimonial !== undefined && <Chip gold>Testimonial {MONEY_SIGN}{formatMoney(cl.testimonial)}</Chip>}
                     </div>
                   </div>
                 </div>
@@ -795,8 +795,8 @@ function LifePage({ o }: { o: CareerOverviewData }) {
     <>
       <div className="mt-2 px-3 py-3 text-center" style={{ background: "linear-gradient(180deg, rgba(251,191,36,.18), rgba(251,191,36,.04))", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.35)" }}>
         <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-200">In the bank</div>
-        <div className="sk-num mt-0.5 text-[36px] leading-none text-white">★<CountUp value={l.money} ms={1200} format={(n) => formatMoney(Math.round(n))} /></div>
-        {l.testimonial && <div className="mt-1 text-[11px] font-bold text-white/80">incl. a testimonial at {short(l.testimonial.club)}: ★{formatMoney(l.testimonial.payout)}</div>}
+        <div className="sk-num mt-0.5 text-[36px] leading-none text-white">{MONEY_SIGN}<CountUp value={l.money} ms={1200} format={(n) => formatMoney(Math.round(n))} /></div>
+        {l.testimonial && <div className="mt-1 text-[11px] font-bold text-white/80">incl. a testimonial at {short(l.testimonial.club)}: {MONEY_SIGN}{formatMoney(l.testimonial.payout)}</div>}
       </div>
 
       <Heading>Standing</Heading>
@@ -833,7 +833,7 @@ function LifePage({ o }: { o: CareerOverviewData }) {
       {(l.horse || l.sponsors.length > 0 || l.clubsOwned.length > 0 || l.presidencies.length > 0 || l.son) && <Heading>Everything else</Heading>}
       <div className="space-y-1">
         {l.horse && (
-          <LifeRow icon="🐎" title={l.horse.name} sub={`${l.horse.won} wins from ${l.horse.run} races`} value={`★${formatMoney(l.horse.earnings)}`} />
+          <LifeRow icon="🐎" title={l.horse.name} sub={`${l.horse.won} wins from ${l.horse.run} races`} value={`${MONEY_SIGN}${formatMoney(l.horse.earnings)}`} />
         )}
         {l.sponsors.length > 0 && (
           <LifeRow icon="🤝" title="Sponsors" sub={l.sponsors.map(s => s.brand).join(" · ")} value={String(l.sponsors.length)} dots={l.sponsors.map(s => s.color)} />

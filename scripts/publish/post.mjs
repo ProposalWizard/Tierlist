@@ -6,6 +6,7 @@
  *        [--at 2026-11-12T18:30:00Z] [--ig "…"] [--fb "…"] [--yt "…"] [--site https://knowitball.co.uk]
  *   node scripts/publish/post.mjs --status          the accounts, the queue and the numbers
  *   node scripts/publish/post.mjs --tick            run the poster now instead of waiting for the 5-minute timer
+ *   node scripts/publish/post.mjs --stats           live numbers: re-read every recent post's numbers from the apps now
  *
  * Auth: every request carries the header x-publish-agent. In a cloud chat the network proxy adds it (a network
  * secret for host knowitball.co.uk, header x-publish-agent = PUBLISH_AGENT_TOKEN); locally set PUBLISH_AGENT_TOKEN.
@@ -18,7 +19,9 @@ const args = process.argv.slice(2);
 const flag = (n) => { const i = args.indexOf(`--${n}`); return i >= 0 ? args[i + 1] : undefined; };
 const has = (n) => args.includes(`--${n}`);
 const site = (flag("site") || process.env.PUBLISH_SITE || "https://knowitball.co.uk").replace(/\/$/, "");
-const headers = { "Content-Type": "application/json", "x-publish-agent": process.env.PUBLISH_AGENT_TOKEN || "set-by-proxy" };
+const key = process.env.PUBLISH_AGENT_TOKEN;
+// Locally: the key from the environment. In a cloud chat: the network proxy puts the saved key into Authorization.
+const headers = { "Content-Type": "application/json", ...(key ? { "x-publish-agent": key } : { Authorization: "Bearer set-by-proxy" }) };
 
 async function call(path, init = {}) {
   const r = await fetch(site + path, { ...init, headers: { ...headers, ...(init.headers || {}) } });
@@ -34,12 +37,13 @@ function show(d) {
     for (const pl of p.platforms) {
       const r = p.results?.[pl] || {};
       const stats = r.stats ? Object.entries(r.stats).map(([k, v]) => `${v} ${k}`).join(", ") : "";
-      console.log(`   ${pl}: ${r.stage || "pending"}${r.link ? " " + r.link : ""}${stats ? " · " + stats : ""}${r.error ? " · " + r.error : ""}`);
+      console.log(`   ${pl}: ${r.stage || "pending"}${r.link ? " " + r.link : ""}${stats ? " · " + stats : ""}${r.error ? " · " + r.error : ""}${r.note ? " · [" + r.note + "]" : ""}`);
     }
   }
 }
 
 if (has("status")) { show(await call("/api/admin/publish")); process.exit(0); }
+if (has("stats")) { const t = await call("/api/admin/publish/tick?fresh=1", { method: "POST", body: "{}" }); console.log(`Re-read ${t.statsRefreshed} numbers from the apps.${t.errors?.length ? " Errors: " + t.errors.join(" | ") : ""}`); show(await call("/api/admin/publish")); process.exit(0); }
 if (has("tick")) { console.log(JSON.stringify(await call("/api/admin/publish/tick", { method: "POST", body: "{}" }), null, 2)); process.exit(0); }
 
 const file = args.find((a, i) => !a.startsWith("--") && !(i > 0 && args[i - 1].startsWith("--")));

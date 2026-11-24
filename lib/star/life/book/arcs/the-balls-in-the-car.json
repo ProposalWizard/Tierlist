@@ -1,0 +1,395 @@
+{
+ "id": "arc-the-balls-in-the-car",
+ "title": "Two hundred balls",
+ "owner": "lad",
+ "summary": "The lads are filling the new signing's car with footballs and you're the one who has to keep him talking. Help, warn him, or stay out of it. Next season he gets someone back.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "lad",
+   "pick": "squad",
+   "where": [
+    "age<=26"
+   ],
+   "order": "bond-asc"
+  },
+  {
+   "slot": "ring",
+   "pick": "squad",
+   "order": "bond-desc"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "got-you-back",
+   "title": "He got you back",
+   "text": "You helped fill his car with balls. A season later, your car was full of something worse."
+  },
+  {
+   "id": "the-tip-off",
+   "title": "The tip-off",
+   "text": "You warned him. He's never forgotten that, and neither have the lads."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "prk-1-car",
+   "title": "Keep him talking",
+   "n": 1,
+   "event": {
+    "id": "arc-prk-1-car",
+    "title": "Keep him talking",
+    "category": "teammates",
+    "place": "compound:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "ring",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{ring.name} has the kit man's van keys and a grin. Every spare ball at the club is in a pile by {lad.name}'s car."
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "ring",
+       "say": [
+        "\"He's in the canteen. Keep him in there for ten minutes. Ask him about his old club, he never stops.\""
+       ],
+       "replies": [
+        {
+         "id": "in",
+         "label": "Go and keep him talking.",
+         "tone": "confident",
+         "end": "helped"
+        },
+        {
+         "id": "warn",
+         "label": "Go and tell him.",
+         "tone": "honest",
+         "goto": "p-warn"
+        },
+        {
+         "id": "out",
+         "label": "\"Leave me out of it.\"",
+         "tone": "calm",
+         "end": "out"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "out"
+        }
+       ]
+      },
+      "p-warn": {
+       "who": "lad",
+       "say": [
+        "{lad.short} looks out of the canteen window at his car, then at you. \"How many balls?\""
+       ],
+       "replies": [
+        {
+         "id": "all",
+         "label": "\"All of them.\"",
+         "tone": "honest",
+         "end": "warned"
+        },
+        {
+         "id": "join",
+         "label": "\"Enough. Want to put some in {ring.short}'s car instead?\"",
+         "tone": "reckless",
+         "end": "turned"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "helped": [
+       {
+        "text": "He opens the door and they come out like water. He laughs. He also writes your name in his phone notes.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 2,
+          "grudge": 3
+         },
+         {
+          "slot": "ring",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "lad",
+          "tag": "kept-me-talking-for-the-prank",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "helped"
+         }
+        }
+       }
+      ],
+      "warned": [
+       {
+        "text": "He moves his car before they're done. The lads stand in an empty space with two hundred balls.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 10,
+          "respect": 4
+         },
+         {
+          "slot": "ring",
+          "bond": -4,
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "lad",
+          "tag": "tipped-me-off",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "warned"
+         }
+        }
+       }
+      ],
+      "turned": [
+       {
+        "text": "It's {ring.short}'s car that ends up full. He finds out who it was in about a minute.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 10,
+          "respect": 2
+         },
+         {
+          "slot": "ring",
+          "bond": -2,
+          "respect": 4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "lad",
+          "tag": "tipped-me-off",
+          "strength": 3
+         },
+         {
+          "slot": "ring",
+          "tag": "turned-the-prank-on-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "warned"
+         }
+        }
+       }
+      ],
+      "out": [
+       {
+        "text": "You hear the cheer from the gym.",
+        "npc": [
+         {
+          "slot": "ring",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "out"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "ring",
+      "pick": "squad",
+      "order": "bond-desc"
+     },
+     {
+      "slot": "lad",
+      "pick": "squad",
+      "where": [
+       "age<=26"
+      ],
+      "order": "bond-asc"
+     }
+    ]
+   },
+   "hint": "The lads are up to something"
+  },
+  {
+   "id": "prk-2-back",
+   "title": "Your car",
+   "after": {
+    "beat": "prk-1-car",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-prk-2-back",
+    "title": "Your car",
+    "category": "teammates",
+    "place": "compound:car-park",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "lad",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{if arc.path=='helped'}You open your car door and it's full to the roof with packing peanuts. On the dashboard there's a note: \"Ten minutes. Remember?\"{/if}",
+     "{if !arc.path=='helped'}{lad.short} is in the car park with a bag of packing peanuts the size of a sofa. \"Want in?\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "laugh",
+      "label": "{if arc.path=='helped'}Laugh. Fair's fair.{/if}{if !arc.path=='helped'}\"Whose car?\"{/if}",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='helped'",
+        "text": "It takes you forty minutes to empty it, and you're finding them in the vents in April.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 6,
+          "respect": 2,
+          "grudge": -3
+         }
+        ],
+        "arc": {
+         "end": "got-you-back"
+        }
+       },
+       {
+        "text": "\"{ring.short}'s. Who else.\" He gives you the bag.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-tip-off"
+        }
+       }
+      ]
+     },
+     {
+      "id": "grump",
+      "label": "{if arc.path=='helped'}\"Grow up.\"{/if}{if !arc.path=='helped'}\"I'm too old for this.\"{/if}",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "if": "arc.path=='helped'",
+        "text": "He laughs so hard he has to sit down on the kerb.",
+        "npc": [
+         {
+          "slot": "lad",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "got-you-back"
+        }
+       },
+       {
+        "text": "\"Suit yourself.\" You hear the cheer from the gym again.",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "end": "the-tip-off"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "lad",
+      "pick": "squad",
+      "where": [
+       "age<=26"
+      ],
+      "order": "bond-asc"
+     },
+     {
+      "slot": "ring",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "Next season, someone's car"
+  }
+ ]
+}

@@ -206,7 +206,7 @@ export const FEE_BANDS: Record<number, [number, number]> = {
 /** Each league a buyer sits above yours adds this share to the fee. */
 export const FEE_PER_LEVEL_UP = 0.3;
 
-/** Two significant figures: ★187,412 reads ★190k. */
+/** Two significant figures: £187,412 reads £190k. */
 function roundFee(v: number): number {
   if (v <= 0) return 0;
   const mag = Math.pow(10, Math.max(0, Math.floor(Math.log10(v)) - 1));

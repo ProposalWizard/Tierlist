@@ -25,6 +25,7 @@ import type { CareerState, StarPlayer } from "@/lib/star/types";
 import type { BrandDeal } from "@/lib/star/sponsorDeals";
 import { CaptainInOffice, ManagerSays } from "@/components/star/ManagerMoments";
 import { benchMomentFor } from "@/lib/star/managerMoments";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 type Pick = RelationshipKind | "advert" | "captain" | "bench";
 const GAMES: { id: Pick; name: string; bar: string; what: string }[] = [
@@ -106,7 +107,7 @@ export default function RelGamesTest() {
                 <div className="rg-what">{sel.what}</div>
                 <Btn main onClick={() => open(sel.id)}>▶ Start</Btn>
                 {last ? (
-                  <div className="rg-last">Last game: <b>{last.won ? "won" : "lost"}</b>, {last.gain > 0 ? "+" : ""}{last.gain}{last.cost ? ` · cost ★${last.cost}` : ""}</div>
+                  <div className="rg-last">Last game: <b>{last.won ? "won" : "lost"}</b>, {last.gain > 0 ? "+" : ""}{last.gain}{last.cost ? ` · cost ${MONEY_SIGN}${last.cost}` : ""}</div>
                 ) : <Note>Play a game to see what it pays here.</Note>}
               </div>
             </div>

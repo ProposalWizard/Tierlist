@@ -1,0 +1,129 @@
+/* The 3D phone test page (app/star-phone3d-dev/page.tsx). */
+.p3-film { position: fixed; inset: 0; display: grid; place-items: center; background: #000; }
+.p3-wrap { display: grid; place-items: center; padding: 8px 0 24px; }
+.p3-stage { position: relative; overflow: hidden; background: #000; border-radius: 0; transform: translateZ(0); }
+.p3-wrap .p3-stage { border-radius: 22px; box-shadow: 0 10px 40px rgba(0, 0, 0, .35); }
+.p3-full { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; }
+.p3-home { z-index: 3; }
+.p3-hit { position: absolute; z-index: 4; background: transparent; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.p3-held { position: absolute; inset: 0; z-index: 3; }
+.p3-screen { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; background: #000; }
+
+/* Your house (live 3D, components/star/Home3D.tsx). While the phone is up it is ONE
+   still frame, blurred here with a CSS blur on its canvas only (nothing redraws). */
+.p3-house3d { position: absolute; inset: 0; z-index: 1; }
+.p3-house3d canvas { transition: filter 600ms ease-in-out; }
+.p3-opening .p3-house3d canvas, .p3-phone .p3-house3d canvas, .p3-closing-home .p3-house3d canvas,
+.p3-raising .p3-house3d canvas, .p3-home .p3-house3d canvas { filter: blur(7px) brightness(.9); }
+.p3-dim { position: absolute; inset: 0; z-index: 2; background: #000; opacity: 0; pointer-events: none; }
+
+/* ── Opening: the eyelids part (one quick half-blink), the world sharpens, the phone comes up into the hand ──
+   (Harry, 20 Nov 2026: the single blink, 820 ms; "the original blink was better") */
+.p3-opening .p3-lid { position: absolute; left: -10%; right: -10%; height: 56%; background: #000; z-index: 5; }
+.p3-opening .p3-lid-top { top: 0; border-radius: 0 0 50% 50% / 0 0 40% 40%; animation: p3-lid-top 820ms cubic-bezier(.55, 0, .2, 1) both; }
+.p3-opening .p3-lid-bottom { bottom: 0; border-radius: 50% 50% 0 0 / 40% 40% 0 0; animation: p3-lid-bottom 820ms cubic-bezier(.55, 0, .2, 1) both; }
+@keyframes p3-lid-top { 0% { transform: translateY(0); } 18% { transform: translateY(-38%); } 30% { transform: translateY(-20%); } 100% { transform: translateY(-112%); } }
+@keyframes p3-lid-bottom { 0% { transform: translateY(0); } 18% { transform: translateY(38%); } 30% { transform: translateY(20%); } 100% { transform: translateY(112%); } }
+.p3-blink-old.p3-opening .p3-dim { animation: p3-dim 820ms ease-out both; }
+@keyframes p3-dim { from { opacity: .6; } to { opacity: 0; } }
+.p3-blink-old.p3-opening .p3-held { animation: p3-raise-open 820ms cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes p3-raise-open { 0% { transform: translateY(26%) rotate(-4deg); filter: blur(6px); } 60% { filter: blur(0); } 100% { transform: none; filter: none; } }
+/* ── The new eye-opening (?blink=A "Far Cry", ?blink=B "Resident Evil 7"; Harry, 20 Nov 2026) ──
+   The lids are ONE dark layer with an almond hole: the hole is where two big circles
+   overlap (a lens: pointed corners like an eye), each with a soft 70 px edge, and it
+   opens by moving the circles apart (--eye, a registered property, so it animates
+   with no script). The room behind is over-bright and very blurred, and focuses;
+   a glare washes over everything and fades; the head rights itself. */
+@property --eye { syntax: "<length>"; inherits: false; initial-value: 0px; }
+.p3-eyes {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background: #0d0504; /* warm, as light through skin, not flat black */
+  --eye: 0px;
+  -webkit-mask-image:
+    radial-gradient(circle 760px at 50% calc(47% + 760px - var(--eye)), transparent 690px, #000 760px),
+    radial-gradient(circle 760px at 50% calc(47% - 760px + var(--eye)), transparent 690px, #000 760px);
+  mask-image:
+    radial-gradient(circle 760px at 50% calc(47% + 760px - var(--eye)), transparent 690px, #000 760px),
+    radial-gradient(circle 760px at 50% calc(47% - 760px + var(--eye)), transparent 690px, #000 760px);
+}
+.p3-glare { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; background: radial-gradient(ellipse 70% 45% at 50% 45%, #fff8ec, rgba(255, 244, 225, .55) 55%, rgba(255, 240, 220, 0) 100%); mix-blend-mode: screen; }
+.p3-ghost { z-index: 3; pointer-events: none; opacity: 0; }
+
+/* A: the Far Cry wake-up — cracks open, droops, opens wider, a half-blink, then wide (1.7 s) */
+.p3-blink-A.p3-opening .p3-eyes { animation: p3-eye-A 1700ms linear both; }
+@keyframes p3-eye-A {
+  0% { --eye: 0px; animation-timing-function: cubic-bezier(.3, 0, .4, 1); }
+  15% { --eye: 150px; animation-timing-function: cubic-bezier(.5, 0, .7, 1); }
+  27% { --eye: 70px; animation-timing-function: ease-in-out; }
+  33% { --eye: 66px; animation-timing-function: cubic-bezier(.25, .1, .3, 1); }
+  54% { --eye: 330px; animation-timing-function: cubic-bezier(.5, 0, .6, 1); }
+  61% { --eye: 230px; animation-timing-function: cubic-bezier(.2, .7, .3, 1); }
+  90% { --eye: 700px; opacity: 1; }
+  100% { --eye: 760px; opacity: 0; }
+}
+.p3-blink-A.p3-opening .p3-house3d canvas { animation: p3-focus-A 1700ms ease-out both; }
+@keyframes p3-focus-A { 0% { filter: blur(22px) brightness(2.3) saturate(.6); } 50% { filter: blur(15px) brightness(1.45) saturate(.8); } 100% { filter: blur(7px) brightness(.9); } }
+.p3-blink-A.p3-opening .p3-house3d { animation: p3-head-A 1700ms cubic-bezier(.3, .6, .3, 1) both; transform-origin: 50% 60%; }
+@keyframes p3-head-A { 0% { transform: rotate(-5deg) scale(1.1) translateY(2%); } 55% { transform: rotate(1.2deg) scale(1.05); } 100% { transform: none; } }
+.p3-blink-A.p3-opening .p3-held { animation: p3-raise-A 1700ms cubic-bezier(.25, .7, .25, 1) both; }
+@keyframes p3-raise-A { 0% { transform: translateY(34%) rotate(-7deg); filter: blur(12px) brightness(1.7); } 55% { filter: blur(4px) brightness(1.15); } 85% { filter: blur(0); } 100% { transform: none; filter: none; } }
+.p3-blink-A.p3-opening .p3-ghost { animation: p3-ghost-A 1700ms cubic-bezier(.25, .7, .25, 1) both; }
+@keyframes p3-ghost-A { 0% { opacity: .5; transform: translate(9%, 30%) rotate(-3deg); filter: blur(12px); } 55% { opacity: .35; transform: translate(4%, 3%); filter: blur(5px); } 80% { opacity: 0; transform: none; } 100% { opacity: 0; transform: none; } }
+.p3-blink-A.p3-opening .p3-glare { animation: p3-glare-A 1700ms ease-out both; }
+@keyframes p3-glare-A { 0% { opacity: .85; } 30% { opacity: .6; } 100% { opacity: 0; } }
+
+/* B: Resident Evil 7 — one slow open with a small flutter; blur clears (1.2 s) */
+.p3-blink-B.p3-opening .p3-eyes { animation: p3-eye-B 1200ms linear both; }
+@keyframes p3-eye-B {
+  0% { --eye: 0px; animation-timing-function: cubic-bezier(.3, 0, .5, 1); }
+  30% { --eye: 120px; animation-timing-function: ease-in-out; }
+  40% { --eye: 95px; animation-timing-function: cubic-bezier(.3, .1, .3, 1); }
+  88% { --eye: 700px; opacity: 1; }
+  100% { --eye: 760px; opacity: 0; }
+}
+.p3-blink-B.p3-opening .p3-house3d canvas { animation: p3-focus-B 1200ms ease-out both; }
+@keyframes p3-focus-B { 0% { filter: blur(16px) brightness(1.5); } 100% { filter: blur(7px) brightness(.9); } }
+.p3-blink-B.p3-opening .p3-house3d { animation: p3-head-B 1200ms cubic-bezier(.3, .6, .3, 1) both; transform-origin: 50% 60%; }
+@keyframes p3-head-B { 0% { transform: rotate(2.5deg) scale(1.05); } 100% { transform: none; } }
+.p3-blink-B.p3-opening .p3-held { animation: p3-raise-B 1200ms cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes p3-raise-B { 0% { transform: translateY(28%) rotate(-4deg); filter: blur(8px); } 70% { filter: blur(0); } 100% { transform: none; filter: none; } }
+.p3-blink-B.p3-opening .p3-glare { animation: p3-glare-B 1200ms ease-out both; }
+@keyframes p3-glare-B { 0% { opacity: .45; } 100% { opacity: 0; } }
+
+/* back from the house: the phone comes up (no blink, your eyes are open) */
+.p3-raising .p3-held { animation: p3-raise 600ms cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes p3-raise { 0% { transform: translate(12%, 95%) rotate(14deg); } 100% { transform: none; } }
+
+/* ── HOME: the phone drops away quickly and the menu is back ── */
+.p3-closing-home .p3-held { animation: p3-drop 320ms cubic-bezier(.5, 0, .9, .5) both; }
+.p3-closing-home .p3-home { animation: p3-show 320ms ease-out both; z-index: 4; }
+@keyframes p3-drop { to { transform: translateY(60%); opacity: 0; } }
+@keyframes p3-show { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── BACK = put phone away: the hand lowers out of view in your eyes, the room sharpens ──
+   (then the page pulls the 3D camera back from your eyes to the house's own camera) */
+.p3-putting-away .p3-held { animation: p3-lower 650ms cubic-bezier(.45, 0, .2, 1) both; }
+@keyframes p3-lower { 0% { transform: none; } 100% { transform: translate(12%, 95%) rotate(14deg); } }
+
+/* In the house: take the phone out again */
+.p3-pickup {
+  position: absolute; z-index: 4; right: 12px; top: 58px; height: 36px; padding: 0 14px;
+  border-radius: 999px; border: 1px solid rgba(255, 255, 255, .25); background: rgba(10, 8, 6, .72); color: #f7f1e8;
+  font-weight: 900; font-size: 14px; cursor: pointer;
+}
+.p3-note {
+  position: absolute; z-index: 6; left: 16px; right: 16px; top: 16px; padding: 10px 12px; border-radius: 14px;
+  background: rgba(10, 8, 6, .86); color: #f7f1e8; font-weight: 800; font-size: 13px; text-align: center;
+}
+
+/* The real phone on the glass (Harry, 20 Nov 2026: "relations page built and lagged").
+   The glass is bent with a 3D transform, so anything that repaints inside it re-rasters
+   the bent layer: the bars' drifting light and breathing blurred glow (ui/flat.css 3)
+   repaint every frame, 41 fps with Relationships open at CPU x4, and the blurred glows
+   cost ~50 ms on the tap that opens it. On the glass only: the bars keep fill, gloss
+   and rim, without the drifting light and the glow. */
+.p3-screen .sk-liq-flow, .p3-screen .sk-liq-glow { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .p3-stage * { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}

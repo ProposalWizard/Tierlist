@@ -6,6 +6,7 @@ import {
   getPriceOverride, setPriceOverride, resetPriceOverride,
 } from "@/lib/star/tuningStore";
 import { KIB_CANS_DEFAULT, BOOTS_CATALOGUE_DEFAULT, LIFESTYLE_ITEMS_DEFAULT } from "@/lib/star/shopDefaults";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 /**
  * THE TUNING EDITOR.
@@ -163,7 +164,7 @@ export default function TuningEditor() {
           {KIB_CANS_DEFAULT.map((c) => (
             <PriceCatalogueRow
               key={c.id} catalogue="kibCans" itemId={c.id} name={c.name}
-              fields={[{ field: "price", label: "★", base: c.price }, { field: "restore", label: "⚡", base: c.restore }]}
+              fields={[{ field: "price", label: MONEY_SIGN, base: c.price }, { field: "restore", label: "⚡", base: c.restore }]}
               onChange={bump}
             />
           ))}
@@ -177,7 +178,7 @@ export default function TuningEditor() {
           {BOOTS_CATALOGUE_DEFAULT.map((b) => (
             <PriceCatalogueRow
               key={b.id} catalogue="boots" itemId={b.id} name={b.name}
-              fields={[{ field: "price", label: "★", base: b.price }]}
+              fields={[{ field: "price", label: MONEY_SIGN, base: b.price }]}
               onChange={bump}
             />
           ))}
@@ -191,7 +192,7 @@ export default function TuningEditor() {
           {LIFESTYLE_ITEMS_DEFAULT.map((it) => (
             <PriceCatalogueRow
               key={it.id} catalogue="lifestyle" itemId={it.id} name={it.name}
-              fields={[{ field: "price", label: "★", base: it.price }]}
+              fields={[{ field: "price", label: MONEY_SIGN, base: it.price }]}
               onChange={bump}
             />
           ))}

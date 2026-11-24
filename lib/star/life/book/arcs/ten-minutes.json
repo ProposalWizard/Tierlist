@@ -1,0 +1,1018 @@
+{
+ "id": "arc-ten-minutes",
+ "title": "Miss it",
+ "owner": "vet",
+ "summary": "A veteran team-mate owes money to the wrong people, and they want you to miss a penalty. Say no, say yes, or go to the gaffer. On Saturday there's a penalty. Weeks later they want more, the season after the league starts asking questions, and years on you find out what it cost him.",
+ "size": "big",
+ "about": {
+  "who": [
+   "veteran team-mate",
+   "gaffer",
+   "local reporter"
+  ],
+  "tone": [
+   "dark",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.2
+ },
+ "needsActivity": "penalties",
+ "cast": [
+  {
+   "slot": "vet",
+   "pick": "squad",
+   "where": [
+    "veteran"
+   ],
+   "order": "best"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  }
+ ],
+ "vars": {
+  "deal": "none",
+  "pen": "none",
+  "told": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "clean-hands",
+   "title": "Clean hands",
+   "text": "They asked you to miss a penalty. You scored it, and you told the truth when the league asked."
+  },
+  {
+   "id": "the-fix",
+   "title": "The fix",
+   "text": "You missed it on purpose. Nobody has found out, yet. You think about it every time you take a penalty."
+  },
+  {
+   "id": "you-saved-him",
+   "title": "You saved him",
+   "text": "You went to the gaffer, and a man who owed the wrong people money got out alive and clean."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "fix-1-ask",
+   "title": "In his car",
+   "n": 1,
+   "event": {
+    "id": "arc-fix-1-ask",
+    "title": "In his car",
+    "category": "teammates",
+    "place": "compound:car-park",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "squad.any(veteran)",
+      "clubApps>=5"
+     ]
+    },
+    "setup": [
+     "{vet.name} asks you to sit in his car for a minute. He's thirty-three and he's been here eight years. The engine's off and he doesn't look at you."
+    ],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "vet",
+       "say": [
+        "\"I owe some people. A lot. They know you're on penalties. They want you to miss one on Saturday if we get one. Two grand for you. And they wipe mine.\""
+       ],
+       "replies": [
+        {
+         "id": "no",
+         "label": "\"No. Never. Get out of it some other way.\"",
+         "tone": "brave",
+         "goto": "a-no"
+        },
+        {
+         "id": "who",
+         "label": "\"Who are these people?\"",
+         "tone": "honest",
+         "goto": "a2"
+        },
+        {
+         "id": "gaffer",
+         "label": "\"We're going to the gaffer. Now.\"",
+         "tone": "brave",
+         "goto": "a-gaffer"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "a2"
+        }
+       ]
+      },
+      "a2": {
+       "who": "vet",
+       "say": [
+        "\"You don't want to know. I've got two kids. They've been outside my house, in a car.\""
+       ],
+       "replies": [
+        {
+         "id": "help",
+         "label": "\"Then let me help. Not like this.\"",
+         "tone": "kind",
+         "goto": "a-gaffer"
+        },
+        {
+         "id": "yes",
+         "label": "\"Once. Then never again.\"",
+         "tone": "reckless",
+         "end": "agreed",
+         "var": {
+          "deal": "yes"
+         }
+        },
+        {
+         "id": "no",
+         "label": "\"I can't. I'm sorry.\"",
+         "tone": "honest",
+         "goto": "a-no"
+        }
+       ]
+      },
+      "a-no": {
+       "who": "vet",
+       "say": [
+        "\"I knew you'd say that.\" He grips the wheel. \"Don't tell anyone. Please. Just don't.\""
+       ],
+       "replies": [
+        {
+         "id": "quiet",
+         "label": "\"I won't tell anyone.\"",
+         "tone": "calm",
+         "end": "refused-quiet",
+         "var": {
+          "deal": "no"
+         }
+        },
+        {
+         "id": "tell",
+         "label": "\"I'm telling the gaffer, for your sake.\"",
+         "tone": "brave",
+         "goto": "a-gaffer"
+        }
+       ]
+      },
+      "a-gaffer": {
+       "who": "vet",
+       "say": [
+        "He's crying now, properly. \"He'll sack me.\""
+       ],
+       "replies": [
+        {
+         "id": "with",
+         "label": "\"I'll be in there with you.\"",
+         "tone": "kind",
+         "end": "reported",
+         "var": {
+          "deal": "reported"
+         }
+        },
+        {
+         "id": "alone",
+         "label": "\"Then go on your own. I'll know if you don't.\"",
+         "tone": "cold",
+         "end": "refused-quiet",
+         "var": {
+          "deal": "no"
+         }
+        }
+       ]
+      }
+     },
+     "ends": {
+      "agreed": [
+       {
+        "text": "He grips your arm. \"Thank you.\" He gives you a phone number on a piece of paper and tells you to burn it after.",
+        "effects": {
+         "scandal": true
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 8,
+          "respect": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "agreed-to-the-penalty",
+          "strength": 3
+         },
+         {
+          "slot": "you",
+          "tag": "agreed-to-fix-a-penalty",
+          "strength": 3
+         }
+        ]
+       }
+      ],
+      "refused-quiet": [
+       {
+        "text": "He drives off before you've shut the door properly.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": -6,
+          "respect": 4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "said-no-to-the-penalty",
+          "strength": 3
+         }
+        ]
+       }
+      ],
+      "reported": [
+       {
+        "text": "You sit outside {manager.short}'s office for an hour while he's in there. When he comes out the gaffer is behind him with a hand on his shoulder and a phone to his ear.",
+        "effects": {
+         "boss": 6
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 6,
+          "respect": 6
+         },
+         {
+          "slot": "manager",
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "took-me-to-the-gaffer",
+          "strength": 3
+         },
+         {
+          "slot": "manager",
+          "tag": "brought-the-fix-to-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "told": 1
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "A veteran asks you to sit in his car"
+  },
+  {
+   "id": "fix-2-penalty",
+   "title": "The penalty",
+   "after": {
+    "beat": "fix-1-ask",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-fix-2-penalty",
+    "title": "The penalty",
+    "category": "match",
+    "place": "stadium:pitch",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "after-match",
+      "walkout"
+     ]
+    },
+    "setup": [
+     "Saturday. Sixty-eighth minute, nil-nil, and the referee points at the spot.",
+     "{if arc.deal=='yes'}{vet.short} picks the ball up and hands it to you without a word.{/if}{if !arc.deal=='yes'}You put the ball on the spot. {vet.short} won't look at you.{/if}"
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "vet",
+       "say": [
+        "The keeper's bouncing on his line. The crowd behind the goal is waving."
+       ],
+       "replies": [
+        {
+         "id": "take",
+         "label": "Take it.",
+         "tone": "brave",
+         "goto": "play"
+        },
+        {
+         "id": "give",
+         "label": "Give the ball to someone else.",
+         "tone": "calm",
+         "end": "gave-away"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "penalties",
+        "name": "The penalty",
+        "intro": "One penalty. Whatever you meant to do with it.",
+        "dials": {
+         "shots": 1,
+         "keeper": true,
+         "choice": "score or miss, the player's own aim"
+        },
+        "score": "scored (1) or not (0)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -2
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "p-gave"
+        ],
+        [
+         "activity.won",
+         "p-scored"
+        ],
+        [
+         "",
+         "p-missed"
+        ]
+       ]
+      },
+      "p-scored": {
+       "who": "vet",
+       "say": [
+        "It's in. The stand goes up. {vet.short} is the last one to reach you, and he hugs you very hard."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Run back to halfway.",
+         "tone": "calm",
+         "end": "scored"
+        }
+       ]
+      },
+      "p-missed": {
+       "who": "vet",
+       "say": [
+        "It's high and wide. Nobody looks at {vet.short}. Everybody looks at you."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Run back to halfway.",
+         "tone": "calm",
+         "end": "missed"
+        }
+       ]
+      },
+      "p-gave": {
+       "who": "vet",
+       "say": [
+        "You can't do it. You walk away from the spot."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Let someone else take it.",
+         "tone": "calm",
+         "end": "gave-away"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "scored": [
+       {
+        "text": "{if arc.deal=='yes'}You score. The phone number in your pocket burns all the way home.{/if}{if !arc.deal=='yes'}You score, and you win. In the dressing room you sit with your boots on for twenty minutes.{/if}",
+        "effects": {
+         "fans": 4
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "scored-the-penalty-anyway",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "pen": "scored"
+         }
+        }
+       }
+      ],
+      "missed": [
+       {
+        "if": "arc.deal=='yes'",
+        "text": "{if arc.deal=='yes'}You miss. Two grand turns up in an envelope behind your car's number plate on Monday.{/if}{if !arc.deal=='yes'}You miss, for real. Your legs went. Nobody would believe you either way.{/if}",
+        "effects": {
+         "fans": -4,
+         "scandal": true,
+         "moneyWeeks": 2
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 6,
+          "respect": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "missed-the-penalty-on-purpose",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "pen": "missed"
+         }
+        }
+       },
+       {
+        "text": "You miss, for real. Your legs went. Nobody will ever believe you either way.",
+        "effects": {
+         "fans": -4
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "pen": "missed"
+         }
+        }
+       }
+      ],
+      "gave-away": [
+       {
+        "text": "The captain takes it and scores. You can feel the gaffer looking at you from the bench.",
+        "effects": {
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "pen": "gave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "On Saturday, a penalty"
+  },
+  {
+   "id": "fix-3-more",
+   "title": "They want more",
+   "after": {
+    "beat": "fix-2-penalty",
+    "weeks": [
+     2,
+     5
+    ]
+   },
+   "event": {
+    "id": "arc-fix-3-more",
+    "title": "They want more",
+    "category": "teammates",
+    "place": "compound:car-park",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "!arc.deal=='reported'"
+     ]
+    },
+    "setup": [
+     "{vet.short} is in his car again, with the engine running."
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "vet",
+       "say": [
+        "{if arc.pen=='missed' && arc.deal=='yes'}\"They want another one. A booking in the first ten minutes this time. They said you'd say yes, because you said yes before.\"{/if}",
+        "{if !arc.pen=='missed' || !arc.deal=='yes'}\"You scored, so I owe them double now. They want a booking in the first ten minutes. Please.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "gaffer",
+         "label": "\"We're going to the gaffer. Today.\"",
+         "tone": "brave",
+         "end": "to-the-gaffer"
+        },
+        {
+         "id": "no",
+         "label": "\"No. I'm done.\"",
+         "tone": "brave",
+         "end": "done"
+        },
+        {
+         "id": "yes",
+         "label": "\"A booking. Then I'm out.\"",
+         "tone": "reckless",
+         "end": "booked"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "to-the-gaffer": [
+       {
+        "text": "You go in together. It takes two hours. When you come out the club's lawyer is on the way and {vet.short} has stopped shaking.",
+        "effects": {
+         "boss": 4
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 8,
+          "respect": 4
+         },
+         {
+          "slot": "manager",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "took-me-to-the-gaffer",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "told": 1
+         }
+        }
+       }
+      ],
+      "done": [
+       {
+        "text": "He nods. He doesn't turn up to training on Thursday.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": -4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "said-no-to-the-penalty",
+          "strength": 3
+         }
+        ]
+       }
+      ],
+      "booked": [
+       {
+        "text": "You go through the back of a man in the fourth minute. Yellow. Nobody thinks anything of it except you.",
+        "effects": {
+         "scandal": true,
+         "boss": -2
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "got-booked-on-purpose",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deal": "deeper"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "Weeks later, they want more"
+  },
+  {
+   "id": "fix-4-league",
+   "title": "The league's questions",
+   "after": {
+    "beat": "fix-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-fix-4-league",
+    "title": "The league's questions",
+    "category": "club",
+    "place": "compound:office",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Two men from the league's integrity unit are in the gaffer's office with a laptop. They've been looking at betting on your games last season.",
+     "{if arc.told==1}{manager.short} is in the corner with his arms folded. He nods at you when you come in.{/if}"
+    ],
+    "talk": {
+     "start": "l1",
+     "nodes": {
+      "l1": {
+       "who": "manager",
+       "say": [
+        "One of them turns the laptop round. It's the penalty. \"Talk us through this one.\""
+       ],
+       "replies": [
+        {
+         "id": "truth",
+         "label": "Tell them everything.",
+         "tone": "honest",
+         "end": "truth"
+        },
+        {
+         "id": "lie",
+         "label": "\"My legs went. That's all.\"",
+         "tone": "lie",
+         "end": "lie"
+        },
+        {
+         "id": "lawyer",
+         "label": "\"I'd like to speak to somebody first.\"",
+         "tone": "calm",
+         "end": "lawyer"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "lawyer"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "truth": [
+       {
+        "if": "arc.told==1 || !arc.pen=='missed'",
+        "text": "{if arc.told==1}It's all already in their notes. They thank you for coming to the gaffer when you did.{/if}{if arc.told==0}You tell them. It takes three hours. They write everything down and tell you not to leave the country.{/if}",
+        "effects": {
+         "reputation": 6
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "told-the-league-the-truth",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "told": 2
+         }
+        }
+       },
+       {
+        "text": "You tell them. A six-month ban, and a fine, and your name in every paper. {reporter.short} from the {reporter.outlet} writes the only kind piece.",
+        "effects": {
+         "reputation": -8,
+         "fans": -10,
+         "scandal": true,
+         "moneyWeeks": -6
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "banned-for-the-penalty",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "told": 3
+         }
+        }
+       }
+      ],
+      "lie": [
+       {
+        "if": "arc.pen=='missed'",
+        "text": "They write it down. They don't look like they believe it. Nothing happens, for now.",
+        "effects": {
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "lied-to-the-league",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "told": 0
+         }
+        }
+       },
+       {
+        "text": "You scored that penalty. They look confused, then move on to the next clip.",
+        "arc": {
+         "set": {
+          "told": 0
+         }
+        }
+       }
+      ],
+      "lawyer": [
+       {
+        "text": "Your agent sends somebody in a suit. It drags on for months.",
+        "effects": {
+         "boss": -2
+        },
+        "arc": {
+         "set": {
+          "told": 0
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "Next season, the league asks questions"
+  },
+  {
+   "id": "fix-5-years",
+   "title": "A letter",
+   "after": {
+    "beat": "fix-4-league",
+    "seasons": [
+     2,
+     5
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-fix-5-years",
+    "title": "A letter",
+    "category": "teammates",
+    "place": "home",
+    "size": "big",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "followUp"
+     ]
+    },
+    "setup": [
+     "A letter in handwriting you know from team sheets. {vet.name} is out of football.",
+     "{if arc.told>=1}\"I talk in schools now, about the betting. I always tell them about a lad who sat in my car and said we're going to the gaffer.\"{/if}",
+     "{if arc.told==0}\"They wiped my debt in the end. I don't know if it was worth it. I think about the penalty. I expect you do.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "write",
+      "label": "Write back.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.told==1 || arc.told==2",
+        "text": "He replies with a photo of a school hall. You keep it.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "wrote-back-after-the-fix",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "you-saved-him"
+        }
+       },
+       {
+        "if": "arc.pen=='missed' && arc.deal=='yes' && arc.told==0",
+        "text": "You write back that you're glad he's out. You don't mention the penalty.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-fix"
+        }
+       },
+       {
+        "text": "You write back. You both mention the penalty once and then talk about the weather.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "clean-hands"
+        }
+       }
+      ]
+     },
+     {
+      "id": "bin",
+      "label": "Put it in a drawer.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.pen=='missed' && arc.deal=='yes'",
+        "text": "It's still in the drawer. So is the piece of paper with the phone number on it.",
+        "arc": {
+         "end": "the-fix"
+        }
+       },
+       {
+        "text": "It's still in the drawer.",
+        "arc": {
+         "end": "clean-hands"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "Years later, you'll hear from him",
+   "look": {
+    "chip": "Years later"
+   }
+  }
+ ]
+}

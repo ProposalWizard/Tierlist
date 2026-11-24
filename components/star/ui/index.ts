@@ -10,7 +10,7 @@ export { default as CountUp } from "./CountUp";
 export { default as RiseIn } from "./RiseIn";
 export { default as Glow } from "./Glow";
 export { default as Stadium, Pitch } from "./Stadium";
-export { KitStyles, KIT_CSS, useCountUp, prefersReducedMotion } from "./motion";
+export { KitStyles, useCountUp, prefersReducedMotion } from "./motion";
 export { useClubTheme, clubTheme, glowOf, cardStyle, duelStyle, rgba, tint, luminance, type ClubTheme } from "./theme";
 export { Burst, FloatText, Shake, Pop, Shine, Drips, useTrigger } from "./juice";
 export { ShakeX, LossFlash, WinCelebration, Badge, useFly } from "./reward";

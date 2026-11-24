@@ -1,0 +1,80 @@
+/*
+ * THE LIVING WORLD's screens (phase 1): the People page, the event card in its
+ * 4 templates, the outcome. Built on the Glass look (ui/glassLook.css): dark
+ * frost cards (deep blue-slate, never white-on-white), white type, one green
+ * for the main action. Everything is scoped under .lw.
+ */
+.lw { --lw-card: var(--sk-card, linear-gradient(180deg, rgba(14, 30, 52, .62), rgba(10, 22, 40, .70)));
+  --lw-edge: rgba(255, 255, 255, .16); --lw-dim: rgba(255, 255, 255, .68); --lw-green: #22c55e; --lw-amber: #fbbf24;
+  color: #fff; }
+.lw-card { background: var(--lw-card); border: 1px solid var(--lw-edge); border-radius: 14px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .8); }
+.lw-title { font-weight: 900; text-transform: uppercase; letter-spacing: .02em; font-size: 20px; text-align: center; text-shadow: 0 2px 6px rgba(0, 0, 0, .6); }
+.lw-kicker { font-size: 10px; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; color: var(--lw-amber); }
+.lw-group { margin: 14px 2px 6px; font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: var(--lw-dim); display: flex; justify-content: space-between; }
+
+/* A person row */
+.lw-row { display: flex; align-items: center; gap: 10px; padding: 9px 10px; width: 100%; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, .07); }
+.lw-row:last-child { border-bottom: 0; }
+.lw-row:active { background: rgba(255, 255, 255, .06); }
+.lw-name { font-size: 14px; font-weight: 800; line-height: 1.15; }
+.lw-sub { font-size: 11px; color: var(--lw-dim); line-height: 1.2; margin-top: 1px; }
+.lw-mem { font-size: 11px; color: #fde68a; line-height: 1.25; margin-top: 3px; }
+.lw-bars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 5px; }
+.lw-bar { position: relative; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.lw-bar > i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; }
+.lw-bar-label { font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--lw-dim); margin-bottom: 2px; display: flex; justify-content: space-between; }
+
+/* Faces */
+.lw-face { flex: none; border-radius: 999px; overflow: hidden; background: #334155; display: grid; place-items: center; box-shadow: 0 0 0 2px rgba(255, 255, 255, .18); }
+.lw-face img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+
+/* Buttons */
+.lw-choice { width: 100%; text-align: left; padding: 12px 14px; border-radius: 12px; font-size: 14px; font-weight: 800; line-height: 1.25;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .05)); border: 1px solid rgba(255, 255, 255, .18); color: #fff; }
+.lw-choice:active { transform: translateY(1px); }
+.lw-choice[disabled] { opacity: .45; }
+.lw-cost { display: inline-flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.lw-chip { font-size: 10px; font-weight: 900; padding: 2px 6px; border-radius: 6px; background: rgba(0, 0, 0, .35); color: #fde68a; letter-spacing: .02em; }
+.lw-main { width: 100%; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; color: #052e16;
+  background: linear-gradient(180deg, #4ade80, #16a34a); box-shadow: 0 0 18px rgba(34, 197, 94, .45), inset 0 1px 0 rgba(255, 255, 255, .5); }
+
+/* The callback strip: a memory coming back */
+.lw-callback { border-left: 3px solid var(--lw-amber); background: rgba(251, 191, 36, .12); padding: 8px 10px; border-radius: 0 10px 10px 0; font-size: 13px; line-height: 1.35; }
+.lw-callback b { color: var(--lw-amber); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; display: block; margin-bottom: 2px; }
+.lw-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: rgba(251, 191, 36, .18); color: var(--lw-amber); }
+
+/* Phone call */
+.lw-ring { animation: lw-ring 1.4s ease-out infinite; }
+@keyframes lw-ring { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, .55); } 100% { box-shadow: 0 0 0 22px rgba(34, 197, 94, 0); } }
+@media (prefers-reduced-motion: reduce) { .lw-ring { animation: none; } }
+
+/* Text thread */
+.lw-bubble { max-width: 86%; padding: 9px 12px; border-radius: 16px 16px 16px 4px; font-size: 14px; line-height: 1.35; background: rgba(255, 255, 255, .14); }
+.lw-reply { align-self: flex-end; border-radius: 16px 16px 4px 16px; background: linear-gradient(180deg, #3b82f6, #2563eb); border: 0; text-align: left; max-width: 90%; }
+
+/* Feed post */
+.lw-post-head { display: flex; align-items: center; gap: 8px; }
+.lw-outlet { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; font-weight: 900; font-size: 15px; background: #b91c1c; color: #fff; }
+.lw-headline { font-size: 17px; font-weight: 900; line-height: 1.25; }
+
+/* Talk-scene still */
+.lw-still { position: relative; height: 200px; border-radius: 14px; overflow: hidden; border: 1px solid var(--lw-edge); }
+.lw-still .lw-floor { position: absolute; inset: auto 0 0 0; height: 42%; background: linear-gradient(180deg, rgba(0, 0, 0, .0), rgba(0, 0, 0, .45)); }
+.lw-still .lw-cast { position: absolute; inset: auto 0 18px 0; display: flex; justify-content: center; align-items: flex-end; gap: 18px; }
+.lw-still .lw-place { position: absolute; left: 10px; top: 10px; }
+.lw-caption { font-size: 14px; line-height: 1.4; }
+
+/* Outcome changes */
+.lw-changes { display: flex; flex-wrap: wrap; gap: 6px; }
+.lw-change { font-size: 12px; font-weight: 800; padding: 5px 9px; border-radius: 8px; background: rgba(0, 0, 0, .3); border: 1px solid rgba(255, 255, 255, .12); }
+.lw-change[data-tone="up"] { color: #86efac; border-color: rgba(134, 239, 172, .35); }
+.lw-change[data-tone="down"] { color: #fca5a5; border-color: rgba(252, 165, 165, .35); }
+.lw-change[data-tone="mem"] { color: #fde68a; border-color: rgba(253, 230, 138, .35); }
+.lw-change[data-tone="rule"] { color: #fff; background: rgba(239, 68, 68, .28); border-color: rgba(239, 68, 68, .5); }
+
+/* The person sheet */
+.lw-sheet-bg { position: absolute; inset: 0; background: rgba(0, 0, 0, .55); z-index: 40; display: flex; align-items: flex-end; }
+.lw-sheet { width: 100%; max-height: 88%; overflow-y: auto; border-radius: 18px 18px 0 0; padding: 14px 14px 22px; background: linear-gradient(180deg, rgba(16, 32, 56, .97), rgba(8, 18, 34, .98)); border-top: 1px solid rgba(255, 255, 255, .2); }
+.lw-act { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; border-radius: 12px; text-align: left; background: linear-gradient(180deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .04)); border: 1px solid rgba(255, 255, 255, .16); }
+.lw-act[disabled] { opacity: .45; }
+.lw-act-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 18px; background: rgba(0, 0, 0, .3); flex: none; }

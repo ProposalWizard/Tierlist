@@ -78,6 +78,7 @@ import {
 import { kitsOf } from "./kits";
 import { surname } from "./media/grammar";
 import { pickAfterMatch, pickAfterMissed } from "./managerMoments";
+import { MONEY_SIGN } from "./money";
 
 export const SPONSOR_CATEGORIES = [
   "Boots", "Sports Drink", "Sports Clothing", "Casual Clothing", "Food",
@@ -2056,7 +2057,7 @@ export function advanceSeason(
     // the same feed the dashboard already reads (DashboardStats.tsx).
     sponsorNews: [
       ...sponsorRoll.lapsed,
-      ...sponsorRoll.seasonFees.map(f => `${f.category}: Season fee — ★${f.fee}`),
+      ...sponsorRoll.seasonFees.map(f => `${f.category}: Season fee — ${MONEY_SIGN}${f.fee}`),
     ],
     // Silverware and individual recognition feed the same reputation
     // sponsors actually check — see trophyFame/honourFame above.

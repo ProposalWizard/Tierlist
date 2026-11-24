@@ -13,7 +13,7 @@ import { ACHIEVEMENTS } from "@/lib/star/achievements";
 import type { CareerState } from "@/lib/star/types";
 import { sfx } from "@/lib/star/sfx";
 import { APP_STORE, LOCK_HINT, FEATURE_INFO, stepsFor, phoneStepLine, phoneShortfall, appInstalled, hasSeen, isOpen, nextStep, stepDone, type Feature, type StepId } from "@/lib/star/unlocks";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import type { BeatText } from "@/lib/star/story";
 import { Burst, PressButton } from "./ui";
 import StylePicture from "./StylePicture";
@@ -394,7 +394,7 @@ export function AppStore({ career, onInstall }: { career: CareerState; onInstall
               {have ? (
                 <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-black text-white/70">Added</span>
               ) : (
-                <PressButton variant={career.money >= a.price ? "primary" : "plain"} size="none" disabled={career.money < a.price} onClick={() => onInstall(a.id)} className="rounded-full px-3 py-1 text-[11px] font-black tabular-nums">★{formatMoney(a.price)}</PressButton>
+                <PressButton variant={career.money >= a.price ? "primary" : "plain"} size="none" disabled={career.money < a.price} onClick={() => onInstall(a.id)} className="rounded-full px-3 py-1 text-[11px] font-black tabular-nums">{MONEY_SIGN}{formatMoney(a.price)}</PressButton>
               )}
             </div>
           );

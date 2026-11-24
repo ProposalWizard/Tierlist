@@ -5,6 +5,7 @@ import { seasonQualifiers } from "./competitions";
 import { ruleBookFor } from "./ruleBook";
 import { calendarMonthOf, divisionOf } from "./calendar";
 import { getTuning } from "./tuningStore";
+import { MONEY_SIGN } from "./money";
 
 /**
  * THE CASINO'S BOOK — BETTING ON WHO WINS THE ACTUAL COMPETITIONS.
@@ -217,7 +218,7 @@ export function betNewsLines(settlements: BetSettlement[]): string[] {
   return settlements.map(s => {
     const comp = BET_COMPETITIONS.find(c => c.id === s.bet.competition)?.label ?? s.bet.competition;
     return s.won
-      ? `${comp}: ${s.bet.club} won! ★${s.bet.stake} @ ${s.bet.odds.toFixed(2)} → ★${s.payout}`
-      : `${comp}: ${s.bet.club} didn't win it — ★${s.bet.stake} stake lost.`;
+      ? `${comp}: ${s.bet.club} won! ${MONEY_SIGN}${s.bet.stake} @ ${s.bet.odds.toFixed(2)} → ${MONEY_SIGN}${s.payout}`
+      : `${comp}: ${s.bet.club} didn't win it — ${MONEY_SIGN}${s.bet.stake} stake lost.`;
   });
 }

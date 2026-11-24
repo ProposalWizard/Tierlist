@@ -1,0 +1,405 @@
+{
+ "id": "arc-pe-teacher",
+ "title": "Sir wants a shirt",
+ "owner": "pal",
+ "summary": "Your old school mate texts: the PE teacher who said you'd never make it wants a signed shirt for the school raffle. What you write on it gets back to him. A season later the school asks for something bigger.",
+ "size": "small",
+ "about": {
+  "who": [
+   "old school friend"
+  ],
+  "tone": [
+   "funny",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "pal",
+   "pick": "pal"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "old-school-pride",
+   "title": "On the wall at school",
+   "text": "Your shirt is in the school's reception, and the PE teacher tells everyone he always knew."
+  },
+  {
+   "id": "still-sore",
+   "title": "Still sore",
+   "text": "You never let it go, and the school stopped asking."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "pet-1-text",
+   "title": "A text from school",
+   "n": 1,
+   "event": {
+    "id": "arc-pet-1-text",
+    "title": "A text from school",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "clubApps>=1"
+     ]
+    },
+    "setup": [
+     "A text from {pal.name}. You sat next to him in every lesson for five years."
+    ],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "pal",
+       "say": [
+        "\"Mate. Our old PE teacher is doing the school raffle and he asked if I could get a signed shirt off you. Yes, him. The one who said you'd be stacking shelves.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Course. Who do I make it out to?\"",
+         "tone": "kind",
+         "goto": "s2"
+        },
+        {
+         "id": "write",
+         "label": "\"I'll sign it. And I'll write something on it.\"",
+         "tone": "confident",
+         "goto": "s-write"
+        },
+        {
+         "id": "no",
+         "label": "\"He can buy a ticket like everyone else.\"",
+         "tone": "cold",
+         "end": "refused"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "left-on-read"
+        }
+       ]
+      },
+      "s2": {
+       "who": "pal",
+       "say": [
+        "\"No idea. I've never called him anything but Sir. Do you want me to come and pick it up?\""
+       ],
+       "replies": [
+        {
+         "id": "drop",
+         "label": "\"I'll drop it in at the school myself.\"",
+         "tone": "humble",
+         "end": "dropped-in"
+        },
+        {
+         "id": "post",
+         "label": "\"I'll post it to you.\"",
+         "tone": "calm",
+         "end": "posted"
+        }
+       ]
+      },
+      "s-write": {
+       "who": "pal",
+       "say": [
+        "\"Go on. What are you writing?\""
+       ],
+       "replies": [
+        {
+         "id": "told",
+         "label": "\"‘To Sir. The shelves are fine. Love, {you.short}.’\"",
+         "tone": "confident",
+         "end": "wrote-it"
+        },
+        {
+         "id": "nice",
+         "label": "\"Only joking. ‘Thanks for the lift to the county trials.’\"",
+         "tone": "kind",
+         "end": "posted"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "dropped-in": [
+       {
+        "text": "You walk into the old sports hall and it's smaller than you remember. Sir shakes your hand for too long.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "dropped-the-shirt-in",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "posted": [
+       {
+        "text": "It raises four hundred quid for the minibus. {pal.short} sends you a photo of Sir holding it up.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "signed-the-raffle-shirt",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "wrote-it": [
+       {
+        "text": "It's the best seller in the raffle. Sir buys every ticket he can, takes it home himself and isn't seen at the staff Christmas do.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "wrote-on-hollins-shirt",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "dig"
+         }
+        }
+       }
+      ],
+      "refused": [
+       {
+        "text": "\"Fair. He was a nightmare.\" Two weeks later {pal.short} isn't in the group chat any more.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -6,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "wouldnt-sign-for-the-school",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cold"
+         }
+        }
+       }
+      ],
+      "left-on-read": [
+       {
+        "text": "He sends a question mark the next day. Then nothing.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cold"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "An old school mate has a favour to ask"
+  },
+  {
+   "id": "pet-2-assembly",
+   "title": "Prize-giving",
+   "after": {
+    "beat": "pet-1-text",
+    "seasons": [
+     1,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-pet-2-assembly",
+    "title": "Prize-giving",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{pal.short} again. \"They want you to give out the prizes at the leavers' assembly. Sir asked for you by name.\"",
+     "{if arc.path=='dig'}\"He's still got the shirt, by the way. Framed it. With the writing facing the wall.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go and give out the prizes.",
+      "tone": "kind",
+      "cost": {
+       "weekAction": 1
+      },
+      "outcomes": [
+       {
+        "text": "Sir introduces you as \"one of mine\". You let him have it.",
+        "effects": {
+         "fans": 2,
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "did-the-leavers-assembly",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "old-school-pride"
+        }
+       }
+      ]
+     },
+     {
+      "id": "busy",
+      "label": "Say you're training.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "!arc.path=='cold'",
+        "text": "\"No worries, he'll understand.\" He sends a photo of the shirt in reception the week after.",
+        "npc": [
+         {
+          "slot": "pal"
+         }
+        ],
+        "arc": {
+         "end": "old-school-pride"
+        }
+       },
+       {
+        "text": "{pal.short} doesn't reply. The school asks a weather man off local telly instead.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -4
+         }
+        ],
+        "arc": {
+         "end": "still-sore"
+        }
+       }
+      ]
+     },
+     {
+      "id": "dig",
+      "label": "\"Tell Sir to ask me himself.\"",
+      "tone": "fiery",
+      "outcomes": [
+       {
+        "text": "He does ask, in a letter. You don't answer it.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -4,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "never-forgave-sir",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "still-sore"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "The school wants something bigger"
+  }
+ ]
+}

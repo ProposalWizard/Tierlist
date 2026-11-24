@@ -1,0 +1,1901 @@
+{
+ "id": "arc-number-nine",
+ "title": "Sort it out between you",
+ "owner": "mate",
+ "summary": "The gaffer leaves the number nine off the squad list and tells you and the other striker to sort it out. A crossbar challenge decides it. Next season he's injured and asks you to feed him in his comeback, then asks you to back him in the gaffer's office. Seasons on, he's leaving, and years after that a parcel turns up.",
+ "size": "big",
+ "about": {
+  "who": [
+   "team-mate: rival for your shirt",
+   "gaffer"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.2
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "where": [
+    "samePosition"
+   ],
+   "order": "best"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "shirt": "none",
+  "feel": "none",
+  "ally": 0,
+  "fed": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "brothers-in-arms",
+   "title": "Two number nines",
+   "text": "You fought him for the shirt and then you backed him when it counted. His nine is framed in your hallway."
+  },
+  {
+   "id": "the-feud",
+   "title": "The nine and the grudge",
+   "text": "You and him never sorted it out, and every time you meet it's still about the shirt."
+  },
+  {
+   "id": "quiet-ending",
+   "title": "He kept it to himself",
+   "text": "You got on, more or less. When he left he didn't say much, and neither did you."
+  }
+ ],
+ "promises": {
+  "p-back-him": {
+   "id": "p-back-him",
+   "to": "mate",
+   "text": "Back {mate.short} in the gaffer's office",
+   "due": {
+    "beat": "n9-4-office"
+   },
+   "keptBy": {
+    "beat": "n9-4-office",
+    "ends": [
+     "backed"
+    ]
+   },
+   "dueText": "When he's fit",
+   "kept": {
+    "text": "You said you'd back him, and you did.",
+    "npc": [
+     {
+      "slot": "mate",
+      "bond": 4,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said \"say when\". When he said when, you didn't.",
+    "npc": [
+     {
+      "slot": "mate",
+      "bond": -8,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "mate",
+      "tag": "said-hed-back-him-and-didnt",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "n9-1-shirt",
+   "title": "The number nine",
+   "n": 1,
+   "event": {
+    "id": "arc-n9-1-shirt",
+    "title": "The number nine",
+    "category": "teammates",
+    "place": "compound:corridor",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "squad.any(samePosition)"
+     ]
+    },
+    "setup": [
+     "The squad numbers for next season are pinned up outside the gaffer's office. The nine has been left blank, and underneath it {manager.short} has written \"Sort it out between you.\""
+    ],
+    "talk": {
+     "start": "n1",
+     "nodes": {
+      "n1": {
+       "who": "mate",
+       "say": [
+        "{mate.name} reads it twice. \"I've worn nine since I was eleven. You knew that, didn't you?\""
+       ],
+       "replies": [
+        {
+         "id": "give",
+         "label": "\"It's yours. I'm not fussed about a number.\"",
+         "tone": "humble",
+         "goto": "n-give"
+        },
+        {
+         "id": "bar",
+         "label": "\"Crossbar after training. Five each.\"",
+         "tone": "confident",
+         "goto": "n2"
+        },
+        {
+         "id": "grab",
+         "label": "\"He's put it up for grabs, so I'm grabbing it.\"",
+         "tone": "fiery",
+         "goto": "n-cold",
+         "mood": -1
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "n-quiet"
+        }
+       ]
+      },
+      "n-give": {
+       "who": "mate",
+       "say": [
+        "\"You mean that?\" He looks at you like he's waiting for the catch."
+       ],
+       "replies": [
+        {
+         "id": "mean",
+         "label": "\"I mean it. Score in it.\"",
+         "tone": "kind",
+         "end": "gave-warm"
+        },
+        {
+         "id": "catch",
+         "label": "\"You can carry my boots to the bus for a month.\"",
+         "tone": "confident",
+         "end": "gave-joke",
+         "mood": 1
+        }
+       ]
+      },
+      "n-quiet": {
+       "who": "mate",
+       "say": [
+        "He waits. \"So that's a no, then. I'll tell him we've sorted it.\""
+       ],
+       "replies": [
+        {
+         "id": "walk",
+         "label": "Let him go and tell him.",
+         "tone": "calm",
+         "end": "gave-quiet"
+        },
+        {
+         "id": "bar",
+         "label": "\"Crossbar. After training.\"",
+         "tone": "brave",
+         "goto": "n2"
+        }
+       ]
+      },
+      "n-cold": {
+       "who": "mate",
+       "say": [
+        "\"Grabbing it.\" He takes the pen off its string and writes his own name next to the nine."
+       ],
+       "replies": [
+        {
+         "id": "rub",
+         "label": "Rub his name out with your thumb.",
+         "tone": "fiery",
+         "end": "feud-start"
+        },
+        {
+         "id": "bar",
+         "label": "\"Fine. Crossbar, then, and loser shuts up about it.\"",
+         "tone": "brave",
+         "goto": "n2"
+        },
+        {
+         "id": "leave",
+         "label": "\"Have it, then.\"",
+         "tone": "cold",
+         "end": "gave-cold"
+        }
+       ]
+      },
+      "n2": {
+       "who": "mate",
+       "say": [
+        "\"Five each from the edge of the box. Whoever hits the bar most gets nine. You go first, because it was your idea.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Get the balls.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "stake",
+         "label": "\"Loser drives the winner in for a month as well.\"",
+         "tone": "reckless",
+         "goto": "play",
+         "mood": 1
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "crossbar",
+        "name": "The nine",
+        "intro": "Five each at the bar from the edge of the box. He goes after you.",
+        "dials": {
+         "shots": 5,
+         "from": "16m",
+         "opponent": {
+          "slot": "mate"
+         }
+        },
+        "score": "shots off the bar (0-5) against his",
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "power",
+         "target": 55
+        },
+        "cost": {
+         "energy": -5
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "r-stop"
+        ],
+        [
+         "activity.won",
+         "r-won"
+        ],
+        [
+         "",
+         "r-lost"
+        ]
+       ]
+      },
+      "r-won": {
+       "who": "mate",
+       "say": [
+        "\"{activity.score} to {activity.oppScore}.\" He pulls the shirt off the hook in the kit room and throws it at you. \"Go on, then.\""
+       ],
+       "replies": [
+        {
+         "id": "shake",
+         "label": "Shake his hand.",
+         "tone": "kind",
+         "end": "won-shook"
+        },
+        {
+         "id": "gloat",
+         "label": "\"Told you.\"",
+         "tone": "confident",
+         "end": "won-gloat"
+        }
+       ]
+      },
+      "r-lost": {
+       "who": "mate",
+       "say": [
+        "\"{activity.oppScore} to {activity.score}. Nine stays where it is.\" He picks up the last ball. \"You hit it, mind.\""
+       ],
+       "replies": [
+        {
+         "id": "fair",
+         "label": "\"Fair enough. I'll take eighteen.\"",
+         "tone": "humble",
+         "end": "lost-fair"
+        },
+        {
+         "id": "again",
+         "label": "\"Best of three tomorrow.\"",
+         "tone": "fiery",
+         "end": "lost-again"
+        }
+       ]
+      },
+      "r-stop": {
+       "who": "mate",
+       "say": [
+        "\"You can't walk off halfway through. That's me, then.\""
+       ],
+       "replies": [
+        {
+         "id": "sorry",
+         "label": "\"My calf's tight. It's yours.\"",
+         "tone": "honest",
+         "end": "stopped"
+        },
+        {
+         "id": "whatever",
+         "label": "Walk in without answering.",
+         "tone": "cold",
+         "end": "stopped"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "gave-warm": [
+       {
+        "text": "He wears nine on Saturday and scores in it. He points at you on the way back.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "gave-him-the-nine",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "shirt": "him",
+          "feel": "warm"
+         }
+        }
+       }
+      ],
+      "gave-joke": [
+       {
+        "text": "He carries your boots to the bus every away game for a month and complains every time.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 10,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "gave-him-the-nine",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "shirt": "him",
+          "feel": "warm"
+         }
+        }
+       }
+      ],
+      "gave-quiet": [
+       {
+        "text": "He tells the gaffer it's sorted. Nobody asks you what you think.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "let-him-have-the-nine",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "shirt": "him",
+          "feel": "none"
+         }
+        }
+       }
+      ],
+      "gave-cold": [
+       {
+        "text": "He wears nine. He knows you didn't mean it kindly.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -4,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "sulked-over-the-nine",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "shirt": "him",
+          "feel": "sour"
+         }
+        }
+       }
+      ],
+      "feud-start": [
+       {
+        "text": "The gaffer sees the smudge and gives nine to neither of you. You play in fourteen, he plays in twenty-two.",
+        "effects": {
+         "team": -4,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -8,
+          "respect": -2,
+          "grudge": 14
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "rubbed-his-name-out",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "shirt": "none",
+          "feel": "sour"
+         }
+        },
+        "noteSquad": "the-nine-row"
+       }
+      ],
+      "won-shook": [
+       {
+        "text": "You wear nine. He takes eighteen and doesn't make a thing of it.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4,
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "beat-him-for-the-nine",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "shirt": "you",
+          "feel": "warm"
+         }
+        }
+       }
+      ],
+      "won-gloat": [
+       {
+        "text": "You wear nine. He hears you said \"told you\" to the lads as well, and he doesn't laugh.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -6,
+          "respect": 2,
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "gloated-over-the-nine",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "shirt": "you",
+          "feel": "sour"
+         }
+        }
+       }
+      ],
+      "lost-fair": [
+       {
+        "text": "You take eighteen. On Saturday he scores and runs past the bench to you first.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "took-eighteen-without-a-fuss",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "shirt": "him",
+          "feel": "warm"
+         }
+        }
+       }
+      ],
+      "lost-again": [
+       {
+        "text": "He says no to best of three. You hear him tell the physio you're a sore loser.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -2,
+          "respect": 2,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "wanted-best-of-three",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "shirt": "him",
+          "feel": "sour"
+         }
+        }
+       }
+      ],
+      "stopped": [
+       {
+        "text": "He wears nine, and he tells everyone you walked off.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -2,
+          "respect": -6,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "walked-off-the-crossbar",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "shirt": "him",
+          "feel": "sour"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "samePosition"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The other striker wants the nine"
+  },
+  {
+   "id": "n9-2-gaffer",
+   "title": "The gaffer on the nine",
+   "after": {
+    "beat": "n9-1-shirt",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-n9-2-gaffer",
+    "title": "The gaffer on the nine",
+    "category": "manager",
+    "place": "compound:office",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "followUp"
+     ]
+    },
+    "setup": [
+     "{manager.name} calls you in. The new squad list is on his desk with the numbers filled in."
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "manager",
+       "say": [
+        "{if arc.shirt=='you'}\"Nine's a big shirt at this club. {mate.short} scored eleven in it last season. I want to see what you do in it.\"{/if}",
+        "{if arc.shirt=='him'}\"You let {mate.short} have nine. I'd like to know whether that's because you're a team player or because you didn't want it.\"{/if}",
+        "{if arc.shirt=='none'}\"Neither of you is wearing nine until you can stand in a corridor without a fight. Do you understand me?\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "calm",
+         "label": "\"It's a number. I'll score whatever I'm wearing.\"",
+         "tone": "calm",
+         "goto": "g2"
+        },
+        {
+         "id": "confident",
+         "label": "\"Give me three games and you'll see.\"",
+         "tone": "confident",
+         "goto": "g2",
+         "mood": 1
+        },
+        {
+         "id": "fiery",
+         "label": "\"Then pick a striker and stop making us scrap for it.\"",
+         "tone": "fiery",
+         "end": "snapped",
+         "mood": -1
+        },
+        {
+         "id": "quiet",
+         "label": "… Say nothing",
+         "silent": true,
+         "goto": "g2"
+        }
+       ]
+      },
+      "g2": {
+       "who": "manager",
+       "say": [
+        "\"Right. Score in the next three and we won't need this chat again.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Three games.\"",
+         "tone": "confident",
+         "end": "objective"
+        },
+        {
+         "id": "fine",
+         "label": "\"Fine.\"",
+         "tone": "calm",
+         "end": "objective"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "objective": [
+       {
+        "text": "He writes something on the list and doesn't show you what.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "objective": {
+         "id": "o-n9-three",
+         "text": "Score in one of your next 3 matches",
+         "window": {
+          "matches": 3
+         },
+         "met": "lastGoals>=1",
+         "onMet": "n9-2b-scored",
+         "onMiss": "n9-2c-blank",
+         "why": "From the gaffer, after the shirt. {mate.short} will be watching."
+        }
+       }
+      ],
+      "snapped": [
+       {
+        "text": "\"I'll pick when I'm ready. Shut the door on your way out.\"",
+        "effects": {
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -4,
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "told-him-to-pick-a-striker",
+          "strength": 2
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "samePosition"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The gaffer has heard how you sorted it"
+  },
+  {
+   "id": "n9-2b-scored",
+   "title": "Off the mark",
+   "after": {
+    "objective": "o-n9-three"
+   },
+   "event": {
+    "id": "arc-n9-2b-scored",
+    "title": "Off the mark",
+    "category": "teammates",
+    "place": "stadium:dressing-room",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "You scored. In the dressing room after, {mate.short} is two pegs down, taking his tape off."
+    ],
+    "choices": [
+     {
+      "id": "nod",
+      "label": "Nod at him.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "{if arc.feel=='warm'}He nods back and throws you his spare tape.{/if}{if !arc.feel=='warm'}He looks at his boots instead.{/if}",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "you-scored-after-the-nine",
+          "strength": 1
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "joke",
+      "label": "\"That's for the shirt.\"",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "text": "Half the room laughs, and he carries on taking his tape off.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -3,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "rubbed-it-in",
+          "strength": 1
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "samePosition"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "Score in the next three",
+   "look": {
+    "chip": "Objective met"
+   }
+  },
+  {
+   "id": "n9-2c-blank",
+   "title": "Three blanks",
+   "after": {
+    "objective": "o-n9-three"
+   },
+   "event": {
+    "id": "arc-n9-2c-blank",
+    "title": "Three blanks",
+    "category": "manager",
+    "place": "compound:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Three games, no goal. {manager.short} passes you in the corridor and asks the kit man where the new balls are."
+    ],
+    "choices": [
+     {
+      "id": "extra",
+      "label": "Stay out after training on your own.",
+      "tone": "humble",
+      "cost": {
+       "energy": -8
+      },
+      "outcomes": [
+       {
+        "text": "You hit balls at the empty goal until the groundsman turns the sprinklers on.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "train": {
+         "technique": 1
+        }
+       }
+      ]
+     },
+     {
+      "id": "go",
+      "label": "Go home.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "{if arc.shirt=='you'}By Friday there's a rumour the nine is going back to {mate.short}.{/if}{if !arc.shirt=='you'}You go home and watch the game back twice.{/if}",
+        "effects": {
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": 2
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "samePosition"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "Score in the next three",
+   "look": {
+    "chip": "Objective missed"
+   }
+  },
+  {
+   "id": "n9-3-ankle",
+   "title": "His comeback",
+   "after": {
+    "beat": "n9-1-shirt",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-n9-3-ankle",
+    "title": "His comeback",
+    "category": "teammates",
+    "place": "compound:pitch-2",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.name} has been out for nine weeks with his ankle. He's on pitch two with a bag of balls, on his own, in a protective boot on the bad foot.",
+     "{if arc.feel=='sour'}You haven't said much to each other since the nine.{/if}"
+    ],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "mate",
+       "say": [
+        "\"The physio says I can shoot on Monday. Nobody else will stay out and feed me. They think I'm done.\""
+       ],
+       "replies": [
+        {
+         "id": "feed",
+         "label": "\"I'll feed you. Today, if you want.\"",
+         "tone": "kind",
+         "goto": "a2",
+         "mood": 1
+        },
+        {
+         "id": "why",
+         "label": "\"Why are you asking me?\"",
+         "tone": "honest",
+         "goto": "a-why"
+        },
+        {
+         "id": "no",
+         "label": "\"Ask one of the kids.\"",
+         "tone": "cold",
+         "end": "refused"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "a-why"
+        }
+       ]
+      },
+      "a-why": {
+       "who": "mate",
+       "say": [
+        "\"Because you're the one who wants my place. If I'm finishing in the corners against your passes, I'm fit.\""
+       ],
+       "replies": [
+        {
+         "id": "feed",
+         "label": "\"Get on the D, then.\"",
+         "tone": "brave",
+         "goto": "a2"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm not helping you take it back.\"",
+         "tone": "fiery",
+         "end": "refused-hard"
+        }
+       ]
+      },
+      "a2": {
+       "who": "mate",
+       "say": [
+        "\"Ten. Roll them through the cones onto my right foot. If it's a bad ball I'm not chasing it, I've got one ankle.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Roll the first one.",
+         "tone": "calm",
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "feed-drill",
+        "name": "His comeback",
+        "intro": "Ten passes through the cones. A good ball gives him a better chance.",
+        "dials": {
+         "balls": 10,
+         "shooter": {
+          "slot": "mate"
+         }
+        },
+        "score": "his goals off your passes (0-10)",
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "vision",
+         "target": 55
+        },
+        "cost": {
+         "energy": -5
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "f-stop"
+        ],
+        [
+         "activity.score>=6",
+         "f-good"
+        ],
+        [
+         "",
+         "f-poor"
+        ]
+       ]
+      },
+      "f-good": {
+       "who": "mate",
+       "say": [
+        "\"{activity.score} in. Don't tell the physio I hit them that hard.\" He sits down on the bag. \"When I'm right, I'm going to ask the gaffer to play two up top. You and me. Will you back me?\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"I'll back you. Say when.\"",
+         "tone": "honest",
+         "end": "backing"
+        },
+        {
+         "id": "maybe",
+         "label": "\"Get fit first. Then we'll see.\"",
+         "tone": "calm",
+         "end": "fed-maybe"
+        }
+       ]
+      },
+      "f-poor": {
+       "who": "mate",
+       "say": [
+        "\"{activity.score}. That's my ankle, not your passing.\" He doesn't sound sure. \"Same time next week?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Same time.\"",
+         "tone": "kind",
+         "end": "fed-maybe"
+        },
+        {
+         "id": "no",
+         "label": "\"I've got my own game to worry about.\"",
+         "tone": "cold",
+         "end": "fed-once"
+        }
+       ]
+      },
+      "f-stop": {
+       "who": "mate",
+       "say": [
+        "\"That's it? Fine. Thanks, I suppose.\""
+       ],
+       "replies": [
+        {
+         "id": "sorry",
+         "label": "\"I've got a knock. Monday, properly.\"",
+         "tone": "honest",
+         "end": "fed-once"
+        },
+        {
+         "id": "go",
+         "label": "Go in.",
+         "tone": "cold",
+         "end": "refused"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "backing": [
+       {
+        "text": "\"Say when.\" He writes it on the strapping on his wrist.",
+        "effects": {
+         "team": 4
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 12,
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "fed-him-on-his-comeback",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "fed": 1
+         }
+        },
+        "promise": "p-back-him"
+       }
+      ],
+      "fed-maybe": [
+       {
+        "text": "He limps in with the bag. He's quicker on it than he was this morning.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "fed-him-on-his-comeback",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "fed": 1
+         }
+        }
+       }
+      ],
+      "fed-once": [
+       {
+        "text": "He collects the balls himself.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "fed-him-once",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "fed": 1
+         }
+        }
+       }
+      ],
+      "refused": [
+       {
+        "text": "One of the academy lads feeds him instead. He makes a point of thanking the kid where you can hear it.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -6,
+          "respect": -2,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "wouldnt-feed-him",
+          "strength": 2
+         }
+        ]
+       }
+      ],
+      "refused-hard": [
+       {
+        "text": "\"Good to know where I stand.\" He tells the dressing room before you're back in it.",
+        "effects": {
+         "team": -4
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -10,
+          "grudge": 14
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "wouldnt-feed-him",
+          "strength": 3
+         }
+        ],
+        "noteSquad": "refused-to-help-the-injured-lad"
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "samePosition"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "Next season, something happens to him"
+  },
+  {
+   "id": "n9-4-office",
+   "title": "Two up top",
+   "after": {
+    "beat": "n9-3-ankle",
+    "weeks": [
+     2,
+     4
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-n9-4-office",
+    "title": "Two up top",
+    "category": "manager",
+    "place": "compound:office",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "arc.fed==1"
+     ]
+    },
+    "setup": [
+     "{mate.short} knocks on the gaffer's door and holds it open for you. \"Come on, then.\""
+    ],
+    "talk": {
+     "start": "o1",
+     "nodes": {
+      "o1": {
+       "who": "manager",
+       "say": [
+        "{manager.name} listens to {mate.short} without looking up. \"Two strikers. And which of my midfielders goes, {you.short}? You tell me.\""
+       ],
+       "replies": [
+        {
+         "id": "back",
+         "label": "\"Play us both. We work, and I'll run for him.\"",
+         "tone": "brave",
+         "goto": "o2"
+        },
+        {
+         "id": "hedge",
+         "label": "\"It's your call, gaffer.\"",
+         "tone": "calm",
+         "end": "hedged"
+        },
+        {
+         "id": "self",
+         "label": "\"If it's one of us, it's me.\"",
+         "tone": "fiery",
+         "end": "took-it"
+        },
+        {
+         "id": "quiet",
+         "label": "… Say nothing",
+         "silent": true,
+         "end": "hedged"
+        }
+       ]
+      },
+      "o2": {
+       "who": "manager",
+       "say": [
+        "\"You'll run for him. In the eightieth minute at somebody else's ground, in the rain.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"In the rain.\"",
+         "tone": "confident",
+         "end": "backed"
+        },
+        {
+         "id": "both",
+         "label": "\"Both of us will.\"",
+         "tone": "humble",
+         "end": "backed"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "backed": [
+       {
+        "text": "\"Two weeks. If it doesn't work I go back to one and I'm not having this chat again.\" You start together on Saturday, and you're still starting together at Easter.",
+        "effects": {
+         "boss": 3,
+         "team": 5
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 12,
+          "respect": 10
+         },
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "backed-him-in-the-office",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "ally": 1
+         }
+        }
+       }
+      ],
+      "hedged": [
+       {
+        "text": "{mate.short} stops holding the door. In the corridor he says \"Thanks for nothing\" quietly enough that only you hear it.",
+        "effects": {
+         "team": -3
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -10,
+          "respect": -6,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "left-him-alone-in-the-office",
+          "strength": 3
+         }
+        ],
+        "promiseBroken": [
+         "p-back-him"
+        ]
+       }
+      ],
+      "took-it": [
+       {
+        "text": "The gaffer almost smiles. {mate.short} walks out before you do.",
+        "effects": {
+         "boss": 2,
+         "team": -5
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -14,
+          "grudge": 16
+         },
+         {
+          "slot": "manager",
+          "respect": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "took-his-place-in-the-office",
+          "strength": 3
+         }
+        ],
+        "promiseBroken": [
+         "p-back-him"
+        ],
+        "noteSquad": "the-office-and-the-nine"
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "samePosition"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "He's going to ask the gaffer for two strikers"
+  },
+  {
+   "id": "n9-5-leaving",
+   "title": "He's leaving",
+   "after": {
+    "beat": "n9-3-ankle",
+    "seasons": [
+     1,
+     2
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-n9-5-leaving",
+    "title": "He's leaving",
+    "category": "teammates",
+    "place": "stadium:tunnel",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "variants": [
+     {
+      "if": "!sameClub",
+      "template": "phone-call",
+      "place": "home",
+      "setupSwap": "A call from {mate.name}. You haven't spoken since you moved."
+     }
+    ],
+    "trigger": {
+     "when": [
+      "after-match",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{if mate.age>=1}{mate.name} has asked to leave in the summer. He asks you to walk out to the car park with him.{/if}{if !mate.age>=1}{mate.name} is in the other team's line in the tunnel, in their colours. He's let his hair grow.{/if}"
+    ],
+    "talk": {
+     "start": "l1",
+     "nodes": {
+      "l1": {
+       "who": "mate",
+       "say": [
+        "{if arc.ally==1}\"I owe you for that office. I won't forget that, wherever I end up.\"{/if}",
+        "{if arc.ally==0 && arc.feel=='sour'}\"You got what you wanted, then. The nine, the place, all of it.\"{/if}",
+        "{if arc.ally==0 && !arc.feel=='sour'}\"Funny, I thought we'd be up front together for years.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "warm",
+         "label": "\"Come back and see us. I mean it.\"",
+         "tone": "kind",
+         "end": "warm-goodbye"
+        },
+        {
+         "id": "square",
+         "label": "\"We're square. Go and score some goals.\"",
+         "tone": "calm",
+         "end": "square"
+        },
+        {
+         "id": "dig",
+         "label": "\"Nobody's sorry you're going.\"",
+         "tone": "cold",
+         "end": "bitter-goodbye"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "square"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "warm-goodbye": [
+       {
+        "text": "He hugs you, which he has never done, and tells you the bag of balls is yours.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "saw-him-off-properly",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "feel": "warm"
+         }
+        }
+       }
+      ],
+      "square": [
+       {
+        "text": "He nods and gets in his car.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "said-we-were-square",
+          "strength": 1
+         }
+        ]
+       }
+      ],
+      "bitter-goodbye": [
+       {
+        "text": "\"Good to know.\" He says it again to the reporter outside, in other words.",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -10,
+          "grudge": 14
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "glad-he-was-going",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "feel": "sour"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "samePosition"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "He wants a word before he goes"
+  },
+  {
+   "id": "n9-6-parcel",
+   "title": "A parcel at the door",
+   "after": {
+    "beat": "n9-5-leaving",
+    "seasons": [
+     2,
+     5
+    ]
+   },
+   "n": 5,
+   "event": {
+    "id": "arc-n9-6-parcel",
+    "title": "A parcel at the door",
+    "category": "teammates",
+    "place": "home",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "followUp"
+     ]
+    },
+    "setup": [
+     "{if arc.feel=='warm'}A flat parcel, wrapped badly. Inside is a number nine shirt in a cheap frame, the one you played that crossbar for, signed on the back. \"Retiring Saturday. You were the best I played with. Come if you can.\"{/if}",
+     "{if !arc.feel=='warm'}A newspaper cutting with no note. {mate.name} is retiring, and in the interview he names the best striker he played with. It isn't you, and he's made sure it isn't.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go to his last game.",
+      "tone": "kind",
+      "cost": {
+       "weekAction": 1
+      },
+      "outcomes": [
+       {
+        "if": "arc.feel=='warm'",
+        "text": "You stand in the away end in a coat. He sees you at full time and points, the way he did the first week.",
+        "effects": {
+         "fans": 3,
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 10,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "came-to-his-last-game",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "brothers-in-arms"
+        }
+       },
+       {
+        "text": "You go anyway. He sees you and looks away, then at full time he walks over and shakes your hand without a word.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 4,
+          "grudge": -10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "came-to-his-last-game",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "quiet-ending"
+        }
+       }
+      ]
+     },
+     {
+      "id": "hang",
+      "label": "Hang it, or bin it, and leave it there.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.feel=='warm'",
+        "text": "It goes up in the hallway, and it's still there now.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "brothers-in-arms"
+        }
+       },
+       {
+        "text": "You read it twice and put it in the recycling.",
+        "effects": {
+         "fame": -1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "end": "the-feud"
+        }
+       }
+      ]
+     },
+     {
+      "id": "call",
+      "label": "Ring him.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.ally==1",
+        "text": "He answers on the first ring. You talk about the crossbar for twenty minutes.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "rang-him-when-he-retired",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "brothers-in-arms"
+        }
+       },
+       {
+        "if": "arc.feel=='sour'",
+        "text": "It rings out. Then a text: \"Don't.\"",
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "rang-him-when-he-retired",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "end": "the-feud"
+        }
+       },
+       {
+        "text": "It rings out. He texts later: \"Saw you rang. Busy week.\"",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "quiet-ending"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "samePosition"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "Years on, something from him",
+   "look": {
+    "chip": "Years later"
+   }
+  }
+ ]
+}

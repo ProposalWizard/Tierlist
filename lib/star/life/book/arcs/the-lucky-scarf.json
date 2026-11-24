@@ -1,0 +1,303 @@
+{
+ "id": "arc-the-lucky-scarf",
+ "title": "The scarf",
+ "owner": "fan",
+ "summary": "The old man with the season ticket by the tunnel gives you his scarf, the one he's had since 1971. He says it's lucky. A season later he isn't in his seat.",
+ "size": "small",
+ "about": {
+  "who": [
+   "season-ticket holder"
+  ],
+  "tone": [
+   "warm",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "fan",
+   "pick": "fan"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-empty-seat-by-the-tunnel",
+   "title": "The seat by the tunnel",
+   "text": "He gave you his scarf. When he died, you put it on his seat."
+  },
+  {
+   "id": "just-a-scarf",
+   "title": "Just a scarf",
+   "text": "He gave you his scarf and you put it in a drawer. His son asked about it once."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "scf-1-scarf",
+   "title": "Since 1971",
+   "n": 1,
+   "event": {
+    "id": "arc-scf-1-scarf",
+    "title": "Since 1971",
+    "category": "fans",
+    "place": "stadium:tunnel",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastLost || lastRating<6.5"
+     ]
+    },
+    "setup": [
+     "{fan.name} has had the seat by the tunnel since before your dad was born. After the game he leans over the rail and holds out a scarf so faded you can barely see the colours."
+    ],
+    "talk": {
+     "start": "f1",
+     "nodes": {
+      "f1": {
+       "who": "fan",
+       "say": [
+        "\"I've had this since 1971. It's been lucky for every good player we've had. You're not one yet, but you might be. Take it.\""
+       ],
+       "replies": [
+        {
+         "id": "take",
+         "label": "\"I can't take that.\"",
+         "tone": "humble",
+         "goto": "f2"
+        },
+        {
+         "id": "yes",
+         "label": "Take it. \"I'll wear it on the bus.\"",
+         "tone": "kind",
+         "end": "took"
+        },
+        {
+         "id": "joke",
+         "label": "\"Has it been washed since 1971?\"",
+         "tone": "confident",
+         "goto": "f2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "took-quiet"
+        }
+       ]
+      },
+      "f2": {
+       "who": "fan",
+       "say": [
+        "\"Don't be soft. My wife's been trying to bin it for fifty years. Take it before she wins.\""
+       ],
+       "replies": [
+        {
+         "id": "take",
+         "label": "Take it.",
+         "tone": "kind",
+         "end": "took"
+        },
+        {
+         "id": "no",
+         "label": "\"Keep it, honestly. It's yours.\"",
+         "tone": "calm",
+         "end": "refused"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "took": [
+       {
+        "text": "It smells of cigarettes and pies. You score the next week and point at the seat by the tunnel. He stands up, which he doesn't do.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 12,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "took-my-scarf",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "took"
+         }
+        }
+       }
+      ],
+      "took-quiet": [
+       {
+        "text": "You take it and nod. He sits back down, pleased.",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "took-my-scarf",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "took"
+         }
+        }
+       }
+      ],
+      "refused": [
+       {
+        "text": "\"Suit yourself.\" He wears it himself, and gives you a nod every week anyway.",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "refused"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "The old man by the tunnel wants a word"
+  },
+  {
+   "id": "scf-2-seat",
+   "title": "The seat by the tunnel",
+   "after": {
+    "beat": "scf-1-scarf",
+    "seasons": [
+     1,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-scf-2-seat",
+    "title": "The seat by the tunnel",
+    "category": "fans",
+    "place": "stadium:tunnel",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on. The seat by the tunnel is empty, with a bunch of flowers on it. {fan.short} died on Tuesday. A man about your dad's age is in the next seat. He's {fan.short}'s son."
+    ],
+    "choices": [
+     {
+      "id": "scarf",
+      "label": "{if arc.path=='took'}Put the scarf on his seat before kick-off.{/if}{if !arc.path=='took'}Go over and shake his son's hand.{/if}",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='took'",
+        "text": "His son puts his hand on it and leaves it there for the whole first half. The stand claps in the seventy-first minute.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "put-the-scarf-on-his-seat",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-empty-seat-by-the-tunnel"
+        }
+       },
+       {
+        "text": "\"He said you were all right,\" his son says. \"From him that was a lot.\"",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "just-a-scarf"
+        }
+       }
+      ]
+     },
+     {
+      "id": "play",
+      "label": "Play the game.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "{if arc.path=='took'}The scarf is in your kit bag. You touch it before you go out, and you don't tell anyone.{/if}{if !arc.path=='took'}You look at the seat once, on the way out.{/if}",
+        "arc": {
+         "end": "just-a-scarf"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "A season on, the seat by the tunnel"
+  }
+ ]
+}

@@ -1,0 +1,477 @@
+{
+ "id": "arc-bar-for-breakfast",
+ "title": "Breakfast is on the bar",
+ "owner": "coach",
+ "summary": "The first-team coach bets you a week of breakfasts that you can't hit the bar more than him from the edge of the box. Then you play it. A season later he wants a rematch, or he still owes you.",
+ "size": "small",
+ "about": {
+  "who": [
+   "coach"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "coach",
+   "pick": "coach"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "breakfast-club",
+   "title": "Breakfast club",
+   "text": "The crossbar bet became a thing. Whoever loses buys bacon rolls."
+  },
+  {
+   "id": "never-paid",
+   "title": "He never paid",
+   "text": "He still owes you four breakfasts, and it's still on the whiteboard."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "brk-1-bet",
+   "title": "A week of breakfasts",
+   "n": 1,
+   "event": {
+    "id": "arc-brk-1-bet",
+    "title": "A week of breakfasts",
+    "category": "training",
+    "place": "compound:pitch-1",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "!injured"
+     ]
+    },
+    "setup": [
+     "Training's done. {coach.name} is juggling a ball on the edge of the box in his flip-flops."
+    ],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "coach",
+       "say": [
+        "\"Five each at the bar. Loser buys the breakfasts all week. I played at this level for twelve years, so I'd think about it if I were you.\""
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "\"You're on.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "boots",
+         "label": "\"You're in flip-flops.\"",
+         "tone": "calm",
+         "goto": "b2"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm not taking your money, coach.\"",
+         "tone": "kind",
+         "end": "declined"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "declined"
+        }
+       ]
+      },
+      "b2": {
+       "who": "coach",
+       "say": [
+        "\"I'm giving you a chance.\""
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "\"Get the balls, then.\"",
+         "tone": "confident",
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "crossbar",
+        "name": "Breakfast on the bar",
+        "intro": "Five each at the bar from the edge of the box. He goes after you, in flip-flops.",
+        "dials": {
+         "shots": 5,
+         "from": "16m",
+         "opponent": {
+          "slot": "coach"
+         }
+        },
+        "score": "shots off the bar (0-5) against his",
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "power",
+         "target": 50
+        },
+        "cost": {
+         "energy": -4
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "r-stop"
+        ],
+        [
+         "activity.won",
+         "r-won"
+        ],
+        [
+         "",
+         "r-lost"
+        ]
+       ]
+      },
+      "r-won": {
+       "who": "coach",
+       "say": [
+        "\"{activity.score} to {activity.oppScore}. That's a fluke.\" He looks at his flip-flops like they let him down."
+       ],
+       "replies": [
+        {
+         "id": "bacon",
+         "label": "\"Bacon rolls. Brown sauce.\"",
+         "tone": "confident",
+         "end": "won"
+        },
+        {
+         "id": "let",
+         "label": "\"Forget it. It was a laugh.\"",
+         "tone": "kind",
+         "end": "won-let-off"
+        }
+       ]
+      },
+      "r-lost": {
+       "who": "coach",
+       "say": [
+        "\"{activity.oppScore} to {activity.score}. Twelve years at this level, I said.\""
+       ],
+       "replies": [
+        {
+         "id": "pay",
+         "label": "\"Fine. What do you want on it?\"",
+         "tone": "humble",
+         "end": "lost"
+        },
+        {
+         "id": "again",
+         "label": "\"Double or nothing next season.\"",
+         "tone": "reckless",
+         "end": "lost-double"
+        }
+       ]
+      },
+      "r-stop": {
+       "who": "coach",
+       "say": [
+        "\"Walking off? That counts as a loss where I'm from.\""
+       ],
+       "replies": [
+        {
+         "id": "pay",
+         "label": "\"Fair. I'll get the breakfasts.\"",
+         "tone": "humble",
+         "end": "lost"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "won": [
+       {
+        "text": "He pays for two days and then goes very quiet about it.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "beat-him-on-the-bar",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "owed"
+         }
+        }
+       }
+      ],
+      "won-let-off": [
+       {
+        "text": "\"You're too soft for this game.\" He buys them anyway on the Friday.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "let-him-off-the-breakfasts",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "square"
+         }
+        }
+       }
+      ],
+      "lost": [
+       {
+        "text": "Five mornings of bacon rolls. He eats his standing next to the coffee machine telling everyone how.",
+        "effects": {
+         "moneyWeeks": -0.1,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "bought-him-breakfast",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "square"
+         }
+        }
+       }
+      ],
+      "lost-double": [
+       {
+        "text": "\"Next season. I'll write it on the whiteboard.\" He does.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "double-or-nothing-on-the-bar",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "double"
+         }
+        }
+       }
+      ],
+      "declined": [
+       {
+        "text": "\"Scared of a man in flip-flops.\" He tells the whole canteen.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": -2,
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "square"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The coach fancies his chances on the bar"
+  },
+  {
+   "id": "brk-2-whiteboard",
+   "title": "The whiteboard",
+   "after": {
+    "beat": "brk-1-bet",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-brk-2-whiteboard",
+    "title": "The whiteboard",
+    "category": "training",
+    "place": "compound:pitch-1",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{if arc.path=='double'}It's still on the whiteboard in the coaches' room: \"DOUBLE OR NOTHING. THE BAR.\" {coach.short} has rubbed out the date and written \"NOW\".{/if}",
+     "{if !arc.path=='double'}{coach.short} is in the canteen queue in front of you.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "rolls",
+      "label": "Buy him a bacon roll.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "{if arc.path=='owed'}\"I thought I owed you.\" \"You do.\" He laughs and pays for both.{/if}{if !arc.path=='owed'}He takes it like it's a peace treaty. It becomes a Friday thing.{/if}",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "breakfast-every-friday",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "breakfast-club"
+        }
+       }
+      ]
+     },
+     {
+      "id": "remind",
+      "label": "\"You still owe me four breakfasts.\"",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='owed'",
+        "text": "He goes red, then buys them for the whole squad to make the point that he can.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "breakfast-club"
+        }
+       },
+       {
+        "text": "\"I don't owe you anything.\" He's right, and he enjoys it.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "end": "never-paid"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ignore",
+      "label": "Get your own and sit down.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "{if arc.path=='owed'}He never mentions the breakfasts again. Neither do you.{/if}{if !arc.path=='owed'}He eats on his own.{/if}",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "end": "never-paid"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "He might want a rematch"
+  }
+ ]
+}

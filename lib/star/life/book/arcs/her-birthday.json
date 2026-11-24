@@ -1,0 +1,334 @@
+{
+ "id": "arc-her-birthday",
+ "title": "Table for two at eight",
+ "owner": "partner",
+ "summary": "You stayed out on the training pitch and forgot your partner's birthday dinner. She's been at the restaurant since eight. What you say when you get in matters, and a year on, it's her birthday again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "partner"
+  ],
+  "tone": [
+   "awkward",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "partner",
+   "pick": "partner"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "never-again",
+   "title": "Never again",
+   "text": "You forgot her birthday once. You've never been late since, and she still teases you about it."
+  },
+  {
+   "id": "the-same-again",
+   "title": "The same again",
+   "text": "You forgot it again. She stopped booking tables."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "bday-1-late",
+   "title": "Quarter to ten",
+   "n": 1,
+   "event": {
+    "id": "arc-bday-1-late",
+    "title": "Quarter to ten",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "hasPartner"
+     ]
+    },
+    "setup": [
+     "You get in at quarter to ten. {partner.short} is on the sofa in a dress, with her shoes off. You remember the restaurant exactly as you see the shoes."
+    ],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "partner",
+       "say": [
+        "\"I sat there till nine. The waiter brought me a free dessert because he felt sorry for me.\""
+       ],
+       "replies": [
+        {
+         "id": "sorry",
+         "label": "\"I'm so sorry. I've got no excuse.\"",
+         "tone": "honest",
+         "goto": "b2"
+        },
+        {
+         "id": "excuse",
+         "label": "\"Training ran over.\"",
+         "tone": "lie",
+         "goto": "b-excuse"
+        },
+        {
+         "id": "fix",
+         "label": "\"Get your shoes on. We'll go now.\"",
+         "tone": "brave",
+         "goto": "b2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "b-excuse"
+        }
+       ]
+      },
+      "b-excuse": {
+       "who": "partner",
+       "say": [
+        "\"Training finishes at one. You've been on pitch two again, haven't you?\""
+       ],
+       "replies": [
+        {
+         "id": "truth",
+         "label": "\"Yeah. I forgot. I'm sorry.\"",
+         "tone": "honest",
+         "goto": "b2"
+        },
+        {
+         "id": "dig",
+         "label": "\"I'm trying to get better at my job.\"",
+         "tone": "fiery",
+         "end": "argued"
+        }
+       ]
+      },
+      "b2": {
+       "who": "partner",
+       "say": [
+        "She looks at you for a long time. \"It's still my birthday for two hours and fifteen minutes.\""
+       ],
+       "replies": [
+        {
+         "id": "chips",
+         "label": "\"Chip shop. My treat. You can keep the dress on.\"",
+         "tone": "kind",
+         "end": "chips"
+        },
+        {
+         "id": "next",
+         "label": "\"Let me book somewhere better for tomorrow.\"",
+         "tone": "calm",
+         "end": "tomorrow"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "chips": [
+       {
+        "text": "You eat chips on a wall outside the chip shop at eleven o'clock. She says it's the best birthday dinner she's had, and gets ketchup on the dress.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "birthday-chips-on-a-wall",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "saved"
+         }
+        }
+       }
+      ],
+      "tomorrow": [
+       {
+        "text": "Tomorrow is fine. The waiter recognises her and asks if she got stood up again.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "forgot-my-birthday-dinner",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "late"
+         }
+        }
+       }
+      ],
+      "argued": [
+       {
+        "text": "She goes to bed. You sleep on the sofa next to her shoes.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -10,
+          "respect": -4,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "forgot-my-birthday-dinner",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "late"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "Something's wrong at home"
+  },
+  {
+   "id": "bday-2-again",
+   "title": "Her birthday",
+   "after": {
+    "beat": "bday-1-late",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-bday-2-again",
+    "title": "Her birthday",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ],
+     "requires": [
+      "hasPartner"
+     ]
+    },
+    "setup": [
+     "A year on. It's her birthday again, and training has finished early."
+    ],
+    "choices": [
+     {
+      "id": "home",
+      "label": "Go straight home with flowers.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "{if arc.path=='saved'}You've booked the chip shop. You've rung ahead. They've put a candle in the chips.{/if}{if !arc.path=='saved'}You're home at two. She looks at the clock and then at you and laughs.{/if}",
+        "effects": {
+         "energy": 2
+        },
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "remembered-my-birthday",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "never-again"
+        }
+       }
+      ]
+     },
+     {
+      "id": "pitch",
+      "label": "Do half an hour on pitch two first.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "Half an hour turns into two. Your phone has nine missed calls on it.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -12,
+          "respect": -6,
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "forgot-my-birthday-again",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-same-again"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "A year on, her birthday again"
+  }
+ ]
+}

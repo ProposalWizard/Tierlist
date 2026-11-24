@@ -124,3 +124,34 @@ when each foot is planted; `plantedAt(info, foot, t)` reads it. A runtime
 ground lock pins a planted foot where it landed (two-bone IK on thigh + shin)
 so a 1.65 m or a 2.00 m body never slides or floats. Not wired into any scene
 yet.
+
+## Quaternius Universal Animation Library 1 (CC0) — 21 Nov 2026
+
+Harry: "find walking animations and match them to our style/bodies, same goes
+for standing". Ten clips from UAL 1 (`clipdefs.py` `UAL_CLIPS`): `walk_relaxed`,
+`walk_formal`, `jog_easy`, `idle_relaxed`, `idle_relaxed_m` (mirrored),
+`idle_talk`, `seated_idle`, `seated_talk`, `sit_down_ual`, `stand_up_ual`.
+Licence: `ual/LICENSE` and `public/star/anims3d/LICENSE-ual.txt`.
+
+1. **Read the FBX once** (Blender 4.0 headless; only needed for new UAL clips):
+   `blender -b --python tools/mocap3d/read_ual.py -- UAL1_Standard.fbx /tmp/ual1.json Walk_Loop ...`
+   then `gzip -9 -c /tmp/ual1.json > tools/mocap3d/ual/ual1.json.gz` (committed, so no Blender after).
+2. `ual.py` gives the dump the shape of `cmu.py` (CMU bone names), so a clip is
+   just `trial="ual:<Clip>"` in `clipdefs.py` and runs through the same
+   `retarget.py` (rest-pose corrected turns, hips scaled by leg length, ankle IK,
+   planted feet pinned). UAL loops are in place: `:travel` gives a walk back its
+   travel (the planted foot's own speed) so the feet can be pinned.
+   `srcFeet` (the library rig's own ankle spacing per metre of leg) goes in the
+   file; `tests/star/gaitWidth.mts` holds every head and build to it.
+3. **Add them to the shipped files without rebuilding every CMU clip**:
+   ```bash
+   python3 tools/mocap3d/build.py --cmu x --only walk_relaxed,... --out /tmp/u --no-shrink
+   cp /tmp/u/mocap.glb public/star/anims3d/_tmp/new.glb
+   npx tsx tools/motionref/settle_clips.mts public/star/anims3d/_tmp/new.glb   # people file only
+   node tools/mocap3d/merge_clips.mjs public/star/anims3d/mocap.glb public/star/anims3d/_tmp/new.glb
+   node tools/mocap3d/merge_clips.mjs public/star/anims3d/mocap-ual.glb /tmp/u/mocap-ual.glb
+   node scripts/perf3d/shrink-models.mjs star/anims3d/mocap.glb star/anims3d/mocap-ual.glb
+   ```
+   Settle only the NEW clips (never re-settle the whole shipped file: it moves the old idle).
+4. Stick sheets: `python3 tools/mocap3d/ual_sticks.py out.png Walk_Loop` (the source on its own rig),
+   `build.py ... --sheet DIR` (the solved body).

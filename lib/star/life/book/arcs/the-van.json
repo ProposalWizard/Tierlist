@@ -1,0 +1,453 @@
+{
+ "id": "arc-the-van",
+ "title": "The van",
+ "owner": "pal",
+ "summary": "Your old school friend wants to start his own business and needs a van. He asks you for the money. Lend it, give it, or say no. Weeks later the first payment is due, and a season on you find out what he did with it.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "old school friend"
+  ],
+  "tone": [
+   "awkward",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.25
+ },
+ "cast": [
+  {
+   "slot": "pal",
+   "pick": "pal"
+  }
+ ],
+ "vars": {
+  "lent": 0,
+  "paid": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "his-name-on-the-van",
+   "title": "His name on the van",
+   "text": "You lent him the money and he built something with it. His van has your squad number on the back doors."
+  },
+  {
+   "id": "the-money-went",
+   "title": "The money went",
+   "text": "The money went, and so did he, mostly."
+  },
+  {
+   "id": "no-loan",
+   "title": "No loan",
+   "text": "You said no to the van. He got the money off his uncle, and you still see him at Christmas."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "van-1-ask",
+   "title": "A business plan",
+   "n": 1,
+   "event": {
+    "id": "arc-van-1-ask",
+    "title": "A business plan",
+    "category": "family",
+    "place": "town:cafe",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{pal.name} has asked to meet in the café you used to go to after school. He's brought a folder with a business plan in it, which you've never known him do."
+    ],
+    "talk": {
+     "start": "v1",
+     "nodes": {
+      "v1": {
+       "who": "pal",
+       "say": [
+        "\"Garden landscaping. I've got three jobs lined up and no van. The bank said no. I need three weeks of what you earn. I'll pay it back monthly, with interest if you want.\""
+       ],
+       "replies": [
+        {
+         "id": "lend",
+         "label": "\"I'll lend it. Pay me back when you can.\"",
+         "tone": "kind",
+         "goto": "v2",
+         "cost": {
+          "moneyWeeks": 2
+         }
+        },
+        {
+         "id": "plan",
+         "label": "\"Show me the plan, then.\"",
+         "tone": "honest",
+         "goto": "v-plan"
+        },
+        {
+         "id": "no",
+         "label": "\"I don't lend money to mates. It never ends well.\"",
+         "tone": "honest",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "v-plan"
+        }
+       ]
+      },
+      "v-plan": {
+       "who": "pal",
+       "say": [
+        "He talks you through it page by page. It's better than you expected, which you don't say."
+       ],
+       "replies": [
+        {
+         "id": "lend",
+         "label": "\"All right. I'm in.\"",
+         "tone": "brave",
+         "goto": "v2",
+         "cost": {
+          "moneyWeeks": 2
+         }
+        },
+        {
+         "id": "no",
+         "label": "\"It's good. It's still a no.\"",
+         "tone": "cold",
+         "end": "no-after-plan"
+        }
+       ]
+      },
+      "v2": {
+       "who": "pal",
+       "say": [
+        "\"First payment on the first of the month. I'll set it up tonight. You'll see.\""
+       ],
+       "replies": [
+        {
+         "id": "trust",
+         "label": "\"I know.\"",
+         "tone": "calm",
+         "end": "lent"
+        },
+        {
+         "id": "joke",
+         "label": "\"If you don't, I'm having the van.\"",
+         "tone": "confident",
+         "end": "lent"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "lent": [
+       {
+        "text": "He shakes your hand across the table and knocks the sugar over.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 12,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "lent-me-for-the-van",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "lent": 1
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fair.\" He pays for the coffees, which he can't really afford.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -6,
+          "respect": 2,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "wouldnt-lend-me-for-the-van",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "no-loan"
+        }
+       }
+      ],
+      "no-after-plan": [
+       {
+        "text": "He puts the folder away slowly.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -8,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "wouldnt-lend-me-for-the-van",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "no-loan"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "Your old school friend wants a word"
+  },
+  {
+   "id": "van-2-first",
+   "title": "The first of the month",
+   "after": {
+    "beat": "van-1-ask",
+    "weeks": [
+     3,
+     5
+    ]
+   },
+   "event": {
+    "id": "arc-van-2-first",
+    "title": "The first of the month",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "arc.lent==1"
+     ]
+    },
+    "setup": [
+     "The first of the month. Your banking app pings."
+    ],
+    "choices": [
+     {
+      "id": "check",
+      "label": "Check it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "chance": 0.6,
+        "text": "The first payment is there, to the penny, with a note: \"VAN 1 OF 12\".",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "paid": 1
+         }
+        }
+       },
+       {
+        "chance": 0.4,
+        "text": "It's not there. A text comes an hour later: \"Next week, promise. Two jobs paid late.\"",
+        "npc": [
+         {
+          "slot": "pal",
+          "respect": -4
+         }
+        ],
+        "arc": {
+         "set": {
+          "paid": 0
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "ring",
+      "label": "Ring him to say you don't need it back yet.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "\"You're mad.\" He pays it anyway, two days late.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "said-no-rush-on-the-van",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "paid": 1
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "His first payment is due"
+  },
+  {
+   "id": "van-3-later",
+   "title": "The van",
+   "after": {
+    "beat": "van-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-van-3-later",
+    "title": "The van",
+    "category": "family",
+    "place": "town:street",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "driving"
+     ]
+    },
+    "setup": [
+     "{if arc.paid==1}You're stopped at the lights and there's a van in front of you with {pal.short}'s name on the side, and your squad number painted small on the back doors.{/if}",
+     "{if !arc.paid==1}You haven't heard from {pal.short} in months. His mum tells your mum he's gone to work abroad.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "beep",
+      "label": "{if arc.paid==1}Beep the horn.{/if}{if !arc.paid==1}Text him.{/if}",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.paid==1",
+        "text": "He leans out of the window, sees it's you and does a lap of the roundabout for no reason. He's paid you back every penny.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "his-van-has-my-number",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "his-name-on-the-van"
+        }
+       },
+       {
+        "text": "The message shows as delivered. A week later it still hasn't been read.",
+        "npc": [
+         {
+          "slot": "pal",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "the-money-went"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Leave it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.paid==1",
+        "text": "He doesn't see you. You smile at the number on the back doors all the way home.",
+        "arc": {
+         "end": "his-name-on-the-van"
+        }
+       },
+       {
+        "text": "You leave it. You've still got his folder in a drawer somewhere.",
+        "arc": {
+         "end": "the-money-went"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "A season on, you'll see what he did with it"
+  }
+ ]
+}

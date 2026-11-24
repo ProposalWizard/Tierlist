@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CareerState } from "@/lib/star/types";
 import { ACHIEVEMENTS, ACHIEVEMENT_GROUPS, type Achievement, type AchievementTier } from "@/lib/star/achievements";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { achievementXp } from "@/lib/star/xpConfig";
 
 /**
@@ -31,7 +31,7 @@ type Filter = "all" | "done" | "todo" | "near";
 /** How far along counts as "nearly there". */
 const NEAR = 0.5;
 
-const shortMoney = (v: number) => (v >= 1_000_000 ? `★${+(v / 1_000_000).toFixed(1)}m` : v >= 1_000 ? `★${Math.floor(v / 1_000)}k` : `★${formatMoney(v)}`);
+const shortMoney = (v: number) => (v >= 1_000_000 ? `${MONEY_SIGN}${+(v / 1_000_000).toFixed(1)}m` : v >= 1_000 ? `${MONEY_SIGN}${Math.floor(v / 1_000)}k` : `${MONEY_SIGN}${formatMoney(v)}`);
 const progressOf = (a: Achievement, c: CareerState): [number, number] | null => {
   if (!a.progress) return null;
   try { return a.progress(c); } catch { return null; }

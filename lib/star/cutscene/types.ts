@@ -60,6 +60,13 @@ export interface ActorLook {
   accessories?: { slot: string; color: string; color2?: string; stripes?: string[] }[];
   /** A fitted face picture (faceFit.ts): passed straight to the people layer. */
   face?: unknown;
+  /**
+   * His people preset (lib/star/people/presets.ts, set by casting.ts castAll for everyone but you):
+   * head, build, modelled hairstyle, drawn face, clothes. `null` in a script = cast him the old way.
+   */
+  people?: import("../people/presets").PersonLookResult | null;
+  /** How finely his drawn face is painted (0 … 1; a seated crowd in the back rows is drawn at less). */
+  detail?: number;
 }
 
 export interface CastMember {
@@ -268,7 +275,7 @@ export interface HandTrack extends TrackBase { type: "hand"; actor: string; hand
 /** A prop changes hands, appears, goes. */
 export interface PropTrack extends TrackBase {
   type: "prop"; prop: string;
-  action: "attach" | "detach" | "show" | "hide" | "place";
+  action: "attach" | "detach" | "show" | "hide" | "place" | "dribble";
   /** attach: whose hand (and which). */
   actor?: string; hand?: "L" | "R";
   /** attach to a body part instead of a hand (a scarf on the neck, a medal). */
@@ -280,6 +287,12 @@ export interface PropTrack extends TrackBase {
   dur?: number;
   /** A flight: lift this high in the middle of the move (a ball struck, a thrown shirt). */
   arc?: number;
+  /**
+   * dribble (a ball): from `at` for `dur` the ball is at `actor`'s feet: touched on by this foot each
+   * time it swings through (its toe furthest forward), rolling ahead between touches, and at `at + dur`
+   * against the same foot as he strikes it (the move's own contact). A place after it flies from there.
+   */
+  foot?: "L" | "R";
 }
 
 export interface FaceTrack extends TrackBase { type: "face"; actor: string; expression: Expression; dur?: number; amount?: number; blendIn?: number }

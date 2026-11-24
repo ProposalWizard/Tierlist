@@ -17,7 +17,7 @@ import type { Act, CastMember, Emotion, EventKind, Expression, LocationId, PoseH
 import type { Rng } from "./math";
 import { VOICE_LINES } from "./voiceLines";
 import { FLUID_ON } from "./fluid";
-import { PRESS_DESK_TOP } from "./presets/locations";
+import { PRESS_DESK_TOP, PRESS_SEATS, PRESS_SEAT_LIFT } from "./presets/locations";
 
 export type ShotPurpose = "establish" | "action" | "detail" | "emotion" | "reaction" | "hero" | "two" | "pov" | "crowd" | "follow";
 
@@ -233,8 +233,10 @@ export const shirtPhoto: BeatDef = {
         { type: "clip", actor: Y, at: t, clip: "idle" },
         { type: "clip", actor: O, at: t, clip: "idle-boss" },
         { type: "prop", prop: "shirt", at: t, action: "show" },
-        { type: "pose", actor: Y, at: t, dur: d, pose: FLUID_ON.on ? "ref-shirt-up" : "hold-shirt-up", prop: "shirt", blendIn: 0 },
-        { type: "reach", actor: O, hand: "R", at: t, dur: d, target: { actor: Y, part: "shoulder.L" }, offset: [0.02, 0.04, -0.05], grip: "flat", along: [-1, 0, 0.1], palm: [0, -1, 0], blendIn: 0 },
+        { type: "pose", actor: Y, at: t, dur: d, pose: "hold-shirt-up", prop: "shirt", blendIn: 0 },
+        // the chairs pushed in out of the picture (seen between the two men they were a black slab)
+        { type: "prop", prop: "chairY", at: t, action: "place", to: [1.5, 0, 0.5], yaw: 250 },
+        { type: "reach", actor: O, hand: "R", at: t, dur: d, target: { actor: Y, part: "shoulder.L" }, offset: [0.03, 0.05, -0.06], grip: "flat", along: [-1, 0, 0.1], palm: [0, -1, 0], blendIn: 0 },
         { type: "look", actor: Y, at: t, dur: d, target: { mark: "photo.cam" }, amount: 0.9, blendIn: 0 },
         { type: "look", actor: O, at: t, dur: d, target: { mark: "photo.cam" }, amount: 0.9, blendIn: 0 },
         { type: "face", actor: Y, at: t, expression: "grin", amount: 1 },
@@ -255,25 +257,33 @@ export const shirtPhoto: BeatDef = {
 const SHOT_SPOT: Vec3 = [-2.6, 0, 14.2];
 const SLIDE_START: Vec3 = [-6.0, 0, 18.4], SLIDE_END: Vec3 = [-7.4, 0, 22.1];
 
+/**
+ * Seconds from the start of the "shot" clip to the foot meeting the ball: the motion-capture shot_r's
+ * measured contact (0.42, its toe lowest and fastest at 0.45; the old hand-made clip's was 0.31, and the ball flew off while his foot was
+ * still swung back). The director puts the ball against the foot at the real moment (dribble).
+ */
+export const STRIKE_CONTACT = 0.45;
+
 export const goalStrike: BeatDef = {
   id: "goal-strike", act: "moment", at: ["pitch"],
   weight: (e) => (e.kind === "scored" || e.kind === "record-broken" ? 1 : 0),
   build: (c, t) => {
     const Y = c.ids.you;
     const K = "keeper";
-    const run = 2.4, contact = t + run + 0.31;
+    const run = 2.4, contact = t + run + STRIKE_CONTACT;
     const d = run + 0.95;
-    // the ball runs ahead of him, then flies into the top corner and drops in the net
-    const pts: Vec3[] = [[-5.0, 0.12, 22.6], [-4.3, 0.12, 20.3], [-3.6, 0.12, 18.1], [-2.95, 0.12, 15.9], [-2.6, 0.12, 13.7]];
-    const ball: Track[] = pts.map((p, i) => ({ type: "prop", prop: "ball", at: t + (i * run) / pts.length, action: "place", to: p, dur: run / pts.length } as Track));
+    // the ball at his feet (director.ts dribble: touched on by his right foot each stride, against it as he
+    // strikes), then into the top corner and down into the net
+    const ball: Track[] = [{ type: "prop", prop: "ball", at: t, action: "dribble", actor: Y, foot: "R", dur: contact - t } as Track];
     ball.push(
       { type: "prop", prop: "ball", at: contact, action: "place", to: [2.95, 1.95, -0.1], dur: 0.48, arc: 0.4 },
-      { type: "prop", prop: "ball", at: contact + 0.48, action: "place", to: [3.1, 0.12, -1.3], dur: 0.45 },
+      { type: "prop", prop: "ball", at: contact + 0.48, action: "place", to: [3.1, 0.11, -1.3], dur: 0.45 },
     );
     return {
       name: "The strike", act: "moment", dur: d,
       cast: [{ id: K, role: "keeper", mark: "goal.line", face: 0 }, { id: "def4", role: "rival", mark: [-9.5, 0, 25], face: "shot.spot" }],
-      props: [{ id: "ball", kind: "ball", at: [-5.3, 0.12, 23.2], scale: 1.6 }],
+      // a real-size ball on the grass (RUL-3D-006; it was 1.6x and sunk 5 cm into the pitch)
+      props: [{ id: "ball", kind: "ball", at: [-5.3, 0.11, 23.2] }],
       tracks: [
         { type: "place", actor: Y, at: t, to: "run.start", yaw: 160 },
         { type: "move", actor: Y, at: t, dur: run, path: [SHOT_SPOT], gait: "dribble", ease: 0 },
@@ -287,6 +297,7 @@ export const goalStrike: BeatDef = {
         { type: "look", actor: Y, at: t + run - 0.6, dur: 1.4, target: { mark: "goal", y: 1.5 }, amount: 0.7 },
         { type: "face", actor: Y, at: t + run - 0.8, expression: "focused", dur: 1.4 },
         { type: "fx", fx: "speed-lines", at: contact - 0.05, dur: 0.5, amount: 0.6 },
+        { type: "sound", at: t, cue: "crowd-murmur", volume: 0.5 },
         { type: "sound", at: contact, cue: "kick" },
         { type: "sound", at: contact + 0.48, cue: "net" },
         { type: "sound", at: contact + 0.5, cue: "crowd-roar" },
@@ -373,13 +384,15 @@ export const trophyLift: BeatDef = {
       { type: "fx", fx: "ticker-tape", at: t + 1.6, dur: d - 1.6, around: { mark: "podium" }, amount: 1 },
       { type: "fx", fx: "camera-flashes", at: t + 0.6, dur: d - 0.6, around: { point: [0, 1.2, 33] }, amount: 0.8 },
       { type: "fx", fx: "fireworks", at: t + 1.8, dur: d - 1.8, around: { mark: "podium" }, when: { flag: "night" } },
+      { type: "sound", at: t, cue: "applause" },
+      { type: "sound", at: t + 0.6, cue: "camera-shutters", volume: 0.6 },
       { type: "sound", at: t + 1.6, cue: "crowd-roar" },
     ];
+    // round him and behind (he faces −z, the cameras are in front): never between him and the lens
+    const ring = (i: number): Vec3 => { const a = ((i + 0.5) / Math.max(1, mates.length) - 0.5) * 3.4; return [Math.sin(a) * 1.9, 0, 40 + Math.cos(a) * 1.3 + 0.3]; };
     mates.forEach((m, i) => {
-      // round him and behind (he faces −z, the cameras are in front): never between him and the lens
-      const a = ((i + 0.5) / Math.max(1, mates.length) - 0.5) * 3.4;
       tr.push(
-        { type: "place", actor: m, at: t, to: [Math.sin(a) * 1.9, 0, 40 + Math.cos(a) * 1.3 + 0.3], yaw: { actor: Y } },
+        { type: "place", actor: m, at: t, to: ring(i), yaw: { actor: Y } },
         { type: "pose", actor: m, at: t, dur: 1.5, pose: "applaud" },
         { type: "clip", actor: m, at: t + 1.5 + i * 0.07, clip: i % 2 ? "cheer" : "celebrate", loop: true, blendIn: 0.3 },
         { type: "face", actor: m, at: t + 1.5, expression: "elated" },
@@ -388,7 +401,7 @@ export const trophyLift: BeatDef = {
     return {
       name: "Lifts the trophy", act: "moment", dur: d, tracks: tr,
       props: [{ id: "trophy", kind: cup as PropSpec["kind"], at: undefined }],
-      cast: mates.map((m) => ({ id: m, role: "teammate" as const, mark: "podium" })),
+      cast: mates.map((m, i) => ({ id: m, role: "teammate" as const, mark: ring(i), face: 180 })),
       shots: [
         { at: t, dur: 1.5, purpose: "emotion", subject: you(c), weight: 0.8, name: "Looks at it" },
         { at: t + 1.5, dur: 2.6, purpose: "hero", subject: you(c), weight: 1, name: "Up it goes", hint: { preset: "low-hero", lens: 24, move: "crane-up", moveAmount: 0.6 } },
@@ -438,7 +451,8 @@ export const walkOut: BeatDef = {
   weight: (e) => (["walkout", "debut", "rivalry"].includes(e.kind) ? 1 : 0),
   build: (c, t) => {
     const Y = c.ids.you;
-    const d = 6.2;
+    // a real walking pace (20 Nov 2026, Harry: "he isn't even walking"): ~1.4 m/s, out just past the mouth
+    const d = 7.6;
     const tr: Track[] = [];
     const walkers: [string, string][] = [["home0", "home.0"], [Y, "you.start"], ["home2", "home.2"], ["home3", "home.3"], ["home4", "home.4"], ["away0", "away.0"], ["away1", "away.1"], ["away2", "away.2"], ["away3", "away.3"], ["away4", "away.4"]];
     walkers.forEach(([id, mk], i) => {
@@ -447,13 +461,14 @@ export const walkOut: BeatDef = {
       const delay = row * 0.35 + (home ? 0 : 0.1);
       const x = home ? -0.55 : 0.55;
       void mk; void i;
-      tr.push({ type: "move", actor: id, at: t + delay, dur: d - delay, path: [[x, 0, 15.5 - row * 1.0], [x * 1.4, 0, 24 - row * 1.0]], gait: "walk", ease: 0.25 });
+      tr.push({ type: "move", actor: id, at: t + delay, dur: d - delay, path: [[x, 0, 15.2 - row * 1.0], [x * 1.15, 0, 19.6 - row * 0.9]], gait: "walk", ease: 0.25 });
     });
     tr.push(
       { type: "light", at: t + 2.5, dur: d - 2.5, exposure: 1.25 },
       { type: "fx", fx: "flare", at: t + 2.2, dur: d - 2.2, amount: 1 },
       { type: "look", actor: Y, at: t + 3.4, dur: d - 3.4, target: { point: [-6, 12, 40] }, amount: 0.6 },
       { type: "face", actor: Y, at: t + 3.6, expression: c.valence < 0 ? "determined" : "smile", amount: 0.8 },
+      { type: "sound", at: t, cue: "crowd-murmur", volume: 0.8 },
       { type: "sound", at: t + 2.4, cue: "crowd-roar" },
     );
     return {
@@ -461,7 +476,8 @@ export const walkOut: BeatDef = {
       shots: [
         { at: t, dur: 2.4, purpose: "follow", subject: you(c), weight: 0.8, name: "Down the tunnel", hint: { preset: "medium", yaw: 165, move: "follow" } },
         { at: t + 2.4, dur: 2.0, purpose: "hero", subject: you(c), weight: 1, name: "The light", hint: { preset: "low-hero", yaw: 0, lens: 22, move: "follow" } },
-        { at: t + 4.4, dur: d - 4.4, purpose: "establish", subject: you(c), weight: 0.8, name: "The stadium", hint: { preset: "wide", yaw: 200, move: "crane-up", moveAmount: 2 } },
+        { at: t + 4.4, dur: d - 6.2, purpose: "emotion", subject: you(c), weight: 0.9, name: "Into the light", hint: { preset: "medium-close", yaw: 10, lens: 50, move: "follow" } },
+        { at: t + d - 1.8, dur: 1.8, purpose: "establish", subject: you(c), weight: 0.8, name: "The stadium", hint: { preset: "wide", yaw: 200, move: "crane-up", moveAmount: 2 } },
       ],
     };
   },
@@ -469,25 +485,59 @@ export const walkOut: BeatDef = {
 
 // ═════════════════════════════ THE PRESS ROOM ═══════════════════════════
 
+/** A recorded voice line with this text (voiceLines.ts), if there is one: its id and length. */
+function recorded(text: string): { cue: string; dur: number } | null {
+  const r = Object.entries(VOICE_LINES).find(([, v]) => v.text === text);
+  return r ? { cue: r[0], dur: r[1].duration } : null;
+}
+
+/**
+ * The reporters in their seats (20 Nov 2026: they were capsules): people from the presets, seated, facing
+ * the desk, their faces drawn at half detail (they are small in the picture). Which seats: the front row
+ * but its middle (the camera's aisle), and a few behind; never the chair the questioner got up from.
+ */
+export const PRESS_REPORTER_SEATS: [number, number][] = PRESS_SEATS.filter(([x, z]) =>
+  (z < 3 && x !== 0) || (z > 3 && z < 4 && [-2.25, 0.75, 1.5].includes(x)) || (z > 4 && [-1.5, 2.25].includes(x)));
+
 export const pressQuestion: BeatDef = {
   id: "press-question", act: "build", at: ["press-room"],
   weight: (e) => (e.kind === "press-conference" || e.kind === "transfer-request" || e.kind === "rivalry" ? 1 : 0.3),
   build: (c, t) => {
     const Y = c.ids.you;
-    const d = 3.0;
     const q = c.ev.detail?.question ?? "How does it feel?";
+    const rec = recorded(q);
+    const talk = rec ? rec.dur : 2.2;
+    const d = Math.max(3.0, talk + 0.8);
+    const reps = PRESS_REPORTER_SEATS.map(([x, z], i) => ({ id: `rep${i}`, x, z }));
     return {
       name: "The question", act: "build", dur: d,
-      cast: [{ id: "jour", role: "journalist", mark: "journalist", face: 180 }],
+      props: [{ id: "jmic", kind: "mic" }],
+      cast: [
+        { id: "jour", role: "journalist", mark: "journalist", face: 180 },
+        ...reps.map((r) => ({ id: r.id, role: "journalist" as const, mark: [r.x, 0, r.z] as Vec3, face: 180, look: { detail: 0.5 } })),
+      ],
       tracks: [
+        ...reps.flatMap((r, i): Track[] => [
+          { type: "clip", actor: r.id, at: 0, clip: "sit-listen", loop: true, from: i * 0.37 },
+          // they watch you, a few glancing at the questioner
+          { type: "look", actor: r.id, at: 0, dur: 40, target: i % 4 === 1 ? { actor: "jour", part: "head" } : { actor: Y, part: "head" }, amount: 0.7 },
+        ]),
         { type: "clip", actor: Y, at: 0, clip: "sit" },
-        { type: "pose", actor: Y, at: 0, dur: 20, pose: "lean-in", amount: 0.25, blendIn: 0 },
+        { type: "pose", actor: Y, at: 0, dur: 20, pose: "lean-in", amount: 0.1, blendIn: 0 },
+        { type: "sound", at: 0, cue: "crowd-murmur", volume: 0.25 },
         // hands on the table while he listens; B5c: they lift off when he answers (pressAnswer, ref-talk-hands)
-        { type: "reach", actor: Y, hand: "R", at: 0, dur: FLUID_ON.on ? t + d + 0.2 : 30, target: { actor: Y, local: [-0.2, PRESS_DESK_TOP + 0.035, 0.42] }, along: [0.25, -0.15, 1], palm: [0.15, -1, 0.05], blendIn: 0, blendOut: 0.5 },
-        { type: "reach", actor: Y, hand: "L", at: 0, dur: FLUID_ON.on ? t + d + 0.3 : 30, target: { actor: Y, local: [0.2, PRESS_DESK_TOP + 0.035, 0.42] }, along: [-0.25, -0.15, 1], palm: [-0.15, -1, 0.05], blendIn: 0, blendOut: 0.5 },
+        { type: "reach", actor: Y, hand: "R", at: 0, dur: FLUID_ON.on ? t + d + 0.2 : 30, target: { actor: Y, local: [-0.2, PRESS_DESK_TOP - PRESS_SEAT_LIFT + 0.035, 0.42] }, along: [0.25, -0.15, 1], palm: [0.15, -1, 0.05], blendIn: 0, blendOut: 0.5 },
+        { type: "reach", actor: Y, hand: "L", at: 0, dur: FLUID_ON.on ? t + d + 0.3 : 30, target: { actor: Y, local: [0.2, PRESS_DESK_TOP - PRESS_SEAT_LIFT + 0.035, 0.42] }, along: [-0.25, -0.15, 1], palm: [-0.15, -1, 0.05], blendIn: 0, blendOut: 0.5 },
         { type: "clip", actor: "jour", at: 0, clip: "talk-boss", loop: true },
-        { type: "speak", actor: "jour", at: t + 0.3, dur: 2.2, line: q },
-        { type: "caption", at: t + 0.3, dur: 2.4, text: q, style: "subtitle", speaker: "Journalist" },
+        // his microphone up to his mouth, a nod into the question, the face of a man asking (he stood stiff, arms down)
+        { type: "prop", prop: "jmic", at: 0, action: "attach", actor: "jour", hand: "R", dur: 0.01 },
+        { type: "reach", actor: "jour", hand: "R", at: 0, dur: 40, target: { actor: "jour", local: [-0.12, 1.42, 0.24] }, grip: "grip", along: [0.15, 0.85, 0.35], palm: [1, 0, 0], blendIn: 0 },
+        { type: "face", actor: "jour", at: 0, expression: "focused", amount: 0.8 },
+        { type: "pose", actor: "jour", at: t + 0.6, dur: 1.2, pose: "nod", amount: 0.6 },
+        { type: "look", actor: "jour", at: 0, dur: 40, target: { actor: Y, part: "head" }, amount: 0.9 },
+        { type: "speak", actor: "jour", at: t + 0.3, dur: talk, line: q, cue: rec?.cue },
+        ...(rec ? [{ type: "sound", at: t + 0.3, cue: rec.cue } as Track] : []),
+        { type: "caption", at: t + 0.3, dur: talk + 0.2, text: q, style: "subtitle", speaker: "Journalist" },
         { type: "look", actor: Y, at: t, dur: d, target: { actor: "jour", part: "head" }, amount: 0.8 },
         { type: "fx", fx: "camera-flashes", at: t, dur: d, around: { point: [0, 1.4, 3.6] }, amount: 0.5 },
       ],
@@ -505,16 +555,20 @@ export const pressAnswer: BeatDef = {
   build: (c, t) => {
     const Y = c.ids.you;
     const a = c.ev.detail?.answer ?? (c.valence >= 0 ? "We go again. This is only the start." : "I'll let my football do the talking.");
-    const d = Math.max(3.2, 1.2 + a.length * 0.055);
+    const rec = recorded(a);
+    const d = Math.max(3.2, rec ? rec.dur + 1.0 : 1.2 + a.length * 0.055);
     const perf = performFor(c.ev.emotion, c.ev.intensity ?? 0.5, c.valence);
     return {
       name: "The answer", act: "moment", dur: d,
       tracks: [
-        { type: "speak", actor: Y, at: t + 0.3, dur: d - 0.6, line: a },
+        { type: "speak", actor: Y, at: t + 0.3, dur: rec ? rec.dur : d - 0.6, line: a, cue: rec?.cue },
+        ...(rec ? [{ type: "sound", at: t + 0.3, cue: rec.cue } as Track] : []),
         { type: "caption", at: t + 0.3, dur: d - 0.4, text: a, style: "subtitle", speaker: "{player}" },
         { type: "look", actor: Y, at: t, dur: d, target: { mark: "journalist", y: 1.2 }, amount: 0.75 },
         { type: "face", actor: Y, at: t, expression: perf.face === "elated" ? "smile" : perf.face, amount: 0.9 },
-        { type: "pose", actor: Y, at: t + 0.2, dur: d, pose: "lean-in", amount: 0.4 },
+        { type: "pose", actor: Y, at: t + 0.2, dur: d, pose: "lean-in", amount: 0.15 },
+        // he talks sitting down (Quaternius UAL 1 seated talk), the reporters sit listening (pressQuestion "sit-listen")
+        { type: "clip", actor: Y, at: t, clip: "sit-talk", loop: true, blendIn: 0.5 },
         // B5c: he talks with his hands, as the real man did (ref-press-answer.mp4)
         ...(FLUID_ON.on ? [{ type: "pose", actor: Y, at: t, dur: d + 2, pose: "ref-talk-hands", blendIn: 0.6 } as Track] : []),
         { type: "fx", fx: "camera-flashes", at: t, dur: d, around: { point: [0, 1.4, 3.6] }, amount: 0.7 },
@@ -588,7 +642,8 @@ export const mentorWord: BeatDef = {
         { type: "pose", actor: Y, at: tN - 0.1, dur: 1.6, pose: "nod", blendIn: 0.1 },
         { type: "reach", actor: M, hand: "R", at: tH, dur: 1.4, target: { actor: Y, part: "shoulder.L" }, offset: [0, 0.05, 0], grip: "flat", palm: [0, -1, 0.2], along: [-1, 0, 0.3], blendIn: 0.4, blendOut: 0.4 },
         { type: "face", actor: M, at: tH, expression: "smile", amount: 0.6 },
-        { type: "move", actor: M, at: tW, dur: d - (tW - t), path: [[1.6, 0, -1.5], [3.2, 0, -5]], gait: "walk", ease: 0.3 },
+        // a walking pace (it was 2.5 m/s on a walk: his feet slid)
+        { type: "move", actor: M, at: tW, dur: d - (tW - t), path: [[1.2, 0, -0.8], [2.2, 0, -2.6]], gait: "walk", ease: 0.3 },
         { type: "face", actor: Y, at: tW, expression: "determined", amount: 1 },
       ],
       shots: [
@@ -764,18 +819,25 @@ export const farewellWalk: BeatDef = {
       { type: "face", actor: Y, at: t, expression: "proud", amount: 0.8 },
       { type: "face", actor: Y, at: t + walk + 0.3, expression: "smile", amount: 1 },
       { type: "fx", fx: "camera-flashes", at: t + walk, dur: d - walk, around: { point: [0, 1.2, 34] }, amount: 0.7 },
+      { type: "sound", at: t, cue: "crowd-murmur", volume: 0.6 },
       { type: "sound", at: t + walk + 0.2, cue: "applause" },
+      { type: "sound", at: t + walk + 0.4, cue: "crowd-roar", volume: 0.7 },
     ];
+    // the guard of honour: two lines facing each other the length of his walk and past it (20 Nov 2026:
+    // six men read as a sparse handful; a full squad is 7 a side), each clapping on his own beat
+    const n = Math.ceil(mates.length / 2), gap = Math.min(1.6, 9 / Math.max(1, n));
+    const spot = (i: number): Vec3 => { const s = i % 2 ? 1 : -1, row = Math.floor(i / 2); return [s * (1.45 + (row % 2) * 0.08), 0, 46.2 - row * gap]; };
     mates.forEach((m, i) => {
-      const s = i % 2 ? 1 : -1, row = Math.floor(i / 2);
+      const s = i % 2 ? 1 : -1;
       tr.push(
-        { type: "place", actor: m, at: t, to: [s * 1.5, 0, 45.5 - row * 1.6], yaw: s * -90 },
-        { type: "pose", actor: m, at: t, dur: d, pose: "applaud", amount: 0.9 },
+        { type: "place", actor: m, at: t, to: spot(i), yaw: s * -90 },
+        { type: "pose", actor: m, at: t + (i % 5) * 0.06, dur: d, pose: "applaud", amount: 0.9 },
+        { type: "look", actor: m, at: t + 0.2, dur: d, target: { actor: Y, part: "head" }, amount: 0.75 },
       );
     });
     return {
       name: "The last walk", act: "moment", dur: d, tracks: tr,
-      cast: mates.map((m) => ({ id: m, role: "teammate" as const, mark: "centre" })),
+      cast: mates.map((m, i) => ({ id: m, role: "teammate" as const, mark: spot(i), face: i % 2 ? -90 : 90 })),
       shots: [
         { at: t, dur: 1.8, purpose: "establish", subject: you(c), weight: 1, name: "The stadium", hint: { preset: "wide", yaw: 160, lens: 24, rise: 1.2, move: "dolly-in", moveAmount: 0.3 } },
         { at: t + 1.8, dur: walk - 1.6, purpose: "follow", subject: you(c), weight: 0.8, name: "Down the guard", hint: { preset: "medium", move: "follow" } },

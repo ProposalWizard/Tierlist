@@ -9,6 +9,7 @@
  */
 import { useSyncExternalStore } from "react";
 import { ACCESSORIES } from "./store/catalogue";
+import { MONEY_SIGN } from "./money";
 
 /** A line across the desk. "talk" = over your shoulder at him; "reply" =
  *  over his shoulder at you. */
@@ -49,7 +50,7 @@ export const SAMPLE_TERMS = {
 
 /** The contract's rows, in the order they are printed. */
 export function contractRows(t: { seasons?: number | null; wage?: number | null; number?: number | null; position?: string | null; season?: string | null }): [string, string][] {
-  const money = (n: number) => `★${Math.round(n).toLocaleString("en-GB")}`;
+  const money = (n: number) => `${MONEY_SIGN}${Math.round(n).toLocaleString("en-GB")}`;
   const rows: [string, string][] = [
     ["Length", t.seasons ? `${t.seasons} season${t.seasons === 1 ? "" : "s"}` : ""],
     ["From", t.season ?? ""],

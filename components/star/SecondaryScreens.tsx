@@ -11,7 +11,7 @@ import { mulberry32 } from "@/lib/star/season";
 import type { CareerState, Trophy } from "@/lib/star/types";
 import AchievementWall from "./AchievementWall";
 
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { renewalWage, renewalMultiplier, RENEWAL_RAISE_PER_WIN, RENEWAL_SOURED_CUT } from "@/lib/star/economy";
 import { Burst, CountUp, FloatText, PressButton, Shine, StatBar, clubTheme, useTrigger } from "./ui";
 import { Screen, ScreenHeader, Rays, useLater } from "./ui/Screen";
@@ -27,7 +27,7 @@ function ObjectiveRow({ deal }: { deal: import("@/lib/star/types").SponsorDeal }
         <span className={o.done ? "text-emerald-300" : "text-white"}>
           {objectiveLabel(o)}{o.done ? " ✓" : ""}
         </span>
-        <span className="text-amber-300">★{formatMoney(o.bonus)}</span>
+        <span className="text-amber-300">{MONEY_SIGN}{formatMoney(o.bonus)}</span>
       </div>
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/40">
         <div className={`h-full rounded-full ${o.done ? "bg-emerald-400" : "bg-amber-400"}`} style={{ width: `${Math.max(3, pct)}%` }} />
@@ -83,7 +83,7 @@ export function SponsorsScreen({ career, onBack, onSign }: {
                       onClick={() => onSign(sp.category)}
                       className="kit-btn kit-btn-green rounded-lg px-3 py-1 text-[10px]"
                     >
-                      Sign — ★{formatMoney(sponsorFee(sp.category, career))}
+                      Sign — {MONEY_SIGN}{formatMoney(sponsorFee(sp.category, career))}
                     </button>
                   ) : (
                     <div className="text-[10px] text-white/85 uppercase font-black">Locked</div>
@@ -419,9 +419,9 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
               Your agent will play higher-or-lower against the club negotiator. Every correct guess raises your offer by {Math.round(RENEWAL_RAISE_PER_WIN * 100)}% — take it whenever you like, or keep pushing. Get one wrong and talks sour: the offer drops, and that final number is the only one left on the table.
             </div>
             <div className="kit-row rounded-xl p-3 text-xs mb-3 space-y-1">
-              <div className="flex justify-between"><span>Current wage</span><span className="text-yellow-300 font-black">★{formatMoney(career.contract.wage)}/week</span></div>
-              <div className="flex justify-between"><span>Goal bonus</span><span className="text-yellow-300 font-black">★{formatMoney(career.contract.goalBonus)}</span></div>
-              <div className="flex justify-between"><span>Assist bonus</span><span className="text-yellow-300 font-black">★{formatMoney(career.contract.assistBonus)}</span></div>
+              <div className="flex justify-between"><span>Current wage</span><span className="text-yellow-300 font-black">{MONEY_SIGN}{formatMoney(career.contract.wage)}/week</span></div>
+              <div className="flex justify-between"><span>Goal bonus</span><span className="text-yellow-300 font-black">{MONEY_SIGN}{formatMoney(career.contract.goalBonus)}</span></div>
+              <div className="flex justify-between"><span>Assist bonus</span><span className="text-yellow-300 font-black">{MONEY_SIGN}{formatMoney(career.contract.assistBonus)}</span></div>
               <div className="flex justify-between"><span>Seasons remaining</span><span className="text-white/85 font-black">{career.contract.seasonsRemaining}</span></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -455,9 +455,9 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
               <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">
                 {locked ? "Final offer" : "Current offer"}
               </div>
-              <div className="flex justify-between"><span>Wage</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(offeredWage)}/week</span></div>
-              <div className="flex justify-between"><span>Goal bonus</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.goalBonus))}</span></div>
-              <div className="flex justify-between"><span>Assist bonus</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.assistBonus))}</span></div>
+              <div className="flex justify-between"><span>Wage</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>{MONEY_SIGN}{formatMoney(offeredWage)}/week</span></div>
+              <div className="flex justify-between"><span>Goal bonus</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>{MONEY_SIGN}{formatMoney(currentOffer(career.contract.goalBonus))}</span></div>
+              <div className="flex justify-between"><span>Assist bonus</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>{MONEY_SIGN}{formatMoney(currentOffer(career.contract.assistBonus))}</span></div>
             </div>
 
             {!locked ? (

@@ -41,6 +41,21 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 20 Nov 2026 — decision screens: all three, each for its job (Harry, 15:35)
+- **"I love the sims round bar to decide what to interact on and then the telltale
+  for actual conversing … random events where the other person forces the
+  interaction … there's a use for the football mix too, maybe press conferences,
+  training stuff, dilemmas."** The event's data names its screen
+  (`LifeEvent.screen`): `telltale` (slow, grey world, the speaker in colour, a
+  clock, "… Say nothing" is an answer and what the clock picks), `dial` (Humble /
+  Calm / Confident / Fiery, who is listening, "… No comment"), else the plain
+  card. Tapping a person = the round menu (components/star/life/RoundMenu.tsx).
+- (from the proposal, kept as rules) "X will remember that." only when a memory
+  was really written; no invented "% of players" number, only the squad's own
+  ("7 of your 11 team-mates…") and your voice this season; the clock is rare
+  and has Normal | Long | Off per device; reduced motion drops the zoom/drift.
+  Stills: the scratchpad decision-build set; test page /star-life-dev.
+
 ### 13 Nov 2026 — the Team board tab: who is active now, work first (Harry)
 - **"This can be improved visually, where is the live now/active now?"** Said
   of the Team board tab on a computer (three equal cards, mostly white space).

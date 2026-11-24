@@ -26,6 +26,7 @@
  *
  * Pure three.js; no 2D canvas drawing here (signing3dTextures.ts does that).
  */
+import { fitHipJoints } from "./three3d/hipFit";
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { loadGltfCached } from "./three3d/perf";
@@ -40,7 +41,8 @@ import { withMocapOwn } from "./three3d/footballAnims";
 import { motionLook } from "./motionLook";
 import { playerStyleLook, type PlayerStyleLook } from "./style3d/toon/look";
 import { matchPlayerStyle } from "./style3d/toon/matchLook";
-import { TOON_HEADS, toonFileFor, toonFileIsJudged, TOON_BUILD_SCALE, TOON_SUIT_HEADS, TOON_HEM_FIX, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
+import { TOON_FACE_LANDMARKS } from "./style3d/toon/faceLandmarks";
+import { TOON_HEADS, TOON_ALL_HEADS, toonHeadIsSuit, toonFileFor, toonFileIsJudged, TOON_BUILD_SCALE, TOON_SUIT_HEADS, TOON_HEM_FIX, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
 import { patchToonBody, toonUniforms, toonShirtLayout } from "./style3d/toon/shader";
 import { toonProportions, warpToonBody, type ToonPropId } from "./style3d/toon/proportions";
 import { SMALL_INK } from "./style3d/smallMen";
@@ -199,6 +201,15 @@ export interface PersonLook {
   accessories?: WornThing[];
   /** Manager: how grey his hair is (0..1). */
   grey?: number;
+  /**
+   * Style A, smart clothes (a person preset, lib/star/people/presets.ts): the suit's colours, or a
+   * tracksuit / casual set on a kit body (the suit mode's long sleeves and trousers). Unset: as before.
+   */
+  suit?: { coat: string; trousers: string; shirt: string; tie: string; shoes?: string };
+  /** Style A: a haircut on the modelled hair (0..1 each): scalp to skin (1 bald), beard off, stubble on; pattern 1 waves, 2 cornrows. Unset: as modelled. */
+  hairCut?: { scalp?: number; beard?: number; stubble?: number; pattern?: number };
+  /** Style A: how much darker than the hair the brows are drawn (0 as the hair … 0.6; a grey-haired man keeps brows that read). */
+  browDark?: number;
 }
 
 // ── Loading ───────────────────────────────────────────────────────────────
@@ -219,8 +230,8 @@ export function loadToonHead(loader: { loadAsync(url: string): Promise<unknown> 
   }
   return g.then((one) => {
     const set: GLTF[] = [];
-    set[TOON_HEADS.indexOf(head)] = one;
-    return { ...one, toonBodies: set, toonWhich: TOON_SUIT_HEADS.includes(head) ? "manager" : "player" } as GLTF;
+    set[TOON_ALL_HEADS.indexOf(head)] = one;
+    return { ...one, toonBodies: set, toonWhich: toonHeadIsSuit(head) ? "manager" : "player" } as GLTF;
   });
 }
 
@@ -246,7 +257,7 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
   if (which !== "anims" && style === "new") {
     // only the heads this scene needs (a manager: the suits); a head not loaded falls back (makePerson3d)
     const want = heads ?? (which === "manager" ? TOON_SUIT_HEADS : TOON_HEADS);
-    const all = Promise.all(TOON_HEADS.map((b) => {
+    const all = Promise.all(TOON_ALL_HEADS.map((b) => {
       if (!want.includes(b)) return Promise.resolve(undefined as unknown as GLTF);
       const url = toonFileFor(b);
       let g = cache.get(url);
@@ -411,7 +422,12 @@ const FRAG_BODY = `
   float limb = step(0.12, abs(r.x));
   float onFore = step(df, 0.085) * step(-0.05, tf) * limb;
   float onUpper = step(du, 0.095) * step(0.15, tu) * step(tu, 1.05) * limb;
-  if (uSleeve.a > 0.5) col = mix(col, uSleeve.rgb * shade, skin * max(onUpper, onFore * step(tf, 0.97)));
+  // long sleeves (a tracksuit top): the whole arm to the wrist, the elbow included, in an even cloth shade (the
+  // narrow tubes left skin showing at the elbow and round the thick upper arm, and the skin's own baked light
+  // made the sleeve blotchy)
+  float onElbowS = step(length(r - E), 0.12) * limb;
+  float sleeveW = skin * max(max(step(du, 0.12) * step(0.12, tu) * step(tu, 1.05) * limb, onElbowS), onFore * step(tf, 0.97));
+  if (uSleeve.a > 0.5) col = mix(col, uSleeve.rgb * clamp(mix(1.0, shade, 0.4), 0.8, 1.1), sleeveW);
   if (uTape.a > 0.5) col = mix(col, uTape.rgb * max(shade, 0.6), onFore * step(0.8, tf) * step(tf, 0.97));
   if (uGlove.a > 0.5) {
     float g = step(df, 0.1) * step(0.97, tf) * limb;
@@ -656,14 +672,14 @@ export function makePerson3d(
     const suitWanted = opts.suit ?? toonWearsSuit(role, opts.human?.outfit);
     toon = opts.toonBody ?? (opts.you ? toonYou().body : toonBodyFor(id));
     toonHead = opts.toonHead ?? (opts.you && !suitWanted ? toonYou().head : toonHeadFor(id, suitWanted));
-    if (!tg.toonBodies[TOON_HEADS.indexOf(toonHead)]) {
+    if (!tg.toonBodies[TOON_ALL_HEADS.indexOf(toonHead)]) {
       // that head was not loaded for this scene: the nearest loaded one of the same kind (kit or suit)
-      const same = (h: ToonHead) => TOON_SUIT_HEADS.includes(h) === suitWanted;
-      const loaded = TOON_HEADS.filter((h) => tg.toonBodies![TOON_HEADS.indexOf(h)]);
+      const same = (h: ToonHead) => toonHeadIsSuit(h) === suitWanted;
+      const loaded = TOON_ALL_HEADS.filter((h) => tg.toonBodies![TOON_ALL_HEADS.indexOf(h)]);
       const pool = loaded.filter(same).length ? loaded.filter(same) : loaded;
       toonHead = pool[hashId(`${id}#head`) % pool.length];
     }
-    model = tg.toonBodies[TOON_HEADS.indexOf(toonHead)];
+    model = tg.toonBodies[TOON_ALL_HEADS.indexOf(toonHead)];
   } else {
     const which = (model as GLTF & { humanWhich?: string }).humanWhich;
     if (which) return makeHuman(T, SkeletonUtils, model, anims, opts.human ?? defaultHumanSpec(which), opts);
@@ -671,7 +687,7 @@ export function makePerson3d(
   let meta = model.scene.userData as PersonMeta;
   if (meta.quant) dequantize(T, model, meta.quant);
   // the suit heads are modelled in their suits; a player head is in a kit
-  const suit = !!toonHead && TOON_SUIT_HEADS.includes(toonHead);
+  const suit = !!toonHead && toonHeadIsSuit(toonHead);
   if (toon) meta = { ...meta, file: String(meta.model), model: suit ? "manager" : "player" };
   if (toon && toonHead && TOON_HEM_FIX[toonHead] && !toonFileIsJudged(toonHead)) meta = { ...meta, kit: { ...meta.kit, hemY: TOON_HEM_FIX[toonHead]! } };
   const root = new T.Group();
@@ -682,6 +698,9 @@ export function makePerson3d(
   // A (today) changes nothing. Done at build scale 1, before the build below.
   const prop = toon ? toonProportions() : null;
   const warp = prop ? warpToonBody(T, root, body, prop) : null;
+  // the hip joints where this body's own legs are, at the clip skeleton's hip width (three3d/hipFit.ts):
+  // some heads were rigged with them far too near the middle, and every clip's feet landed on one line
+  fitHipJoints(T, root, body, anims.scene);
   // Style A build: the whole person a touch slimmer, broader or taller
   if (toon) inner.scale.set(...TOON_BUILD_SCALE[toon]);
   const bones: Record<string, THREE.Bone> = {};
@@ -700,13 +719,17 @@ export function makePerson3d(
     const tk = meta.kit as PersonMeta["kit"] & { collarY?: number };
     const lay = toonShirtLayout({ shoulderY: meta.joints.LeftArm?.[1] ?? 1.4, collarY: tk.collarY ?? (meta.joints.neck?.[1] ?? 1.5) - 0.03 });
     const tu = u as Record<string, { value: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    // where this head's painted irises are, so the shader keeps their own paint (an iris is not skin)
+    const eyeLm = toonHead ? TOON_FACE_LANDMARKS[toonHead] : undefined;
+    if (eyeLm) { tu.uTfIrisA.value.set(eyeLm.iris[0][0], eyeLm.iris[0][1], eyeLm.iris[1][0], eyeLm.iris[1][1]); tu.uTfIrisB.value.set(eyeLm.iris[0][2], eyeLm.iris[1][2]); }
     tu.uNumBox.value.set(lay.number.x, lay.number.y, lay.number.size, lay.number.size);
     tu.uNameBox.value.set(lay.name.x, lay.name.y, lay.name.w, lay.name.h);
     tu.uFrontNum.value.set(lay.front.x, lay.front.y, lay.front.size, 1);
     // the skin's own shading, so long sleeves over the arms shade like the cloth (casual sets)
     tu.uCloth.value.z = Math.min(1.4, Math.max(0.25, Math.pow(Math.max(meta.skinAvg[1], 1e-4), 1 / 2.2) / 0.7));
     u.uKit.value = 1;
-    (u as Record<string, { value: unknown }>).uSuit.value = suit ? 1 : 0;
+    // (2 = a head modelled in its suit: its own collar and tie stand round the neck; 1 = a suit or tracksuit painted on a kit head)
+    (u as Record<string, { value: unknown }>).uSuit.value = suit ? 2 : 0;
     const tl = { ...TOON_LOOK_DEFAULT, ...opts.toonLook };
     ((u as Record<string, { value: unknown }>).uShade.value as THREE.Vector4).set(tl.soft ? 1 : 0, tl.faceLift, tl.hairSheen ? 1 : 0, 0);
     patchToonBody(T, mat, u, FRAG_HEAD, FRAG_ACCESSORIES);
@@ -995,6 +1018,16 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
     u.uTrim.value = lin(T, look.kit.trim);
     if (u.uSuitTie) u.uSuitTie.value = lin(T, look.kit.shirt);
   }
+  if (look.suit && u.uSuit) {
+    u.uSuit.value = Math.max(Number(u.uSuit.value) || 0, 1);
+    u.uSuitCoat.value = lin(T, look.suit.coat);
+    u.uSuitTrousers.value = lin(T, look.suit.trousers);
+    u.uSuitShirt.value = lin(T, look.suit.shirt);
+    u.uSuitTie.value = lin(T, look.suit.tie);
+    u.uShoes.value = lin(T, look.suit.shoes ?? "#141416");
+  }
+  if (u.uShade) u.uShade.value.w = look.browDark ?? 0;
+  if (u.uHairCut) u.uHairCut.value.set(look.hairCut?.scalp ?? 0, look.hairCut?.beard ?? 0, look.hairCut?.stubble ?? 0, look.hairCut?.pattern ?? 0);
   if (u.uBadgeOn) {
     u.uBadgeOn.value = look.badge ? 2 : 1;
     if (look.badge) u.uBadge.value = look.badge;
@@ -1112,3 +1145,4 @@ const FRAG_ACCESSORIES = FRAG_BODY.slice(FRAG_BODY.indexOf("  // Arms: forearm")
 /** The body's uniforms, shader patch and outline (as makePerson3d makes them),
  *  for the human body (lib/star/human3d/human.ts). */
 export { makeUniforms as makePeople3dUniforms, patchBody as patchPeople3dBody, outlineMaterial as people3dOutline };
+

@@ -67,7 +67,9 @@ export const CASUAL_SETS: CasualSet[] = [
   },
 ];
 
-export const DEFAULT_OUTFIT: OutfitChoice = { wear: "kit", casual: "hoodie", kit: "home", boots: "own" };
+// No choice yet: casual off the pitch (Harry, 21 Nov 2026, the cloth clothes in houses; "why would someone … be
+// wearing … a football kit … that doesn't make sense"). Was the kit. Training and the match always show the kit.
+export const DEFAULT_OUTFIT: OutfitChoice = { wear: "casual", casual: "hoodie", kit: "home", boots: "own" };
 
 export function casualSet(id: string | undefined): CasualSet {
   return CASUAL_SETS.find((s) => s.id === id) ?? CASUAL_SETS[0];

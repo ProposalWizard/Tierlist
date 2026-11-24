@@ -139,7 +139,10 @@ console.log("The timed job (vercel.json crons)");
 {
   const vercel = JSON.parse(fs.readFileSync(path.join(process.cwd(), "vercel.json"), "utf8"));
   ok(vercel.git?.deploymentEnabled?.main === true && vercel.git?.deploymentEnabled?.["**"] === false, "only main still deploys");
-  ok((vercel.crons ?? []).some((c: { path: string; schedule: string }) => c.path === "/api/admin/patch-notes/media-sync" && /^\*\/\d+ \* \* \* \*$/.test(c.schedule)), "the media-sync route runs every few minutes");
+  // Since 23 Nov 2026 Supabase runs it every 5 minutes (Vercel's free plan allows crons once a day only).
+  const frequent = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/frequent_jobs_cron.sql"), "utf8");
+  ok(/'patch-notes-media-sync',\s*'\*\/5 \* \* \* \*'/.test(frequent) && frequent.includes("/api/admin/patch-notes/media-sync"), "the media-sync route runs every 5 minutes (Supabase timer)");
+  ok(!(vercel.crons ?? []).some((c: { path: string }) => c.path === "/api/admin/patch-notes/media-sync"), "and Vercel no longer runs it");
   const CRON_UA = "vercel-cron/1.0";
   ok(cronAllowed({ userAgent: CRON_UA }, undefined), "no CRON_SECRET: Vercel's timed call gets in");
   ok(!cronAllowed({ userAgent: "Mozilla/5.0" }, undefined) && !cronAllowed({}, ""), "no CRON_SECRET: a browser does not (it goes through the admin check)");
