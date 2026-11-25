@@ -246,5 +246,13 @@
     "added": "2026-11-24T19:54:00Z",
     "title": "Progress 24 Nov: One Knowitball plan, faster Draft, Patch notes page fixed",
     "prompt": "Daily progress update, 23 Nov 19:54 to 24 Nov 19:54 (UK).\n\nLeo:\n- PR #838: One Knowitball, the whole-site plan (plan only, nothing on the site changed). One frame and one look on every page, 10 faults found, Tic Tac Toe and Ten-A-Ball brought up to date, and Draft in three waves. About 15 working days in 7 steps, with 5 decisions for Leo.\n- Draft: faster clubs and squads, keeper stat names, full surnames. The Patch notes page no longer crashes.\n- Build: the type check runs on its own before the build, not inside it.\n\nTeam:\n- Brain note: Vercel is back on the Hobby plan (23 Nov).\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.143 Leo: One Knowitball, the whole-site plan (no page link yet; read it in Admin, Patch notes)."
+  },
+  {
+    "id": "progress-2026-11-25",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-11-25T19:54:00Z",
+    "title": "Progress 25 Nov: records videos, Brain page posting, faces re-upload",
+    "prompt": "Daily progress update, 24 Nov 19:54 to 25 Nov 19:54 (UK).\n\nMikey (his branches merged into main this evening):\n- Video factory: ex15, Four records that might never be beaten, with real moments, scorebug and quad scenes, moving pictures; ex15b, the Guardiola cut (38 s), in posting storage and on the Brain page. ex02b uses real Chitalu pictures, and voice files are now keyed by their words (fixes lines said twice or out of step).\n- Brain page: Send posts by itself through the Publish queue, Refresh gets fresh numbers, Facebook is posted by hand; blank page fixed; Supabase answers are read past its warning sentence.\n- A one-off job to re-upload player faces with a week's browser cache (to be deleted once done).\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- No new patch note today. Latest is 0.143 Leo: One Knowitball, the whole-site plan (in Admin, Patch notes)."
   }
 ]
