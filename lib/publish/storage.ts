@@ -9,6 +9,7 @@
 import { getStorage, r2Storage } from "@/lib/marketing/storage";
 import { isVideoKey, mediaOf, r2ConfigFrom } from "@/lib/marketing/r2";
 import type { Storage } from "@/lib/marketing/mediaApi";
+import type { Space } from "./types";
 
 export const OWN = "own:";
 export type Source = "own" | "kib";
@@ -32,8 +33,16 @@ export function isPublishVideo(key: unknown): key is string {
   const k = locate(key).key;
   return isVideoKey(k) && mediaOf(k)?.kind === "video";
 }
-/** Uploads go to Mikey's bucket when it is set up, else the team's. */
-export function uploadTarget(): { source: Source; store: Storage } | null {
-  const own = ownStorage(); if (own) return { source: "own", store: own };
-  const kib = kibStorage(); return kib ? { source: "kib", store: kib } : null;
+/**
+ * Where a space keeps its videos (Mikey, 24 Nov 2026): football and content use Mikey's own bucket, each in its own
+ * folder (videos/football/, videos/content/; older football uploads are in videos/publish/); kib uses the team's
+ * Marketing bucket (all of videos/, so Marketing → Uploads shows up too).
+ */
+export function uploadTarget(space: Space = "football"): { source: Source; store: Storage; folder: string } | null {
+  if (space === "kib") { const kib = kibStorage(); return kib ? { source: "kib", store: kib, folder: "kib" } : null; }
+  const own = ownStorage(); if (own) return { source: "own", store: own, folder: space };
+  const kib = kibStorage(); return kib ? { source: "kib", store: kib, folder: space } : null;
 }
+/** The folders a space's video list reads. */
+export const listPrefixes = (space: Space): string[] =>
+  space === "kib" ? ["videos/"] : space === "football" ? ["videos/football/", "videos/publish/"] : [`videos/${space}/`];

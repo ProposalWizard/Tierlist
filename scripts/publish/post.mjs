@@ -4,6 +4,7 @@
  *
  *   node scripts/publish/post.mjs <video.mp4> --title "…" --caption "…" [--to instagram,facebook,youtube]
  *        [--at 2026-11-12T18:30:00Z] [--ig "…"] [--fb "…"] [--yt "…"] [--site https://knowitball.co.uk]
+ *        [--space football|content|kib]   which set of accounts (default football); also for --status and --stats
  *   node scripts/publish/post.mjs --status          the accounts, the queue and the numbers
  *   node scripts/publish/post.mjs --tick            run the poster now instead of waiting for the 5-minute timer
  *   node scripts/publish/post.mjs --stats           live numbers: re-read every recent post's numbers from the apps now
@@ -17,6 +18,9 @@ import { basename } from "node:path";
 
 const args = process.argv.slice(2);
 const flag = (n) => { const i = args.indexOf(`--${n}`); return i >= 0 ? args[i + 1] : undefined; };
+// Which set of accounts: football (default, Mikey's Brain) | content (Mikey's Brain: Content) | kib (Knowitball team).
+const space = flag("space") || "football";
+if (!["football", "content", "kib"].includes(space)) { console.error("--space must be football, content or kib."); process.exit(1); }
 const has = (n) => args.includes(`--${n}`);
 const site = (flag("site") || process.env.PUBLISH_SITE || "https://knowitball.co.uk").replace(/\/$/, "");
 const key = process.env.PUBLISH_AGENT_TOKEN;
@@ -42,8 +46,8 @@ function show(d) {
   }
 }
 
-if (has("status")) { show(await call("/api/admin/publish")); process.exit(0); }
-if (has("stats")) { const t = await call("/api/admin/publish/tick?fresh=1", { method: "POST", body: "{}" }); console.log(`Re-read ${t.statsRefreshed} numbers from the apps.${t.errors?.length ? " Errors: " + t.errors.join(" | ") : ""}`); show(await call("/api/admin/publish")); process.exit(0); }
+if (has("status")) { show(await call(`/api/admin/publish?space=${space}`)); process.exit(0); }
+if (has("stats")) { const t = await call("/api/admin/publish/tick?fresh=1", { method: "POST", body: "{}" }); console.log(`Re-read ${t.statsRefreshed} numbers from the apps.${t.errors?.length ? " Errors: " + t.errors.join(" | ") : ""}`); show(await call(`/api/admin/publish?space=${space}`)); process.exit(0); }
 if (has("tick")) { console.log(JSON.stringify(await call("/api/admin/publish/tick", { method: "POST", body: "{}" }), null, 2)); process.exit(0); }
 
 const file = args.find((a, i) => !a.startsWith("--") && !(i > 0 && args[i - 1].startsWith("--")));
@@ -55,13 +59,13 @@ const caption = flag("caption") || "";
 if (platforms.includes("youtube") && !title) { console.error("YouTube needs --title."); process.exit(1); }
 
 console.log(`Uploading ${basename(file)} (${(size / 1e6).toFixed(1)} MB)…`);
-const up = await call("/api/admin/publish/upload", { method: "POST", body: JSON.stringify({ name: basename(file), size }) });
+const up = await call("/api/admin/publish/upload", { method: "POST", body: JSON.stringify({ name: basename(file), size, space }) });
 const put = await fetch(up.url, { method: "PUT", body: readFileSync(file), headers: { "content-length": String(size) } });
 if (!put.ok) { console.error(`Storage refused the upload (${put.status}): ${(await put.text()).slice(0, 300)}`); process.exit(1); }
 
 const captions = { instagram: flag("ig") ?? caption, facebook: flag("fb") ?? caption, youtube: flag("yt") ?? caption };
 const at = flag("at");
-const { post } = await call("/api/admin/publish", { method: "POST", body: JSON.stringify({ video_key: up.key, title, captions, platforms, scheduled_at: at || new Date().toISOString() }) });
+const { post } = await call("/api/admin/publish", { method: "POST", body: JSON.stringify({ space, video_key: up.key, title, captions, platforms, scheduled_at: at || new Date().toISOString() }) });
 console.log(`Queued ${post.id} for ${post.scheduled_at} → ${platforms.join(", ")}`);
 if (!at) { await call("/api/admin/publish/tick", { method: "POST", body: "{}" }).catch((e) => console.log("(tick:", e.message + ")")); }
 console.log("Check with: node scripts/publish/post.mjs --status");
