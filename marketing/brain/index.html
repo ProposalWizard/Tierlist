@@ -302,7 +302,7 @@ async function sql(q){if(!MCP)MCP=await window.claude.use('mcp');if(!MCP)throw {
   const r=await MCP.callTool('Supabase','execute_sql',{project_id:PID,query:q},{cache:false});
   let p=r.payload;if(p&&typeof p==='object'&&typeof p.result==='string')p=p.result;if(typeof p!=='string')p=(r.content||[]).map(c=>c.text||'').join('');
   try{const j=JSON.parse(p);if(j&&typeof j.result==='string')p=j.result;else if(Array.isArray(j))return j}catch(e){}
-  const m=p.match(/<untrusted-data-[^>]*>\s*([\s\S]*?)\s*<\/untrusted-data/);const body=m?m[1]:p;
+  const m=p.match(/<untrusted-data-[^>]*>\s*(\[[\s\S]*?\])\s*<\/untrusted-data/);const body=m?m[1]:p;
   try{return JSON.parse(body)}catch(e){throw {code:'tool_error',message:body.slice(0,300)}}}
 const KICK=f=>`do $$ declare c text; begin select ${f?"replace(command, '/api/admin/publish/tick'||chr(39), '/api/admin/publish/tick?fresh=1'||chr(39))":"command"} into c from cron.job where jobname='publish-tick'; execute c; end $$; select 1 as ok`;
 const errMsg=e=>({needs_reauth:'Reconnect Supabase in claude.ai Settings → Connectors.',server_not_connected:'Add the Supabase connector in claude.ai Settings → Connectors.',not_in_manifest:'The page is not allowed to use Supabase yet. Allow it when claude.ai asks.',approval_required:'Press Allow when claude.ai asks to let the page use Supabase.',not_granted:'Open the page on claude.ai to post from it.'})[e&&e.code]||String((e&&e.message)||e).slice(0,200);
