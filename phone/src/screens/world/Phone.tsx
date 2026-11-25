@@ -48,6 +48,7 @@ import { Backdrop, BottomBar, LOOK, glassStyle } from "../../ui/look";
 import { GameTop } from "../../world/chrome";
 import { PlayerHead } from "../../draw/PlayerHead";
 import { skinToneHex } from "@/lib/star/playerIdentity";
+import { luminance, rgba as heroRgba, tint as tintOf } from "@/lib/star/heroFigure";
 
 type Inside = "social" | "squad" | "fixtures" | "messages" | "appstore" | "scout" | "kickabout" | "relations";
 interface App { id: string; label: string; icon: string; bg: string; /** The icon's lighter top colour (PhoneHome bg[0]). */ hi?: string; title?: string; /** A screen of its own (nav name), or an app inside the phone. */ screen?: string; inside?: Inside; soon?: string }
@@ -181,8 +182,13 @@ export function PhoneScreen({ params, glass }: { params?: Record<string, unknown
  */
 function PhoneBody({ glow, trim, clock, onHome, onBack, children, fill = false }: { glow: string; trim: string; clock: string; onHome?: () => void; onBack: () => void; children: ReactNode; fill?: boolean }) {
   const [room, setRoom] = useState<{ w: number; h: number } | null>(null);
-  const g = glow.startsWith("#") ? glow : "#10b981";
-  const second = trim.startsWith("#") && lum(trim) < 0.85 && lum(trim) > 0.04 ? trim : g;
+  // PhoneHome wallpaper(glow, trim): the club's glow colour (a dark kit is lifted and written "rgb(…)":
+  // it was read as "no colour" here and every such club got emerald), and its trim as the second light.
+  const g = glow.startsWith("#") || glow.startsWith("rgb") ? glow : "#10b981";
+  const trimBase = luminance(trim) > 0.85 ? g : trim;
+  const second = luminance(trimBase) < 0.12 ? tintOf(trimBase, 0.35) : trimBase;
+  // PhoneFrame's rim glow is written `${rim}66`: only a "#rrggbb" colour makes a glow there.
+  const rimGlow = g.startsWith("#") && g.length === 7;
   // on the 3D phone's glass (`fill`) the phone is the whole box, edge to edge (the hand's own phone is the bezel)
   const h = room ? (fill ? room.h : room.h - 12) : 0;
   const w = room ? (fill ? room.w : Math.min(room.w - 16, Math.round(h * 0.6))) : 0;
@@ -192,11 +198,13 @@ function PhoneBody({ glow, trim, clock, onHome, onBack, children, fill = false }
         <View style={{
           width: w, height: h, borderRadius: 42, borderWidth: 3, borderColor: "#3a3a3f", padding: 3,
           backgroundImage: "linear-gradient(155deg, #232327 0%, #131316 40%, #0a0a0c 100%)",
-          boxShadow: `0px 30px 70px -20px rgba(0,0,0,0.75), 0px 0px 34px -6px ${rgba(g, 0.4)}, inset 0px 0px 0px 1.5px rgba(255,255,255,0.08)`,
+          boxShadow: rimGlow
+            ? `0px 30px 70px -20px rgba(0,0,0,0.75), 0px 0px 34px -6px ${rgba(g, 0.4)}, inset 0px 0px 0px 1.5px rgba(255,255,255,0.08)`
+            : "0px 30px 70px -20px rgba(0,0,0,0.75), inset 0px 0px 0px 1.5px rgba(255,255,255,0.06)",
         } as ViewStyle}>
           <View style={{
             flex: 1, borderRadius: 37, overflow: "hidden", backgroundColor: "#000",
-            backgroundImage: `radial-gradient(120% 55% at 15% 0%, ${rgba(g, 0.62)} 0%, rgba(0,0,0,0) 62%), radial-gradient(100% 50% at 100% 100%, ${rgba(second, 0.38)} 0%, rgba(0,0,0,0) 60%), linear-gradient(165deg, #0c1629 0%, #05080f 70%)`,
+            backgroundImage: `radial-gradient(120% 55% at 15% 0%, ${heroRgba(g, 0.62)} 0%, ${heroRgba(g, 0)} 62%), radial-gradient(100% 50% at 100% 100%, ${heroRgba(second, 0.38)} 0%, ${heroRgba(second, 0)} 60%), linear-gradient(165deg, #0c1629 0%, #05080f 70%)`,
           } as ViewStyle}>
             {/* status bar */}
             <View style={{ height: 30, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 22, paddingTop: 4 }}>
@@ -227,11 +235,6 @@ function PhoneBody({ glow, trim, clock, onHome, onBack, children, fill = false }
       )}
     </View>
   );
-}
-
-function lum(hex: string): number {
-  const n = parseInt(hex.replace("#", "").slice(0, 6).padEnd(6, "0"), 16);
-  return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
 }
 
 /** The status bar's signal bars, wifi and battery (PhoneFrame's SVGs, drawn with boxes). */
@@ -304,9 +307,9 @@ function Grid({ career, glow, badges, installed, onOpen }: { career: CareerState
   return (
     <ScrollView onLayout={(e) => { const h = Math.round(e.nativeEvent.layout.height); if (h !== roomH) setRoomH(h); }} contentContainerStyle={{ paddingHorizontal: 10, paddingTop: 6, paddingBottom: 4, flexGrow: 1 }}>
       {next ? <NextMatchWidget career={career} next={next} /> : (
-        <View style={[glassStyle("glass", glow.startsWith("#") ? glow : undefined), { borderRadius: 20, padding: 12 }]}>
-          <Text style={{ color: "#fde68a", fontWeight: "900", fontSize: 10, letterSpacing: 2 }}>SEASON COMPLETE</Text>
-          <Text style={{ color: C.dim, fontWeight: "700" }}>★ {formatWallet(career.money)} in the bank</Text>
+        <View style={[glassStyle("glass", glow.startsWith("#") ? glow : undefined), { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8 }]}>
+          <Text style={{ color: "#fde68a", fontWeight: "900", fontSize: 9, lineHeight: 13.5, letterSpacing: 1.62 }}>SEASON COMPLETE</Text>
+          <Text style={{ color: "rgba(255,255,255,0.75)", fontWeight: "700", fontSize: 11, lineHeight: 16.5 }}>★ {formatWallet(career.money)} in the bank</Text>
         </View>
       )}
       <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 8 }}>{grid.map(icon)}</View>
@@ -427,29 +430,38 @@ function FixturesApp({ career }: { career: CareerState }) {
   const nextIdx = list.findIndex((f) => !f.played);
   const ref = useRef<FlatList<Fixture>>(null);
   useEffect(() => { if (nextIdx > 2) setTimeout(() => ref.current?.scrollToIndex({ index: nextIdx, viewPosition: 0.4, animated: false }), 50); }, [nextIdx]);
+  // A played row is 32 px (its 20 px crest and 6 px above and below); a row still to play has its
+  // date under the name (18 + 13.5 px of words): 43.5 px. 4 px between rows.
+  const tops = useMemo(() => { const t = [0]; for (const f of list) t.push(t[t.length - 1] + (f.played ? 32 : 43.5) + 4); return t; }, [list]);
   if (!list.length) return <Soon text="No fixtures yet." />;
   return (
-    <FlatList ref={ref} data={list} keyExtractor={(f, i) => `${f.week}-${f.opponent}-${f.kind}-${i}`} contentContainerStyle={{ padding: 8, gap: 4 }}
-      getItemLayout={(_, i) => ({ length: 48, offset: 48 * i, index: i })}
+    <FlatList ref={ref} data={list} keyExtractor={(f, i) => `${f.week}-${f.opponent}-${f.kind}-${i}`} contentContainerStyle={{ paddingVertical: 4 }}
+      getItemLayout={(_, i) => ({ length: tops[i + 1] - tops[i], offset: 4 + tops[i], index: i })}
       onScrollToIndexFailed={() => {}}
       renderItem={({ item: f, index: i }) => {
         const us = f.home ? f.homeScore : f.awayScore, them = f.home ? f.awayScore : f.homeScore;
         const res = f.played && us !== undefined && them !== undefined ? (us > them ? "W" : us === them ? "D" : "L") : null;
-        const tone = res === "W" ? "#059669" : res === "L" ? "#b91c1c" : "#d97706";
+        // win green, loss red, a draw yellow-orange (the website's gradients)
+        const tone = res === "W" ? "linear-gradient(180deg, #34d399, #059669)" : res === "L" ? "linear-gradient(180deg, #ef4444, #b91c1c)" : "linear-gradient(180deg, #fbbf24, #f97316)";
         const next = i === nextIdx;
         const lab = fixtureLabel(f);
         return (
-          <View style={[{ height: 44, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 10, borderRadius: 12, backgroundColor: next ? "rgba(14,165,233,0.15)" : f.played ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.03)", borderWidth: next ? 1.5 : 1, borderColor: next ? "rgba(56,189,248,0.9)" : "rgba(255,255,255,0.06)" }, next && ({ boxShadow: "0px 0px 14px rgba(56,189,248,0.55)" } as ViewStyle)]}>
-            <View style={{ width: 52 }}>
-              <Text numberOfLines={1} style={{ color: "#fde68a", fontWeight: "900", fontSize: 9 }}>{lab.top}</Text>
-              {lab.sub ? <Text numberOfLines={1} style={{ color: "rgba(253,230,138,0.7)", fontWeight: "900", fontSize: 8 }}>{lab.sub}</Text> : null}
+          <View style={[{ height: f.played ? 32 : 43.5, marginHorizontal: 8, marginBottom: 4, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 10, borderRadius: 12, backgroundColor: next ? "rgba(14,165,233,0.15)" : f.played ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.025)" },
+            ({ boxShadow: next ? "inset 0px 0px 0px 1.5px rgba(56,189,248,0.9), 0px 0px 14px rgba(56,189,248,0.55)" : "inset 0px 0px 0px 1px rgba(255,255,255,0.06)" } as ViewStyle)]}>
+            <View style={{ width: 50 }}>
+              <Text numberOfLines={1} style={{ color: "#fde68a", fontWeight: "900", fontSize: 9, lineHeight: 11.25 }}>{lab.top}</Text>
+              {lab.sub ? <Text numberOfLines={1} style={{ color: "rgba(253,230,138,0.7)", fontWeight: "900", fontSize: 8, lineHeight: 10 }}>{lab.sub}</Text> : null}
             </View>
             <ClubBadge club={f.opponent} size={20} career={career} />
-            <View style={{ flex: 1 }}>
-              <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 12 }}>{short(f.opponent)} <Text style={{ color: "rgba(255,255,255,0.6)" }}>({f.home ? "H" : "A"})</Text></Text>
-              {!f.played && <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.6)", fontSize: 9, fontWeight: "700" }}>{fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career))}</Text>}
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text numberOfLines={1} style={{ color: C.text, fontWeight: "900", fontSize: 12, lineHeight: 18 }}>{short(f.opponent)} <Text style={{ color: "rgba(255,255,255,0.6)" }}>({f.home ? "H" : "A"})</Text></Text>
+              {!f.played && <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.6)", fontSize: 9, lineHeight: 13.5, fontWeight: "700" }}>{fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career))}</Text>}
             </View>
-            {res ? <Text style={{ backgroundColor: tone, color: "#fff", fontWeight: "900", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6, overflow: "hidden" }}>{us}-{them} {res}</Text> : null}
+            {res ? (
+              <View style={{ borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, backgroundImage: tone, boxShadow: "0px 1px 3px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)" } as ViewStyle}>
+                <Text style={{ color: "#fff", fontWeight: "900", fontSize: 11, lineHeight: 16.5, fontVariant: ["tabular-nums"] }}>{us}-{them} {res}</Text>
+              </View>
+            ) : null}
           </View>
         );
       }} />

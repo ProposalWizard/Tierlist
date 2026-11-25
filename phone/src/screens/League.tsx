@@ -70,11 +70,11 @@ function AlertsSheet({ career, ticks, onTick, onClose }: { career: CareerState; 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-end" }}>
-        <Pressable onPress={() => {}} style={{ backgroundColor: "#07110c", borderTopWidth: 2, borderTopColor: "rgba(255,255,255,0.3)", paddingBottom: Math.max(10, inset.bottom) }}>
+        <Pressable onPress={() => {}} style={{ backgroundColor: "#07110c", boxShadow: "inset 0px 2px 0px rgba(255,255,255,0.3)", paddingBottom: Math.max(10, inset.bottom) } as ViewStyle}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.2)" }}>
             <Text style={{ fontSize: 20, lineHeight: 24 }}>🔔</Text>
-            <Text style={{ flex: 1, color: "#fff", fontSize: 18, fontWeight: "900", letterSpacing: 0.4 }}>LIVE SCORES</Text>
-            <Text style={{ color: "#fcd34d", fontSize: 16, fontWeight: "900", fontVariant: ["tabular-nums"] }}>{ticks.length}</Text>
+            <Text style={{ flex: 1, color: "#fff", fontSize: 18, lineHeight: 27, fontWeight: "900", letterSpacing: 0.45 }}>LIVE SCORES</Text>
+            <Text style={{ color: "#fcd34d", fontSize: 16, lineHeight: 24, fontWeight: "900", fontVariant: ["tabular-nums"] }}>{ticks.length}</Text>
             <Press onPress={onClose} style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.1)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)" }}>
               <Text style={{ color: "#fff", fontSize: 16, fontWeight: "900" }}>✕</Text>
             </Press>
@@ -85,8 +85,9 @@ function AlertsSheet({ career, ticks, onTick, onClose }: { career: CareerState; 
               return (
                 <Press key={club} onPress={() => onTick(club)} style={{ width: (vp.width - 3) / 2, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 8, paddingVertical: 8, backgroundColor: on ? "#fbbf24" : "#0c1a12" }}>
                   <ClubBadge club={club} size={22} />
-                  <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, color: on ? "#030712" : "#fff", fontSize: 14, lineHeight: 18, fontWeight: "900", textTransform: "uppercase" }}>{shortClub(club)}</Text>
-                  <Text style={{ fontSize: 15, opacity: on ? 1 : 0.35 }}>🔔</Text>
+                  <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, color: on ? "#030712" : "#fff", fontSize: 14, lineHeight: 14, fontWeight: "900", textTransform: "uppercase" }}>{shortClub(club)}</Text>
+                  {/* an unticked bell is greyed: opacity .35 and no colour (the website's opacity-35 grayscale) */}
+                  <View style={on ? null : ({ opacity: 0.35, filter: [{ grayscale: 1 }] } as ViewStyle)}><Text style={{ fontSize: 15, lineHeight: 22.5 }}>🔔</Text></View>
                 </Press>
               );
             })}

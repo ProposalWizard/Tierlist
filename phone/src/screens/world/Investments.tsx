@@ -43,7 +43,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useWindowDimensions } from "react-native";
 import { Backdrop, BackPill, glassStyle } from "../../ui/look";
 import { Negotiation } from "./Negotiation";
-import { NumBox, TextBox, Choose, Problem, SmallBtn, Line, Small, Head, KitSwatch, ColourRow, pctText } from "./politicsKit";
+import { NumBox, TextBox, Choose, Problem, SmallBtn, Line, Small, Head, KitSwatch, ColourRow, RangeSlider, pctText } from "./politicsKit";
 import * as P from "../../world/politics";
 import type { BoardSection, InvestmentsEntry } from "../../world/politics";
 
@@ -83,14 +83,14 @@ function InvFrame({ balance, onBack, children }: { balance: number; onBack: () =
   return (
     <View style={{ flex: 1, backgroundColor: "#0b1a2e", paddingTop: inset.top }}>
       <Backdrop kind="stadium" />
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 }}>
+      <View style={{ width: "100%", maxWidth: 384, alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 }}>
         <BackPill onPress={onBack} />
         <View style={[glassStyle("glass", "#f59e0b"), { flex: 1, height: 38, borderRadius: 12, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }]}>
           <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "900", letterSpacing: 2 }}>BALANCE</Text>
           <Text numberOfLines={1} style={{ color: "#fde047", fontSize: 15, fontWeight: "900", fontVariant: ["tabular-nums"] }}>★ {money(balance)}</Text>
         </View>
       </View>
-      <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 40 + inset.bottom, gap: 10 }}>{children}</ScrollView>
+      <ScrollView contentContainerStyle={{ width: "100%", maxWidth: 384, alignSelf: "center", padding: 12, paddingBottom: 40 + inset.bottom, gap: 10 }}>{children}</ScrollView>
     </View>
   );
 }
@@ -194,11 +194,8 @@ function StakeControls({ career, club, valuation, mode = "both", onDone }: { car
       {mode !== "buy" && stakePct > 0 && (
         <View style={{ gap: 6 }}>
           <Head color={C.text}>Sell</Head>
-          <Line>
-            <SmallBtn label="−" flex={false} onPress={() => setSellFraction((f) => Math.max(0.01, Math.round((f - 0.05) * 100) / 100))} />
-            <Text style={{ flex: 1, color: C.text, fontWeight: "900", textAlign: "center" }}>{Math.round(sellFraction * 100)}% of your stake</Text>
-            <SmallBtn label="+" flex={false} onPress={() => setSellFraction((f) => Math.min(1, Math.round((f + 0.05) * 100) / 100))} />
-          </Line>
+          {/* any amount, not just the presets: the website's red range slider */}
+          <RangeSlider value={Math.round(sellFraction * 100)} onChange={(v) => setSellFraction(v / 100)} />
           <Line>{[0.25, 0.5, 0.75, 1].map((f) => <SmallBtn key={f} tone={sellFraction === f ? "red" : "plain"} label={f === 1 ? "ALL" : `${Math.round(f * 100)}%`} onPress={() => setSellFraction(f)} />)}</Line>
           <SmallBtn tone="red" label={`Sell ${Math.round(sellFraction * 100)}% of your stake (${pctText(sellPct)} of the club) for ★${money(sellAmount)}`} onPress={() => setPending({ kind: "sell", pct: sellPct, amount: sellAmount })} />
         </View>
@@ -218,7 +215,7 @@ function Portfolio({ career, owned }: { career: CareerState; owned: { club: stri
   const [recDetail, setRecDetail] = useState("");
   const [recMessage, setRecMessage] = useState<string | null>(null);
   const [trade, setTrade] = useState<{ club: string; mode: "buy" | "sell" } | null>(null);
-  if (owned.length === 0) return <Card><Text style={{ color: C.text, textAlign: "center", fontWeight: "700" }}>No stakes yet — buy into a club from the Market tab.</Text></Card>;
+  if (owned.length === 0) return <Card style={{ paddingHorizontal: 16, paddingVertical: 32 }}><Text style={{ color: "rgba(255,255,255,0.9)", textAlign: "center", fontSize: 14, lineHeight: 20, fontWeight: "400" }}>No stakes yet — buy into a club from the Market tab.</Text></Card>;
   const totalValue = owned.reduce((s, i) => s + clubValuation(i.club, career) * (i.percent / 100), 0);
   const totalCost = owned.reduce((s, i) => s + i.avgBuyValuation * (i.percent / 100), 0);
   const totalProfit = totalValue - totalCost;
@@ -290,7 +287,7 @@ function Portfolio({ career, owned }: { career: CareerState; owned: { club: stri
 // ── BOARDROOM ───────────────────────────────────────────────────────────────
 
 function BoardroomList({ clubs, career, onOpen }: { clubs: string[]; career: CareerState; onOpen: (c: string) => void }) {
-  if (clubs.length === 0) return <Card><Text style={{ color: C.text, textAlign: "center", fontWeight: "700" }}>Own {MAJORITY_THRESHOLD}% or more of a club to take a seat on its board.</Text></Card>;
+  if (clubs.length === 0) return <Card style={{ paddingHorizontal: 16, paddingVertical: 32 }}><Text style={{ color: "rgba(255,255,255,0.9)", textAlign: "center", fontSize: 14, lineHeight: 20, fontWeight: "400" }}>Own {MAJORITY_THRESHOLD}% or more of a club to take a seat on its board.</Text></Card>;
   return (
     <>
       {clubs.map((club) => (
