@@ -9,6 +9,8 @@
  *  - Settings: only real preferences.
  *  - Placeholder: a screen still to come, saying so.
  */
+import { readExitInfo, clearExitInfo } from "../../exitInfo";
+import { live3dOffByCrash } from "../../game/prefs";
 import { partsSwitchedOff, turnPartBackOn, PART_NAMES, closedWhileInfo, closedWhileLine, clearClosedWhile, lastErrorInfo, lastErrorLine } from "../../safety";
 import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { ownedPenaltyRunups, ownedFreeKickRunups, careerPenaltyRunup, careerFreeKickRunup } from "@/lib/star/runupStyles";
@@ -233,6 +235,7 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
             <View style={{ flex: 1 }}>
               <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{label}</Text>
               {sub ? <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600", marginTop: 2 }}>{sub}</Text> : null}
+              {k === "live3dScenes" && live3dOffByCrash() ? <Text style={{ color: "#fbbf24", fontSize: 11, fontWeight: "800", marginTop: 2 }}>{`Switched off after a crash (${live3dOffByCrash()}). Turn it on to try again.`}</Text> : null}
             </View>
             <Track on={prefs[k]} />
           </Press>
@@ -307,6 +310,7 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
       )}
       <SwitchedOffCard />
       <ClosedWhileCard />
+      <AndroidExitCard />
       {/* The website's More → Data credits (lib/star/dataCredits.ts): who made the data,
           pictures and sounds the game uses, under the licence each asks for. */}
       <Card style={{ padding: 0 }}>
@@ -395,6 +399,25 @@ function ClosedWhileCard() {
       )}
       <Text selectable style={{ color: C.text, fontSize: 11, lineHeight: 15, fontWeight: "600", marginBottom: 8 }}>{closedWhileLine() ?? (err ? lastErrorLine(err) : "")}</Text>
       <View style={{ width: 120 }}><Btn small label="Clear" onPress={() => { clearClosedWhile(); bump((n) => n + 1); }} /></View>
+    </Card>
+  );
+}
+
+/**
+ * "Android says the app last stopped because: ..." (src/exitInfo.ts: Android's own ApplicationExitInfo, written by the native side on every start).
+ * Shown on an Android phone that has a report; the text can be copied (press and hold); Clear removes the file.
+ */
+function AndroidExitCard() {
+  const [, bump] = useState(0);
+  const text = readExitInfo();
+  if (!text) return null;
+  const reason = /^reason: (.*)$/m.exec(text)?.[1] ?? "see below";
+  return (
+    <Card tone="#ef4444">
+      <Text style={{ color: C.text, fontWeight: "900", fontSize: 15 }}>{`Android says the app last stopped because: ${reason}`}</Text>
+      <Text style={{ color: C.dim, fontSize: 12, marginTop: 4, marginBottom: 8 }}>Android's own report of the last 3 times the app stopped, newest first. Send this to the team (press and hold the text to copy).</Text>
+      <Text selectable style={{ color: C.text, fontSize: 11, lineHeight: 15, fontWeight: "600", marginBottom: 8 }}>{text}</Text>
+      <View style={{ width: 120 }}><Btn small label="Clear" onPress={() => { clearExitInfo(); bump((n) => n + 1); }} /></View>
     </Card>
   );
 }

@@ -37,12 +37,19 @@ import { useRiskyPart, markStep, clearTrail, notePulse } from "../safety";
 import { Press } from "../ui/Press";
 import { setupPhone3d } from "./assets";
 import { glCounts } from "./gl";
+import { placeOpened, settleHeadshots } from "./glBusy";
 import { neutralizeGl, registerPlace, type PlaceNet } from "./crashNet";
 import { startWalkScene, type WalkController, type WalkHost, type WalkStart } from "./walkHost";
 
 /** The longest the scene may take to start before the plain card takes over. */
 export const WALK_LOAD_LIMIT_MS = 45000;
 const GOLD = "#facc15";
+/**
+ * After the screen before it has gone, how long a place waits (with its plain loading cover up) before it makes its GL view (26 Nov 2026).
+ * The signing closed the app at "mounted (view being made)" straight after the trial's screens went; whatever those left behind (images,
+ * the match's JavaScript objects, a GL being let go) gets this moment to settle. A guess at the cause, a cheap and safe cure either way.
+ */
+export const GL_SETTLE_MS = 800;
 /** The stick: the ring's radius and where it sits (the website's Stick: 132 across, 22 from the left). */
 const R = 52, RING = 132, RING_LEFT = 22;
 
@@ -119,8 +126,11 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
   // crash breadcrumbs (../safety.ts): the last step this place reached survives a native crash and is shown in Settings next launch
   const place = p.name ?? "3D place";
   const marked = useRef(false);
-  if (allowed && !marked.current) { marked.current = true; markStep(place, "mounted (view being made)"); }
+  if (allowed && !marked.current) { marked.current = true; markStep(place, "mounted (waiting for the screen before to go quiet)"); }
+  const viewMarked = useRef(false);
   const [failed, setFailed] = useState<string | null>(null);
+  // The GL view is made only once the screen before has gone and gone quiet (see GL_SETTLE_MS); until then the loading cover shows.
+  const [viewOk, setViewOk] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [ready, setReady] = useState(false);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -140,6 +150,23 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
   const dpr = PixelRatio.get() || 1;
   const pr = Math.min(dpr, TIER_PROFILES[tier].movePixelRatio);
   const k = pr / dpr;
+
+  // While this place is open the headshot maker makes nothing (./glBusy.ts), and the view waits for the screen before it and for the headshot GL.
+  useEffect(() => {
+    if (!allowed) return;
+    const closed = placeOpened();
+    let live2 = true;
+    const frame2 = () => new Promise<void>((res) => requestAnimationFrame(() => requestAnimationFrame(() => res())));
+    (async () => {
+      await frame2();
+      await settleHeadshots();
+      await new Promise<void>((res) => setTimeout(res, GL_SETTLE_MS));
+      if (!live2) return;
+      markStep(place, "view allowed (screen before has gone quiet)");
+      setViewOk(true);
+    })();
+    return () => { live2 = false; closed(); };
+  }, [allowed, place]);
 
   // The crash net: while this place is mounted, a JavaScript error fails it over to its plain version (./crashNet.ts).
   useEffect(() => {
@@ -324,6 +351,9 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
     }
   };
 
+  // the last step before the phone's own GL is made: a close after this one and before "gl context created" is inside the native GL view
+  if (size && viewOk && !viewMarked.current && !failed && allowed) { viewMarked.current = true; markStep(place, `GLView being made (${size.w}x${size.h})`); }
+
   const failWhy = failed ?? (!allowed ? "The 3D is switched off" : null);
   const onFailNow = p.onFail;
   useEffect(() => { if (failWhy && onFailNow) onFailNow(failWhy); }, [failWhy]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -332,7 +362,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
 
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: p.cover ?? "#0d1420", overflow: "hidden" }]} onLayout={(e) => { const { width, height } = e.nativeEvent.layout; if (!size || Math.abs(size.w - width) > 1 || Math.abs(size.h - height) > 1) setSize({ w: width, h: height }); }}>
-      {size && (
+      {size && viewOk && (
         <View style={[StyleSheet.absoluteFill, { overflow: "hidden" }]} pointerEvents="none">
           <GLView key={`${attempt}`} msaaSamples={0} onContextCreate={onContext} pointerEvents="none"
             style={{ position: "absolute", width: size.w * k, height: size.h * k, left: (size.w - size.w * k) / 2, top: (size.h - size.h * k) / 2, transform: [{ scale: 1 / k }] }} />

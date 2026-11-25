@@ -25,6 +25,7 @@ import { GLTFLoader } from "./GLTFLoader";
 import { withMeshopt } from "./meshopt";
 import { withSceneDocument, withSceneDocumentSync } from "./env";
 import { prepareGl } from "./gl";
+import { headshotsPaused, registerHeadshotSettler } from "./glBusy";
 
 type People = typeof import("@/lib/star/people3d");
 
@@ -71,6 +72,8 @@ export const headshotsPossible = () => !noGl && !!glSource;
 /** One picture of this man (queued behind the others). Top row first, premultiplied RGBA. */
 export function shootHeadshot(look: HeadshotLook, frame: HeadshotFrame = "head"): Promise<HeadshotPixels | null> {
   if (!headshotsPossible()) return Promise.resolve(null);
+  // a 3D place is open (./glBusy.ts): no second GL now; the drawn head stays and the picture is made the next time it is wanted
+  if (headshotsPaused()) return Promise.resolve(null);
   return new Promise((done) => { queue.push({ look, frame, done }); void pump(); });
 }
 
@@ -267,12 +270,20 @@ async function shoot(r: Rig, look: HeadshotLook, frame: HeadshotFrame): Promise<
   return any ? { width: px, height: px, data } : null;
 }
 
-function dropRig() {
+/** Waits for the running job to end, then lets the GL go now (not after the idle wait): the Walk3D places call this before they make their view. */
+registerHeadshotSettler(async () => {
+  queue.splice(0).forEach((j) => j.done(null));
+  for (let i = 0; i < 60 && pumping; i++) await new Promise((res) => setTimeout(res, 100));
+  if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+  await dropRig();
+});
+
+function dropRig(): Promise<void> {
   idleTimer = null;
   const was = rig;
   rig = null;
-  if (!was) return;
-  void was.then(async (r) => {
+  if (!was) return Promise.resolve();
+  return was.then(async (r) => {
     if (!r) return;
     for (const sp of Array.from(r.sitters.values())) {
       try {

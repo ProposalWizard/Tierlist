@@ -35,6 +35,17 @@ const DEFAULTS: Prefs = { sound: true, gameMusic: false, skipLineup: false, play
 const KEY = "prefs-v1";
 let current: Prefs = { ...DEFAULTS, ...(loadJson<Partial<Prefs>>(KEY) ?? {}) };
 const subs = new Set<() => void>();
+// Why Live 3D scenes is OFF when the app (not the player) switched it off: Settings shows one line about it until it is turned on again.
+const OFF_KEY = "live3d-off-by-crash-v1";
+let offByCrash: string | null = (() => { try { return loadJson<string>(OFF_KEY) ?? null; } catch { return null; } })();
+/** Called after the app turned Live 3D scenes off by itself ("the app closed in the signing", "a 3D error in the office"). */
+export function markLive3dOffByCrash(why: string) {
+  offByCrash = why;
+  try { saveJson(OFF_KEY, why); } catch { /* the note is lost, the switch stays off */ }
+  subs.forEach((f) => f());
+}
+/** The reason the app switched Live 3D scenes off, or null (the player's own choice, or it is on). */
+export function live3dOffByCrash(): string | null { return current.live3dScenes ? null : offByCrash; }
 // 24 Nov 2026: the last run closed in the middle of a live 3D scene (the signing, the office, a night, a reward: src/safety.ts left a
 // trail). The switch goes OFF now, so the same scene cannot close the app again on the next try (the signing used to replay and close at
 // the same moment every time). Settings → Live 3D scenes turns it back on. Only the launch that FOUND the trail does this.
@@ -42,6 +53,7 @@ try {
   if (current.live3dScenes && closedWhileFresh() && /signing|office|night|reward/i.test(closedWhileInfo()?.place ?? "")) {
     current = { ...current, live3dScenes: false };
     saveJson(KEY, current);
+    markLive3dOffByCrash(`the app closed in ${closedWhileInfo()?.place ?? "a 3D scene"}`);
   }
 } catch { /* the switch stays as it was */ }
 
@@ -49,6 +61,7 @@ export function getPrefs(): Prefs { return current; }
 export function setPref<K extends keyof Prefs>(k: K, v: Prefs[K]) {
   current = { ...current, [k]: v };
   saveJson(KEY, current);
+  if (k === "live3dScenes" && v === true && offByCrash) { offByCrash = null; try { saveJson(OFF_KEY, null); } catch { /* as it was */ } }
   subs.forEach((f) => f());
 }
 /** True when the automatic 3D scenes may start (Settings → Live 3D scenes). */

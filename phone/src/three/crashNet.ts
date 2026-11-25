@@ -15,7 +15,7 @@
  *
  * No React and no phone-only imports besides the two small stores, so tools/live3d-check.mjs runs this same file.
  */
-import { setPref } from "../game/prefs";
+import { markLive3dOffByCrash, setPref } from "../game/prefs";
 import { currentTrail, markStep, recordLastError } from "../safety";
 
 /** A failed-over place stays covered this long (a late timer of the scene's own after it was let go). */
@@ -68,7 +68,7 @@ export function reportPlaceError(source: string, e: unknown): boolean {
       recordLastError({ place: name, source, message: message.slice(0, 300), stack: stackLines(e), lastEvent, at: Date.now(), steps });
       for (const p of open) markStep(p.name, `ERROR (${source}): ${message.slice(0, 80)}`);
       // 3. so it does not start again: the switch off (and the match's 3D view for the match)
-      try { setPref("live3dScenes", false); } catch { /* the switch stays as it was */ }
+      try { setPref("live3dScenes", false); markLive3dOffByCrash(`a 3D error in ${name}`); } catch { /* the switch stays as it was */ }
       if (open.some((p) => MATCH_PLACE.test(p.name))) { try { setPref("matchView3d", false); } catch { /* as it was */ } }
       // fail each place over to its plain version, once
       for (const p of open) {
