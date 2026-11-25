@@ -393,7 +393,7 @@ function CanTile({ can: c, career }: { can: KibCan; career: CareerState }) {
       <View style={{ flexDirection: "row", gap: 4, marginTop: 6 }}>
         <View {...useT} style={{ flex: 1 }}>
           <LookButton kind="accent" accent={accent} small disabled={!canUse} onPress={() => flow.useCan(c.id)} style={{ borderRadius: 6, paddingVertical: 4 }}>
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: canUse ? "#111" : "rgba(255,255,255,0.45)", fontSize: 10.5, fontWeight: "900", letterSpacing: 0 }}>{ready ? "✓" : full ? "FULL" : "USE"}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: canUse ? "#111" : "#fff", fontSize: 10.5, fontWeight: "900", letterSpacing: 0 }}>{ready ? "✓" : full ? "FULL" : "USE"}</Text>
           </LookButton>
         </View>
         <LookButton kind="dark" small disabled={career.money < price} onPress={() => flow.buyCan(c)} style={{ flex: 1, borderRadius: 6, paddingVertical: 4 }}>
