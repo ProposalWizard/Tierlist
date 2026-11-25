@@ -224,7 +224,7 @@ function Chooser({ open, onClose, glow, groups, all, current, yours, onPick, onL
             </Press>
           )}
           {groups.map(g => (
-            <View key={g.title} style={{ marginBottom: 12 }}>
+            <View key={g.title} style={{ marginBottom: 8 }}>
               <Text style={{ color: "#fcd34d", fontSize: 10, lineHeight: 15, fontWeight: "900", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4, paddingHorizontal: 4 }}>{g.title}</Text>
               {g.keys.map(k => {
                 const c = all.find(x => x.key === k)!;

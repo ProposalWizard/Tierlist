@@ -94,17 +94,28 @@ function paintPitchSpace(g: Ctx, lwM: number, box: boolean) {
   // Markings, every line at its real distance.
   g.lineWidth = lwM;
   g.strokeStyle = LINE_NEW;
-  g.beginPath(); g.moveTo(0, HALF_LEN); g.lineTo(0, 0); g.lineTo(PITCH_W, 0); g.lineTo(PITCH_W, HALF_LEN); g.stroke();
+  // Every STRAIGHT line is a thin filled bar, not a stroked path. Stroked, the long ones (the goal line, the
+  // 18-yard box: wider than the screen once the camera is close) were dropped whole by the phone's graphics
+  // chip under the camera's tilt: a penalty showed the six-yard box and the D with no 18-yard line between
+  // them (playtest round 2, `in-setpiece-n.jpg`; the same code on a plain surface drew them). A filled bar
+  // is drawn at any size. Across-lines run the full length, corners included; up-lines fit between them.
+  const h = lwM / 2;
+  g.fillStyle = LINE_NEW;
+  const across = (x1: number, x2: number, y: number) => g.fillRect(x1 - h, y - h, x2 - x1 + lwM, lwM);
+  const up = (x: number, y1: number, y2: number) => g.fillRect(x - h, y1 + h, lwM, y2 - y1 - lwM);
+  const boxLines = (l: number, r: number, depth: number) => { across(l, r, depth); up(l, 0, depth); up(r, 0, depth); };
+  across(0, PITCH_W, 0); up(0, 0, HALF_LEN + lwM); up(PITCH_W, 0, HALF_LEN + lwM);
   if (box) {
-    g.strokeRect(BOX_L, 0, BOX_R - BOX_L, BOX_DEPTH);
-    g.strokeRect(SIX_L, 0, SIX_R - SIX_L, SIX_DEPTH);
+    boxLines(BOX_L, BOX_R, BOX_DEPTH);
+    boxLines(SIX_L, SIX_R, SIX_DEPTH);
     g.beginPath(); g.arc(CX, PEN_SPOT_Y, Math.max(lwM * 1.07, 0.11), 0, Math.PI * 2); g.fillStyle = "rgba(255,255,250,0.85)"; g.fill();
     const half = Math.acos(Math.max(-1, Math.min(1, (BOX_DEPTH - PEN_SPOT_Y) / ARC_R)));
     g.beginPath(); g.arc(CX, PEN_SPOT_Y, ARC_R, Math.PI / 2 - half, Math.PI / 2 + half); g.stroke();
   }
   g.beginPath(); g.arc(0, 0, CORNER_R, 0, Math.PI / 2); g.stroke();
   g.beginPath(); g.arc(PITCH_W, 0, CORNER_R, Math.PI / 2, Math.PI); g.stroke();
-  g.beginPath(); g.moveTo(0, HALF_LEN); g.lineTo(PITCH_W, HALF_LEN); g.stroke();
+  g.fillStyle = LINE_NEW;
+  g.fillRect(h, HALF_LEN - h, PITCH_W - lwM, lwM);
   g.beginPath(); g.arc(CX, HALF_LEN, CENTRE_R, 0, Math.PI * 2); g.stroke();
 }
 

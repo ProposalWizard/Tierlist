@@ -2454,6 +2454,13 @@ export class MatchDriver {
           this.layOffsLeft -= 1;
           this.pushLine(po.stick?.choice === "through" ? "Through ball, into your run!" : po.stick ? "He plays it back to your feet…" : "He lays it back into your run…");
         }
+        // CanvasMatch: the answer to your call when it cannot be given (playOn.ts sets stick.note while the pass plays on).
+        if (po.stick?.note) {
+          this.callMsgNow = { text: po.stick.note === "late" ? "Too late, he's shooting" : "No lane to you", untilTick: this.tickNo + ticksFor(1500) };
+          po.stick.note = null;
+          this.later(1500, () => this.bump());
+          this.bump();
+        }
       }
       let res = stepBall(ball, sc, this.rng, h);
       noteMatePlays(this.matePlays, mateProbe, sc);

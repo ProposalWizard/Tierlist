@@ -38,8 +38,8 @@ export function StatsScreen({ career, onBack, onRenew, start }: { career: Career
       // The swipe hint back to Home (the website's SwipePages arrow on the Stats page).
       footer={<View style={{ height: 22, flexDirection: "row", justifyContent: "flex-end", alignItems: "center", paddingRight: 84 }}>
         <Press onPress={onBack} style={{ flexDirection: "row", alignItems: "center", gap: 4, opacity: 0.85 }}>
-          <Text style={{ color: "#fff", fontSize: 10.5, fontWeight: "700", letterSpacing: 0.6 }}>HOME</Text>
-          <Text style={{ fontSize: 12 }}>🏠</Text>
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 9.5, lineHeight: 9.5, fontWeight: "600", letterSpacing: 0.24, textShadowColor: "rgba(0,0,0,0.85)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>HOME</Text>
+          <Text style={{ fontSize: 11, lineHeight: 13 }}>🏠</Text>
           <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }}>▶</Text>
         </Press>
       </View>}>
