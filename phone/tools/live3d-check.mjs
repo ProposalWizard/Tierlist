@@ -358,6 +358,56 @@ console.log("== Skip / Back while a place is loading: the scene is let go first,
   ok(/useNav|hardwareBackPress/.test(fs.readFileSync(path.resolve("../phone/App.tsx"), "utf8")) && /back\(\)/.test(fs.readFileSync(path.resolve("../phone/App.tsx"), "utf8")), "the phone's Back button calls nav back(), which waits (src/nav.tsx)");
 }
 
+
+console.log("== the title and Home player (src/three/HomePlayer3D.tsx) is made as safe as a Walk3D place");
+{
+  const gb = path.join(path.dirname(out), "glbusy-check.cjs");
+  await build({ entryPoints: [path.resolve("src/three/glBusy.ts")], bundle: true, platform: "node", format: "cjs", outfile: gb, logLevel: "error" });
+  const G = req(gb);
+  const wl2 = path.join(path.dirname(out), "walkleave-check2.cjs");
+  await build({ entryPoints: [path.resolve("src/three/walkLeave.ts")], bundle: true, platform: "node", format: "cjs", outfile: wl2, logLevel: "error" });
+  const W2 = req(wl2);
+  // one GL at a time: a view that is alive holds the next one back, and its release has a short grace
+  ok(G.glViewsAlive() === 0, "no GL view alive at the start");
+  const rel = G.glViewAlive();
+  ok(G.glViewsAlive() === 1, "a GL view made counts as alive");
+  let waited = false; const w = G.waitNoGlView(2000).then((v) => { waited = v; });
+  await new Promise((r) => setTimeout(r, 120));
+  ok(!waited, "the next place WAITS while a GL view is alive");
+  rel(); await new Promise((r) => setTimeout(r, 100));
+  ok(G.glViewsAlive() === 1, "after its scene is let go the view still counts for the grace (" + G.GL_RELEASE_GRACE_MS + " ms): the native side tears it down");
+  await w; ok(waited === true, "then the waiting place goes on");
+  const rel2 = G.glViewAlive(); const t0 = Date.now(); const timedOut = await G.waitNoGlView(150);
+  ok(timedOut === false && Date.now() - t0 < 600, "a view that never lets go is not waited for forever (the wait gives up)"); rel2(); await new Promise((r) => setTimeout(r, 350));
+  // opening a screen (nav.go / nav.replace) while the title's player is STARTING waits; with nothing starting it runs at once
+  const gates = []; const mkGate = () => { const log = [], frames = []; const gate = new W2.LeaveGate({ dispose: () => log.push("dispose"), after: (fn) => frames.push(fn), timer: (fn, ms) => () => {} }); return { gate, log, frames }; };
+  { let n = 0; W2.whenStartSafe(() => n++); ok(n === 1, "whenStartSafe with no place: runs at once"); }
+  { const t = mkGate(); const un = W2.registerWalkGate(t.gate); t.gate.starting(); t.gate.settled();
+    let n = 0; W2.whenStartSafe(() => n++); ok(n === 1, "whenStartSafe with the player up and running: runs at once (as nav.go always did)"); un(); }
+  { const t = mkGate(); const un = W2.registerWalkGate(t.gate); t.gate.starting();
+    let n = 0; W2.whenStartSafe(() => n++); t.frames.splice(0).forEach((f) => f());
+    ok(n === 0 && !t.log.includes("dispose"), "whenStartSafe while the player is STARTING: the screen does not open under its start");
+    t.gate.settled(); t.frames.splice(0).forEach((f) => f());
+    ok(n === 1 && t.log[0] === "dispose", "...it opens after the start has finished and the scene was let go"); un(); }
+  const hp = fs.readFileSync(path.resolve("src/three/HomePlayer3D.tsx"), "utf8");
+  for (const [re, what] of [
+    [/registerPlace\(place/, "registers as a place (the crash net: a JavaScript error fails it over to the drawn player)"],
+    [/markStep\(place, "mounted/, "writes the step trail: mounted"], [/markStep\(place, `GLView being made/, "...GLView being made"], [/markStep\(place, `gl context created/, "...gl context created"],
+    [/markStep\(place, "scene building"/, "...scene building"], [/markStep\(place, "first frame"/, "...first frame"],
+    [/await settleHeadshots\(\);\s*await waitNoGlView\(\);\s*await new Promise<void>\(\(res\) => setTimeout\(res, HOME_GL_SETTLE_MS\)\)/, "the view waits for the headshot GL, any other GL view and a settle (0.8 s) before it is made"],
+    [/viewSig === sig && \(\s*<GLView/, "no GL view is mounted until it is allowed (the picture or the grey shape shows meanwhile)"],
+    [/new LeaveGate\(/, "has a leave gate (skip while loading waits for the start)"], [/registerWalkGate\(gate\.current/, "...registered while mounted"],
+    [/gate\.current\?\.starting\(\)/, "...'starting' when the view is made"], [/wantsLeave \|\| viewMarked\.current !== mine\) \{ neutralizeGl\(gl\)/, "...a leave before the GL came: nothing is started on it"],
+    [/neutralizeGl\(gl\);\s*markStep\(place, "scene let go"\)/, "every GL call is a no-op once the scene is let go"],
+    [/net\.current\?\.onFrameError\(e\)/, "a frame that throws goes to the net"], [/placeOpened\(\)/, "the headshot maker is paused while it is up"],
+    [/glViewAlive\(\)/, "counts as a live GL view"], [/HOME_LOAD_LIMIT_MS/, "a start that takes too long gives the drawn player"],
+    [/failed \? fallback/, "falls back to the drawn player on any failure"]]) ok(re.test(hp), "HomePlayer3D " + what);
+  ok(/glViewAlive\(\)/.test(walkSrc) && /await waitNoGlView\(\)/.test(walkSrc), "Walk3D waits for no GL view alive and counts as one");
+  const glue = fs.readFileSync(path.resolve("src/areas/glue.tsx"), "utf8");
+  ok(/onContinue=\{leave\(open\)\}/.test(glue) && /onNew=\{leave\(/.test(glue) && /onHall=\{leave\(/.test(glue) && /onSettings=\{leave\(/.test(glue), "every way off the title goes through whenWalkSafe");
+  ok(/whenStartSafe\(\(\) => setStack\(\(s\) => \[\.\.\.s, \{ name, params \}\]\)\)/.test(fs.readFileSync(path.resolve("src/nav.tsx"), "utf8")), "nav.go waits while a place is starting");
+}
+
 console.log(bad ? `\n${bad} FAILED` : "\nPASS: live 3D switch, breadcrumbs and the crash net");
 process.exit(bad ? 1 : 0);
 

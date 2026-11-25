@@ -253,31 +253,35 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
   }, [size, kits, pitchPic, contactPic]);
 
   // ── Touches on the pitch ──
+  // The touch in progress lives in ONE object on a ref (see MatchFirstPerson.tsx): the build gives each
+  // gesture-handler callback its own copy of a plain `let` it captured, so values set in onBegin were
+  // stale in onUpdate / onFinalize (the run-up nudge, the dribble lane, the flight curve, the strike swipe).
+  const touch = useRef({ start: { x: 0, y: 0 }, nudgeBase: 0, laneBase: 0, laneX: 0 });
   const pan = useMemo(() => {
-    let start = { x: 0, y: 0 }, nudgeBase = 0, laneBase = 0, laneX = 0;
     const pull = (drag: { x: number; y: number }, ball: { x: number; y: number }) => (camRef.current ? screenPull(camRef.current, drag, ball) : 0);
     return Gesture.Pan().runOnJS(true).minDistance(0)
       .onBegin((e) => {
         const d = dRef.current, cam = camRef.current;
         if (!d || !cam || d.held) return;
-        start = { x: e.x, y: e.y };
+        touch.current.start = { x: e.x, y: e.y };
         const p = fromScreen(cam, e.x, e.y);
         if (d.phase === "tdDribble") {
           if (d.tdReady) { d.tdTap(p); return; }
-          laneBase = d.td?.laneTarget ?? 0; laneX = p.x;
+          touch.current.laneBase = d.td?.laneTarget ?? 0; touch.current.laneX = p.x;
           return;
         }
-        if (d.phase === "runup") { nudgeBase = d.runup?.nudgeM ?? 0; return; }
+        if (d.phase === "runup") { touch.current.nudgeBase = d.runup?.nudgeM ?? 0; return; }
         d.pointerDown(p, grabMetres(cam, BALL_GRAB_FRACTION), grabMetres(cam, CAPTAIN_GRAB_FRACTION));
       })
       .onUpdate((e) => {
         const d = dRef.current, cam = camRef.current;
         if (!d || !cam || d.held) return;
-        if (d.phase === "tdDribble") { d.tdSteer(laneBase + (fromScreen(cam, e.x, e.y).x - laneX)); return; }
+        if (d.phase === "tdDribble") { { const t = touch.current; d.tdSteer(t.laneBase + (fromScreen(cam, e.x, e.y).x - t.laneX)); } return; }
         if (d.phase === "runup") {
-          const along = d.facing === "right" ? e.y - start.y : d.facing === "left" ? start.y - e.y : e.x - start.x;
+          const t = touch.current;
+          const along = d.facing === "right" ? e.y - t.start.y : d.facing === "left" ? t.start.y - e.y : e.x - t.start.x;
           const m = nudgeFromDrag(along, cam.W, cam.vp.x2 - cam.vp.x1);
-          d.nudgeRunup(Math.max(-RUNUP.nudgeMaxM, Math.min(RUNUP.nudgeMaxM, nudgeBase + m)));
+          d.nudgeRunup(Math.max(-RUNUP.nudgeMaxM, Math.min(RUNUP.nudgeMaxM, t.nudgeBase + m)));
           return;
         }
         d.pointerMove(fromScreen(cam, e.x, e.y), pull);
@@ -285,7 +289,7 @@ export function MatchPitch({ make, kits, onDone, onUi, overlay, banners = true, 
       .onFinalize((e) => {
         const d = dRef.current, cam = camRef.current;
         if (!d || !cam || d.held) return;
-        const dx = e.x - start.x, dy = e.y - start.y;
+        const st = touch.current.start, dx = e.x - st.x, dy = e.y - st.y;
         if (d.phase === "tdDribble") {
           if (Math.hypot(dx, dy) < 10) d.tdTap(fromScreen(cam, e.x, e.y));
           else if (Math.abs(e.velocityX) > 1.6 * cam.W) d.tdBurst(e.velocityX > 0 ? 1 : -1);

@@ -27,8 +27,9 @@ function rgba(hex: string, a: number): string {
 
 export function HomePlayer({ career, width, height, where, ball, glow }: { career: CareerState; width: number; height: number; where: "home" | "title"; /** His light in another colour (away with your country: the nation's, HomeHub `glow`). */ glow?: string; /** The ball at his feet when he is DRAWN (the 3D player brings his own). */ ball?: boolean }) {
   const style = usePlayerStyleLook();
-  // 3D starts a moment after the rest of Home, so a crash in it is named on its own (safety.ts)
-  const ok3d = useRiskyPart("3d", { delayMs: 2500, settleMs: 6000 });
+  // 3D starts a moment after the rest of Home, so a crash in it is named on its own (safety.ts). HomePlayer3D then waits another
+  // HOME_GL_SETTLE_MS (the screen before gone and quiet, no other GL alive) before it makes its view: 1700 + 800 = the 2.5 s it was.
+  const ok3d = useRiskyPart("3d", { delayMs: 1700, settleMs: 6000 });
   const club = career.player.club;
   const kit = kitsOf(club, career.clubKits?.[club]).home;
   const lit = glow && /^#[0-9a-f]{6}$/i.test(glow) ? glow : kit.shirt;

@@ -4,7 +4,7 @@
  * Screens register themselves in screens/registry.tsx by name.
  */
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import { whenWalkSafe } from "./three/walkLeave";
+import { whenWalkSafe, whenStartSafe } from "./three/walkLeave";
 
 export interface Route { name: string; params?: Record<string, unknown> }
 interface Nav { stack: Route[]; go: (name: string, params?: Record<string, unknown>) => void; replace: (name: string, params?: Record<string, unknown>) => void; back: () => void; home: () => void }
@@ -14,8 +14,9 @@ export function NavProvider({ initial, children }: { initial: Route; children: R
   const [stack, setStack] = useState<Route[]>([initial]);
   const nav = useMemo<Nav>(() => ({
     stack,
-    go: (name, params) => setStack((s) => [...s, { name, params }]),
-    replace: (name, params) => setStack((s) => [...s.slice(0, -1), { name, params }]),
+    // Going on while a 3D place is still STARTING waits for the start too (the title's and Home's player: three/HomePlayer3D.tsx)
+    go: (name, params) => whenStartSafe(() => setStack((s) => [...s, { name, params }])),
+    replace: (name, params) => whenStartSafe(() => setStack((s) => [...s.slice(0, -1), { name, params }])),
     // Back / home while a 3D place is still starting wait for it, then the scene is let go, then the screen goes (three/walkLeave.ts)
     back: () => whenWalkSafe(() => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s))),
     home: () => whenWalkSafe(() => setStack([{ name: "tabs" }])),

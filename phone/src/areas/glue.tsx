@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import type { ScreenMap } from "./types";
 import { worldScreens } from "./world";
 import { useNav } from "../nav";
+import { whenWalkSafe } from "../three/walkLeave";
 import * as flow from "../game/flow";
 import { setTransferHandlers } from "../world/transferHandlers";
 import { coreScreens } from "./core";
@@ -80,19 +81,21 @@ function TitleWithMenu() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const open = () => { const s = flow.resumeStep(); if (s.screen === "tabs") nav.home(); else nav.replace(s.screen, s.params); };
+  // Every way off the title waits for its 3D player while it is still starting, lets the scene go, THEN closes the screen (three/walkLeave.ts)
+  const leave = (go: () => void) => () => whenWalkSafe(go);
   return (
     <TitleMenu
-      onContinue={open}
-      onNew={() => nav.go("career-new")}
-      onHall={() => nav.go("hall-of-fame")}
+      onContinue={leave(open)}
+      onNew={leave(() => nav.go("career-new"))}
+      onHall={leave(() => nav.go("hall-of-fame"))}
       // With a save: the title closes and the coach replays his tour on Home (page.tsx handleTitleTutorial).
-      onTutorial={() => {
+      onTutorial={leave(() => {
         if (!getCareer()) { nav.go("career-new"); return; }
         const s = flow.resumeStep();
         open();
         if (s.screen === "tabs") askTour(HELP_TOURS.home);
-      }}
-      onSettings={() => nav.go("career-settings")}
+      })}
+      onSettings={leave(() => nav.go("career-settings"))}
     />
   );
 }

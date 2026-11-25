@@ -31,6 +31,10 @@ import type { CareerState } from "@/lib/star/types";
 import { toonYou, subscribeToonYou } from "@/lib/star/style3d/toon/bodies";
 import { setupPhone3d } from "./assets";
 import type { HomeScene } from "./homeScene";
+import { markStep, clearTrail, notePulse } from "../safety";
+import { placeOpened, settleHeadshots, glViewAlive, waitNoGlView } from "./glBusy";
+import { neutralizeGl, registerPlace, type PlaceNet } from "./crashNet";
+import { LeaveGate, registerWalkGate } from "./walkLeave";
 
 /** The loop stops this long after the screen opens or after the last touch (the last frame stays). */
 export const IDLE_MS = 6000;
@@ -38,6 +42,10 @@ export const IDLE_MS = 6000;
 export const MAX_PIXEL_RATIO = 2;
 /** At most 30 frames a second, as the website. */
 const FRAME_MS = 33;
+/** The view is made this long after the screen before it has gone and the headshot GL and any other GL view have let go (as Walk3D's GL_SETTLE_MS). */
+export const HOME_GL_SETTLE_MS = 800;
+/** A start that takes longer than this gives the drawn player (the Walk3D places' limit is longer: they load a whole scene). */
+export const HOME_LOAD_LIMIT_MS = 20000;
 
 /** What the last frames cost on this phone (JavaScript ms per frame, frames drawn, draw calls): a meter can read it. */
 export const home3dStats = { frames: 0, jsMs: [] as number[], calls: 0, triangles: 0, buildMs: 0, firstMs: 0 };
@@ -49,9 +57,67 @@ export function HomePlayer3D({ career, width, height, where, kitShirt, kitTrim, 
   const num = career.squadNumber ?? 9;
   const sig = [where, width, height, kitShirt, kitTrim, num, you.head, you.body, you.skin, you.hair, you.name ?? ""].join("|");
   const [ready, setReady] = useState(false);
+  // A failure stays for as long as this screen is up (the drawn player stands in): a new look does not try the same 3D again.
   const [failed, setFailed] = useState(false);
   const [snap, setSnap] = useState<string | null>(() => readSnap(where, sig));
-  useEffect(() => { setSnap(readSnap(where, sig)); setReady(false); setFailed(false); }, [where, sig]);
+  // The GL view of this `sig` is made only once the screen before has gone and gone quiet; null = no view (the picture or the grey shape shows)
+  const [viewSig, setViewSig] = useState<string | null>(null);
+  useEffect(() => { setSnap(readSnap(where, sig)); setReady(false); }, [where, sig]);
+  const place = where === "title" ? "Title player" : "Home player";
+  const unmounted = useRef(false);
+  const failedRef = useRef(false);
+  failedRef.current = failed;
+  const stops = useRef(new Map<string, () => void>());
+  const net = useRef<PlaceNet | null>(null);
+  const viewMarked = useRef<string | null>(null);
+
+  // crash trail (../safety.ts): the last step reached survives a native crash and shows in Settings next launch
+  const marked = useRef(false);
+  if (!marked.current) { marked.current = true; markStep(place, "mounted (waiting for the screen before to go quiet)"); }
+
+  // Skip / Back / Continue while the view is still starting wait for the start, the scene is let go, THEN the screen goes (./walkLeave.ts)
+  const gate = useRef<LeaveGate | null>(null);
+  if (!gate.current) {
+    gate.current = new LeaveGate({
+      dispose: () => { for (const f of Array.from(stops.current.values())) f(); stops.current.clear(); setViewSig(null); },
+      after: (fn) => { requestAnimationFrame(() => requestAnimationFrame(() => { markStep(place, "left (scene let go first)"); fn(); })); },
+      timer: (fn, ms) => { const t = setTimeout(fn, ms); return () => clearTimeout(t); },
+    });
+  }
+  useEffect(() => registerWalkGate(gate.current!), []);
+
+  // The crash net (./crashNet.ts): a JavaScript error while this place is up fails it over to the drawn player.
+  useEffect(() => {
+    unmounted.current = false;
+    const n = registerPlace(place, (why) => { console.warn("[3D home player] failed over:", why); setFailed(true); });
+    net.current = n;
+    return () => { unmounted.current = true; n.unregister(); if (net.current === n) net.current = null; clearTrail(place); };
+  }, [place]);
+
+  // While this place is up the headshot maker makes nothing (./glBusy.ts), and a view is made only after the headshot GL and every other GL view have let go.
+  useEffect(() => {
+    const closed = placeOpened();
+    return () => closed();
+  }, []);
+  useEffect(() => {
+    if (failed) return;
+    let live = true;
+    viewMarked.current = null;
+    setViewSig(null);
+    const frame2 = () => new Promise<void>((res) => requestAnimationFrame(() => requestAnimationFrame(() => res())));
+    (async () => {
+      await frame2();
+      await settleHeadshots();
+      await waitNoGlView();
+      await new Promise<void>((res) => setTimeout(res, HOME_GL_SETTLE_MS));
+      if (!live || unmounted.current || failedRef.current || gate.current?.wantsLeave) return; // left (or failed) before the view was made: none is made
+      markStep(place, "view allowed (screen before has gone quiet)");
+      setViewSig(sig);
+    })();
+    return () => { live = false; };
+  }, [sig, failed, place]);
+  // the last step before the phone's own GL is made: a close after this one and before "gl context created" is inside the native GL view
+  if (viewSig === sig && !failed && viewMarked.current !== sig) { viewMarked.current = sig; gate.current?.starting(); markStep(place, `GLView being made (${Math.round(width)}x${Math.round(height)})`); }
 
   const turn = useRef({ yaw: where === "title" ? -0.35 : 0.32, drag: false, from: 0 });
   const loop = useRef<{ wake: () => void } | null>(null);
@@ -74,6 +140,10 @@ export function HomePlayer3D({ career, width, height, where, kitShirt, kitTrim, 
 
   const onContext = (gl: ExpoWebGLRenderingContext) => {
     const mine = sig;
+    // the view was let go (a leave, a failure, a new look) before the phone gave it a GL: nothing to start, and the GL is left alone
+    if (unmounted.current || failedRef.current || gate.current?.wantsLeave || viewMarked.current !== mine) { neutralizeGl(gl); gate.current?.settled(); return; }
+    markStep(place, `gl context created (${gl.drawingBufferWidth}x${gl.drawingBufferHeight})`);
+    const release = glViewAlive();
     let dead = false, raf = 0, last = 0, scene: HomeScene | null = null;
     let cleanup = () => {};
     let awakeUntil = Date.now() + IDLE_MS;
@@ -83,6 +153,7 @@ export function HomePlayer3D({ career, width, height, where, kitShirt, kitTrim, 
       active = s === "active";
       if (active) wake(); else { cancelAnimationFrame(raf); raf = 0; }
     });
+    const limit = setTimeout(() => { if (!scene && !dead) { console.warn("[3D home player] took too long; the drawn player stays"); setFailed(true); } }, HOME_LOAD_LIMIT_MS);
     const frame = (now: number) => {
       raf = 0;
       if (dead || !scene || !active) return;
@@ -93,61 +164,97 @@ export function HomePlayer3D({ career, width, height, where, kitShirt, kitTrim, 
       raf = requestAnimationFrame(frame);
       if (now - last < FRAME_MS) return;
       last = now;
-      if (!tr.drag && where === "home") tr.yaw += (scene.restYaw - tr.yaw) * 0.04; // drifts back to his pose
-      scene.drawAt((Date.now() - t0) / 1000, tr.yaw);
-      const inf = scene.info();
-      home3dStats.frames++;
-      home3dStats.calls = inf.calls; home3dStats.triangles = inf.triangles;
-      home3dStats.jsMs.push(inf.jsMs);
-      if (home3dStats.jsMs.length > 120) home3dStats.jsMs.shift();
+      try {
+        if (!tr.drag && where === "home") tr.yaw += (scene.restYaw - tr.yaw) * 0.04; // drifts back to his pose
+        scene.drawAt((Date.now() - t0) / 1000, tr.yaw);
+        const inf = scene.info();
+        home3dStats.frames++;
+        home3dStats.calls = inf.calls; home3dStats.triangles = inf.triangles;
+        home3dStats.jsMs.push(inf.jsMs);
+        if (home3dStats.jsMs.length > 120) home3dStats.jsMs.shift();
+        notePulse(place);
+      } catch (e) {
+        // a frame threw: the net takes it (the drawn player replaces him); without it the same
+        console.warn("[3D home player] a frame failed; the drawn player instead:", e);
+        if (!dead && !net.current?.onFrameError(e)) setFailed(true);
+      }
     };
     const wake = () => {
       awakeUntil = Date.now() + IDLE_MS;
       if (!raf && !dead && scene && active) raf = requestAnimationFrame(frame);
     };
     loop.current = { wake };
+    /** Let the scene go, then make every later GL call a no-op (a late timer or frame must not reach the native side). */
+    const letGo = () => {
+      if (dead) return;
+      dead = true; cancelAnimationFrame(raf); clearTimeout(limit); sub.remove();
+      if (loop.current?.wake === wake) loop.current = null;
+      try { cleanup(); } catch (e) { console.warn("[3D home player] dispose", e); }
+      cleanup = () => {};
+      neutralizeGl(gl);
+      markStep(place, "scene let go");
+      release();
+    };
+    stops.current.set(mine, letGo);
     (async () => {
       try {
+        markStep(place, "three loading");
         setupPhone3d();
         const THREE = await import("three");
         const { prepareGl, sceneCanvas } = await import("./gl");
         const { buildHomeScene } = await import("./homeScene");
-        if (dead) return;
+        if (dead) { gate.current?.settled(); return; }
         prepareGl(gl);
         const b0 = Date.now();
+        markStep(place, "scene building");
         const renderer = new THREE.WebGLRenderer({ canvas: sceneCanvas(gl) as never, context: gl as never, antialias: false, alpha: true, powerPreference: "low-power" });
         renderer.setPixelRatio(1);
         renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight, false);
         const s = await buildHomeScene(renderer, { where, width, height, kitShirt, kitTrim, num, you });
-        if (dead) { s.dispose(); renderer.dispose(); return; }
+        if (dead) { try { s.dispose(); renderer.dispose(); } catch { /* the view is gone */ } gate.current?.settled(); return; }
         home3dStats.buildMs = Date.now() - b0;
         scene = s;
+        cleanup = () => { s.dispose(); renderer.dispose(); };
+        if (gate.current?.wantsLeave) { gate.current.settled(); return; } // a leave came in while it was building: it lets the scene go
         if (where === "title") turn.current.yaw = s.restYaw;
         // the first picture: drawn now, kept for the next visit's wait when the kept one is missing or out of date
         const f0 = Date.now();
         s.drawAt(0, turn.current.yaw);
         home3dStats.firstMs = Date.now() - f0;
+        markStep(place, "first frame");
         if (readSnap(where, sig) === null) keepSnap(where, sig, gl);
+        clearTimeout(limit);
         setReady(true);
-        cleanup = () => { s.dispose(); renderer.dispose(); };
+        gate.current?.settled();
         wake();
       } catch (e) {
         console.warn("3D home player", e);
-        if (!dead) setFailed(true);
+        gate.current?.settled();
+        if (!dead && !net.current?.onFrameError(e)) setFailed(true);
       }
     })();
-    stops.current.set(mine, () => { dead = true; cancelAnimationFrame(raf); sub.remove(); if (loop.current?.wake === wake) loop.current = null; cleanup(); });
   };
   // each GL view's loop stops with it (a new look makes a new view; leaving the screen stops all)
-  const stops = useRef(new Map<string, () => void>());
-  useEffect(() => () => { stops.current.get(sig)?.(); stops.current.delete(sig); }, [sig]);
+  useEffect(() => () => { for (const f of Array.from(stops.current.values())) f(); stops.current.clear(); }, []);
+  // a new look: the old view goes first (viewSig is null for a moment, see above), its scene let go
+  useEffect(() => { return () => { const f = stops.current.get(sig); if (f) f(); else gate.current?.settled(); stops.current.delete(sig); }; }, [sig]);
+  // a failure (the net, a frame, a slow start): the scene is let go now and the drawn player stands in; a failure the app caught is not a crash
+  useEffect(() => {
+    if (!failed) return;
+    clearTrail(place);
+    for (const f of Array.from(stops.current.values())) f();
+    stops.current.clear();
+    gate.current?.settled();
+  }, [failed, place]);
 
   return (
     <View style={{ width, height }} {...pan.panHandlers} onTouchStart={() => loop.current?.wake()}>
       {failed ? fallback : (
         <View style={{ position: "absolute", left: 0, top: 0, width, height, overflow: "hidden" }} pointerEvents="none">
-          <GLView key={sig} msaaSamples={0} onContextCreate={onContext}
-            style={{ position: "absolute", width: glW, height: glH, left: (width - glW) / 2, top: (height - glH) / 2, transform: [{ scale: 1 / k }] }} />
+          {viewSig === sig && (
+            <GLView key={sig} msaaSamples={0} onContextCreate={onContext}
+              style={{ position: "absolute", width: glW, height: glH, left: (width - glW) / 2, top: (height - glH) / 2, transform: [{ scale: 1 / k }] }} />
+          )}
         </View>
       )}
       {!ready && !failed && (snap

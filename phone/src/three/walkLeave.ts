@@ -88,3 +88,13 @@ export function whenWalkSafe(go: () => void): void {
   for (const g of list) g.leave(one);
 }
 let inFlight = false;
+
+/**
+ * Like whenWalkSafe, but only waits when a place is STILL STARTING (its GL view being made, the scene not up yet). With nothing
+ * starting, `go` runs at once, exactly as before. Used by nav.go / nav.replace, so opening a screen over the title or Home
+ * while their 3D player is starting does not take the GL view away under its start.
+ */
+export function whenStartSafe(go: () => void): void {
+  for (const g of gates) if (g.isStarting) { whenWalkSafe(go); return; }
+  go();
+}

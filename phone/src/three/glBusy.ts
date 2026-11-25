@@ -24,3 +24,33 @@ export function registerHeadshotSettler(f: () => Promise<void>) { settler = f; }
 export async function settleHeadshots(): Promise<void> {
   try { await settler?.(); } catch { /* the place starts anyway */ }
 }
+
+/**
+ * GL VIEWS THAT ARE ALIVE (title and Home player, the Walk3D places). A view counts from the moment it is made until a short
+ * grace after its scene was let go (the native side tears the view down a moment after the scene). Another place waits for none
+ * to be alive before it makes its own: no two GL views are ever created or destroyed at the same time.
+ */
+export const GL_RELEASE_GRACE_MS = 300;
+let views = 0;
+/** A GL view is being made. Returns the function that says its scene was let go (the count drops GL_RELEASE_GRACE_MS later). */
+export function glViewAlive(): () => void {
+  views++;
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    const t = setTimeout(() => { views = Math.max(0, views - 1); }, GL_RELEASE_GRACE_MS);
+    (t as unknown as { unref?: () => void }).unref?.();
+  };
+}
+/** How many GL views are alive now (for the checks). */
+export function glViewsAlive(): number { return views; }
+/** Resolves true when no GL view is alive (checked every 50 ms), false after `maxMs` (the caller goes on: a view that never lets go is not waited for forever). */
+export async function waitNoGlView(maxMs = 3000): Promise<boolean> {
+  const t0 = Date.now();
+  while (views > 0) {
+    if (Date.now() - t0 >= maxMs) return false;
+    await new Promise<void>((res) => setTimeout(res, 50));
+  }
+  return true;
+}

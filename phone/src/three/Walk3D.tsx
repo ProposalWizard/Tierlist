@@ -37,7 +37,7 @@ import { useRiskyPart, markStep, clearTrail, notePulse } from "../safety";
 import { Press } from "../ui/Press";
 import { setupPhone3d } from "./assets";
 import { glCounts } from "./gl";
-import { placeOpened, settleHeadshots } from "./glBusy";
+import { placeOpened, settleHeadshots, glViewAlive, waitNoGlView } from "./glBusy";
 import { neutralizeGl, registerPlace, type PlaceNet } from "./crashNet";
 import { startWalkScene, type WalkController, type WalkHost, type WalkStart } from "./walkHost";
 import { LeaveGate, registerWalkGate } from "./walkLeave";
@@ -173,6 +173,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
     (async () => {
       await frame2();
       await settleHeadshots();
+      await waitNoGlView(); // no other GL view (the title's or Home's player, let go a moment ago) is still being torn down
       await new Promise<void>((res) => setTimeout(res, GL_SETTLE_MS));
       if (!live2 || gate.current?.wantsLeave) return; // left before the view was made: no view is made
       markStep(place, "view allowed (screen before has gone quiet)");
@@ -180,6 +181,9 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
     })();
     return () => { live2 = false; closed(); };
   }, [allowed, place]);
+
+  // This place's GL view counts as alive from the moment it is allowed until its scene is let go (./glBusy.ts)
+  useEffect(() => { if (!viewOk) return; return glViewAlive(); }, [viewOk]);
 
   // The crash net: while this place is mounted, a JavaScript error fails it over to its plain version (./crashNet.ts).
   useEffect(() => {
