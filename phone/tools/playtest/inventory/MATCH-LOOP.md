@@ -72,3 +72,26 @@ packed penalty (`match/drawPitch.ts`).
   30 match minutes; the bench crashed once (fixed). 360×640 checked on the bench feed only.
 - **Feed speed**: not comparable here. Run 1 (412): KIB 53'→60' in ~2.4 s, packed ~4.8 s. Run 2 (360×640): packed 53'→60' in 5.0 s
   (0.7 s a minute = MINUTE_TICK_MS), KIB 53'→56' in 9.7 s. KIB's clock is frame-stepped with a 0.25 s cap a frame; re-measure on a quiet machine.
+
+## Round 3 (Fable, 25 Nov 2026): the hard situations, website (dev) beside KIB Next
+
+Bench: `live.mjs --port 7851`, website = `next dev` of this worktree with `reactStrictMode: false` **temporarily** (the dev server's
+double effects gave R2-1's 0-0; with it off the bench entry is the same as KIB's, line by line), KIB = web build of this branch.
+No packed build was available (`mobile/www` is not in a worktree). New tools: `seed-scan-level.ts` (which SEASON NUMBER makes a
+fixture end level when you never score; seed = season*1000+week, so the save differs only in `career.season`; `make-season-end.mts --season N`),
+`auto3.mjs` (auto.mjs + `miss:true` pulls every aim the wrong way, `anyAim:true` also aims pass chances), `flow.mjs`.
+The headless scan has no real squads, so its entry scores are NOT the live ones (season 1 FA Cup: headless 1-0, live 1-1; check live).
+
+| situation | how reached | website | KIB Next | verdict |
+|---|---|---|---|---|
+| Bench entry, FA Cup 3rd round at Blackpool (season 1, 52') | `fa1.json`, CONTINUE/PLAY/KICK OFF | 1-1, 14 lines, rating 6.4 | the same 1-1, the same 14 lines, rating 6.4 | SAME (`s1.jpg`; R2-1 closed for good: Strict Mode only) |
+| Half time (starter, Sunderland) | `l45.json`, auto to HALF TIME | HALF TIME 1 - 0, energy 46, rating 5.0, can ×0 grey button with can picture | identical numbers; can button was dimmed and grey-worded | **fixed** (`Press dim`) |
+| Full time + added time | same, to FULL TIME | "+4 MINUTES ADDED", FULL TIME 1 - 0, amber FULL TIME | same bar, rows and plate | SAME |
+| Replaced by the manager | the same match | "Your number is up. You are replaced." at 82' | not hit (rating 4.5, not low enough) | SAME (same lib call) |
+| FA Cup tie lost with misses only | `fa1.json`, miss policy | Blackpool win 2-1, DEFEAT, "Out of the FA Cup — Blackpool win the Third Round tie." | the same score and words | SAME |
+| Extra time, "Second half (extra time)", penalties | no live seed ends level for both (the hidden second half decides, and the website cannot be forced) | not reached | KIB forced level + shootout: CTAs and log lines are the website's strings; strip shown | SAME (code) / website not seen |
+| Shootout strip | KIB `runShootout()` on a level tie | not reached | sizes brought to the website's (LiveShootout.tsx) | **fixed** by code |
+| Corner chance | `setPieceNext = "corner"` | no seed serves one | renders | KIB only |
+| Throw-ins, goal kicks, offsides, cards, injury | | cards and injuries do not exist in the website's match; throw-in/offside are commentary lines and the OFFSIDE caption (`matchCommentary.ts` 138, MikeyPopup) | same lines | SAME |
+| Pass chance without STAMINA box (Sunderland 1')| a drag toward a mate | "OUT OF PLAY" caption straight away | contact (STRIKE IT) screen came first on a long drag | OPEN: needs a matched drag length to tell a real difference from my drag |
+| Money sign | Home, Phone | **£** (commit fa7b2e017, 19 Nov: `MONEY_SIGN = "£"`, RUL-UI-011) | ★ in 137 places | NOT CHANGED: the packed build (18 Nov) still has ★; Mikey decides |

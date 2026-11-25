@@ -256,3 +256,16 @@ The dev website's bench differs from packed only because of React Strict Mode in
 
 `auto.mjs` (**ran**): auto-plays an open bench page until a regex of words appears (header). Start it un-awaited through `run`
 with an `out` file and poll that file: `pt.mjs` gives up after 300 s. On KIB the strike title is canvas-drawn; it keys on "POWER".
+
+
+## Round 3 additions (25 Nov 2026), all **ran**
+
+- A level match without luck: `seed-scan-level.ts` (build line in its header) lists which `career.season` makes a fixture end level when you
+  never score; `make-season-end.mts --left 22 --season N` makes that save (FA Cup 3rd round at Blackpool, you on the bench at 52'). Live entries differ
+  from the headless scan (real squads): season 1 is 1-1 at 52' in both apps.
+- The website in dev mode needs `reactStrictMode: false` for the bench to match (set it in `next.config.mjs`, never commit it), the cookie banner
+  closed ("No thanks"), and PLAY at (367, 875). Copy `.env.local`, start `npx next dev -p 3100`.
+- `auto3.mjs`: `miss:true` never scores; `anyAim:true` also aims chances with no STAMINA box (a pass). `flow.mjs`: scripted presses.
+- KIB speed ×8: tap the clock plate three times at (361, 120). KIB is 3-5x slower than the website under swiftshader: a match to full time takes ~4 min.
+- Force the end of a KIB match: `__kibMatch.runShootout()` (after `pause = null`) shows the shootout strip; a level tie at the whistle needs
+  the scores set BEFORE the clock reaches full time. The website has no such hook.

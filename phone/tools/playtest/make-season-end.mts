@@ -47,7 +47,10 @@ while (g++ < 300) {
   c = (g % 9 === 0 ? simulateMissedFixture(c, next) : creditMatchResult(c, next, stats(us, them, next.home, Math.min(us, 2)))).career;
 }
 if (SEASON2) c = advanceSeason(c, false).career;
-c = { ...c, money: Math.max(c.money, 500000) };
+// --season N: only the season NUMBER changes (the match seed is season*1000 + week), so the same fixture gets another hidden match
+// (playtest round 3: tools/playtest/seed-scan-level.ts says which N ends level when you never score).
+const si = process.argv.indexOf("--season");
+c = { ...c, money: Math.max(c.money, 500000), ...(si >= 0 ? { season: Number(process.argv[si + 1]) } : {}) };
 saveCareer(c, ANON_SCOPE);
 const packed = Object.fromEntries(store);
 const next = { "knowitball-career\\career-v2": JSON.stringify(c) };

@@ -24,3 +24,11 @@ Only a real phone can confirm: font size, camera hole, hidden bars, buzz, music,
 - OPEN: trial dribble ignores taps (MatchFirstPerson gesture inside Trial's ScrollView; code reads fine, needs a device run). Mikey unsure the dribble stage should stay.
 - OPEN: trial free kick: after the ball leaves the screen the player chases it and it takes a while to move on.
 - NOTE: photo has no face scan like the website (known). A deflection up into the air looked great.
+
+## Playtest round 3 (25 Nov): status of "Mikey's playtest of test app 4"
+- Title "Main menu" closing the app: FIXED in code (TitleMenu `Quiet`), still needs a phone to confirm.
+- Cans "FULL": ONE LINE, seen on the web bench at 412 (`FULL` / `USE` / `×0`), code `numberOfLines={1} adjustsFontSizeToFit`.
+- Phone → Social gap: not re-measured against the website this round (both Phone lists read the same words); open for the world loop.
+- Trial dribble ignores taps / free-kick chase: unchanged, need a device.
+- Photo has no face scan like the website: known, left.
+- Money: the website now shows £ (19 Nov), KIB and the packed build ★. Mikey's call.

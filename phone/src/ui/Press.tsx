@@ -7,13 +7,14 @@ import * as Haptics from "expo-haptics";
 
 const AP = Animated.createAnimatedComponent(Pressable);
 
-export function Press({ onPress, style, children, disabled, onLayout, hitSlop }: {
-  onPress?: () => void; style?: StyleProp<ViewStyle>; children: ReactNode; disabled?: boolean; onLayout?: (e: LayoutChangeEvent) => void; hitSlop?: number;
+export function Press({ onPress, style, children, disabled, onLayout, hitSlop, dim = true }: {
+  /** dim=false: a disabled button keeps full opacity (the website's `disabled:bg-gray-700 disabled:text-white` has none). */
+  onPress?: () => void; style?: StyleProp<ViewStyle>; children: ReactNode; disabled?: boolean; onLayout?: (e: LayoutChangeEvent) => void; hitSlop?: number; dim?: boolean;
 }) {
   const s = useSharedValue(1);
   const a = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   return (
-    <AP disabled={disabled} onLayout={onLayout} hitSlop={hitSlop} style={[style, a, disabled && { opacity: 0.45 }]}
+    <AP disabled={disabled} onLayout={onLayout} hitSlop={hitSlop} style={[style, a, disabled && dim && { opacity: 0.45 }]}
       onPressIn={() => { s.value = withTiming(0.95, { duration: 70 }); Haptics.selectionAsync().catch(() => {}); }}
       onPressOut={() => { s.value = withSpring(1, { damping: 14, stiffness: 320 }); }}
       onPress={onPress}>

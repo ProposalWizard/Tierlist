@@ -221,9 +221,9 @@ Packed: `components/star/MatchCommentary.tsx`, `KickOffCard.tsx`. KIB: `phone/sr
 | Radar | only with radar look New (default Old) | none | SAME (default) | | | CM 11471 | code |
 | Playstyle icons | float over the feed's bottom-right (absolute), chosen 42 px with glow, others 32 px dim+desaturated | own strip under the feed, same sizes, no desaturate | DIFFERENT (layout) | LOW | | MatchCommentary 230-270 / MatchFeed 100-112 | pair-feed-412 |
 | "YOU ARE GOING ON" + GET OUT THERE | amber bar, yellow button with glow | same | SAME | | letterSpacing 2.2 on 14 px: fine | MatchCommentary 272-300 / MatchFeed 114-136 | pair-feed-412 |
-| Half time bar | "Second half" + Use can ×n (can picture) | same, **no can picture**, adds "Energy NN%" line | DIFFERENT | LOW | | MatchCommentary 280-296 / MatchFeed 118-128 | code |
+| Half time bar | "Second half" + Use can ×n (can picture) | same, can picture, no extra line (the old row was out of date). Round 3: the disabled can button kept the Press dim (opacity .45, grey words); the website only swaps the fill to gray-700 and the words stay white. FIXED (`Press dim={false}`) | SAME (seen both, starter, Sunderland, 1-0 at 45', energy 46 both, rating 5.0 both) | | | MatchCommentary 280-296 / MatchFeed 118-128 | round 3 `ht.jpg` |
 | Energy panel + LOW / MEDIUM / HIGH | bar, three lightning badges with rings | same (Skia badges) | SAME | | | MatchCommentary 304-345 / MatchFeed 140-165 | pair-feed-412 |
-| Full time / Extra time / Penalties CTAs | same five CTAs | same | SAME | | | CM setPause / driver 657-1062 | code |
+| Full time / Extra time / Penalties CTAs | same five CTAs | same; every `setPause` and `logLine` string of the full-time branch is identical (read side by side CanvasMatch 9190-9330 / driver 880-950). Round 3: KIB forced into a level FA Cup tie (scores set at the final whistle, `runShootout()`): "Penalties." log, strip, 10 kicks incl. "Next: You"; website not reached (see below) | SAME (code) | | | | round 3 |
 
 ## 4. The pitch during a chance (aim, run-up, flight, result)
 
@@ -289,17 +289,21 @@ Packed `LiveShootout.tsx` (ShootoutStrip). KIB `MatchShootout.tsx`.
 
 | element | packed | KIB Next | status | sev | android risk | files | stills |
 |---|---|---|---|---|---|---|---|
-| Strip at the bottom: title, Next: name, two rows of ✓/✗, score | yes | yes, same words and colours; circles 15 px vs 14 px | SAME | | | LiveShootout 109-150 / MatchShootout 10-50 | code |
+| Strip at the bottom: title, Next: name, two rows of ✓/✗, score | yes | yes, same words and colours; round 3: sizes now the website's (title 9 px/0.18em, names 10, circles 14 with 2 px gap, ✓ 8, score 18/28, bg 80 %, winner line 12 px #6ee7b7 tracking .3) | SAME (seen KIB at 412 over a forced shootout; website's strip not reached: no way to force a level game there; code read line by line) | | | LiveShootout 109-150 / MatchShootout | round 3 `k-so1`, `k-so2` (scratchpad p3) |
 | Winner line pops (kib-pop) | pops | still | DIFFERENT | LOW | | / | code |
 
 ## 9. Half time, subs, injuries, cards, full time
 
 | element | packed | KIB Next | status | sev | android risk | files | stills |
 |---|---|---|---|---|---|---|---|
-| Half time pause + can | in the feed bar | same | SAME | | | / MatchFeed 114 | code |
+| Half time pause + can | in the feed bar | same | SAME (seen both, round 3, `ht.jpg`) | | | / MatchFeed 114 | round 3 |
 | Off the feed (pause over the pitch) | n/a (always cut to the feed) | dark cover + label + button | DIFFERENT (extra path) | LOW | | / MatchFeed 170-180 | code |
-| Coming on (sub), planned off, red card, injury | commentary lines + pauses from the same lib calls | same driver port | SAME (code) | | | CM / driver.ts | code |
-| Full time → post-match | button "Full time" | same | SAME | | | / | code |
+| Coming on (sub) | "You are coming on." + amber "YOU ARE GOING ON" bar + GET OUT THERE | same | SAME (seen both, round 3, `s1.jpg`: same 1-1 board, same 14 lines, rating 6.4) | | | | round 3 |
+| Red card, yellow card, injury in the match | none: the website's real match has no cards and no in-match injury (the injury roll is the career's, at full time; `MatchRadar.tsx FullTime` with 🚑 is a dev page) | none | SAME (nothing to build; grep of CanvasMatch, hiddenMatch, matchLog, matchCommentary: 0 hits) | | | | code |
+| Throw-in, goal kick, offside, corner as feed lines | hidden-match commentary from `lib/star/matchCommentary.ts` ("Arsenal win a throw-in…", "…short corner routine…", "The flag is up — offside!") | same lines (seen both: throw-in, corner routine) | SAME | | | | round 3 |
+| Corner as a chance (CORNER! kind) | `SCENARIO_LABEL.corner`; sandbox hint only | KIB: forced with `__kibMatch.setPieceNext = "corner"`: renders (flag, the box full, keeper, D). No seed serves a corner on the website to put beside it | SAME (code) / KIB seen only | | | | round 3 `k-corner.jpg` |
+| Full time → post-match | button "Full time" | same | SAME (seen both, round 3, `ft.jpg`: "+4 MINUTES ADDED" bar, "FULL TIME  1 - 0" row, one amber button, energy panel) | | | / | round 3 |
+| Replaced by the manager ("Your number is up. You are replaced.") | dark-green plain row | same words from `lib/star/selection.ts hookCheck`; seen on the website (82') but not in KIB: in KIB the rating path was higher (4.5 vs 3.5), so the same check did not fire. Same call, same arguments (match-parity 12/12) | SAME (code + website seen) | | | | round 3 |
 
 ## 10. Post-match
 

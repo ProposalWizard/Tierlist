@@ -336,7 +336,7 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
             <View style={{ flexDirection: "row", gap: 8, marginTop: p.label ? 10 : 0 }}>
               {/* Half time only: drink a Basic KIB can (+65) before the second half. */}
               {p.halfTime && !d.setup.farewell && (
-                <Press onPress={() => d.drinkHalfTimeKib()} disabled={d.kibCansLeft() <= 0 || d.energy >= 100}
+                <Press onPress={() => d.drinkHalfTimeKib()} disabled={d.kibCansLeft() <= 0 || d.energy >= 100} dim={false}
                   style={{ flexBasis: "33%", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 4, backgroundColor: d.kibCansLeft() <= 0 || d.energy >= 100 ? "#374151" : "#f97316" }}>
                   {/* the can's picture, then "USE CAN" over "×n" (MatchCommentary KibCanIcon h-8 w-5) */}
                   <Image source={CAN.basic} resizeMode="contain" style={{ width: 20, height: 32 }} />
