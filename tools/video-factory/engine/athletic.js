@@ -21,7 +21,12 @@ const grain = document.createElement("canvas"); grain.width = 540; grain.height 
   gg.putImageData(im, 0, 0); }
 
 let THon = false;
+let BGO = null;   // set per step by athletic.html: {image, motion, blur, dim}
+function setBG(o) { BGO = o; }
+function cover(g, im, z = 1, dx = 0, dy = 0) { const k = Math.max(W / im.width, H / im.height) * z, w = im.width * k, h = im.height * k; g.drawImage(im, (W - w) / 2 + dx, (H - h) / 2 + dy, w, h); }
 function bg(g, pal, t = 0) {
+  if (BGO) { const mv = BGO.motion && MOT[BGO.motion] && MOT[BGO.motion].naturalWidth ? MOT[BGO.motion] : null; const im = mv || (IMG[BGO.image] && IMG[BGO.image].naturalWidth ? IMG[BGO.image] : null);
+    if (im) { g.save(); g.filter = `blur(${BGO.blur ?? 10}px)`; cover(g, im, 1.08 + 0.04 * Math.min(1, t / 4)); g.filter = "none"; g.fillStyle = `rgba(8,12,24,${BGO.dim ?? 0.55})`; g.fillRect(0, 0, W, H); g.restore(); return; } }
   const TH = (window.STORY && window.STORY.theme) || {};   // read late: timeline.js loads after this file
   if (!THon && TH.palette) { Object.assign(PAL, TH.palette); THon = true; }
   if (TH.mono) pal = TH.mono;
@@ -43,7 +48,7 @@ const rr = (g, x, y, w, h, r) => { g.beginPath(); g.roundRect(x, y, w, h, r); };
 function card(g, x, y, w, h, fill = "#fff", r = 26) { g.save(); g.fillStyle = "rgba(0,0,0,.25)"; rr(g, x + 10, y + 14, w, h, r); g.fill(); g.fillStyle = fill; g.lineWidth = 6; g.strokeStyle = INK; rr(g, x, y, w, h, r); g.fill(); g.stroke(); g.restore(); }
 
 // ── drawn people: a dark silhouette with a light rim (the faceless style), or a portrait image ──
-const IMG = {};
+const IMG = {}, MOT = {};
 function person(g, x, y, s, o = {}) {
   const im = o.image && IMG[o.image] && IMG[o.image].naturalWidth ? IMG[o.image] : null;
   if (im) { const w = 760 * s, h = w * im.height / im.width; g.drawImage(im, x - w / 2, y - h, w, h); return; }
@@ -321,10 +326,15 @@ S.ledger = (g, t, dur, sc) => {
 };
 
 // a full-screen illustration (STORY.images[sc.image]) with a slow push and drift
+// motion (24 Nov 2026, Mikey: "make the explainer pictures move"): sc.motion names a clip made from the same picture
+// (STORY.motions[key] = {n}); athletic.html loads the frame for this moment into MOT[key] before drawing. The clip
+// plays at its own speed and holds its last frame; with no clip the still is used. sc.blur blurs it (the hook).
 S.picture = (g, t, dur, sc) => {
-  bg(g, sc.bg || "navy", t); const im = IMG[sc.image] && IMG[sc.image].naturalWidth ? IMG[sc.image] : null;
-  if (im) { const z = 1.04 + 0.08 * (t / dur), w = W * z, h = w * im.height / im.width; const dx = (sc.drift || 0) * 60 * (t / dur);
-    g.drawImage(im, 540 - w / 2 + dx, Math.min(0, (H - h) / 2), w, Math.max(h, H * z)); g.fillStyle = "rgba(0,0,0,.12)"; g.fillRect(0, 0, W, H); }
+  bg(g, sc.bg || "navy", t); const mv = sc.motion && MOT[sc.motion] && MOT[sc.motion].naturalWidth ? MOT[sc.motion] : null;
+  const im = mv || (IMG[sc.image] && IMG[sc.image].naturalWidth ? IMG[sc.image] : null);
+  if (im) { const z = mv ? 1.0 + 0.03 * (t / dur) : 1.04 + 0.08 * (t / dur), w = W * z, h = w * im.height / im.width; const dx = (sc.drift || 0) * 60 * (t / dur);
+    if (sc.blur) { const b = sc.unblurAt != null ? sc.blur * (1 - cl((t - sc.unblurAt) * 3)) : sc.blur; g.filter = `blur(${b}px)`; }
+    g.drawImage(im, 540 - w / 2 + dx, Math.min(0, (H - h) / 2), w, Math.max(h, H * z)); g.filter = "none"; g.fillStyle = "rgba(0,0,0,.12)"; g.fillRect(0, 0, W, H); }
   else { g.save(); g.setLineDash([24, 18]); g.strokeStyle = "rgba(255,255,255,.6)"; g.lineWidth = 8; rr(g, 70, 380, 940, 1160, 30); g.stroke(); g.restore(); T(g, "IMAGE: " + sc.image, 540, 980, 60, { color: "rgba(255,255,255,.8)", maxW: 880 }); }
   if (sc.label) nameTag(g, sc.label, 540, 300, cl((t - 0.3) * 3));
   if (sc.big) T(g, sc.big, 540, sc.bigY || 1250, sc.bigSize || 200, { shadow: true, stroke: 14, color: sc.bigCol || "#fff", alpha: cl((t - 0.15) * 4), maxW: 980 });
@@ -395,7 +405,7 @@ S.clues = (g, t, dur, sc) => {
 };
 S.statement = (g, t, dur, sc) => {
   bg(g, sc.bg || "navy", t); const lines = String(sc.text).split("|"); const n = lines.length;
-  lines.forEach((l, i) => { const k = ez((t - i * 0.25) * 3); T(g, l, 540 + 80 * (1 - k), 820 + (i - (n - 1) / 2) * 150, sc.size || 130, { alpha: k, shadow: true, stroke: 12, color: i === (sc.hi ?? -1) ? YEL : "#fff", maxW: 960 }); });
+  lines.forEach((l, i) => { const k = ez((t - i * 0.25) * 3); T(g, l, 540 + 80 * (1 - k), 820 + (i - (n - 1) / 2) * (sc.lineGap || 150), sc.size || 130, { alpha: k, shadow: true, stroke: 12, color: i === (sc.hi ?? -1) ? YEL : "#fff", maxW: 960 }); });
 };
 S.stopwatch = (g, t, dur, sc) => {
   bg(g, sc.bg || "red", t); const v = Math.min(sc.to, sc.to * cl(t / Math.max(0.5, dur * 0.7)));
@@ -403,7 +413,7 @@ S.stopwatch = (g, t, dur, sc) => {
   rr(g, -50, -420, 100, 80, 14); g.fillStyle = INK; g.fill();
   for (let i = 0; i < 60; i++) { const a = i / 60 * Math.PI * 2; g.strokeStyle = INK; g.lineWidth = i % 5 ? 4 : 10; g.beginPath(); g.moveTo(Math.sin(a) * 300, -Math.cos(a) * 300); g.lineTo(Math.sin(a) * (i % 5 ? 280 : 260), -Math.cos(a) * (i % 5 ? 280 : 260)); g.stroke(); }
   const a = v / 60 * Math.PI * 2; g.strokeStyle = "#e2384a"; g.lineWidth = 12; g.lineCap = "round"; g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.sin(a) * 250, -Math.cos(a) * 250); g.stroke(); g.restore();
-  T(g, v.toFixed(2) + "s", 540, 1330, 190, { shadow: true, stroke: 12 }); if (sc.word) T(g, sc.word, 540, 1440, 64, { color: YEL, alpha: cl((t - 0.4) * 3) });
+  T(g, sc.mmss ? Math.floor(v / 60) + ":" + String(Math.floor(v % 60)).padStart(2, "0") : v.toFixed(2) + "s", 540, 1330, 190, { shadow: true, stroke: 12 });   // mmss: minutes:seconds (8:59) if (sc.word) T(g, sc.word, 540, 1440, 64, { color: YEL, alpha: cl((t - 0.4) * 3) });
 };
 
 // ── full-screen beats (17 Nov 2026 redo) ──
@@ -484,7 +494,45 @@ S.x5_bars = (g, t, dur, sc) => {
     card(g, 60, y + 80, w, rh - 120, x.hi ? YEL : (x.col || "#fff"), 18); T(g, x.val, 60 + w - 26, y + rh - 62, Math.min(110, rh - 150), { align: "right", color: INK }); g.restore(); });
 };
 
-window.EXPLAINER = { S, bg, finish, T, rr, INK, YEL, IMG, cl, ez, pop };
+// A TV score graphic in the Knowitball game's scoreboard look (components/star/MikeyPopup.tsx): gold tag, dark navy
+// club bars with a kit-colour edge, white score boxes, a clock strip. sc: {tag, home, away, homeCol, awayCol, score:"0-1",
+// from:"0-0" (rolls to score at rollAt s), clock:"45:00", note:"HALF-TIME"}. Use with bgImage (a stadium picture).
+S.scorebug = (g, t, dur, sc) => {
+  bg(g, sc.bg || "navy", t); const k = ez(t * 3.2), y0 = sc.y || 700; g.save(); g.translate(0, -260 * (1 - k)); g.globalAlpha = cl(k * 1.5);
+  const O = (s, x, y, size, col, align = "center", ls = 0) => { g.save(); g.font = `700 ${size}px Oswald`; g.textAlign = align; g.fillStyle = col; if (ls) g.letterSpacing = ls + "px"; g.fillText(s, x, y); g.restore(); };
+  if (sc.tag) { g.font = "700 40px Oswald"; const w = g.measureText(sc.tag).width + 110; const gr = g.createLinearGradient(540 - w / 2, 0, 540 + w / 2, 0); gr.addColorStop(0, "#ffd23a"); gr.addColorStop(1, "#ffb000"); g.fillStyle = gr;
+    g.beginPath(); g.moveTo(540 - w / 2 + 26, y0 - 76); g.lineTo(540 + w / 2 - 26, y0 - 76); g.lineTo(540 + w / 2, y0); g.lineTo(540 - w / 2, y0); g.closePath(); g.fill(); O(sc.tag, 540, y0 - 22, 40, "#0b1020", "center", 5); }
+  const [a, b] = String(t >= (sc.rollAt ?? 0.5) || !sc.from ? sc.score : sc.from).split("-"); const [a0, b0] = String(sc.from || sc.score).split("-");
+  const row = (y, name, col, val, old, d) => { const kk = ez((t - d) * 4); g.save(); g.translate((1 - kk) * (d ? 1100 : -1100), 0);
+    g.fillStyle = "rgba(0,0,0,.45)"; g.fillRect(50, y + 12, 980, 190); g.fillStyle = "#0d1526"; g.fillRect(40, y, 800, 190); g.fillStyle = col; g.fillRect(40, y, 34, 190); g.fillStyle = "rgba(255,255,255,.75)"; g.fillRect(74, y, 6, 190);
+    g.font = "700 104px Oswald"; let sz = 104; const w = g.measureText(name).width; if (w > 700) sz = 104 * 700 / w; O(name, 112, y + 95 + sz * 0.36, sz, "#f8fafc", "left", 2);
+    const gr = g.createLinearGradient(0, y, 0, y + 190); gr.addColorStop(0, "#ffffff"); gr.addColorStop(1, "#dfe5ee"); g.fillStyle = gr; g.fillRect(840, y, 200, 190);
+    const roll = sc.from && val !== old ? cl((t - (sc.rollAt ?? 0.5)) * 5) : 1; if (roll < 1 && roll > 0) { g.fillStyle = `rgba(255,214,0,${1 - roll})`; g.fillRect(840, y, 200, 190); }
+    g.save(); g.beginPath(); g.rect(840, y, 200, 190); g.clip(); O(val, 940, y + 150 + 190 * (1 - roll), 160, "#0b1020"); if (roll < 1) O(old, 940, y + 150 - 190 * roll, 160, "#0b1020"); g.restore();
+    const sh = ((t * 0.5) % 2.4) * 900 - 300; const sg = g.createLinearGradient(sh, 0, sh + 220, 0); sg.addColorStop(0, "rgba(255,255,255,0)"); sg.addColorStop(0.5, "rgba(255,255,255,.14)"); sg.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = sg; g.fillRect(40, y, 800, 190); g.restore(); };
+  row(y0, sc.home, sc.homeCol || "#dc052d", a, a0, 0); row(y0 + 200, sc.away, sc.awayCol || "#65b32e", b, b0, 0.1);
+  if (sc.clock || sc.note) { const kk = ez((t - 0.3) * 4); g.save(); g.globalAlpha *= kk; g.fillStyle = "rgba(8,13,26,.94)"; g.fillRect(120, y0 + 400, 840, 96); g.fillStyle = "#ffc21a"; g.fillRect(120, y0 + 492, 840, 6);
+    if (sc.clock) O(sc.clock, sc.note ? 300 : 540, y0 + 468, 64, "#ffc21a"); if (sc.note) O(sc.note, sc.clock ? 640 : 540, y0 + 466, 58, "#ffffff", "center", 3); g.restore(); }
+  g.restore();
+  if (sc.big) T(g, sc.big, 540, sc.bigY || 480, sc.bigSize || 200, { shadow: true, stroke: 14, color: YEL, alpha: cl((t - 0.1) * 4) });
+};
+// The screen split into four quarters, one picture (or moving clip) each, popping in one after another; a line across
+// the middle. sc.items: [{image, motion, label, d (seconds), blur}], sc.text, sc.textAt.
+S.quad = (g, t, dur, sc) => {
+  g.fillStyle = "#0b1020"; g.fillRect(0, 0, W, H); const hw = W / 2, hh = H / 2;
+  sc.items.forEach((it, i) => { const d = it.d ?? i * 0.35, k = pop(cl((t - d) * 5)); if (k <= 0) return; const x = (i % 2) * hw, y = Math.floor(i / 2) * hh;
+    const mv = it.motion && MOT[it.motion] && MOT[it.motion].naturalWidth ? MOT[it.motion] : null, im = mv || (IMG[it.image] && IMG[it.image].naturalWidth ? IMG[it.image] : null);
+    g.save(); g.translate(x + hw / 2, y + hh / 2); g.scale(k, k); g.beginPath(); g.rect(-hw / 2 + 5, -hh / 2 + 5, hw - 10, hh - 10); g.clip();
+    if (im) { const z = Math.max(hw / im.width, hh / im.height) * (1.02 + 0.04 * Math.min(1, (t - d) / 4)), w = im.width * z, h = im.height * z; if (it.blur ?? sc.blur) g.filter = `blur(${it.blur ?? sc.blur}px)`; g.drawImage(im, -w / 2, -h / 2 + (it.dy || 0), w, h); g.filter = "none"; }
+    if (it.label) { const gr = g.createLinearGradient(0, hh / 2 - 240, 0, hh / 2); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,.8)"); g.fillStyle = gr; g.fillRect(-hw / 2, hh / 2 - 240, hw, 240);
+      const top = i < 2; T(g, it.label, 0, top ? hh / 2 - 150 : hh / 2 - 60, 64, { color: "#fff", stroke: 8, maxW: hw - 50 }); if (it.sub) T(g, it.sub, 0, top ? hh / 2 - 90 : hh / 2 - 6, 40, { color: YEL, maxW: hw - 50 }); }
+    if (it.big) T(g, it.big, 0, 60, 260, { shadow: true, stroke: 14 });
+    g.restore(); });
+  if (sc.text2) { const k = pop(cl((t - (sc.text2At ?? 0.2)) * 4)); if (k > 0) { const ls = String(sc.text2).split("|"); g.save(); g.translate(540, sc.text2Y || 560); g.scale(k, k); g.rotate(0.02);
+      ls.forEach((l, i) => T(g, l, 0, (i - (ls.length - 1) / 2) * 150 + 50, 140, { shadow: true, stroke: 16, color: i === ls.length - 1 ? YEL : "#fff", maxW: 1000 })); g.restore(); } }
+  if (sc.text) { const k = pop(cl((t - (sc.textAt ?? 1.5)) * 4)); if (k > 0) { g.save(); g.translate(540, 960); g.scale(k, k); g.rotate(-0.03); g.fillStyle = YEL; g.strokeStyle = INK; g.lineWidth = 10; g.font = "120px Anton"; const w = Math.min(1000, g.measureText(sc.text).width + 80); rr(g, -w / 2, -95, w, 190, 24); g.fill(); g.stroke(); T(g, sc.text, 0, 44, 120, { color: INK, maxW: w - 50 }); g.restore(); } }
+};
+window.EXPLAINER = { S, bg, setBG, finish, T, rr, INK, YEL, IMG, MOT, cl, ez, pop };
 })();
 
 // ── x7_ scenes (17 Nov 2026, explainer redo: offside / hat-trick / rules / World Cup 2030). Added, not edits. ──

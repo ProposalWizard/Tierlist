@@ -33,3 +33,15 @@ For any "how did X happen" story, spend real time on the mechanics: the signings
 (fee, where from, what changed), the tactical idea and which player it unlocked (who moved where, why it
 worked, a pitch diagram), the turning-point decisions, and the numbers that prove it. The pizza / deep-line
 level of detail is the minimum, not the target. Every "how" beat still gets its own picture.
+
+## Real moments, lively screens, no reading the screen (Mikey, 24 Nov 2026, on ex15)
+"I don't want things that are just AI. I want things to look exactly how they were, but in AI."
+- **Research the real moment first** (how each goal went in, who was there, what they wore, the famous reaction shot), then
+  write the picture prompt from that. Named people get a real reference photo (Guardiola is bald: the first try gave him hair).
+- **A list of goals is a picture of each goal** popping on at its minute, not ball icons while the voice reads the minutes.
+- **Never say what the screen already shows** (the bars name Ronaldo and Lewandowski: the voice says only "nobody has got past 69").
+- **No flat-colour "PowerPoint" screens.** Every graphic sits over a picture or a moving clip (`bgImage` / `bgMotion` on any step).
+  Scores use `scorebug` (the game's scoreboard look), never the old `score` cards. Nothing on screen with nothing happening.
+- **An ending that lists options is four quarters** (`quad`): each option its own picture or clip filling a corner.
+- Higgsfield now runs from Claude Code: pictures GPT Image 2.6 (medium, 2K), clips Kling 3.0 (5 s, silent, start_image = the picture),
+  played by `"motion": key` on a picture step. Say "Immediately ..." in a clip prompt when the step is short. Check every clip by eye.
