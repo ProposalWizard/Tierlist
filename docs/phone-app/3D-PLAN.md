@@ -344,3 +344,6 @@ Run one builder at a time (Sonnet), merge, check, push, next. Permissions and de
 5. The ~12 open playtest-round fixes (see docs/phone-app/STATUS-22NOV.md and the playtest notes).
 6. Release setup: real package uk.co.knowitball.game, upload key, permission removal, 32-bit support, save migration (prepare everything; the key and Play Console steps need Mikey).
 7. Ride the horse and drive the cars in the Garden. CHECKED 25 Nov: the website's Garden does NOT have it (lib/star/garden3d/scene.ts in origin/main and all 108 remote branches: the horse only grazes and wanders the paddock, the cars are parked props). So it is built NEW, in the app only (phone/**, not lib/).
+
+### Needs from Mikey (added 25 Nov, playtest round 3)
+- Money sign: the website prints "£" everywhere since 19 Nov (lib/star/money.ts MONEY_SIGN, RUL-UI-011); the app still prints "★" in 137 places. Switch the app to the website's sign? (Recommended: yes, one change reading MONEY_SIGN.)
