@@ -615,3 +615,40 @@ S.x7_flags = (g, t, dur, sc) => {
     T(g, f.label || "", 0, chh / 2 + 78, 66, { stroke: 9, maxW: cw, color: f.hi ? YEL : "#fff" }); g.restore(); });
 };
 })();
+
+// ── ex16 additions (25 Nov 2026, Mikey: the Mourinho/Vini/Alonso short). Wrappers, not edits. ──
+// picture: sc.meter {from, to, at} a hate-love gauge that swings (-1 = hate, 1 = love); sc.bubble {text, at, x, y} a
+// speech bubble that types out. versus: sc.banner (a yellow box across the middle), sc.crossAt (the left card goes grey
+// and gets a red line through it).
+(() => {
+const X = window.EXPLAINER, S = X.S, T = X.T, rr = X.rr, INK = X.INK, YEL = X.YEL, cl = X.cl, ez = X.ez, pop = X.pop;
+function meter(g, t, m) {
+  const k = pop(cl(t * 4)); if (k <= 0) return; const cx = 540, cy = m.y || 1470, R = 210;
+  const v = m.from + (m.to - m.from) * ez(cl((t - (m.at ?? 0.8)) * 1.6)) + Math.sin(t * 9) * 0.02;
+  g.save(); g.translate(cx, cy); g.scale(k, k);
+  g.fillStyle = "rgba(8,13,26,.86)"; rr(g, -360, -280, 720, 340, 40); g.fill();
+  g.lineWidth = 46; g.lineCap = "butt";
+  g.strokeStyle = "#e2384a"; g.beginPath(); g.arc(0, 0, R, Math.PI, Math.PI * 1.5); g.stroke();
+  g.strokeStyle = "#2bd47a"; g.beginPath(); g.arc(0, 0, R, Math.PI * 1.5, Math.PI * 2); g.stroke();
+  const a = Math.PI * 1.5 + v * Math.PI / 2; g.strokeStyle = "#fff"; g.lineWidth = 14; g.lineCap = "round";
+  g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(a) * (R - 40), Math.sin(a) * (R - 40)); g.stroke();
+  g.fillStyle = "#fff"; g.beginPath(); g.arc(0, 0, 22, 0, 7); g.fill();
+  T(g, "HATE", -R - 10, 40, 54, { color: "#ff6b7a", stroke: 6 }); T(g, "LOVE", R + 10, 40, 54, { color: "#5cf0a0", stroke: 6 });
+  g.restore();
+}
+function bubble(g, t, b) {
+  const s = cl((t - (b.at ?? 0.3)) * 3); if (s <= 0) return; const n = Math.floor((t - (b.at ?? 0.3)) * (b.cps || 22)), txt = String(b.text).slice(0, Math.max(1, n));
+  const x = b.x || 540, y = b.y || 420; g.save(); g.translate(x, y); g.scale(pop(s), pop(s)); g.font = "64px Anton";
+  const lines = txt.split("|"), w = Math.min(960, Math.max(...String(b.text).split("|").map(l => g.measureText(l).width)) + 90), h = 90 + 78 * (String(b.text).split("|").length - 1) + 40;
+  g.fillStyle = "rgba(0,0,0,.3)"; rr(g, -w / 2 + 10, -h / 2 + 12, w, h, 34); g.fill();
+  g.fillStyle = "#fff"; g.strokeStyle = INK; g.lineWidth = 8; rr(g, -w / 2, -h / 2, w, h, 34); g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(-40, h / 2 - 4); g.lineTo(0, h / 2 + 60); g.lineTo(30, h / 2 - 4); g.closePath(); g.fill(); g.stroke(); g.fillRect(-36, h / 2 - 14, 62, 14);
+  lines.forEach((l, i) => T(g, l, 0, -h / 2 + 90 + i * 78, 64, { color: INK, maxW: w - 50 })); g.restore();
+}
+const pic = S.picture; S.picture = (g, t, dur, sc) => { pic(g, t, dur, sc); if (sc.meter) meter(g, t, sc.meter); if (sc.bubble) bubble(g, t, sc.bubble); };
+const vs = S.versus; S.versus = (g, t, dur, sc) => {
+  vs(g, t, dur, sc);
+  if (sc.crossAt != null) { const c = cl((t - sc.crossAt) * 3); if (c > 0) { g.fillStyle = `rgba(30,30,40,${0.55 * c})`; g.fillRect(0, 0, 534, 1920); g.save(); g.strokeStyle = "#e2384a"; g.lineWidth = 26; g.lineCap = "round"; g.beginPath(); g.moveTo(60, 1500); g.lineTo(60 + 420 * c, 1500 - 900 * c); g.stroke(); g.restore(); } }
+  if (sc.banner) { const k = pop(cl((t - (sc.bannerAt ?? 1.2)) * 4)); if (k > 0) { g.save(); g.translate(540, sc.bannerY || 300); g.scale(k, k); g.rotate(-0.03); g.fillStyle = YEL; g.strokeStyle = INK; g.lineWidth = 10; g.font = "110px Anton"; const w = Math.min(1000, g.measureText(sc.banner).width + 80); rr(g, -w / 2, -90, w, 180, 24); g.fill(); g.stroke(); T(g, sc.banner, 0, 40, 110, { color: INK, maxW: w - 50 }); g.restore(); } }
+};
+})();

@@ -1,0 +1,317 @@
+{
+ "series": "Explainer",
+ "layout": "explainer",
+ "music": "02-working-it-out.mp3",
+ "voice": {
+  "provider": "elevenlabs",
+  "voiceId": "WAppqUXeqDqXjNTaQxG9"
+ },
+ "id": "ex16-mourinho-vini",
+ "variant": "v1 (25 Nov 2026, Mikey): remake of a TikTok's story, full screen, facts checked",
+ "title": "Why Vini loves Mourinho but not Alonso",
+ "sources": [
+  "https://www.beinsports.com/en-us/soccer/la-liga/articles/mourinho-defends-vin%C3%ADcius-and-responds-to-comesa%C3%B1a-over-the-negreira-case-2026-11-23",
+  "https://www.sportsmole.co.uk/football/real-madrid/champions-league/news/jose-makes-vinicius-promise-amid-superstars-struggles_609706.html",
+  "https://sports.yahoo.com/articles/real-madrid-forward-reignites-xabi-133300379.html",
+  "https://global.espn.com/football/story/_/id/47597455/kylian-mbappe-bids-xabi-alonso-farewell-no-message-vinicius-junior-jude-bellingham",
+  "https://www.si.com/soccer/three-real-madrid-stars-unconvinced-xabi-alonso",
+  "https://sports.yahoo.com/articles/real-madrid-superstar-sends-encouraging-100200722.html"
+ ],
+ "facts": "Mourinho presser ~23 Nov: 'very good boy, very empathetic, that's fundamental', starts v PSV. Vini liked 433 post on Chelsea 1-4 Leeds (Alonso's Chelsea). Oct 2025 Clasico sub, no handshake, benched several times after. Alonso left Jan 2026, Vini silent. 4-game ban after Villarreal red; benched v Celta 21 Nov, on 57', helped both goals, 2-1. NOT used: 'Alonso never spoke to him' (no source).",
+ "images": {
+  "xabi_touchline": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/xabi_touchline.png",
+  "hug": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/hug.png",
+  "presser": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/presser.png",
+  "clasico_off": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/clasico_off.png",
+  "vini_sprint": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/vini_sprint.png",
+  "arm_round": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/arm_round.png",
+  "vini_bench": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/vini_bench.png",
+  "vini_phone": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/vini_phone.png",
+  "xabi_cut": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/xabi_cut.png",
+  "jose_cut": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/jose_cut.png",
+  "vini_cut": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/vini_cut.png"
+ },
+ "motions": {
+  "m_hug": "file:///home/user/Tierlist/tools/video-factory/work/clips/m_hug.mp4",
+  "m_clasico": "file:///home/user/Tierlist/tools/video-factory/work/clips/m_clasico.mp4",
+  "m_arm": "file:///home/user/Tierlist/tools/video-factory/work/clips/m_arm.mp4",
+  "m_xabi": "file:///home/user/Tierlist/tools/video-factory/work/clips/m_xabi.mp4",
+  "m_sprint": "file:///home/user/Tierlist/tools/video-factory/work/clips/m_sprint.mp4"
+ },
+ "lines": [
+  {
+   "text": "Xabi Alonso benched Vinícius, and Vini never forgave him.",
+   "scene": {
+    "bg": "navy",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "xabi_touchline",
+      "w": 0,
+      "motion": "m_xabi",
+      "label": "XABI ALONSO",
+      "meter": {
+       "from": 0,
+       "to": -0.85,
+       "at": 1.0
+      }
+     }
+    ],
+    "cut": true
+   }
+  },
+  {
+   "text": "Mourinho benched him too. So why does Vini love him?",
+   "scene": {
+    "bg": "navy",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "hug",
+      "w": 0,
+      "motion": "m_hug",
+      "label": "JOSÉ MOURINHO",
+      "meter": {
+       "from": -0.85,
+       "to": 0.9,
+       "at": 1.6
+      }
+     }
+    ]
+   }
+  },
+  {
+   "text": "This week, Mourinho called him a very good boy. Very empathetic, and that's fundamental.",
+   "scene": {
+    "bg": "navy",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "presser",
+      "w": 0,
+      "label": "23 NOV · PRESS CONFERENCE",
+      "bubble": {
+       "text": "\"VERY EMPATHETIC…|THAT'S FUNDAMENTAL\"",
+       "at": 2.2,
+       "y": 1450
+      }
+     }
+    ]
+   }
+  },
+  {
+   "text": "And Vini? He was caught liking a post about Alonso's Chelsea losing four-one to Leeds.",
+   "scene": {
+    "bg": "navy",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "vini_phone",
+      "w": 0
+     },
+     {
+      "type": "scorebug",
+      "w": 5,
+      "tag": "PREMIER LEAGUE",
+      "home": "CHELSEA",
+      "homeCol": "#034694",
+      "away": "LEEDS",
+      "awayCol": "#ffcd00",
+      "score": "1-4",
+      "note": "LIKED BY VINIJR",
+      "bgImage": "vini_phone",
+      "bgBlur": 10,
+      "bgDim": 0.5
+     }
+    ]
+   }
+  },
+  {
+   "text": "It goes back to October 2025. Alonso took him off in the Clásico.",
+   "scene": {
+    "bg": "navy",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "clasico_off",
+      "w": 0,
+      "motion": "m_clasico",
+      "label": "OCT 2025 · EL CLÁSICO"
+     }
+    ]
+   }
+  },
+  {
+   "text": "No handshake. Benched again and again. And when Alonso left in January, not a word from Vini.",
+   "scene": {
+    "bg": "navy",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "clasico_off",
+      "w": 0,
+      "stamp": "NO HANDSHAKE",
+      "stampY": 700
+     },
+     {
+      "type": "picture",
+      "image": "vini_bench",
+      "w": 2,
+      "label": "BENCHED"
+     },
+     {
+      "type": "statement",
+      "text": "NOT A|WORD",
+      "hi": 1,
+      "size": 230,
+      "lineGap": 250,
+      "w": 12,
+      "bgImage": "xabi_touchline",
+      "bgBlur": 8,
+      "bgDim": 0.5
+     }
+    ]
+   }
+  },
+  {
+   "text": "Mourinho did bench him, against Celta, straight after a four-game ban.",
+   "scene": {
+    "bg": "navy",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "vini_bench",
+      "w": 0,
+      "label": "21 NOV · VS CELTA"
+     },
+     {
+      "type": "scorebug",
+      "w": 4,
+      "tag": "21 NOV · LA LIGA",
+      "home": "REAL MADRID",
+      "homeCol": "#febe10",
+      "away": "CELTA",
+      "awayCol": "#8ac3ee",
+      "score": "0-1",
+      "clock": "57'",
+      "note": "VINI COMES ON",
+      "bgImage": "vini_bench",
+      "bgBlur": 10,
+      "bgDim": 0.5
+     }
+    ]
+   }
+  },
+  {
+   "text": "But he came on after fifty-seven minutes, and helped make both goals.",
+   "scene": {
+    "bg": "navy",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "vini_sprint",
+      "w": 0,
+      "motion": "m_sprint",
+      "big": "57'",
+      "bigSize": 300,
+      "bigY": 1330
+     },
+     {
+      "type": "scorebug",
+      "w": 7,
+      "tag": "21 NOV · LA LIGA",
+      "home": "REAL MADRID",
+      "homeCol": "#febe10",
+      "away": "CELTA",
+      "awayCol": "#8ac3ee",
+      "from": "0-1",
+      "score": "2-1",
+      "rollAt": 0.5,
+      "note": "FULL TIME",
+      "bgImage": "vini_sprint",
+      "bgBlur": 10,
+      "bgDim": 0.5
+     }
+    ]
+   }
+  },
+  {
+   "text": "Same bench. Different feeling.",
+   "scene": {
+    "bg": "navy",
+    "type": "versus",
+    "steps": [
+     {
+      "type": "versus",
+      "w": 0,
+      "left": {
+       "image": "xabi_cut"
+      },
+      "right": {
+       "image": "jose_cut"
+      },
+      "leftName": "ALONSO",
+      "rightName": "MOURINHO",
+      "leftNum": "",
+      "rightNum": "",
+      "crossAt": 1.3
+     }
+    ]
+   }
+  },
+  {
+   "text": "Mourinho talks to him, backs him, and starts him against PSV.",
+   "scene": {
+    "bg": "navy",
+    "type": "picture",
+    "steps": [
+     {
+      "type": "picture",
+      "image": "arm_round",
+      "w": 0,
+      "motion": "m_arm",
+      "label": "STARTS VS PSV",
+      "meter": {
+       "from": 0.3,
+       "to": 0.95,
+       "at": 1.5
+      }
+     }
+    ]
+   }
+  },
+  {
+   "text": "It's not tactics. It's how you treat people. So who handled Vini better?",
+   "scene": {
+    "bg": "navy",
+    "type": "versus",
+    "steps": [
+     {
+      "type": "versus",
+      "w": 0,
+      "left": {
+       "image": "xabi_cut"
+      },
+      "right": {
+       "image": "jose_cut"
+      },
+      "leftName": "ALONSO",
+      "rightName": "MOURINHO",
+      "leftNum": "",
+      "rightNum": "",
+      "banner": "WHO GOT IT RIGHT?",
+      "bannerAt": 2.4
+     }
+    ]
+   }
+  }
+ ]
+}
