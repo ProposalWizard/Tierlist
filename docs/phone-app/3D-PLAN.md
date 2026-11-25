@@ -335,3 +335,12 @@ Not done on purpose: the website's 3D camera button and in-match camera orbit (t
 - The 3D match view (WP7) is Off by default, as on the website, and is the heaviest 3D in the app (about 7 ms of JavaScript a frame with a JIT, about 39 ms without one, paced so it takes about a third of the time). Keep it as an opt-in "3D" button, or hide the button until the S20+ has said it is smooth?
 - The match radar (WP7) is Off by default, as on the website ("Match radar (testing)"). Say if it should be On for everyone.
 - Turning the 3D off in a match lets its memory go (a flip back rebuilds it, 8 to 11 s on the web build). The website keeps it hidden for an instant flip. Say if instant matters more than memory.
+
+## The "all 7" queue (Mikey, 25 Nov 2026: "do all 7 starting from number 1; leave permissions to the end; app only, not the website")
+Run one builder at a time (Sonnet), merge, check, push, next. Permissions and decisions go to the end of this file's "Needs from Mikey".
+1. Merge the four unfinished fixer branches (global line-height/Anton text rule, world r2, career r2, match r2). [running: branch merge-fixers]
+2. Trial dribble ignores taps; trial free kick slow after the ball leaves the screen. Plus item 4: Skip while the 3D signing loads can unmount the GL view under a live context.
+3. Main menu crash after "Who are you?" (read the new "Android says the app last stopped because" card if Mikey has sent it; else analyse the title-player mount path).
+5. The ~12 open playtest-round fixes (see docs/phone-app/STATUS-22NOV.md and the playtest notes).
+6. Release setup: real package uk.co.knowitball.game, upload key, permission removal, 32-bit support, save migration (prepare everything; the key and Play Console steps need Mikey).
+7. Ride the horse and drive the cars in the Garden. CHECKED 25 Nov: the website's Garden does NOT have it (lib/star/garden3d/scene.ts in origin/main and all 108 remote branches: the horse only grazes and wanders the paddock, the cars are parked props). So it is built NEW, in the app only (phone/**, not lib/).
