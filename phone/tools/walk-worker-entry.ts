@@ -19,7 +19,7 @@ import type { ShopCallbacks, ShopController } from "@/lib/star/shop3d/scene";
 import { glCounts } from "../src/three/gl";
 import { setToonYou } from "@/lib/star/style3d/toon/bodies";
 import { kitsOf } from "@/lib/star/kits";
-import type { GardenData, GardenController, GardenCallbacks } from "@/lib/star/garden3d/scene";
+import type { GardenData, GardenController, GardenCallbacks } from "../src/three/garden/sceneRide"; // KIB RIDE: the app's garden (with the ride)
 import type { Quality3d } from "@/lib/star/three3d/quality";
 
 const g = globalThis as unknown as Record<string, unknown> & { postMessage(m: unknown): void };
@@ -34,6 +34,8 @@ let cards: unknown[] = [];
 let gl: WebGL2RenderingContext | null = null;
 let near: string | null = null;
 let doors: string[] = [];
+const rideLog: string[] = [];
+let lastRide: unknown = null;
 let glRef: OffscreenCanvas | null = null;
 const log: string[] = [];
 const jsMs: number[] = [];
@@ -67,14 +69,14 @@ async function platform() {
 
 const YOU = { body: "c2" as const, head: "h2" as const, skin: "#c68642", hair: "#2b1d14", name: "KANE" };
 
-function gardenData(arrive: GardenData["arrive"], sky: GardenData["sky"]): GardenData {
+function gardenData(arrive: GardenData["arrive"], sky: GardenData["sky"], fixedStep?: number): GardenData {
   return {
     kit: kitsOf("Arsenal").home,
     number: 9, tier: 3, stable: 3,
     horse: { name: "Comet" },
     trophies: [{ name: "Premier League", count: 2, art: "/star/trophies/premier-league.webp" }, { name: "FA Cup", count: 1, art: "/star/trophies/fa-cup.webp" }, { name: "Golden Boot", count: 1, art: "/star/trophies/golden-boot.webp" }, { name: "Community Shield", count: 1, art: null }],
     cars: ["/star/shop3d/items/car-1.glb", "/star/shop3d/items/car-2.glb", "/star/shop3d/items/car-classic.glb"],
-    sky, mates: [7, 4, 11], arrive,
+    sky, mates: [7, 4, 11], arrive, fixedStep,
     player: { look: "new", skin: "#c68642", hair: "#2b1d14", hairStyle: "short" },
   };
 }
@@ -154,15 +156,17 @@ self.onmessage = async (ev: MessageEvent) => {
           gl, width: m.w as number, height: m.h as number, pixelRatio: m.pr as number, quality: m.quality as Quality3d,
         });
       } else {
+      STEP = (m.step as number | undefined) || undefined;
       const cbs: GardenCallbacks = {
         onNear: (s) => { near = s; },
+        onRide: (r) => { rideLog.push(`${r.mode}/${r.phase}`); lastRide = r; },
         onFps: () => {},
         onShopDoor: () => { doors.push("shop"); },
         onTrainingGate: () => { doors.push("training"); },
         onContextLost: () => { doors.push("lost"); },
       };
       host = await startWalkScene<GardenData, GardenCallbacks, GardenController>({
-        start: loadGardenStart(), data: gardenData(m.arrive as GardenData["arrive"], m.sky as GardenData["sky"]), callbacks: cbs,
+        start: loadGardenStart(), data: gardenData(m.arrive as GardenData["arrive"], m.sky as GardenData["sky"], STEP), callbacks: cbs,
         gl, width: m.w as number, height: m.h as number, pixelRatio: m.pr as number, quality: m.quality as Quality3d,
       });
       }
@@ -176,6 +180,7 @@ self.onmessage = async (ev: MessageEvent) => {
       // any other method of the place's controller by name (the shop's select, setLevel, setCardOpen, pick, walkToItem ...)
       if (fn === "call") out = await ((c as unknown as Record<string, (...x: unknown[]) => unknown>)[m.name as string])(...(m.args as unknown[]));
       else if (fn === "wear") await c.wear(m.what === "kit" ? { kind: "kit", kit: "away", boots: "#141416" } : { kind: "casual", set: CASUAL_SETS.find((x) => x.id === m.what) ?? CASUAL_SETS[0] });
+      else if (fn === "ride") out = (c.ride as unknown as Record<string, (...x: unknown[]) => unknown>)[m.name as string](...((m.args as unknown[]) ?? []));
       else if (fn === "place") c.place(a[0], a[1], a[2]);
       else if (fn === "stick") c.setStick(a[0], a[1]);
       else if (fn === "tap") out = c.tap?.(a[0], a[1]);
@@ -189,7 +194,7 @@ self.onmessage = async (ev: MessageEvent) => {
       const c = host!.controller as GardenController;
       const js = jsMs.slice().sort((a, b) => a - b);
       if (m.reset) jsMs.length = 0;
-      reply({ where: c.where(), near, doors, cards: cards.length, room: (c as unknown as HomeController).room?.(), stats: c.stats(), frames: gl ? glCounts(gl).frames : 0, pinching: host!.pinching(), log, walking: c.walking?.(), js: { n: js.length, median: js[Math.floor(js.length / 2)] ?? 0, p95: js[Math.floor(js.length * 0.95)] ?? 0 } });
+      reply({ where: c.where(), near, doors, ride: c.ride?.info?.(), rideLog, lastRide, cards: cards.length, room: (c as unknown as HomeController).room?.(), stats: c.stats(), frames: gl ? glCounts(gl).frames : 0, pinching: host!.pinching(), log, walking: c.walking?.(), js: { n: js.length, median: js[Math.floor(js.length / 2)] ?? 0, p95: js[Math.floor(js.length * 0.95)] ?? 0 } });
     } else if (m.op === "asked") {
       reply(Array.from(new Set(requested)));
     } else if (m.op === "dispose") {

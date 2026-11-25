@@ -11,11 +11,14 @@
  * src/three/assetList.ts). It then walks to spots, takes a still of each, reads the scene's own
  * numbers (draw calls, triangles) and the frames drawn, and checks that leaving puts everything back.
  * The machine has no graphics chip (SwiftShader draws on the processor): read times as relative.
+ * With --place garden it also gets on the horse and into a car (KIB RIDE: src/three/garden/): mounts, moves with the stick for some game seconds,
+ * asserts the position changed, stayed inside the garden and out of every obstacle, gets off, and prints the JavaScript time a frame on foot, riding and driving.
  * Exits 1 on any failure.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { THREE_ASSET_URLS } from "../src/three/assetList";
+import { CAR_BODY, HORSE_BODY, bodyFree, type Obstacles } from "../src/three/garden/ride"; // KIB RIDE
 
 const args = process.argv.slice(2);
 const arg = (k: string, d: string) => (args.includes(k) ? args[args.indexOf(k) + 1] : d);
@@ -30,7 +33,10 @@ const TIER = arg("--tier", "house");
 const LIVING = arg("--living", "on") !== "off";
 const POV = args.includes("--pov");
 /** Shop only: every frame moves the game on by this many seconds (software GL draws about 1 frame a second; 0 = real time). */
-const STEP = Number(arg("--step", PLACE === "garden" ? "0" : "0.1"));
+const STEP = Number(arg("--step", "0.1"));
+const RIDE_ONLY = args.includes("--ride-only");
+/** The ride flow's game seconds are multiplied by this (software GL draws a frame or two a second: 1 = the full lengths). */
+const SCALE = Number(arg("--ride-scale", "1"));
 const PHONE = path.join(__dirname, "..");
 const ROOT = path.join(PHONE, "..");
 let failed = 0;
@@ -191,7 +197,190 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
       console.log(`   released: ${h3 - h2} frames in 2.5 s`);
       ok(h3 - h2 >= 1, "the house did not draw again after it was let go");
     };
-    for (const s of spots) {
+
+    /** KIB RIDE: the horse and the car, in the worker (no document), through the scene's own controller. */
+    const rideFlow = async () => {
+      type St = { where: { x: number; z: number; yaw: number; t: number }; near: string | null; ride?: { mode: string; phase: string; mph: number; gait: string; canRide: boolean; canDrive: boolean; car: number | null; off: boolean }; rideLog: string[]; js: { n: number; median: number; p95: number }; stats: { calls: number; triangles: number; mode?: string }; log: string[] };
+      const st = async (reset = false) => (await call("state", { reset })) as St;
+      const rcall = (name: string, ...args: unknown[]) => call("cmd", { fn: "ride", name, args });
+      const until = async (what: string, pred: (s: St) => boolean, ms = 90000) => { const t = Date.now(); let s = await st(); while (!pred(s) && Date.now() - t < ms) { await sleep(500); s = await st(); } ok(pred(s), `timed out waiting for ${what}`); return s; };
+      const getObs = async () => (await rcall("obstacles")) as Obstacles;
+      let obs: Obstacles = await getObs();
+      console.log(`   KIB RIDE: ${obs.boxes.length} boxes, ${obs.circles.length} circles, ${obs.extra?.length ?? 0} vehicle-only plugs`);
+      /** The free pose nearest to where a test wants the vehicle (the garden is full of bushes and trees). */
+      const freeNear = (x: number, z: number, yw: number, body: typeof HORSE_BODY | typeof CAR_BODY, lane = 0): [number, number, number] => {
+        // `lane`: metres of free ground wanted along the heading (negative: behind him)
+        const laneOk = (px: number, pz: number) => { for (let d = 0.5; d <= Math.abs(lane); d += 0.5) { const k = Math.sign(lane) * d; if (!bodyFree(px + Math.sin(yw) * k, pz + Math.cos(yw) * k, yw, body, obs)) return false; } return true; };
+        for (let r = 0; r < 16; r += 0.5) for (let a = 0; a < 16; a++) { const px = x + Math.cos((a / 16) * 6.283) * r, pz = z + Math.sin((a / 16) * 6.283) * r; if (bodyFree(px, pz, yw, body, obs) && laneOk(px, pz)) return [px, pz, yw]; }
+        return [x, z, yw];
+      };
+      const putAt = async (kind: "horse" | "car", x: number, z: number, yw: number, lane = 0) => { obs = await getObs(); const [px, pz] = freeNear(x, z, yw, kind === "horse" ? HORSE_BODY : CAR_BODY, lane); return rcall("put", px, pz, yw); };
+      /** Where the vehicle is, as the scene says. */
+      const vehicle = async () => { const d = (await rcall("debug")) as { mode: string; horse: { x: number; z: number; yaw: number; speed: number }; car: { x: number; z: number; yaw: number; vf: number }; rider: number[]; saddle: number[]; cars: ({ i: number; moved: boolean; at: number[] } | null)[]; horseBox: { size: number[]; min: number[] } | null; bones: [string, number[]][] | null; hit: number; sit: boolean; sitHips: number[] }; return d; };
+      /** Run a stick for `secs` and check the vehicle is never inside an obstacle (polled between frames: every sample is a frame's end state). */
+      const drive = async (label: string, x: number, y: number, secs0: number, kind: "horse" | "car") => {
+        const secs = secs0 * SCALE;
+        obs = await getObs();
+        const body = kind === "horse" ? HORSE_BODY : CAR_BODY;
+        const t0 = (await st()).where.t;
+        await call("cmd", { fn: "stick", args: [x, y] });
+        let s = await st(), bad = 0, n = 0, out = 0, top = 0, hit = 0;
+        const wall = Date.now();
+        let p = await vehicle();
+        const start = kind === "horse" ? { ...p.horse } : { ...p.car };
+        while (s.where.t - t0 < secs && Date.now() - wall < 150000) {
+          await sleep(350);
+          s = await st(); p = await vehicle();
+          const v = kind === "horse" ? p.horse : p.car;
+          n++;
+          if (!bodyFree(v.x, v.z, v.yaw, body, obs)) bad++;
+          if (Math.abs(v.x) > 18.3 || Math.abs(v.z) > 18.3) out++;
+          top = Math.max(top, Math.abs(kind === "horse" ? (p.horse as { speed: number }).speed : (p.car as { vf: number }).vf));
+          hit = Math.max(hit, p.hit);
+        }
+        await call("cmd", { fn: "stick", args: [0, 0] });
+        const end = kind === "horse" ? p.horse : p.car;
+        const moved = Math.hypot(end.x - start.x, end.z - start.z);
+        console.log(`   ${label.padEnd(26)} ${(s.where.t - t0).toFixed(1)} game s, ${n} samples: moved ${moved.toFixed(1)} m to ${end.x.toFixed(1)}, ${end.z.toFixed(1)}, top ${top.toFixed(1)} m/s, hit ${hit.toFixed(1)}, ${s.ride?.gait ?? ""} ${s.ride?.mph ?? 0} mph`);
+        ok(bad === 0, `${label}: inside an obstacle in ${bad} of ${n} samples`);
+        ok(out === 0, `${label}: left the garden in ${out} of ${n} samples`);
+        return { moved, end, top, hit, bad };
+      };
+      const jsOf = async (label: string, secs0: number) => {
+        const secs = secs0 * SCALE;
+        await st(true);
+        const t0 = (await st()).where.t; const w = Date.now();
+        let s = await st();
+        while (s.where.t - t0 < secs && Date.now() - w < 60000) { await sleep(500); s = await st(); }
+        console.log(`   JS per frame ${label.padEnd(8)} median ${s.js.median.toFixed(2)} ms, p95 ${s.js.p95.toFixed(2)} ms over ${s.js.n} frames; ${s.stats.calls} draws, ${(s.stats.triangles / 1000).toFixed(0)}k tris, mode ${s.stats.mode}`);
+        return s.js;
+      };
+
+      console.log("   -- the horse");
+      await call("cmd", { fn: "place", args: [-5.5, 6.5, -Math.PI / 2] });
+      await sleep(1500);
+      const jsWalk = await (async () => { await call("cmd", { fn: "stick", args: [0, 0.5] }); const r = await jsOf("on foot", 8); await call("cmd", { fn: "stick", args: [0, 0] }); return r; })();
+      await call("cmd", { fn: "place", args: [-5.5, 6.5, -Math.PI / 2] });
+      await sleep(1500);
+      let s0 = await until("the horse's card (near=horse and canRide)", (s) => s.near === "horse" && !!s.ride?.canRide, 30000);
+      ok(!!s0.ride?.canRide, "Ride is not offered at the paddock");
+      const p0 = await vehicle();
+      console.log(`   horse model: ${JSON.stringify(p0.horseBox)} bones ${JSON.stringify(p0.bones)}`);
+      ok(await rcall("mountHorse") === true, "mountHorse refused");
+      for (let k = 0; k < 24 && process.env.RIDE_TRACE; k++) { const d = await vehicle(); const q = await st(); console.log(`   trace ${k}: t=${q.where.t.toFixed(1)} mode ${q.ride?.mode}/${q.ride?.phase} horse ${d.horse.x},${d.horse.z} yaw ${d.horse.yaw} sp ${d.horse.speed} hit ${d.hit}`); if (q.ride?.phase === "on") break; await sleep(400); }
+      s0 = await until("the horse to come and him to get on (phase on)", (s) => s.ride?.mode === "horse" && s.ride.phase === "on", 120000);
+      let v = await vehicle();
+      console.log(`   mounted: rider at ${v.rider.join(",")} saddle ${v.saddle.join(",")} sit pose ${v.sit} hips ${v.sitHips.join(",")}; ride log ${s0.rideLog.join(" > ")}`);
+      ok(v.sit, "no seated pose for the rider");
+      // his hips (the foot of the rider plus the seated hips turned to the horse's way) are on the saddle
+      const hy = v.horse.yaw, hipX = v.rider[0] + v.sitHips[0] * Math.cos(hy) + v.sitHips[2] * Math.sin(hy), hipZ = v.rider[2] - v.sitHips[0] * Math.sin(hy) + v.sitHips[2] * Math.cos(hy);
+      ok(Math.hypot(hipX - v.saddle[0], hipZ - v.saddle[2]) < 0.15 && Math.abs(v.rider[1] + v.sitHips[1] - v.saddle[1]) < 0.15, `the rider is not on the saddle (hips ${hipX.toFixed(2)},${(v.rider[1] + v.sitHips[1]).toFixed(2)},${hipZ.toFixed(2)} saddle ${v.saddle.join(",")})`);
+      await shot("ride-mounted");
+      // his seat from the side: the legs, the saddle (the debug camera, then back to the follow camera)
+      { const hy2 = v.horse.yaw, rx = Math.cos(hy2), rz = -Math.sin(hy2);
+        await call("cmd", { fn: "cam", args: [v.horse.x + rx * 3.6, 1.3, v.horse.z + rz * 3.6, v.horse.x, 1.1, v.horse.z] }); await sleep(2500); await shot("ride-side");
+        await call("cmd", { fn: "cam", args: [v.horse.x - Math.sin(hy2) * 4.2 + rx * 1.6, 1.8, v.horse.z - Math.cos(hy2) * 4.2 + rz * 1.6, v.horse.x, 1.2, v.horse.z] }); await sleep(2500); await shot("ride-rear34");
+        await call("cmd", { fn: "cam", args: [] }); }
+      // out of the paddock by the gate, then along the lane
+      await putAt("horse", -7.6, 6.5, Math.PI / 2); // by the gate, facing east (the gate is on the east side)
+      const h1 = await drive("walk (push 0.3)", 0, 0.3, 4, "horse");
+      ok(h1.moved > 0.25 * 4 * SCALE, "the walk did not move him");
+      await shot("ride-walk");
+      await putAt("horse", 4, 14, Math.PI);
+      const h2 = await drive("canter (full push)", 0, 1, 7, "horse");
+      ok(h2.moved > 1.5 * 7 * SCALE, `the canter moved only ${h2.moved.toFixed(1)} m`);
+      ok(h2.top > (SCALE >= 0.4 ? 4.5 : 2.5), `the canter top speed was ${h2.top.toFixed(1)}`);
+      await shot("ride-canter");
+      const jsRide = await (async () => { await call("cmd", { fn: "stick", args: [0, 0.8] }); const r = await jsOf("riding", 8); await call("cmd", { fn: "stick", args: [0, 0] }); return r; })();
+      await drive("steer left then right", -0.8, 0.7, 4, "horse");
+      await drive("steer right", 0.8, 0.7, 4, "horse");
+      // into the things: the fountain, the shop, the boundary, a tree line
+      await putAt("horse", 0, 4, Math.PI); const f = await drive("at the fountain", 0, 1, 8, "horse");
+      ok(Math.hypot(f.end.x - 0, f.end.z + 2.2) > 1.95 + 0.4, "ended inside the fountain");
+      await putAt("horse", 0, -4, Math.PI); const sh = await drive("at the shop front", 0, 1, 6, "horse");
+      ok(sh.end.z > -9, `went into the shop (z ${sh.end.z.toFixed(2)})`);
+      await putAt("horse", 12, 0, Math.PI / 2); const bd = await drive("at the east boundary", 0, 1, 8, "horse");
+      ok(bd.end.x <= 18.3, "left the garden by the east");
+      await putAt("horse", -12, 14, -Math.PI / 2); const bw = await drive("at the west boundary", 0, 1, 8, "horse");
+      ok(bw.end.x >= -18.3, "left the garden by the west");
+      await putAt("horse", 6, -3, 0); await drive("round the garden (stick right)", 1, 0.9, 12, "horse");
+      // off
+      await putAt("horse", -3, 8, 0);
+      await rcall("stop");
+      s0 = await until("him to be off (mode walk)", (s) => s.ride?.mode === "walk", 90000);
+      const afterH = (await st()).where; const hv = await vehicle();
+      console.log(`   dismounted at ${afterH.x.toFixed(2)}, ${afterH.z.toFixed(2)}; horse at ${hv.horse.x.toFixed(2)}, ${hv.horse.z.toFixed(2)}; ride log ${s0.rideLog.join(" > ")}`);
+      ok(Math.hypot(afterH.x - hv.horse.x, afterH.z - hv.horse.z) < 3.2 && Math.hypot(afterH.x - hv.horse.x, afterH.z - hv.horse.z) > 0.6, "he did not get off beside the horse");
+      ok(bodyFree(afterH.x, afterH.z, 0, { r: 0.32, at: [0] }, obs), "he got off inside something");
+      { const o2 = await getObs(); const posts = o2.circles.filter((c) => Math.hypot(c[0] - hv.horse.x, c[1] - hv.horse.z) < 1.2 && c[2] >= 0.5);
+        console.log(`   the horse left outside the paddock is ${posts.length} post(s) for walkers and cars`);
+        ok(posts.length === 2, "the horse left outside the paddock is not something to walk round"); }
+      await shot("ride-dismounted");
+      console.log("   -- the cars");
+      await call("cmd", { fn: "place", args: [9.5, 10.2, Math.PI] });
+      await sleep(1500);
+      s0 = await until("the cars' card (near=cars and canDrive)", (s) => s.near === "cars" && !!s.ride?.canDrive, 30000);
+      const before = await vehicle();
+      console.log(`   cars before: ${JSON.stringify(before.cars)}; canDrive car ${s0.ride?.car}`);
+      ok(await rcall("driveCar") === true, "driveCar refused");
+      s0 = await until("him to be in the car (phase on)", (s) => s.ride?.mode === "car" && s.ride.phase === "on", 60000);
+      v = await vehicle();
+      console.log(`   in car ${s0.ride?.car}: at ${v.car.x.toFixed(2)}, ${v.car.z.toFixed(2)} facing ${v.car.yaw.toFixed(2)}; ride log ${s0.rideLog.join(" > ")}`);
+      await shot("drive-in");
+      { const cy2 = v.car.yaw, rx = Math.cos(cy2), rz = -Math.sin(cy2);
+        await call("cmd", { fn: "cam", args: [v.car.x + rx * 6, 1.6, v.car.z + rz * 6, v.car.x, 0.7, v.car.z] }); await sleep(2500); await shot("drive-side");
+        await call("cmd", { fn: "cam", args: [] }); }
+      const startCar = { ...v.car };
+      const c1 = await drive("throttle (up)", 0, 1, 4, "car");
+      ok(c1.moved > 1.5 * 4 * SCALE, `the car moved only ${c1.moved.toFixed(1)} m`);
+      await shot("drive-moving");
+      const jsDrive = await (async () => { await call("cmd", { fn: "stick", args: [0, 1] }); const r = await jsOf("driving", 6); await call("cmd", { fn: "stick", args: [0, 0] }); return r; })();
+      await putAt("car", 0, 15, Math.PI);
+      await drive("steer left (push left+up)", -1, 0.8, 4, "car");
+      await shot("drive-turn");
+      await putAt("car", -6, 4, Math.PI / 2, -7);
+      const cb = await drive("brake then reverse (down)", 0, -1, 5, "car");
+      const cv = await vehicle();
+      ok(cv.car.vf < -0.5, `it did not reverse (vf ${cv.car.vf})`);
+      await putAt("car", 0, 5, Math.PI); const cf = await drive("car at the fountain", 0, 1, 6, "car");
+      ok(Math.hypot(cf.end.x - 0, cf.end.z + 2.2) > 1.95 + 0.9, "the car ended inside the fountain");
+      await putAt("car", 0, -3, Math.PI); const cs2 = await drive("car at the shop front", 0, 1, 6, "car");
+      ok(cs2.end.z > -9 + 0.9, `the car went into the shop (z ${cs2.end.z.toFixed(2)})`);
+      await putAt("car", 12, 0, Math.PI / 2); const cbd = await drive("car at the east boundary", 0, 1, 6, "car");
+      ok(cbd.end.x <= 18.3, "the car left the garden by the east");
+      await putAt("car", 12, 1.5, -Math.PI / 2); await drive("car at the gazebo side", 0, 1, 8, "car");
+      await putAt("car", 6, 4, Math.PI); await drive("car, circle (stick right)", 1, 0.9, 8, "car");
+      // park it somewhere open, get out
+      await putAt("car", -2, 10, Math.PI / 2);
+      await rcall("stop");
+      s0 = await until("him to be out (mode walk)", (s) => s.ride?.mode === "walk", 60000);
+      const outAt = (await st()).where; const after = await vehicle();
+      const mine = after.cars.find((c) => c && c.i === (before.cars.find((c2) => c2 && c2.moved === false)?.i ?? 0));
+      console.log(`   out at ${outAt.x.toFixed(2)}, ${outAt.z.toFixed(2)}; cars now ${JSON.stringify(after.cars)}; ride log ${s0.rideLog.slice(-4).join(" > ")}`);
+      const driven = after.cars.find((c) => c && c.moved);
+      ok(!!driven, "no car is marked as driven");
+      if (driven) {
+        ok(Math.hypot(driven.at[0] - after.car.x, driven.at[2] - after.car.z) < 0.3, "the car is not parked where it stopped");
+        ok(Math.hypot(outAt.x - driven.at[0], outAt.z - driven.at[2]) > 1.2 && Math.hypot(outAt.x - driven.at[0], outAt.z - driven.at[2]) < 3.5, "he did not get out beside the car");
+      }
+      void mine; void startCar; void cb;
+      ok(bodyFree(outAt.x, outAt.z, 0, { r: 0.32, at: [0] }, (await rcall("obstacles")) as Obstacles), "he got out inside something");
+      await shot("drive-out");
+      // the parked car is something to walk round: walk into it
+      await call("cmd", { fn: "stick", args: [0, 0] });
+      // an error in the ride puts him back on his feet and switches the ride off
+      await call("cmd", { fn: "place", args: [-5.5, 6.5, -Math.PI / 2] });
+      await sleep(800);
+      ok(await rcall("mountHorse") === true, "mountHorse refused (fault test)");
+      await until("on the horse again", (s) => s.ride?.mode === "horse" && s.ride.phase === "on", 120000);
+      await rcall("fault");
+      s0 = await until("the fault to put him back on his feet", (s) => s.ride?.mode === "walk" && s.ride.off, 30000);
+      console.log(`   fault: mode ${s0.ride?.mode}, off ${s0.ride?.off}; the garden is still drawing: ${(await st()).stats.calls} draws`);
+      ok(await rcall("mountHorse") === false, "the ride is not off after a fault");
+      console.log(`   JS per frame (median, V8 on this machine, Hermes will be several times more): on foot ${jsWalk.median.toFixed(2)} ms, riding ${jsRide.median.toFixed(2)} ms, driving ${jsDrive.median.toFixed(2)} ms`);
+      return { jsWalk, jsRide, jsDrive };
+    };
+    for (const s of RIDE_ONLY ? [] : spots) {
       await call("cmd", { fn: "place", args: s.at });
       await sleep(1800);
       // frames drawn over 3 s standing there
@@ -209,7 +398,7 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
     await call("cmd", { fn: "place", args: home });
     await sleep(800);
     const w0 = (await call("state") as { where: { x: number; z: number; yaw: number } }).where;
-    if (PLACE !== "house") {
+    if (PLACE !== "house" && !RIDE_ONLY) {
     await call("cmd", { fn: "stick", args: [0, 1] });
     // software GL draws about a frame a second (less when the machine is busy): wait until he has moved, up to 20 s
     const tStick = Date.now();
@@ -273,6 +462,7 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.log(`   F
       console.log(`   walked at the doorway: doors=${JSON.stringify(door.doors)} now at ${door.where.x.toFixed(1)}, ${door.where.z.toFixed(1)}`);
       ok(door.doors.includes("door"), "walking through the doorway did not call onDoor");
     }
+    if (PLACE === "garden" && !args.includes("--no-ride")) await rideFlow();
     // pause holds the frames, resume goes on
     await call("cmd", { fn: "pause" });
     await sleep(300);
