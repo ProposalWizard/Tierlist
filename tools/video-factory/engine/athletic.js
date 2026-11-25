@@ -652,3 +652,21 @@ const vs = S.versus; S.versus = (g, t, dur, sc) => {
   if (sc.banner) { const k = pop(cl((t - (sc.bannerAt ?? 1.2)) * 4)); if (k > 0) { g.save(); g.translate(540, sc.bannerY || 300); g.scale(k, k); g.rotate(-0.03); g.fillStyle = YEL; g.strokeStyle = INK; g.lineWidth = 10; g.font = "110px Anton"; const w = Math.min(1000, g.measureText(sc.banner).width + 80); rr(g, -w / 2, -90, w, 180, 24); g.fill(); g.stroke(); T(g, sc.banner, 0, 40, 110, { color: INK, maxW: w - 50 }); g.restore(); } }
 };
 })();
+
+// ex16: duel, two big cut-out portraits side by side (sc.left / sc.right = image keys, leftName / rightName),
+// VS in the middle, sc.crossAt greys and strikes the left one, sc.banner pops in at sc.bannerAt.
+(() => {
+const X = window.EXPLAINER, S = X.S, T = X.T, rr = X.rr, INK = X.INK, YEL = X.YEL, IMG = X.IMG, cl = X.cl, ez = X.ez, pop = X.pop, bg = X.bg;
+S.duel = (g, t, dur, sc) => {
+  bg(g, sc.bg || "navy", t);
+  const side = (key, cx, d, name, col) => { const im = IMG[key] && IMG[key].naturalWidth ? IMG[key] : null, k = ez(cl((t - d) * 2.6)); if (!im) return;
+    g.save(); g.beginPath(); g.rect(cx - 270, 0, 540, 1920); g.clip(); g.fillStyle = col; g.globalAlpha = 0.22; g.fillRect(cx - 270, 0, 540, 1920); g.globalAlpha = 1;
+    const h = 1000, w = h * im.width / im.height, z = 1 + 0.04 * (t / dur); g.translate(cx, 1380 + 300 * (1 - k)); g.scale(z, z); g.drawImage(im, -w / 2, -h, w, h); g.restore();
+    const nk = cl((t - d - 0.3) * 3); if (nk > 0) { g.save(); g.translate(cx, 1240); g.scale(pop(nk), pop(nk)); g.font = "84px Anton"; const tw = g.measureText(name).width + 60; g.fillStyle = INK; rr(g, -tw / 2, -70, tw, 110, 18); g.fill(); T(g, name, 0, 18, 84, { color: "#fff" }); g.restore(); } };
+  side(sc.left, 270, 0, sc.leftName, "#e2384a"); side(sc.right, 810, 0.25, sc.rightName, "#2bd47a");
+  g.fillStyle = INK; g.fillRect(534, 0, 12, 1920);
+  const vk = pop(cl((t - 0.6) * 3)); if (vk > 0) { g.save(); g.translate(540, 760); g.scale(vk, vk); g.fillStyle = "#e2384a"; g.strokeStyle = INK; g.lineWidth = 8; g.beginPath(); g.arc(0, 0, 90, 0, 7); g.fill(); g.stroke(); T(g, "VS", 0, 30, 90); g.restore(); }
+  if (sc.crossAt != null) { const c = cl((t - sc.crossAt) * 3); if (c > 0) { g.fillStyle = `rgba(20,20,30,${0.55 * c})`; g.fillRect(0, 0, 534, 1920); g.save(); g.strokeStyle = "#e2384a"; g.lineWidth = 28; g.lineCap = "round"; g.beginPath(); g.moveTo(70, 1320); g.lineTo(70 + 400 * c, 1320 - 900 * c); g.stroke(); g.restore(); } }
+  if (sc.banner) { const k = pop(cl((t - (sc.bannerAt ?? 1.2)) * 4)); if (k > 0) { g.save(); g.translate(540, sc.bannerY || 330); g.scale(k, k); g.rotate(-0.03); g.fillStyle = YEL; g.strokeStyle = INK; g.lineWidth = 10; g.font = "120px Anton"; const w = Math.min(1000, g.measureText(sc.banner).width + 80); rr(g, -w / 2, -95, w, 190, 24); g.fill(); g.stroke(); T(g, sc.banner, 0, 44, 120, { color: INK, maxW: w - 50 }); g.restore(); } }
+};
+})();

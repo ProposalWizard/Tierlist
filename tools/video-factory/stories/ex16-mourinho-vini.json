@@ -54,7 +54,8 @@
       "meter": {
        "from": 0,
        "to": -0.85,
-       "at": 1.0
+       "at": 1.0,
+       "y": 1180
       }
      }
     ],
@@ -76,7 +77,8 @@
       "meter": {
        "from": -0.85,
        "to": 0.9,
-       "at": 1.6
+       "at": 1.6,
+       "y": 1180
       }
      }
     ]
@@ -96,7 +98,7 @@
       "bubble": {
        "text": "\"VERY EMPATHETIC…|THAT'S FUNDAMENTAL\"",
        "at": 2.2,
-       "y": 1450
+       "y": 1120
       }
      }
     ]
@@ -247,21 +249,15 @@
    "text": "Same bench. Different feeling.",
    "scene": {
     "bg": "navy",
-    "type": "versus",
+    "type": "duel",
     "steps": [
      {
-      "type": "versus",
+      "type": "duel",
       "w": 0,
-      "left": {
-       "image": "xabi_cut"
-      },
-      "right": {
-       "image": "jose_cut"
-      },
+      "left": "xabi_cut",
+      "right": "jose_cut",
       "leftName": "ALONSO",
       "rightName": "MOURINHO",
-      "leftNum": "",
-      "rightNum": "",
       "crossAt": 1.3
      }
     ]
@@ -282,7 +278,8 @@
       "meter": {
        "from": 0.3,
        "to": 0.95,
-       "at": 1.5
+       "at": 1.5,
+       "y": 1180
       }
      }
     ]
@@ -292,21 +289,15 @@
    "text": "It's not tactics. It's how you treat people. So who handled Vini better?",
    "scene": {
     "bg": "navy",
-    "type": "versus",
+    "type": "duel",
     "steps": [
      {
-      "type": "versus",
+      "type": "duel",
       "w": 0,
-      "left": {
-       "image": "xabi_cut"
-      },
-      "right": {
-       "image": "jose_cut"
-      },
+      "left": "xabi_cut",
+      "right": "jose_cut",
       "leftName": "ALONSO",
       "rightName": "MOURINHO",
-      "leftNum": "",
-      "rightNum": "",
       "banner": "WHO GOT IT RIGHT?",
       "bannerAt": 2.4
      }
