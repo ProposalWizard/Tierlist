@@ -1,7 +1,7 @@
 /**
  * THE APP'S OWN "react-native" (metro.config.js sends every `import … from
  * "react-native"` in phone/src and App.tsx here; packages are not touched).
- * Everything is React Native's own, except three things that must behave like
+ * Everything is React Native's own, except these things that must behave like
  * the packed app on every phone:
  *
  *  - Text and TextInput NEVER grow with the phone's "Font size" setting. The
@@ -9,6 +9,9 @@
  *    box was drawn for the same sizes. (React 19 ignores `Text.defaultProps`,
  *    so the prop is set on every Text here. `plugins/withKibAndroid.js` also
  *    pins the Android font scale to 1 for anything that is not a Text.)
+ *  - Every Text follows the packed app's rules for every word: a 1.5 line box when
+ *    it sets none, Anton for bold words of 16 px or more, a soft shadow on white
+ *    and amber words (ui/look/globalText.js; phone/tools/look/GLOBAL-RULES.md).
  *  - Modal is drawn INSIDE the app's own window (OverlayHost in App.tsx). An
  *    Android Modal is a second window: it brings the hidden status and
  *    navigation bars back and is laid out without the camera cut-out.
@@ -36,9 +39,44 @@ function oldScaled(style) {
   return out;
 }
 
+// ── the packed app's rules for every word (ui/look/globalText.js) ─────────────
+const { globalTextStyle } = require("./ui/look/globalText");
+/** Browser only, for the look check: localStorage "kib.look" = "off", or a list of "lh,anton,shadow" to leave out. */
+const LOOK_OFF = (() => {
+  try {
+    if (RN.Platform.OS !== "web" || typeof localStorage === "undefined") return "";
+    return localStorage.getItem("kib.look") || "";
+  } catch {
+    return "";
+  }
+})();
+const ANDROID = RN.Platform.OS === "android";
+// Android: no extra room above and below the letters, so a line is as tall as its lineHeight says.
+const NO_FONT_PAD = { includeFontPadding: false };
+/** Set while inside a Text: a Text in a Text takes its line box and font from the outer one. */
+const InText = React.createContext(null);
+
 function Text(props) {
+  const parent = React.useContext(InText);
+  const plain = OLD_SCALE !== 1 || LOOK_OFF === "off";
+  const g = plain ? null : globalTextStyle(RN.StyleSheet.flatten(props.style), parent, props.children);
+  const size = g ? g.fontSize : 14, anton = g ? g.anton : false;
+  const mine = React.useMemo(() => ({ fontSize: size, anton }), [size, anton]);
   if (OLD_SCALE !== 1) return React.createElement(RN.Text, { ...props, style: oldScaled(props.style) });
-  return React.createElement(RN.Text, { ...props, allowFontScaling: false });
+  if (!g) return React.createElement(RN.Text, { ...props, allowFontScaling: false });
+  let add = g.add;
+  if (add && LOOK_OFF) {
+    add = { ...add };
+    if (LOOK_OFF.includes("lh")) delete add.lineHeight;
+    if (LOOK_OFF.includes("anton")) { delete add.fontFamily; delete add.fontWeight; delete add.letterSpacing; }
+    if (LOOK_OFF.includes("shadow")) { delete add.textShadowColor; delete add.textShadowOffset; delete add.textShadowRadius; }
+  }
+  const pad = ANDROID && !parent ? NO_FONT_PAD : null;
+  const style = add || pad ? [pad, props.style, add] : props.style;
+  const el = React.createElement(RN.Text, { ...props, style, allowFontScaling: false });
+  // only words inside: nothing in it can be another Text
+  if (typeof props.children === "string" || typeof props.children === "number") return el;
+  return React.createElement(InText.Provider, { value: mine }, el);
 }
 Text.displayName = "Text";
 

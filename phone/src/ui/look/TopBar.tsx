@@ -1,16 +1,17 @@
 /**
  * THE WEBSITE'S TOP BAR (ui/GameBar.tsx + ui/TopHud.tsx, glass skin):
- *   row 1: your name (Anton), AGE pill, ★ money pill, "?" and ⚙;
+ *   row 1 (48 tall): your name (Anton 15), AGE chip, ★ money chip (numbers in Anton 13), "?" and the gear;
  *   row 2: the star badge (fills with your way through the level, the level on
  *   it) standing on a gold bar, and the lightning bolt on the energy bar.
  *
  *   <TopBar career={career} onHelp={…} onSettings={…} onStarPass={…} />
  *   <TopBar career={career} left="happiness" | "reputation" />   (Relations / Style, TopHud HUD_SPEC)
  *
- * Under the phone's status bar (it pads itself by the safe area). A frosted
- * blue band with rounded bottom corners; no blur, no animation.
+ * Under the phone's status bar (it pads itself by the safe area). Two see-through
+ * blue-slate bands, each with rounded bottom corners and a light line, as the
+ * website's two bars; what is behind shows through (no blur, no animation).
  */
-import { Image, Text, View, type ViewStyle } from "react-native";
+import { Image, Text, View, type TextStyle, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CareerState } from "@/lib/star/types";
 import { starStatus } from "@/lib/star/starPoints";
@@ -23,8 +24,7 @@ import { Press } from "../Press";
 import { useTourTarget } from "../tour";
 import { FONT } from "./fonts";
 import { ICON } from "./pictures";
-import { Pill } from "./Text";
-import { LOOK } from "./tokens";
+import { LOOK, NO_SHADOW } from "./tokens";
 
 /** Green / amber / red by level (ui/StatBar.tsx levelColors). */
 export function levelColors(v: number): [string, string] {
@@ -32,43 +32,72 @@ export function levelColors(v: number): [string, string] {
 }
 const GOLD: [string, string] = ["#f59e0b", "#fde047"];
 
-export function TopBar({ career, onHelp, onSettings, onStarPass, left = "star" }: {
+/** The see-through blue-slate of both bars (glassLook 4: rgba(14,30,52,.42) with a blur behind; a little stronger here, no blur). */
+const BAND = "rgba(14,30,52,0.5)";
+const BAND_LINE = "rgba(255,255,255,0.26)";
+
+export function TopBar({ career, onHelp, onSettings, onStarPass, left = "star", under }: {
   career: CareerState; onHelp?: () => void; onSettings?: () => void; onStarPass?: () => void; left?: "star" | "happiness" | "reputation";
+  /** A colour under the glass, for a screen whose top is dark on the website (the League). */
+  under?: string;
 }) {
   const inset = useSafeAreaInsets();
   const p = career.player;
   // Named for the coach tour (ui/tour.tsx), as the website's data-tour names.
   const moneyT = useTourTarget("money"), ratingT = useTourTarget("rating"), energyT = useTourTarget("energy");
   return (
-    <View style={{
-      paddingTop: inset.top + 6, paddingHorizontal: 10, paddingBottom: 10,
-      backgroundImage: `linear-gradient(180deg, ${LOOK.barTop}, ${LOOK.barBottom})`,
-      borderBottomLeftRadius: 20, borderBottomRightRadius: 20,
-      borderBottomWidth: 1, borderColor: "rgba(255,255,255,0.26)",
-      boxShadow: "0px 4px 10px -4px rgba(0,0,0,0.4)",
-    } as ViewStyle}>
-      {/* row 1 */}
-      <View style={{ height: 40, flexDirection: "row", alignItems: "center", gap: 6 }}>
-        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flex: 1, color: "#fff", fontFamily: FONT.display, fontSize: 17, letterSpacing: 0.4, textTransform: "uppercase" }}>{`${p.firstName} ${p.lastName}`}</Text>
-        <Pill label="Age" value={p.age} />
-        <View {...moneyT}><Pill icon={<Text style={{ color: LOOK.amber, fontSize: 12 }}>★</Text>} value={formatWallet(Math.round(career.money))} /></View>
-        {onHelp ? <SquareBtn onPress={onHelp}><Text style={{ color: "#fff", fontSize: 17, fontWeight: "900" }}>?</Text></SquareBtn> : <View style={{ width: 32 }} />}
-        <SquareBtn onPress={onSettings}><Text style={{ color: "#fff", fontSize: 17 }}>⚙</Text></SquareBtn>
+    <View style={under ? { backgroundColor: under } : undefined}>
+      {/* row 1 (ui/GameBar.tsx): 48 tall, 12 at the sides, its own rounded foot and line */}
+      <View style={{
+        height: 48 + inset.top, paddingTop: inset.top, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 6,
+        backgroundColor: BAND, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, borderBottomWidth: 1, borderColor: BAND_LINE,
+      }}>
+        <Text numberOfLines={1} style={{ flex: 1, color: "#fff", fontFamily: FONT.display, fontSize: 15, lineHeight: 18.75, letterSpacing: 0.375, textTransform: "uppercase" }}>{`${p.firstName} ${p.lastName}`}</Text>
+        <Chip baseline>
+          <Text style={{ color: LOOK.inkSoft, fontSize: 9, lineHeight: 9, fontWeight: "900", letterSpacing: 1.08 }}>AGE</Text>
+          <Text style={NUM}>{p.age}</Text>
+        </Chip>
+        <View {...moneyT}>
+          <Chip>
+            <Text style={{ color: LOOK.amber, fontSize: 12, lineHeight: 12 }}>★</Text>
+            <Text numberOfLines={1} style={NUM}>{formatWallet(Math.round(career.money))}</Text>
+          </Chip>
+        </View>
+        {onHelp ? <SquareBtn onPress={onHelp}><Text style={{ color: "#fff", fontFamily: FONT.display, fontSize: 17, lineHeight: 17, ...NO_SHADOW }}>?</Text></SquareBtn> : <View style={{ width: 32 }} />}
+        <SquareBtn onPress={onSettings}><Image source={ICON.gear} style={{ width: 18, height: 18 }} /></SquareBtn>
       </View>
-      {/* row 2: rating | energy */}
-      <View style={{ flexDirection: "row", marginTop: 10, height: 36 }}>
-        {left === "star" ? <View {...ratingT} style={{ flex: 1 }}><StarCell career={career} onPress={onStarPass} /></View>
-          : left === "happiness" ? <Meter value={happinessOf(career)} colors={levelColors(happinessOf(career))} icon={<Text style={{ fontSize: 26 }}>😊</Text>} />
-          : <Meter value={career.reputation} colors={["#0ea5e9", "#38bdf8"]} icon={<Image source={ICON.world} style={{ width: 40, height: 40 }} />} />}
-        <View {...energyT} style={{ flex: 1 }}><Meter value={career.energy} colors={levelColors(career.energy)} icon={<Image source={ICON.energy} style={{ width: 44, height: 44 }} />} /></View>
+      {/* row 2 (ui/TopHud.tsx): rating | energy, 8 at the sides, 10 above, 8 below */}
+      <View style={{
+        flexDirection: "row", paddingHorizontal: 8, paddingTop: 10, paddingBottom: 8,
+        backgroundColor: BAND, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, borderBottomWidth: 1, borderColor: BAND_LINE,
+        boxShadow: "0px 4px 10px -4px rgba(0,0,0,0.4)",
+      } as ViewStyle}>
+        <View style={{ flex: 1, height: 36 }}>
+          {left === "star" ? <View {...ratingT} style={{ flex: 1 }}><StarCell career={career} onPress={onStarPass} /></View>
+            : left === "happiness" ? <Meter value={happinessOf(career)} colors={levelColors(happinessOf(career))} icon={<Text style={{ fontSize: 26 }}>😊</Text>} />
+            : <Meter value={career.reputation} colors={["#0ea5e9", "#38bdf8"]} icon={<Image source={ICON.world} style={{ width: 40, height: 40 }} />} />}
+        </View>
+        <View {...energyT} style={{ flex: 1, height: 36 }}><Meter value={career.energy} colors={levelColors(career.energy)} icon={<Image source={ICON.energy} style={{ width: 44, height: 44 }} />} /></View>
       </View>
+    </View>
+  );
+}
+
+/** The top bar's numbers (`.sk-num`): Anton 13 on a 13 line. */
+const NUM = { color: "#fff", fontFamily: FONT.display, fontSize: 13, lineHeight: 13, fontVariant: ["tabular-nums"] } as TextStyle;
+
+/** AGE 18 and ★ 500k (`.sk-top-chip`): white 16 %, a 1 px light rim inside, 6 and 4 of padding. */
+function Chip({ children, baseline }: { children: React.ReactNode; baseline?: boolean }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: baseline ? "baseline" : "center", gap: 4, paddingHorizontal: 6, paddingVertical: 4, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.16)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.26)" } as ViewStyle}>
+      {children}
     </View>
   );
 }
 
 function SquareBtn({ onPress, children }: { onPress?: () => void; children: React.ReactNode }) {
   return (
-    <Press onPress={onPress} style={{ width: 32, height: 32, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.16)", borderWidth: 1, borderColor: "rgba(255,255,255,0.3)" }}>
+    <Press onPress={onPress} style={{ width: 32, height: 32, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.16)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.3)" } as ViewStyle}>
       {children}
     </Press>
   );
@@ -112,7 +141,7 @@ function StarCell({ career, onPress }: { career: CareerState; onPress?: () => vo
   const dot = waiting ? (
     <View pointerEvents="none" style={{ position: "absolute", left: 34, top: -6, width: 15, height: 15, borderRadius: 8, alignItems: "center", justifyContent: "center",
       backgroundImage: "radial-gradient(circle at 35% 30%, #fca5a5 0%, #ef4444 45%, #b91c1c 100%)", boxShadow: "0px 0px 0px 1.5px #fff, 0px 0px 8px rgba(239,68,68,0.9)" } as ViewStyle}>
-      <Text style={{ color: "#fff", fontSize: 10, lineHeight: 12, fontWeight: "900" }}>!</Text>
+      <Text style={{ color: "#fff", fontSize: 10, lineHeight: 10, fontWeight: "900", textShadowColor: "rgba(0,0,0,0.4)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 }}>!</Text>
     </View>
   ) : null;
   return onPress ? <Press onPress={onPress} style={{ flex: 1 }}>{cell}{dot}</Press> : <View style={{ flex: 1 }}>{cell}</View>;
@@ -134,7 +163,7 @@ export function FillStar({ fraction, level, size = 44 }: { fraction: number; lev
       </View>
       {level !== undefined && (
         <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center", paddingTop: 4 }}>
-          <Text style={{ color: "#fff", fontSize: Math.round(size * 0.32), fontWeight: "900", textShadowColor: "#5b3a00", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>{level}</Text>
+          <Text style={{ color: "#fff", fontFamily: FONT.display, fontSize: Math.round(size * 0.32), lineHeight: Math.round(size * 0.32), fontVariant: ["tabular-nums"], textShadowColor: "#5b3a00", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>{level}</Text>
         </View>
       )}
     </View>

@@ -123,7 +123,7 @@ export function Home({ career, onQuit, onLeague }: { career: CareerState; onQuit
   return (
     <View style={{ flex: 1, backgroundColor: "#0b1a2e" }} {...swipe.panHandlers}>
       <Backdrop kind="home" sky={sky} lineY={lineY} />
-      <TopBar career={career}
+      <TopBar career={career} under="#186ec6"
         onHelp={() => askTour(HELP_TOURS.home)}
         onSettings={() => nav.go("career-settings")}
         onStarPass={SCREENS["star-pass"] ? () => nav.go("star-pass") : undefined} />
@@ -210,7 +210,7 @@ function NextMatch({ career, next }: { career: CareerState; next: Fixture | null
     <View style={{ flexDirection: "row", gap: 3 }}>
       {five.map((r, i) => (
         <View key={i} style={{ width: 15, height: 15, alignItems: "center", justifyContent: "center", backgroundColor: r === "W" ? "#10b981" : r === "D" ? "#6b7280" : "#dc2626" }}>
-          <Text style={{ color: "#fff", fontSize: 10, fontWeight: "900" }}>{r}</Text>
+          <Text style={{ color: "#fff", fontSize: 10, lineHeight: 10, fontWeight: "900" }}>{r}</Text>
         </View>
       ))}
     </View>
@@ -233,16 +233,16 @@ function NextMatch({ career, next }: { career: CareerState; next: Fixture | null
   return (
     <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4, height: 92 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", height: 15 }}>
-        <Text style={[{ color: LOOK.emerald300, fontSize: 10, fontWeight: "900", letterSpacing: 1.8 }, shadow]}>NEXT MATCH</Text>
-        <Text numberOfLines={1} style={[{ color: "rgba(255,255,255,0.8)", fontSize: 10, fontWeight: "900", letterSpacing: 1, maxWidth: "62%" }, shadow]}>{comp.toUpperCase()}</Text>
+        <Text style={[{ color: LOOK.emerald300, fontSize: 10, lineHeight: 10, fontWeight: "900", letterSpacing: 1.8 }, shadow]}>NEXT MATCH</Text>
+        <Text numberOfLines={1} style={[{ color: "rgba(255,255,255,0.75)", fontSize: 10, lineHeight: 10, fontWeight: "900", letterSpacing: 0.5, maxWidth: "62%" }, shadow]}>{comp.toUpperCase()}</Text>
       </View>
       <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "center", gap: 4, marginTop: 2 }}>
         <Side club={home} you={home === mine} />
-        <View style={{ height: 34, width: 18, alignItems: "center", justifyContent: "center" }}><Text style={[{ color: "rgba(255,255,255,0.9)", fontSize: 16, fontWeight: "900" }, shadow]}>v</Text></View>
+        <View style={{ height: 34, width: 18, alignItems: "center", justifyContent: "center" }}><Text style={[{ color: "rgba(255,255,255,0.9)", fontSize: 16, lineHeight: 16, fontWeight: "900" }, shadow]}>v</Text></View>
         <Side club={away} you={away === mine} />
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, height: 16, marginTop: 2 }}>
-        <Text style={[{ color: "#fff", fontWeight: "900", fontSize: 11 }, shadow]}>{date ?? `Week ${next.week}`}</Text>
+        <Text style={[{ color: "#fff", fontWeight: "900", fontSize: 11, lineHeight: 11 }, shadow]}>{date ?? `Week ${next.week}`}</Text>
         <View style={{ backgroundColor: days <= 1 ? "#fbbf24" : "rgba(255,255,255,0.12)", paddingHorizontal: 6 }}>
           <Text style={{ color: days <= 1 ? "#030712" : "#fde68a", fontWeight: "900", fontSize: 10, lineHeight: 15 }}>⏱ {when}</Text>
         </View>
@@ -259,7 +259,7 @@ function Side({ club, you }: { club: string; you: boolean }) {
       <View style={[{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }, you && ({ boxShadow: "0px 0px 12px rgba(110,231,183,0.6)" } as ViewStyle)]}>
         <ClubCrest club={club} size={32} />
       </View>
-      <Text numberOfLines={1} style={[{ color: you ? LOOK.emerald300 : "#fff", fontWeight: "900", fontSize: 11.5 }, shadow]}>{shortClub(club)}</Text>
+      <Text numberOfLines={1} style={[{ color: you ? LOOK.emerald300 : "#fff", fontWeight: "900", fontSize: 11.5, lineHeight: 14.375 }, shadow]}>{shortClub(club)}</Text>
     </View>
   );
 }
@@ -284,9 +284,9 @@ function StatTiles({ career }: { career: CareerState }) {
         } as ViewStyle}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Image source={t.icon} resizeMode="contain" style={{ width: 22, height: 22 }} />
-            <Text style={{ color: "#fff", fontSize: 23, fontWeight: "900", textShadowColor: rgba(t.color, 0.7), textShadowRadius: 10, textShadowOffset: { width: 0, height: 0 } }}>{t.value}</Text>
+            <Text style={{ color: "#fff", fontSize: 23, lineHeight: 23, fontWeight: "900", textShadowColor: rgba(t.color, 0.7), textShadowRadius: 10, textShadowOffset: { width: 0, height: 0 } }}>{t.value}</Text>
           </View>
-          <Text style={{ color: "#fff", fontSize: 10, fontWeight: "900", letterSpacing: 1.4, marginTop: 4 }}>{t.label.toUpperCase()}</Text>
+          <Text style={{ color: "#fff", fontSize: 10, lineHeight: 10, fontWeight: "900", letterSpacing: 1.4, marginTop: 4 }}>{t.label.toUpperCase()}</Text>
           {t.bar !== undefined && (
             <View style={{ position: "absolute", left: 6, right: 6, bottom: 4, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.15)", overflow: "hidden" }}>
               <View style={{ width: `${Math.max(0, Math.min(100, t.bar))}%`, height: "100%", borderRadius: 2, backgroundColor: t.color }} />
@@ -308,14 +308,14 @@ function LeagueStrip({ career, onOpen }: { career: CareerState; onOpen?: () => v
   return (
     <View style={{ marginTop: 4, zIndex: 3 }}>
       <Press onPress={() => setOpen((o) => !o)} style={{ height: 24, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 8, ...(open ? { backgroundColor: "rgb(4,16,10)" } : { backgroundImage: "linear-gradient(180deg, rgba(0,0,0,0.28), rgba(0,0,0,0.12))" }) } as ViewStyle}>
-        <Text numberOfLines={1} style={[{ flex: 1, color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1.5 }, shadow]}>🏆 {leagueNameFor(divisionOf(career)).toUpperCase()}</Text>
+        <Text numberOfLines={1} style={[{ flex: 1, color: "#fff", fontSize: 11, lineHeight: 11, fontWeight: "900", letterSpacing: 1.5 }, shadow]}>🏆 {leagueNameFor(divisionOf(career)).toUpperCase()}</Text>
         {open && onOpen && (
           <Press onPress={onOpen} style={{ borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, backgroundColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)" }}>
             <Text style={{ color: "#fff", fontSize: 10, fontWeight: "900", letterSpacing: 0.8 }}>FULL TABLE ›</Text>
           </Press>
         )}
-        <Text style={[{ color: "#fef08a", fontSize: 13, fontWeight: "900" }, shadow]}>{me + 1}<Text style={{ fontSize: 9 }}>{ordinal(me + 1).replace(/^\d+/, "")}</Text></Text>
-        <Text style={[{ color: "#fff", fontSize: 12, fontWeight: "900", transform: [{ rotate: open ? "180deg" : "0deg" }] }, shadow]}>▾</Text>
+        <Text style={[{ color: "#fef08a", fontSize: 13, lineHeight: 13, fontWeight: "900" }, shadow]}>{me + 1}<Text style={{ fontSize: 9 }}>{ordinal(me + 1).replace(/^\d+/, "")}</Text></Text>
+        <Text style={[{ color: "#fff", fontSize: 12, lineHeight: 12, fontWeight: "900", transform: [{ rotate: open ? "180deg" : "0deg" }] }, shadow]}>▾</Text>
       </Press>
       {open && (
         <View style={{ position: "absolute", left: 0, right: 0, top: 24, backgroundColor: "rgb(4,16,10)", paddingHorizontal: 12, paddingBottom: 6, boxShadow: "0px 8px 18px rgba(0,0,0,0.5)" } as ViewStyle}>
@@ -347,8 +347,8 @@ function BootsLine({ career }: { career: CareerState }) {
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, maxWidth: "100%", borderRadius: 4, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: "rgba(5,8,15,0.72)", boxShadow: "inset 0px 0px 0px 1px rgba(251,146,60,0.55)" } as ViewStyle}>
         <Text style={{ fontSize: 13 }}>👟</Text>
         {left > 0
-          ? <Text numberOfLines={1} style={{ color: "#fff", fontSize: 11, fontWeight: "900", flexShrink: 1 }}>{b.name}{gives ? <Text style={{ color: "#fde68a" }}>  {gives}</Text> : null}<Text style={{ color: "rgba(255,255,255,0.7)" }}>  · {left} {left === 1 ? "match" : "matches"} left</Text></Text>
-          : <Text style={{ color: "#fde68a", fontSize: 11, fontWeight: "900" }}>No boots: buy a pair in the Shop</Text>}
+          ? <Text numberOfLines={1} style={{ color: "#fff", fontSize: 11, lineHeight: 11, fontWeight: "900", flexShrink: 1 }}>{b.name}{gives ? <Text style={{ color: "#fde68a" }}>  {gives}</Text> : null}<Text style={{ color: "rgba(255,255,255,0.7)" }}>  · {left} {left === 1 ? "match" : "matches"} left</Text></Text>
+          : <Text style={{ color: "#fde68a", fontSize: 11, lineHeight: 11, fontWeight: "900" }}>No boots: buy a pair in the Shop</Text>}
       </View>
     </View>
   );
@@ -386,14 +386,14 @@ function CanTile({ can: c, career }: { can: KibCan; career: CareerState }) {
           <FloatUp trigger={drank} text="−1" color="#fff" size={12} rise={16} ms={800} style={{ left: 4, top: 0 }} />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={{ color: "#fff", fontSize: name.length > 5 ? 10.5 : 12.5, fontWeight: "900", paddingLeft: 4 }}>{name}</Text>
+          <Text numberOfLines={1} style={{ color: "#fff", fontSize: name.length > 5 ? 10.5 : 12.5, lineHeight: name.length > 5 ? 13.125 : 15.625, fontWeight: "900", paddingLeft: 4 }}>{name}</Text>
           <Text numberOfLines={2} style={{ color: "rgba(255,255,255,0.8)", fontSize: 9.5, fontWeight: "700", lineHeight: 11 }}>{effect}</Text>
         </View>
       </View>
       <View style={{ flexDirection: "row", gap: 4, marginTop: 6 }}>
         <View {...useT} style={{ flex: 1 }}>
           <LookButton kind="accent" accent={accent} small disabled={!canUse} onPress={() => flow.useCan(c.id)} style={{ borderRadius: 6, paddingVertical: 4 }}>
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: canUse ? "#111" : "#fff", fontSize: 10.5, fontWeight: "900", letterSpacing: 0 }}>{ready ? "✓" : full ? "FULL" : "USE"}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: canUse ? "#111" : "rgba(255,255,255,0.45)", fontSize: 10.5, fontWeight: "900", letterSpacing: 0 }}>{ready ? "✓" : full ? "FULL" : "USE"}</Text>
           </LookButton>
         </View>
         <LookButton kind="dark" small disabled={career.money < price} onPress={() => flow.buyCan(c)} style={{ flex: 1, borderRadius: 6, paddingVertical: 4 }}>
@@ -411,8 +411,8 @@ function Arrow({ side, icon, label, onPress, tour }: { side: "left" | "right"; i
     <View {...t}>
     <Press onPress={onPress} style={{ height: 24, flexDirection: side === "left" ? "row" : "row-reverse", alignItems: "center", gap: 4, paddingHorizontal: 6, borderRadius: 2, backgroundColor: "rgba(8,20,38,0.34)", opacity: 0.8 }}>
       <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }}>{side === "left" ? "◀" : "▶"}</Text>
-      <Text style={{ fontSize: 12 }}>{icon}</Text>
-      <Text style={{ color: "#fff", fontSize: 10.5, fontWeight: "700", letterSpacing: 0.6 }}>{label.toUpperCase()}</Text>
+      <Text style={{ fontSize: 11, lineHeight: 13 }}>{icon}</Text>
+      <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 9.5, lineHeight: 9.5, fontWeight: "600", letterSpacing: 0.24, textShadowColor: "rgba(0,0,0,0.85)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>{label.toUpperCase()}</Text>
     </Press>
     </View>
   );

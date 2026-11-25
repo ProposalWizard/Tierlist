@@ -733,7 +733,7 @@ export function ShopScreen({ params }: { params?: Record<string, unknown> }) {
 
       <ShopBar active={tab} onPick={(t) => { setTab(t); setMoreOpen(false); setFameOpen(false); }} onSponsors={() => nav.go("sponsors")}
         on3D={SCREENS["shop-3d"] && !partOff("3d") ? () => nav.go("shop-3d", { from: "shop" }) : undefined} />
-      <BottomBar active={null} />
+      <BottomBar active={null} plain />
 
       {sheet && sheetView ? (
         <DetailSheet v={sheetView} career={career} boots={boots} onLevel={(lv) => setPick((p) => ({ ...p, [sheet.key]: lv }))} onClose={() => { setSheet(null); setPick({}); }} />

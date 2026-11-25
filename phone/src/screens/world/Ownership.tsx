@@ -22,8 +22,8 @@ function RepBar({ label, value }: { label: string; value: number }) {
   return (
     <View style={{ flex: 1 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 3 }}>
-        <Text numberOfLines={1} style={{ color: C.text, fontSize: 10, fontWeight: "900", flex: 1 }}>{label}</Text>
-        <Text style={{ color: C.text, fontSize: 10, fontWeight: "900" }}>{value}</Text>
+        <Text numberOfLines={1} style={{ color: C.text, fontSize: 9, fontWeight: "900", flex: 1 }}>{label}</Text>
+        <Text style={{ color: C.text, fontSize: 9, fontWeight: "900" }}>{value}</Text>
       </View>
       <Fill value={value} color={C.green} height={8} />
     </View>
@@ -43,8 +43,8 @@ export function OwnershipScreen() {
       <Press onPress={() => nav.go("reputation")}>
         <Card tone="rgba(16,185,129,0.6)">
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
-            <Text style={{ color: C.text, fontSize: 11, fontWeight: "900", letterSpacing: 1.5 }}>🌍 REPUTATION</Text>
-            <Text style={{ color: "#6ee7b7", fontSize: 11, fontWeight: "900" }}>Details →</Text>
+            <Text style={{ color: C.text, fontSize: 10, fontWeight: "900", letterSpacing: 1 }}>🌍 REPUTATION</Text>
+            <Text style={{ color: "#6ee7b7", fontSize: 10, fontWeight: "900" }}>Details →</Text>
           </View>
           <View style={{ flexDirection: "row", gap: 10 }}>
             <RepBar label={`Reputation · ${reputationLabel(rep)}`} value={rep} />
@@ -56,20 +56,20 @@ export function OwnershipScreen() {
       <Press onPress={() => nav.go("rule-book")}>
         <Card tone="rgba(99,102,241,0.6)">
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
-            <Text style={{ color: C.text, fontSize: 11, fontWeight: "900", letterSpacing: 1.5 }}>⚖️ RULE BOOK & GOVERNING BODIES</Text>
-            <Text style={{ color: "#a5b4fc", fontSize: 11, fontWeight: "900" }}>Open →</Text>
+            <Text style={{ color: C.text, fontSize: 10, fontWeight: "900", letterSpacing: 1 }}>⚖️ RULE BOOK & GOVERNING BODIES</Text>
+            <Text style={{ color: "#a5b4fc", fontSize: 10, fontWeight: "900" }}>Open →</Text>
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             {GOVERNING_BODIES.map((b) => {
               const president = isBodyPresident(career, b);
               return (
                 <View key={b} style={{ borderRadius: 99, paddingHorizontal: 9, paddingVertical: 4, backgroundColor: president ? C.gold : C.panel2 }}>
-                  <Text style={{ color: president ? "#111" : C.text, fontSize: 11, fontWeight: "900" }}>{president ? "👑" : ""}{b} {influenceIn(career, b)}</Text>
+                  <Text style={{ color: president ? "#111" : C.text, fontSize: 9, fontWeight: "900" }}>{president ? "👑" : ""}{b} {influenceIn(career, b)}</Text>
                 </View>
               );
             })}
           </View>
-          <Text style={{ color: C.text, fontSize: 11, fontWeight: "700", marginTop: 8 }}>
+          <Text style={{ color: C.text, fontSize: 9, fontWeight: "700", marginTop: 8 }}>
             {anyPresidency ? "You hold a presidency — real powers unlocked."
               : anyCanPropose ? "You have enough influence to propose a rule change."
               : "Invest influence with a governing body to start proposing changes."}

@@ -58,3 +58,6 @@ export const GLASS_EDGE = `inset 0px 1px 0px rgba(255,255,255,0.22), inset 0px 0
 
 /** Text that must read over a bright sky (glassLook 3). */
 export const TEXT_SHADOW = { textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 } as const;
+
+/** Switches the soft shadow off for one Text (the rule for every word gives white and amber words one: ui/look/globalText.js). */
+export const NO_SHADOW = { textShadowColor: "transparent", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 0 } as const;

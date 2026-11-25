@@ -44,8 +44,8 @@ export function PlayerCardView({ career, scale = 0.93 }: { career: CareerState; 
     <View style={{ gap: 3 }}>
       {keys.map((s) => (
         <View key={s.key} style={{ flexDirection: "row", alignItems: "flex-end", gap: 6 }}>
-          <Text style={{ width: 26, textAlign: "right", fontFamily: FONT.display, fontSize: 19, lineHeight: 21, color: look.ink }}>{data.stats[s.key]}</Text>
-          <Text style={{ fontSize: 13, fontWeight: "700", letterSpacing: 0.4, color: look.soft, marginBottom: 2 }}>{s.label}</Text>
+          <Text style={{ width: 26, textAlign: "right", fontFamily: FONT.display, fontSize: 19, lineHeight: 19, color: look.ink }}>{data.stats[s.key]}</Text>
+          <Text style={{ fontSize: 13, lineHeight: 13, fontWeight: "700", letterSpacing: 0.4, color: look.soft, marginBottom: 2 }}>{s.label}</Text>
         </View>
       ))}
     </View>
@@ -61,15 +61,15 @@ export function PlayerCardView({ career, scale = 0.93 }: { career: CareerState; 
         </View>
         {/* Left column: overall, position, flag, badge. */}
         <View style={{ position: "absolute", left: 22, top: 30, width: 50, alignItems: "center" }}>
-          <Text style={{ fontFamily: FONT.display, fontSize: 44, lineHeight: 46, color: look.ink }}>{data.overall}</Text>
-          <Text style={{ fontFamily: FONT.display, fontSize: 15, lineHeight: 18, color: look.ink }}>{data.position}</Text>
+          <Text style={{ fontFamily: FONT.display, fontSize: 44, lineHeight: 39.6, color: look.ink }}>{data.overall}</Text>
+          <Text style={{ fontFamily: FONT.display, fontSize: 15, lineHeight: 15, marginTop: 2, color: look.ink }}>{data.position}</Text>
           <View style={{ width: 32, height: 1, marginVertical: 6, backgroundColor: look.line }} />
           <ClubBadge club={nation} size={28} />
           <View style={{ height: 6 }} />
           <ClubBadge club={career.player.club} size={28} />
         </View>
         {/* Name. */}
-        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ position: "absolute", left: 24, right: 24, top: 156, textAlign: "center", fontFamily: FONT.display, fontSize: 19, lineHeight: 22, letterSpacing: 0.6, color: look.ink }}>{name}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ position: "absolute", left: 24, right: 24, top: 156, textAlign: "center", fontFamily: FONT.display, fontSize: 19, lineHeight: 19, letterSpacing: 0.6, color: look.ink }}>{name}</Text>
         {/* The six. */}
         <View style={{ position: "absolute", left: 0, right: 0, top: 190, flexDirection: "row", justifyContent: "center", gap: 20 }}>
           {half(CARD_STATS.slice(0, 3))}

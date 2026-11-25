@@ -611,12 +611,13 @@ const NATION_GLOW = "#3b82f6";
 function groupRows(prefix: string, g: GroupView, nation: string): Row[] {
   return [
     row(`${prefix}-t`, <Title style={{ marginTop: 6 }}>{g.title}</Title>),
-    row(`${prefix}-h`, <Cells head cells={["#", "NATION", "P", "W", "D", "GD", "PTS"]} />),
+    // one glass card, as the league table (the website's IntlKit GroupTable in a ClubCard)
+    ...carded([row(`${prefix}-h`, <Cells head cells={["#", "NATION", "P", "W", "D", "GD", "PTS"]} />),
     ...g.rows.map((r, i) => row(`${prefix}-${r.name}`, (
       <View style={[{ borderRadius: 8, backgroundColor: i % 2 === 0 ? "rgba(255,255,255,0.04)" : "transparent", borderLeftWidth: 3, borderLeftColor: i === 0 ? "#fbbf24" : "transparent" }, r.name === nation && youRow(NATION_GLOW)]}>
         <Cells lead={<Flag nation={r.name} size={13} />} cells={[String(i + 1), r.name, r.p, r.w, r.d, r.gd > 0 ? `+${r.gd}` : r.gd, r.pts]} />
       </View>
-    ))),
+    )))], 6, 0),
   ];
 }
 function matchRow(key: string, m: MatchView, nation: string): Row {

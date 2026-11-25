@@ -54,7 +54,7 @@ export function StatsScreen({ career, onBack, onRenew, start }: { career: Career
                 (on ? { backgroundImage: "linear-gradient(180deg, #fde047, #f59e0b)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.5)" }
                   : { backgroundColor: "rgba(8,20,38,0.7)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.34)" }) as ViewStyle]}>
                 <Text style={{ fontSize: 18 }}>{v.icon}</Text>
-                <Text numberOfLines={1} style={{ color: on ? "#030712" : "#fff", fontWeight: "900", fontSize: 12, letterSpacing: 0.4 }}>{v.label.toUpperCase()}</Text>
+                <Text numberOfLines={1} style={{ color: on ? "#030712" : "#fff", fontWeight: "900", fontSize: 12, lineHeight: 12, letterSpacing: 0.4 }}>{v.label.toUpperCase()}</Text>
               </Press>
             );
           })}
@@ -72,7 +72,7 @@ export function StatsScreen({ career, onBack, onRenew, start }: { career: Career
 function SeasonCareer({ label, season, total, gold }: { label: string; season: number; total: number; gold?: boolean }) {
   return (
     <View style={{ flex: 1, borderRadius: 8, paddingVertical: 8, alignItems: "center", backgroundColor: "rgba(0,0,0,0.3)", borderWidth: 1, borderColor: "rgba(255,255,255,0.08)" }}>
-      <Text style={{ color: gold && season > 0 ? "#fcd34d" : "#fff", fontSize: 26, lineHeight: 28, fontWeight: "900" }}>{season}</Text>
+      <Text style={{ color: gold && season > 0 ? "#fcd34d" : "#fff", fontSize: 26, lineHeight: 26, fontWeight: "900" }}>{season}</Text>
       <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 9.5, fontWeight: "900", letterSpacing: 1, marginTop: 3 }}>{label.toUpperCase()}</Text>
       <Text style={{ color: "#fde68a", fontSize: 11, fontWeight: "900", marginTop: 3 }}>{total} <Text style={{ fontSize: 9, color: "rgba(253,230,138,0.7)" }}>career</Text></Text>
     </View>
@@ -218,7 +218,7 @@ function Cabinet({ items }: { items: { competition: string; count: number }[] })
             return (
               <View key={j} style={{ flex: 1, alignItems: "center", paddingTop: 8, paddingBottom: 6, paddingHorizontal: 3, backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(0,0,0,0.3))", boxShadow: "inset 0px -3px 0px rgba(120,72,24,0.85), inset 0px 0px 0px 1px rgba(255,255,255,0.07)" } as ViewStyle}>
                 <Text style={{ fontSize: 30 }}>{h.competition === "Golden Ball" ? "🥇" : /Boot/.test(h.competition) ? "👟" : /Player|Award|Team/.test(h.competition) ? "🏅" : "🏆"}</Text>
-                <View style={{ position: "absolute", right: 3, top: 3, backgroundColor: "#fbbf24", borderRadius: 2, paddingHorizontal: 3 }}><Text style={{ color: "#030712", fontSize: 11, fontWeight: "900" }}>×{h.count}</Text></View>
+                <View style={{ position: "absolute", right: 3, top: 3, backgroundColor: "#fbbf24", borderRadius: 2, paddingHorizontal: 3 }}><Text style={{ color: "#030712", fontSize: 11, lineHeight: 15, fontWeight: "900" }}>×{h.count}</Text></View>
                 <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.8)", fontSize: 9, fontWeight: "900", marginTop: 4 }}>{h.competition.toUpperCase()}</Text>
               </View>
             );

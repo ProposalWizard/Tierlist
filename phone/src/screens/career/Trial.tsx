@@ -73,12 +73,12 @@ export function TrialScreen({ career, go }: { career: CareerState; go: (s: flow.
   const progress = (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8 }}>
       <Pressable onPress={() => go({ screen: "title" })} hitSlop={8} style={{ borderRadius: 99, backgroundColor: "rgba(0,0,0,0.3)", paddingHorizontal: 8, paddingVertical: 4 }}>
-        <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "900", letterSpacing: 0.4 }}>✕ EXIT</Text>
+        <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "900", letterSpacing: 0.25 }}>✕ EXIT</Text>
       </Pressable>
       <View style={{ flex: 1, flexDirection: "row", gap: 4 }}>
         {stages.map((s) => <View key={s} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: trial.results[s] ? "#10b981" : s === stage ? "#fff" : "rgba(255,255,255,0.2)" }} />)}
       </View>
-      <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>{stage ? `${done.length + 1}/${stages.length}` : "DONE"}</Text>
+      <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: "900", letterSpacing: 1 }}>{stage ? `${done.length + 1}/${stages.length}` : "DONE"}</Text>
     </View>
   );
   const event = stage ? adversityOn(trial, stage) : null;
