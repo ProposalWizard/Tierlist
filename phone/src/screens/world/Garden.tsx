@@ -17,12 +17,16 @@
  *   house door     → your 3D house (screens/world/House3D.tsx; its front door and Back lead out here)
  *   casino door    → shut: "Casino · Locked" (this app has no casino)
  * Back goes to where you came from (the Phone).
+ *
+ * KIB RIDE (25 Nov 2026): if you own a horse you can get on it (a Ride button on its card, or a tap on it) and ride it round the garden; every car
+ * you own can be driven (a chip for each on the cars' card, a Drive button when you stand by one, or a tap on it). While you ride or drive the
+ * stick steers, the spot cards go, and a small speed readout and a Dismount / Get out button take their place. The scene is ../../three/garden/sceneRide.ts.
  */
 import { useMemo, useRef, useState } from "react";
 import { Image, Platform, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { CareerState } from "@/lib/star/types";
-import type { GardenCallbacks, GardenController, GardenData, GardenSpot } from "@/lib/star/garden3d/scene";
+import type { GardenCallbacks, GardenController, GardenData, GardenSpot, RideInfo } from "../../three/garden/sceneRide";
 import { kitsOf } from "@/lib/star/kits";
 import { gardenData } from "@/lib/star/gardenLevel";
 import { homeSkyFor } from "@/lib/star/kickoff";
@@ -37,7 +41,7 @@ import { useCareer } from "../../game/store";
 import { usePrefs } from "../../game/prefs";
 import { useNav } from "../../nav";
 import { Press } from "../../ui/Press";
-import { partOff } from "../../safety";
+import { markStep, partOff } from "../../safety";
 import { SCREENS } from "../../areas/registry";
 import { packedPicture } from "../../data/packed";
 import { absoluteUrl } from "../../draw/offscreen";
@@ -49,6 +53,10 @@ const INK = "#f7f1e8";
 const GOLD = "#facc15";
 /** The car families the shop has a 3D model of (lib/star/shop3d/catalogue.ts). */
 const CAR_MODELS = ["car-1", "car-2", "suv", "car-3", "classic", "car-4"];
+
+/** The car families you own, in the order the garden parks them (the scene parks the first three). */
+const ownedCarIds = (career: CareerState) => { const owned = new Set(career.ownedItems.map((it) => baseIdOf(it))); return CAR_MODELS.filter((id) => owned.has(id)).slice(0, 3); };
+const carName = (career: CareerState, id: string) => career.ownedItems.find((it) => baseIdOf(it) === id)?.name ?? "Car";
 
 /** Where you step out when you come back from a door (set when you walk through one). */
 let comeBack: GardenData["arrive"] | null = null;
@@ -96,6 +104,8 @@ function Garden({ career, params }: { career: CareerState; params?: Record<strin
   const nav = useNav();
   const prefs = usePrefs();
   const [near, setNear] = useState<GardenSpot | null>(null);
+  const [ride, setRide] = useState<RideInfo | null>(null);
+  const rideSeen = useRef<string>("walk");
   const info = useMemo(() => gardenData(career), [career]);
   // Three real team-mates, picked at random each visit (as the website).
   const [visitors] = useState(() => {
@@ -108,7 +118,10 @@ function Garden({ career, params }: { career: CareerState; params?: Record<strin
     comeBack = null;
     // params.sky: the look check's way to ask for a time of day ("day" | "sunset" | "night"); the game leaves it to your next match
     const sky = params?.sky === "day" || params?.sky === "sunset" || params?.sky === "night" ? params.sky : undefined;
-    return gardenSceneData(career, arrive, sky);
+    const d = gardenSceneData(career, arrive, sky);
+    // params.step: the look check's way to make every frame move the game on by a fixed time (software GL draws a frame a second); the game never passes it
+    if (typeof params?.step === "number" && params.step > 0 && params.step <= 0.2) d.fixedStep = params.step;
+    return d;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -124,6 +137,16 @@ function Garden({ career, params }: { career: CareerState; params?: Record<strin
   const callbacks = (api: WalkApi): GardenCallbacks => ({
     onNear: (s) => { if (!api.dead()) setNear(s); },
     onFps: () => { /* the speed readout (Settings → Show 3D speed) counts frames itself */ },
+    onRide: (r) => {
+      if (api.dead()) return;
+      // the crash trail (../../safety.ts): a close in the middle of a ride shows which kind in Settings next launch
+      const now = r.mode === "walk" ? "walk" : `${r.mode}:${r.phase === "leave" ? "stop" : "start"}`;
+      if (now !== rideSeen.current) {
+        rideSeen.current = now;
+        markStep("The garden", r.mode === "walk" ? "ride stop / drive stop" : r.phase === "leave" ? "ride/drive stopping" : r.mode === "horse" ? "ride start" : "drive start");
+      }
+      setRide(r);
+    },
     onShopDoor: () => { if (!api.dead()) hooks.current.onShop(); },
     onTrainingGate: () => { if (!api.dead()) hooks.current.onTraining(); },
     onHouseDoor: () => { if (!api.dead()) hooks.current.onHouse(); },
@@ -158,9 +181,23 @@ function Garden({ career, params }: { career: CareerState; params?: Record<strin
             )}
           </View>
         </SafeAreaView>
-        {ctrl && near && near !== "fountain" && (
+        {ctrl && ride && ride.mode !== "walk" && (
           <SafeAreaView edges={["bottom"]} pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "flex-end", justifyContent: "flex-end", paddingRight: 12, paddingBottom: 24 }}>
-            <SpotCard spot={near} career={career} info={info} visitors={visitors} onShop={onShop} onTraining={onTraining} onHouse={onHouse} />
+            <RideHud ride={ride} career={career} onStop={() => ctrl.ride.stop()} />
+          </SafeAreaView>
+        )}
+        {ctrl && (!ride || ride.mode === "walk") && near && near !== "fountain" && (
+          <SafeAreaView edges={["bottom"]} pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "flex-end", justifyContent: "flex-end", paddingRight: 12, paddingBottom: 24 }}>
+            <SpotCard spot={near} career={career} info={info} visitors={visitors} onShop={onShop} onTraining={onTraining} onHouse={onHouse} ride={ride} onRide={() => ctrl.ride.mountHorse()} onDrive={(i) => ctrl.ride.driveCar(i)} />
+          </SafeAreaView>
+        )}
+        {/* a horse or a car of yours is close but its card is not up (left outside the paddock, a car parked elsewhere): a button of its own */}
+        {ctrl && ride && ride.mode === "walk" && !ride.off && (ride.canRide && near !== "horse" || ride.canDrive && near !== "cars") && (
+          <SafeAreaView edges={["bottom"]} pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "flex-end", justifyContent: "flex-end", paddingRight: 12, paddingBottom: (near && near !== "fountain" ? 110 : 24) }}>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              {ride.canRide && near !== "horse" && <Press onPress={() => ctrl.ride.mountHorse()} style={[goBtn, { flexDirection: "row", gap: 6 }]}><Text style={{ fontSize: 16 }}>🐎</Text><Text style={{ color: "#111", fontWeight: "900", fontSize: 15 }}>Ride</Text></Press>}
+              {ride.canDrive && near !== "cars" && ride.car !== null && <Press onPress={() => ctrl.ride.driveCar(ride.car ?? undefined)} style={[goBtn, { flexDirection: "row", gap: 6 }]}><Text style={{ fontSize: 16 }}>🚗</Text><Text style={{ color: "#111", fontWeight: "900", fontSize: 15 }}>Drive</Text></Press>}
+            </View>
           </SafeAreaView>
         )}
       </Walk3D>
@@ -175,8 +212,9 @@ const goBtn = { height: 38, paddingHorizontal: 16, borderRadius: 12, backgroundC
 const pictureUri = (url: string) => packedPicture(url) ?? absoluteUrl(url);
 
 /** The small card for wherever you are standing (components/star/Garden3D.tsx SpotCard). */
-function SpotCard({ spot, career, info, visitors, onShop, onTraining, onHouse }: {
+function SpotCard({ spot, career, info, visitors, onShop, onTraining, onHouse, ride, onRide, onDrive }: {
   spot: GardenSpot; career: CareerState; info: ReturnType<typeof gardenData>; visitors: CareerState["squad"]; onShop: () => void; onTraining: () => void; onHouse: () => void;
+  ride: RideInfo | null; onRide: () => void; onDrive: (i: number) => void;
 }) {
   if (spot === "shop") {
     return (
@@ -261,6 +299,7 @@ function SpotCard({ spot, career, info, visitors, onShop, onTraining, onHouse }:
               <Text style={{ color: INK, fontSize: 13, fontWeight: "900" }}>🏁 {h.racesRun}</Text>
               <Text style={{ color: GOLD, fontSize: 13, fontWeight: "900" }}>🥇 {h.racesWon}</Text>
             </View>
+            {ride && !ride.off && <Press onPress={onRide} style={[goBtn, { alignSelf: "stretch", marginTop: 2 }]}><Text style={{ color: "#111", fontWeight: "900", fontSize: 15 }}>Ride ›</Text></Press>}
           </View>
         ) : (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, opacity: 0.6 }}><Text style={{ fontSize: 22 }}>🐎</Text><Text style={{ color: INK, fontWeight: "900" }}>0</Text></View>
@@ -270,9 +309,13 @@ function SpotCard({ spot, career, info, visitors, onShop, onTraining, onHouse }:
   }
   if (spot === "cars") {
     const n = career.ownedItems.filter((it) => CAR_MODELS.includes(baseIdOf(it))).length;
+    const ids = ownedCarIds(career);
     return (
-      <View style={[card, { flexDirection: "row", alignItems: "center", gap: 8 }]}>
+      <View style={[card, { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }]}>
         <Text style={{ fontSize: 22 }}>🚗</Text><Text style={{ color: INK, fontWeight: "900", fontSize: 18 }}>{n}</Text>
+        {ride && !ride.off && ids.map((id, i) => (
+          <Press key={id} onPress={() => onDrive(i)} style={[goBtn, { height: 34, paddingHorizontal: 12 }]}><Text numberOfLines={1} style={{ color: "#111", fontWeight: "900", fontSize: 13, maxWidth: 110 }}>Drive {carName(career, id)}</Text></Press>
+        ))}
       </View>
     );
   }
@@ -284,6 +327,23 @@ function SpotCard({ spot, career, info, visitors, onShop, onTraining, onHouse }:
     );
   }
   return null;
+}
+
+/** While you ride or drive: how fast, and the way off. */
+function RideHud({ ride, career, onStop }: { ride: RideInfo; career: CareerState; onStop: () => void }) {
+  const horse = ride.mode === "horse";
+  const word = ride.phase === "call" ? "Coming…" : ride.phase === "mount" ? (horse ? "Getting on…" : "Getting in…") : ride.phase === "leave" ? "Slowing…" : horse ? ride.gait.charAt(0).toUpperCase() + ride.gait.slice(1) : "";
+  const car = !horse && ride.car !== null ? carName(career, ownedCarIds(career)[ride.car] ?? "") : "";
+  return (
+    <View style={[card, { flexDirection: "row", alignItems: "center", gap: 12 }]}>
+      <Text style={{ fontSize: 22 }}>{horse ? "🐎" : "🚗"}</Text>
+      <View style={{ minWidth: 70 }}>
+        <Text style={{ color: INK, fontWeight: "900", fontSize: 20, lineHeight: 22 }}>{ride.mph}<Text style={{ fontSize: 11, fontWeight: "800", opacity: 0.7 }}> mph</Text></Text>
+        {(word || car) ? <Text numberOfLines={1} style={{ color: GOLD, fontWeight: "800", fontSize: 11 }}>{word || car}</Text> : null}
+      </View>
+      {ride.phase !== "call" && <Press onPress={onStop} style={goBtn}><Text style={{ color: "#111", fontWeight: "900", fontSize: 15 }}>{horse ? "Dismount" : "Get out"}</Text></Press>}
+    </View>
+  );
 }
 
 function Bar({ icon, v }: { icon: string; v: number }) {

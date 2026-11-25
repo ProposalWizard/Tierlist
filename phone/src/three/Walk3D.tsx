@@ -78,7 +78,7 @@ export interface WalkApi {
   dead(): boolean;
 }
 
-export interface WalkNumbers { fps: number; calls: number; triangles: number; tier: string; pixelRatio: number; loaded: number }
+export interface WalkNumbers { fps: number; calls: number; triangles: number; tier: string; pixelRatio: number; loaded: number; /** KIB RIDE: the garden's walk / horse / car */ mode?: string }
 
 export interface Walk3DProps<D, CB, C extends WalkController> {
   /** Loads the place's start function (a plain require inside, so the 3D code is read only now). */
@@ -309,7 +309,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
       f0 = frames; d0 = draws; r0 = tris; t0 = now;
       lastFps.current = fps;
       const st = l.host.controller.stats?.();
-      setSpeed({ fps, calls: perFrame || (st?.calls ?? 0), triangles: (st?.triangles ?? 0) >= 1000 ? st!.triangles : triPerFrame, tier: String(st?.quality ?? l.tier), pixelRatio: l.pr, loaded: Number(st?.loaded ?? 0) });
+      setSpeed({ fps, calls: perFrame || (st?.calls ?? 0), triangles: (st?.triangles ?? 0) >= 1000 ? st!.triangles : triPerFrame, tier: String(st?.quality ?? l.tier), pixelRatio: l.pr, loaded: Number(st?.loaded ?? 0), mode: st?.mode ? String(st.mode) : undefined });
     }, 1000);
     return () => clearInterval(id);
   }, [p.showSpeed, ready]);
@@ -398,7 +398,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
       {speed && (
         <View pointerEvents="none" style={{ position: "absolute", left: 6, ...(p.speedTop ? { top: 4 } : { bottom: Math.max(4, insets.bottom + 2) }), backgroundColor: "rgba(0,0,0,0.62)", paddingHorizontal: 5, paddingVertical: 3, borderRadius: 5 }}>
           <Text style={{ color: "#d1fae5", fontSize: 10, lineHeight: 12.5, fontWeight: "700", fontFamily: "monospace" }}>
-            {`${speed.fps.toFixed(0)} fps  ${speed.calls} draws  ${speed.triangles < 1000 ? "?" : (speed.triangles / 1000).toFixed(0) + "k"} tris\npx ${speed.pixelRatio.toFixed(2)}  ${speed.tier}`}
+            {`${speed.fps.toFixed(0)} fps  ${speed.calls} draws  ${speed.triangles < 1000 ? "?" : (speed.triangles / 1000).toFixed(0) + "k"} tris\npx ${speed.pixelRatio.toFixed(2)}  ${speed.tier}${speed.mode ? `\nmode ${speed.mode === "horse" ? "ride" : speed.mode === "car" ? "drive" : "walk"}` : ""}`}
           </Text>
         </View>
       )}
