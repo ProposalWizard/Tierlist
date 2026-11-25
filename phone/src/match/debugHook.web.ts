@@ -4,3 +4,8 @@
 export function debugMatch(d: unknown): void {
   try { (globalThis as Record<string, unknown>).__kibMatch = d; } catch { /* no window */ }
 }
+
+/** The live first-person dribble run (MatchFirstPerson) on `window.__kibRun`, for the playtest bench. */
+export function debugRun(r: unknown): void {
+  try { (globalThis as Record<string, unknown>).__kibRun = r; } catch { /* no window */ }
+}

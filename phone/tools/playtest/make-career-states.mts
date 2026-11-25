@@ -9,6 +9,7 @@
  *   trial-last   a trialist with four of the five trial stages done; only the free
  *                kick is left, so one strike shows "Next up"… no: it shows the end,
  *                "A scout has spotted you", then the scout's talk.
+ *   trial-dribble  four of the five stages done; only "Take him on" (dribbling) is left.
  *   trial-done   all five stages done: both apps open on the scout's talk.
  *   retire-due   an Arsenal career in its last season (CAREER_SEASONS) (retirementCheck
  *                says it must retire at this season's end), every match played: End of Season.
@@ -78,9 +79,9 @@ function playSeason(c: CareerState, left: number): CareerState {
 
 let career: CareerState;
 let phase: StarPhase | null = null;
-if (state === "trial-last" || state === "trial-done" || state === "free-agent") {
+if (state === "trial-last" || state === "trial-dribble" || state === "trial-done" || state === "free-agent") {
   let trial = startTrial(0x5eed1234);
-  const skip = state === "trial-last" ? new Set(["freeKicks"]) : new Set<string>();
+  const skip = state === "trial-last" ? new Set(["freeKicks"]) : state === "trial-dribble" ? new Set(["dribbling"]) : new Set<string>();
   for (const s of TRIAL_STAGES) if (!skip.has(s)) trial = recordStage(trial, s, state === "free-agent" ? 0 : 0.8);
   career = { ...makeIdentity(player, "premier"), trial };
   phase = state === "trial-done" ? "manager-talk" : state === "free-agent" ? "free-agent" : "trial-stages";

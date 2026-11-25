@@ -131,6 +131,8 @@ const KIB_HALF_TIME_RESTORE = KIB_CANS.find((c) => c.id === "basic")?.restore ??
 export const FRAME_DT = 1 / 60;
 /** One tick of the driver in milliseconds (the website's setTimeouts are counted in these). */
 export const TICK_MS = 1000 / 60;
+/** A feature's flight runs this many times faster while the ball is out of the picture / dead (flightLapse). */
+const LAPSE_UNSEEN = 6, LAPSE_DEAD = 4, LAPSE_SLOW_MS = 5.5;
 /** A setTimeout of `ms` at 60 frames a second: how many frames later it runs. */
 export const ticksFor = (ms: number) => Math.max(1, Math.ceil((ms * 60) / 1000 - 1e-9));
 
@@ -2262,7 +2264,11 @@ export class MatchDriver {
       }
     }
 
-    if (this.phase === "flight" && this.ball) this.stepFlight(dt);
+    if (this.phase === "flight" && this.ball) {
+      this.stepFlight(dt);
+      // A trial stage / drill only (never a match): the dead stretch of a flight runs faster (see flightLapse).
+      for (let extra = this.flightLapse(); extra > 0 && this.phase === "flight" && this.ball; extra--) this.stepFlight(dt);
+    }
 
     if (this.phase === "result" && this.ball) {
       const b = this.ball;
@@ -2421,6 +2427,25 @@ export class MatchDriver {
     return id;
   }
 
+  /**
+   * HOW MANY EXTRA FRAMES' WORTH of the flight to run this frame (Mikey, 25 Nov 2026: "the free kick stage is slow after the
+   * ball leaves the screen"). In a feature (the trial's stages, the drills) the engine still has to DECIDE the chance, and with
+   * nothing to see that takes seconds: a free kick the wall took the pace off crept 4 to 7 s before the engine called it, and a
+   * ball that had left the picture took as long. The same fixed 1/180 s steps are simply run more times a frame, so every
+   * step, every random draw and the outcome are exactly the same, only sooner on the clock (tools/trial-timing.ts prints the
+   * outcome, the ball's spot and the random count for each kick: they do not change). Never in a match (no `feature`).
+   */
+  private flightLapse(): number {
+    if (!this.feature) return 0;
+    const b = this.ball;
+    if (!b || b.inNet) return 0;
+    const vp = this.viewport;
+    // wholly out of the picture (and still flying): nobody is looking at it
+    if (b.pos.x < vp.x1 || b.pos.x > vp.x2 || b.pos.y < vp.y1 || b.pos.y > vp.y2) return LAPSE_UNSEEN - 1;
+    // a dead ball: somebody else has had it (the wall, the keeper, the post) and it is only creeping now; his own slow ball is never hurried
+    if (b.lastTouch && b.lastTouch !== "attack" && b.z < 4 && Math.hypot(b.vel.x, b.vel.y) < LAPSE_SLOW_MS) return LAPSE_DEAD - 1;
+    return 0;
+  }
   /** The flight: the ball and everyone, three steps a frame (CanvasMatch's frame loop, flight branch). */
   private stepFlight(dt: number) {
     const fixedStep = realBallOn();

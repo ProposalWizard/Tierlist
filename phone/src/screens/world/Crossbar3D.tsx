@@ -26,6 +26,7 @@ import { EngineFeature } from "../MatchFeature";
 import { usePitchHeight } from "../MatchStages";
 import { GameShell, ResultPanel, type GameResult } from "../MatchRelGames";
 import { Walk3D } from "../../three/Walk3D";
+import { whenWalkSafe } from "../../three/walkLeave";
 import { loadTrainingStart, type TrainingWalk } from "../../three/trainingScene";
 import { crossbarMate, crossbarSceneData, trainingSeed } from "../../three/trainingData";
 
@@ -33,12 +34,14 @@ export interface Training3DResult extends GameResult { you: number; him: number;
 type Step = "you-aim" | "you-flight" | "you-after" | "mate" | "mate-after" | "done";
 const TONE = "#38bdf8";
 
-export function CrossbarChallenge({ career, showSpeed, onExit, onFinish }: {
+export function CrossbarChallenge({ career, showSpeed, onExit: exitNow, onFinish }: {
   career: CareerState;
   showSpeed?: boolean;
   onExit: () => void;
   onFinish: (result: Training3DResult) => void;
 }) {
+  // Exit while the 3D is still starting waits for it, the scene is let go, then the screen goes (three/walkLeave.ts)
+  const onExit = () => whenWalkSafe(exitNow);
   const team = career.relationships.team;
   const seed = trainingSeed(career);
   const pitchH = usePitchHeight();

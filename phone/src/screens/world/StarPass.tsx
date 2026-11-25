@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Image, Modal, ScrollView, Text, View, useWindowDimensions, type ImageSourcePropType, type ViewStyle } from "react-native";
 import { RewardReveal } from "./Locker";
+import { whenWalkSafe } from "../../three/walkLeave";
 import { useNav } from "../../nav";
 import { starStatus, starTitle, STAR_GATES, ledgerOf, MAX_LEVEL } from "@/lib/star/starPoints";
 import { STAR_PASS_THEMES, rewardLevelsOf, rewardTier, themeFor } from "@/lib/star/starPassRewards";
@@ -213,7 +214,7 @@ export function StarPassScreen() {
 
       <BottomBar active={null} plain />
 
-      <Modal visible={preview !== null && !!shown} transparent animationType="fade" onRequestClose={() => setPreview(null)}>
+      <Modal visible={preview !== null && !!shown} transparent animationType="fade" onRequestClose={() => whenWalkSafe(() => setPreview(null))}>
         {shown && preview !== null && (
           <Preview card={shown} level={preview} claimable={claimable.has(preview)} claimed={isClaimed(career, preview)} reached={preview <= st.stars} onClose={() => setPreview(null)}
             onLater={() => { const c = getCareer(); if (c) setCareer(claimLevel(c, preview, shown, starStatus(c).stars)); setPreview(null); }}
@@ -308,9 +309,11 @@ function RewardStop({ level, y, width, card, reached, next, claimable, claimed, 
 }
 
 /** A reward, big: what it is; claim it ("Use it" / "Later") once you reach it. */
-function Preview({ card, level, claimable, claimed, reached, onClose, onLater, onUse }: {
+function Preview({ card, level, claimable, claimed, reached, onClose: closeNow, onLater: laterNow, onUse: useNow }: {
   card: CatalogueItem; level: number; claimable: boolean; claimed: boolean; reached: boolean; onClose: () => void; onLater: () => void; onUse: () => void;
 }) {
+  // closing while the 3D reward is still starting waits for it (three/walkLeave.ts)
+  const onClose = () => whenWalkSafe(closeNow), onLater = () => whenWalkSafe(laterNow), onUse = () => whenWalkSafe(useNow);
   const theme = themeFor(level);
   const big = pic(card.art?.scene) ?? pic(card.art?.image) ?? pic(`${ART}/plinth-${theme.key}-${rewardTier(level)}.webp`);
   // The reward as live 3D you drag round (the website's RewardPreview: `art.live ?? art.spin`), the still picture under it

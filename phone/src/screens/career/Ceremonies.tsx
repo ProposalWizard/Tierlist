@@ -52,6 +52,7 @@ import * as flow from "../../game/flow";
 import { ClubCrest } from "./kit";
 import { Backdrop, glassStyle } from "../../ui/look";
 import { SeasonAwardsScreen } from "./SeasonEnd";
+import { whenWalkSafe } from "../../three/walkLeave";
 
 const GOLD = "#fbbf24";
 const AMBER200 = "#fde68a";
@@ -241,7 +242,8 @@ function GoldenBallCeremony({ career, result, onDone }: { career: CareerState; r
   useSeekHook(plan, mode, freeze, handle);
   const { size, onLayout } = useSize();
   const finished = useRef(false);
-  const finish = useCallback(() => { if (!finished.current) { finished.current = true; onDone(); } }, [onDone]);
+  // Skip while the 3D room is still starting waits for it, then the room is let go, then the screen goes (three/walkLeave.ts)
+  const finish = useCallback(() => { if (!finished.current) { finished.current = true; whenWalkSafe(onDone); } }, [onDone]);
   useEffect(() => { if (ready && !isFrozen() && t >= plan.end + 1.5) finish(); }, [ready, t, plan.end, finish, isFrozen]);
   const revealed = t >= plan.revealAt;
   useEffect(() => { if (revealed && !isFrozen()) playCheer(); }, [revealed, isFrozen]);
@@ -584,7 +586,8 @@ function AwardsCeremony({ career, plan, onDone }: { career: CareerState; plan: A
   useSeekHook(plan, mode, freeze, handle);
   const { size, onLayout } = useSize();
   const finished = useRef(false);
-  const finish = useCallback(() => { if (!finished.current) { finished.current = true; onDone(); } }, [onDone]);
+  // Skip while the 3D room is still starting waits for it, then the room is let go, then the screen goes (three/walkLeave.ts)
+  const finish = useCallback(() => { if (!finished.current) { finished.current = true; whenWalkSafe(onDone); } }, [onDone]);
   useEffect(() => { if (ready && !isFrozen() && t >= plan.end + 1.0) finish(); }, [ready, t, plan.end, finish, isFrozen]);
   const skip = () => {
     if (!ready) return;

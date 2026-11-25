@@ -25,6 +25,7 @@ import { FONT } from "../../ui/look";
 import { STAR_PASS_PIC } from "../../ui/look/worldPics";
 import { StoreFigure } from "./StoreFigure";
 import { Podium3D } from "../../podium/Podium3D";
+import { whenWalkSafe } from "../../three/walkLeave";
 
 const pic = (url?: string): ImageSourcePropType | undefined => (url ? STAR_PASS_PIC[url] : undefined);
 
@@ -143,7 +144,9 @@ export function LockerScreen() {
  * rises in big, its name, then USE NOW or LATER. Either way it is yours and in
  * the Locker; USE NOW also puts it on.
  */
-export function RewardReveal({ card, level, career, onUse, onLater }: { card: CatalogueItem; level: number; career: CareerState; onUse: () => void; onLater: () => void }) {
+export function RewardReveal({ card, level, career, onUse: useNow, onLater: laterNow }: { card: CatalogueItem; level: number; career: CareerState; onUse: () => void; onLater: () => void }) {
+  // leaving while the 3D reward is still starting waits for it (three/walkLeave.ts)
+  const onUse = () => whenWalkSafe(useNow), onLater = () => whenWalkSafe(laterNow);
   const vp = useWindowDimensions();
   const spin = useRef(new Animated.Value(0)).current;
   const rise = useRef(new Animated.Value(0)).current;

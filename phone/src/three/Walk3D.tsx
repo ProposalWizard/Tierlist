@@ -40,6 +40,7 @@ import { glCounts } from "./gl";
 import { placeOpened, settleHeadshots } from "./glBusy";
 import { neutralizeGl, registerPlace, type PlaceNet } from "./crashNet";
 import { startWalkScene, type WalkController, type WalkHost, type WalkStart } from "./walkHost";
+import { LeaveGate, registerWalkGate } from "./walkLeave";
 
 /** The longest the scene may take to start before the plain card takes over. */
 export const WALK_LOAD_LIMIT_MS = 45000;
@@ -145,6 +146,18 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
   // the crash net (./crashNet.ts): this place counts as mounted from its first draw to its close
   const net = useRef<PlaceNet | null>(null);
   const unmounted = useRef(false);
+  // Skip / Back during the load wait for the start, then the scene is disposed, THEN the screen goes (./walkLeave.ts)
+  const [leaving, setLeaving] = useState(false);
+  const gate = useRef<LeaveGate | null>(null);
+  if (!gate.current) {
+    gate.current = new LeaveGate({
+      dispose: () => { const l = live.current; if (l) letGo(l); },
+      after: (fn) => { requestAnimationFrame(() => requestAnimationFrame(() => { markStep(place, "left (scene let go first)"); fn(); })); },
+      leaving: (on) => { markStep(place, on ? "leave asked while starting: waiting for the start" : "leaving"); setLeaving(on); },
+      timer: (fn, ms) => { const t = setTimeout(fn, ms); return () => clearTimeout(t); },
+    });
+  }
+  useEffect(() => registerWalkGate(gate.current!), []);
 
   const tier = useMemo(() => (attempt > 0 ? "low" : p.tierFor ? p.tierFor(attempt) : walkTier(attempt)), [attempt]); // eslint-disable-line react-hooks/exhaustive-deps
   const dpr = PixelRatio.get() || 1;
@@ -161,7 +174,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
       await frame2();
       await settleHeadshots();
       await new Promise<void>((res) => setTimeout(res, GL_SETTLE_MS));
-      if (!live2) return;
+      if (!live2 || gate.current?.wantsLeave) return; // left before the view was made: no view is made
       markStep(place, "view allowed (screen before has gone quiet)");
       setViewOk(true);
     })();
@@ -199,8 +212,8 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
     if (!failed) return;
     clearTrail(place); // a failure the app caught is not a crash (its error is kept apart: Settings → "Last error")
     const l = live.current;
-    if (!l) return;
-    letGo(l);
+    if (l) letGo(l);
+    gate.current?.settled(); // the view is gone with the plain card: nothing left to wait for
   }, [failed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Frames stop in the background and go on in front.
@@ -219,12 +232,15 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
 
   const restartOnce = useCallback(() => {
     setReady(false);
+    gate.current?.starting();
     setAttempt((n) => { if (n >= 1) { setFailed("The phone took the 3D away"); return n; } return n + 1; });
   }, []);
 
   const onContext = useCallback((gl: ExpoWebGLRenderingContext) => {
     // the view was closed (or let go after a failure) before the phone gave it a GL: nothing to start, and the GL is left alone
-    if (!size || unmounted.current) { neutralizeGl(gl); return; }
+    if (!size || unmounted.current) { neutralizeGl(gl); gate.current?.settled(); return; }
+    // Skip / Back was tapped before the phone gave the view its GL: nothing is started on it; the leave goes on once the context is let go
+    if (gate.current?.wantsLeave) { neutralizeGl(gl); gate.current.settled(); return; }
     const me = { dead: false, host: null as WalkHost<C> | null, gl: gl as unknown as WebGL2RenderingContext, tier, pr };
     live.current = me;
     markStep(place, `gl context created (attempt ${attempt}, ${tier}, ${size.w}x${size.h})`);
@@ -249,12 +265,15 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
           },
         });
         clearTimeout(limit);
-        if (me.dead) { host.dispose(); neutralizeGl(me.gl); return; }
+        if (me.dead) { host.dispose(); neutralizeGl(me.gl); gate.current?.settled(); return; }
         me.host = host;
+        // Skip / Back was tapped while the scene was starting: it is up now, so it is disposed here (never handed to the screen) and the leave goes on
+        if (gate.current?.wantsLeave) { gate.current.settled(); return; }
         if (AppState.currentState !== "active") host.pause();
         // the scene's own calls that move it along (shots, the signing) are steps too: "setShot(shake)", "sign()"
         traceCalls(host.controller, place, () => me.dead);
         cur.current.onController?.(host.controller);
+        gate.current?.settled();
         setReady(true);
         // first frame handed to the screen; the trail then stays until the place closes cleanly, or has run 10 s after its LAST step
         const poll = setInterval(() => {
@@ -266,6 +285,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
         clearTimeout(limit);
         console.warn("[walk 3D] could not start:", e);
         if (!me.dead) setFailed(e instanceof Error ? e.message : String(e));
+        gate.current?.settled();
       }
     })();
   }, [size, tier, pr, restartOnce, place, attempt]);
@@ -352,7 +372,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
   };
 
   // the last step before the phone's own GL is made: a close after this one and before "gl context created" is inside the native GL view
-  if (size && viewOk && !viewMarked.current && !failed && allowed) { viewMarked.current = true; markStep(place, `GLView being made (${size.w}x${size.h})`); }
+  if (size && viewOk && !viewMarked.current && !failed && allowed) { viewMarked.current = true; gate.current?.starting(); markStep(place, `GLView being made (${size.w}x${size.h})`); }
 
   const failWhy = failed ?? (!allowed ? "The 3D is switched off" : null);
   const onFailNow = p.onFail;
@@ -391,6 +411,12 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
       )}
       {/* the screen's own buttons and cards: above the loading cover, so Back is there while it loads */}
       {p.children}
+      {leaving && (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center" }]}>
+          <ActivityIndicator color={GOLD} />
+          <Text style={{ marginTop: 10, color: "#f7f1e8", fontWeight: "900", fontSize: 15 }}>Leaving…</Text>
+        </View>
+      )}
     </View>
   );
 }

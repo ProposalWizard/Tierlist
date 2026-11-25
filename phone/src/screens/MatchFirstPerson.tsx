@@ -32,6 +32,7 @@ import { mulberry32 } from "@/lib/star/season";
 import { recordDrawing } from "../draw/useDrawing";
 import { loadedFace, type FacePicture } from "../draw/offscreen";
 import { setSkia } from "../match/skiaApi";
+import { debugRun } from "../match/debugHook";
 
 setSkia(Skia);
 
@@ -102,6 +103,7 @@ export function FirstPersonRun({
     const rng = seed !== undefined ? mulberry32(seed) : mulberry32((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0);
     const run = newRun({ pace, oppStrength, rounds, waveSizes, rng, mates: 0, ...(knockOn ? { knockOn: true } : {}), ...(lanes ? { lanes } : {}) });
     runRef.current = run;
+    debugRun(run);
     camXRef.current = run.x;
     ballXRef.current = run.x + sideDirRef.current * CARRY.restFootX;
     ballVXRef.current = 0;
@@ -210,38 +212,44 @@ export function FirstPersonRun({
   }, [W, H, pr, pic, chaseEye, chasePitchDeg, chaseOffset, cameraFollowRate, ballTouchReach]);
 
   // Touches: a tap on a side touches the ball that way, a drag steers, a flick bursts.
+  //
+  // The touch in progress lives in ONE object on a ref and every handler reads and writes `touch.current.<field>`.
+  // (Mikey, 25 Nov 2026: "tapping left/right does nothing". Gesture-handler callbacks are made into worklets by the
+  // build, which gives each callback its own copy of a plain `let` it captured: `start` was set in onBegin and was
+  // still null in onUpdate and onFinalize, so no tap and no drag ever steered. Seen in the web build: the finalize
+  // saw start=false after the begin had set it.)
+  const touch = useRef<{ anchorPx: number; anchorLane: number; start: { x: number; y: number; t: number } | null; samples: { x: number; t: number }[] }>({ anchorPx: 0, anchorLane: 0, start: null, samples: [] });
   const gesture = useMemo(() => {
-    let anchorPx = 0, anchorLane = 0, start: { x: number; y: number; t: number } | null = null;
-    let samples: { x: number; t: number }[] = [];
     return Gesture.Pan().runOnJS(true).minDistance(0)
       .onBegin((e) => {
         if (phaseRef.current === "ready") { if (!holdRef.current) setPhase("run"); return; }
         const run = runRef.current;
         if (!run || phaseRef.current !== "run") return;
-        anchorPx = e.x; anchorLane = run.laneTarget ?? run.x;
-        samples = [{ x: e.x, t: Date.now() }];
-        start = { x: e.x, y: e.y, t: Date.now() };
+        const t = touch.current;
+        t.anchorPx = e.x; t.anchorLane = run.laneTarget ?? run.x;
+        t.samples = [{ x: e.x, t: Date.now() }];
+        t.start = { x: e.x, y: e.y, t: Date.now() };
       })
       .onUpdate((e) => {
-        const run = runRef.current;
-        if (!run || phaseRef.current !== "run" || !start) return;
+        const run = runRef.current, t = touch.current;
+        if (!run || phaseRef.current !== "run" || !t.start) return;
         const w = Math.max(1, W);
         const perPx = (run.maxX - run.minX) / Math.max(1, w * 0.8);
-        applySteer(run, anchorLane + (e.x - anchorPx) * perPx);
+        applySteer(run, t.anchorLane + (e.x - t.anchorPx) * perPx);
         const now = Date.now();
-        samples.push({ x: e.x, t: now });
-        while (samples.length > 1 && now - samples[0].t > 150) samples.shift();
-        const oldest = samples[0], dtMs = now - oldest.t;
+        t.samples.push({ x: e.x, t: now });
+        while (t.samples.length > 1 && now - t.samples[0].t > 150) t.samples.shift();
+        const oldest = t.samples[0], dtMs = now - oldest.t;
         if (dtMs > 20) {
           const vx = (e.x - oldest.x) / (dtMs / 1000);
           if (Math.abs(vx) >= FLICK_MIN_SPEED_FRAC * w && Math.abs(e.x - oldest.x) >= FLICK_MIN_PX_FRAC * w) {
-            if (applyBurst(run, vx > 0 ? 1 : -1)) { anchorPx = e.x; anchorLane = run.laneTarget; samples = [{ x: e.x, t: now }]; }
+            if (applyBurst(run, vx > 0 ? 1 : -1)) { t.anchorPx = e.x; t.anchorLane = run.laneTarget; t.samples = [{ x: e.x, t: now }]; }
           }
         }
       })
       .onFinalize((e) => {
-        const run = runRef.current, s = start;
-        start = null;
+        const run = runRef.current, t = touch.current, s = t.start;
+        t.start = null;
         if (!run || !s || phaseRef.current !== "run") return;
         const w = Math.max(1, W);
         const moved = Math.hypot(e.x - s.x, e.y - s.y), heldMs = Date.now() - s.t;

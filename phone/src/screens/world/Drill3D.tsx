@@ -23,6 +23,7 @@ import type { DrillDef, DrillSession, DrillTrain } from "@/lib/star/play3d/drill
 import type { Play3DController } from "@/lib/star/play3d/scene";
 import { Press } from "../../ui/Press";
 import { Walk3D } from "../../three/Walk3D";
+import { whenWalkSafe } from "../../three/walkLeave";
 import { loadDrillStart } from "../../three/trainingScene";
 import { castFrom, drillLook, drillSceneData, drillSession, realMatchHeightFor } from "../../three/trainingData";
 import { GameShell, ResultPanel, type GameResult } from "../MatchRelGames";
@@ -46,7 +47,7 @@ export interface Drill3DResult extends GameResult { drill: string; /** Pace Spri
 type Mark = { id: string; name: string; x: number; y: number; off: boolean; aim: boolean };
 type CallUi = { cd: number; ans?: { ok: boolean; why: string; you?: { x: number; y: number }; mate?: { x: number; y: number; off: boolean } } };
 
-export function Drill3D({ career, drill, seed, mode, options, showSpeed, onExit, onFinish }: {
+export function Drill3D({ career, drill, seed, mode, options, showSpeed, onExit: exitNow, onFinish }: {
   career: CareerState;
   drill: DrillDef;
   seed: number;
@@ -56,6 +57,8 @@ export function Drill3D({ career, drill, seed, mode, options, showSpeed, onExit,
   onExit: () => void;
   onFinish: (r: Drill3DResult) => void;
 }) {
+  // Exit while the 3D is still starting waits for it, the scene is let go, then the screen goes (three/walkLeave.ts)
+  const onExit = () => whenWalkSafe(exitNow);
   const team = career.relationships.team;
   const win = useWindowDimensions();
   // one visit: the cast, the drill's World and the picture's people

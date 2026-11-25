@@ -22,6 +22,7 @@ import type { CareerState } from "@/lib/star/types";
 import { usePrefs } from "../../game/prefs";
 import { markStep } from "../../safety";
 import { Walk3D } from "../../three/Walk3D";
+import { whenWalkSafe } from "../../three/walkLeave";
 import { loadSigningStart, type SigningCallbacks, type SigningData, type SigningWalk } from "../../three/signingScene";
 import { signingPlan } from "../../three/signingData";
 import { SigningMoment, type SigningTerms as DrawnTerms } from "./Signing";
@@ -51,7 +52,9 @@ export function Signing3D({ career, club, managerName, onDone, terms, number, ki
   return <Signing3DView plan={plan} onDone={onDone} onFail={() => setFailed(true)} />;
 }
 
-function Signing3DView({ plan, onDone, onFail }: { plan: ReturnType<typeof signingPlan>; onDone: () => void; onFail: () => void }) {
+function Signing3DView({ plan, onDone: leaveNow, onFail }: { plan: ReturnType<typeof signingPlan>; onDone: () => void; onFail: () => void }) {
+  // Skip / Continue while the room is still loading wait for the start, the scene is let go, then the screen goes (three/walkLeave.ts)
+  const onDone = () => whenWalkSafe(leaveNow);
   const { lines, title, club, managerName } = plan;
   const insets = useSafeAreaInsets();
   const prefs = usePrefs();

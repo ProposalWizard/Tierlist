@@ -285,6 +285,79 @@ const walkSrc = fs.readFileSync(path.resolve("src/three/Walk3D.tsx"), "utf8");
 for (const [re, what] of [[/registerPlace\(place/, "registers the place while mounted"], [/wrapCallbacks\(cb/, "wraps the scene's callbacks (onEvent after the frame)"], [/onFrameError\(e\)/, "frame errors go to the net"], [/onFrame: \(\) => \{ if \(!me\.dead\) notePulse/, "frames pulse"], [/neutralizeGl\(/, "the GL is neutralised when the view goes"], [/unmounted\.current\) \{ neutralizeGl\(gl\)/, "onContextCreate after unmount does nothing"], [/traceCalls\(host\.controller/, "setShot/sign/skip are steps"]]) ok(re.test(walkSrc), "Walk3D " + what);
 ok(!/setTimeout\(\(\) => \{ clearInterval\(poll\)/.test(walkSrc), "Walk3D no longer clears the trail after 10 s of running");
 
+console.log("== Skip / Back while a place is loading: the scene is let go first, the screen goes after (src/three/walkLeave.ts)");
+{
+  const wl = path.join(path.dirname(out), "walkleave-check.cjs");
+  await build({ entryPoints: [path.resolve("src/three/walkLeave.ts")], bundle: true, platform: "node", format: "cjs", outfile: wl, logLevel: "error" });
+  const W = (globalThis.__wl = null, req(wl));
+  // a fake clock and a fake frame queue, so the order of events can be read
+  const mk = () => {
+    const log = [], frames = [], timers = [];
+    let leavingShown = false;
+    const gate = new W.LeaveGate({
+      dispose: () => log.push("dispose"),
+      after: (fn) => frames.push(fn),
+      leaving: (on) => { leavingShown = on; log.push(on ? "Leaving… shown" : "Leaving… hidden"); },
+      timer: (fn, ms) => { const t = { fn, ms, live: true }; timers.push(t); return () => { t.live = false; }; },
+    });
+    const frame = () => { while (frames.length) frames.shift()(); };
+    return { gate, log, frame, timers, shown: () => leavingShown };
+  };
+  // 1. Skip while the scene is still starting: nothing is disposed and nothing leaves until the start finishes
+  { const t = mk(); const un = W.registerWalkGate(t.gate); t.gate.starting();
+    let left = false; W.whenWalkSafe(() => { left = true; t.log.push("screen left (GLView unmounted)"); });
+    t.frame();
+    ok(!left && !t.log.includes("dispose"), "Skip during the start: the screen has NOT left and the scene is NOT disposed yet (the start is still using the GL)");
+    ok(t.shown(), "Skip during the start: \"Leaving…\" is shown");
+    t.log.push("start finished"); t.gate.settled(); t.frame();
+    ok(t.log.join(" > ") === "Leaving… shown > start finished > dispose > screen left (GLView unmounted)", "the order is: start finishes, scene disposed, THEN the screen leaves (" + t.log.join(" > ") + ")");
+    un(); }
+  // 2. Skip once the scene is up: disposed first, the screen a frame later
+  { const t = mk(); const un = W.registerWalkGate(t.gate); t.gate.starting(); t.gate.settled();
+    W.whenWalkSafe(() => t.log.push("screen left"));
+    ok(t.log.join(" > ") === "dispose", "Skip with the scene up: disposed at once, screen not yet gone (" + t.log.join(" > ") + ")");
+    t.frame();
+    ok(t.log.join(" > ") === "dispose > screen left", "Skip with the scene up: the screen leaves after the disposal (" + t.log.join(" > ") + ")");
+    un(); }
+  // 3. a start that fails still lets the leave go (the plain card is up, nothing to wait for)
+  { const t = mk(); const un = W.registerWalkGate(t.gate); t.gate.starting();
+    W.whenWalkSafe(() => t.log.push("screen left")); t.gate.settled(); t.frame();
+    ok(t.log.join(" > ") === "Leaving… shown > dispose > screen left", "a start that ends (even in failure) lets the waiting leave go");
+    un(); }
+  // 4. a start that never settles is not waited for forever
+  { const t = mk(); const un = W.registerWalkGate(t.gate); t.gate.starting();
+    W.whenWalkSafe(() => t.log.push("screen left"));
+    const tm = t.timers[0]; ok(tm && tm.ms === W.LEAVE_WAIT_MAX_MS && W.LEAVE_WAIT_MAX_MS <= 10000, "a hung start is waited for at most " + (tm && tm.ms) + " ms");
+    tm.fn(); t.frame();
+    ok(t.log.join(" > ") === "Leaving… shown > dispose > screen left", "after that time the scene is let go and the screen leaves anyway");
+    un(); }
+  // 5. no 3D place mounted: leaves at once; a second tap on Skip does not leave twice
+  { let n = 0; W.whenWalkSafe(() => n++); ok(n === 1, "no place mounted: the screen leaves at once");
+    const t = mk(); const un = W.registerWalkGate(t.gate); t.gate.starting();
+    let m = 0; W.whenWalkSafe(() => m++); W.whenWalkSafe(() => m++); t.gate.settled(); t.frame();
+    ok(m === 1, "Skip tapped twice while loading leaves once (left " + m + ")");
+    un(); }
+  // 6. the view was never made (Skip before the screen before went quiet): nothing to dispose, leaves
+  { const t = mk(); const un = W.registerWalkGate(t.gate);
+    let left = false; W.whenWalkSafe(() => { left = true; }); t.frame();
+    ok(left, "Skip before the GL view exists leaves straight away");
+    un(); }
+  // the wiring: Walk3D waits in each of its three start stages, and every screen that has a place leaves through the gate
+  const w3 = fs.readFileSync(path.resolve("src/three/Walk3D.tsx"), "utf8");
+  for (const [re, what] of [[/new LeaveGate\(/, "Walk3D makes a leave gate"], [/registerWalkGate\(gate\.current/, "registers it while mounted"],
+    [/gate\.current\?\.starting\(\);\s*markStep\(place, `GLView being made/, "the gate is 'starting' when the GL view is made"],
+    [/gate\.current\?\.wantsLeave\) \{ neutralizeGl\(gl\)/, "a leave asked before the GL context came: nothing is started on it"],
+    [/gate\.current\?\.wantsLeave\) \{ gate\.current\.settled\(\); return; \}/, "a leave asked while the scene started: it is not handed to the screen, it is disposed and the leave goes on"],
+    [/dispose: \(\) => \{ const l = live\.current; if \(l\) letGo\(l\)/, "the gate's disposal is the place's own letGo (host.dispose, then every GL call a no-op)"],
+    [/Leaving…/, "\"Leaving…\" is shown while it waits"]]) ok(re.test(w3), "Walk3D: " + what);
+  for (const [file, what] of [["src/screens/career/Signing3D.tsx", "the signing's Skip and Continue"], ["src/screens/career/Ceremonies.tsx", "the Golden Ball night and the Season Awards night's Skip"],
+    ["src/nav.tsx", "Back and home of the garden, shop, house, training pitch, drills and the hardware Back button"], ["src/screens/world/Drill3D.tsx", "the 3D drill's Exit"],
+    ["src/screens/world/Crossbar3D.tsx", "the Crossbar Challenge's Exit"], ["src/screens/world/StarPass.tsx", "the Star Pass reward preview (podium)"], ["src/screens/world/Locker.tsx", "the reward reveal (podium)"]]) {
+    ok(/whenWalkSafe\(/.test(fs.readFileSync(path.resolve(file), "utf8")), what + " go through whenWalkSafe");
+  }
+  ok(/useNav|hardwareBackPress/.test(fs.readFileSync(path.resolve("../phone/App.tsx"), "utf8")) && /back\(\)/.test(fs.readFileSync(path.resolve("../phone/App.tsx"), "utf8")), "the phone's Back button calls nav back(), which waits (src/nav.tsx)");
+}
+
 console.log(bad ? `\n${bad} FAILED` : "\nPASS: live 3D switch, breadcrumbs and the crash net");
 process.exit(bad ? 1 : 0);
 
