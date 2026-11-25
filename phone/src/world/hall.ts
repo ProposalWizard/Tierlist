@@ -31,6 +31,15 @@ export function addToPhoneHall(career: CareerState): boolean {
   return true;
 }
 
+/** Bring in a Hall of Fame book from elsewhere (the old app's, migrate/applyOldSave.ts): entries by id, anything removed stays removed. */
+export function importPhoneHall(other: HallBook) {
+  const seen = new Set(book.entries.map((e) => e.id));
+  const removed = Array.from(new Set([...book.removed, ...other.removed]));
+  const entries = [...book.entries, ...other.entries.filter((e) => !seen.has(e.id) && !removed.includes(e.id))]
+    .sort((a, b) => b.addedAt - a.addedAt).slice(0, HALL_MAX_ENTRIES);
+  write({ entries, removed });
+}
+
 /** Take one out (removeFromHall): it stays out. */
 export function removeFromPhoneHall(id: string) {
   write({ entries: book.entries.filter((e) => e.id !== id), removed: [...book.removed, id] });

@@ -10,6 +10,7 @@ import { ToonYouSync } from "./src/three/youSync";
 import { useLookFonts } from "./src/ui/look/fonts";
 import { OverlayHost } from "./src/ui/overlayHost";
 import { CoachHost } from "./src/screens/career/Coach";
+import { OldSavePrompt } from "./src/screens/OldSavePrompt";
 
 function Router() {
   const { stack, back } = useNav();
@@ -32,7 +33,7 @@ export default function App() {
       <SafeAreaProvider>
         <Immersive />
         <ToonYouSync />
-        <NavProvider initial={{ name: "title" }}><Router /><CoachHost /><OverlayHost /></NavProvider>
+        <NavProvider initial={{ name: "title" }}><Router /><CoachHost /><OverlayHost /><OldSavePrompt /></NavProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

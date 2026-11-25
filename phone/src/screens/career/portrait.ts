@@ -52,7 +52,7 @@ export async function pickPortrait(from: "library" | "camera"): Promise<Portrait
     const options = { mediaTypes: ["images"] as ("images")[], allowsEditing: true, aspect: [1, 1] as [number, number], quality: 0.7, base64: true, exif: false };
     if (from === "camera") {
       const perm = await Picker.requestCameraPermissionsAsync();
-      if (!perm.granted) return { ok: false, reason: "denied", message: perm.canAskAgain ? "The camera was not allowed." : "The camera is switched off for KIB Next. Turn it on in the phone's Settings → Apps → KIB Next → Permissions." };
+      if (!perm.granted) return { ok: false, reason: "denied", message: perm.canAskAgain ? "The camera was not allowed." : "The camera is switched off for this app. Turn it on in the phone's Settings → Apps → this app → Permissions." };
     }
     const res = from === "camera"
       ? await Picker.launchCameraAsync({ ...options, cameraType: Picker.CameraType.front })
