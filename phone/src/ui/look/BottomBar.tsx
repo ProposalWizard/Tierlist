@@ -1,10 +1,12 @@
 /**
  * THE WEBSITE'S BOTTOM BAR (components/star/MainBar.tsx, glass skin):
  *   League · Training · HOME · Phone · PLAY
- * The button of the screen you are on is a light glass pane (Home on Home), PLAY
- * the round green button rising out of the bar. Badges as the website: Training
- * shows the sessions left (amber, with a bolt), Phone the unread count (red);
- * a locked button shows a padlock and says how to open it when tapped.
+ * The button of the screen you are on has a green line under its word; Home on
+ * Home is a light glass pane; PLAY is the round green button rising out of the
+ * bar. Badges as the website: Training shows the sessions left (amber, with a
+ * bolt), Phone the unread count (red); on a full screen (`plain`: League, Shop,
+ * Sponsors, Star Pass) no numbers, only a red dot on Phone. A locked button
+ * shows a padlock and says how to open it when tapped.
  *
  *   <BottomBar active="home" />                            wired to the app's screens (useMainBarActions)
  *   <BottomBar active="league" on={{ league: …, play: … }} /> override any button
@@ -13,7 +15,7 @@
  * Home is one tap away everywhere, as on the website.
  */
 import { useMemo, useState } from "react";
-import { Text, View, type ViewStyle } from "react-native";
+import { Text, View, useWindowDimensions, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { nextFixtureFor } from "@/lib/star/competitions";
@@ -31,6 +33,7 @@ import { Press } from "../Press";
 import { PlayButton } from "./Buttons";
 import { useTourTarget } from "../tour";
 import { LockIcon } from "../LockIcon";
+import { NO_SHADOW } from "./tokens";
 
 export type BarTab = "league" | "training" | "home" | "phone" | "play";
 
@@ -92,9 +95,14 @@ function locksFor(career: CareerState): Partial<Record<BarTab, string>> {
   };
 }
 
-export function BottomBar({ active, on }: { active?: BarTab | null; on?: Partial<Record<BarTab, () => void>> }) {
+export function BottomBar({ active, on, plain }: {
+  active?: BarTab | null; on?: Partial<Record<BarTab, () => void>>;
+  /** The website's bar on a full screen (League, Shop, Sponsors, Star Pass: page.tsx mainBarRaw): no numbers, only a red dot on Phone while something is unread. */
+  plain?: boolean;
+}) {
   const career = useCareer();
   const inset = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const go = { ...useMainBarActions(), ...on };
   const [note, setNote] = useState<{ label: string; hint: string } | null>(null);
   // Named for the coach tour (ui/tour.tsx), as the website's data-tour names.
@@ -109,10 +117,14 @@ export function BottomBar({ active, on }: { active?: BarTab | null; on?: Partial
     if (hint) { setNote({ label, hint }); setTimeout(() => setNote((n) => (n?.label === label ? null : n)), 2600); return; }
     go[t]();
   };
+  // the website's words: 12 px from 380 wide, 11 px under it
+  const small = width < 380;
+  const phoneDot = plain ? !!badges.media || badges.life === "dot" : badges.life === "dot" && !badges.media;
   return (
     <View style={{
-      flexDirection: "row", alignItems: "flex-end", gap: 4, paddingHorizontal: 6, paddingTop: 5, paddingBottom: Math.max(6, inset.bottom),
-      backgroundImage: "linear-gradient(180deg, rgba(30,56,92,0.95), rgba(14,30,52,0.97))",
+      // MainBar.tsx + glassLook 5: 4 above, 6 at the sides and below, 4 between; see-through blue-slate, a light line on top
+      flexDirection: "row", alignItems: "flex-end", gap: 4, paddingHorizontal: 6, paddingTop: 4, paddingBottom: Math.max(6, inset.bottom),
+      backgroundColor: "rgba(14,30,52,0.56)",
       borderTopLeftRadius: 22, borderTopRightRadius: 22, borderTopWidth: 1, borderColor: "rgba(255,255,255,0.28)",
       boxShadow: "0px -6px 16px -8px rgba(0,0,0,0.7)",
     } as ViewStyle}>
@@ -122,33 +134,42 @@ export function BottomBar({ active, on }: { active?: BarTab | null; on?: Partial
           <Text style={{ color: "#fcd34d", fontSize: 12, fontWeight: "700" }}>{note.hint}</Text>
         </View>
       )}
-      <View {...leagueT} style={{ flex: 1 }}><NavBtn label="League" icon="🏆" on={active === "league"} locked={!!locks.league} onPress={() => tap("league", "League")} /></View>
-      <View {...trainingT} style={{ flex: 1 }}><NavBtn label="Training" icon="⚽" on={active === "training"} locked={!!locks.training} count={badges.skills} bolt onPress={() => tap("training", "Training")} /></View>
-      <View {...homeT} style={{ flex: 1 }}><NavBtn label="Home" icon="🏠" on={active === "home"} locked={false} onPress={() => { if (active !== "home") tap("home", "Home"); }} /></View>
-      <View {...phoneT} style={{ flex: 1 }}><NavBtn label="Phone" icon="📱" on={active === "phone"} locked={!!locks.phone} count={badges.media} dot={badges.life === "dot" && !badges.media} onPress={() => tap("phone", "Phone")} /></View>
-      <View style={{ flex: 1, alignItems: "center", height: 50 }}>
-        <View {...playT} style={{ position: "absolute", top: -22 }}>
-          <PlayButton locked={!!locks.play} today={!!badges.play} onPress={() => tap("play", "Play")} />
+      <View {...leagueT} style={{ flex: 1 }}><NavBtn small={small} label="League" icon="🏆" on={active === "league"} locked={!!locks.league} onPress={() => tap("league", "League")} /></View>
+      <View {...trainingT} style={{ flex: 1 }}><NavBtn small={small} label="Training" icon="⚽" on={active === "training"} locked={!!locks.training} count={plain ? undefined : badges.skills} bolt onPress={() => tap("training", "Training")} /></View>
+      <View {...homeT} style={{ flex: 1 }}><NavBtn small={small} label="Home" icon="🏠" home on={active === "home"} locked={false} onPress={() => { if (active !== "home") tap("home", "Home"); }} /></View>
+      <View {...phoneT} style={{ flex: 1 }}><NavBtn small={small} label="Phone" icon="📱" on={active === "phone"} locked={!!locks.phone} count={plain ? undefined : badges.media} dot={phoneDot} onPress={() => tap("phone", "Phone")} /></View>
+      {/* PLAY: 66 round, rising 20 above its 46-tall place (MainBar PlayBtn `-mt-5`) */}
+      <View style={{ flex: 1, alignItems: "center", height: 46 }}>
+        <View {...playT} style={{ position: "absolute", top: -20 }}>
+          <PlayButton locked={!!locks.play} onPress={() => tap("play", "Play")} />
         </View>
       </View>
     </View>
   );
 }
 
-function NavBtn({ label, icon, on, locked, count, bolt, dot, onPress }: { label: string; icon: string; on: boolean; locked: boolean; count?: number; bolt?: boolean; dot?: boolean; onPress: () => void }) {
+/**
+ * One button (MainBar NavBtn / HomeBtn, glass skin): 50 tall, the 18 px picture on an 18 line, 2 under it the
+ * word (12 on a 15 line; 11 on 13.75 under 380 wide). The button you are on has a green line under its word;
+ * only Home, when you are on Home, is a light pane.
+ */
+function NavBtn({ label, icon, on, home, locked, count, bolt, dot, small, onPress }: { label: string; icon: string; on: boolean; home?: boolean; locked: boolean; count?: number; bolt?: boolean; dot?: boolean; small?: boolean; onPress: () => void }) {
+  const size = small ? 11 : 12;
   return (
-    <Press onPress={onPress} style={[{ flex: 1, height: 50, borderRadius: 14, alignItems: "center", justifyContent: "center", gap: 2 },
-      on && ({ backgroundColor: "rgba(255,255,255,0.18)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.34)" } as ViewStyle)]}>
-      <Text style={{ fontSize: 18, opacity: locked ? 0.3 : 1 }}>{icon}</Text>
-      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: locked ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.92)", fontSize: 12, fontWeight: "900" }}>{label}</Text>
-      {locked && <View style={{ position: "absolute", right: 7, top: 5 }}><LockIcon size={13} color="rgba(255,255,255,0.75)" /></View>}
+    <Press onPress={onPress} style={[{ height: 50, borderRadius: 14, alignItems: "center", justifyContent: "center", gap: 2 },
+      home && on && ({ backgroundColor: "rgba(255,255,255,0.18)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.34)" } as ViewStyle)]}>
+      {/* drawn on a 22 line so no phone cuts the picture's top; it still takes 18 */}
+      <Text style={[{ fontSize: 18, lineHeight: 22, marginVertical: -2, opacity: locked ? 0.3 : 1 }, home && { textShadowColor: "rgba(253,224,71,0.8)", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 4 }]}>{icon}</Text>
+      <Text numberOfLines={1} style={[{ maxWidth: "100%", color: home && on ? "#ffffff" : "rgba(255,255,255,0.88)", fontSize: size, lineHeight: size * 1.25, fontWeight: "900", opacity: locked ? 0.6 : 1 }, !(on || home) && NO_SHADOW]}>{label}</Text>
+      {on && !home && <View style={{ position: "absolute", bottom: 4, width: 20, height: 3, borderRadius: 2, backgroundColor: "#34d399" }} />}
+      {locked && <View style={{ position: "absolute", right: 6, top: 6 }}><LockIcon size={12} color="#d1d5db" /></View>}
       {!locked && !!count && count > 0 && (
-        <View style={{ position: "absolute", right: 4, top: 3, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: bolt ? "#fbbf24" : "#ef4444", borderWidth: 2, borderColor: "#1e3a5c" }}>
-          {bolt && <Text style={{ fontSize: 8, marginRight: 1 }}>⚡</Text>}
-          <Text style={{ color: bolt ? "#030712" : "#fff", fontSize: 10, fontWeight: "900" }}>{count > 99 ? "99+" : count}</Text>
+        <View style={{ position: "absolute", right: 4, top: 4, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: bolt ? "#fbbf24" : "#ef4444", boxShadow: "0px 0px 0px 2px rgba(255,255,255,0.26)" } as ViewStyle}>
+          {bolt && <Text style={{ fontSize: 9, lineHeight: 11, marginVertical: -1, marginLeft: -2, marginRight: 1 }}>⚡</Text>}
+          <Text style={{ color: bolt ? "#030712" : "#fff", fontSize: 10.5, lineHeight: 10.5, fontWeight: "900", fontVariant: ["tabular-nums"] }}>{count > 99 ? "99+" : count}</Text>
         </View>
       )}
-      {!locked && dot && <View style={{ position: "absolute", right: 8, top: 6, width: 10, height: 10, borderRadius: 5, backgroundColor: "#ef4444" }} />}
+      {!locked && dot && !count && <View style={{ position: "absolute", right: 8, top: 6, width: 10, height: 10, borderRadius: 5, backgroundColor: "#ef4444", boxShadow: "0px 0px 0px 2px rgba(255,255,255,0.26)" } as ViewStyle} />}
     </Press>
   );
 }

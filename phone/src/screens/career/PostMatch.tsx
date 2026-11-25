@@ -359,6 +359,11 @@ function ScoreCard({ sting, celebrate, burst, children }: { sting: boolean; cele
 function Verdict({ children }: { children: ReactNode }) {
   return <Slam on={useLater(1000)}>{children}</Slam>;
 }
+/** PostMatch.tsx's StarIcon: a 14 px gold star (#fbbf24, soft gold glow) before each amount; the amount itself has no "★". */
+function PayStar() {
+  return <Text style={{ color: "#fbbf24", fontSize: 15, lineHeight: 16, textShadowColor: "rgba(251,191,36,0.6)", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 4 }}>★</Text>;
+}
+const exact = (n: number) => Math.round(n).toLocaleString("en-GB");
 /** The pay card (4.4 s): rises in, each row counts up, the total shines and floats its "+★". */
 function Pay({ wage, goalBonus, sponsorPay, totalCash }: { wage: number; goalBonus: number; sponsorPay: number; totalCash: number }) {
   const on = useLater(4400);
@@ -369,14 +374,18 @@ function Pay({ wage, goalBonus, sponsorPay, totalCash }: { wage: number; goalBon
         {([["Wage", wage], ["Goal Bonus", goalBonus], ["Sponsors", sponsorPay]] as [string, number][]).map(([k, v]) => (
           <View key={k} style={{ flexDirection: "row", paddingHorizontal: 12, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)" }}>
             <Text style={{ flex: 1, color: "#fff", fontSize: 12, fontWeight: "900" }}>{k}</Text>
-            <Text style={{ color: "#fff", fontSize: 14, fontWeight: "900", fontVariant: ["tabular-nums"] }}><CountUp value={on ? v : 0} ms={700} format={(n) => money(Math.round(n))} /></Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <PayStar />
+              <Text style={{ color: "#fff", fontSize: 14, fontWeight: "900", fontVariant: ["tabular-nums"] }}><CountUp value={on ? v : 0} ms={700} format={exact} /></Text>
+            </View>
           </View>
         ))}
         <View style={{ flexDirection: "row", alignItems: "center", margin: 8, marginTop: 6, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, backgroundImage: "linear-gradient(180deg, #34d399, #059669 60%, #065f46)", boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.4)" } as ViewStyle}>
           <Shine on={on} />
           <Text style={{ flex: 1, color: "#fff", fontWeight: "900", fontSize: 14 }}>Total Cash</Text>
-          <View>
-            <Text style={{ color: "#fff", fontWeight: "900", fontSize: 17, fontVariant: ["tabular-nums"] }}><CountUp value={on ? totalCash : 0} ms={900} format={(n) => money(Math.round(n))} /></Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <PayStar />
+            <Text style={{ color: "#fff", fontWeight: "900", fontSize: 17, fontVariant: ["tabular-nums"] }}><CountUp value={on ? totalCash : 0} ms={900} format={exact} /></Text>
             <FloatText on={on && totalCash > 0} text={`+${money(totalCash)}`} color="#fde047" />
           </View>
         </View>

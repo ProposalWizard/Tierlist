@@ -126,18 +126,18 @@ export function TrialBoard({ title, left, centreLabel, centreValue, right, foote
       boxShadow: "0px 6px 16px -6px rgba(0,0,0,0.8), inset 0px 1px 0px rgba(255,255,255,0.12)" } as ViewStyle}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={{ color: "#7dd3fc", fontSize: 11, fontWeight: "900", letterSpacing: 0.3, textTransform: "uppercase" }}>{title}</Text>
+          <Text numberOfLines={1} style={{ color: "#7dd3fc", fontSize: 11, fontWeight: "900", letterSpacing: 0.275, textTransform: "uppercase" }}>{title}</Text>
           {left}
         </View>
         <View style={{ alignItems: "center" }}>
           <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 9, fontWeight: "900", letterSpacing: 1.8, textTransform: "uppercase" }}>{centreLabel}</Text>
           {typeof centreValue === "string"
-            ? <Text style={{ color: "#fff", fontFamily: FONT.display, fontSize: 26, lineHeight: 30 }}>{centreValue}</Text>
+            ? <Text style={{ color: "#fff", fontFamily: FONT.display, fontSize: 24, lineHeight: 24, fontVariant: ["tabular-nums"] }}>{centreValue}</Text>
             : centreValue}
         </View>
         <View style={{ flex: 1, minWidth: 0, alignItems: "flex-end" }}>{right}</View>
       </View>
-      <Text style={{ marginTop: 3, minHeight: 14, textAlign: "center", color: "rgba(255,255,255,0.75)", fontSize: 10.5, fontWeight: "900", letterSpacing: 0.3, textTransform: "uppercase" }}>{footer ?? ""}</Text>
+      <Text style={{ marginTop: 4, minHeight: 14, textAlign: "center", color: "rgba(255,255,255,0.75)", fontSize: 10.5, fontWeight: "900", letterSpacing: 0.26, textTransform: "uppercase" }}>{footer ?? ""}</Text>
     </View>
   );
 }

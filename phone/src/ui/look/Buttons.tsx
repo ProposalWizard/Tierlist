@@ -12,6 +12,7 @@
 import { useState, type ReactNode } from "react";
 import { Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { Press } from "../Press";
+import { LockIcon } from "../LockIcon";
 import { FONT } from "./fonts";
 import { LOOK, rgba } from "./tokens";
 
@@ -41,7 +42,7 @@ export function LookButton({ label, onPress, kind = "primary", accent, small, di
   const k = disabled && kind === "accent" ? { box: { backgroundColor: "rgba(255,255,255,0.22)" } as ViewStyle, ink: "#ffffff" } : kindStyle(kind, accent);
   return (
     <Press disabled={disabled} onPress={onPress} style={[k.box, { borderRadius: small ? 8 : 12, paddingVertical: small ? 6 : web ? 12 : 13, paddingHorizontal: 10, alignItems: "center", justifyContent: "center" }, style]}>
-      {children ?? <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={[{ color: k.ink, fontSize: small ? 11 : 16, fontWeight: "900" }, web && { lineHeight: small ? 16.5 : 24 }]}>{label}</Text>}
+      {children ?? <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={[{ color: k.ink, fontFamily: FONT.sans, fontSize: small ? 11 : 16, fontWeight: "900" }, web && { lineHeight: small ? 16.5 : 24 }]}>{label}</Text>}
     </Press>
   );
 }
@@ -81,20 +82,21 @@ export function SlantButton({ icon, label, hint, badge, primary, gold, onPress, 
 }
 
 /** The round PLAY that rises out of the bottom bar, glowing green (glassLook 6, MainBar PlayBtn). */
-export function PlayButton({ onPress, locked, size = 66, today }: { onPress: () => void; locked?: boolean; size?: number; /** A match today (MainBar PlayBtn `today`): an amber ring. */ today?: boolean }) {
+export function PlayButton({ onPress, locked, size = 66 }: { onPress: () => void; locked?: boolean; size?: number; /** Kept for callers: the glass skin draws a match day the same (glassLook 6 sets the rim). */ today?: boolean }) {
+  // MainBar PlayBtn under glassLook 6: the same green, rim and glow locked or not; a drawn triangle (24 box) over PLAY (11 on an 11 line).
   return (
     <Press onPress={onPress} style={{
       width: size, height: size, borderRadius: size / 2, alignItems: "center", justifyContent: "center",
-      ...(locked
-        ? { backgroundColor: "#374151", borderWidth: 3, borderColor: "#1f2937" }
-        : {
-          backgroundImage: "radial-gradient(circle at 50% 35%, #5cff9a, #14c45a 60%, #0c8f3f)",
-          borderWidth: today ? 3 : 1, borderColor: today ? "#fcd34d" : "rgba(200,255,220,0.9)",
-          boxShadow: today ? "0px 0px 30px 9px rgba(252,211,77,0.55), 0px 0px 26px 6px rgba(34,227,107,0.6)" : "0px 0px 26px 6px rgba(34,227,107,0.6)",
-        }),
+      backgroundImage: "radial-gradient(circle at 50% 35%, #5cff9a, #14c45a 60%, #0c8f3f)",
+      borderWidth: 1, borderColor: "rgba(200,255,220,0.9)",
+      boxShadow: "0px 0px 26px 6px rgba(34,227,107,0.6), 0px 0px 60px 0px rgba(34,227,107,0.3)",
     } as ViewStyle}>
-      {locked ? <Text style={{ fontSize: 18 }}>🔒</Text> : <Text style={{ color: "#fff", fontSize: 22, marginLeft: 3, marginBottom: -2, textShadowColor: "rgba(0,60,25,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>▶</Text>}
-      <Text style={{ color: locked ? "#d1d5db" : "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1.2, textShadowColor: "rgba(0,60,25,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>PLAY</Text>
+      {locked ? <View style={{ width: 24, height: 24, alignItems: "center", justifyContent: "center" }}><LockIcon size={22} color="#ffffff" /></View> : (
+        <View style={{ width: 24, height: 24, marginLeft: 2 }}>
+          <View style={{ position: "absolute", left: 7, top: 4.5, width: 0, height: 0, borderTopWidth: 7.5, borderBottomWidth: 7.5, borderLeftWidth: 13, borderTopColor: "transparent", borderBottomColor: "transparent", borderLeftColor: "#ffffff" }} />
+        </View>
+      )}
+      <Text style={{ color: "#fff", fontSize: 11, lineHeight: 11, fontWeight: "900", letterSpacing: 0.55, textShadowColor: "rgba(0,60,25,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>PLAY</Text>
     </Press>
   );
 }

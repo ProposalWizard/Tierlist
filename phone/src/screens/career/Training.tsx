@@ -45,7 +45,7 @@ function SkillNumbers({ scope, value, stars, c1, c2 }: { scope: string; value: n
   seenSkill.set(scope, { value, stars });
   const rose = !!was && value > was.value;
   const starsRose = !!was && stars > was.stars;
-  const num = <Text style={{ color: c2, fontSize: 24, lineHeight: 26, fontWeight: "900", textShadowColor: rgba(c1, 0.7), textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }}>{value}</Text>;
+  const num = <Text style={{ color: c2, fontSize: 24, lineHeight: 24, fontWeight: "900", textShadowColor: rgba(c1, 0.7), textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }}>{value}</Text>;
   const st = <Text style={{ color: "#fcd34d", fontSize: 10, fontWeight: "900", marginTop: 2 }}>★ {stars}/90</Text>;
   return (
     <View style={{ alignItems: "center" }}>
@@ -70,7 +70,7 @@ export function TrainingScreen({ career, onBack, go }: { career: CareerState; on
     <Frame title="Training" top bar="training" bare backdrop="pitch">
       {/* The week's sessions as charge cells (SkillsScreen.tsx). */}
       <Card style={{ alignItems: "center", paddingVertical: 12, borderRadius: 4 }}>
-        <Text style={{ color: LOOK.emerald300, fontSize: 11, fontWeight: "900", letterSpacing: 2.2 }}>TRAINING</Text>
+        <Text style={{ color: LOOK.emerald300, fontSize: 10, fontWeight: "900", letterSpacing: 2.2 }}>TRAINING</Text>
         <TourTarget name="sessions" style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
           {Array.from({ length: TRAINING_SESSIONS_PER_WEEK }, (_, i) => <SessionCell key={i} full={i < left} />)}
         </TourTarget>
@@ -99,7 +99,7 @@ export function TrainingScreen({ career, onBack, go }: { career: CareerState; on
                 <Text style={{ fontSize: 22 }}>{icon}</Text>
               </View>
               {/* The name only; what it does is on the skill's own page (Mikey's playtest, 24 Oct 2026). */}
-              <Text style={{ flex: 1, color: "#fff", fontWeight: "900", fontSize: 15 }}>{label}</Text>
+              <Text style={{ flex: 1, color: "#fff", fontWeight: "900", fontSize: 15, lineHeight: 18.75 }}>{label}</Text>
               <SkillNumbers scope={`${career.player.firstName}${career.player.lastName}${career.player.startYear}:${key}`} value={value} stars={totalStars(starsOf(career, key))} c1={c1} c2={c2} />
             </View>
             <View style={{ marginTop: 10, flexDirection: "row" }}><Bar value={value} colors={[c1, c2]} height={12} /></View>

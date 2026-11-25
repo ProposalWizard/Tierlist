@@ -6,7 +6,11 @@
  * the national manager, Sponsors, a partner slot, Reputation and Fame.
  * The games themselves are the career area's (career-relationship-game).
  */
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Canvas, Image as SkImageView, type SkImage } from "@shopify/react-native-skia";
+import { fakeFaceFor, DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
+import { loadPicture } from "../../draw/PlayerFigure";
+import { clubGlow } from "../../world/ui";
 import { ScrollView, Text, View, type ViewStyle } from "react-native";
 import type { CareerState } from "@/lib/star/types";
 import { actionsLeft } from "@/lib/star/week";
@@ -33,14 +37,54 @@ const HELP: Record<Kind | "sponsors" | "reputation" | "fame", string> = {
   fame: "Goals, trophies and what you own make you famous.",
 };
 
+/**
+ * The bar (ui/LiquidBar.tsx, flat.css .sk-liq): a dark rounded track with a hairline rim, the fill a
+ * rounded pill running deep to light with a gloss along its top, the number over the middle.
+ */
 function SquareBar({ value, colors, shown }: { value: number; colors: [string, string]; shown?: number }) {
   const v = Math.max(0, Math.min(100, value));
   return (
-    <View style={{ height: 20, backgroundColor: "rgba(0,0,0,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.3)", justifyContent: "center", overflow: "hidden" }}>
-      <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${v}%`, backgroundImage: `linear-gradient(180deg, ${colors[1]}, ${colors[0]})` } as ViewStyle} />
+    <View style={{ height: 20, borderRadius: 10, justifyContent: "center", overflow: "hidden", backgroundImage: "linear-gradient(180deg, rgba(0,0,0,0.78), rgba(0,0,0,0.55))", boxShadow: "inset 0px 1px 3px rgba(0,0,0,0.8), inset 0px 0px 0px 1px rgba(255,255,255,0.22)" } as ViewStyle}>
+      {v > 0 ? (
+        <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${v}%`, minWidth: 8, borderRadius: 10, overflow: "hidden", backgroundImage: `linear-gradient(90deg, ${colors[0]}, ${colors[1]})`, boxShadow: "inset 0px -2px 4px rgba(0,0,0,0.28)" } as ViewStyle}>
+          <View pointerEvents="none" style={{ position: "absolute", left: 3, right: 3, top: "8%", height: "38%", borderRadius: 10, backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.62), rgba(255,255,255,0.06))" } as ViewStyle} />
+        </View>
+      ) : null}
       <Text style={{ textAlign: "center", color: "#fff", fontSize: 11, lineHeight: 14, fontWeight: "900", textShadowColor: "rgba(0,0,0,0.9)", textShadowRadius: 2, fontVariant: ["tabular-nums"] }}>{Math.round(shown ?? value)}</Text>
     </View>
   );
+}
+
+/** A face in a ring (RelationsPage.tsx Face): the photo covers the circle from its top; a glow in the row's colour. */
+function Face({ src, fallback, small, tone }: { src?: string; fallback?: string; small?: boolean; tone: string }) {
+  const s = small ? 28 : 40;
+  const inner = s - 4;
+  const [img, setImg] = useState<SkImage | null>(null);
+  useEffect(() => {
+    let alive = true;
+    setImg(null);
+    (async () => {
+      let got = src ? await loadPicture(src) : null;
+      if (!got) got = await loadPicture(fallback ?? DEFAULT_FAKE_FACE);
+      if (alive) setImg(got);
+    })();
+    return () => { alive = false; };
+  }, [src, fallback]);
+  const k = img ? Math.max(inner / img.width(), inner / img.height()) : 1;
+  return (
+    <View style={{ width: s, height: s, borderRadius: s / 2, borderWidth: 2, borderColor: "#111827", backgroundColor: "#4b5563", overflow: "hidden", boxShadow: `0px 0px ${small ? 6 : 12}px ${rgba(tone, 0.6)}` } as ViewStyle}>
+      {img ? (
+        <Canvas style={{ width: inner, height: inner }} pointerEvents="none">
+          <SkImageView image={img} x={(inner - img.width() * k) / 2} y={0} width={img.width() * k} height={img.height() * k} fit="fill" />
+        </Canvas>
+      ) : null}
+    </View>
+  );
+}
+/** The manager's stand-in face: never the same fake face as yours (RelationsPage managerFace). */
+function managerFace(name: string, yours: string) {
+  const f = fakeFaceFor(`manager:${name}`);
+  return f === yours ? fakeFaceFor(`gaffer:${name}:2`) : f;
 }
 
 function HelpDot({ on, onPress }: { on: boolean; onPress: () => void }) {
@@ -75,6 +119,9 @@ export function RelationsApp({ career, onPlay, onOpen }: { career: CareerState; 
   const fame = fameOf(career);
   const gf = career.girlfriend;
   const toggle = (k: string) => setHelp(help === k ? null : k);
+  const glow = clubGlow(career.player.club, career);
+  // the dressing room: the first two squad players with a photo (RelationsPage `mates`)
+  const mates = (career.squad ?? []).filter((p) => p.imageUrl).slice(0, 2);
 
   const game = (k: Kind, marks: number[]) => {
     const done = gamePlayedThisWeek(career.relGamesPlayed, career.season, career.week, k);
@@ -82,7 +129,11 @@ export function RelationsApp({ career, onPlay, onOpen }: { career: CareerState; 
     const off = !canPlay || done;
     return (
       <RowShell key={k} tone={CARD_TONE[k]} help={help === k ? HELP[k] : null}>
-        <View style={{ width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: rgba(CARD_TONE[k], 0.3), borderWidth: 2, borderColor: "#111827" }}><Text style={{ fontSize: 20 }}>{ICON[k]}</Text></View>
+        {k === "boss" ? <Face src={career.manager ? managerFace(career.manager.name, career.player.portrait ?? DEFAULT_FAKE_FACE) : undefined} tone={CARD_TONE.boss} />
+          : k === "team" ? (mates.length
+            ? <View style={{ flexDirection: "row" }}>{mates.map((p, i) => <View key={p.id} style={{ marginLeft: i ? -8 : 0 }}><Face src={p.imageUrl} fallback={fakeFaceFor(p.id)} small tone={CARD_TONE.team} /></View>)}</View>
+            : <View style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 22 }}>{ICON.team}</Text></View>)
+          : <View style={{ width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundImage: `radial-gradient(circle at 35% 30%, ${rgba(glow, 0.8)}, ${rgba(glow, 0.3)})` } as ViewStyle}><Text style={{ fontSize: 22 }}>{ICON.fans}</Text></View>}
         <View style={{ flex: 1, minWidth: 0 }}>
           <Label>{NAME[k]}</Label>
           <View>
@@ -102,7 +153,7 @@ export function RelationsApp({ career, onPlay, onOpen }: { career: CareerState; 
       <View style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 24 }}>{icon}</Text></View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Label>{name}</Label>
-        {value !== undefined ? <SquareBar value={value} shown={shown} colors={[tone, tone]} /> : null}
+        {value !== undefined ? <SquareBar value={value} shown={shown} colors={[tone, rgba(tone, 0.6)]} /> : null}
       </View>
     </>);
     return (

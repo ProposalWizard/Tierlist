@@ -39,6 +39,8 @@ export const ICON = {
   fame: require("../../../assets/look/icons/fame.png"),
   starFull: require("../../../assets/look/icons/star-full.png"),
   starEmpty: require("../../../assets/look/icons/star-empty.png"),
+  /** The top bar's settings gear (ui/GameBar.tsx GearIcon, white stroke; 72 px for an 18 px drawing). */
+  gear: require("../../../assets/look/icons/gear.png"),
   /** The match's own ball (public/star/ball.webp). */
   ball: require("../../../assets/look/icons/ball.webp"),
   /** A boot (public/shop/boot-control-L1.webp): Home's Assists tile. */

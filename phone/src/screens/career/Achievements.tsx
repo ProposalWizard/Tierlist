@@ -22,6 +22,10 @@ import { Press } from "../../ui/Press";
 import { FONT, LookButton } from "../../ui/look";
 import { TopSpace } from "../../ui/safe";
 import { ClubCrest } from "./kit";
+import { LockIcon } from "../../ui/LockIcon";
+import { useNav } from "../../nav";
+import { setCareer } from "../../game/store";
+import { LOCK_HINT, FEATURE_INFO, stepsFor, phoneStepLine, phoneShortfall, hasSeen, isOpen, markSeen, nextStep, stepDone, managerTalkDue, type StepId } from "@/lib/star/unlocks";
 
 const TIER: Record<AchievementTier, { label: string; rim: string; ink: string }> = {
   easy: { label: "Bronze", rim: "#cd7f32", ink: "#f2b27a" },
@@ -111,6 +115,74 @@ function Ring({ got, total }: { got: number; total: number }) {
   );
 }
 
+/**
+ * YOUR FIRST STEPS / COMING UP, above the ring (components/star/UnlockChain.tsx UnlockChallenges):
+ * the story steps in order, the next one with a green "Go →", then Sponsors (locked, or open with its own Go).
+ * Gone once every step is done and Sponsors has been seen. Go does what page.tsx goStep does.
+ */
+function UnlockChallenges({ career }: { career: CareerState }) {
+  const nav = useNav();
+  const next = nextStep(career);
+  const STEPS = stepsFor(career);
+  const sponsorsOpen = isOpen(career, "sponsors");
+  const sponsorsNew = sponsorsOpen && !hasSeen(career, "help-sponsors");
+  if (!next && sponsorsOpen && !sponsorsNew) return null;
+  const go = (id: StepId | "sponsors") => {
+    setCareer((c) => markSeen(c, `step-${id}`));
+    if (id === "first-two-sessions") nav.go("career-training");
+    else if (id === "first-game") nav.home();
+    else if (id === "boss-meeting") { if (managerTalkDue(career)) nav.go("career-relationship-game", { kind: "boss" }); else nav.go("career-relations"); }
+    else if (id === "buy-phone") nav.go("shop");
+    else if (id === "sponsors") nav.go("sponsors");
+  };
+  const sub = { color: "rgba(255,255,255,0.75)", fontSize: 10.5, lineHeight: 15.75, fontWeight: "700" } as const;
+  const GoBtn = ({ id, primary }: { id: StepId | "sponsors"; primary: boolean }) => (
+    <Press onPress={() => go(id)} style={[{ borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
+      (primary ? { backgroundImage: "linear-gradient(180deg, #4ade80, #10b981 55%, #047857)", boxShadow: "0px 6px 16px -4px rgba(16,185,129,0.7)" }
+        : { backgroundColor: "rgba(255,255,255,0.16)", boxShadow: "inset 0px 0px 0px 1px rgba(255,255,255,0.3)" }) as ViewStyle]}>
+      <Text style={{ color: "#fff", fontSize: 12, lineHeight: 18, fontWeight: "900" }}>Go →</Text>
+    </Press>
+  );
+  return (
+    <View style={{ marginBottom: 12, borderRadius: 16, overflow: "hidden", backgroundImage: "linear-gradient(180deg, rgba(251,191,36,0.12), rgba(0,0,0,0.25))", boxShadow: "inset 0px 0px 0px 1px rgba(252,211,77,0.3)" } as ViewStyle}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, paddingTop: 10 }}>
+        <Text style={{ color: "#fcd34d", fontSize: 10, lineHeight: 15, fontWeight: "900", letterSpacing: 2 }}>{STEPS.length ? "YOUR FIRST STEPS" : "COMING UP"}</Text>
+        {STEPS.length > 0 && <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, lineHeight: 15, fontWeight: "900" }}>{STEPS.filter((s) => stepDone(career, s.id)).length} / {STEPS.length}</Text>}
+      </View>
+      {STEPS.map((s, i) => {
+        const got = stepDone(career, s.id);
+        const isNext = next?.id === s.id;
+        const later = !got && !isNext;
+        return (
+          <View key={s.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)", backgroundColor: isNext ? "rgba(252,211,77,0.08)" : "transparent" }}>
+            <View style={[{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+              got ? { backgroundColor: "#fbbf24" } : isNext ? { backgroundColor: "rgba(255,255,255,0.15)", borderWidth: 2, borderColor: "#fcd34d" } : { backgroundColor: "rgba(255,255,255,0.06)" }]}>
+              <Text style={{ fontSize: 15, lineHeight: 22.5, fontWeight: "900", color: got ? "#030712" : isNext ? "#fcd34d" : "rgba(255,255,255,0.4)" }}>{got ? "★" : i + 1}</Text>
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ fontSize: 14, lineHeight: 20, fontWeight: "900", color: got ? "#fde047" : later ? "rgba(255,255,255,0.55)" : "#fff" }}>{s.todo}</Text>
+              <Text style={sub}>{got ? "Done" : s.opens}</Text>
+              {isNext && s.id === "buy-phone" && <Text style={[sub, { fontWeight: "900", color: phoneShortfall(career) > 0 ? "#fcd34d" : "#6ee7b7" }]}>{phoneStepLine(career)}</Text>}
+            </View>
+            {got && <Text style={{ color: "#34d399", fontSize: 18, lineHeight: 28, fontWeight: "900" }}>✓</Text>}
+            {isNext && <GoBtn id={s.id} primary />}
+          </View>
+        );
+      })}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 10 }}>
+        <View style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: sponsorsOpen ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.06)" }}>
+          {sponsorsOpen ? <Text style={{ fontSize: 17, lineHeight: 25.5 }}>🤝</Text> : <LockIcon size={16} />}
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={{ fontSize: 14, lineHeight: 20, fontWeight: "900", color: sponsorsOpen ? "#fff" : "rgba(255,255,255,0.7)" }}>{sponsorsOpen ? "Sponsors are open" : "Sponsors"}</Text>
+          <Text style={sub}>{sponsorsOpen ? FEATURE_INFO.sponsors.line : `Opens with your first offer · ${LOCK_HINT.sponsors}`}</Text>
+        </View>
+        {sponsorsOpen && <GoBtn id="sponsors" primary={sponsorsNew} />}
+      </View>
+    </View>
+  );
+}
+
 export function AchievementWall({ career }: { career: CareerState }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [open, setOpen] = useState<Achievement | null>(null);
@@ -125,6 +197,7 @@ export function AchievementWall({ career }: { career: CareerState }) {
   const shown = (a: Achievement) => filter === "all" || (filter === "done" ? done.has(a.id) : filter === "todo" ? !done.has(a.id) : nearIds.has(a.id));
   return (
     <View style={{ paddingBottom: 24 }}>
+      {career.unlocks ? <UnlockChallenges career={career} /> : null}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 16, borderRadius: 18, padding: 16,
         backgroundImage: "linear-gradient(135deg, rgba(253,224,71,0.22), rgba(245,158,11,0.08) 60%, rgba(0,0,0,0.2))", boxShadow: "inset 0px 0px 0px 1.5px rgba(253,224,71,0.55)" } as ViewStyle}>
         <Ring got={got} total={ACHIEVEMENTS.length} />
