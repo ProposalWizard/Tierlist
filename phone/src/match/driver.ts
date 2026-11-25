@@ -67,7 +67,7 @@ import { matchInputsFor, careerMatchSpec } from "@/lib/star/matchInputs";
 import { commentaryBuildup, commentaryStrike, commentaryReceived, commentaryReceiverShot, commentaryResult } from "@/lib/star/matchCommentary";
 import { isBigMoment, headingIn, BIG_SLOW_RATE } from "@/lib/star/bigMoment";
 import { leoUpdateOn } from "@/lib/star/leoUpdate";
-import { finaliseMatch, fairRating } from "@/lib/star/matchStats";
+import { finaliseMatch, fairRating, regressForMinutes } from "@/lib/star/matchStats";
 import { goalZone, passGrade, missKind } from "@/lib/star/chanceRating";
 import { runStretch } from "@/lib/star/stretchRun";
 import { hookCheck, subComesOnNow, SUB_OFF_ENERGY, type HookReason } from "@/lib/star/selection";
@@ -597,6 +597,15 @@ export class MatchDriver {
   ratingSoFar(): number {
     const t = this.tally;
     return fairRating({ ...t, passes: t.passesCompleted }, this.userScore, this.oppScore).rating;
+  }
+  /** The plate's RATING box, as CanvasMatch draws it: the same fair rating, on the score AS SHOWN (goal lines
+   *  in the feed), pulled toward 6.5 for the minutes you have played. So the box at full time is the
+   *  post-match number, and it does not start at the raw 6.1 before you have done anything. */
+  shownRating(): number {
+    const t = this.tally;
+    let us = 0, them = 0;
+    for (const l of this.log) { if (l.tone === "goal") us++; else if (l.tone === "oppGoal") them++; }
+    return regressForMinutes(fairRating({ ...t, passes: t.passesCompleted }, us, them).rating, Math.max(1, this.matchMinute - this.enteredAt));
   }
   private matchExtras() {
     const t = this.tally;

@@ -42,20 +42,24 @@ const LINE_GLOSS = {
   boxShadow: "inset 0px 1px 0px rgba(255,255,255,0.16), inset 0px -1px 0px rgba(0,0,0,0.4)",
 } as ViewStyle;
 
+// The sizes are MatchCommentary's Line, set out in full: the minute chip is 10 px on the page's 1.5 line
+// (15) + py-0.5 = 19 px, the words 12 px `leading-snug` (16.5), the row `py-1.5`: 31 px for one line, 47.6
+// for two. Packed lines the two up on their baselines; here the words start 0.6 px down, which is the same
+// place (the elsewhere line, 11 px: 1.6 px) and does not depend on how a phone measures a baseline.
 function FeedLine({ l, d, kits }: { l: LogLine; d: MatchDriver; kits: MatchKits }) {
   const shown = l.minute !== undefined ? minuteLabel(l.minute, d.ADDED, d.MATCH_DURATION) : "";
   const home = d.setup.fixture.home !== false;
   const userKit = home ? kits.home : kits.away, oppKit = home ? kits.away : kits.home;
   const chip = (
     <View style={{ minWidth: 24, borderRadius: 4, backgroundColor: "rgba(0,0,0,0.7)", paddingHorizontal: 2, paddingVertical: 2, alignItems: "center" }}>
-      <Text style={{ color: "#fff", fontSize: 10, fontWeight: "900" }}>{shown}</Text>
+      <Text style={{ color: "#fff", fontSize: 10, lineHeight: 15, fontWeight: "900" }}>{shown}</Text>
     </View>
   );
   if (l.tone === "period") {
     return (
       <View style={[{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: "rgba(21,95,56,0.8)", borderTopWidth: 1, borderBottomWidth: 1, borderColor: "rgba(255,255,255,0.1)" }, LINE_GLOSS]}>
-        {l.minute !== undefined && <Text style={{ minWidth: 24, color: "#fff", fontSize: 10, fontWeight: "900" }}>{shown}</Text>}
-        <Text style={{ flex: 1, textAlign: "center", color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 2 }}>{l.text.toUpperCase()}</Text>
+        {l.minute !== undefined && <Text style={{ minWidth: 24, color: "#fff", fontSize: 10, lineHeight: 15, fontWeight: "900" }}>{shown}</Text>}
+        <Text style={{ flex: 1, textAlign: "center", color: "#fff", fontSize: 11, lineHeight: 16.5, fontWeight: "900", letterSpacing: 2 }}>{l.text.toUpperCase()}</Text>
         {l.minute !== undefined && <View style={{ width: 24 }} />}
       </View>
     );
@@ -64,7 +68,7 @@ function FeedLine({ l, d, kits }: { l: LogLine; d: MatchDriver; kits: MatchKits 
     return (
       <View style={[{ flexDirection: "row", alignItems: "flex-start", gap: 8, paddingHorizontal: 12, paddingRight: 64, paddingVertical: 6, backgroundColor: "rgba(8,47,73,0.9)" }, LINE_GLOSS]}>
         {chip}
-        <Text style={{ flex: 1, color: "#e0f2fe", fontSize: 11, fontWeight: "700", lineHeight: 15 }}>{l.text}</Text>
+        <Text style={{ flex: 1, marginTop: 1.6, color: "#e0f2fe", fontSize: 11, fontWeight: "700", lineHeight: 15.125 }}>{l.text}</Text>
       </View>
     );
   }
@@ -79,7 +83,7 @@ function FeedLine({ l, d, kits }: { l: LogLine; d: MatchDriver; kits: MatchKits 
     <View style={[{ flexDirection: "row", alignItems: "flex-start", gap: 8, paddingLeft: l.tone === "assist" ? 32 : 12, paddingRight: 64, paddingVertical: 6, backgroundColor: row.backgroundColor }, LINE_GLOSS]}>
       {l.tone === "goal" ? <GoalFlash /> : null}
       {chip}
-      <Text style={{ flex: 1, color: row.color, fontSize: 12, fontWeight: weight, lineHeight: 16 }}>{l.text}</Text>
+      <Text style={{ flex: 1, marginTop: 0.6, color: row.color, fontSize: 12, fontWeight: weight, lineHeight: 16.5 }}>{l.text}</Text>
     </View>
   );
 }
@@ -289,7 +293,9 @@ export function MatchFeed({ d, kits }: { d: MatchDriver; kits: MatchKits }) {
           {d.log.length <= 1
             ? <KickOffCard d={d} kits={kits} />
             : lines.map((l) => <FeedLine key={l.id} l={l} d={d} kits={kits} />)}
-          <View style={{ height: 52 }} />
+          {/* No space kept under the last line: the playstyle buttons have their own 48 px strip below, which is
+              the 48 px (`pb-12`) packed keeps under its list for its floating buttons. Both at once left an
+              empty band above the buttons and cut two lines (and 52 px of the kick-off card) on a short phone. */}
         </Pressable>
       </ScrollView>
       {/* The minute and the speed on one plate, floating over the feed's corner (tap: faster). */}
