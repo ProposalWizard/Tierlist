@@ -167,6 +167,12 @@ export async function GET(request: NextRequest) {
       if (found) player.image_url = found;
     }
   }
+  // A raw SoFIFA link left after that answers 403 (SoFIFA needs a login since
+  // Aug 2026): the card waited about half a second for the error before showing
+  // the silhouette. Send no link instead, so the silhouette shows at once.
+  for (const player of roster) {
+    if (player.image_url && !isSelfHosted(player.image_url) && player.image_url.includes("cdn.sofifa.net")) player.image_url = null;
+  }
 
   // Safety net: estimate OVR from face stats if all other sources returned 0
   for (const player of roster) {
@@ -277,7 +283,12 @@ export async function GET(request: NextRequest) {
     { club, year, roster: cleanRoster },
     {
       // s-maxage: Vercel's CDN keeps it too, so repeat asks cost no server time (6 Nov 2026).
-      headers: { "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400" },
+      headers: {
+        "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
+        // Vercel's own CDN header too: the live site answered X-Vercel-Cache: BYPASS to
+        // every request with only Cache-Control (measured 24 Nov 2026).
+        "Vercel-CDN-Cache-Control": "max-age=3600, stale-while-revalidate=86400",
+      },
     }
   );
 }

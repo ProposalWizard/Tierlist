@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createPublicReadClient } from "@/lib/supabase/publicRead";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
 import { PREMIER_LEAGUE_CLUBS } from "@/lib/star/clubs";
@@ -54,7 +54,52 @@ function isEnglishPLClub(club: string): boolean {
 
 const PAGE_SIZE = 1000;
 
-export async function GET() {
+/*
+ * ── Speed (24 Nov 2026) ──
+ * The list below is built by scanning every player row in the database
+ * (get_pl_club_seasons has no index to use). Measured on the live site:
+ * 9.5 s for a cold first call, about 1 s after, and 14 calls since August
+ * that hit the 30-second limit and failed. Almost every new player opens
+ * Draft mode first, so that wait was the first thing they saw.
+ *
+ * Now the answer is kept for 5 minutes: in this server's memory, and on
+ * Vercel's CDN, which also hands out the last answer while it fetches a new
+ * one in the background (stale-while-revalidate). Players never wait on the
+ * scan once it has run once. The admin pages that are editing FC 27 pass
+ * ?fresh=1 and always get a new answer (the old "not cached" reason below).
+ */
+const KEEP_MS = 5 * 60_000;
+let kept: { at: number; body: unknown } | null = null;
+let building: Promise<unknown> | null = null;
+
+export async function GET(request: NextRequest) {
+  const fresh = request.nextUrl.searchParams.get("fresh") === "1";
+  if (!fresh && kept && Date.now() - kept.at < KEEP_MS) return answer(kept.body, false);
+  try {
+    // One scan at a time: callers that arrive while it runs share it.
+    building ??= buildClubList().finally(() => { building = null; });
+    const body = await building;
+    return answer(body, fresh);
+  } catch (e) {
+    // The scan failed: an older answer beats an error screen.
+    if (kept) return answer(kept.body, false);
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Could not load clubs" }, { status: 500 });
+  }
+}
+
+function answer(body: unknown, fresh: boolean) {
+  return NextResponse.json(body, {
+    headers: fresh
+      ? { "Cache-Control": "no-store" }
+      : {
+          "Cache-Control": "public, max-age=60, stale-while-revalidate=86400",
+          // Vercel's own CDN header: kept 5 minutes, then served stale while it refreshes.
+          "Vercel-CDN-Cache-Control": "max-age=300, stale-while-revalidate=86400",
+        },
+  });
+}
+
+async function buildClubList(): Promise<unknown> {
   const supabase = createPublicReadClient();
 
   const clubMap = new Map<string, Set<number>>();
@@ -107,9 +152,7 @@ export async function GET() {
         .order("id", { ascending: true })
         .range(from, from + PAGE_SIZE - 1);
 
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
+      if (error) throw new Error(error.message);
       for (const row of data ?? []) {
         if (isEnglishPLClub((row.club as string) ?? "")) {
           add(row.club as string, row.fifa_year as number);
@@ -162,30 +205,25 @@ export async function GET() {
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  return NextResponse.json(
-    {
-      clubs,
-      // Enough to tell the three failure modes apart from a browser, without
-      // needing database access: whether the SQL function is installed, whether
-      // the current edition was found by name, and which editions came back.
-      meta: {
-        rpc: rpcWorked,
-        currentEdition: STAR_FIFA_YEAR,
-        playersFoundByName: byName,
-        editions: Array.from(new Set(clubs.flatMap((c) => c.seasons))).sort((a, b) => b - a),
-      },
+  const body = {
+    clubs,
+    // Enough to tell the three failure modes apart from a browser, without
+    // needing database access: whether the SQL function is installed, whether
+    // the current edition was found by name, and which editions came back.
+    meta: {
+      rpc: rpcWorked,
+      currentEdition: STAR_FIFA_YEAR,
+      playersFoundByName: byName,
+      editions: Array.from(new Set(clubs.flatMap((c) => c.seasons))).sort((a, b) => b - a),
     },
-    {
-      // ── Not cached ──
-      //
-      // This is the list of clubs that exist in each edition, and FC 27 is being
-      // built by hand right now — cloned in, edited, players moved between clubs
-      // while the transfer window is open. It was cached for an hour, then for a
-      // minute; both meant a club that had just gained its first FC 27 player
-      // did not appear, with nothing on screen to say the answer was stale, and
-      // a stale answer here reads as "the import failed" and sends you back to
-      // the SQL editor. The RPC makes the query cheap enough to just ask.
-      headers: { "Cache-Control": "no-store" },
-    }
-  );
+  };
+  // A list with no clubs is never kept: it is a failed read, not an answer.
+  if (clubs.length > 0) kept = { at: Date.now(), body };
+  /*
+   * Why the admin pages still ask for a fresh answer (?fresh=1): FC 27 is
+   * built by hand, cloned in and edited while the transfer window is open.
+   * A kept answer meant a club that had just gained its first FC 27 player did
+   * not appear, which reads as "the import failed". Players don't need that.
+   */
+  return body
 }
