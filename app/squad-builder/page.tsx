@@ -3,7 +3,7 @@ import SquadBuilder from "@/components/SquadBuilder";
 import PageGuide from "@/components/admin/PageGuide";
 
 export const metadata = {
-  title: "Squad Builder | Knowitball",
+  title: "Squad Builder",
   description: "Build your dream squad with any formation. Drag players into position and share your lineup.",
 };
 

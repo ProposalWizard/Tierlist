@@ -40,10 +40,10 @@ export default async function AuthPage({
         {/* App branding */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight text-white">
-            ⚽ Football Tierlist
+            ⚽ Knowitball
           </h1>
           <p className="mt-2 text-white">
-            Sign in to build and save your player rankings
+            Sign in to keep your careers, drafts and scores on every device
           </p>
         </div>
 

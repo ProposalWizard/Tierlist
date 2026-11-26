@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const metadata: Metadata = {
-  title: "Daily Tic Tac Toe — Knowitball",
+  title: "Daily Tic Tac Toe",
   description: "Play today's daily Football Tic Tac Toe challenge.",
   alternates: { canonical: "/tic-tac-toe/daily" },
 };

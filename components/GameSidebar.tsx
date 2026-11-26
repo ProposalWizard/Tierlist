@@ -21,7 +21,7 @@ const ALL_GAMES: GameLink[] = [
   { name: "Road to the Golden Ball", description: "Live a career and win the world's greatest award", href: GAME_PATH, beta: true },
   { name: "Tierlists",           description: "Create & play drag-and-drop tierlists",    href: "/tierlists"  },
   { name: "PL Draft",            description: "Build a dream XI from random FIFA rosters", href: "/draft"     },
-  { name: "Ten-A-Ball",          description: "Football trivia — ten questions, ten lives", href: "/tenable"  },
+  { name: "Ten-A-Ball",          description: "Name all ten before your three lives run out", href: "/tenable"  },
   { name: "Football Tic Tac Toe",description: "Pick players to fill the grid",            href: "/tic-tac-toe"},
   { name: "Blind Rankings",      description: "Rank players without knowing who's next",   href: "/blind-rankings" },
 ];
