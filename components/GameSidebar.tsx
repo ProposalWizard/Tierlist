@@ -113,6 +113,9 @@ export default function GameSidebar() {
                   <Link
                     key={game.href}
                     href={game.href}
+                  // No early download (26 Nov 2026): on every page the menus pulled in
+                  // about 5 MB of game code nobody had asked for yet.
+                  prefetch={false}
                     className={`group mx-3 my-0.5 block rounded-lg px-3 py-3 transition-colors ${
                       isActive
                         ? "bg-purple-900/30 text-white"

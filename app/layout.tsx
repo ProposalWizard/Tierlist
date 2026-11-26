@@ -70,17 +70,19 @@ export const metadata: Metadata = {
     default: "Knowitball",
     template: "%s | Knowitball",
   },
-  description: "Drag and drop football players into S, A, B, C, D tiers. Save and share your rankings — free forever.",
+  // The site's default words for search results and link previews. They still
+  // described Tierlists (paused since 17 Nov 2026) until 26 Nov 2026.
+  description: "Free football games: Road to the Golden Ball (a football career game), Premier League Draft, Tic Tac Toe and Ten-A-Ball.",
   openGraph: {
     type: "website",
-    siteName: "Knowitball Tierlists",
-    title: "Knowitball Tierlists",
-    description: "Drag and drop football players into S, A, B, C, D tiers. Save and share your rankings.",
+    siteName: "Knowitball",
+    title: "Knowitball",
+    description: "Free football games: Road to the Golden Ball (a football career game), Premier League Draft, Tic Tac Toe and Ten-A-Ball.",
   },
   twitter: {
     card: "summary",
-    title: "Knowitball Tierlists",
-    description: "Drag and drop football players into S, A, B, C, D tiers. Save and share your rankings.",
+    title: "Knowitball",
+    description: "Free football games: Road to the Golden Ball (a football career game), Premier League Draft, Tic Tac Toe and Ten-A-Ball.",
   },
 };
 

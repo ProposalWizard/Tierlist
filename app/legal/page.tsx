@@ -7,7 +7,7 @@ import { ChangeCookieChoice } from "@/components/CookieConsent";
 
 export const metadata: Metadata = {
   title: "Privacy & Terms",
-  description: "Privacy Policy and Terms of Use for Knowitball Tierlists.",
+  description: "Privacy Policy and Terms of Use for Knowitball.",
   alternates: { canonical: "/legal" },
 };
 

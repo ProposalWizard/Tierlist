@@ -94,6 +94,12 @@ const nextConfig = {
     return [
       { source: "/star-dev", destination: "/road-to-the-golden-ball", permanent: false },
       { source: "/road-to-ballon-dor", destination: "/road-to-the-golden-ball", permanent: true },
+      // The sign-in page is /auth; the addresses people type by habit went to "not found" (26 Nov 2026).
+      { source: "/login", destination: "/auth", permanent: false },
+      { source: "/signin", destination: "/auth", permanent: false },
+      { source: "/sign-in", destination: "/auth", permanent: false },
+      { source: "/register", destination: "/auth", permanent: false },
+      { source: "/signup", destination: "/auth", permanent: false },
     ];
   },
   async headers() {

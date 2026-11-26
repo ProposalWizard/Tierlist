@@ -39,6 +39,9 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
             <Link
               key={g.href}
               href={g.href}
+                  // No early download (26 Nov 2026): on every page the menus pulled in
+                  // about 5 MB of game code nobody had asked for yet.
+                  prefetch={false}
               className={`flex flex-shrink-0 items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
                 isActive
                   ? "bg-purple-700/40 text-purple-300"
@@ -62,6 +65,9 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
           <Link
             key={g.href}
             href={g.href}
+                  // No early download (26 Nov 2026): on every page the menus pulled in
+                  // about 5 MB of game code nobody had asked for yet.
+                  prefetch={false}
             className={`flex flex-shrink-0 items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap ${
               isActive
                 ? "bg-purple-700/40 text-purple-300"

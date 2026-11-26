@@ -12,10 +12,13 @@ import { createClient } from "@/lib/supabase/server";
 import { isGuestUser } from "@/lib/guest/config";
 import { createServiceClient } from "@/lib/supabase/service";
 import { claimTesterLink, type TesterClient } from "@/lib/testerLinks";
+import { overLimit, slowDown, LIMITS } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  // Too many from one person: a friendly 429, never a crash (lib/rateLimit).
+  if (await overLimit(req, LIMITS.testerClaim)) return slowDown(LIMITS.testerClaim);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   // Guests (lib/guest/config.ts) count as signed out here.

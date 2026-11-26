@@ -162,6 +162,9 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
                 <Link
                   key={g.href}
                   href={g.href}
+                  // No early download (26 Nov 2026): on every page the menus pulled in
+                  // about 5 MB of game code nobody had asked for yet.
+                  prefetch={false}
                   onClick={() => setOpen(false)}
                   className="px-4 py-2 text-sm font-semibold text-white hover:bg-gray-900"
                 >

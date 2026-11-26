@@ -130,7 +130,8 @@ export const config = {
     // No page lives under those three paths (/star-dev is "star-", not "star/").
     // Also skips the two squad routes (6 Nov 2026): they never ask who you
     // are, and a login cookie refreshed on their answer would stop Vercel's
-    // CDN keeping it (they are the same for every player).
-    "/((?!_next/static|_next/image|favicon.ico|star/|sfx/|models/|api/star/league-squads|api/draft/roster|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // CDN keeping it (they are the same for every player). The club list and
+    // the season rewards joined them on 26 Nov 2026, for the same reason.
+    "/((?!_next/static|_next/image|favicon.ico|star/|sfx/|models/|api/star/league-squads|api/draft/roster|api/draft/clubs|api/season-rewards|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
