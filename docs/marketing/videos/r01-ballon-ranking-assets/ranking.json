@@ -4,7 +4,7 @@
  "top": 20,
  "shown": 3,
  "step": 2.0,
- "endHold": 4.6,
+ "endHold": 5.3,
  "rows": [
   {
    "rank": 1,
@@ -153,5 +153,7 @@
   "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/stadium/s1.jpg",
   "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/stadium/s2.jpg",
   "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/stadium/s3.jpg"
- ]
+ ],
+ "t0": -0.3,
+ "front": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Noni_Madueke.png"
 }

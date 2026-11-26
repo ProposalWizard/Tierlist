@@ -1,7 +1,7 @@
 // node render.mjs data.json out.mp4 [music.mp3]  (Mikey, 26 Nov 2026): the ranking countdown, frame by frame.
 import { chromium } from "playwright"; import fs from "node:fs"; import { spawn } from "node:child_process"; import path from "node:path";
 const [dataPath, out, music] = process.argv.slice(2); const D = JSON.parse(fs.readFileSync(dataPath, "utf8")); const FPS = 30;
-const dur = 0.35 + (D.top - D.shown - 5) * D.step + D.endHold;
+const dur = (D.t0 ?? 0.35) + (D.top - D.shown - 5) * D.step + D.endHold;
 const br = await chromium.launch({ args: ["--allow-file-access-from-files"] }); const p = await br.newPage({ viewport: { width: 1080, height: 1920 } });
 await p.goto("file://" + path.resolve(path.dirname(new URL(import.meta.url).pathname), "ranking.html")); await p.evaluate(async (d) => window.setup(d), D);
 const args = ["-v", "error", "-y", "-f", "image2pipe", "-framerate", String(FPS), "-i", "-"]; if (music) args.push("-i", music);

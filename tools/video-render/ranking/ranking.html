@@ -30,24 +30,35 @@ const load = src => new Promise(res => { if (!src) return res(null); const i = n
 window.setup = async (data) => { D = data; await document.fonts.load("800 40px Mont"); await document.fonts.load("900 40px Mont"); await document.fonts.load("800 40px Mont", "ÉÜÇĞ");
   IM.podium = await load(D.podium); IM.st = []; for (const s of D.stadiums) IM.st.push(await load(s));
   for (const r of D.rows) { IM["c" + r.rank] = await load(r.cut); IM["k" + r.rank] = await load(r.badge); IM["f" + r.rank] = await load(r.flag); }
-  for (const r of D.rows.filter(r => r.rank <= 5)) { const im = IM["c" + r.rank]; if (!im) continue; const pad = 24, cw = im.width + pad * 2, ch = im.height + pad * 2;
+  IM.front = await load(D.front); for (const r of D.rows.filter(r => r.rank <= 5)) { const im = r.rank === 1 && IM.front ? IM.front : IM["c" + r.rank]; if (!im) continue; const pad = 24, cw = im.width + pad * 2, ch = im.height + pad * 2;
     const mk = (fill) => { const cv = document.createElement("canvas"); cv.width = cw; cv.height = ch; const x = cv.getContext("2d"); x.drawImage(im, pad, pad); x.globalCompositeOperation = "source-in"; x.fillStyle = fill(x); x.fillRect(0, 0, cw, ch); return cv; };
     const rim = mk(() => "#f0bf5c"), body = mk(x => { const gr = x.createLinearGradient(0, 0, 0, ch); gr.addColorStop(0, "#7a5520"); gr.addColorStop(0.5, "#3d2a10"); gr.addColorStop(1, "#140d05"); return gr; });
     const out = document.createElement("canvas"); out.width = cw; out.height = ch; const o = out.getContext("2d"); o.drawImage(rim, -9, -7); o.drawImage(rim, 9, -7); o.drawImage(body, 0, 0); IM["s" + r.rank] = out; }
   return true; };
 const rowOf = rank => D.rows.find(r => r.rank === rank);
 function cover(im, cx, cy, z, blur, alpha) { if (!im) return; const k = Math.max(W / im.width, H / im.height) * z, w = im.width * k, h = im.height * k; g.save(); g.globalAlpha = alpha; if (blur) g.filter = `blur(${blur}px)`; g.drawImage(im, cx - w / 2, cy - h / 2, w, h); g.restore(); }
-// the huge zoomed-in golden ball: fills the left of the screen, its curved edge down the middle, behind the player
-function bigBall(t) { const im = IM.podium; if (!im) return; const R = 1180, cx = -560 + 10 * Math.sin(t * 0.5), cy = 760;
-  const r0 = im.width * BALL.r, k = R / r0; g.save(); g.beginPath(); g.arc(cx, cy, R, 0, 7); g.clip();
-  g.drawImage(im, cx - im.width * BALL.cx * k, cy - im.height * BALL.cy * k, im.width * k, im.height * k);
-  const sh = g.createRadialGradient(cx, cy, R * 0.7, cx, cy, R); sh.addColorStop(0, "rgba(0,0,0,0)"); sh.addColorStop(1, "rgba(60,30,0,.35)"); g.fillStyle = sh; g.fillRect(0, 0, W, H); g.restore();
-  g.save(); g.strokeStyle = "rgba(255,240,195,.9)"; g.lineWidth = 4; g.shadowColor = "rgba(255,210,120,1)"; g.shadowBlur = 28; g.beginPath(); g.arc(cx, cy, R, -1.0, 1.0); g.stroke(); g.restore(); }
+// the gold panel (as in the TikTok): the golden ball's panels seen close up, filling the left of the screen; its right edge
+// is a "(" curve, the edge of a huge circle centred far off to the right. It sits in front of the player, behind the board.
+const EDGE = { cx: 4834, cy: 960, R: 4244 };   // edge at x ~ 700 at the top and bottom, ~ 590 in the middle
+const edgeX = y => EDGE.cx - Math.sqrt(EDGE.R * EDGE.R - (y - EDGE.cy) * (y - EDGE.cy));
+function goldPanel(t) { const im = IM.podium; if (!im) return; g.save(); g.beginPath(); g.moveTo(0, 0); for (let y = 0; y <= H; y += 20) g.lineTo(edgeX(y), y); g.lineTo(0, H); g.closePath(); g.clip();
+  const r0 = im.width * BALL.r, R = 1500, k = R / r0, bx = 160 + 14 * Math.sin(t * 0.4), by = 700 + 10 * Math.cos(t * 0.33);
+  g.drawImage(im, bx - im.width * BALL.cx * k, by - im.height * BALL.cy * k, im.width * k, im.height * k);
+  let gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(255,230,160,.10)"); gr.addColorStop(0.6, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,.55)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  gr = g.createLinearGradient(540, 0, 720, 0); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(40,20,0,.35)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); g.restore();
+  g.save(); g.strokeStyle = "rgba(255,238,190,.9)"; g.lineWidth = 4; g.shadowColor = "rgba(255,210,120,1)"; g.shadowBlur = 24; g.beginPath(); for (let y = 0; y <= H; y += 20) (y ? g.lineTo : g.moveTo).call(g, edgeX(y), y); g.stroke(); g.restore(); }
+// gold sparkles drifting up behind the player, coming and going in waves
+function sparkles(t) { const wave = Math.pow(Math.max(0, Math.sin(t * 0.85)), 2); if (wave < 0.02) return; g.save(); g.globalCompositeOperation = "lighter";
+  for (let i = 0; i < 70; i++) { const r1 = Math.sin(i * 12.9898) * 43758.5453 % 1, r2 = Math.sin(i * 78.233) * 12345.678 % 1, r3 = Math.sin(i * 4.1) * 9999.1 % 1;
+    const sp = 60 + 90 * Math.abs(r2), x = 560 + 520 * Math.abs(r1) + 20 * Math.sin(t * 1.3 + i), y = 1900 - ((t * sp + 1900 * Math.abs(r3)) % 1900), sz = 3 + 7 * Math.abs(r2);
+    const tw = 0.5 + 0.5 * Math.sin(t * 5 + i * 2.1), a = wave * tw * 0.9; const gl = g.createRadialGradient(x, y, 0, x, y, sz * 5); gl.addColorStop(0, `rgba(255,225,150,${a})`); gl.addColorStop(1, "rgba(255,190,80,0)"); g.fillStyle = gl; g.fillRect(x - sz * 5, y - sz * 5, sz * 10, sz * 10);
+    if (i % 5 === 0) { g.strokeStyle = `rgba(255,240,200,${a})`; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - sz * 3, y); g.lineTo(x + sz * 3, y); g.moveTo(x, y - sz * 3); g.lineTo(x, y + sz * 3); g.stroke(); } }
+  g.restore(); }
 // the trophy on its podium (a real-looking cut-out), standing on the bottom edge of the screen
-function podium(x, h, glow) { const im = IM.podium; if (!im) return; const w = h * im.width / im.height, top = 1940 - h;
+function podium(x, h, glow) { const im = IM.podium; if (!im) return; const w = h * im.width / im.height, top = 1985 - h;
   if (glow > 0) { const gr = g.createRadialGradient(x, top + h * 0.12, 10, x, top + h * 0.12, h * 0.6); gr.addColorStop(0, `rgba(255,210,120,${0.5 * glow})`); gr.addColorStop(1, "rgba(255,210,120,0)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
   g.save(); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 40; g.drawImage(im, x - w * BALL.cx, top, w, h); g.restore(); }
-function header(t) { const k = ez(t * 3), cx = 300; g.save(); g.globalAlpha = k;
+function header(t) { const k = 1, cx = 300; g.save(); g.globalAlpha = k;
   g.font = "900 30px Mont"; g.letterSpacing = "3px"; let w = g.measureText("KNOWITBALL").width + 60; g.letterSpacing = "0px"; rr(cx - w / 2, 118, w, 54, 27); g.fillStyle = "#fff"; g.fill(); txt("KNOWITBALL", cx, 145, 30, INK, { a: "center", w: 900, ls: 3 });
   w = 530; rr(cx - w / 2, 184, w, 86, 18); g.fillStyle = DARK; g.fill(); g.strokeStyle = GOLD2; g.lineWidth = 3; g.stroke();
   const gr = g.createLinearGradient(0, 200, 0, 256); gr.addColorStop(0, GOLD1); gr.addColorStop(1, GOLD2); txt("BALLON D'OR RANKING", cx, 227, 44, gr, { a: "center", w: 900, maxW: w - 56 });
@@ -78,20 +89,21 @@ function silhouettes(t, k) { // 1 at the front, 2 and 3 behind, 4 and 5 at the b
 window.draw = (t) => {
   const pre = D.rows.filter(r => r.rank > D.top - D.shown).sort((a, b) => b.rank - a.rank);
   const order = D.rows.filter(r => r.rank <= D.top - D.shown && r.rank > 5).sort((a, b) => b.rank - a.rank);
-  const t0 = 0.35, step = D.step, n = order.length, endAt = t0 + n * step, ending = t >= endAt;
+  const t0 = D.t0 ?? 0.35, step = D.step, n = order.length, endAt = t0 + n * step, ending = t >= endAt;
   const cur = Math.max(0, Math.min(n - 1, Math.floor((t - t0) / step))), phase = t < t0 ? 0 : t - t0 - cur * step;
   const showR = t < t0 ? pre[pre.length - 1] : order[cur], e = ending ? ez((t - endAt) * 1.6) : 0;
   g.fillStyle = "#0a0805"; g.fillRect(0, 0, W, H);
   const bgp = (t < t0 ? t : phase) / step; cover(IM.st[showR.rank % IM.st.length], 540 + 50 * bgp, 960, 1.12, 9, 1 - e);
   if (e > 0) { const gr = g.createRadialGradient(840, 900, 50, 840, 900, 1000); gr.addColorStop(0, `rgba(110,72,22,${0.9 * e})`); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
   let gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(0,0,0,.25)"); gr.addColorStop(0.55, "rgba(0,0,0,.05)"); gr.addColorStop(1, "rgba(0,0,0,.7)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
-  bigBall(t);
+  if (!ending) sparkles(t);
   if (!ending) { const im = IM["c" + showR.rank]; if (im) { const p = t < t0 ? 1 : phase, k = ez(p * 3), fade = t < t0 ? 1 : cl(p * 5) * (1 - cl((p - step + 0.12) * 9));
       const h = 1500, w = h * im.width / im.height, x = 810 + 260 * (1 - k) - 40 * (p / step); g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(im, x - w / 2, 1990 - h, w, h); g.restore(); } }
   else silhouettes(t, (t - endAt) * 1.2);
+  goldPanel(t);
   header(t);
-  g.save(); g.globalAlpha = ez(t * 2.5); rr(BX - 12, BY - 12, BW + 24, RH * D.top + 14, 22); g.fillStyle = "rgba(8,6,4,.45)"; g.fill(); g.restore();
-  for (let rk = 1; rk <= D.top; rk++) { const k = ez(t * 3); if (k <= 0) continue; g.save(); g.globalAlpha = k;
+  g.save(); rr(BX - 12, BY - 12, BW + 24, RH * D.top + 14, 22); g.fillStyle = "rgba(8,6,4,.45)"; g.fill(); g.restore();
+  for (let rk = 1; rk <= D.top; rk++) { const k = 1; g.save(); g.globalAlpha = k;
     const r = rowOf(rk), pi = pre.indexOf(r), oi = order.indexOf(r);
     let info = null; if (pi >= 0) info = { r, slide: 1, hl: 0 }; else if (oi >= 0 && t >= t0 + oi * step) { const s = t - t0 - oi * step; info = { r, slide: s * 2.4, hl: oi === cur && !ending ? 1 - cl((s - 0.7) * 2.2) : 0 }; }
     row(rk, info);
@@ -103,7 +115,7 @@ window.draw = (t) => {
       txt("REVEALED TOMORROW", 0, 84, 26, "#fff", { a: "center", w: 800, ls: 4 }); g.restore(); }
     podium(840, 820 * (0.92 + 0.08 * ez((t - endAt) * 2)), cl((t - endAt - 0.3) * 2));
     const k2 = pop(cl((t - endAt - 1.0) * 3)); if (k2 > 0) { g.save(); g.translate(540, 1832); g.scale(k2, k2); rr(-360, -50, 720, 100, 26); const b2 = g.createLinearGradient(0, -50, 0, 50); b2.addColorStop(0, GOLD1); b2.addColorStop(1, GOLD2); g.fillStyle = b2; g.fill(); g.strokeStyle = INK; g.lineWidth = 5; g.stroke(); txt("COMMENT YOUR TOP 5", 0, 0, 44, INK, { a: "center", w: 900, ls: 1 }); g.restore(); } }
-  else podium(905, 700, 0.3 + 0.15 * Math.sin(t * 2.5));
+  else podium(860, 820, 0.3 + 0.15 * Math.sin(t * 2.5));
   if (D.credit) txt(D.credit, 1062, 1906, 14, "rgba(255,255,255,.55)", { w: 800, a: "right" });
 };
 window.ready = true;
