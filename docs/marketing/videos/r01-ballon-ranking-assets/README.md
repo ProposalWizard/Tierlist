@@ -9,3 +9,5 @@ Format from a TikTok: opens on 17 sliding in (20-18 already shown), 17 to 6 reve
   `node tools/video-render/ranking/render.mjs docs/marketing/videos/r01-ballon-ranking-assets/ranking.json OUT.mp4 public/star/music/09-last-attack.mp3`
 - Layers, back to front: stadium, gold sparkles (in waves), player, the gold panel (the ball's panels close up, right edge a "(" curve), board, trophy on its podium (always in front, down to the bottom edge).
 - The front silhouette at the end is always Noni Madueke ("front" in ranking.json), whatever the top 5 is (Mikey, 26 Nov 2026).
+- The gold panel is the TikTok's measured size (Mikey, 26 Nov 2026): its right edge is a circle, 55% of the width at the top and bottom, 40% in the middle (EDGE in ranking.html); outline 7 px. Measured from the empty rows above and below their board, because the board hides the edge in the middle.
+- Madueke's silhouette wears a silver chain with a "NONZINO" pendant ("chain" in ranking.json, drawn by chain() in ranking.html onto the front silhouette).

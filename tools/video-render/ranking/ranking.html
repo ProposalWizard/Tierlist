@@ -33,20 +33,36 @@ window.setup = async (data) => { D = data; await document.fonts.load("800 40px M
   IM.front = await load(D.front); for (const r of D.rows.filter(r => r.rank <= 5)) { const im = r.rank === 1 && IM.front ? IM.front : IM["c" + r.rank]; if (!im) continue; const pad = 24, cw = im.width + pad * 2, ch = im.height + pad * 2;
     const mk = (fill) => { const cv = document.createElement("canvas"); cv.width = cw; cv.height = ch; const x = cv.getContext("2d"); x.drawImage(im, pad, pad); x.globalCompositeOperation = "source-in"; x.fillStyle = fill(x); x.fillRect(0, 0, cw, ch); return cv; };
     const rim = mk(() => "#f0bf5c"), body = mk(x => { const gr = x.createLinearGradient(0, 0, 0, ch); gr.addColorStop(0, "#7a5520"); gr.addColorStop(0.5, "#3d2a10"); gr.addColorStop(1, "#140d05"); return gr; });
-    const out = document.createElement("canvas"); out.width = cw; out.height = ch; const o = out.getContext("2d"); o.drawImage(rim, -9, -7); o.drawImage(rim, 9, -7); o.drawImage(body, 0, 0); IM["s" + r.rank] = out; }
+    const out = document.createElement("canvas"); out.width = cw; out.height = ch; const o = out.getContext("2d"); o.drawImage(rim, -9, -7); o.drawImage(rim, 9, -7); o.drawImage(body, 0, 0);
+    if (r.rank === 1 && D.chain) chain(o, cw, ch, D.chain); IM["s" + r.rank] = out; }
   return true; };
+// a chain round the neck with a lettered pendant (Mikey, 26 Nov 2026: Madueke's "NONZINO"), in silver on the dark figure
+function chain(o, cw, ch, word) { const nx = cw * 0.465, ny = ch * 0.425, half = cw * 0.17, dip = ch * 0.085, link = 24;
+  const pt = u => { const x = nx - half + 2 * half * u, y = ny + dip * 4 * u * (1 - u); return [x, y]; };
+  o.save(); o.lineCap = "round"; o.lineJoin = "round";
+  // the chain goes up under the collar on both sides, then hangs in a U
+  o.beginPath(); o.moveTo(nx - half * 1.12, ny - ch * 0.03); o.lineTo(...pt(0)); for (let u = 0; u <= 1.001; u += 0.02) o.lineTo(...pt(u)); o.lineTo(nx + half * 1.12, ny - ch * 0.03);
+  o.strokeStyle = "#1a1206"; o.lineWidth = link + 12; o.stroke(); o.strokeStyle = "#cfd5dc"; o.lineWidth = link; o.stroke();
+  o.setLineDash([link * 0.9, link * 0.75]); o.strokeStyle = "#ffffff"; o.lineWidth = link * 0.45; o.stroke(); o.setLineDash([]);
+  // the pendant: the word in thick silver letters on a dark outline, hanging from the middle of the chain
+  const [bx, by] = pt(0.5), size = cw * 0.086; o.font = `900 ${size}px Mont`; o.letterSpacing = size * 0.04 + "px"; const m = o.measureText(word), w = m.width, cy = by + ch * 0.07;
+  o.beginPath(); o.moveTo(bx, by); o.lineTo(bx, cy - size * 0.62); o.strokeStyle = "#1a1206"; o.lineWidth = link * 0.7 + 10; o.stroke(); o.strokeStyle = "#cfd5dc"; o.lineWidth = link * 0.7; o.stroke();
+  o.textAlign = "center"; o.textBaseline = "middle"; o.lineWidth = size * 0.34; o.strokeStyle = "#1a1206"; o.strokeText(word, bx, cy);
+  const gr = o.createLinearGradient(0, cy - size * 0.5, 0, cy + size * 0.5); gr.addColorStop(0, "#ffffff"); gr.addColorStop(0.55, "#dfe4ea"); gr.addColorStop(1, "#aab2bc"); o.fillStyle = gr; o.fillText(word, bx, cy);
+  o.fillStyle = "rgba(255,255,255,.95)"; [[-0.46, -0.5], [0.3, 0.45], [0.48, -0.45]].forEach(([fx, fy]) => { const sx = bx + w * fx, sy = cy + size * fy; o.beginPath(); o.moveTo(sx - size * 0.28, sy); o.lineTo(sx, sy - size * 0.05); o.lineTo(sx + size * 0.28, sy); o.lineTo(sx, sy + size * 0.05); o.closePath(); o.fill(); o.beginPath(); o.moveTo(sx, sy - size * 0.28); o.lineTo(sx + size * 0.05, sy); o.lineTo(sx, sy + size * 0.28); o.lineTo(sx - size * 0.05, sy); o.closePath(); o.fill(); });
+  o.restore(); }
 const rowOf = rank => D.rows.find(r => r.rank === rank);
 function cover(im, cx, cy, z, blur, alpha) { if (!im) return; const k = Math.max(W / im.width, H / im.height) * z, w = im.width * k, h = im.height * k; g.save(); g.globalAlpha = alpha; if (blur) g.filter = `blur(${blur}px)`; g.drawImage(im, cx - w / 2, cy - h / 2, w, h); g.restore(); }
 // the gold panel (as in the TikTok): the golden ball's panels seen close up, filling the left of the screen; its right edge
 // is a "(" curve, the edge of a huge circle centred far off to the right. It sits in front of the player, behind the board.
-const EDGE = { cx: 4834, cy: 960, R: 4244 };   // edge at x ~ 700 at the top and bottom, ~ 590 in the middle
+const EDGE = { cx: 3313, cy: 960, R: 2880 };   // the TikTok's edge, measured: x = 598 (55%) at the top and bottom, 433 (40%) in the middle
 const edgeX = y => EDGE.cx - Math.sqrt(EDGE.R * EDGE.R - (y - EDGE.cy) * (y - EDGE.cy));
 function goldPanel(t) { const im = IM.podium; if (!im) return; g.save(); g.beginPath(); g.moveTo(0, 0); for (let y = 0; y <= H; y += 20) g.lineTo(edgeX(y), y); g.lineTo(0, H); g.closePath(); g.clip();
   const r0 = im.width * BALL.r, R = 1500, k = R / r0, bx = 160 + 14 * Math.sin(t * 0.4), by = 700 + 10 * Math.cos(t * 0.33);
   g.drawImage(im, bx - im.width * BALL.cx * k, by - im.height * BALL.cy * k, im.width * k, im.height * k);
   let gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(255,230,160,.10)"); gr.addColorStop(0.6, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,.55)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
-  gr = g.createLinearGradient(540, 0, 720, 0); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(40,20,0,.35)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); g.restore();
-  g.save(); g.strokeStyle = "rgba(255,238,190,.9)"; g.lineWidth = 4; g.shadowColor = "rgba(255,210,120,1)"; g.shadowBlur = 24; g.beginPath(); for (let y = 0; y <= H; y += 20) (y ? g.lineTo : g.moveTo).call(g, edgeX(y), y); g.stroke(); g.restore(); }
+  gr = g.createLinearGradient(380, 0, 610, 0); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(40,20,0,.35)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); g.restore();
+  g.save(); g.strokeStyle = "rgba(255,238,190,.95)"; g.lineWidth = 7; g.shadowColor = "rgba(255,210,120,1)"; g.shadowBlur = 26; g.beginPath(); for (let y = 0; y <= H; y += 20) (y ? g.lineTo : g.moveTo).call(g, edgeX(y), y); g.stroke(); g.restore(); }
 // gold sparkles drifting up behind the player, coming and going in waves
 function sparkles(t) { const wave = Math.pow(Math.max(0, Math.sin(t * 0.85)), 2); if (wave < 0.02) return; g.save(); g.globalCompositeOperation = "lighter";
   for (let i = 0; i < 70; i++) { const r1 = Math.sin(i * 12.9898) * 43758.5453 % 1, r2 = Math.sin(i * 78.233) * 12345.678 % 1, r3 = Math.sin(i * 4.1) * 9999.1 % 1;
