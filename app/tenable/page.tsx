@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
 import HowToPlayButton from "@/components/HowToPlayButton";
+import { pickDaily, ukToday } from "@/lib/tenable/daily";
 
 export const metadata: Metadata = {
   title: "Ten-A-Ball",
@@ -37,8 +38,9 @@ export default async function TenableListPage() {
 
   const items: TenableRow[] = (puzzles ?? []) as TenableRow[];
 
-  const today = new Date().toISOString().slice(0, 10);
-  const daily = items.find((p) => p.daily_date === today);
+  // Today's challenge: a hand-dated one, else the next in turn (lib/tenable/daily.ts).
+  const today = ukToday();
+  const daily = pickDaily(items, today);
   const previous = items.filter((p) => p !== daily);
 
   return (
@@ -79,9 +81,9 @@ export default async function TenableListPage() {
               className="group block overflow-hidden rounded-xl border border-emerald-700/50 bg-gradient-to-r from-emerald-900/20 to-gray-900 p-6 transition-colors hover:border-emerald-600"
             >
               <h3 className="text-xl font-black text-white group-hover:text-emerald-300">{daily.title}</h3>
-              {daily.daily_date && (
-                <p className="mt-1 text-xs text-white">{daily.daily_date}</p>
-              )}
+              <p className="mt-1 text-xs text-white">
+                {new Date(`${today}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+              </p>
               <div className="mt-3">
                 <span className="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-bold text-white">
                   Play Now
