@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { applyLook, lookFromCookie, scopeOf, setLookCookie, setThemeCookie, type Theme } from "@/lib/siteLook/look";
+import { markDarkBoxes } from "@/lib/siteLook/keepDark";
 
 export default function SiteLook() {
   const path = usePathname() ?? "/";
@@ -25,6 +26,17 @@ export default function SiteLook() {
   }, [path, isAdmin]);
 
   useEffect(() => { applyLook(document.documentElement, look, path); }, [look, path]);
+
+  // Light look: keep boxes drawn for a dark page dark (Mikey's art cards, the admin panel), as they appear.
+  useEffect(() => {
+    if (!look.on || look.theme !== "light" || scopeOf(path) !== "page") return;
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const run = () => { t = null; markDarkBoxes(document); };
+    run();
+    const mo = new MutationObserver(() => { if (!t) t = setTimeout(run, 120); });
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => { mo.disconnect(); if (t) clearTimeout(t); };
+  }, [look, path]);
 
   if (!look.on || scopeOf(path) === "game") return null;
   const set = (next: { on: boolean; theme: Theme }) => { setLookCookie(next.on); setThemeCookie(next.theme); setLook(next); };
