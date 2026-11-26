@@ -32,6 +32,11 @@ const NON_ENGLISH_PL_CLUBS = new Set(
     "Saturn Ramenskoye", "Spartak Moscow", "Spartak Nalchik", "Torpedo Moscow",
     "FC Sibir Novosibirsk",
     "Zenit",
+    // French: one RC Strasbourg player in the 2024 data is filed under
+    // "Premier League", which put "RC Strasbourg Alsace 2023/24" in the reel and
+    // would have served their whole French squad (Leo's fault list, 24 Nov 2026;
+    // measured 26 Nov: 1 of 26 rows mislabelled).
+    "RC Strasbourg Alsace",
   ].map((c) => c.toLowerCase())
 );
 

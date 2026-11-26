@@ -5,6 +5,7 @@ import Link from "next/link";
 import { OPEN_ADMIN_NAV_EVENT } from "./AdminNavPanel";
 // "Admin" opens the admin's home, the Team board (Harry, 20 Oct 2026).
 import { ADMIN_HUB } from "@/lib/adminRegistry";
+import { GAMES } from "./GameSidebar";
 
 interface Props {
   isLoggedIn: boolean;
@@ -155,6 +156,19 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
             className="absolute right-0 top-full z-50 mt-2 w-52 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-800 bg-gray-950 shadow-xl md:hidden"
           >
             <div className="flex flex-col py-2">
+              {/* The games, here too: on a phone this is the only menu. */}
+              <p className="px-4 pb-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">Games</p>
+              {GAMES.map((g) => (
+                <Link
+                  key={g.href}
+                  href={g.href}
+                  onClick={() => setOpen(false)}
+                  className="px-4 py-2 text-sm font-semibold text-white hover:bg-gray-900"
+                >
+                  {g.name}
+                </Link>
+              ))}
+              <div className="mx-4 my-1 border-t border-gray-800" />
               {isLoggedIn ? (
                 <>
                   {isAdmin && (
