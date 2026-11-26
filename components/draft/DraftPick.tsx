@@ -1,5 +1,7 @@
 "use client";
+import { shortName } from "@/lib/draft/shortName";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { loadDraftClubs } from "@/lib/draft/clubList";
 import { FORMATIONS, getPositionColor, getPositionTextColor, formatSeasonYear } from "./formations";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import type { DraftSettings, DraftPlayer } from "@/app/draft/page";
@@ -212,8 +214,7 @@ export default function DraftPick({
   const loadClubs = useCallback(() => {
     setClubsLoading(true);
     setError(null);
-    fetch("/api/draft/clubs")
-      .then((r) => r.json())
+    loadDraftClubs()
       .then((d) => {
         if (d.clubs && d.clubs.length > 0) {
           setAvailableClubs(d.clubs);
@@ -301,10 +302,15 @@ export default function DraftPick({
       });
     });
 
+    // Ask for the squad now, while the wheel turns (24 Nov 2026). It used to be
+    // asked for only after the 2.2 s spin, so every pick waited the spin AND the
+    // fetch; now the fetch hides inside the spin.
+    const rosterAsk = fetchRosterData(target.club, target.year);
+    rosterAsk.catch(() => {}); // handled when the spin ends; no "unhandled" warning meanwhile
     spinTimersRef.current.push(setTimeout(() => {
       setSpinDisplay(target);
       setPhase("pick");
-      fetchRoster(target.club, target.year);
+      fetchRoster(target.club, target.year, rosterAsk);
     }, 2200));
   }, [getRandomClubYear, generateSpinItems]);
 
@@ -325,13 +331,16 @@ export default function DraftPick({
     }, 50));
   }, [handleSpin, respinsRemaining]);
 
-  const fetchRoster = async (club: string, year: number) => {
+  const fetchRosterData = (club: string, year: number): Promise<{ roster?: RosterPlayer[] }> => {
+    let url = `/api/draft/roster?club=${encodeURIComponent(club)}&year=${year}`;
+    if (settings.mode === "prime") url += "&prime=true";
+    return fetch(url).then((res) => res.json());
+  };
+
+  const fetchRoster = async (club: string, year: number, asked?: Promise<{ roster?: RosterPlayer[] }>) => {
     const myCount = spinCountRef.current;
     try {
-      let url = `/api/draft/roster?club=${encodeURIComponent(club)}&year=${year}`;
-      if (settings.mode === "prime") url += "&prime=true";
-      const res = await fetch(url);
-      const data = await res.json();
+      const data = await (asked ?? fetchRosterData(club, year));
       // A newer spin started while this fetch was in flight — discard the stale
       // response so it can't overwrite the current spin (or yank the user out of it).
       if (spinCountRef.current !== myCount) return;
@@ -562,10 +571,17 @@ export default function DraftPick({
     { label: "DEF", pick: (p) => p.defending },
     { label: "PHY", pick: (p) => p.physical },
   ];
+  // A keeper's six card numbers are his keeping numbers (FIFA's GK card puts
+  // diving, handling, kicking, reflexes, speed and positioning where an outfield
+  // card has PAC to PHY). Shown under outfield names they read as "Pickford
+  // PAS 87 DRI 85" (seen in the draft, 24 Nov 2026).
+  const GK_LABELS: Record<string, string> = { PAC: "DIV", SHO: "HAN", PAS: "KIC", DRI: "REF", DEF: "SPD", PHY: "POS" };
+  const isKeeper = (player: RosterPlayer) => String(player.positions ?? "").split(",").map((x) => x.trim()).includes("GK");
   const getTop3Stats = (player: RosterPlayer) =>
     [...clubFirstStats]
       .sort((a, b) => b.pick(player) - a.pick(player))
-      .slice(0, 3);
+      .slice(0, 3)
+      .map((ks) => (isKeeper(player) ? { ...ks, label: GK_LABELS[ks.label] ?? ks.label } : ks));
   const displayStats = (isClubFirst || isSubPick || isSeason2Draft) ? clubFirstStats : keyStats;
 
   return (
@@ -776,7 +792,7 @@ export default function DraftPick({
                       </div>
                       <div className="flex flex-col items-center mt-0.5 max-w-[64px] sm:max-w-[80px]">
                         <span className="text-[10px] sm:text-xs font-bold text-white truncate w-full text-center leading-tight [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">
-                          {displayPlayer.name.split(" ").pop()}
+                          {shortName(displayPlayer.name)}
                         </span>
                         <div className="flex items-center gap-1">
                           {getFlagUrl(displayPlayer.nationality) ? (
@@ -835,7 +851,7 @@ export default function DraftPick({
                         )}
                       </div>
                       <span className={`mt-1 text-[8px] font-black text-white px-1.5 py-0.5 rounded ${getPositionColor(p.assignedPosition)}`}>{p.assignedPosition}</span>
-                      <span className="mt-0.5 text-[10px] font-bold text-white truncate max-w-[68px] text-center leading-tight">{p.name.split(" ").pop()}</span>
+                      <span className="mt-0.5 text-[10px] font-bold text-white truncate max-w-[68px] text-center leading-tight">{shortName(p.name)}</span>
                       <div className="flex items-center gap-1">
                         {getFlagUrl(p.nationality) ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -889,7 +905,7 @@ export default function DraftPick({
                             )}
                           </div>
                           <span className={`mt-1 text-[8px] font-black text-white px-1.5 py-0.5 rounded ${getPositionColor(sub.assignedPosition)}`}>{sub.assignedPosition}</span>
-                          <span className="mt-0.5 text-[10px] font-bold text-white truncate max-w-[72px] text-center leading-tight">{sub.name.split(" ").pop()}</span>
+                          <span className="mt-0.5 text-[10px] font-bold text-white truncate max-w-[72px] text-center leading-tight">{shortName(sub.name)}</span>
                           <div className="flex items-center gap-1">
                             {getFlagUrl(sub.nationality) ? (
                               // eslint-disable-next-line @next/next/no-img-element
@@ -990,7 +1006,7 @@ export default function DraftPick({
                   <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
                     {p.assignedPosition}
                   </span>
-                  <span className="font-medium">{p.name.split(" ").pop()}</span>
+                  <span className="font-medium">{shortName(p.name)}</span>
                   <span className="font-extrabold text-emerald-400">{p.overall}</span>
                 </div>
               ))}
@@ -1002,7 +1018,7 @@ export default function DraftPick({
                   <span className={`text-[9px] font-bold px-1 py-0.5 rounded bg-purple-700 text-white`}>
                     {p.assignedPosition}
                   </span>
-                  <span className="font-medium">{p.name.split(" ").pop()}</span>
+                  <span className="font-medium">{shortName(p.name)}</span>
                   <span className="font-extrabold text-emerald-400">{p.overall}</span>
                 </div>
               ))}
@@ -1014,7 +1030,7 @@ export default function DraftPick({
                   <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${getPositionColor(p.assignedPosition)} text-white`}>
                     {p.assignedPosition}
                   </span>
-                  <span className="font-medium text-white">{p.name.split(" ").pop()}</span>
+                  <span className="font-medium text-white">{shortName(p.name)}</span>
                   <span className="font-extrabold text-purple-400">{p.overall}</span>
                 </div>
               ))}
@@ -1060,7 +1076,7 @@ export default function DraftPick({
                         {slot.label}
                       </div>
                       {filled && player ? (
-                        <div className="text-[10px] text-white truncate mt-0.5">{player.name.split(" ").pop()}</div>
+                        <div className="text-[10px] text-white truncate mt-0.5">{shortName(player.name)}</div>
                       ) : !filled ? (
                         <div className="text-[10px] text-white mt-0.5">Available</div>
                       ) : null}
