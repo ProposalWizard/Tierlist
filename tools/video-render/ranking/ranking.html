@@ -28,7 +28,7 @@ function txt(s, x, cy, size, col, o = {}) { g.save(); const wt = o.w || 800; con
   g.fillStyle = col; g.fillText(s, X, baseY); g.restore(); return size; }
 const load = src => new Promise(res => { if (!src) return res(null); const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
 window.setup = async (data) => { D = data; await document.fonts.load("800 40px Mont"); await document.fonts.load("900 40px Mont"); await document.fonts.load("800 40px Mont", "ÉÜÇĞ");
-  IM.podium = await load(D.podium); IM.st = []; for (const s of D.stadiums) IM.st.push(await load(s));
+  IM.podium = await load(D.podium); IM.panel = await load(D.panel); IM.st = []; for (const s of D.stadiums) IM.st.push(await load(s));
   for (const r of D.rows) { IM["c" + r.rank] = await load(r.cut); IM["k" + r.rank] = await load(r.badge); IM["f" + r.rank] = await load(r.flag); }
   IM.front = await load(D.front); for (const r of D.rows.filter(r => r.rank <= 5)) { const im = r.rank === 1 && IM.front ? IM.front : IM["c" + r.rank]; if (!im) continue; const pad = 24, cw = im.width + pad * 2, ch = im.height + pad * 2;
     const mk = (fill) => { const cv = document.createElement("canvas"); cv.width = cw; cv.height = ch; const x = cv.getContext("2d"); x.drawImage(im, pad, pad); x.globalCompositeOperation = "source-in"; x.fillStyle = fill(x); x.fillRect(0, 0, cw, ch); return cv; };
@@ -57,11 +57,9 @@ function cover(im, cx, cy, z, blur, alpha) { if (!im) return; const k = Math.max
 // is a "(" curve, the edge of a huge circle centred far off to the right. It sits in front of the player, behind the board.
 const EDGE = { cx: 3313, cy: 960, R: 2880 };   // the TikTok's edge, measured: x = 598 (55%) at the top and bottom, 433 (40%) in the middle
 const edgeX = y => EDGE.cx - Math.sqrt(EDGE.R * EDGE.R - (y - EDGE.cy) * (y - EDGE.cy));
-function goldPanel(t) { const im = IM.podium; if (!im) return; g.save(); g.beginPath(); g.moveTo(0, 0); for (let y = 0; y <= H; y += 20) g.lineTo(edgeX(y), y); g.lineTo(0, H); g.closePath(); g.clip();
-  const r0 = im.width * BALL.r, R = 1500, k = R / r0, bx = 160 + 14 * Math.sin(t * 0.4), by = 700 + 10 * Math.cos(t * 0.33);
-  g.drawImage(im, bx - im.width * BALL.cx * k, by - im.height * BALL.cy * k, im.width * k, im.height * k);
-  let gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(255,230,160,.10)"); gr.addColorStop(0.6, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,.55)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
-  gr = g.createLinearGradient(380, 0, 610, 0); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(40,20,0,.35)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); g.restore();
+function goldPanel(t) { const im = IM.panel; if (!im) return; g.save(); g.beginPath(); g.moveTo(0, 0); for (let y = 0; y <= H; y += 20) g.lineTo(edgeX(y), y); g.lineTo(0, H); g.closePath(); g.clip();
+  g.drawImage(im, 0, 0, W, H);
+  let gr = g.createLinearGradient(380, 0, 610, 0); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(40,20,0,.32)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); g.restore();
   g.save(); g.strokeStyle = "rgba(255,238,190,.95)"; g.lineWidth = 7; g.shadowColor = "rgba(255,210,120,1)"; g.shadowBlur = 26; g.beginPath(); for (let y = 0; y <= H; y += 20) (y ? g.lineTo : g.moveTo).call(g, edgeX(y), y); g.stroke(); g.restore(); }
 // gold sparkles drifting up behind the player, coming and going in waves
 function sparkles(t) { const wave = Math.pow(Math.max(0, Math.sin(t * 0.85)), 2); if (wave < 0.02) return; g.save(); g.globalCompositeOperation = "lighter";
@@ -114,7 +112,7 @@ window.draw = (t) => {
   let gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(0,0,0,.25)"); gr.addColorStop(0.55, "rgba(0,0,0,.05)"); gr.addColorStop(1, "rgba(0,0,0,.7)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
   if (!ending) sparkles(t);
   if (!ending) { const im = IM["c" + showR.rank]; if (im) { const p = t < t0 ? 1 : phase, k = ez(p * 3), fade = t < t0 ? 1 : cl(p * 5) * (1 - cl((p - step + 0.12) * 9));
-      const h = 1500, w = h * im.width / im.height, x = 810 + 260 * (1 - k) - 40 * (p / step); g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(im, x - w / 2, 1990 - h, w, h); g.restore(); } }
+      const asp = im.width / im.height, h = Math.min(D.playerH || 1820, 1450 / asp), w = h * asp, x = 800 + 260 * (1 - k) - 40 * (p / step); g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(im, x - w / 2, 1990 - h, w, h); g.restore(); } }
   else silhouettes(t, (t - endAt) * 1.2);
   goldPanel(t);
   header(t);
@@ -127,10 +125,10 @@ window.draw = (t) => {
     g.restore(); }
   if (ending) { const k = pop(cl((t - endAt) * 2.6)); if (k > 0) { const y0 = BY - 4, h5 = RH * 5 - 6; g.save(); g.translate(BX + BW / 2, y0 + h5 / 2); g.scale(k, k);
       rr(-BW / 2 - 4, -h5 / 2, BW + 8, h5, 18); g.fillStyle = "rgba(12,9,5,.97)"; g.fill(); g.strokeStyle = GOLD2; g.lineWidth = 4; g.stroke();
-      txt("WHO'S YOUR", 0, -88, 46, "#fff", { a: "center", w: 900, ls: 1 }); const gg = g.createLinearGradient(0, -40, 0, 40); gg.addColorStop(0, GOLD1); gg.addColorStop(1, GOLD2); txt("TOP 5?", 0, -8, 96, gg, { a: "center", w: 900 });
-      txt("REVEALED TOMORROW", 0, 84, 26, "#fff", { a: "center", w: 800, ls: 4 }); g.restore(); }
+      const gg = g.createLinearGradient(0, -90, 0, -10); gg.addColorStop(0, GOLD1); gg.addColorStop(1, GOLD2); txt("TOP 5", 0, -52, 118, gg, { a: "center", w: 900 });
+      txt("REVEALED", 0, 44, 50, "#fff", { a: "center", w: 900, ls: 3 }); txt("TOMORROW", 0, 104, 50, "#fff", { a: "center", w: 900, ls: 3 }); g.restore(); }
     podium(840, 820 * (0.92 + 0.08 * ez((t - endAt) * 2)), cl((t - endAt - 0.3) * 2));
-    const k2 = pop(cl((t - endAt - 1.0) * 3)); if (k2 > 0) { g.save(); g.translate(540, 1832); g.scale(k2, k2); rr(-360, -50, 720, 100, 26); const b2 = g.createLinearGradient(0, -50, 0, 50); b2.addColorStop(0, GOLD1); b2.addColorStop(1, GOLD2); g.fillStyle = b2; g.fill(); g.strokeStyle = INK; g.lineWidth = 5; g.stroke(); txt("COMMENT YOUR TOP 5", 0, 0, 44, INK, { a: "center", w: 900, ls: 1 }); g.restore(); } }
+    const k2 = pop(cl((t - endAt - 1.0) * 3)); if (k2 > 0) { g.save(); g.translate(540, 1832); g.scale(k2, k2); rr(-360, -50, 720, 100, 26); const b2 = g.createLinearGradient(0, -50, 0, 50); b2.addColorStop(0, GOLD1); b2.addColorStop(1, GOLD2); g.fillStyle = b2; g.fill(); g.strokeStyle = INK; g.lineWidth = 5; g.stroke(); txt("WHO'S YOUR TOP 5?", 0, 0, 48, INK, { a: "center", w: 900, ls: 1 }); g.restore(); } }
   else podium(860, 820, 0.3 + 0.15 * Math.sin(t * 2.5));
   if (D.credit) txt(D.credit, 1062, 1906, 14, "rgba(255,255,255,.55)", { w: 800, a: "right" });
 };
