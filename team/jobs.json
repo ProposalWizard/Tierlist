@@ -254,5 +254,13 @@
     "added": "2026-11-25T19:54:00Z",
     "title": "Progress 25 Nov: records videos, Brain page posting, faces re-upload",
     "prompt": "Daily progress update, 24 Nov 19:54 to 25 Nov 19:54 (UK).\n\nMikey (his branches merged into main this evening):\n- Video factory: ex15, Four records that might never be beaten, with real moments, scorebug and quad scenes, moving pictures; ex15b, the Guardiola cut (38 s), in posting storage and on the Brain page. ex02b uses real Chitalu pictures, and voice files are now keyed by their words (fixes lines said twice or out of step).\n- Brain page: Send posts by itself through the Publish queue, Refresh gets fresh numbers, Facebook is posted by hand; blank page fixed; Supabase answers are read past its warning sentence.\n- A one-off job to re-upload player faces with a week's browser cache (to be deleted once done).\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- No new patch note today. Latest is 0.143 Leo: One Knowitball, the whole-site plan (in Admin, Patch notes)."
+  },
+  {
+    "id": "progress-2026-11-26",
+    "owner": "all",
+    "from": "Leo",
+    "added": "2026-11-26T19:54:00Z",
+    "title": "Progress 26 Nov: new look preview, readability check, ex16, Publish spaces",
+    "prompt": "Daily progress update, 25 Nov 19:54 to 26 Nov 19:54 (UK).\n\nLeo:\n- PR #839: the new look preview. An admin-only switch (Admin, New look, or ?look=v2) shows every public page in the cream-and-green look, or dark, on your device only; everyone else sees today's site. Fixed for everyone: double Knowitball in titles, sign-in's old name, Ten-A-Ball's lives line, the Objectives badge over Sign in.\n- PR #840: new look fixes and a readability check. Hall of Fame and the admin panel read again, home has a dark mode, Mikey's Draft art stays as drawn on dark cards. The new check measured every word on 14 pages in every look (162 of 168 passed, the rest fixed). Some faint text fixed for everyone.\n\nMikey (his branch merged into main overnight):\n- ex16: Why Vini loves Mourinho but not Alonso (48 s), ready to Send on the Brain page; every Brain page video now plays inside the page.\n- Publish spaces (football, content, kib), each with its own accounts, videos, posts and numbers; posting tool setup docs.\n- All 13,387 player faces now carry a week's browser cache; the one-off job is removed.\n- The 27 daily progress updates (22 Oct to 25 Nov) reached the Team board with this merge.\n\nPatch notes (Admin, Patch notes: https://knowitball.co.uk/admin/patch-notes):\n- 0.144 Leo: The new look, only for you (read it in Admin, Patch notes).\n- 0.145 Leo: New look fixes and a readability check (read it in Admin, Patch notes)."
   }
 ]
