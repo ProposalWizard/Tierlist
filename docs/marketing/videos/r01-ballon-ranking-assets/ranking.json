@@ -3,15 +3,13 @@
  "sub": "NOV 2026",
  "top": 20,
  "shown": 3,
- "step": 1.75,
- "endHold": 4.2,
- "trophy": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/trophy.png",
+ "step": 2.0,
+ "endHold": 4.6,
  "rows": [
   {
    "rank": 1,
    "name": "Lamine Yamal",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Lamine_Yamal.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Lamine_Yamal.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/fcbarcelona.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/es.png"
   },
@@ -19,7 +17,6 @@
    "rank": 2,
    "name": "Ousmane Dembélé",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Ousmane_Dembélé.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Ousmane_Dembélé.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/parissaintgermain.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/fr.png"
   },
@@ -27,7 +24,6 @@
    "rank": 3,
    "name": "Kylian Mbappé",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Kylian_Mbappé.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Kylian_Mbappé.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/realmadrid.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/fr.png"
   },
@@ -35,7 +31,6 @@
    "rank": 4,
    "name": "Harry Kane",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Harry_Kane.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Harry_Kane.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/fcbayernmunchen.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/gb-eng.png"
   },
@@ -43,7 +38,6 @@
    "rank": 5,
    "name": "Michael Olise",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Michael_Olise.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Michael_Olise.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/fcbayernmunchen.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/fr.png"
   },
@@ -51,7 +45,6 @@
    "rank": 6,
    "name": "Erling Haaland",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Erling_Haaland.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Erling_Haaland.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/manchestercity.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/no.png"
   },
@@ -59,7 +52,6 @@
    "rank": 7,
    "name": "Vitinha",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Vitinha.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Vitinha.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/parissaintgermain.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/pt.png"
   },
@@ -67,7 +59,6 @@
    "rank": 8,
    "name": "Raphinha",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Raphinha.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Raphinha.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/fcbarcelona.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/br.png"
   },
@@ -75,7 +66,6 @@
    "rank": 9,
    "name": "Declan Rice",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Declan_Rice.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Declan_Rice.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/arsenal.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/gb-eng.png"
   },
@@ -83,7 +73,6 @@
    "rank": 10,
    "name": "Pedri",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Pedri.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Pedri.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/fcbarcelona.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/es.png"
   },
@@ -91,7 +80,6 @@
    "rank": 11,
    "name": "Mohamed Salah",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Mohamed_Salah.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Mohamed_Salah.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/liverpool.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/eg.png"
   },
@@ -99,7 +87,6 @@
    "rank": 12,
    "name": "Achraf Hakimi",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Achraf_Hakimi.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Achraf_Hakimi.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/parissaintgermain.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/ma.png"
   },
@@ -107,7 +94,6 @@
    "rank": 13,
    "name": "Jude Bellingham",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Jude_Bellingham.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Jude_Bellingham.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/realmadrid.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/gb-eng.png"
   },
@@ -115,7 +101,6 @@
    "rank": 14,
    "name": "Bukayo Saka",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Bukayo_Saka.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Bukayo_Saka.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/arsenal.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/gb-eng.png"
   },
@@ -123,7 +108,6 @@
    "rank": 15,
    "name": "Florian Wirtz",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Florian_Wirtz.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Florian_Wirtz.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/liverpool.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/de.png"
   },
@@ -131,7 +115,6 @@
    "rank": 16,
    "name": "Cole Palmer",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Cole_Palmer.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Cole_Palmer.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/chelsea.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/gb-eng.png"
   },
@@ -139,7 +122,6 @@
    "rank": 17,
    "name": "Nuno Mendes",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Nuno_Mendes.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Nuno_Mendes.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/parissaintgermain.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/pt.png"
   },
@@ -147,7 +129,6 @@
    "rank": 18,
    "name": "Arda Güler",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Arda_Güler.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Arda_Güler.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/realmadrid.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/tr.png"
   },
@@ -155,7 +136,6 @@
    "rank": 19,
    "name": "Désiré Doué",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Désiré_Doué.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Désiré_Doué.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/parissaintgermain.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/fr.png"
   },
@@ -163,10 +143,15 @@
    "rank": 20,
    "name": "Vinícius Júnior",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Vinícius_Júnior.png",
-   "bg": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/raw/Vinícius_Júnior.jpg",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge/realmadrid.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/br.png"
   }
  ],
- "credit": "Photos: Wikimedia Commons, CC BY-SA 4.0 (Bryan Berlin, LawEnthusiast, Ank Kumar)"
+ "credit": "Photos: Wikimedia Commons, CC BY-SA 4.0 (Bryan Berlin, LawEnthusiast)",
+ "podium": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/podium_cut.png",
+ "stadiums": [
+  "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/stadium/s1.jpg",
+  "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/stadium/s2.jpg",
+  "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/stadium/s3.jpg"
+ ]
 }

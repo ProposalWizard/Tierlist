@@ -1,114 +1,110 @@
 <!doctype html><html><head><meta charset="utf-8"><style>
-@font-face{font-family:Anton;src:url(../../video-factory/assets/Anton.ttf)}@font-face{font-family:Oswald;src:url(../../video-factory/assets/Oswald-Bold.woff2);font-weight:700}
+@font-face{font-family:Mont;src:url(../../video-factory/assets/montserrat-latin-800-normal.woff2) format("woff2");font-weight:800}
+@font-face{font-family:Mont;src:url(../../video-factory/assets/montserrat-latin-ext-800-normal.woff2) format("woff2");font-weight:800;unicode-range:U+0100-024F}
+@font-face{font-family:Mont;src:url(../../video-factory/assets/montserrat-latin-900-normal.woff2) format("woff2");font-weight:900}
 body{margin:0;background:#000}</style></head><body><canvas id="c" width="1080" height="1920"></canvas><script>
-// Ballon d'Or style ranking countdown, v2 (Mikey, 26 Nov 2026).
-// window.setup(data) then window.draw(t). data: {title, sub, top, shown, step, endHold, trophy, credit,
-//   rows:[{rank, name, cut (player cut-out png), bg (the original photo), badge, flag}]}  (rows for every rank 1..top)
+// Ballon d'Or style ranking countdown, v3 (Mikey, 26 Nov 2026).
+// window.setup(data) then window.draw(t). data: {title, sub, top, shown, step, endHold, podium, stadiums:[...], credit,
+//   rows:[{rank, name, cut, badge, flag}]}  (rows for every rank 1..top; 1-5 are the hidden silhouettes)
 const W = 1080, H = 1920, c = document.getElementById("c"), g = c.getContext("2d");
-const cl = x => Math.max(0, Math.min(1, x)), ez = x => { x = cl(x); return 1 - Math.pow(1 - x, 3); }, eio = x => { x = cl(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const cl = x => Math.max(0, Math.min(1, x)), ez = x => { x = cl(x); return 1 - Math.pow(1 - x, 3); };
 const pop = x => { x = cl(x); return 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2); };
 let D, IM = {};
-const GOLD1 = "#fbe3a1", GOLD2 = "#e0ad4c", GOLD3 = "#9a6518", INK = "#16110a", DARK = "rgba(14,11,7,.94)";
+const GOLD1 = "#fbe3a1", GOLD2 = "#e0ad4c", INK = "#16110a", DARK = "rgba(14,11,7,.95)";
+// where the ball sits inside the podium cut-out (measured): centre and radius as fractions of its width / height
+const BALL = { cx: 395 / 1153, cy: 300 / 2489, r: 282 / 1153 };
 function rr(x, y, w, h, r) { r = Math.min(r, h / 2, w / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
-// text placed by its visual centre (cy), so it sits exactly in the middle of a box
-function txt(s, x, cy, size, col, o = {}) { g.save(); const font = () => `${o.w || ""} ${size}px ${o.f || "Anton"}`; g.font = font(); g.textAlign = o.a || "left";
-  if (o.ls) g.letterSpacing = o.ls + "px";
-  if (o.maxW) { const w = g.measureText(s).width; if (w > o.maxW) { size = size * o.maxW / w; g.font = font(); } }
-  const m = g.measureText("HXÉ"), asc = m.actualBoundingBoxAscent, desc = m.actualBoundingBoxDescent * 0.2, y = cy + (asc - desc) / 2;
-  if (o.stroke) { g.lineJoin = "round"; g.lineWidth = o.stroke; g.strokeStyle = o.sc || INK; g.strokeText(s, x, y); }
-  if (o.shadow) { g.shadowColor = "rgba(0,0,0,.45)"; g.shadowBlur = 8; g.shadowOffsetY = 3; }
-  g.fillStyle = col; g.fillText(s, x, y); g.restore(); return size; }
+// Text placed by the exact ink box of THIS string: (x, cy) is the centre (a:"center") or left edge of the letters themselves.
+function txt(s, x, cy, size, col, o = {}) { g.save(); const wt = o.w || 800; const set = () => { g.font = `${wt} ${size}px Mont`; g.letterSpacing = (o.ls || 0) + "px"; };
+  set(); g.textAlign = "left"; g.textBaseline = "alphabetic";
+  if (o.maxW) { const w = g.measureText(s).width; if (w > o.maxW) { size = size * o.maxW / w; set(); } }
+  const m = g.measureText(s), L = m.actualBoundingBoxLeft, R = m.actualBoundingBoxRight;
+  // height: capitals are centred by their cap height (accents and the Q's tail hang outside), anything else by its own ink
+  const caps = s === s.toUpperCase(), hm = g.measureText("H"), A = caps ? hm.actualBoundingBoxAscent : m.actualBoundingBoxAscent, De = caps ? 0 : m.actualBoundingBoxDescent;
+  const inkW = R + L - (o.ls || 0); // letterSpacing adds space after the last letter: leave it out
+  const baseY = cy + (A - De) / 2, X = o.a === "center" ? x - inkW / 2 + L : o.a === "right" ? x - inkW + L : x + L;
+  if (o.shadow) { g.shadowColor = "rgba(0,0,0,.5)"; g.shadowBlur = 10; g.shadowOffsetY = 3; }
+  if (o.stroke) { g.lineJoin = "round"; g.lineWidth = o.stroke; g.strokeStyle = o.sc || INK; g.strokeText(s, X, baseY); }
+  g.fillStyle = col; g.fillText(s, X, baseY); g.restore(); return size; }
 const load = src => new Promise(res => { if (!src) return res(null); const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
-window.setup = async (data) => { D = data; await document.fonts.load("40px Anton"); await document.fonts.load("700 40px Oswald");
-  IM.trophy = await load(D.trophy);
-  for (const r of D.rows) { IM["c" + r.rank] = await load(r.cut); IM["b" + r.rank] = await load(r.bg); IM["k" + r.rank] = await load(r.badge); IM["f" + r.rank] = await load(r.flag); }
-  // silhouettes of the top 5 (dark figure, gold rim) made once
-  for (const r of D.rows.filter(r => r.rank <= 5)) { const im = IM["c" + r.rank]; if (!im) continue; const cv = document.createElement("canvas"); cv.width = im.width + 40; cv.height = im.height + 40; const x = cv.getContext("2d");
-    x.drawImage(im, 20, 20); x.globalCompositeOperation = "source-in"; x.fillStyle = "#e8b24e"; x.fillRect(0, 0, cv.width, cv.height);
-    const cv2 = document.createElement("canvas"); cv2.width = cv.width; cv2.height = cv.height; const y = cv2.getContext("2d"); y.drawImage(cv, -8, -6); y.drawImage(cv, 8, -6); y.globalCompositeOperation = "source-over";
-    const dk = document.createElement("canvas"); dk.width = cv.width; dk.height = cv.height; const z = dk.getContext("2d"); z.drawImage(im, 20, 20); z.globalCompositeOperation = "source-in"; const gr = z.createLinearGradient(0, 0, 0, dk.height); gr.addColorStop(0, "#7a5520"); gr.addColorStop(0.5, "#3d2a10"); gr.addColorStop(1, "#140d05"); z.fillStyle = gr; z.fillRect(0, 0, dk.width, dk.height);
-    y.drawImage(dk, 0, 0); IM["s" + r.rank] = cv2; }
+window.setup = async (data) => { D = data; await document.fonts.load("800 40px Mont"); await document.fonts.load("900 40px Mont"); await document.fonts.load("800 40px Mont", "ÉÜÇĞ");
+  IM.podium = await load(D.podium); IM.st = []; for (const s of D.stadiums) IM.st.push(await load(s));
+  for (const r of D.rows) { IM["c" + r.rank] = await load(r.cut); IM["k" + r.rank] = await load(r.badge); IM["f" + r.rank] = await load(r.flag); }
+  for (const r of D.rows.filter(r => r.rank <= 5)) { const im = IM["c" + r.rank]; if (!im) continue; const pad = 24, cw = im.width + pad * 2, ch = im.height + pad * 2;
+    const mk = (fill) => { const cv = document.createElement("canvas"); cv.width = cw; cv.height = ch; const x = cv.getContext("2d"); x.drawImage(im, pad, pad); x.globalCompositeOperation = "source-in"; x.fillStyle = fill(x); x.fillRect(0, 0, cw, ch); return cv; };
+    const rim = mk(() => "#f0bf5c"), body = mk(x => { const gr = x.createLinearGradient(0, 0, 0, ch); gr.addColorStop(0, "#7a5520"); gr.addColorStop(0.5, "#3d2a10"); gr.addColorStop(1, "#140d05"); return gr; });
+    const out = document.createElement("canvas"); out.width = cw; out.height = ch; const o = out.getContext("2d"); o.drawImage(rim, -9, -7); o.drawImage(rim, 9, -7); o.drawImage(body, 0, 0); IM["s" + r.rank] = out; }
   return true; };
 const rowOf = rank => D.rows.find(r => r.rank === rank);
-function coverImg(im, cx, cy, z, blur, alpha) { if (!im) return; const k = Math.max(W / im.width, H / im.height) * z, w = im.width * k, h = im.height * k; g.save(); g.globalAlpha = alpha; if (blur) g.filter = `blur(${blur}px)`; g.drawImage(im, cx - w / 2, cy - h / 2, w, h); g.restore(); }
-// the big zoomed-in golden ball, curving in from the left (in front of the background, behind the board)
-function bigBall(t) { const im = IM.trophy; if (!im) return; const bw = im.width, ballR = im.width * 0.369, bcx = im.width * 0.382, bcy = im.height * 0.27;
-  const R = 1250, cx = -560 + 8 * Math.sin(t * 0.6), cy = 520; g.save(); g.beginPath(); g.arc(cx, cy, R, 0, 7); g.clip();
-  const k = R / ballR; g.drawImage(im, cx - bcx * k, cy - bcy * k, bw * k, im.height * k);
-  const sh = g.createLinearGradient(cx + R - 260, 0, cx + R, 0); sh.addColorStop(0, "rgba(0,0,0,0)"); sh.addColorStop(1, "rgba(0,0,0,.45)"); g.fillStyle = sh; g.fillRect(0, 0, W, H); g.restore();
-  g.save(); g.strokeStyle = "rgba(255,236,180,.85)"; g.lineWidth = 5; g.shadowColor = "rgba(255,210,120,.9)"; g.shadowBlur = 24; g.beginPath(); g.arc(cx, cy, R, -0.9, 0.9); g.stroke(); g.restore(); }
-// the small trophy on its podium
-function podium(x, y, s, glow) { const im = IM.trophy; g.save(); g.translate(x, y); g.scale(s, s);
-  if (glow > 0) { const gr = g.createRadialGradient(0, -260, 10, 0, -260, 420); gr.addColorStop(0, `rgba(255,214,130,${0.55 * glow})`); gr.addColorStop(1, "rgba(255,214,130,0)"); g.fillStyle = gr; g.fillRect(-450, -700, 900, 900); }
-  let gr = g.createLinearGradient(-150, 0, 150, 0); gr.addColorStop(0, "#08080a"); gr.addColorStop(0.45, "#34343a"); gr.addColorStop(0.55, "#2a2a2f"); gr.addColorStop(1, "#08080a"); g.fillStyle = gr; g.fillRect(-150, 0, 300, 520);
-  g.fillStyle = "#4a4a52"; g.beginPath(); g.ellipse(0, 0, 150, 26, 0, 0, 7); g.fill(); g.strokeStyle = "rgba(240,200,110,.8)"; g.lineWidth = 3; g.beginPath(); g.ellipse(0, 0, 150, 26, 0, 0, 7); g.stroke();
-  g.strokeStyle = "rgba(240,200,110,.55)"; g.lineWidth = 3; g.beginPath(); g.moveTo(-150, 60); g.lineTo(150, 60); g.stroke();
-  txt("KNOWITBALL", 0, 120, 30, "rgba(240,200,110,.85)", { a: "center", ls: 4 });
-  if (im) { const h = 440, w = h * im.width / im.height; g.drawImage(im, -w / 2, -h + 8, w, h); }
-  g.restore(); }
+function cover(im, cx, cy, z, blur, alpha) { if (!im) return; const k = Math.max(W / im.width, H / im.height) * z, w = im.width * k, h = im.height * k; g.save(); g.globalAlpha = alpha; if (blur) g.filter = `blur(${blur}px)`; g.drawImage(im, cx - w / 2, cy - h / 2, w, h); g.restore(); }
+// the huge zoomed-in golden ball: fills the left of the screen, its curved edge down the middle, behind the player
+function bigBall(t) { const im = IM.podium; if (!im) return; const R = 1180, cx = -560 + 10 * Math.sin(t * 0.5), cy = 760;
+  const r0 = im.width * BALL.r, k = R / r0; g.save(); g.beginPath(); g.arc(cx, cy, R, 0, 7); g.clip();
+  g.drawImage(im, cx - im.width * BALL.cx * k, cy - im.height * BALL.cy * k, im.width * k, im.height * k);
+  const sh = g.createRadialGradient(cx, cy, R * 0.7, cx, cy, R); sh.addColorStop(0, "rgba(0,0,0,0)"); sh.addColorStop(1, "rgba(60,30,0,.35)"); g.fillStyle = sh; g.fillRect(0, 0, W, H); g.restore();
+  g.save(); g.strokeStyle = "rgba(255,240,195,.9)"; g.lineWidth = 4; g.shadowColor = "rgba(255,210,120,1)"; g.shadowBlur = 28; g.beginPath(); g.arc(cx, cy, R, -1.0, 1.0); g.stroke(); g.restore(); }
+// the trophy on its podium (a real-looking cut-out), standing on the bottom edge of the screen
+function podium(x, h, glow) { const im = IM.podium; if (!im) return; const w = h * im.width / im.height, top = 1940 - h;
+  if (glow > 0) { const gr = g.createRadialGradient(x, top + h * 0.12, 10, x, top + h * 0.12, h * 0.6); gr.addColorStop(0, `rgba(255,210,120,${0.5 * glow})`); gr.addColorStop(1, "rgba(255,210,120,0)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+  g.save(); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 40; g.drawImage(im, x - w * BALL.cx, top, w, h); g.restore(); }
 function header(t) { const k = ez(t * 3), cx = 300; g.save(); g.globalAlpha = k;
-  g.font = "34px Anton"; let w = g.measureText("KNOWITBALL").width + 64; rr(cx - w / 2, 120, w, 56, 28); g.fillStyle = "#fff"; g.fill(); txt("KNOWITBALL", cx, 148, 34, INK, { a: "center", ls: 2 });
-  w = 520; rr(cx - w / 2, 188, w, 84, 18); g.fillStyle = DARK; g.fill(); g.strokeStyle = GOLD2; g.lineWidth = 3; g.stroke();
-  const gr = g.createLinearGradient(0, 200, 0, 262); gr.addColorStop(0, GOLD1); gr.addColorStop(1, GOLD2); txt("BALLON D'OR RANKING", cx, 230, 54, gr, { a: "center", maxW: w - 50, ls: 1 });
-  w = 170; rr(cx - w / 2, 282, w, 44, 12); g.fillStyle = "rgba(14,11,7,.85)"; g.fill(); txt(D.sub, cx, 304, 28, "#fff", { a: "center", ls: 3 }); g.restore(); }
-// one ranking row: number cap, gold strip, club badge (a quarter tucked behind the cap), flag, name
-const BX = 34, BY = 352, RH = 64, BW = 532;
-function row(rank, t, info) { const y = BY + (rank - 1) * RH, h = RH - 10;
-  // number cap
-  rr(BX, y, 64, h, 10); g.fillStyle = DARK; g.fill(); txt(String(rank), BX + 32, y + h / 2, 34, "#fff", { a: "center" });
-  // strip
-  const sx = BX + 72, sw = BW - 72; let gr = g.createLinearGradient(sx, y, sx, y + h); gr.addColorStop(0, GOLD1); gr.addColorStop(0.55, GOLD2); gr.addColorStop(1, "#c58f35");
-  rr(sx, y, sw, h, 10); g.fillStyle = gr; g.fill(); g.save(); g.globalAlpha = 0.35; g.strokeStyle = "#fff6d8"; g.lineWidth = 2; rr(sx + 1, y + 1, sw - 2, h - 2, 9); g.stroke(); g.restore();
-  if (!info) return; const { r, slide, hl } = info;
-  g.save(); rr(sx, y, sw, h, 10); g.clip();
-  if (hl > 0) { g.fillStyle = `rgba(255,255,255,${0.96 * hl})`; g.fillRect(sx, y, sw * ez(slide * 1.4), h); }
-  const off = -420 * (1 - ez(slide));
-  const bd = IM["k" + rank]; if (bd) { const bh = h * 1.25, bw2 = bh * bd.width / bd.height; g.drawImage(bd, sx - bw2 * 0.25 + off, y + h / 2 - bh / 2, bw2, bh); }
-  const fl = IM["f" + rank]; const fx = sx + 52 + off; if (fl) { const fh = 30, fw = fh * fl.width / fl.height; g.save(); rr(fx, y + h / 2 - fh / 2, fw, fh, 5); g.clip(); g.drawImage(fl, fx, y + h / 2 - fh / 2, fw, fh); g.restore(); g.strokeStyle = "rgba(0,0,0,.35)"; g.lineWidth = 2; rr(fx, y + h / 2 - fh / 2, fw, fh, 5); g.stroke(); }
-  txt(r.name.toUpperCase(), fx + 60, y + h / 2, 34, INK, { maxW: sw - 130, f: "Oswald", w: 700, ls: 0.5 });
+  g.font = "900 30px Mont"; g.letterSpacing = "3px"; let w = g.measureText("KNOWITBALL").width + 60; g.letterSpacing = "0px"; rr(cx - w / 2, 118, w, 54, 27); g.fillStyle = "#fff"; g.fill(); txt("KNOWITBALL", cx, 145, 30, INK, { a: "center", w: 900, ls: 3 });
+  w = 530; rr(cx - w / 2, 184, w, 86, 18); g.fillStyle = DARK; g.fill(); g.strokeStyle = GOLD2; g.lineWidth = 3; g.stroke();
+  const gr = g.createLinearGradient(0, 200, 0, 256); gr.addColorStop(0, GOLD1); gr.addColorStop(1, GOLD2); txt("BALLON D'OR RANKING", cx, 227, 44, gr, { a: "center", w: 900, maxW: w - 56 });
+  w = 150; rr(cx - w / 2, 280, w, 42, 12); g.fillStyle = "rgba(14,11,7,.88)"; g.fill(); txt(D.sub, cx, 301, 22, "#fff", { a: "center", w: 800, ls: 3 }); g.restore(); }
+// one ranking row, one joined piece: dark number end, gold strip with badge (a quarter tucked under the number end), flag and name
+const BX = 34, BY = 352, RH = 64, BW = 532, NW = 64;
+function row(rank, info) { const y = BY + (rank - 1) * RH, h = RH - 10;
+  g.save(); rr(BX, y, BW, h, 12); g.clip();
+  let gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, GOLD1); gr.addColorStop(0.55, GOLD2); gr.addColorStop(1, "#c58f35"); g.fillStyle = gr; g.fillRect(BX, y, BW, h);
+  g.fillStyle = "rgba(255,246,216,.45)"; g.fillRect(BX, y, BW, 2);
+  if (info) { const { r, slide, hl } = info, sx = BX + NW;
+    if (hl > 0) { g.fillStyle = `rgba(255,255,255,${0.96 * hl})`; g.fillRect(sx, y, (BW - NW) * ez(slide * 1.4), h); }
+    const off = -420 * (1 - ez(slide));
+    const bd = IM["k" + rank]; if (bd) { const bh = h * 1.3, bw2 = bh * bd.width / bd.height; g.drawImage(bd, sx - bw2 * 0.25 + off, y + h / 2 - bh / 2, bw2, bh); }
+    const fl = IM["f" + rank], fx = sx + 58 + off, fh = 28; if (fl) { const fw = fh * fl.width / fl.height; g.save(); rr(fx, y + h / 2 - fh / 2, fw, fh, 4); g.clip(); g.drawImage(fl, fx, y + h / 2 - fh / 2, fw, fh); g.restore(); }
+    txt(r.name.toUpperCase(), fx + 54, y + h / 2, 29, INK, { w: 800, maxW: BW - NW - 125 }); }
+  // the number end, drawn last so the badge tucks under it
+  g.fillStyle = DARK; g.fillRect(BX, y, NW, h); g.fillStyle = "rgba(255,255,255,.08)"; g.fillRect(BX + NW - 2, y, 2, h);
+  txt(String(rank), BX + NW / 2, y + h / 2, 30, "#fff", { a: "center", w: 900 });
   g.restore(); }
-function silhouettes(t, k) { // the top 5 as dark figures: 1 at the front, 2 and 3 behind, 4 and 5 at the back
-  const spots = { 4: [660, 1330, 0.44], 5: [1010, 1330, 0.44], 2: [720, 1440, 0.52], 3: [960, 1440, 0.52], 1: [840, 1560, 0.62] };
-  { const gl = g.createRadialGradient(840, 1050, 40, 840, 1050, 640); gl.addColorStop(0, `rgba(255,205,110,${0.55 * cl(k)})`); gl.addColorStop(1, 'rgba(255,205,110,0)'); g.fillStyle = gl; g.fillRect(0, 0, W, H); }
-  [4, 5, 2, 3, 1].forEach((rk, i) => { const s = IM["s" + rk]; if (!s) return; const [x, by, sc] = spots[rk], kk = ez((k - i * 0.08) * 2.2); if (kk <= 0) return;
-    const h = 1350 * sc, w = h * s.width / s.height; g.save(); g.globalAlpha = kk; g.translate(0, 80 * (1 - kk)); g.drawImage(s, x - w / 2, by - h, w, h);
-    txt("?", x, by - h * 0.74, 150 * sc, "#fff", { a: "center", stroke: 10, shadow: true }); g.restore(); }); }
+function silhouettes(t, k) { // 1 at the front, 2 and 3 behind, 4 and 5 at the back; each sways a little
+  const spots = { 4: [655, 1060, 0.5], 5: [1025, 1060, 0.5], 2: [720, 1180, 0.58], 3: [960, 1180, 0.58], 1: [840, 1300, 0.68] };
+  { const gl = g.createRadialGradient(840, 760, 40, 840, 760, 650); gl.addColorStop(0, `rgba(255,205,110,${0.55 * cl(k)})`); gl.addColorStop(1, "rgba(255,205,110,0)"); g.fillStyle = gl; g.fillRect(0, 0, W, H); }
+  [4, 5, 2, 3, 1].forEach((rk, i) => { const s = IM["s" + rk]; if (!s) return; const [x0, by0, sc] = spots[rk], kk = ez((k - i * 0.08) * 2.2); if (kk <= 0) return;
+    const x = x0 + 7 * Math.sin(t * 1.1 + i * 1.7), by = by0 + 5 * Math.sin(t * 1.4 + i), h = 1350 * sc, w = h * s.width / s.height;
+    g.save(); g.globalAlpha = kk; g.translate(0, 80 * (1 - kk)); g.drawImage(s, x - w / 2, by - h, w, h);
+    txt("?", x, by - h * 0.76, 120 * sc, "#fff", { a: "center", w: 900, stroke: 9, shadow: true }); g.restore(); }); }
 window.draw = (t) => {
-  const order = D.rows.filter(r => r.rank > D.top - D.shown ? false : r.rank > 5).sort((a, b) => b.rank - a.rank); // revealed one by one: 17..6
-  const pre = D.rows.filter(r => r.rank > D.top - D.shown).sort((a, b) => b.rank - a.rank);                         // already shown: 20..18
+  const pre = D.rows.filter(r => r.rank > D.top - D.shown).sort((a, b) => b.rank - a.rank);
+  const order = D.rows.filter(r => r.rank <= D.top - D.shown && r.rank > 5).sort((a, b) => b.rank - a.rank);
   const t0 = 0.35, step = D.step, n = order.length, endAt = t0 + n * step, ending = t >= endAt;
   const cur = Math.max(0, Math.min(n - 1, Math.floor((t - t0) / step))), phase = t < t0 ? 0 : t - t0 - cur * step;
-  const showR = t < t0 ? pre[pre.length - 1] : order[cur];
+  const showR = t < t0 ? pre[pre.length - 1] : order[cur], e = ending ? ez((t - endAt) * 1.6) : 0;
   g.fillStyle = "#0a0805"; g.fillRect(0, 0, W, H);
-  const e = ending ? ez((t - endAt) * 1.6) : 0;
-  // background: the photo, blurred, drifting one way
-  const bgp = (t < t0 ? t : phase) / step;
-  if (e < 1) coverImg(IM["b" + showR.rank], 560 + 40 * bgp, 860, 1.18, 16, 0.75 * (1 - e));
-  if (e > 0) { const gr = g.createRadialGradient(800, 1100, 50, 800, 1100, 1000); gr.addColorStop(0, `rgba(120,80,25,${0.9 * e})`); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
-  let gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(0,0,0,.25)"); gr.addColorStop(0.6, "rgba(0,0,0,.1)"); gr.addColorStop(1, "rgba(0,0,0,.8)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
-  // the player, sharp, sliding in then drifting across the other way
-  if (!ending) { const im = IM["c" + showR.rank]; if (im) { const p = t < t0 ? 1 : phase, k = ez(p * 3.2), fade = t < t0 ? 1 : cl(p * 5) * (1 - cl((p - step + 0.12) * 9));
-      const h = 1500, w = h * im.width / im.height, x = 800 + 260 * (1 - k) - 34 * p; g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(im, x - w / 2, 1980 - h, w, h); g.restore(); } }
+  const bgp = (t < t0 ? t : phase) / step; cover(IM.st[showR.rank % IM.st.length], 540 + 50 * bgp, 960, 1.12, 9, 1 - e);
+  if (e > 0) { const gr = g.createRadialGradient(840, 900, 50, 840, 900, 1000); gr.addColorStop(0, `rgba(110,72,22,${0.9 * e})`); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+  let gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(0,0,0,.25)"); gr.addColorStop(0.55, "rgba(0,0,0,.05)"); gr.addColorStop(1, "rgba(0,0,0,.7)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
   bigBall(t);
-  if (ending) silhouettes(t, (t - endAt) * 1.2);
+  if (!ending) { const im = IM["c" + showR.rank]; if (im) { const p = t < t0 ? 1 : phase, k = ez(p * 3), fade = t < t0 ? 1 : cl(p * 5) * (1 - cl((p - step + 0.12) * 9));
+      const h = 1500, w = h * im.width / im.height, x = 810 + 260 * (1 - k) - 40 * (p / step); g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(im, x - w / 2, 1990 - h, w, h); g.restore(); } }
+  else silhouettes(t, (t - endAt) * 1.2);
   header(t);
-  // the board
-  g.save(); g.globalAlpha = ez(t * 2.5); rr(BX - 12, BY - 12, BW + 24, RH * D.top + 14, 22); g.fillStyle = "rgba(8,6,4,.5)"; g.fill(); g.restore();
-  for (let rk = 1; rk <= D.top; rk++) { const k = ez((t * 3) - (D.top - rk) * 0.02); if (k <= 0) continue; g.save(); g.globalAlpha = k;
+  g.save(); g.globalAlpha = ez(t * 2.5); rr(BX - 12, BY - 12, BW + 24, RH * D.top + 14, 22); g.fillStyle = "rgba(8,6,4,.45)"; g.fill(); g.restore();
+  for (let rk = 1; rk <= D.top; rk++) { const k = ez(t * 3); if (k <= 0) continue; g.save(); g.globalAlpha = k;
     const r = rowOf(rk), pi = pre.indexOf(r), oi = order.indexOf(r);
-    let info = null; if (pi >= 0) info = { r, slide: 1, hl: 0 }; else if (oi >= 0 && t >= t0 + oi * step) { const s = t - t0 - oi * step; info = { r, slide: s * 2.6, hl: oi === cur && !ending ? 1 - cl((s - 0.55) * 2.5) : 0 }; }
-    row(rk, t, info);
-    if (info && oi === cur && !ending) { g.fillStyle = "#fff"; rr(BX - 26, BY + (rk - 1) * RH + 10, 10, RH - 30, 5); g.fill(); }
+    let info = null; if (pi >= 0) info = { r, slide: 1, hl: 0 }; else if (oi >= 0 && t >= t0 + oi * step) { const s = t - t0 - oi * step; info = { r, slide: s * 2.4, hl: oi === cur && !ending ? 1 - cl((s - 0.7) * 2.2) : 0 }; }
+    row(rk, info);
+    if (info && oi === cur && !ending) { g.fillStyle = "#fff"; rr(BX - 24, BY + (rk - 1) * RH + 10, 9, RH - 30, 5); g.fill(); }
     g.restore(); }
-  // ending: the top 5 covered with the question, the trophy on its podium, the call to comment
   if (ending) { const k = pop(cl((t - endAt) * 2.6)); if (k > 0) { const y0 = BY - 4, h5 = RH * 5 - 6; g.save(); g.translate(BX + BW / 2, y0 + h5 / 2); g.scale(k, k);
       rr(-BW / 2 - 4, -h5 / 2, BW + 8, h5, 18); g.fillStyle = "rgba(12,9,5,.97)"; g.fill(); g.strokeStyle = GOLD2; g.lineWidth = 4; g.stroke();
-      txt("WHO'S YOUR", 0, -92, 58, "#fff", { a: "center", ls: 1 }); const gg = g.createLinearGradient(0, -40, 0, 40); gg.addColorStop(0, GOLD1); gg.addColorStop(1, GOLD2); txt("TOP 5?", 0, -6, 104, gg, { a: "center" });
-      txt("REVEALED TOMORROW", 0, 88, 34, "#fff", { a: "center", f: "Oswald", w: 700, ls: 3 }); g.restore(); }
-    podium(840, 1690, 0.82 * (0.9 + 0.1 * ez((t - endAt) * 2)), cl((t - endAt - 0.3) * 2));
-    const k2 = pop(cl((t - endAt - 1.0) * 3)); if (k2 > 0) { g.save(); g.translate(540, 1835); g.scale(k2, k2); rr(-380, -52, 760, 104, 26); const bg2 = g.createLinearGradient(0, -52, 0, 52); bg2.addColorStop(0, GOLD1); bg2.addColorStop(1, GOLD2); g.fillStyle = bg2; g.fill(); g.strokeStyle = INK; g.lineWidth = 5; g.stroke(); txt("COMMENT YOUR TOP 5", 0, 0, 58, INK, { a: "center", ls: 1 }); g.restore(); } }
-  else podium(890, 1655, 0.62, 0.35 + 0.15 * Math.sin(t * 2.5));
-  if (D.credit) txt(D.credit, 1060, 1906, 15, "rgba(255,255,255,.55)", { a: "right", f: "Oswald", w: 700 });
+      txt("WHO'S YOUR", 0, -88, 46, "#fff", { a: "center", w: 900, ls: 1 }); const gg = g.createLinearGradient(0, -40, 0, 40); gg.addColorStop(0, GOLD1); gg.addColorStop(1, GOLD2); txt("TOP 5?", 0, -8, 96, gg, { a: "center", w: 900 });
+      txt("REVEALED TOMORROW", 0, 84, 26, "#fff", { a: "center", w: 800, ls: 4 }); g.restore(); }
+    podium(840, 820 * (0.92 + 0.08 * ez((t - endAt) * 2)), cl((t - endAt - 0.3) * 2));
+    const k2 = pop(cl((t - endAt - 1.0) * 3)); if (k2 > 0) { g.save(); g.translate(540, 1832); g.scale(k2, k2); rr(-360, -50, 720, 100, 26); const b2 = g.createLinearGradient(0, -50, 0, 50); b2.addColorStop(0, GOLD1); b2.addColorStop(1, GOLD2); g.fillStyle = b2; g.fill(); g.strokeStyle = INK; g.lineWidth = 5; g.stroke(); txt("COMMENT YOUR TOP 5", 0, 0, 44, INK, { a: "center", w: 900, ls: 1 }); g.restore(); } }
+  else podium(905, 700, 0.3 + 0.15 * Math.sin(t * 2.5));
+  if (D.credit) txt(D.credit, 1062, 1906, 14, "rgba(255,255,255,.55)", { w: 800, a: "right" });
 };
 window.ready = true;
 </script></body></html>
