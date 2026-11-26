@@ -1,0 +1,73 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Anton;src:url(../../video-factory/assets/Anton.ttf)}@font-face{font-family:Oswald;src:url(../../video-factory/assets/Oswald-Bold.woff2);font-weight:700}
+body{margin:0;background:#000}</style></head><body><canvas id="c" width="1080" height="1920"></canvas><script>
+// Ballon d'Or style ranking countdown (Mikey, 26 Nov 2026). window.setup(data) then window.draw(t). data: {title, sub, rows:[{rank,name,img}], top, step, endHold}
+const W = 1080, H = 1920, c = document.getElementById("c"), g = c.getContext("2d");
+const cl = x => Math.max(0, Math.min(1, x)), ez = x => { x = cl(x); return 1 - Math.pow(1 - x, 3); }, pop = x => { x = cl(x); return 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2); };
+let D, IM = {};
+const GOLD1 = "#f7d78a", GOLD2 = "#d9a441", GOLD3 = "#8a5a12", INK = "#14100a";
+function rr(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function txt(s, x, y, size, col, o = {}) { g.save(); g.font = `${o.w || ""} ${size}px ${o.f || "Anton"}`; g.textAlign = o.a || "left"; g.textBaseline = "middle"; let sz = size; if (o.maxW) { const w = g.measureText(s).width; if (w > o.maxW) { sz = size * o.maxW / w; g.font = `${o.w || ""} ${sz}px ${o.f || "Anton"}`; } }
+  if (o.stroke) { g.lineJoin = "round"; g.lineWidth = o.stroke; g.strokeStyle = o.sc || INK; g.strokeText(s, x, y); } g.fillStyle = col; g.fillText(s, x, y); g.restore(); }
+window.setup = async (data) => { D = data; await document.fonts.load("40px Anton"); await document.fonts.load("700 40px Oswald");
+  await Promise.all(D.rows.map(r => new Promise(res => { const i = new Image(); i.onload = res; i.onerror = res; i.src = r.img; IM[r.rank] = i; }))); return true; };
+function cover(im, alpha, blur, z) { if (!im || !im.naturalWidth) return; const k = Math.max(W / im.width, H / im.height) * z, w = im.width * k, h = im.height * k; g.save(); g.globalAlpha = alpha; g.filter = `blur(${blur}px)`; g.drawImage(im, (W - w) / 2, (H - h) / 2 - 100, w, h); g.restore(); }
+function trophy(x, y, s, shine) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  // pedestal
+  let gr = g.createLinearGradient(-110, 0, 110, 0); gr.addColorStop(0, "#0d0d0f"); gr.addColorStop(0.5, "#2c2c31"); gr.addColorStop(1, "#0d0d0f"); g.fillStyle = gr; g.fillRect(-110, 120, 220, 420);
+  g.fillStyle = "#3a3a40"; g.beginPath(); g.ellipse(0, 120, 110, 22, 0, 0, 7); g.fill();
+  g.strokeStyle = "rgba(240,200,110,.55)"; g.lineWidth = 4; g.beginPath(); g.arc(0, 300, 46, 0, 7); g.stroke();
+  // base rock
+  gr = g.createLinearGradient(0, 40, 0, 120); gr.addColorStop(0, "#b0a69a"); gr.addColorStop(1, "#4a443e"); g.fillStyle = gr; g.beginPath(); g.moveTo(-80, 118); g.quadraticCurveTo(-70, 60, -30, 50); g.lineTo(30, 50); g.quadraticCurveTo(70, 60, 80, 118); g.closePath(); g.fill();
+  // ball
+  gr = g.createRadialGradient(-40, -60, 10, 0, -20, 120); gr.addColorStop(0, "#fff6d6"); gr.addColorStop(0.3, GOLD1); gr.addColorStop(0.7, GOLD2); gr.addColorStop(1, GOLD3); g.fillStyle = gr; g.beginPath(); g.arc(0, -20, 100, 0, 7); g.fill();
+  g.strokeStyle = "rgba(90,55,10,.65)"; g.lineWidth = 5; const pent = (cx, cy, r, rot) => { g.beginPath(); for (let i = 0; i < 5; i++) { const a = rot + i * Math.PI * 2 / 5; g.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); } g.closePath(); g.stroke(); };
+  pent(0, -20, 34, -Math.PI / 2); [[0, -92], [68, -42], [44, 44], [-44, 44], [-68, -42]].forEach(([px, py], i) => { g.beginPath(); g.moveTo(px * 0.5, -20 + (py + 20) * 0.5); g.lineTo(px * 0.95, -20 + (py + 20) * 0.95); g.stroke(); });
+  if (shine > 0) { g.globalCompositeOperation = "lighter"; gr = g.createRadialGradient(0, -20, 0, 0, -20, 260); gr.addColorStop(0, `rgba(255,220,140,${0.5 * shine})`); gr.addColorStop(1, "rgba(255,220,140,0)"); g.fillStyle = gr; g.fillRect(-300, -320, 600, 600); }
+  g.restore(); }
+function mystery(x, y, k) { // a gold statue silhouette with question marks
+  g.save(); g.globalAlpha = k; g.translate(x, y); const gr = g.createLinearGradient(-200, -600, 200, 300); gr.addColorStop(0, "#f3d48a"); gr.addColorStop(0.5, "#b07a2a"); gr.addColorStop(1, "#5e3c10"); g.fillStyle = gr;
+  g.beginPath(); g.ellipse(0, -430, 95, 120, 0, 0, 7); g.fill(); g.fillRect(-45, -330, 90, 70);
+  g.beginPath(); g.moveTo(-260, 300); g.bezierCurveTo(-260, -80, -200, -250, -90, -280); g.lineTo(90, -280); g.bezierCurveTo(200, -250, 260, -80, 260, 300); g.closePath(); g.fill();
+  [[-200, -470, 150, -0.2], [190, -380, 190, 0.18]].forEach(([qx, qy, s, r]) => { g.save(); g.translate(qx, qy); g.rotate(r); txt("?", 0, 0, s, "#fff", { a: "center", stroke: 10 }); g.restore(); });
+  g.restore(); }
+window.draw = (t) => {
+  const n = D.rows.length, step = D.step, t0 = 0.5, endAt = t0 + n * step;
+  const cur = Math.max(0, Math.min(n - 1, Math.floor((t - t0) / step))), phase = t - t0 - cur * step, ending = t >= endAt;
+  g.fillStyle = "#0b0906"; g.fillRect(0, 0, W, H);
+  // background: the current player blurred and dark, the gold arc
+  if (!ending) cover(IM[D.rows[cur].rank], 0.55, 18, 1.15); else { const e = ez((t - endAt) * 2); cover(IM[D.rows[n - 1].rank], 0.55 * (1 - e), 18, 1.15); }
+  let gr = g.createRadialGradient(-200, -200, 200, -200, -200, 1100); gr.addColorStop(0, "rgba(247,215,138,.95)"); gr.addColorStop(0.55, "rgba(217,164,65,.55)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  gr = g.createLinearGradient(0, H * 0.6, 0, H); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,.85)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  // the player (or the mystery statue)
+  if (!ending) { const im = IM[D.rows[cur].rank]; if (im && im.naturalWidth) { const k = ez(phase * 5), h = 1520, w = h * im.width / im.height; const z = 1 + 0.04 * phase; g.save(); g.globalAlpha = cl(phase * 6);
+      g.translate(790 + 140 * (1 - k), 1960); g.scale(z, z); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 40; g.drawImage(im, -w / 2, -h, w, h); g.restore(); }
+    
+  } else mystery(790, 1150, ez((t - endAt - 0.15) * 2));
+  trophy(800, 1560, 0.95, ending ? cl((t - endAt - 0.4) * 2) : 0.15 + 0.15 * Math.sin(t * 3));
+  // header
+  const hk = ez(t * 3); g.save(); g.globalAlpha = hk;
+  rr(150, 150, 260, 54, 27); g.fillStyle = "#fff"; g.fill(); txt("KNOWITBALL", 280, 178, 34, INK, { a: "center" });
+  rr(40, 214, 480, 74, 16); g.fillStyle = "rgba(15,12,8,.92)"; g.fill(); g.strokeStyle = GOLD2; g.lineWidth = 3; g.stroke(); txt(D.title, 280, 252, 50, GOLD1, { a: "center", maxW: 450 });
+  rr(130, 296, 300, 52, 14); g.fillStyle = "rgba(15,12,8,.85)"; g.fill(); txt(D.sub, 280, 323, 34, "#fff", { a: "center", maxW: 280 }); g.restore();
+  // the board
+  const bx = 40, by = 380, rh = 60, bw = 480; g.save(); g.globalAlpha = ez(t * 2.5); rr(bx - 14, by - 16, bw + 28, rh * D.top + 30, 22); g.fillStyle = "rgba(10,8,5,.55)"; g.fill(); g.restore();
+  for (let r = 1; r <= D.top; r++) { const y = by + (r - 1) * rh, rk = ez((t - 0.05 * (D.top - r) * 0.3) * 3); if (rk <= 0) continue; g.save(); g.globalAlpha = rk;
+    rr(bx, y, 52, rh - 8, 8); g.fillStyle = "rgba(15,12,8,.9)"; g.fill(); txt(String(r), bx + 26, y + (rh - 8) / 2 + 2, 34, "#fff", { a: "center" });
+    const idx = D.rows.findIndex(o => o.rank === r), shown = idx >= 0 && t >= t0 + idx * step; const isNew = idx === cur && !ending && phase < step;
+    const slide = shown ? ez((t - t0 - idx * step) * 5) : 0;
+    gr = g.createLinearGradient(bx + 60, 0, bx + bw, 0); gr.addColorStop(0, GOLD1); gr.addColorStop(1, GOLD2); g.fillStyle = gr; rr(bx + 60, y, bw - 60, rh - 8, 8); g.fill();
+    if (shown) { const hl = isNew ? 1 - cl((phase - 0.6) * 2) : 0; if (hl > 0) { g.fillStyle = `rgba(255,255,255,${0.95 * hl})`; rr(bx + 60, y, (bw - 60) * slide, rh - 8, 8); g.fill(); }
+      g.save(); g.beginPath(); g.rect(bx + 60, y, bw - 60, rh); g.clip(); txt(D.rows[idx].name.toUpperCase(), bx + 80 - 400 * (1 - slide), y + (rh - 8) / 2 + 2, 36, INK, { maxW: bw - 100 }); g.restore();
+      if (isNew) { g.fillStyle = "#fff"; rr(bx - 34, y + 8, 14, rh - 24, 7); g.fill(); } }
+    g.restore(); }
+  // ending: the top 5 covered, the question
+  if (ending) { const e = pop(cl((t - endAt) * 3)); if (e > 0) { const y0 = by - 6, h5 = rh * 5 - 2; g.save(); g.translate(bx + bw / 2, y0 + h5 / 2); g.scale(e, e);
+      rr(-bw / 2 - 6, -h5 / 2, bw + 12, h5, 16); g.fillStyle = "rgba(12,9,5,.96)"; g.fill(); g.strokeStyle = GOLD2; g.lineWidth = 4; g.stroke();
+      txt("WHO'S YOUR", 0, -78, 62, "#fff", { a: "center" }); txt("TOP 5?", 0, -6, 92, GOLD1, { a: "center" }); txt("REVEALED TOMORROW", 0, 82, 40, "#fff", { a: "center", f: "Oswald", w: 700 }); g.restore(); }
+    const k2 = pop(cl((t - endAt - 1.0) * 3)); if (k2 > 0) { g.save(); g.translate(540, 1790); g.scale(k2, k2); rr(-380, -60, 760, 120, 26); g.fillStyle = GOLD1; g.fill(); g.strokeStyle = INK; g.lineWidth = 6; g.stroke(); txt("COMMENT YOUR TOP 5", 0, 4, 64, INK, { a: "center" }); g.restore(); } }
+  if (D.credit) txt(D.credit, 1060, 1900, 16, "rgba(255,255,255,.6)", { a: "right", f: "Oswald", w: 700 });
+};
+window.ready = true;
+</script></body></html>
