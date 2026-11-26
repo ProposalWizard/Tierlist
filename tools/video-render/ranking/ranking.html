@@ -9,7 +9,7 @@ body{margin:0;background:#000}</style></head><body><canvas id="c" width="1080" h
 const W = 1080, H = 1920, c = document.getElementById("c"), g = c.getContext("2d");
 const cl = x => Math.max(0, Math.min(1, x)), ez = x => { x = cl(x); return 1 - Math.pow(1 - x, 3); };
 const pop = x => { x = cl(x); return 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2); };
-let D, IM = {};
+let D, IM = {}; const PC = document.createElement("canvas"); PC.width = 1080; PC.height = 1920; const PX = PC.getContext("2d");
 const GOLD1 = "#fbe3a1", GOLD2 = "#e0ad4c", INK = "#16110a", DARK = "rgba(14,11,7,.95)";
 // where the ball sits inside the podium cut-out (measured): centre and radius as fractions of its width / height
 const BALL = { cx: 395 / 1153, cy: 300 / 2489, r: 282 / 1153 };
@@ -112,7 +112,11 @@ window.draw = (t) => {
   let gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(0,0,0,.25)"); gr.addColorStop(0.55, "rgba(0,0,0,.05)"); gr.addColorStop(1, "rgba(0,0,0,.7)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
   if (!ending) sparkles(t);
   if (!ending) { const im = IM["c" + showR.rank]; if (im) { const p = t < t0 ? 1 : phase, k = ez(p * 3), fade = t < t0 ? 1 : cl(p * 5) * (1 - cl((p - step + 0.12) * 9));
-      const asp = im.width / im.height, h = Math.min(D.playerH || 1820, 1450 / asp), w = h * asp, x = 800 + 260 * (1 - k) - 40 * (p / step); g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(im, x - w / 2, 1990 - h, w, h); g.restore(); } }
+      const asp = im.width / im.height, h = Math.min(D.playerH || 1456, (D.playerW || 1160) / asp), w = h * asp, x = (D.playerX || 825) + 260 * (1 - k) - 40 * (p / step), top = D.playerTop || 300;
+      // drawn on a spare canvas so the bottom of the cut-out can fade softly into the dark instead of ending in a hard line
+      PX.clearRect(0, 0, W, H); PX.globalCompositeOperation = "source-over"; PX.drawImage(im, x - w / 2, top, w, h); PX.globalCompositeOperation = "destination-in";
+      const mk = PX.createLinearGradient(0, top + h - 300, 0, top + h - 20); mk.addColorStop(0, "rgba(0,0,0,1)"); mk.addColorStop(1, "rgba(0,0,0,0)"); PX.fillStyle = mk; PX.fillRect(0, 0, W, H); PX.globalCompositeOperation = "source-over";
+      g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); } }
   else silhouettes(t, (t - endAt) * 1.2);
   goldPanel(t);
   header(t);
