@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import HowToPlayButton from "@/components/HowToPlayButton";
 
 export const metadata: Metadata = {
-  title: "Ten-A-Ball — Knowitball",
+  title: "Ten-A-Ball",
   description: "Football trivia challenge. Guess all 10 answers before you lose your 3 lives!",
   alternates: { canonical: "/tenable" },
 };

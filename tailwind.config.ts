@@ -1,4 +1,6 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
+import { tailwindColors, normalVars, lightVars, darkVars, solidRules, chromeVars, SEL } from "./lib/siteLook/palette";
 
 /**
  * The Studio (Marketing → Studio, 22 Oct 2026): the editing suite's paint tokens. Every one reads a CSS variable that
@@ -40,6 +42,9 @@ const config: Config = {
           d: "#7fbfff", // blue for D tier
         },
         ...studioColors,
+        // The site's colours as named settings (lib/siteLook/palette.ts): unchanged for everyone,
+        // the new look for an admin with the New look preview on.
+        ...tailwindColors(),
       },
       fontFamily: {
         display: ["var(--font-cinzel)", "serif"],
@@ -57,7 +62,14 @@ const config: Config = {
       transitionDuration: { fast: "150ms", base: "220ms", slow: "320ms" },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(({ addBase }) => {
+      addBase({ [SEL.normal]: normalVars(), [SEL.light]: lightVars(), [SEL.dark]: darkVars() });
+      addBase(solidRules());
+      // The frame (top bar, footer) on every page but admin, the game's own screens included.
+      addBase({ 'html[data-look="v2"]:not([data-scope="admin"]) [data-global-chrome]': chromeVars() });
+    }),
+  ],
 };
 
 export default config;

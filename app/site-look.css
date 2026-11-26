@@ -1,0 +1,28 @@
+/*
+ * app/site-look.css: the New look preview's frame (Leo, 26 Nov 2026).
+ * Only under html[data-look="v2"] (an admin's own device, lib/siteLook/look.ts).
+ * The colours themselves are settings (lib/siteLook/palette.ts); this file is
+ * the few things a colour swap can't do: the green bars, the cream Sign in,
+ * the page background, and the type.
+ */
+html[data-look="v2"]:not([data-scope="admin"]) nav[data-global-chrome] {
+  background: #0a6a34 !important; border-bottom-color: #085a2c !important; backdrop-filter: none;
+}
+html[data-look="v2"][data-theme="dark"]:not([data-scope="admin"]) nav[data-global-chrome] { background: #0a4a26 !important; border-bottom-color: #063a1d !important; }
+html[data-look="v2"]:not([data-scope="admin"]) footer[data-global-chrome] { background: #0a6a34 !important; border-top-color: #085a2c !important; }
+html[data-look="v2"][data-theme="dark"]:not([data-scope="admin"]) footer[data-global-chrome] { background: #0a4a26 !important; border-top-color: #063a1d !important; }
+/* Sign in: the home's cream button */
+html[data-look="v2"]:not([data-scope="admin"]) [data-global-chrome] .bg-indigo-600 { background: #f4efe2 !important; color: #0a4a26 !important; font-weight: 800; }
+html[data-look="v2"]:not([data-scope="admin"]) [data-global-chrome] .bg-indigo-600:hover { background: #fff !important; }
+html[data-look="v2"]:not([data-scope="admin"]) nav[data-global-chrome] .border-gray-700 { border-color: rgba(255,255,255,.55) !important; }
+html[data-look="v2"]:not([data-scope="admin"]) footer[data-global-chrome] textarea { background: rgba(0,0,0,.18) !important; border-color: rgba(255,255,255,.5) !important; color: #fff; }
+html[data-look="v2"]:not([data-scope="admin"]) footer[data-global-chrome] textarea::placeholder { color: #d5e9dc !important; }
+
+/* Pages: the home's heavy headings */
+html[data-look="v2"][data-scope="page"] main h1, html[data-look="v2"][data-scope="page"] .flex-1 h1 { font-weight: 900; letter-spacing: -.02em; }
+/* Light: cards lift off the cream like the home's tiles */
+html[data-look="v2"][data-scope="page"][data-theme="light"] .flex-1 :is(.bg-gray-900, .bg-gray-900\/50, .bg-gray-900\/60, .bg-gray-900\/80) { box-shadow: 0 3px 0 rgba(18,21,26,.10), 0 8px 18px rgba(18,21,26,.06); }
+/* The game strip: the page you are on is a cream pill (the purple one vanished on green) */
+html[data-look="v2"]:not([data-scope="admin"]) [data-global-chrome] .bg-purple-700\/40 { background: #f4efe2 !important; color: #0a4a26 !important; }
+/* Light: the Draft setup's hand-picked near-black boxes become cream cards (the words already turn dark) */
+html[data-look="v2"][data-scope="page"][data-theme="light"] :is(.bg-\[\#09060f\], .bg-\[\#060c18\], .bg-\[\#010d18\]) { background: #fff !important; }

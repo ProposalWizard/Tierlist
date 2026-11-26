@@ -106,6 +106,27 @@ export const ADMIN_GUIDES = {
     inGame: ["Nowhere. This is the front door to the tools."],
     dev: "app/admin/page.tsx (who may open it), app/admin/AdminHub.tsx, app/admin/adminHub.css · lib/adminRegistry.ts ADMIN_HUB, adminHomeFor, backFor · /api/admin/team (what changed) · app/admin/home/page.tsx (old front door, now also sends here)",
   },
+  "/admin/new-look": {
+    title: "New look",
+    what: "Try the new Knowitball look (the home's cream and green, or its dark option) on the real site, on this device only. Everyone else sees today's site.",
+    buttons: [
+      {
+        group: "The switch",
+        items: [
+          ["On / Off", "Turns the new look on or off for this device."],
+          ["Light (cream) / Dark", "Which version of the new look you see."],
+          ["The page links", "Open each public page to check it in the new look."],
+        ],
+      },
+      {
+        group: "On every page while it's on",
+        items: [["● New look", "Bottom-left. Tap for Light, Dark or Turn off."]],
+      },
+    ],
+    saving: ["This device only (a small cookie). Nothing is shared and nobody else's site changes. Sign out or another device: off."],
+    inGame: ["Public pages only (home, games, Draft, Tic Tac Toe, Ten-A-Ball, sign-in, profile …). The game's own screens and admin pages never change."],
+    dev: "lib/siteLook/look.ts (cookie, scope, boot script) · lib/siteLook/palette.ts (colour settings) · tailwind.config.ts · app/site-look.css · components/SiteLook.tsx · ?look=v2|off&theme=light|dark (admins only)",
+  },
   "/admin/site-content": {
     title: "Site content",
     what: "Run the live site's content: tierlists, categories, vote tierlists, blind rankings, the daily games, objectives, cards and feedback. This page was /admin until 12 Nov 2026; /admin is now the admin home. Reach it from Website games → Tierlists.",

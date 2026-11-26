@@ -27,6 +27,86 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
   {
+      "version": "0.144",
+      "title": "Leo's patch notes: The new look, only for you",
+      "author": "Leo",
+      "publishedAt": "2026-11-26T03:19:33Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "A secret admin switch (Admin → New look, or ?look=v2): every public page in the new cream-and-green look, or dark, on your device only. Everyone else sees today's site. Fixed for everyone: double 'Knowitball' in titles, sign-in's old name, Ten-A-Ball's 'ten lives' line, the Objectives badge over Sign in. Next, behind the switch: page polish, old games, Draft.",
+      "stats": [
+        {
+          "value": "2",
+          "label": "looks: Light (cream) and Dark"
+        },
+        {
+          "value": "0",
+          "label": "changes for anyone without the switch"
+        },
+        {
+          "value": "14",
+          "label": "pages checked 3 ways"
+        },
+        {
+          "value": "4",
+          "label": "small fixes for everyone"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Admin → New look",
+              "detail": "On, then Light or Dark; open the pages from its list."
+            },
+            {
+              "title": "● New look button",
+              "detail": "Bottom-left on every page while on."
+            },
+            {
+              "title": "Phone",
+              "detail": "knowitball.co.uk/?look=v2 signed in as admin; ?look=off to stop."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed for everyone",
+          "items": [
+            {
+              "title": "Titles",
+              "detail": "No 'Knowitball | Knowitball'."
+            },
+            {
+              "title": "Sign in",
+              "detail": "Says Knowitball."
+            },
+            {
+              "title": "Ten-A-Ball menu line",
+              "detail": "Three lives."
+            },
+            {
+              "title": "Objectives badge",
+              "detail": "No longer over Sign in on a computer."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Page polish, old games, Draft",
+              "detail": "All behind the switch until you say go."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+  {
       "version": "0.143",
       "title": "Leo's patch notes: One Knowitball, the whole-site plan",
       "author": "Leo",
