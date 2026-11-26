@@ -8,7 +8,8 @@
  */
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
-import { whoIs } from "@/lib/publish/auth";
+import { NOT_YOURS, mayUse, whoIs } from "@/lib/publish/auth";
+import { spaceOf } from "@/lib/publish/types";
 import { OWN, uploadTarget } from "@/lib/publish/storage";
 import { CAPS, checkUpload, uploadUrl, videoKey } from "@/lib/marketing/r2";
 
@@ -16,12 +17,13 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   const who = await whoIs(req, ["admin", "agent"]);
-  if (!who) return NextResponse.json({ error: "Only the Publish owner can use this (PUBLISH_OWNER_EMAIL), or any admin when no owner is set." }, { status: 403 });
-  const target = uploadTarget();
+  const b = (await req.json().catch(() => ({}))) as { name?: unknown; size?: unknown; space?: unknown };
+  const space = spaceOf(b.space);
+  if (!mayUse(who, space)) return NextResponse.json({ error: NOT_YOURS }, { status: 403 });
+  const target = uploadTarget(space);
   if (!target || !target.store.config) return NextResponse.json({ error: "No video storage is connected here (PUBLISH_R2_ settings, or the Marketing R2 settings)." }, { status: 503 });
   const config = target.store.config;
-  const b = (await req.json().catch(() => ({}))) as { name?: unknown; size?: unknown };
-  const check = checkUpload({ name: b.name, size: b.size, folder: "publish" }, { files: 0, bytes: 0 });
+  const check = checkUpload({ name: b.name, size: b.size, folder: target.folder }, { files: 0, bytes: 0 });
   if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
   if (check.kind !== "video") return NextResponse.json({ error: "Only videos can be posted." }, { status: 415 });
   const now = new Date();

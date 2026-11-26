@@ -3226,8 +3226,11 @@ export const ADMIN_GUIDES = {
 
   "/admin/marketing/publish": {
     title: "Publish",
-    what: "Post a finished video to Instagram, Facebook and YouTube now or at a set time, and see its views, likes and comments. Only Mikey (the owner) can use it once PUBLISH_OWNER_EMAIL is set; until then, admins.",
+    what: "Post a finished video to Instagram, Facebook and YouTube now or at a set time, and see its views, likes and comments. Three sets of accounts, picked at the top: Football and Content are Mikey's own (only his login, PUBLISH_OWNER_EMAIL); Knowitball is the team's (every admin).",
     buttons: [
+      { group: "Which accounts", items: [
+        ["Football / Content / Knowitball", "Switches the whole page to that set of accounts: its connected logins, its videos, its posts and numbers. Connect buttons connect accounts for the set you are on."],
+      ] },
       { group: "Accounts", items: [
         ["Connect Facebook + Instagram", "Opens Facebook's login. Pick the Knowitball Page and its Instagram, press Allow. One login connects both."],
         ["Connect YouTube", "Opens Google's login. Pick the Knowitball channel, press Allow."],
