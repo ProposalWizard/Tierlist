@@ -126,7 +126,7 @@ export default function DraftHistoryPage() {
           </p>
           <Link
             href="/auth?next=/draft/history"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-600 hover:to-emerald-500 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             Sign In
           </Link>

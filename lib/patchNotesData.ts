@@ -27,6 +27,86 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
   {
+      "version": "0.145",
+      "title": "Leo's patch notes: New look fixes and a readability check",
+      "author": "Leo",
+      "publishedAt": "2026-11-26T18:21:03Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "In the New look preview: the Hall of Fame boards read again (they only showed signed in, which my checks missed), home has a dark mode, the admin panel reads, and Mikey's Draft art stays exactly as drawn as dark cards on the cream page. A new check measures every word on 14 pages in light, dark and today's look, signed out, signed in and as admin, phone and computer: 162 of 168 passed and the rest are fixed. Some faint text on today's site fixed for everyone too.",
+      "stats": [
+        {
+          "value": "84 → 0",
+          "label": "unreadable words on the Hall of Fame"
+        },
+        {
+          "value": "168",
+          "label": "page checks per run"
+        },
+        {
+          "value": "3 : 1",
+          "label": "lowest contrast allowed"
+        },
+        {
+          "value": "0",
+          "label": "pages listed by hand for the art cards"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Draft → Hall of Fame, signed in",
+              "detail": "New look on, light then dark."
+            },
+            {
+              "title": "Home in dark",
+              "detail": "● New look → Dark."
+            },
+            {
+              "title": "Admin panel",
+              "detail": "Open it on any page with the new look on."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Hall of Fame boards",
+              "detail": "Mikey's art kept; every word readable."
+            },
+            {
+              "title": "Home dark mode",
+              "detail": "Same greens as the rest."
+            },
+            {
+              "title": "Admin panel",
+              "detail": "Keeps its own dark colours."
+            },
+            {
+              "title": "For everyone",
+              "detail": "Objectives badge, Draft setup options, Tic Tac Toe and history small words."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Readability check",
+              "detail": "scripts/site-look/contrast.mjs; Brain RUL-UI-014: every look change passes it first."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+  {
       "version": "0.144",
       "title": "Leo's patch notes: The new look, only for you",
       "author": "Leo",

@@ -106,7 +106,7 @@ export default function GameSidebar() {
             {/* Game list */}
             <nav className="flex-1 overflow-y-auto overscroll-contain py-2">
               {/* Live games */}
-              <p className="mx-4 mb-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-gray-600">Games</p>
+              <p className="mx-4 mb-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Games</p>
               {GAMES.map((game) => {
                 const isActive = pathname === game.href || (game.href !== "/" && pathname.startsWith(game.href));
                 return (
