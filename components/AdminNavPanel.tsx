@@ -357,7 +357,7 @@ export default function AdminNavPanel() {
           </Link>
           {GROUPS.filter((group) => group.game === game).map((group) => (
             <div key={group.label} className="mb-2">
-              <p className="mx-4 mb-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-gray-600">
+              <p className="mx-4 mb-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
                 {group.label}
               </p>
               {group.links.map((link) => {

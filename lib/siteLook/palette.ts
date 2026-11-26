@@ -26,6 +26,7 @@ type Scale = Record<Shade, string>;
 export const FAMILIES = ["gray", "slate", "emerald", "amber", "red", "indigo", "purple", "yellow", "blue", "green", "orange", "cyan", "sky", "teal", "violet", "rose", "pink", "lime"] as const;
 type Family = (typeof FAMILIES)[number];
 const BRANDED: readonly Family[] = ["indigo", "purple", "violet"];
+const PALE: readonly Family[] = ["amber", "yellow", "lime", "orange", "cyan", "sky", "emerald", "green", "teal"];
 
 /** "#0a7a3d" → "10 122 61" (the form `rgb(var(--x) / a)` needs). */
 export function triplet(hex: string): string {
@@ -83,7 +84,9 @@ export function lightVars(): Record<string, string> {
       if (f === "gray" || f === "slate") { v[`--k-${f}-${s}`] = triplet(CREAM_GRAY[s]); continue; }
       const src = BRANDED.includes(f) ? BRAND : tw(f);
       // A branded solid (indigo-600 button) is the home's green button, never lightened.
-      v[`--k-${f}-${s}`] = triplet(src[lightShade(s)]);
+      // Pale families (amber, yellow …) need one step darker on cream to read (contrast check, 26 Nov).
+      const shade = PALE.includes(f) && (s === "300" || s === "400") ? (s === "300" ? "800" : "700") : lightShade(s);
+      v[`--k-${f}-${s}`] = triplet(src[shade]);
     }
   }
   return v;
@@ -127,5 +130,16 @@ export function solidRules(): Record<string, Record<string, string>> {
 
 /** The top bar and footer: green in both themes, drawn with the dark set inside (they were made for it). */
 export function chromeVars(): Record<string, string> {
-  return { "--k-white": triplet("#ffffff"), ...darkVars() };
+  return keepDarkVars();
+}
+
+/**
+ * Made-for-dark parts kept dark on a cream page (Leo, 26 Nov 2026): Mikey's
+ * Draft art cards, the Hall of Fame boards, the admin panel. Every colour back
+ * to its dark-page value (in the dark look's greens), so their words read
+ * as designed. components/SiteLook.tsx marks them (data-keep-dark) by
+ * measuring: any box whose own background is near-black.
+ */
+export function keepDarkVars(): Record<string, string> {
+  return { ...normalVars(), ...darkVars() };
 }

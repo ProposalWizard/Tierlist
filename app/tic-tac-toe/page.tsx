@@ -36,7 +36,7 @@ export default function TicTacToeMainPage() {
             <div className="text-2xl font-black text-amber-300 group-hover:text-amber-200">
               Daily
             </div>
-            <p className="mt-1 text-sm text-amber-400/70">
+            <p className="mt-1 text-sm text-amber-400/90">
               A new challenge every day
             </p>
           </Link>
@@ -48,7 +48,7 @@ export default function TicTacToeMainPage() {
             <div className="text-2xl font-black text-green-300 group-hover:text-green-200">
               Easy
             </div>
-            <p className="mt-1 text-sm text-green-400/70">
+            <p className="mt-1 text-sm text-green-400/90">
               Jump into a random easy puzzle
             </p>
           </Link>

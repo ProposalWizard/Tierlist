@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 import plugin from "tailwindcss/plugin";
-import { tailwindColors, normalVars, lightVars, darkVars, solidRules, chromeVars, SEL } from "./lib/siteLook/palette";
+import { tailwindColors, normalVars, lightVars, darkVars, solidRules, chromeVars, keepDarkVars, SEL } from "./lib/siteLook/palette";
 
 /**
  * The Studio (Marketing → Studio, 22 Oct 2026): the editing suite's paint tokens. Every one reads a CSS variable that
@@ -68,6 +68,9 @@ const config: Config = {
       addBase(solidRules());
       // The frame (top bar, footer) on every page but admin, the game's own screens included.
       addBase({ 'html[data-look="v2"]:not([data-scope="admin"]) [data-global-chrome]': chromeVars() });
+      // Dark-made parts on a cream page keep their dark colours (components/SiteLook.tsx marks them).
+      addBase({ [`${SEL.light} [data-keep-dark], ${SEL.light} [data-admin-nav]`]: keepDarkVars() });
+      addBase({ [`:where(${SEL.light}) [data-keep-dark], :where(${SEL.light}) [data-admin-nav]`]: { color: "rgb(var(--k-gray-100))" } });
     }),
   ],
 };

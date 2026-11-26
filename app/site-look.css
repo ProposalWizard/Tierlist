@@ -26,3 +26,32 @@ html[data-look="v2"][data-scope="page"][data-theme="light"] .flex-1 :is(.bg-gray
 html[data-look="v2"]:not([data-scope="admin"]) [data-global-chrome] .bg-purple-700\/40 { background: #f4efe2 !important; color: #0a4a26 !important; }
 /* Light: the Draft setup's hand-picked near-black boxes become cream cards (the words already turn dark) */
 html[data-look="v2"][data-scope="page"][data-theme="light"] :is(.bg-\[\#09060f\], .bg-\[\#060c18\], .bg-\[\#010d18\]) { background: #fff !important; }
+
+/* ══ The home in the dark look (Leo, 26 Nov: "home page dark mode doesnt work").
+   The home has its own colours (components/home/home.css, look D on cream);
+   these are the same parts in the dark look's green-black. ══ */
+html[data-look="v2"][data-theme="dark"] .kh-c.kh-d {
+  --bg: #0b110e; --ink: #f2f4f2; --muted: #b9c4bd; --accent: #0a7a3d; --accent-ink: #fff; --focus: #f2f4f2;
+  --intro-bg: #0b110e; --intro-ink: #f2f4f2;
+}
+html[data-look="v2"][data-theme="dark"] body:has(.kh-d) { background: #0a4a26; }
+html[data-look="v2"][data-theme="dark"] body:has(.kh-d) nav[data-global-chrome],
+html[data-look="v2"][data-theme="dark"] body:has(.kh-d) footer[data-global-chrome] { background: #0a4a26 !important; border-color: #063a1d !important; }
+html[data-look="v2"][data-theme="dark"] .kh-d .kh-gold { color: #e6b65c; }
+html[data-look="v2"][data-theme="dark"] .kh-d .kh-beta-tag { background: #f2f4f2; color: #0b110e; }
+html[data-look="v2"][data-theme="dark"] .kh-d .kh-phone { background: #000; box-shadow: 0 24px 50px rgba(0,0,0,.6); }
+html[data-look="v2"][data-theme="dark"] .kh-d :is(.kh-band, .kh-more) { border-top-color: #2b3a31; }
+html[data-look="v2"][data-theme="dark"] .kh-d .kh-get-btn { background: #f2f4f2; color: #0b110e; }
+html[data-look="v2"][data-theme="dark"] .kh-d .kh-get-btn small { color: #3a4350; }
+html[data-look="v2"][data-theme="dark"] .kh-d :is(.kh-get-soon, .kh-get-done) { border-color: #6c786f; color: #f2f4f2; }
+html[data-look="v2"][data-theme="dark"] .kh-d :is(.kh-get-soon, .kh-get-done) small { color: #b9c4bd; }
+html[data-look="v2"][data-theme="dark"] .kh-d .kh-get-tip { background: #151c18; }
+html[data-look="v2"][data-theme="dark"] .kh-d .kh-step { background: #f2f4f2; color: #0b110e; }
+html[data-look="v2"][data-theme="dark"] .kh-d .kh-beta-input { background: #151c18; color: #f2f4f2; border-color: #6c786f; }
+html[data-look="v2"][data-theme="dark"] .kh-d .kh-beta-input::placeholder { color: #97a39b; }
+html[data-look="v2"][data-theme="dark"] .kh-d .kh-tile { background: #151c18 !important; box-shadow: 0 5px 0 rgba(0,0,0,.5), 0 12px 24px rgba(0,0,0,.35) !important; }
+html[data-look="v2"][data-theme="dark"] .kh-d .kh-tile-name { color: #f2f4f2; }
+html[data-look="v2"][data-theme="dark"] .kh-d .kh-foot { border-top-color: #2b3a31; }
+html[data-look="v2"][data-theme="dark"] .kh-tab { color: #f2f4f2; }
+html[data-look="v2"][data-theme="dark"] .kh-tab:hover { background: rgba(255,255,255,.08); }
+html[data-look="v2"][data-theme="dark"] :is(.kh-tab-on, .kh-tab-on:hover) { background: #f2f4f2; color: #0b110e !important; }
