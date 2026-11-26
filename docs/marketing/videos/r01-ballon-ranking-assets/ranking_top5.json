@@ -1,0 +1,325 @@
+{
+ "title": "BALLON D'OR RANKING",
+ "sub": "NOV 2026",
+ "top": 20,
+ "podium": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/podium_cut.png",
+ "panel": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/gold_panel.png",
+ "stadiums": [
+  "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/stadium/s1.jpg",
+  "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/stadium/s2.jpg",
+  "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/stadium/s3.jpg"
+ ],
+ "credit": "Photos: Wikimedia Commons, CC BY / CC BY-SA 4.0 (Bryan Berlin, YantsImages, LawEnthusiast, Biso, Sandro Halank, Ank Kumar)",
+ "rows": [
+  {
+   "rank": 1,
+   "name": "Lamine Yamal",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Lamine_Yamal.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/barcelona.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/es.png"
+  },
+  {
+   "rank": 2,
+   "name": "Michael Olise",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Michael_Olise.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/bayern.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/fr.png"
+  },
+  {
+   "rank": 3,
+   "name": "Jude Bellingham",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Jude_Bellingham.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/realmadrid.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/gb-eng.png"
+  },
+  {
+   "rank": 4,
+   "name": "Kylian Mbappé",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Kylian_Mbappé.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/realmadrid.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/fr.png"
+  },
+  {
+   "rank": 5,
+   "name": "Raphinha",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Raphinha.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/barcelona.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/br.png"
+  },
+  {
+   "rank": 6,
+   "name": "Erling Haaland",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Erling_Haaland.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/mancity.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/no.png"
+  },
+  {
+   "rank": 7,
+   "name": "Donyell Malen",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Donyell_Malen.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/roma.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/nl.png",
+   "zoom": 0.54
+  },
+  {
+   "rank": 8,
+   "name": "Arda Güler",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Arda_Güler_hd.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/realmadrid.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/tr.png"
+  },
+  {
+   "rank": 9,
+   "name": "Declan Rice",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Declan_Rice.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/arsenal.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/gb-eng.png"
+  },
+  {
+   "rank": 10,
+   "name": "Nico Paz",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Nico_Paz.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/como.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/ar.png"
+  },
+  {
+   "rank": 11,
+   "name": "Rodri",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Rodri.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/barcelona.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/es.png"
+  },
+  {
+   "rank": 12,
+   "name": "Pascal Groß",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Pascal_Groß.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/brighton.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/de.png"
+  },
+  {
+   "rank": 13,
+   "name": "Fermín López",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Fermín_López.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/barcelona.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/es.png"
+  },
+  {
+   "rank": 14,
+   "name": "Gabriel",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Gabriel.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/arsenal.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/br.png"
+  },
+  {
+   "rank": 15,
+   "name": "Elliot Anderson",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Elliot_Anderson.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/mancity.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/gb-eng.png"
+  },
+  {
+   "rank": 16,
+   "name": "Harry Kane",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Harry_Kane.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/bayern.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/gb-eng.png"
+  },
+  {
+   "rank": 17,
+   "name": "Adrien Rabiot",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Adrien_Rabiot.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/milan.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/fr.png"
+  },
+  {
+   "rank": 18,
+   "name": "Maxim De Cuyper",
+   "cut": null,
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/brighton.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/be.png"
+  },
+  {
+   "rank": 19,
+   "name": "Gianluca Prestianni",
+   "cut": null,
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/benfica.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/ar.png"
+  },
+  {
+   "rank": 20,
+   "name": "Florian Wirtz",
+   "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Florian_Wirtz.png",
+   "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/liverpool.png",
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/de.png"
+  }
+ ],
+ "mode": "top5",
+ "rowH": 50,
+ "madueke": {
+  "name": "Noni Madueke",
+  "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Noni_Madueke.png",
+  "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/arsenal.png",
+  "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/gb-eng.png"
+ },
+ "stats": {
+  "1": {
+   "g": 17,
+   "a": 15,
+   "rows": [
+    {
+     "label": "LEAGUE",
+     "g": 10,
+     "a": 9,
+     "n": 13
+    },
+    {
+     "label": "CHAMPIONS LEAGUE",
+     "g": 3,
+     "a": 4,
+     "n": 4
+    },
+    {
+     "label": "CUPS",
+     "g": 0,
+     "a": 0,
+     "n": 0
+    },
+    {
+     "label": "INTERNATIONAL",
+     "g": 4,
+     "a": 2,
+     "n": 5
+    }
+   ]
+  },
+  "2": {
+   "g": 17,
+   "a": 8,
+   "rows": [
+    {
+     "label": "LEAGUE",
+     "g": 6,
+     "a": 3,
+     "n": 10
+    },
+    {
+     "label": "CHAMPIONS LEAGUE",
+     "g": 2,
+     "a": 1,
+     "n": 3
+    },
+    {
+     "label": "CUPS",
+     "g": 4,
+     "a": 2,
+     "n": 3
+    },
+    {
+     "label": "INTERNATIONAL",
+     "g": 5,
+     "a": 2,
+     "n": 6
+    }
+   ]
+  },
+  "3": {
+   "g": 8,
+   "a": 10,
+   "rows": [
+    {
+     "label": "LEAGUE",
+     "g": 5,
+     "a": 3,
+     "n": 13
+    },
+    {
+     "label": "CHAMPIONS LEAGUE",
+     "g": 2,
+     "a": 1,
+     "n": 5
+    },
+    {
+     "label": "CUPS",
+     "g": 0,
+     "a": 0,
+     "n": 0
+    },
+    {
+     "label": "INTERNATIONAL",
+     "g": 1,
+     "a": 6,
+     "n": 6
+    }
+   ]
+  },
+  "4": {
+   "g": 20,
+   "a": 5,
+   "rows": [
+    {
+     "label": "LEAGUE",
+     "g": 13,
+     "a": 3,
+     "n": 13
+    },
+    {
+     "label": "CHAMPIONS LEAGUE",
+     "g": 6,
+     "a": 2,
+     "n": 5
+    },
+    {
+     "label": "CUPS",
+     "g": 0,
+     "a": 0,
+     "n": 0
+    },
+    {
+     "label": "INTERNATIONAL",
+     "g": 1,
+     "a": 0,
+     "n": 2
+    }
+   ]
+  },
+  "5": {
+   "g": 20,
+   "a": 4,
+   "rows": [
+    {
+     "label": "LEAGUE",
+     "g": 15,
+     "a": 3,
+     "n": 12
+    },
+    {
+     "label": "CHAMPIONS LEAGUE",
+     "g": 4,
+     "a": 0,
+     "n": 4
+    },
+    {
+     "label": "CUPS",
+     "g": 0,
+     "a": 0,
+     "n": 0
+    },
+    {
+     "label": "INTERNATIONAL",
+     "g": 1,
+     "a": 1,
+     "n": 3
+    }
+   ]
+  }
+ },
+ "foot": "FOTMOB · OFFICIAL MATCHES TO 25 NOV",
+ "timing": {
+  "step": 5.0,
+  "mad": 2.6,
+  "glitch": 0.9,
+  "last": 5.8,
+  "cta": 2.6
+ },
+ "duration": 29.3
+}
