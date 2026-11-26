@@ -137,6 +137,8 @@ const nextConfig = {
       { source: "/star/:path*", headers: gameAssetCache },
       { source: "/sfx/:path*", headers: gameAssetCache },
       { source: "/models/:path*", headers: gameAssetCache },
+      // The shrunk card pictures (26 Nov 2026): one file per card id, never changed in place.
+      { source: "/cards/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" }] },
       { source: "/shop/:path*", headers: gameAssetCache },
       { source: "/home/:path*", headers: gameAssetCache },
       { source: "/icons3d/:path*", headers: gameAssetCache },
