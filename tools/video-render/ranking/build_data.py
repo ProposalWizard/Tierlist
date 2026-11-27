@@ -21,8 +21,13 @@ rows = []
 for rk, name, key, cut, badge, flag in L:
     p = FM[key]; assert CLUB.get(p["team"]) == badge, (name, p["team"], badge)   # the badge must be the club FotMob says they are at now
     rows.append({"rank": rk, "name": name, "cut": f"{F}/cut/{cut}.png" if cut else None, "badge": f"{F}/badge2/{badge}.png", "flag": f"{F}/flag/{flag}.png"})
+# the new photos are agency close-ups at very different distances: scale each so every head is about the same size (head share of the cut-out judged by eye)
+HEAD = {"Adrien Rabiot": .30, "Arda Güler": .24, "Declan Rice": .45, "Donyell Malen": .20, "Elliot Anderson": .45, "Erling Haaland": .45, "Fermín López": .38, "Gabriel": .32, "Harry Kane": .42,
+        "Jude Bellingham": .26, "Kylian Mbappé": .26, "Lamine Yamal": .30, "Michael Olise": .22, "Nico Paz": .40, "Pascal Groß": .40, "Raphinha": .30, "Rodri": .30}
+from PIL import Image as _I
 for r in rows:
-    if r["name"] == "Donyell Malen": r["zoom"] = 0.54   # his only free photo is a very tight head shot: scale it to match the others
+    if r["name"] in HEAD and r["cut"]:
+        w, h = _I.open(r["cut"].replace("file://", "")).size; base = min(1456, 1160 / (w / h)); r["zoom"] = round(max(0.55, min(1.15, 330 / (HEAD[r["name"]] * base))), 2)
 rows.sort(key=lambda r: r["rank"])
 def bucket(m):
     c, t = m["comp"], m["team"]
@@ -44,7 +49,7 @@ for p in FM.values():
 asof = datetime.date.fromisoformat(max(m["date"] for k in ("Raphinha", "Kylian Mbappé", "Jude Bellingham", "Michael Olise", "Lamine Yamal") for m in FM[k]["matches"] if m["date"] <= "2026-11-30")).strftime("%d %b").upper().lstrip("0")
 mad = {"name": "Noni Madueke", "cut": f"{F}/cut/Noni_Madueke.png", "badge": f"{F}/badge2/arsenal.png", "flag": f"{F}/flag/gb-eng.png"}
 common = {"title": "BALLON D'OR RANKING", "sub": "NOV 2026", "top": 20, "podium": f"{F}/podium_cut.png", "panel": f"{F}/gold_panel.png", "stadiums": [f"{F}/stadium/s{i}.jpg" for i in (1, 2, 3)],
-          "credit": "Photos: Wikimedia Commons, CC BY / CC BY-SA 4.0 (Bryan Berlin, YantsImages, LawEnthusiast, Biso, Sandro Halank, Ank Kumar)", "rows": rows}
+          "credit": "", "rows": rows}
 v1 = dict(common, mode="count", shown=3, step=2.0, t0=-0.3, endHold=5.3, front=f"{F}/cut/Noni_Madueke.png", chain="NONZINO")
 v2 = dict(common, mode="top5", madueke=mad, stats=stats, foot=f"FOTMOB · OFFICIAL MATCHES TO {asof}", timing={"step": 5.0, "mad": 2.6, "glitch": 0.9, "last": 5.8, "cta": 2.6})
 v2["duration"] = 4 * v2["timing"]["step"] + sum(v2["timing"][k] for k in ("mad", "glitch", "last"))
