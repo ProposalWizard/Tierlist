@@ -1,0 +1,469 @@
+{
+ "id": "arc-her-job",
+ "title": "Her job offer",
+ "owner": "partner",
+ "summary": "Your partner has been offered the job she's wanted for years, in a city four hours away. She asks what you think. You promise to make the weekends work. A season on, you find out if they did.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "partner"
+  ],
+  "tone": [
+   "tense",
+   "warm",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "partner",
+   "pick": "partner"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "weekends": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "four-hours",
+   "title": "Four hours",
+   "text": "Your partner took the job four hours away, and you drove up every Sunday you could."
+  },
+  {
+   "id": "she-stayed",
+   "title": "She stayed",
+   "text": "Your partner turned down the job of her life. She says she doesn't think about it."
+  },
+  {
+   "id": "the-motorway",
+   "title": "The motorway",
+   "text": "Your partner took the job four hours away. The weekends didn't work."
+  }
+ ],
+ "promises": {
+  "p-weekends": {
+   "id": "p-weekends",
+   "to": "partner",
+   "text": "Make the weekends work while she's away",
+   "due": {
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "keptBy": {
+    "beat": "job-2",
+    "ends": [
+     "drive"
+    ]
+   },
+   "dueText": "Her first month in the new job",
+   "remind": "\"Sunday? Say Sunday. I've found a pub that does a roast and shows the game.\"",
+   "kept": {
+    "text": "You said you'd make the weekends work, and you drove up.",
+    "npc": [
+     {
+      "slot": "partner",
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd make the weekends work.",
+    "npc": [
+     {
+      "slot": "partner",
+      "bond": -8
+     }
+    ],
+    "remember": [
+     {
+      "slot": "partner",
+      "tag": "didnt-make-the-weekends-work",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "job-1",
+   "title": "The offer",
+   "n": 1,
+   "event": {
+    "id": "arc-job-1",
+    "title": "The offer",
+    "category": "family",
+    "place": "home:kitchen",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "hasPartner"
+     ]
+    },
+    "setup": [
+     "{partner.short} is sitting at the kitchen table with her laptop shut and her hands on top of it. She's been offered the job she's been after for six years. It's four hours away."
+    ],
+    "talk": {
+     "start": "j1",
+     "nodes": {
+      "j1": {
+       "who": "partner",
+       "say": [
+        "\"I haven't said yes. I wanted to ask you first. Be honest. Not what you think I want to hear.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Take it. We'll make the weekends work.\"",
+         "tone": "kind",
+         "end": "go",
+         "promise": "p-weekends"
+        },
+        {
+         "id": "stay",
+         "label": "\"I don't want you to go.\"",
+         "tone": "honest",
+         "goto": "j2"
+        },
+        {
+         "id": "football",
+         "label": "\"I can't move. You know I can't.\"",
+         "tone": "honest",
+         "goto": "j2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "j2"
+        }
+       ]
+      },
+      "j2": {
+       "who": "partner",
+       "say": [
+        "She opens the laptop and looks at the email, and closes it again. \"So that's a no.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"No. It's a yes. Take it. I'll drive up.\"",
+         "tone": "brave",
+         "end": "go",
+         "promise": "p-weekends"
+        },
+        {
+         "id": "stay",
+         "label": "\"It's a please stay.\"",
+         "tone": "honest",
+         "end": "stay"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "She cries, then laughs, then sends the email. She's gone in a month with a car full of boxes and your old club scarf on the back seat.",
+        "npc": [
+         {
+          "slot": "partner",
+          "respect": 6,
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "told-me-to-take-the-job",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "go"
+         }
+        }
+       }
+      ],
+      "stay": [
+       {
+        "text": "She writes the email saying no. It takes her an hour. She doesn't say anything about it after, and it's there anyway.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -2,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "asked-me-to-stay",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stay"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "Your partner has news"
+  },
+  {
+   "id": "job-2",
+   "title": "Sunday",
+   "after": {
+    "beat": "job-1",
+    "weeks": [
+     2,
+     4
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-job-2",
+    "title": "Sunday",
+    "category": "family",
+    "place": "home:bed",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "promise(p-weekends)"
+     ]
+    },
+    "setup": [
+     "Sunday morning after a Saturday away game. You're stiff, you got in at one, and it's four hours up the motorway to her new flat. She's texted a photo of the pub that does a roast."
+    ],
+    "choices": [
+     {
+      "id": "drive",
+      "label": "Get in the car.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "Four hours. She's on the pavement outside the pub before you've parked. You eat the roast, watch the highlights, and drive back at nine. You do it again the week after.",
+        "effects": {
+         "energy": -10
+        },
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "drove-up-every-sunday",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "weekends": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "next",
+      "label": "\"Next week. I'm wrecked.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "text": "\"Next week,\" she says. Next week there's a cup game. The week after that, she says she's busy.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -8
+         }
+        ],
+        "arc": {
+         "set": {
+          "weekends": 0
+         }
+        },
+        "promiseBroken": [
+         "p-weekends"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "The first Sunday she is away"
+  },
+  {
+   "id": "job-3",
+   "title": "A season on",
+   "after": {
+    "beat": "job-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-job-3",
+    "title": "A season on",
+    "category": "family",
+    "place": "home:kitchen",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on.",
+     "{if arc.weekends==1}You know every service station on that motorway. She's got a promotion. She's asked you about the summer.{/if}",
+     "{if arc.path=='stay'}She's still here. Her old firm gave the job to someone else, who's on the website now.{/if}",
+     "{if arc.path=='go' && arc.weekends==0}She rings less. When she does, it's about the flat, and the boxes she left.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "summer",
+      "label": "Talk about the summer.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.weekends==1",
+        "text": "You spend the summer up there, in her flat, with the window open. She shows you round her city like it's hers, because it is.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "end": "four-hours"
+        }
+       },
+       {
+        "if": "arc.path=='stay'",
+        "text": "You talk about the summer. She says somewhere hot. She doesn't mention the website.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "she-stayed"
+        }
+       },
+       {
+        "text": "You talk about the summer, and it becomes a talk about the boxes, and then about everything.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -4
+         }
+        ],
+        "arc": {
+         "end": "the-motorway"
+        }
+       }
+      ]
+     },
+     {
+      "id": "later",
+      "label": "Leave it for now.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.weekends==1",
+        "text": "You leave it. She books the summer herself, for both of you.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "four-hours"
+        }
+       },
+       {
+        "if": "arc.path=='stay'",
+        "text": "You leave it. She leaves it too.",
+        "arc": {
+         "end": "she-stayed"
+        }
+       },
+       {
+        "text": "You leave it, and so does she, for good.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -6
+         }
+        ],
+        "arc": {
+         "end": "the-motorway"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "A season on, the two of you"
+  }
+ ]
+}

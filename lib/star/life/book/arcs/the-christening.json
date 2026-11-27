@@ -1,0 +1,286 @@
+{
+ "id": "arc-the-christening",
+ "title": "Godfather",
+ "owner": "mate",
+ "summary": "A team-mate asks you to be godfather to his baby girl. The christening is Sunday morning, the day after an away game four hours away. A season on, she's walking.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate"
+  ],
+  "tone": [
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.18
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "order": "bond-desc"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "her-godfather",
+   "title": "Her godfather",
+   "text": "You're godfather to a team-mate's daughter. She calls you by your shirt number."
+  },
+  {
+   "id": "the-card",
+   "title": "The card",
+   "text": "A team-mate asked you to be his daughter's godfather. You sent a card."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "xtn-1",
+   "title": "Will you?",
+   "n": 1,
+   "event": {
+    "id": "arc-xtn-1",
+    "title": "Will you?",
+    "category": "squad",
+    "place": "compound:physio-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.short} waits until the physio room is empty. He's holding his phone with a picture of his daughter on it, three months old, asleep in a club babygrow."
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "mate",
+       "say": [
+        "\"Will you be her godfather? It's Sunday after next. We're away on the Saturday, I know. Four hours. I'm driving straight back.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'd be proud to.\"",
+         "tone": "kind",
+         "end": "yes"
+        },
+        {
+         "id": "me",
+         "label": "\"Me? Why me?\"",
+         "tone": "honest",
+         "goto": "g2"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm not really a church person.\"",
+         "tone": "honest",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "g2"
+        }
+       ]
+      },
+      "g2": {
+       "who": "mate",
+       "say": [
+        "\"Because she should have somebody who turns up.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll turn up.\"",
+         "tone": "kind",
+         "end": "yes"
+        },
+        {
+         "id": "no",
+         "label": "\"I don't think I'm the one.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "You get back from the away game at two in the morning and you're in the church at ten in a borrowed tie. She screams through the whole thing and stops when you hold her.",
+        "effects": {
+         "team": 2,
+         "energy": -6
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": 4,
+          "bond": 14
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "godfather-to-my-girl",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"No worries.\" He asks the left back. You send a card with money in it that's too much.",
+        "effects": {
+         "moneyWeeks": -1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "A team-mate asks you something"
+  },
+  {
+   "id": "xtn-2",
+   "title": "Walking",
+   "after": {
+    "beat": "xtn-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-xtn-2",
+    "title": "Walking",
+    "category": "squad",
+    "place": "compound:pitch-2",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. Family day at the training ground. {mate.short}'s daughter is walking, mostly, and she's coming straight across pitch two towards you.",
+     "{if arc.path=='no'}The left back is following her with his arms out.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "pick",
+      "label": "Pick her up.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "She points at your shirt and says the number. It's her third word. {mate.short} says the first two were Mum and no.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "her-godfather"
+        }
+       },
+       {
+        "text": "She lets you hold her for a second and then wants the left back.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-card"
+        }
+       }
+      ]
+     },
+     {
+      "id": "wave",
+      "label": "Wave at her.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "She waves back with her whole arm and falls over. She's fine.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "her-godfather"
+        }
+       },
+       {
+        "text": "She waves and walks past you to the left back.",
+        "arc": {
+         "end": "the-card"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "A season on, his daughter"
+  }
+ ]
+}

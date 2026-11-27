@@ -1,0 +1,266 @@
+{
+ "id": "arc-the-big-screen",
+ "title": "On the big screen",
+ "owner": "partner",
+ "summary": "The club offers to put a message from you on the big screen at half time, for your partner, who's in the stand. The lads assume you're proposing. A season on, the big screen asks again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "partner"
+  ],
+  "tone": [
+   "funny",
+   "awkward",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.18
+ },
+ "cast": [
+  {
+   "slot": "partner",
+   "pick": "partner"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-screen",
+   "title": "The screen",
+   "text": "You put a message for your partner on the big screen. Twenty thousand people read it before she did."
+  },
+  {
+   "id": "just-a-text",
+   "title": "Just a text",
+   "text": "You sent your partner a text at half time instead of the big screen. She liked that better."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "bsc-1",
+   "title": "Half time",
+   "n": 1,
+   "event": {
+    "id": "arc-bsc-1",
+    "title": "Half time",
+    "category": "family",
+    "place": "compound:canteen",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "hasPartner"
+     ]
+    },
+    "setup": [
+     "The club's media lad has an idea for Saturday: a message from you on the big screen at half time, for {partner.short}, who'll be in the family stand. The lads in the canteen have already decided you're proposing."
+    ],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "partner",
+       "say": [
+        "The media lad has a form. \"Twenty words, max. Anything you like. No proposing unless you tell me first, because we need the camera on her.\""
+       ],
+       "replies": [
+        {
+         "id": "thanks",
+         "label": "\"Thanks for coming. Love you.\"",
+         "tone": "kind",
+         "end": "screen"
+        },
+        {
+         "id": "joke",
+         "label": "\"Put: Ring your mum.\"",
+         "tone": "confident",
+         "end": "joke"
+        },
+        {
+         "id": "no",
+         "label": "\"I'll just text her.\"",
+         "tone": "calm",
+         "end": "text"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "text"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "screen": [
+       {
+        "text": "Half time. It goes up. The camera finds her, and she covers her face with a scarf. The family stand claps. Your phone has forty messages asking if you've proposed.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "put-me-on-the-big-screen",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "screen"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "Half time: RING YOUR MUM in big letters. She laughs so hard she's on the camera for longer than the replay. She rings your mum.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "screen"
+         }
+        }
+       }
+      ],
+      "text": [
+       {
+        "text": "You text her at half time. She sends back a photo of her pie, and the canteen is disappointed.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "text"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "The club offers you the big screen"
+  },
+  {
+   "id": "bsc-2",
+   "title": "Again",
+   "after": {
+    "beat": "bsc-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-bsc-2",
+    "title": "Again",
+    "category": "family",
+    "place": "compound:canteen",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The media lad is back with his form.",
+     "{if arc.path=='screen'}\"Same again? It was the most watched clip of the season. Or are you finally going to do it properly?\"{/if}",
+     "{if arc.path=='text'}\"Last chance. She'd love it. Everyone says she'd love it.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "screen",
+      "label": "Fill in the form.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You write something only she'll understand. Twenty thousand people read it and don't get it, and she does.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "the-screen"
+        }
+       }
+      ]
+     },
+     {
+      "id": "text",
+      "label": "\"I'll text her.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "You text her at half time. She texts back from the stand, three rows from the front, and you can see her laughing on the screen anyway.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "just-a-text"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "A season on, the big screen"
+  }
+ ]
+}

@@ -1,0 +1,483 @@
+{
+ "id": "arc-the-chairmans-son",
+ "title": "The chairman's son",
+ "owner": "chairman",
+ "summary": "The chairman's son is nineteen and in the reserves, and he isn't good enough. The chairman asks you, privately, whether he is. You promise him the truth. A season on, the lad has made his own choice.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "chairman",
+   "academy years",
+   "dressing room"
+  ],
+  "tone": [
+   "dark",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  },
+  {
+   "slot": "coach",
+   "pick": "coach"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "truth": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-truth",
+   "title": "The truth",
+   "text": "You told the chairman his son wasn't good enough. The lad is a physio now and thanks you every time he sees you."
+  },
+  {
+   "id": "the-favour",
+   "title": "The favour",
+   "text": "You told the chairman his son was nearly there. He wasn't, and he found out the hard way."
+  }
+ ],
+ "promises": {
+  "p-the-truth": {
+   "id": "p-the-truth",
+   "to": "chairman",
+   "text": "Tell the chairman straight about his son after the reserve game",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "cso-2",
+    "ends": [
+     "truth",
+     "soft"
+    ]
+   },
+   "dueText": "After you have watched the lad on Tuesday",
+   "kept": {
+    "text": "You said you'd tell him what you saw, and you did.",
+    "npc": [
+     {
+      "slot": "chairman",
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd tell him about his son.",
+    "npc": [
+     {
+      "slot": "chairman",
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "chairman",
+      "tag": "never-told-me-about-my-son",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "cso-1",
+   "title": "A private word",
+   "n": 1,
+   "event": {
+    "id": "arc-cso-1",
+    "title": "A private word",
+    "category": "club",
+    "place": "compound:boardroom",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "clubApps>=10"
+     ]
+    },
+    "setup": [
+     "{chairman.short} asks you into the boardroom and shuts the door. His son is nineteen, a centre midfielder in the reserves. Everyone at the club knows he isn't good enough. The chairman doesn't, or won't."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "chairman",
+       "say": [
+        "\"The coaches tell me what I want to hear. I pay them. You I don't pay, not directly. Watch him on Tuesday and tell me the truth. Is he going to make it?\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"I'll watch him and tell you straight.\"",
+         "tone": "honest",
+         "end": "promised",
+         "promise": "p-the-truth"
+        },
+        {
+         "id": "coach",
+         "label": "\"Ask {coach.short}. He sees him every day.\"",
+         "tone": "calm",
+         "goto": "c2"
+        },
+        {
+         "id": "no",
+         "label": "\"That's not my place.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "c2"
+        }
+       ]
+      },
+      "c2": {
+       "who": "chairman",
+       "say": [
+        "\"{coach.short} has a mortgage. Will you?\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"Okay. Tuesday. I'll tell you straight.\"",
+         "tone": "honest",
+         "end": "promised",
+         "promise": "p-the-truth"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm sorry. I can't.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "promised": [
+       {
+        "text": "He shakes your hand and holds on. \"Straight. Whatever it is.\"",
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "promised"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fair.\" He opens the door for you. He watches the reserves on his own on Tuesday, from his car.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The chairman wants a private word"
+  },
+  {
+   "id": "cso-2",
+   "title": "Tuesday",
+   "after": {
+    "beat": "cso-1",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-cso-2",
+    "title": "Tuesday",
+    "category": "club",
+    "place": "stadium:car-park",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ],
+     "requires": [
+      "promise(p-the-truth)"
+     ]
+    },
+    "setup": [
+     "Tuesday night, the reserves, sixty people in the stand. His son works hard, loses the ball eleven times and gets subbed at sixty. In the car park the chairman's car is still running with the window down."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "chairman",
+       "say": [
+        "\"Well?\""
+       ],
+       "replies": [
+        {
+         "id": "truth",
+         "label": "\"He won't make it here. I'm sorry.\"",
+         "tone": "honest",
+         "end": "truth"
+        },
+        {
+         "id": "soft",
+         "label": "\"He's nearly there. Another year.\"",
+         "tone": "lie",
+         "end": "soft"
+        },
+        {
+         "id": "drive",
+         "label": "Walk past to your own car.",
+         "tone": "cold",
+         "end": "drive"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "truth": [
+       {
+        "text": "He looks at the steering wheel for a long time. Then he says thank you, and winds the window up, and sits there with the engine running.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": 8,
+          "bond": 2,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "told-me-the-truth-about-my-son",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "truth": 1
+         }
+        }
+       }
+      ],
+      "soft": [
+       {
+        "text": "\"Another year.\" He smiles for the first time in weeks. He drives off with the radio on.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "truth": 0
+         }
+        }
+       }
+      ],
+      "drive": [
+       {
+        "text": "You walk past. The car's still running when you pull out.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": -6
+         }
+        ],
+        "arc": {
+         "set": {
+          "truth": 0
+         }
+        },
+        "promiseBroken": [
+         "p-the-truth"
+        ]
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The reserve game, and the chairman waiting"
+  },
+  {
+   "id": "cso-3",
+   "title": "A season on",
+   "after": {
+    "beat": "cso-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-cso-3",
+    "title": "A season on",
+    "category": "club",
+    "place": "compound:physio-room",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on.",
+     "{if arc.truth==1}The chairman's son is in the physio room in a club polo shirt. He's doing a sports science degree and a placement here two days a week.{/if}",
+     "{if arc.truth==0}The chairman's son was released in the summer by the coaches, in a meeting nobody warned him about. He's at a club in the eighth tier.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "talk",
+      "label": "Say hello to the lad.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.truth==1",
+        "text": "He knows. His dad told him who said it. \"Best thing anyone did for me,\" he says, and puts an ice pack on your knee.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": 4,
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "the-truth"
+        }
+       },
+       {
+        "text": "You ring him. He's polite. He says his dad told him he was nearly there.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "end": "the-favour"
+        }
+       }
+      ]
+     },
+     {
+      "id": "nod",
+      "label": "Nod at the chairman in the corridor.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.truth==1",
+        "text": "He nods back. He hasn't asked you anything since, and he doesn't need to.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-truth"
+        }
+       },
+       {
+        "text": "He looks away first.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "the-favour"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "A season on, the chairman's son"
+  }
+ ]
+}

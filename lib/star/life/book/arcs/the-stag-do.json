@@ -1,0 +1,478 @@
+{
+ "id": "arc-the-stag-do",
+ "title": "The stag do",
+ "owner": "brother",
+ "summary": "Your brother's stag do is the night before a game, in a city three hours away. You promise him you'll come for the meal and be home by midnight. A season on, it's the wedding photos.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "brother",
+   "gaffer"
+  ],
+  "tone": [
+   "funny",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "brother",
+   "pick": "brother"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "home": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "best-man",
+   "title": "The meal",
+   "text": "You went to your brother's stag do for the meal and drove home by midnight. You scored the next day."
+  },
+  {
+   "id": "the-fountain",
+   "title": "The fountain",
+   "text": "You stayed out at your brother's stag do. There's a photo of you in a fountain, and the gaffer has seen it."
+  },
+  {
+   "id": "missed-it",
+   "title": "Missed it",
+   "text": "You missed your brother's stag do for a game. He was fine about it. Mostly."
+  }
+ ],
+ "promises": {
+  "p-stag": {
+   "id": "p-stag",
+   "to": "brother",
+   "text": "Go to {brother.short}'s stag do for the meal",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "stg-2",
+    "ends": [
+     "meal",
+     "stay"
+    ]
+   },
+   "dueText": "A week on Friday, eight o'clock",
+   "remind": "\"Friday. Eight. Wear something you don't mind getting wet. Don't ask.\"",
+   "kept": {
+    "text": "You said you'd be at his stag do, and you were.",
+    "npc": [
+     {
+      "slot": "brother",
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd come to his stag do.",
+    "npc": [
+     {
+      "slot": "brother",
+      "bond": -8
+     }
+    ],
+    "remember": [
+     {
+      "slot": "brother",
+      "tag": "missed-my-stag-do",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "stg-1",
+   "title": "The invite",
+   "n": 1,
+   "event": {
+    "id": "arc-stg-1",
+    "title": "The invite",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{brother.short} is getting married. The stag do is a week on Friday in a city three hours away. You've got a game on the Saturday at three."
+    ],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "brother",
+       "say": [
+        "\"Just come for the meal. Eight o'clock. Have a lemonade, drive home, I'll never ask you for anything again.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"The meal. Home by midnight. Promise.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-stag"
+        },
+        {
+         "id": "game",
+         "label": "\"I've got a game, mate.\"",
+         "tone": "honest",
+         "goto": "s2"
+        },
+        {
+         "id": "all",
+         "label": "\"I'm coming for the whole thing.\"",
+         "tone": "reckless",
+         "end": "yes",
+         "promise": "p-stag"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "s2"
+        }
+       ]
+      },
+      "s2": {
+       "who": "brother",
+       "say": [
+        "\"At three. On Saturday. The meal's at eight on Friday. You can do both. Everyone can do both.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Okay. The meal.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-stag"
+        },
+        {
+         "id": "no",
+         "label": "\"I can't risk it.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "He sends you the itinerary. Item four is \"fountain\". You don't ask.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fair enough,\" he says, too quickly. He sends you a photo of the menu anyway.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": -6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your brother's stag do"
+  },
+  {
+   "id": "stg-2",
+   "title": "Friday night",
+   "after": {
+    "beat": "stg-1",
+    "weeks": [
+     1,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-stg-2",
+    "title": "Friday night",
+    "category": "family",
+    "place": "away:city",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "promise(p-stag)"
+     ]
+    },
+    "setup": [
+     "Friday. A steak house in a city three hours away. Fourteen men in matching T-shirts with your brother's face on them. You're on lemonade. It's half eleven and they're all getting up to go to item four."
+    ],
+    "choices": [
+     {
+      "id": "meal",
+      "label": "Hug him and drive home.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You're in bed at quarter to three. On Saturday you score, and you do a little fountain thing with your hands for the cameras. He texts you a hundred exclamation marks.",
+        "effects": {
+         "boss": 1,
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "came-to-my-stag-do",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "home": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "stay",
+      "label": "Stay for item four.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "Item four is a fountain. You're in it at two in the morning in a T-shirt with your brother's face on, and so is a man with a phone. The gaffer has the photo by breakfast.",
+        "effects": {
+         "boss": -6,
+         "fame": 2,
+         "matchFitness": -8
+        },
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 12
+         },
+         {
+          "slot": "manager",
+          "respect": -6,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "saw-the-fountain-photo",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "home": 0,
+          "path": "fountain"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The stag do"
+  },
+  {
+   "id": "stg-3",
+   "title": "The wedding photos",
+   "after": {
+    "beat": "stg-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-stg-3",
+    "title": "The wedding photos",
+    "category": "family",
+    "place": "home:mums-kitchen",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {brother.short}'s wedding photos come back. The album has a page at the back for the stag do.",
+     "{if arc.path=='fountain'}The fountain photo is in it, the big one, the one the gaffer saw.{/if}",
+     "{if arc.home==1}You're in the steak house photo with a lemonade and a T-shirt over your shirt.{/if}",
+     "{if arc.path=='no'}You're not on the page. He's written \"working\" under a picture of a football.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "laugh",
+      "label": "Laugh at the page.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='fountain'",
+        "text": "Your mum does not laugh at the page.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-fountain"
+        }
+       },
+       {
+        "if": "arc.home==1",
+        "text": "He points at your lemonade. \"Legend.\"",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "best-man"
+        }
+       },
+       {
+        "text": "He points at the football. \"That's you.\" He means it nicely, nearly.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "missed-it"
+        }
+       }
+      ]
+     },
+     {
+      "id": "turn",
+      "label": "Turn the page.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='fountain'",
+        "text": "The next page is the wedding. You're in that one, in the front row, dry.",
+        "arc": {
+         "end": "the-fountain"
+        }
+       },
+       {
+        "if": "arc.home==1",
+        "text": "The next page is you making the speech.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "best-man"
+        }
+       },
+       {
+        "text": "The next page is the wedding, and you're in all of those.",
+        "arc": {
+         "end": "missed-it"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, the wedding photos"
+  }
+ ]
+}

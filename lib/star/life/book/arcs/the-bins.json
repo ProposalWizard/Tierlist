@@ -1,0 +1,267 @@
+{
+ "id": "arc-the-bins",
+ "title": "Bin night",
+ "owner": "tabloid",
+ "summary": "Somebody has been through your bins, and on Sunday there's a story about what you eat. You know who. A season on, he wants a favour.",
+ "size": "small",
+ "about": {
+  "who": [
+   "tabloid reporter"
+  ],
+  "tone": [
+   "funny",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.18
+ },
+ "cast": [
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-favour",
+   "title": "The favour",
+   "text": "A reporter went through your bins. A season later you let him have the story he wanted, and he owes you."
+  },
+  {
+   "id": "locked",
+   "title": "Locked bins",
+   "text": "Your bins have a lock on them now. The reporter still writes about you, from further away."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "bin-1",
+   "title": "Sunday",
+   "n": 1,
+   "event": {
+    "id": "arc-bin-1",
+    "title": "Sunday",
+    "category": "media",
+    "place": "home:driveway",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Sunday's {tabloid.outlet}: \"STAR'S SECRET TAKEAWAY SHAME\", with a photo of a pizza box and four kebab wrappers on your drive. {tabloid.name}'s name is on it. The pizza box was your brother's."
+    ],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "tabloid",
+       "say": [
+        "He rings you himself on Monday, cheerful. \"No hard feelings. Want to give me a quote? Say it was a cheat day. Everyone loves a cheat day.\""
+       ],
+       "replies": [
+        {
+         "id": "cheat",
+         "label": "\"It was a cheat day.\"",
+         "tone": "calm",
+         "end": "quote"
+        },
+        {
+         "id": "brother",
+         "label": "\"It was my brother's.\"",
+         "tone": "honest",
+         "end": "brother"
+        },
+        {
+         "id": "bins",
+         "label": "\"Stay out of my bins.\"",
+         "tone": "fiery",
+         "end": "angry"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "angry"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "quote": [
+       {
+        "text": "\"STAR: IT WAS MY CHEAT DAY.\" It goes down well. A pizza place offers you a deal.",
+        "effects": {
+         "fame": 1
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "quote"
+         }
+        }
+       }
+      ],
+      "brother": [
+       {
+        "text": "\"STAR BLAMES BROTHER.\" Your brother rings you, and then the paper, and makes it worse.",
+        "effects": {
+         "fame": 1,
+         "reputation": -1
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "quote"
+         }
+        }
+       }
+      ],
+      "angry": [
+       {
+        "text": "You buy a bin with a padlock. It's in the paper the next Sunday: \"STAR LOCKS BINS.\"",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "tabloid",
+          "tag": "told-me-to-stay-out-of-the-bins",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "locked"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "There's a story about your bins"
+  },
+  {
+   "id": "bin-2",
+   "title": "The favour",
+   "after": {
+    "beat": "bin-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-bin-2",
+    "title": "The favour",
+    "category": "media",
+    "place": "home:door",
+    "size": "small",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {tabloid.short} rings. His editor wants a picture of you at home, a real one, for a feature, and he's got a week.",
+     "{if arc.path=='locked'}\"I won't touch the bins. Promise.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "yes",
+      "label": "\"Come round Thursday. Bring your own milk.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "He comes round, drinks his own milk and gets a nice photo of you and the dog next door. He sends a bottle at Christmas with a card: \"Owe you.\"",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 8,
+          "grudge": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "tabloid",
+          "tag": "let-me-in-for-the-feature",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "the-favour"
+        }
+       }
+      ]
+     },
+     {
+      "id": "no",
+      "label": "\"No.\"",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "He does the feature anyway, with a photo of your front door from across the road.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "locked"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "A season on, the reporter wants something"
+  }
+ ]
+}

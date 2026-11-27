@@ -1,0 +1,425 @@
+{
+ "id": "arc-your-grandad",
+ "title": "Your grandad",
+ "owner": "mum",
+ "summary": "Your grandad is in a care home now, and most days he doesn't know your mum. She asks you to visit on a Wednesday. You promise. A season on, she rings early in the morning.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "mum",
+   "family"
+  ],
+  "tone": [
+   "dark",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "went": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "he-knew",
+   "title": "He knew",
+   "text": "You visited your grandad in the care home, and for ten minutes he knew exactly who you were."
+  },
+  {
+   "id": "wednesday",
+   "title": "Wednesday",
+   "text": "You meant to visit your grandad on a Wednesday. Your mum went on her own."
+  }
+ ],
+ "promises": {
+  "p-grandad": {
+   "id": "p-grandad",
+   "to": "mum",
+   "text": "Visit Grandad at the care home on a Wednesday",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "gdd-2",
+    "ends": [
+     "go"
+    ]
+   },
+   "dueText": "A Wednesday afternoon, after training",
+   "remind": "\"Wednesday. Three o'clock is best, after his tea. He's better after his tea.\"",
+   "kept": {
+    "text": "You said you'd go and see him, and you went.",
+    "npc": [
+     {
+      "slot": "mum",
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd go and see your grandad.",
+    "npc": [
+     {
+      "slot": "mum",
+      "bond": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "mum",
+      "tag": "never-visited-grandad",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "gdd-1",
+   "title": "The care home",
+   "n": 1,
+   "event": {
+    "id": "arc-gdd-1",
+    "title": "The care home",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your mum rings from the car park of the care home. Your grandad didn't know her today. He asked her if she was the new nurse. He took you to your first game when you were five."
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "mum",
+       "say": [
+        "\"Would you come with me one Wednesday? He might not know you either. I just think. He used to cut your goals out of the paper. He's still got them in his drawer.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Next Wednesday. I'll come.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-grandad"
+        },
+        {
+         "id": "scared",
+         "label": "\"What if he doesn't know me?\"",
+         "tone": "honest",
+         "goto": "g2"
+        },
+        {
+         "id": "busy",
+         "label": "\"Wednesdays are hard, Mum.\"",
+         "tone": "calm",
+         "end": "busy"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "g2"
+        }
+       ]
+      },
+      "g2": {
+       "who": "mum",
+       "say": [
+        "\"Then he won't. And you'll have been.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Okay. Next Wednesday.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-grandad"
+        },
+        {
+         "id": "busy",
+         "label": "\"I'll try.\"",
+         "tone": "calm",
+         "end": "busy"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "She doesn't say anything for a second. \"Three o'clock. After his tea.\"",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "busy": [
+       {
+        "text": "\"I know, love.\" She goes back in on her own.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "busy"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Your mum asks about Grandad"
+  },
+  {
+   "id": "gdd-2",
+   "title": "Wednesday",
+   "after": {
+    "beat": "gdd-1",
+    "weeks": [
+     1,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-gdd-2",
+    "title": "Wednesday",
+    "category": "family",
+    "place": "town:care-home",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ],
+     "requires": [
+      "promise(p-grandad)"
+     ]
+    },
+    "setup": [
+     "Wednesday, five to three. The care home smells of gravy and radiators. Your grandad is in a chair by the window in a cardigan your mum bought him. He looks at you like you're a stranger."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Sit down next to him.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You sit with him for an hour and talk about the first game he took you to, the score, the pie. Near the end he says your full name and asks how the left foot is. Then he's gone again. Your mum sits in the car until she can drive.",
+        "npc": [
+         {
+          "slot": "mum",
+          "respect": 4,
+          "bond": 14
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "came-to-see-grandad",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Say you've got physio and go.",
+      "tone": "lie",
+      "outcomes": [
+       {
+        "text": "You stay ten minutes and say you've got physio. In the car park you sit in your car for a long time.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -6
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": 0
+         }
+        },
+        "promiseBroken": [
+         "p-grandad"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Wednesday at the care home"
+  },
+  {
+   "id": "gdd-3",
+   "title": "Early",
+   "after": {
+    "beat": "gdd-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-gdd-3",
+    "title": "Early",
+    "category": "family",
+    "place": "home:bed",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. Your mum rings at six in the morning, which she never does. Grandad died in the night, in his sleep, by the window.",
+     "{if arc.went==1}She says the nurse found him with the drawer open and your goals on his lap.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Drive over to hers.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.went==1",
+        "text": "You drive over in your training kit. You sit in her kitchen all morning and miss training, and the gaffer rings to say don't come in. At the funeral you carry him with your uncles.",
+        "effects": {
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 10
+         }
+        ],
+        "arc": {
+         "end": "he-knew"
+        }
+       },
+       {
+        "text": "You drive over. She's already made tea. You sit in her kitchen and she tells you about the Wednesday she went on her own.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "wednesday"
+        }
+       }
+      ]
+     },
+     {
+      "id": "train",
+      "label": "Go to training. Ring her after.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.went==1",
+        "text": "You train badly and ring her at lunch. She says he knew you that day. She's sure of it.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "he-knew"
+        }
+       },
+       {
+        "text": "You ring her at lunch. She says it was peaceful. You don't ask about the Wednesdays.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "end": "wednesday"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, your mum rings early"
+  }
+ ]
+}
