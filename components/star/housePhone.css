@@ -1,6 +1,7 @@
 /* The 3D phone in the game (components/star/HousePhone.tsx, RUL-UI-008).
    The look is the test page's (app/star-phone3d-dev/phone3d.css): eye-opening B
-   ("Resident Evil 7", Harry 20 Nov 2026), played in 0.6 s here (the instant-feel rule). */
+   ("Resident Evil 7", Harry 20 Nov 2026), played in 0.9 s here (Harry, 27 Nov 2026, on his iPhone: "an in-between. The slower blink was good":
+   between the game's old 0.6 s and the test page's 1.2 s). */
 
 .hp-layer { position: fixed; inset: 0; z-index: 82; overflow: hidden; touch-action: manipulation; }
 /* the room while the house is still loading: a blurred picture, gone once the real house is behind */
@@ -20,7 +21,7 @@
 .hp [data-home3d] canvas { transition: filter 450ms ease-in-out; }
 .hp-opening [data-home3d] canvas, .hp-phone [data-home3d] canvas, .hp-raising [data-home3d] canvas { filter: blur(7px) brightness(.9); }
 
-/* ── Opening: eye-opening B, 0.6 s ── */
+/* ── Opening: eye-opening B, 0.9 s ── */
 @property --hp-eye { syntax: "<length>"; inherits: false; initial-value: 0px; }
 .hp-eyes {
   position: absolute; inset: 0; z-index: 5; pointer-events: none;
@@ -32,7 +33,7 @@
   mask-image:
     radial-gradient(circle 760px at 50% calc(47% + 760px - var(--hp-eye)), transparent 690px, #000 760px),
     radial-gradient(circle 760px at 50% calc(47% - 760px + var(--hp-eye)), transparent 690px, #000 760px);
-  animation: hp-eye 600ms linear both;
+  animation: hp-eye 900ms linear both;
 }
 @keyframes hp-eye {
   0% { --hp-eye: 0px; animation-timing-function: cubic-bezier(.3, 0, .5, 1); }
@@ -41,11 +42,11 @@
   88% { --hp-eye: 700px; opacity: 1; }
   100% { --hp-eye: 760px; opacity: 0; }
 }
-.hp-glare { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; background: radial-gradient(ellipse 70% 45% at 50% 45%, #fff8ec, rgba(255, 244, 225, .55) 55%, rgba(255, 240, 220, 0) 100%); mix-blend-mode: screen; animation: hp-glare 600ms ease-out both; }
+.hp-glare { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; background: radial-gradient(ellipse 70% 45% at 50% 45%, #fff8ec, rgba(255, 244, 225, .55) 55%, rgba(255, 240, 220, 0) 100%); mix-blend-mode: screen; animation: hp-glare 900ms ease-out both; }
 @keyframes hp-glare { 0% { opacity: .45; } 100% { opacity: 0; } }
-.hp-opening .hp-back { animation: hp-focus 600ms ease-out both; }
+.hp-opening .hp-back { animation: hp-focus 900ms ease-out both; }
 @keyframes hp-focus { 0% { filter: brightness(1.5); transform: rotate(2.5deg) scale(1.05); } 100% { filter: none; transform: none; } }
-.hp-opening .hp-held { animation: hp-raise-open 600ms cubic-bezier(.2, .8, .2, 1) both; }
+.hp-opening .hp-held { animation: hp-raise-open 900ms cubic-bezier(.2, .8, .2, 1) both; }
 @keyframes hp-raise-open { 0% { transform: translateY(28%) rotate(-4deg); filter: blur(8px); } 70% { filter: blur(0); } 100% { transform: none; filter: none; } }
 
 /* back from the house: the camera went into your eyes; the phone comes up (no blink) */

@@ -5,11 +5,12 @@
  *
  * Your house (Home3D) and the phone in your hand, as one screen, so the
  * house never reloads between them:
- *   - `up` (the page's phase "media", the Phone tab): an eye-opening (B, 0.6 s)
+ *   - `up` (the page's phase "media", the Phone tab): an eye-opening (B, 0.9 s)
  *     onto your hand holding the phone, your house behind it from your own
  *     eyes, blurred and still. The REAL phone (PhoneHome) is on the glass:
  *     a normal page box bent with a CSS matrix3d, so the browser sends each
- *     tap to the button under the finger.
+ *     tap to the button under the finger. Every app works inside the glass
+ *     (PhoneHome `apps`, components/star/PhoneApps.tsx; Harry 27 Nov 2026).
  *       HOME (the phone's own, on its home screen) → `onHome` (the Home screen);
  *       BACK (the phone's own, on its home screen) → `onPutAway`: the page goes
  *       to the house (phase "home-3d"), `up` turns false here, the hand
@@ -42,8 +43,9 @@ const Home3D = lazyScreen(() => import("./Home3D"));
 
 const HAND = "/star/phone3d/hand.webp";
 const ROOM = "/star/phone3d/room-blur.webp";
-/** How long each move takes (ms). Opening ≤ 0.6 s (the instant-feel rule). */
-const T = { open: 600, lower: 300, pull: 700, pullIn: 300, raise: 300 };
+/** How long each move takes (ms). Opening 0.9 s (Harry, 27 Nov 2026: "an in-between. The slower blink was good";
+ *  was 0.6 s; the test page's B is 1.2 s). A tap skips it. */
+const T = { open: 900, lower: 300, pull: 700, pullIn: 300, raise: 300 };
 /** The phone up this long (ms) before the house behind it starts loading. */
 const HOUSE_AFTER = 2500;
 /** Kickabout: the glass flat, in the middle of the picture. */
