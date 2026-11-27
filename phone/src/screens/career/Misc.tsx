@@ -40,6 +40,7 @@ import { Frame, Card, Label, Row, Btn, ClubCrest, Fill, StandInNote, money, C } 
 import { DATA_CREDITS, CREDIT_GROUPS } from "@/lib/star/dataCredits";
 import { tint } from "@/lib/star/heroFigure";
 import { OfficeMoment } from "./Office3D";
+import { GlTestCard } from "../../three/GlTestCard";
 
 // ── Contract renewal: higher or lower ──
 export function ContractRenewalScreen({ career, go }: { career: CareerState; go: (s: flow.Step) => void }) {
@@ -313,6 +314,7 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
       <SwitchedOffCard />
       <ClosedWhileCard />
       <AndroidExitCard />
+      <GlTestCard />
       {/* The website's More → Data credits (lib/star/dataCredits.ts): who made the data,
           pictures and sounds the game uses, under the licence each asks for. */}
       <Card style={{ padding: 0 }}>

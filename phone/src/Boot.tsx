@@ -61,7 +61,7 @@ export default function Boot() {
 /** After a crash in the phone's graphics code: says which part was switched off (safety.ts). */
 function TrippedNote() {
   const [parts] = useState(() => { try { return require("./safety").justTripped() as string[]; } catch { return []; } });
-  const [safe] = useState(() => { try { return require("./safety").safeBootNote() as string | null; } catch { return null; } });
+  const [safe] = useState(() => { try { const sf = require("./safety"); return (sf.safeBootNote() ?? sf.glUnsafeNote()) as string | null; } catch { return null; } });
   const [show, setShow] = useState(parts.length > 0 || !!safe);
   useEffect(() => { if (show) { const t = setTimeout(() => setShow(false), 15000); return () => clearTimeout(t); } }, [show]);
   if (!show) return null;

@@ -33,7 +33,7 @@ import { ActivityIndicator, AppState, Dimensions, PixelRatio, StyleSheet, Text, 
 import { GLView, type ExpoWebGLRenderingContext } from "expo-gl";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TIER_PROFILES, quality3dSetting, quality3dTier, type Quality3d } from "@/lib/star/three3d/quality";
-import { useRiskyPart, markStep, clearTrail, notePulse } from "../safety";
+import { useRiskyPart, markStep, clearTrail, notePulse, glUnsafeNote } from "../safety";
 import { Press } from "../ui/Press";
 import { setupPhone3d } from "./assets";
 import { glCounts } from "./gl";
@@ -378,7 +378,7 @@ export function Walk3D<D, CB, C extends WalkController>(p: Walk3DProps<D, CB, C>
   // the last step before the phone's own GL is made: a close after this one and before "gl context created" is inside the native GL view
   if (size && viewOk && !viewMarked.current && !failed && allowed) { viewMarked.current = true; gate.current?.starting(); markStep(place, `GLView being made (${size.w}x${size.h})`); }
 
-  const failWhy = failed ?? (!allowed ? "The 3D is switched off" : null);
+  const failWhy = failed ?? (!allowed ? (glUnsafeNote() ?? "The 3D is switched off") : null);
   const onFailNow = p.onFail;
   useEffect(() => { if (failWhy && onFailNow) onFailNow(failWhy); }, [failWhy]); // eslint-disable-line react-hooks/exhaustive-deps
   if (failWhy && onFailNow) return null;

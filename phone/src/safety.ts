@@ -51,6 +51,41 @@ let safeBootWhy: string | null = null;
 export function safeBootNote(): string | null { return safeBoot ? `Safe start: the app closed last time while ${safeBootWhy}, so 3D is off for this start. Settings: Turn back on.` : null; }
 export function isSafeBoot(): boolean { return safeBoot; }
 
+/**
+ * GL UNSAFE ON THIS PHONE (27 Nov 2026, Mikey's Samsung: the app died, with no error screen, at "GLView being made" in the signing, the
+ * house and the garden). When the last run closed while a GL view or context was being made (or while the Settings "GL test" was
+ * making one), this phone's GL is marked UNSAFE and kept for every later launch: `partOff("3d")` is true, so every automatic and
+ * walked-into 3D place shows its plain version and says so. Only a passing "GL test" (all steps) or its "Try 3D anyway" button lifts it.
+ */
+const GL_UNSAFE = "gl-unsafe";
+export interface GlUnsafe { place: string; step: string; at: number }
+let glUnsafe: GlUnsafe | null = null;
+/** Steps (the last one a place wrote) that are INSIDE the making of a GL view or context: a close here is the GL's own. */
+export function isGlCreationStep(place: string, step: string): boolean {
+  if (place === GL_TEST_PLACE) return true; // the test clears its trail when a step passes: any step left over is a close inside it
+  return /GLView being made|gl source set|creating (a )?GL|createContext/i.test(step);
+}
+export const GL_TEST_PLACE = "GL test";
+/** True when this phone's GL is marked unsafe (3D stays off everywhere). */
+export function glIsUnsafe(): boolean { return glUnsafe !== null; }
+export function glUnsafeInfo(): GlUnsafe | null { return glUnsafe; }
+/** The plain sentence for a screen that cannot show its 3D because of it, else null. */
+export function glUnsafeNote(): string | null {
+  return glUnsafe ? `This phone's GL failed: the app closed while a 3D view was being made (${glUnsafe.place}, "${glUnsafe.step}"), so 3D stays off here. Settings: GL test.` : null;
+}
+export function markGlUnsafe(place: string, step: string) {
+  glUnsafe = { place, step, at: Date.now() };
+  try { kv.set(GL_UNSAFE, JSON.stringify(glUnsafe)); } catch { /* never stop the app */ }
+}
+/** The GL test passed (or "Try 3D anyway"): 3D may start again. */
+export function clearGlUnsafe() {
+  glUnsafe = null;
+  try { kv.remove(GL_UNSAFE); } catch { /* nothing to clear */ }
+  // the parts this guard switched off meanwhile come back with it
+  turnPartBackOn("3d");
+}
+try { const raw = kv.getString(GL_UNSAFE); if (raw) glUnsafe = JSON.parse(raw) as GlUnsafe; } catch { /* a half-written mark: ignored */ }
+
 const num = (k: string) => Number(kv.getString(k) ?? "0") || 0;
 
 // What was still starting when the app last closed.
@@ -88,7 +123,7 @@ for (const k of kv.getAllKeys()) {
 /** Parts switched off at this launch, after closing twice in a row while starting (shown once). */
 export function justTripped(): RiskyPart[] { return trippedNow; }
 /** True when the part's plain fallback must be used (switched off, left out for this launch, or this is a SAFE START for "3d"). */
-export function partOff(part: RiskyPart): boolean { return (part === "3d" && safeBoot) || skipThisLaunch.has(part) || kv.getString(OFF + part) === "1"; }
+export function partOff(part: RiskyPart): boolean { return (part === "3d" && (safeBoot || glUnsafe !== null)) || skipThisLaunch.has(part) || kv.getString(OFF + part) === "1"; }
 /** Parts that are switched off (until "Turn back on" or the next automatic try). */
 export function partsSwitchedOff(): RiskyPart[] {
   return (Object.keys(PART_NAMES) as RiskyPart[]).filter((p) => kv.getString(OFF + p) === "1");
@@ -220,6 +255,7 @@ try {
     kv.remove(k);
   }
   for (const k of kv.getAllKeys()) if (k.startsWith(PULSE)) kv.remove(k);
+  if (newest) { const last = newest.steps[newest.steps.length - 1]; if (last && isGlCreationStep(newest.place, last.step)) markGlUnsafe(newest.place, last.step); }
   if (newest) { kv.set(CLOSED, JSON.stringify(newest)); closedFresh = true; safeBoot = true; safeBootWhy = `${newest.place} was on screen (it stopped at "${newest.steps[newest.steps.length - 1]?.step ?? "the start"}")`; }
   else if (stillStarting.has("3d")) { safeBoot = true; safeBootWhy = "a 3D part was still starting"; }
   const raw = kv.getString(CLOSED);

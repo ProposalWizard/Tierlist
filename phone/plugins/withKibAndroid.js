@@ -18,10 +18,17 @@
  *    (ApplicationExitInfo, Android 11+) and writes the newest 3 reports as plain text to filesDir/kib-exit-info.txt, newest first.
  *    Settings shows it ("Android says the app last stopped because"). Everything is in try/catch on a background thread; it never throws.
  *
+ * 5. R8 KEEP RULES FOR expo-gl (27 Nov 2026): the release build has R8 on (android.enableMinifyInReleaseBuilds=true in the Expo template).
+ *    expo-gl's C++ finds Java code BY NAME (GLContext.flush() through GetMethodID, the EXGL native methods through their symbol names)
+ *    and ships no consumer rules, so R8 renames/removes them: GetMethodID returns null and the next JNI call kills the process the
+ *    moment a GLView is made. The rules below keep expo.modules.gl as written. See docs/phone-app/3D-PLAN.md "GLView crash".
+ *
  * To check on a phone: set the phone's font size to the largest, open the game:
  * the title screen must look exactly as it does at the default size.
  */
-const { withMainActivity, withMainApplication } = require("expo/config-plugins");
+const { withMainActivity, withMainApplication, withDangerousMod } = require("expo/config-plugins");
+const fs = require("fs");
+const path = require("path");
 
 const MARK = "// kib: withKibAndroid";
 const EXIT_MARK = "// kib: exitInfo";
@@ -179,7 +186,21 @@ function addToClass(src, name, methods, mark = MARK) {
   return src.replace(re, `$1\n${methods}`);
 }
 
+const PRO_MARK = "# kib: expo-gl keep rules";
+const PRO_RULES = `
+${PRO_MARK} (27 Nov 2026) - expo-gl's C++ looks these up by name; R8 must not rename or drop them
+-keep class expo.modules.gl.** { *; }
+-keep class expo.modules.gl.cpp.EXGL { *; }
+-keepclasseswithmembernames class * { native <methods>; }
+`;
+
 module.exports = function withKibAndroid(config) {
+  config = withDangerousMod(config, ["android", (c) => {
+    const file = path.join(c.modRequest.platformProjectRoot, "app", "proguard-rules.pro");
+    const cur = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
+    if (!cur.includes(PRO_MARK)) fs.writeFileSync(file, cur.replace(/\s*$/, "\n") + PRO_RULES);
+    return c;
+  }]);
   config = withMainActivity(config, (c) => {
     if (c.modResults.language !== "kt") throw new Error("withKibAndroid: MainActivity is not Kotlin");
     let src = addToClass(c.modResults.contents, "MainActivity", ACTIVITY_METHODS);

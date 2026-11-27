@@ -470,6 +470,36 @@ console.log("== the two cards keep that run's data after a restart");
   ok(/blocks\.containsKey\(ts\)/.test(plug) && /file\.readText\(\)/.test(plug), "the native side MERGES new reports into the kept file (older reports are not lost by a restart)");
 }
 
+// ── GL unsafe (27 Nov 2026): a close at GLView creation marks this phone's GL unsafe for every later launch ─────────────────────
+{
+  console.log("== GL unsafe guard");
+  const kv = () => globalThis.__kvStore;
+  kv().clear(); r = fresh();
+  ok(!r.safety.glIsUnsafe() && !r.safety.partOff("3d"), "a clean phone: GL is not marked and 3D is on");
+  r.safety.markStep("Your house", "GLView being made (384x853)");
+  r = fresh();
+  ok(r.safety.glIsUnsafe() && r.safety.partOff("3d"), "closed at 'GLView being made': GL is unsafe and 3D is off");
+  ok((r.safety.glUnsafeNote() ?? "").includes("This phone's GL failed"), "the plain message: " + r.safety.glUnsafeNote());
+  r = fresh(); r = fresh();
+  ok(r.safety.glIsUnsafe() && r.safety.partOff("3d"), "still unsafe two launches later (it is kept, not a one-launch safe start)");
+  ok(r.prefs.automatic3dAllowed() === false, "the automatic gate says no (headshots, title player, farewell)");
+  r.safety.clearGlUnsafe();
+  ok(!r.safety.glIsUnsafe() && !r.safety.partOff("3d"), "the GL test's 'Turn 3D back on' lifts it");
+  r = fresh();
+  ok(!r.safety.glIsUnsafe(), "and it stays lifted after a restart");
+  // a close in the GL test names the test and marks it too
+  kv().clear(); r = fresh();
+  r.safety.markStep("GL test", "3 no msaa: making the view");
+  r = fresh();
+  ok(r.safety.glIsUnsafe() && /GL test at 3 no msaa: making the view/.test(r.safety.closedWhileLine() ?? ""), "a close inside the GL test is named (test 3) and marks GL unsafe");
+  // a close elsewhere in 3D (not GL creation) does not mark it
+  kv().clear(); r = fresh();
+  r.safety.markStep("The signing", "event stamp");
+  r = fresh();
+  ok(!r.safety.glIsUnsafe(), "a close later in a scene (after the view was made) does not mark GL unsafe");
+  kv().clear(); r = fresh();
+}
+
 console.log(bad ? `\n${bad} FAILED` : "\nPASS: live 3D switch, breadcrumbs and the crash net");
 process.exit(bad ? 1 : 0);
 
