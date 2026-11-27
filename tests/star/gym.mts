@@ -49,18 +49,19 @@ for (const kind of ["bench", "treadmill", "bag"] as GymGameKind[]) {
 {
   // bench: letting go at the top drops the bar onto your chest: a bounce, then the set ends at two
   let s = benchStart(1);
-  for (let i = 0; i < 2000 && !s.done; i++) s = benchStep(s, 1 / 60, s.phase !== "down");
+  for (let i = 0; i < 2000 && !s.done; i++) s = benchStep(s, 1 / 60, s.phase === "up");
   check(s.strikes === BENCH.strikesOut && s.done && resultOf(s).failed && s.reps === 0, `bench: let go at the top and it bounces, two strikes end it (${s.strikes} strikes, ${s.reps} reps)`);
   // a full good set: 8 reps, most lowered slowly
   const g = play("bench", 60) as ReturnType<typeof benchStart>;
   check(g.reps === BENCH.reps && g.clean >= BENCH.reps - 1, `bench: the good set is ${BENCH.reps} reps, lowered slowly (${g.reps}, ${g.clean} slow)`);
-  // let go halfway up: back down, no rep, no strike
+  // lower it slowly, press a little, let go: back onto the chest gently, no rep, no strike
   let h = benchStart(1);
-  for (let i = 0; i < 20; i++) h = benchStep(h, 1 / 60, true);
-  for (let i = 0; i < 120; i++) h = benchStep(h, 1 / 60, false);
-  check(h.reps === 0 && h.strikes === 0 && h.bar === 0, "bench: giving up halfway is no rep and no harm");
+  for (let i = 0; i < 600 && h.phase === "down"; i++) h = benchStep(h, 1 / 60, h.v < -0.55);
+  for (let i = 0; i < 8; i++) h = benchStep(h, 1 / 60, true);
+  for (let i = 0; i < 60; i++) h = benchStep(h, 1 / 60, false);
+  check(h.reps === 0 && h.strikes === 0 && h.bar === 0, `bench: giving up low is no rep and no harm (${h.reps}, ${h.strikes}, ${h.bar})`);
   // stronger lifters push harder
-  check(benchStep(benchStart(4), 0.5, true).bar > benchStep(benchStart(1), 0.5, true).bar, "bench: Strength 4 pushes faster than Strength 1");
+  check(benchStep({ ...benchStart(4), bar: 0, phase: "up" }, 0.4, true).bar > benchStep({ ...benchStart(1), bar: 0, phase: "up" }, 0.4, true).bar, "bench: Strength 4 pushes faster than Strength 1");
 }
 {
   // treadmill: never hold and the belt takes you off the back

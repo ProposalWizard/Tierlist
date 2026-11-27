@@ -10,6 +10,11 @@
  * routines, people, the card, the budget). Not in the real game yet
  * (RUL-UI-002): the game's house and garden are unchanged.
  *
+ * ?place=gym: THE GYM (Harry, 27 Nov 2026: "a gym based on the GTA 6 gym"; lib/star/world3d/gymPlace.ts):
+ * a bench press, two treadmills, a heavy bag, each a mini-game of its own (lib/star/gym/games.ts), your
+ * Strength / Cardio / Focus with the ring and the workout window (lib/star/gym/progress.ts), a team-mate
+ * on his own session. Demos: ?demo=gym (the film: walk in, a set, off the treadmill) | bench | treadmill | fall | bag.
+ *
  * ?place=house|garden, ?demo=sofa|fridge|visitor|talk (a scripted run, for
  * filming with scripts/film/frames3d.mjs), ?bare=1 / ?film=1 full screen,
  * ?q=low|medium|high the quality tier. Nothing is saved.
@@ -46,7 +51,8 @@ export default function World3DTestPage() {
 function World3DTest() {
   const params = useSearchParams();
   const demo = params.get("demo");
-  const [place, setPlace] = useState<WorldPlace>(params.get("place") === "house" || demo === "sofa" || demo === "fridge" ? "house" : "garden");
+  const GYM_DEMOS = ["gym", "bench", "treadmill", "fall", "bag"];
+  const [place, setPlace] = useState<WorldPlace>(params.get("place") === "house" || demo === "sofa" || demo === "fridge" ? "house" : params.get("place") === "gym" || GYM_DEMOS.includes(demo ?? "") ? "gym" : "garden");
   const [run, setRun] = useState(0);
   const quality = parseQuality3d(params.get("q")) ?? undefined;
   // a made-up career: the squad gives the team-mates their names, numbers and the living world's chat
@@ -101,6 +107,7 @@ function World3DTest() {
         <div className="s3-bar" data-world3d-dev>
           <Pill on={place === "house"} onClick={() => setPlace("house")}>House</Pill>
           <Pill on={place === "garden"} onClick={() => setPlace("garden")}>Garden</Pill>
+          <Pill on={place === "gym"} onClick={() => setPlace("gym")}>Gym</Pill>
           {HOME_TIERS.map((t) => <Pill key={t} on={place === "house" && tier === t} onClick={() => { setPlace("house"); setTier(t); }}>{t}</Pill>)}
           <Btn onClick={() => setRun((k) => k + 1)}>↻ Restart</Btn>
         </div>

@@ -187,3 +187,14 @@ export const BENCH_MATE: RoutineTemplate = {
     { do: { kind: "stretch" }, mins: [0.8, 1.2], chance: 0.6 },
   ],
 };
+
+/** The gym (world3d/gymPlace.ts): a run on the far treadmill, a drink at the cooler, a stretch on the mat, round again. */
+export const GYM_MATE: RoutineTemplate = {
+  id: "gym-mate",
+  repeat: true,
+  steps: [
+    { do: { kind: "use", target: "treadmill2-belt", loop: [{ clip: "jog", secs: 6 }] }, mins: [2.4, 3.4] },
+    { do: { kind: "use", target: "cooler" }, mins: [0.15, 0.2], gap: [0.05, 0.2] },
+    { do: { kind: "use", target: "mat", loop: [{ clip: "stretch", or: ["idle"], secs: 6 }] }, mins: [0.8, 1.2] },
+  ],
+};

@@ -41,7 +41,7 @@ import { DayClock, RoutineRunner, planRoutine, GARDEN_VISITOR, BENCH_MATE, type 
 import { npcBudget, planBudget, animatesOn } from "./budget";
 import { objectCard, personCard, smallTalk, talkSpot, type InteractCard } from "./interact";
 
-export type WorldPlace = "house" | "garden";
+export type WorldPlace = "house" | "garden" | "gym";
 
 export interface WorldPerson { id: string; name: string; number: number }
 
@@ -63,12 +63,17 @@ export interface WorldOptions {
   chat?: (id: string) => { line: string; change?: string } | null;
 }
 
-export interface WorldStatus { clock: string; people: { id: string; name: string; doing: string }[] }
+export interface WorldStatus { clock: string; people: { id: string; name: string; doing: string }[]; fitness?: GymFitness }
+
+/** The gym's three stats, the ring and the window, for the test page's strip (lib/star/gym/progress.ts gymView). */
+export type GymFitness = ReturnType<typeof import("../gym/progress").gymView> & { week: number };
 
 export interface WorldCallbacks {
   onCard: (card: InteractCard | null) => void;
   onStatus?: (s: WorldStatus) => void;
   onContextLost?: () => void;
+  /** The gym: the mini-game's screen, every frame (no React state: components/star/GymHud.tsx writes it straight to the page). */
+  onGym?: (f: import("./gymPlace").GymHudFrame) => void;
 }
 
 export interface WorldController {
@@ -76,6 +81,12 @@ export interface WorldController {
   act: (action: string) => void;
   /** A scripted tap on a thing or a person by id (the demos and the filming). */
   tapId: (id: string) => void;
+  /** The gym: your thumb on the screen (press = true, let go = false). */
+  gymHold: (on: boolean) => void;
+  /** Tests: a bot thumb at this skill (0..1), or null for yours. */
+  gymBot: (skill: number | null) => void;
+  /** Frames drawn and the main thread's milliseconds (step, render) since the last call. */
+  perf: () => { frames: number; stepMs: number; renderMs: number };
   stats: () => { calls: number; triangles: number; tier: Quality3d; people: number; animated: number };
   debug: () => Record<string, unknown>;
   dispose: () => void;
@@ -87,8 +98,16 @@ const DEMOS: Record<string, { place: WorldPlace; duration: number; rate?: number
   fridge: { place: "house", duration: 15, steps: [[0.4, "tap:fridge"], [5.0, "act:use"]] },
   visitor: { place: "garden", duration: 34, rate: 10, steps: [], you: [-0.3, 1.9, 2.6], watch: "mate-2", zoom: 0.5 },
   talk: { place: "garden", duration: 11, steps: [[0.4, "tap:mate-0"], [7.4, "act:chat"]] },
+  // the gym film: walk in to the bench, a set (a good thumb), up, over to the treadmill, a bad thumb: off the back
+  gym: { place: "gym", duration: 19, steps: [[0.2, "tap:bench"], [2.9, "bot:1"], [2.9, "act:use"], [9.6, "act:gym:quit"], [10.3, "tap:treadmill"], [10.7, "bot:0"], [10.7, "act:use"]], you: [-1.2, 1.4, Math.PI] },
+  bench: { place: "gym", duration: 32, steps: [[0.2, "tap:bench"], [3.6, "bot:1"], [3.6, "act:use"]], you: [-0.9, 2.4, Math.PI] },
+  treadmill: { place: "gym", duration: 36, steps: [[0.2, "tap:treadmill"], [3.6, "bot:1"], [3.6, "act:use"]], you: [1.4, 1.2, Math.PI] },
+  fall: { place: "gym", duration: 14, steps: [[0.2, "tap:treadmill"], [3.6, "bot:0"], [3.6, "act:use"]], you: [1.4, 1.2, Math.PI] },
+  bag: { place: "gym", duration: 31, steps: [[0.2, "tap:bag"], [3.0, "bot:1"], [3.0, "act:use"]], you: [-1.2, 2.6, Math.PI] },
 };
 export const WORLD_DEMOS = DEMOS;
+/** Where the gym's team-mate starts (by the far treadmill). */
+const GYM_MATE_START: [number, number] = [3.9, 0.2];
 
 export async function startWorld3d(container: HTMLElement, cb: WorldCallbacks, opts: WorldOptions): Promise<WorldController> {
   const own: { release?: (root?: any) => void; root?: any } = {};
@@ -168,8 +187,24 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   let sun: any;
   let built: Built;
 
+  let gymRoom: import("./gymPlace").GymRoomOut | null = null;
   if (place === "house") built = await buildHouse();
+  else if (place === "gym") built = await buildGym();
   else built = buildGarden();
+
+  async function buildGym(): Promise<Built> {
+    const { buildGymRoom } = await import("./gymPlace");
+    const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
+    renderer.toneMappingExposure = 1.05;
+    scene.environmentIntensity = 0.45;
+    const { Reflector }: any = await import("three/examples/jsm/objects/Reflector.js");
+    const { MIRROR_PX } = await import("../home3d/roomBuild");
+    gymRoom = buildGymRoom({ THREE, scene, prof, kit: opts.kit, club: opts.club, mergeGeometries, Reflector, mirrorPx: MIRROR_PX[tier] * 4 });
+    sun = gymRoom.sun;
+    const n = shadowSizeFor(prof, 1024) || 1024;
+    sun.shadow.mapSize.set(n, n);
+    return { objects: gymRoom.objects, solids: gymRoom.solids, bounds: gymRoom.bounds, you: gymRoom.you, ceil: gymRoom.ceil, camBox: gymRoom.camBox };
+  }
 
   async function buildHouse(): Promise<Built> {
     const { buildRoom } = await import("../home3d/roomBuild");
@@ -395,7 +430,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   // ── People: their bodies and clips ──
   const loader = new GLTFLoader();
   await withMeshopt(loader);
-  const mates = place === "garden" ? opts.mates.slice(0, 3) : [];
+  const mates = place === "garden" ? opts.mates.slice(0, 3) : place === "gym" ? opts.mates.slice(0, 1) : [];
   // the team-mates are cast from the people presets (lib/star/people/presets.ts): their own
   // head, build, hair and drawn face (the face system), no two alike
   const PR = await import("../people/presets");
@@ -422,6 +457,17 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const p: Person3D = makePerson3d(THREE, SK, charG, animG, { outline, castShadow: true, ...(o.you ? { you: true } : L ? { who: L.id, toonHead: L.head, toonBody: L.build } : { who: id }) });
     if (L) dressPerson3d(THREE, p, { ...L.dress, kit: { ...(L.kit ?? {}), ...o.kit }, number: tex(numberCanvas(o.number, "#ffffff")) } as any);
     else dressPerson3d(THREE, p, { skin: o.you ? "#c68642" : toonSkinFor(id), hair: o.you ? "#2b1b12" : toonHairFor(id), kit: o.kit, number: tex(numberCanvas(o.number, "#ffffff")) });
+    if (place === "gym") {
+      // the gym kit (Harry: "gym kit = club training top/shorts"): real cloth, no number; the shirt a shade under the club's
+      const CL = await import("../style3d/toon/clothes");
+      const { shadeHex } = await import("../style3d/toon/clothes/casual");
+      const top = o.you ? shadeHex(opts.kit.shirt, -0.12) : shadeHex(opts.kit.shirt, -0.45);
+      const base: any = L ? L.dress : { skin: o.you ? "#c68642" : toonSkinFor(id), hair: o.you ? "#2b1b12" : toonHairFor(id) };
+      // trainers, not boots
+      const accessories = [...((base.accessories ?? []) as any[]).filter((a) => a.slot !== "boots"), { slot: "boots", color: o.you ? "#ecebe6" : "#2b2d33" }];
+      dressPerson3d(THREE, p, { ...base, accessories, kit: { shirt: top, trim: opts.kit.trim, shorts: "#1d1f24", socks: "#f2f2ef" }, number: null } as any);
+      CL.dressCloth(THREE, p, "kit", L?.id ?? id, { whiteBalance: CL.HOME_WB });
+    }
     let rig: any = null;
     if (L) {
       // a phone draws the face at half detail (faceIdApply.ts FACE_DETAIL)
@@ -502,6 +548,13 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       holdCan(v, true);
     }
   }
+  if (place === "gym" && npcs[0]) {
+    const R = await import("./routine");
+    const n = npcs[0];
+    // the team-mate's session: a run on the far treadmill, a drink, a stretch on the mat, round again
+    n.place(GYM_MATE_START[0], GYM_MATE_START[1], Math.PI);
+    runners.set(n, new RoutineRunner(planRoutine(n.id, R.GYM_MATE, clock.minute, clock.minute + 600, 20261127)));
+  }
   const objOf = (target: string): SmartObject | undefined => target.startsWith("kind:") ? objects.ofKind(target.slice(5) as any)[0] : objects.get(target);
   /** A step's game minutes in real seconds (rate = times faster than real time). */
   const realSecs = (s: PlannedStep) => Math.max(1, ((s.until - s.at) * 60) / rate);
@@ -532,6 +585,30 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     if (next && next.do.kind === "use" && next.do.target === s.do.target && next.at - s.until < 0.05) return;
     n.leave();
   };
+
+  // ── The gym: the mini-games (./gymPlace.ts GymSession) and your Strength / Cardio / Focus (lib/star/gym/progress.ts) ──
+  const GP = place === "gym" ? await import("../gym/progress") : null;
+  const GG = place === "gym" ? await import("../gym/games") : null;
+  let gymState = GP ? GP.newGym() : null;
+  const gymGap = { season: 1, week: 1 };
+  let gym: import("./gymPlace").GymSession | null = null;
+  const fitness = (): GymFitness | undefined => (GP && gymState ? { ...GP.gymView(gymState, gymGap), week: gymGap.week } : undefined);
+  if (gymRoom && GP && GG) {
+    const { GymSession } = await import("./gymPlace");
+    const size = (() => { const hipsRest = you.person.rest.get(you.person.bones.Hips)?.[0].y ?? you.person.bones.Hips.position.y; const hy = (footG.scene?.userData as any)?.hipsY as number | undefined; return hy ? hipsRest / hy : 1; })();
+    gym = new GymSession(THREE, gymRoom, you, {
+      levelOf: (k) => GP.levelOf(gymState!.points[GP.STAT_OF[k]]),
+      clipSpeed: (name) => (clipInfo(footG, name)?.speed ?? (name === "sprint" ? 6.5 : name === "run" ? 4.5 : 3)) * size,
+      seed: 7,
+      onResult: (r, quit) => {
+        const out = GP.doExercise(gymState!, gymGap, r);
+        gymState = out.gym;
+        if (demo && quit) return; // the film moves straight on
+        show({ key: `gym:${r.kind}`, sub: GG.GAME_NAMES[r.kind], title: r.failed ? (r.kind === "treadmill" ? "Off the back!" : "Too fast!") : quit ? "Stopped early" : "Set done", lines: [r.headline + ".", out.words], actions: [{ id: "close", label: "OK", primary: true }] });
+      },
+    });
+  }
+  const mateBeltSpeed = place === "gym" ? (clipInfo(footG, "jog")?.speed ?? 3) : 0;
 
   // ── Tapping: a person, a thing, else the floor; walk up; one card ──
   const marker = makeTapMarker(THREE, scene);
@@ -597,6 +674,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const tap = (clientX: number, clientY: number) => {
+    if (gym?.active) return; // your thumb is on the mini-game
     const r = renderer.domElement.getBoundingClientRect();
     ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
@@ -624,6 +702,27 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   };
   const act = (a: string) => {
     if (a === "close") { endTalk(); pending = null; show(null); return; }
+    if (a === "gym:quit") { gym?.quit(); return; }
+    if (a === "gym:nextWeek" && GP && gymState) {
+      // a match played: the next gap between matches (the window counts down; miss it and you slip)
+      gymGap.week++;
+      const v = GP.gymView(gymState, gymGap);
+      show({ key: "gym:week", sub: `Week ${gymGap.week}`, title: "A match later", lines: [v.window >= 0 ? `Workout window: ${v.window === 0 ? "last week to train" : `${v.window + 1} weeks left`}.` : v.slipping ? `You missed the window: Strength and Cardio will slip ${GP.SLIP * v.slipping}.` : "No workout window open: your next visit opens one."], actions: [{ id: "close", label: "OK", primary: true }] });
+      return;
+    }
+    if (a === "use" && pending?.obj.game && gym) {
+      marker.fade();
+      const o = pending.obj;
+      if (o.id === "treadmill2" && npcs.some((n) => n.using?.id === "treadmill2-belt")) { show(objectCard(o, { taken: true })); return; }
+      pending = null;
+      show(null);
+      // stood at the machine: the session takes it from here (the fade, the game, the result card)
+      const startIt = () => gym!.begin(o);
+      const s = o.slots[0];
+      if (Math.hypot(you.x - s.stand[0], you.z - s.stand[1]) > 0.5 && o.game !== "treadmill") you.walkTo(world, s.stand, { face: s.facing, onArrive: startIt });
+      else startIt();
+      return;
+    }
     if (a === "chat" && talking) {
       const res = opts.chat?.(talking.id) ?? null;
       const c0 = card;
@@ -649,7 +748,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
           if (o.kind === "fridge") holdCan(you, true);
           show(objectCard(o, { using: true }));
         },
-        onOut: () => { if (o.kind === "fridge") { fridgeDoor?.open(false); you.face(you.yaw + Math.PI, () => you.sip(true)); show({ key: `obj:${o.id}`, title: o.label, lines: [o.effect?.text ?? "Done."], actions: [{ id: "close", label: "OK", primary: true }] }); } },
+        onOut: () => { if (o.id === "cooler" && GP && gymState) gymState = GP.takeProtein(gymState, gymGap); if (o.kind === "fridge") { fridgeDoor?.open(false); you.face(you.yaw + Math.PI, () => you.sip(true)); show({ key: `obj:${o.id}`, title: o.label, lines: [o.effect?.text ?? "Done."], actions: [{ id: "close", label: "OK", primary: true }] }); } },
       });
       if (!okUse) show(objectCard(o, { taken: true }));
       else show(null);
@@ -695,7 +794,18 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   resize();
   const ro = new ResizeObserver(resize);
   ro.observe(container);
+  let shotWas = false;
   const stepCam = (dt: number) => {
+    // a gym mini-game: its own shot (set while the screen is black, eased after)
+    const sh = gym?.shot();
+    if (sh) {
+      want.set(sh.cam[0], sh.cam[1], sh.cam[2]); wantLook.set(sh.look[0], sh.look[1], sh.look[2]);
+      if (!shotWas) { camPos.copy(want); camLook.copy(wantLook); shotWas = true; }
+      else { camPos.lerp(want, Math.min(1, dt * 3)); camLook.lerp(wantLook, Math.min(1, dt * 3)); }
+      camera.position.copy(camPos); camera.lookAt(camLook);
+      return;
+    }
+    if (shotWas) { shotWas = false; first = true; camYaw = you.yaw + Math.PI; }
     zoom.step(dt);
     CS = zoomedFollowCam(zoom.now);
     const aspect = (container.clientWidth || 1) / (container.clientHeight || 1);
@@ -735,6 +845,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     while (demoSteps.length && demoSteps[0][0] <= simT) {
       const [, what] = demoSteps.shift()!;
       if (what.startsWith("tap:")) tapId(what.slice(4)); else if (what.startsWith("act:")) act(what.slice(4));
+      else if (what.startsWith("bot:") && gym) gym.bot = Number(what.slice(4));
     }
     clock.advance(dt);
     // a filmed run can have you turn to watch someone (the camera turns with you)
@@ -757,7 +868,15 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const vis = npcs.filter((n) => n.root.visible);
     const plan = planBudget(vis.map((n) => { const [x, z] = n.bodyXZ(); tv3.set(x, 1, z); return { id: n.id, dist: Math.hypot(x - camera.position.x, z - camera.position.z), onScreen: frustum.containsPoint(tv3), moving: n.moving }; }), budget);
     animated = 0;
+    gym?.step(dt);
+    if (gymRoom) {
+      // the team-mate's belt runs while he is on it
+      const b2 = gymRoom.props.belts.find((b) => b.id === "treadmill2");
+      const on = npcs.some((n) => n.using?.id === "treadmill2" && n.state === "use");
+      if (b2) b2.speed += ((on ? mateBeltSpeed : 0) - b2.speed) * Math.min(1, dt * 3);
+    }
     you.update(dt, world, true);
+    gym?.afterPose(dt);
     vis.forEach((n, i) => {
       const every = plan[i].every;
       const on = animatesOn(every, frameN, i + 1);
@@ -772,6 +891,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     fridgeDoor?.tick(dt);
     marker.update(dt);
     stepCam(dt);
+    if (gym && cb.onGym) cb.onGym(gym.hud());
     // the sun's shadow: drawn again only while someone moves
     if (sun?.castShadow) {
       shadowT -= dt;
@@ -783,7 +903,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     statusT -= dt;
     if (statusT <= 0 && cb.onStatus) {
       statusT = 0.5;
-      cb.onStatus({ clock: clock.hhmm, people: npcs.map((n) => ({ id: n.id, name: n.name, doing: !n.root.visible ? "away" : n.seated ? (n.prop ? "on the bench, a drink" : "on the bench") : n.state === "walk" ? "walking" : n.state === "act" ? "stretching" : "standing" })) });
+      cb.onStatus({ fitness: fitness(), clock: clock.hhmm, people: npcs.map((n) => ({ id: n.id, name: n.name, doing: !n.root.visible ? "away" : place === "gym" && n.using ? (n.using.id === "treadmill2-belt" ? "running" : n.using.id === "mat" ? "stretching" : n.using.id === "cooler" ? "a drink" : n.using.label) : n.seated ? (n.prop ? "on the bench, a drink" : "on the bench") : n.state === "walk" ? "walking" : n.state === "act" ? "stretching" : "standing" })) });
     }
     frameN++;
   };
@@ -793,13 +913,17 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
 
   let last = performance.now();
   let filming = false;
+  const perf = { frames: 0, stepMs: 0, renderMs: 0 };
   const loop = () => {
     if (filming || disposed) return;
     const now = performance.now();
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
     step(dt);
+    const mid = performance.now();
     renderer.render(scene, camera);
+    // the main thread's cost of a frame (the phone measurement: scripts read ctrl.perf())
+    perf.frames++; perf.stepMs += mid - now; perf.renderMs += performance.now() - mid;
   };
   // a filmed demo waits for the film tool's seek (frameStep.ts): nothing moves before frame 0
   if (demo) { stepCam(0); renderer.render(scene, camera); }
@@ -818,6 +942,9 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
 
   const ctrl: WorldController = {
     tap, act, tapId,
+    gymHold: (on: boolean) => { if (gym) gym.hold = on; },
+    gymBot: (skill: number | null) => { if (gym) gym.bot = skill; },
+    perf: () => { const o = { ...perf }; perf.frames = 0; perf.stepMs = 0; perf.renderMs = 0; return o; },
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, tier, people: people.filter((p) => p.root.visible).length, animated }),
     debug: () => ({
       place, tier, budget, clock: clock.hhmm, simT: +simT.toFixed(2),
@@ -856,6 +983,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       }),
       minGap: (() => { let m = Infinity; const b = world.bodies(); for (let i = 0; i < b.length; i++) for (let j = i + 1; j < b.length; j++) m = Math.min(m, Math.hypot(b[i].x - b[j].x, b[i].z - b[j].z)); return +m.toFixed(2); })(),
       card: card?.title ?? null,
+      gym: gym ? { phase: gym.phase, kind: gym.kind, benchPierceCm: gym.benchPierceCm, info: gym.active ? gym.info() : null, game: gym.game ? { t: +gym.game.t.toFixed(2), done: gym.game.done } : null, fitness: fitness() } : null,
       stats: ctrl.stats(),
     }),
     dispose: () => {
@@ -868,6 +996,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       onPointer();
       renderer.domElement.removeEventListener("webglcontextlost", onLost);
       marker.dispose();
+      gym?.dispose();
+      gymRoom?.mirror?.dispose?.();
       envTex.dispose(); pmrem.dispose();
       release(scene);
     },

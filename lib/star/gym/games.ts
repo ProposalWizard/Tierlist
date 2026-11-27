@@ -3,11 +3,11 @@
  * docs/research/gym-compound-driving-2026-11-27.md, phase 1). Each is a small phone game of its own,
  * one thumb, 20 to 40 seconds. Not football, so not the match engine (RUL-ENG-002 is about football).
  *
- *   bench      PRESS AND HOLD to push the bar up; LET GO and it comes down under its own weight.
- *              Lower it slowly: short holds brake it (feathering). Drop it too fast onto your chest
+ *   bench      The set starts with the bar up. LET GO and it comes down under its own weight;
+ *              PRESS AND HOLD to push it back up. Lower it slowly: short holds brake it (feathering). Drop it too fast onto your chest
  *              and it bounces: a strike. Two strikes and the set ends (a "tweak", GTA's
- *              "let go too fast and you hurt yourself"). A rep counts at the top (the click) and
- *              again when it comes down under control. 8 reps a set.
+ *              "let go too fast and you hurt yourself"). A rep counts at the top (the click);
+ *              lowered in a second or more, it is a slow one. 8 reps a set.
  *   treadmill  The belt carries you BACK; HOLD to run forward. Keep your marker inside the green
  *              zone, which drifts a little. The belt speeds up every 8 seconds. Off the back edge
  *              and you fall off (San Andreas' loved fail, kept on purpose): the run ends.
@@ -81,14 +81,17 @@ export interface BenchState {
   bar: number;
   /** Its speed (heights/s, + up). */
   v: number;
-  phase: "up" | "down" | "rest";
+  /** A rep: LOWER it ("down", from the top), then PRESS it ("up", from the chest). The set starts at the top. */
+  phase: "up" | "down";
   reps: number;
   /** Reps lowered slowly (the tempo). */
   clean: number;
   strikes: number;
-  /** Time the bar has been coming down this rep (s). */
+  /** How long this rep's lowering took (s). */
   downT: number;
-  /** The last thing that happened, for the screen ("click", "bounce", "slow", "rep"), and how long ago. */
+  /** This rep bounced off the chest: it will not count when it goes back up. */
+  bad: boolean;
+  /** The last thing that happened, for the screen ("click" a rep up, "bounce", "slow"/"fast" the lowering), and how long ago. */
   flash: { what: "click" | "bounce" | "clean" | "fast" | null; age: number };
   done: boolean;
   /** Your Strength level (1-4): a stronger lifter pushes harder. */
@@ -96,7 +99,7 @@ export interface BenchState {
 }
 
 export function benchStart(level = 1): BenchState {
-  return { kind: "bench", t: 0, bar: 0.02, v: 0, phase: "rest", reps: 0, clean: 0, strikes: 0, downT: 0, flash: { what: null, age: 9 }, done: false, level: clamp(level, 1, 4) };
+  return { kind: "bench", t: 0, bar: 1, v: 0, phase: "down", reps: 0, clean: 0, strikes: 0, downT: 0, bad: false, flash: { what: null, age: 9 }, done: false, level: clamp(level, 1, 4) };
 }
 
 /** How hard you push this rep (fatigue lowers it, Strength raises it). */
@@ -115,31 +118,24 @@ export function benchStep(s0: BenchState, dt: number, hold: boolean): BenchState
     s.v = clamp(s.v + a * h, -BENCH.vMax, BENCH.vMax);
     s.bar += s.v * h;
     if (s.phase === "down") s.downT += h;
-    if (s.bar >= 1) {
-      s.bar = 1; s.v = Math.min(0, s.v);
-      if (s.phase !== "down") {
-        // the click at the top: the rep is up
-        if (s.phase === "up") { s.flash = { what: "click", age: 0 }; }
-        s.phase = "down"; s.downT = 0;
-      }
-    }
-    if (s.phase === "rest" && s.bar > 0.08) s.phase = "up";
     if (s.bar <= 0) {
       const land = -s.v;
       s.bar = 0; s.v = 0;
-      if (s.phase === "down") {
-        if (land > BENCH.safeLand) {
-          // dropped onto the chest: a bounce, the rep does not count
-          s.strikes++;
-          s.flash = { what: "bounce", age: 0 };
-        } else {
-          s.reps++;
-          const slow = s.downT >= BENCH.slowDown;
-          if (slow) s.clean++;
-          s.flash = { what: slow ? "clean" : "fast", age: 0 };
-        }
-        s.phase = "rest";
-      } else if (s.phase === "up") s.phase = "rest"; // let go halfway: back down, no rep, no harm
+      if (land > BENCH.safeLand) {
+        // dropped onto the chest: a bounce, this rep will not count
+        s.strikes++; s.bad = true;
+        s.flash = { what: "bounce", age: 0 };
+      } else if (s.phase === "down" && !s.bad) s.flash = { what: s.downT >= BENCH.slowDown ? "clean" : "fast", age: 0 };
+      s.phase = "up";
+    }
+    if (s.bar >= 1) {
+      s.bar = 1; s.v = Math.min(0, s.v);
+      if (s.phase === "up") {
+        // the click at the top: the rep is up
+        if (!s.bad) { s.reps++; if (s.downT >= BENCH.slowDown) s.clean++; }
+        s.flash = { what: "click", age: 0 };
+        s.phase = "down"; s.downT = 0; s.bad = false;
+      }
     }
     if (s.reps >= BENCH.reps || s.strikes >= BENCH.strikesOut || s.t >= BENCH.maxSecs) s.done = true;
   });
@@ -353,7 +349,7 @@ export const GAME_NAMES: Record<GymGameKind, string> = { bench: "Bench press", t
  */
 export function botHold(s: GameState, skill = 1): boolean {
   if (s.kind === "bench") {
-    if (s.phase === "rest" || s.phase === "up") return true;
+    if (s.phase === "up") return true;
     // coming down: brake whenever it falls faster than a slow, safe speed
     const target = skill >= 0.5 ? -0.55 : -1.6;
     return s.v < target;

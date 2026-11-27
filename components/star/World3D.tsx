@@ -9,6 +9,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import type { InteractCard } from "@/lib/star/world3d/interact";
+import { GymHud, type GymHudHandle } from "@/components/star/GymHud";
 import type { WorldController, WorldOptions, WorldStatus } from "@/lib/star/world3d/testScene";
 
 export default function World3D({ options, clean }: { options: WorldOptions; clean?: boolean }) {
@@ -17,6 +18,8 @@ export default function World3D({ options, clean }: { options: WorldOptions; cle
   const [card, setCard] = useState<InteractCard | null>(null);
   const [status, setStatus] = useState<WorldStatus | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
+  const hud = useRef<GymHudHandle>(null);
+  const [gymOn, setGymOn] = useState(false);
   const optsRef = useRef(options);
   optsRef.current = options;
   const key = `${options.place}|${options.demo ?? ""}|${options.quality ?? ""}`;
@@ -34,11 +37,21 @@ export default function World3D({ options, clean }: { options: WorldOptions; cle
         onCard: (c) => { if (!gone) setCard(c); },
         onStatus: (s) => { if (!gone) setStatus(s); },
         onContextLost: () => { if (!gone) setState("failed"); },
+        onGym: (f) => { if (gone) return; hud.current?.frame(f); const on = !!f.kind; setGymOn((was) => (was === on ? was : on)); },
       }, { ...optsRef.current, chat: (id) => optsRef.current.chat?.(id) ?? null }))
       .then((c) => { if (gone) { c.dispose(); return; } ctrl.current = c; setState("ready"); })
       .catch((e) => { console.error("world3d", e); if (!gone) setState("failed"); }), 0);
     return () => { gone = true; window.clearTimeout(go); ctrl.current?.dispose(); ctrl.current = null; };
   }, [key]);
+
+  // the gym on a computer: the space bar is your thumb
+  useEffect(() => {
+    if (options.place !== "gym") return;
+    const kd = (e: KeyboardEvent) => { if (e.code === "Space") { e.preventDefault(); ctrl.current?.gymHold(true); } };
+    const ku = (e: KeyboardEvent) => { if (e.code === "Space") ctrl.current?.gymHold(false); };
+    window.addEventListener("keydown", kd); window.addEventListener("keyup", ku);
+    return () => { window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); };
+  }, [options.place]);
 
   return (
     <div style={{ position: "absolute", inset: 0, background: "#0b0d12", overflow: "hidden", fontFamily: "system-ui, sans-serif" }} data-world3d={state}>
@@ -48,11 +61,14 @@ export default function World3D({ options, clean }: { options: WorldOptions; cle
           {state === "loading" ? "Opening…" : "3D could not open on this device."}
         </div>
       )}
-      {state === "ready" && status && !clean && (
+      {state === "ready" && status && !clean && !gymOn && (
         <div style={{ position: "absolute", top: 10, left: 10, right: 10, display: "flex", gap: 6, flexWrap: "wrap", pointerEvents: "none" }} data-world3d-status>
           <span style={chip("#facc15", "#111")}>{status.clock}</span>
           {status.people.map((p) => <span key={p.id} style={chip("rgba(8,10,16,.78)", "#f8fafc")}>{p.name}: {p.doing}</span>)}
         </div>
+      )}
+      {state === "ready" && options.place === "gym" && (
+        <GymHud ref={hud} fitness={clean ? undefined : status?.fitness} film={!!options.demo} onHold={(on) => ctrl.current?.gymHold(on)} onAct={(id) => ctrl.current?.act(id)} />
       )}
       {card && (
         <div data-world3d-card style={{ position: "absolute", left: 12, right: 12, bottom: 16, maxWidth: 460, margin: "0 auto", padding: "12px 14px", borderRadius: 14, background: "rgba(8,10,16,.9)", color: "#f8fafc", borderTop: "3px solid #facc15", boxShadow: "0 10px 30px rgba(0,0,0,.4)" }}>

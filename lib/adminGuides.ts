@@ -2591,6 +2591,11 @@ export const ADMIN_GUIDES = {
         items: [
           ["House / Garden (above the scene)", "Which place opens: the house's lounge (sofa, TV, fridge) or the garden (bench, gate, team-mates)."],
           ["starter / flat / penthouse / house / villa / estate", "Opens the LIVING HOUSE of that home (the real house screen with every room of that home): things to use in every room (sofa and TV, fridge, bed, shower, mirror, coffee machine, treadmill, pool table, loungers, cinema seats) and team-mates round (1 in the starter flat up to 4 at the estate). Walk through a doorway to the next room. Same as ?place=house&tier=villa. Nothing is saved; a home reaches the real game only once it is switched on in the code (LIVING_TIERS)."],
+          ["Gym (above the scene)", "THE GYM, GTA 6 style (same as ?place=gym): a bench press, two treadmills, a heavy bag, mirrors, mats and a water cooler; one team-mate runs, drinks and stretches on his own. Tap a machine, then Start: a mini-game of its own (not football). Hold anywhere (or the space bar) to push: the bar up, run on the belt, the cursor right; let go to ease off. Drop the bar too fast and it bounces; let the belt take you and you fall off. Not in the career yet."],
+          ["Strength / Cardio / Focus strip (gym)", "Your three gym levels (1 to 4), today's ring (one dot per machine; all three close it, more does nothing) and the workout window. Only on this page, never saved."],
+          ["Play a match ▸ (gym)", "Moves the gym on one gap between matches: the window counts down. Train inside it for full points; miss it and Strength and Cardio slip back."],
+          ["✕ (during a gym game)", "Stops the game; what you did still counts."],
+          ["Water cooler: Protein shake (gym)", "A shake this week: the week's gym points ×1.2."],
           ["↻ Restart", "Opens the place again from the start (the same people, the same day)."],
           ["Tap the floor", "You walk there, round furniture and round people."],
           ["Tap the sofa, the TV, the fridge, the bench or the gate", "You walk up to it and its card opens. Sit down / Watch TV / Take a can: you do it. Stand up ends it."],
