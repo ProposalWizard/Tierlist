@@ -1,0 +1,282 @@
+{
+ "id": "arc-the-highlighter",
+ "title": "Dad and the highlighter",
+ "owner": "dad",
+ "summary": "Your first proper contract is on the kitchen table and your dad has taken a day off work to read it with a highlighter. A season on, he still has his copy.",
+ "size": "small",
+ "about": {
+  "who": [
+   "dad"
+  ],
+  "tone": [
+   "warm",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "dad",
+   "pick": "dad"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "his-copy",
+   "title": "His copy",
+   "text": "Your dad read your first contract line by line, and he still has the copy he highlighted."
+  },
+  {
+   "id": "signed-alone",
+   "title": "Signed it alone",
+   "text": "You signed your first contract without him. He found out from the club's website."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "hil-1",
+   "title": "The kitchen table",
+   "n": 1,
+   "event": {
+    "id": "arc-hil-1",
+    "title": "The kitchen table",
+    "category": "family",
+    "place": "home:kitchen",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "age<=19"
+     ]
+    },
+    "setup": [
+     "Your first professional contract is on the kitchen table, eleven pages. Your dad has a yellow highlighter, his reading glasses and a day off work he booked a month ago."
+    ],
+    "talk": {
+     "start": "f1",
+     "nodes": {
+      "f1": {
+       "who": "dad",
+       "say": [
+        "\"I just want to go through it. I'm not saying there's anything wrong. Page four, what does image rights mean? Is that your face?\""
+       ],
+       "replies": [
+        {
+         "id": "read",
+         "label": "\"Go on, then. Page by page.\"",
+         "tone": "kind",
+         "end": "read"
+        },
+        {
+         "id": "agent",
+         "label": "\"The agent's read it, Dad.\"",
+         "tone": "honest",
+         "goto": "f2"
+        },
+        {
+         "id": "sign",
+         "label": "Sign it while he's on page four.",
+         "tone": "reckless",
+         "end": "signed"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "f2"
+        }
+       ]
+      },
+      "f2": {
+       "who": "dad",
+       "say": [
+        "He takes his glasses off. \"I know he has. I'd like to and all. I've never read one before.\""
+       ],
+       "replies": [
+        {
+         "id": "read",
+         "label": "\"Page four, then.\"",
+         "tone": "kind",
+         "end": "read"
+        },
+        {
+         "id": "sign",
+         "label": "\"I'm signing it tonight.\"",
+         "tone": "cold",
+         "end": "signed"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "read": [
+       {
+        "text": "It takes three hours. He highlights eleven things and rings the club about one of them himself. They change a word. He's unbearable about it for a month.",
+        "npc": [
+         {
+          "slot": "dad",
+          "respect": 4,
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "read-my-first-contract",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "read"
+         }
+        }
+       }
+      ],
+      "signed": [
+       {
+        "text": "You sign it on the side. He puts the highlighter back in the drawer with the batteries and says well done.",
+        "npc": [
+         {
+          "slot": "dad",
+          "respect": -2,
+          "bond": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "signed-without-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "signed"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Your first contract is on the table"
+  },
+  {
+   "id": "hil-2",
+   "title": "The glovebox",
+   "after": {
+    "beat": "hil-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-hil-2",
+    "title": "The glovebox",
+    "category": "family",
+    "place": "home:driveway",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. You borrow your dad's van to move a sofa. In the glovebox, under the tax disc and the mints, is a folded contract with yellow lines all over it.",
+     "{if arc.path=='signed'}It's your contract. He must have printed his own copy off.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "ask",
+      "label": "Ask him about it.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "\"Somebody had to read it properly,\" he says. He shows you page four. He's written \"FACE\" in the margin.",
+        "npc": [
+         {
+          "slot": "dad",
+          "respect": 2,
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "his-copy"
+        }
+       }
+      ]
+     },
+     {
+      "id": "back",
+      "label": "Put it back where it was.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='read'",
+        "text": "You put it back under the mints. He never knows you saw it.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "his-copy"
+        }
+       },
+       {
+        "text": "You put it back under the mints and drive the sofa round to your flat.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "signed-alone"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A season on, Dad's van"
+  }
+ ]
+}

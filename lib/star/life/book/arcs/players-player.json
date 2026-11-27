@@ -1,0 +1,285 @@
+{
+ "id": "arc-players-player",
+ "title": "Players' player",
+ "owner": "mate",
+ "summary": "The squad vote for players' player of the year. You've won it, and you know who should have. A season on, the vote comes round again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate",
+   "awards"
+  ],
+  "tone": [
+   "warm",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "order": "best"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "his-award",
+   "title": "His award",
+   "text": "You won players' player and gave the speech about the lad who should have won it."
+  },
+  {
+   "id": "my-award",
+   "title": "Your award",
+   "text": "You won players' player and kept the trophy."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "ppy-1",
+   "title": "The vote",
+   "n": 1,
+   "event": {
+    "id": "arc-ppy-1",
+    "title": "The vote",
+    "category": "squad",
+    "place": "town:function-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "season-end"
+     ]
+    },
+    "setup": [
+     "End of season do. The captain reads out the players' player of the year, and it's you. Across the table {mate.short}, who played every minute and never got a mention in the paper, is clapping harder than anyone."
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "mate",
+       "say": [
+        "Somebody hands you the microphone. The room goes quiet and waits."
+       ],
+       "replies": [
+        {
+         "id": "him",
+         "label": "\"This should be his. He's carried us.\"",
+         "tone": "kind",
+         "end": "him"
+        },
+        {
+         "id": "thanks",
+         "label": "\"Thanks, lads. Means a lot.\"",
+         "tone": "humble",
+         "end": "thanks"
+        },
+        {
+         "id": "joke",
+         "label": "\"I'd like to thank myself.\"",
+         "tone": "confident",
+         "end": "joke"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "thanks"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "him": [
+       {
+        "text": "You point at {mate.short}. The room stands up for him. He goes red to his collar and buys every round till one.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": 6,
+          "bond": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "gave-me-the-players-player-speech",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "him"
+         }
+        }
+       }
+      ],
+      "thanks": [
+       {
+        "text": "Short and fine. {mate.short} shakes your hand on the way out.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "thanks"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "Half the room laughs. The other half laughs a second later. {mate.short} laughs most.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "joke"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "You've won players' player"
+  },
+  {
+   "id": "ppy-2",
+   "title": "The vote again",
+   "after": {
+    "beat": "ppy-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-ppy-2",
+    "title": "The vote again",
+    "category": "squad",
+    "place": "compound:dressing-room",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The voting slips go round the dressing room in a cup.",
+     "{if arc.path=='him'}{mate.short} has his slip filled in before you've found a pen. He shows you. It's your name. You haven't written yet.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "him",
+      "label": "Write {mate.short}'s name.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='him'",
+        "text": "He wins it. He gives a speech that's mostly about you and mostly lies.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "end": "his-award"
+        }
+       },
+       {
+        "text": "He wins it by one vote. He never finds out it was yours.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "his-award"
+        }
+       }
+      ]
+     },
+     {
+      "id": "self",
+      "label": "Write your own name.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "text": "You win it again. The trophy goes on the shelf next to last year's.",
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": -1
+         }
+        ],
+        "arc": {
+         "end": "my-award"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "A season on, the players' vote"
+  }
+ ]
+}

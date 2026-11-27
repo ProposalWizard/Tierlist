@@ -1,0 +1,296 @@
+{
+ "id": "arc-the-heckler",
+ "title": "Row F",
+ "owner": "fan",
+ "summary": "A man in row F shouts the same thing at you every home game. One Saturday you can hear it on the pitch, and you turn round. A season on, he's still in row F.",
+ "size": "small",
+ "about": {
+  "who": [
+   "season-ticket holder"
+  ],
+  "tone": [
+   "tense",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "fan",
+   "pick": "fan"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "row-f",
+   "title": "Row F",
+   "text": "The man in row F shouted at you for a season, until he started shouting for you."
+  },
+  {
+   "id": "the-steward",
+   "title": "The steward",
+   "text": "You had a man thrown out of row F. His seat's been empty since."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "hck-1",
+   "title": "Row F",
+   "n": 1,
+   "event": {
+    "id": "arc-hck-1",
+    "title": "Row F",
+    "category": "fans",
+    "place": "stadium:pitch",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastLost || lastRating<6.5"
+     ]
+    },
+    "setup": [
+     "{fan.name} sits in row F by the corner flag. Every time you take a corner he shouts \"Hit the first man, you donkey.\" Today you didn't hit the first man."
+    ],
+    "talk": {
+     "start": "h1",
+     "nodes": {
+      "h1": {
+       "who": "fan",
+       "say": [
+        "At full time he's at the front of the stand, leaning over. \"You heard me. Hit the first man.\""
+       ],
+       "replies": [
+        {
+         "id": "fair",
+         "label": "\"You're not wrong, to be fair.\"",
+         "tone": "humble",
+         "end": "fair"
+        },
+        {
+         "id": "back",
+         "label": "\"Come and take one, then.\"",
+         "tone": "fiery",
+         "end": "back"
+        },
+        {
+         "id": "steward",
+         "label": "Point him out to a steward.",
+         "tone": "cold",
+         "end": "steward"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "fair"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "fair": [
+       {
+        "text": "He wasn't ready for that. He sits down and folds his arms. The next game he shouts it once, quieter.",
+        "npc": [
+         {
+          "slot": "fan",
+          "respect": 4,
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "fair"
+         }
+        }
+       }
+      ],
+      "back": [
+       {
+        "text": "Half the stand cheers you and half cheers him. Somebody films it. On Monday it's a picture with a caption.",
+        "effects": {
+         "fame": 1,
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "respect": 2,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "told-me-to-take-a-corner",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "back"
+         }
+        }
+       }
+      ],
+      "steward": [
+       {
+        "text": "Two stewards walk him out down the steps while the stand boos you. His seat is empty for the rest of the season.",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "had-me-thrown-out",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "out"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "The man in row F"
+  },
+  {
+   "id": "hck-2",
+   "title": "Next season",
+   "after": {
+    "beat": "hck-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-hck-2",
+    "title": "Next season",
+    "category": "fans",
+    "place": "stadium:pitch",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. A home game, your first corner.",
+     "{if arc.path=='out'}Row F by the corner flag has an empty seat in it.{/if}",
+     "{if !arc.path=='out'}{fan.short} is in row F with a flask, waiting.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "first",
+      "label": "Hit the first man on purpose.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "!arc.path=='out'",
+        "text": "You hit the first man. {fan.short} stands up and claps, and shouts \"Again.\" It goes in off the second man.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "respect": 4,
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "row-f"
+        }
+       },
+       {
+        "text": "You hit the first man. Nobody in row F says anything, because nobody is there.",
+        "arc": {
+         "end": "the-steward"
+        }
+       }
+      ]
+     },
+     {
+      "id": "look",
+      "label": "Look up at row F.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "!arc.path=='out'",
+        "text": "He waves his flask. You wave back without thinking about it.",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "row-f"
+        }
+       },
+       {
+        "text": "The seat's still empty. A steward told you he moved to the away end to watch you from there.",
+        "npc": [
+         {
+          "slot": "fan",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "the-steward"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "A season on, row F"
+  }
+ ]
+}

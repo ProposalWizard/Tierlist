@@ -1,0 +1,279 @@
+{
+ "id": "arc-the-ankle",
+ "title": "Same ankle",
+ "owner": "physio",
+ "summary": "You go over on your ankle on the far corner of pitch two. The physio says two days off it; you want Saturday. A season on, same corner, same ankle.",
+ "size": "small",
+ "about": {
+  "who": [
+   "physio",
+   "injury"
+  ],
+  "tone": [
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "physio",
+   "pick": "physio"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "told-her",
+   "title": "Told her straight",
+   "text": "You went over on the same ankle twice, and both times you limped straight to the physio."
+  },
+  {
+   "id": "the-same-ankle",
+   "title": "The same ankle",
+   "text": "You ran it off twice. The ankle has a click in it now."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "ank-1",
+   "title": "Over on it",
+   "n": 1,
+   "event": {
+    "id": "arc-ank-1",
+    "title": "Over on it",
+    "category": "injury",
+    "place": "compound:physio-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "!injured"
+     ]
+    },
+    "setup": [
+     "Small-sided game, far corner of pitch two, the dip by the drain. You go over on your right ankle and hear it before you feel it. {physio.name} is already walking over with the ice."
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "physio",
+       "say": [
+        "She presses on the outside of it and watches your face. \"Ligament, not bone. Ice tonight, nothing on it for two days, then we'll see. Saturday's probably not happening.\""
+       ],
+       "replies": [
+        {
+         "id": "fine",
+         "label": "\"Two days. Fine.\"",
+         "tone": "humble",
+         "end": "rest"
+        },
+        {
+         "id": "strap",
+         "label": "\"Strap it. I'll play.\"",
+         "tone": "reckless",
+         "goto": "p2"
+        },
+        {
+         "id": "needle",
+         "label": "\"Is there anything you can give me?\"",
+         "tone": "reckless",
+         "goto": "p2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "rest"
+        }
+       ]
+      },
+      "p2": {
+       "who": "physio",
+       "say": [
+        "\"No. You can be stupid on Saturday if the gaffer lets you. I'm not helping.\""
+       ],
+       "replies": [
+        {
+         "id": "fine",
+         "label": "\"Fine. Two days.\"",
+         "tone": "humble",
+         "end": "rest"
+        },
+        {
+         "id": "play",
+         "label": "\"I'll ask him myself.\"",
+         "tone": "fiery",
+         "end": "played"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "rest": [
+       {
+        "text": "You sit out two days with your foot in a bucket. It's fine by Friday. You miss Saturday and the team draws.",
+        "effects": {
+         "matchFitness": -6
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": 6,
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "rested-the-ankle",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "rest"
+         }
+        }
+       }
+      ],
+      "played": [
+       {
+        "text": "The gaffer lets you. You play an hour on it strapped like a parcel and it swells up like a grapefruit on the coach home.",
+        "effects": {
+         "matchFitness": -10,
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "played-on-the-ankle",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "played"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     }
+    ]
+   },
+   "hint": "You went over on your ankle"
+  },
+  {
+   "id": "ank-2",
+   "title": "The dip by the drain",
+   "after": {
+    "beat": "ank-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-ank-2",
+    "title": "The dip by the drain",
+    "category": "injury",
+    "place": "compound:pitch-2",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The far corner of pitch two, the dip by the drain. You go over on the same ankle, not as bad. Nobody saw.",
+     "{if arc.path=='played'}It clicks when you put weight on it. It's clicked since last season.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "tell",
+      "label": "Limp in and tell her.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "text": "{physio.short} looks at it and then out of the window at the drain. That afternoon she rings the groundsman about the dip, and he fills it in.",
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": 4,
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "told-her"
+        }
+       }
+      ]
+     },
+     {
+      "id": "run",
+      "label": "Run it off.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "You run it off. It holds. In the shower it's purple and you put your sock on before anyone sees.",
+        "effects": {
+         "matchFitness": -4
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "end": "the-same-ankle"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     }
+    ]
+   },
+   "hint": "A season on, the far corner of pitch two"
+  }
+ ]
+}

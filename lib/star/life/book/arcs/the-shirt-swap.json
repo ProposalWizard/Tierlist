@@ -1,0 +1,287 @@
+{
+ "id": "arc-the-shirt-swap",
+ "title": "The shirt",
+ "owner": "rival",
+ "summary": "After a hard game their centre half asks for your shirt. A season on, you find out where it went.",
+ "size": "small",
+ "about": {
+  "who": [
+   "rival player"
+  ],
+  "tone": [
+   "warm",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "rival",
+   "pick": "rival"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-lad",
+   "title": "His lad",
+   "text": "His lad wore your shirt to the game, down to his knees."
+  },
+  {
+   "id": "no-swap",
+   "title": "No swap",
+   "text": "You wouldn't swap. His lad wears a ball boy's shirt instead."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "shs-1",
+   "title": "Swap?",
+   "n": 1,
+   "event": {
+    "id": "arc-shs-1",
+    "title": "Swap?",
+    "category": "rivals",
+    "place": "stadium:pitch",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Full time. {rival.name} has kicked you for ninety minutes. Now he's walking over holding his shirt out.",
+     "{if mem(rival,'squared-up-in-the-tunnel')}He's the one from the tunnel. He hasn't forgotten, and nor have you.{/if}"
+    ],
+    "talk": {
+     "start": "w1",
+     "nodes": {
+      "w1": {
+       "who": "rival",
+       "say": [
+        "\"Shirt? It's for my lad. He thinks you're good. I've told him you're not.\""
+       ],
+       "replies": [
+        {
+         "id": "no",
+         "label": "\"After all that? No.\"",
+         "tone": "fiery",
+         "end": "no"
+        },
+        {
+         "id": "swap",
+         "label": "Swap shirts.",
+         "tone": "kind",
+         "end": "swap"
+        },
+        {
+         "id": "sign",
+         "label": "\"I'll sign it for him and all.\"",
+         "tone": "kind",
+         "end": "signed"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "swap"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "swap": [
+       {
+        "text": "You swap. His is wet through and smells of Deep Heat. Yours goes in his bag.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4,
+          "grudge": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "swapped-shirts-with-me",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "swap"
+         }
+        }
+       }
+      ],
+      "signed": [
+       {
+        "text": "You borrow a pen off a steward and write his lad's name on it. He reads it twice and nods.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 8,
+          "grudge": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "signed-a-shirt-for-my-lad",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "signed"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He shrugs and gives his shirt to a ball boy. Somebody films it.",
+        "effects": {
+         "reputation": -1
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "wouldnt-swap-shirts",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     }
+    ]
+   },
+   "hint": "Their centre half wants your shirt"
+  },
+  {
+   "id": "shs-2",
+   "title": "The lad",
+   "after": {
+    "beat": "shs-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-shs-2",
+    "title": "The lad",
+    "category": "rivals",
+    "place": "stadium:tunnel",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on. You're walking out against {rival.short}'s team. One of the mascots is a boy of about eight.",
+     "{if !arc.path=='no'}He's wearing your shirt from last season. It comes down to his knees.{/if}",
+     "{if arc.path=='no'}He's holding a ball boy's shirt with his dad's number on it.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "nod",
+      "label": "Nod at his dad.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "!arc.path=='no'",
+        "text": "{rival.short} nods back and pulls his gloves on.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-lad"
+        }
+       },
+       {
+        "text": "{rival.short} looks at you and then at his lad's shirt and doesn't nod back.",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "no-swap"
+        }
+       }
+      ]
+     },
+     {
+      "id": "hand",
+      "label": "Hold the lad's hand out.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "He walks out holding your hand, not his dad's. {rival.short} kicks you hard in the first minute and laughs about it at full time.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 6,
+          "grudge": -2
+         }
+        ],
+        "arc": {
+         "end": "the-lad"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     }
+    ]
+   },
+   "hint": "A season on, you play them again"
+  }
+ ]
+}

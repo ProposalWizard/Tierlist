@@ -1,0 +1,276 @@
+{
+ "id": "arc-the-advert",
+ "title": "One line",
+ "owner": "sponsor",
+ "summary": "The boot sponsor wants you in an advert. One line: \"Built for the ninetieth minute.\" It takes thirty-one takes. A season on, kids shout it at you.",
+ "size": "small",
+ "about": {
+  "who": [
+   "sponsor's rep",
+   "fame"
+  ],
+  "tone": [
+   "funny",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "sponsor",
+   "pick": "sponsor"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-line",
+   "title": "The line",
+   "text": "You said one line in a boot advert, and kids still shout it at you."
+  },
+  {
+   "id": "the-hands",
+   "title": "The hands",
+   "text": "You said no to the line, so the advert is just your feet."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "adv-1",
+   "title": "Take thirty-one",
+   "n": 1,
+   "event": {
+    "id": "arc-adv-1",
+    "title": "Take thirty-one",
+    "category": "fame",
+    "place": "town:studio",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "sponsor",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "fame>=10"
+     ]
+    },
+    "setup": [
+     "A studio with a fake pitch and a fan blowing at your face. {sponsor.name} from {sponsor.outlet} has a card with your one line on it: \"Built for the ninetieth minute.\" It's take thirty-one."
+    ],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "sponsor",
+       "say": [
+        "\"Lovely. Can you say it like you mean it? Like it's the ninetieth minute. Like you're tired but not tired.\""
+       ],
+       "replies": [
+        {
+         "id": "again",
+         "label": "Say it again, tired but not tired.",
+         "tone": "humble",
+         "end": "again"
+        },
+        {
+         "id": "own",
+         "label": "\"Can I say it my way?\"",
+         "tone": "confident",
+         "goto": "a2"
+        },
+        {
+         "id": "done",
+         "label": "\"I'm done. Use my feet.\"",
+         "tone": "calm",
+         "end": "feet"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "again"
+        }
+       ]
+      },
+      "a2": {
+       "who": "sponsor",
+       "say": [
+        "\"Your way's fine. As long as it's the words on the card.\""
+       ],
+       "replies": [
+        {
+         "id": "again",
+         "label": "Say it your way.",
+         "tone": "confident",
+         "end": "again"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "again": [
+       {
+        "text": "Take thirty-two. The director cries a little. It's on telly by the end of the month, eleven seconds long.",
+        "effects": {
+         "fame": 2,
+         "moneyWeeks": 1
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sponsor",
+          "tag": "did-the-advert-line",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "line"
+         }
+        }
+       }
+      ],
+      "feet": [
+       {
+        "text": "They film your feet for an hour and use a voice from a man in Leeds. You're paid the same.",
+        "effects": {
+         "moneyWeeks": 1
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "feet"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     }
+    ]
+   },
+   "hint": "The boot sponsor wants you in an advert"
+  },
+  {
+   "id": "adv-2",
+   "title": "In the street",
+   "after": {
+    "beat": "adv-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-adv-2",
+    "title": "In the street",
+    "category": "fame",
+    "place": "stadium:car-park",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "sponsor",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. After a home game there are kids by the car park gate.",
+     "{if arc.path=='line'}One of them shouts \"Built for the ninetieth minute!\" in a voice that's a lot like yours. The rest do it too.{/if}",
+     "{if arc.path=='feet'}One of them asks if you're the feet off the telly.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "do",
+      "label": "Do the line for them.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='line'",
+        "text": "You do it tired but not tired. They film it. It does better than the advert.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-line"
+        }
+       },
+       {
+        "text": "You do the feet. They don't get it, but they film it anyway.",
+        "effects": {
+         "fans": 1
+        },
+        "arc": {
+         "end": "the-hands"
+        }
+       }
+      ]
+     },
+     {
+      "id": "sign",
+      "label": "Sign their programmes and go.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='line'",
+        "text": "You sign them. One of them shouts the line as you drive off.",
+        "arc": {
+         "end": "the-line"
+        }
+       },
+       {
+        "text": "You sign them. Nobody shouts anything.",
+        "arc": {
+         "end": "the-hands"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     }
+    ]
+   },
+   "hint": "A season on, the advert"
+  }
+ ]
+}

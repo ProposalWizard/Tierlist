@@ -1,0 +1,291 @@
+{
+ "id": "arc-the-bad-car",
+ "title": "His cousin's car",
+ "owner": "mate",
+ "summary": "A team-mate's cousin sells cars, and he's got one for you at mate's rates. It's very shiny. A season on, you find out what's under the shine.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate",
+   "money"
+  ],
+  "tone": [
+   "funny",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "order": "bond-desc"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-shine",
+   "title": "Under the shine",
+   "text": "You bought a car off a team-mate's cousin. It broke down on the motorway with the squad watching."
+  },
+  {
+   "id": "said-no",
+   "title": "Said no",
+   "text": "You didn't buy his cousin's car. He still says you missed out."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "bcr-1",
+   "title": "Mate's rates",
+   "n": 1,
+   "event": {
+    "id": "arc-bcr-1",
+    "title": "Mate's rates",
+    "category": "money",
+    "place": "compound:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.short} has a photo on his phone of a black car with gold wheels. \"My cousin's. Low mileage, one owner, the owner's in prison so he won't want it back. Mate's rates.\""
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "mate",
+       "say": [
+        "\"Two weeks' wages and it's yours. Cash. He'll bring it Friday. No log book yet, but it's coming.\""
+       ],
+       "replies": [
+        {
+         "id": "buy",
+         "label": "\"Go on. Friday.\"",
+         "tone": "reckless",
+         "end": "buy"
+        },
+        {
+         "id": "book",
+         "label": "\"No log book?\"",
+         "tone": "honest",
+         "goto": "c2"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm alright, thanks.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "c2"
+        }
+       ]
+      },
+      "c2": {
+       "who": "mate",
+       "say": [
+        "\"It's in the post. He's very honest, my cousin. He's got a tattoo that says honest.\""
+       ],
+       "replies": [
+        {
+         "id": "buy",
+         "label": "\"Fine. Friday.\"",
+         "tone": "reckless",
+         "end": "buy"
+        },
+        {
+         "id": "no",
+         "label": "\"I'll leave it.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "buy": [
+       {
+        "text": "Friday. The car is shinier than the photo. The log book never comes. The radio only gets one station and it's in Welsh.",
+        "effects": {
+         "moneyWeeks": -2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "bought-his-cousins-car",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "bought"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Your loss.\" The car goes to a left back at another club the next week.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "A team-mate's cousin has a car for you"
+  },
+  {
+   "id": "bcr-2",
+   "title": "The hard shoulder",
+   "after": {
+    "beat": "bcr-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-bcr-2",
+    "title": "The hard shoulder",
+    "category": "money",
+    "place": "driving:motorway",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on.",
+     "{if arc.path=='bought'}The car dies on the motorway on the way to training, in the outside lane. The team coach goes past with every window full of phones.{/if}",
+     "{if arc.path=='no'}The left back at the other club has been in the paper. The car was stolen. He has to give it back to a man in Swansea.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "laugh",
+      "label": "Laugh it off.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='bought'",
+        "text": "You get a lift in from the recovery man. At training there's a toy car on your peg with gold wheels.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-shine"
+        }
+       },
+       {
+        "text": "You show {mate.short} the article. He says his cousin is a victim in all this.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "said-no"
+        }
+       }
+      ]
+     },
+     {
+      "id": "angry",
+      "label": "Ring {mate.short}.",
+      "tone": "fiery",
+      "outcomes": [
+       {
+        "if": "arc.path=='bought'",
+        "text": "\"Has it got the gold wheels still? Then it's fine.\" You're forty minutes late and fined.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -4,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "end": "the-shine"
+        }
+       },
+       {
+        "text": "He doesn't pick up. He's in the gym telling everyone it was a different car.",
+        "arc": {
+         "end": "said-no"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "A season on, the cousin's car"
+  }
+ ]
+}

@@ -1,0 +1,857 @@
+{
+ "id": "arc-she-grows-up",
+ "title": "The girl from the sign",
+ "owner": "kidfan",
+ "summary": "The young fan who held up a sign for you is older now and plays herself. She has a trial, she wants ten balls with you on pitch three, she nearly packs it in, and years on she's walking out at the same ground in her own shirt.",
+ "size": "big",
+ "about": {
+  "who": [
+   "young fan",
+   "grown up"
+  ],
+  "tone": [
+   "warm",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.3
+ },
+ "cast": [
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  },
+  {
+   "slot": "coach",
+   "pick": "coach"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "best": 0,
+  "trial": 0,
+  "quit": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "her-shirt",
+   "title": "Her own shirt",
+   "text": "The girl who held up a sign for you walked out at your ground in her own shirt. You were in the stand."
+  },
+  {
+   "id": "she-stopped",
+   "title": "She stopped",
+   "text": "The girl who held up a sign for you played for a few years and then stopped. She still comes to every game."
+  },
+  {
+   "id": "the-ticket",
+   "title": "The ticket",
+   "text": "The girl from the sign made it. She sent you a ticket, and you couldn't go."
+  }
+ ],
+ "promises": {
+  "p-her-trial": {
+   "id": "p-her-trial",
+   "to": "kidfan",
+   "text": "Watch {kidfan.short}'s trial for the girls' academy",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "sgu-2",
+    "ends": [
+     "go"
+    ]
+   },
+   "dueText": "A Sunday morning, two weeks away",
+   "remind": "\"It's Sunday. Pitch three. Mum says you won't come. You will, won't you?\"",
+   "kept": {
+    "text": "You said you'd come to her trial, and you were there.",
+    "npc": [
+     {
+      "slot": "kidfan",
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd watch her trial.",
+    "npc": [
+     {
+      "slot": "kidfan",
+      "bond": -8
+     }
+    ],
+    "remember": [
+     {
+      "slot": "kidfan",
+      "tag": "missed-my-trial",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "sgu-1",
+   "title": "Older now",
+   "n": 1,
+   "event": {
+    "id": "arc-sgu-1",
+    "title": "Older now",
+    "category": "fans",
+    "place": "stadium:car-park",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "By the car park gate there's a girl in your shirt, taller than you remember, holding a ball instead of a sign. It's {kidfan.name}.",
+     "{if mem(kidfan,'gave-her-the-birthday-shirt')}She's wearing the shirt you gave her for her birthday. It fits now.{/if}",
+     "{if mem(kidfan,'walked-past-her-sign')}You walked past her sign once. She's come back anyway.{/if}",
+     "{if mem(kidfan,'remembered-her')}She knows you'll remember her. You do.{/if}"
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "kidfan",
+       "say": [
+        "\"I play now. Left wing. I've got a trial for the girls' academy, Sunday after next. Would you come? You don't have to say anything. Just stand there.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll be there.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-her-trial"
+        },
+        {
+         "id": "wing",
+         "label": "\"Left wing? Show me your left foot.\"",
+         "tone": "confident",
+         "goto": "k2"
+        },
+        {
+         "id": "busy",
+         "label": "\"I'll try. Sundays are hard.\"",
+         "tone": "honest",
+         "end": "maybe"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "k2"
+        }
+       ]
+      },
+      "k2": {
+       "who": "kidfan",
+       "say": [
+        "She does twenty keepy-ups on her left foot in her school shoes, and then flicks it to you."
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Sunday after next. I'll be there.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-her-trial"
+        },
+        {
+         "id": "busy",
+         "label": "\"Good feet. I'll try and come.\"",
+         "tone": "calm",
+         "end": "maybe"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "She doesn't scream. She nods very hard and walks off and then runs.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "promised-to-watch-my-trial",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "maybe": [
+       {
+        "text": "\"Okay.\" She's heard try before.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "maybe"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The young fan from the sign"
+  },
+  {
+   "id": "sgu-2",
+   "title": "The trial",
+   "after": {
+    "beat": "sgu-1",
+    "weeks": [
+     1,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-sgu-2",
+    "title": "The trial",
+    "category": "fans",
+    "place": "compound:pitch-3",
+    "size": "big",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Sunday, half nine, pitch three at the academy. Forty girls in bibs and a lot of parents with flasks. {kidfan.short} is warming up and keeps looking at the car park."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go and stand by the fence.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You stand by the fence with your hood up. She sees you in the first minute. She scores twice with her left and makes the academy.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "respect": 6,
+          "bond": 12
+         },
+         {
+          "slot": "coach",
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "came-to-my-trial",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "trial": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "lie",
+      "label": "Stay in bed.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "You stay in bed. She has a good game and a bad one. She makes the academy by one place. Nobody tells you until Wednesday.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -6
+         }
+        ],
+        "arc": {
+         "set": {
+          "trial": 0
+         }
+        },
+        "promiseBroken": [
+         "p-her-trial"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "Her trial for the girls' academy"
+  },
+  {
+   "id": "sgu-3",
+   "title": "Ten balls on pitch three",
+   "after": {
+    "beat": "sgu-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-sgu-3",
+    "title": "Ten balls on pitch three",
+    "category": "fans",
+    "place": "compound:pitch-3",
+    "size": "big",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The girls' academy trains on pitch three after you on Thursdays. {kidfan.short} is waiting by the bag of balls when you come off.",
+     "{if arc.trial==0}She's polite. She calls you by your surname now.{/if}"
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "kidfan",
+       "say": [
+        "\"Ten balls. I'll call them. If you get more than seven I'll stop asking you for your boots.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Call them, then.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "easy",
+         "label": "\"Go easy on me.\"",
+         "tone": "humble",
+         "goto": "play"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "{kidfan.short}'s ten",
+        "intro": "Pitch three, Thursday. Ten balls, and she calls every one.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "call-it",
+           "balls": 3,
+           "line": "\"I say the corner, you hit it. Like the coaches do.\""
+          },
+          {
+           "kind": "props",
+           "balls": 2,
+           "line": "\"Tyre. Then the bucket. We use a bucket too.\""
+          },
+          {
+           "kind": "crossbar",
+           "balls": 1
+          },
+          {
+           "kind": "far",
+           "balls": 2,
+           "line": "\"From where I shoot from.\""
+          },
+          {
+           "kind": "corners",
+           "balls": 1
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. Double or nothing. I always do double or nothing.\""
+          }
+         ],
+         "lines": {
+          "hit": "\"Fine.\"",
+          "wide": "\"I'd have scored that.\"",
+          "streak3": "\"Okay. You're okay.\"",
+          "wrong": "\"Other corner. I said the other corner.\"",
+          "double:miss": "\"Ha.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "kidfan",
+         "lines": [
+          "\"Ten.\"",
+          "\"Twenty.\"",
+          "\"Thirty.\"",
+          "\"Forty.\"",
+          "\"Fifty.\"",
+          "\"Sixty.\"",
+          "\"Seventy.\"",
+          "\"Eighty.\"",
+          "\"Ninety.\"",
+          "\"And a hundred. I want your boots anyway.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "c-stop"
+        ],
+        [
+         "activity.score>=7",
+         "c-good"
+        ],
+        [
+         "",
+         "c-poor"
+        ]
+       ]
+      },
+      "c-good": {
+       "who": "kidfan",
+       "say": [
+        "\"{activity.tens}.\" She thinks about it. \"I'm still asking for your boots.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"You can have them when I'm done.\"",
+         "tone": "kind",
+         "end": "good"
+        }
+       ]
+      },
+      "c-poor": {
+       "who": "kidfan",
+       "say": [
+        "\"{activity.tens}. I got eighty last week.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Show me, then.\"",
+         "tone": "humble",
+         "end": "poor"
+        }
+       ]
+      },
+      "c-stop": {
+       "who": "kidfan",
+       "say": [
+        "\"You can't stop. We don't stop.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Fair.\"",
+         "tone": "humble",
+         "end": "poor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "She writes your score on her hand. On Monday she's done the same drill nine times and beaten it.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "respect": 6,
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "did-ten-balls-with-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": "activity.tens"
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "She shows you. She gets eighty. She doesn't say anything, she just picks up the cones.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "respect": 2,
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": "activity.tens"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "A season on, she wants ten balls with you"
+  },
+  {
+   "id": "sgu-4",
+   "title": "The text",
+   "after": {
+    "beat": "sgu-1",
+    "seasons": [
+     2,
+     2
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-sgu-4",
+    "title": "The text",
+    "category": "fans",
+    "place": "home:sofa",
+    "size": "big",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A text from a number you don't know. \"It's me. Got your number off my coach. I've been released from the academy. I think I'm going to stop. Sorry. I just wanted to tell you.\""
+    ],
+    "talk": {
+     "start": "x1",
+     "nodes": {
+      "x1": {
+       "who": "kidfan",
+       "say": [
+        "Three dots for a long time. Then: \"Was I any good? Be honest.\""
+       ],
+       "replies": [
+        {
+         "id": "good",
+         "label": "\"You were good. You still are. One club said no.\"",
+         "tone": "honest",
+         "goto": "x2"
+        },
+        {
+         "id": "me",
+         "label": "\"I got released at fifteen. Did I ever tell you?\"",
+         "tone": "kind",
+         "goto": "x2"
+        },
+        {
+         "id": "ok",
+         "label": "\"Do what makes you happy.\"",
+         "tone": "calm",
+         "end": "stop"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "stop"
+        }
+       ]
+      },
+      "x2": {
+       "who": "kidfan",
+       "say": [
+        "\"Really?\""
+       ],
+       "replies": [
+        {
+         "id": "trial",
+         "label": "\"There's an open trial at a club down the road in May. Go.\"",
+         "tone": "brave",
+         "end": "go"
+        },
+        {
+         "id": "rest",
+         "label": "\"Really. Have a rest, then decide.\"",
+         "tone": "kind",
+         "end": "go"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "\"Okay.\" Two days later her coach rings the club down the road. You never find out what he said.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "respect": 4,
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "talked-me-out-of-stopping",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "quit": 0
+         }
+        }
+       }
+      ],
+      "stop": [
+       {
+        "text": "\"Okay. Thanks.\" She stops. You see her at the next home game in the stand, in your shirt, with her mates.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "quit": 1
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "A season on, she's had enough"
+  },
+  {
+   "id": "sgu-5",
+   "title": "Her own shirt",
+   "after": {
+    "beat": "sgu-1",
+    "seasons": [
+     3,
+     4
+    ]
+   },
+   "n": 5,
+   "event": {
+    "id": "arc-sgu-5",
+    "title": "Her own shirt",
+    "category": "fans",
+    "place": "compound:reception",
+    "size": "big",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Years on. An envelope at the training ground with your name on it in handwriting you know.",
+     "{if arc.quit==0}It's a ticket. Women's team, first-team debut, at your ground, Sunday at two. \"Left wing. You're in row C. I'm not doing you a sign.\"{/if}",
+     "{if arc.quit==1}It's a card from {kidfan.short}. She's at university now, studying physio. \"I still come to every game.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go to the game.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.quit==0",
+        "text": "Row C. She walks out at your ground in her own shirt with her name on it, and she looks for you in the stand, and finds you. She scores. She points at row C.",
+        "effects": {
+         "fans": 4,
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "respect": 6,
+          "bond": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "came-to-my-debut",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "her-shirt"
+        }
+       },
+       {
+        "text": "You write back. She sends a picture of a plastic skeleton with your shirt on it.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "she-stopped"
+        }
+       }
+      ]
+     },
+     {
+      "id": "miss",
+      "label": "You've got a game. Send her a text.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.quit==0",
+        "text": "You send a text at five to two. She scores at twenty past and sends a photo of row C, empty, with a thumbs up.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-ticket"
+        }
+       },
+       {
+        "text": "You send a text. She sends back a photo of her, at the stadium, in the stand.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "she-stopped"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "Years on, the girl from the sign"
+  }
+ ]
+}

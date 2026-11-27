@@ -1,0 +1,261 @@
+{
+ "id": "arc-the-ref-remembers",
+ "title": "He remembers",
+ "owner": "referee",
+ "summary": "The referee who has your name in his head is doing your game again. Whatever happened between you last time, he hasn't forgotten. A season on, he's doing his last one.",
+ "size": "small",
+ "about": {
+  "who": [
+   "referee"
+  ],
+  "tone": [
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "referee",
+   "pick": "referee"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "shook-hands",
+   "title": "Shook hands",
+   "text": "The referee who had your name in his head shook your hand on his last day."
+  },
+  {
+   "id": "arms-folded",
+   "title": "Arms folded",
+   "text": "You kept your arms folded at the referee's last game. There's a photo."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "rrm-1",
+   "title": "The coin toss",
+   "n": 1,
+   "event": {
+    "id": "arc-rrm-1",
+    "title": "The coin toss",
+    "category": "rivals",
+    "place": "stadium:pitch",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "{referee.name} is doing your game. At the coin toss he looks at you a second longer than he looks at anyone else.",
+     "{if mem(referee,'called-me-a-cheat')}Last time you called him a cheat in the tunnel.{/if}",
+     "{if mem(referee,'gave-me-a-fair-hearing')}Last time he heard you out, and he was fair.{/if}",
+     "{if mem(referee,'signed-my-lads-shirt')}You signed his son's shirt once.{/if}"
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "referee",
+       "say": [
+        "\"Afternoon. I'll be watching the arms at corners. Yours included. Clear?\""
+       ],
+       "replies": [
+        {
+         "id": "clear",
+         "label": "\"Clear.\"",
+         "tone": "calm",
+         "end": "clear"
+        },
+        {
+         "id": "fair",
+         "label": "\"Just be fair, ref.\"",
+         "tone": "confident",
+         "goto": "r2"
+        },
+        {
+         "id": "cheek",
+         "label": "\"Watch theirs and all.\"",
+         "tone": "fiery",
+         "end": "cheek"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "clear"
+        }
+       ]
+      },
+      "r2": {
+       "who": "referee",
+       "say": [
+        "\"I'm always fair. You'll get what you earn.\""
+       ],
+       "replies": [
+        {
+         "id": "clear",
+         "label": "\"Fair enough.\"",
+         "tone": "calm",
+         "end": "clear"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "clear": [
+       {
+        "text": "He gives you two free kicks you'd have argued about any other week. In the seventy-ninth minute he books you for a shirt pull you did do.",
+        "npc": [
+         {
+          "slot": "referee",
+          "respect": 4,
+          "grudge": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "clear"
+         }
+        }
+       }
+      ],
+      "cheek": [
+       {
+        "text": "He writes something on his card before the game's even started. Every fifty-fifty goes their way for half an hour.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "gave-me-cheek-at-the-toss",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cheek"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "The referee is doing your game again"
+  },
+  {
+   "id": "rrm-2",
+   "title": "His last game",
+   "after": {
+    "beat": "rrm-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-rrm-2",
+    "title": "His last game",
+    "category": "rivals",
+    "place": "stadium:tunnel",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on. It's {referee.short}'s last game before he retires. Both teams are meant to clap him out.",
+     "{if arc.path=='cheek'}He sees you in the line and his face doesn't move.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "clap",
+      "label": "Clap him out with the rest.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You clap. At full time he finds you in the tunnel and shakes your hand, which he's never done with anyone.",
+        "npc": [
+         {
+          "slot": "referee",
+          "respect": 4,
+          "bond": 6,
+          "grudge": -6
+         }
+        ],
+        "arc": {
+         "end": "shook-hands"
+        }
+       }
+      ]
+     },
+     {
+      "id": "arms",
+      "label": "Keep your arms folded.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "The cameras get it. A paper runs a picture of you with your arms folded and him walking past.",
+        "effects": {
+         "reputation": -2
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "end": "arms-folded"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "A season on, the referee's last game"
+  }
+ ]
+}

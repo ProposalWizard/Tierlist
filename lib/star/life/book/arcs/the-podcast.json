@@ -1,0 +1,302 @@
+{
+ "id": "arc-the-podcast",
+ "title": "Two lads and a microphone",
+ "owner": "pal",
+ "summary": "Your old school friend has started a podcast in his spare room and wants you on it. Eleven listeners, and one of them is a journalist. A season on, it has rather more.",
+ "size": "small",
+ "about": {
+  "who": [
+   "old school friend",
+   "fame"
+  ],
+  "tone": [
+   "funny",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "pal",
+   "pick": "pal"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "on-the-pod",
+   "title": "On the pod",
+   "text": "You went back on your friend's podcast and nobody got fined."
+  },
+  {
+   "id": "a-listener",
+   "title": "A listener",
+   "text": "You listen to your friend's podcast in the car, which is more than most of his friends do."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "pod-1",
+   "title": "The spare room",
+   "n": 1,
+   "event": {
+    "id": "arc-pod-1",
+    "title": "The spare room",
+    "category": "fame",
+    "place": "town:pals-house",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{pal.name} has a microphone on a stand in his spare room, two sofa cushions gaffer-taped to the wall and eleven listeners. He wants you on episode twelve."
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "pal",
+       "say": [
+        "\"Forty minutes. School stuff, a bit of football, the PE teacher. Nothing you'd get fined for. Probably.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Go on. Episode twelve.\"",
+         "tone": "kind",
+         "goto": "p2"
+        },
+        {
+         "id": "club",
+         "label": "\"I'll have to ask the club.\"",
+         "tone": "honest",
+         "end": "club"
+        },
+        {
+         "id": "no",
+         "label": "\"Mate, I can't.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "p2"
+        }
+       ]
+      },
+      "p2": {
+       "who": "pal",
+       "say": [
+        "He's already recording. \"So. Is the gaffer actually as angry as he looks?\""
+       ],
+       "replies": [
+        {
+         "id": "honest",
+         "label": "\"Worse. He threw a melon once.\"",
+         "tone": "reckless",
+         "end": "melon"
+        },
+        {
+         "id": "safe",
+         "label": "\"He's fine. Great man.\"",
+         "tone": "calm",
+         "end": "safe"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "melon": [
+       {
+        "text": "Episode twelve gets four hundred listens. One of them works for a paper, and on Thursday there's a small piece about a melon.",
+        "effects": {
+         "fame": 2,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "did-his-podcast",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "melon"
+         }
+        }
+       }
+      ],
+      "safe": [
+       {
+        "text": "It's the dullest forty minutes he's ever recorded. He puts it out anyway, and his nan says it's the best one.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "did-his-podcast",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "safe"
+         }
+        }
+       }
+      ],
+      "club": [
+       {
+        "text": "The club says no in four words. {pal.short} says fair enough and does an episode about you without you.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"No worries.\" Episode twelve is about his car.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "Your old friend wants you on his podcast"
+  },
+  {
+   "id": "pod-2",
+   "title": "Episode sixty",
+   "after": {
+    "beat": "pod-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-pod-2",
+    "title": "Episode sixty",
+    "category": "fame",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {pal.short}'s podcast has a sponsor now, a van hire firm, and it's on episode sixty.",
+     "{if arc.path=='melon'}The melon one is still the most listened to. People shout \"melon\" at you in the street.{/if}",
+     "{if arc.path=='safe'}He plays your episode when he can't get to sleep.{/if}",
+     "{if arc.path=='no'}He's had three players from other clubs on it since.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "back",
+      "label": "Text him: \"Have me back on.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "Episode sixty-one. You talk about school for an hour and nobody gets fined. He sends you the listening figures every week for a month.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "on-the-pod"
+        }
+       }
+      ]
+     },
+     {
+      "id": "listen",
+      "label": "Just listen to it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "You listen to episode sixty in the car. He mentions you twice, kindly.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "a-listener"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "A season on, the podcast"
+  }
+ ]
+}

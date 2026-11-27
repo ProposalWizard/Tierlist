@@ -1,0 +1,898 @@
+{
+ "id": "arc-the-nemesis",
+ "title": "Him",
+ "owner": "rival",
+ "summary": "There's one centre half who wins every header against you, wherever either of you plays. A shove, a war of words in the papers, a charity day with him in goal, his move to the club you hate, and a last game where one of you gets the final word.",
+ "size": "big",
+ "about": {
+  "who": [
+   "rival player",
+   "local reporter",
+   "the nemesis across clubs"
+  ],
+  "tone": [
+   "tense",
+   "funny",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.3
+ },
+ "cast": [
+  {
+   "slot": "rival",
+   "pick": "rival"
+  },
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "score": 0,
+  "best": 0,
+  "press": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "even",
+   "title": "Even",
+   "text": "One centre half followed you round the country for five seasons. By the end you were even, and you shook on it."
+  },
+  {
+   "id": "his",
+   "title": "His",
+   "text": "One centre half followed you round the country for five seasons, and he had the last word."
+  },
+  {
+   "id": "yours",
+   "title": "Yours",
+   "text": "One centre half followed you round the country for five seasons, and you had the last word."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "nem-1",
+   "title": "The header",
+   "n": 1,
+   "event": {
+    "id": "arc-nem-1",
+    "title": "The header",
+    "category": "rivals",
+    "place": "stadium:pitch",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "{rival.name} won every header against you today, eleven of them. On the last one he patted you on the head on the way down.",
+     "{if mem(rival,'squared-up-in-the-tunnel')}It's the same man from the tunnel.{/if}",
+     "{if mem(rival,'never-said-sorry-for-the-tackle')}It's the man you never said sorry to.{/if}"
+    ],
+    "talk": {
+     "start": "h1",
+     "nodes": {
+      "h1": {
+       "who": "rival",
+       "say": [
+        "In the tunnel he's waiting, still grinning. \"Eleven. I counted. Do you want me to write them down for you?\""
+       ],
+       "replies": [
+        {
+         "id": "shove",
+         "label": "Shove him.",
+         "tone": "reckless",
+         "end": "shove"
+        },
+        {
+         "id": "next",
+         "label": "\"Next time.\"",
+         "tone": "calm",
+         "end": "next"
+        },
+        {
+         "id": "laugh",
+         "label": "\"Write them down. I'll frame it.\"",
+         "tone": "confident",
+         "end": "laugh"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "next"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "shove": [
+       {
+        "text": "You shove him, he shoves back, six players get involved and a steward loses his hat. Both clubs get a letter.",
+        "effects": {
+         "boss": -2,
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "respect": 2,
+          "grudge": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "shoved-me-in-the-tunnel",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "war"
+         }
+        }
+       }
+      ],
+      "next": [
+       {
+        "text": "\"There's always a next time.\" He goes up the stairs two at a time.",
+        "npc": [
+         {
+          "slot": "rival",
+          "respect": 2,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cold"
+         }
+        }
+       }
+      ],
+      "laugh": [
+       {
+        "text": "He does write them down, on the back of a team sheet, and puts it through your club's letterbox on Monday. Eleven ticks.",
+        "npc": [
+         {
+          "slot": "rival",
+          "respect": 4,
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "sent-me-the-eleven-ticks",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "banter"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "One centre half has your number"
+  },
+  {
+   "id": "nem-2",
+   "title": "In the paper",
+   "after": {
+    "beat": "nem-1",
+    "weeks": [
+     2,
+     4
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-nem-2",
+    "title": "In the paper",
+    "category": "rivals",
+    "place": "home:sofa",
+    "size": "big",
+    "rarity": "follow-up",
+    "template": "phone-call",
+    "screen": "dial",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{reporter.name} rings. {rival.short} has done an interview. Asked about you, he said: \"Good lad. Can't head it.\" She wants your answer for tomorrow's paper."
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "reporter",
+       "say": [
+        "\"I'll print whatever you say. I'd rather it was good.\""
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"He's right. I'm working on it.\"",
+         "tone": "humble",
+         "end": "humble"
+        },
+        {
+         "id": "calm",
+         "label": "\"He's a good player. See you next time.\"",
+         "tone": "calm",
+         "end": "calm"
+        },
+        {
+         "id": "fire",
+         "label": "\"He can't run. He's never needed to.\"",
+         "tone": "fiery",
+         "end": "fire"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "calm"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "humble": [
+       {
+        "text": "\"He's right. I'm working on it.\" It runs small on page sixty. He texts you a picture of it: \"Respect.\"",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 6,
+          "grudge": -4
+         },
+         {
+          "slot": "reporter",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "press": "humble"
+         }
+        }
+       }
+      ],
+      "calm": [
+       {
+        "text": "Page sixty, three lines. Nobody reads it except him.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "press": "calm"
+         }
+        }
+       }
+      ],
+      "fire": [
+       {
+        "text": "\"He can't run.\" It's the back page. His club's fans print it on a banner.",
+        "effects": {
+         "fame": 3,
+         "reputation": -2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 10
+         },
+         {
+          "slot": "reporter",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "gave-me-the-back-page",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "press": "fire"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The reporter wants your answer to what he said"
+  },
+  {
+   "id": "nem-3",
+   "title": "The charity day",
+   "after": {
+    "beat": "nem-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-nem-3",
+    "title": "The charity day",
+    "category": "rivals",
+    "place": "compound:pitch-1",
+    "size": "big",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. A charity day on a training pitch, both clubs' players, a bucket for the hospice. Somebody has had a joke idea. {rival.short} is in goal, in gloves two sizes too big, and you have ten balls.",
+     "{if arc.press=='fire'}He's had \"CAN'T RUN\" printed on the back of his goalkeeper shirt.{/if}"
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "rival",
+       "say": [
+        "\"A pound a goal for the hospice off me. A pound a save off you. Go on, then. Head it in, if you like.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"A pound a goal. Get in goal.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "double",
+         "label": "\"Make it a tenner.\"",
+         "tone": "reckless",
+         "goto": "play"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "Him in goal",
+        "intro": "A charity day. Ten balls, {rival.short} in goal for some of them, the reporter counting.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "corners",
+           "balls": 2,
+           "line": "\"Warm-up. He's not in yet.\""
+          },
+          {
+           "kind": "keeper",
+           "balls": 3,
+           "line": "\"Right. He's in. A pound a goal.\""
+          },
+          {
+           "kind": "crossbar",
+           "balls": 1
+          },
+          {
+           "kind": "lights-out",
+           "balls": 2,
+           "line": "\"Somebody has turned the floodlights off. For the hospice.\""
+          },
+          {
+           "kind": "far",
+           "balls": 1
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. Him in goal. Twenty or ten off.\""
+          }
+         ],
+         "lines": {
+          "keeper:saved": "\"He's pointing at his gloves.\"",
+          "keeper:hit": "\"He's pointing at the defender. There isn't one.\"",
+          "hit": "\"That's a pound.\"",
+          "streak3": "\"The hospice are doing well out of this.\"",
+          "double:miss": "\"He's doing a lap of honour.\""
+         },
+         "keeperSlot": "rival"
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "reporter",
+         "lines": [
+          "\"Ten.\"",
+          "\"Twenty.\"",
+          "\"Thirty.\"",
+          "\"Forty.\"",
+          "\"Fifty.\"",
+          "\"Sixty.\"",
+          "\"Seventy.\"",
+          "\"Eighty.\"",
+          "\"Ninety.\"",
+          "\"And a hundred. He owes the hospice a fortune.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "c-stop"
+        ],
+        [
+         "activity.score>=6",
+         "c-good"
+        ],
+        [
+         "",
+         "c-poor"
+        ]
+       ]
+      },
+      "c-good": {
+       "who": "rival",
+       "say": [
+        "\"{activity.tens}.\" He throws the gloves at you. \"I'm a centre half. I'm a very good centre half.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"You owe the hospice.\"",
+         "tone": "confident",
+         "end": "good"
+        }
+       ]
+      },
+      "c-poor": {
+       "who": "rival",
+       "say": [
+        "\"{activity.tens}. Can't head it, can't shoot it.\" He's having the time of his life."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Next season.\"",
+         "tone": "humble",
+         "end": "poor"
+        }
+       ]
+      },
+      "c-stop": {
+       "who": "rival",
+       "say": [
+        "\"Walking off? That's a save, that.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Fine.\"",
+         "tone": "humble",
+         "end": "poor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "He pays the hospice in cash out of his own wallet, in front of the cameras. Somebody puts the clip up with sad music.",
+        "effects": {
+         "fans": 3,
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "respect": 6,
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "beat-me-in-goal",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": "activity.tens",
+          "score": 1
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "You pay the hospice for every save. He tells every interviewer for a month.",
+        "effects": {
+         "reputation": 1
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 2,
+          "grudge": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": "activity.tens",
+          "score": -1
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on: a charity day, him in goal"
+  },
+  {
+   "id": "nem-4",
+   "title": "His move",
+   "after": {
+    "beat": "nem-1",
+    "seasons": [
+     1,
+     2
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-nem-4",
+    "title": "His move",
+    "category": "rivals",
+    "place": "home:sofa",
+    "size": "big",
+    "rarity": "callback",
+    "template": "feed-post",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{rival.short} has signed for your club's rivals, the ones down the road. He did a photo in their scarf. Your fans are sending you the photo.",
+     "{if arc.score==1}He kept the charity day gloves. They're in the background of the photo.{/if}"
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "rival",
+       "say": [
+        "A message from him, the night it's announced: \"Derby day. You and me. Bring your head.\""
+       ],
+       "replies": [
+        {
+         "id": "bring",
+         "label": "\"I'll bring it.\"",
+         "tone": "confident",
+         "end": "bring"
+        },
+        {
+         "id": "nice",
+         "label": "\"Good move for you, mate.\"",
+         "tone": "kind",
+         "end": "nice"
+        },
+        {
+         "id": "post",
+         "label": "Post the photo with a clown emoji.",
+         "tone": "reckless",
+         "end": "post"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "nice"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "bring": [
+       {
+        "text": "He sends back a picture of a header machine in his garden.",
+        "npc": [
+         {
+          "slot": "rival",
+          "respect": 4,
+          "grudge": 2
+         }
+        ]
+       }
+      ],
+      "nice": [
+       {
+        "text": "\"Cheers. I'm still winning every header.\"",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4
+         }
+        ]
+       }
+      ],
+      "post": [
+       {
+        "text": "Your fans love it. His new fans find your address. The club asks you to take it down and you do, an hour too late.",
+        "effects": {
+         "fans": 3,
+         "boss": -2,
+         "reputation": -2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "posted-a-clown-at-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "war"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "He's signed for the club you hate"
+  },
+  {
+   "id": "nem-5",
+   "title": "Derby day",
+   "after": {
+    "beat": "nem-4",
+    "weeks": [
+     6,
+     12
+    ]
+   },
+   "n": 5,
+   "event": {
+    "id": "arc-nem-5",
+    "title": "Derby day",
+    "category": "rivals",
+    "place": "stadium:pitch",
+    "size": "big",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Derby day, the late kick-off. Eighty-ninth minute, a cross from the right, you and {rival.short} going up for it together like you have for five seasons.",
+     "{if arc.path=='war'}Both sets of fans have been singing about the two of you since the warm-up.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "head",
+      "label": "Go up for it.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "chance": 0.5,
+        "text": "You win it. First header you've won off him in five seasons. It goes in off the post. He lies on the grass and laughs until he's booked for time-wasting.",
+        "effects": {
+         "fans": 6,
+         "fame": 4
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "lost-the-last-header",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "yours"
+        }
+       },
+       {
+        "chance": 0.5,
+        "text": "He wins it. Of course he wins it. He heads it out to the halfway line and points at his own head.",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "won-the-last-header",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "his"
+        }
+       }
+      ]
+     },
+     {
+      "id": "foot",
+      "label": "Let it drop and go for the volley.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "text": "You let it drop, and it drops perfectly, and you volley it over the bar. He shakes your hand at full time. \"Couldn't head it, could you.\"",
+        "npc": [
+         {
+          "slot": "rival",
+          "respect": 4,
+          "bond": 8,
+          "grudge": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "shook-hands-on-derby-day",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "even"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Derby day: the last word"
+  }
+ ]
+}

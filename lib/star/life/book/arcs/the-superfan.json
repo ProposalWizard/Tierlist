@@ -1,0 +1,461 @@
+{
+ "id": "arc-the-superfan",
+ "title": "The tattoo",
+ "owner": "fan",
+ "summary": "The season ticket by the tunnel has had your face tattooed on his calf. He wants you to see it. He'll be at every away game. You promise to come to his sixtieth. A season on, it's his birthday.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "season-ticket holder",
+   "fame"
+  ],
+  "tone": [
+   "funny",
+   "awkward",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "fan",
+   "pick": "fan"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "went": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-sixtieth",
+   "title": "His sixtieth",
+   "text": "A fan had your face tattooed on his leg, and you went to his sixtieth."
+  },
+  {
+   "id": "the-calf",
+   "title": "On his calf",
+   "text": "Your face is on a man's calf. You've seen it once."
+  }
+ ],
+ "promises": {
+  "p-sixtieth": {
+   "id": "p-sixtieth",
+   "to": "fan",
+   "text": "Go to {fan.short}'s sixtieth at the social club",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "fan-2",
+    "ends": [
+     "go"
+    ]
+   },
+   "dueText": "The Saturday night after next",
+   "remind": "\"Saturday. Social club. Eight. There's a buffet.\"",
+   "kept": {
+    "text": "You said you'd go to his sixtieth.",
+    "npc": [
+     {
+      "slot": "fan",
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd go to his sixtieth.",
+    "npc": [
+     {
+      "slot": "fan",
+      "bond": -8
+     }
+    ],
+    "remember": [
+     {
+      "slot": "fan",
+      "tag": "didnt-come-to-my-sixtieth",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "fan-1",
+   "title": "His calf",
+   "n": 1,
+   "event": {
+    "id": "arc-fan-1",
+    "title": "His calf",
+    "category": "fans",
+    "place": "stadium:car-park",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "{fan.name}, the season ticket by the tunnel, is waiting by the players' car park with his trouser leg rolled up. Your face is on his calf, in colour. It looks a bit like you."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "fan",
+       "say": [
+        "\"Four hours. I went to the man who did the badge on my back. Do you like it? Be honest.\""
+       ],
+       "replies": [
+        {
+         "id": "love",
+         "label": "\"I love it.\"",
+         "tone": "kind",
+         "goto": "t2"
+        },
+        {
+         "id": "honest",
+         "label": "\"It's got my nose wrong.\"",
+         "tone": "honest",
+         "goto": "t2"
+        },
+        {
+         "id": "why",
+         "label": "\"Why?\"",
+         "tone": "cold",
+         "end": "why"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "t2"
+        }
+       ]
+      },
+      "t2": {
+       "who": "fan",
+       "say": [
+        "\"I'm sixty the Saturday after next. Social club. Would you come? Ten minutes. I'll tell no one.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll come. I promise.\"",
+         "tone": "kind",
+         "end": "promised",
+         "promise": "p-sixtieth"
+        },
+        {
+         "id": "maybe",
+         "label": "\"I'll try.\"",
+         "tone": "calm",
+         "end": "maybe"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "promised": [
+       {
+        "text": "He's told forty people by Sunday. The social club orders more sausage rolls.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "promised-my-sixtieth",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "promised"
+         }
+        }
+       }
+      ],
+      "maybe": [
+       {
+        "text": "\"Course.\" He rolls his trouser leg back down.",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "maybe"
+         }
+        }
+       }
+      ],
+      "why": [
+       {
+        "text": "\"Because you're mine,\" he says, and rolls his trouser leg down, and goes home.",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "asked-why-about-the-tattoo",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "why"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "A fan wants to show you something"
+  },
+  {
+   "id": "fan-2",
+   "title": "The social club",
+   "after": {
+    "beat": "fan-1",
+    "weeks": [
+     1,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-fan-2",
+    "title": "The social club",
+    "category": "fans",
+    "place": "town:social-club",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "promise(p-sixtieth)"
+     ]
+    },
+    "setup": [
+     "Saturday night. The social club has a banner with your face on it, copied from his calf. You can see the car park from your car."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go in.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "The room goes silent and then very loud. You stay an hour, not ten minutes. His wife cries. He shows his calf to you again, next to your actual face, for a photo.",
+        "effects": {
+         "fans": 4,
+         "fame": 1
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "respect": 6,
+          "bond": 14
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "came-to-my-sixtieth",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "home",
+      "label": "Drive home.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "You drive home. On Monday there's a slice of birthday cake in clingfilm on your car windscreen with no note.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": -10
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": 0
+         }
+        },
+        "promiseBroken": [
+         "p-sixtieth"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "His sixtieth at the social club"
+  },
+  {
+   "id": "fan-3",
+   "title": "The away end",
+   "after": {
+    "beat": "fan-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-fan-3",
+    "title": "The away end",
+    "category": "fans",
+    "place": "away:stadium",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. A long away trip on a Tuesday, three hundred in the away end. He's at the front, trouser leg rolled up in the rain.",
+     "{if arc.went==1}The photo from his sixtieth is his profile picture.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "clap",
+      "label": "Go over and clap him.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.went==1",
+        "text": "He holds his calf up to the fence. You hold your face next to it for the photographers.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "the-sixtieth"
+        }
+       },
+       {
+        "text": "He claps back. It's still your face on his calf.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-calf"
+        }
+       }
+      ]
+     },
+     {
+      "id": "tunnel",
+      "label": "Head straight down the tunnel.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.went==1",
+        "text": "He waves at your back.",
+        "arc": {
+         "end": "the-sixtieth"
+        }
+       },
+       {
+        "text": "He rolls his trouser leg down.",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "end": "the-calf"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "A season on, the fan"
+  }
+ ]
+}

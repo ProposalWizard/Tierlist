@@ -1,0 +1,285 @@
+{
+ "id": "arc-the-fines-book",
+ "title": "The fines book",
+ "owner": "capt",
+ "summary": "The senior pros run a fines book: late, wrong socks, phone at dinner. This week you're in it for something you didn't do. A season on, you're asked to run it.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate: the captain",
+   "dressing room"
+  ],
+  "tone": [
+   "funny",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "capt",
+   "pick": "squad",
+   "where": [
+    "veteran"
+   ],
+   "order": "best"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-book",
+   "title": "The book",
+   "text": "You were fined for something you didn't do. A season later you ran the fines book."
+  },
+  {
+   "id": "not-the-book",
+   "title": "Not the book",
+   "text": "You turned down the fines book, and got fined for your haircut."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "fnb-1",
+   "title": "Fined",
+   "n": 1,
+   "event": {
+    "id": "arc-fnb-1",
+    "title": "Fined",
+    "category": "squad",
+    "place": "compound:dressing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "capt",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "squad.any(veteran)"
+     ]
+    },
+    "setup": [
+     "The fines book is a red notebook that lives on the physio bed. {capt.short} reads it out every Friday. This week: \"{you.short}, phone at dinner, twenty quid.\" It wasn't you. It was the lad next to you."
+    ],
+    "talk": {
+     "start": "f1",
+     "nodes": {
+      "f1": {
+       "who": "capt",
+       "say": [
+        "\"Twenty quid in the jar. Anything to say?\""
+       ],
+       "replies": [
+        {
+         "id": "pay",
+         "label": "Pay it.",
+         "tone": "humble",
+         "end": "paid"
+        },
+        {
+         "id": "grass",
+         "label": "\"It was him, not me.\"",
+         "tone": "honest",
+         "goto": "f2"
+        },
+        {
+         "id": "appeal",
+         "label": "\"I'd like to appeal.\"",
+         "tone": "confident",
+         "goto": "f3"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "paid"
+        }
+       ]
+      },
+      "f2": {
+       "who": "capt",
+       "say": [
+        "The lad next to you goes red. \"Grassing's forty,\" {capt.short} says. \"It's in the rules. Page one.\""
+       ],
+       "replies": [
+        {
+         "id": "pay",
+         "label": "Pay the forty.",
+         "tone": "humble",
+         "end": "grassed"
+        }
+       ]
+      },
+      "f3": {
+       "who": "capt",
+       "say": [
+        "\"Appeals are heard by the court.\" The court is three senior pros on the bench. They vote in about a second."
+       ],
+       "replies": [
+        {
+         "id": "pay",
+         "label": "Pay double.",
+         "tone": "humble",
+         "end": "paid"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "paid": [
+       {
+        "text": "You put the twenty in the jar. The lad next to you buys your coffee for a week without being asked.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "respect": 4,
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "paid"
+         }
+        }
+       }
+      ],
+      "grassed": [
+       {
+        "text": "You pay forty. The lad pays his twenty. For a month nobody passes you the ketchup.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "grassed"
+         }
+        },
+        "noteSquad": "grassed-in-the-fines-book"
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "You're in the fines book"
+  },
+  {
+   "id": "fnb-2",
+   "title": "The red notebook",
+   "after": {
+    "beat": "fnb-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-fnb-2",
+    "title": "The red notebook",
+    "category": "squad",
+    "place": "compound:dressing-room",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "capt",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. {capt.short} is leaving in the summer. On Friday he hands you the red notebook in front of everyone.",
+     "{if arc.path=='grassed'}Somebody coughs the word \"forty\".{/if}"
+    ],
+    "choices": [
+     {
+      "id": "take",
+      "label": "Take it and read out the first fine.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "text": "\"{capt.short}. Handing over late. Fifty.\" The room goes up. He pays it in coins.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "respect": 4,
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "the-book"
+        }
+       }
+      ]
+     },
+     {
+      "id": "pass",
+      "label": "\"Give it to someone else.\"",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "text": "He gives it to the loudest lad in the room, who fines you on his first day for a haircut.",
+        "npc": [
+         {
+          "slot": "capt",
+          "respect": -1
+         }
+        ],
+        "arc": {
+         "end": "not-the-book"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "A season on, the fines book"
+  }
+ ]
+}
