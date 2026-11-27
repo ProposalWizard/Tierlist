@@ -170,7 +170,7 @@ function drawTop5(t) { const T = D.timing, order = [5, 4, 3, 2, 1], len = { 5: T
   let gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(0,0,0,.25)"); gr.addColorStop(0.55, "rgba(0,0,0,.05)"); gr.addColorStop(1, "rgba(0,0,0,.7)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
   sparkles(t);
   // the player (rank 1: Madueke, then the glitch, then Yamal)
-  if (sub === "n") { const im = IM["c" + cur]; if (im) { const fade = cl(ph * 5) * (1 - cl((ph - step + 0.12) * 9)); figure(im, ph, step, PC); g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); } }
+  if (sub === "n") { const im = IM["c" + cur]; if (im) { const fade = cl(ph * 5) * (1 - cl((ph - step + 0.12) * 9)); figure(im, ph, step, PC, rowOf(cur).zoom || 1); g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); } }
   else if (sub === "mad") { if (IM.mad) { figure(IM.mad, ph, step, PC); g.save(); g.globalAlpha = cl(ph * 5); g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); } }
   else if (sub === "gl") glitchFigure(IM.mad, IM.c1, gp, t, rowOf(1).zoom || 1);
   else { figure(IM.c1, 0.5 + py, step, PC, rowOf(1).zoom || 1); g.save(); g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); }

@@ -21,13 +21,8 @@ rows = []
 for rk, name, key, cut, badge, flag in L:
     p = FM[key]; assert CLUB.get(p["team"]) == badge, (name, p["team"], badge)   # the badge must be the club FotMob says they are at now
     rows.append({"rank": rk, "name": name, "cut": f"{F}/cut/{cut}.png" if cut else None, "badge": f"{F}/badge2/{badge}.png", "flag": f"{F}/flag/{flag}.png"})
-# the new photos are agency close-ups at very different distances: scale each so every head is about the same size (head share of the cut-out judged by eye)
-HEAD = {"Adrien Rabiot": .30, "Arda Güler": .24, "Declan Rice": .45, "Donyell Malen": .20, "Elliot Anderson": .45, "Erling Haaland": .45, "Fermín López": .38, "Gabriel": .32, "Harry Kane": .42,
-        "Jude Bellingham": .26, "Kylian Mbappé": .26, "Lamine Yamal": .30, "Michael Olise": .22, "Nico Paz": .40, "Pascal Groß": .40, "Raphinha": .30, "Rodri": .30}
-from PIL import Image as _I
 for r in rows:
-    if r["name"] in HEAD and r["cut"]:
-        w, h = _I.open(r["cut"].replace("file://", "")).size; base = min(1456, 1160 / (w / h)); r["zoom"] = round(max(0.55, min(1.15, 330 / (HEAD[r["name"]] * base))), 2)
+    if r["name"] == "Jude Bellingham": r["zoom"] = 2.0   # his photo is a wide arms-out shot: scale up so his face and chest fill the screen (arms run off the edges)
 rows.sort(key=lambda r: r["rank"])
 def bucket(m):
     c, t = m["comp"], m["team"]
