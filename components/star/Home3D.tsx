@@ -39,6 +39,7 @@ import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import { Stick, pill, round } from "./Shop3D";
 import { sleepNight } from "@/lib/star/home3d/sleep";
+import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -167,7 +168,8 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
     let dead = false;
     const el = holder.current;
     if (!el) return;
-    if (restarts > 1) { setErrText("The phone stopped the 3D (out of memory?)"); setStatus("error"); return; }
+    // the phone took the 3D away: rebuilt silently AUTO_REBUILDS times (Low after the first), then the card
+    if (restarts > AUTO_REBUILDS) { setErrText("The phone stopped the 3D (out of memory?)"); setStatus("error"); return; }
     (async () => {
       try {
         const { startHome } = await import("@/lib/star/home3d/scene");
@@ -215,6 +217,8 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
       } catch (e) {
         if (dead) return; // closed mid-load (three3d/perf.ts isAbandonedScene): nothing to show
         console.error("3D home failed to load", e);
+        // tried again by itself on a fresh renderer (three3d/autoHeal.ts) before the card and its tap
+        if (restarts < AUTO_REBUILDS) { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
         if (!dead) { setErrText(e instanceof Error ? `${e.name}: ${e.message}` : String(e)); setStatus("error"); }
       }
     })();

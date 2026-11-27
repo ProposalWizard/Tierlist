@@ -10,12 +10,16 @@
  *   4. the device caps: Apple and desktop unchanged, Android capped at 1.5 pixels per point;
  *   5. the automatic resolution: down fast, up slowly, never under its floor, no flicker (resScale.ts);
  *   6. the governor on an Android phone: pixels first, then shadows and post (governor.ts).
+ *   7. the freeze (Harry, 27 Nov 2026: "it just shows like a frozen screen … we should never have a
+ *      feature where we have to press tap to reload"): a 3D picture the phone took away is rebuilt
+ *      silently twice a minute, and only then is "Tap to reload 3D" shown (three3d/autoHeal.ts).
  */
 import { acquireRenderer, abandonedContainer, isAbandonedScene, ABANDONED_SCENE } from "../../lib/star/three3d/perf";
 import { match3dButtons, type Match3dStatus } from "../../lib/star/matchView3d";
 import { tierHintFromGpu, gpuClass, deviceCaps, autoTierFromDevice } from "../../lib/star/three3d/quality";
 import { ResolutionScaler, cappedPixelRatio, resScale, resScaleState } from "../../lib/star/three3d/resScale";
 import { Governor } from "../../lib/star/three3d/governor";
+import { afterLoss, healReset, newHealState, AUTO_REBUILDS, HEAL_WINDOW_MS } from "../../lib/star/three3d/autoHeal";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -116,6 +120,25 @@ check(cappedPixelRatio(0.8, 1.5, 1, 1) === 0.8, "a place asking less than the fl
   const gApple = new Governor({ start: "medium", remember: false, now: () => 0 } as never);
   let t = 0; for (let i = 0; i < 2000; i++) { t += 30; gApple.frame(t); }
   check(gApple.index === 2, `Apple / desktop: the old rule, pixels only at ~33 fps (rung ${gApple.index})`);
+}
+
+// ── 7. the freeze: lost 3D heals itself, the tap only as a last resort ──
+{
+  // A canvas whose context the phone took: on screen, no new frames (the frozen picture / sad-face box).
+  // Before: the Home player kept that dead canvas and put it back on every return to Home; the match
+  // showed "3D ↻" at once. Now each place asks afterLoss what to do.
+  const h = newHealState();
+  check(AUTO_REBUILDS === 2, "two silent rebuilds before any tap");
+  check(afterLoss(h, 0) === "rebuild", "first freeze: rebuilt silently");
+  check(afterLoss(h, 5_000) === "rebuild", "second freeze: rebuilt silently");
+  check(afterLoss(h, 9_000) === "give-up", "third freeze within a minute: the fallback (tap to reload)");
+  check(afterLoss(h, 9_000 + HEAL_WINDOW_MS) === "rebuild", "a minute later it is a one-off again: rebuilt silently");
+  healReset(h);
+  check(afterLoss(h, 10) === "rebuild" && afterLoss(h, 20) === "rebuild", "after a tap the count starts again");
+  // the match while it heals: the 2D | 3D switch (no amber "3D ↻"), exactly as Match3DLayer passes it
+  const healing = true;
+  check(match3dButtons(true, healing ? "loading" : "lost").toggle, "match healing after a lost 3D: no '3D ↻' shown");
+  check(match3dButtons(true, "lost").retry, "match after two failed heals: '3D ↻' (last resort)");
 }
 
 if (problems.length) {
