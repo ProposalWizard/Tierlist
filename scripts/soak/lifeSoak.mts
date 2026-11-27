@@ -11,8 +11,18 @@
  *
  * It must show: at most 2 events a week and 1 medium-or-big; 6 weeks between
  * big ones; no event over its limit; memory at most 6 lines a person and 60
- * people; the life block under 25 KB; every follow-up fired or dropped; and it
+ * people; the life block under LIFE_BLOCK_LIMIT (50 KB); every follow-up fired or dropped; and it
  * lists any event that never fired (a broken trigger).
+ *
+ * The stories' part of the save is printed too: open records (life.arcs) and the finished
+ * stories packed one word each (life.fin, arcPack.ts).
+ *
+ * The kit room door (b4-the-door) needs a best of 90 from the dice at Thursday drills, all in
+ * season one at technique ~40: about 1 career in 200 gets there, so whether it fires in these
+ * 200 careers was luck (red in 3 of 8 runs). When it does not fire here, the soak takes real
+ * careers from this run, sitting at a Thursday with two nights done, re-rolls that Thursday's
+ * dice (own seeds) until a 90 comes up, and checks the door then opens and plays from that real
+ * state. Same thing checked (the door opens in real play), without the luck.
  */
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import * as C from "../../lib/star/clubs";
@@ -35,6 +45,18 @@ import { autoBeat } from "../../lib/star/life/talk";
 import { openPromises, MAX_OPEN_PROMISES } from "../../lib/star/life/promises";
 import { ARCS } from "../../lib/star/life/arcBook";
 
+/**
+ * The most the living world (career.life: people, memories, promises, stories) may take in one
+ * save, in bytes. Was 25 KB; Harry raised it on 27 Nov 2026 ("lift that limit, 50 to 100 KB").
+ * Why 50 and not 100: a whole save is 180-550 KB today, and each phone keeps up to 3 of them in
+ * the browser's storage (about 5 MB for the whole site), and sends the whole save to the online
+ * copy, gzipped, many times a session. 50 KB is at most ~9% on a big save and needs no other
+ * change. With finished stories packed at ~13 bytes each (arcPack.ts), the stories part of the
+ * biggest soak save is 1-2 KB, so 50 KB is room for thousands more finished stories, far more
+ * than a career can meet (one new story at most every 3 weeks). Going to 100 KB would buy
+ * nothing the book needs and costs every upload.
+ */
+const LIFE_BLOCK_LIMIT = 50_000;
 const CAREERS = Number(process.argv[2] ?? 200);
 const SEASONS = Number(process.argv[3] ?? 15);
 const WEEKS = 46;
@@ -57,6 +79,9 @@ let maxLife = 0, sumLife = 0, maxPeople = 0, maxMem = 0, eventMoney = 0, wageMon
 const perSeason: number[] = [];
 // Events v2 counters.
 const arcEnds = new Map<string, number>(), beatFires = new Map<string, number>();
+let storyBytesMax = 0, packedMax = 0, finChars = 0, finWords = 0;
+const DOOR = "b4-the-door";
+const doorSnaps: { c: CareerState; facts: Record<string, unknown>; arc: string; beat: string }[] = [];
 let arcsStarted = 0, arcsUnfinished = 0, promisesOpenAtEnd = 0, promisesKept = 0, promisesBroken = 0, maxOpenArcs = 0, arcBytesMax = 0;
 const unfinishedAt = new Map<string, number>();
 const t0 = Date.now();
@@ -131,7 +156,10 @@ function runCareer(n: number): { events: number; lifeBytes: number } {
       for (const [, run] of Object.entries(arcsOf(c))) {
         const den = run.cast.kitman;
         if (!den) continue;
-        for (const bb of bubblesFor(c, den, facts)) if (!bb.gold && rng() < 0.5) { const a = autoBeat(c, bb.arc, bb.beat, { rng, facts, pick }); if (a) { c = a.career; beatFires.set(bb.beat, (beatFires.get(bb.beat) ?? 0) + 1); } }
+        for (const bb of bubblesFor(c, den, facts)) if (!bb.gold && rng() < 0.5) {
+          const kit = arcsOf(c)[bb.arc];
+          if (bb.beat === "b3-thursdays" && doorSnaps.length < 12 && Number(kit?.v.nights ?? 0) >= 2 && !kit?.f[DOOR]?.length) doorSnaps.push({ c, facts, arc: bb.arc, beat: bb.beat });
+          const a = autoBeat(c, bb.arc, bb.beat, { rng, facts, pick }); if (a) { c = a.career; beatFires.set(bb.beat, (beatFires.get(bb.beat) ?? 0) + 1); } }
       }
       {
         const open = Object.values(arcsOf(c)).filter((r) => !r.done).length;
@@ -195,6 +223,9 @@ function runCareer(n: number): { events: number; lifeBytes: number } {
   }
   for (const p of c.life?.promises ?? []) { if (p.st === "open") promisesOpenAtEnd++; else if (p.st === "kept") promisesKept++; else promisesBroken++; }
   const bytes = c.life ? JSON.stringify(c.life).length : 0;
+  storyBytesMax = Math.max(storyBytesMax, JSON.stringify(c.life?.arcs ?? {}).length + (c.life?.fin?.length ?? 0));
+  const words = (c.life?.fin ?? "").split(" ").filter(Boolean).length;
+  packedMax = Math.max(packedMax, words); finWords += words; finChars += (c.life?.fin ?? "").length;
   pendingLeft += c.life?.pending.length ?? 0;
   for (const [id, k] of Object.entries(c.life?.fired ?? {})) {
     const e = EVENTS.find((x) => x.id === id);
@@ -213,11 +244,12 @@ check(repeatOk, "the same seed gave a different career (not repeatable)");
 // Reset counters after the repeat check, then the real run.
 fireCount.clear(); weeksTotal = 0; eventsTotal = 0; socialTotal = 0; chatsTotal = 0; followUpsFired = 0; dropped = 0; pendingLeft = 0;
 maxPeople = 0; maxMem = 0; eventMoney = 0; wageMoney = 0; callbacksShown = 0; carsLost = 0; perSeason.length = 0;
+storyBytesMax = 0; packedMax = 0; finChars = 0; finWords = 0; doorSnaps.length = 0;
 arcEnds.clear(); beatFires.clear(); unfinishedAt.clear(); arcsStarted = 0; arcsUnfinished = 0; promisesOpenAtEnd = 0; promisesKept = 0; promisesBroken = 0; maxOpenArcs = 0; arcBytesMax = 0;
 for (let n = 0; n < CAREERS; n++) {
   const r = runCareer(n);
   maxLife = Math.max(maxLife, r.lifeBytes); sumLife += r.lifeBytes;
-  check(r.lifeBytes < 25_000, "the life block passed 25 KB");
+  check(r.lifeBytes < LIFE_BLOCK_LIMIT, `the life block passed ${LIFE_BLOCK_LIMIT / 1000} KB`);
 }
 
 const never = EVENTS.filter((e) => !fireCount.has(e.id)).map((e) => e.id);
@@ -233,12 +265,32 @@ console.log(`repeatable: ${repeatOk ? "yes" : "NO"}`);
 const counts = [...fireCount.entries()].sort((a, b) => b[1] - a[1]);
 console.log(`most fired: ${counts.slice(0, 5).map(([k, v]) => `${k} ${v}`).join(", ")}`);
 console.log(`least fired: ${counts.slice(-5).map(([k, v]) => `${k} ${v}`).join(", ")}`);
+// The door from real Thursdays when the dice did not give a 90 here (see the top).
+function doorFromRealState(): string {
+  // Technique is about 40 then: a 90 is about 1 Thursday in 7,000, so up to 60,000 re-rolls.
+  for (let seed = 0; doorSnaps.length && seed < 60_000; seed++) {
+    const sn = doorSnaps[seed % doorSnaps.length];
+    const r = mulberry32(31337 + seed * 101);
+    const pick = (k: number) => Math.floor(r() * k);
+    const a = autoBeat(sn.c, sn.arc, sn.beat, { rng: r, facts: sn.facts, pick });
+    if (!a || Number(arcsOf(a.career)[sn.arc]?.v.best ?? 0) < 90) continue;
+    const m = arcMoment({ ...a.career, week: a.career.week + 1 }, "arrive:training", { rng: r, facts: sn.facts });
+    const door = m.screens.find((x) => x.beat === DOOR);
+    if (!door) return `a best of ${arcsOf(a.career)[sn.arc]?.v.best} after ${arcsOf(a.career)[sn.arc]?.v.nights} nights, but the door did not open`;
+    return autoBeat(m.career, door.arc, door.beat, { rng: r, facts: sn.facts, pick }) ? "ok" : "the door opened but would not play";
+  }
+  return `no 90 in 60,000 re-rolls of ${doorSnaps.length} real Thursdays`;
+}
+let doorNote = "";
+if (!beatFires.get(DOOR)) { const d = doorFromRealState(); doorNote = d === "ok" ? "not by these dice; opens and plays from a real Thursday re-rolled to 90" : d; if (d === "ok") beatFires.set(`${DOOR} (re-rolled)`, 1); check(d === "ok", `${DOOR} never fired, and from a real Thursday: ${d}`); }
 // Events v2: every arc reaches each of its endings; a beat seasons away fires; nothing left open at the end.
 for (const a of ARCS) for (const e of a.ends) check(arcEnds.has(`${a.id}:${e.id}`), `${a.id} never ended "${e.id}"`);
-for (const a of ARCS) for (const b of a.beats) check((beatFires.get(b.id) ?? 0) > 0 || b.event.trigger.when.includes("followUp") && b.id.includes("7b"), `${b.id} never fired`);
+for (const a of ARCS) for (const b of a.beats) check((beatFires.get(b.id) ?? 0) > 0 || b.id === DOOR || b.event.trigger.when.includes("followUp") && b.id.includes("7b"), `${b.id} never fired`);
 console.log(`stories: ${arcsStarted} started, ${arcsUnfinished} unfinished at the end (${[...unfinishedAt.entries()].map(([k, v]) => `${k} ×${v}`).join(", ") || "none"}); most open at once ${maxOpenArcs}; largest story in the save ${arcBytesMax} bytes`);
 console.log(`  endings: ${[...arcEnds.entries()].map(([k, v]) => `${k.split(":")[1]} ${v}`).join(", ")}`);
 console.log(`  beats: ${[...beatFires.entries()].map(([k, v]) => `${k} ${v}`).join(", ")}`);
+console.log(`  the kit room door: ${beatFires.get(DOOR) ?? 0} careers by the dice${doorNote ? ` (${doorNote})` : ""}`);
+console.log(`stories in the save: max ${(storyBytesMax / 1024).toFixed(1)} KB (open records, and at most ${packedMax} finished stories packed, ${finWords ? (finChars / finWords).toFixed(1) : 0} bytes each on average)`);
 console.log(`  promises: kept ${promisesKept}, broken ${promisesBroken}, still open at the end ${promisesOpenAtEnd}`);
 for (const [k, n] of problems) console.log(`  ✗ ${k} ×${n}`);
 if (!problems.size) console.log("all held");
