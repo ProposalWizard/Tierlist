@@ -30,6 +30,16 @@ interface TenableRow {
   created_at: string;
 }
 
+/** "records ", "Records" → one heading per topic however it was typed (shown as first written, capital first). */
+const topicNames = new Map<string, string>();
+function topicOf(category: string | null | undefined): string {
+  const t = (category ?? "").trim().replace(/\s+/g, " ");
+  if (!t) return "More";
+  const k = t.toLowerCase();
+  if (!topicNames.has(k)) topicNames.set(k, t.charAt(0).toUpperCase() + t.slice(1));
+  return topicNames.get(k)!;
+}
+
 export default async function TenableListPage() {
   const service = createServiceClient();
 
@@ -102,11 +112,11 @@ export default async function TenableListPage() {
         {/* Previous puzzles */}
         {preview && previous.length > 0 && (
           <div className="mb-8 space-y-8" data-tenable-topics>
-            {Array.from(new Set(previous.map((p) => p.category || "More"))).map((topic) => (
+            {Array.from(new Set(previous.map((p) => topicOf(p.category)))).map((topic) => (
               <section key={topic}>
                 <h2 className="mb-3 text-sm font-bold uppercase text-white">{topic}</h2>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {previous.filter((p) => (p.category || "More") === topic).map((p) => (
+                  {previous.filter((p) => topicOf(p.category) === topic).map((p) => (
                     <Link key={p.id} href={`/tenable/${p.id}`} className="group flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 p-4 transition-colors hover:border-emerald-600">
                       <div>
                         <h3 className="font-bold text-white group-hover:text-emerald-300">{p.title}</h3>
