@@ -1899,15 +1899,15 @@ export const ADMIN_GUIDES = {
     what: "The 3D phone flow (Harry, 19-20 Nov 2026, RUL-UI-008): tap Phone and an eye-blink opens on your hand holding the real phone, with your real 3D house behind it seen from your own eyes (blurred, one still frame). Put the phone away and the camera pulls back from your eyes into the normal 3D house, where you can walk round.",
     buttons: [
       { group: "The steps", items: [
-        ["Phone (bottom bar, on the Home picture)", "Your eyes open (1.2 s, see ?blink below) on your hand holding the phone. Waits until the house has loaded."],
-        ["The apps on the phone", "The real phone on a sample career. Messages, Squad, Social, Fixtures, Relationships, Kickabout and the others that live in the phone open and work on the glass (a relationship game only shows a note). Apps that leave the phone in the game (Shop, Store, Garden, Your house, Casino, Sponsors, Owner, Settings) only show a one-line note here."],
+        ["Phone (bottom bar, on the Home picture)", "Your eyes open (0.9 s, the game's; see ?blink below) on your hand holding the phone. Waits until the house has loaded."],
+        ["The apps on the phone", "The real phone on a sample career. Messages, Squad, Social, Fixtures, Relationships, Kickabout and the others that live in the phone open and work on the glass (a relationship game only shows a note). Sponsors, Shop, Store, Casino, Owner, Garden, Your house and Settings also open inside the phone, as in the game (27 Nov 2026): Sign / Decline and Store buys work on the sample career; buying or drinking a can and every “Open full screen ↗” button only show a one-line note here."],
         ["HOME (the phone's own bar)", "In an app: back to the phone's home screen. On the phone's home screen: the phone drops away and you are back on the Home screen."],
         ["BACK (the phone's own bar)", "In an app: back to the phone's home screen. On the phone's home screen: put the phone away. It lowers out of view while the room sharpens (still your eyes), then the camera pulls back to the house's normal camera."],
         ["The house (after BACK)", "The real 3D house: the stick or tap to walk, drag to look, doorways to other rooms, the wardrobe and cabinet cards. Its ‹ Home pill goes to the Home screen."],
         ["📱 Phone (in the house)", "The camera goes back into your eyes and the phone comes up again."],
       ] },
       { group: "Options in the address (to compare)", items: [
-        ["(no ?blink: B, Harry's pick)", "The Resident Evil 7 style eye-opening (1.2 s): soft almond-shaped lids open slowly with a small flutter, the blur clears, the head rights itself."],
+        ["(no ?blink: B, Harry's pick)", "The Resident Evil 7 style eye-opening (0.9 s, the game's since 27 Nov 2026; was 1.2 s): soft almond-shaped lids open slowly with a small flutter, the blur clears, the head rights itself."],
         ["?blink=A", "The Far Cry style, kept to compare (1.7 s): the eyes crack open, droop, open wider, half-blink, then open; a bright blurred double view that focuses."],
         ["?blink=old", "The straight-bars blink from before (0.8 s)."],
         ["(no ?cam: D, Harry's pick)", "The walking camera in the house: close like C, centred straight behind him, a little higher and looking a little down like A, a smooth follow. The game's camera too since 20 Nov 2026 (and the garden, 3D shop and casino), with pinch / wheel zoom."],
@@ -1918,7 +1918,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing is saved. The career is a made-up sample; the wardrobe's choice is forgotten on reload."],
     inGame: ["Not in the game. Harry judges it here first (Stage 3 of the tap-speed and 3D plan)."],
-    dev: "app/star-phone3d-dev/page.tsx + phone3d.css · the house is components/star/Home3D.tsx with pov (lib/star/home3d/scene.ts setPov / hold / renderOnce; absent = the house as before) and houseCam (scene.ts HOUSE_CAMS; absent or D = the game's camera since 20 Nov 2026, lib/star/three3d/followCam.ts) · the bars' drifting light and glow are off on the glass only (they repaint the bent layer every frame) · the phone is components/star/PhoneHome.tsx with fill + onPhoneHome, bent onto the glass with a CSS matrix3d from the render's printed corners · hand.webp from tools/phone3d/hand_phone_gta.py · ?film=1 = the stage alone on a film clock: window.__phone3dStep(ms) moves the CSS and the 3D one frame (videos are made frame by frame)",
+    dev: "app/star-phone3d-dev/page.tsx + phone3d.css · the house is components/star/Home3D.tsx with pov (lib/star/home3d/scene.ts setPov / hold / renderOnce; absent = the house as before) and houseCam (scene.ts HOUSE_CAMS; absent or D = the game's camera since 20 Nov 2026, lib/star/three3d/followCam.ts) · the bars' drifting light and glow are off on the glass only (they repaint the bent layer every frame) · the phone is components/star/PhoneHome.tsx with fill + onPhoneHome + apps (the in-phone apps, components/star/PhoneApps.tsx), bent onto the glass with a CSS matrix3d from the render's printed corners · hand.webp from tools/phone3d/hand_phone_gta.py · ?film=1 = the stage alone on a film clock: window.__phone3dStep(ms) moves the CSS and the 3D one frame (videos are made frame by frame)",
   },
   "/star-shop-dev": {
     title: "Menu shop (test)",

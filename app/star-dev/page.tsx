@@ -5149,6 +5149,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       isNew={(id) => appIsNew(career, id)}
       onOpened={(id) => setCareer(c => (c ? markAppOpened(c, id) : c))}
       {...glass}
+      // On the 3D phone every app works inside the glass (components/star/PhoneApps.tsx), with these same handlers.
+      apps={glass ? { sponsors: sponsorActions, onBuyKib: handleBuyKib, onUseCan: handleUseCan, onCareer: setCareer } : undefined}
     />
   );
   // The 3D phone (RUL-UI-008): the Phone tab opens it in your hand, your 3D house behind
@@ -5189,7 +5191,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onHome={() => handleNavigate("home")}
         onPutAway={() => { setHomeFromGarden(false); setPhase("home-3d"); }}
         onPhone={phoneFrom3d}
-        notice={lockNote}
+        notice={lockNote ?? sponsorNote}
       />
     );
   }
