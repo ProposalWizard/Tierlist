@@ -2,7 +2,7 @@
  "id": "arc-the-tackle",
  "title": "Late",
  "owner": "rival",
- "summary": "You go in late on their centre half and he comes off on a stretcher. It wasn't meant. What you do in the days after decides whether he's an enemy for life. A season on, he's fit, and you play them again.",
+ "summary": "You go in late on their centre half and he comes off on a stretcher. Weeks later, while he's in rehab, he gets in touch himself. A season on he's fit and you play them again, and in the end you're there for his last game.",
  "size": "small",
  "about": {
   "who": [
@@ -23,7 +23,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -36,6 +38,11 @@
    "id": "the-grudge",
    "title": "The grudge",
    "text": "He came back from the injury with your name in his head."
+  },
+  {
+   "id": "his-leeks",
+   "title": "The leeks",
+   "text": "You hurt a man by accident and then dug his allotment while he got better. On his last day he gave you his shirt and a box of leeks."
   }
  ],
  "promises": {},
@@ -195,6 +202,223 @@
    "hint": "A tackle goes wrong"
   },
   {
+   "id": "tck-1b-rehab",
+   "title": "Week six",
+   "after": {
+    "beat": "tck-1-tackle",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-tck-1b-rehab",
+    "title": "Week six",
+    "category": "rivals",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='visited'",
+      "then": "v1",
+      "else": "o1"
+     },
+     "nodes": {
+      "v1": {
+       "who": "rival",
+       "say": [
+        "A photo of a knee in a brace and a muddy allotment. \"Week six. Physio says I'm ahead. The leeks are behind. Fancy coming to dig?\""
+       ],
+       "replies": [
+        {
+         "id": "dig",
+         "label": "\"Saturday morning. I'll bring gloves.\"",
+         "tone": "kind",
+         "end": "dig"
+        },
+        {
+         "id": "photo",
+         "label": "\"Send me a photo of the leeks.\"",
+         "tone": "calm",
+         "end": "photo"
+        },
+        {
+         "id": "no",
+         "label": "\"Best not. People would talk.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      },
+      "o1": {
+       "who": "rival",
+       "say": [
+        "A text from a number you don't know. \"Got this off the wife's phone. I'll be back in March. Just so you know.\""
+       ],
+       "replies": [
+        {
+         "id": "sorry",
+         "label": "\"I'm glad. I am sorry. I didn't mean it.\"",
+         "tone": "honest",
+         "end": "sorry"
+        },
+        {
+         "id": "march",
+         "label": "\"See you in March.\"",
+         "tone": "cold",
+         "end": "march"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "silent"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "dig": [
+       {
+        "text": "He sits on an upturned bucket and tells you where to dig. You dig for three hours. He gives you a carrier bag of potatoes and a lecture on slugs.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 10,
+          "respect": 4,
+          "grudge": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "dug-my-allotment",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "dug"
+         }
+        }
+       }
+      ],
+      "photo": [
+       {
+        "text": "He sends one every week after that, leeks first and then the knee.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4,
+          "grudge": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "photo"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fair enough.\" The photos stop.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "no"
+         }
+        }
+       }
+      ],
+      "sorry": [
+       {
+        "text": "Nothing back for two days. Then: \"I know. Didn't stop it hurting.\"",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4,
+          "respect": 2,
+          "grudge": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "said-sorry-for-the-tackle",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "sorry2"
+         }
+        }
+       }
+      ],
+      "march": [
+       {
+        "text": "\"Bring shin pads.\"",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": -2,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "march"
+         }
+        }
+       }
+      ],
+      "silent": [
+       {
+        "text": "Read, at 22:14. You don't answer. He doesn't text again.",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "silent"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     }
+    ]
+   },
+   "hint": "He's in rehab. He might get in touch"
+  },
+  {
    "id": "tck-2-back",
    "title": "He's back",
    "after": {
@@ -244,7 +468,15 @@
          }
         ],
         "arc": {
-         "end": "the-visit"
+         "end": "the-visit",
+         "set": {
+          "ended": "the-visit"
+         },
+         "next": "tck-3-last",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -257,7 +489,15 @@
          }
         ],
         "arc": {
-         "end": "the-grudge"
+         "end": "the-grudge",
+         "set": {
+          "ended": "the-grudge"
+         },
+         "next": "tck-3-last",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -278,7 +518,15 @@
          }
         ],
         "arc": {
-         "end": "the-visit"
+         "end": "the-visit",
+         "set": {
+          "ended": "the-visit"
+         },
+         "next": "tck-3-last",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -289,6 +537,138 @@
           "grudge": 6
          }
         ],
+        "arc": {
+         "end": "the-grudge",
+         "set": {
+          "ended": "the-grudge"
+         },
+         "next": "tck-3-last",
+         "afterWeeks": [
+          40,
+          60
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     }
+    ]
+   },
+   "hint": "A season on, you play them again"
+  },
+  {
+   "id": "tck-3-last",
+   "title": "His last game",
+   "after": {
+    "beat": "tck-2-back",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-tck-3-last",
+    "title": "His last game",
+    "category": "rivals",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "walkout",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Two seasons on. It's {rival.name}'s last game before he retires, and it's against you. His kids are mascots. He's got a strapping on the knee you did, still.",
+     "{if arc.mid=='dug'}He's carrying a cardboard box under his arm in the tunnel. It's full of leeks.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "swap",
+      "label": "Ask for his shirt at full time.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.mid=='dug'",
+        "text": "He gives you the shirt and the box of leeks. \"You did the digging, you get the leeks.\" You still don't know what to do with leeks.",
+        "effects": {
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "gave-me-the-leeks",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "his-leeks"
+        }
+       },
+       {
+        "if": "!arc.path=='nothing' || arc.mid=='sorry2'",
+        "text": "He pulls it off and swaps. \"Mind how you go in, son.\" He's smiling.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4,
+          "respect": 2,
+          "grudge": -4
+         }
+        ],
+        "arc": {
+         "end": "the-visit"
+        }
+       },
+       {
+        "text": "He looks at your hand, then walks past it to his own fans.",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "end": "the-grudge"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Leave him to his own fans.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='visited'",
+        "text": "He comes and finds you anyway, in your dressing room, still in his boots, and shakes your hand.",
+        "arc": {
+         "end": "the-visit"
+        }
+       },
+       {
+        "text": "He does his lap of honour. He doesn't look at you once.",
         "arc": {
          "end": "the-grudge"
         }
@@ -304,7 +684,7 @@
      }
     ]
    },
-   "hint": "A season on, you play them again"
+   "hint": "Somebody's last game is coming up"
   }
  ]
 }

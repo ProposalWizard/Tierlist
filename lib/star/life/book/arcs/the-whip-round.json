@@ -2,7 +2,7 @@
  "id": "arc-the-whip-round",
  "title": "The whip-round",
  "owner": "mate",
- "summary": "A team-mate's partner has had a baby and the captain's doing a whip-round for a pram. What you put in the envelope gets noticed. A season later there's a christening.",
+ "summary": "A team-mate's partner has had a baby and the captain's doing a whip-round. Weeks later the new dad is falling apart in training on no sleep. A season on there's a christening, and after that a little girl at the training ground who knows exactly who you are.",
  "size": "small",
  "about": {
   "who": [
@@ -32,7 +32,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -45,6 +47,11 @@
    "id": "left-out",
    "title": "Left out",
    "text": "You got it wrong with the envelope, and you weren't on the christening list."
+  },
+  {
+   "id": "uncle",
+   "title": "Uncle",
+   "text": "You put your hand in your pocket and then your legs on the line for a team-mate with a new baby. His little girl calls you Uncle. So does everyone else, now."
   }
  ],
  "promises": {},
@@ -256,6 +263,154 @@
    "hint": "There's a whip-round going"
   },
   {
+   "id": "whp-1b-nosleep",
+   "title": "No sleep",
+   "after": {
+    "beat": "whp-1-envelope",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-whp-1b-nosleep",
+    "title": "No sleep",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "capt",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "capt",
+       "say": [
+        "{mate.short} has given the ball away four times in the first drill. {capt.short} pulls you to one side. \"He's had two hours' sleep in a week. The gaffer's about to drop him, and he can't afford to be dropped. Do something.\""
+       ],
+       "replies": [
+        {
+         "id": "run",
+         "label": "\"I'll do his extra running with him after.\"",
+         "tone": "kind",
+         "end": "covered"
+        },
+        {
+         "id": "drills",
+         "label": "\"I'll cover for him in the drills.\"",
+         "tone": "calm",
+         "end": "drills"
+        },
+        {
+         "id": "leave",
+         "label": "\"He'll have to get on with it.\"",
+         "tone": "cold",
+         "end": "left"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "covered": [
+       {
+        "text": "You run his laps with him in the rain and he talks about nappies the whole way. He keeps his place on Saturday.",
+        "effects": {
+         "energy": -6,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 10,
+          "respect": 4
+         },
+         {
+          "slot": "capt",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "ran-my-laps-when-the-baby-came",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "covered"
+         }
+        }
+       }
+      ],
+      "drills": [
+       {
+        "text": "You give him easy passes all morning. The gaffer notices, and lets it go.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "drills"
+         }
+        }
+       }
+      ],
+      "left": [
+       {
+        "text": "He's dropped for Saturday. {capt.short} looks at you like you've had a pram and not put anything in it.",
+        "npc": [
+         {
+          "slot": "capt",
+          "respect": -4,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "left"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "random"
+     },
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The new dad is struggling"
+  },
+  {
    "id": "whp-2-christening",
    "title": "The christening",
    "after": {
@@ -312,7 +467,15 @@
          }
         ],
         "arc": {
-         "end": "godparent"
+         "end": "godparent",
+         "set": {
+          "ended": "godparent"
+         },
+         "next": "whp-3-birthday",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -324,7 +487,15 @@
          }
         ],
         "arc": {
-         "end": "godparent"
+         "end": "godparent",
+         "set": {
+          "ended": "godparent"
+         },
+         "next": "whp-3-birthday",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -343,7 +514,15 @@
          }
         ],
         "arc": {
-         "end": "left-out"
+         "end": "left-out",
+         "set": {
+          "ended": "left-out"
+         },
+         "next": "whp-3-birthday",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -359,6 +538,120 @@
     ]
    },
    "hint": "A season on, a card in the post"
+  },
+  {
+   "id": "whp-3-birthday",
+   "title": "Her first birthday",
+   "after": {
+    "beat": "whp-2-christening",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-whp-3-birthday",
+    "title": "Her first birthday",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.short}'s little girl is one. He brings her to the training ground in a tiny shirt with the club badge on, and puts her down on the grass by the tunnel. She sets off, wobbling, straight towards you."
+    ],
+    "choices": [
+     {
+      "id": "pick",
+      "label": "Pick her up.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='big' || arc.mid=='covered'",
+        "text": "She grabs your nose and says something that's nearly your name. {mate.short} says she's been saying it all week. \"Uncle,\" his partner calls you, at the gate, and it sticks.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "my-girl-calls-him-uncle",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "uncle"
+        }
+       },
+       {
+        "if": "arc.path=='skipped'",
+        "text": "She cries. {mate.short} takes her back, politely.",
+        "arc": {
+         "end": "left-out"
+        }
+       },
+       {
+        "text": "She pats your face very seriously and goes back to her dad.",
+        "arc": {
+         "end": "godparent"
+        }
+       }
+      ]
+     },
+     {
+      "id": "wave",
+      "label": "Wave at her.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='skipped'",
+        "text": "She waves back, at everyone. You're one of everyone.",
+        "arc": {
+         "end": "left-out"
+        }
+       },
+       {
+        "text": "She waves back with both hands and sits down hard.",
+        "arc": {
+         "end": "godparent"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "random"
+     },
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "A small visitor at the training ground"
   }
  ]
 }

@@ -2,7 +2,7 @@
  "id": "arc-the-christmas-lights",
  "title": "Switch them on",
  "owner": "chairman",
- "summary": "The chairman has promised the council a player to switch on the town's Christmas lights, and it's you. It's a Thursday night, it's freezing, and there's a stage. A year on, the town asks again.",
+ "summary": "The chairman has volunteered you to switch on the town's Christmas lights. Weeks later a letter comes from a girl who was at the front, or the weather man wants you for his calendar. A year on the town asks again, and the year after that someone else wants the button.",
  "size": "small",
  "about": {
   "who": [
@@ -23,7 +23,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -36,6 +38,11 @@
    "id": "the-weather-man",
    "title": "The weather man",
    "text": "You said no, and the local weather man has done it ever since."
+  },
+  {
+   "id": "her-button",
+   "title": "Her button",
+   "text": "The girl in the yellow hat switches the town's lights on now. You stand behind her every year and count down, too slowly."
   }
  ],
  "promises": {},
@@ -186,6 +193,204 @@
    "hint": "The chairman has volunteered you"
   },
   {
+   "id": "xms-1b-letter",
+   "title": "A letter",
+   "after": {
+    "beat": "xms-1-ask",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-xms-1b-letter",
+    "title": "A letter",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='did'",
+      "then": "d1",
+      "else": "w1"
+     },
+     "nodes": {
+      "d1": {
+       "who": "chairman",
+       "say": [
+        "{chairman.short} has a letter in a plastic sleeve. \"From a mum. Her girl was at the front in a yellow hat. First time out since her operation. The children's ward has a party on the twentieth, and she's asked if you'll come.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Tell her I'll be there.\"",
+         "tone": "kind",
+         "end": "ward"
+        },
+        {
+         "id": "lads",
+         "label": "\"Can I bring a few of the lads?\"",
+         "tone": "confident",
+         "end": "lads"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm no good in hospitals.\"",
+         "tone": "honest",
+         "end": "no"
+        }
+       ]
+      },
+      "w1": {
+       "who": "chairman",
+       "say": [
+        "\"The weather man's been on. He wants you for his charity calendar. December. In a Christmas jumper, with him, in the snow machine.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"One jumper. One photo.\"",
+         "tone": "humble",
+         "end": "calendar"
+        },
+        {
+         "id": "no",
+         "label": "\"Tell him he can have December.\"",
+         "tone": "calm",
+         "end": "no2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "no2"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ward": [
+       {
+        "text": "You go on your own on the twentieth. The girl in the yellow hat is in bed four. She shows you the photo her mum took of you pressing the button, and she's in it, at the front.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "went-to-the-ward-party",
+          "strength": 3
+         },
+         {
+          "slot": "you",
+          "tag": "went-to-the-childrens-ward",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "ward"
+         }
+        }
+       }
+      ],
+      "lads": [
+       {
+        "text": "Six of you go in Santa hats. The girl in the yellow hat makes everyone sign her cast, and the goalkeeper cries in the lift.",
+        "effects": {
+         "fans": 2,
+         "team": 1
+        },
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "went-to-the-ward-party",
+          "strength": 3
+         },
+         {
+          "slot": "you",
+          "tag": "went-to-the-childrens-ward",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "ward"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fair enough.\" He sends a signed ball. The mum writes back to say thanks, and you keep the letter in your car.",
+        "arc": {
+         "set": {
+          "mid": "no"
+         }
+        }
+       }
+      ],
+      "calendar": [
+       {
+        "text": "December is you and the weather man in matching jumpers in a snow machine. It sells out at the club shop.",
+        "effects": {
+         "fans": 1
+        },
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "did-the-weather-mans-calendar",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "calendar"
+         }
+        }
+       }
+      ],
+      "no2": [
+       {
+        "text": "He has a goalkeeper from the women's team instead. She's much better at it than you would have been.",
+        "arc": {
+         "set": {
+          "mid": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The chairman has something to show you"
+  },
+  {
    "id": "xms-2-again",
    "title": "December again",
    "after": {
@@ -242,7 +447,15 @@
          }
         ],
         "arc": {
-         "end": "the-lights-man"
+         "end": "the-lights-man",
+         "set": {
+          "ended": "the-lights-man"
+         },
+         "next": "xms-3-button",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -251,7 +464,15 @@
          "fans": 2
         },
         "arc": {
-         "end": "the-lights-man"
+         "end": "the-lights-man",
+         "set": {
+          "ended": "the-lights-man"
+         },
+         "next": "xms-3-button",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -271,11 +492,149 @@
          }
         ],
         "arc": {
-         "end": "the-weather-man"
+         "end": "the-weather-man",
+         "set": {
+          "ended": "the-weather-man"
+         },
+         "next": "xms-3-button",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
         "text": "\"The weather man, then,\" he sighs.",
+        "arc": {
+         "end": "the-weather-man",
+         "set": {
+          "ended": "the-weather-man"
+         },
+         "next": "xms-3-button",
+         "afterWeeks": [
+          40,
+          60
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "Next December, the town asks again"
+  },
+  {
+   "id": "xms-3-button",
+   "title": "The button",
+   "after": {
+    "beat": "xms-2-again",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-xms-3-button",
+    "title": "The button",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Another December. {chairman.short} is in the same tie. \"The council have had letters. They want a local kid to press the button this year.\"",
+     "{if arc.mid=='ward'}He hands you a photo. It's the girl in the yellow hat, with hair now, holding up a sign: \"CAN HE COUNT DOWN FOR ME?\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "stand",
+      "label": "\"I'll stand next to whoever it is.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.mid=='ward'",
+        "text": "She presses it at exactly one, and you're still saying three. Three thousand people laugh, and the lights come on.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "counted-down-for-the-girl",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "her-button"
+        }
+       },
+       {
+        "if": "arc.path=='did'",
+        "text": "A lad from the under-tens presses it. You count down with him and the square chants your name at the end, which he loves.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "the-lights-man"
+        }
+       },
+       {
+        "text": "You stand at the back of the stage next to the weather man. He does his dance. You do half of it.",
+        "effects": {
+         "fans": 1
+        },
+        "arc": {
+         "end": "the-weather-man"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "\"Let the kid have it to themselves.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.mid=='ward'",
+        "text": "You watch from the crowd. She finds you anyway and waves you up, and you go.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "her-button"
+        }
+       },
+       {
+        "if": "arc.path=='did'",
+        "text": "You watch from the back with a hot chocolate. People still come up and say you did it better.",
+        "arc": {
+         "end": "the-lights-man"
+        }
+       },
+       {
+        "text": "The weather man presents it. He's been doing it for years now.",
         "arc": {
          "end": "the-weather-man"
         }
@@ -291,7 +650,7 @@
      }
     ]
    },
-   "hint": "Next December, the town asks again"
+   "hint": "Another December, and someone else wants the button"
   }
  ]
 }

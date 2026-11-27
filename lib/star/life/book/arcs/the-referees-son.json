@@ -2,7 +2,7 @@
  "id": "arc-the-referees-son",
  "title": "For his lad",
  "owner": "referee",
- "summary": "After the game the referee asks, quietly, if you'd sign a shirt for his son. It's a strange thing for a referee to ask. A season on, his son is in the tunnel with a sign of his own.",
+ "summary": "After the game the referee asks, quietly, if you'd sign a shirt for his son. Weeks later he's in the middle of your game and you go down in the box. A season on his son is in the tunnel with a sign, and after that the referee has his last game.",
  "size": "small",
  "about": {
   "who": [
@@ -23,7 +23,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -36,6 +38,11 @@
    "id": "no-shirt",
    "title": "No shirt",
    "text": "You said no to the referee. It was the right call, and his son still doesn't know why."
+  },
+  {
+   "id": "his-last-game",
+   "title": "The coin",
+   "text": "You got up in the box once when you could have stayed down. On his last day the referee gave you the coin from the toss, and told his lad why."
   }
  ],
  "promises": {},
@@ -218,6 +225,131 @@
    "hint": "The referee wants a quiet word"
   },
   {
+   "id": "rson-1b-box",
+   "title": "In the box",
+   "after": {
+    "beat": "rson-1-ask",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-rson-1b-box",
+    "title": "In the box",
+    "category": "match",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Weeks later, {referee.name} is in the middle again. Eighty-eighth minute, nil-nil, and you go down in the box. You were clipped, a bit. Not much."
+    ],
+    "choices": [
+     {
+      "id": "appeal",
+      "label": "Stay down and appeal.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='signed'",
+        "chance": 0.5,
+        "text": "He points to the spot. Their gaffer says on the radio after that he'd like to know \"what was signed for who\". It's in the paper on Monday.",
+        "effects": {
+         "reputation": -2,
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": -2,
+          "respect": -4,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "won-a-penalty-off-the-shirt-ref",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "given"
+         }
+        }
+       },
+       {
+        "text": "He waves play on and books you for the dive. He doesn't look at you while he writes it.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "booked"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "up",
+      "label": "Get up. It wasn't a penalty.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "text": "You get up and jog back. He gives you the smallest nod, and their centre half pats your head.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 2,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "got-up-in-the-box",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "honest"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "The same referee, weeks later"
+  },
+  {
    "id": "rson-2-son",
    "title": "A sign in the tunnel",
    "after": {
@@ -267,7 +399,15 @@
          }
         ],
         "arc": {
-         "end": "his-sons-shirt"
+         "end": "his-sons-shirt",
+         "set": {
+          "ended": "his-sons-shirt"
+         },
+         "next": "rson-3-whistle",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -280,7 +420,15 @@
          }
         ],
         "arc": {
-         "end": "no-shirt"
+         "end": "no-shirt",
+         "set": {
+          "ended": "no-shirt"
+         },
+         "next": "rson-3-whistle",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -294,11 +442,133 @@
         "if": "arc.path=='signed'",
         "text": "He waves the sign at you anyway.",
         "arc": {
-         "end": "his-sons-shirt"
+         "end": "his-sons-shirt",
+         "set": {
+          "ended": "his-sons-shirt"
+         },
+         "next": "rson-3-whistle",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
         "text": "He puts the sign down.",
+        "arc": {
+         "end": "no-shirt",
+         "set": {
+          "ended": "no-shirt"
+         },
+         "next": "rson-3-whistle",
+         "afterWeeks": [
+          40,
+          60
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "A season on, a boy in the tunnel"
+  },
+  {
+   "id": "rson-3-whistle",
+   "title": "The last whistle",
+   "after": {
+    "beat": "rson-2-son",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-rson-3-whistle",
+    "title": "The last whistle",
+    "category": "match",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "walkout",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "It's {referee.name}'s last game before he retires, and it's yours. In the tunnel he's got a lad of fourteen with him in a black kit. He's running the line today, at the junior game after."
+    ],
+    "choices": [
+     {
+      "id": "shake",
+      "label": "Shake his hand and go.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='signed'",
+        "text": "His lad is waiting by the dressing room door with the shirt you signed, two sizes too small now.",
+        "arc": {
+         "end": "his-sons-shirt"
+        }
+       },
+       {
+        "text": "He shakes it, and blows the whistle for the last time ten minutes later.",
+        "arc": {
+         "end": "no-shirt"
+        }
+       }
+      ]
+     },
+     {
+      "id": "coin",
+      "label": "Ask him for the coin from the toss.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.mid=='honest'",
+        "text": "He gives you the coin at full time. \"You got up once, in the box. I told him about that.\" His lad nods like he was there.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "gave-me-the-coin",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "his-last-game"
+        }
+       },
+       {
+        "if": "arc.path=='signed'",
+        "text": "He gives it to his lad to give you. The lad says, \"Thanks for the shirt,\" and goes red.",
+        "arc": {
+         "end": "his-sons-shirt"
+        }
+       },
+       {
+        "text": "He keeps the coin. \"Rules,\" he says, and smiles, and you never do find out which rule.",
         "arc": {
          "end": "no-shirt"
         }
@@ -314,7 +584,7 @@
      }
     ]
    },
-   "hint": "A season on, a boy in the tunnel"
+   "hint": "The referee has news"
   }
  ]
 }

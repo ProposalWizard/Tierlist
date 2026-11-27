@@ -2,7 +2,7 @@
  "id": "arc-the-tablets",
  "title": "Something for the hamstring",
  "owner": "mate",
- "summary": "A team-mate offers you tablets that he says will get you back from your hamstring a week early. They're not from the physio. A season on, testing day comes round.",
+ "summary": "A team-mate offers you tablets for your hamstring that aren't from the physio. Weeks later you see what they cost, him or you. A season on testing day comes round, and after that the academy wants someone to talk to the kids.",
  "size": "small",
  "about": {
   "who": [
@@ -32,7 +32,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -45,6 +47,11 @@
    "id": "the-letter-from-testing",
    "title": "The letter",
    "text": "You took them. One day the letter came."
+  },
+  {
+   "id": "the-talk-to-the-kids",
+   "title": "The talk",
+   "text": "You told the academy about a brown bottle with no label, and the team-mate who lost twelve weeks to it. One of the kids came and found you after."
   }
  ],
  "promises": {},
@@ -229,6 +236,221 @@
    "hint": "A team-mate has something for you"
   },
   {
+   "id": "pil-1b-cost",
+   "title": "What they cost",
+   "after": {
+    "beat": "pil-1-offer",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-pil-1b-cost",
+    "title": "What they cost",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='took'",
+      "then": "k1",
+      "else": "c1"
+     },
+     "nodes": {
+      "c1": {
+       "who": "mate",
+       "say": [
+        "{mate.name} is on crutches. \"Torn. Twelve weeks. The doc reckons the tablets hid it. I didn't feel it go till it went.\""
+       ],
+       "replies": [
+        {
+         "id": "bin",
+         "label": "\"Bin the rest. Today.\"",
+         "tone": "honest",
+         "end": "binned"
+        },
+        {
+         "id": "doctor",
+         "label": "\"Tell the doctor where you got them.\"",
+         "tone": "brave",
+         "end": "doctor"
+        },
+        {
+         "id": "sorry",
+         "label": "\"That's rough, mate.\"",
+         "tone": "calm",
+         "end": "sorry"
+        }
+       ]
+      },
+      "k1": {
+       "who": "physio",
+       "say": [
+        "{physio.name} has your heart monitor readings on a clipboard. \"Your resting rate's up twenty since last month. You're sleeping badly. What are you taking?\""
+       ],
+       "replies": [
+        {
+         "id": "truth",
+         "label": "Tell her the truth.",
+         "tone": "honest",
+         "end": "truth"
+        },
+        {
+         "id": "lie",
+         "label": "\"Nothing.\"",
+         "tone": "lie",
+         "end": "lied"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "binned": [
+       {
+        "text": "He tips the bottle into the bin in the boot room while you watch. \"Happy?\" Not really. He does it anyway.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "binned-the-tablets-in-front-of-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "binned"
+         }
+        }
+       }
+      ],
+      "doctor": [
+       {
+        "text": "He tells the doctor. The doctor tells the club. His cousin stops answering his phone.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -4,
+          "respect": 4,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "made-me-tell-the-doctor",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "doctor"
+         }
+        }
+       }
+      ],
+      "sorry": [
+       {
+        "text": "\"Yeah.\" He swings off on the crutches. The bottle's still in his washbag.",
+        "arc": {
+         "set": {
+          "mid": "sorry"
+         }
+        }
+       }
+      ],
+      "truth": [
+       {
+        "text": "She doesn't say anything for a long time. Then she takes the bottle off you and writes something down, and tells you exactly what happens next.",
+        "effects": {
+         "energy": -4
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "told-me-about-the-tablets",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "truth"
+         }
+        }
+       }
+      ],
+      "lied": [
+       {
+        "text": "\"Right.\" She writes \"nothing\" on the clipboard, in inverted commas.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": -4,
+          "respect": -6,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "lied-to-me-about-the-tablets",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "lied"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age>=24"
+      ],
+      "order": "random"
+     },
+     {
+      "slot": "physio",
+      "pick": "physio"
+     }
+    ]
+   },
+   "hint": "Somebody's paying for the tablets"
+  },
+  {
    "id": "pil-2-test",
    "title": "Testing day",
    "after": {
@@ -274,7 +496,15 @@
          }
         ],
         "arc": {
-         "end": "clean-sample"
+         "end": "clean-sample",
+         "set": {
+          "ended": "clean-sample"
+         },
+         "next": "pil-3-academy",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -298,7 +528,15 @@
          }
         ],
         "arc": {
-         "end": "the-letter-from-testing"
+         "end": "the-letter-from-testing",
+         "set": {
+          "ended": "the-letter-from-testing"
+         },
+         "next": "pil-3-academy",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -334,7 +572,15 @@
          }
         ],
         "arc": {
-         "end": "clean-sample"
+         "end": "clean-sample",
+         "set": {
+          "ended": "clean-sample"
+         },
+         "next": "pil-3-academy",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -351,7 +597,15 @@
          }
         ],
         "arc": {
-         "end": "the-letter-from-testing"
+         "end": "the-letter-from-testing",
+         "set": {
+          "ended": "the-letter-from-testing"
+         },
+         "next": "pil-3-academy",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -374,6 +628,119 @@
     ]
    },
    "hint": "A season on, testing day"
+  },
+  {
+   "id": "pil-3-academy",
+   "title": "The academy talk",
+   "after": {
+    "beat": "pil-2-test",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-pil-3-academy",
+    "title": "The academy talk",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The academy is doing its talk on drugs and testing for the under-18s. They want a first-team player to stand up at the front of a classroom for ten minutes. {physio.short} has put your name forward."
+    ],
+    "choices": [
+     {
+      "id": "talk",
+      "label": "Do the talk.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.mid=='binned'",
+        "text": "You tell them about a brown bottle with no label and a team-mate on crutches for twelve weeks. Thirty sixteen-year-olds go completely quiet. One stays behind to ask a question he's clearly been carrying for a while.",
+        "effects": {
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "gave-the-academy-the-tablets-talk",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-talk-to-the-kids"
+        }
+       },
+       {
+        "if": "arc.path=='clean'",
+        "text": "You give them the usual slides. They're on their phones. You did nothing wrong and there's nothing to tell.",
+        "arc": {
+         "end": "clean-sample"
+        }
+       },
+       {
+        "text": "You stand up at the front. You can't do it. {physio.short} takes over and doesn't say your name.",
+        "arc": {
+         "end": "the-letter-from-testing"
+        }
+       }
+      ]
+     },
+     {
+      "id": "busy",
+      "label": "Say you're training.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='clean'",
+        "text": "Someone else does it. You hear it was good.",
+        "arc": {
+         "end": "clean-sample"
+        }
+       },
+       {
+        "text": "Someone else does it. They use your case on a slide, without your name, and everybody knows.",
+        "arc": {
+         "end": "the-letter-from-testing"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age>=24"
+      ],
+      "order": "random"
+     },
+     {
+      "slot": "physio",
+      "pick": "physio"
+     }
+    ]
+   },
+   "hint": "The academy wants a first-team player"
   }
  ]
 }

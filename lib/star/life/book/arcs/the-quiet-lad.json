@@ -2,7 +2,7 @@
  "id": "arc-the-quiet-lad",
  "title": "Room with the quiet lad",
  "owner": "vet",
- "summary": "The oldest player in the squad asks you to room with the lad nobody talks to on away trips. A season later the quiet lad isn't quiet any more, and he remembers who sat with him.",
+ "summary": "The oldest player in the squad asks you to room with the lad nobody talks to. Weeks later the lad texts you at midnight: he wants to go home. A season on he isn't quiet any more, and after that he's the one asking the new lads which side of the room they want.",
  "size": "small",
  "about": {
   "who": [
@@ -35,7 +35,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -48,6 +50,11 @@
    "id": "still-a-stranger",
    "title": "Still a stranger",
    "text": "You never did get to know him. He left in the summer without saying goodbye."
+  },
+  {
+   "id": "passed-it-on",
+   "title": "Which side of the room",
+   "text": "You had the quiet lad round for Sunday tea when he wanted to go home. Now he rooms with the new signings, and asks them which side of the room they want."
   }
  ],
  "promises": {},
@@ -230,6 +237,151 @@
    "hint": "The veteran wants a word on the bus"
   },
   {
+   "id": "qlad-1b-home",
+   "title": "Midnight",
+   "after": {
+    "beat": "qlad-1-ask",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-qlad-1b-home",
+    "title": "Midnight",
+    "category": "teammates",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "lad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "l1",
+     "nodes": {
+      "l1": {
+       "who": "lad",
+       "say": [
+        "A text from {lad.short}, at ten to midnight. \"Sorry it's late. I think I want to go home. My mum says come home. I don't know anyone here except you and you're not really my mate.\""
+       ],
+       "replies": [
+        {
+         "id": "tea",
+         "label": "\"Come round for your tea Sunday. Mine's rubbish, but.\"",
+         "tone": "kind",
+         "end": "tea"
+        },
+        {
+         "id": "vet",
+         "label": "\"Talk to {vet.short}. He nearly went home once too.\"",
+         "tone": "honest",
+         "end": "vet"
+        },
+        {
+         "id": "sleep",
+         "label": "\"Get some sleep, mate. See you in the morning.\"",
+         "tone": "calm",
+         "end": "sleep"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "tea": [
+       {
+        "text": "He comes on Sunday with a bag of oranges, because his mum said not to come empty-handed. You burn the roast. He stays till nine and talks more than he has since he signed.",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "lad",
+          "tag": "had-sunday-tea-at-mine",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "tea"
+         }
+        }
+       }
+      ],
+      "vet": [
+       {
+        "text": "{vet.short} takes him to the café before training on Monday. They sit there an hour. The lad stays.",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 4,
+          "respect": 2
+         },
+         {
+          "slot": "vet",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "sent-the-lad-to-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "vet"
+         }
+        }
+       }
+      ],
+      "sleep": [
+       {
+        "text": "\"Ok.\" He's in on time in the morning, eyes red. He doesn't text again.",
+        "arc": {
+         "set": {
+          "mid": "sleep"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "lad",
+      "pick": "squad",
+      "where": [
+       "age<=24"
+      ],
+      "order": "bond-asc"
+     }
+    ]
+   },
+   "hint": "Your phone, late"
+  },
+  {
    "id": "qlad-2-bus",
    "title": "Back of the bus",
    "after": {
@@ -294,7 +446,15 @@
          }
         ],
         "arc": {
-         "end": "the-lad-came-good"
+         "end": "the-lad-came-good",
+         "set": {
+          "ended": "the-lad-came-good"
+         },
+         "next": "qlad-3-nextlad",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -306,7 +466,15 @@
          }
         ],
         "arc": {
-         "end": "still-a-stranger"
+         "end": "still-a-stranger",
+         "set": {
+          "ended": "still-a-stranger"
+         },
+         "next": "qlad-3-nextlad",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -325,7 +493,15 @@
          }
         ],
         "arc": {
-         "end": "still-a-stranger"
+         "end": "still-a-stranger",
+         "set": {
+          "ended": "still-a-stranger"
+         },
+         "next": "qlad-3-nextlad",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -352,6 +528,127 @@
     ]
    },
    "hint": "The quiet lad, a season on"
+  },
+  {
+   "id": "qlad-3-nextlad",
+   "title": "The next quiet lad",
+   "after": {
+    "beat": "qlad-2-bus",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-qlad-3-nextlad",
+    "title": "The next quiet lad",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A new signing this summer, nineteen, from abroad, eats on his own. {vet.short} has retired. It's {lad.short} who comes and finds you. \"I'm going to room with him. What did you say to me, the first night?\""
+    ],
+    "choices": [
+     {
+      "id": "side",
+      "label": "\"Ask him which side of the room he wants.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.mid=='tea'",
+        "text": "He laughs. \"That's it?\" That's it. He asks, and the new lad picks the window. On Sunday there's a bag of oranges on your doorstep with two names on it.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "lad",
+          "tag": "roomed-with-the-new-lad",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "passed-it-on"
+        }
+       },
+       {
+        "if": "arc.path=='roomed'",
+        "text": "\"That's it?\" That's it. He asks. They watch a quiz show. He comes good, the new lad, in time.",
+        "effects": {
+         "team": 2
+        },
+        "arc": {
+         "end": "the-lad-came-good"
+        }
+       },
+       {
+        "text": "He nods and goes. You hear later the new lad went home in October.",
+        "arc": {
+         "end": "still-a-stranger"
+        }
+       }
+      ]
+     },
+     {
+      "id": "quiz",
+      "label": "\"Buy him a quiz book.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='roomed'",
+        "text": "He buys two. The back of the bus becomes a quiz team.",
+        "arc": {
+         "end": "the-lad-came-good"
+        }
+       },
+       {
+        "text": "He buys one. You don't hear how it went.",
+        "arc": {
+         "end": "still-a-stranger"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "lad",
+      "pick": "squad",
+      "where": [
+       "age<=24"
+      ],
+      "order": "bond-asc"
+     }
+    ]
+   },
+   "hint": "A new signing nobody talks to"
   }
  ]
 }

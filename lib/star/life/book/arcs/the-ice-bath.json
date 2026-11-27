@@ -2,7 +2,7 @@
  "id": "arc-the-ice-bath",
  "title": "Ten minutes in the ice",
  "owner": "physio",
- "summary": "The physio bets you can't last ten minutes in the ice bath, longer than the toughest lad in the squad. It's daft, it's in front of everyone, and next season she has the stopwatch out again.",
+ "summary": "The physio bets you can't last ten minutes in the ice bath, longer than the toughest lad in the squad. Weeks later he's injured and grumpy and needs somebody. Next season the stopwatch comes out again, and after that he has one last go.",
  "size": "small",
  "about": {
   "who": [
@@ -31,7 +31,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -44,6 +46,11 @@
    "id": "frozen-out",
    "title": "Frozen out",
    "text": "You got out first. Twice. The lads have a name for you now."
+  },
+  {
+   "id": "last-in-the-ice",
+   "title": "Together",
+   "text": "You did his rehab with him when he was hurt. On his last day you sat in the ice bath together and got out at the same time. Nobody wrote it down."
   }
  ],
  "promises": {},
@@ -216,6 +223,150 @@
    "hint": "The physio has a stopwatch"
   },
   {
+   "id": "ice-1b-rehab",
+   "title": "Eleven weeks",
+   "after": {
+    "beat": "ice-1-bath",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-ice-1b-rehab",
+    "title": "Eleven weeks",
+    "category": "staff",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "hard",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "h1",
+     "nodes": {
+      "h1": {
+       "who": "hard",
+       "say": [
+        "{hard.name} is on the physio bed with his thigh strapped. \"Eleven weeks. I'm thirty-odd. Eleven weeks at my age is a year.\" {physio.short} is writing a rehab plan and not looking at either of you."
+       ],
+       "replies": [
+        {
+         "id": "rehab",
+         "label": "\"I'll do the rehab sessions with you.\"",
+         "tone": "kind",
+         "end": "rehab"
+        },
+        {
+         "id": "text",
+         "label": "\"I'll text you the team news.\"",
+         "tone": "calm",
+         "end": "text"
+        },
+        {
+         "id": "fine",
+         "label": "\"You'll be fine.\"",
+         "tone": "cold",
+         "end": "fine"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "rehab": [
+       {
+        "text": "Six mornings at seven, in the pool and on the bike. He swears at every length. On the last one he says, \"Thanks, son,\" to the water.",
+        "effects": {
+         "energy": -6,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "hard",
+          "bond": 10,
+          "respect": 6
+         },
+         {
+          "slot": "physio",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "hard",
+          "tag": "did-my-rehab-with-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "rehab"
+         }
+        }
+       }
+      ],
+      "text": [
+       {
+        "text": "You text him the team every Friday. He texts back his own, every Friday, and it's always better.",
+        "npc": [
+         {
+          "slot": "hard",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "text"
+         }
+        }
+       }
+      ],
+      "fine": [
+       {
+        "text": "\"Course I will.\" He does it on his own, at six, before anyone's in.",
+        "npc": [
+         {
+          "slot": "hard",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "fine"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "hard",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The hard man has bad news"
+  },
+  {
    "id": "ice-2-again",
    "title": "The whiteboard",
    "after": {
@@ -264,7 +415,15 @@
          }
         ],
         "arc": {
-         "end": "ice-king"
+         "end": "ice-king",
+         "set": {
+          "ended": "ice-king"
+         },
+         "next": "ice-3-lastone",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -275,7 +434,15 @@
          "team": 1
         },
         "arc": {
-         "end": "frozen-out"
+         "end": "frozen-out",
+         "set": {
+          "ended": "frozen-out"
+         },
+         "next": "ice-3-lastone",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -293,7 +460,15 @@
          }
         ],
         "arc": {
-         "end": "ice-king"
+         "end": "ice-king",
+         "set": {
+          "ended": "ice-king"
+         },
+         "next": "ice-3-lastone",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -313,11 +488,140 @@
          }
         ],
         "arc": {
-         "end": "ice-king"
+         "end": "ice-king",
+         "set": {
+          "ended": "ice-king"
+         },
+         "next": "ice-3-lastone",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
         "text": "\"Again?\" The lads do the noise. You know the noise.",
+        "arc": {
+         "end": "frozen-out",
+         "set": {
+          "ended": "frozen-out"
+         },
+         "next": "ice-3-lastone",
+         "afterWeeks": [
+          40,
+          60
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "hard",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "Next season, the stopwatch comes out again"
+  },
+  {
+   "id": "ice-3-lastone",
+   "title": "One last go",
+   "after": {
+    "beat": "ice-2-again",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-ice-3-lastone",
+    "title": "One last go",
+    "category": "staff",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{hard.short}'s last day before he retires. {physio.short} has filled the ice bath and found the old stopwatch. \"One more. You two. For the board.\""
+    ],
+    "choices": [
+     {
+      "id": "watch",
+      "label": "Hold the stopwatch for him.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='won'",
+        "text": "He does thirteen minutes on his own. He gets out, looks at the board where your name is, and leaves it there. \"Yours,\" he says.",
+        "arc": {
+         "end": "ice-king"
+        }
+       },
+       {
+        "text": "Thirteen minutes. He writes his own name at the top in marker and caps the pen like a full stop.",
+        "arc": {
+         "end": "frozen-out"
+        }
+       }
+      ]
+     },
+     {
+      "id": "in",
+      "label": "Get in with him.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.mid=='rehab'",
+        "text": "You sit up to your chests, humming. At ten minutes he says \"together\" and you both get out at once. Nobody writes the time down.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "hard",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "hard",
+          "tag": "got-out-with-me-on-my-last-day",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "last-in-the-ice"
+        }
+       },
+       {
+        "if": "arc.path=='won'",
+        "text": "You beat him again, by a minute. He doesn't mind. He's retiring.",
+        "arc": {
+         "end": "ice-king"
+        }
+       },
+       {
+        "text": "You last eight. He does fourteen to make his point, on his last day, at his age.",
         "arc": {
          "end": "frozen-out"
         }
@@ -341,7 +645,7 @@
      }
     ]
    },
-   "hint": "Next season, the stopwatch comes out again"
+   "hint": "The hard man's last day"
   }
  ]
 }

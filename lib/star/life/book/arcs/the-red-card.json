@@ -2,7 +2,7 @@
  "id": "arc-the-red-card",
  "title": "Talk to him",
  "owner": "manager",
- "summary": "A young lad got sent off and the whole ground blamed him for the defeat. The gaffer asks you to talk to him, not as a coach, as a player. What you say to him travels further than you think. A season on, he's in a big game again.",
+ "summary": "A young lad got sent off and the whole ground blamed him. Weeks later the messages online haven't stopped and he can't stop reading them. A season on he's in a big game again, and after that a younger lad needs talking to, and it's his turn.",
  "size": "small",
  "about": {
   "who": [
@@ -32,7 +32,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -45,6 +47,11 @@
    "id": "he-went-again",
    "title": "He went again",
    "text": "He got sent off again, and you weren't the one he listened to."
+  },
+  {
+   "id": "his-turn",
+   "title": "His turn",
+   "text": "You talked to a kid after his worst day. A season later, when a younger one got sent off, the kid you talked to did the talking."
   }
  ],
  "promises": {},
@@ -270,6 +277,173 @@
    "hint": "The gaffer wants you to talk to someone"
   },
   {
+   "id": "red-1b-messages",
+   "title": "The messages",
+   "after": {
+    "beat": "red-1-office",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-red-1b-messages",
+    "title": "The messages",
+    "category": "manager",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='cold'",
+      "then": "c1",
+      "else": "k1"
+     },
+     "nodes": {
+      "k1": {
+       "who": "kid",
+       "say": [
+        "A text from {kid.short}, late. \"Can't stop reading them. Someone says he knows where my mum works. I'm not being soft, I just can't sleep.\""
+       ],
+       "replies": [
+        {
+         "id": "ring",
+         "label": "\"Ring me. Now.\"",
+         "tone": "kind",
+         "end": "rang"
+        },
+        {
+         "id": "club",
+         "label": "\"Screenshot every one. Send them to the club.\"",
+         "tone": "calm",
+         "end": "club"
+        },
+        {
+         "id": "read",
+         "label": "\"Just don't read them.\"",
+         "tone": "cold",
+         "end": "read"
+        }
+       ]
+      },
+      "c1": {
+       "who": "manager",
+       "say": [
+        "{manager.short} texts, late. \"The lad's in a bad way online. People saying they know where his mum works. You said he could sort himself out. He can't. Ring him.\""
+       ],
+       "replies": [
+        {
+         "id": "ring",
+         "label": "Ring him.",
+         "tone": "kind",
+         "end": "rang"
+        },
+        {
+         "id": "club",
+         "label": "\"Get the club's people on it.\"",
+         "tone": "calm",
+         "end": "club"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "rang": [
+       {
+        "text": "You talk till one. Mostly about nothing, a film, his mum's dog. He sends you a screenshot the next day: the app, deleted. The club's safeguarding officer rings him on Monday.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "rang-me-the-night-of-the-messages",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "rang"
+         }
+        }
+       }
+      ],
+      "club": [
+       {
+        "text": "The club's people take it from there. Two accounts get reported, one gets a visit. He says thanks in a text with no capital letters.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "sent-the-messages-to-the-club",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "club"
+         }
+        }
+       }
+      ],
+      "read": [
+       {
+        "text": "\"Yeah. Ok.\" He reads them. He's not in on time in the morning. The club gets involved anyway, a week late.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -3,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "read"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=21"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "The kid's phone won't stop"
+  },
+  {
    "id": "red-2-derby",
    "title": "The big one",
    "after": {
@@ -326,7 +500,15 @@
          }
         ],
         "arc": {
-         "end": "he-stayed-on"
+         "end": "he-stayed-on",
+         "set": {
+          "ended": "he-stayed-on"
+         },
+         "next": "red-3-histurn",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -342,7 +524,15 @@
          }
         ],
         "arc": {
-         "end": "he-went-again"
+         "end": "he-went-again",
+         "set": {
+          "ended": "he-went-again"
+         },
+         "next": "red-3-histurn",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -363,7 +553,15 @@
          }
         ],
         "arc": {
-         "end": "he-stayed-on"
+         "end": "he-stayed-on",
+         "set": {
+          "ended": "he-stayed-on"
+         },
+         "next": "red-3-histurn",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -372,7 +570,15 @@
          "team": -2
         },
         "arc": {
-         "end": "he-went-again"
+         "end": "he-went-again",
+         "set": {
+          "ended": "he-went-again"
+         },
+         "next": "red-3-histurn",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -395,6 +601,113 @@
     ]
    },
    "hint": "A season on, a big game for him"
+  },
+  {
+   "id": "red-3-histurn",
+   "title": "His turn",
+   "after": {
+    "beat": "red-2-derby",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-red-3-histurn",
+    "title": "His turn",
+    "category": "manager",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on, a sixteen-year-old gets a straight red in the youth cup and the whole ground blames him. {manager.short} looks at you, then at {kid.short}. \"One of you two.\""
+    ],
+    "choices": [
+     {
+      "id": "him",
+      "label": "\"Let him do it.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='kind'",
+        "text": "{kid.short} goes to the gym. You watch through the window. He gets on the bike next to the boy and says nothing for twenty minutes, then something that makes the boy laugh.",
+        "effects": {
+         "team": 2,
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "did-the-talking-for-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "his-turn"
+        }
+       },
+       {
+        "text": "{kid.short} says he wouldn't know what to say. He's right, and that's on you as much as him.",
+        "arc": {
+         "end": "he-went-again"
+        }
+       }
+      ]
+     },
+     {
+      "id": "both",
+      "label": "\"We'll both go.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='kind'",
+        "text": "You both get on bikes. The boy looks from one to the other. {kid.short} tells him about his red, then yours. He kept his head, the next time. So will this one.",
+        "arc": {
+         "end": "he-stayed-on"
+        }
+       },
+       {
+        "text": "You do the talking. {kid.short} stands by the door the whole time.",
+        "arc": {
+         "end": "he-went-again"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=21"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "A younger lad needs a word"
   }
  ]
 }

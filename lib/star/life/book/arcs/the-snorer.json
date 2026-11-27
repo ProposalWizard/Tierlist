@@ -2,7 +2,7 @@
  "id": "arc-the-snorer",
  "title": "The snorer",
  "owner": "roomie",
- "summary": "Your room-mate snores like a lawnmower and you've got a game tomorrow. What you do about it at two in the morning becomes a dressing-room story. A season later, it's still a story.",
+ "summary": "Your room-mate snores like a lawnmower the night before a game. Weeks later the club doctor says it's more than snoring, and he's frightened. A season later it's still a story, and after that you room with him and his machine.",
  "size": "small",
  "about": {
   "who": [
@@ -23,7 +23,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -36,6 +38,11 @@
    "id": "good-sleep",
    "title": "A good night's sleep",
    "text": "He got it fixed, and he thinks it was his idea."
+  },
+  {
+   "id": "the-machine",
+   "title": "The fridge",
+   "text": "You sat in a sleep clinic till your room-mate fell asleep with wires on. Now you room with him and a machine that hums like a fridge, and you both sleep."
   }
  ],
  "promises": {},
@@ -253,6 +260,138 @@
    "hint": "Your room-mate is snoring"
   },
   {
+   "id": "snr-1b-clinic",
+   "title": "The clinic",
+   "after": {
+    "beat": "snr-1-night",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-snr-1b-clinic",
+    "title": "The clinic",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "roomie",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "roomie",
+       "say": [
+        "{roomie.name} catches you by the cars. He's not joking for once. \"Doc says I stop breathing in my sleep. Twenty times an hour. He wants me in a clinic overnight with wires on. I'm not good with that stuff.\""
+       ],
+       "replies": [
+        {
+         "id": "told",
+         "label": "\"Told you you snored.\"",
+         "tone": "cold",
+         "end": "told"
+        },
+        {
+         "id": "joke",
+         "label": "Do the lawnmower noise.",
+         "tone": "reckless",
+         "end": "joke"
+        },
+        {
+         "id": "come",
+         "label": "\"Get it checked. I'll come with you.\"",
+         "tone": "kind",
+         "end": "doctor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "doctor": [
+       {
+        "text": "You sit in a plastic chair till he's asleep with wires on his head. The nurse says you can go. You go at two, after he's stopped stopping.",
+        "effects": {
+         "energy": -6
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "came-to-the-sleep-clinic",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "doctor"
+         }
+        }
+       }
+      ],
+      "told": [
+       {
+        "text": "\"Yeah. Thanks.\" He goes to the clinic on his own.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": -3,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "told2"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "He laughs because you laugh. Then he stops. \"I'm actually scared, mate.\" You stop too.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "joke"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "roomie",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "Your room-mate has had some news"
+  },
+  {
    "id": "snr-2-later",
    "title": "Still snoring",
    "after": {
@@ -309,7 +448,15 @@
          }
         ],
         "arc": {
-         "end": "the-recording"
+         "end": "the-recording",
+         "set": {
+          "ended": "the-recording"
+         },
+         "next": "snr-3-machine",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -329,7 +476,15 @@
          }
         ],
         "arc": {
-         "end": "good-sleep"
+         "end": "good-sleep",
+         "set": {
+          "ended": "good-sleep"
+         },
+         "next": "snr-3-machine",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -345,6 +500,114 @@
     ]
    },
    "hint": "A season on, the snoring"
+  },
+  {
+   "id": "snr-3-machine",
+   "title": "The machine",
+   "after": {
+    "beat": "snr-2-later",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-snr-3-machine",
+    "title": "The machine",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "roomie",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Another season, another away trip. {roomie.short} sleeps with a mask and a machine now that hums like a fridge. The rooming list is up, and nobody's put their name next to his."
+    ],
+    "choices": [
+     {
+      "id": "own",
+      "label": "Ask for your own room.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='posted'",
+        "text": "Somebody else rooms with him. They play the old video on the coach to welcome him.",
+        "arc": {
+         "end": "the-recording"
+        }
+       },
+       {
+        "text": "He rooms with the young lad, who says the hum is nice.",
+        "arc": {
+         "end": "good-sleep"
+        }
+       }
+      ]
+     },
+     {
+      "id": "room",
+      "label": "Put your name next to his.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.mid=='doctor'",
+        "text": "The machine hums. He doesn't snore. You both sleep eight hours for the first time in years and play like it.",
+        "effects": {
+         "energy": 6,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "roomed-with-me-and-the-machine",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-machine"
+        }
+       },
+       {
+        "if": "arc.path=='posted'",
+        "text": "The lads ask if you'll film the machine. You don't. They do it anyway, through the door.",
+        "arc": {
+         "end": "the-recording"
+        }
+       },
+       {
+        "text": "He shows you how the mask goes on like he's showing you a car. You sleep fine.",
+        "arc": {
+         "end": "good-sleep"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "roomie",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "Away trip, the rooming list"
   }
  ]
 }

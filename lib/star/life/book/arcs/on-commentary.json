@@ -2,7 +2,7 @@
  "id": "arc-on-commentary",
  "title": "Not good enough",
  "owner": "legend",
- "summary": "The club legend is on the radio commentary and says you're not good enough to wear the shirt. You meet him in the players' lounge after. A season on, he's on commentary again.",
+ "summary": "The club legend says on the radio you're not good enough to wear the shirt. Weeks later he turns up on pitch two to make you turn, or he says it again on the phone-in. A season on he's on commentary again, and after that it's his last game in the box.",
  "size": "small",
  "about": {
   "who": [
@@ -23,7 +23,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -36,6 +38,11 @@
    "id": "still-not-good-enough",
    "title": "Still not good enough",
    "text": "He said it on the radio and he never took it back."
+  },
+  {
+   "id": "his-last-commentary",
+   "title": "Turned twice",
+   "text": "The legend's last game on the radio was yours. He said you turned twice, on air, and gave you his last notes in the box."
   }
  ],
  "promises": {},
@@ -223,6 +230,291 @@
    "hint": "The legend said something on the radio"
   },
   {
+   "id": "com-1b-turn",
+   "title": "Turn",
+   "after": {
+    "beat": "com-1-lounge",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-com-1b-turn",
+    "title": "Turn",
+    "category": "legend",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='asked'",
+      "then": "a1",
+      "else": "b1"
+     },
+     "nodes": {
+      "a1": {
+       "who": "legend",
+       "say": [
+        "{legend.name} is on pitch two in a club coat and his good shoes. \"Back to goal. I'll feed it in. You turn. Every time. I'm not on the radio till three.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Feed it in.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "no",
+         "label": "\"Not today.\"",
+         "tone": "calm",
+         "end": "notoday"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "{legend.short}'s turns",
+        "intro": "Back to goal, he feeds it in, you turn and hit it. Ten balls.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "far",
+           "balls": 2,
+           "line": "\"Back to goal. Turn. Hit it. Don't look at me, look at the goal.\""
+          },
+          {
+           "kind": "corners",
+           "balls": 2,
+           "line": "\"Turn and put it in the corner. Either. Mean it.\""
+          },
+          {
+           "kind": "keeper",
+           "balls": 3,
+           "line": "\"I'll go in. I was never a keeper, so it's fair.\""
+          },
+          {
+           "kind": "call-it",
+           "balls": 2,
+           "line": "\"I'll shout the side as you turn.\""
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. Turn like you mean it.\""
+          }
+         ],
+         "keeperSlot": "legend",
+         "lines": {
+          "hit": "\"That's a turn.\"",
+          "keeper:saved": "\"Not past {name}. And I'm {age}.\"",
+          "wide": "\"You turned. That's something.\"",
+          "streak3": "\"Right. Now do it on Saturday.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "legend",
+         "lines": [
+          "\"One.\"",
+          "\"Two.\"",
+          "\"Three.\"",
+          "\"Four.\"",
+          "\"Five.\"",
+          "\"Six.\"",
+          "\"Seven.\"",
+          "\"Eight.\"",
+          "\"Nine.\"",
+          "\"Ten. Turn on Saturday.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "stop"
+        ],
+        [
+         "activity.score>=6",
+         "good"
+        ],
+        [
+         "",
+         "poor"
+        ]
+       ]
+      },
+      "good": {
+       "who": "legend",
+       "say": [
+        "\"{activity.score}.\" He picks his coat up off the grass. \"You can do it. So do it when there's people.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Saturday.\"",
+         "tone": "confident",
+         "end": "turned"
+        }
+       ]
+      },
+      "poor": {
+       "who": "legend",
+       "say": [
+        "\"{activity.score}. You turned, at least. Nobody turns at your age. They're all scared of the ball.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Same time next week?\"",
+         "tone": "humble",
+         "end": "turned"
+        }
+       ]
+      },
+      "stop": {
+       "who": "legend",
+       "say": [
+        "You stop. He shrugs and goes to the commentary box early."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Another day.\"",
+         "tone": "calm",
+         "end": "notoday"
+        }
+       ]
+      },
+      "b1": {
+       "who": "legend",
+       "say": [
+        "The radio phone-in, Thursday night. He's the guest. He says it again: \"Not good enough. Not yet.\" Your mum texts: \"RING IN.\""
+       ],
+       "replies": [
+        {
+         "id": "ring",
+         "label": "Ring in and ask him what you should do.",
+         "tone": "brave",
+         "end": "rang"
+        },
+        {
+         "id": "leave",
+         "label": "Turn it off.",
+         "tone": "calm",
+         "end": "left"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "turned": [
+       {
+        "text": "On the way off he says, \"You turned left twice. Your dad's side, was it?\" It was.",
+        "effects": {
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "turned-on-pitch-two",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "turned"
+         }
+        },
+        "train": {
+         "technique": 1
+        }
+       }
+      ],
+      "notoday": [
+       {
+        "text": "\"Your loss.\" He goes up to the box. You can see him through the glass, eating a pie.",
+        "arc": {
+         "set": {
+          "mid": "left"
+         }
+        }
+       }
+      ],
+      "rang": [
+       {
+        "text": "The producer puts you straight through. There's a silence on live radio. Then he says, \"Turn, son. Just once a game.\" Your mum records it.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 4,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "rang-the-phone-in",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "rang"
+         }
+        }
+       }
+      ],
+      "left": [
+       {
+        "text": "Your mum doesn't speak to the radio for a week.",
+        "arc": {
+         "set": {
+          "mid": "left"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     }
+    ]
+   },
+   "hint": "The legend hasn't finished with you"
+  },
+  {
    "id": "com-2-radio",
    "title": "On air again",
    "after": {
@@ -281,7 +573,15 @@
          }
         ],
         "arc": {
-         "end": "he-changed-his-tune"
+         "end": "he-changed-his-tune",
+         "set": {
+          "ended": "he-changed-his-tune"
+         },
+         "next": "com-3-last",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -292,7 +592,15 @@
          }
         ],
         "arc": {
-         "end": "still-not-good-enough"
+         "end": "still-not-good-enough",
+         "set": {
+          "ended": "still-not-good-enough"
+         },
+         "next": "com-3-last",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -306,11 +614,132 @@
         "if": "arc.path=='asked'",
         "text": "Mum rings instead and reads it out to you, twice.",
         "arc": {
-         "end": "he-changed-his-tune"
+         "end": "he-changed-his-tune",
+         "set": {
+          "ended": "he-changed-his-tune"
+         },
+         "next": "com-3-last",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
         "text": "You don't need to.",
+        "arc": {
+         "end": "still-not-good-enough",
+         "set": {
+          "ended": "still-not-good-enough"
+         },
+         "next": "com-3-last",
+         "afterWeeks": [
+          40,
+          60
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     }
+    ]
+   },
+   "hint": "A season on, he's on commentary again"
+  },
+  {
+   "id": "com-3-last",
+   "title": "His last commentary",
+   "after": {
+    "beat": "com-2-radio",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-com-3-last",
+    "title": "His last commentary",
+    "category": "legend",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "It's {legend.name}'s last game on the radio before he retires from it, and it's your game. Your mum has the clip on her phone before you're off the pitch."
+    ],
+    "choices": [
+     {
+      "id": "find",
+      "label": "Go up to the commentary box after.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.mid=='turned' || arc.mid=='rang'",
+        "text": "He's packing up his headphones. \"Turned twice today,\" he says. \"I said so. On air.\" The whole box laughs. He gives you his last match notes, folded in four.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "gave-me-his-last-notes",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "his-last-commentary"
+        }
+       },
+       {
+        "if": "arc.path=='asked'",
+        "text": "He shakes your hand at the door. \"Good enough,\" he says. \"Told them.\"",
+        "arc": {
+         "end": "he-changed-his-tune"
+        }
+       },
+       {
+        "text": "He's already gone. He left by the back stairs.",
+        "arc": {
+         "end": "still-not-good-enough"
+        }
+       }
+      ]
+     },
+     {
+      "id": "play",
+      "label": "Play Mum's clip on the coach.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='asked'",
+        "text": "\"…and he turns, and he's away, and I've said it before, he's good enough.\" Mum's typed a heart.",
+        "arc": {
+         "end": "he-changed-his-tune"
+        }
+       },
+       {
+        "text": "\"…still goes backwards a bit.\" On his last day. Mum's typed something you won't repeat.",
         "arc": {
          "end": "still-not-good-enough"
         }
@@ -326,7 +755,7 @@
      }
     ]
    },
-   "hint": "A season on, he's on commentary again"
+   "hint": "The legend has one more game in the box"
   }
  ]
 }

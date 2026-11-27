@@ -2,7 +2,7 @@
  "id": "arc-left-back",
  "title": "Left back for the cup",
  "owner": "manager",
- "summary": "Injuries leave the gaffer with no left back for the cup game, and he asks you to play there. Next season he needs a favour again, and he remembers whether you gave him the first one.",
+ "summary": "Injuries leave the gaffer with no left back, and he asks you to play there. Weeks later the left back is fit and the gaffer has a choice, or the kid who got skinned is struggling. Next season he needs a favour again, and after that everybody knows what you are.",
  "size": "small",
  "about": {
   "who": [
@@ -23,7 +23,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -36,6 +38,11 @@
    "id": "strikers-only",
    "title": "Strikers only",
    "text": "You wouldn't play out of position, and he stopped asking."
+  },
+  {
+   "id": "left-back-for-life",
+   "title": "Left back for life",
+   "text": "You filled in at left back once and stayed there. Seasons on, nobody remembers you were a striker, apart from your mum."
   }
  ],
  "promises": {},
@@ -222,6 +229,193 @@
    "hint": "The gaffer is short at the back"
   },
   {
+   "id": "oop-1b-choice",
+   "title": "The choice",
+   "after": {
+    "beat": "oop-1-ask",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-oop-1b-choice",
+    "title": "The choice",
+    "category": "manager",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='yes'",
+      "then": "y1",
+      "else": "n1"
+     },
+     "nodes": {
+      "y1": {
+       "who": "manager",
+       "screen": "dial",
+       "say": [
+        "\"The left back's fit. But you kept a clean sheet, and you liked it, I could tell. I've got a choice and I'm asking you first, which I never do.\""
+       ],
+       "replies": [
+        {
+         "id": "me",
+         "label": "\"Play me there. I liked it.\"",
+         "tone": "confident",
+         "end": "keep"
+        },
+        {
+         "id": "him",
+         "label": "\"Play him. It's his shirt.\"",
+         "tone": "humble",
+         "end": "back"
+        },
+        {
+         "id": "up",
+         "label": "\"Up front, gaffer. Where I belong.\"",
+         "tone": "calm",
+         "end": "up"
+        }
+       ]
+      },
+      "n1": {
+       "who": "manager",
+       "screen": "dial",
+       "say": [
+        "\"The kid hasn't slept since the cup game. He was nineteen and he got skinned on telly. He thinks it's his fault. It isn't.\""
+       ],
+       "replies": [
+        {
+         "id": "talk",
+         "label": "\"I'll talk to him.\"",
+         "tone": "humble",
+         "end": "talk"
+        },
+        {
+         "id": "cold",
+         "label": "\"Not my fault either, gaffer.\"",
+         "tone": "fiery",
+         "end": "cold"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "keep": [
+       {
+        "text": "\"Left back it is.\" You play there for a month. The real left back sulks and then gets sold.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "wanted-to-stay-at-left-back",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "kept-lb"
+         }
+        }
+       }
+      ],
+      "back": [
+       {
+        "text": "\"Good lad.\" The left back hears about it, and buys you a coffee for a fortnight.",
+        "effects": {
+         "boss": 2,
+         "team": 1
+        },
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "gave-the-shirt-back",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "gave-back"
+         }
+        }
+       }
+      ],
+      "up": [
+       {
+        "text": "\"Fine.\" You score on Saturday from where you belong, which helps.",
+        "arc": {
+         "set": {
+          "mid": "up"
+         }
+        }
+       }
+      ],
+      "talk": [
+       {
+        "text": "You find the kid on the bike in the gym and tell him you said no first. He looks at you for a long time. \"So it was you,\" he says, and then, \"Thanks for telling me.\"",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "talked"
+         }
+        }
+       }
+      ],
+      "cold": [
+       {
+        "text": "\"No,\" he says. \"I didn't say it was.\" He sees the kid himself.",
+        "effects": {
+         "boss": -2
+        },
+        "arc": {
+         "set": {
+          "mid": "cold"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The gaffer has a team to pick"
+  },
+  {
    "id": "oop-2-again",
    "title": "Short again",
    "after": {
@@ -284,7 +478,15 @@
          }
         ],
         "arc": {
-         "end": "the-utility-man"
+         "end": "the-utility-man",
+         "set": {
+          "ended": "the-utility-man"
+         },
+         "next": "oop-3-radio",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -296,7 +498,15 @@
          }
         ],
         "arc": {
-         "end": "the-utility-man"
+         "end": "the-utility-man",
+         "set": {
+          "ended": "the-utility-man"
+         },
+         "next": "oop-3-radio",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -318,7 +528,15 @@
          }
         ],
         "arc": {
-         "end": "strikers-only"
+         "end": "strikers-only",
+         "set": {
+          "ended": "strikers-only"
+         },
+         "next": "oop-3-radio",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -333,6 +551,115 @@
     ]
    },
    "hint": "He might need another favour"
+  },
+  {
+   "id": "oop-3-radio",
+   "title": "On the radio",
+   "after": {
+    "beat": "oop-2-again",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-oop-3-radio",
+    "title": "On the radio",
+    "category": "manager",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Local radio, the gaffer's weekly phone-in. Somebody rings in and asks {manager.short} who his most important player is. Your mum rings you to say turn it on."
+    ],
+    "choices": [
+     {
+      "id": "listen",
+      "label": "Turn it on.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.mid=='kept-lb'",
+        "text": "\"Our left back,\" he says, and then has to explain to the caller that he means you. The caller doesn't believe him.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "called-me-his-left-back",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "left-back-for-life"
+        }
+       },
+       {
+        "if": "arc.path=='yes'",
+        "text": "\"The one who'll play anywhere I ask.\" He doesn't say your name. He doesn't need to.",
+        "effects": {
+         "boss": 2
+        },
+        "arc": {
+         "end": "the-utility-man"
+        }
+       },
+       {
+        "text": "He names three other players. Mum says something rude about him to the radio.",
+        "arc": {
+         "end": "strikers-only"
+        }
+       }
+      ]
+     },
+     {
+      "id": "off",
+      "label": "Leave it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "Mum tells you anyway: \"Anywhere he asks, he said. Anywhere.\"",
+        "arc": {
+         "end": "the-utility-man"
+        }
+       },
+       {
+        "text": "Mum doesn't ring back. You assume that means something.",
+        "arc": {
+         "end": "strikers-only"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The gaffer is asked about you"
   }
  ]
 }

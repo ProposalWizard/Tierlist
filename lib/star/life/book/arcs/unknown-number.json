@@ -2,7 +2,7 @@
  "id": "arc-unknown-number",
  "title": "Unknown number",
  "owner": "manager",
- "summary": "A text from a number you don't know offers you money for a yellow card in the first twenty minutes. You can delete it, reply, or take it to the gaffer. A season on, someone at another club gets caught, and the papers want to know who else got the text.",
+ "summary": "A text from a number you don't know offers you money for a yellow card. Weeks later a second text comes, or the league asks you to keep the number live. A season on a story breaks, and after that there's a hearing.",
  "size": "small",
  "about": {
   "who": [
@@ -33,7 +33,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -46,6 +48,11 @@
    "id": "deleted-it",
    "title": "You deleted it",
    "text": "You deleted the text. When the story broke, you wished you hadn't."
+  },
+  {
+   "id": "the-witness",
+   "title": "The witness",
+   "text": "You sat at a long table and read a fixer's texts out loud. The league uses your screenshots in its talks to academy lads now."
   }
  ],
  "promises": {},
@@ -212,6 +219,190 @@
    "hint": "A text from a number you don't know"
   },
   {
+   "id": "txt-1b-second",
+   "title": "Another text",
+   "after": {
+    "beat": "txt-1-text",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-txt-1b-second",
+    "title": "Another text",
+    "category": "agent",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "number",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='reported'",
+      "then": "r1",
+      "else": "d1"
+     },
+     "nodes": {
+      "r1": {
+       "who": "number",
+       "say": [
+        "A woman from the league's integrity unit rings. \"That number's texted you again, hasn't it? Could you reply to it? We'd like to keep it talking while we trace it.\""
+       ],
+       "replies": [
+        {
+         "id": "help",
+         "label": "\"Tell me what to say.\"",
+         "tone": "brave",
+         "end": "help"
+        },
+        {
+         "id": "out",
+         "label": "\"I'd rather not be involved.\"",
+         "tone": "calm",
+         "end": "out"
+        }
+       ]
+      },
+      "d1": {
+       "who": "number",
+       "say": [
+        "A new number. \"We know you got the first one. Ten grand this time. Your mum's still at number 22?\""
+       ],
+       "replies": [
+        {
+         "id": "gaffer",
+         "label": "Take the lot to the gaffer, now.",
+         "tone": "brave",
+         "end": "late"
+        },
+        {
+         "id": "delete",
+         "label": "Delete it. Again.",
+         "tone": "cold",
+         "end": "deleted"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "deleted"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "help": [
+       {
+        "text": "For a week you text a fixer the words a woman from the league sends you. On the Friday she rings: \"Got him. Thank you.\"",
+        "effects": {
+         "reputation": 2
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "helped-the-league-trace-the-fixer",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "helped"
+         }
+        }
+       }
+      ],
+      "out": [
+       {
+        "text": "\"Understood.\" She thanks you anyway and you never hear how it ends.",
+        "arc": {
+         "set": {
+          "mid": "out"
+         }
+        }
+       }
+      ],
+      "late": [
+       {
+        "text": "{manager.short} reads it twice and puts his coat on. You're at the league's offices by nine at night. Your mum gets a police car outside for a week and quite likes it.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 2,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "brought-me-the-second-text",
+          "strength": 2
+         },
+         {
+          "slot": "you",
+          "tag": "reported-the-fixer",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "late"
+         }
+        }
+       }
+      ],
+      "deleted": [
+       {
+        "text": "You delete it. You check your mum's street on the map at two in the morning.",
+        "effects": {
+         "energy": -6
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "deleted-the-second-text",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "deleted-again"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "number",
+      "pick": "stranger"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Your phone, late at night"
+  },
+  {
    "id": "txt-2-story",
    "title": "The story breaks",
    "after": {
@@ -261,7 +452,15 @@
          }
         ],
         "arc": {
-         "end": "reported-it"
+         "end": "reported-it",
+         "set": {
+          "ended": "reported-it"
+         },
+         "next": "txt-3-hearing",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -276,7 +475,15 @@
          }
         ],
         "arc": {
-         "end": "deleted-it"
+         "end": "deleted-it",
+         "set": {
+          "ended": "deleted-it"
+         },
+         "next": "txt-3-hearing",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -293,7 +500,15 @@
          "reputation": 2
         },
         "arc": {
-         "end": "reported-it"
+         "end": "reported-it",
+         "set": {
+          "ended": "reported-it"
+         },
+         "next": "txt-3-hearing",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -302,7 +517,15 @@
          "reputation": -2
         },
         "arc": {
-         "end": "deleted-it"
+         "end": "deleted-it",
+         "set": {
+          "ended": "deleted-it"
+         },
+         "next": "txt-3-hearing",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -321,6 +544,126 @@
     ]
    },
    "hint": "A season on, a story breaks"
+  },
+  {
+   "id": "txt-3-hearing",
+   "title": "The hearing",
+   "after": {
+    "beat": "txt-2-story",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-txt-3-hearing",
+    "title": "The hearing",
+    "category": "agent",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on, the fixer case goes to a hearing. The league has asked players who got the texts to come and say so, in a room in a hotel with a long table and jugs of water."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go and give evidence.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.mid=='helped' || arc.mid=='late'",
+        "text": "You read out your texts in order. The man at the end of the table doesn't look up once. He gets four years.",
+        "effects": {
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "gave-evidence-against-the-fixer",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-witness"
+        }
+       },
+       {
+        "if": "arc.path=='reported'",
+        "text": "You say what you sent the gaffer that night. It's in the report as one line, with your name.",
+        "effects": {
+         "reputation": 2
+        },
+        "arc": {
+         "end": "reported-it"
+        }
+       },
+       {
+        "text": "They ask why you didn't report it at the time. You haven't got a good answer, and it's in the report.",
+        "effects": {
+         "reputation": -2
+        },
+        "arc": {
+         "end": "deleted-it"
+        }
+       }
+      ]
+     },
+     {
+      "id": "statement",
+      "label": "Let the league's statement do it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='reported'",
+        "text": "The statement lists the clubs who reported it. Yours is first.",
+        "arc": {
+         "end": "reported-it"
+        }
+       },
+       {
+        "text": "The statement lists the clubs who reported it. Yours isn't on it.",
+        "arc": {
+         "end": "deleted-it"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "number",
+      "pick": "stranger"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "The league wants to hear from players"
   }
  ]
 }

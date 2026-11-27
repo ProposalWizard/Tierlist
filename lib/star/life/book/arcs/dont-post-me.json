@@ -2,7 +2,7 @@
  "id": "arc-dont-post-me",
  "title": "Don't post me",
  "owner": "sister",
- "summary": "Your sister asks you to stop putting her in your posts. People at her work are messaging her about you. A season later she needs you to post something.",
+ "summary": "Your sister asks you to stop putting her in your posts. Weeks later a fan account posts her anyway, and she needs you to do something about it. A season on her running club needs you to post it, and a season after that it has its first 10k.",
  "size": "small",
  "about": {
   "who": [
@@ -23,7 +23,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -36,6 +38,11 @@
    "id": "still-in-the-photos",
    "title": "Still in the photos",
    "text": "You kept posting her. She kept muting you."
+  },
+  {
+   "id": "ran-with-her",
+   "title": "At the back",
+   "text": "You ran your sister's 10k at the back, in a hat, with the walkers. Not one photo of you exists, and that was the point."
   }
  ],
  "promises": {},
@@ -198,6 +205,206 @@
    "hint": "Your sister has a problem"
   },
   {
+   "id": "sis-1b-account",
+   "title": "The account",
+   "after": {
+    "beat": "sis-1-ask",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-sis-1b-account",
+    "title": "The account",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "sister",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='cold'",
+      "then": "c1",
+      "else": "k1"
+     },
+     "nodes": {
+      "k1": {
+       "who": "sister",
+       "say": [
+        "\"Someone's posted me at the bus stop. A fan account. 'His sister, every morning, 7.40.' I know you took yours down. This isn't you. I just don't know what to do.\""
+       ],
+       "replies": [
+        {
+         "id": "club",
+         "label": "\"Send me the name. The club has people for this.\"",
+         "tone": "calm",
+         "end": "club"
+        },
+        {
+         "id": "post",
+         "label": "\"I'll post and tell them to leave you alone.\"",
+         "tone": "brave",
+         "end": "post"
+        },
+        {
+         "id": "ignore",
+         "label": "\"Ignore it. It goes away.\"",
+         "tone": "cold",
+         "end": "ignore"
+        }
+       ]
+      },
+      "c1": {
+       "who": "sister",
+       "say": [
+        "\"A fan account's posted me at the bus stop. With the time I'm there. This is what I meant. This is exactly what I meant.\""
+       ],
+       "replies": [
+        {
+         "id": "club",
+         "label": "\"Send me the name. I'll get the club on it.\"",
+         "tone": "calm",
+         "end": "club"
+        },
+        {
+         "id": "sorry",
+         "label": "\"I'm sorry. I'll take every one of mine down.\"",
+         "tone": "honest",
+         "end": "sorry"
+        },
+        {
+         "id": "ignore",
+         "label": "\"It'll blow over.\"",
+         "tone": "cold",
+         "end": "ignore"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "club": [
+       {
+        "text": "The club's lawyer has it down by the next morning. The account's owner turns out to be a lad of fifteen, and his dad writes your sister a letter.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sister",
+          "tag": "got-the-club-to-sort-the-account",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "club"
+         }
+        }
+       }
+      ],
+      "post": [
+       {
+        "text": "\"Leave my family alone. They didn't sign up for this.\" It gets a million likes. The account deletes itself. She sends one word: \"thanks\".",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sister",
+          "tag": "told-them-to-leave-me-alone",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "post"
+         }
+        }
+       }
+      ],
+      "sorry": [
+       {
+        "text": "You take down forty photos that night. She doesn't answer, but the next morning she's left a heart on the one of you both as kids, the only one you kept.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 6,
+          "grudge": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sister",
+          "tag": "took-me-out-of-the-posts",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "club",
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "ignore": [
+       {
+        "text": "It doesn't go away. She gets a taxi to work for a month and doesn't tell you what it cost.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": -5,
+          "respect": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sister",
+          "tag": "told-me-to-ignore-the-account",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "ignored"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sister",
+      "pick": "sister"
+     }
+    ]
+   },
+   "hint": "Your sister's on the phone, upset"
+  },
+  {
    "id": "sis-2-later",
    "title": "Please post this",
    "after": {
@@ -253,7 +460,15 @@
          }
         ],
         "arc": {
-         "end": "she-asked-you-to"
+         "end": "she-asked-you-to",
+         "set": {
+          "ended": "she-asked-you-to"
+         },
+         "next": "sis-3-10k",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -265,7 +480,15 @@
          }
         ],
         "arc": {
-         "end": "still-in-the-photos"
+         "end": "still-in-the-photos",
+         "set": {
+          "ended": "still-in-the-photos"
+         },
+         "next": "sis-3-10k",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -286,7 +509,15 @@
          }
         ],
         "arc": {
-         "end": "she-asked-you-to"
+         "end": "she-asked-you-to",
+         "set": {
+          "ended": "she-asked-you-to"
+         },
+         "next": "sis-3-10k",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -296,6 +527,127 @@
           "slot": "sister"
          }
         ],
+        "arc": {
+         "end": "still-in-the-photos",
+         "set": {
+          "ended": "still-in-the-photos"
+         },
+         "next": "sis-3-10k",
+         "afterWeeks": [
+          40,
+          60
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sister",
+      "pick": "sister"
+     }
+    ]
+   },
+   "hint": "A season on, your sister needs something"
+  },
+  {
+   "id": "sis-3-10k",
+   "title": "The 10k",
+   "after": {
+    "beat": "sis-2-later",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-sis-3-10k",
+    "title": "The 10k",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "sister",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{sister.short}: \"First 10k. Two hundred women from the estate. Sunday. The council have shut the ring road for us.\"",
+     "{if !arc.mid=='ignored'}Then: \"Will you hand out the medals? Stand at the back for the photos, though.\"{/if}{if arc.mid=='ignored'}Then, a while later: \"Mum said I should ask you.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "medals",
+      "label": "Hand out the medals, at the back.",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "if": "arc.path=='kind'",
+        "text": "Two hundred medals. You stand at the back of every photo. She stands at the front of all of them, and you've never seen her look like that.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "she-asked-you-to"
+        }
+       },
+       {
+        "text": "You hand them out. She thanks you on the microphone, briefly, and gets on with it.",
+        "arc": {
+         "end": "still-in-the-photos"
+        }
+       }
+      ]
+     },
+     {
+      "id": "run",
+      "label": "Run it, at the back with the slow group.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "!arc.mid=='ignored'",
+        "text": "You run it in a hat and sunglasses with the walkers, and finish in an hour and twenty. She doesn't post a single photo of you, and you don't mind.",
+        "effects": {
+         "energy": -8,
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sister",
+          "tag": "ran-my-10k-at-the-back",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "ran-with-her"
+        }
+       },
+       {
+        "text": "You run it. People keep stopping you for photos, and the slow group gets slower. She says nothing about it, which says it.",
+        "effects": {
+         "energy": -8
+        },
         "arc": {
          "end": "still-in-the-photos"
         }
@@ -311,7 +663,7 @@
      }
     ]
    },
-   "hint": "A season on, your sister needs something"
+   "hint": "Your sister's running club has a big day"
   }
  ]
 }

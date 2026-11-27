@@ -2,7 +2,7 @@
  "id": "arc-the-lucky-scarf",
  "title": "The scarf",
  "owner": "fan",
- "summary": "The old man with the season ticket by the tunnel gives you his scarf, the one he's had since 1971. He says it's lucky. A season later he isn't in his seat.",
+ "summary": "The old man with the season ticket by the tunnel gives you his scarf. Weeks later he tells you about 1971. A season later he isn't in his seat, and after that his grandson is.",
  "size": "small",
  "about": {
   "who": [
@@ -23,7 +23,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -36,6 +38,11 @@
    "id": "just-a-scarf",
    "title": "Just a scarf",
    "text": "He gave you his scarf and you put it in a drawer. His son asked about it once."
+  },
+  {
+   "id": "the-boy-has-it",
+   "title": "The boy has it",
+   "text": "You gave the old man's 1971 scarf to his grandson. The boy sits in the seat by the tunnel now, and he wears it in June."
   }
  ],
  "promises": {},
@@ -204,6 +211,184 @@
    "hint": "The old man by the tunnel wants a word"
   },
   {
+   "id": "scf-1b-1971",
+   "title": "1971",
+   "after": {
+    "beat": "scf-1-scarf",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-scf-1b-1971",
+    "title": "1971",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "walkout",
+      "after-match"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='took'",
+      "then": "t1",
+      "else": "r1"
+     },
+     "nodes": {
+      "t1": {
+       "who": "fan",
+       "say": [
+        "{fan.short} is at the rail before kick-off. \"Did you wear it, then? Don't lie. My wife says you'll have put it in a drawer.\""
+       ],
+       "replies": [
+        {
+         "id": "wore",
+         "label": "\"On the bus, every away game.\"",
+         "tone": "honest",
+         "end": "wore"
+        },
+        {
+         "id": "bag",
+         "label": "\"It's in my kit bag. Every game.\"",
+         "tone": "kind",
+         "end": "bag"
+        },
+        {
+         "id": "drawer",
+         "label": "\"It's in a drawer.\"",
+         "tone": "honest",
+         "end": "drawer"
+        }
+       ]
+      },
+      "r1": {
+       "who": "fan",
+       "say": [
+        "{fan.short} holds out a photo instead. A cup run, 1971, a crowd on a terrace. \"That's me, third from the left. That's the scarf new.\""
+       ],
+       "replies": [
+        {
+         "id": "keep",
+         "label": "\"Can I keep this?\"",
+         "tone": "kind",
+         "end": "photo"
+        },
+        {
+         "id": "son",
+         "label": "\"You should give it to your son.\"",
+         "tone": "calm",
+         "end": "son"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "wore": [
+       {
+        "text": "\"Good lad.\" He tells you about the cup run of 1971, the whole thing, and you're nearly late out.",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "wore-my-scarf",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "wore"
+         }
+        }
+       }
+      ],
+      "bag": [
+       {
+        "text": "He nods. \"Kit bag's all right. Kit bag's proper.\"",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "bag"
+         }
+        }
+       }
+      ],
+      "drawer": [
+       {
+        "text": "He laughs until he coughs. \"She was right. Get it out of the drawer.\"",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "drawer"
+         }
+        }
+       }
+      ],
+      "photo": [
+       {
+        "text": "\"Keep it. I've got the scarf. You've got the proof.\"",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "photo"
+         }
+        }
+       }
+      ],
+      "son": [
+       {
+        "text": "\"He's got enough of my rubbish.\" He gives it to you anyway.",
+        "arc": {
+         "set": {
+          "mid": "photo"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "The old man by the tunnel is waiting"
+  },
+  {
    "id": "scf-2-seat",
    "title": "The seat by the tunnel",
    "after": {
@@ -258,7 +443,15 @@
          }
         ],
         "arc": {
-         "end": "the-empty-seat-by-the-tunnel"
+         "end": "the-empty-seat-by-the-tunnel",
+         "set": {
+          "ended": "the-empty-seat-by-the-tunnel"
+         },
+         "next": "scf-3-grandson",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -270,7 +463,15 @@
          }
         ],
         "arc": {
-         "end": "just-a-scarf"
+         "end": "just-a-scarf",
+         "set": {
+          "ended": "just-a-scarf"
+         },
+         "next": "scf-3-grandson",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -282,6 +483,111 @@
       "outcomes": [
        {
         "text": "{if arc.path=='took'}The scarf is in your kit bag. You touch it before you go out, and you don't tell anyone.{/if}{if !arc.path=='took'}You look at the seat once, on the way out.{/if}",
+        "arc": {
+         "end": "just-a-scarf",
+         "set": {
+          "ended": "just-a-scarf"
+         },
+         "next": "scf-3-grandson",
+         "afterWeeks": [
+          40,
+          60
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "A season on, the seat by the tunnel"
+  },
+  {
+   "id": "scf-3-grandson",
+   "title": "The grandson",
+   "after": {
+    "beat": "scf-2-seat",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-scf-3-grandson",
+    "title": "The grandson",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "Another season. A boy of eight is in the seat by the tunnel, next to {fan.short}'s son. He's got his grandad's eyebrows and a programme he's holding like a shield."
+    ],
+    "choices": [
+     {
+      "id": "give",
+      "label": "{if arc.path=='took'}Bring the scarf and give it to the boy.{/if}{if !arc.path=='took'}Give the boy the photo from 1971.{/if}",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='took'",
+        "text": "The boy puts it on straight away. It goes round his neck three times. His dad has to look at the pitch for a while.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "gave-his-grandson-the-scarf",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-boy-has-it"
+        }
+       },
+       {
+        "text": "The boy looks at it for ages. \"Which one's Grandad?\" Third from the left.",
+        "arc": {
+         "end": "just-a-scarf"
+        }
+       }
+      ]
+     },
+     {
+      "id": "keep",
+      "label": "Keep it, and nod to the boy.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='took'",
+        "text": "The scarf stays in your kit bag. Every game you touch it on the way out, and the boy watches you do it.",
+        "arc": {
+         "end": "the-empty-seat-by-the-tunnel"
+        }
+       },
+       {
+        "text": "The boy nods back, very seriously, the way his grandad did.",
         "arc": {
          "end": "just-a-scarf"
         }
@@ -297,7 +603,7 @@
      }
     ]
    },
-   "hint": "A season on, the seat by the tunnel"
+   "hint": "Someone new in the seat by the tunnel"
   }
  ]
 }

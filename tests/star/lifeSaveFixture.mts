@@ -13,6 +13,13 @@
  * end). This test loads each save the way the game does (migrateLife), plays the same weeks with
  * the new code and checks every one of those is the same, and that the save is much smaller.
  *
+ * The book grows (new stories, old stories made deeper: story batch 3, 27 Nov 2026), so the exact
+ * replay is played on the book AS IT WAS when the saves were made
+ * (`fixtures/lifeBook-2026-11-27.json.gz`, the 121 stories of commit 52a7231, swapped in place
+ * below): that checks the CODE still plays an old save exactly as it did. Today's book is checked
+ * first, for what a player with an old save sees: every story keeps its ending, its people and the
+ * beats it played, and 30 weeks play on with no beat that will not open.
+ *
  *   npx tsx tests/star/lifeSaveFixture.mts             check
  *   WRITE_FIXTURE=1 npx tsx tests/star/lifeSaveFixture.mts   only with the OLD code (never again)
  */
@@ -29,7 +36,9 @@ const { makeInitialCareer } = await import("../../lib/star/careerFlow.ts");
 const C = await import("../../lib/star/clubs.ts");
 const { mulberry32 } = await import("../../lib/star/season.ts");
 import type { CareerState, StarPlayer } from "../../lib/star/types";
-import type { LifeMoment } from "../../lib/star/life/types";
+import type { ArcRun, LifeArc, LifeMoment } from "../../lib/star/life/types";
+const { gunzipSync } = await import("node:zlib");
+const BOOK = await import("../../lib/star/life/arcBook.ts");
 
 const FILE = new URL("./fixtures/lifeSaves-2026-11-27.json", import.meta.url);
 let fails = 0;
@@ -71,7 +80,8 @@ function rest(c: CareerState) {
 }
 
 /** 30 weeks on from the save, fixed dice, every reply and game by the dice (as the soak plays). */
-function playOn(c0: CareerState, seed: number): { steps: string[]; end: CareerState } {
+function playOn(c0: CareerState, seed: number): { steps: string[]; end: CareerState; dead: string[] } {
+  const dead: string[] = [];
   const rng = mulberry32(seed);
   const pick = (k: number) => Math.floor(rng() * k);
   let c = c0;
@@ -86,7 +96,7 @@ function playOn(c0: CareerState, seed: number): { steps: string[]; end: CareerSt
       const r = A.arcMoment(c, m, { rng, facts });
       c = r.career;
       steps.push(`${c.season}.${c.week} ${m} screens=${JSON.stringify(r.screens)} offers=${JSON.stringify(r.offers)} notices=${hash(r.notices)}`);
-      for (const sc of r.screens) { const a = T.autoBeat(c, sc.arc, sc.beat, { rng, facts, pick }); if (a) { c = a.career; steps.push(`  played ${sc.beat} -> ${a.end}`); } }
+      for (const sc of r.screens) { const a = T.autoBeat(c, sc.arc, sc.beat, { rng, facts, pick }); if (a) { c = a.career; steps.push(`  played ${sc.beat} -> ${a.end}`); } else dead.push(`${c.season}.${c.week} ${sc.beat}`); }
       for (const o of r.offers) if (rng() < 0.6) { const a = T.autoBeat(c, o.arc, o.beat, { rng, facts, pick }); if (a) { c = a.career; steps.push(`  took ${o.beat} -> ${a.end}`); } }
     }
     for (const [, run] of Object.entries(A.arcsOf(c))) {
@@ -97,7 +107,7 @@ function playOn(c0: CareerState, seed: number): { steps: string[]; end: CareerSt
     c = A.endOfDay(c, rng).career;
     steps.push(`  view ${hash(view(c))} rest ${hash(rest(c))}`);
   }
-  return { steps, end: c };
+  return { steps, end: c, dead };
 }
 
 function digest(s: Saved) {
@@ -120,6 +130,42 @@ if (process.env.WRITE_FIXTURE) {
   writeFileSync(FILE, JSON.stringify(fx));
   for (const [k, d] of Object.entries(fx.expect)) console.log(`${k}: written; life block ${d.bytesLoaded} bytes loaded, ${d.bytesEnd} after 30 weeks`);
   process.exit(0);
+}
+// ── 1. Today's book: what a player with an old save sees ──────────────────────────────────────
+const LIFE_BLOCK_LIMIT = 50_000;
+const doneOf = (f: Record<string, number[]>) => JSON.stringify(Object.keys(f).filter((b) => f[b].length).sort());
+for (const [k, s] of Object.entries(fx.saves)) {
+  const raw = ((s.life as { arcs?: Record<string, ArcRun> }).arcs ?? {}) as Record<string, ArcRun>;
+  const c = careerFor(s);
+  const runs = A.arcsOf(c);
+  const lost = Object.entries(raw).filter(([id, r]) => !runs[id] || runs[id].done !== r.done || JSON.stringify(runs[id].cast) !== JSON.stringify(r.cast) || doneOf(runs[id].f) !== doneOf(r.f)).map(([id]) => id);
+  check(!lost.length && Object.keys(runs).length === Object.keys(raw).length, `${k}, today's book: all ${Object.keys(raw).length} stories load with their endings, people and beats played${lost.length ? ` (changed: ${lost.slice(0, 4).join(", ")})` : ""}`);
+  const p = playOn(c, 4242);
+  check(!p.dead.length, `${k}, today's book: 30 weeks played on, every due beat opens${p.dead.length ? ` (${p.dead.slice(0, 3).join(", ")})` : ""}`);
+  const after = A.arcsOf(p.end);
+  const moved = Object.entries(raw).filter(([id, r]) => r.done && !Object.keys(r.s).length && !r.o && after[id]?.done !== r.done).map(([id]) => id);
+  check(!moved.length, `${k}, today's book: every story that was over stays over the same way${moved.length ? ` (${moved.slice(0, 4).join(", ")})` : ""}`);
+  check(hash(view({ ...p.end, life: migrateLife(JSON.parse(JSON.stringify(p.end.life))) })) === hash(view(p.end)), `${k}, today's book: saved again, it loads back the same`);
+  const bytes = JSON.stringify(p.end.life).length;
+  check(bytes < LIFE_BLOCK_LIMIT, `${k}, today's book: the life block stays under ${LIFE_BLOCK_LIMIT / 1000} KB (${bytes} bytes)`);
+  const started = Object.keys(after).filter((id) => !(id in raw)).length;
+  console.log(`${k}, today's book: ${Object.keys(raw).length} stories loaded the same; ${started} new ones met in 30 weeks; life block ${bytes} bytes`);
+}
+
+// ── 2. The book as it was: the exact replay ────────────────────────────────────────────────────
+// Swapped in place (the same objects, so every module's lookups see it), after today's book is done.
+{
+  const old = JSON.parse(gunzipSync(readFileSync(new URL("./fixtures/lifeBook-2026-11-27.json.gz", import.meta.url))).toString()) as LifeArc[];
+  const live = new Map(BOOK.ALL_ARCS.map((a) => [a.id, a] as [string, LifeArc]));
+  const olds = old.map((a) => {
+    const cur = live.get(a.id);
+    if (!cur) throw new Error(`the old book's story ${a.id} is gone from today's book (never take a story out)`);
+    for (const key of Object.keys(cur)) delete (cur as unknown as Record<string, unknown>)[key];
+    return Object.assign(cur, a);
+  });
+  BOOK.ALL_ARCS.splice(0, BOOK.ALL_ARCS.length, ...olds);
+  BOOK.ARCS.splice(0, BOOK.ARCS.length, ...olds.filter((a) => !a.needsActivity));
+  BOOK.WAITING_ARCS.splice(0, BOOK.WAITING_ARCS.length, ...olds.filter((a) => !!a.needsActivity));
 }
 for (const [k, s] of Object.entries(fx.saves)) {
   const want = fx.expect![k];

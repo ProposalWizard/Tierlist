@@ -53,6 +53,12 @@ npx tsx tests/star/lifeSaveFixture.mts  # old saves still load and play the same
 - Old saves load as they were (`migrate.ts` keeps every story) and are packed at their first
   story moment. `tests/star/lifeSaveFixture.mts` holds two real saves made before packing: it
   checks they load and play on exactly as they did. Never regenerate that fixture.
+- That exact replay runs on the book as it was on 27 Nov 2026 (`fixtures/lifeBook-2026-11-27.json.gz`,
+  swapped in by the test), so new stories and deeper old ones never break it. Today's book is checked
+  there too: every story in the old saves keeps its ending, people and beats, and 30 weeks play on.
+- To make an old story deeper: add beats with new ids (a side beat with no `n`, or the next `n`), keep
+  every old ending reachable, and schedule a later beat from an old ending with `next` + `afterWeeks`
+  (the story counts as over for pacing, and the later beat can still end it a new way).
 
 ### 1. People: name a ROLE, never a person
 
