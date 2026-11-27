@@ -46,7 +46,7 @@ mad = {"name": "Noni Madueke", "cut": f"{F}/cut/Noni_Madueke.png", "badge": f"{F
 common = {"title": "BALLON D'OR RANKING", "sub": "NOV 2026", "top": 20, "podium": f"{F}/podium_cut.png", "panel": f"{F}/gold_panel.png", "stadiums": [f"{F}/stadium/s{i}.jpg" for i in (1, 2, 3)],
           "credit": "Photos: Wikimedia Commons, CC BY / CC BY-SA 4.0 (Bryan Berlin, YantsImages, LawEnthusiast, Biso, Sandro Halank, Ank Kumar)", "rows": rows}
 v1 = dict(common, mode="count", shown=3, step=2.0, t0=-0.3, endHold=5.3, front=f"{F}/cut/Noni_Madueke.png", chain="NONZINO")
-v2 = dict(common, mode="top5", rowH=50, madueke=mad, stats=stats, foot=f"FOTMOB · OFFICIAL MATCHES TO {asof}", timing={"step": 5.0, "mad": 2.6, "glitch": 0.9, "last": 5.8, "cta": 2.6})
+v2 = dict(common, mode="top5", madueke=mad, stats=stats, foot=f"FOTMOB · OFFICIAL MATCHES TO {asof}", timing={"step": 5.0, "mad": 2.6, "glitch": 0.9, "last": 5.8, "cta": 2.6})
 v2["duration"] = 4 * v2["timing"]["step"] + sum(v2["timing"][k] for k in ("mad", "glitch", "last"))
 json.dump(v1, open(A + "/ranking.json", "w"), ensure_ascii=False, indent=1); json.dump(v2, open(A + "/ranking_top5.json", "w"), ensure_ascii=False, indent=1)
 print("as of", asof, "| video 2 length", v2["duration"], "s")

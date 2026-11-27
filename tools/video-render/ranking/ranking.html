@@ -152,20 +152,15 @@ function glitchFigure(a, b, gp, t) { figure(a, 1, 1, PC); figure(b, 1, 1, PC2); 
   g.save(); for (let i = 0; i < 7; i++) { const r = hash(i * 9.1 + frame * 2.3); if (r < 0.55 * amp + 0.1) { g.fillStyle = `rgba(255,255,255,${0.12 + 0.25 * hash(i + frame)})`; g.fillRect(560 + hash(i * 4.4 + frame) * 200, hash(i * 1.9 + frame * 3.1) * H, 140 + 280 * hash(i + 3 + frame), 3 + 12 * hash(i * 5.5 + frame)); } } g.restore();
   if (gp < 0.1 || (gp > 0.45 && gp < 0.55)) { g.fillStyle = "rgba(255,255,255,.22)"; g.fillRect(0, 0, W, H); } }
 const scr = (word, gp, frame) => { const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ#%@&"; return word.split("").map((ch, i) => ch === " " ? " " : (hash(i * 3.3 + frame * 1.9) < gp ? chars[Math.floor(hash(i + frame * 7.7) * chars.length)] : ch)).join(""); };
-function statCard(ph, st) { const k = pop(cl((ph - 0.45) * 3.2)); if (k <= 0 || !st) return;
-  const x = BX, w = BW, h = 404, y = BY + RH * D.top + 24;
-  g.save(); g.translate(x + w / 2, y + h / 2); g.scale(0.94 + 0.06 * k, 0.94 + 0.06 * k); g.globalAlpha = cl(k * 1.4); g.translate(-(x + w / 2), -(y + h / 2));
-  rr(x, y, w, h, 20); g.fillStyle = "rgba(10,8,5,.94)"; g.fill(); g.strokeStyle = GOLD2; g.lineWidth = 3; g.stroke();
-  txt("2026/27 SEASON", x + 26, y + 36, 24, GOLD1, { w: 900, ls: 3 }); txt("ALL COMPETITIONS", x + w - 26, y + 36, 16, "rgba(255,255,255,.65)", { w: 800, ls: 2, a: "right" });
-  const cu = v => Math.round(v * ez((ph - 0.7) / 0.9)), bw = (w - 52 - 24) / 3, by = y + 68, bh = 112;
-  [["GOALS", st.g, 0], ["ASSISTS", st.a, 1], ["G + A", st.g + st.a, 2]].forEach(([lab, v, i]) => { const bx = x + 26 + i * (bw + 12); rr(bx, by, bw, bh, 14);
-    if (i === 2) { const gg = g.createLinearGradient(0, by, 0, by + bh); gg.addColorStop(0, GOLD1); gg.addColorStop(1, GOLD2); g.fillStyle = gg; } else g.fillStyle = "rgba(255,255,255,.08)"; g.fill();
-    txt(String(cu(v)), bx + bw / 2, by + 46, 68, i === 2 ? INK : "#fff", { a: "center", w: 900 }); txt(lab, bx + bw / 2, by + 90, 18, i === 2 ? INK : GOLD1, { a: "center", w: 800, ls: 2 }); });
-  const gx = x + w - 140, ax = x + w - 60; txt("GOALS", gx, y + 204, 14, "rgba(255,255,255,.55)", { a: "center", w: 800, ls: 1.5 }); txt("ASSISTS", ax, y + 204, 14, "rgba(255,255,255,.55)", { a: "center", w: 800, ls: 1.5 });
-  st.rows.forEach((r, i) => { const ry = y + 238 + i * 38; g.fillStyle = "rgba(255,255,255,.10)"; g.fillRect(x + 26, ry - 19, w - 52, 1.5);
-    txt(r.label, x + 26, ry, 21, r.n ? "#fff" : "rgba(255,255,255,.4)", { w: 800, ls: 0.5 });
-    txt(r.n ? String(r.g) : "–", gx, ry, 26, r.n ? (r.g ? GOLD1 : "#fff") : "rgba(255,255,255,.35)", { a: "center", w: 900 }); txt(r.n ? String(r.a) : "–", ax, ry, 26, r.n ? (r.a ? GOLD1 : "#fff") : "rgba(255,255,255,.35)", { a: "center", w: 900 }); });
-  txt(D.foot || "", x + w / 2, y + h - 18, 13, "rgba(255,255,255,.45)", { a: "center", w: 800, ls: 1 }); g.restore(); }
+// the stats engraved into the plinth: goals, assists, games; each counts up from 0 when its rank is revealed
+function engrave(ph, st) { if (!st || ph < 0) return; const k = cl(ph * 4); if (k <= 0) return;
+  const cx = 857, y0 = 1494, gap = 130, games = st.rows.reduce((s, r) => s + (r.n || 0), 0), items = [[st.g, "GOALS"], [st.a, "ASSISTS"], [games, "GAMES"]];
+  g.save(); g.globalAlpha = k;
+  items.forEach(([v, lab], i) => { const y = y0 + i * gap, val = Math.round(v * ez(cl((ph - 0.3 - i * 0.18) / 1.1))), n = String(val);
+    // engraved: a dark edge above, a light edge below, gold in the cut
+    [[0, -2.5, "rgba(0,0,0,.95)"], [0, 2.5, "rgba(255,226,160,.28)"], [0, 0, "#d9ae55"]].forEach(([dx, dy, c]) => { txt(n, cx + dx, y + 38 + dy, 88, c, { a: "center", w: 900 }); txt(lab, cx + dx, y + 100 + dy, 21, c, { a: "center", w: 900, ls: 4 }); });
+    if (i < 2) { const ly = y + gap - 16; g.fillStyle = "rgba(0,0,0,.9)"; g.fillRect(cx - 78, ly - 1.5, 156, 2); g.fillStyle = "rgba(255,226,160,.3)"; g.fillRect(cx - 78, ly + 1, 156, 2); } });
+  g.restore(); }
 function drawTop5(t) { const T = D.timing, order = [5, 4, 3, 2, 1], len = { 5: T.step, 4: T.step, 3: T.step, 2: T.step, 1: T.mad + T.glitch + T.last }, start = {}; let acc = 0;
   order.forEach(r => { start[r] = acc; acc += len[r]; }); const total = acc;
   const cur = order.filter(r => start[r] <= t).pop() || 5, ph = t - start[cur], step = T.step, frame = Math.floor(t * 24);
@@ -187,9 +182,9 @@ function drawTop5(t) { const T = D.timing, order = [5, 4, 3, 2, 1], len = { 5: T
       if (rk === 1) { if (sub === "mad") { info.name = D.madueke.name; info.bd = IM.madBadge; info.fl = IM.madFlag; }
         else if (sub === "gl") { const first = gp < 0.5; info.name = scr(first ? D.madueke.name : r.name, first ? gp * 2 : (1 - gp) * 2, frame); const flick = hash(frame * 1.3) < 0.5; info.bd = (first ? flick : !flick) ? IM.madBadge : IM["k1"]; info.fl = (first ? flick : !flick) ? IM.madFlag : IM["f1"]; info.hl = 1 - cl(hash(frame) * 0.6); info.slide = 1; } } }
     row(rk, info); if (info && rk === cur && info.hl > 0.05) { g.fillStyle = "#fff"; rr(BX - 24, BY + (rk - 1) * RH + 10 * (RH / 64), 9, RH - 30 * (RH / 64), 5); g.fill(); } }
-  if (sub !== "mad" && sub !== "gl") statCard(sub === "yam" ? py - 0.0 + 0.2 : ph, D.stats[cur]);
   podium(860, 820, 0.3 + 0.15 * Math.sin(t * 2.5));
-  const k2 = pop(cl((t - (total - T.cta)) * 3)); if (k2 > 0) { g.save(); g.translate(540, 1846); g.scale(k2, k2); rr(-300, -42, 600, 84, 24); const b2 = g.createLinearGradient(0, -42, 0, 42); b2.addColorStop(0, GOLD1); b2.addColorStop(1, GOLD2); g.fillStyle = b2; g.fill(); g.strokeStyle = INK; g.lineWidth = 5; g.stroke(); txt("DO YOU AGREE?", 0, 0, 44, INK, { a: "center", w: 900, ls: 1 }); g.restore(); }
+  if (sub !== "mad" && sub !== "gl") engrave(sub === "yam" ? py + 0.2 : ph, D.stats[cur]);
+  const k2 = pop(cl((t - (total - T.cta)) * 3)); if (k2 > 0) { g.save(); g.translate(300, 1738); g.scale(k2, k2); rr(-250, -42, 500, 84, 24); const b2 = g.createLinearGradient(0, -42, 0, 42); b2.addColorStop(0, GOLD1); b2.addColorStop(1, GOLD2); g.fillStyle = b2; g.fill(); g.strokeStyle = INK; g.lineWidth = 5; g.stroke(); txt("DO YOU AGREE?", 0, 0, 38, INK, { a: "center", w: 900, ls: 1 }); g.restore(); }
   if (D.credit) txt(D.credit, 1062, 1906, 14, "rgba(255,255,255,.55)", { w: 800, a: "right" }); }
 window.draw = t => D.mode === "top5" ? drawTop5(t) : drawCount(t);
 window.ready = true;
