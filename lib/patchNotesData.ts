@@ -27,65 +27,66 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
   {
-      "version": "0.147",
-      "title": "Leo's patch notes: Draft chemistry, Ranked or Custom, and watching games",
+      "version": "0.143",
+      "title": "Leo's patch notes: One Knowitball, the whole website",
       "author": "Leo",
-      "publishedAt": "2026-11-27T04:30:23Z",
-      "updatedAt": null,
+      "publishedAt": "2026-11-24T16:19:34Z",
+      "updatedAt": "2026-11-27T04:46:26Z",
       "artifactUrl": null,
-      "summary": "Behind the New look switch: FIFA-style Chemistry as a rule set with its own board; every draft is Ranked (standard rules, Hall of Fame: Normal, Prime or Chemistry) or Custom (history only); convince to stay is a higher-or-lower card game; a Match Centre to watch your finals and biggest win with commentary. Players sorted by rating again; phone spacing fixed. The Chemistry board needs one SQL file run. Manager mode and friend matches planned.",
+      "updateNote": "Rounds 1–5 in one note: plan, the New look switch, readability check, Daily Draft and old games, Chemistry + Ranked/Custom + watching games.",
+      "summary": "One patch note for the whole website job, updated each round. Behind the New look switch: the home's look on every page (light or dark), Daily Draft, Draft spot ratings, Chemistry with Ranked or Custom (three Hall of Fame boards), higher-or-lower, Watch the big games, Tic Tac Toe and Ten-A-Ball updates, Rankings for the tester, a readability check every round. Fixed for everyone: titles, sign-in name, Ten-A-Ball line and duplicate, Objectives badge, three wrong Draft seasons, faint text. Needs: the Chemistry SQL run; Mikey's yes for Rankings.",
       "stats": [
         {
-          "value": "6–10",
-          "label": "league points a season from full chemistry"
+          "value": "5",
+          "label": "rounds so far, one note"
         },
         {
           "value": "3",
-          "label": "Hall of Fame boards, all else is Custom"
+          "label": "Hall of Fame boards (Normal, Prime, Chemistry)"
         },
         {
-          "value": "43%",
-          "label": "stay rate in higher-or-lower (was a 50% coin flip)"
+          "value": "84 → 0",
+          "label": "unreadable words on the Hall of Fame"
         },
         {
-          "value": "45 s",
-          "label": "to watch a match, or Skip"
+          "value": "0",
+          "label": "changes for anyone without the switch"
         }
       ],
       "sections": [
         {
           "kind": "added",
-          "title": "Check these",
+          "title": "Check these (switch on)",
           "items": [
             {
-              "title": "Draft → Rules: Chemistry",
-              "detail": "Pick it; see the Ranked line; play: Chem count and spot hints."
+              "title": "Draft",
+              "detail": "Daily Draft; Rules: Chemistry; spot ratings and Best spot; Watch the big games."
             },
             {
-              "title": "Change re-spins",
-              "detail": "The line turns amber: Custom."
+              "title": "Tic Tac Toe",
+              "detail": "Today's grid first; streak and Share."
             },
             {
-              "title": "After a season",
-              "detail": "Watch the big games → Watch."
+              "title": "Ten-A-Ball",
+              "detail": "Topics, your best on each, Share."
             },
             {
-              "title": "Season 2 pre-season",
-              "detail": "If a player wants to leave: Convince to stay → higher or lower."
+              "title": "Every page",
+              "detail": "● New look → Light or Dark."
             }
           ]
         },
         {
           "kind": "fixed",
-          "title": "Fixed",
+          "title": "Fixed for everyone",
           "items": [
             {
-              "title": "Sorted by rating",
-              "detail": "Highest-rated first again."
+              "title": "Site",
+              "detail": "Titles, sign-in name, Objectives badge clear of Sign in, faint text."
             },
             {
-              "title": "Phone spacing",
-              "detail": "Cards line up and no longer touch."
+              "title": "Games",
+              "detail": "Ten-A-Ball lives line and duplicate; three wrong Draft seasons."
             }
           ]
         },
@@ -94,343 +95,45 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "title": "Needs you / next",
           "items": [
             {
-              "title": "Run the Chemistry SQL",
-              "detail": "supabase/migrations/draft_records_chemistry.sql in the Supabase SQL editor."
+              "title": "Chemistry board",
+              "detail": "Run supabase/migrations/draft_records_chemistry.sql."
             },
             {
               "title": "Next",
-              "detail": "Friend matches watched together; Manager mode (plan in docs/DRAFT_MANAGER_PLAN.md)."
+              "detail": "Friend matches watched together, Manager mode, page polish."
             }
           ]
         }
       ],
-      "updates": []
+      "updates": [
+        {
+          "at": "2026-11-26T03:19:33Z",
+          "where": "was 0.144",
+          "note": "The new look, only for you"
+        },
+        {
+          "at": "2026-11-26T18:21:03Z",
+          "where": "was 0.145",
+          "note": "New look fixes and a readability check"
+        },
+        {
+          "at": "2026-11-27T02:22:14Z",
+          "where": "was 0.146",
+          "note": "Daily Draft and the old games"
+        },
+        {
+          "at": "2026-11-27T04:30:23Z",
+          "where": "was 0.147",
+          "note": "Draft chemistry, Ranked or Custom, and watching games"
+        },
+        {
+          "at": "2026-11-27T04:46:26Z",
+          "where": "0.143",
+          "note": "Rounds 1–5 in one note: plan, the New look switch, readability check, Daily Draft and old games, Chemistry + Ranked/Custom + watching games."
+        }
+      ]
     },
   {
-      "version": "0.146",
-      "title": "Leo's patch notes: Daily Draft and the old games",
-      "author": "Leo",
-      "publishedAt": "2026-11-27T02:22:14Z",
-      "updatedAt": null,
-      "artifactUrl": null,
-      "summary": "Behind the New look switch: a Daily Draft (same 14 spins for everyone, ranking, share grid, streak), smarter Draft picking (what you still need, best fits first, each spot's real rating and an out-of-position warning, one-tap best spot), Tic Tac Toe opens on today's grid with a streak and Share, Ten-A-Ball gets topics, bests and Share, Rankings run for the tester. For everyone: three wrong Draft seasons removed and Ten-A-Ball's duplicate gone. Chemistry waits on one decision.",
-      "stats": [
-        {
-          "value": "14",
-          "label": "same spins for everyone each day"
-        },
-        {
-          "value": "86 → 58",
-          "label": "a striker's rating in goal, now shown"
-        },
-        {
-          "value": "3",
-          "label": "wrong seasons removed from the Draft"
-        },
-        {
-          "value": "2 of 2",
-          "label": "test players got identical spins"
-        }
-      ],
-      "sections": [
-        {
-          "kind": "added",
-          "title": "Check these",
-          "items": [
-            {
-              "title": "Draft → Daily Draft",
-              "detail": "Switch on; play today's draft to the end; Share."
-            },
-            {
-              "title": "Draft picking",
-              "detail": "Pick a player: each spot shows his rating there; Best spot button."
-            },
-            {
-              "title": "Tic Tac Toe",
-              "detail": "Play today's grid; finish it for the streak and Share."
-            },
-            {
-              "title": "Ten-A-Ball",
-              "detail": "Topics; play one, your best shows on its card."
-            },
-            {
-              "title": "Rankings",
-              "detail": "In the game links with your switch on."
-            }
-          ]
-        },
-        {
-          "kind": "fixed",
-          "title": "Fixed for everyone",
-          "items": [
-            {
-              "title": "Draft seasons",
-              "detail": "Bournemouth 2012/13, Aston Villa 2018/19, Sunderland 2021/22 removed (not in the PL then)."
-            },
-            {
-              "title": "Ten-A-Ball",
-              "detail": "The same challenge no longer listed twice."
-            }
-          ]
-        },
-        {
-          "kind": "known",
-          "title": "Your call",
-          "items": [
-            {
-              "title": "Chemistry",
-              "detail": "Changes results: count in the Hall of Fame or a separate board?"
-            },
-            {
-              "title": "Rankings for everyone",
-              "detail": "Mikey paused them; needs his yes."
-            }
-          ]
-        }
-      ],
-      "updates": []
-    },
-  {
-      "version": "0.145",
-      "title": "Leo's patch notes: New look fixes and a readability check",
-      "author": "Leo",
-      "publishedAt": "2026-11-26T18:21:03Z",
-      "updatedAt": null,
-      "artifactUrl": null,
-      "summary": "In the New look preview: the Hall of Fame boards read again (they only showed signed in, which my checks missed), home has a dark mode, the admin panel reads, and Mikey's Draft art stays exactly as drawn as dark cards on the cream page. A new check measures every word on 14 pages in light, dark and today's look, signed out, signed in and as admin, phone and computer: 162 of 168 passed and the rest are fixed. Some faint text on today's site fixed for everyone too.",
-      "stats": [
-        {
-          "value": "84 → 0",
-          "label": "unreadable words on the Hall of Fame"
-        },
-        {
-          "value": "168",
-          "label": "page checks per run"
-        },
-        {
-          "value": "3 : 1",
-          "label": "lowest contrast allowed"
-        },
-        {
-          "value": "0",
-          "label": "pages listed by hand for the art cards"
-        }
-      ],
-      "sections": [
-        {
-          "kind": "added",
-          "title": "Check these",
-          "items": [
-            {
-              "title": "Draft → Hall of Fame, signed in",
-              "detail": "New look on, light then dark."
-            },
-            {
-              "title": "Home in dark",
-              "detail": "● New look → Dark."
-            },
-            {
-              "title": "Admin panel",
-              "detail": "Open it on any page with the new look on."
-            }
-          ]
-        },
-        {
-          "kind": "fixed",
-          "title": "Fixed",
-          "items": [
-            {
-              "title": "Hall of Fame boards",
-              "detail": "Mikey's art kept; every word readable."
-            },
-            {
-              "title": "Home dark mode",
-              "detail": "Same greens as the rest."
-            },
-            {
-              "title": "Admin panel",
-              "detail": "Keeps its own dark colours."
-            },
-            {
-              "title": "For everyone",
-              "detail": "Objectives badge, Draft setup options, Tic Tac Toe and history small words."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "Added",
-          "items": [
-            {
-              "title": "Readability check",
-              "detail": "scripts/site-look/contrast.mjs; Brain RUL-UI-014: every look change passes it first."
-            }
-          ]
-        }
-      ],
-      "updates": []
-    },
-  {
-      "version": "0.144",
-      "title": "Leo's patch notes: The new look, only for you",
-      "author": "Leo",
-      "publishedAt": "2026-11-26T03:19:33Z",
-      "updatedAt": null,
-      "artifactUrl": null,
-      "summary": "A secret admin switch (Admin → New look, or ?look=v2): every public page in the new cream-and-green look, or dark, on your device only. Everyone else sees today's site. Fixed for everyone: double 'Knowitball' in titles, sign-in's old name, Ten-A-Ball's 'ten lives' line, the Objectives badge over Sign in. Next, behind the switch: page polish, old games, Draft.",
-      "stats": [
-        {
-          "value": "2",
-          "label": "looks: Light (cream) and Dark"
-        },
-        {
-          "value": "0",
-          "label": "changes for anyone without the switch"
-        },
-        {
-          "value": "14",
-          "label": "pages checked 3 ways"
-        },
-        {
-          "value": "4",
-          "label": "small fixes for everyone"
-        }
-      ],
-      "sections": [
-        {
-          "kind": "added",
-          "title": "Check these",
-          "items": [
-            {
-              "title": "Admin → New look",
-              "detail": "On, then Light or Dark; open the pages from its list."
-            },
-            {
-              "title": "● New look button",
-              "detail": "Bottom-left on every page while on."
-            },
-            {
-              "title": "Phone",
-              "detail": "knowitball.co.uk/?look=v2 signed in as admin; ?look=off to stop."
-            }
-          ]
-        },
-        {
-          "kind": "fixed",
-          "title": "Fixed for everyone",
-          "items": [
-            {
-              "title": "Titles",
-              "detail": "No 'Knowitball | Knowitball'."
-            },
-            {
-              "title": "Sign in",
-              "detail": "Says Knowitball."
-            },
-            {
-              "title": "Ten-A-Ball menu line",
-              "detail": "Three lives."
-            },
-            {
-              "title": "Objectives badge",
-              "detail": "No longer over Sign in on a computer."
-            }
-          ]
-        },
-        {
-          "kind": "known",
-          "title": "Next",
-          "items": [
-            {
-              "title": "Page polish, old games, Draft",
-              "detail": "All behind the switch until you say go."
-            }
-          ]
-        }
-      ],
-      "updates": []
-    },
-  {
-      "version": "0.143",
-      "title": "Leo's patch notes: One Knowitball, the whole-site plan",
-      "author": "Leo",
-      "publishedAt": "2026-11-24T16:19:34Z",
-      "updatedAt": null,
-      "artifactUrl": null,
-      "summary": "Plan only, nothing on the site changed. Today the home is cream and green and every other page is dark navy and purple. The plan: one frame (green top bar with one menu, a game bar, green footer) and one look on every page, 10 faults fixed, Tic Tac Toe and Ten-A-Ball brought up to date, and Draft in three waves (faces back, Daily Draft with rankings and a share grid, links between players, Challenge Draft, play a friend). About 15 working days in 7 steps. 5 decisions for Leo.",
-      "stats": [
-        {
-          "value": "22",
-          "label": "live pages checked, phone + computer"
-        },
-        {
-          "value": "2",
-          "label": "looks on the site today"
-        },
-        {
-          "value": "10",
-          "label": "faults found"
-        },
-        {
-          "value": "~15 days",
-          "label": "to do all of it, 7 steps"
-        }
-      ],
-      "sections": [
-        {
-          "kind": "added",
-          "title": "Check these",
-          "items": [
-            {
-              "title": "Before and after pictures",
-              "detail": "Draft, Tic Tac Toe and Ten-A-Ball now, and drawn in the home's look."
-            },
-            {
-              "title": "The 5 decisions at the bottom",
-              "detail": "Cream everywhere; one menu; Tierlists back or gone; Daily Draft first; Ten-A-Ball challenge of the day."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "The plan",
-          "items": [
-            {
-              "title": "One frame, one look",
-              "detail": "Green top bar with one menu, a game bar, the green footer, the home's colours and cards everywhere; a build check stops the old look coming back."
-            },
-            {
-              "title": "Old games",
-              "detail": "Tic Tac Toe: today's grid first, rarity, streaks, share. Ten-A-Ball: a real daily challenge, topics, best scores."
-            },
-            {
-              "title": "Draft, three waves",
-              "detail": "Faces, clean clubs, faster picks; Daily Draft with ranking and share grid, links between players; Challenge Draft, beat-my-XI, season story, levels."
-            }
-          ]
-        },
-        {
-          "kind": "known",
-          "title": "Faults found (not fixed yet)",
-          "items": [
-            {
-              "title": "Look",
-              "detail": "Two menu buttons on phones; sign-in says Football Tierlist; titles say Knowitball twice; Objectives badge covers Sign in on a computer."
-            },
-            {
-              "title": "Ten-A-Ball",
-              "detail": "Says daily but is a fixed 33; one listed twice; menu says ten lives, game gives 3."
-            },
-            {
-              "title": "Draft",
-              "detail": "All silhouettes; a French club in the PL reel; a keeper can play up front with no warning."
-            }
-          ]
-        }
-      ],
-      "updates": []
-    },
-    {
       "version": "0.142",
       "title": "Harry's patch notes: 3D phone, real clothes at home",
       "author": "Harry",
