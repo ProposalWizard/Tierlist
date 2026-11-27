@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weekly Round-ups</title>
+<style>
+  /* Same tokens and parts as Harry's pages (0.109h). One column, stacked cards. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    --turf:#1f6b3d;--turf2:#24763f;--chalk:rgba(255,255,255,.75);
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      --turf:#2f8a50;--turf2:#358f55;--chalk:rgba(255,255,255,.85);
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    --turf:#2f8a50;--turf2:#358f55;--chalk:rgba(255,255,255,.85);
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:flex-start;gap:8px;margin:0 0 6px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none;margin-top:7px}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 10px}
+  .upd{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:var(--r);padding:9px 12px;margin:0 0 4px;font-size:14px;color:var(--ink2)}
+  .upd b{color:var(--blue);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .idea{margin:0 0 10px;color:var(--ink2);font-size:14.5px}
+  .idea b{color:var(--ink)}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b{color:var(--ink)}
+  .sub3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--ink3);margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+
+  /* drawn diagrams */
+  .fig{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:10px;margin:10px 0 2px;min-width:0}
+  .fig svg{display:block;width:100%;max-width:390px;height:auto;margin:0 auto}
+  .cap{font-size:12.5px;color:var(--ink3);margin:6px 0 0;line-height:1.4}
+  .cap b{color:var(--ink2)}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  .item details{background:var(--card2)}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details li b{color:var(--ink)}
+  details h4{margin:12px 0 4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px;white-space:nowrap}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox li.done::before{background:var(--green);content:"\2713"}
+  .okbox .q{font-weight:700}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+
+  .note{border:1px dashed var(--line);border-radius:var(--r);padding:10px 12px;margin:14px 0 0;color:var(--ink2);font-size:13.5px;background:var(--card)}
+  .note b{color:var(--ink)}
+
+  /* clip card (references/clip-card.html) */
+  .clip{margin:12px auto 2px;max-width:390px;min-width:0}
+  .clip .look{font-size:14px;color:var(--ink2);margin:0 0 7px;background:var(--card2);border-radius:10px;padding:9px 12px}
+  .clip .look b{color:var(--green);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;max-height:80vh;object-fit:contain;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+  .clip .spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+  .clip .spd button.on{background:var(--ink);color:var(--bg)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .clip figcaption b{color:var(--ink2)}
+  details .clip{margin-top:4px;margin-bottom:16px}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+.round{margin-top:36px;padding-top:18px;border-top:2px solid rgba(0,0,0,.12)}
+.nums{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}.nums li{margin:3px 0}.nums b{color:var(--ink)}
+</style>
+</head><body>
+<div class="wrap">
+<header>
+  <span class="ver">v0.148 &middot; LEO &middot; WEEKLY ROUND-UPS &middot; UPDATED 27 NOV</span>
+  <h1>Weekly round-ups: what reached main each week</h1>
+  <p class="status"><i></i><span>One note for the weekly round-ups, updated every Friday, newest first. Each round lists what was merged into main that week, for Harry to skim. Lines marked &ldquo;from the commit list&rdquo; come from the commit messages, not from a patch note.</span></p>
+  <p class="sub">Made by Leo&rsquo;s weekly routine &middot; started 23 Oct 2026 &middot; 6 rounds so far</p>
+  <p class="upd"><b>Updated 27 Nov</b>Week 6 (20 to 27 Nov) added. One note for the weekly round-ups from now on (RUL-TEAM-034); weeks 1 to 5 folded in.</p>
+</header>
+<h2 class="add"><i></i>WHERE IT STANDS</h2>
+<div class="item"><div class="ih"><b>Check these</b><span class="pill p-blu">this week</span></div><p class="idea">The new look (Leo, v0.143) &middot; Ten-A-Ball daily challenge &middot; One menu on phones &middot; Link previews and page names &middot; Harry's 3D notes (v0.141, v0.142)</p></div>
+<div class="item"><div class="ih"><b>Still open (from this week's notes, not rechecked today)</b><span class="pill p-amb">open</span></div><p class="idea">Chemistry board &middot; Rankings &middot; The New look</p></div>
+<h2 class="nxt round"><i></i>ROUND 6 &middot; 27 NOV &middot; THE WEBSITE'S NEW LOOK, VERCEL BACK ON THE FREE PLAN, RELEASE PREP</h2>
+<p class="snote">Week 6 (20 to 27 Nov): 7 PRs and 100 commits. Leo's whole-website job (behind the New look switch: new look in light and dark, Daily Draft, Chemistry, Ranked or Custom). Release prep on main: request limits, cached lists, link previews, /login, card pictures from 195 MB to 7.7 MB, Ten-A-Ball as a real daily challenge, one menu on phones. Vercel back on the free plan with frequent jobs moved to Supabase. Harry's notes 0.141 and 0.142 (sleep, living houses, cloth clothes, 3D phone).</p>
+<h2 class="add"><i></i>CHECK THESE</h2>
+<div class="item"><div class="ih"><b>The new look (Leo, v0.143)</b></div><p class="idea">Turn on Admin → New look. Every public page in the home's look, light or dark; Daily Draft; Chemistry with Ranked or Custom. Nobody else sees it yet.</p></div>
+<div class="item"><div class="ih"><b>Ten-A-Ball daily challenge</b></div><p class="idea">One challenge a day, the same for everyone, on the UK date.</p></div>
+<div class="item"><div class="ih"><b>One menu on phones</b></div><p class="idea">The games are listed inside the one menu.</p></div>
+<div class="item"><div class="ih"><b>Link previews and page names</b></div><p class="idea">Share a page link and check the preview card and the tab name. /login now works.</p></div>
+<div class="item"><div class="ih"><b>Harry's 3D notes (v0.141, v0.142)</b></div><p class="idea">Sleep, living houses, cloth clothes, the 3D phone and real clothes at home.</p></div>
+<h2 class="add"><i></i>WEBSITE AND DRAFT (LEO, MIKEY'S BRANCH)</h2>
+<div class="item"><div class="ih"><b>One Knowitball (v0.143, rounds 1 to 5)</b></div><p class="idea">Plan, the New look switch, a readability check every round, Daily Draft, spot ratings and Best spot, Chemistry, Ranked or Custom (three Hall of Fame boards), higher-or-lower to keep a player, Watch the big games.</p></div>
+<div class="item"><div class="ih"><b>Fixed for everyone</b></div><p class="idea">Page titles, sign-in name, Ten-A-Ball lives line and duplicate, Objectives badge, three wrong Draft seasons, faint text. Tic Tac Toe streak counts today's grid.</p></div>
+<div class="item"><div class="ih"><b>Draft speed</b></div><p class="idea">Faster clubs and squads, keeper stat names, full surnames. The patch notes page no longer crashes.</p></div>
+<h2 class="chg"><i></i>RELEASE PREP AND RUNNING COSTS (FROM THE COMMIT LIST)</h2>
+<div class="item"><div class="ih"><b>Vercel back on the free (Hobby) plan</b></div><p class="idea">Frequent jobs moved to Supabase; every Vercel cron now runs once a day; the morning post watches Vercel processor time.</p></div>
+<div class="item"><div class="ih"><b>Lighter site</b></div><p class="idea">Request limits, cached lists, lighter pages. 61 card pictures shrunk from 195 MB to 7.7 MB (WebP, 640 px); new uploads shrink in the browser.</p></div>
+<div class="item"><div class="ih"><b>Player faces</b></div><p class="idea">All 13,387 faces now carry a week's browser cache.</p></div>
+<div class="item"><div class="ih"><b>Build</b></div><p class="idea">The type check runs on its own before the build, not inside it.</p></div>
+<h2 class="add"><i></i>MARKETING AND TEAM TOOLS (MIKEY, FROM THE COMMIT LIST)</h2>
+<div class="item"><div class="ih"><b>Publish spaces</b></div><p class="idea">Football, content and kib spaces, each with its own accounts, videos, posts and numbers. Facebook posts go up as Reels; YouTube uploads carry #Shorts.</p></div>
+<div class="item"><div class="ih"><b>Explainer ex16</b></div><p class="idea">Why Vini loves Mourinho but not Alonso (48 s), final render; the Brain page plays every video from a small copy.</p></div>
+<div class="item"><div class="ih"><b>Team board</b></div><p class="idea">A progress update every day from 20 to 25 Nov.</p></div>
+<h2 class="bug"><i></i>STILL OPEN (FROM THIS WEEK'S NOTES, NOT RECHECKED TODAY)</h2>
+<div class="item"><div class="ih"><b>Chemistry board</b></div><p class="idea">Needs supabase/migrations/draft_records_chemistry.sql run.</p></div>
+<div class="item"><div class="ih"><b>Rankings</b></div><p class="idea">Back for everyone only after Mikey says yes.</p></div>
+<div class="item"><div class="ih"><b>The New look</b></div><p class="idea">Only behind the switch until Leo says go.</p></div>
+<details><summary>The numbers</summary><div class="item"><div class="ih"><b>The numbers</b></div><ul class="nums"><li><b>6</b> weeks in this one note</li><li><b>7</b> PRs merged this week (#838 to #845)</li><li><b>100</b> commits on main this week</li><li><b>195 → 7.7 MB</b> card pictures</li></ul></div></details>
+<h2 class="nxt round"><i></i>ROUND 5 &middot; 20 NOV &middot; WEEKLY ROUND-UP, 13 TO 20 NOV</h2>
+<p class="snote">One page for the week, for Harry. 2 pull requests merged into main from Fri 13 Nov to Fri 20 Nov (#832, #833), plus a round from the Harry branch and one direct commit. Two new patch notes (Mikey's v0.139, Leo's v0.140); the other lines come from the commit list and say so. Biggest changes: the phone app is signed with a Google Play page in 86 languages, a separate phone-built app (KIB Next) plays the same game, a round of fixes from Mikey's phone test, the Knowitball Discord kit, and Claude jobs on GitHub. Nothing new is live on Discord or Google Play yet.</p>
+<details><summary>Show round 5 (24 lines, was 0.143)</summary>
+<h2 class="add"><i></i>CHECK THESE</h2>
+<div class="item"><div class="ih"><b>Privacy policy: the new phone app section</b></div><p class="idea">The site's privacy policy page. v0.139.</p></div>
+<div class="item"><div class="ih"><b>Fixes from Mikey's phone test</b></div><p class="idea">Play a career on a phone: matches play from kick-off, the page never scrolls, Home after every match, POST shows once. 17-18 Nov commits.</p></div>
+<div class="item"><div class="ih"><b>Rankings say 'not running right now'</b></div><p class="idea">Every Rankings page. 17 Nov.</p></div>
+<div class="item"><div class="ih"><b>Join our Discord buttons</b></div><p class="idea">Site footer and game Settings. Hidden until the invite link is set. v0.140.</p></div>
+<div class="item"><div class="ih"><b>Claude on GitHub</b></div><p class="idea">@claude in an issue, or Run workflow. Needs the ANTHROPIC_API_KEY secret. 20 Nov.</p></div>
+<h2 class="add"><i></i>THE PHONE APP (MIKEY)</h2>
+<div class="item"><div class="ih"><b>The packed app is signed, and its Google Play page is done</b></div><p class="idea">86 languages, icon, feature graphic, 8 screenshots, Play's forms, and a privacy policy that covers the phone app. A 14-day closed test comes before the public launch. v0.139.</p></div>
+<div class="item"><div class="ih"><b>Why the app lags</b></div><p class="idea">Hidden work stutters screens that aren't being touched. App 1.1 drops the frosted-glass blur; the phone app has no Card Night. v0.139.</p></div>
+<div class="item"><div class="ih"><b>KIB Next: a separate app built for the phone</b></div><p class="idea">It plays the same game with the same rules (100 of 100 test matches identical to the website): the whole career, real players offline, goal videos with Save video, your 3D player, the farewell walk-out. It has never run on a real phone. v0.139.</p></div>
+<h2 class="add"><i></i>GAME FIXES (FROM THE COMMIT LIST)</h2>
+<div class="item"><div class="ih"><b>Mikey's phone test, parts 1 to 3</b></div><p class="idea">Matches play from kick-off; real cup squads; one chance a half; the feed video plays once; Home after every match; the casino says Locked; the trial free-kick card sits off the wall. 18 Nov.</p></div>
+<div class="item"><div class="ih"><b>Screens fit the phone</b></div><p class="idea">The page never scrolls and the top stays put. The tutorial shows a swipe; the Shop hint clears the Play button. 18 Nov.</p></div>
+<div class="item"><div class="ih"><b>Smaller fixes</b></div><p class="idea">Hitting the post shows POST once, not twice. The star rating rises as far as the points allow. Play as lists only real positions. The star bar says when a level is held; the physio can at full energy is fixed. 17 Nov.</p></div>
+<div class="item"><div class="ih"><b>Rankings paused</b></div><p class="idea">Every Rankings page shows 'not running right now'. 17 Nov.</p></div>
+<div class="item"><div class="ih"><b>Build fix</b></div><p class="idea">The highlights tool's audio no longer broke the build. 18 Nov.</p></div>
+<h2 class="add"><i></i>DISCORD AND TEAM TOOLS</h2>
+<div class="item"><div class="ih"><b>The Knowitball Discord, ready to build (Leo)</b></div><p class="idea">A script makes the whole server in one go: 10 roles, 21 channels, rules, welcome posts and 2 joining questions. Join buttons on the site and in the game. New patch notes post themselves to #updates. A growth plan. v0.140.</p></div>
+<div class="item"><div class="ih"><b>Claude on GitHub (Harry)</b></div><p class="idea">Run jobs on the team's API credit with @claude in an issue, or Run workflow. Until the ANTHROPIC_API_KEY secret is set, nothing runs; the website is not affected. 20 Nov.</p></div>
+<div class="item"><div class="ih"><b>Mikey's Brain (Mikey)</b></div><p class="idea">A private page for his 8 social accounts: approve, post, results and rules, and a step-by-step posting chain with titles, captions and hashtags per app. 17-18 Nov.</p></div>
+<h2 class="add"><i></i>MARKETING VIDEOS (MIKEY, FROM THE COMMIT LIST)</h2>
+<div class="item"><div class="ih"><b>The scout's file look</b></div><p class="idea">Van Dijk's replacement (v12, a 53 s cut in v13) and how Liverpool replace Alisson (v14). v11 posted to Instagram. 13-15 Nov.</p></div>
+<div class="item"><div class="ih"><b>Where should Vinícius go?</b></div><p class="idea">A Next club tab in the Twin Finder (need, fit and level for every top-5 club), a season sim with the game's match model, and a highlights tool that turns the game's goal clips into vertical videos. v15 and v16. 15-16 Nov.</p></div>
+<h2 class="bug"><i></i>STILL OPEN (FROM THIS WEEK'S NOTES, NOT RECHECKED TODAY)</h2>
+<div class="item"><div class="ih"><b>KIB Next has never run on a phone</b></div><p class="idea">Save video is untested on a device. v0.139.</p></div>
+<div class="item"><div class="ih"><b>The Discord server does not exist yet</b></div><p class="idea">Leo makes the server and bot (about 5 minutes) and sets two Vercel settings. Not run on real Discord. v0.140.</p></div>
+<div class="item"><div class="ih"><b>Claude on GitHub needs the ANTHROPIC_API_KEY secret</b></div><p class="idea">20 Nov.</p></div>
+<div class="item"><div class="ih"><b>From v0.138: no database backup yet</b></div><p class="idea">Cloudflare not joined up on the live site. Not rechecked.</p></div>
+<h2 class="nxt"><i></i>CALLS FOR HARRY</h2>
+<div class="item"><div class="ih"><b>Set the ANTHROPIC_API_KEY secret on GitHub</b></div><p class="idea">Settings → Secrets and variables → Actions. 20 Nov.</p></div>
+<div class="item"><div class="ih"><b>Closed test of the packed app, then playtest KIB Next on real phones</b></div><p class="idea">v0.139.</p></div>
+<div class="item"><div class="ih"><b>The numbers</b></div><ul class="nums"><li><b>2</b> pull requests merged into main this week</li><li><b>2</b> new patch notes (v0.139, v0.140)</li><li><b>86</b> languages on the Google Play page</li><li><b>100 / 100</b> KIB Next test matches identical to the website</li></ul></div>
+</details>
+<h2 class="nxt round"><i></i>ROUND 4 &middot; 13 NOV &middot; WEEKLY ROUND-UP, 6 TO 13 NOV</h2>
+<p class="snote">One page for the week, for Harry. 1 pull request merged into main from Fri 6 Nov to Fri 13 Nov (#831); everything else went straight into main, about 90 commits. One new patch note this week (Harry's v0.138); the rest of these lines come from the commit list and say so. Biggest changes: a new public home at knowitball.co.uk, the game renamed Road to the Golden Ball, the Team room rebuilt with bots you can @, one admin home, a nightly database backup set up (not working yet), the app packed for iPhone, and a week of marketing videos (Stat Twins, Twin Finder, posting to Instagram).</p>
+<details><summary>Show round 4 (28 lines, was 0.142)</summary>
+<h2 class="add"><i></i>CHECK THESE</h2>
+<div class="item"><div class="ih"><b>The new home at knowitball.co.uk</b></div><p class="idea">Cream phone look, green bar and footer, an All games tab, Join the beta. v0.138.</p></div>
+<div class="item"><div class="ih"><b>The new name: Road to the Golden Ball</b></div><p class="idea">Title screen and the award night. New address /road-to-the-golden-ball. v0.138.</p></div>
+<div class="item"><div class="ih"><b>Team room: Dark and Light, channel tabs, five bots with Run now</b></div><p class="idea">Admin → Team. v0.138.</p></div>
+<div class="item"><div class="ih"><b>Bots you can @, and a Claude bot</b></div><p class="idea">Admin → Team, type @. Built after v0.138; needs the ANTHROPIC_API_KEY setting. 13 Nov commits.</p></div>
+<div class="item"><div class="ih"><b>One admin home at /admin</b></div><p class="idea">Back never leaves admin; the recorder keeps going. v0.138.</p></div>
+<div class="item"><div class="ih"><b>Marketing → Publish</b></div><p class="idea">Posting to Instagram, Facebook and YouTube from the admin. 11 Nov commits.</p></div>
+<h2 class="add"><i></i>SITE, TEAM ROOM AND ADMIN (HARRY)</h2>
+<div class="item"><div class="ih"><b>A new public home</b></div><p class="idea">Built as three looks on a test page first, then look D went in: the phone-screen look on cream with a green bar and footer. 6 games. Install, App Store, Steam and Join the beta. v0.138.</p></div>
+<div class="item"><div class="ih"><b>The game is now Road to the Golden Ball</b></div><p class="idea">The award is the Golden Ball. New address /road-to-the-golden-ball. v0.138.</p></div>
+<div class="item"><div class="ih"><b>Team room rebuilt</b></div><p class="idea">Dark and Light looks; every channel has its own tabs; #today is new; a message can become a task; /today and /todo; a Me home and a Team board tab. Pop-ups stay until you close them. v0.138.</p></div>
+<div class="item"><div class="ih"><b>Five bots, each with its own page and Run now</b></div><p class="idea">Health, Bug, Today, Jobs and Patch. The Patch bot announces new patch notes in #general by itself. v0.138.</p></div>
+<div class="item"><div class="ih"><b>Bots you can @</b></div><p class="idea">A Claude bot, and a bot each for Harry, Mikey and Leo, with an on-screen run and a run table. Needs ANTHROPIC_API_KEY set. From the 13 Nov commits; not in a patch note yet.</p></div>
+<div class="item"><div class="ih"><b>One admin home, one look</b></div><p class="idea">The Knowitball look is the default. Back stays inside admin. v0.138.</p></div>
+<div class="item"><div class="ih"><b>Recordings save to Cloudflare first</b></div><p class="idea">Drive is the copy. A link everyone can open, a 30-day clean-up and a Keep button. v0.138.</p></div>
+<div class="item"><div class="ih"><b>Behind the scenes</b></div><p class="idea">Failed pushes to the site fixed (marketing videos kept out of the site's functions). A morning limits check at 08:00 in #health. A nightly database backup at 03:00. Patch-note pictures move to Cloudflare by themselves. v0.138.</p></div>
+<h2 class="add"><i></i>THE APP (FROM THE COMMIT LIST)</h2>
+<div class="item"><div class="ih"><b>iPhone project and Codemagic set-up</b></div><p class="idea">A packed app with a back button, vibration, an icon and a more app-like feel; security updates. 10 Nov.</p></div>
+<div class="item"><div class="ih"><b>Online saves go up squeezed</b></div><p class="idea">About a quarter of the size. 10 Nov.</p></div>
+<div class="item"><div class="ih"><b>App fixes</b></div><p class="idea">A scroll lock that trapped a player on a tall screen is fixed; the phone's top bar is hidden; Go closes the keyboard; knockout names fit. 10-11 Nov.</p></div>
+<h2 class="add"><i></i>MARKETING VIDEOS (MIKEY, FROM THE COMMIT LIST)</h2>
+<div class="item"><div class="ih"><b>Stat Twins: a player's statistical twin</b></div><p class="idea">Episodes for Salah, Haaland, Neymar, Kane, Van Dijk and Cole Palmer, a batch of 27 videos, and a motion engine for them. Several posted to Instagram. 8-11 Nov.</p></div>
+<div class="item"><div class="ih"><b>Twin Finder page</b></div><p class="idea">Find any player's statistical twins across the top 5 leagues and every position, with key stats on tap. 8-9 Nov.</p></div>
+<div class="item"><div class="ih"><b>Who replaces him? and Analysed like chess</b></div><p class="idea">New formats: v07 (who replaces Lewis Hall at Newcastle) and CH-03 (Mourinho v Pep, Camp Nou 2010). PR #831 adds an X vs cuts template. 7-10 Nov.</p></div>
+<div class="item"><div class="ih"><b>Posting and a video library</b></div><p class="idea">Marketing → Publish posts to Instagram, Facebook and YouTube (a queue, a 5-minute timer, encrypted logins). Every Knowitball video in one searchable page. 11 Nov.</p></div>
+<div class="item"><div class="ih"><b>Preview film</b></div><p class="idea">A dressing-room set made in Blender, seven shots, and a second fast ad cut to the beat. 10 Nov.</p></div>
+<h2 class="bug"><i></i>STILL OPEN (FROM THIS WEEK'S NOTES, NOT RECHECKED TODAY)</h2>
+<div class="item"><div class="ih"><b>No database backup yet</b></div><p class="idea">Cloudflare is not joined up on the live site, so the first nightly backup failed. v0.138.</p></div>
+<div class="item"><div class="ih"><b>The Patch bot is not proven live until a note appears in #general</b></div><p class="idea">Bug bot and the Team board tab are proven with stand-in data only. v0.138.</p></div>
+<div class="item"><div class="ih"><b>About 70 admin tool pages still have their old insides</b></div><p class="idea">v0.138.</p></div>
+<div class="item"><div class="ih"><b>Only one patch note this week</b></div><p class="idea">The app, marketing and @bot work has no patch note yet; those lines come from the commit list.</p></div>
+<h2 class="nxt"><i></i>CALLS FOR HARRY</h2>
+<div class="item"><div class="ih"><b>Join Cloudflare up on the live site, then check the first backup</b></div><p class="idea">v0.138.</p></div>
+<div class="item"><div class="ih"><b>Set ANTHROPIC_API_KEY so the @bots can run</b></div><p class="idea">13 Nov commits (CLAUDE.md note).</p></div>
+<div class="item"><div class="ih"><b>The numbers</b></div><ul class="nums"><li><b>1</b> pull request merged into main (about 90 direct commits)</li><li><b>1</b> new patch note this week (v0.138)</li><li><b>6</b> games on the new home</li><li><b>0</b> database backups so far (Cloudflare not joined up)</li></ul></div>
+</details>
+<h2 class="nxt round"><i></i>ROUND 3 &middot; 6 NOV &middot; WEEKLY ROUND-UP, 30 OCT TO 6 NOV</h2>
+<p class="snote">One page for the week, for Harry. 11 pull requests merged into main from Fri 30 Oct to Fri 6 Nov (Leo 10, Mikey 1), plus Harry's and Mikey's rounds merged straight in. Nothing reached main after 3 Nov. The 9 new patch notes (v0.129 to v0.137) are condensed here; each line names the version with the full detail. Mikey's 2-3 Nov work has no patch note yet, so those lines come from the commit list. Biggest changes: the Glass stadium look is the new default, the 3D ball is a real football, a perfect top-corner free kick now goes in (11% → 79% against a 92 keeper), the season review and knockout trees, achievements cut from 136 to 67, and the game's new address knowitball.co.uk/road-to-ballon-dor. Leo's feed, video and live-chance work is on the site behind switches that are off by default.</p>
+<details><summary>Show round 3 (33 lines, was 0.141)</summary>
+<h2 class="add"><i></i>CHECK THESE</h2>
+<div class="item"><div class="ih"><b>The Glass stadium look on every career screen</b></div><p class="idea">Settings → Screens → UI look: Glass | Pitch. Glass is the default. v0.137.</p></div>
+<div class="item"><div class="ih"><b>The 3D ball is a real football; one ball on the title screen</b></div><p class="idea">Title screen and 3D views. v0.137.</p></div>
+<div class="item"><div class="ih"><b>The game's new address</b></div><p class="idea">knowitball.co.uk/road-to-ballon-dor (/star-dev forwards there). 3 Nov.</p></div>
+<div class="item"><div class="ih"><b>Season review and knockout trees</b></div><p class="idea">End a season: one trophy list, tap a trophy for its table, scorers and assists. 2 Nov.</p></div>
+<div class="item"><div class="ih"><b>Achievements: a gold trophy wall</b></div><p class="idea">136 → 67 achievements, with Nearly there. 3 Nov.</p></div>
+<div class="item"><div class="ih"><b>History tabs: real top scorers, assisters and player of the season</b></div><p class="idea">League → a competition → History. PR #830.</p></div>
+<div class="item"><div class="ih"><b>Free kicks: the very top corner goes in</b></div><p class="idea">Any free kick in a match. v0.135.</p></div>
+<div class="item"><div class="ih"><b>Leo's switches: Settings → Updates (admins)</b></div><p class="idea">Social feed, goal videos, commentary, live chances. All off by default. v0.129 to v0.134.</p></div>
+<h2 class="add"><i></i>LOOK AND SITE (HARRY)</h2>
+<div class="item"><div class="ih"><b>Glass stadium is the new default look</b></div><p class="idea">A blurred day stadium behind every career screen, frosted-glass cards and bars, white text, a glowing green PLAY. Pitch is still a choice, and gets a stadium too. New rule RUL-UI-007: a whole-game look may be a Settings choice. v0.137.</p></div>
+<div class="item"><div class="ih"><b>A real football</b></div><p class="idea">12 black and 20 white patches. The title screen showed two balls; now one. v0.137.</p></div>
+<div class="item"><div class="ih"><b>Small pushes go live faster</b></div><p class="idea">A small push runs a quick check: 30 to 40 minutes → about 10. v0.137.</p></div>
+<h2 class="add"><i></i>CAREER, HISTORY AND MARKETING (MIKEY)</h2>
+<div class="item"><div class="ih"><b>Season review: one trophy list in a fixed order</b></div><p class="idea">Tap any trophy for its table, scorers and assists. Your European competition is never kept twice. From the 2 Nov commits; no patch note yet.</p></div>
+<div class="item"><div class="ih"><b>Knockout tree: last 16 to the final</b></div><p class="idea">Champions and Europa League from the last 16; the cups from the last 8. Top scorers now count knockout legs and whole international editions, and the European competition you are in has its own scorers. 2 Nov.</p></div>
+<div class="item"><div class="ih"><b>Realistic simulated shoot-outs</b></div><p class="idea">Also your own line under the top 10, and a shorter KO tab. 2 Nov.</p></div>
+<div class="item"><div class="ih"><b>Achievements: 136 → 67</b></div><p class="idea">A gold trophy wall with Nearly there; the XP climb is the same. One gold pop-up per achievement. 3 Nov.</p></div>
+<div class="item"><div class="ih"><b>History tabs with real history</b></div><p class="idea">Top scorer, top assister and player of the season. Your career's seasons first, then the real history before them. PR #830, Brain FACT-DAT-008.</p></div>
+<div class="item"><div class="ih"><b>The game's address: knowitball.co.uk/road-to-ballon-dor</b></div><p class="idea">/star-dev forwards there. 3 Nov.</p></div>
+<div class="item"><div class="ih"><b>Smaller saves</b></div><p class="idea">The Hall of Fame copy leaves out last season's full record: a played career 145 KB → 78 KB. 2 Nov.</p></div>
+<div class="item"><div class="ih"><b>Video factory for marketing: 88 shorts</b></div><p class="idea">A storyboard becomes a 1080×1920 short with voice, drawn scenes, captions and music. MP4s now play on iPhone. PR #830, tools/video-factory/.</p></div>
+<div class="item"><div class="ih"><b>Playtest fixes</b></div><p class="idea">'1 game' not '1 games'; short club names on shield and winner cards; play-off winner in green; the Lower League Trophy in the chooser. 3 Nov.</p></div>
+<h2 class="add"><i></i>MATCH, FEED AND TEST PAGES (LEO)</h2>
+<div class="item"><div class="ih"><b>Free kicks: the very top corner beats the keeper</b></div><p class="idea">A perfect ball into the very top corner went in 11% of the time against a 92-rated keeper; now 79%. An ordinary taker 10% → 16%. Low and middle shots unchanged. In every match. PR #828, v0.135.</p></div>
+<div class="item"><div class="ih"><b>Test pages play like the real game</b></div><p class="idea">Six test screens had the old, easier free-kick keeper; test screens used skill 40 for free kicks. Both now match the real match. Weather, build-ups and sim90 too. PR #829, v0.136.</p></div>
+<div class="item"><div class="ih"><b>Live chances: take a touch, everyone moves, your stats decide</b></div><p class="idea">One quick flick to open an angle; the keeper rushes one-on-ones; defenders close you down and can win it. Technique, pace, vision and power set the skill. Still off by default. PRs #820, #823, #826, #827; v0.126, v0.133, v0.134.</p></div>
+<div class="item"><div class="ih"><b>Social feed: football Twitter and TikTok</b></div><p class="idea">52 made-up accounts and 899 lines (was 33 and 272); replies that fit the post (mismatches 20.7% → 0.1%); polls, quote posts, a ranked feed. A Social Studio admin page at /admin/social. Behind Leo's switch. PRs #821, #822, #824, #825; v0.129 to v0.132.</p></div>
+<div class="item"><div class="ih"><b>Goal videos and commentary</b></div><p class="idea">Goal videos start in 0.05 s on PC (was about 5 s); full screen; 2D from above; cut five ways plus six new edit types. A new commentary voice and four commentary teams. The season video plays every goal (0 lost clips, was 8 of 21). Behind Leo's switch. v0.129 to v0.132.</p></div>
+<h2 class="bug"><i></i>STILL OPEN (FROM THIS WEEK'S NOTES, NOT RECHECKED TODAY)</h2>
+<div class="item"><div class="ih"><b>Glass look gaps</b></div><p class="idea">Home keeps its night stadium; energy-can cards on Home are cut off at the bottom; the Phone keeps a red club wallpaper; the League banner stays club red. v0.137.</p></div>
+<div class="item"><div class="ih"><b>5 tests were already broken before Harry's round</b></div><p class="idea">v0.137.</p></div>
+<div class="item"><div class="ih"><b>The free-kick fix is not played by hand yet</b></div><p class="idea">v0.135.</p></div>
+<div class="item"><div class="ih"><b>Live chances: the touch is not checked in 3D</b></div><p class="idea">v0.133, v0.134.</p></div>
+<div class="item"><div class="ih"><b>Leo's feed and video work is not played in a real career, nor heard by a person yet</b></div><p class="idea">v0.131, v0.132.</p></div>
+<div class="item"><div class="ih"><b>Mikey's 2-3 Nov round has no patch note</b></div><p class="idea">Mikey writes notes only when he asks for them (his standing rule).</p></div>
+<h2 class="nxt"><i></i>CALLS FOR HARRY</h2>
+<div class="item"><div class="ih"><b>Day stadium on Home: yes or no</b></div><p class="idea">v0.137.</p></div>
+<div class="item"><div class="ih"><b>When Leo's switches go on for everyone</b></div><p class="idea">Feed, videos, commentary and live chances are all off by default. v0.129 to v0.134.</p></div>
+<div class="item"><div class="ih"><b>The numbers</b></div><ul class="nums"><li><b>11</b> pull requests merged into main this week</li><li><b>9</b> new patch notes this week</li><li><b>11% → 79%</b> perfect top-corner free kick vs a 92 keeper</li><li><b>136 → 67</b> achievements</li></ul></div>
+</details>
+<h2 class="nxt round"><i></i>ROUND 2 &middot; 30 OCT &middot; WEEKLY ROUND-UP, 23 TO 30 OCT</h2>
+<p class="snote">One page for the week, for Harry. 41 pull requests merged into main from Fri 23 Oct to Fri 30 Oct, plus Mikey's rounds merged straight in. The 10 new patch notes (v0.109h to v0.112h, v0.121 to v0.126) are condensed here by area; each line names the version with the full detail. Biggest changes: a new career's first hour is a story (Mikey), the 50-level Star Pass road, Power 40 made weaker, chances that follow your play style, men at 22 px on every chance kind, the Slack-style Team room, Claude working in Supabase, and every patch note made the same (with its own number). Leo's builds (celebrations, feed, weather, keeper catches, live chances) are on the site behind switches that are off by default.</p>
+<details><summary>Show round 2 (43 lines, was 0.128)</summary>
+<h2 class="add"><i></i>CHECK THESE</h2>
+<div class="item"><div class="ih"><b>Start a new career: the first hour is a story</b></div><p class="idea">Each feature is brought in by a person after a game; moves open one at a time. v0.124.</p></div>
+<div class="item"><div class="ih"><b>Star Pass: the 50-level road and its rewards</b></div><p class="idea">Star Pass, then the Locker. PR #801.</p></div>
+<div class="item"><div class="ih"><b>Power 40 is weaker; chances follow your play style</b></div><p class="idea">Any match on a new career. v0.124.</p></div>
+<div class="item"><div class="ih"><b>Men at 22 px on every chance kind; headers and volleys redone</b></div><p class="idea">Any 2D chance on a phone. v0.109h.</p></div>
+<div class="item"><div class="ih"><b>Team room in Slack's layout</b></div><p class="idea">Admin → Team. v0.111h.</p></div>
+<div class="item"><div class="ih"><b>Cookie banner: analytics only after Accept</b></div><p class="idea">Open the site in a private window.</p></div>
+<div class="item"><div class="ih"><b>Every patch note has an author, a time, its own number and a page</b></div><p class="idea">Admin → Patch notes. Old numbers moved (0.108 is now 0.119, and others). v0.122.</p></div>
+<div class="item"><div class="ih"><b>Leo's switches: Settings → Updates (admins)</b></div><p class="idea">Celebrations, feed, weather, keeper catches, live chances. All off by default. v0.119, v0.121, v0.123, v0.126.</p></div>
+<h2 class="add"><i></i>CAREER AND STAR PASS (MIKEY)</h2>
+<div class="item"><div class="ih"><b>A new career's first hour is a story</b></div><p class="idea">Problem: everything was open at once. Fix: a person brings in each feature after a game, moves open one at a time with a guide, set pieces are earned, the first match and the first sponsor are guided. A team-mate gives you his old boots before game 1. First contract ★35 a week in North or South. v0.124.</p></div>
+<div class="item"><div class="ih"><b>Power 40 is a starting player now</b></div><p class="idea">A full shot at Power 40: 79 → 66 km/h. The top (Power 100) stays 32.76 m/s, the old top. A Power curve box in the Play Area to type the speeds. v0.124.</p></div>
+<div class="item"><div class="ih"><b>Chances follow your play style and what is open</b></div><p class="idea">0% byline crosses on Attacking; no headers or volleys before they open. Every byline cross has a short option (300 of 300). Build-ups that end in an offside flag are not shown. A chance in every half on Medium and High. v0.124.</p></div>
+<div class="item"><div class="ih"><b>Room to pull back on every chance</b></div><p class="idea">Tight angles with no room 21% → 0. Every cutback is side-on. Men, keeper and ball are one size next to the goal on every camera. v0.124.</p></div>
+<div class="item"><div class="ih"><b>Star Pass: 50 levels, 16 new rewards, 4 celebrations</b></div><p class="idea">Every even level from 2 to 100. Golden Run-up, The Leaf free kick and Signature Boots are Star Pass only. Blender art for every box reward, tap to spin. PR #801, 28 Oct.</p></div>
+<div class="item"><div class="ih"><b>Broadcast pop-ups are the only pop-ups</b></div><p class="idea">The Pop-up pack setting is gone. 27 Oct.</p></div>
+<div class="item"><div class="ih"><b>One match for every tool</b></div><p class="idea">Corners, new-career moves and owed chances go through the shared match builder. Brain FACT-ENG-007. 27 Oct.</p></div>
+<div class="item"><div class="ih"><b>Cookie consent</b></div><p class="idea">Google Analytics and PostHog start only after Accept. 27 Oct.</p></div>
+<div class="item"><div class="ih"><b>Small fixes</b></div><p class="idea">Multiplayer draft: European winners from outside the top places now play, no crash. Player photos are found in other editions again. 27 Oct.</p></div>
+<h2 class="add"><i></i>THE MATCH AND ADMIN (HARRY)</h2>
+<div class="item"><div class="ih"><b>Men at 22 px on every chance kind</b></div><p class="idea">Was up to 31 px, 37 on a byline cross. Only the pitch zooms; goal rates unchanged. Live since 25 Oct. v0.109h.</p></div>
+<div class="item"><div class="ih"><b>Headers and volleys redone to Harry's notes</b></div><p class="idea">No drag-back arrow: straight to the Head it? / Volley it? screen where you tap the ball. The cross comes in once. Same in the Head &amp; Volley drill. v0.109h.</p></div>
+<div class="item"><div class="ih"><b>Build-ups: one smooth camera glide, landing on the chance's own frame</b></div><p class="idea">Worst camera jump 640 → 38 px a second. v0.109h, PR #793.</p></div>
+<div class="item"><div class="ih"><b>Aerial contact moves for headers and volleys</b></div><p class="idea">8 aerial moves; header framing 25 m; a test page at /star-aerials-dev. PRs #794, #795.</p></div>
+<div class="item"><div class="ih"><b>Cut-scene skin at light tones</b></div><p class="idea">Face against neck 5.9 → 1.0. Darker tones still 4.6 to 6.6, waiting on a call. v0.109h.</p></div>
+<div class="item"><div class="ih"><b>Claude can work in Supabase, asking first</b></div><p class="idea">Done in the live database on 25 Oct: 2 missing tables made, the login-streak hole closed, 19 missing indexes added. One login check per request (was two). v0.110h.</p></div>
+<div class="item"><div class="ih"><b>Team room in Slack's layout</b></div><p class="idea">Channel list, 9 preset channels, presence, bells per channel, #bugs fills itself from bug reports. Live since 25 Oct; bots that run Claude are not built. v0.111h.</p></div>
+<div class="item"><div class="ih"><b>Marketing Studio plan</b></div><p class="idea">Plan only: paste a TikTok link and Claude logs it, breaks it down and builds our version. 9 build slices. Guest accounts and ad pages are on the site, switched off. v0.112h.</p></div>
+<div class="item"><div class="ih"><b>Builds and media</b></div><p class="idea">The next build gets 6 GB of memory (fixed the failed deploy of #810). Patch-note clips and stills squeezed: Harry's notes 82.7 → 73.8 MB. PRs #805, #808, #811, #815.</p></div>
+<h2 class="add"><i></i>LEO'S BUILDS AND PATCH NOTES</h2>
+<div class="item"><div class="ih"><b>Celebrations, fast feed, goal videos, season end, 17 bug fixes</b></div><p class="idea">On the site since 24 Oct behind Leo's switch, off by default. The bicycle kick was taken out (Harry is building it). PRs #785, #787. v0.119.</p></div>
+<div class="item"><div class="ih"><b>The 7 overnight parts, behind Leo's 26 Oct switch</b></div><p class="idea">Nobody stands on you in a celebration (closest 0.23 → 1.60 m); 0 feed scroll hiccups at 4× slow (was 9); your goal's post always has its video (48% → 100%); weather in real matches (goals +1.6% to +2.8%). PR #798. v0.121.</p></div>
+<div class="item"><div class="ih"><b>Keeper catches and dives (Leo's switch)</b></div><p class="idea">16 new keeper moves; a caught ball stays in his gloves; he lands, lies a beat and gets up. Ball no longer frozen in the air (21 catches checked, 0 outside his hands). Results unchanged. PRs #810, #813, #816, #817. v0.123.</p></div>
+<div class="item"><div class="ih"><b>Overnight sanity sweep: 75 findings, 20 fixed</b></div><p class="idea">Money reads 1.9m not 1m; SAVED and POST on your own shots; the goal scoreboard sits low; celebrations moved to Store → Animations; can't-afford line. PR #818. v0.125.</p></div>
+<div class="item"><div class="ih"><b>Live chances (test switch, off by default)</b></div><p class="idea">The last pass keeps coming to you; time your strike as it arrives. 98% of open-play chances go live. Test page /star-live-chances-dev. PR #819. v0.126.</p></div>
+<div class="item"><div class="ih"><b>Every patch note made the same</b></div><p class="idea">123 notes tidied: author, time, updates, own number, a menu title and a page. 9 notes renumbered. One set of rules checks them all. PR #800. v0.122, Brain RUL-TEAM-028.</p></div>
+<h2 class="bug"><i></i>STILL OPEN (FROM THIS WEEK'S NOTES, NOT RECHECKED TODAY)</h2>
+<div class="item"><div class="ih"><b>Mikey's 26 Oct gameplay batch is not seen on a phone yet</b></div><p class="idea">A weaker Power 40 scores fewer goals; side-on cutbacks draw men up to 5% smaller. v0.124.</p></div>
+<div class="item"><div class="ih"><b>Aerial training auto-played and got stuck</b></div><p class="idea">v0.124.</p></div>
+<div class="item"><div class="ih"><b>Darker skin tones in cut scenes still differ</b></div><p class="idea">Face against neck 4.6 to 6.6. v0.109h.</p></div>
+<div class="item"><div class="ih"><b>Guest accounts not tested end to end; no downloadable database backup</b></div><p class="idea">v0.110h.</p></div>
+<div class="item"><div class="ih"><b>Store celebration previews don't move; shop names don't match pictures</b></div><p class="idea">Listed for a decision. v0.125.</p></div>
+<div class="item"><div class="ih"><b>Men stacked on one spot; wide camera cuts; 3 opponent goals in added time once</b></div><p class="idea">Listed for a decision. v0.125.</p></div>
+<div class="item"><div class="ih"><b>12 test files were already failing on main</b></div><p class="idea">Named in PR #801. Several were fixed on 27 Oct (chanceMaker, chanceJudge, identity, leadInGen, kindMix, freshness); not rechecked.</p></div>
+<h2 class="nxt"><i></i>CALLS FOR HARRY</h2>
+<div class="item"><div class="ih"><b>Keeper look: A Natural, B Broadcast or C Arcade</b></div><p class="idea">v0.123.</p></div>
+<div class="item"><div class="ih"><b>Store celebration previews</b></div><p class="idea">A moving preview needs a new animation loop, which the one-engine guard blocks. Your call. v0.125.</p></div>
+<div class="item"><div class="ih"><b>Marketing Studio plan</b></div><p class="idea">Answer the calls on the plan. v0.112h.</p></div>
+<div class="item"><div class="ih"><b>When Leo's switches go on for everyone</b></div><p class="idea">All five are off by default. v0.119, v0.121, v0.123, v0.126.</p></div>
+<div class="item"><div class="ih"><b>The numbers</b></div><ul class="nums"><li><b>41</b> pull requests merged into main this week</li><li><b>10</b> new patch notes this week</li><li><b>50</b> levels on the new Star Pass road</li><li><b>5</b> Leo builds on the site behind switches, off by default</li></ul></div>
+</details>
+<h2 class="nxt round"><i></i>ROUND 1 &middot; 23 OCT &middot; WEEKLY ROUND-UP, 16 TO 23 OCT</h2>
+<p class="snote">One page for the week, for Harry. 35 pull requests merged into main from Fri 16 Oct to Fri 23 Oct (Harry 29, Leo 6), plus Mikey's rounds merged straight in. The week's 60 patch notes (from v0.57 on) are condensed here by area; each line names the version that has the full detail. Biggest changes: the whole world season is played for real, the FA Cup has its ten real rounds, the transfer window, running after a chance (B14), real headers and volleys with the new Aerial &amp; Acrobatics skill, players back to size B, the player card on Stats, Mikey's master plan (one bottom bar, a fuller Phone), and the admin's Team room, Inbox and Marketing Studio. Leo's tonight build (v0.119) is on branch Leo and is NOT live.</p>
+<details><summary>Show round 1 (50 lines, was 0.127)</summary>
+<h2 class="add"><i></i>CHECK THESE</h2>
+<div class="item"><div class="ih"><b>Stats page: the FIFA-style card with your own 3D man</b></div><p class="idea">Career → Stats. v0.106h, v0.108h, v0.120.</p></div>
+<div class="item"><div class="ih"><b>One bottom bar on every career screen, and a fuller Phone</b></div><p class="idea">Home, then the bar and the Phone app. v0.120.</p></div>
+<div class="item"><div class="ih"><b>League: one page for every competition, plus 🌍 All leagues</b></div><p class="idea">League tab. v0.114, v0.120.</p></div>
+<div class="item"><div class="ih"><b>FA Cup with ten rounds</b></div><p class="idea">Play to the FA Cup in a lower-league career. v0.116.</p></div>
+<div class="item"><div class="ih"><b>Transfer window at the end of a season</b></div><p class="idea">Finish a season; Home → Transfers. v0.59.</p></div>
+<div class="item"><div class="ih"><b>Run after a pass (Auto run on a phone, W A S D on a computer)</b></div><p class="idea">Any open-play chance where you pass. v0.95h, v0.96h.</p></div>
+<div class="item"><div class="ih"><b>Headers and volleys, and the Aerial &amp; Acrobatics skill</b></div><p class="idea">In a match and in Training → Head &amp; Volley. v0.88, v0.105h, v0.106h.</p></div>
+<div class="item"><div class="ih"><b>Players back to size B, keeper back to a man's height</b></div><p class="idea">Any 2D chance on a phone. v0.107h, v0.108h.</p></div>
+<div class="item"><div class="ih"><b>Build-ups before chances, about 3 s each, three styles</b></div><p class="idea">Any match (Full highlights rebuild is on by default). v0.107h, v0.108h.</p></div>
+<div class="item"><div class="ih"><b>Game music switch</b></div><p class="idea">Settings → first card → Game music. v0.117.</p></div>
+<div class="item"><div class="ih"><b>Admin: Team board, Inbox bell, Marketing Studio</b></div><p class="idea">/admin. v0.82, v0.102h, v0.104h, v0.107h.</p></div>
+<div class="item"><div class="ih"><b>Real Goals test page: 4,625 real goals</b></div><p class="idea">/star-real-goals-dev. v0.58, v0.113, v0.115.</p></div>
+<h2 class="add"><i></i>CAREER AND SEASON (MIKEY)</h2>
+<div class="item"><div class="ih"><b>The world season: every league and cup is played for real</b></div><p class="idea">Problem: only your own league was played. Fix: 7 English leagues, both cups, both shields, the Champions League and the Europa League play match by match on their real dates. Promotion and relegation come from those tables. League Two beat a Premier League club in a cup 34% of the time; now 8%. v0.114.</p></div>
+<div class="item"><div class="ih"><b>FA Cup: ten real rounds, each league joins at its real round</b></div><p class="idea">Was 6 rounds. 24 byes in the 3rd Qualifying Round, never your club. 20,029 soak matches, 0 broken states. v0.116.</p></div>
+<div class="item"><div class="ih"><b>Transfer window: clubs come to you each summer</b></div><p class="idea">Your season gets a letter, S to D. The letter decides how many leagues up a club can come from. League → Club → Negotiate. Fee priced by your league (a non-league striker no longer shows ★406m). v0.59.</p></div>
+<div class="item"><div class="ih"><b>The world ages</b></div><p class="idea">Players decline from 31, retire at 35 to 41 (keepers 37 to 43), and young players from the same country replace them. 211 nations wear their real kits (was 15). v0.59.</p></div>
+<div class="item"><div class="ih"><b>New pop-ups: Settings → Match → Pop-up pack: Classic | Broadcast</b></div><p class="idea">Broadcast is a goal scoreboard with a rolling score, scorer and assist, and TV captions. Default Classic. v0.116, v0.100h.</p></div>
+<div class="item"><div class="ih"><b>Game music: 11 original orchestral tracks</b></div><p class="idea">Off by default. Home, matches, full time and the Ballon d'Or night. 17% level in a match, 32% at home. v0.117.</p></div>
+<div class="item"><div class="ih"><b>Mikey's master plan, steps 1 to 5</b></div><p class="idea">One bottom bar everywhere and a cleaner Home; Stats shows the whole card and four tabs; League is one page for every competition; the Phone holds Relationships, Squad, Fixtures &amp; results and real messages; the phone clock shows the real day. Phone back to Home 1.9 s → 0.3 s. v0.120.</p></div>
+<h2 class="add"><i></i>THE MATCH (HARRY)</h2>
+<div class="item"><div class="ih"><b>Running after a chance (B14)</b></div><p class="idea">Problem: a pass ended your part of the chance. Fix: it plays on in the same picture. Auto run on a phone, W A S D and Shift on a computer, and a stamina bar. 500 matches: your goals 0.98 → 1.04 a match. v0.95h, v0.96h.</p></div>
+<div class="item"><div class="ih"><b>Headers and volleys are back, then made real</b></div><p class="idea">Back on after being off since 24 Sep (v0.88). Then 52 real headers and 102 real volleys play in the air, not along the ground (v0.105h). Cross heights now vary 1.5 to 2.6 m (was always 1.85 m) (v0.106h).</p></div>
+<div class="item"><div class="ih"><b>New skill: Aerial &amp; Acrobatics, with a Head &amp; Volley drill</b></div><p class="idea">30 drill levels. In real matches, headers and volleys read Aerial, not Technique. Goals per 100 headers at Aerial 30 / 60 / 90: 14.1 / 24.9 / 36.3. A gold perfect circle that grows with Aerial. v0.105h, v0.106h, v0.108h.</p></div>
+<div class="item"><div class="ih"><b>Build-ups before chances</b></div><p class="idea">Built behind a switch (v0.63h, v0.86, v0.93), cut from 32.2 to 21.6 s a match (v0.103h), then about 3 s each in three styles: long ball, tiki-taka, or a run then a pass. Real moments about 1 in 10 chances (was 1 in 7). On by default for new phones. v0.107h, v0.108h.</p></div>
+<div class="item"><div class="ih"><b>Player size: up to C, then back to B</b></div><p class="idea">Size C made men 1.56x bigger (v0.103h). It was too big, so they went back to B: about 22 px on a phone long-range chance (C was 28). Headers, volleys and the drill drew men 1.2 to 1.45x too big; now 22 px too. v0.107h, v0.108h.</p></div>
+<div class="item"><div class="ih"><b>Fairer even matches (sim piece 4)</b></div><p class="idea">One shared builder for match inputs. Even-match possession 44.5% → 49.8%. v0.106h.</p></div>
+<div class="item"><div class="ih"><b>Shots miss a third less; a midweek game pays a quarter-week extra</b></div><p class="idea">Mikey's playtest rounds, 22 Oct. Also: a player taken off in extra time stays off. v0.120.</p></div>
+<h2 class="add"><i></i>TRAINING, 3D AND SCREENS (HARRY)</h2>
+<div class="item"><div class="ih"><b>Training: 150 levels editable, Pick the Pass, drag-and-drop editor</b></div><p class="idea">Vision is rebuilt from 263 real passes. Levels play with the skills you would have by then. v0.71, v0.76, v0.77.</p></div>
+<div class="item"><div class="ih"><b>Fairer 3D keepers</b></div><p class="idea">Free Roam, Headers &amp; Volleys and Wembley keepers save about 1 in 3 from a decent player (was 52 to 70%). v0.81.</p></div>
+<div class="item"><div class="ih"><b>3D looks: natural skin, blinking faces, 3D headshots on award screens</b></div><p class="idea">Yellow skin in the signing scene 94% → 0%. One even skin colour for every 3D man (face vs arm gap 13-28 → 0-2.4). v0.69, v0.79, v0.94, v0.108h.</p></div>
+<div class="item"><div class="ih"><b>Lower League Trophy, and cup screens that fit one page</b></div><p class="idea">120 clubs, 7 midweek rounds, 119 matches. The Trophy tab was a 56-row list; now one screen. v0.73, v0.80.</p></div>
+<div class="item"><div class="ih"><b>Navigation round 1 (New UI)</b></div><p class="idea">Back returns to where you came from. 8 back buttons → 1. Career overview 4 taps → 2. v0.104h.</p></div>
+<div class="item"><div class="ih"><b>Fixtures: 170 clashes → 0 over 45 seasons</b></div><p class="idea">v0.78. The ten-round FA Cup and the Trophy now share the calendar with 0 clashes (v0.97h).</p></div>
+<div class="item"><div class="ih"><b>Eight screens drew the pitch too small</b></div><p class="idea">Now the real match's size: 366 px on a phone, 384 on a computer. v0.62h, v0.84.</p></div>
+<h2 class="add"><i></i>ADMIN AND TEAM TOOLS (HARRY)</h2>
+<div class="item"><div class="ih"><b>Admin home, split by game, four looks on one layout</b></div><p class="idea">57 admin and test pages in one list, 17 old pages deleted, a lock on every test page. 45 of 45 admin pages on the Broadcast frame. v0.57, v0.65, v0.68, v0.83.</p></div>
+<div class="item"><div class="ih"><b>Team room: board, chat, ideas, to-do, and admin lands on the Team board</b></div><p class="idea">Replies, @ and # tags, Shift+X pointing, read receipts. Jobs arrive by pushing team/jobs.json; phones buzz. v0.60h, v0.74, v0.82, v0.87, v0.90.</p></div>
+<div class="item"><div class="ih"><b>Inbox bell: unread patch notes, and a buzz for each new one</b></div><p class="idea">Patch notes now go live on their own, before the feature code. v0.102h.</p></div>
+<div class="item"><div class="ih"><b>Marketing tab and Marketing Studio, with uploads</b></div><p class="idea">Board, Client, Studio, Uploads. Up to 500 MB a file, 30 files and 5 GB per admin per day. v0.104h, v0.107h.</p></div>
+<div class="item"><div class="ih"><b>Lag test, live share and motion references</b></div><p class="idea">Lag test: 10 steps, about 5 minutes. Live share: a 6-letter code Claude can watch. 27 motion reference clips at /admin/motion-refs. v0.89, v0.91, v0.92.</p></div>
+<div class="item"><div class="ih"><b>The Brain: CLAUDE.md 441 KB → 43 KB</b></div><p class="idea">Working rules are now short notes in brain/ with one index. Blind test: 13 of 15 hits, 0 wrong. v0.98h.</p></div>
+<div class="item"><div class="ih"><b>Only main makes a Vercel deploy</b></div><p class="idea">Side branches made 92 of 104 builds on 22 Oct. PR #772, v0.108h.</p></div>
+<h2 class="add"><i></i>REAL DATA AND REAL GOALS (LEO, HARRY)</h2>
+<div class="item"><div class="ih"><b>Free-licence data only</b></div><p class="idea">The licensed data was deleted: its licence does not allow a paid game. Real moments, Real shots and Real Goals were rebuilt on free data (Wyscout, SoccerTrack v2, SkillCorner, IDSSE). v0.64, v0.67.</p></div>
+<div class="item"><div class="ih"><b>Real Goals test page: 50 → 4,625 real goals</b></div><p class="idea">A level map with stars, the real move replayed with real names and kits, and every 2017/18 league goal of the top five leagues. Test page only; the career is unchanged. v0.58, v0.113, v0.115.</p></div>
+<div class="item"><div class="ih"><b>Visual Effects Lab (test page)</b></div><p class="idea">/star-vfx-lab-dev: 13 match moments, 123 editable effect cards. v0.58.</p></div>
+<h2 class="bug"><i></i>STILL OPEN (FROM THIS WEEK'S NOTES, NOT RECHECKED TODAY)</h2>
+<div class="item"><div class="ih"><b>Five-a-side: a pass never becomes a team-mate's shot</b></div><p class="idea">0 of 1,000; chance pictures 1 and 6 never score. Needs a gameplay call. v0.72.</p></div>
+<div class="item"><div class="ih"><b>3D: high-skill players blaze over</b></div><p class="idea">About 78% of firm shots from 12 to 20 m go over. v0.81.</p></div>
+<div class="item"><div class="ih"><b>3D headshots: blond hair also colours eyebrows and beard on dark skin</b></div><p class="idea">Team sheets are still drawn. v0.79.</p></div>
+<div class="item"><div class="ih"><b>Training levels page freezes on the second tab switch</b></div><p class="idea">v0.77.</p></div>
+<div class="item"><div class="ih"><b>A Championship club in Europe that wins everything needs 38 midweeks; a season has 34</b></div><p class="idea">v0.78. A club in the European knockout play-off also has two Tuesdays next to its FA Cup Fifth Round and Quarter-Final.</p></div>
+<div class="item"><div class="ih"><b>team_room_v2.sql was listed as waiting to be run</b></div><p class="idea">v0.74, v0.82. Check before relying on round-two features.</p></div>
+<h2 class="nxt"><i></i>NOT LIVE YET</h2>
+<div class="item"><div class="ih"><b>Leo's tonight build (v0.119) is on branch Leo</b></div><p class="idea">Goal celebrations from the shop, a faster social feed (1.5 s → 0.29 s on a cheap phone), Goal of the Month, bicycle kicks, Real Goals paths and 61 famous goals, a season video, a goals gallery, an awards night, 17 bug fixes. It touches the match file and the keeper. It goes live only when Leo says push. Plan: v0.118.</p></div>
+<div class="item"><div class="ih"><b>The numbers</b></div><ul class="nums"><li><b>35</b> pull requests merged into main this week</li><li><b>60</b> patch notes this week</li><li><b>3,792</b> files changed on main this week</li><li><b>1</b> build not live yet: Leo's v0.119, on branch Leo</li></ul></div>
+</details>
+<footer>Leo &middot; v0.148 &middot; weekly round-ups, rounds 1 to 6 (16 Oct to 27 Nov 2026). Built from main&rsquo;s merge and commit history each Friday.</footer>
+</div></body></html>

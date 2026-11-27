@@ -27,6 +27,170 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
   {
+    "version": "0.148",
+    "title": "Leo's patch notes: Weekly round-ups",
+    "author": "Leo",
+    "publishedAt": "2026-10-23T16:40:00Z",
+    "updatedAt": "2026-11-27T17:50:00Z",
+    "artifactUrl": null,
+    "updateNote": "Week 6 (20 to 27 Nov) added. One note for the weekly round-ups from now on (RUL-TEAM-034); weeks 1 to 5 folded in.",
+    "summary": "One note for the weekly round-ups, a new round each Friday, newest first. Week 6 (20 to 27 Nov): 7 PRs and 100 commits. Leo's whole-website job (behind the New look switch: new look in light and dark, Daily Draft, Chemistry, Ranked or Custom). Release prep on main: request limits, cached lists, link previews, /login, card pictures from 195 MB to 7.7 MB, Ten-A-Ball as a real daily challenge, one menu on phones. Vercel back on the free plan with frequent jobs moved to Supabase. Harry's notes 0.141 and 0.142 (sleep, living houses, cloth clothes, 3D phone).",
+    "stats": [
+      {
+        "value": "6",
+        "label": "weeks in this one note"
+      },
+      {
+        "value": "7",
+        "label": "PRs merged this week (#838 to #845)"
+      },
+      {
+        "value": "100",
+        "label": "commits on main this week"
+      },
+      {
+        "value": "195 → 7.7 MB",
+        "label": "card pictures"
+      }
+    ],
+    "sections": [
+      {
+        "kind": "added",
+        "title": "Check these",
+        "items": [
+          {
+            "title": "The new look (Leo, v0.143)",
+            "detail": "Turn on Admin → New look. Every public page in the home's look, light or dark; Daily Draft; Chemistry with Ranked or Custom. Nobody else sees it yet."
+          },
+          {
+            "title": "Ten-A-Ball daily challenge",
+            "detail": "One challenge a day, the same for everyone, on the UK date."
+          },
+          {
+            "title": "One menu on phones",
+            "detail": "The games are listed inside the one menu."
+          },
+          {
+            "title": "Link previews and page names",
+            "detail": "Share a page link and check the preview card and the tab name. /login now works."
+          },
+          {
+            "title": "Harry's 3D notes (v0.141, v0.142)",
+            "detail": "Sleep, living houses, cloth clothes, the 3D phone and real clothes at home."
+          }
+        ]
+      },
+      {
+        "kind": "added",
+        "title": "Website and Draft (Leo, Mikey's branch)",
+        "items": [
+          {
+            "title": "One Knowitball (v0.143, rounds 1 to 5)",
+            "detail": "Plan, the New look switch, a readability check every round, Daily Draft, spot ratings and Best spot, Chemistry, Ranked or Custom (three Hall of Fame boards), higher-or-lower to keep a player, Watch the big games."
+          },
+          {
+            "title": "Fixed for everyone",
+            "detail": "Page titles, sign-in name, Ten-A-Ball lives line and duplicate, Objectives badge, three wrong Draft seasons, faint text. Tic Tac Toe streak counts today's grid."
+          },
+          {
+            "title": "Draft speed",
+            "detail": "Faster clubs and squads, keeper stat names, full surnames. The patch notes page no longer crashes."
+          }
+        ]
+      },
+      {
+        "kind": "changed",
+        "title": "Release prep and running costs (from the commit list)",
+        "items": [
+          {
+            "title": "Vercel back on the free (Hobby) plan",
+            "detail": "Frequent jobs moved to Supabase; every Vercel cron now runs once a day; the morning post watches Vercel processor time."
+          },
+          {
+            "title": "Lighter site",
+            "detail": "Request limits, cached lists, lighter pages. 61 card pictures shrunk from 195 MB to 7.7 MB (WebP, 640 px); new uploads shrink in the browser."
+          },
+          {
+            "title": "Player faces",
+            "detail": "All 13,387 faces now carry a week's browser cache."
+          },
+          {
+            "title": "Build",
+            "detail": "The type check runs on its own before the build, not inside it."
+          }
+        ]
+      },
+      {
+        "kind": "added",
+        "title": "Marketing and team tools (Mikey, from the commit list)",
+        "items": [
+          {
+            "title": "Publish spaces",
+            "detail": "Football, content and kib spaces, each with its own accounts, videos, posts and numbers. Facebook posts go up as Reels; YouTube uploads carry #Shorts."
+          },
+          {
+            "title": "Explainer ex16",
+            "detail": "Why Vini loves Mourinho but not Alonso (48 s), final render; the Brain page plays every video from a small copy."
+          },
+          {
+            "title": "Team board",
+            "detail": "A progress update every day from 20 to 25 Nov."
+          }
+        ]
+      },
+      {
+        "kind": "known",
+        "title": "Still open (from this week's notes, not rechecked today)",
+        "items": [
+          {
+            "title": "Chemistry board",
+            "detail": "Needs supabase/migrations/draft_records_chemistry.sql run."
+          },
+          {
+            "title": "Rankings",
+            "detail": "Back for everyone only after Mikey says yes."
+          },
+          {
+            "title": "The New look",
+            "detail": "Only behind the switch until Leo says go."
+          }
+        ]
+      }
+    ],
+    "updates": [
+      {
+        "at": "2026-10-23T16:40:00Z",
+        "where": "Week 1, 16 to 23 Oct (was 0.127, never merged)",
+        "note": "One page for the week, for Harry"
+      },
+      {
+        "at": "2026-10-30T17:50:00Z",
+        "where": "Week 2, 23 to 30 Oct (was 0.128, never merged)",
+        "note": "One page for the week, for Harry"
+      },
+      {
+        "at": "2026-11-06T17:50:00Z",
+        "where": "Week 3, 30 Oct to 6 Nov (was 0.141, never merged)",
+        "note": "One page for the week, for Harry"
+      },
+      {
+        "at": "2026-11-13T17:50:00Z",
+        "where": "Week 4, 6 to 13 Nov (was 0.142, never merged)",
+        "note": "One page for the week, for Harry"
+      },
+      {
+        "at": "2026-11-20T17:50:00Z",
+        "where": "Week 5, 13 to 20 Nov (was 0.143, never merged)",
+        "note": "One page for the week, for Harry"
+      },
+      {
+        "at": "2026-11-27T17:50:00Z",
+        "where": "Week 6 round + page",
+        "note": "Week 6 (20 to 27 Nov) added. One note for the weekly round-ups from now on (RUL-TEAM-034); weeks 1 to 5 folded in."
+      }
+    ]
+  },
+  {
       "version": "0.143",
       "title": "Leo's patch notes: One Knowitball, the whole website",
       "author": "Leo",
