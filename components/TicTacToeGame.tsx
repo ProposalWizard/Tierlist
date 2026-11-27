@@ -1237,10 +1237,13 @@ function ResultsScreen({
   // A finished daily grid counts towards the streak (this device). Shown with the New look preview on.
   const preview = usePreview();
   const [streak, setStreak] = useState<number | null>(null);
+  // Counts the day you PLAYED today's grid (opened from "Play today's grid": ?mode=solo). The grid
+  // served as today's can be an older daily when none is scheduled, so its own date isn't used.
+  const fromToday = useSearchParams().get("mode") === "solo";
   useEffect(() => {
-    if (!puzzle.is_daily || !puzzle.daily_date || mode !== "solo") return;
-    setStreak(currentStreak(markDaily(puzzle.daily_date), todayUTC()));
-  }, [puzzle.is_daily, puzzle.daily_date, mode]);
+    if (!puzzle.is_daily || mode !== "solo" || !fromToday) return;
+    setStreak(currentStreak(markDaily(todayUTC()), todayUTC()));
+  }, [puzzle.is_daily, mode, fromToday]);
 
   const is2P = mode === "2player";
   const [s1, s2] = gameState.playerScores;
