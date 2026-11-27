@@ -1,7 +1,7 @@
 {
   "id": "ex02b-most-goals-in-a-year",
   "series": "Explainer",
-  "variant": "v2: steps every 1-2 s",
+  "variant": "v2: steps every 1-2 s (20 Nov: real Chitalu pictures, voice matched line by line)",
   "title": "Who has scored the most goals in a single year?",
   "layout": "explainer",
   "music": "02-working-it-out.mp3",
@@ -212,7 +212,7 @@
               {
                 "year": "2012",
                 "top": "NEW",
-                "label": "86 and counting",
+                "label": "Messi breaks it",
                 "tick": true,
                 "head": "#1ea85a"
               }

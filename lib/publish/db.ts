@@ -3,7 +3,7 @@
  * with the service role. Tokens leave this file only encrypted (in) or opened for one platform call (out).
  */
 import { createServiceClient } from "@/lib/supabase/service";
-import { PLATFORMS, type AccountView, type Platform, type PublishAccount, type PublishPost } from "./types";
+import { PLATFORMS, type AccountView, type Platform, type PublishAccount, type PublishPost, type Space } from "./types";
 
 const db = () => createServiceClient();
 
@@ -14,35 +14,36 @@ function check<T>(r: { data: T; error: { message?: string; code?: string } | nul
   return r.data;
 }
 
-export async function getAccount(p: Platform): Promise<PublishAccount | null> {
-  return check(await db().from("publish_accounts").select("*").eq("platform", p).maybeSingle()) as PublishAccount | null;
+/** Every read and write names its space (football / content / kib): each space has its own logins. */
+export async function getAccount(space: Space, p: Platform): Promise<PublishAccount | null> {
+  return check(await db().from("publish_accounts").select("*").eq("space", space).eq("platform", p).maybeSingle()) as PublishAccount | null;
 }
 
-export async function accountViews(): Promise<AccountView[]> {
-  const rows = (check(await db().from("publish_accounts").select("platform,account_id,account_name,expires_at,updated_at")) ?? []) as Pick<PublishAccount, "platform" | "account_id" | "account_name" | "expires_at" | "updated_at">[];
+export async function accountViews(space: Space): Promise<AccountView[]> {
+  const rows = (check(await db().from("publish_accounts").select("platform,account_id,account_name,expires_at,updated_at").eq("space", space)) ?? []) as Pick<PublishAccount, "platform" | "account_id" | "account_name" | "expires_at" | "updated_at">[];
   return PLATFORMS.map((p) => {
     const r = rows.find((x) => x.platform === p);
     return { platform: p, connected: !!r, name: r?.account_name ?? "", id: r?.account_id ?? "", expiresAt: r?.expires_at ?? null, updatedAt: r?.updated_at ?? null };
   });
 }
 
-export async function saveAccount(row: Omit<PublishAccount, "updated_at"> & { connected_by?: string | null }): Promise<void> {
-  check(await db().from("publish_accounts").upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: "platform" }));
+export async function saveAccount(row: Omit<PublishAccount, "updated_at" | "space"> & { space: Space; connected_by?: string | null }): Promise<void> {
+  check(await db().from("publish_accounts").upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: "space,platform" }));
 }
 
-export async function removeAccount(p: Platform): Promise<void> {
-  check(await db().from("publish_accounts").delete().eq("platform", p));
+export async function removeAccount(space: Space, p: Platform): Promise<void> {
+  check(await db().from("publish_accounts").delete().eq("space", space).eq("platform", p));
 }
 
-export async function listPosts(limit = 60): Promise<PublishPost[]> {
-  return (check(await db().from("publish_posts").select("*").order("scheduled_at", { ascending: false }).limit(limit)) ?? []) as PublishPost[];
+export async function listPosts(space: Space, limit = 60): Promise<PublishPost[]> {
+  return (check(await db().from("publish_posts").select("*").eq("space", space).order("scheduled_at", { ascending: false }).limit(limit)) ?? []) as PublishPost[];
 }
 
 export async function getPost(id: string): Promise<PublishPost | null> {
   return check(await db().from("publish_posts").select("*").eq("id", id).maybeSingle()) as PublishPost | null;
 }
 
-export async function insertPost(p: Pick<PublishPost, "video_key" | "title" | "captions" | "platforms" | "scheduled_at" | "created_by">): Promise<PublishPost> {
+export async function insertPost(p: Pick<PublishPost, "video_key" | "title" | "captions" | "platforms" | "scheduled_at" | "created_by"> & { space: Space }): Promise<PublishPost> {
   return check(await db().from("publish_posts").insert({ ...p, status: "scheduled", results: {} }).select("*").single()) as PublishPost;
 }
 
@@ -59,4 +60,10 @@ export async function duePosts(now: Date): Promise<PublishPost[]> {
 export async function recentPosted(now: Date): Promise<PublishPost[]> {
   const since = new Date(now.getTime() - 30 * 864e5).toISOString();
   return (check(await db().from("publish_posts").select("*").in("status", ["done", "partial"]).gte("scheduled_at", since).order("scheduled_at", { ascending: false }).limit(40)) ?? []) as PublishPost[];
+}
+
+/** The Facebook Pages other spaces already post to (so a new login picks this space's own Page). */
+export async function facebookPagesInOtherSpaces(space: Space): Promise<string[]> {
+  const rows = (check(await db().from("publish_accounts").select("account_id").eq("platform", "facebook").neq("space", space)) ?? []) as { account_id: string }[];
+  return rows.map((r) => r.account_id);
 }

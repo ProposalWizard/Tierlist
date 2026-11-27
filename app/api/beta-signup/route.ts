@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { overLimit, slowDown, LIMITS } from "@/lib/rateLimit";
 
 /**
  * POST /api/beta-signup   { email }
@@ -39,6 +40,8 @@ function tooMany(ip: string): boolean {
 }
 
 export async function POST(request: Request) {
+  // Too many from one person: a friendly 429, never a crash (lib/rateLimit).
+  if (await overLimit(request, LIMITS.betaSignup)) return slowDown(LIMITS.betaSignup);
   const ip = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || request.headers.get("x-real-ip") || "unknown";
   if (tooMany(ip)) return NextResponse.json({ ok: false, reason: "slow" }, { status: 429 });
 

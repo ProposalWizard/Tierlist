@@ -9,6 +9,14 @@ try { writeAssetVersions(); } catch (e) { console.warn("asset versions not refre
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // The type check runs as its own step in `npm run build`, just before
+  // `next build` (package.json), so a type error still stops every deploy.
+  // Next's built-in copy of the same check ran inside the build while the
+  // compile already held most of the memory: on Vercel's free plan (8 GB,
+  // 2 CPUs) it took 35+ minutes and the 45-minute limit cut the deploy off
+  // (24 Nov 2026, dpl_CRwkhVAruFN48amsirpWgu6u7tar). On its own it takes
+  // about 2.5 minutes here.
+  typescript: { ignoreBuildErrors: true },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "upload.wikimedia.org" },
@@ -86,6 +94,12 @@ const nextConfig = {
     return [
       { source: "/star-dev", destination: "/road-to-the-golden-ball", permanent: false },
       { source: "/road-to-ballon-dor", destination: "/road-to-the-golden-ball", permanent: true },
+      // The sign-in page is /auth; the addresses people type by habit went to "not found" (26 Nov 2026).
+      { source: "/login", destination: "/auth", permanent: false },
+      { source: "/signin", destination: "/auth", permanent: false },
+      { source: "/sign-in", destination: "/auth", permanent: false },
+      { source: "/register", destination: "/auth", permanent: false },
+      { source: "/signup", destination: "/auth", permanent: false },
     ];
   },
   async headers() {
@@ -123,6 +137,8 @@ const nextConfig = {
       { source: "/star/:path*", headers: gameAssetCache },
       { source: "/sfx/:path*", headers: gameAssetCache },
       { source: "/models/:path*", headers: gameAssetCache },
+      // The shrunk card pictures (26 Nov 2026): one file per card id, never changed in place.
+      { source: "/cards/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" }] },
       { source: "/shop/:path*", headers: gameAssetCache },
       { source: "/home/:path*", headers: gameAssetCache },
       { source: "/icons3d/:path*", headers: gameAssetCache },

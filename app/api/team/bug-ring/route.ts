@@ -18,12 +18,15 @@ import { TEAM_ROOM } from "@/lib/teamRoom/config";
 import { ringsWithBells } from "@/lib/teamRoom/bells";
 import { bellsOf, pushReady, quietPeople, ring, teamAccounts } from "@/lib/teamRoom/notifyServer";
 import type { PushPayload } from "@/lib/teamRoom/notify";
+import { overLimit, slowDown, LIMITS } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
 const FRESH_MS = 2 * 60_000;
 
-export async function POST() {
+export async function POST(req: Request) {
+  // Too many from one person: a friendly 429, never a crash (lib/rateLimit).
+  if (await overLimit(req, LIMITS.bugRing)) return slowDown(LIMITS.bugRing);
   if (!pushReady()) return NextResponse.json({ ok: true, sent: 0, off: true });
   let sb: ReturnType<typeof createServiceClient>;
   try { sb = createServiceClient(); } catch { return NextResponse.json({ ok: true, sent: 0 }); }

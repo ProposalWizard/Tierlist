@@ -225,6 +225,9 @@ export const LIMITS = {
   r2: 10 * GB,
 } as const;
 
+/** Vercel's free plan: 4 hours of function processor time a month (lib/backup/vercelUsage.ts). */
+export const VERCEL_FREE_CPU_MS_LIMIT = 4 * 3600_000;
+
 export const DOT: Record<Level, string> = { green: "🟢", amber: "🟠", red: "🔴", unknown: "⚪" };
 
 export function sizeWord(b: number): string {
@@ -256,6 +259,9 @@ export interface LimitsInput {
   backup: Manifest | null;
   /** Why a reading is missing (shown in the post, never a key). */
   notes?: string[];
+  /** Vercel function processor time over the last 30 days, in ms (vercelUsage.ts).
+   *  undefined = not read (no line); null = could not read. */
+  vercelCpuMs?: number | null;
 }
 
 export interface LimitsPost { title: string; body: string; level: Level; red: boolean; lines: { what: string; level: Level }[] }
@@ -273,6 +279,15 @@ export function limitsPost(i: LimitsInput): LimitsPost {
   meter("Supabase Storage", i.storageBytes, LIMITS.storage);
   const top = i.r2?.folders.slice(0, 4).map((f) => `${f.folder} ${sizeWord(f.bytes)}`).join(", ");
   meter("Cloudflare R2", i.r2?.total ?? null, LIMITS.r2, top ? ` · ${top}` : "");
+  // Vercel's free plan: 4 hours of processor time a month (Mikey, 20 Nov 2026).
+  if (i.vercelCpuMs !== undefined) {
+    const used = i.vercelCpuMs;
+    const level = levelOf(used, VERCEL_FREE_CPU_MS_LIMIT);
+    const hours = (ms: number) => `${(ms / 3600_000).toFixed(1)} h`;
+    const text = used == null ? `${DOT.unknown} Vercel processor time: could not read`
+      : `${DOT[level]} Vercel processor time (last 30 days): ${hours(used)} of ${hours(VERCEL_FREE_CPU_MS_LIMIT)} free (${pct(used, VERCEL_FREE_CPU_MS_LIMIT)})${level === "amber" || level === "red" ? " · over the limit pauses functions for up to 30 days: cut usage or go Pro" : ""}`;
+    lines.push({ what: "Vercel CPU", level, text });
+  }
 
   const b = i.backup;
   let bLevel: Level;

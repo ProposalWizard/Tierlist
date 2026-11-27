@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Test Pages Match</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Same tokens and parts as Harry's pages (0.109h). One column, stacked cards. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    --turf:#1f6b3d;--turf2:#24763f;--chalk:rgba(255,255,255,.75);
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      --turf:#2f8a50;--turf2:#358f55;--chalk:rgba(255,255,255,.85);
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    --turf:#2f8a50;--turf2:#358f55;--chalk:rgba(255,255,255,.85);
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:flex-start;gap:8px;margin:0 0 6px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none;margin-top:7px}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 10px}
+  .upd{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:var(--r);padding:9px 12px;margin:0 0 4px;font-size:14px;color:var(--ink2)}
+  .upd b{color:var(--blue);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .idea{margin:0 0 10px;color:var(--ink2);font-size:14.5px}
+  .idea b{color:var(--ink)}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b{color:var(--ink)}
+  .sub3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--ink3);margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+
+  /* drawn diagrams */
+  .fig{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:10px;margin:10px 0 2px;min-width:0}
+  .fig svg{display:block;width:100%;max-width:390px;height:auto;margin:0 auto}
+  .cap{font-size:12.5px;color:var(--ink3);margin:6px 0 0;line-height:1.4}
+  .cap b{color:var(--ink2)}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  .item details{background:var(--card2)}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details li b{color:var(--ink)}
+  details h4{margin:12px 0 4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px;white-space:nowrap}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox li.done::before{background:var(--green);content:"\2713"}
+  .okbox .q{font-weight:700}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+
+  .note{border:1px dashed var(--line);border-radius:var(--r);padding:10px 12px;margin:14px 0 0;color:var(--ink2);font-size:13.5px;background:var(--card)}
+  .note b{color:var(--ink)}
+
+  /* clip card (references/clip-card.html) */
+  .clip{margin:12px auto 2px;max-width:390px;min-width:0}
+  .clip .look{font-size:14px;color:var(--ink2);margin:0 0 7px;background:var(--card2);border-radius:10px;padding:9px 12px}
+  .clip .look b{color:var(--green);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;max-height:80vh;object-fit:contain;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+  .clip .spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+  .clip .spd button.on{background:var(--ink);color:var(--bg)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .clip figcaption b{color:var(--ink2)}
+  details .clip{margin-top:4px;margin-bottom:16px}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+.round{margin-top:36px;padding-top:18px;border-top:2px solid rgba(0,0,0,.12)}
+</style>
+</head><body>
+<div class="wrap">
+<div class="wrap">
+<header>
+  <span class="ver">v0.143 &middot; LEO &middot; ONE KNOWITBALL &middot; UPDATED 27 NOV</span>
+  <h1>One Knowitball: the whole website</h1>
+  <p class="status"><i></i><span>One patch note for the whole job, updated each round, newest first. Every public page gets the home&rsquo;s look and frame (cream, or dark if you choose), the old games are brought up to date, and Draft gets a lot better. <b>All of it is behind your New look switch</b> (Admin &rarr; New look, or knowitball.co.uk/?look=v2) until you say go.</span></p>
+  <p class="sub">Made by Leo &middot; started 24 Nov 2026 &middot; 5 rounds so far</p>
+</header>
+<h2 class="add"><i></i>WHERE IT STANDS</h2>
+<div class="item"><div class="ih"><b>Done, behind the switch</b><span class="tag t-seen">live</span></div><p class="idea">The new look in light and dark on every public page (Mikey&rsquo;s Draft art kept as dark cards); Daily Draft with ranking, share and streak; Draft spot ratings, Best spot, Needs; Chemistry with Ranked or Custom (three boards); higher-or-lower to keep a player; Watch the big games; Tic Tac Toe today-first, streak, share; Ten-A-Ball topics, bests, share; Rankings running for you; the readability check on every round.</p></div>
+<div class="item"><div class="ih"><b>Fixed for everyone</b><span class="tag t-meas">live</span></div><p class="idea">Page titles, sign-in name, Ten-A-Ball lives line and duplicate, Objectives badge clear of Sign in on a computer, three wrong Draft seasons, faint text on the Objectives badge, Draft setup and Tic Tac Toe.</p></div>
+<div class="item"><div class="ih"><b>Needs you</b><span class="pill p-amb">to do</span></div><p class="idea">Run supabase/migrations/draft_records_chemistry.sql for the Chemistry board. Mikey&rsquo;s yes before Rankings come back for everyone. Then, when you&rsquo;re happy, say go and the switch becomes the site.</p></div>
+<div class="item"><div class="ih"><b>Next</b><span class="pill p-blu">next</span></div><p class="idea">Friend matches watched together, Manager mode (docs/DRAFT_MANAGER_PLAN.md), page-by-page polish, the Objectives badge on phones.</p></div>
+<h2 class="nxt round"><i></i>ROUND 5 &middot; 27 NOV &middot; DRAFT: CHEMISTRY, RANKED OR CUSTOM, HIGHER-OR-LOWER, WATCHING GAMES</h2>
+<div class="roundbody">
+<h2 class="nxt"><i></i>WHAT YOU SAID</h2>
+<p class="snote">&ldquo;Link between players thing like fifa chemistry &hellip; should be a mode or setting &hellip; not loads of diff things that make drafts too different so u cant rlly compare &hellip; convince to stay &hellip; higher or lower card minigame &hellip; football manager or chairman style &hellip; commentary &hellip; sort new picks by rating again &hellip; those ui bits are literally touching.&rdquo;</p>
+
+<h2 class="add"><i></i>CHEMISTRY</h2>
+<figure><img src="r0147-chemistry.webp" alt="Draft rules choice and the spot chooser with chemistry" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Draft Rules: Classic or Chemistry, and the Ranked line. Picking: Chem 0/33 at the top, and what each spot would give him</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>How links work</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Starters next to each other on the pitch link: same club and same season 3, same club 2, same nation 1. A player&rsquo;s chemistry is half his link points, up to 3, and only in a spot he can play. Team chemistry up to 33. Each point is +1 to his overall and every stat for the season, like FUT.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>How much it matters</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">Measured over 300 squads: full chemistry (33) is worth about 6&ndash;10 league points a season; a typical mixed squad (9&ndash;15) about 2&ndash;4. Worth chasing, doesn&rsquo;t decide everything. A test pins it: 2003/04 Arsenal together scores 33, eleven strangers 0, a man out of position 0.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>While you pick</b><span class="tag t-seen">played</span></div>
+  <p class="idea">&ldquo;Chem 12/33&rdquo; next to the pick count, and on every free spot what he&rsquo;d get there (&ldquo;+2 chem&rdquo; or &ldquo;no links&rdquo;).</p>
+</div>
+
+<h2 class="add"><i></i>RANKED OR CUSTOM: ONLY THREE BOARDS</h2>
+<div class="item">
+  <div class="ih"><b>Ranked</b><span class="tag t-seen">played</span></div>
+  <p class="idea">The standard rules (full era, 3 re-spins, ratings shown) count for the Hall of Fame: <b>Normal</b>, <b>Prime</b> or <b>Chemistry</b> (Chemistry plays with Normal ratings). The setup screen says which board, in green.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Custom</b><span class="tag t-seen">played</span></div>
+  <p class="idea">Change anything else (fewer re-spins, hidden ratings, a narrower era, Chemistry with Prime) and it says so in amber: &ldquo;Custom (1 re-spin): your history only&rdquo;. It plays the same, it just never sits next to standard drafts.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Chemistry board needs one database step</b><span class="pill p-amb">needs you</span></div>
+  <p class="idea">The Hall of Fame only accepts Normal and Prime today. Run supabase/migrations/draft_records_chemistry.sql once in the Supabase SQL editor; until then Chemistry drafts go in your history but not the board. The board&rsquo;s tab shows with your switch on.</p>
+</div>
+
+<h2 class="add"><i></i>CONVINCE TO STAY: HIGHER OR LOWER</h2>
+<div class="item">
+  <div class="ih"><b>Three right in a row and he stays</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">Cards from your own squad: is the next one&rsquo;s overall higher or lower? One wrong and he goes. A tie counts as right. Played sensibly he stays about 43% of the time (the old coin flip was 50%), but now it&rsquo;s your call.</p>
+</div>
+
+<h2 class="add"><i></i>WATCH THE BIG GAMES</h2>
+<figure><img src="r0147-match-centre.webp" alt="Watch the big games, the Match Centre live and at full time" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Under the season: your finals and biggest win. The Match Centre: scoreboard, clock, commentary with real scorers and assists, Skip to the end.</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>You decide what to watch</b><span class="tag t-seen">played</span></div>
+  <p class="idea">Under every season once it has finished revealing (so nothing is given away): the FA Cup, League Cup, Champions League and Europa League finals you reached, plus your biggest win. About 45 seconds a match, or Skip.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>It tells the real result</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Your goals keep their real scorer, assist and minute from the season; it never re-simulates, so watching changes nothing.</p>
+</div>
+
+<h2 class="add"><i></i>FIXED</h2>
+<div class="item">
+  <div class="ih"><b>Players sorted by rating again</b><span class="tag t-seen">played</span></div>
+  <p class="idea">The squad list is highest-rated first, always (I&rsquo;d changed it to &ldquo;best fit&rdquo;; undone). The &ldquo;Needs&rdquo; line stays.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Phone spacing</b><span class="tag t-seen">played</span></div>
+  <p class="idea">The Daily Draft and Challenge cards line up with the setup underneath, with even gaps; they no longer touch or run edge to edge.</p>
+</div>
+
+<h2 class="bug"><i></i>NEXT</h2>
+<div class="item">
+  <div class="ih"><b>Friend matches, watched together</b><span class="pill p-blu">next</span></div>
+  <p class="idea">In a room, both screens play the same match in the Match Centre at the same moment; finals between friends play automatically, Skip stays.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Manager mode</b><span class="pill p-blu">next</span></div>
+  <p class="idea">A separate long mode on the same players and simulator: step through 38 weeks, pick the XI and mentality, watch or quick-result each match, one half-time change, transfer windows with a budget, then the chairman layer (board targets, money). Its own Hall of Fame. Plan: docs/DRAFT_MANAGER_PLAN.md.</p>
+</div>
+<details><summary>How it was checked</summary>
+  <p>A Chemistry draft was played to the end in a real browser with the live site&rsquo;s data: the Ranked line, the chemistry count and spot hints, the season, Watch the big games, the Match Centre live and skipped to full time. New tests: chemistry (links, caps, out of position, the boost), Ranked/Custom, higher-or-lower (and its odds over 20,000 deals), the match timeline (same story every time, real scorers, extra time and penalties). Not played yet in a browser: the higher-or-lower game itself (it only appears when a player wants to leave in pre-season, which is random); its rules are tested.</p>
+</details></div>
+<h2 class="nxt round"><i></i>ROUND 4 &middot; 27 NOV &middot; DAILY DRAFT, BETTER PICKING, TIC TAC TOE AND TEN-A-BALL</h2>
+<div class="roundbody">
+<h2 class="nxt"><i></i>WHAT YOU SAID</h2>
+<p class="snote">&ldquo;Carry on, do em all.&rdquo;</p>
+<h2 class="add"><i></i>DRAFT: THE DAILY DRAFT</h2>
+<figure><img src="r0146-draft-daily.webp" alt="The Daily Draft result card and the setup card after playing" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>After your season: points, today&rsquo;s ranking, your 14 picks as squares, Share. Back on the setup screen: today&rsquo;s score and your streak.</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Same spins for everyone, every day</b><span class="tag t-seen">played</span></div>
+  <p class="idea">Picked from today&rsquo;s date: two separate players got exactly the same 14 club-seasons in the same order. Same settings for all (normal ratings, pick player then spot, no re-spins).</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Ranking</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Your first season&rsquo;s points against everyone else&rsquo;s today: &ldquo;Top 12% of 340&rdquo;. One score per player: their first of the day, so replaying doesn&rsquo;t help. Signed-in players are counted.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Share grid and streak</b><span class="tag t-seen">played</span></div>
+  <p class="idea">Your 14 picks as squares (green: the best player that spin had), points, finish and top-% in one tap; a streak of days played.</p>
+</div>
+<h2 class="add"><i></i>DRAFT: BETTER PICKING</h2>
+<figure><img src="r0146-draft-pick.webp" alt="Daily Draft card, roster with Needs line, spot chooser with ratings" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Left to right: the Daily Draft card; &ldquo;Needs: &hellip; best fits first&rdquo;; every spot with his real rating there and a one-tap Best spot</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Out-of-position warning</b><span class="tag t-seen">played</span></div>
+  <p class="idea">Each spot says Natural, Can play here (with his rating there) or Out of position (in red). These are the season simulator&rsquo;s own numbers: a keeper up front was rated 58, not 86.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Best spot, one tap</b><span class="tag t-seen">played</span></div>
+  <p class="idea">The free spot where he rates highest, as one green button.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Needs and best fits first</b><span class="tag t-seen">played</span></div>
+  <p class="idea">The list says which spots are still empty and puts the players who&rsquo;d rate highest in them first.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Wrong seasons fixed (for everyone)</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Three seasons had 21 clubs: Bournemouth in 2012/13 (League One), Aston Villa in 2018/19 (Championship), Sunderland in 2021/22 (League One). Removed from the spins. Strasbourg was already fixed by a teammate.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Challenge Draft link</b><span class="tag t-seen">played</span></div>
+  <p class="idea">A card for admins to the Challenge Draft test page (every pick is a brief).</p>
+</div>
+<h2 class="add"><i></i>TIC TAC TOE</h2>
+<figure><img src="r0146-ttt.webp" alt="Tic Tac Toe opens on today's grid" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Today&rsquo;s grid first, straight into solo (no Solo / 2 Player screen)</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Streak and Share</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Finishing a daily grid counts towards a streak (this device). Share opens your phone&rsquo;s share sheet with the result squares and the link.</p>
+</div>
+<h2 class="add"><i></i>TEN-A-BALL</h2>
+<div class="item">
+  <div class="ih"><b>Topics, bests, Share</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Challenges grouped by topic; your best score on each card; Share at the end (&ldquo;7/10 &#9917;&#9917;&#9917;&hellip;&rdquo;). The duplicate &ldquo;Danish players&rdquo; is gone for everyone. The challenge of the day was already added by a teammate.</p>
+</div>
+<h2 class="add"><i></i>RANKINGS (TIERLISTS)</h2>
+<div class="item">
+  <div class="ih"><b>Running for you, paused for everyone else</b><span class="pill p-amb">your call</span></div>
+  <p class="idea">Mikey paused Rankings on 17 Nov (&ldquo;make the rankings mode unavailable right now&rdquo;). With your switch on they run and show in the game links, so you can test them in the new look. Bringing them back for everyone needs Mikey&rsquo;s yes.</p>
+</div>
+<h2 class="bug"><i></i>NEXT</h2>
+<div class="item">
+  <div class="ih"><b>Links between players (chemistry)</b><span class="pill p-amb">your call</span></div>
+  <p class="idea">Built only when you decide one thing: it changes season results, so new records would beat old ones more easily. Count them in the Hall of Fame, or keep a separate board?</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Draft wave 3</b><span class="pill p-blu">next</span></div>
+  <p class="idea">Beat-my-XI links for friends, the season told as a story, levels that unlock eras and formations.</p>
+</div>
+<details><summary>How it was checked</summary>
+  <p>The Daily Draft was played to the end in a real browser twice (14 picks, pre-season, the season, the result card, back to setup); both runs got identical spins. New tests: the daily spins (same for everyone whatever order the list arrives in, new each day), ranking %, share text; Tic Tac Toe streak; Ten-A-Ball best and share. The readability check passed on Draft and Tic Tac Toe in light and dark, signed out and as admin. Tic Tac Toe&rsquo;s daily grid, Ten-A-Ball&rsquo;s list and the ranking with real players need the live database: checked on the live site after this goes up.</p>
+</details></div>
+<h2 class="nxt round"><i></i>ROUND 3 &middot; 26 NOV &middot; HALL OF FAME, HOME DARK MODE, ADMIN PANEL; THE READABILITY CHECK</h2>
+<div class="roundbody">
+<h2 class="nxt"><i></i>WHAT YOU SAID</h2>
+<p class="snote">&ldquo;You should NEVER be letting stupid shit like this pass. So so easy to check for surely. Also home page dark mode doesn&rsquo;t work. Also Mikey&rsquo;s really cool draft pictures &hellip; I rlly want them too.&rdquo;</p>
+<h2 class="bug"><i></i>WHY IT GOT THROUGH</h2>
+<div class="item">
+  <div class="ih"><b>I only looked at pages signed out</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">The Hall of Fame boards only show when you&rsquo;re signed in, so my pictures showed the &ldquo;Sign in&rdquo; box instead. The new check signs in as a pretend player (and as an admin) inside its own test browser.</p>
+</div>
+<figure><img src="r0145-before.webp" alt="Hall of Fame before: dark words on dark cards" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Before (the check found 84 unreadable words on this one page)</b></figcaption></figure>
+<h2 class="add"><i></i>FIXED</h2>
+<figure><img src="r0145-records.webp" alt="Hall of Fame in light and dark" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Hall of Fame, signed in: light and dark. Mikey&rsquo;s pictures kept.</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Mikey&rsquo;s art kept, everywhere</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">Any box drawn for a dark page (the Draft poster, Hall of Fame boards, History and Hall of Fame buttons) is found by measuring its colour and kept exactly as designed, as a dark card on the cream, like the phone picture on the home page. No page had to be listed by hand, so a new one works too.</p>
+</div>
+<figure><img src="r0145-homedraft.webp" alt="Home in dark; Draft setup in light" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Home in the dark look (was still cream); Draft setup in light with the art kept</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Home dark mode</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">The home has its own colours; it now has a dark version in the same greens.</p>
+</div>
+<figure><img src="r0145-adminpanel.webp" alt="The admin side panel, readable" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>The admin side panel on a cream page</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Admin panel</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">Keeps its own dark colours on every page in the new look.</p>
+</div>
+<h2 class="add"><i></i>ALSO FIXED FOR EVERYONE (FAINT ON TODAY&rsquo;S SITE TOO)</h2>
+<div class="item">
+  <div class="ih"><b>Objectives badge</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">Deeper orange so the white words read.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Draft setup</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">Selected options (Normal, Club first &hellip;) in deeper colours; the small lines under them, &ldquo;14 spins&rdquo;, the team name and the room-code preview brighter.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Tic Tac Toe, Draft history, admin panel labels</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">Brighter small words and the Sign In button.</p>
+</div>
+<h2 class="add"><i></i>THE CHECK (EVERY ROUND FROM NOW ON)</h2>
+<div class="item">
+  <div class="ih"><b>Every word, every page, measured</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">14 pages &times; light, dark and today&rsquo;s look &times; signed out and in &times; phone and computer. Anything under 3 : 1 is listed with a picture. It runs on a local build with the real site&rsquo;s data. Brain rule RUL-UI-014: no look change ships without it.</p>
+</div>
+<details><summary>How it was checked</summary>
+  <p>Full run: 162 of 168 page checks passed; the 6 left were one greyed-out &ldquo;sign in to play with friends&rdquo; preview (now marked as disabled and lighter). Hall of Fame, home and Draft were also looked at by eye in both looks. Not covered by the check: words on top of photos (can&rsquo;t be measured from colours), and pages that need a real account&rsquo;s own data (your own history and profile show the empty versions).</p>
+</details></div>
+<h2 class="nxt round"><i></i>ROUND 2 &middot; 26 NOV &middot; THE NEW LOOK, ON THE REAL SITE, ONLY FOR YOU</h2>
+<div class="roundbody">
+<h2 class="nxt"><i></i>WHAT YOU ASKED FOR</h2>
+<p class="snote">&ldquo;Is there a way I can test all this without having to change the entire website &hellip; or maybe just make it a lil secret admin setting.&rdquo; Plus your answers: dark mode as an option, keep the game links, bring Tierlists back, everything for Draft, a daily Ten-A-Ball.</p>
+<h2 class="add"><i></i>HOW TO TRY IT</h2>
+<div class="item">
+  <div class="ih"><b>Admin &rarr; New look</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">On / Off, and Light (cream) / Dark. A list of every page to check. Only this device: sign in on another and it&rsquo;s off there.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>&ldquo;&#9679; New look&rdquo; button</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">While it&rsquo;s on, bottom-left on every page: tap for Light, Dark or Turn off.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>On a phone</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Go to knowitball.co.uk/?look=v2 while signed in as an admin (and /?look=off to stop).</p>
+</div>
+<h2 class="add"><i></i>WHAT IT LOOKS LIKE (TODAY &middot; LIGHT &middot; DARK)</h2>
+<figure><img src="r0144-draft.webp" alt="Draft setup: today, light, dark" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>PL Draft setup</b></figcaption></figure>
+<figure><img src="r0144-ttt.webp" alt="Tic Tac Toe: today, light, dark" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Tic Tac Toe</b></figcaption></figure>
+<figure><img src="r0144-auth.webp" alt="Sign in: today, light, dark" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Sign in (now says Knowitball, not Football Tierlist)</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Every public page at once</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">The green top bar and footer, cream Sign in, green buttons instead of purple, the page you&rsquo;re on as a cream pill in the game links. Game screens and admin pages don&rsquo;t change.</p>
+</div>
+<h2 class="add"><i></i>FIXED FOR EVERYONE (NOT JUST THE PREVIEW)</h2>
+<div class="item">
+  <div class="ih"><b>Page titles</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">No more &ldquo;Knowitball | Knowitball&rdquo; on Draft, Tic Tac Toe, Ten-A-Ball; Objectives has a title.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Sign in</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">Says &ldquo;Knowitball&rdquo; and &ldquo;keep your careers, drafts and scores on every device&rdquo;.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Ten-A-Ball in the menu</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Now says three lives (was &ldquo;ten lives&rdquo;).</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Objectives badge</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">On a computer it sits under the top bar, not over Sign in.</p>
+</div>
+<h2 class="bug"><i></i>NEXT (ALL BEHIND THE SWITCH)</h2>
+<div class="item">
+  <div class="ih"><b>Page-by-page polish</b><span class="pill p-blu">next</span></div>
+  <p class="idea">Each page checked in both looks; Draft&rsquo;s own screens restyled properly (this round only made them readable).</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Old games</b><span class="pill p-blu">next</span></div>
+  <p class="idea">Tic Tac Toe (today&rsquo;s grid first, rarity, streak, share), Ten-A-Ball (challenge of the day, the duplicate removed), Tierlists back.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Draft waves 1&ndash;3</b><span class="pill p-blu">next</span></div>
+  <p class="idea">Faces, clean clubs, out-of-position warning, faster picks; Daily Draft; links; Challenge Draft; play a friend.</p>
+</div>
+<details><summary>How it was checked</summary>
+  <p>Built the site and opened 14 pages three ways (switch off, light, dark) at phone size. With the switch off the colours are exactly today&rsquo;s (same background on every page, checked). A new test checks the colour settings, which pages change, and the start-up script. Not seen yet: Draft&rsquo;s pick screens and Ten-A-Ball&rsquo;s list in the new look (they need the live database; checked on the live site after this goes up).</p>
+</details></div>
+<h2 class="nxt round"><i></i>ROUND 1 &middot; 24 NOV &middot; THE PLAN: TWO LOOKS TODAY, 10 FAULTS, DRAFT IDEAS</h2>
+<div class="roundbody">
+<h2 class="nxt"><i></i>WHAT YOU ASKED FOR</h2>
+<p class="snote">&ldquo;The home screen, that&rsquo;s perfect. Across all pages we want a consistent theme, look &hellip; header footer sidebar links &hellip; keep the other old games up to date &hellip; Draft can certainly be made a LOT better.&rdquo;</p>
+
+<h2 class="bug"><i></i>TODAY: TWO WEBSITES IN ONE</h2>
+<figure><img src="r0143-today.webp" alt="Eight pages of the live site on a phone" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Live today, phone: home and All games are cream and green; Draft, Tic Tac Toe, Ten-A-Ball, sign-in and the game&rsquo;s landing are dark navy and purple</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>The home&rsquo;s look only switches on for the home</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">It is a set of overrides in the home&rsquo;s own style file. So the main job is to make those colours the site&rsquo;s normal ones, then tidy each page.</p>
+</div>
+<figure><img src="r0143-headers.webp" alt="The two top bars on a computer" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Top: the home&rsquo;s bar (no game links; the Objectives badge covers Sign in). Bottom: every other page (game strip, purple Sign in).</b></figcaption></figure>
+
+<h2 class="bug"><i></i>10 FAULTS FOUND ON THE WAY</h2>
+<div class="item">
+  <div class="ih"><b>Look and frame</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">Two menu buttons in the phone top bar &middot; sign-in still says &ldquo;Football Tierlist&rdquo; &middot; page titles say &ldquo;Knowitball | Knowitball&rdquo; &middot; on a computer the Objectives badge covers Sign in &middot; the game strip is cut off on phones.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Ten-A-Ball</b><span class="tag t-meas">counted</span></div>
+  <p class="idea">Says &ldquo;a new challenge every day&rdquo; but is a fixed list of 33, with &ldquo;Danish players&rdquo; twice. The menu says &ldquo;ten lives&rdquo;, the game gives 3.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Draft</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">Every player is a grey silhouette &middot; &ldquo;RC Strasbourg 2023/24&rdquo; (French) spun past in the Premier League reel &middot; a keeper can be put up front with no warning.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Dead pages</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">/legend is a 404; Tierlists, Rankings, Vote, Create and Find all say &ldquo;isn&rsquo;t running right now&rdquo;.</p>
+</div>
+
+<h2 class="add"><i></i>THE PLAN, PICTURED</h2>
+<figure><img src="r0143-before.webp" alt="Draft, Draft picks, Tic Tac Toe and Ten-A-Ball as they are now" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Now: Draft setup, a Draft pick, Tic Tac Toe, Ten-A-Ball</b></figcaption></figure>
+<figure><img src="r0143-after.webp" alt="The same games drawn in the home&rsquo;s look" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>After (a mock-up, not built): green top bar with one menu, a game bar (Back, name, How to play), cream page, white cards, green buttons, green footer</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>1. One frame on every page &middot; 1 day</b><span class="pill p-blu">plan</span></div>
+  <p class="idea">Green top bar: logo, Sign in, ONE menu (games, profile, objectives, Discord). A game bar on game pages. The green footer everywhere. No sidebars. The career game keeps its own full-screen screens.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>2. One look &middot; 2&ndash;3 days</b><span class="pill p-blu">plan</span></div>
+  <p class="idea">The home&rsquo;s colours, type, cards and buttons as named settings every page uses; purple removed. A build check stops anyone adding the old navy/purple back.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>3. Fix the 10 faults &middot; &frac12; day</b><span class="pill p-blu">plan</span></div>
+  <p class="idea">Each one shown fixed.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>4. Tic Tac Toe and Ten-A-Ball &middot; 2 days</b><span class="pill p-blu">plan</span></div>
+  <p class="idea">Tic Tac Toe: today&rsquo;s grid opens straight away, how rare each answer was, a streak, a share grid. Ten-A-Ball: a real challenge of the day (same for everyone), topics, your best on each card, share.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>5&ndash;7. Draft, three waves &middot; about 10 days</b><span class="pill p-blu">plan</span></div>
+  <p class="idea"><b>Wave 1</b>: faces back, clean club list, out-of-position warning, &ldquo;Needs: RB, CM, ST&rdquo; with best fits first, faster picks. <b>Wave 2</b>: <b>Daily Draft</b> (same 14 spins for everyone, your ranking, streak, share grid: the biggest growth idea), <b>links</b> between players from the same club, nation or era, a &ldquo;Share my XI&rdquo; picture. <b>Wave 3</b>: Challenge Draft (built on a test page already), beat-my-XI links for friends, the season told as a story, levels that unlock eras and formations, and a link to Road to the Golden Ball.</p>
+</div>
+
+<h2 class="bug"><i></i>YOUR CALLS (FEEDBACK FIRST, THEN SAY GO)</h2>
+<div class="item">
+  <div class="ih"><b>1. Cream everywhere, no dark mode?</b><span class="pill p-amb">your call</span></div>
+  <p class="idea">Recommended: yes.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>2. Drop the game strip, one menu instead?</b><span class="pill p-amb">your call</span></div>
+  <p class="idea">Recommended: yes (the home never had it; it doesn&rsquo;t fit a phone).</p>
+</div>
+<div class="item">
+  <div class="ih"><b>3. Tierlists: bring back or remove?</b><span class="pill p-amb">your call</span></div>
+  <p class="idea">Five pages say &ldquo;not running&rdquo; today.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>4. Draft: Daily Draft + links first?</b><span class="pill p-amb">your call</span></div>
+  <p class="idea">Recommended: yes.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>5. Ten-A-Ball: a featured challenge a day?</b><span class="pill p-amb">your call</span></div>
+  <p class="idea">Recommended: yes.</p>
+</div>
+
+<details><summary>How it was checked</summary>
+  <p>22 live pages opened on a phone and a computer, with screenshots, background colour, title and heading read from each. Draft played on the live site to pick 11 of 14 (about 5 s a pick). Tic Tac Toe&rsquo;s daily, archive and Ten-A-Ball opened. The 33 Ten-A-Ball challenges counted. The &ldquo;after&rdquo; pictures are a drawn mock-up using the home&rsquo;s exact colours, not the built site. Not checked: the Draft season results screen (my test didn&rsquo;t reach it), and how many daily grids are queued (the database isn&rsquo;t reachable from here).</p>
+</details></div>
+<footer>Leo &middot; site 0.143 &middot; one patch note for the whole website job</footer>
+</div>
+</div>
+</div>
+<script>
+(function(){
+  var K="{CKKEY}", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+  document.addEventListener('click',function(e){
+    var r=e.target.closest&&e.target.closest('.spd button'); if(!r) return;
+    var c=r.closest('.clip'), v=c.querySelector('video');
+    c.querySelectorAll('.spd button').forEach(function(x){ x.classList.toggle('on', x===r); });
+    if(v){ var rate=parseFloat(r.getAttribute('data-r')); v.playbackRate=rate; v.defaultPlaybackRate=rate; if(v.paused) v.play().catch(function(){}); }
+  });
+  document.querySelectorAll('details').forEach(function(d){
+    d.addEventListener('toggle',function(){ if(!d.open) d.querySelectorAll('video').forEach(function(v){ v.pause(); }); });
+  });
+})();
+</script>
+<style>
+.zm-t{cursor:zoom-in}
+.zm-ov{position:fixed;inset:0;z-index:1000;background:rgba(10,14,12,.92);overflow:auto;-webkit-overflow-scrolling:touch;padding:calc(56px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.zm-ov[hidden]{display:none!important}
+.zm-bar{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));display:flex;gap:8px;z-index:1001}
+.zm-bar button{font:600 15px/1 system-ui,sans-serif;padding:10px 14px;border-radius:10px;border:0;background:#fff;color:#111;cursor:pointer}
+.zm-st{transform-origin:0 0;background:var(--bg,#fff);border-radius:10px;display:inline-block}
+.zm-st img,.zm-st svg{max-width:none!important}
+.zm-hint{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));color:#fff;font:13px system-ui,sans-serif;opacity:.8}
+</style>
+<div class="zm-ov" id="zmOv" hidden><div class="zm-hint">Pinch or + / − to zoom</div><div class="zm-bar"><button id="zmOut" aria-label="Zoom out">−</button><button id="zmIn" aria-label="Zoom in">+</button><button id="zmX" aria-label="Close">✕</button></div><div id="zmBox"></div></div>
+<script>
+(function(){
+  var sel='figure img,.fig svg';
+  var ov=document.getElementById('zmOv'),box=document.getElementById('zmBox'),st=null,sc=1,w=0,h=0;
+  function apply(){st.style.transform='scale('+sc+')';box.style.width=(w*sc)+'px';box.style.height=(h*sc)+'px';}
+  function open(el){
+    var r=el.getBoundingClientRect();
+    var c=el.cloneNode(true);c.classList.remove('zm-t');
+    st=document.createElement('div');st.className='zm-st';st.appendChild(c);
+    box.innerHTML='';box.appendChild(st);ov.hidden=false;document.body.style.overflow='hidden';
+    if(c.tagName.toLowerCase()==='img'){c.style.width=(c.naturalWidth||r.width*2)+'px';c.style.height='auto';}
+    else{c.style.width=Math.max(r.width,780)+'px';c.style.maxWidth='none';c.style.height='auto';}
+    w=st.offsetWidth;h=st.offsetHeight;
+    var fit=(ov.clientWidth-32)/w;sc=Math.min(fit,Math.max(1,fit));apply();ov.scrollTo(0,0);
+  }
+  function close(){ov.hidden=true;box.innerHTML='';document.body.style.overflow='';}
+  document.querySelectorAll(sel).forEach(function(el){el.classList.add('zm-t');el.setAttribute('title','Tap to enlarge');});
+  document.addEventListener('click',function(e){
+    if(ov.contains(e.target)){if(e.target===ov)close();return;}
+    var t=e.target.closest('.zm-t');if(!t)return;
+    if(e.target.closest('a,button,summary,input,label'))return;
+    e.preventDefault();open(t);
+  });
+  document.getElementById('zmX').onclick=close;
+  document.getElementById('zmIn').onclick=function(){sc=Math.min(sc*1.4,6);apply();};
+  document.getElementById('zmOut').onclick=function(){sc=Math.max(sc/1.4,.2);apply();};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!ov.hidden)close();});
+})();
+</script>
+</body></html>

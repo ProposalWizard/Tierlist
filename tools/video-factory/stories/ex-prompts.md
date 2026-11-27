@@ -2,7 +2,7 @@
 
 Settings for every image: **Higgsfield, GPT Image 2.6, medium quality, 2K.** Portraits 3:4, scenes 9:16.
 Shirts are always plain (no badges, sponsors or logos). Real people are only drawn when there are plenty
-of photos of them; anyone without (Chitalu, Savage) stays a silhouette in the video on purpose.
+of photos of them; anyone without (Savage) stays a silhouette in the video on purpose. Chitalu now has real pictures from a reference photo (Mikey, 20 Nov 2026; prompts in prompts/ex02b.md).
 
 **Portrait style (add to the end of every portrait):** head and shoulders, facing camera, bold clean black
 outlines, flat cel shading with one shadow tone, realistic likeness, plain solid light grey background,

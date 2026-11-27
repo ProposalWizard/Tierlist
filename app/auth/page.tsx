@@ -11,7 +11,7 @@ import AuthForm from "@/components/AuthForm";
 
 export const metadata: Metadata = {
   title: "Sign In",
-  description: "Sign in to Knowitball Tierlists to create, save, and share your football tier rankings.",
+  description: "Sign in to Knowitball to save your games, records and progress.",
   robots: { index: false, follow: false },
 };
 
@@ -40,10 +40,10 @@ export default async function AuthPage({
         {/* App branding */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight text-white">
-            ⚽ Football Tierlist
+            ⚽ Knowitball
           </h1>
           <p className="mt-2 text-white">
-            Sign in to build and save your player rankings
+            Sign in to keep your careers, drafts and scores on every device
           </p>
         </div>
 

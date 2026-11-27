@@ -15,7 +15,7 @@ export default function PLClubsPage() {
   const [viewMode, setViewMode] = useState<"bySeason" | "byClub">("bySeason");
 
   useEffect(() => {
-    fetch("/api/draft/clubs")
+    fetch("/api/draft/clubs?fresh=1")
       .then((r) => r.json())
       .then((d) => {
         if (d.clubs) setClubs(d.clubs);

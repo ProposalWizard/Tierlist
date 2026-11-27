@@ -26,7 +26,114 @@ import type { PatchNote } from "./patchNotes";
 
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
-    {
+  {
+      "version": "0.143",
+      "title": "Leo's patch notes: One Knowitball, the whole website",
+      "author": "Leo",
+      "publishedAt": "2026-11-24T16:19:34Z",
+      "updatedAt": "2026-11-27T04:46:26Z",
+      "artifactUrl": null,
+      "updateNote": "Rounds 1–5 in one note: plan, the New look switch, readability check, Daily Draft and old games, Chemistry + Ranked/Custom + watching games.",
+      "summary": "One patch note for the whole website job, updated each round. Behind the New look switch: the home's look on every page (light or dark), Daily Draft, Draft spot ratings, Chemistry with Ranked or Custom (three Hall of Fame boards), higher-or-lower, Watch the big games, Tic Tac Toe and Ten-A-Ball updates, Rankings for the tester, a readability check every round. Fixed for everyone: titles, sign-in name, Ten-A-Ball line and duplicate, Objectives badge, three wrong Draft seasons, faint text. Needs: the Chemistry SQL run; Mikey's yes for Rankings.",
+      "stats": [
+        {
+          "value": "5",
+          "label": "rounds so far, one note"
+        },
+        {
+          "value": "3",
+          "label": "Hall of Fame boards (Normal, Prime, Chemistry)"
+        },
+        {
+          "value": "84 → 0",
+          "label": "unreadable words on the Hall of Fame"
+        },
+        {
+          "value": "0",
+          "label": "changes for anyone without the switch"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these (switch on)",
+          "items": [
+            {
+              "title": "Draft",
+              "detail": "Daily Draft; Rules: Chemistry; spot ratings and Best spot; Watch the big games."
+            },
+            {
+              "title": "Tic Tac Toe",
+              "detail": "Today's grid first; streak and Share."
+            },
+            {
+              "title": "Ten-A-Ball",
+              "detail": "Topics, your best on each, Share."
+            },
+            {
+              "title": "Every page",
+              "detail": "● New look → Light or Dark."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed for everyone",
+          "items": [
+            {
+              "title": "Site",
+              "detail": "Titles, sign-in name, Objectives badge clear of Sign in, faint text."
+            },
+            {
+              "title": "Games",
+              "detail": "Ten-A-Ball lives line and duplicate; three wrong Draft seasons."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Needs you / next",
+          "items": [
+            {
+              "title": "Chemistry board",
+              "detail": "Run supabase/migrations/draft_records_chemistry.sql."
+            },
+            {
+              "title": "Next",
+              "detail": "Friend matches watched together, Manager mode, page polish."
+            }
+          ]
+        }
+      ],
+      "updates": [
+        {
+          "at": "2026-11-26T03:19:33Z",
+          "where": "was 0.144",
+          "note": "The new look, only for you"
+        },
+        {
+          "at": "2026-11-26T18:21:03Z",
+          "where": "was 0.145",
+          "note": "New look fixes and a readability check"
+        },
+        {
+          "at": "2026-11-27T02:22:14Z",
+          "where": "was 0.146",
+          "note": "Daily Draft and the old games"
+        },
+        {
+          "at": "2026-11-27T04:30:23Z",
+          "where": "was 0.147",
+          "note": "Draft chemistry, Ranked or Custom, and watching games"
+        },
+        {
+          "at": "2026-11-27T04:46:26Z",
+          "where": "0.143",
+          "note": "Rounds 1–5 in one note: plan, the New look switch, readability check, Daily Draft and old games, Chemistry + Ranked/Custom + watching games."
+        }
+      ]
+    },
+  {
       "version": "0.142",
       "title": "Harry's patch notes: 3D phone, real clothes at home",
       "author": "Harry",

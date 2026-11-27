@@ -1,4 +1,5 @@
 "use client";
+import { shortName } from "@/lib/draft/shortName";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { FORMATIONS, getPositionColor } from "./formations";
 import { calculateSeasonOdds, positionFitness } from "@/lib/seasonSimulator";
@@ -407,7 +408,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                   {/* Name + Rating + Flag */}
                   <div className="flex flex-col items-center mt-0.5 max-w-[60px] sm:max-w-[72px]">
                     <span className="text-[8px] sm:text-[10px] font-bold text-white truncate w-full text-center leading-tight">
-                      {p.name.split(" ").pop()}
+                      {shortName(p.name)}
                     </span>
                     <div className="flex items-center gap-0.5">
                       {getFlagUrl(p.nationality) ? (
@@ -479,7 +480,7 @@ export default function SquadManagerDev({ players, onConfirm, title, subtitle, f
                 </span>
                 {/* Name + OVR + Flag */}
                 <span className="text-[9px] sm:text-[10px] font-bold text-white truncate max-w-[64px] text-center">
-                  {p.name.split(" ").pop()}
+                  {shortName(p.name)}
                 </span>
                 <div className="flex items-center gap-0.5">
                   {getFlagUrl(p.nationality) && (

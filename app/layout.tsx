@@ -7,6 +7,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import "./site-look.css";
 // The game kit's styles (components/star/ui/kit.css), loaded once for the whole site. Imported here, not in
 // motion.tsx, so the star tests (plain node) can load motion.tsx without a CSS loader.
 import "@/components/star/ui/kit.css";
@@ -14,6 +15,8 @@ import GlobalNav from "@/components/GlobalNav";
 import SiteFooter from "@/components/SiteFooter";
 import { PostHogProvider } from "@/components/PostHogProvider";
 import CookieConsent from "@/components/CookieConsent";
+import SiteLook from "@/components/SiteLook";
+import { BOOT_SCRIPT } from "@/lib/siteLook/look";
 // The admin screen recorder sits above every page, so moving page never stops
 // a recording (Harry, 12 Nov 2026). Shows nothing until a recording starts.
 import RecorderProvider from "@/components/admin/recorder/RecorderProvider";
@@ -67,17 +70,19 @@ export const metadata: Metadata = {
     default: "Knowitball",
     template: "%s | Knowitball",
   },
-  description: "Drag and drop football players into S, A, B, C, D tiers. Save and share your rankings — free forever.",
+  // The site's default words for search results and link previews. They still
+  // described Tierlists (paused since 17 Nov 2026) until 26 Nov 2026.
+  description: "Free football games: Road to the Golden Ball (a football career game), Premier League Draft, Tic Tac Toe and Ten-A-Ball.",
   openGraph: {
     type: "website",
-    siteName: "Knowitball Tierlists",
-    title: "Knowitball Tierlists",
-    description: "Drag and drop football players into S, A, B, C, D tiers. Save and share your rankings.",
+    siteName: "Knowitball",
+    title: "Knowitball",
+    description: "Free football games: Road to the Golden Ball (a football career game), Premier League Draft, Tic Tac Toe and Ten-A-Ball.",
   },
   twitter: {
     card: "summary",
-    title: "Knowitball Tierlists",
-    description: "Drag and drop football players into S, A, B, C, D tiers. Save and share your rankings.",
+    title: "Knowitball",
+    description: "Free football games: Road to the Golden Ball (a football career game), Premier League Draft, Tic Tac Toe and Ten-A-Ball.",
   },
 };
 
@@ -87,11 +92,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={cinzel.variable}>
+    <html lang="en" className={cinzel.variable} suppressHydrationWarning>
       <head>
         <link rel="dns-prefetch" href="https://cagkgfketucousksgtbk.supabase.co" />
         <link rel="preconnect" href="https://cagkgfketucousksgtbk.supabase.co" crossOrigin="anonymous" />
         {/* Google Analytics loads only after a yes to cookies (components/CookieConsent.tsx). */}
+        {/* The New look preview (an admin's own device only), set before the page paints: lib/siteLook/look.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />
       </head>
       <body className={`font-sans bg-gray-950 text-gray-100 min-h-screen flex flex-col overflow-x-hidden`}>
         <PostHogProvider>
@@ -100,6 +107,7 @@ export default function RootLayout({
             <div className="flex-1">{children}</div>
             <SiteFooter />
             <CookieConsent />
+            <SiteLook />
           </RecorderProvider>
         </PostHogProvider>
       </body>

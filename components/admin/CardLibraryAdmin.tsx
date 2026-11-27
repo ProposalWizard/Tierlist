@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { compressImage } from "@/lib/imageUtils";
 import type { LibraryCard } from "./CardLibraryPicker";
 
 interface PendingCard {
@@ -67,7 +68,10 @@ export default function CardLibraryAdmin() {
       try {
         // Upload file
         const formData = new FormData();
-        formData.append("file", p.file);
+        // Shrunk in the browser first (WebP, at most 1200 px): the 61 cards
+        // uploaded before 26 Nov 2026 were about 3 MB each, and every visitor
+        // to Objectives or a Draft result downloaded them.
+        formData.append("file", await compressImage(p.file).catch(() => p.file));
         const uploadRes = await fetch("/api/admin/upload-image", { method: "POST", body: formData });
         if (!uploadRes.ok) {
           const { error } = await uploadRes.json();

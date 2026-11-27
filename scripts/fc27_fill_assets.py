@@ -311,6 +311,9 @@ def upload_face(sofifa_id: str, data: bytes) -> str:
             **_headers(),
             "Content-Type": "image/png",
             "x-upsert": "true",
+            # Kept by browsers for a week (24 Nov 2026): without it Storage serves
+            # "no-cache" and every face is asked for again on every screen.
+            "cache-control": "max-age=604800",
         },
         timeout=60,
     )

@@ -19,7 +19,7 @@ function stepTimes(s) {
   return out;
 }
 function spec(s, i) { const base = Object.assign({}, s.scene); delete base.steps; delete base.hook; return Object.assign(base, s.scene.steps[i]); }
-function drawOne(c, sp, lt, dur) { try { (X.S[sp.type] || X.S.text)(c, lt, dur, sp); } catch (e) { window.errorsSeen.push(sp.type + ": " + e.message); } }
+function drawOne(c, sp, lt, dur) { X.setBG(sp.bgImage || sp.bgMotion ? { image: sp.bgImage, motion: sp.bgMotion, blur: sp.bgBlur, dim: sp.bgDim } : null); try { (X.S[sp.type] || X.S.text)(c, lt, dur, sp); } catch (e) { window.errorsSeen.push(sp.type + ": " + e.message); } X.setBG(null); }
 const off2 = document.createElement("canvas"); off2.width = 1080; off2.height = 1920; const o2 = off2.getContext("2d");
 function drawScene(c, s, t) {
   const lt = t - s.t0, dur = s.t1 - s.t0;
@@ -77,6 +77,17 @@ window.draw = async (f) => {
   const end = { t0: TL.endCard, t1: TL.total, scene: { type: "cta" } };
   const all = TL.scenes.concat([end]);
   let i = all.findIndex((x) => t >= x.t0 && t < x.t1); if (i < 0) i = all.length - 1; const s = all[i];
+  // moving pictures: load this moment's frame of every clip on screen (this scene, and the one the wipe is leaving)
+  const MO = STORY.motions || {}; const want = [];
+  const motionOf = (sc, at) => { if (!sc || !sc.scene) return; const st = sc.scene.steps;
+    const keys = (sp, lt) => { for (const m of [sp.motion, sp.bgMotion]) if (m && MO[m]) want.push([m, lt]); for (const it of sp.items || []) if (it && it.motion && MO[it.motion]) want.push([it.motion, Math.max(0, lt - (it.d || 0))]); };
+    if (!st) { keys(sc.scene, at - sc.t0); return; }
+    const T0 = stepTimes(sc); let k = 0; for (let j = 0; j < T0.length; j++) if (at >= T0[j]) k = j;
+    for (const j of [k, k - 1]) { if (j < 0) continue; keys(st[j], at - T0[j]); } };
+  motionOf(s, t); if (i > 0) motionOf(all[i - 1], s.t0 - 0.001);
+  for (const [key, lt] of want) { const n = MO[key].n, fr = Math.max(1, Math.min(n, Math.floor(lt * FPS) + 1));
+    const src = "file://" + MO[key].dir + "/m" + String(fr).padStart(5, "0") + ".jpg";
+    if (!X.MOT[key] || X.MOT[key].dataset.src !== src) { const im = new Image(); im.dataset.src = src; im.src = src; await im.decode().catch(() => {}); X.MOT[key] = im; } }
   drawScene(g, s, t);
   const lt = t - s.t0, W0 = 0.36;
   if (i > 0 && lt < W0 && !s.scene.cut) {   // the circle wipe: the old idea stays, the new one opens out of the middle
@@ -85,7 +96,7 @@ window.draw = async (f) => {
     g.save(); g.beginPath(); g.rect(0, 0, 1080, 1920); g.moveTo(cx + r, cy); g.arc(cx, cy, r, 0, Math.PI * 2, true); g.closePath(); g.clip(); g.drawImage(off, 0, 0); g.restore();
     g.save(); g.strokeStyle = "#fff"; g.lineWidth = 14 * (1 - k); g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke(); g.restore();
   }
-  X.finish(g, t); mark(g); if (s !== end) captions(t, s);
+  X.finish(g, t); mark(g); if (s !== end && !s.scene.noCaption) captions(t, s);   // noCaption: the words are already big on screen
   return cv.toDataURL("image/jpeg", 0.9);
 };
 </script></body></html>
