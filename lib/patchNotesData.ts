@@ -27,6 +27,86 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
   {
+      "version": "0.147",
+      "title": "Leo's patch notes: Draft chemistry, Ranked or Custom, and watching games",
+      "author": "Leo",
+      "publishedAt": "2026-11-27T04:30:23Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Behind the New look switch: FIFA-style Chemistry as a rule set with its own board; every draft is Ranked (standard rules, Hall of Fame: Normal, Prime or Chemistry) or Custom (history only); convince to stay is a higher-or-lower card game; a Match Centre to watch your finals and biggest win with commentary. Players sorted by rating again; phone spacing fixed. The Chemistry board needs one SQL file run. Manager mode and friend matches planned.",
+      "stats": [
+        {
+          "value": "6–10",
+          "label": "league points a season from full chemistry"
+        },
+        {
+          "value": "3",
+          "label": "Hall of Fame boards, all else is Custom"
+        },
+        {
+          "value": "43%",
+          "label": "stay rate in higher-or-lower (was a 50% coin flip)"
+        },
+        {
+          "value": "45 s",
+          "label": "to watch a match, or Skip"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Draft → Rules: Chemistry",
+              "detail": "Pick it; see the Ranked line; play: Chem count and spot hints."
+            },
+            {
+              "title": "Change re-spins",
+              "detail": "The line turns amber: Custom."
+            },
+            {
+              "title": "After a season",
+              "detail": "Watch the big games → Watch."
+            },
+            {
+              "title": "Season 2 pre-season",
+              "detail": "If a player wants to leave: Convince to stay → higher or lower."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Sorted by rating",
+              "detail": "Highest-rated first again."
+            },
+            {
+              "title": "Phone spacing",
+              "detail": "Cards line up and no longer touch."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Needs you / next",
+          "items": [
+            {
+              "title": "Run the Chemistry SQL",
+              "detail": "supabase/migrations/draft_records_chemistry.sql in the Supabase SQL editor."
+            },
+            {
+              "title": "Next",
+              "detail": "Friend matches watched together; Manager mode (plan in docs/DRAFT_MANAGER_PLAN.md)."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+  {
       "version": "0.146",
       "title": "Leo's patch notes: Daily Draft and the old games",
       "author": "Leo",

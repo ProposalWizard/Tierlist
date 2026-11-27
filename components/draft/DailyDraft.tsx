@@ -42,7 +42,7 @@ export function DailyDraftStart({ date, onStart }: { date: string; onStart: () =
     setStreak(dailyStreak(Object.keys(all), date));
   }, [date]);
   return (
-    <div className="mx-auto mb-6 max-w-xl rounded-2xl bg-emerald-700 p-5 text-white shadow-lg" data-daily-draft-start>
+    <div className="w-full rounded-2xl bg-emerald-700 p-5 text-white shadow-lg" data-daily-draft-start>
       <p className="text-xs font-black uppercase tracking-widest text-white/90">Daily Draft · {prettyDate(date)}</p>
       <p className="mt-1 text-2xl font-black text-white">{done ? `Today: ${done.points} pts` : "Same 14 spins for everyone"}</p>
       <p className="mt-1 text-sm text-white">
@@ -89,7 +89,7 @@ export function DailyDraftDone({ date, players, result, isSignedIn }: { date: st
 
   if (!result) return null;
   return (
-    <div className="mx-auto my-6 max-w-xl rounded-2xl bg-emerald-700 p-5 text-white shadow-lg" data-daily-draft-done>
+    <div className="w-full rounded-2xl bg-emerald-700 p-5 text-white shadow-lg" data-daily-draft-done>
       <p className="text-xs font-black uppercase tracking-widest text-white/90">Daily Draft · {prettyDate(date)}</p>
       <p className="mt-1 text-3xl font-black text-white">{result.points} pts</p>
       <p className="mt-1 text-sm text-white">
