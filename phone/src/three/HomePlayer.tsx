@@ -1,4 +1,5 @@
 import { useRiskyPart } from "../safety";
+import { usePrefs } from "../game/prefs";
 /**
  * YOUR PLAYER ON HOME AND THE TITLE SCREEN — the one hook (the website's
  * components/star/HomePlayer.tsx): a box (width × height, his boots on its
@@ -9,6 +10,7 @@ import { useRiskyPart } from "../safety";
  * - Old: the drawn figure (draw/PlayerFigure.tsx).
  * The glow and the pool are drawn once (no animation: nothing redraws).
  */
+import { useState } from "react";
 import { Image, View } from "react-native";
 import { ICON } from "../ui/look/pictures";
 const BALL = ICON.ball;
@@ -18,6 +20,10 @@ import { kitsOf } from "@/lib/star/kits";
 import { usePlayerStyleLook } from "@/lib/star/style3d/toon/look";
 import { PlayerFigure } from "../draw/PlayerFigure";
 import { HomePlayer3D } from "./HomePlayer3D";
+
+/** The app's first seconds: no automatic GL view is made before this much of the launch has passed. */
+export const BOOT_QUIET_MS = 8000;
+const BOOT_AT = Date.now();
 
 function rgba(hex: string, a: number): string {
   const h = hex.replace("#", "");
@@ -29,7 +35,11 @@ export function HomePlayer({ career, width, height, where, ball, glow }: { caree
   const style = usePlayerStyleLook();
   // 3D starts a moment after the rest of Home, so a crash in it is named on its own (safety.ts). HomePlayer3D then waits another
   // HOME_GL_SETTLE_MS (the screen before gone and quiet, no other GL alive) before it makes its view: 1700 + 800 = the 2.5 s it was.
-  const ok3d = useRiskyPart("3d", { delayMs: 1700, settleMs: 6000 });
+  // Live 3D scenes OFF (the default) or a safe start: the drawn player only, no GL view is ever made here (Mikey, 27 Nov 2026: the main menu closed ~5 s in).
+  // ON: not in the first BOOT_QUIET_MS of the app's life either, so the menu never makes its view while the app is still starting.
+  const live = usePrefs().live3dScenes;
+  const [delay] = useState(() => Math.max(1700, BOOT_QUIET_MS - (Date.now() - BOOT_AT)));
+  const ok3d = useRiskyPart("3d", { delayMs: delay, settleMs: 6000, off: !live });
   const club = career.player.club;
   const kit = kitsOf(club, career.clubKits?.[club]).home;
   const lit = glow && /^#[0-9a-f]{6}$/i.test(glow) ? glow : kit.shirt;

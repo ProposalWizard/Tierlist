@@ -394,3 +394,10 @@ Run one builder at a time (Sonnet), merge, check, push, next. Permissions and de
 
 ### Needs from Mikey (added 25 Nov, playtest round 3)
 - Money sign: the website prints "£" everywhere since 19 Nov (lib/star/money.ts MONEY_SIGN, RUL-UI-011); the app still prints "★" in 137 places. Switch the app to the website's sign? (Recommended: yes, one change reading MONEY_SIGN.)
+
+### Crash fixes: the news report after the trial (27 Nov 2026, test app 3d6, Live 3D scenes OFF)
+- **SAW in the code**: the news report (`NewsMoments.tsx` YourHead) mounts `Headshot3D` with `cacheOnly` false and no read of `live3dScenes`. It made a GL context with no view (`GLView.createContextAsync`), loaded the people GLBs and encoded a PNG with Skia. It wrote no crash trail and no "3d" mark, so the close left no red card and no strike. The title's and Home's player (`HomePlayer3D`) also ignored the switch and made a GL view ~2.5 s after the menu opened.
+- **Not proven** (no device, no tombstone read): that the headshot GL was what killed the process, and why a swipe-away cleared the second-launch loop (guessed: leftover native GL or memory; the "Android says" card of that run will tell).
+- **Fix**: one gate `automatic3dAllowed()` (`game/prefs.ts`: switch ON, crash guard "3d" on, not a safe start). Headshot3D makes no picture without it (it still shows a picture already kept as a file), the title/Home player and the farewell start 3D only through it, the title/Home player waits 8 s of app life (`BOOT_QUIET_MS`) even when ON. The headshot maker now leaves a trail ("Headshot maker").
+- **Safe start** (`safety.ts`): a launch that finds a trail (or the "3d" part still starting) has `partOff("3d")` true for that launch: every 3D place shows its drawn version; Boot shows "Safe start: the app closed last time while ..."; Settings has a Safe start card with Turn back on. The launch after a quiet one is normal.
+- The two red/Android cards: the trail line is stored in MMKV until Clear; the Android file is merged on each start (older reports kept). Checks: `tools/live3d-check.mjs` (new sections).

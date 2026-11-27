@@ -6,7 +6,7 @@
  */
 import { useSyncExternalStore } from "react";
 import { loadJson, saveJson } from "./save";
-import { closedWhileFresh, closedWhileInfo } from "../safety";
+import { closedWhileFresh, closedWhileInfo, partOff } from "../safety";
 
 export interface Prefs {
   /** Sound effects in the match and on screens. */
@@ -50,7 +50,7 @@ export function live3dOffByCrash(): string | null { return current.live3dScenes 
 // trail). The switch goes OFF now, so the same scene cannot close the app again on the next try (the signing used to replay and close at
 // the same moment every time). Settings → Live 3D scenes turns it back on. Only the launch that FOUND the trail does this.
 try {
-  if (current.live3dScenes && closedWhileFresh() && /signing|office|night|reward/i.test(closedWhileInfo()?.place ?? "")) {
+  if (current.live3dScenes && closedWhileFresh() && /signing|office|night|reward|headshot|player/i.test(closedWhileInfo()?.place ?? "")) {
     current = { ...current, live3dScenes: false };
     saveJson(KEY, current);
     markLive3dOffByCrash(`the app closed in ${closedWhileInfo()?.place ?? "a 3D scene"}`);
@@ -66,6 +66,12 @@ export function setPref<K extends keyof Prefs>(k: K, v: Prefs[K]) {
 }
 /** True when the automatic 3D scenes may start (Settings → Live 3D scenes). */
 export function live3dScenesOn(): boolean { return current.live3dScenes === true; }
+/**
+ * THE ONE GATE FOR EVERYTHING 3D THAT STARTS BY ITSELF (news report headshots, the title's and Home's player, the signing, the office,
+ * the nights, the rewards): Live 3D scenes ON, the crash guard has "3d" on, and this is not a safe start (src/safety.ts).
+ * With it false nothing makes a GL view, a GL context or a headshot.
+ */
+export function automatic3dAllowed(): boolean { return current.live3dScenes === true && !partOff("3d"); }
 export function usePrefs(): Prefs {
   return useSyncExternalStore((f) => { subs.add(f); return () => subs.delete(f); }, () => current, () => current);
 }

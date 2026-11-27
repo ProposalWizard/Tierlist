@@ -39,6 +39,18 @@ const WAIT = "wait:";
 const STRIKES_TO_OFF = 2;
 const RETRY_AFTER = 4;
 
+/**
+ * SAFE START (Mikey, 27 Nov 2026: the app closed at the signing's news report, then closed again ~5 s into the main menu on every launch).
+ * If the last run ended while a 3D place was mounted (a breadcrumb trail was left), or while the "3d" part was still starting, this
+ * launch starts with ALL 3D off ("3d" is off for this launch: every place shows its drawn / plain version, nothing makes a GL view
+ * or a headshot). Not kept for later launches: the launch after a quiet one is normal. Settings -> "Turn back on" ends it at once.
+ */
+let safeBoot = false;
+let safeBootWhy: string | null = null;
+/** The plain sentence for the screen while this launch is a safe start, else null. */
+export function safeBootNote(): string | null { return safeBoot ? `Safe start: the app closed last time while ${safeBootWhy}, so 3D is off for this start. Settings: Turn back on.` : null; }
+export function isSafeBoot(): boolean { return safeBoot; }
+
 const num = (k: string) => Number(kv.getString(k) ?? "0") || 0;
 
 // What was still starting when the app last closed.
@@ -75,13 +87,14 @@ for (const k of kv.getAllKeys()) {
 }
 /** Parts switched off at this launch, after closing twice in a row while starting (shown once). */
 export function justTripped(): RiskyPart[] { return trippedNow; }
-/** True when the part's plain fallback must be used (switched off, or left out for this launch). */
-export function partOff(part: RiskyPart): boolean { return skipThisLaunch.has(part) || kv.getString(OFF + part) === "1"; }
+/** True when the part's plain fallback must be used (switched off, left out for this launch, or this is a SAFE START for "3d"). */
+export function partOff(part: RiskyPart): boolean { return (part === "3d" && safeBoot) || skipThisLaunch.has(part) || kv.getString(OFF + part) === "1"; }
 /** Parts that are switched off (until "Turn back on" or the next automatic try). */
 export function partsSwitchedOff(): RiskyPart[] {
   return (Object.keys(PART_NAMES) as RiskyPart[]).filter((p) => kv.getString(OFF + p) === "1");
 }
 export function turnPartBackOn(part: RiskyPart) {
+  if (part === "3d") safeBoot = false;
   kv.remove(OFF + part); kv.remove(WAIT + part); kv.remove(STRIKES + part);
   skipThisLaunch.delete(part);
   const i = trippedNow.indexOf(part);
@@ -122,8 +135,8 @@ try {
  * passed without a crash. `delayMs` waits before saying yes, so parts that start
  * together on one screen start one after another and a crash names the right one.
  */
-export function useRiskyPart(part: RiskyPart, opts: { settleMs?: number; delayMs?: number } = {}): boolean {
-  const off = partOff(part);
+export function useRiskyPart(part: RiskyPart, opts: { settleMs?: number; delayMs?: number; /** also off: the caller says no (a setting) and nothing is marked */ off?: boolean } = {}): boolean {
+  const off = partOff(part) || opts.off === true;
   // no wait: marked at once, during the first draw, since the crash can come in it
   const [go, setGo] = useState(() => { if (!off && !opts.delayMs) { start(part); return true; } return false; });
   useEffect(() => {
@@ -207,7 +220,8 @@ try {
     kv.remove(k);
   }
   for (const k of kv.getAllKeys()) if (k.startsWith(PULSE)) kv.remove(k);
-  if (newest) { kv.set(CLOSED, JSON.stringify(newest)); closedFresh = true; }
+  if (newest) { kv.set(CLOSED, JSON.stringify(newest)); closedFresh = true; safeBoot = true; safeBootWhy = `${newest.place} was on screen (it stopped at "${newest.steps[newest.steps.length - 1]?.step ?? "the start"}")`; }
+  else if (stillStarting.has("3d")) { safeBoot = true; safeBootWhy = "a 3D part was still starting"; }
   const raw = kv.getString(CLOSED);
   if (raw) closedWhile = JSON.parse(raw) as ClosedWhile;
   const rawErr = kv.getString(LAST_ERROR);

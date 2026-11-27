@@ -408,6 +408,68 @@ console.log("== the title and Home player (src/three/HomePlayer3D.tsx) is made a
   ok(/whenStartSafe\(\(\) => setStack\(\(s\) => \[\.\.\.s, \{ name, params \}\]\)\)/.test(fs.readFileSync(path.resolve("src/nav.tsx"), "utf8")), "nav.go waits while a place is starting");
 }
 
+
+console.log("== the news report after the trial, Live 3D scenes OFF: no GL view, no GL context, no headshot is made (27 Nov 2026)");
+{
+  kv().clear(); r = fresh();
+  ok(r.prefs.getPrefs().live3dScenes === false && r.prefs.automatic3dAllowed() === false, "default: the one gate (automatic3dAllowed) says no");
+  r.prefs.setPref("live3dScenes", true);
+  ok(r.prefs.automatic3dAllowed() === true, "switch ON and a normal start: the gate says yes");
+  r.prefs.setPref("live3dScenes", false);
+  const hs = fs.readFileSync(path.resolve("src/three/Headshot3D.tsx"), "utf8");
+  const make = hs.indexOf("setupPhone3d();"), gate = hs.indexOf("if (!automatic3dAllowed()) return null;");
+  ok(gate > 0 && make > gate, "Headshot3D: headshotUri refuses to MAKE a picture (no GL context) before anything 3D is set up when the gate says no");
+  ok(/cacheOnly = cacheOnly \|\| !makeOk/.test(hs) && /makeOk = usePrefs\(\)\.live3dScenes/.test(hs), "Headshot3D: with the switch off the card only reads a picture already kept as a file");
+  ok(/markStep\(TRAIL_PLACE/.test(hs) && /clearTrail\(TRAIL_PLACE\)/.test(hs), "Headshot3D: making a picture leaves a crash trail (it left none before), cleared when it ends");
+  const news = fs.readFileSync(path.resolve("src/screens/career/NewsMoments.tsx"), "utf8");
+  ok(/<Headshot3D id="you"/.test(news) && !/GLView|HomePlayer3D|Walk3D/.test(news), "the news report mounts only Headshot3D (no GL view of its own)");
+  const hpl = fs.readFileSync(path.resolve("src/three/HomePlayer.tsx"), "utf8");
+  ok(/off: !live/.test(hpl) && /BOOT_QUIET_MS/.test(hpl), "title/Home player: no 3D at all with the switch off; with it on, not in the app's first 8 s");
+  const fw = fs.readFileSync(path.resolve("src/three/Farewell3D.tsx"), "utf8");
+  ok(!/partOff\("3d"\) \? "drawn"/.test(fw) && /automatic3dAllowed\(\)/.test(fw), "the farewell starts 3D only through the gate");
+  // every file that makes a GL view/context is either a place the player walks into, or is behind the gate
+  const glFiles = ["Farewell3D.tsx", "HomePlayer3D.tsx", "Headshot3D.tsx", "Walk3D.tsx"];
+  ok(glFiles.length === 4, "GL makers: " + glFiles.join(", ") + " (Walk3D places read the switch in their screens; HomePlayer3D via HomePlayer; Headshot3D, Farewell3D above)");
+}
+
+console.log("== safe start: the last run ended while a place was mounted -> this launch has ALL 3D off, says so, the next quiet launch is normal");
+{
+  kv().clear(); r = fresh();
+  r.prefs.setPref("live3dScenes", true);
+  ok(r.safety.isSafeBoot() === false && r.safety.safeBootNote() === null, "a normal start is not a safe start");
+  r.safety.markStep("Headshot maker", "start (making a picture)");           // the app is killed here (no clear)
+  r = fresh();
+  ok(r.safety.isSafeBoot() === true, "next launch: safe start (a trail was left)");
+  ok(r.safety.partOff("3d") === true, "safe start: the 3D part is off (every 3D place shows its drawn / plain version)");
+  ok(r.prefs.automatic3dAllowed() === false, "safe start: the gate says no even though the player's switch was ON (the switch was also turned off by the app)");
+  ok(/Safe start: the app closed last time while Headshot maker was on screen/.test(r.safety.safeBootNote() ?? ""), "the screen says it plainly: " + r.safety.safeBootNote());
+  r.safety.turnPartBackOn("3d");
+  ok(r.safety.isSafeBoot() === false && r.safety.partOff("3d") === false, "Settings -> Turn back on ends the safe start at once");
+  r = fresh();
+  ok(r.safety.isSafeBoot() === false, "the launch after a quiet one is a normal start again");
+  ok(r.safety.closedWhileInfo() !== null, "...and the red 'Last time the app closed while' data is still there (kept until Clear)");
+  kv().clear(); r = fresh();
+  r.safety.markStep("The signing", "x"); r = fresh(); ok(r.safety.isSafeBoot() === true, "a trail in the signing gives a safe start too");
+  const boot = fs.readFileSync(path.resolve("src/Boot.tsx"), "utf8");
+  ok(/safeBootNote\(\)/.test(boot), "Boot shows the safe-start sentence at the foot of the screen");
+  const misc2 = fs.readFileSync(path.resolve("src/screens/career/Misc.tsx"), "utf8");
+  ok(/Safe start/.test(misc2) && /turnPartBackOn\("3d"\)/.test(misc2), "Settings has a Safe start card with Turn back on");
+}
+
+console.log("== the two cards keep that run's data after a restart");
+{
+  kv().clear(); r = fresh();
+  r.safety.markStep("Title player", "GLView being made (200x300)");
+  r = fresh();
+  const a = r.safety.closedWhileLine();
+  r = fresh(); r = fresh();
+  ok(a && r.safety.closedWhileLine() === a, "the red card's line is the same after two more restarts: " + a);
+  const ex = fs.readFileSync(path.resolve("src/exitInfo.ts"), "utf8");
+  ok(!/\.delete\(\)/.test(ex.replace(/export function clearExitInfo[\s\S]*$/, "")), "exitInfo.ts deletes the file only in Clear (reading never removes it)");
+  const plug = fs.readFileSync(path.resolve("plugins/withKibAndroid.js"), "utf8");
+  ok(/blocks\.containsKey\(ts\)/.test(plug) && /file\.readText\(\)/.test(plug), "the native side MERGES new reports into the kept file (older reports are not lost by a restart)");
+}
+
 console.log(bad ? `\n${bad} FAILED` : "\nPASS: live 3D switch, breadcrumbs and the crash net");
 process.exit(bad ? 1 : 0);
 

@@ -1,4 +1,5 @@
-import { partOff } from "../safety";
+import { partOff, markStep, clearTrail } from "../safety";
+import { automatic3dAllowed, usePrefs } from "../game/prefs";
 /**
  * A PLAYER'S HEADSHOT, SHOT FROM THE 3D MODEL (the website's
  * components/star/Headshot3D.tsx, on the phone).
@@ -27,6 +28,9 @@ const memory = new Map<string, string>();
 const going = new Map<string, Promise<string | null>>();
 let dir: Directory | null = null;
 let failedOnce = false;
+/** The crash trail of the picture maker (src/safety.ts): a close while it makes a picture is named in Settings and gives a safe start. */
+const TRAIL_PLACE = "Headshot maker";
+let makingNow = 0;
 
 function fileName(key: string): string {
   let h1 = 0x811c9dc5, h2 = 0x01000193;
@@ -58,12 +62,18 @@ export function headshotUri(id: string, look: HeadshotLook, frame: HeadshotFrame
   let p = cacheOnly ? undefined : going.get(key);
   if (p) return p;
   p = (async () => {
+    let madeHere = false;
     try {
       dir ??= new Directory(Paths.document, "kib-headshots");
       if (!dir.exists) dir.create({ intermediates: true, idempotent: true });
       const f = new File(dir, fileName(key));
       if (f.exists) { memory.set(key, f.uri); return f.uri; }
       if (cacheOnly || failedOnce) return null;
+      // Live 3D scenes OFF, the guard has 3D off, or a safe start: no picture is MADE (no GL context, no models): the drawn head stays
+      if (!automatic3dAllowed()) return null;
+      makingNow++;
+      madeHere = true;
+      markStep(TRAIL_PLACE, "start (making a picture)");
       setupPhone3d();
       const { shootHeadshot, setHeadshotGl, headshotsPossible } = await import("./headshotMaker");
       const { GLView } = await import("expo-gl");
@@ -73,7 +83,9 @@ export function headshotUri(id: string, look: HeadshotLook, frame: HeadshotFrame
           drop: (gl) => { void GLView.destroyContextAsync(gl as never).catch(() => {}); },
         });
       }
+      markStep(TRAIL_PLACE, "gl source set");
       const px = await shootHeadshot(look, frame);
+      markStep(TRAIL_PLACE, "picture shot");
       if (!px) { if (!headshotsPossible()) failedOnce = true; return null; }
       const img = Skia.Image.MakeImage({ width: px.width, height: px.height, colorType: 4, alphaType: 2 } as never, Skia.Data.fromBytes(px.data), px.width * 4);
       const png = img?.encodeToBytes();
@@ -87,6 +99,7 @@ export function headshotUri(id: string, look: HeadshotLook, frame: HeadshotFrame
       console.warn("headshot", e);
       return null;
     } finally {
+      if (madeHere && --makingNow <= 0) { makingNow = 0; clearTrail(TRAIL_PLACE); }
       if (!cacheOnly) going.delete(key);
     }
   })();
@@ -110,6 +123,9 @@ export function Headshot3D({ id, you, position, skin, kit, size, frame = "head",
   fallback: ReactNode;
 }) {
   if (partOff("3d")) return <>{fallback}</>;
+  // Live 3D scenes OFF: a picture already kept on the phone may show (a file, no GL), nothing is made
+  const makeOk = usePrefs().live3dScenes;
+  cacheOnly = cacheOnly || !makeOk;
   const yourPick = useSyncExternalStore(subscribeToonYou, toonYou, toonYou);
   const isYou = !!you || id === "you";
   const look = useMemo(
