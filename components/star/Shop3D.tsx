@@ -15,6 +15,7 @@
  *
  * The 3D is lib/star/shop3d/scene.ts; three.js only loads when this opens.
  */
+import Reload3dPill from "./Reload3d";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { shopDisplays, type DisplayId, type ShopPrices } from "@/lib/star/shop3d/catalogue";
@@ -116,6 +117,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
 
   // Start the 3D once (again if the phone takes the 3D away: once, at "low").
   const [restarts, setRestarts] = useState(0);
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
@@ -176,6 +178,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
         (window as unknown as { __shop3d?: ShopController }).__shop3d = c;
         setStatus("ready");
       } catch (e) {
+        if (dead) return; // closed mid-load: nothing to show
         console.error("3D shop failed to load", e);
         if (!dead) {
           setErrText(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
@@ -190,7 +193,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
       delete (window as unknown as { __shop3d?: ShopController }).__shop3d;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restarts]);
+  }, [restarts, retry]);
 
   useEffect(() => { ctrlRef.current?.setKit(kit); }, [kit.shirt, kit.trim, status]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { ctrlRef.current?.setOwned(owned); }, [owned, status]);
@@ -317,7 +320,8 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
                   {errText.slice(0, 200)}
                 </div>
               )}
-              <button onClick={onBack} style={{ ...cta, marginTop: 14 }}>Back to the {backLabel}</button>
+              <Reload3dPill floating={false} onReload={() => { setErrText(""); setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} />
+              <div><button onClick={onBack} style={{ ...cta, marginTop: 10 }}>Back to the {backLabel}</button></div>
             </div>
           )}
         </div>

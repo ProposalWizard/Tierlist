@@ -33,7 +33,7 @@ import type { CareerState } from "@/lib/star/types";
 import type { HomeController } from "@/lib/star/home3d/scene";
 import type { Home3DProps } from "./Home3D";
 import { lazyScreen } from "@/lib/star/lazyScreen";
-import { quality3dTier } from "@/lib/star/three3d/quality";
+import { quality3dTier, quality3dSetting } from "@/lib/star/three3d/quality";
 import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
 import { STAGE, SCREEN, GLASS_MATRIX } from "@/lib/star/phone3dGlass";
 import "./housePhone.css";
@@ -65,10 +65,19 @@ export function phone3dCan(): boolean {
   return (lastAnswer = phone3dNow());
 }
 
+/** Auto's answer is read once per visit to the game (27 Nov 2026: a scene reading the GPU's name could move
+ *  Auto to Low between two Phone taps, so the 3D phone "toggled off" by itself). Only the player's own
+ *  Settings → 3D quality: Low turns it off mid-visit. */
+let autoLowOnce: boolean | undefined;
 function phone3dNow(): boolean {
   if (typeof window === "undefined" || !HOME3D_IN_CAREER) return false;
   try { if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false; } catch { /* old browser */ }
-  if (quality3dTier() === "low") return false;
+  const set = quality3dSetting();
+  if (set === "low") return false;
+  if (set === "auto") {
+    if (autoLowOnce === undefined) autoLowOnce = quality3dTier() === "low";
+    if (autoLowOnce) return false;
+  }
   if (webgl === undefined) {
     try {
       const g = document.createElement("canvas").getContext("webgl2");

@@ -26,6 +26,7 @@
  * casino's doors. If the phone can't run the 3D, the classic casino menu
  * shows instead, so nothing is lost.
  */
+import Reload3dPill from "./Reload3d";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { CasinoController, CasinoStation, CasinoCallbacks } from "@/lib/star/casino3d/scene";
@@ -107,6 +108,7 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
   }, []);
 
   const [restarts, setRestarts] = useState(0);
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
@@ -161,7 +163,7 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
       delete (window as unknown as { __casino3d?: CasinoController }).__casino3d;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restarts]);
+  }, [restarts, retry]);
   useEffect(() => { if (restarts > 1) setStatus("error"); }, [restarts]);
 
   // a game over the room: the room stops drawing until it closes. Closing
@@ -188,7 +190,7 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
 
   const drag = useRef<{ id: number; x: number; y: number; moved: number } | null>(null);
 
-  if (status === "error") return <>{renderGame(undefined, onBack)}</>;
+  if (status === "error") return <>{renderGame(undefined, onBack)}<Reload3dPill onReload={() => { setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} /></>;
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "#14070b", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-casino3d>

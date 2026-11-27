@@ -37,7 +37,7 @@ import { EngineFrameContext, type EngineFrame, type EngineFrameObserver } from "
 import type { EngineView } from "@/lib/star/style3d/engineView";
 import { resolveStyle } from "@/lib/star/style3d/styles";
 import type { TimeOfDay } from "@/lib/star/style3d/real/assets";
-import { useMatchView3d, setMatchView3d } from "@/lib/star/matchView3d";
+import { useMatchView3d, setMatchView3d, match3dButtons } from "@/lib/star/matchView3d";
 import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
 import { SettingsGroups } from "./DeviceSettings";
 import Quality3dRow from "./Quality3dRow";
@@ -105,7 +105,7 @@ export default function Match3DLayer({ children, tod = "golden", hold = false }:
         if (lost) { v.setVisible(false); return; }
         setStatus("ready");
       })
-      .catch((e) => { console.error("Career match 3D failed to load", e); if (!dead) setStatus("off"); });
+      .catch((e) => { if (dead) return; /* closed mid-load (three3d/perf.ts isAbandonedScene) */ console.error("Career match 3D failed to load", e); setStatus("off"); });
     killRef.current = () => { dead = true; try { ev.current?.dispose(); } catch (e) { console.error("Career match 3D: dispose failed", e); } ev.current = null; holder.remove(); };
   }, []);
 
@@ -123,15 +123,29 @@ export default function Match3DLayer({ children, tod = "golden", hold = false }:
     return () => { killRef.current?.(); killRef.current = null; box.current = null; };
   }, []);
 
-  // 3D wanted: build it the first time, show it after; 2D wanted: hide it (kept, so flipping back is instant)
+  // 3D wanted: build it the first time, show it after; 2D wanted: hide it (kept, so flipping back is instant).
+  // Flipping to 3D with a view that lost the one renderer to another 3D place builds it again (Harry, 27 Nov 2026).
   useEffect(() => {
+    if (on && killRef.current && ev.current && statusRef.current === "ready" && !ev.current.holdsRenderer()) { rebuild(); return; }
     if (on && !killRef.current) build();
     ev.current?.setVisible(on && status !== "lost");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [on, status, build, boxN]);
+  const checkAt = useRef(0);
 
   const onFrame = useCallback((f: EngineFrame) => {
     const v = ev.current;
     if (!v || statusRef.current === "lost") return;
+    // once a second: still holding the renderer? (a 3D place left loading behind can take it) — build again, never a blank pitch
+    const now = performance.now();
+    if (now - checkAt.current > 1000) {
+      checkAt.current = now;
+      if (statusRef.current === "ready" && !v.holdsRenderer()) {
+        console.warn("Career match 3D: another 3D place took the renderer — building the 3D again");
+        rebuildRef.current?.();
+        return;
+      }
+    }
     try {
       v.frame(f);
       errRun.current = 0;
@@ -157,20 +171,21 @@ export default function Match3DLayer({ children, tod = "golden", hold = false }:
     }
   }, []);
 
-  const can3d = status !== "off";
+  // never a sticky "off": a failed build shows "3D ↻" (tap to try again), as a lost one does
+  const buttons = match3dButtons(on, status);
   const chrome = (
     <>
-      {on && status === "lost" && (
+      {buttons.retry && (
         <button
           data-match-3d-retry
-          onClick={() => { autoLeft.current = AUTO_RETRIES; rebuild(); }}
+          onClick={() => { autoLeft.current = AUTO_RETRIES; void import("@/lib/star/three3d/perf").then((m) => { if (statusRef.current === "off") m.dropSharedRenderer(); rebuild(); }); }}
           aria-label="3D paused: tap to try 3D again"
           className="px-2 flex items-center border-l border-white/10 text-[10px] font-black tracking-wide text-amber-300 hover:text-amber-200 transition"
         >
           3D ↻
         </button>
       )}
-      {can3d && !(on && status === "lost") && (
+      {buttons.toggle && (
         <button
           data-match-view-toggle
           onClick={() => setMatchView3d(on ? "off" : "on")}
@@ -199,7 +214,7 @@ export default function Match3DLayer({ children, tod = "golden", hold = false }:
     hide2D: on && status === "ready", attach, onFrame, hold: settingsOpen || hold, chrome,
     warming: on && (status === "idle" || status === "loading"),
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [on, status, attach, onFrame, settingsOpen, hold, can3d, rebuild]);
+  }), [on, status, attach, onFrame, settingsOpen, hold, rebuild]);
 
   return (
     <div className="relative" data-career-3d={on ? status : "2d"}>

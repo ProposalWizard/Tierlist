@@ -34,6 +34,7 @@ import { wornAt } from "@/lib/star/home3d/outfits";
 import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import GardenScreen from "./GardenScreen";
+import Reload3dPill from "./Reload3d";
 import { Stick, pill } from "./Shop3D";
 
 const INK = "#f7f1e8";
@@ -110,6 +111,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
   // The phone took the 3D away (iPhone Safari, short of memory): start the
   // garden again once; a second time, the drawn garden instead.
   const [restarts, setRestarts] = useState(0);
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
@@ -181,8 +183,9 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
         (window as unknown as { __garden3d?: GardenController }).__garden3d = c;
         setStatus("ready");
       } catch (e) {
+        if (dead) return; // closed mid-load: nothing to show
         console.error("3D garden failed to load", e);
-        if (!dead) setStatus("error");
+        setStatus("error");
       }
     })();
     return () => {
@@ -192,7 +195,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
       delete (window as unknown as { __garden3d?: GardenController }).__garden3d;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, restarts]);
+  }, [data, restarts, retry]);
   useEffect(() => { if (restarts > 1) setStatus("error"); }, [restarts]);
 
   const drag = useRef<{ id: number; x: number; y: number; moved: number } | null>(null);
@@ -205,7 +208,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
     setTapped(c.pick(x, y)); // the old garden: tap opens the card
   };
 
-  if (status === "error") return <GardenScreen career={career} onBack={onBack} />;
+  if (status === "error") return (<><GardenScreen career={career} onBack={onBack} /><Reload3dPill onReload={() => { setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} /></>);
 
   return (
     <div style={{ position: embedded ? "absolute" : "fixed", inset: 0, zIndex: embedded ? 1 : 80, background: "#0d1420", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-garden3d>

@@ -161,6 +161,8 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   }, []);
 
   const [restarts, setRestarts] = useState(0);
+  /** "Tap to reload 3D": a fresh start (restarts back to 0 may not change it, so this does). */
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
@@ -169,6 +171,8 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
     (async () => {
       try {
         const { startHome } = await import("@/lib/star/home3d/scene");
+        // closed while its code was still downloading (the 3D phone's house, left for a match): build nothing
+        if (dead) return;
         const q = new URLSearchParams(window.location.search);
         const start = () => startHome(el, {
           onNear: (s) => setNear(s),
@@ -209,6 +213,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         setStatus("ready");
         readyRef.current?.(c);
       } catch (e) {
+        if (dead) return; // closed mid-load (three3d/perf.ts isAbandonedScene): nothing to show
         console.error("3D home failed to load", e);
         if (!dead) { setErrText(e instanceof Error ? `${e.name}: ${e.message}` : String(e)); setStatus("error"); }
       }
@@ -220,7 +225,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
       delete (window as unknown as { __home3d?: HomeController }).__home3d;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, restarts]);
+  }, [data, restarts, retry]);
 
   const open: HomeSpot | null = near && dismissed !== near ? near : null;
   useEffect(() => { if (!near) setDismissed(null); }, [near]);
@@ -310,7 +315,8 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
               <div style={{ fontWeight: 900, fontSize: 17, marginBottom: 6 }}>Your house didn&apos;t load</div>
               <div style={{ fontWeight: 600, color: MUTED, fontSize: 14, lineHeight: 1.5 }}>This phone or browser may not run 3D.</div>
               {errText && <div style={{ fontWeight: 600, color: MUTED, fontSize: 10.5, marginTop: 10, opacity: 0.7, wordBreak: "break-word" }}>{errText.slice(0, 200)}</div>}
-              <button onClick={onBack} style={{ ...ctaStyle, marginTop: 14 }}>Back to {backLabel}</button>
+              <button onClick={() => { void import("@/lib/star/three3d/perf").then((m) => { m.dropSharedRenderer(); setErrText(""); setStatus("loading"); setRestarts(0); setRetry((n) => n + 1); }); }} style={{ ...ctaStyle, marginTop: 14 }} data-reload-3d>Tap to reload 3D</button>
+              <button onClick={onBack} style={{ ...ctaStyle, marginTop: 10, background: "transparent", color: INK, border: "1px solid rgba(255,255,255,.3)" }}>Back to {backLabel}</button>
             </div>
           )}
         </div>
