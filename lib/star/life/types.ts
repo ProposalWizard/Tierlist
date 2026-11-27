@@ -222,8 +222,11 @@ export interface LifeState {
    *  must keep someone the seed would not pick (an old save's Den). */
   pool?: Record<string, string>;
   // ── Events v2 (arcs, promises, objectives; lib/star/life/arcs.ts). All optional. ──
-  /** Stories in progress or finished, by arc id. */
+  /** Stories in progress (and finished ones not packed yet), by arc id. */
   arcs?: Record<string, ArcRun>;
+  /** Finished stories, packed small (arcPack.ts): one short word each, joined by spaces, e.g.
+   *  "k3f9q11b.7" = story code, ending code, start week, beats played. Read them with arcsOf. */
+  fin?: string;
   /** Promises and debts: up to 6 open, the last 20 kept or broken. */
   promises?: PromiseRun[];
   /** Match objectives a talk set (at most 2). */
@@ -399,6 +402,9 @@ export interface ArcPromiseDef {
 
 export interface LifeArc {
   id: string;
+  /** Its short code in the save (arcPack.ts), 4 letters or digits. Leave it out: the code is made
+   *  from the id. Set it only when the checker says two stories' codes clash; never change it later. */
+  code?: string;
   title: string;
   owner: string;
   summary: string;

@@ -20,6 +20,7 @@ import { parseCond, slotsIn, tagsIn } from "./cond";
 import { BAND, MAX_LINE, MAX_TELLTALE_LINE, PICKS, REAL_NAMES } from "./validate";
 import { PLACEHOLDER_KEYS, YOU_KEYS } from "./text";
 import { ROUND_LIBRARY, type RoundKind } from "./drill";
+import { packProblems } from "./arcPack";
 
 export interface ArcProblem { id: string; problem: string }
 
@@ -199,7 +200,8 @@ function allOutcomes(arc: LifeArc): { where: string; o: ArcOutcome; size: string
  * `events` is the v1 book, so a story can read a memory a v1 event writes (and back).
  */
 export function validateArcBook(arcs: LifeArc[], events: LifeEvent[] = []): ArcProblem[] {
-  const out: ArcProblem[] = [...validateArcs(arcs)];
+  // Save codes (arcPack.ts): a finished story is stored as its code and its ending's code.
+  const out: ArcProblem[] = [...validateArcs(arcs), ...packProblems(arcs)];
   const written = new Set<string>();
   for (const e of events) for (const c of e.choices ?? []) for (const o of c.outcomes ?? []) for (const r of o.remember ?? []) written.add(r.tag);
   for (const a of arcs) for (const { o } of allOutcomes(a)) { for (const r of o.remember ?? []) written.add(r.tag); if (o.noteSquad) written.add(o.noteSquad); }

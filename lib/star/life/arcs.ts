@@ -4,7 +4,9 @@
  *
  *  - A story lives in `career.life.arcs[id]` (ArcRun): its cast, a few values
  *    (your best, the path you took), its clocks, the weeks each beat played
- *    and the beats an ending scheduled. About 0.5 KB.
+ *    and the beats an ending scheduled. About 0.5 KB. Once it is over it is
+ *    packed into one short word in `life.fin` (arcPack.ts, ~12 bytes); read
+ *    every story, open or packed, with `arcsOf`.
  *  - `arcMoment` is called at each moment (after a match, arriving at
  *    training, season end …). It expires a "today only" offer (its
  *    ifIgnored ending plays), breaks promises past their date, sends a
@@ -27,6 +29,7 @@ import { chooseOption, pickOutcome, type ChoiceResult, type LifeChange } from ".
 import { lifeWeek, personInfo, remember, roleOf, tidy } from "./people";
 import { fillLine } from "./text";
 import { breakPromise, keepPromise, makePromise, openPromises, promiseDef } from "./promises";
+import { allRuns, isPacked, packDone, runIn, unpackRun } from "./arcPack";
 
 /** lifeWeek counts 50 weeks to a season. */
 export const LIFE_SEASON = 50;
@@ -87,15 +90,16 @@ export interface BeatLive {
 
 // ── Reading the story ──────────────────────────────────────────────────────
 
+/** Every story, open and finished (packed ones unpacked, read only), in the order they started. */
 export function arcsOf(c: CareerState): Record<string, ArcRun> {
-  return lifeOf(c).arcs ?? {};
+  return allRuns(lifeOf(c));
 }
 
 /** The condition context for a story: the career, the arc's values (with
  *  what this talk has set so far), the talk, the game just played. */
 export function arcCtx(c: CareerState, arcId: string, b?: BeatLive | null, facts?: FactOverride): CondCtx {
   const life = lifeOf(c);
-  const run = life.arcs?.[arcId];
+  const run = runIn(life, arcId);
   const cast = b?.cast ?? run?.cast ?? {};
   return ctxFor(c, life, cast, factsOf(c, facts), { v2: v2Of(c, life, run, b) });
 }
@@ -192,7 +196,7 @@ export function openBeat(c: CareerState, arcId: string, beatId: string): { caree
   const arc = arcById(arcId);
   const beat = arc && beatOf(arc, beatId);
   const life = cloneLife(lifeOf(c));
-  const run = life.arcs?.[arcId];
+  const run = unpackRun(life, arcId);
   if (!arc || !beat || !run) return null;
   const cast = castFor(c, arc, run, beat);
   if (!cast) return null;
@@ -250,6 +254,9 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
   let life = cloneLife(lifeOf(c));
   // The stories meet people too: keep the remembered list inside its cap (people.ts tidy).
   if (Object.keys(life.people).length > PEOPLE_CAP) tidy(life, c, now);
+  // A story finished and shrunk at an earlier moment is packed into one short word (arcPack.ts).
+  // It reads exactly as the shrunk record did; packing it first keeps the shrink below unchanged.
+  packDone(life);
   // A finished story (with nothing still scheduled) keeps only what the quest log shows: its
   // ending, its owner, and the weeks its beats played. Sixty stories stay small in the save.
   for (const [id, run] of Object.entries(life.arcs ?? {})) {
@@ -289,10 +296,19 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
   // 5. What wants to play now.
   const screens: ArcPick[] = [];
   const offers: MomentResult["offers"] = [];
-  const lastStart = Math.max(-999, ...Object.values(lifeOf(c).arcs ?? {}).map((r) => r.at));
+  const lastStart = Math.max(-999, ...Object.values(arcsOf(c)).map((r) => r.at));
   let started = 0;
   for (const arc of ARCS) {
     life = lifeOf(c);
+    // A packed story is over with nothing scheduled: no beat of it can open (beatOpen), unless the
+    // test page forces it, which needs the full record back.
+    if (isPacked(life, arc.id)) {
+      if (opts.force !== arc.id) continue;
+      const nl = cloneLife(life);
+      unpackRun(nl, arc.id);
+      c = { ...c, life: nl };
+      life = nl;
+    }
     let run = life.arcs?.[arc.id];
     if (!run) {
       const first = arc.beats[0];
@@ -446,7 +462,7 @@ export function playEnding(c0: CareerState, b: BeatLive, endId: string, opts: Pl
   const now = lifeWeek(c0);
   // The values this talk set are the arc's now.
   const life0 = cloneLife(lifeOf(c0));
-  const run0 = life0.arcs?.[b.arc];
+  const run0 = unpackRun(life0, b.arc);
   if (run0) run0.v = { ...run0.v, ...b.tv };
   let c: CareerState = { ...c0, life: life0 };
   const ctx = arcCtx(c, b.arc, { ...b, tv: {} }, opts.facts);
@@ -482,7 +498,7 @@ function applyArcOutcome(c0: CareerState, b: BeatLive, o: ArcOutcome, endId: str
   let c = c0;
   const arc = arcById(b.arc)!;
   let life = cloneLife(lifeOf(c));
-  const run = life.arcs![b.arc];
+  const run = unpackRun(life, b.arc)!;
   const ctx = () => arcCtx({ ...c, life }, b.arc, { ...b, tv: {} }, opts.facts);
   const a = o.arc;
   if (a?.set) for (const [k, x] of Object.entries(a.set)) run.v[k] = resolveVar(x, run.v, b);

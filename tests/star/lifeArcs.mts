@@ -272,9 +272,13 @@ const atNight = m.career;
       life.arcs = Object.fromEntries(ALL_ARCS.filter((a) => a.id !== arc.id).map((a) => [a.id, { at: 0, club: c.player.club, cast: {}, v: {}, k: {}, f: {}, s: {}, done: "x" }]));
       c = { ...c, life };
       const first = arc.beats[0].event.trigger.when.find((m) => m !== "followUp") ?? "arrive:training";
+      // The beats it played, read while its record is still full (a finished story is packed small
+      // at the next moment and keeps only its main line: arcPack.ts).
+      const note = (cc: CareerState) => { for (const [b, f] of Object.entries(cc.life?.arcs?.[arc.id]?.f ?? {})) if (f.length) beats.add(b); return cc; };
       const take = (cc: CareerState, res: { screens: { arc: string; beat: string }[]; offers: { arc: string; beat: string }[] }) => {
-        for (const sc of res.screens) { const a = T.autoBeat(cc, sc.arc, sc.beat, { rng: r, pick }); if (a) cc = a.career; else dead.push(`${sc.beat} would not open`); }
-        for (const o of res.offers) if (r() < 0.7) { const a = T.autoBeat(cc, o.arc, o.beat, { rng: r, pick }); if (a) cc = a.career; }
+        note(cc);
+        for (const sc of res.screens) { const a = T.autoBeat(cc, sc.arc, sc.beat, { rng: r, pick }); if (a) cc = note(a.career); else dead.push(`${sc.beat} would not open`); }
+        for (const o of res.offers) if (r() < 0.7) { const a = T.autoBeat(cc, o.arc, o.beat, { rng: r, pick }); if (a) cc = note(a.career); }
         return cc;
       };
       const facts = () => ({ lastRating: Math.round((5 + r() * 4) * 10) / 10, lastGoals: r() < 0.35 ? 1 : 0, lastWon: r() < 0.45, lastLost: r() < 0.35 });
@@ -282,7 +286,7 @@ const atNight = m.career;
       c = take(m.career, m);
       const start = c.season;
       for (let guard = 0; guard < 10 * 46; guard++) {
-        const done = c.life!.arcs![arc.id];
+        const done = A.arcsOf(c)[arc.id];
         if (!done || (done.done && !Object.keys(done.s).length && !done.o)) break;
         let week = c.week + 1, season = c.season;
         if (week > 46) {
@@ -296,9 +300,9 @@ const atNight = m.career;
         c = { ...c, week, season, weekActions: 3, energy: 80 };
         const f = facts();
         for (const mo of moments) { m = A.arcMoment(c, mo, { rng: r, facts: f }); c = take(m.career, m); }
-        c = A.endOfDay(c, r).career;
+        c = note(A.endOfDay(c, r).career);
       }
-      const run = c.life!.arcs![arc.id];
+      const run = A.arcsOf(c)[arc.id];
       if (run?.done) ends.add(run.done);
       for (const [b, f] of Object.entries(run?.f ?? {})) if (f.length) beats.add(b);
       played++;

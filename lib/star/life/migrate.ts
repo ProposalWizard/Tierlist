@@ -9,6 +9,9 @@ import type { ArcRun, LifeMemory, LifePerson, LifeState, ObjectiveRun, PromiseRu
 import { PEOPLE_CAP, PERSON_MEMORY_CAP } from "./types";
 import { freshLife } from "./people";
 
+/** A sanity bound on stories in one save, far above what a career can meet. */
+const MAX_SAVED_ARCS = 2000;
+
 const num = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? v : d);
 const clamp = (v: unknown, d: number) => Math.max(0, Math.min(100, Math.round(num(v, d))));
 const obj = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
@@ -72,7 +75,8 @@ function migrateV2(o: Record<string, unknown>): Partial<LifeState> {
   const numList = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is number => typeof x === "number").slice(-12) : []);
   if (o.arcs && typeof o.arcs === "object") {
     const arcs: Record<string, ArcRun> = {};
-    for (const [id, rv] of Object.entries(obj(o.arcs)).slice(0, 40)) {
+    // Every story is kept (this was 40, so a career that had met more lost the rest on load).
+    for (const [id, rv] of Object.entries(obj(o.arcs)).slice(0, MAX_SAVED_ARCS)) {
       const r = obj(rv);
       const v = Object.fromEntries(Object.entries(obj(r.v)).filter(([, x]) => typeof x === "number" || str(x)).slice(0, 12)) as ArcRun["v"];
       const f: ArcRun["f"] = {};
@@ -86,6 +90,12 @@ function migrateV2(o: Record<string, unknown>): Partial<LifeState> {
       };
     }
     out.arcs = arcs;
+  }
+  // Finished stories, packed (arcPack.ts): each well-formed word is kept as it is (the book is not
+  // loaded here; a word for a story no longer in the book is kept and simply not shown).
+  if (str(o.fin)) {
+    const words = (o.fin as string).split(" ").filter((w) => /^[0-9a-z]{8,}\.[0-9a-z]+(\.[^\s.]+)?$/.test(w)).slice(-MAX_SAVED_ARCS);
+    if (words.length) out.fin = Array.from(new Set(words)).join(" ");
   }
   // The people pool (pool.ts): a pinned person is kept; a save whose kit man story started
   // before the pool existed keeps Den (the man it was written with).

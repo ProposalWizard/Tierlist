@@ -15,7 +15,44 @@ Then run, and keep green:
 npx tsx tests/star/lifeArcs.mts     # the checker, every story played by the dice, the people pool
 npx tsx tests/star/lifeEvents.mts
 npx tsx scripts/soak/lifeSoak.mts   # every beat and ending reached across 200 careers
+npx tsx tests/star/lifeSaveFixture.mts  # old saves still load and play the same
 ```
+
+### 0. Who meets it: `start`
+
+```json
+"start": { "chance": 0.22, "careers": 0.18 }
+```
+
+- `chance` (above 0, at most 1): each time its first beat could play, the odds it begins then.
+  A seeded roll, the career's own, so careers do not all meet it in the same week.
+- `careers` (optional, above 0, at most 1): the share of careers that ever meet it, rolled once
+  per career from the player's name. 0.18 = about 1 career in 5. Leave it out and every career
+  can meet it (batch 1's 60 stories). Use it for stories that should feel rare, and to spread a
+  big book across careers: no single career should meet all of them.
+- No `start` at all = the story always starts when its first beat can (only the kit man).
+- Pacing on top (`arcs.ts`): at most one new story per moment, three weeks apart
+  (`START_GAP_WEEKS`), at most 12 open at once (`MAX_OPEN_ARCS`).
+
+### 0b. How a story is kept in the save (`arcPack.ts`)
+
+- While it is open: a full record in `life.arcs[id]` (people, values, clocks, the weeks each
+  beat played), about 0.3 to 0.5 KB. At most 12 are open.
+- One moment after it ends it is shrunk (values, clocks, club wiped; only its owner kept), and
+  at the next moment packed into ONE short word in `life.fin`, about 12 bytes:
+  story code (4) + ending code (3) + start week + `.` + beats played on the main line
+  (+ `.` + the owner's id, only for a team-mate). `arcsOf(c)` reads open and packed stories
+  alike; a packed one reads exactly as its shrunk record did.
+- So a finished story can only be read later for: its ending, its owner and which main-line
+  beats you played. Anything another story or event must know later goes in a memory
+  (`remember`), a squad memory, a flag, `give` / `unlock`, or a promise, never in `vars`.
+- Never rename a story's `id` or an ending's `id`, and never renumber a beat's `n`, once the story
+  is in the game: old saves name them. New endings and beats are fine anywhere.
+- The checker fails if two stories' codes clash (set `"code": "ab12"`, 4 letters or digits, on the
+  NEW story; never change a code later) or two endings of one story clash (rename the new one).
+- Old saves load as they were (`migrate.ts` keeps every story) and are packed at their first
+  story moment. `tests/star/lifeSaveFixture.mts` holds two real saves made before packing: it
+  checks they load and play on exactly as they did. Never regenerate that fixture.
 
 ### 1. People: name a ROLE, never a person
 
