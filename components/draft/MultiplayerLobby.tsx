@@ -170,6 +170,8 @@ export default function MultiplayerLobby({
     let pollTimer: ReturnType<typeof setInterval> | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
+    let live = false;
+    let onShow: (() => void) | null = null;
 
     const checkComplete = async () => {
       if (cancelled || completedRef.current) return;
@@ -226,15 +228,28 @@ export default function MultiplayerLobby({
             { event: "*", schema: "public", table: "draft_room_players", filter: `room_id=eq.${roomId}` },
             () => { fetchRoom(); }
           )
-          .subscribe();
+          .subscribe((status) => { live = status === "SUBSCRIBED"; });
 
+        // The safety-net poll (24 Nov 2026). It ran every 2 s for every player
+        // in every lobby, even with the live channel working and the tab hidden:
+        // /api/draft/rooms/[code] was the site's biggest use of server time.
+        // Now: every 2 s only while the live channel is not connected, every
+        // 10 s while it is, and not at all while the tab is hidden (a check runs
+        // as soon as it is shown again).
+        let lastPoll = 0;
         pollTimer = setInterval(() => {
           if (completedRef.current) {
             if (pollTimer) clearInterval(pollTimer);
             return;
           }
+          if (typeof document !== "undefined" && document.hidden) return;
+          const gap = live ? 10_000 : 2_000;
+          if (Date.now() - lastPoll < gap - 100) return;
+          lastPoll = Date.now();
           checkComplete();
         }, 2000);
+        onShow = () => { if (!document.hidden) { lastPoll = Date.now(); checkComplete(); } };
+        document.addEventListener("visibilitychange", onShow);
       });
     };
     init();
@@ -244,6 +259,7 @@ export default function MultiplayerLobby({
       if (channel) supabase.removeChannel(channel);
       if (pollTimer) clearInterval(pollTimer);
       if (retryTimer) clearTimeout(retryTimer);
+      if (onShow) document.removeEventListener("visibilitychange", onShow);
     };
   }, [roomCode, fetchRoom, tryComplete, resultIsForCurrentSeason, syncSettings]);
 

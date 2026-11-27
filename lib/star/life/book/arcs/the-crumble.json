@@ -1,0 +1,387 @@
+{
+ "id": "arc-the-crumble",
+ "title": "The last bowl of crumble",
+ "owner": "canteen",
+ "summary": "The woman who runs the canteen keeps the last bowl of Friday's crumble for whoever scored on Saturday. A season later the new nutritionist takes it off the menu, and she wants to know whose side you're on.",
+ "size": "small",
+ "about": {
+  "who": [
+   "canteen"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "canteen",
+   "pick": "canteen"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "crumble-saved",
+   "title": "Crumble on Fridays",
+   "text": "You stuck up for the crumble, and it's still on the menu on Fridays."
+  },
+  {
+   "id": "crumble-gone",
+   "title": "No more crumble",
+   "text": "The crumble went. She still saves you a biscuit, but it isn't the same."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "cru-1-bowl",
+   "title": "The last bowl",
+   "n": 1,
+   "event": {
+    "id": "arc-cru-1-bowl",
+    "title": "The last bowl",
+    "category": "staff",
+    "place": "compound:canteen",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "clubApps>=2"
+     ]
+    },
+    "setup": [
+     "{canteen.name} is wiping down the hatch. There's one bowl of apple crumble on the side with a tea towel over it."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "canteen",
+       "say": [
+        "\"That one's not for you. It's for whoever scores on Saturday. It's been under that towel five weeks, so you lot had better get on with it.\""
+       ],
+       "replies": [
+        {
+         "id": "me",
+         "label": "\"Keep it warm. It's mine.\"",
+         "tone": "confident",
+         "goto": "c2"
+        },
+        {
+         "id": "custard",
+         "label": "\"Does it come with custard?\"",
+         "tone": "calm",
+         "goto": "c-custard",
+         "mood": 1
+        },
+        {
+         "id": "diet",
+         "label": "\"I'm off sugar this season.\"",
+         "tone": "cold",
+         "end": "no-sugar"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "nodded"
+        }
+       ]
+      },
+      "c2": {
+       "who": "canteen",
+       "say": [
+        "\"Big talk. If you score, I'll put your name on the board above the hatch. If you don't, you're on the washing up.\""
+       ],
+       "replies": [
+        {
+         "id": "deal",
+         "label": "\"Deal.\"",
+         "tone": "brave",
+         "end": "deal"
+        },
+        {
+         "id": "halves",
+         "label": "\"Can I have half if I set one up?\"",
+         "tone": "humble",
+         "end": "halves"
+        }
+       ]
+      },
+      "c-custard": {
+       "who": "canteen",
+       "say": [
+        "\"Custard is for scorers as well. Everybody thinks they're funny.\""
+       ],
+       "replies": [
+        {
+         "id": "deal",
+         "label": "\"Then I'll score.\"",
+         "tone": "confident",
+         "end": "deal"
+        },
+        {
+         "id": "fair",
+         "label": "\"Fair enough.\"",
+         "tone": "calm",
+         "end": "nodded"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "deal": [
+       {
+        "text": "She writes \"{you.short}?\" on a bit of tape and sticks it to the tea towel.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "claimed-the-crumble",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "warm"
+         }
+        }
+       }
+      ],
+      "halves": [
+       {
+        "text": "\"Assists get the skin off the custard. That's the rule now.\"",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "asked-for-assist-crumble",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "warm"
+         }
+        }
+       }
+      ],
+      "no-sugar": [
+       {
+        "text": "\"Suit yourself.\" She moves the bowl further down the side, away from you.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": -3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "turned-down-the-crumble",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cold"
+         }
+        }
+       }
+      ],
+      "nodded": [
+       {
+        "text": "She goes back to the hatch. The tea towel stays where it is.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "none"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     }
+    ]
+   },
+   "hint": "The canteen saves the crumble for a scorer"
+  },
+  {
+   "id": "cru-2-menu",
+   "title": "Off the menu",
+   "after": {
+    "beat": "cru-1-bowl",
+    "seasons": [
+     1,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-cru-2-menu",
+    "title": "Off the menu",
+    "category": "staff",
+    "place": "compound:canteen",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "canteen",
+    "variants": [
+     {
+      "if": "!sameClub",
+      "template": "text-thread",
+      "place": "home",
+      "setupSwap": "A text from a number you don't know. \"It's {canteen.short} from the canteen. They've banned the crumble. Thought you should know.\""
+     }
+    ],
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The new nutritionist has put a laminated card on the hatch. No crumble, no custard, and a picture of a bowl of seeds.",
+     "{canteen.short} is standing behind it with her arms folded."
+    ],
+    "choices": [
+     {
+      "id": "speak",
+      "label": "Go and see the gaffer about it.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "sameClub",
+        "text": "{manager.short} listens with a straight face for about a minute. Crumble is back on Fridays, for scorers only, which was always the rule.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 10,
+          "respect": 6
+         },
+         {
+          "slot": "manager",
+          "respect": -1
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "saved-the-crumble",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "crumble-saved"
+        }
+       },
+       {
+        "text": "You ring your old gaffer, which is a strange call to make. Crumble's back by the end of the month.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 10,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "saved-the-crumble",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "crumble-saved"
+        }
+       }
+      ]
+     },
+     {
+      "id": "seeds",
+      "label": "Try the seeds.",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "text": "{if arc.path=='warm'}\"After all that,\" she says, and takes your bowl a bit harder than she needs to.{/if}{if !arc.path=='warm'}She shrugs and serves you seeds.{/if}",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": -4,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "went-with-the-seeds",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "crumble-gone"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Something's happened to the crumble"
+  }
+ ]
+}

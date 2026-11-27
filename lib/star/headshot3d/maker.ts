@@ -27,6 +27,7 @@ import type { ToonFaceRig } from "../style3d/toon/face";
 import type { ToonHead } from "../style3d/toon/bodies";
 import { HEADSHOT_PX, HEADSHOT_SHOT, HEADSHOT_LIGHT, CARD_SHOT, headshotKey, type HeadshotLook, type HeadshotFrame } from "./look";
 import { getHeadshot, putHeadshot, headshotFromMemory } from "./store";
+import { safeCompileAsync } from "../three3d/safeCompile";
 
 type Three = typeof import("three");
 type People = typeof import("../people3d");
@@ -289,6 +290,13 @@ async function shoot(r: Rig, look: HeadshotLook, frame: HeadshotFrame = "head", 
     cam.lookAt(head.x, head.y + S.aimUp, head.z);
   }
   cam.updateMatrixWorld(true);
+  for (const o of scene.children) if ((o as { isGroup?: boolean }).isGroup) o.visible = o === p.root;
+  // Speed fix 2 (20 Nov 2026): his shaders built before the draw, one at a time
+  // with the page given a turn between them (three3d/safeCompile.ts), not all
+  // inside the draw: the Stats card's 1.7 s freeze (speed audit item 4).
+  // Same programs, same picture. A second picture finds them already built.
+  try { await safeCompileAsync(renderer, scene, cam, 4000); } catch { /* built in the draw, as before */ }
+  if (r.lost) { p.root.visible = false; return null; }
   for (const o of scene.children) if ((o as { isGroup?: boolean }).isGroup) o.visible = o === p.root;
   const L = HEADSHOT_LIGHT;
   r.withRim(T, { color: L.rim, strength: L.rimStrength, from: L.rimFrom }, () => renderer.render(scene, cam));

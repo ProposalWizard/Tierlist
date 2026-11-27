@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Football Tic Tac Toe — Knowitball",
+  title: "Football Tic Tac Toe",
   description: "Test your football knowledge in this 3x3 grid challenge. Name players that match two conditions per square!",
   alternates: { canonical: "/tic-tac-toe" },
 };

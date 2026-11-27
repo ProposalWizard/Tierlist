@@ -26,811 +26,469 @@ import type { PatchNote } from "./patchNotes";
 
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
-    {
+  {
+    "version": "0.148",
+    "title": "Leo's patch notes: Weekly round-ups",
+    "author": "Leo",
+    "publishedAt": "2026-10-23T16:40:00Z",
+    "updatedAt": "2026-11-27T17:50:00Z",
+    "artifactUrl": null,
+    "updateNote": "Week 6 (20 to 27 Nov) added. One note for the weekly round-ups from now on (RUL-TEAM-034); weeks 1 to 5 folded in.",
+    "summary": "One note for the weekly round-ups, a new round each Friday, newest first. Week 6 (20 to 27 Nov): 7 PRs and 100 commits. Leo's whole-website job (behind the New look switch: new look in light and dark, Daily Draft, Chemistry, Ranked or Custom). Release prep on main: request limits, cached lists, link previews, /login, card pictures from 195 MB to 7.7 MB, Ten-A-Ball as a real daily challenge, one menu on phones. Vercel back on the free plan with frequent jobs moved to Supabase. Harry's notes 0.141 and 0.142 (sleep, living houses, cloth clothes, 3D phone).",
+    "stats": [
+      {
+        "value": "6",
+        "label": "weeks in this one note"
+      },
+      {
+        "value": "7",
+        "label": "PRs merged this week (#838 to #845)"
+      },
+      {
+        "value": "100",
+        "label": "commits on main this week"
+      },
+      {
+        "value": "195 → 7.7 MB",
+        "label": "card pictures"
+      }
+    ],
+    "sections": [
+      {
+        "kind": "added",
+        "title": "Check these",
+        "items": [
+          {
+            "title": "The new look (Leo, v0.143)",
+            "detail": "Turn on Admin → New look. Every public page in the home's look, light or dark; Daily Draft; Chemistry with Ranked or Custom. Nobody else sees it yet."
+          },
+          {
+            "title": "Ten-A-Ball daily challenge",
+            "detail": "One challenge a day, the same for everyone, on the UK date."
+          },
+          {
+            "title": "One menu on phones",
+            "detail": "The games are listed inside the one menu."
+          },
+          {
+            "title": "Link previews and page names",
+            "detail": "Share a page link and check the preview card and the tab name. /login now works."
+          },
+          {
+            "title": "Harry's 3D notes (v0.141, v0.142)",
+            "detail": "Sleep, living houses, cloth clothes, the 3D phone and real clothes at home."
+          }
+        ]
+      },
+      {
+        "kind": "added",
+        "title": "Website and Draft (Leo, Mikey's branch)",
+        "items": [
+          {
+            "title": "One Knowitball (v0.143, rounds 1 to 5)",
+            "detail": "Plan, the New look switch, a readability check every round, Daily Draft, spot ratings and Best spot, Chemistry, Ranked or Custom (three Hall of Fame boards), higher-or-lower to keep a player, Watch the big games."
+          },
+          {
+            "title": "Fixed for everyone",
+            "detail": "Page titles, sign-in name, Ten-A-Ball lives line and duplicate, Objectives badge, three wrong Draft seasons, faint text. Tic Tac Toe streak counts today's grid."
+          },
+          {
+            "title": "Draft speed",
+            "detail": "Faster clubs and squads, keeper stat names, full surnames. The patch notes page no longer crashes."
+          }
+        ]
+      },
+      {
+        "kind": "changed",
+        "title": "Release prep and running costs (from the commit list)",
+        "items": [
+          {
+            "title": "Vercel back on the free (Hobby) plan",
+            "detail": "Frequent jobs moved to Supabase; every Vercel cron now runs once a day; the morning post watches Vercel processor time."
+          },
+          {
+            "title": "Lighter site",
+            "detail": "Request limits, cached lists, lighter pages. 61 card pictures shrunk from 195 MB to 7.7 MB (WebP, 640 px); new uploads shrink in the browser."
+          },
+          {
+            "title": "Player faces",
+            "detail": "All 13,387 faces now carry a week's browser cache."
+          },
+          {
+            "title": "Build",
+            "detail": "The type check runs on its own before the build, not inside it."
+          }
+        ]
+      },
+      {
+        "kind": "added",
+        "title": "Marketing and team tools (Mikey, from the commit list)",
+        "items": [
+          {
+            "title": "Publish spaces",
+            "detail": "Football, content and kib spaces, each with its own accounts, videos, posts and numbers. Facebook posts go up as Reels; YouTube uploads carry #Shorts."
+          },
+          {
+            "title": "Explainer ex16",
+            "detail": "Why Vini loves Mourinho but not Alonso (48 s), final render; the Brain page plays every video from a small copy."
+          },
+          {
+            "title": "Team board",
+            "detail": "A progress update every day from 20 to 25 Nov."
+          }
+        ]
+      },
+      {
+        "kind": "known",
+        "title": "Still open (from this week's notes, not rechecked today)",
+        "items": [
+          {
+            "title": "Chemistry board",
+            "detail": "Needs supabase/migrations/draft_records_chemistry.sql run."
+          },
+          {
+            "title": "Rankings",
+            "detail": "Back for everyone only after Mikey says yes."
+          },
+          {
+            "title": "The New look",
+            "detail": "Only behind the switch until Leo says go."
+          }
+        ]
+      }
+    ],
+    "updates": [
+      {
+        "at": "2026-10-23T16:40:00Z",
+        "where": "Week 1, 16 to 23 Oct (was 0.127, never merged)",
+        "note": "One page for the week, for Harry"
+      },
+      {
+        "at": "2026-10-30T17:50:00Z",
+        "where": "Week 2, 23 to 30 Oct (was 0.128, never merged)",
+        "note": "One page for the week, for Harry"
+      },
+      {
+        "at": "2026-11-06T17:50:00Z",
+        "where": "Week 3, 30 Oct to 6 Nov (was 0.141, never merged)",
+        "note": "One page for the week, for Harry"
+      },
+      {
+        "at": "2026-11-13T17:50:00Z",
+        "where": "Week 4, 6 to 13 Nov (was 0.142, never merged)",
+        "note": "One page for the week, for Harry"
+      },
+      {
+        "at": "2026-11-20T17:50:00Z",
+        "where": "Week 5, 13 to 20 Nov (was 0.143, never merged)",
+        "note": "One page for the week, for Harry"
+      },
+      {
+        "at": "2026-11-27T17:50:00Z",
+        "where": "Week 6 round + page",
+        "note": "Week 6 (20 to 27 Nov) added. One note for the weekly round-ups from now on (RUL-TEAM-034); weeks 1 to 5 folded in."
+      }
+    ]
+  },
+  {
       "version": "0.143",
-      "title": "Leo's patch notes: Weekly round-up, 13 to 20 Nov",
+      "title": "Leo's patch notes: One Knowitball, the whole website",
       "author": "Leo",
-      "publishedAt": "2026-11-20T17:50:00Z",
-      "updatedAt": null,
+      "publishedAt": "2026-11-24T16:19:34Z",
+      "updatedAt": "2026-11-27T04:46:26Z",
       "artifactUrl": null,
-      "summary": "One page for the week, for Harry. 2 pull requests merged into main from Fri 13 Nov to Fri 20 Nov (#832, #833), plus a round from the Harry branch and one direct commit. Two new patch notes (Mikey's v0.139, Leo's v0.140); the other lines come from the commit list and say so. Biggest changes: the phone app is signed with a Google Play page in 86 languages, a separate phone-built app (KIB Next) plays the same game, a round of fixes from Mikey's phone test, the Knowitball Discord kit, and Claude jobs on GitHub. Nothing new is live on Discord or Google Play yet.",
+      "updateNote": "Rounds 1–5 in one note: plan, the New look switch, readability check, Daily Draft and old games, Chemistry + Ranked/Custom + watching games.",
+      "summary": "One patch note for the whole website job, updated each round. Behind the New look switch: the home's look on every page (light or dark), Daily Draft, Draft spot ratings, Chemistry with Ranked or Custom (three Hall of Fame boards), higher-or-lower, Watch the big games, Tic Tac Toe and Ten-A-Ball updates, Rankings for the tester, a readability check every round. Fixed for everyone: titles, sign-in name, Ten-A-Ball line and duplicate, Objectives badge, three wrong Draft seasons, faint text. Needs: the Chemistry SQL run; Mikey's yes for Rankings.",
       "stats": [
         {
-          "value": "2",
-          "label": "pull requests merged into main this week"
+          "value": "5",
+          "label": "rounds so far, one note"
         },
         {
-          "value": "2",
-          "label": "new patch notes (v0.139, v0.140)"
+          "value": "3",
+          "label": "Hall of Fame boards (Normal, Prime, Chemistry)"
         },
         {
-          "value": "86",
-          "label": "languages on the Google Play page"
-        },
-        {
-          "value": "100 / 100",
-          "label": "KIB Next test matches identical to the website"
-        }
-      ],
-      "updates": [],
-      "sections": [
-        {
-          "kind": "added",
-          "title": "Check these",
-          "items": [
-            {
-              "title": "Privacy policy: the new phone app section",
-              "detail": "The site's privacy policy page. v0.139."
-            },
-            {
-              "title": "Fixes from Mikey's phone test",
-              "detail": "Play a career on a phone: matches play from kick-off, the page never scrolls, Home after every match, POST shows once. 17-18 Nov commits."
-            },
-            {
-              "title": "Rankings say 'not running right now'",
-              "detail": "Every Rankings page. 17 Nov."
-            },
-            {
-              "title": "Join our Discord buttons",
-              "detail": "Site footer and game Settings. Hidden until the invite link is set. v0.140."
-            },
-            {
-              "title": "Claude on GitHub",
-              "detail": "@claude in an issue, or Run workflow. Needs the ANTHROPIC_API_KEY secret. 20 Nov."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "The phone app (Mikey)",
-          "items": [
-            {
-              "title": "The packed app is signed, and its Google Play page is done",
-              "detail": "86 languages, icon, feature graphic, 8 screenshots, Play's forms, and a privacy policy that covers the phone app. A 14-day closed test comes before the public launch. v0.139."
-            },
-            {
-              "title": "Why the app lags",
-              "detail": "Hidden work stutters screens that aren't being touched. App 1.1 drops the frosted-glass blur; the phone app has no Card Night. v0.139."
-            },
-            {
-              "title": "KIB Next: a separate app built for the phone",
-              "detail": "It plays the same game with the same rules (100 of 100 test matches identical to the website): the whole career, real players offline, goal videos with Save video, your 3D player, the farewell walk-out. It has never run on a real phone. v0.139."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "Game fixes (from the commit list)",
-          "items": [
-            {
-              "title": "Mikey's phone test, parts 1 to 3",
-              "detail": "Matches play from kick-off; real cup squads; one chance a half; the feed video plays once; Home after every match; the casino says Locked; the trial free-kick card sits off the wall. 18 Nov."
-            },
-            {
-              "title": "Screens fit the phone",
-              "detail": "The page never scrolls and the top stays put. The tutorial shows a swipe; the Shop hint clears the Play button. 18 Nov."
-            },
-            {
-              "title": "Smaller fixes",
-              "detail": "Hitting the post shows POST once, not twice. The star rating rises as far as the points allow. Play as lists only real positions. The star bar says when a level is held; the physio can at full energy is fixed. 17 Nov."
-            },
-            {
-              "title": "Rankings paused",
-              "detail": "Every Rankings page shows 'not running right now'. 17 Nov."
-            },
-            {
-              "title": "Build fix",
-              "detail": "The highlights tool's audio no longer broke the build. 18 Nov."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "Discord and team tools",
-          "items": [
-            {
-              "title": "The Knowitball Discord, ready to build (Leo)",
-              "detail": "A script makes the whole server in one go: 10 roles, 21 channels, rules, welcome posts and 2 joining questions. Join buttons on the site and in the game. New patch notes post themselves to #updates. A growth plan. v0.140."
-            },
-            {
-              "title": "Claude on GitHub (Harry)",
-              "detail": "Run jobs on the team's API credit with @claude in an issue, or Run workflow. Until the ANTHROPIC_API_KEY secret is set, nothing runs; the website is not affected. 20 Nov."
-            },
-            {
-              "title": "Mikey's Brain (Mikey)",
-              "detail": "A private page for his 8 social accounts: approve, post, results and rules, and a step-by-step posting chain with titles, captions and hashtags per app. 17-18 Nov."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "Marketing videos (Mikey, from the commit list)",
-          "items": [
-            {
-              "title": "The scout's file look",
-              "detail": "Van Dijk's replacement (v12, a 53 s cut in v13) and how Liverpool replace Alisson (v14). v11 posted to Instagram. 13-15 Nov."
-            },
-            {
-              "title": "Where should Vinícius go?",
-              "detail": "A Next club tab in the Twin Finder (need, fit and level for every top-5 club), a season sim with the game's match model, and a highlights tool that turns the game's goal clips into vertical videos. v15 and v16. 15-16 Nov."
-            }
-          ]
-        },
-        {
-          "kind": "known",
-          "title": "Still open (from this week's notes, not rechecked today)",
-          "items": [
-            {
-              "title": "KIB Next has never run on a phone",
-              "detail": "Save video is untested on a device. v0.139."
-            },
-            {
-              "title": "The Discord server does not exist yet",
-              "detail": "Leo makes the server and bot (about 5 minutes) and sets two Vercel settings. Not run on real Discord. v0.140."
-            },
-            {
-              "title": "Claude on GitHub needs the ANTHROPIC_API_KEY secret",
-              "detail": "20 Nov."
-            },
-            {
-              "title": "From v0.138: no database backup yet",
-              "detail": "Cloudflare not joined up on the live site. Not rechecked."
-            }
-          ]
-        },
-        {
-          "kind": "next",
-          "title": "Calls for Harry",
-          "items": [
-            {
-              "title": "Set the ANTHROPIC_API_KEY secret on GitHub",
-              "detail": "Settings → Secrets and variables → Actions. 20 Nov."
-            },
-            {
-              "title": "Closed test of the packed app, then playtest KIB Next on real phones",
-              "detail": "v0.139."
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "version": "0.142",
-      "title": "Leo's patch notes: Weekly round-up, 6 to 13 Nov",
-      "author": "Leo",
-      "publishedAt": "2026-11-13T17:50:00Z",
-      "updatedAt": null,
-      "artifactUrl": null,
-      "summary": "One page for the week, for Harry. 1 pull request merged into main from Fri 6 Nov to Fri 13 Nov (#831); everything else went straight into main, about 90 commits. One new patch note this week (Harry's v0.138); the rest of these lines come from the commit list and say so. Biggest changes: a new public home at knowitball.co.uk, the game renamed Road to the Golden Ball, the Team room rebuilt with bots you can @, one admin home, a nightly database backup set up (not working yet), the app packed for iPhone, and a week of marketing videos (Stat Twins, Twin Finder, posting to Instagram).",
-      "stats": [
-        {
-          "value": "1",
-          "label": "pull request merged into main (about 90 direct commits)"
-        },
-        {
-          "value": "1",
-          "label": "new patch note this week (v0.138)"
-        },
-        {
-          "value": "6",
-          "label": "games on the new home"
+          "value": "84 → 0",
+          "label": "unreadable words on the Hall of Fame"
         },
         {
           "value": "0",
-          "label": "database backups so far (Cloudflare not joined up)"
+          "label": "changes for anyone without the switch"
         }
       ],
-      "updates": [],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these (switch on)",
+          "items": [
+            {
+              "title": "Draft",
+              "detail": "Daily Draft; Rules: Chemistry; spot ratings and Best spot; Watch the big games."
+            },
+            {
+              "title": "Tic Tac Toe",
+              "detail": "Today's grid first; streak and Share."
+            },
+            {
+              "title": "Ten-A-Ball",
+              "detail": "Topics, your best on each, Share."
+            },
+            {
+              "title": "Every page",
+              "detail": "● New look → Light or Dark."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed for everyone",
+          "items": [
+            {
+              "title": "Site",
+              "detail": "Titles, sign-in name, Objectives badge clear of Sign in, faint text."
+            },
+            {
+              "title": "Games",
+              "detail": "Ten-A-Ball lives line and duplicate; three wrong Draft seasons."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Needs you / next",
+          "items": [
+            {
+              "title": "Chemistry board",
+              "detail": "Run supabase/migrations/draft_records_chemistry.sql."
+            },
+            {
+              "title": "Next",
+              "detail": "Friend matches watched together, Manager mode, page polish."
+            }
+          ]
+        }
+      ],
+      "updates": [
+        {
+          "at": "2026-11-26T03:19:33Z",
+          "where": "was 0.144",
+          "note": "The new look, only for you"
+        },
+        {
+          "at": "2026-11-26T18:21:03Z",
+          "where": "was 0.145",
+          "note": "New look fixes and a readability check"
+        },
+        {
+          "at": "2026-11-27T02:22:14Z",
+          "where": "was 0.146",
+          "note": "Daily Draft and the old games"
+        },
+        {
+          "at": "2026-11-27T04:30:23Z",
+          "where": "was 0.147",
+          "note": "Draft chemistry, Ranked or Custom, and watching games"
+        },
+        {
+          "at": "2026-11-27T04:46:26Z",
+          "where": "0.143",
+          "note": "Rounds 1–5 in one note: plan, the New look switch, readability check, Daily Draft and old games, Chemistry + Ranked/Custom + watching games."
+        }
+      ]
+    },
+  {
+      "version": "0.142",
+      "title": "Harry's patch notes: 3D phone, real clothes at home",
+      "author": "Harry",
+      "publishedAt": "2026-11-21T05:25:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/RtSxn6BtEpLzYaQup2K27F",
+      "summary": "The Phone tab now opens onto your own hand holding the phone in your house, and every app works on the glass. BACK puts it away into your house; a Phone button in the house and the garden brings it back. At home nobody wears a match kit any more: you wear your home outfit in real cloth, team-mates wear casual or club training clothes. Weak phones keep the flat phone.",
+      "stats": [
+        {
+          "value": "0.6 s",
+          "label": "eyes open onto the phone"
+        },
+        {
+          "value": "6",
+          "label": "houses in real clothes, plus the garden"
+        },
+        {
+          "value": "74 / 120",
+          "label": "draws in the busiest room (was 68)"
+        }
+      ],
       "sections": [
         {
           "kind": "added",
           "title": "Check these",
           "items": [
             {
-              "title": "The new home at knowitball.co.uk",
-              "detail": "Cream phone look, green bar and footer, an All games tab, Join the beta. v0.138."
+              "title": "The Phone tab opens onto your hand holding the phone",
+              "detail": "Home → Phone (bottom bar). A tap skips the move."
             },
             {
-              "title": "The new name: Road to the Golden Ball",
-              "detail": "Title screen and the award night. New address /road-to-the-golden-ball. v0.138."
+              "title": "Open two apps and tap something in each",
+              "detail": "On the 3D phone: Messages → a message; Relationships → scroll."
             },
             {
-              "title": "Team room: Dark and Light, channel tabs, five bots with Run now",
-              "detail": "Admin → Team. v0.138."
+              "title": "BACK puts the phone away and you are in your house",
+              "detail": "BACK, bottom right of the phone."
             },
             {
-              "title": "Bots you can @, and a Claude bot",
-              "detail": "Admin → Team, type @. Built after v0.138; needs the ANTHROPIC_API_KEY setting. 13 Nov commits."
+              "title": "The Phone button in the house",
+              "detail": "In your house: \"Phone\", top right."
             },
             {
-              "title": "One admin home at /admin",
-              "detail": "Back never leaves admin; the recorder keeps going. v0.138."
+              "title": "The Phone button in the garden",
+              "detail": "Home → Garden → \"Phone\", top right."
             },
             {
-              "title": "Marketing → Publish",
-              "detail": "Posting to Instagram, Facebook and YouTube from the admin. 11 Nov commits."
+              "title": "HOME on the phone goes straight to Home",
+              "detail": "HOME, bottom left of the phone."
+            },
+            {
+              "title": "Kickabout turns the phone flat to your face",
+              "detail": "On the 3D phone: Kickabout."
+            },
+            {
+              "title": "A team-mate on the sofa wears casual clothes, not a kit",
+              "detail": "Phone → Your house → the lounge."
+            },
+            {
+              "title": "You wear your own home outfit, in cloth",
+              "detail": "Home → House; then change it in the wardrobe and look again."
+            },
+            {
+              "title": "The garden bench and the pitch",
+              "detail": "Home → Garden → the gazebo bench, then the training pitch."
+            },
+            {
+              "title": "Can you read the phone's text?",
+              "detail": "Any app on the 3D phone. Say yes or \"too small\"."
+            },
+            {
+              "title": "How smooth is the camera move?",
+              "detail": "Phone tab in, BACK out, Phone button in again."
             }
           ]
         },
         {
           "kind": "added",
-          "title": "Site, Team room and admin (Harry)",
+          "title": "Added",
           "items": [
             {
-              "title": "A new public home",
-              "detail": "Built as three looks on a test page first, then look D went in: the phone-screen look on cream with a green bar and footer. 6 games. Install, App Store, Steam and Join the beta. v0.138."
-            },
-            {
-              "title": "The game is now Road to the Golden Ball",
-              "detail": "The award is the Golden Ball. New address /road-to-the-golden-ball. v0.138."
-            },
-            {
-              "title": "Team room rebuilt",
-              "detail": "Dark and Light looks; every channel has its own tabs; #today is new; a message can become a task; /today and /todo; a Me home and a Team board tab. Pop-ups stay until you close them. v0.138."
-            },
-            {
-              "title": "Five bots, each with its own page and Run now",
-              "detail": "Health, Bug, Today, Jobs and Patch. The Patch bot announces new patch notes in #general by itself. v0.138."
-            },
-            {
-              "title": "Bots you can @",
-              "detail": "A Claude bot, and a bot each for Harry, Mikey and Leo, with an on-screen run and a run table. Needs ANTHROPIC_API_KEY set. From the 13 Nov commits; not in a patch note yet."
-            },
-            {
-              "title": "One admin home, one look",
-              "detail": "The Knowitball look is the default. Back stays inside admin. v0.138."
-            },
-            {
-              "title": "Recordings save to Cloudflare first",
-              "detail": "Drive is the copy. A link everyone can open, a 30-day clean-up and a Keep button. v0.138."
-            },
-            {
-              "title": "Behind the scenes",
-              "detail": "Failed pushes to the site fixed (marketing videos kept out of the site's functions). A morning limits check at 08:00 in #health. A nightly database backup at 03:00. Patch-note pictures move to Cloudflare by themselves. v0.138."
+              "title": "The 3D phone is in the real game",
+              "detail": "Problem: the 3D phone only lived on a test page. Why: the Phone tab still opened the flat phone, and the house and phone were two screens. Fix: one screen, so the house never reloads; every app works on the glass. Weak phones (no 3D, quality Low, reduce motion, the first visit's phone tour) keep the flat phone."
             }
           ]
         },
         {
-          "kind": "added",
-          "title": "The app (from the commit list)",
+          "kind": "changed",
+          "title": "Changed",
           "items": [
             {
-              "title": "iPhone project and Codemagic set-up",
-              "detail": "A packed app with a back button, vibration, an icon and a more app-like feel; security updates. 10 Nov."
+              "title": "Real clothes in the houses and the garden",
+              "detail": "You: your saved home outfit in cloth. Team-mates: about 1 in 4 in club training wear, the rest a tee, hoodie, shirt or polo; the same man always wears the same. Garden pitch: training tracksuits. Match and training: still the kit."
             },
             {
-              "title": "Online saves go up squeezed",
-              "detail": "About a quarter of the size. 10 Nov."
-            },
-            {
-              "title": "App fixes",
-              "detail": "A scroll lock that trapped a player on a tall screen is fixed; the phone's top bar is hidden; Go closes the keyboard; knockout names fit. 10-11 Nov."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "Marketing videos (Mikey, from the commit list)",
-          "items": [
-            {
-              "title": "Stat Twins: a player's statistical twin",
-              "detail": "Episodes for Salah, Haaland, Neymar, Kane, Van Dijk and Cole Palmer, a batch of 27 videos, and a motion engine for them. Several posted to Instagram. 8-11 Nov."
-            },
-            {
-              "title": "Twin Finder page",
-              "detail": "Find any player's statistical twins across the top 5 leagues and every position, with key stats on tap. 8-9 Nov."
-            },
-            {
-              "title": "Who replaces him? and Analysed like chess",
-              "detail": "New formats: v07 (who replaces Lewis Hall at Newcastle) and CH-03 (Mourinho v Pep, Camp Nou 2010). PR #831 adds an X vs cuts template. 7-10 Nov."
-            },
-            {
-              "title": "Posting and a video library",
-              "detail": "Marketing → Publish posts to Instagram, Facebook and YouTube (a queue, a 5-minute timer, encrypted logins). Every Knowitball video in one searchable page. 11 Nov."
-            },
-            {
-              "title": "Preview film",
-              "detail": "A dressing-room set made in Blender, seven shots, and a second fast ad cut to the beat. 10 Nov."
+              "title": "No outfit picked? A hoodie, not the kit",
+              "detail": "At home, in the garden and in the shop."
             }
           ]
         },
         {
           "kind": "known",
-          "title": "Still open (from this week's notes, not rechecked today)",
+          "title": "Known issues",
           "items": [
             {
-              "title": "No database backup yet",
-              "detail": "Cloudflare is not joined up on the live site, so the first nightly backup failed. v0.138."
+              "title": "The house behind the phone can stall while it loads",
+              "detail": "It loads after 2.5 s, or on BACK."
             },
             {
-              "title": "The Patch bot is not proven live until a note appears in #general",
-              "detail": "Bug bot and the Team board tab are proven with stand-in data only. v0.138."
+              "title": "Garden → phone took about 3 s on the build machine"
             },
             {
-              "title": "About 70 admin tool pages still have their old insides",
-              "detail": "v0.138."
+              "title": "Phone text is about 55% of its flat size",
+              "detail": "Judge it on your phone.",
+              "pill": {
+                "text": "your call",
+                "tone": "amber"
+              }
             },
             {
-              "title": "Only one patch note this week",
-              "detail": "The app, marketing and @bot work has no patch note yet; those lines come from the commit list."
+              "title": "The eyes open in 0.6 s, not the approved 1.2 s blink B"
+            },
+            {
+              "title": "Clothes leftovers",
+              "detail": "A notch at the tee's hem, the hood is a lump, the first team-mate wears the same slate hoodie in every house."
+            },
+            {
+              "title": "The shop in cloth not looked at"
+            },
+            {
+              "title": "Carried from 0.141",
+              "detail": "Cut scenes not ready; the mentor's face; cars up close; the bed pose; speed on a phone."
             }
           ]
         },
         {
           "kind": "next",
-          "title": "Calls for Harry",
+          "title": "Next",
           "items": [
             {
-              "title": "Join Cloudflare up on the live site, then check the first backup",
-              "detail": "v0.138."
+              "title": "Your phone test: text size, smoothness, load time"
             },
             {
-              "title": "Set ANTHROPIC_API_KEY so the @bots can run",
-              "detail": "13 Nov commits (CLAUDE.md note)."
+              "title": "Fix the clothes leftovers and give team-mates more variety"
+            },
+            {
+              "title": "Look at the shop in cloth"
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.141 · 21 Nov 2026 · Sleep, living houses, cloth clothes",
+              "detail": "Sleep passes the night (+10 energy); six lived-in houses; cloth in cut scenes; feet land apart; kick off faster. Still open: cut scenes, the mentor's face, cars up close, the bed pose, speed on a phone."
+            },
+            {
+              "title": "v0.138 · 13 Nov 2026 · New home, Team room, bots, admin",
+              "detail": "Still open: Cloudflare not joined up on the live site."
             }
           ]
         }
-      ]
+      ],
+      "updates": []
     },
     {
       "version": "0.141",
-      "title": "Leo's patch notes: Weekly round-up, 30 Oct to 6 Nov",
-      "author": "Leo",
-      "publishedAt": "2026-11-06T17:50:00Z",
+      "title": "Harry's patch notes: Sleep, living houses, cloth clothes",
+      "author": "Harry",
+      "publishedAt": "2026-11-21T03:45:00Z",
       "updatedAt": null,
-      "artifactUrl": null,
-      "summary": "One page for the week, for Harry. 11 pull requests merged into main from Fri 30 Oct to Fri 6 Nov (Leo 10, Mikey 1), plus Harry's and Mikey's rounds merged straight in. Nothing reached main after 3 Nov. The 9 new patch notes (v0.129 to v0.137) are condensed here; each line names the version with the full detail. Mikey's 2-3 Nov work has no patch note yet, so those lines come from the commit list. Biggest changes: the Glass stadium look is the new default, the 3D ball is a real football, a perfect top-corner free kick now goes in (11% → 79% against a 92 keeper), the season review and knockout trees, achievements cut from 136 to 67, and the game's new address knowitball.co.uk/road-to-ballon-dor. Leo's feed, video and live-chance work is on the site behind switches that are off by default.",
+      "artifactUrl": "https://claude.ai/artifact/ABWmdwvNY8k9AH9aKdKpV6",
+      "summary": "Sleeping in your house now passes the night and counts as the week's Rest (energy 62 → 72, once between matches). All six houses are lived in, with team-mates in normal clothes. Clothes are real cloth, people walk and sit properly, and kick off is a little faster. Cut scenes, 60 follow-through stories and the kit man drill stay on test pages: they are not in a real career.",
       "stats": [
         {
-          "value": "11",
-          "label": "pull requests merged into main this week"
+          "value": "+10",
+          "label": "energy from one night's sleep"
         },
         {
-          "value": "9",
-          "label": "new patch notes this week"
+          "value": "6",
+          "label": "houses lived in"
         },
         {
-          "value": "11% → 79%",
-          "label": "perfect top-corner free kick vs a 92 keeper"
-        },
-        {
-          "value": "136 → 67",
-          "label": "achievements"
-        }
-      ],
-      "updates": [],
-      "sections": [
-        {
-          "kind": "added",
-          "title": "Check these",
-          "items": [
-            {
-              "title": "The Glass stadium look on every career screen",
-              "detail": "Settings → Screens → UI look: Glass | Pitch. Glass is the default. v0.137."
-            },
-            {
-              "title": "The 3D ball is a real football; one ball on the title screen",
-              "detail": "Title screen and 3D views. v0.137."
-            },
-            {
-              "title": "The game's new address",
-              "detail": "knowitball.co.uk/road-to-ballon-dor (/star-dev forwards there). 3 Nov."
-            },
-            {
-              "title": "Season review and knockout trees",
-              "detail": "End a season: one trophy list, tap a trophy for its table, scorers and assists. 2 Nov."
-            },
-            {
-              "title": "Achievements: a gold trophy wall",
-              "detail": "136 → 67 achievements, with Nearly there. 3 Nov."
-            },
-            {
-              "title": "History tabs: real top scorers, assisters and player of the season",
-              "detail": "League → a competition → History. PR #830."
-            },
-            {
-              "title": "Free kicks: the very top corner goes in",
-              "detail": "Any free kick in a match. v0.135."
-            },
-            {
-              "title": "Leo's switches: Settings → Updates (admins)",
-              "detail": "Social feed, goal videos, commentary, live chances. All off by default. v0.129 to v0.134."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "Look and site (Harry)",
-          "items": [
-            {
-              "title": "Glass stadium is the new default look",
-              "detail": "A blurred day stadium behind every career screen, frosted-glass cards and bars, white text, a glowing green PLAY. Pitch is still a choice, and gets a stadium too. New rule RUL-UI-007: a whole-game look may be a Settings choice. v0.137."
-            },
-            {
-              "title": "A real football",
-              "detail": "12 black and 20 white patches. The title screen showed two balls; now one. v0.137."
-            },
-            {
-              "title": "Small pushes go live faster",
-              "detail": "A small push runs a quick check: 30 to 40 minutes → about 10. v0.137."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "Career, history and marketing (Mikey)",
-          "items": [
-            {
-              "title": "Season review: one trophy list in a fixed order",
-              "detail": "Tap any trophy for its table, scorers and assists. Your European competition is never kept twice. From the 2 Nov commits; no patch note yet."
-            },
-            {
-              "title": "Knockout tree: last 16 to the final",
-              "detail": "Champions and Europa League from the last 16; the cups from the last 8. Top scorers now count knockout legs and whole international editions, and the European competition you are in has its own scorers. 2 Nov."
-            },
-            {
-              "title": "Realistic simulated shoot-outs",
-              "detail": "Also your own line under the top 10, and a shorter KO tab. 2 Nov."
-            },
-            {
-              "title": "Achievements: 136 → 67",
-              "detail": "A gold trophy wall with Nearly there; the XP climb is the same. One gold pop-up per achievement. 3 Nov."
-            },
-            {
-              "title": "History tabs with real history",
-              "detail": "Top scorer, top assister and player of the season. Your career's seasons first, then the real history before them. PR #830, Brain FACT-DAT-008."
-            },
-            {
-              "title": "The game's address: knowitball.co.uk/road-to-ballon-dor",
-              "detail": "/star-dev forwards there. 3 Nov."
-            },
-            {
-              "title": "Smaller saves",
-              "detail": "The Hall of Fame copy leaves out last season's full record: a played career 145 KB → 78 KB. 2 Nov."
-            },
-            {
-              "title": "Video factory for marketing: 88 shorts",
-              "detail": "A storyboard becomes a 1080×1920 short with voice, drawn scenes, captions and music. MP4s now play on iPhone. PR #830, tools/video-factory/."
-            },
-            {
-              "title": "Playtest fixes",
-              "detail": "'1 game' not '1 games'; short club names on shield and winner cards; play-off winner in green; the Lower League Trophy in the chooser. 3 Nov."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "Match, feed and test pages (Leo)",
-          "items": [
-            {
-              "title": "Free kicks: the very top corner beats the keeper",
-              "detail": "A perfect ball into the very top corner went in 11% of the time against a 92-rated keeper; now 79%. An ordinary taker 10% → 16%. Low and middle shots unchanged. In every match. PR #828, v0.135."
-            },
-            {
-              "title": "Test pages play like the real game",
-              "detail": "Six test screens had the old, easier free-kick keeper; test screens used skill 40 for free kicks. Both now match the real match. Weather, build-ups and sim90 too. PR #829, v0.136."
-            },
-            {
-              "title": "Live chances: take a touch, everyone moves, your stats decide",
-              "detail": "One quick flick to open an angle; the keeper rushes one-on-ones; defenders close you down and can win it. Technique, pace, vision and power set the skill. Still off by default. PRs #820, #823, #826, #827; v0.126, v0.133, v0.134."
-            },
-            {
-              "title": "Social feed: football Twitter and TikTok",
-              "detail": "52 made-up accounts and 899 lines (was 33 and 272); replies that fit the post (mismatches 20.7% → 0.1%); polls, quote posts, a ranked feed. A Social Studio admin page at /admin/social. Behind Leo's switch. PRs #821, #822, #824, #825; v0.129 to v0.132."
-            },
-            {
-              "title": "Goal videos and commentary",
-              "detail": "Goal videos start in 0.05 s on PC (was about 5 s); full screen; 2D from above; cut five ways plus six new edit types. A new commentary voice and four commentary teams. The season video plays every goal (0 lost clips, was 8 of 21). Behind Leo's switch. v0.129 to v0.132."
-            }
-          ]
-        },
-        {
-          "kind": "known",
-          "title": "Still open (from this week's notes, not rechecked today)",
-          "items": [
-            {
-              "title": "Glass look gaps",
-              "detail": "Home keeps its night stadium; energy-can cards on Home are cut off at the bottom; the Phone keeps a red club wallpaper; the League banner stays club red. v0.137."
-            },
-            {
-              "title": "5 tests were already broken before Harry's round",
-              "detail": "v0.137."
-            },
-            {
-              "title": "The free-kick fix is not played by hand yet",
-              "detail": "v0.135."
-            },
-            {
-              "title": "Live chances: the touch is not checked in 3D",
-              "detail": "v0.133, v0.134."
-            },
-            {
-              "title": "Leo's feed and video work is not played in a real career, nor heard by a person yet",
-              "detail": "v0.131, v0.132."
-            },
-            {
-              "title": "Mikey's 2-3 Nov round has no patch note",
-              "detail": "Mikey writes notes only when he asks for them (his standing rule)."
-            }
-          ]
-        },
-        {
-          "kind": "next",
-          "title": "Calls for Harry",
-          "items": [
-            {
-              "title": "Day stadium on Home: yes or no",
-              "detail": "v0.137."
-            },
-            {
-              "title": "When Leo's switches go on for everyone",
-              "detail": "Feed, videos, commentary and live chances are all off by default. v0.129 to v0.134."
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "version": "0.128",
-      "title": "Leo's patch notes: Weekly round-up, 23 to 30 Oct",
-      "author": "Leo",
-      "publishedAt": "2026-10-30T17:50:00Z",
-      "updatedAt": null,
-      "artifactUrl": null,
-      "summary": "One page for the week, for Harry. 41 pull requests merged into main from Fri 23 Oct to Fri 30 Oct, plus Mikey's rounds merged straight in. The 10 new patch notes (v0.109h to v0.112h, v0.121 to v0.126) are condensed here by area; each line names the version with the full detail. Biggest changes: a new career's first hour is a story (Mikey), the 50-level Star Pass road, Power 40 made weaker, chances that follow your play style, men at 22 px on every chance kind, the Slack-style Team room, Claude working in Supabase, and every patch note made the same (with its own number). Leo's builds (celebrations, feed, weather, keeper catches, live chances) are on the site behind switches that are off by default.",
-      "stats": [
-        {
-          "value": "41",
-          "label": "pull requests merged into main this week"
-        },
-        {
-          "value": "10",
-          "label": "new patch notes this week"
-        },
-        {
-          "value": "50",
-          "label": "levels on the new Star Pass road"
-        },
-        {
-          "value": "5",
-          "label": "Leo builds on the site behind switches, off by default"
-        }
-      ],
-      "updates": [],
-      "sections": [
-        {
-          "kind": "added",
-          "title": "Check these",
-          "items": [
-            {
-              "title": "Start a new career: the first hour is a story",
-              "detail": "Each feature is brought in by a person after a game; moves open one at a time. v0.124."
-            },
-            {
-              "title": "Star Pass: the 50-level road and its rewards",
-              "detail": "Star Pass, then the Locker. PR #801."
-            },
-            {
-              "title": "Power 40 is weaker; chances follow your play style",
-              "detail": "Any match on a new career. v0.124."
-            },
-            {
-              "title": "Men at 22 px on every chance kind; headers and volleys redone",
-              "detail": "Any 2D chance on a phone. v0.109h."
-            },
-            {
-              "title": "Team room in Slack's layout",
-              "detail": "Admin → Team. v0.111h."
-            },
-            {
-              "title": "Cookie banner: analytics only after Accept",
-              "detail": "Open the site in a private window."
-            },
-            {
-              "title": "Every patch note has an author, a time, its own number and a page",
-              "detail": "Admin → Patch notes. Old numbers moved (0.108 is now 0.119, and others). v0.122."
-            },
-            {
-              "title": "Leo's switches: Settings → Updates (admins)",
-              "detail": "Celebrations, feed, weather, keeper catches, live chances. All off by default. v0.119, v0.121, v0.123, v0.126."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "Career and Star Pass (Mikey)",
-          "items": [
-            {
-              "title": "A new career's first hour is a story",
-              "detail": "Problem: everything was open at once. Fix: a person brings in each feature after a game, moves open one at a time with a guide, set pieces are earned, the first match and the first sponsor are guided. A team-mate gives you his old boots before game 1. First contract ★35 a week in North or South. v0.124."
-            },
-            {
-              "title": "Power 40 is a starting player now",
-              "detail": "A full shot at Power 40: 79 → 66 km/h. The top (Power 100) stays 32.76 m/s, the old top. A Power curve box in the Play Area to type the speeds. v0.124."
-            },
-            {
-              "title": "Chances follow your play style and what is open",
-              "detail": "0% byline crosses on Attacking; no headers or volleys before they open. Every byline cross has a short option (300 of 300). Build-ups that end in an offside flag are not shown. A chance in every half on Medium and High. v0.124."
-            },
-            {
-              "title": "Room to pull back on every chance",
-              "detail": "Tight angles with no room 21% → 0. Every cutback is side-on. Men, keeper and ball are one size next to the goal on every camera. v0.124."
-            },
-            {
-              "title": "Star Pass: 50 levels, 16 new rewards, 4 celebrations",
-              "detail": "Every even level from 2 to 100. Golden Run-up, The Leaf free kick and Signature Boots are Star Pass only. Blender art for every box reward, tap to spin. PR #801, 28 Oct."
-            },
-            {
-              "title": "Broadcast pop-ups are the only pop-ups",
-              "detail": "The Pop-up pack setting is gone. 27 Oct."
-            },
-            {
-              "title": "One match for every tool",
-              "detail": "Corners, new-career moves and owed chances go through the shared match builder. Brain FACT-ENG-007. 27 Oct."
-            },
-            {
-              "title": "Cookie consent",
-              "detail": "Google Analytics and PostHog start only after Accept. 27 Oct."
-            },
-            {
-              "title": "Small fixes",
-              "detail": "Multiplayer draft: European winners from outside the top places now play, no crash. Player photos are found in other editions again. 27 Oct."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "The match and admin (Harry)",
-          "items": [
-            {
-              "title": "Men at 22 px on every chance kind",
-              "detail": "Was up to 31 px, 37 on a byline cross. Only the pitch zooms; goal rates unchanged. Live since 25 Oct. v0.109h."
-            },
-            {
-              "title": "Headers and volleys redone to Harry's notes",
-              "detail": "No drag-back arrow: straight to the Head it? / Volley it? screen where you tap the ball. The cross comes in once. Same in the Head & Volley drill. v0.109h."
-            },
-            {
-              "title": "Build-ups: one smooth camera glide, landing on the chance's own frame",
-              "detail": "Worst camera jump 640 → 38 px a second. v0.109h, PR #793."
-            },
-            {
-              "title": "Aerial contact moves for headers and volleys",
-              "detail": "8 aerial moves; header framing 25 m; a test page at /star-aerials-dev. PRs #794, #795."
-            },
-            {
-              "title": "Cut-scene skin at light tones",
-              "detail": "Face against neck 5.9 → 1.0. Darker tones still 4.6 to 6.6, waiting on a call. v0.109h."
-            },
-            {
-              "title": "Claude can work in Supabase, asking first",
-              "detail": "Done in the live database on 25 Oct: 2 missing tables made, the login-streak hole closed, 19 missing indexes added. One login check per request (was two). v0.110h."
-            },
-            {
-              "title": "Team room in Slack's layout",
-              "detail": "Channel list, 9 preset channels, presence, bells per channel, #bugs fills itself from bug reports. Live since 25 Oct; bots that run Claude are not built. v0.111h."
-            },
-            {
-              "title": "Marketing Studio plan",
-              "detail": "Plan only: paste a TikTok link and Claude logs it, breaks it down and builds our version. 9 build slices. Guest accounts and ad pages are on the site, switched off. v0.112h."
-            },
-            {
-              "title": "Builds and media",
-              "detail": "The next build gets 6 GB of memory (fixed the failed deploy of #810). Patch-note clips and stills squeezed: Harry's notes 82.7 → 73.8 MB. PRs #805, #808, #811, #815."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "Leo's builds and patch notes",
-          "items": [
-            {
-              "title": "Celebrations, fast feed, goal videos, season end, 17 bug fixes",
-              "detail": "On the site since 24 Oct behind Leo's switch, off by default. The bicycle kick was taken out (Harry is building it). PRs #785, #787. v0.119."
-            },
-            {
-              "title": "The 7 overnight parts, behind Leo's 26 Oct switch",
-              "detail": "Nobody stands on you in a celebration (closest 0.23 → 1.60 m); 0 feed scroll hiccups at 4× slow (was 9); your goal's post always has its video (48% → 100%); weather in real matches (goals +1.6% to +2.8%). PR #798. v0.121."
-            },
-            {
-              "title": "Keeper catches and dives (Leo's switch)",
-              "detail": "16 new keeper moves; a caught ball stays in his gloves; he lands, lies a beat and gets up. Ball no longer frozen in the air (21 catches checked, 0 outside his hands). Results unchanged. PRs #810, #813, #816, #817. v0.123."
-            },
-            {
-              "title": "Overnight sanity sweep: 75 findings, 20 fixed",
-              "detail": "Money reads 1.9m not 1m; SAVED and POST on your own shots; the goal scoreboard sits low; celebrations moved to Store → Animations; can't-afford line. PR #818. v0.125."
-            },
-            {
-              "title": "Live chances (test switch, off by default)",
-              "detail": "The last pass keeps coming to you; time your strike as it arrives. 98% of open-play chances go live. Test page /star-live-chances-dev. PR #819. v0.126."
-            },
-            {
-              "title": "Every patch note made the same",
-              "detail": "123 notes tidied: author, time, updates, own number, a menu title and a page. 9 notes renumbered. One set of rules checks them all. PR #800. v0.122, Brain RUL-TEAM-028."
-            }
-          ]
-        },
-        {
-          "kind": "known",
-          "title": "Still open (from this week's notes, not rechecked today)",
-          "items": [
-            {
-              "title": "Mikey's 26 Oct gameplay batch is not seen on a phone yet",
-              "detail": "A weaker Power 40 scores fewer goals; side-on cutbacks draw men up to 5% smaller. v0.124."
-            },
-            {
-              "title": "Aerial training auto-played and got stuck",
-              "detail": "v0.124."
-            },
-            {
-              "title": "Darker skin tones in cut scenes still differ",
-              "detail": "Face against neck 4.6 to 6.6. v0.109h."
-            },
-            {
-              "title": "Guest accounts not tested end to end; no downloadable database backup",
-              "detail": "v0.110h."
-            },
-            {
-              "title": "Store celebration previews don't move; shop names don't match pictures",
-              "detail": "Listed for a decision. v0.125."
-            },
-            {
-              "title": "Men stacked on one spot; wide camera cuts; 3 opponent goals in added time once",
-              "detail": "Listed for a decision. v0.125."
-            },
-            {
-              "title": "12 test files were already failing on main",
-              "detail": "Named in PR #801. Several were fixed on 27 Oct (chanceMaker, chanceJudge, identity, leadInGen, kindMix, freshness); not rechecked."
-            }
-          ]
-        },
-        {
-          "kind": "next",
-          "title": "Calls for Harry",
-          "items": [
-            {
-              "title": "Keeper look: A Natural, B Broadcast or C Arcade",
-              "detail": "v0.123."
-            },
-            {
-              "title": "Store celebration previews",
-              "detail": "A moving preview needs a new animation loop, which the one-engine guard blocks. Your call. v0.125."
-            },
-            {
-              "title": "Marketing Studio plan",
-              "detail": "Answer the calls on the plan. v0.112h."
-            },
-            {
-              "title": "When Leo's switches go on for everyone",
-              "detail": "All five are off by default. v0.119, v0.121, v0.123, v0.126."
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "version": "0.127",
-      "title": "Leo's patch notes: Weekly round-up, 16 to 23 Oct",
-      "publishedAt": "2026-10-23T16:40:00Z",
-      "updatedAt": null,
-      "artifactUrl": null,
-      "summary": "One page for the week, for Harry. 35 pull requests merged into main from Fri 16 Oct to Fri 23 Oct (Harry 29, Leo 6), plus Mikey's rounds merged straight in. The week's 60 patch notes (from v0.57 on) are condensed here by area; each line names the version that has the full detail. Biggest changes: the whole world season is played for real, the FA Cup has its ten real rounds, the transfer window, running after a chance (B14), real headers and volleys with the new Aerial & Acrobatics skill, players back to size B, the player card on Stats, Mikey's master plan (one bottom bar, a fuller Phone), and the admin's Team room, Inbox and Marketing Studio. Leo's tonight build (v0.119) is on branch Leo and is NOT live.",
-      "stats": [
-        {
-          "value": "35",
-          "label": "pull requests merged into main this week"
+          "value": "9.3 cm",
+          "label": "walking gap (was 0.5, real 8.0)"
         },
         {
           "value": "60",
-          "label": "patch notes this week"
-        },
-        {
-          "value": "3,792",
-          "label": "files changed on main this week"
-        },
-        {
-          "value": "1",
-          "label": "build not live yet: Leo's v0.119, on branch Leo"
+          "label": "stories, test page only"
         }
       ],
       "sections": [
@@ -839,251 +497,219 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "title": "Check these",
           "items": [
             {
-              "title": "Stats page: the FIFA-style card with your own 3D man",
-              "detail": "Career → Stats. v0.106h, v0.108h, v0.120."
+              "title": "Sleep in your bed: the night passes and you get energy back",
+              "detail": "In a career: Phone → Your house (or Home → Garden → the house door) → bed → \"Sleep till morning\". Energy on Home before and after."
             },
             {
-              "title": "One bottom bar on every career screen, and a fuller Phone",
-              "detail": "Home, then the bar and the Phone app. v0.120."
+              "title": "Sleep a second time before the next match: no more energy",
+              "detail": "Same bed again, before you play."
             },
             {
-              "title": "League: one page for every competition, plus 🌍 All leagues",
-              "detail": "League tab. v0.114, v0.120."
+              "title": "Each room opens from a high corner",
+              "detail": "Phone → Your house → walk room to room."
             },
             {
-              "title": "FA Cup with ten rounds",
-              "detail": "Play to the FA Cup in a lower-league career. v0.116."
+              "title": "Team-mates wear normal clothes, never a kit; you wear your home set",
+              "detail": "Phone → Your house; Home → Garden (the bench)."
             },
             {
-              "title": "Transfer window at the end of a season",
-              "detail": "Finish a season; Home → Transfers. v0.59."
+              "title": "Each person walks, stands and blinks in his own way",
+              "detail": "Home → Garden and Your house."
             },
             {
-              "title": "Run after a pass (Auto run on a phone, W A S D on a computer)",
-              "detail": "Any open-play chance where you pass. v0.95h, v0.96h."
+              "title": "Every bed works, the flat's too",
+              "detail": "Your house → bedroom."
             },
             {
-              "title": "Headers and volleys, and the Aerial & Acrobatics skill",
-              "detail": "In a match and in Training → Head & Volley. v0.88, v0.105h, v0.106h."
+              "title": "Plants have real leaves",
+              "detail": "Your house → kitchen; the 3D shop's brass pots."
             },
             {
-              "title": "Players back to size B, keeper back to a man's height",
-              "detail": "Any 2D chance on a phone. v0.107h, v0.108h."
+              "title": "Villa: games room and a bath you can use",
+              "detail": "Only if your career owns the villa."
             },
             {
-              "title": "Build-ups before chances, about 3 s each, three styles",
-              "detail": "Any match (Full highlights rebuild is on by default). v0.107h, v0.108h."
+              "title": "Kick off starts a little faster",
+              "detail": "Team sheets → KICK OFF."
             },
             {
-              "title": "Game music switch",
-              "detail": "Settings → first card → Game music. v0.117."
+              "title": "Do Stats, Your house and the Garden open fast enough?",
+              "detail": "Home → Stats; Phone → Your house; Home → Garden."
             },
             {
-              "title": "Admin: Team board, Inbox bell, Marketing Studio",
-              "detail": "/admin. v0.82, v0.102h, v0.104h, v0.107h."
+              "title": "Cut scenes with cloth clothes (test page)",
+              "detail": "knowitball.co.uk/star-scene-editor-dev?place=director&scene=press (and scene=walkout). Signed in as the team."
             },
             {
-              "title": "Real Goals test page: 4,625 real goals",
-              "detail": "/star-real-goals-dev. v0.58, v0.113, v0.115."
+              "title": "The kit man drill, six rounds in the dark (test page)",
+              "detail": "knowitball.co.uk/star-life-dev → Kit man story → ▶ Start, then stay out with Den on Thursday."
+            },
+            {
+              "title": "The 60 follow-through stories (test page)",
+              "detail": "knowitball.co.uk/star-life-dev → ▶ Play a week or +10 weeks."
             }
           ]
         },
         {
           "kind": "added",
-          "title": "Career and season (Mikey)",
+          "title": "Added",
           "items": [
             {
-              "title": "The world season: every league and cup is played for real",
-              "detail": "Problem: only your own league was played. Fix: 7 English leagues, both cups, both shields, the Champions League and the Europa League play match by match on their real dates. Promotion and relegation come from those tables. League Two beat a Premier League club in a cup 34% of the time; now 8%. v0.114."
+              "title": "Sleeping in your house passes time",
+              "detail": "Problem: the bed did nothing. Why: the career has no clock between matches, only the week. Fix: one night = the week's Rest, once between two matches; never more than Rest, never moves a fixture.",
+              "bars": [
+                {
+                  "label": "Energy after a night",
+                  "was": 62,
+                  "now": 72,
+                  "state": "good"
+                }
+              ]
             },
             {
-              "title": "FA Cup: ten real rounds, each league joins at its real round",
-              "detail": "Was 6 rounds. 24 byes in the 3rd Qualifying Round, never your club. 20,029 soak matches, 0 broken states. v0.116."
+              "title": "Clothes are cloth, not paint",
+              "detail": "Kits and clothes are a real layer of cloth. Cut scenes dress by role; houses and the garden too (approved 21 Nov). The match keeps the old kits until measured on a phone."
             },
             {
-              "title": "Transfer window: clubs come to you each summer",
-              "detail": "Your season gets a letter, S to D. The letter decides how many leagues up a club can come from. League → Club → Negotiate. Fee priced by your league (a non-league striker no longer shows ★406m). v0.59."
-            },
-            {
-              "title": "The world ages",
-              "detail": "Players decline from 31, retire at 35 to 41 (keepers 37 to 43), and young players from the same country replace them. 211 nations wear their real kits (was 15). v0.59."
-            },
-            {
-              "title": "New pop-ups: Settings → Match → Pop-up pack: Classic | Broadcast",
-              "detail": "Broadcast is a goal scoreboard with a rolling score, scorer and assist, and TV captions. Default Classic. v0.116, v0.100h."
-            },
-            {
-              "title": "Game music: 11 original orchestral tracks",
-              "detail": "Off by default. Home, matches, full time and the Ballon d'Or night. 17% level in a match, 32% at home. v0.117."
-            },
-            {
-              "title": "Mikey's master plan, steps 1 to 5",
-              "detail": "One bottom bar everywhere and a cleaner Home; Stats shows the whole card and four tabs; League is one page for every competition; the Phone holds Relationships, Squad, Fixtures & results and real messages; the phone clock shows the real day. Phone back to Home 1.9 s → 0.3 s. v0.120."
+              "title": "60 stories where every choice comes back",
+              "detail": "40 small, 15 medium, 5 big. Test page only: off in the real career.",
+              "pill": {
+                "text": "test page only",
+                "tone": "amber"
+              }
             }
           ]
         },
         {
-          "kind": "added",
-          "title": "The match (Harry)",
+          "kind": "changed",
+          "title": "Changed",
           "items": [
             {
-              "title": "Running after a chance (B14)",
-              "detail": "Problem: a pass ended your part of the chance. Fix: it plays on in the same picture. Auto run on a phone, W A S D and Shift on a computer, and a stamina bar. 500 matches: your goals 0.98 → 1.04 a match. v0.95h, v0.96h."
+              "title": "All six houses are lived in",
+              "detail": "Rooms, things to use, team-mates round; arrival shots from a high corner; every bed works; villa games room and bath; real-leaf plants; morning sun."
             },
             {
-              "title": "Headers and volleys are back, then made real",
-              "detail": "Back on after being off since 24 Sep (v0.88). Then 52 real headers and 102 real volleys play in the air, not along the ground (v0.105h). Cross heights now vary 1.5 to 2.6 m (was always 1.85 m) (v0.106h)."
+              "title": "The kit man drill: six rounds in the dark",
+              "detail": "Call it, the crossbar, old tricks, Den in goal, lights out, double or nowt. A typical score is 6 of 10.",
+              "pill": {
+                "text": "test page only",
+                "tone": "amber"
+              }
             },
             {
-              "title": "New skill: Aerial & Acrobatics, with a Head & Volley drill",
-              "detail": "30 drill levels. In real matches, headers and volleys read Aerial, not Technique. Goals per 100 headers at Aerial 30 / 60 / 90: 14.1 / 24.9 / 36.3. A gold perfect circle that grows with Aerial. v0.105h, v0.106h, v0.108h."
-            },
-            {
-              "title": "Build-ups before chances",
-              "detail": "Built behind a switch (v0.63h, v0.86, v0.93), cut from 32.2 to 21.6 s a match (v0.103h), then about 3 s each in three styles: long ball, tiki-taka, or a run then a pass. Real moments about 1 in 10 chances (was 1 in 7). On by default for new phones. v0.107h, v0.108h."
-            },
-            {
-              "title": "Player size: up to C, then back to B",
-              "detail": "Size C made men 1.56x bigger (v0.103h). It was too big, so they went back to B: about 22 px on a phone long-range chance (C was 28). Headers, volleys and the drill drew men 1.2 to 1.45x too big; now 22 px too. v0.107h, v0.108h."
-            },
-            {
-              "title": "Fairer even matches (sim piece 4)",
-              "detail": "One shared builder for match inputs. Even-match possession 44.5% → 49.8%. v0.106h."
-            },
-            {
-              "title": "Shots miss a third less; a midweek game pays a quarter-week extra",
-              "detail": "Mikey's playtest rounds, 22 Oct. Also: a player taken off in extra time stays off. v0.120."
+              "title": "Cut scenes: better, not ready",
+              "detail": "Press conference and walk-out with cloth clothes, own walks and living faces. They stay out of the career until Harry says yes.",
+              "pill": {
+                "text": "test page only",
+                "tone": "amber"
+              }
             }
           ]
         },
         {
-          "kind": "added",
-          "title": "Training, 3D and screens (Harry)",
+          "kind": "fixed",
+          "title": "Fixed",
           "items": [
             {
-              "title": "Training: 150 levels editable, Pick the Pass, drag-and-drop editor",
-              "detail": "Vision is rebuilt from 263 real passes. Levels play with the skills you would have by then. v0.71, v0.76, v0.77."
+              "title": "Feet land where a real walker's do",
+              "detail": "Hips were built too narrow (9.7 to 11.4 cm against the animations' 19.7 cm).",
+              "bars": [
+                {
+                  "label": "Walking gap",
+                  "was": 0.5,
+                  "now": 9.3,
+                  "target": 8,
+                  "state": "good",
+                  "unit": "cm"
+                }
+              ]
             },
             {
-              "title": "Fairer 3D keepers",
-              "detail": "Free Roam, Headers & Volleys and Wembley keepers save about 1 in 3 from a decent player (was 52 to 70%). v0.81."
+              "title": "Sitting, clean faces, the ball, own walk",
+              "detail": "Thighs level and feet flat; old painted faces removed on all 12 heads; the ball 0.38 m ahead at his toe; each person his own walk and blinks; ten real free-library animations fitted."
             },
             {
-              "title": "3D looks: natural skin, blinking faces, 3D headshots on award screens",
-              "detail": "Yellow skin in the signing scene 94% → 0%. One even skin colour for every 3D man (face vs arm gap 13-28 → 0-2.4). v0.69, v0.79, v0.94, v0.108h."
+              "title": "The mentor's neck is clean",
+              "detail": "His face is still pale.",
+              "pill": {
+                "text": "half done",
+                "tone": "amber"
+              }
             },
             {
-              "title": "Lower League Trophy, and cup screens that fit one page",
-              "detail": "120 clubs, 7 midweek rounds, 119 matches. The Trophy tab was a 56-row list; now one screen. v0.73, v0.80."
-            },
-            {
-              "title": "Navigation round 1 (New UI)",
-              "detail": "Back returns to where you came from. 8 back buttons → 1. Career overview 4 taps → 2. v0.104h."
-            },
-            {
-              "title": "Fixtures: 170 clashes → 0 over 45 seasons",
-              "detail": "v0.78. The ten-round FA Cup and the Trophy now share the calendar with 0 clashes (v0.97h)."
-            },
-            {
-              "title": "Eight screens drew the pitch too small",
-              "detail": "Now the real match's size: 366 px on a phone, 384 on a computer. v0.62h, v0.84."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "Admin and team tools (Harry)",
-          "items": [
-            {
-              "title": "Admin home, split by game, four looks on one layout",
-              "detail": "57 admin and test pages in one list, 17 old pages deleted, a lock on every test page. 45 of 45 admin pages on the Broadcast frame. v0.57, v0.65, v0.68, v0.83."
-            },
-            {
-              "title": "Team room: board, chat, ideas, to-do, and admin lands on the Team board",
-              "detail": "Replies, @ and # tags, Shift+X pointing, read receipts. Jobs arrive by pushing team/jobs.json; phones buzz. v0.60h, v0.74, v0.82, v0.87, v0.90."
-            },
-            {
-              "title": "Inbox bell: unread patch notes, and a buzz for each new one",
-              "detail": "Patch notes now go live on their own, before the feature code. v0.102h."
-            },
-            {
-              "title": "Marketing tab and Marketing Studio, with uploads",
-              "detail": "Board, Client, Studio, Uploads. Up to 500 MB a file, 30 files and 5 GB per admin per day. v0.104h, v0.107h."
-            },
-            {
-              "title": "Lag test, live share and motion references",
-              "detail": "Lag test: 10 steps, about 5 minutes. Live share: a 6-letter code Claude can watch. 27 motion reference clips at /admin/motion-refs. v0.89, v0.91, v0.92."
-            },
-            {
-              "title": "The Brain: CLAUDE.md 441 KB → 43 KB",
-              "detail": "Working rules are now short notes in brain/ with one index. Blind test: 13 of 15 hits, 0 wrong. v0.98h."
-            },
-            {
-              "title": "Only main makes a Vercel deploy",
-              "detail": "Side branches made 92 of 104 builds on 22 Oct. PR #772, v0.108h."
-            }
-          ]
-        },
-        {
-          "kind": "added",
-          "title": "Real data and Real Goals (Leo, Harry)",
-          "items": [
-            {
-              "title": "Free-licence data only",
-              "detail": "The licensed data was deleted: its licence does not allow a paid game. Real moments, Real shots and Real Goals were rebuilt on free data (Wyscout, SoccerTrack v2, SkillCorner, IDSSE). v0.64, v0.67."
-            },
-            {
-              "title": "Real Goals test page: 50 → 4,625 real goals",
-              "detail": "A level map with stars, the real move replayed with real names and kits, and every 2017/18 league goal of the top five leagues. Test page only; the career is unchanged. v0.58, v0.113, v0.115."
-            },
-            {
-              "title": "Visual Effects Lab (test page)",
-              "detail": "/star-vfx-lab-dev: 13 match moments, 123 editable effect cards. v0.58."
+              "title": "Kick off is a little faster",
+              "detail": "0.28 → 0.23 s on the build machine. Stats, house and garden: no real change measured there.",
+              "bars": [
+                {
+                  "label": "Kick off",
+                  "was": 0.28,
+                  "now": 0.23,
+                  "state": "good",
+                  "unit": "s"
+                }
+              ]
             }
           ]
         },
         {
           "kind": "known",
-          "title": "Still open (from this week's notes, not rechecked today)",
+          "title": "Known issues",
           "items": [
             {
-              "title": "Five-a-side: a pass never becomes a team-mate's shot",
-              "detail": "0 of 1,000; chance pictures 1 and 6 never score. Needs a gameplay call. v0.72."
+              "title": "Cut scenes are not ready to ship",
+              "detail": "They stay on the test page until Harry says yes."
             },
             {
-              "title": "3D: high-skill players blaze over",
-              "detail": "About 78% of firm shots from 12 to 20 m go over. v0.81."
+              "title": "The mentor's face is pale and flat"
             },
             {
-              "title": "3D headshots: blond hair also colours eyebrows and beard on dark skin",
-              "detail": "Team sheets are still drawn. v0.79."
+              "title": "Clothes leftovers",
+              "detail": "Waist notch on untucked shirts, ragged tracksuit hem when jogging, a small hood."
             },
             {
-              "title": "Training levels page freezes on the second tab switch",
-              "detail": "v0.77."
+              "title": "Cars look damaged up close",
+              "detail": "Kept at a distance."
             },
             {
-              "title": "A Championship club in Europe that wins everything needs 38 midweeks; a season has 34",
-              "detail": "v0.78. A club in the European knockout play-off also has two Tuesdays next to its FA Cup Fifth Round and Quarter-Final."
+              "title": "In bed he is a head over a flat block",
+              "detail": "No lying-down animation yet."
             },
             {
-              "title": "team_room_v2.sql was listed as waiting to be run",
-              "detail": "v0.74, v0.82. Check before relying on round-two features."
+              "title": "Not seen on screen yet",
+              "detail": "Fans in real clothes, the casino's living faces, the ten new animations moving on a phone."
+            },
+            {
+              "title": "Speed on a phone is unknown",
+              "detail": "The build machine cannot judge 3D speed."
             }
           ]
         },
         {
           "kind": "next",
-          "title": "Not live yet",
+          "title": "Next",
           "items": [
             {
-              "title": "Leo's tonight build (v0.119) is on branch Leo",
-              "detail": "Goal celebrations from the shop, a faster social feed (1.5 s → 0.29 s on a cheap phone), Goal of the Month, bicycle kicks, Real Goals paths and 61 famous goals, a season video, a goals gallery, an awards night, 17 bug fixes. It touches the match file and the keeper. It goes live only when Leo says push. Plan: v0.118."
+              "title": "The mentor's face, then film all seven cut scenes again"
+            },
+            {
+              "title": "Build the game modes that unlock the most waiting stories"
+            },
+            {
+              "title": "Speed on a real phone"
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.138 · 13 Nov 2026 · New home, Team room, bots, admin",
+              "detail": "Still open: Cloudflare not joined up on the live site."
             }
           ]
         }
       ],
-      "author": "Leo",
       "updates": []
     },
   {

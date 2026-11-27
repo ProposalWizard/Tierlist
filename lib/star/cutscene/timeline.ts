@@ -7,12 +7,13 @@
  * So seek(t) gives the same picture whichever frame came before, and the
  * frame-by-frame filming tool can step through it.
  */
+import { ownMotion, type OwnMotion } from "../people/life";
 import type {
   CameraTrack, CaptionTrack, CareerContext, CastMember, ClipTrack, Cond, CutsceneScript, LetterboxTrack,
   MoveTrack, PlaceTrack, SoundTrack, StoryEvent, Target, Track, TransitionTrack, TurnTrack, Vec3,
 } from "./types";
 import { LOCATIONS, resolvePoint, type LocationPreset } from "./presets/locations";
-import { GAIT_SPEED, defaultIdle, resolveClip } from "./presets/clips";
+import { GAIT_SPEED, defaultIdle, resolveClip, type ClipChoice } from "./presets/clips";
 import { angleDiff, clamp, lerp, lerpAngle, makePath, smooth, windowWeight, yawTo, v3 } from "./math";
 
 // ── Conditions and text ───────────────────────────────────────────────────
@@ -193,6 +194,9 @@ function clipTime(tr: ClipTrack, t: number, dur: number, from?: number, speedK =
   return tt;
 }
 
+/** EACH PERSON'S OWN MOTION now lives in people/life.ts (every Person3D reads it, not only the cut scenes). */
+export { ownMotion, type OwnMotion };
+
 /**
  * Body clips for an actor at t: [real clip, time, weight][]. `has` / `dur`
  * describe the body (which clips it has, how long each is).
@@ -207,13 +211,17 @@ export function clipsAt(c: Compiled, id: string, t: number, has: (n: string) => 
     out.set(name, cur ? [cur[0], cur[1] + w] : [time, w]);
     upright += up * w;
   };
+  const own = ownMotion(id);
+  // his own standing idle (people/life.ts): a plain "idle" becomes his, when the body has it
+  const mine = (ch: ClipChoice | null): ClipChoice | null => (ch && ch.clip === "idle" && own.idle !== "idle" && has(own.idle) ? { ...ch, clip: own.idle } : ch);
   const sample = (tr: ClipTrack | null, w: number) => {
     if (!tr) {
-      const ch = resolveClip(defaultIdle(role, body), has);
-      if (ch) add(ch.clip, ((t * (ch.speed ?? 1)) % Math.max(0.1, dur(ch.clip)) + dur(ch.clip)) % Math.max(0.1, dur(ch.clip)), w, ch.upright ?? 0);
+      const ch = mine(resolveClip(defaultIdle(role, body), has));
+      // (each man's idle starts at his own moment: a line of 22 never sways as one)
+      if (ch) add(ch.clip, ((t * (ch.speed ?? 1) * own.rate + own.phase * dur(ch.clip)) % Math.max(0.1, dur(ch.clip)) + dur(ch.clip)) % Math.max(0.1, dur(ch.clip)), w, ch.upright ?? 0);
       return;
     }
-    const ch = resolveClip(tr.clip, has);
+    const ch = mine(resolveClip(tr.clip, has));
     if (!ch) return;
     add(ch.clip, clipTime(tr, t, dur(ch.clip), ch.from, ch.speed ?? 1, ch.hold), w, ch.upright ?? 0);
   };
@@ -249,10 +257,14 @@ export function clipsAt(c: Compiled, id: string, t: number, has: (n: string) => 
   const r = rootAt(c, id, t);
   let entries = Array.from(out.entries()).map(([n, [time, w]]) => [n, time, w] as [string, number, number]);
   if (r.gait && r.gait.weight > 0) {
-    const ch = resolveClip(r.gait.clip, has);
+    let ch = resolveClip(r.gait.clip, has);
+    let rate = 1;
+    // each man has his own walk (people/life.ts: four of them), its stride clock scaled so his feet still keep up
+    if (ch && ch.clip === "walk" && own.walk !== "walk" && has(own.walk)) { ch = { ...ch, clip: own.walk }; rate = (GAIT_SPEED.walk ?? 1.35) / (GAIT_SPEED[own.walk] ?? 1.35); }
     if (ch) {
       const d = Math.max(0.1, dur(ch.clip));
-      const time = ((r.gait.time * (ch.speed ?? 1)) % d + d) % d;
+      // his own place in the stride: no two men's feet land together (the walk-out marched in step)
+      const time = ((r.gait.time * (ch.speed ?? 1) * rate + own.phase * d) % d + d) % d;
       const gw = r.gait.weight;
       entries = entries.map(([n, tt, w]) => [n, tt, w * (1 - gw)] as [string, number, number]);
       upright = upright * (1 - gw) + (ch.upright ?? 0) * gw;

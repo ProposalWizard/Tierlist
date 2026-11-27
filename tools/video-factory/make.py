@@ -5,6 +5,7 @@ mic-in-a-room finish -> captions from the SCRIPT words timed by the transcriber
 -> render frames in a headless browser -> music + voice mix -> MP4.
 Needs: ffmpeg, node + playwright chromium, faster_whisper, and a Chatterbox venv
 (env CHATTERBOX_PY, default the session's cbx venv)."""
+import hashlib
 import argparse, difflib, json, os, re, shutil, subprocess, sys
 import numpy as np, soundfile as sf
 
@@ -72,7 +73,10 @@ def eleven_voice(cfg, lines, work, best):
     for i, ln in enumerate(lines):
         text = ln.get("sayEleven") or ln.get("say") or ln["text"]
         for take, seed in enumerate(cfg.get("seeds", [7, 19])):
-            mp3 = os.path.join(work, f"l{i:02d}-e{seed}.mp3"); wav = os.path.join(work, f"l{i:02d}-e{seed}.wav")
+            # The file name carries the words' fingerprint: a rewritten line never reuses an old recording
+            # (Mikey, 20 Nov 2026: the voice said the wrong lines after a script rewrite).
+            h = hashlib.sha1(f"{vid}|{model}|{text}".encode()).hexdigest()[:10]
+            mp3 = os.path.join(work, f"l{i:02d}-{h}-e{seed}.mp3"); wav = os.path.join(work, f"l{i:02d}-{h}-e{seed}.wav")
             if not os.path.exists(mp3) and take > 0 and cfg.get("noNewTakes"): continue  # reuse what was already paid for
             if not os.path.exists(mp3):
                 body = json.dumps({"text": text, "model_id": model, "voice_settings": vs, "seed": seed}).encode()
@@ -112,6 +116,16 @@ def main():
             p = os.path.join(work, f"l{i:02d}-s{seed}.wav"); heard, words = transcribe(p); s = sim(lines[i].get("say", lines[i]["text"]), heard)
             if s > best.get(i, (-1,))[0]: best[i] = (s, p, words)
         log(f"voice round {round_ + 1}: " + ", ".join(f"{i}:{best[i][0]:.2f}" for i in sorted(best)))
+    # 1b. moving pictures (24 Nov 2026): story["motions"] = {key: "clip.mp4"} (a clip made from one of the pictures);
+    #     each is cut into frames once, and a picture step with "motion": key plays them (engine/athletic.js S.picture)
+    for key, src in list((story.get("motions") or {}).items()):
+        if isinstance(src, dict): continue
+        d = os.path.join(work, "motion", key); fr = os.path.join(d, "m00001.jpg")
+        if not os.path.exists(fr):
+            os.makedirs(d, exist_ok=True)
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", src.replace("file://", ""), "-vf", f"fps={FPS},scale=1080:-2", "-q:v", "3", os.path.join(d, "m%05d.jpg")], check=True)
+        story["motions"][key] = {"dir": d, "n": len([f for f in os.listdir(d) if f.endswith(".jpg")])}
+        log(f"motion {key}: {story['motions'][key]['n']} frames")
     # 2. finish, place, caption
     at, scenes, chunks, plan = 0.35, [], [], []
     for i, ln in enumerate(lines):
@@ -133,7 +147,7 @@ def main():
                 t1 = at + (nxt["t0"] if nxt else d - 0.1)
                 chunks.append({"t0": round(cur[0]["t0"] - 0.03, 3), "t1": round(t1, 3), "words": cur}); cur = []
         scenes.append({"t0": scene_t0, "scene": {**ln["scene"], "lead": lead}, "words": [{"w": w["w"], "t0": round(at + w["t0"], 3)} for w in timed], "vo1": round(at + d, 3)})
-        at += d + 0.28
+        at += d + 0.28 + float(ln.get("hold", 0))   # hold: extra seconds on this line's picture after the voice
     vo_end = at - 0.28
     for i, s in enumerate(scenes): s["t1"] = scenes[i + 1]["t0"] if i + 1 < len(scenes) else round(vo_end + 0.4, 3)
     end_card = round(vo_end + 0.4, 3); total = end_card + 2.4
@@ -146,10 +160,11 @@ def main():
     env = np.round(np.convolve(np.clip(env / ref, 0, 1), [0.25, 0.5, 0.25], "same"), 3)
     tl = {"total": round(total, 3), "end": round(vo_end, 3), "endCard": end_card, "scenes": scenes, "chunks": chunks, "env": env.tolist()}
     with open(os.path.join(work, "timeline.js"), "w") as f:
-        f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels", "layoutScale")}) + ";\n")
+        f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels", "layoutScale", "theme", "motions")}) + ";\n")
         f.write("window.TL = " + json.dumps(tl) + ";\n")
     eng = os.path.join(HERE, "engine")
-    html = open(os.path.join(eng, "chess.html" if story.get("layout") == "chess" else "edit.html")).read().replace('src="avatars.js"', f'src="{eng}/avatars.js"').replace('src="scenes.js"', f'src="{eng}/scenes.js"').replace('src="chess.js"', f'src="{eng}/chess.js"').replace("url(../assets/", f"url({HERE}/assets/")
+    page = {"chess": "chess.html", "explainer": "athletic.html"}.get(story.get("layout"), "edit.html")
+    html = open(os.path.join(eng, page)).read().replace('src="avatars.js"', f'src="{eng}/avatars.js"').replace('src="scenes.js"', f'src="{eng}/scenes.js"').replace('src="chess.js"', f'src="{eng}/chess.js"').replace('src="athletic.js"', f'src="{eng}/athletic.js"').replace("url(../assets/", f"url({HERE}/assets/")
     open(os.path.join(work, "edit.html"), "w").write(html)
     # 2b. real footage (optional, private drafts only): a scene with "clip": [[file, start, seconds, xcentre?], ...]
     #     gets its frames cut to the pitch window; files are read from story["clipsDir"]
@@ -173,7 +188,7 @@ def main():
                 fx[i0:i0 + len(aud)] += aud[:max(0, len(fx) - i0)]; clip_t[i] = got_before + len(aud) / SR
             s["clipDir"] = outd; s["clipFrames"] = got
         with open(os.path.join(work, "timeline.js"), "w") as f:
-            f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels", "layoutScale")}) + ";\n")
+            f.write("window.STORY = " + json.dumps({k: story.get(k, {}) for k in ("clubs", "people", "players", "shapes", "images", "evalPct", "possLabels", "layoutScale", "theme", "motions")}) + ";\n")
             f.write("window.TL = " + json.dumps(tl) + ";\n")
     # 3. render
     frames = os.path.join(work, "eframes"); shutil.rmtree(frames, ignore_errors=True)

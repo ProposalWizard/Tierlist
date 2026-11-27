@@ -17,6 +17,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { limitsPost, sizesByTopFolder, ukClock, type Manifest } from "@/lib/backup/plan";
 import { postHealth, r2Config, r2ListAll, readManifest, supabaseSizes } from "@/lib/backup/server";
+import { vercelCpuLast30Days } from "@/lib/backup/vercelUsage";
 import type { TeamPerson } from "./config";
 import type { BotRow } from "./channels";
 import type { TeamMessage } from "./logic";
@@ -145,7 +146,10 @@ export async function readLimits(sb: SupabaseClient, now: Date) {
     try { r2 = sizesByTopFolder(await r2ListAll(config)); } catch { notes.push("could not list the R2 bucket"); }
     try { backup = await readManifest(config, day); } catch { notes.push("could not read last night's backup manifest"); }
   }
-  return { day, post: limitsPost({ day, dbBytes: sizes.dbBytes, storageBytes: sizes.storageBytes, r2, backup, notes }) };
+  const cpu = await vercelCpuLast30Days(now);
+  const vercelCpuMs = "cpuMs" in cpu ? cpu.cpuMs : /^(Vercel usage is not connected|Vercel.s free plan)/.test(cpu.note) ? undefined : null;
+  if ("note" in cpu) notes.push(cpu.note);
+  return { day, post: limitsPost({ day, dbBytes: sizes.dbBytes, storageBytes: sizes.storageBytes, r2, backup, notes, vercelCpuMs }) };
 }
 
 export async function runHealthBot(sb: SupabaseClient, now: Date, opts: { by?: TeamPerson | null; manual?: boolean } = {}): Promise<BotRun> {

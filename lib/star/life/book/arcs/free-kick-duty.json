@@ -1,0 +1,431 @@
+{
+ "id": "arc-free-kick-duty",
+ "title": "Who takes them",
+ "owner": "capt",
+ "summary": "The captain takes every free kick and hasn't scored one in two seasons. He offers you a contest after training: put six of ten past him from the edge of the box and the free kicks are yours. You play it. A season on, there's a free kick in the last minute.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate: the captain"
+  ],
+  "tone": [
+   "tense",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "capt",
+   "pick": "squad",
+   "where": [
+    "veteran"
+   ],
+   "order": "best"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "your-free-kicks",
+   "title": "Your free kicks",
+   "text": "You won the free kicks off the captain, and you scored the one that mattered."
+  },
+  {
+   "id": "his-free-kicks",
+   "title": "His free kicks",
+   "text": "The captain kept the free kicks. You still think you'd have scored that one."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "fkb-1-contest",
+   "title": "Five each",
+   "n": 1,
+   "event": {
+    "id": "arc-fkb-1-contest",
+    "title": "Five each",
+    "category": "training",
+    "place": "compound:pitch-1",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "capt",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "squad.any(veteran)"
+     ]
+    },
+    "setup": [
+     "{capt.name} has set up a wall of mannequins on the edge of the box. He's taken every free kick for two seasons and scored none."
+    ],
+    "talk": {
+     "start": "f1",
+     "nodes": {
+      "f1": {
+       "who": "capt",
+       "say": [
+        "\"The lads say you should be on them. Fine. Ten balls, me in goal. Six past me and they're yours till Christmas.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Get in goal, then.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "share",
+         "label": "\"How about we share them?\"",
+         "tone": "humble",
+         "end": "shared"
+        },
+        {
+         "id": "no",
+         "label": "\"They're yours, skip.\"",
+         "tone": "calm",
+         "end": "his"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "his"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "{capt.short}'s free kicks",
+        "intro": "Ten balls from the edge of the box. Six that count and the free kicks are yours.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "far",
+           "balls": 2,
+           "name": "Over the wall",
+           "line": "\"From twenty yards, low. The wall jumps, so go under it.\""
+          },
+          {
+           "kind": "corners",
+           "balls": 2,
+           "line": "\"Either corner. Pick one and mean it.\""
+          },
+          {
+           "kind": "keeper",
+           "balls": 3,
+           "line": "\"Me in goal now. I've saved better than you.\""
+          },
+          {
+           "kind": "crossbar",
+           "balls": 1,
+           "line": "\"Bar. Just to show off.\""
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. Twenty if it goes in, ten off if it doesn't.\""
+          }
+         ],
+         "keeperSlot": "capt",
+         "lines": {
+          "keeper:saved": "\"Not past {name}. Not today.\"",
+          "keeper:hit": "\"Lucky.\"",
+          "hit": "\"Fine. That one counts.\"",
+          "over": "\"That's going in row Z, that.\"",
+          "streak3": "\"Right, now I'm worried.\""
+         }
+        },
+        "score": "balls that count (0-10); six wins the free kicks",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "capt",
+         "lines": [
+          "\"One.\"",
+          "\"Two.\"",
+          "\"Three, and don't get cocky.\"",
+          "\"Four.\"",
+          "\"Five. One more.\"",
+          "\"Six. Oh no.\"",
+          "\"Seven.\"",
+          "\"Eight.\"",
+          "\"Nine.\"",
+          "\"Ten. Fine. They're yours.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "p-stop"
+        ],
+        [
+         "activity.score>=6",
+         "p-won"
+        ],
+        [
+         "",
+         "p-lost"
+        ]
+       ]
+      },
+      "p-won": {
+       "who": "capt",
+       "say": [
+        "\"{activity.score} past me.\" He picks up a mannequin and carries it off like it's injured. \"They're yours. Don't miss.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"I'll try not to.\"",
+         "tone": "humble",
+         "end": "won"
+        }
+       ]
+      },
+      "p-lost": {
+       "who": "capt",
+       "say": [
+        "\"{activity.score}. You needed six. Told them.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Fair. They're yours.\"",
+         "tone": "humble",
+         "end": "lost"
+        }
+       ]
+      },
+      "p-stop": {
+       "who": "capt",
+       "say": [
+        "\"Walking off? Then they're mine.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"They're yours.\"",
+         "tone": "calm",
+         "end": "lost"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "won": [
+       {
+        "text": "You hit the bar with your first one on Saturday. The second one goes in.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": 2,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "capt",
+          "tag": "won-the-free-kicks-off-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "you"
+         }
+        }
+       }
+      ],
+      "lost": [
+       {
+        "text": "He keeps them. He scores one the next month and looks at you.",
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "him"
+         }
+        }
+       }
+      ],
+      "shared": [
+       {
+        "text": "\"Left side's yours, right side's mine.\" It works better than either of you expected.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "you"
+         }
+        }
+       }
+      ],
+      "his": [
+       {
+        "text": "He nods and keeps them. The lads groan.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "him"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The captain wants to settle something"
+  },
+  {
+   "id": "fkb-2-last",
+   "title": "The last minute",
+   "after": {
+    "beat": "fkb-1-contest",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-fkb-2-last",
+    "title": "The last minute",
+    "category": "match",
+    "place": "stadium:pitch",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "capt",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. Ninety-third minute, a free kick on the edge of the box, one-one."
+    ],
+    "choices": [
+     {
+      "id": "take",
+      "label": "Pick the ball up.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='you'",
+        "text": "It's yours, so you take it, and it goes in off the underside of the bar. {capt.short} gets to you first.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "your-free-kicks"
+        }
+       },
+       {
+        "text": "{capt.short} takes the ball off you. It's his. He hits the wall.",
+        "npc": [
+         {
+          "slot": "capt",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "his-free-kicks"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Let him take it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "He hits the wall, and the ball rolls back to their keeper.",
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "his-free-kicks"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "A season on, a free kick at the end"
+  }
+ ]
+}

@@ -10,7 +10,7 @@ import type { CareerState } from "@/lib/star/types";
 import { clauseSummary } from "@/lib/star/contracts";
 import { divisionOf, leagueNameFor } from "@/lib/star/calendar";
 import { kitsOf } from "@/lib/star/kits";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import { PressButton } from "./ui";
 import { SIGNATURE_D } from "./TrialReward";
@@ -29,9 +29,9 @@ export default function ContractPaper({ career, onRenew }: { career: CareerState
     ["Position", career.player.position],
     ["Shirt", career.squadNumber ? `No. ${career.squadNumber}` : "—"],
     ["Seasons left", String(c.seasonsRemaining)],
-    ["Wage", `★${formatMoney(c.wage)} / week`],
-    ["Goal bonus", `★${formatMoney(c.goalBonus)}`],
-    ["Assist bonus", `★${formatMoney(c.assistBonus)}`],
+    ["Wage", `${MONEY_SIGN}${formatMoney(c.wage)} / week`],
+    ["Goal bonus", `${MONEY_SIGN}${formatMoney(c.goalBonus)}`],
+    ["Assist bonus", `${MONEY_SIGN}${formatMoney(c.assistBonus)}`],
   ];
   return (
     <div data-contract-paper>

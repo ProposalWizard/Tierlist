@@ -173,11 +173,13 @@ export async function installVClock(context, { fps = 60, audioMaxS = 240 } = {})
 const state = new WeakMap();
 
 /** The clock is ours from here. `capture`: a folder for the frames (none = not filming yet). */
-export async function vStart(page, { capture = null } = {}) {
+/** `scale`: capture at this many pixels per CSS pixel (2 = a phone's real 780x1688 at 390x844); default 1. */
+export async function vStart(page, { capture = null, scale = 0 } = {}) {
   // (capture here is a plain folder; the sound clock starts with the first vCapture)
   await page.evaluate(() => window.__vclock.start());
   const cdp = await page.context().newCDPSession(page);
-  state.set(page, { cdp, dir: capture, n: 0 });
+  const vp = page.viewportSize();
+  state.set(page, { cdp, dir: capture, n: 0, clip: scale && vp ? { x: 0, y: 0, width: vp.width, height: vp.height, scale } : null });
   if (capture) fs.mkdirSync(capture, { recursive: true });
 }
 
@@ -210,7 +212,7 @@ async function grab(page) {
   if (!s.dir) return;
   // what the game says is on screen at this frame (ground truth for smoothness checks)
   if (s.probe) s.log.push(await page.evaluate(s.probe).catch(() => null));
-  const r = await s.cdp.send("Page.captureScreenshot", { format: "jpeg", quality: 88, fromSurface: true });
+  const r = await s.cdp.send("Page.captureScreenshot", { format: "jpeg", quality: 88, fromSurface: true, ...(s.clip ? { clip: s.clip } : {}) });
   fs.writeFileSync(path.join(s.dir, `f${String(s.n++).padStart(5, "0")}.jpg`), Buffer.from(r.data, "base64"));
 }
 

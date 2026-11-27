@@ -12,7 +12,7 @@ import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_ALL_LEVELS as BOOTS_FUL
 import { divisionOf } from "@/lib/star/calendar";
 import { SHOP_TIERS } from "@/lib/star/economy";
 import { ruleBookFor } from "@/lib/star/ruleBook";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
 import KibCanIcon from "./KibCanIcon";
 import BootPicture from "./BootPicture";
@@ -25,7 +25,7 @@ import {
   useClubTheme, rgba, tint, FloatText,
 } from "./ui";
 
-/** "−★12k" floating up off the HUD's money when you spend. */
+/** "−£12k" floating up off the HUD's money when you spend. */
 function SpentFloat({ n, text }: { n: number; text: string }) {
   return <div className="relative h-0 w-0"><FloatText trigger={n} text={text} color="#fca5a5" className="right-3 top-1" size={15} /></div>;
 }
@@ -60,7 +60,7 @@ interface Props {
  * Reskinned 28 Sep 2026 (Harry: "that can animation is elite, we need stuff
  * like that all over"). Buying anything plays the can's kind of reward: the
  * item flies into your inventory (its Owned count, your current boots, the
- * item's own row), "−★X" floats up off your money, and the money counts
+ * item's own row), "−£X" floats up off your money, and the money counts
  * down to its new value. Every price, level, rule and handler is unchanged.
  */
 export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, hud, onHome, focus }: Props) {
@@ -88,11 +88,11 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
   const ownedRefs = useRef<Record<string, HTMLElement | null>>({});
   const bootRef = useRef<HTMLDivElement>(null);
   const canArtRefs = useRef<Record<string, HTMLElement | null>>({});
-  /** Spend: "−★X" floats off the money (which counts down), and a copy of
+  /** Spend: "−£X" floats off the money (which counts down), and a copy of
    *  what you bought flies into where it now lives. `holdCount` keeps a
    *  can's Owned count from ticking until its can lands. */
   const reward = (price: number, from: Element | null, to: Element | null, node: React.ReactNode, color: string, key: string, holdCount = false) => {
-    setSpent((s) => ({ n: s.n + 1, text: `−★${formatMoney(price)}` }));
+    setSpent((s) => ({ n: s.n + 1, text: `−${MONEY_SIGN}${formatMoney(price)}` }));
     if (holdCount) setInFlight((m) => ({ ...m, [key]: (m[key] ?? 0) + 1 }));
     // With the top HUD up there is no wallet pill: the HUD's money cell is the target.
     fly(from, to ?? walletRef.current ?? (typeof document !== "undefined" ? document.querySelector("[data-hud] [data-money-chip]") : null), node, () => {
@@ -258,7 +258,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="flex items-center justify-end gap-1 text-[14px] font-black text-yellow-300">★ {formatMoney(price)}</div>
+                    <div className="flex items-center justify-end gap-1 text-[14px] font-black text-yellow-300">{MONEY_SIGN}{formatMoney(price)}</div>
                     <PressButton
                       variant="accent"
                       accent={accent}
@@ -369,7 +369,7 @@ const BasketButton = forwardRef<HTMLButtonElement, { show: boolean; count: numbe
         </span>
         <span className="text-left leading-none">
           <span className="block text-[12px] font-black uppercase tracking-wide">{paying ? "Paying…" : "Basket"}</span>
-          {!paying && <span className="block text-[11px] font-black text-yellow-100">★{formatMoney(total)}</span>}
+          {!paying && <span className="block text-[11px] font-black text-yellow-100">{MONEY_SIGN}{formatMoney(total)}</span>}
         </span>
       </button>
     );
@@ -398,7 +398,7 @@ function BasketSheet({ career, entries, onClose, onPay, onAddPair }: {
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[13px] font-black text-white">{e.kind === "boot" ? e.boot.name : e.item.name} L{(e.kind === "boot" ? e.boot.level : e.item.level) ?? 1}</div>
                 <div className="text-[11px] font-black text-yellow-300">
-                  ★{formatMoney(e.kind === "boot" ? e.boot.price * e.qty : e.item.price)}
+                  {MONEY_SIGN}{formatMoney(e.kind === "boot" ? e.boot.price * e.qty : e.item.price)}
                   {e.kind === "boot" && <span className="ml-1 text-[10px] font-bold text-white/65">{e.qty} pair{e.qty === 1 ? "" : "s"} · {e.boot.matches * e.qty} matches</span>}
                 </div>
               </div>
@@ -415,11 +415,11 @@ function BasketSheet({ career, entries, onClose, onPay, onAddPair }: {
           <div className="text-[10.5px] font-bold text-white/65">You wear one pair of boots. More pairs of the same boot add their matches together.</div>
           <div className="flex items-center justify-between px-1 pt-1">
             <span className="text-[12px] font-black uppercase tracking-wide text-white/80">Total</span>
-            <span className="text-[18px] font-black text-yellow-300">★{formatMoney(total)}</span>
+            <span className="text-[18px] font-black text-yellow-300">{MONEY_SIGN}{formatMoney(total)}</span>
           </div>
           <PressButton variant="primary" size="none" disabled={short > 0} pulse={short <= 0} onClick={onPay}
             className="w-full rounded-2xl py-3 text-[14px] font-black">
-            {short > 0 ? `Not enough money — ★${formatMoney(short)} short` : `Pay for all — ★${formatMoney(total)}`}
+            {short > 0 ? `Not enough money — ${MONEY_SIGN}${formatMoney(short)} short` : `Pay for all — ${MONEY_SIGN}${formatMoney(total)}`}
           </PressButton>
         </div>
       )}

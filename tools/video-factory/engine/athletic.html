@@ -1,0 +1,102 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Anton;src:url(../assets/Anton.ttf)}@font-face{font-family:Oswald;src:url(../assets/Oswald-Bold.woff2);font-weight:700}
+body{margin:0;background:#000}</style></head><body><canvas id="c" width="1080" height="1920"></canvas>
+<script src="athletic.js"></script>
+<script src="timeline.js"></script>
+<script>
+// The explainer look (athletic.js): full-screen drawn scenes, a circle wipe into each new idea, the hook
+// line big and white, every other line as 2-3 word captions in yellow on a dark box. No narrator on screen.
+const FPS = 30, X = window.EXPLAINER;
+const cv = document.getElementById("c"), g = cv.getContext("2d");
+const off = document.createElement("canvas"); off.width = 1080; off.height = 1920; const og = off.getContext("2d");
+
+// STEPS (17 Nov 2026, Mikey: "something new every second or two, what you see explains what you hear"):
+// a line's scene may carry steps: [{w: word index, type, ...}] - each step starts on its word and draws
+// full screen; the step before it pops/slides away under it in 0.22 s.
+function stepTimes(s) {
+  const st = s.scene.steps; const out = [];
+  st.forEach((x, i) => { const wd = s.words[Math.min(x.w || 0, s.words.length - 1)]; out.push(i === 0 ? s.t0 : Math.max(s.t0, (wd ? wd.t0 : s.t0) - 0.06)); });
+  return out;
+}
+function spec(s, i) { const base = Object.assign({}, s.scene); delete base.steps; delete base.hook; return Object.assign(base, s.scene.steps[i]); }
+function drawOne(c, sp, lt, dur) { X.setBG(sp.bgImage || sp.bgMotion ? { image: sp.bgImage, motion: sp.bgMotion, blur: sp.bgBlur, dim: sp.bgDim } : null); try { (X.S[sp.type] || X.S.text)(c, lt, dur, sp); } catch (e) { window.errorsSeen.push(sp.type + ": " + e.message); } X.setBG(null); }
+const off2 = document.createElement("canvas"); off2.width = 1080; off2.height = 1920; const o2 = off2.getContext("2d");
+function drawScene(c, s, t) {
+  const lt = t - s.t0, dur = s.t1 - s.t0;
+  if (!s.scene.steps) return drawOne(c, s.scene, lt, dur);
+  const T0 = stepTimes(s); let k = 0; for (let i = 0; i < T0.length; i++) if (t >= T0[i]) k = i;
+  const end = k + 1 < T0.length ? T0[k + 1] : s.t1; const st = spec(s, k); const sl = t - T0[k];
+  if (k > 0 && sl < 0.22 && st.tr !== "cut") {   // transition: the new step pops in over the old one
+    o2.setTransform(1, 0, 0, 1, 0, 0); drawOne(o2, spec(s, k - 1), T0[k] - T0[k - 1], T0[k] - T0[k - 1]);
+    c.drawImage(off2, 0, 0); const u = X.ez(sl / 0.22);
+    o2.setTransform(1, 0, 0, 1, 0, 0); drawOne(o2, st, sl, end - T0[k]);
+    c.save();
+    if (st.tr === "slide") { c.translate(1080 * (1 - u), 0); }
+    else { const z = 1.12 - 0.12 * u; c.translate(540, 960); c.scale(z, z); c.translate(-540, -960); c.globalAlpha = u; }
+    c.drawImage(off2, 0, 0); c.restore(); return;
+  }
+  drawOne(c, st, sl, end - T0[k]);
+}
+function mark(c) { c.save(); c.globalAlpha = 0.9; c.font = "64px Anton"; c.textAlign = "right"; c.lineWidth = 5; c.strokeStyle = "#1b1416"; c.strokeText("KIB", 1010, 150); c.fillStyle = "#fff"; c.fillText("KIB", 1010, 150); c.restore(); }
+
+function captions(t, s) {
+  const ch = TL.chunks.find((k) => t >= k.t0 && t < k.t1); if (!ch) return;
+  const words = ch.words.map((w) => w.w).join(" ");
+  if (s && s.scene.hook) {   // the hook: big, white, two lines, centred
+    g.save(); g.font = "150px Anton"; g.textAlign = "center"; const parts = words.split(" "); const lines = parts.length > 2 ? [parts.slice(0, Math.ceil(parts.length / 2)).join(" "), parts.slice(Math.ceil(parts.length / 2)).join(" ")] : [words];
+    const k = X.pop(X.cl((t - ch.t0) * 7)); g.translate(540, 400); g.scale(k, k);
+    lines.forEach((l, i) => { const y = (i - (lines.length - 1) / 2) * 160 + 50; let sz = 150; const w = g.measureText(l).width; if (w > 960) { sz = 150 * 960 / w; g.font = `${sz}px Anton`; }
+      g.fillStyle = "rgba(0,0,0,.45)"; g.fillText(l, 7, y + 9); g.lineJoin = "round"; g.lineWidth = 12; g.strokeStyle = "#1b1416"; g.strokeText(l, 0, y); g.fillStyle = "#fff"; g.fillText(l, 0, y); g.font = "150px Anton"; });
+    g.restore(); return;
+  }
+  const cs = (STORY.theme || {}).captions;
+  if (cs === "karaoke") {  // word-by-word: the spoken word lights up, no box
+    g.save(); g.font = "92px Anton"; g.textAlign = "left"; const ws = ch.words; const sp = 24; const wd = ws.map((w) => g.measureText(w.w).width); let tot = wd.reduce((a, b) => a + b, 0) + sp * (ws.length - 1); const sc2 = Math.min(1, 940 / tot);
+    g.translate(540, 1660); g.scale(sc2, sc2); let x = -tot / 2;
+    ws.forEach((w, i) => { const on = t >= w.t0 && t < (ws[i + 1]?.t0 ?? ch.t1); g.lineJoin = "round"; g.lineWidth = 14; g.strokeStyle = "#111"; g.strokeText(w.w, x, 0); g.fillStyle = on ? (STORY.theme.hi || "#39ff88") : "#fff"; g.fillText(w.w, x, 0); x += wd[i] + sp; });
+    g.restore(); return;
+  }
+  if (cs === "paper") {  // newspaper strip: black on cream
+    g.save(); g.font = "700 74px Oswald"; g.textAlign = "center"; const w = g.measureText(words).width; g.fillStyle = "#f4ecd8"; g.strokeStyle = "#111"; g.lineWidth = 5; X.rr(g, 540 - w / 2 - 26, 1440, w + 52, 104, 4); g.fill(); g.stroke(); g.fillStyle = "#111"; g.fillText(words, 540, 1516); g.restore(); return;
+  }
+  g.save(); g.font = "86px Anton"; g.textAlign = "center"; let sz = 86; const w = g.measureText(words).width; if (w > 920) { sz = 86 * 920 / w; g.font = `${sz}px Anton`; }
+  const ww = g.measureText(words).width; const k = X.ez(X.cl((t - ch.t0) * 9)); g.translate(540, 1500); g.scale(0.9 + 0.1 * k, 0.9 + 0.1 * k); g.globalAlpha = k;
+  g.fillStyle = "rgba(20,14,16,.88)"; X.rr(g, -ww / 2 - 22, -sz * 0.92, ww + 44, sz * 1.18, 10); g.fill();
+  g.fillStyle = X.YEL; g.fillText(words, 0, 0); g.restore();
+}
+
+window.TOTAL = Math.ceil(TL.total * FPS);
+window.errorsSeen = [];
+window.ready = (async () => {
+  await document.fonts.load("40px Anton");
+  for (const [k, src] of Object.entries(STORY.images || {})) { const im = new Image(); im.src = src; await im.decode().catch(() => {}); X.IMG[k] = im; }
+})();
+
+window.draw = async (f) => {
+  const t = f / FPS; g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+  const end = { t0: TL.endCard, t1: TL.total, scene: { type: "cta" } };
+  const all = TL.scenes.concat([end]);
+  let i = all.findIndex((x) => t >= x.t0 && t < x.t1); if (i < 0) i = all.length - 1; const s = all[i];
+  // moving pictures: load this moment's frame of every clip on screen (this scene, and the one the wipe is leaving)
+  const MO = STORY.motions || {}; const want = [];
+  const motionOf = (sc, at) => { if (!sc || !sc.scene) return; const st = sc.scene.steps;
+    const keys = (sp, lt) => { for (const m of [sp.motion, sp.bgMotion]) if (m && MO[m]) want.push([m, lt]); for (const it of sp.items || []) if (it && it.motion && MO[it.motion]) want.push([it.motion, Math.max(0, lt - (it.d || 0))]); };
+    if (!st) { keys(sc.scene, at - sc.t0); return; }
+    const T0 = stepTimes(sc); let k = 0; for (let j = 0; j < T0.length; j++) if (at >= T0[j]) k = j;
+    for (const j of [k, k - 1]) { if (j < 0) continue; keys(st[j], at - T0[j]); } };
+  motionOf(s, t); if (i > 0) motionOf(all[i - 1], s.t0 - 0.001);
+  for (const [key, lt] of want) { const n = MO[key].n, fr = Math.max(1, Math.min(n, Math.floor(lt * FPS) + 1));
+    const src = "file://" + MO[key].dir + "/m" + String(fr).padStart(5, "0") + ".jpg";
+    if (!X.MOT[key] || X.MOT[key].dataset.src !== src) { const im = new Image(); im.dataset.src = src; im.src = src; await im.decode().catch(() => {}); X.MOT[key] = im; } }
+  drawScene(g, s, t);
+  const lt = t - s.t0, W0 = 0.36;
+  if (i > 0 && lt < W0 && !s.scene.cut) {   // the circle wipe: the old idea stays, the new one opens out of the middle
+    const p = all[i - 1]; og.setTransform(1, 0, 0, 1, 0, 0); drawScene(og, p, s.t0 - 0.001);
+    const k = X.ez(lt / W0), r = 1150 * k, cx = s.scene.wipeX ?? 540, cy = s.scene.wipeY ?? 900;
+    g.save(); g.beginPath(); g.rect(0, 0, 1080, 1920); g.moveTo(cx + r, cy); g.arc(cx, cy, r, 0, Math.PI * 2, true); g.closePath(); g.clip(); g.drawImage(off, 0, 0); g.restore();
+    g.save(); g.strokeStyle = "#fff"; g.lineWidth = 14 * (1 - k); g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke(); g.restore();
+  }
+  X.finish(g, t); mark(g); if (s !== end && !s.scene.noCaption) captions(t, s);   // noCaption: the words are already big on screen
+  return cv.toDataURL("image/jpeg", 0.9);
+};
+</script></body></html>

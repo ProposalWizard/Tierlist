@@ -71,6 +71,7 @@ import { aerialFromOld } from "./aerial";
 import { BOOT_LEVELS, BOOTS_CATALOGUE_DEFAULT, KIB_CANS_DEFAULT, LIFESTYLE_LEVELS, LIFESTYLE_ITEMS_DEFAULT } from "./shopDefaults";
 import { computeStarRating } from "./rating";
 import type { CareerState } from "./types";
+import { MONEY_SIGN } from "./money";
 
 // ═══════════════════════════════════════════════════════════════════════
 //  THE LIMITS — each one with the rule it comes from
@@ -630,8 +631,8 @@ export function checkSave(prevIn: unknown, nextIn: unknown, ctx: GuardContext): 
     const rise = Math.max(0, total - num(prev.money));
     if (total > ceiling) {
       flag("money", "cheat", num(prev.money), money, ceiling,
-        spend > 0 ? `more money (plus ★${Math.round(spend)} of new ${parts.join(", ")}) than play and the server's casino record give (casino ★${Math.round(casinoCredit)})`
-          : `more money than play and the server's casino record give (casino ★${Math.round(casinoCredit)})`);
+        spend > 0 ? `more money (plus ${MONEY_SIGN}${Math.round(spend)} of new ${parts.join(", ")}) than play and the server's casino record give (casino ${MONEY_SIGN}${Math.round(casinoCredit)})`
+          : `more money than play and the server's casino record give (casino ${MONEY_SIGN}${Math.round(casinoCredit)})`);
       if (ctx.mode === "enforce") {
         if (ceiling < spend && prevFull) {
           for (const f of parts) putBack(f, prevFull[f]);
@@ -644,13 +645,13 @@ export function checkSave(prevIn: unknown, nextIn: unknown, ctx: GuardContext): 
     } else {
       if (total > bound) {
         flag("money", "watch", num(prev.money), money, bound,
-          `above what play could earn by ★${Math.round(total - bound)}: casino winnings the server recorded (★${Math.round(casinoCredit)})`);
+          `above what play could earn by ${MONEY_SIGN}${Math.round(total - bound)}: casino winnings the server recorded (${MONEY_SIGN}${Math.round(casinoCredit)})`);
       }
       casinoCredit = Math.max(0, casinoCredit - rise);
     }
   } else if (Number.isFinite(money) && spend > 0 && spend > bound && !longGap) {
     flag(parts[0] ?? "money", "cheat", null, Math.round(spend), bound,
-      `new ${parts.join(", ")} worth ★${Math.round(spend)} with only ★${Math.round(bound)} to pay for them`);
+      `new ${parts.join(", ")} worth ${MONEY_SIGN}${Math.round(spend)} with only ${MONEY_SIGN}${Math.round(bound)} to pay for them`);
     if (ctx.mode === "enforce" && prevFull) for (const f of parts) putBack(f, prevFull[f]);
     if (ctx.mode === "enforce") putBack("money", Math.min(money, Math.max(0, bound)));
   } else if (Number.isFinite(money) && total > bound) {
@@ -665,7 +666,7 @@ export function checkSave(prevIn: unknown, nextIn: unknown, ctx: GuardContext): 
       flag("money", "watch", num(prev.money), money, bound, `above what play could earn by ×${(10 ** luckUsed).toFixed(1)}: casino luck (allowance left ×${(10 ** luck.left).toFixed(0)})`);
     } else {
       flag("money", "cheat", num(prev.money), money, bound * 10 ** luck.left,
-        spend > 0 ? `more money (plus ★${Math.round(spend)} of new ${parts.join(", ")}) than play and luck could give`
+        spend > 0 ? `more money (plus ${MONEY_SIGN}${Math.round(spend)} of new ${parts.join(", ")}) than play and luck could give`
           : "more money than play and luck could give");
       const honest = Math.max(0, bound - spend);
       if (ctx.mode === "enforce") {

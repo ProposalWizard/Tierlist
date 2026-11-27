@@ -1,4 +1,6 @@
 "use client";
+import { usePreview } from "@/lib/siteLook/usePreview";
+import { customReasons, isRanked } from "@/lib/draft/ranked";
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -35,7 +37,7 @@ function TeamNameInput({ value, onChange }: { value: string; onChange: (name: st
           <span className="text-cyan-400">TEAM</span>
           <span className="text-white"> NAME</span>
         </h2>
-        <span className="text-white/30 font-black text-sm select-none">{">>>"}</span>
+        <span className="text-white/60 font-black text-sm select-none">{">>>"}</span>
       </div>
 
       {/* Gradient-border card */}
@@ -129,10 +131,10 @@ function SettingsBtn({
   accent?: "teal" | "amber" | "purple" | "sky";
 }) {
   const gradMap: Record<string, string> = {
-    teal: "linear-gradient(135deg,#0d9488 0%,#06b6d4 100%)",
-    amber: "linear-gradient(135deg,#b45309 0%,#f59e0b 100%)",
-    purple: "linear-gradient(135deg,#6d28d9 0%,#a855f7 100%)",
-    sky: "linear-gradient(135deg,#0369a1 0%,#38bdf8 100%)",
+    teal: "linear-gradient(135deg,#0f766e 0%,#0e7490 100%)",
+    amber: "linear-gradient(135deg,#92400e 0%,#b45309 100%)",
+    purple: "linear-gradient(135deg,#5b21b6 0%,#7c3aed 100%)",
+    sky: "linear-gradient(135deg,#075985 0%,#0369a1 100%)",
   };
   const shadowMap: Record<string, string> = {
     teal: "0 4px 18px rgba(6,182,212,0.35)",
@@ -147,7 +149,7 @@ function SettingsBtn({
       className={`relative flex-1 py-3 px-3 rounded-xl text-left transition-all duration-200 ${
         selected
           ? "text-white"
-          : "bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white/80 hover:bg-white/[0.07]"
+          : "bg-white/[0.04] border border-white/[0.08] text-white/70 hover:text-white/90 hover:bg-white/[0.07]"
       }`}
     >
       {selected && (
@@ -178,6 +180,9 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
   const [draftOrder, setDraftOrder] = useState<"position-first" | "club-first">("club-first");
   const [respins, setRespins] = useState<0 | 1 | 3>(3);
   const [hiddenRatings, setHiddenRatings] = useState(false);
+  // New look preview (Leo, 27 Nov 2026): Rules (Classic / Chemistry) and the Ranked or Custom line.
+  const preview = usePreview();
+  const [chemistryOn, setChemistryOn] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [joiningRoom, setJoiningRoom] = useState(false);
@@ -199,6 +204,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
     draftOrder,
     respins,
     hiddenRatings,
+    ...(preview && chemistryOn ? { chemistry: true } : {}),
   });
 
   const handleJoin = async () => {
@@ -355,7 +361,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
             {/* TO separator */}
             <div className="flex flex-col items-center gap-1 shrink-0">
               <div className="w-px h-3 bg-white/15" />
-              <span className="text-[9px] font-black tracking-widest text-white/30 uppercase">TO</span>
+              <span className="text-[9px] font-black tracking-widest text-white/60 uppercase">TO</span>
               <div className="w-px h-3 bg-white/15" />
             </div>
 
@@ -396,6 +402,26 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
           )}
         </div>
 
+        {preview && (
+          <div className="mb-4 sm:mb-5" data-draft-rules>
+            <SectionHeader
+              icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.8 10.2a3 3 0 00-4.2 0l-3 3a3 3 0 104.2 4.2l.9-.9m-1.5-6.3a3 3 0 004.2 0l3-3a3 3 0 10-4.2-4.2l-.9.9" /></svg>}
+              label1="DRAFT"
+              label2="RULES"
+            />
+            <div className="flex gap-2">
+              <SettingsBtn selected={!chemistryOn} onClick={() => setChemistryOn(false)} accent="teal">
+                <div className="text-xs font-black italic uppercase leading-none mb-1">Classic</div>
+                <div className="text-[9px] opacity-90 leading-snug">Best players win</div>
+              </SettingsBtn>
+              <SettingsBtn selected={chemistryOn} onClick={() => setChemistryOn(true)} accent="purple">
+                <div className="text-xs font-black italic uppercase leading-none mb-1">Chemistry</div>
+                <div className="text-[9px] opacity-90 leading-snug">Same club, season or nation next to each other: up to +3 each</div>
+              </SettingsBtn>
+            </div>
+          </div>
+        )}
+
         {/* Game Mode */}
         <div className="mb-4 sm:mb-5">
           <SectionHeader
@@ -413,11 +439,11 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
           <div className="flex gap-2">
             <SettingsBtn selected={mode === "normal"} onClick={() => setMode("normal")} accent="teal">
               <div className="text-xs font-black italic uppercase leading-none mb-1">Normal</div>
-              <div className="text-[9px] opacity-70 leading-snug">Rated as that season</div>
+              <div className="text-[9px] opacity-90 leading-snug">Rated as that season</div>
             </SettingsBtn>
             <SettingsBtn selected={mode === "prime"} onClick={() => setMode("prime")} accent="amber">
               <div className="text-xs font-black italic uppercase leading-none mb-1">Prime</div>
-              <div className="text-[9px] opacity-70 leading-snug">Best-ever rating</div>
+              <div className="text-[9px] opacity-90 leading-snug">Best-ever rating</div>
             </SettingsBtn>
           </div>
         </div>
@@ -436,11 +462,11 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
           <div className="flex gap-2">
             <SettingsBtn selected={draftOrder === "club-first"} onClick={() => setDraftOrder("club-first")} accent="teal">
               <div className="text-xs font-black italic uppercase leading-none mb-1">Club First</div>
-              <div className="text-[9px] opacity-70 leading-snug">Pick player, choose slot</div>
+              <div className="text-[9px] opacity-90 leading-snug">Pick player, choose slot</div>
             </SettingsBtn>
             <SettingsBtn selected={draftOrder === "position-first"} onClick={() => setDraftOrder("position-first")} accent="sky">
               <div className="text-xs font-black italic uppercase leading-none mb-1">Position First</div>
-              <div className="text-[9px] opacity-70 leading-snug">Fill each slot in order</div>
+              <div className="text-[9px] opacity-90 leading-snug">Fill each slot in order</div>
             </SettingsBtn>
           </div>
         </div>
@@ -460,11 +486,11 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
           <div className="flex gap-2">
             <SettingsBtn selected={!hiddenRatings} onClick={() => setHiddenRatings(false)} accent="teal">
               <div className="text-xs font-black italic uppercase leading-none mb-1">Normal</div>
-              <div className="text-[9px] opacity-70 leading-snug">Ratings visible</div>
+              <div className="text-[9px] opacity-90 leading-snug">Ratings visible</div>
             </SettingsBtn>
             <SettingsBtn selected={hiddenRatings} onClick={() => setHiddenRatings(true)} accent="purple">
               <div className="text-xs font-black italic uppercase leading-none mb-1">Hidden</div>
-              <div className="text-[9px] opacity-70 leading-snug">Revealed after pick</div>
+              <div className="text-[9px] opacity-90 leading-snug">Revealed after pick</div>
             </SettingsBtn>
           </div>
         </div>
@@ -486,7 +512,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
                 <div className="text-xs font-black italic uppercase leading-none mb-1">
                   {n === 0 ? "None" : n === 1 ? "1 Re-spin" : "3 Re-spins"}
                 </div>
-                <div className="text-[9px] opacity-70 leading-snug">
+                <div className="text-[9px] opacity-90 leading-snug">
                   {n === 0 ? "No 2nd chances" : n === 1 ? "One total" : "Three total"}
                 </div>
               </SettingsBtn>
@@ -496,7 +522,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
 
         {/* Start Draft button */}
         <button
-          onClick={() => onStart({ formation, eraStart, eraEnd: Math.max(eraStart, eraEnd), mode, draftOrder, respins, hiddenRatings })}
+          onClick={() => onStart(currentSettings())}
           disabled={eraStart > eraEnd}
           className="group relative w-full rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
           style={{
@@ -519,7 +545,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
                 Start Draft<span className="ml-1.5 inline-block transition-transform group-hover:translate-x-1">→</span>
               </div>
               {teamName && (
-                <div className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1 max-w-[200px] mx-auto truncate">
+                <div className="text-[10px] font-bold text-white/90 uppercase tracking-widest mt-1 max-w-[200px] mx-auto truncate">
                   {teamName}
                 </div>
               )}
@@ -527,9 +553,20 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
           </div>
         </button>
 
-        <p className="text-center text-white/25 text-[10px] mt-3 tracking-widest uppercase">
+        <p className="text-center text-white/60 text-[10px] mt-3 tracking-widest uppercase">
           14 spins · 11 starters + 3 subs · 38 matches
         </p>
+        {preview && (() => {
+          const st = currentSettings();
+          const ranked = isRanked(st);
+          return (
+            <p data-draft-ranked className={`mt-2 text-center text-xs font-bold ${ranked ? "text-emerald-400" : "text-amber-400"}`}>
+              {ranked
+                ? `Ranked: counts for the ${st.chemistry ? "Chemistry" : st.mode === "prime" ? "Prime" : "Normal"} Hall of Fame`
+                : `Custom (${customReasons(st).join(", ")}): your history only, not the Hall of Fame`}
+            </p>
+          );
+        })()}
 
         {/* Sign-in prompt — placed BELOW Start Draft so new/guest users see the
             game as the primary action, not a sign-up wall. */}
@@ -568,15 +605,15 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
               href="/auth?next=/draft"
               className="block rounded-xl border border-gray-800/60 bg-gray-900/40 p-3 transition-all hover:border-emerald-700/50 hover:bg-gray-900/70"
             >
-              <div className="space-y-2 opacity-50 pointer-events-none select-none">
+              <div aria-disabled="true" className="space-y-2 opacity-70 pointer-events-none select-none">
                 <div className="w-full py-3 px-4 rounded-xl text-sm font-bold bg-gray-800/80 border border-gray-700/50 text-white flex items-center justify-center gap-2">
                   <span>&#128274;</span> Create Room
                 </div>
                 <div className="flex gap-2">
-                  <div className="flex-1 bg-gray-800/80 border border-gray-700/50 rounded-xl px-4 py-3 text-sm font-mono font-bold text-white/50 tracking-widest uppercase">
+                  <div className="flex-1 bg-gray-800/80 border border-gray-700/50 rounded-xl px-4 py-3 text-sm font-mono font-bold text-white/85 tracking-widest uppercase">
                     Enter Room Code
                   </div>
-                  <div className="px-5 py-3 rounded-xl text-sm font-bold bg-sky-600/80 text-white">Join</div>
+                  <div className="px-5 py-3 rounded-xl text-sm font-bold bg-sky-700 text-white">Join</div>
                 </div>
               </div>
               <div className="mt-3 flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-400">

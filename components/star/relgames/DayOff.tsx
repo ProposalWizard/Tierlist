@@ -8,6 +8,7 @@
 import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { GameShell, ResultPanel, type GameResult } from "./Shell";
+import { MONEY_SIGN } from "@/lib/star/money";
 
 export function dayOffOptions(career: Pick<CareerState, "contract" | "ownedItems">) {
   const wage = Math.max(1, career.contract?.wage ?? 0);
@@ -37,7 +38,7 @@ export default function DayOff({ career, onFinish, onCancel }: { career: CareerS
                 <span className="text-[28px] leading-none">{o.icon}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[15px] font-black">{o.name}</span>
-                  <span className="block text-[12px] font-bold">{o.cost ? `★${o.cost.toLocaleString("en-GB")}` : "Free"}{short ? " · not enough money" : ""}</span>
+                  <span className="block text-[12px] font-bold">{o.cost ? `${MONEY_SIGN}${o.cost.toLocaleString("en-GB")}` : "Free"}{short ? " · not enough money" : ""}</span>
                 </span>
                 <span className="text-[15px] font-black text-purple-200">+{o.gain}</span>
               </button>

@@ -27,7 +27,8 @@ export function getStorage(): Storage {
   return { mode: "off", missing, list: async () => [], head: async () => null, getText: async () => null, putText: async () => {}, remove: async () => {}, isMediaKey: isVideoKey };
 }
 
-function r2Storage(cfg: R2Config): Storage {
+/** A Storage on any bucket (Publish uses it for Mikey's own bucket). */
+export function r2Storage(cfg: R2Config): Storage {
   const go = async (method: "GET" | "PUT" | "HEAD" | "DELETE", key: string, extra: Parameters<typeof r2Url>[5] = {}, body?: string) => {
     const url = r2Url(cfg, method, key, new Date(), 120, extra);
     const res = await fetch(url, { method, body, cache: "no-store", headers: extra.headers });

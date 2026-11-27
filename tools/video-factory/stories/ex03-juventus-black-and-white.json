@@ -1,0 +1,183 @@
+{
+  "id": "ex03-juventus-black-and-white",
+  "series": "Explainer",
+  "title": "Why do Juventus wear black and white?",
+  "layout": "explainer",
+  "music": "02-working-it-out.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.juventus.com/en/news/articles/black-and-white-brothers-unite-in-the-name-of-tom-savage",
+    "https://en.wikipedia.org/wiki/John_Savage_(English_footballer)",
+    "https://leftlion.co.uk/features/2021/09/tom-gordon-savage-notts-county-juventus/",
+    "https://www.goal.com/en-us/news/why-do-juventus-play-in-black-and-white/szdt01w6llqh1k5ni7lycylqb"
+  ],
+  "facts": {
+    "founded": "Turin, 1897; early kit pink shirts with a black tie",
+    "1903": "the club's English player Savage got black-and-white striped shirts from Nottingham (a Notts County supporter's connection); faded pink is the usual reason given; the details are club tradition, so the video says 'as the story goes'",
+    "notts": "Notts County, founded 1862, oldest professional football club in the world",
+    "2011": "Juventus Stadium opened 8 Sept 2011 with a friendly against Notts County, 1-1"
+  },
+  "images": {
+    "juve1897": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/juve1897.png"
+  },
+  "lines": [
+    {
+      "text": "Why do Juventus wear black and white?",
+      "scene": {
+        "type": "kit",
+        "hook": true,
+        "bg": "yellow",
+        "from": {
+          "c1": "#ffffff",
+          "stripes": "#111111"
+        }
+      }
+    },
+    {
+      "text": "Well, it's because of a club in Nottingham.",
+      "scene": {
+        "type": "route",
+        "bg": "teal",
+        "cities": [
+          "NOTTINGHAM",
+          "TURIN"
+        ]
+      }
+    },
+    {
+      "text": "Juventus were founded in Turin, in 1897.",
+      "scene": {
+        "type": "years",
+        "bg": "purple",
+        "items": [
+          {
+            "year": "1897",
+            "top": "TURIN",
+            "label": "Juventus founded",
+            "tick": true,
+            "head": "#111111"
+          }
+        ]
+      }
+    },
+    {
+      "text": "And their first proper kit was pink. With a black tie.",
+      "scene": {
+        "type": "kit",
+        "bg": "pink",
+        "from": {
+          "c1": "#f5a3c7",
+          "tie": true
+        },
+        "label": "PINK"
+      }
+    },
+    {
+      "text": "By 1903, the story goes, the pink had faded badly.",
+      "scene": {
+        "type": "kit",
+        "bg": "pink",
+        "from": {
+          "c1": "#f5a3c7",
+          "tie": true
+        },
+        "fade": true,
+        "label": "WASHED OUT"
+      }
+    },
+    {
+      "text": "So an Englishman in the team asked a friend back home to send new shirts.",
+      "scene": {
+        "type": "picture",
+        "image": "juve1897",
+        "bg": "pink",
+        "label": "TURIN · 1903"
+      }
+    },
+    {
+      "text": "His friend supported Notts County.",
+      "scene": {
+        "type": "kit",
+        "bg": "navy",
+        "from": {
+          "c1": "#ffffff",
+          "stripes": "#111111"
+        },
+        "label": "NOTTS COUNTY"
+      }
+    },
+    {
+      "text": "So the parcel that arrived in Turin was full of black and white stripes.",
+      "scene": {
+        "type": "route",
+        "bg": "teal",
+        "cities": [
+          "NOTTINGHAM",
+          "TURIN"
+        ],
+        "parcel": true
+      }
+    },
+    {
+      "text": "Pink became black and white, and Juventus have worn it ever since.",
+      "scene": {
+        "type": "kit",
+        "bg": "yellow",
+        "from": {
+          "c1": "#f5a3c7",
+          "tie": true
+        },
+        "to": {
+          "c1": "#ffffff",
+          "stripes": "#111111"
+        },
+        "change": true,
+        "label": "1903 → TODAY"
+      }
+    },
+    {
+      "text": "And Notts County? Founded in 1862, they're the oldest professional club in the world.",
+      "scene": {
+        "type": "years",
+        "bg": "navy",
+        "items": [
+          {
+            "year": "1862",
+            "top": "NOTTS COUNTY",
+            "label": "Oldest professional club",
+            "tick": true,
+            "head": "#111111"
+          }
+        ]
+      }
+    },
+    {
+      "text": "When Juventus opened their new stadium in 2011, guess who they invited.",
+      "scene": {
+        "type": "fixture",
+        "bg": "yellow",
+        "now": {
+          "top": "8 SEPTEMBER 2011 · OPENING GAME",
+          "teams": "JUVENTUS v ???",
+          "foot": "JUVENTUS STADIUM, TURIN"
+        }
+      }
+    },
+    {
+      "text": "Notts County.",
+      "scene": {
+        "type": "fixture",
+        "bg": "yellow",
+        "cut": true,
+        "now": {
+          "top": "8 SEPTEMBER 2011 · OPENING GAME",
+          "teams": "JUVENTUS 1-1 NOTTS COUNTY",
+          "foot": "JUVENTUS STADIUM, TURIN"
+        }
+      }
+    }
+  ]
+}

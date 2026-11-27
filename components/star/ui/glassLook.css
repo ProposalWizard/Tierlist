@@ -47,8 +47,9 @@
 .star-look-pitch.star-skin-glass .sk-shell:not([data-sk-tone="calm"] .sk-shell)::before,
 .star-look-pitch.star-skin-glass :is(.bg-\[\#05070d\], .bg-\[\#05080f\]):not([data-sk-tone="calm"], [data-sk-tone="calm"] *)::before {
   content: ""; position: fixed; inset: -40px; z-index: -1; pointer-events: none;
-  background: var(--sk-page), var(--sk-glass-photo) center 30% / cover no-repeat;
-  filter: blur(12px) brightness(.85) saturate(1.15);
+  /* Blur, brightness and colour are baked into the picture (scripts/perf2d/bake-blur.py,
+     19 Nov 2026): a live filter: blur(12px) was redone at every screen change. */
+  background: var(--sk-page), url(/home/title-stadium-day-glass.webp) center 30% / cover no-repeat;
 }
 .star-look-pitch.star-skin-glass .sk-shell:not([data-sk-tone="calm"] .sk-shell) > .max-w-md,
 .star-look-pitch.star-skin-glass .sk-stadium-screen {

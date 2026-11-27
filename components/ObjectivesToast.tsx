@@ -17,7 +17,7 @@ export default function ObjectivesToast() {
   return (
     <Link
       href="/profile"
-      className={`fixed bottom-4 right-4 md:bottom-auto md:top-4 z-[55] flex flex-col items-end px-3 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 shadow-lg shadow-amber-900/40 transition-all duration-1000 hover:scale-105 active:scale-95 ${
+      className={`fixed bottom-4 right-4 md:bottom-auto md:top-[72px] z-[55] flex flex-col items-end px-3 py-2 rounded-xl bg-gradient-to-r from-amber-700 to-amber-600 hover:from-amber-600 hover:to-amber-500 shadow-lg shadow-amber-900/40 transition-all duration-1000 hover:scale-105 active:scale-95 ${
         fading ? "opacity-0 translate-x-4" : "opacity-100"
       }`}
     >
@@ -25,7 +25,7 @@ export default function ObjectivesToast() {
         <span className="text-xs font-black text-white">Objectives</span>
         <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[9px] font-black text-white uppercase tracking-wider">New</span>
       </div>
-      <span className="text-[9px] text-white/80 font-medium mt-0.5">Tap to view</span>
+      <span className="text-[9px] text-white font-medium mt-0.5">Tap to view</span>
     </Link>
   );
 }

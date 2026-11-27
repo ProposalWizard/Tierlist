@@ -63,7 +63,9 @@ export async function youtubeAccess(refresh: string): Promise<{ access: string; 
  */
 export async function youtubeUpload(access: string, video: { url: string; size: number; type: string }, title: string, description: string, privacy: "public" | "private" | "unlisted" = "public"): Promise<{ id: string; link: string; privacy: string }> {
   const meta = {
-    snippet: { title: title.slice(0, 100) || "Knowitball", description: description.slice(0, 5000), categoryId: "17" /* Sports */ },
+    // A Short: YouTube makes any vertical (or square) upload of 3 minutes or less a Short by itself; #Shorts in
+    // the description is the extra signal it reads (Mikey, 20 Nov 2026: Shorts only).
+    snippet: { title: title.slice(0, 100) || "Knowitball", description: (/#shorts\b/i.test(description) ? description : `${description}\n\n#Shorts`.trim()).slice(0, 5000), categoryId: "17" /* Sports */ },
     status: { privacyStatus: privacy, selfDeclaredMadeForKids: false },
   };
   const start = await fetch("https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status", {

@@ -15,11 +15,14 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { XP_AWARDS, levelFromXp } from "@/lib/xp";
+import { overLimit, slowDown, LIMITS } from "@/lib/rateLimit";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Too many from one person: a friendly 429, never a crash (lib/rateLimit).
+  if (await overLimit(request, LIMITS.vote)) return slowDown(LIMITS.vote);
   const { id } = await params;
 
   let body: { image_id?: string; tier_label?: string; voter_id?: string };

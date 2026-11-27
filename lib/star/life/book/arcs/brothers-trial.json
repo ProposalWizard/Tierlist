@@ -1,0 +1,1116 @@
+{
+ "id": "arc-brothers-trial",
+ "title": "One session",
+ "owner": "brother",
+ "summary": "Your older brother is twenty-three and still plays on Sundays. He asks you to get him one session at your club. Ask the gaffer and you feed him in the trial yourself. What happens next decides whether he's his own man or in your shadow, and a few seasons on you find out which.",
+ "size": "big",
+ "about": {
+  "who": [
+   "brother",
+   "gaffer",
+   "coach"
+  ],
+  "tone": [
+   "warm",
+   "tense",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.2
+ },
+ "cast": [
+  {
+   "slot": "brother",
+   "pick": "brother"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "coach",
+   "pick": "coach"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "trial": 0,
+  "result": "none",
+  "owed": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "his-own-man",
+   "title": "His own man",
+   "text": "You got him one session. He did the rest himself, and he'll tell you so."
+  },
+  {
+   "id": "in-your-shadow",
+   "title": "In your shadow",
+   "text": "Whatever he does, people ask him about you first. He's stopped answering."
+  },
+  {
+   "id": "brothers",
+   "title": "Brothers",
+   "text": "You fell out over money and football and made it up over a trophy at a non-league do."
+  }
+ ],
+ "promises": {
+  "p-ask": {
+   "id": "p-ask",
+   "to": "brother",
+   "text": "Ask the gaffer about a trial for {brother.short}",
+   "due": {
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "keptBy": {
+    "beat": "bro-2-gaffer",
+    "ends": [
+     "asked"
+    ]
+   },
+   "dueText": "This week",
+   "kept": {
+    "text": "You said you'd ask, and you did.",
+    "npc": [
+     {
+      "slot": "brother",
+      "bond": 4,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd ask the gaffer.",
+    "npc": [
+     {
+      "slot": "brother",
+      "bond": -8,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "brother",
+      "tag": "never-asked-the-gaffer",
+      "strength": 3
+     }
+    ]
+   },
+   "remind": "\"Did you ask him yet? No pressure. Bit of pressure.\""
+  }
+ },
+ "beats": [
+  {
+   "id": "bro-1-ask",
+   "title": "One session",
+   "n": 1,
+   "event": {
+    "id": "arc-bro-1-ask",
+    "title": "One session",
+    "category": "family",
+    "place": "home",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{brother.short} rings at ten at night, which he never does. He's twenty-three, plays on Sundays, and works in a warehouse."
+    ],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "brother",
+       "say": [
+        "\"Don't laugh. Can you get me a trial at yours? One session. I scored four on Sunday. I know it's Sunday league. I just want to know.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll ask the gaffer this week.\"",
+         "tone": "kind",
+         "goto": "b2",
+         "promise": "p-ask"
+        },
+        {
+         "id": "honest",
+         "label": "\"It's a big jump, {brother.short}. Are you sure?\"",
+         "tone": "honest",
+         "goto": "b-sure"
+        },
+        {
+         "id": "laugh",
+         "label": "Laugh.",
+         "tone": "cold",
+         "end": "laughed"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "b-sure"
+        }
+       ]
+      },
+      "b-sure": {
+       "who": "brother",
+       "say": [
+        "\"I've been sure since I was nine. You got the letter from the academy and I didn't. I want to know if it was luck.\""
+       ],
+       "replies": [
+        {
+         "id": "ask",
+         "label": "\"Right. I'll ask him.\"",
+         "tone": "brave",
+         "goto": "b2",
+         "promise": "p-ask"
+        },
+        {
+         "id": "no",
+         "label": "\"It wasn't luck. And I'm not asking.\"",
+         "tone": "cold",
+         "end": "refused"
+        }
+       ]
+      },
+      "b2": {
+       "who": "brother",
+       "say": [
+        "\"Don't tell Mum. If it goes wrong I don't want her knowing.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"I won't tell Mum.\"",
+         "tone": "calm",
+         "end": "asked-for"
+        },
+        {
+         "id": "mum",
+         "label": "\"She'd want to know.\"",
+         "tone": "honest",
+         "end": "asked-for"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "asked-for": [
+       {
+        "text": "He says thanks twice and hangs up before you can change your mind.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "said-hed-get-me-a-trial",
+          "strength": 3
+         }
+        ]
+       }
+      ],
+      "laughed": [
+       {
+        "text": "\"Yeah. Forget it.\" He hangs up. Mum rings ten minutes later to ask what you said to him.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": -10,
+          "respect": -4,
+          "grudge": 10
+         },
+         {
+          "slot": "mum",
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "laughed-at-the-trial",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "result": "never"
+         }
+        }
+       }
+      ],
+      "refused": [
+       {
+        "text": "He's quiet for a long time. \"Fair enough.\" He doesn't ring again for a month.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": -8,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "wouldnt-ask-for-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "result": "never"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     }
+    ]
+   },
+   "hint": "Your brother has a favour to ask"
+  },
+  {
+   "id": "bro-2-gaffer",
+   "title": "The gaffer's door",
+   "after": {
+    "beat": "bro-1-ask",
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-bro-2-gaffer",
+    "title": "The gaffer's door",
+    "category": "manager",
+    "place": "compound:office",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "!arc.result=='never'"
+     ]
+    },
+    "setup": [
+     "You've been outside {manager.name}'s door twice this week and walked off both times."
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "manager",
+       "say": [
+        "\"Are you coming in or are you guarding the door?\""
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"My brother wants one session, gaffer. He's decent.\"",
+         "tone": "humble",
+         "goto": "g2"
+        },
+        {
+         "id": "confident",
+         "label": "\"My brother's better than half the under-23s.\"",
+         "tone": "confident",
+         "goto": "g2"
+        },
+        {
+         "id": "calm",
+         "label": "\"Nothing. Wrong door.\"",
+         "tone": "calm",
+         "end": "didnt-ask"
+        },
+        {
+         "id": "quiet",
+         "label": "… Walk away",
+         "silent": true,
+         "end": "didnt-ask"
+        }
+       ]
+      },
+      "g2": {
+       "who": "manager",
+       "say": [
+        "\"One session, Thursday, with {coach.short}. You feed him in the finishing drill. If he's no good, I'm not being polite about it.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"That's all he wants.\"",
+         "tone": "calm",
+         "end": "asked"
+        },
+        {
+         "id": "fair",
+         "label": "\"Fair.\"",
+         "tone": "humble",
+         "end": "asked"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "asked": [
+       {
+        "text": "You text {brother.short} straight away. He replies with nine exclamation marks.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 8,
+          "respect": 2
+         },
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "trial": 1
+         }
+        }
+       }
+      ],
+      "didnt-ask": [
+       {
+        "text": "You tell {brother.short} the gaffer's too busy at the minute. He says no worries, and you can hear that he knows.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": -8,
+          "respect": -6,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "never-asked-the-gaffer",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "result": "never"
+         }
+        },
+        "promiseBroken": [
+         "p-ask"
+        ]
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "brother",
+      "pick": "brother"
+     }
+    ]
+   },
+   "hint": "You said you'd ask the gaffer"
+  },
+  {
+   "id": "bro-3-trial",
+   "title": "Thursday",
+   "after": {
+    "beat": "bro-2-gaffer",
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-bro-3-trial",
+    "title": "Thursday",
+    "category": "family",
+    "place": "compound:pitch-1",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "arc.trial==1"
+     ]
+    },
+    "setup": [
+     "{brother.short} is in the car park at half seven in new boots that are still too stiff. {coach.name} is watching from the side with a clipboard."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "brother",
+       "say": [
+        "\"I've been sick twice. Is that normal?\""
+       ],
+       "replies": [
+        {
+         "id": "normal",
+         "label": "\"I was sick on my debut. Roll your socks down.\"",
+         "tone": "kind",
+         "goto": "t2",
+         "mood": 1
+        },
+        {
+         "id": "focus",
+         "label": "\"Don't look at the coach. Look at me.\"",
+         "tone": "brave",
+         "goto": "t2"
+        },
+        {
+         "id": "joke",
+         "label": "\"You'll be sick a third time when you see the drill.\"",
+         "tone": "confident",
+         "goto": "t2"
+        }
+       ]
+      },
+      "t2": {
+       "who": "brother",
+       "say": [
+        "\"Through the cones, onto my right. Like the garden.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Roll the first one.",
+         "tone": "calm",
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "feed-drill",
+        "name": "One session",
+        "intro": "Ten passes through the cones to your brother. {coach.short} is writing things down.",
+        "dials": {
+         "balls": 10,
+         "shooter": {
+          "slot": "brother"
+         }
+        },
+        "score": "his goals off your passes (0-10)",
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "vision",
+         "target": 55
+        },
+        "cost": {
+         "energy": -5
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "f-stop"
+        ],
+        [
+         "activity.score>=6",
+         "f-good"
+        ],
+        [
+         "",
+         "f-poor"
+        ]
+       ]
+      },
+      "f-good": {
+       "who": "coach",
+       "say": [
+        "{coach.short} comes over with the clipboard. \"{activity.score} from ten. He's not one of ours, but the club down the road would take him. I'll ring them.\""
+       ],
+       "replies": [
+        {
+         "id": "thanks",
+         "label": "\"Thanks, coach.\"",
+         "tone": "humble",
+         "end": "signed"
+        },
+        {
+         "id": "ours",
+         "label": "\"Why not ours?\"",
+         "tone": "fiery",
+         "end": "signed-pushed"
+        }
+       ]
+      },
+      "f-poor": {
+       "who": "coach",
+       "say": [
+        "{coach.short} writes one line and closes the clipboard. \"He's a Sunday player. Nothing wrong with that.\""
+       ],
+       "replies": [
+        {
+         "id": "again",
+         "label": "\"Give him another go. He was nervous.\"",
+         "tone": "brave",
+         "end": "not-pushed"
+        },
+        {
+         "id": "ok",
+         "label": "Nod.",
+         "tone": "calm",
+         "end": "not"
+        }
+       ]
+      },
+      "f-stop": {
+       "who": "brother",
+       "say": [
+        "{brother.short} stops after the sixth. \"I can't. My legs have gone. I'm sorry.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"It's all right. You did six.\"",
+         "tone": "kind",
+         "end": "not"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "signed": [
+       {
+        "text": "He signs for the club down the road on Monday for petrol money. Mum finds out and cries in the kitchen.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 14,
+          "respect": 8
+         },
+         {
+          "slot": "mum",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "fed-me-at-my-trial",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "result": "signed"
+         }
+        }
+       }
+      ],
+      "signed-pushed": [
+       {
+        "text": "\"Because I said.\" He rings the club down the road anyway. {brother.short} signs on Monday.",
+        "effects": {
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 12,
+          "respect": 6
+         },
+         {
+          "slot": "coach",
+          "respect": -3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "fed-me-at-my-trial",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "result": "signed"
+         }
+        }
+       }
+      ],
+      "not-pushed": [
+       {
+        "text": "\"He had his go.\" {brother.short} heard. He drives home without you.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 2,
+          "grudge": 4
+         },
+         {
+          "slot": "coach",
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "fed-me-at-my-trial",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "result": "not"
+         }
+        }
+       }
+      ],
+      "not": [
+       {
+        "text": "He shakes {coach.short}'s hand. In the car he says, \"At least I know.\" He doesn't say anything else all the way home.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "fed-me-at-my-trial",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "result": "not"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "Your brother's trial is on Thursday"
+  },
+  {
+   "id": "bro-4-money",
+   "title": "The car",
+   "after": {
+    "beat": "bro-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-bro-4-money",
+    "title": "The car",
+    "category": "family",
+    "place": "home",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{if arc.result=='signed'}{brother.short} has been playing for the club down the road all season. He comes round and sits in your kitchen looking at your car through the window.{/if}",
+     "{if !arc.result=='signed'}{brother.short} comes round for the first time in months. He looks at your car through the kitchen window for a long time.{/if}"
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "brother",
+       "say": [
+        "{if arc.result=='signed'}\"The gaffer there wants me at every session, and the bus takes two hours. Could you lend me for a car? Two weeks of yours is a year of mine.\"{/if}",
+        "{if !arc.result=='signed'}\"I need a car for the new job. I hate asking. Two weeks of yours. I'll pay it back.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "lend",
+         "label": "Lend him it.",
+         "tone": "kind",
+         "goto": "m-lend",
+         "cost": {
+          "moneyWeeks": 2
+         }
+        },
+        {
+         "id": "give",
+         "label": "\"Have it. Don't pay it back.\"",
+         "tone": "kind",
+         "end": "gave",
+         "cost": {
+          "moneyWeeks": 2
+         }
+        },
+        {
+         "id": "no",
+         "label": "\"I'm not a bank, {brother.short}.\"",
+         "tone": "cold",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "no"
+        }
+       ]
+      },
+      "m-lend": {
+       "who": "brother",
+       "say": [
+        "\"I'll pay it back. Every month. I'll set it up tonight.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"I know you will.\"",
+         "tone": "calm",
+         "end": "lent"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "lent": [
+       {
+        "text": "He pays back the first month on the day. And the second. The third is late.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "lent-me-for-the-car",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "owed": 1
+         }
+        }
+       }
+      ],
+      "gave": [
+       {
+        "text": "He goes red and says he'll pay you back anyway. He never does, and you never ask.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 8,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "gave-me-the-car-money",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "owed": 2
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Course you're not.\" Mum rings you about it the next morning, which you'd expected.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": -10,
+          "respect": -2,
+          "grudge": 10
+         },
+         {
+          "slot": "mum",
+          "bond": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "wouldnt-lend-me-for-the-car",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "owed": 0
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Next season, your brother needs something"
+  },
+  {
+   "id": "bro-5-trophy",
+   "title": "The end-of-season do",
+   "after": {
+    "beat": "bro-4-money",
+    "seasons": [
+     1,
+     3
+    ]
+   },
+   "n": 5,
+   "event": {
+    "id": "arc-bro-5-trophy",
+    "title": "The end-of-season do",
+    "category": "family",
+    "place": "home",
+    "size": "big",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "season-end"
+     ]
+    },
+    "setup": [
+     "{if arc.result=='signed'}{brother.short}'s club won their league. They've asked if you'll hand out the trophy at the end-of-season do in the clubhouse.{/if}",
+     "{if !arc.result=='signed'}Mum rings. {brother.short} has been made captain of his Sunday side, and they've won the cup. He wants you to present it, but he won't ask you himself.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go and hand it over.",
+      "tone": "kind",
+      "cost": {
+       "weekAction": 1
+      },
+      "outcomes": [
+       {
+        "if": "arc.owed>=1 || arc.result=='signed'",
+        "text": "You hand him the trophy and he lifts it straight over your head so you're in none of the photos. You laugh about that for years.",
+        "effects": {
+         "fans": 3,
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 12,
+          "respect": 8,
+          "grudge": -10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "came-to-my-trophy-night",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "brothers"
+        }
+       },
+       {
+        "text": "Everyone wants a photo with you. {brother.short} ends up holding the coats. He says it's fine.",
+        "effects": {
+         "fame": 2
+        },
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 2,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "end": "in-your-shadow"
+        }
+       }
+      ]
+     },
+     {
+      "id": "send",
+      "label": "Send a signed shirt for the raffle instead.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.result=='signed'",
+        "text": "The shirt raises more than the cup cost. {brother.short} sends a photo of himself with the trophy, on his own.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 2,
+          "respect": 6
+         }
+        ],
+        "arc": {
+         "end": "his-own-man"
+        }
+       },
+       {
+        "text": "The raffle is all anyone talks about, and the cup is on the end of the bar.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "in-your-shadow"
+        }
+       }
+      ]
+     },
+     {
+      "id": "him",
+      "label": "Ring {brother.short}. \"Do you want me there?\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "!arc.owed==0",
+        "text": "Long pause. \"No. I want to do this one on my own.\" He sends you a photo of it at midnight.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 6,
+          "respect": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "let-me-have-my-night",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "his-own-man"
+        }
+       },
+       {
+        "text": "\"You can come if you want.\" He means don't.",
+        "npc": [
+         {
+          "slot": "brother",
+          "respect": 2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "in-your-shadow"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A few seasons on, your brother's night",
+   "look": {
+    "chip": "Seasons later"
+   }
+  }
+ ]
+}

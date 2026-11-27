@@ -13,12 +13,12 @@
  *   boost       cans, training boost, a stat can       helps you win, used up
  *   boot        the real shop's boots at your level    helps you win, owned
  *
- * Every price is in WEEKS OF YOUR OWN WAGE (see coins.ts): the ★ price is
+ * Every price is in WEEKS OF YOUR OWN WAGE (see coins.ts): the £ price is
  * that many weeks of your wage, the Coin price is that many weeks at
  * COINS_PER_WAGE_WEEK. The two exceptions reuse the real shop's numbers
  * instead of inventing a second price: KIB cans (priced off your wage
- * already, shopData.ts `kibCanPrice`) and boots (a fixed ★ price per level,
- * shopDefaults.ts) — for those the Coin price is worked out from the ★ one.
+ * already, shopData.ts `kibCanPrice`) and boots (a fixed £ price per level,
+ * shopDefaults.ts) — for those the Coin price is worked out from the £ one.
  *
  * Nothing here is wired into a career. The test page keeps its own wallet.
  */
@@ -261,7 +261,7 @@ export function isConsumable(item: StoreItem): boolean {
 // ── Prices ─────────────────────────────────────────────────────────────────
 
 export interface PriceContext {
-  /** The player's weekly wage, in ★ — drives every scaled price. */
+  /** The player's weekly wage, in £ — drives every scaled price. */
   weeklyWage: number;
   /** Shop level 1-5 (National League 1 … Premier League 5). */
   level: number;

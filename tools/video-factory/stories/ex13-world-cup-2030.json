@@ -1,0 +1,116 @@
+{
+  "id": "ex13-world-cup-2030",
+  "series": "Explainer",
+  "variant": "TOPIC: future · STYLE: pastel",
+  "title": "The strangest World Cup ever is coming",
+  "layout": "explainer",
+  "music": "01-turning-point.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026",
+    "https://en.wikipedia.org/wiki/2030_FIFA_World_Cup"
+  ],
+  "images": {
+    "centenario": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/centenario.png"
+  },
+  "lines": [
+    {
+      "text": "The 2030 World Cup will be played on three continents.",
+      "scene": {
+        "type": "statement",
+        "bg": "teal",
+        "text": "WORLD CUP 2030|3 CONTINENTS",
+        "hi": 1
+      }
+    },
+    {
+      "text": "The main hosts are Spain, Portugal and Morocco.",
+      "scene": {
+        "type": "statement",
+        "bg": "red",
+        "text": "SPAIN|PORTUGAL|MOROCCO",
+        "size": 130
+      }
+    },
+    {
+      "text": "But the first three games will be in South America. Uruguay, Argentina and Paraguay.",
+      "scene": {
+        "type": "statement",
+        "bg": "blue",
+        "text": "URUGUAY|ARGENTINA|PARAGUAY",
+        "size": 130
+      }
+    },
+    {
+      "text": "Why? Because the very first World Cup was in Uruguay, in 1930.",
+      "scene": {
+        "type": "years",
+        "bg": "yellow",
+        "items": [
+          {
+            "year": "1930",
+            "top": "URUGUAY",
+            "label": "The first World Cup",
+            "tick": true
+          },
+          {
+            "year": "2030",
+            "top": "100 YEARS",
+            "label": "Back where it began",
+            "tick": true
+          }
+        ]
+      }
+    },
+    {
+      "text": "A hundred years later, it goes back to where it started.",
+      "scene": {
+        "type": "picture",
+        "image": "centenario",
+        "bg": "blue",
+        "label": "MONTEVIDEO · 1930"
+      }
+    },
+    {
+      "text": "Six countries. Three continents. One tournament.",
+      "scene": {
+        "type": "statement",
+        "bg": "purple",
+        "text": "6 COUNTRIES|3 CONTINENTS|1 TROPHY",
+        "hi": 2,
+        "size": 120
+      }
+    }
+  ],
+  "theme": {
+    "palette": {
+      "red": [
+        "#ff8fab",
+        "#e05780"
+      ],
+      "teal": [
+        "#9be3e0",
+        "#3ea6ae"
+      ],
+      "yellow": [
+        "#ffe58a",
+        "#f4a300"
+      ],
+      "purple": [
+        "#cdb4db",
+        "#7d6bb0"
+      ],
+      "blue": [
+        "#a2d2ff",
+        "#4a8fe0"
+      ],
+      "green": [
+        "#b5e48c",
+        "#52b788"
+      ]
+    }
+  }
+}

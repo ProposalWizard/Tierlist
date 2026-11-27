@@ -31,7 +31,7 @@ import { byFixtureDate } from "@/lib/star/competitions";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { KIB_CANS, kibCanPrice, type KibCan } from "@/lib/star/shopData";
-import { formatMoney } from "@/lib/star/money";
+import { formatMoney, MONEY_SIGN } from "@/lib/star/money";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { divisionOf, fixtureTimestamp, leagueNameFor } from "@/lib/star/calendar";
 import { kitsOf } from "@/lib/star/kits";
@@ -127,13 +127,17 @@ export function daysToNext(career: CareerState, next: Fixture): number {
 // still has to show all of it. Home measures the room it was given (the
 // swipe page's scroll box) and sizes the league table and the player to
 // what is left.
+/** The last measured room, kept between visits to Home (tap speed, 19 Nov 2026):
+ *  Home used to open at the default size and resize a moment later, and that
+ *  size change made the 3D player build itself twice on every return. */
+let lastRoom: number | null = null;
 function useRoom() {
   const ref = useRef<HTMLDivElement>(null);
-  const [room, setRoom] = useState<number | null>(null);
+  const [room, setRoom] = useState<number | null>(lastRoom);
   useLayoutEffect(() => {
     const root = ref.current?.closest("[data-scroll-root]") as HTMLElement | null;
     if (!root) return;
-    const read = () => setRoom(root.clientHeight);
+    const read = () => { lastRoom = root.clientHeight; setRoom(lastRoom); };
     read();
     const ro = new ResizeObserver(read);
     ro.observe(root);
@@ -727,7 +731,7 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini
         </PressButton>
         <PressButton size="none" disabled={!canBuy} onClick={() => onBuy(c)} aria-label={`Buy a ${c.name} for ${formatMoney(price)}`}
           className="rounded-md bg-black/35 py-1 text-[10px] font-black text-yellow-200 ring-1 ring-yellow-300/30 disabled:opacity-40">
-          ★{formatMoney(price)}
+          {MONEY_SIGN}{formatMoney(price)}
         </PressButton>
       </div>
     </div>
@@ -776,7 +780,7 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini
         aria-label={`Buy a ${c.name} for ${formatMoney(price)}`}
         className="mt-1 w-full rounded-lg bg-black/35 py-1 text-[10.5px] font-black text-yellow-200 ring-1 ring-yellow-300/30 disabled:opacity-40"
       >
-        Buy ★{formatMoney(price)}
+        Buy {MONEY_SIGN}{formatMoney(price)}
       </PressButton>
     </div>
   );

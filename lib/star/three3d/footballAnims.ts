@@ -112,6 +112,8 @@ export interface ClipInfo {
   getUp?: number;
   /** Mocap loops: the travel taken out, m/s in his frame (x = his left, z = forward). */
   travel?: [number, number];
+  /** Quaternius UAL clips: the library skeleton's own ankle spacing per metre of leg, [min, mean] (tests/star/gaitWidth.mts). */
+  srcFeet?: [number, number];
   [k: string]: unknown;
 }
 

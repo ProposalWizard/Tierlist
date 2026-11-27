@@ -4,7 +4,7 @@
  * Harry, 9 Oct 2026: "… music". One short looping bed per kind of scene:
  *   signing   warm, hopeful           (signed, arrival)
  *   trophy    triumphant              (a trophy, a goal, an award, promotion, a record)
- *   walkout   building tension        (walk-out, debut, rivalry)
+ *   walkout   building tension        (walk-out, debut, rivalry, a goal)
  *   press     low tension             (press room, bad news, injury, the mentor)
  *   farewell  emotional               (retired)
  * Files: public/sfx/cut-music-<bed>.mp3 (tools/cutscene-music/make_beds.py),
@@ -21,7 +21,9 @@ export type MusicBed = "signing" | "trophy" | "walkout" | "press" | "farewell";
 
 const BY_KIND: Partial<Record<EventKind, MusicBed>> = {
   signed: "signing", arrival: "signing",
-  "won-trophy": "trophy", scored: "trophy", award: "trophy", promoted: "trophy", "record-broken": "trophy",
+  // a goal builds (the run, the strike) under the walk-out's tension bed; the crowd's roar is the payoff
+  // (20 Nov 2026: it reused the trophy's music, so a goal and a trophy sounded the same)
+  "won-trophy": "trophy", scored: "walkout", award: "trophy", promoted: "trophy", "record-broken": "trophy",
   walkout: "walkout", debut: "walkout", rivalry: "walkout",
   "press-conference": "press", dropped: "press", sacked: "press", "transfer-request": "press", injured: "press", "mentor-advice": "press", relegated: "press",
   retired: "farewell",

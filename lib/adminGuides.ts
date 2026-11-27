@@ -106,6 +106,27 @@ export const ADMIN_GUIDES = {
     inGame: ["Nowhere. This is the front door to the tools."],
     dev: "app/admin/page.tsx (who may open it), app/admin/AdminHub.tsx, app/admin/adminHub.css · lib/adminRegistry.ts ADMIN_HUB, adminHomeFor, backFor · /api/admin/team (what changed) · app/admin/home/page.tsx (old front door, now also sends here)",
   },
+  "/admin/new-look": {
+    title: "New look",
+    what: "Try the new Knowitball look (the home's cream and green, or its dark option) on the real site, on this device only. Everyone else sees today's site.",
+    buttons: [
+      {
+        group: "The switch",
+        items: [
+          ["On / Off", "Turns the new look on or off for this device."],
+          ["Light (cream) / Dark", "Which version of the new look you see."],
+          ["The page links", "Open each public page to check it in the new look."],
+        ],
+      },
+      {
+        group: "On every page while it's on",
+        items: [["● New look", "Bottom-left. Tap for Light, Dark or Turn off."]],
+      },
+    ],
+    saving: ["This device only (a small cookie). Nothing is shared and nobody else's site changes. Sign out or another device: off."],
+    inGame: ["Public pages only (home, games, Draft, Tic Tac Toe, Ten-A-Ball, sign-in, profile …). The game's own screens and admin pages never change."],
+    dev: "lib/siteLook/look.ts (cookie, scope, boot script) · lib/siteLook/palette.ts (colour settings) · tailwind.config.ts · app/site-look.css · components/SiteLook.tsx · ?look=v2|off&theme=light|dark (admins only)",
+  },
   "/admin/site-content": {
     title: "Site content",
     what: "Run the live site's content: tierlists, categories, vote tierlists, blind rankings, the daily games, objectives, cards and feedback. This page was /admin until 12 Nov 2026; /admin is now the admin home. Reach it from Website games → Tierlists.",
@@ -575,6 +596,86 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing is saved. It is a test player that resets when you leave."],
     inGame: ["Relations (boss, team, fans) and the Sponsors screen (the advert, on each deal)."],
     dev: "app/star-relgames-dev/page.tsx; the games are components/star/relgames/, their rules lib/star/relationships.ts, lib/star/bossPenalties.ts, lib/star/bossTalk.ts and lib/star/bossSession.ts.",
+  },
+  "/star-life-dev": {
+    title: "Living world",
+    what: "Phase 1 of the living world on a sample career: every person remembers what you did, events fire for a reason and come back later, and you can spend time with team-mates. Off in the real game until Harry says.",
+    buttons: [
+      { group: "The phone (left)", items: [
+        ["People", "Who you know, in groups (dressing room, club staff, family, agent, press). Each person has three bars (Respect, Bond, Grudge, 0 to 100) and the last thing he remembers. The top card is the team bar: fall out with one man and the whole room takes sides."],
+        ["Tap a person", "Opens what he remembers (up to 6 lines; the dots are how strong: 3 never fades) and, for a team-mate, the three social actions."],
+        ["Chat", "Free, once a week per person. He brings up something he remembers if he can, else a line about the week. Bond +1 to +3; a man holding a grudge may blank you."],
+        ["Go for a drive", "Needs a car. Costs 1 day. Plays a drive with him in the passenger seat; what he says follows your car."],
+        ["A day at the races", "His bond 25 or more. Costs 1 day, 0.3 weeks of your wage and 4 energy. The bets are real: lose and the money is gone."],
+        ["An event's buttons", "Your choices. A grey chip is what it costs; a red chip says why you cannot pick it. 'Follow-up' means an earlier choice brought this back; a yellow 'remembers' strip is a memory coming back."],
+        ["Continue", "Back to People, or to the next thing that happens this week."],
+        ["Test tools", "Only in full screen: back to the test page."],
+      ] },
+      { group: "Kit man story (Events v2): A hundred balls in the dark", items: [
+        ["▶ Start: 19, a bad Saturday", "A fresh sample (19, rated 6.1 last match) arriving at training: Den is on pitch two and his round menu has the gold Stay out bubble, today only."],
+        ["The gold bubble", "Opens the talk: four rounds or more, no clock (he is in no hurry). Your answers move his mood; 'Was I that bad?' and silence are real answers; walking away is an ending."],
+        ["Den's hundred", "The real match engine (EngineFeature, training's strike picture, your club's kit). Ten balls, each one different (shown in two words before it comes): rolled square, from the right, a tight angle, the edge of the box, the volley, further out, and a keeper for the last three. A ball counts when it crosses the line inside a small target: under 1 m, within 1.4 m of a post. Ten each; the last is double or nothing (twenty, or ten off); a hundred is the most. Den counts the total (his voiced lines), notices a streak, and says what went wrong after a miss. 'Roll' plays it by the dice (a device that cannot run it): a normal finisher (technique 60-65) rolls a median 6-7 of 10."],
+        ["Jump time", "Next morning (the gaffer, on the dial), Saturday (score and the note in your boot), Next Thursday (the standing 'The hundred' bubble), Season end, and +1/+3/+8 seasons: a skip plays your Thursdays by the dice and stops when the story has something for you (the kit room door, 'I'm finishing in May', his night, the kid)."],
+        ["Switch club", "Moves you to another club: Den rings from the old club's landline and his night clashes with your new club's sponsor dinner."],
+        ["Voices", "Den and the gaffer speak the lines that have a clip (public/star/life/voice/hundred-balls): beat 1, the gaffer's beat 2, the note's penalties line and most of Thursdays; the rest is text. The game's sound setting turns them off."],
+        ["📱 Phone", "Promises (what, who, when; kept and broken) and Stories (the quest log: the beats as dots, Den's clock, the next step and when)."],
+        ["Nothing is saved", "The story lives in this sample career only; the real game does not read it (LIFE_IN_CAREER is false)."],
+      ] },
+      { group: "The phone: a Telltale moment", items: [
+        ["The grey, slow world", "The other person (or the world) has forced the moment: the picture slows and goes grey, the man you answer keeps his colour. The bench picture stands in for the 3D world."],
+        ["The white bar", "The clock. It shrinks to the middle, amber under 40%, red under 20%. When it runs out you said nothing, and that is an answer with its own result."],
+        ["A line (Honest, Lie, Fiery …)", "Say it. The word on the right is how it sounds. On a computer: keys 1 to 4."],
+        ["… Say nothing", "A real answer. On a computer: Space."],
+        ["Continue", "Goes on. On a computer: Enter. Above it: what happened and how many of your own 11 best team-mates would have done the same (worked out from their characters on this phone, not from other players)."],
+        ["↻ X will remember that", "Shows only when the answer wrote a memory. The chips are every number that moved."],
+      ] },
+      { group: "The phone: the tone dial", items: [
+        ["The dial (Humble, Calm, Confident, Fiery)", "Drag or tap it to choose how you say it; a dotted part means this event has no answer in that voice. On a computer: ← and →."],
+        ["You will say", "The line that goes with that voice."],
+        ["Who is listening", "A guess at how the boss, the fans, the dressing room and the person in front of you take it. A guess, not a promise."],
+        ["… No comment", "A real answer with its own result. On a computer: Space."],
+        ["Say it", "Says the line. On a computer: Enter. Then How it landed (the bars move), In your dressing room (team-mates who would have said it your way) and Your voice this season."],
+      ] },
+      { group: "The phone: the round menu", items: [
+        ["The six bubbles", "Friendly, Banter, Football, Business, See you, Mean. Tap one for its lines; See you closes. On a computer: keys 1 to 6, Esc goes back, right-click closes."],
+        ["The plate over his head", "His mood and his Bond and Respect bars. After a line, his answer shows in a white bubble and the change floats up."],
+        ["A line (▲ Bond, ▲ Respect, ▲▼ Risky, ▼ Bond)", "What it is likely to do. Risky can go either way; his mood changes the odds. Small talk moves only his numbers, never your bars."],
+      ] },
+      { group: "Decision screens", items: [
+        ["The pills / The car park / The photo / The late call", "Opens that event in its Telltale screen. The other Telltale events (the shirt, the midnight call, May's reckoning) open from the list when this career has their people."],
+        ["Mixed zone / The hamstring / The agent", "Opens that event on the tone dial."],
+        ["Talk to a team-mate", "Opens the round menu on a team-mate over the bench picture."],
+        ["Decision clock: Normal / Long (x2) / Off", "How long the Telltale clock runs. Off keeps the slow, grey moment with no clock. Kept on this device."],
+        ["As the event says / Plain card for all", "Which screen asks an event: the one its data names, or the old card for every event (to compare)."],
+      ] },
+      { group: "The week", items: [
+        ["▶ Play a week", "The week turns (a day count back, a week's money, a match result rolled), then the director looks at each moment of the week: the walk-out, after the match, arriving at training, the evening, driving. Most weeks are quiet; at most 2 events a week."],
+        ["+10 weeks", "Jumps ten weeks with nothing happening, so a follow-up comes due."],
+        ["Last match: Won / Drew / Lost and the ratings", "What the director thinks your last match was. Some events only fire after a loss or a bad rating."],
+      ] },
+      { group: "A moment, now", items: [
+        ["After a match … Season end", "Asks the director at that one moment. It may say nothing happened: that is the rules working (budget, cooldowns, a reason to fire)."],
+      ] },
+      { group: "Open any event", items: [
+        ["The list and Open", "Opens one event straight away, skipping the week's budget and cooldowns. Its people must still exist in this career."],
+        ["The dice / Outcome 1, 2, 3", "Which outcome plays when a choice has chances (e.g. the 20% crash). The dice = the real odds."],
+        ["Games: the dice / Win / Lose", "The result of a choice's test (the crossbar, your horse)."],
+      ] },
+      { group: "Sample career", items: [
+        ["Lived-in (30 weeks played)", "The sample after 30 weeks played with random choices: people met, memories written, follow-ups waiting."],
+        ["Brand new", "The sample before anything has happened."],
+        ["A follow-up waiting", "A team-mate crashed your car two weeks ago; he is waiting with an envelope (the follow-up and a memory coming back)."],
+        ["Car: No car / Level 2 / Level 4, Owns a horse", "Starts the lived-in sample again with that car and horse."],
+        ["Full screen", "The phone fills the screen, for looking at it on a phone."],
+      ] },
+      { group: "The other panels", items: [
+        ["Waiting to come back", "Every follow-up an earlier choice set up, and when it is due."],
+        ["The numbers", "How big the living world is in the save, the team bar and what a match would read from it, and whether it is on in the real game."],
+      ] },
+    ],
+    saving: ["Nothing is saved. The sample starts again when you reload the page.", "The decision clock setting is kept in this browser only."],
+    inGame: ["Nowhere yet: it is off in the real career (lib/star/life/flag.ts) until Harry says. Phase 2 wires the moments into the game and adds the legend, the star pass story stops and more events."],
+    dev: "app/star-life-dev/page.tsx; screens components/star/life/ (PeoplePage, EventCard, LifeFace, life.css; decision screens Telltale, ToneDial, RoundMenu, DecisionParts, decision.css); decision data lib/star/life/decision.ts (which screen, tones, clock setting, who is listening, the squad line, your voice) and roundMenu.ts (the round menu's API for the 3D world); stills public/star/life/; system lib/star/life/ (types, cond, people, facts, director, resolve, social, sim, migrate, validate, flag); the book lib/star/life/book/events.json; tests/star/lifeEvents.mts; soak scripts/soak/lifeSoak.mts. Design: docs/plans/living-world-design-2026-11-20.md. Events v2 (the kit man arc): talks lib/star/life/talk.ts, arcs arcs.ts + arcBook.ts (book/arcs/hundred-balls.json), promises promises.ts, checker validateArcs.ts, test tests/star/lifeArcs.mts; screens StoryPlayer, StoryCards, ActivityHost (the drills on EngineFeature); stills public/star/life/kitman/ (people drawn on /star-life-dev/portrait?id=<preset>). Design: docs/plans/living-world-events-v2-2026-11-20.md.",
   },
   "/admin/star-xp": {
     title: "XP Book",
@@ -1793,6 +1894,63 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-wallet-dev/ · lib/star/wallet.ts, lib/star/useWallet.ts · app/api/star/wallet (GET), /buy, /webhook (refuses all) · app/api/admin/wallet/grant · supabase/migrations/star_wallet.sql (spend_gems, grant_gems, grant_item) · tests/star/wallet.mts · PAID_ITEMS.md",
   },
+  "/star-phone3d-dev": {
+    title: "3D phone (test)",
+    what: "The 3D phone flow (Harry, 19-20 Nov 2026, RUL-UI-008): tap Phone and an eye-blink opens on your hand holding the real phone, with your real 3D house behind it seen from your own eyes (blurred, one still frame). Put the phone away and the camera pulls back from your eyes into the normal 3D house, where you can walk round.",
+    buttons: [
+      { group: "The steps", items: [
+        ["Phone (bottom bar, on the Home picture)", "Your eyes open (1.2 s, see ?blink below) on your hand holding the phone. Waits until the house has loaded."],
+        ["The apps on the phone", "The real phone on a sample career. Messages, Squad, Social, Fixtures, Relationships, Kickabout and the others that live in the phone open and work on the glass (a relationship game only shows a note). Apps that leave the phone in the game (Shop, Store, Garden, Your house, Casino, Sponsors, Owner, Settings) only show a one-line note here."],
+        ["HOME (the phone's own bar)", "In an app: back to the phone's home screen. On the phone's home screen: the phone drops away and you are back on the Home screen."],
+        ["BACK (the phone's own bar)", "In an app: back to the phone's home screen. On the phone's home screen: put the phone away. It lowers out of view while the room sharpens (still your eyes), then the camera pulls back to the house's normal camera."],
+        ["The house (after BACK)", "The real 3D house: the stick or tap to walk, drag to look, doorways to other rooms, the wardrobe and cabinet cards. Its ‹ Home pill goes to the Home screen."],
+        ["📱 Phone (in the house)", "The camera goes back into your eyes and the phone comes up again."],
+      ] },
+      { group: "Options in the address (to compare)", items: [
+        ["(no ?blink: B, Harry's pick)", "The Resident Evil 7 style eye-opening (1.2 s): soft almond-shaped lids open slowly with a small flutter, the blur clears, the head rights itself."],
+        ["?blink=A", "The Far Cry style, kept to compare (1.7 s): the eyes crack open, droop, open wider, half-blink, then open; a bright blurred double view that focuses."],
+        ["?blink=old", "The straight-bars blink from before (0.8 s)."],
+        ["(no ?cam: D, Harry's pick)", "The walking camera in the house: close like C, centred straight behind him, a little higher and looking a little down like A, a smooth follow. The game's camera too since 20 Nov 2026 (and the garden, 3D shop and casino), with pinch / wheel zoom."],
+        ["?cam=A", "The house's walking camera before camera D went into the game (20 Nov 2026), to compare."],
+        ["?cam=B", "Calm follow: lower, centred, looking at his chest, a softer and slower follow. Test page only."],
+        ["?cam=C", "Over the shoulder: head height, close behind his right shoulder, looking ahead. Test page only."],
+      ] },
+    ],
+    saving: ["Nothing is saved. The career is a made-up sample; the wardrobe's choice is forgotten on reload."],
+    inGame: ["Not in the game. Harry judges it here first (Stage 3 of the tap-speed and 3D plan)."],
+    dev: "app/star-phone3d-dev/page.tsx + phone3d.css · the house is components/star/Home3D.tsx with pov (lib/star/home3d/scene.ts setPov / hold / renderOnce; absent = the house as before) and houseCam (scene.ts HOUSE_CAMS; absent or D = the game's camera since 20 Nov 2026, lib/star/three3d/followCam.ts) · the bars' drifting light and glow are off on the glass only (they repaint the bent layer every frame) · the phone is components/star/PhoneHome.tsx with fill + onPhoneHome, bent onto the glass with a CSS matrix3d from the render's printed corners · hand.webp from tools/phone3d/hand_phone_gta.py · ?film=1 = the stage alone on a film clock: window.__phone3dStep(ms) moves the CSS and the 3D one frame (videos are made frame by frame)",
+  },
+  "/star-shop-dev": {
+    title: "Menu shop (test)",
+    what: "The new shop for the menus (Harry, 19 Nov 2026: layout B on the navy store background), on a made-up career, so it can be looked at and bought from before it goes into the game.",
+    buttons: [
+      { group: "The top", items: [
+        ["Back", "In the game it goes back to where you came from. Here it only says so."],
+        ["?", "Shows one line on how the shop works. Tap again to hide it."],
+        ["Settings (the cog)", "In the game: the game's settings. Here it opens the test tools: \"+$50k money\" adds money to the sample career, \"Start the sample again\" puts everything back as it started."],
+        ["The two bars (Fame, Money)", "Your fame and your money. The light piece on Fame is what the picked item would add; the stripes on Money are what it costs."],
+      ] },
+      { group: "The shop", items: [
+        ["Cans, Boots, Drip, Gadgets, Cars, Homes, Holiday", "The categories. Each opens on the cheapest thing you don't own yet."],
+        ["The big picture", "Swipe it left or right for the next item. Tap it to open the item's sheet."],
+        ["The gold price", "Opens the item's sheet (nothing is bought from the card itself). Red = a banned boot, black market only."],
+        ["The small pictures", "Every item in the category. Tap one to show it big. OWNED = you have it."],
+      ] },
+      { group: "The item sheet", items: [
+        ["A level row", "Picks that level to buy. Green Owned = you have it; Next = the one the shop offers."],
+        ["Buy level N · $X", "Buys it with the game's own rules and prices: the money goes down, the level turns Owned. A pair of boots you just bought is sold out until your next visit."],
+        ["Use lawyers", "Only on a banned boot: pay the lawyers' fee too, for less chance of getting caught."],
+        ["Use one", "Only on a can: drinks one."],
+        ["Close (or swipe the top of the sheet down, or tap outside)", "Shuts the sheet."],
+      ] },
+      { group: "The bottom bar", items: [
+        ["League, Training, Home, Phone, PLAY", "The game's own bar. Here a tap only says where it would go."],
+      ] },
+    ],
+    saving: ["Nothing is saved. Buying changes only the sample career on this page; reload the page and it starts again."],
+    inGame: ["Not in the game yet. Harry looks at it here first; then it replaces the Showroom as the shop in the menus (the Showroom moves to the 3D phone)."],
+    dev: "app/star-shop-dev/page.tsx · components/star/shop/MenuShop.tsx + menuShop.css · background baked by scripts/perf2d/bake-shop-bg.py → public/star/shop/bg-store-navy.webp · buy sums copied from app/star-dev/page.tsx handleBuyKib/Boot/Item/FromBlackMarket · ?cat=cans|boots|drip|gadgets|cars|homes|holiday",
+  },
   "/star-store-dev": {
     title: "Store (test)",
     what: "A test version of an in-game store: daily specials, penalty run-ups, accessories, boosts that help you win, and Coins bought with real money. Nothing here reaches a career, and no real money is ever taken.",
@@ -1989,7 +2147,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing here is saved. The page only shows other test pages at fixed moments."],
     inGame: ["Nothing changes in the game from this page. It is a measuring tool for the 3D changes."],
-    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/scene/page.tsx (the cut-scene and Free Roam shots: a bare StyleTest3D, ?scene=director&fixture=…&clean=1; it took over from the deleted Art styles page /star-style-dev, 21 Oct 2026; also the Lag test's cut-scene step), app/star-3d-bench-dev/home/page.tsx (the Home shot; window.__homeT holds a moment), app/star-3d-bench-dev/face/page.tsx (one head close up, its moving face on an 8 s loop), app/star-3d-bench-dev/faces/page.tsx (measures the eight Style A faces: scripts/bench3d/faces.mjs --write), app/star-3d-bench-dev/headshots/page.tsx (twelve made-up players and you as card headshots shot from the 3D model, beside the drawn heads they replace, with the time each picture took; Make again forgets this device's kept pictures; ?only=3d|drawn; components/star/Headshot3D.tsx, lib/star/headshot3d/; stills and timings: node scripts/bench3d/headshots.mjs DIR), app/star-3d-bench-dev/skin/page.tsx (the skin sheet: every skin tone on the card's 3D man from the real headshot maker, each beside the probe picture that marks his face, neck, upper arm, forearm and hand; ?head=h1..h6; numbers and the contact sheet: node scripts/bench3d/skin.mjs --heads=… --out=DIR, node scripts/bench3d/skin-garden.mjs (the same in the real 3D garden), python3 scripts/bench3d/skin_sheet.py DIR OUT.png; ?skinpaint=0 on any 3D page shows the old skin paint), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old for the before). Home stills: node scripts/bench3d/home.mjs PREFIX 3 8.6 20. Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; on any 3D test page ?skinfix=0 shows the old skin, ?framing=old the old cut-scene cameras, ?face=old still faces.",
+    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/scene/page.tsx (the cut-scene and Free Roam shots: a bare StyleTest3D, ?scene=director&fixture=…&clean=1; it took over from the deleted Art styles page /star-style-dev, 21 Oct 2026; also the Lag test's cut-scene step), app/star-3d-bench-dev/home/page.tsx (the Home shot; window.__homeT holds a moment), app/star-3d-bench-dev/face/page.tsx (one head close up, its moving face on an 8 s loop), app/star-3d-bench-dev/faces/page.tsx (measures the eight Style A faces: scripts/bench3d/faces.mjs --write), app/star-3d-bench-dev/headshots/page.tsx (twelve made-up players and you as card headshots shot from the 3D model, beside the drawn heads they replace, with the time each picture took; Make again forgets this device's kept pictures; ?only=3d|drawn; components/star/Headshot3D.tsx, lib/star/headshot3d/; stills and timings: node scripts/bench3d/headshots.mjs DIR), app/star-3d-bench-dev/skin/page.tsx (the skin sheet: every skin tone on the card's 3D man from the real headshot maker, each beside the probe picture that marks his face, neck, upper arm, forearm and hand; ?head=h1..h6; numbers and the contact sheet: node scripts/bench3d/skin.mjs --heads=… --out=DIR, node scripts/bench3d/skin-garden.mjs (the same in the real 3D garden), python3 scripts/bench3d/skin_sheet.py DIR OUT.png; ?skinpaint=0 on any 3D page shows the old skin paint), app/star-3d-bench-dev/people/page.tsx (the people presets' contact sheet: every preset in lib/star/people/presets.ts drawn by the game's toon renderer and labelled; ?set=staff|players|closeup|scene, and ?set=today-staff|today-players for the same slots as the game draws them today; not in the game yet; stills: node scripts/bench3d/people-sheet.mjs OUTDIR), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old for the before). Home stills: node scripts/bench3d/home.mjs PREFIX 3 8.6 20. Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; on any 3D test page ?skinfix=0 shows the old skin, ?framing=old the old cut-scene cameras, ?face=old still faces.",
   },
   "/star-3d-area-dev": {
     title: "3D Area",
@@ -2423,6 +2581,38 @@ export const ADMIN_GUIDES = {
       "A phone or browser that runs 3D (WebGL). The casual clothes use the human body file (about 5.6 MB, downloaded once).",
     ],
     dev: "components/star/Home3D.tsx (the screen, shared with the game's phase \"home-3d\") · app/star-home3d-dev/page.tsx · lib/star/home3d/{homes,rooms,roomBuild,look,trophies,outfits,wear,textures,scene}.ts · the cars and boots: public/star/home3d/*-lod.glb (light copies of the shop's generated models, tools/home3d/make_lods.mjs) · the body: lib/star/home3d/wear.ts (the Style A hook: setWearerBody)",
+  },
+
+  "/star-world3d-dev": {
+    title: "3D world kit",
+    what: "The first test of people who live in the 3D places: the house lounge and a garden where people use things. In the house you sit on the sofa, watch the TV and take a can from the fridge. In the garden two team-mates sit on the bench and chat, now and then one stands up to stretch, and a third drops round at the gate, sits, has a drink and leaves. Tap anyone to talk. Not in the real game yet: the game's house and garden are unchanged.",
+    buttons: [
+      {
+        items: [
+          ["House / Garden (above the scene)", "Which place opens: the house's lounge (sofa, TV, fridge) or the garden (bench, gate, team-mates)."],
+          ["starter / flat / penthouse / house / villa / estate", "Opens the LIVING HOUSE of that home (the real house screen with every room of that home): things to use in every room (sofa and TV, fridge, bed, shower, mirror, coffee machine, treadmill, pool table, loungers, cinema seats) and team-mates round (1 in the starter flat up to 4 at the estate). Walk through a doorway to the next room. Same as ?place=house&tier=villa. Nothing is saved; a home reaches the real game only once it is switched on in the code (LIVING_TIERS)."],
+          ["↻ Restart", "Opens the place again from the start (the same people, the same day)."],
+          ["Tap the floor", "You walk there, round furniture and round people."],
+          ["Tap the sofa, the TV, the fridge, the bench or the gate", "You walk up to it and its card opens. Sit down / Watch TV / Take a can: you do it. Stand up ends it."],
+          ["Tap a team-mate", "You walk up to him, he looks at you, and his card opens with a couple of lines."],
+          ["Chat (on a team-mate's card)", "The living world's chat: a line from the book and a small bond change, on this page's made-up career only. Once a week per team-mate; after that he says you already spoke."],
+          ["See you / Not now / OK", "Closes the card."],
+          ["Pinch or scroll the wheel", "Zooms the camera out behind you and back in (camera D)."],
+          ["The strip at the top", "The game clock and what each team-mate is doing."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. The made-up career lives on this page only and is gone when you leave or restart.",
+      "The address can hold a set-up: ?place=house|garden, ?q=low|medium|high (the quality tier), ?fps=1 for the frame meter, ?bare=1 full screen, ?demo=sofa|fridge|visitor|talk (a scripted run for filming).",
+    ],
+    inGame: [
+      "Nowhere yet. This is phase 1 of the shared world kit (docs/research/world-3d-2026-11-20.md); the real house and garden get it once Harry approves.",
+    ],
+    needs: [
+      "A phone or browser that runs 3D (WebGL).",
+    ],
+    dev: "components/star/World3D.tsx · app/star-world3d-dev/page.tsx · lib/star/world3d/{smartObject,routine,npc,interact,budget,testScene}.ts · test: tests/star/routine.mts · the lounge itself is lib/star/home3d/roomBuild.ts (unchanged)",
   },
 
   "/star-sprites-dev": {
@@ -3036,8 +3226,11 @@ export const ADMIN_GUIDES = {
 
   "/admin/marketing/publish": {
     title: "Publish",
-    what: "Post a finished video to Instagram, Facebook and YouTube now or at a set time, and see its views, likes and comments. Admins only.",
+    what: "Post a finished video to Instagram, Facebook and YouTube now or at a set time, and see its views, likes and comments. Three sets of accounts, picked at the top: Football and Content are Mikey's own (only his login, PUBLISH_OWNER_EMAIL); Knowitball is the team's (every admin).",
     buttons: [
+      { group: "Which accounts", items: [
+        ["Football / Content / Knowitball", "Switches the whole page to that set of accounts: its connected logins, its videos, its posts and numbers. Connect buttons connect accounts for the set you are on."],
+      ] },
       { group: "Accounts", items: [
         ["Connect Facebook + Instagram", "Opens Facebook's login. Pick the Knowitball Page and its Instagram, press Allow. One login connects both."],
         ["Connect YouTube", "Opens Google's login. Pick the Knowitball channel, press Allow."],
@@ -3045,7 +3238,8 @@ export const ADMIN_GUIDES = {
         ["Forget", "Removes that platform's saved login. Posts to it stop until you connect again."],
       ] },
       { group: "New post", items: [
-        ["Video", "Pick a video already in our storage. Put new ones in with Marketing → Uploads first."],
+        ["Video", "Pick a video. \"Mine\" = Mikey's own storage; \"Knowitball\" = the team's Marketing → Uploads."],
+        ["⬆ Upload a video", "Sends a video from this device straight into Mikey's own storage (or the team's, if his is not set up). Shows the percentage, then picks it in Video."],
         ["Instagram / Facebook / YouTube", "Tick where it goes. A platform that is not connected cannot be ticked."],
         ["Title (YouTube and Facebook)", "The video title. YouTube needs one."],
         ["Caption (all platforms)", "Caption and hashtags. On YouTube it is the description."],
@@ -3054,7 +3248,7 @@ export const ADMIN_GUIDES = {
         ["Post now / Schedule post (big button)", "Puts the post in the queue."],
       ] },
       { group: "Posts and numbers", items: [
-        ["↻ Check now", "Runs the poster straight away instead of waiting for the 5-minute timer, and refreshes numbers that are due."],
+        ["↻ Check now", "Runs the poster straight away instead of waiting for the 5-minute timer, and re-reads every recent post's numbers from Instagram, Facebook and YouTube now (live numbers)."],
         ["Post now", "Posts a scheduled post straight away."],
         ["Cancel", "Stops a scheduled post. Nothing goes out."],
         ["Try again", "Retries the platforms that failed. Platforms that already posted are not posted twice."],
@@ -3062,7 +3256,8 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: [
-      "Shared with Harry, Mikey and Leo: the queue and results are in the database (tables publish_posts and publish_accounts). The page re-reads every minute.",
+      "The queue and results are in the database (tables publish_posts and publish_accounts). The page re-reads every minute. Locked to the owner when PUBLISH_OWNER_EMAIL is set.",
+      "Uploaded videos go to Mikey's own Cloudflare bucket (PUBLISH_R2_ settings), kept apart from the team's Marketing bucket.",
       "Logins are stored encrypted. Nobody can read them from the page.",
       "A timer in the database runs the poster every 5 minutes. Instagram takes a few extra minutes to process a Reel; it shows \"Instagram is processing it\" meanwhile.",
       "Numbers refresh every 3 hours for 30 days after a post goes up.",
@@ -3071,10 +3266,10 @@ export const ADMIN_GUIDES = {
     inGame: ["Nowhere. This posts our own videos to our own accounts."],
     needs: [
       "The database tables and timer: run supabase/migrations/publishing.sql once (with the cron secret pasted in). Without it the page says the tables are missing.",
-      "Vercel settings: PUBLISH_TOKEN_KEY, PUBLISH_CRON_SECRET, PUBLISH_AGENT_TOKEN, META_APP_ID, META_APP_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, plus the four R2 storage settings. The page lists any that are missing.",
+      "Vercel settings: PUBLISH_TOKEN_KEY, PUBLISH_CRON_SECRET, PUBLISH_AGENT_TOKEN, META_APP_ID, META_APP_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, plus video storage: Mikey's own (PUBLISH_R2_ACCOUNT_ID, PUBLISH_R2_BUCKET, PUBLISH_R2_ACCESS_KEY_ID, PUBLISH_R2_SECRET_ACCESS_KEY, and a CORS rule on the bucket allowing knowitball.co.uk to PUT) or the team's four R2 settings. PUBLISH_OWNER_EMAIL locks the page to its owner. The page lists any that are missing.",
       "Until Google approves our YouTube audit, YouTube keeps every video posted from here private. Instagram must be a Professional account linked to the Facebook Page.",
     ],
-    dev: "app/admin/marketing/publish/page.tsx · components/admin/marketing/PublishPanel.tsx · lib/publish/{engine,live,meta,youtube,db,crypto,auth,video,types}.ts · /api/admin/publish{,/[id],/tick,/upload,/accounts,/connect/[platform],/callback/[platform]} · supabase/migrations/publishing.sql · scripts/publish/post.mjs · tests/star/publishEngine.mts",
+    dev: "app/admin/marketing/publish/page.tsx · components/admin/marketing/PublishPanel.tsx · lib/publish/{engine,live,meta,youtube,db,crypto,auth,video,storage,types}.ts · /api/admin/publish{,/[id],/tick,/upload,/accounts,/connect/[platform],/callback/[platform]} · supabase/migrations/publishing.sql · scripts/publish/post.mjs · tests/star/publishEngine.mts",
   },
 
 } satisfies Record<string, AdminGuide>;

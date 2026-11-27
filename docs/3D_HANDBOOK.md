@@ -30,6 +30,7 @@ Preview) sets them all at once.
 | Crossbar Challenge | `components/star/Training3D.tsx` | `lib/star/training3d/scene.ts` (your shot is the 2D engine; the 3D pitch draws it) | `/star-training3d-dev` | none |
 | Garden | `components/star/Garden3D.tsx` | `lib/star/garden3d/scene.ts` (old: `lib/star/garden3d/sceneOld.ts`, frozen) | `/star-garden3d-dev` | 3D garden: New / Old (`lib/star/garden3d/look.ts`) |
 | Your house (rooms you walk through: wardrobe and mirror, trophy cabinet, cars out of the window) | `components/star/Home3D.tsx` | `lib/star/home3d/scene.ts` (one room at a time: `roomBuild.ts`; which rooms and their doors `rooms.ts`; room presets `homes.ts`, outfits `outfits.ts`, the body `wear.ts`, trophies `trophies.ts`, textures `textures.ts`) | `/star-home3d-dev` (`?tier=starter\|flat\|penthouse\|house\|villa\|estate`, `?house=new\|old`, `?look=h\|old`, `?trophies=0`) | none (a new place; its two ways in in a career are one switch, `lib/star/home3d/flag.ts`) |
+| The world kit, phase 1 (people who use things: sofa, TV, fridge, a bench, a visitor at the gate, tap to talk) | `components/star/World3D.tsx` (test page only) | `lib/star/world3d/` (`smartObject.ts`, `routine.ts`, `npc.ts`, `interact.ts`, `budget.ts`; the test places `testScene.ts`, the lounge from `lib/star/home3d/roomBuild.ts`) | `/star-world3d-dev` (`?place=house\|garden`, `?demo=sofa\|fridge\|visitor\|talk` for filming) | none (not in the game yet) |
 | Shop | `components/star/Shop3D.tsx` | `lib/star/shop3d/scene.ts`, items in `lib/star/shop3d/catalogue.ts` | `/star-shop3d-dev` | 3D shop player (`lib/star/signing3d.ts`); 3D look H |
 | Casino | `components/star/Casino3D.tsx`, tables in `components/star/Casino3DTable.tsx` | `lib/star/casino3d/scene.ts` | `/star-garden3d-dev` (has a Casino tab) | Casino: 3D / Classic (`lib/star/casino3d/look.ts`); Casino look: New / Old (`lib/star/casino3d/roomLook.ts`) |
 | Signing scene | `components/star/SigningScene3D.tsx`, in a career via `components/star/SigningScene3DCareer.tsx` | `lib/star/signing3dScene.ts` (people: `lib/star/signing3dRig.ts`) | `/star-3d-area-dev/signing` | Signing scene: 3D / drawn (`lib/star/signing3d.ts`) |
@@ -110,6 +111,50 @@ exactly today's bodies. You never pick a file yourself:
   with `setToonBuild(p, body)` (see `engineView.ts`).
 - Only one person on screen (Home, title)? `loadToonHead(loader, head)` fetches
   one head file instead of all eight.
+- People presets (20 Nov 2026, not wired into scenes yet): `personLook(id, role, { club, known })`
+  in `lib/star/people/presets.ts` picks one of 60 staff/press/fan and 72 player presets by the
+  id's hash, with small per-person touches. Each preset has a heritage that sets skin range, hair
+  texture and colours; a style only goes on a texture it suits (`styleTextures`: no quiff, bun or
+  fringe on coily hair; waves and cornrows, painted on the close crops h3/m2, only on coily hair); `castScene([...])` keeps five people in one shot
+  from sharing a head and coat. Its `.dress` goes straight into `dressPerson3d`, with
+  `toonHead`/`toonBody` into `makePerson3d`. Two new optional looks do it: `suit` (coat,
+  trousers, shirt, tie, shoes: also a tracksuit or casual set on a kit head) and `hairCut`
+  (scalp → skin for bald/shaved on the close-cut heads h3, h6, m2; beard off; stubble on; waves or
+  cornrows; shader uniform `uHairCut`). The face's soft hair edge is crisp now (grey beards on dark
+  skin left pale smudges) and the skin round the eyes is never hair (m2's mask). Contact sheet: `/star-3d-bench-dev/people`
+  (`node scripts/bench3d/people-sheet.mjs OUTDIR`). The suit heads' shirt V is now always shirt
+  (their masks call it skin). Test: `tests/star/peoplePresets.mts`.
+- Modelled hair and new head shapes (20 Nov 2026, presets only, not in the game's seeded pools): 15 hairstyles
+  (locs short / shoulder / tied up, short afro, high-top, twists, braids, curly top, crew cut, slick back, tied
+  back, man bun, mullet, thinning, receding) worn on the close-cut heads, skinned on the wearer's own skeleton:
+  `lib/star/style3d/toon/hairStyles.ts` (list, hair textures, which head wears which set) and
+  `lib/star/style3d/toon/hair.ts` (`wearToonHair(T, loader, person, hair)` after `makePerson3d`; it takes the
+  body's hair colour and cel light). Four re-shaped heads: h7 Broad jaw, h8 Long face, h9 Round face, m3 Older,
+  lined (`TOON_SHAPE_HEADS`; `TOON_ALL_HEADS` is every head file). Built by `tools/hair3d/` (read its README:
+  Blender `build_hair.py`, `reshape_heads.mjs`, the 0-crossing check). Files: `public/star/people3d/hair/`.
+  Loose hair swings: call `hair.update(dt)` every frame (one spring per head of hair, `TOON_HAIR_SWING`; film with
+  `node scripts/bench3d/hair-swing.mjs OUTDIR`). Face types, first pass (to be rebuilt after the face research):
+  `lib/star/style3d/toon/faceShape.ts` + `faceShapeApply.ts` (`applyToonFaceShape` before `addToonFace`).
+  Light skin on a toon preset is painted a touch darker and warmer (`toonSkinHex`, presets.ts), fair or grey brows darker (`browDark`).
+  Sheets: `/star-3d-bench-dev/people?set=hair`, `?set=heads`, `?set=faces`, `?set=swing`.
+- **The face system (20 Nov 2026, Harry: "straight-to-the-face build"; bench only, not in the game yet).** Each person's own face is a
+  FaceId (`lib/star/style3d/toon/faceId.ts`: about fifty numbers and three colours from his id, `personLook(...).faceId`; the same id, the
+  same face): eye shape (round, almond, hooded, narrow, deep-set, downturned, upturned, single lid), size, spacing and a real eye colour,
+  brows, lips, freckles, age lines, a mole, facial hair, and the mould (`faceBuild`: most players lean and athletic; jaw, chin, cheeks, nose,
+  face length). Features come from his heritage's pools, every number inside `FACE_LIMITS` (RUL-3D-010). `applyToonFaceId(T, person, faceId,
+  { detail })` (`faceIdApply.ts`; after `dressPerson3d`, before `addToonFace`) moves his own copy of the mesh and switches on the drawn face in
+  the body shader (`faceIdShader.ts`, `#define TOON_FACEID`): the head's painted eyes, brows, lips and beard are painted out, the skin evened,
+  and his own drawn on the surface. Everyone without a FaceId runs the old shader (one shared change: a measured iris keeps its own paint).
+  Emotions: `FACE_EMOTIONS` (neutral, happy, proud, angry, sad, worried, smug, shocked) = 14 numbers, `blendEmotions({ happy: 0.6, smug: 0.4 })`
+  into `face.set({ face, blink, gaze })`; blinks and glances as before (`blinkAt`, `wanderGaze`). Detail: 1 a computer or a close-up, 0.5 a
+  phone (`FACE_DETAIL`); fine detail also fades by itself as the face gets small; give a FaceId only to people seen up close.
+  Round 2 (20 Nov): beards are one soft shape that follows the jaw (a shield round the mouth, a feathered cheek line, toon-hair light and
+  shade, lips toned back; `BEARD_STYLES`); players no longer wear the boyish heads h1, h4, h5 (`presets.ts PLAYER_VARIANTS`), and
+  `HEAD_LEAN` starts a lean build from a grown man's lower face on h1/h2/h4/h5 and the suit heads; sad and worried read apart.
+  Bench: `?beards=6,9` `?eyes=9,2` `?allheads=9` `?perf=22` (ms a frame with and without the drawn face). Measured on the software
+  renderer only (640x360, noisy): about +25 to +40% of a frame for one face filling the screen, +18 to +35% for 22 people.
+  Sheets: `/star-3d-bench-dev/people?set=faceids` (`&faceid=0` before, `&zoom=1`, `&emotions=9`, `&sliders=9`), `?set=faceplay`; film:
+  `node scripts/bench3d/face-film.mjs OUTDIR`. Tests: `tests/star/peoplePresets.mts`. Not done: mouth shapes from sound.
 - A new head: concept picture → Higgsfield image-to-3D (Tripo H3.1, face limit
   15000) → `tools/modeltest/fit.py` → `scripts/people3d/build_toon_bodies.py <dir>
   tag:dir/fit.glb[:suit]` (it also weights the fingers: `weight_fingers`) →
@@ -163,6 +208,7 @@ exactly today's bodies. You never pick a file yourself:
 
 ### Cameras
 
+- `lib/star/three3d/followCam.ts` — camera D, the walking camera of every walkable 3D area (house, garden New, 3D shop, casino New; 20 Nov 2026): 2.5 m behind, centred, 2.2 m up; pinch / wheel zooms out to 4.4 m (remembered per device). Walls: the boom eases in along its own line and back out (`FollowBoom`, `capOnLine`), never nearer his head than 1.25 m (`riseForMin`), he fades a little only if a ceiling stops the rise (`followFade`); his steps go straight into the camera (`FollowCarry`); walking straight at it, it backs off instead of swinging over him. Test: `tests/star/followCam.mts`. Film: `scripts/film/scenes/follow-cam-d.mjs`.
 - `lib/star/three3d/orbitCam.ts` — the look-around camera for the garden and shop (drag turns, eased, tilt held, never under the floor). Test: `tests/star/orbitCam.mts`.
 - `lib/star/three3d/practiceCam.ts` — the 3D drills' camera: behind your shoulder, turns on its own towards what it frames, never turned by your stick, ball-track for crosses, peek, and PLAY mode for Free Roam (frames the play: tight with the ball, turns to the ball and pulls back when it's away, slides ahead of your run). Test: `tests/star/practiceCam.mts`.
 - The real game's 3D camera is built from the 2D canvas's own tilt (`lib/star/cameraTilt.ts`), so every spot on the grass lands on the same pixel. Do not change one without the other.
@@ -175,6 +221,7 @@ exactly today's bodies. You never pick a file yourself:
 - `lib/star/three3d/runPosture.ts` — load-time fixes on the run loops: upright neck, lowered shoulders, running arms.
 - `lib/star/three3d/footballAnims.ts` — load and play clips (`loadAnims3d`, `addClips`, `ClipPlayer`, `clipInfo`, `plantedAt`).
 - `lib/star/three3d/animBlend.ts` — clean blending for every mode (9 Oct 2026). `FadeWeights`: a clip change fades from the pose he is in now, however many changes come inside one fade (no pop). `locoWeights` + `LocoPhase`: walk / jog / run / sprint mixed by real speed on one stride clock (no flicker, no foot slide, same foot down). `smoothYaw` / `turnTo`: turns ease in and out. `ClipPlayer.loco(speed)` and `GaitBlend` both run on it. Never write a new crossfade or gait picker: use these. Test: `tests/star/animSmooth.mts` (pops, foot slide, turns; `ANIM_OLD=1` measures the old code if its copies are put back).
+- `lib/star/three3d/hipFit.ts` — every person's hip joints are fitted to the clip skeleton's hip width when he is made (`fitHipJoints`, called by `makePerson3d`), so a clip's feet land where the capture's did. Nothing else widens a stride: each clip keeps its own step width. Test: `tests/star/gaitWidth.mts` (see "People overhaul" at the end). `?hipfit=0` shows the old legs.
 - `lib/star/three3d/locomotion.ts` — `footMark`: each loop's left-foot moment, measured off the motion (the capture's own plant marks put the sprint on the wrong foot).
 - `lib/star/motionLook.ts` — Settings → Look → Motion: Mocap / Old.
 
@@ -357,6 +404,13 @@ Your session is a cloud container that clones the repo. **Anything only in your 
 
 What landed today on Harry, newest first, one line each.
 
+- The living houses (20 Nov 2026, Harry: "we need 3D FOR ALL OF them"): every home tier gets its own rooms (`lib/star/home3d/homes.ts` `LIVING_ROOMS`: starter studio; flat nook, lounge, bedroom, bathroom; penthouse open-plan lounge with kitchen island, bedroom, bathroom, terrace; house hallway, lounge, kitchen, bedroom, bathroom, trophy, garage; villa + dressing, gym, games, pool terrace; estate + cinema, garden terrace), built in `lib/star/home3d/livingRooms.ts` (doors `rooms.ts` `DOOR_LIVING`). Furniture is the Kenney Furniture Kit (CC0) packed into `public/star/home3d/furniture.glb` (`tools/home3d/make_furniture.py`, sources in `tools/home3d/kenney-furniture/`), placed by `lib/star/home3d/furniture.ts` (front = -z, tints by material name, joined into the room's still draws). Each room lists what can be used (`BuiltRoom.things`: sofa + TV, stocked fridge, bed, bathroom mirror, shower, coffee machine, treadmill, mat, pool table, loungers, cinema seats, trophy bench), its fx (TV picture, fridge door, shower water) and where team-mates sit (`guests`). `lib/star/world3d/houseLife.ts` runs it inside the real house (`scene.ts` `opts.living`): tap a thing, walk up, card, use (your body handed to a world-kit `Npc` for the clip, a can / cup / remote in the hand), team-mates cast from the people presets (1 starter … 4 estate, `GUESTS_BY_TIER`), tap to talk. A tier reaches the game when it is in `LIVING_TIERS`; every tier is on `/star-world3d-dev?place=house&tier=<tier>`. Shaded corners (`aoCorners`), art (`artPiece`), lamps that glow, filled shelves.
+- The world kit, phase 1 (20 Nov 2026, Harry: every 3D area needs "characters interact with the world. Are they walking around?"; docs/research/world-3d-2026-11-20.md): `lib/star/world3d/`. Smart objects say how they are used (slots, facing, enter/loop/exit clips, card words); `SlotBook` stops two people taking one seat. People (`npc.ts` `Npc`, you included) walk on `tapWalk.ts`, play clips through `ClipPlayer` (no foot slide), never walk through each other (slow, step aside, hard push-out, re-route). Sitting is ONE capture (`sit_down`: held at 1.55 s to stay sat, played backwards to stand) because `sit_idle`/`stand_up` are cut 0.28 m off its feet; each body measures the underside of its seat and thighs (`measureSit` profile) and each seat says where its front edge is (`seatObject` `front`: hips 0.2 m behind it so the shins hang clear); seated hands rest on the thighs. The test page's debug `seats[].pierceCm` counts skin inside a seat (bench and sofa: 0). Team-mates are cast from `lib/star/people/presets.ts` `castScene` (head, build, hair, the drawn face). Routines on a `DayClock` (`routine.ts`, test `tests/star/routine.mts`); budget per tier (`budget.ts`: phone 4 moving / 8 present). Drink and look are added over the clip (look on the neck only: the toon neck is scaled, a turned head shears). Test page `/star-world3d-dev`; the game's house and garden are unchanged. The house now starts you far enough in for camera D's whole boom (`followCam.ts` `settledArrival`).
+- Toon hair and head shapes (20 Nov 2026, Harry: "still more hairstyles, dreads are common in football, try and model new head shapes and hair"): 15 modelled hairstyles and 4 re-shaped heads for the people presets (section 2 "Modelled hair and new head shapes"; `tools/hair3d/README.md`). Presets grew to 72 player and 60 staff looks; locs, afro, high-top, twists and braids only on coily hair (`tests/star/peoplePresets.mts`). Nobody in the game changes yet.
+- The 3D phone, live (20 Nov 2026, Harry, RUL-UI-008; test page `/star-phone3d-dev` only, not in the game): the house can open in his eyes (`Home3D` `pov`, `chrome={false}`, `onReady`; `startHome` option `pov`). `HomeController.setPov(k)` puts the camera on the straight line from his eyes (k 1, he is hidden) to the normal camera (k 0; he fades in once the camera is 0.75 m clear of his head), `null` = off; `hold(true)` draws one frame and stops the loop (the house behind the phone), `renderOnce()` draws one frame (filming). In pov he starts up to 1.4 m further into the room so the camera he pulls back to frames him. Absent, the house is exactly as before. The real phone (`PhoneHome` `fill`, `onPhoneHome`) sits on the glass with a CSS matrix3d. Videos are made frame by frame on `?film=1` (`window.__phone3dStep(ms)`).
+- The 3D phone in the game (21 Nov 2026, Harry: "why does the phone transition to 3D not work?"; RUL-UI-008): `components/star/HousePhone.tsx` is the house and the phone as ONE screen in `app/star-dev/page.tsx` (phase `media` = phone up, phase `home-3d` = in the house; same element, so the house never reloads between them). Phone tab → eye-opening B in 0.6 s (a tap skips it) → the real `PhoneHome` on the glass (`lib/star/phone3dGlass.ts`, shared with the test page). The house behind loads after the phone has been up 2.5 s (a blurred room picture until then) or at once on BACK. BACK → hand lowers 0.3 s, camera eases out of his eyes 0.7 s (`HomeController.easePov`, on the wall clock, inside the house's own loop) → the house; its "📱 Phone" pill (and the garden's) → into his eyes 0.3 s + raise 0.3 s. HOME → Home at once. Kickabout brings the glass flat to the face (its canvas reads taps by its box). In pov he is hidden outright (`root.visible`), as the toon body ignores opacity. Flat phone (as before) when `phone3dCan()` is false: no WebGL, 3D quality Low, reduced motion; also on the first visit while the phone tour is due. The answer is kept while the house/phone screen is open. Preload: the hand and room pictures first in the game's idle preload list.
+- The follow camera, camera D (20 Nov 2026, Harry: "D is good and should be the base for all 3D areas"): `lib/star/three3d/followCam.ts` holds D's numbers (`FOLLOW_CAM_D`: 2.5 m behind, centred, 2.2 m up looking a little down, smooth follow, small swing off walls), the zoom range out to about the old house camera (`FOLLOW_CAM_FAR`, `zoomedFollowCam(z)`), and pinch / wheel input remembered per device (`FollowZoom`, `attachFollowZoom`, key `kib-3d-follow-zoom`). The house uses it only with `startHome` option `houseCam: "D"` (`Home3D` `houseCam`; the 3D phone test page passes D; `?cam=A|B|C` there compares the others, `HOUSE_CAMS` in home3d/scene.ts). Absent, the house camera in the game is unchanged (A). Not wired into the other 3D areas yet.
+- Camera D in the real game (20 Nov 2026, Harry: "should camera D go into the real game?" "yes"): the house's default camera is D (`HomeOptions.houseCam` absent = D; A/B/C stay for `/star-phone3d-dev?cam=`), and the garden (New; `sceneOld.ts` untouched), the 3D shop and the casino (Casino look New; Old untouched) walk with D and its zoom too. Their own shots (cards, the house's opening shots, casino close-ups, the garden's gazebo/fountain/wall rules) are kept. The doorway jam is fixed: you arrive up to 3.2 m inside a door (D's whole boom, where the floor is clear; was 1.5 m) and the boom eases off walls along its own line (see Cameras above).
 - Goal celebrations in the 3D match view (22 Oct 2026, Leo, chat 1 "After you score"): after YOUR goal the 2D match runs you to the nearer corner and plays the celebration equipped in the shop (`lib/star/celebration.ts`: `CELEB_SPECS` maps each move to its `anims3d/mocap.glb` clip — celebrate_safe, celebrate_airplane, knee_slide, celebrate_pump, celebrate_jump, celebrate_roar, celebrate_fist). The frame carries it as `EngineFrameFigure.celeb` (clip + seconds in); `engineView.ts` plays exactly that frame of it with the hips pinned (state `celeb:<clip>`); the 2D moves him along the grass (a knee slide, the hands-up jog). The six 2D sprite clips are atlas 2 (`tools/sprites/new/bake-new.mjs celebs`). Test: `tests/star/celebration.mts`.
 - Your 3D footballer on the FIFA player card (23 Oct 2026, Harry: "add the 3d model to the fifa card"): the card (`components/star/PlayerCard.tsx`) shows your own Style A man (Settings → Your look, your club's home kit) head to waist, a still from the same headshot maker (`<Headshot3D frame="card" />`; `CARD_SHOT` in `lib/star/headshot3d/look.ts`: 320 px, the same lens, pose, smile and light, the camera stood back until crown and waistband fit, measured off his head and hips bones; kept under its own key, bump `CARD_SHOT_VERSION` to re-make). Transparent, so the tier colour shows behind; the card's soft-edge mask fades the waist. "Save image" draws the same still (`playerCardImage.ts`). No WebGL or a failed load: the drawn head stays as before.
 
@@ -1085,3 +1139,110 @@ Harry: "we have got to fix this skin colour issue on the 3d guys" (the FIFA card
 - **Fix** (`lib/star/style3d/toon/shader.ts`, all Style A people share it): `tnSkinOf` paints skin as the picked tone × the file's own light and dark (`TOON_SKIN_PAINT`: ^0.85, 0.35–1.3, 20% of the file's hue kept), brought down as one when too bright; the face's lift on all bare skin; skin-coloured unmasked texels on the head and kit texels on the head or under the jaw become skin; the rim on skin takes the skin's colour. `people3d.ts` passes `uSkinTone`/`uSkinAvg`. The card's mask is now 5% each side, from 82% down (`FACE_FADE`). `HEADSHOT_VERSION` 2 re-makes every kept face. `?skinpaint=0` on any 3D page shows the old skin.
 - **Measured after** (all 8 tones): garden face vs forearm 0–2.4 ΔE (was 13–28), arms 6–17 ΔE off the tone (was 17–26; the rest is the garden's warm daylight); card face vs forearm 0.6–2.3; patchiness inside a region (p90) 16–22 → 2–12. Not changed: the realistic human body (`human3d`, Player style Old) and the old people3d bodies ("3D people: Old").
 - **Cut scenes too (25 Oct 2026).** The signing (and office, walk-out, farewell, award nights) still handed `dressPerson3d` your portrait or the default fake face, and it was pasted over the drawn head at the photo's own colour: at Fair a pink-cheeked face over the even paint, a pale rim round its oval at the jaw and a pale streak over one eyebrow. `dressPerson3d` now drops `look.face` while `PHOTO_FACES` is off (FACT-UI-015), and the career wrappers no longer wait for the picture. Signing reply shot, `/star-3d-area-dev/signing?bare=1&face=0`, all 8 tones: face p90 7–18 → 3–9, Fair face vs neck 5.9 → 1.0 ΔE; card and garden unchanged.
+
+### The 7 cut scenes fixed: the camera-clear rule, preset casts, ground contact (20 Nov 2026)
+
+A filming pass graded the hand-made scenes C/D (camera inside a plant, a chair, people; the cup on his head; the press room open to the sky with capsule reporters; The Icon a plain lad in black). System fixes, all in the director, so every scene gets them:
+- **Camera-clear rule** (`director.ts` `CAMERA_CLEAR`, `clearShot`): a still camera is never inside or within 0.3 m of a set solid or a resting prop (every set mesh but the floor, glass and the stadium), must see its subject's head and chest past them, and (new) no one may stand on the line to the subject's chest anywhere between (the walk-out lost you behind the other team). Blocked → it swings round (near angles first), then rises; else the least blocked view.
+- **Casting from the people presets** (`casting.ts` `castAll`, `peopleStub.ts`): everyone but you gets a preset from `lib/star/people/presets.ts` (head, build, modelled hair, drawn face via `applyToonFaceId`, clothes); same id, same look; no two share a preset in a scene. Manager = an older suit preset; The Icon = `LEGEND_PRESETS` (grey, thinning or receding, 60+); reporters = journalist presets plus smart and casual looks, faces at half detail (`look.detail`). "you" is always your player, also when a scene casts him as the captain.
+- **Ground contact** (`director.ts` `groundContact`, `GROUND`): no knee or toe goes through the floor; on his knees (kneel, knee slide) the knees rest on it. **Contact shadows**: a soft patch under everyone (`placeBlobs`).
+- **Overlap check** (RUL-3D-005): sets list their solids (`presets/locations.ts` `solids`); `tests/star/cutscene.mts` walks every scene's people past them and each other. The tunnel's touchline ad board now has a gap for the teams (`locations3d.ts` `gapBoard`).
+- **Sets**: the press room is a room (walls, ceiling panels, a branded backdrop on a frame, the club's desk skirt, name cards, 21 chairs, reporters cast and seated); the tunnel has light under every other strip, a fill and daylight from the mouth.
+- **Walking and light** (Harry: "he isn't even walking", "the lighting and contrast is a bit much"): anyone who travels plays a gait clip whose feet keep up (the test fails a man moving over 0.3 m/s with no gait, or faster than 1.75x his gait's speed; `GAIT_SPEED` now knows "dribble"); the walk-out walks at ~1.4 m/s. Every cut scene's light is softened the same way (`director.ts` `CUT_LIGHT`: key 0.82, fill 1.3, rim 0.6, flatter grade, lifted shadows, exposure 0.93).
+- **Sound**: the press question and answer are recorded (`scripts/cutscene/voice.py <model dir> press-question press-answer`; only the named lines are re-recorded), cues at t = 0 now play (the tunnel's crowd), crowd ambience under the goal, walk-out, trophy and farewell; a goal plays the walk-out's tension bed, not the trophy's.
+
+### People overhaul: hips, sitting, suits, the ball at his feet (20 Nov 2026)
+
+Harry on the re-filmed cut scenes: "why the legs like squeezing past each other", "his legs are scrunched up when he sits down", "his skin colour is bleeding into his suit", "the ball doesn't really actually go where his feet are". Fixed in the shared people system, so every scene gets it.
+- **The tightrope walk was the rig, not the clips.** Every clip is solved on one skeleton with hip joints 19.7 cm apart. The Style A heads were rigged one by one and some got theirs 9.7 to 11.4 cm apart (Curls, Buzz & beard); the first suit head 30 cm. A clip only turns bones, so Curls stood with his ankles 13.8 cm apart (the capture: 20.7) and walked with them 0.5 to 2.2 cm apart (the capture: 8 to 10). `hipFit.ts` moves each hip joint over that leg's own knee, within 3% of the clip skeleton's width, and binds the thigh again: skin, size and proportions unchanged (RUL-3D-006), nothing per frame. After: standing 22.5 cm, walking 9.3 to 11.1 cm, on all 12 heads and 3 builds. `tests/star/gaitWidth.mts` plays each clip on the clip file's own skeleton (the source) and on every head, and fails a body whose feet are not where the source's are (10%), whose ankles cross, or whose legs touch. Table: `ROWS_ONLY=1 npx tsx tests/star/gaitWidth.mts`; the old numbers: `HIPFIT=0`.
+- **Sitting** (`director.ts` `SITS`, `seatedFeet`): the motion-capture sits were missing from the seated list, so a seated man was pulled down until his feet met the floor. Now a seated man keeps his seat and each foot is laid flat on the floor, the shin down, whatever the chair's height.
+- **Suits** (`toon/shader.ts`, `toon/faceIdShader.ts`): a suit head's shirt collar, tie knot and coat collar are cloth whatever its mask says; nothing unpainted shows on a coat; the suit's own painted smudges are toned to 40%; the drawn face never paints over clothes. A cut-scene tracksuit on a kit head is the whole set, trousers too (`peopleStub.ts`).
+- **The ball at his feet** (`director.ts`, prop action `dribble`): the ball is touched on by whichever foot swings through each step (measured from his own pose before the first frame) and is against the striking foot at the contact; `beats.ts` `STRIKE_CONTACT` is the motion-capture shot's own contact time. The ball is real size.
+- **Close-up stills**: `node scripts/bench3d/closeups.mjs "<director url>" OUTDIR shots.json` (one actor from any side or above, 780x1688, `"hide": ["#grid"]` draws a 10 cm floor grid). Leg numbers: `npx tsx scripts/people3d/legGap.mts`.
+- Not done: the older suit head's face (still odd close up), the jagged edge of a suit head's collar (the mask is coarse there), new clips from other libraries (the capture site was refused by the network; the Quaternius set is already in the repo).
+
+### Clothes as cloth (20 Nov 2026)
+
+Harry: "The kits look not like fabric but painted on with blobs of differing paint." Research and proofs:
+`docs/research/clothes-and-necks-2026-11-20.md`. Code: `lib/star/style3d/toon/clothes/`.
+- **What it is.** A garment is the Style A body's own surface cut along landmark lines of its rest pose (neck ring,
+  collar line, shoulder seam, sleeve end, wrist, waist, hem, shorts end, sock top, ankle), pushed a few mm off the
+  skin, with a lip at every open edge, skinned to the same skeleton with the body's own weights (every clip fits).
+  The body under it is cut away (1.5 cm inside each edge), so no skin shows through and no painted kit is left.
+  Collars (crew, shirt, polo), lapels, the hood and the tie are their own pieces swept along the neck loop.
+  Trouser legs are one straight slim tube hip → ankle (4-7% over the leg; no thigh bump from the old shorts).
+- **Call.** `dressCloth(T, p, kind, who)` after `dressPerson3d` (and before `applyToonFaceId`). It reads the colours
+  `dressPerson3d` already set (kit, pattern, crest, number, suit colours), so club kits, `nationKits.ts` and the
+  people presets drive it unchanged. Kinds (`outfits.ts`): kit, tracksuit, press, suit, polo, fan, hoodie.
+- **Cost (measured, software GPU, so read the change, not the ms).** Built once per head file + proportions + kind
+  (75-314 ms on this machine), then shared; each person gets one small material. 4 draws per person (body, body
+  ink, cloth, cloth ink; 2 before). Press scene: 86 → 112 draws, 261k → 343k triangles, frame time within noise
+  (11 vs 12 frames in 20 s). Walk-out: 69 → 89 draws, 223k → 288k triangles, about +6% frame time (17 vs 16 frames
+  in 20 s). Textures +4 MB (crest, lanyard, detail canvases, cached by colour). Far people (over `CLOTH_INK_FAR`,
+  7 m) drop the cloth's ink line.
+- **Where it is on.** Cut scenes (`lib/star/cutscene/peopleStub.ts` `clothKindFor`): manager, chairman, agent and
+  The Icon in suits; press in shirt, trousers and lanyard; tracksuits for you at the press desk and the staff; kit
+  on the pitch. Fans and family keep the painted clothes for now. Not on yet: the match, the house, the garden.
+- **A body it cannot dress** keeps the painted clothes and is listed in `CLOTH_FALLBACKS` (console line
+  `[clothes] … keeps painted clothes`). `?cloth=0` on any 3D page shows the painted clothes, to compare.
+- **Sheets.** `tools/clothes3d/wardrobe-page.tsx` (copy to `app/star-3d-bench-dev/clothes/page.tsx`; `?shot=wardrobe`
+  each outfit next to today's kit player, `?shot=silhouettes` in black, `?shot=moving` 3 heads × 3 builds jogging,
+  seated and waving), stills with `node tools/clothes3d/shoot.mjs OUTDIR <shot>` (BASE = the dev server).
+- **Rules learnt.** Never inflate: types differ by cut and detail (jacket length, collar, hem, lapels), not by
+  making him wider. A hidden layer sits on the skin and the outer one a few mm out; an outer garment's shaped torso
+  never goes inside the body (`torso.hold`). Never shape sleeves to a straight shoulder → wrist line: a bent arm
+  then pokes through.
+
+### People round 2: a clean head under the drawn face, life for everyone (21 Nov 2026)
+
+Harry: "His face looks really odd … like the new face changes are just kind of morphing over previous stuff", "no variations - 22 players walking at the same pace", "the ball doesn't really actually go where his feet are".
+- **A clean head** (`lib/star/style3d/toon/faceClean.ts`, called by `applyToonFaceId`): before a drawn face goes on, the head file's picture and mask are swapped for a copy whose whole face (under the jaw to the forehead, round to the ears; scalp hair, ears and clothes kept) is one even skin colour, built once per head file and shared (no per-frame cost, no draw call). Age comes only from the drawn system. `?faceclean=0` shows the old way; `?facecleandbg=1` paints what is cleaned (green) and why the rest is kept. Eyes sit in the head: warmer whites, a heavier lid shadow, a soft lid rim (`faceIdShader.ts`).
+- **Own motion for every person** (`lib/star/people/life.ts` `ownMotion`: phase, idle rate, which walk, arms, carriage, restlessness, pace ±8%). Cut scenes read it as before; the world's walkers (`world3d/npc.ts`) now walk at their own pace (the stride clock follows the ground: no slide), a third on `walk_confident`, and blink and glance if they have a moving face (`toonFaceOf(p)`, face.ts).
+- **The odd lean**: `walk_confident` is captured leaning back 6-9°; the director holds every standing or walking back between 3° back and 8° forward.
+- **The dribble**: the ball against the toe at each touch, rolling at his pace (0.38 m ahead of his hips, was up to 0.61).
+- Not done: new clips from other libraries (UAL 1 is on this machine; UAL 2 and KayKit were not reachable; `retarget.py` reads only CMU, a glTF reader is the next step); shop and casino staff do not get the face life yet.
+- Bench: `/star-3d-bench-dev/people?set=faceids&allheads=9&views=front,34,side&heads=m3,m2`.
+
+### People round 3: suit necks, shirt collars, sleeves, fans, casino faces (21 Nov 2026)
+
+Harry on the mentor: "his skin color is bleeding into his suit … His face looks really odd"; on clothes: "you're struggling a lot with necks".
+- **Suit heads (m1-m3) under the cloth suit** (`toon/faceClean.ts`): the head file's painted suit, collar and tie round the neck are cleaned to even skin from under the jaw to 10 cm below the collar line, inside the shoulders, front and back (the nape's hair kept). The cloth suit covers the rest. Was: a pink ring, a jagged painted collar and a dark band under the chin.
+- **The suit's shirt** sits 6 mm off the skin (it sat on it and fought the neck: the "shards"). Its collar is a clean stand laid **round the neck by angle** (`build.ts addCollar`, shirt and polo kinds): a lumpy head's neck edge is several pieces, and the old walk made the collar in strips. The collar has its own normals and is a shade under the shirt. Kit crew collars are unchanged.
+- **Sleeves** (`GarmentSpec.armSmooth`, suit coat and shirt): the arm's surface under the sleeve is smoothed outwards only, still skinned to the same bones (not a rigid tube, which poked through a bent arm).
+- **Fans and family** in cut scenes wear the wardrobe (`peopleStub.ts clothKindFor`): replica shirt and jeans or a hoodie; family also a polo. Never shorts and boots.
+- **Casino staff and punters** read `people/life.ts` (start phase, idle pace) and blink and glance (`casino3d/scene.ts`). The 3D shop has no staff people.
+- Clothes decals give a blank picture without a browser, so `tests/star/propHold.mts` runs under node again.
+- Close-ups of one preset: `?castpreset=<actor id>:<preset id>` on `/star-3d-bench-dev/scene?scene=director&fixture=…`.
+- Not done: the untucked hem notch at the trouser top, the training jacket's rib hem when jogging, the Quaternius UAL 1 clips (the pack is on this machine as one FBX, CC0; `retarget.py` still reads CMU only).
+
+### People round 4: walks and idles from the Quaternius library (21 Nov 2026)
+
+Harry: "instead of using aim of rough cm why not try and find walking animations and match them to our style/bodies, same goes for standing", and "no variations - 22 players walking at the same pace in the same time".
+- **Ten clips from Quaternius Universal Animation Library 1 (CC0)** in `mocap.glb` / `mocap-ual.glb`: `walk_relaxed`, `walk_formal`, `jog_easy`, `idle_relaxed`, `idle_relaxed_m` (mirrored), `idle_talk`, `seated_idle`, `seated_talk`, `sit_down_ual`, `stand_up_ual`. Licence: `public/star/anims3d/LICENSE-ual.txt`.
+- **How**: `tools/mocap3d/read_ual.py` (Blender, once) dumps the FBX to `tools/mocap3d/ual/ual1.json.gz`; `ual.py` gives it the CMU shape so `retarget.py` solves it like a capture (feet pinned, hips by leg length, the library's own step width). Added to the shipped files with `merge_clips.mjs` (no CMU rebuild). Steps: `tools/mocap3d/README.md`, UAL section.
+- **Who plays what** (`lib/star/people/life.ts`): every person but you gets one of four walks (walk 34%, walk_relaxed 30%, walk_confident 20%, walk_formal 16%) and one of three standing idles (idle 40%, idle_relaxed 30%, its mirror 30%), seeded by id; `WALK_SPEED` keeps the stride clock on the ground. Cut scenes (`timeline.ts`) and world walkers (`world3d/npc.ts`) read it. Press desk: the speaker plays `seated_talk` ("sit-talk"), the reporters `seated_idle` ("sit-listen").
+- **Checks**: `tests/star/gaitWidth.mts` holds every head and build to the library rig's own step width (`clips[name].srcFeet`); `bodyOverlap.mts` includes the new clips.
+- **Test scenes** (`lib/star/cutscene/testScenes.ts`, not in any list): `?scene=director&fixture=walkers&cam=old` (eight men crossing a pitch), `solo-walk_relaxed`, `solo-idle_relaxed`. `cam=old` because the film pass cuts away from any walk.
+- Not done: `jog_easy` is a stylised, bouncy run (5.6 m/s in place) and is not picked by anyone yet; UAL 2 (arms folded, phone) is not on this machine.
+### Cloth clothes in the houses and the garden (21 Nov 2026)
+
+Harry, after the re-filmed press conference and walk-out: "yes the clothes films are better, put them in houses".
+- **Who wears what** (`lib/star/style3d/toon/clothes/casual.ts`, picked from the person's id, so always the same):
+  you = your saved home set on the cloth (hoodie & joggers → `hoodie`, tee & jeans → `tee`, shirt & chinos →
+  `shirt`, club tracksuit → `tracksuit`, smart coat → `suit` open, no tie), its colours kept; team-mates in the
+  house and on the gazebo bench = a quarter in club training wear, the rest a tee, hoodie, shirt or club polo in muted
+  colours, never the match kit, never a number; the garden kick-about = club training tracksuits. A body the cloth
+  cannot dress keeps the painted kit, without a number. No saved choice yet = casual off the pitch (`DEFAULT_OUTFIT`
+  was the kit); training and the match always the kit. The shop's "you" uses the same `buildWearer`, so he matches.
+- **New kinds** `tee` (the fan's cut, plain) and `shirt` (the press shirt, no lanyard); `dressCloth(..., { colours,
+  whiteBalance })`: colours by garment (top, inner, trousers, shoes); `HOME_WB` 0.6 takes most of a warm lamp's colour
+  off the cloth (a grey hoodie turned khaki in the estate). Cut scenes pass nothing and are unchanged.
+- **Seats**: `npc.ts measureSit` reads the cloth under his seat and thighs (+3 cm), so 0 cm goes through the sofa
+  (the seat check in `lifeDebug().seats` now has `clothCm`); the garden bench scan reads the trousers too.
+- **Cost** (software GPU, quality high, `?cloth=0` vs cloth, the guests' lounge): +2 draws and about +9.5k triangles a
+  person. Worst room, estate lounge (you + 2 team-mates): 68 → 74 draws, 96k → 122k triangles (budget 120 / 150k).
+  Garden arrival 132 → 133 draws (already over 120 before this).
+- **Film**: `node scripts/film/scenes/estate-cloth-walk.mjs 3000 OUT [cloth=0]` (10 s, 30 fps, 780x1688).
+- Not done: the untucked hem notch on the tee (trousers show at the front corners, as on the fan shirt); the hood is a
+  simple lump at the back; no family or partner people exist in the houses yet.
+

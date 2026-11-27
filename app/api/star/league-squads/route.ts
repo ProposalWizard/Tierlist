@@ -325,6 +325,10 @@ export async function GET(request: NextRequest) {
     // the start of every career cost ~330 ms of server time each). After the
     // hour, the next ask gets the kept copy at once while one fresh read runs
     // in the background, so a rating changed in admin shows within the hour.
-    headers: { "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400" },
+    headers: {
+      "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
+      // Vercel's own CDN header too, like /api/draft/roster (26 Nov 2026).
+      "Vercel-CDN-Cache-Control": "max-age=3600, stale-while-revalidate=86400",
+    },
   });
 }

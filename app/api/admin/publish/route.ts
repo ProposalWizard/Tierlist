@@ -1,40 +1,48 @@
 /**
- * /api/admin/publish — Marketing → Publish (lib/publish/*).
+ * /api/admin/publish — Marketing → Publish (lib/publish/*). Every call names its space (?space= on GET, "space" in the
+ * POST body: football | content | kib; default football). Each space has its own accounts, posts and videos.
  *   GET   the connected accounts (names only, never tokens), the latest posts with their results and numbers,
  *         and the videos in Marketing storage to pick from. Admins, or a chat with the agent token.
  *   POST  queue a post: {video_key, title?, captions: {instagram?, facebook?, youtube?} | caption, platforms,
  *         scheduled_at? (ISO; default now)}. The timer posts it when due; "now" posts within 5 minutes.
  */
 import { NextResponse } from "next/server";
-import { whoIs } from "@/lib/publish/auth";
+import { NOT_YOURS, mayUse, whoIs } from "@/lib/publish/auth";
 import { accountViews, insertPost, listPosts } from "@/lib/publish/db";
-import { PLATFORMS, type Platform } from "@/lib/publish/types";
-import { getStorage } from "@/lib/marketing/storage";
-import { isVideoKey, itemsFromList, mediaOf } from "@/lib/marketing/r2";
+import { PLATFORMS, spaceOf, type Platform } from "@/lib/publish/types";
+import { itemsFromList, type MediaItem } from "@/lib/marketing/r2";
+import { OWN, isPublishVideo, kibStorage, listPrefixes, ownStorage, uploadTarget } from "@/lib/publish/storage";
 
 export const dynamic = "force-dynamic";
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
 export async function GET(req: Request) {
   const who = await whoIs(req, ["admin", "agent"]);
-  if (!who) return json({ error: "Admins only." }, 403);
-  const out: Record<string, unknown> = { setup: setupState() };
-  try { out.accounts = await accountViews(); out.posts = await listPosts(); } catch (e) { out.error = (e as Error).message; out.accounts = []; out.posts = []; }
-  try {
-    const store = getStorage();
-    out.videos = store.mode === "r2" ? itemsFromList(await store.list("videos/")).filter((v) => v.kind === "video").slice(0, 200) : [];
-    out.storage = store.mode;
-  } catch (e) { out.videos = []; out.storageError = (e as Error).message; }
+  const space = spaceOf(new URL(req.url).searchParams.get("space"));
+  if (!mayUse(who, space)) return json({ error: NOT_YOURS }, 403);
+  const out: Record<string, unknown> = { space, setup: setupState() };
+  try { out.accounts = await accountViews(space); out.posts = await listPosts(space); } catch (e) { out.error = (e as Error).message; out.accounts = []; out.posts = []; }
+  // This space's videos: Mikey's own bucket for football/content (marked "own:"), the team's bucket for kib.
+  const videos: (MediaItem & { source: "own" | "kib" })[] = [];
+  const errors: string[] = [];
+  const target = uploadTarget(space);
+  if (target) for (const prefix of listPrefixes(space)) {
+    try { for (const v of itemsFromList(await target.store.list(prefix)).filter((x) => x.kind === "video").slice(0, 200)) videos.push({ ...v, key: (target.source === "own" ? OWN : "") + v.key, source: target.source }); }
+    catch (e) { errors.push((e as Error).message); }
+  }
+  out.videos = videos; out.storage = target ? target.source : "off";
+  if (errors.length) out.storageError = errors.join(" ");
   return json(out);
 }
 
 export async function POST(req: Request) {
   const who = await whoIs(req, ["admin", "agent"]);
-  if (!who) return json({ error: "Admins only." }, 403);
   const b = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!b) return json({ error: "Send the post as JSON." }, 400);
+  const space = spaceOf(b.space);
+  if (!mayUse(who, space)) return json({ error: NOT_YOURS }, 403);
   const key = b.video_key;
-  if (!isVideoKey(key) || mediaOf(key)?.kind !== "video") return json({ error: "Pick a video from Marketing storage." }, 400);
+  if (!isPublishVideo(key)) return json({ error: "Pick a video from storage." }, 400);
   const platforms = Array.isArray(b.platforms) ? PLATFORMS.filter((p) => (b.platforms as unknown[]).includes(p)) as Platform[] : [];
   if (!platforms.length) return json({ error: "Tick at least one platform." }, 400);
   const one = typeof b.caption === "string" ? b.caption : "";
@@ -45,7 +53,7 @@ export async function POST(req: Request) {
   const title = (typeof b.title === "string" ? b.title : "").trim().slice(0, 100);
   if (platforms.includes("youtube") && !title) return json({ error: "YouTube needs a title." }, 400);
   try {
-    const post = await insertPost({ video_key: key, title, captions, platforms, scheduled_at: when.toISOString(), created_by: who.name });
+    const post = await insertPost({ space, video_key: key, title, captions, platforms, scheduled_at: when.toISOString(), created_by: who!.name });
     return json({ post });
   } catch (e) { return json({ error: (e as Error).message }, 500); }
 }
@@ -60,6 +68,8 @@ function setupState() {
     google: has("GOOGLE_CLIENT_ID") && has("GOOGLE_CLIENT_SECRET"),
     cron: has("PUBLISH_CRON_SECRET"),
     agent: has("PUBLISH_AGENT_TOKEN"),
-    storage: has("R2_ACCOUNT_ID") && has("R2_ACCESS_KEY_ID") && has("R2_SECRET_ACCESS_KEY") && has("R2_BUCKET"),
+    storage: !!ownStorage() || !!kibStorage(),
+    kibStorage: !!kibStorage(),
+    ownStorage: !!ownStorage(),
   };
 }

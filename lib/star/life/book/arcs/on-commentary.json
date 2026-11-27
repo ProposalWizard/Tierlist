@@ -1,0 +1,332 @@
+{
+ "id": "arc-on-commentary",
+ "title": "Not good enough",
+ "owner": "legend",
+ "summary": "The club legend is on the radio commentary and says you're not good enough to wear the shirt. You meet him in the players' lounge after. A season on, he's on commentary again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "club legend"
+  ],
+  "tone": [
+   "tense",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "legend",
+   "pick": "legend"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "he-changed-his-tune",
+   "title": "He changed his tune",
+   "text": "The legend said you weren't good enough. A season later, on the same radio, he said you were."
+  },
+  {
+   "id": "still-not-good-enough",
+   "title": "Still not good enough",
+   "text": "He said it on the radio and he never took it back."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "com-1-lounge",
+   "title": "The players' lounge",
+   "n": 1,
+   "event": {
+    "id": "arc-com-1-lounge",
+    "title": "The players' lounge",
+    "category": "legend",
+    "place": "stadium:players-lounge",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastRating<6.8"
+     ]
+    },
+    "setup": [
+     "Your mum texts you a clip from the radio during the game. {legend.name}, on commentary: \"I'm sorry, but he's not good enough to wear that shirt. Not yet.\"",
+     "{if mem(legend,'beat-me-first-to-three')}This is the same man you beat first-to-three on pitch one.{/if}Now he's in the players' lounge with a cup of tea."
+    ],
+    "talk": {
+     "start": "l1",
+     "nodes": {
+      "l1": {
+       "who": "legend",
+       "say": [
+        "He sees you coming and doesn't stand up. \"You heard, then.\""
+       ],
+       "replies": [
+        {
+         "id": "ask",
+         "label": "\"What do I need to do?\"",
+         "tone": "humble",
+         "goto": "l2"
+        },
+        {
+         "id": "bite",
+         "label": "\"You were on the radio. I was on the pitch.\"",
+         "tone": "fiery",
+         "end": "bit"
+        },
+        {
+         "id": "laugh",
+         "label": "\"My mum wants a word with you.\"",
+         "tone": "confident",
+         "end": "laughed"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "walked"
+        }
+       ]
+      },
+      "l2": {
+       "who": "legend",
+       "say": [
+        "He puts the tea down. \"Stop going backwards. Every time you get it with your back to goal, you give it back. Turn. Just once a game. Turn.\""
+       ],
+       "replies": [
+        {
+         "id": "thanks",
+         "label": "\"Turn. Right.\"",
+         "tone": "humble",
+         "end": "asked"
+        },
+        {
+         "id": "ok",
+         "label": "\"I'll think about it.\"",
+         "tone": "calm",
+         "end": "asked"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "asked": [
+       {
+        "text": "You turn twice the next week. One of them is a goal. You don't look at the commentary box. You can feel it looking at you.",
+        "effects": {
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 6,
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "asked-what-i-needed-to-do",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "asked"
+         }
+        }
+       }
+      ],
+      "bit": [
+       {
+        "text": "\"Fair point,\" he says, and drinks his tea. He says it again on the radio next week.",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": -2,
+          "respect": 2,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "snapped-at-me-in-the-lounge",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "bit"
+         }
+        }
+       }
+      ],
+      "laughed": [
+       {
+        "text": "He laughs properly. \"I've met your mum. She's worse than me.\"",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "asked"
+         }
+        }
+       }
+      ],
+      "walked": [
+       {
+        "text": "You walk past him. He watches you go.",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": -2,
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "bit"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     }
+    ]
+   },
+   "hint": "The legend said something on the radio"
+  },
+  {
+   "id": "com-2-radio",
+   "title": "On air again",
+   "after": {
+    "beat": "com-1-lounge",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-com-2-radio",
+    "title": "On air again",
+    "category": "legend",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastGoals>=1 || lastRating>=7"
+     ]
+    },
+    "setup": [
+     "A season on, and your mum sends another clip from the radio."
+    ],
+    "choices": [
+     {
+      "id": "play",
+      "label": "Play it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='asked'",
+        "text": "\"He turned. He turned and put it in the corner, and I'll say it now: he's good enough. I was wrong.\" Mum has typed six exclamation marks under it.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "said-i-was-good-enough",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "he-changed-his-tune"
+        }
+       },
+       {
+        "text": "\"Good goal. Still goes backwards too much.\" Mum has typed one word under it, and it's rude.",
+        "npc": [
+         {
+          "slot": "legend"
+         }
+        ],
+        "arc": {
+         "end": "still-not-good-enough"
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Don't play it.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "if": "arc.path=='asked'",
+        "text": "Mum rings instead and reads it out to you, twice.",
+        "arc": {
+         "end": "he-changed-his-tune"
+        }
+       },
+       {
+        "text": "You don't need to.",
+        "arc": {
+         "end": "still-not-good-enough"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     }
+    ]
+   },
+   "hint": "A season on, he's on commentary again"
+  }
+ ]
+}

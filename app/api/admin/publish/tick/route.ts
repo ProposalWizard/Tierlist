@@ -15,7 +15,10 @@ export const maxDuration = 300;
 async function run(req: Request) {
   const who = await whoIs(req, ["cron", "admin", "agent"]);
   if (!who) return NextResponse.json({ error: "Not allowed." }, { status: 403 });
-  const report = await tick(liveApi());
+  // ?fresh=1 (a person, a chat, or the Brain page's Refresh button through the database, Mikey 24 Nov 2026):
+  // re-read every recent post's numbers now. The 5-minute timer never sends it.
+  const fresh = new URL(req.url).searchParams.get("fresh") === "1";
+  const report = await tick(liveApi(), { fresh });
   return NextResponse.json({ ok: true, by: who.kind, ...report }, { headers: { "Cache-Control": "no-store" } });
 }
 

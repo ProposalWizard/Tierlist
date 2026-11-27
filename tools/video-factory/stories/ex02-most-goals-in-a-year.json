@@ -1,0 +1,237 @@
+{
+  "id": "ex02-most-goals-in-a-year",
+  "series": "Explainer",
+  "title": "Who has scored the most goals in a single year?",
+  "layout": "explainer",
+  "music": "02-working-it-out.mp3",
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "WAppqUXeqDqXjNTaQxG9"
+  },
+  "sources": [
+    "https://www.guinnessworldrecords.com.br/world-records/106274-most-football-goals-scored-in-a-calendar-year",
+    "https://www.espn.co.uk/football/story/_/id/37387746/recapping-messi-record-breaking-2012",
+    "https://www.fcbarcelona.es/es/noticias/1670444/el-dato-del-dia-91-los-goles-de-messi-en-un-ano-natural",
+    "https://bleacherreport.com/articles/1440990-godfrey-chitalu-did-zambian-striker-score-more-goals-than-lionel-messi",
+    "https://www.football-espana.net/26754/messis-african-record-rival"
+  ],
+  "facts": {
+    "messi": "91 competitive goals in calendar year 2012: 79 for Barcelona, 12 for Argentina; Guinness World Records lists it as the record",
+    "muller": "85 goals in 1972 for Bayern Munich and West Germany; the record stood 40 years",
+    "chitalu": "Zambian researchers/FA claim 107 goals in 1972 for Kabwe Warriors and Zambia; record-keeping doubts; never officially accepted (FIFA's position reported both ways, so the video says only 'never officially accepted')"
+  },
+  "images": {
+    "messi": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/messi.png",
+    "muller": "file:///home/user/Tierlist/tools/video-factory/work/ex-people/muller.png"
+  },
+  "lines": [
+    {
+      "text": "Who has scored the most goals in a single year?",
+      "scene": {
+        "type": "portrait",
+        "hook": true,
+        "bg": "blue",
+        "scale": 1.3,
+        "person": {
+          "image": "messi",
+          "hairStyle": "short",
+          "back": true
+        }
+      }
+    },
+    {
+      "text": "Most people would say Lionel Messi.",
+      "scene": {
+        "type": "portrait",
+        "bg": "blue",
+        "person": {
+          "image": "messi",
+          "back": true
+        },
+        "name": "LIONEL MESSI"
+      }
+    },
+    {
+      "text": "In 2012, he scored ninety-one.",
+      "scene": {
+        "type": "grid",
+        "bg": "navy",
+        "groups": [
+          {
+            "n": 79,
+            "col": "#a50044",
+            "label": "BARCELONA"
+          },
+          {
+            "n": 12,
+            "col": "#75aadb",
+            "label": "ARGENTINA"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Seventy-nine for Barcelona. Twelve for Argentina.",
+      "scene": {
+        "type": "grid",
+        "bg": "navy",
+        "instant": true,
+        "legend": true,
+        "cut": true,
+        "groups": [
+          {
+            "n": 79,
+            "col": "#a50044",
+            "label": "BARCELONA"
+          },
+          {
+            "n": 12,
+            "col": "#75aadb",
+            "label": "ARGENTINA"
+          }
+        ]
+      }
+    },
+    {
+      "text": "That broke a record that had stood for forty years.",
+      "scene": {
+        "type": "years",
+        "bg": "purple",
+        "items": [
+          {
+            "year": "1972",
+            "top": "RECORD",
+            "label": "Gerd Müller",
+            "cross": true
+          },
+          {
+            "year": "2012",
+            "top": "NEW",
+            "label": "Lionel Messi",
+            "tick": true,
+            "head": "#1ea85a"
+          }
+        ]
+      }
+    },
+    {
+      "text": "Gerd Müller's eighty-five, for Bayern Munich and West Germany.",
+      "scene": {
+        "type": "portrait",
+        "bg": "red",
+        "person": {
+          "image": "muller",
+          "hair": "#3a2c2a"
+        },
+        "name": "GERD MÜLLER · 85"
+      }
+    },
+    {
+      "text": "Today, Messi's ninety-one is the official world record.",
+      "scene": {
+        "type": "counter",
+        "bg": "navy",
+        "from": 0,
+        "to": 91,
+        "word": "THE OFFICIAL RECORD",
+        "size": 380
+      }
+    },
+    {
+      "text": "But in Zambia, they tell a different story.",
+      "scene": {
+        "type": "flag",
+        "bg": "green",
+        "label": "ZAMBIA",
+        "flag": {
+          "base": "#198a00",
+          "emblem": "#ef7d00",
+          "stripes": [
+            {
+              "x0": 0.62,
+              "x1": 0.75,
+              "col": "#de2010",
+              "top": 0.38
+            },
+            {
+              "x0": 0.75,
+              "x1": 0.875,
+              "col": "#111111",
+              "top": 0.38
+            },
+            {
+              "x0": 0.875,
+              "x1": 1.0,
+              "col": "#ef7d00",
+              "top": 0.38
+            }
+          ]
+        }
+      }
+    },
+    {
+      "text": "Godfrey Chitalu. The same year as Müller: 1972.",
+      "scene": {
+        "type": "portrait",
+        "bg": "green",
+        "person": {
+          "color": "#1b1416",
+          "hair": "#0e0a0b",
+          "suit": false,
+          "rim": "rgba(255,216,74,.7)"
+        },
+        "name": "GODFREY CHITALU"
+      }
+    },
+    {
+      "text": "Zambian researchers say he scored a hundred and seven, for Kabwe Warriors and Zambia.",
+      "scene": {
+        "type": "counter",
+        "bg": "green",
+        "from": 0,
+        "to": 107,
+        "word": "GOALS IN 1972 · CLAIMED",
+        "size": 380
+      }
+    },
+    {
+      "text": "The problem? The records from back then are patchy.",
+      "scene": {
+        "type": "ledger",
+        "bg": "orange",
+        "title": "1972",
+        "title2": "RESULTS"
+      }
+    },
+    {
+      "text": "So the claim has never been officially accepted.",
+      "scene": {
+        "type": "portrait",
+        "bg": "orange",
+        "person": false,
+        "stamp": "UNOFFICIAL"
+      }
+    },
+    {
+      "text": "So is the real record ninety-one, or a hundred and seven?",
+      "scene": {
+        "type": "versus",
+        "bg": "purple",
+        "left": {
+          "image": "messi",
+          "back": true
+        },
+        "leftNum": "91",
+        "leftName": "MESSI · 2012",
+        "right": {
+          "color": "#1b1416",
+          "hair": "#0e0a0b",
+          "suit": false,
+          "rim": "rgba(255,216,74,.7)"
+        },
+        "rightNum": "107",
+        "rightName": "CHITALU · 1972"
+      }
+    }
+  ]
+}

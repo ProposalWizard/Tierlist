@@ -83,5 +83,33 @@ ok(!s.includes("EAAG") && open(s) === "EAAG-secret-token", "tokens are stored en
 let bad = false; try { open(s.replace(/.$/, s.endsWith("A") ? "B" : "A")); } catch { bad = true; }
 ok(bad, "a tampered token is refused");
 
+// The owner lock (PUBLISH_OWNER_EMAIL): unset = every admin; set = only those addresses.
+{ const { ownerOk } = await import("../../lib/publish/auth");
+  ok(ownerOk("a@x.com", {}) && ownerOk(undefined, {}), "no owner set: every admin gets in");
+  ok(ownerOk("Owner@X.com", { PUBLISH_OWNER_EMAIL: "owner@x.com" }) && !ownerOk("other@x.com", { PUBLISH_OWNER_EMAIL: "owner@x.com" }) && !ownerOk(undefined, { PUBLISH_OWNER_EMAIL: "owner@x.com" }), "owner set: only that address");
+  ok(ownerOk("b@x.com", { PUBLISH_OWNER_EMAIL: "a@x.com, b@x.com" }), "several owners split by commas"); }
+
+// Spaces (Mikey, 24 Nov 2026): every account call carries the post's own space; football/content are the owner's only.
+{
+  const rows = [post({ id: "c1", space: "content" })];
+  const seen: string[] = [];
+  const { api } = fake(rows);
+  const wrap = { ...api,
+    instagramStart: async (u: string, c: string, sp?: string) => { seen.push(`ig ${sp}`); return api.instagramStart(u, c); },
+    facebookPost: async (u: string, t: string, c: string, sp?: string) => { seen.push(`fb ${sp}`); return api.facebookPost(u, t, c); },
+    youtubeUpload: async (v: { url: string; size: number; type: string }, t: string, c: string, sp?: string) => { seen.push(`yt ${sp}`); return api.youtubeUpload(v, t, c); },
+  } as EngineApi;
+  await tick(wrap);
+  ok(seen.length === 3 && seen.every((x) => x.endsWith(" content")), "a content post goes out with the content space's logins on all three apps");
+  const { mayUse } = await import("../../lib/publish/auth");
+  const env = process.env.PUBLISH_OWNER_EMAIL; process.env.PUBLISH_OWNER_EMAIL = "owner@x.com";
+  const admin = (email: string) => ({ kind: "admin" as const, name: "A", id: "1", email });
+  ok(mayUse(admin("owner@x.com"), "football") && mayUse(admin("owner@x.com"), "content"), "the owner may use football and content");
+  ok(!mayUse(admin("harry@x.com"), "football") && !mayUse(admin("harry@x.com"), "content"), "another admin may not use football or content");
+  ok(mayUse(admin("harry@x.com"), "kib"), "every admin may use the Knowitball space");
+  ok(mayUse({ kind: "agent", name: "chat" }, "content") && !mayUse(null, "kib"), "the chat key may use every space; nobody signed in may use none");
+  process.env.PUBLISH_OWNER_EMAIL = env;
+}
+
 if (failed) { console.error(`${failed} failed`); process.exit(1); }
 console.log("all passed");

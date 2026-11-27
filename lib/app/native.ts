@@ -93,10 +93,25 @@ export function installNative(): void {
  * fingers at once to show or hide it (it stays as set between launches). It
  * shows frames a second and the slowest frame of the last two seconds, so a
  * tester can say "the match runs at 38, worst 120" instead of "it feels slow".
+ * It also shows the last TAP: finger on the glass to the next picture on screen
+ * (the browser's own Event Timing, the number INP is made of), so "League took
+ * 240" is a number a fix can be checked against (19 Nov 2026). Under 100 feels
+ * instant.
  */
 function speedReadout(): void {
   const KEY = "kib-speed-readout";
   let box: HTMLDivElement | null = null, raf = 0;
+  let tapMs: number | null = null, tapId = 0;
+  try {
+    new PerformanceObserver((list) => {
+      for (const e of list.getEntries() as (PerformanceEntry & { interactionId?: number })[]) {
+        const id = e.interactionId ?? 0;
+        if (!id) continue;
+        // one tap is several events (down, up, click): the tap's time is the longest of them
+        if (id !== tapId) { tapId = id; tapMs = e.duration; } else tapMs = Math.max(tapMs ?? 0, e.duration);
+      }
+    }).observe({ type: "event", buffered: false, durationThreshold: 16 } as PerformanceObserverInit);
+  } catch { /* no Event Timing here (older iPhone WebView): fps only */ }
   const show = () => {
     if (box) return;
     box = document.createElement("div");
@@ -107,7 +122,7 @@ function speedReadout(): void {
       frames.push(now - last); last = now;
       if (now - shown >= 500) {
         const recent = frames.slice(-120), sum = recent.reduce((a, b) => a + b, 0);
-        if (box) box.textContent = `${Math.round((1000 * recent.length) / sum)} fps · worst ${Math.round(Math.max(...recent))} ms`;
+        if (box) box.textContent = `${Math.round((1000 * recent.length) / sum)} fps · worst ${Math.round(Math.max(...recent))} ms` + (tapMs !== null ? ` · tap ${Math.round(tapMs)} ms` : "");
         frames = recent; shown = now;
       }
       raf = requestAnimationFrame(step);

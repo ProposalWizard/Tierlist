@@ -1,0 +1,387 @@
+{
+ "id": "arc-wednesday-fives",
+ "title": "Wednesday fives",
+ "owner": "pal",
+ "summary": "Your old school mates still play five-a-side on a Wednesday, and one of them is short. Playing could get you injured, and the gaffer would go mad. A season on, they're in a cup final.",
+ "size": "small",
+ "about": {
+  "who": [
+   "old school friend"
+  ],
+  "tone": [
+   "warm",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "needsActivity": "five-a-side",
+ "cast": [
+  {
+   "slot": "pal",
+   "pick": "pal"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "one-of-the-lads",
+   "title": "One of the lads",
+   "text": "You still turn out on a Wednesday when they're short, and they still kick you."
+  },
+  {
+   "id": "too-good-for-us",
+   "title": "Too good for us",
+   "text": "You stopped playing on Wednesdays. They stopped asking."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "fas-1-short",
+   "title": "We're one short",
+   "n": 1,
+   "event": {
+    "id": "arc-fas-1-short",
+    "title": "We're one short",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A text from {pal.name}. \"Fives tonight, 8pm, the leisure centre. We're one short. You in? We won't tackle you. Much.\""
+    ],
+    "talk": {
+     "start": "w1",
+     "nodes": {
+      "w1": {
+       "who": "pal",
+       "say": [
+        "\"Please. We're playing the plumbers again and they've got a lad who played for the county.\""
+       ],
+       "replies": [
+        {
+         "id": "in",
+         "label": "\"I'm in. Don't tell anyone.\"",
+         "tone": "reckless",
+         "goto": "play"
+        },
+        {
+         "id": "ref",
+         "label": "\"I'll come and ref it.\"",
+         "tone": "kind",
+         "end": "reffed"
+        },
+        {
+         "id": "no",
+         "label": "\"I can't, mate. If I get hurt the gaffer kills me.\"",
+         "tone": "honest",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "no"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "five-a-side",
+        "name": "Wednesday fives",
+        "intro": "Twenty minutes each way at the leisure centre against the plumbers.",
+        "dials": {
+         "minutes": 40,
+         "side": 5,
+         "team": "your school mates",
+         "against": "the plumbers"
+        },
+        "score": "the score, and whether you got kicked",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -6
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "f-hurt"
+        ],
+        [
+         "activity.won",
+         "f-won"
+        ],
+        [
+         "",
+         "f-lost"
+        ]
+       ]
+      },
+      "f-won": {
+       "who": "pal",
+       "say": [
+        "You win nine-four. The county lad asks for a photo after."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Get a round in.",
+         "tone": "kind",
+         "end": "played"
+        }
+       ]
+      },
+      "f-lost": {
+       "who": "pal",
+       "say": [
+        "You lose six-five. The county lad nutmegs you twice and tells everyone in the bar."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Get a round in anyway.",
+         "tone": "humble",
+         "end": "played"
+        }
+       ]
+      },
+      "f-hurt": {
+       "who": "pal",
+       "say": [
+        "You turn your ankle on the plastic. It's not bad, but you limp to the car."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Ice it and pray.",
+         "tone": "calm",
+         "end": "hurt"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "played": [
+       {
+        "text": "The group chat is just photos of you all night.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "played-wednesday-fives",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "played"
+         }
+        }
+       }
+      ],
+      "hurt": [
+       {
+        "text": "You tell the physio you did it on the stairs. She doesn't believe you.",
+        "effects": {
+         "matchFitness": -6,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "played-wednesday-fives",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "played"
+         }
+        }
+       }
+      ],
+      "reffed": [
+       {
+        "text": "You ref it in your club tracksuit. Both sides moan at every decision. It's perfect.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "reffed-wednesday-fives",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "played"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"No worries.\" They play with four and lose eleven-two.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The old school five-a-side is short"
+  },
+  {
+   "id": "fas-2-final",
+   "title": "The fives cup final",
+   "after": {
+    "beat": "fas-1-short",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-fas-2-final",
+    "title": "The fives cup final",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {pal.short}: \"We're in the leisure centre cup final. Wednesday. Against the plumbers. Just come and watch.\""
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go and watch.",
+      "tone": "kind",
+      "cost": {
+       "weekAction": 1
+      },
+      "outcomes": [
+       {
+        "if": "arc.path=='played'",
+        "text": "They win on penalties and make you lift the plastic trophy with them.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "one-of-the-lads"
+        }
+       },
+       {
+        "text": "They lose to the plumbers, and they're glad you came anyway.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "one-of-the-lads"
+        }
+       }
+      ]
+     },
+     {
+      "id": "no",
+      "label": "\"Can't, sorry.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "They send a photo of the trophy. Nobody tags you.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -4
+         }
+        ],
+        "arc": {
+         "end": "too-good-for-us"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "A season on, they're in a final"
+  }
+ ]
+}

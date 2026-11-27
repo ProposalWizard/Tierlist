@@ -1,0 +1,320 @@
+{
+ "id": "arc-the-referees-son",
+ "title": "For his lad",
+ "owner": "referee",
+ "summary": "After the game the referee asks, quietly, if you'd sign a shirt for his son. It's a strange thing for a referee to ask. A season on, his son is in the tunnel with a sign of his own.",
+ "size": "small",
+ "about": {
+  "who": [
+   "referee"
+  ],
+  "tone": [
+   "awkward",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "referee",
+   "pick": "referee"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "his-sons-shirt",
+   "title": "His son's shirt",
+   "text": "You signed a shirt for the referee's lad. He's a referee too now, and he told you so."
+  },
+  {
+   "id": "no-shirt",
+   "title": "No shirt",
+   "text": "You said no to the referee. It was the right call, and his son still doesn't know why."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "rson-1-ask",
+   "title": "For his lad",
+   "n": 1,
+   "event": {
+    "id": "arc-rson-1-ask",
+    "title": "For his lad",
+    "category": "match",
+    "place": "stadium:tunnel",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "{referee.name} catches you in the tunnel after the game, away from the cameras. He looks embarrassed."
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "referee",
+       "say": [
+        "\"This is a bit odd. My lad's eleven and you're his favourite player. Would you sign a shirt for him? I'm not supposed to ask.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Course. Give me his name.\"",
+         "tone": "kind",
+         "goto": "r2"
+        },
+        {
+         "id": "rules",
+         "label": "\"Are you allowed to ask that?\"",
+         "tone": "honest",
+         "goto": "r-rules"
+        },
+        {
+         "id": "no",
+         "label": "\"I don't think I should.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "r-rules"
+        }
+       ]
+      },
+      "r-rules": {
+       "who": "referee",
+       "say": [
+        "\"No. Probably not. Forget I asked.\""
+       ],
+       "replies": [
+        {
+         "id": "sign",
+         "label": "\"Bring it next time I'm not playing.\"",
+         "tone": "kind",
+         "end": "later"
+        },
+        {
+         "id": "forget",
+         "label": "\"Forgotten.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      },
+      "r2": {
+       "who": "referee",
+       "say": [
+        "He hands you a shirt from his bag. It's yours, your number, bought from the club shop."
+       ],
+       "replies": [
+        {
+         "id": "sign",
+         "label": "Sign it, and draw a whistle on it.",
+         "tone": "kind",
+         "end": "signed"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "signed": [
+       {
+        "text": "He puts it in his bag fast, like it's evidence.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "signed-my-lads-shirt",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "signed"
+         }
+        }
+       }
+      ],
+      "later": [
+       {
+        "text": "A shirt comes to the training ground by post a month later, with a note from an eleven-year-old. You sign it and send it back.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 8,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "signed-my-lads-shirt",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "signed"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He nods. \"Right call.\" He's gone before you can say anything else.",
+        "npc": [
+         {
+          "slot": "referee",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "said-no-to-the-shirt",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "The referee wants a quiet word"
+  },
+  {
+   "id": "rson-2-son",
+   "title": "A sign in the tunnel",
+   "after": {
+    "beat": "rson-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-rson-2-son",
+    "title": "A sign in the tunnel",
+    "category": "match",
+    "place": "stadium:tunnel",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "{if arc.path=='signed'}There's a boy of twelve by the tunnel in your shirt with a whistle drawn on it. His sign says \"I'M A REFEREE NOW.\"{/if}",
+     "{if arc.path=='no'}There's a boy of twelve by the tunnel with a sign: \"MY DAD IS THE REFEREE. SORRY.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "high",
+      "label": "High-five him.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='signed'",
+        "text": "He shows you his referee's badge. It's from the under-twelves.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "his-sons-shirt"
+        }
+       },
+       {
+        "text": "He grins. You never do tell him why there was no shirt.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "no-shirt"
+        }
+       }
+      ]
+     },
+     {
+      "id": "in",
+      "label": "Keep your head down and walk out.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='signed'",
+        "text": "He waves the sign at you anyway.",
+        "arc": {
+         "end": "his-sons-shirt"
+        }
+       },
+       {
+        "text": "He puts the sign down.",
+        "arc": {
+         "end": "no-shirt"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "A season on, a boy in the tunnel"
+  }
+ ]
+}

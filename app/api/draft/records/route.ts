@@ -15,7 +15,9 @@ function isDevPlayer(name: string | null): boolean {
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const personal = url.searchParams.get("personal");
-  const mode = url.searchParams.get("mode") === "prime" ? "prime" : "normal";
+  // "chem": the Chemistry board (Leo, 27 Nov 2026; needs supabase/migrations/draft_records_chemistry.sql).
+  const qm = url.searchParams.get("mode");
+  const mode = qm === "prime" || qm === "chem" ? qm : "normal";
 
   if (personal === "true") {
     const authClient = await createClient();
@@ -140,7 +142,7 @@ export async function POST(req: Request) {
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
-  const mode = body.mode === "prime" ? "prime" : "normal";
+  const mode = body.mode === "prime" || body.mode === "chem" ? body.mode : "normal";
 
   // A dev team never posts (the server also refuses unknown player names below).
   if (body.hasDevPlayers === true) {

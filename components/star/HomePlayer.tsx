@@ -16,6 +16,7 @@
  * soft glow behind him and a gentle idle bounce, so he reads as the star of
  * the screen rather than a cut-out.
  */
+import "./ui/kit.css";
 import type { CareerState } from "@/lib/star/types";
 import type { AvatarStyle } from "@/lib/star/heroFigure";
 import PlayerAvatar from "./PlayerAvatar";
@@ -52,13 +53,7 @@ export function HomePlayerFigure({ career, width, height, where, look, kitShirt,
   return old;
 }
 
-const CSS = `
-@keyframes hp-bob { 0%,100% { transform: translateY(0) rotate(0deg); } 30% { transform: translateY(-3px) rotate(-1deg); } 70% { transform: translateY(-1px) rotate(1deg); } }
-@keyframes hp-pool { 0%,100% { opacity: .85; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.06); } }
-.hp-bob { animation: hp-bob 2.8s ease-in-out infinite; transform-origin: 50% 100%; }
-.hp-pool { animation: hp-pool 2.8s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .hp-bob, .hp-pool { animation: none; } }
-`;
+/* hp-bob / hp-pool live in ./ui/kit.css (loaded once). */
 
 /** The player plus his light. Same box as the figure, nothing outside it is
  *  laid out (the light is absolutely placed), so a layout never shifts. */
@@ -66,13 +61,11 @@ export default function HomePlayer(p: HomePlayerProps) {
   const { width, height, glow } = p;
   return (
     <div className="relative" style={{ width, height }}>
-      <style>{CSS}</style>
       {/* soft glow behind his chest */}
       <div aria-hidden className="pointer-events-none absolute left-1/2 top-[18%] -translate-x-1/2 rounded-full blur-2xl"
         style={{ width: width * 0.95, height: height * 0.55, background: `radial-gradient(closest-side, ${rgba(glow, 0.55)}, transparent)` }} />
-      {/* the pool of light he stands in */}
-      <div aria-hidden className="hp-pool pointer-events-none absolute left-1/2 rounded-[50%]"
-        style={{ bottom: -height * 0.02, width: width * 1.25, height: Math.max(14, height * 0.09), background: `radial-gradient(closest-side, ${rgba("#ffffff", 0.5)}, ${rgba(glow, 0.45)} 55%, transparent)` }} />
+      {/* (No coloured pool of light under his feet: Harry, 20 Nov 2026, "I don't like this coloured
+          shadow under the player". The 3D player keeps his own soft dark shadow, lib/star/homeSet3d.ts.) */}
       <div className="hp-bob relative" style={{ width, height }}>
         <HomePlayerFigure {...p} />
       </div>

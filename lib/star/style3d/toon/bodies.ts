@@ -34,12 +34,25 @@ export const TOON_BUILD_SCALE: Record<ToonBody, [number, number, number]> = {
  * haircut, not a skin tone. Players wear the kit; the suit heads are for
  * managers, staff and presenters.
  */
-export type ToonHead = "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "m1" | "m2";
+export type ToonHead = "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "m1" | "m2" | "h7" | "h8" | "h9" | "m3";
 export const TOON_PLAYER_HEADS: readonly ToonHead[] = ["h1", "h2", "h3", "h4", "h5", "h6"];
 export const TOON_SUIT_HEADS: readonly ToonHead[] = ["m1", "m2"];
 export const TOON_HEADS: readonly ToonHead[] = [...TOON_PLAYER_HEADS, ...TOON_SUIT_HEADS];
+/**
+ * NEW HEAD SHAPES (Harry, 20 Nov 2026: "try and model new head shapes and hair"): the Buzz & beard
+ * head (h3) and the Fade & beard suit head (m2) re-shaped by tools/hair3d/reshape_heads.mjs, the face,
+ * its paint, the rig and the masks kept, so the eyes, brows, mouth and kit work as on any head.
+ * Only the people presets (lib/star/people/presets.ts) use them: they are NOT in the seeded pools
+ * above, so nobody in the game changes, and no scene loads them unless it asks for them by name.
+ */
+export const TOON_SHAPE_HEADS: readonly ToonHead[] = ["h7", "h8", "h9", "m3"];
+/** Every head file there is (the game's eight first: makePerson3d's list of loaded heads is in this order). */
+export const TOON_ALL_HEADS: readonly ToonHead[] = [...TOON_HEADS, ...TOON_SHAPE_HEADS];
+/** A head modelled in a suit (managers, staff, presenters). */
+export const toonHeadIsSuit = (h: ToonHead) => h.startsWith("m");
 export const TOON_HEAD_LABEL: Record<ToonHead, string> = {
   h1: "Curls", h2: "Quiff", h3: "Buzz & beard", h4: "Bun", h5: "Fringe", h6: "Crop & beard", m1: "Grey & stubble", m2: "Fade & beard",
+  h7: "Broad jaw", h8: "Long face", h9: "Round face", m3: "Older, lined",
 };
 export const TOON_FILES: Record<ToonHead, string> = {
   h1: "/star/people3d/toon-p1.glb",
@@ -50,6 +63,10 @@ export const TOON_FILES: Record<ToonHead, string> = {
   h6: "/star/people3d/toon-p6.glb",
   m1: "/star/people3d/toon-mgr.glb",
   m2: "/star/people3d/toon-mgr2.glb",
+  h7: "/star/people3d/toon-p7.glb",
+  h8: "/star/people3d/toon-p8.glb",
+  h9: "/star/people3d/toon-p9.glb",
+  m3: "/star/people3d/toon-mgr3.glb",
 };
 /**
  * BODIES BEING JUDGED (B5b, 20 Oct 2026; Harry rejected bone-scaled proportions:

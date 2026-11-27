@@ -386,8 +386,13 @@ export function filmPass(script: CutsceneScript): CutsceneScript {
     const faceMid: ShotSpec = { preset: "medium-close", subject: who, subject2: other, side: sd, yaw: 14, lens: 52, move: "dolly-in", moveAmount: 0.12 };
     const prop = wf.prop && props.has(wf.prop) ? wf.prop : undefined;
     const covers: { shot: ShotSpec; name: string }[] = [];
-    if (wf.what === "walk") {
-      covers.push({ shot: { preset: "medium", subject: who, side: sd, yaw: 165, lens: 24, move: "follow" }, name: "Into the light" });
+    if (wf.what === "walk" && "actor" in who && who.actor !== "you" && other) {
+      // someone else walking away (The Icon leaving): you watching him go, then him going, from far enough
+      // back that he is a man walking off and not the back of a head across the screen (20 Nov 2026)
+      covers.push({ shot: { preset: "medium-close", subject: other, side: sd, yaw: 10, lens: 50, move: "push" }, name: "Watching" });
+      covers.push({ shot: { preset: "medium-wide", subject: who, side: sd, yaw: 165, lens: 30, rise: 0.3, move: "follow" }, name: "Away" });
+    } else if (wf.what === "walk") {
+      covers.push({ shot: { preset: "medium-wide", subject: who, side: sd, yaw: 165, lens: 26, move: "follow" }, name: "Into the light" });
       covers.push({ shot: { preset: "medium-close", subject: who, side: sd, yaw: 10, lens: 50, move: "follow" }, name: "The face" });
     } else if (prop) {
       covers.push({ shot: { preset: "insert", subject: { prop }, side: sd, yaw: 30, lens: 42, rise: wf.what.startsWith("trophy") ? -0.55 : 0.04, move: "push" }, name: wf.what === "pen" ? "The pen" : `The ${prop}` });

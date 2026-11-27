@@ -8,12 +8,26 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Panel } from "@/components/admin/broadcast/BroadcastPage";
 import { sizeLabel } from "@/lib/marketing/uploadClient";
 import type { MediaItem } from "@/lib/marketing/r2";
-import type { AccountView, Platform, PublishPost } from "@/lib/publish/types";
+import { SPACES, SPACE_NAMES, spaceOf, type AccountView, type Platform, type PublishPost, type Space } from "@/lib/publish/types";
 import "./marketing.css";
 import "./suite.css";
 
-type Setup = { tokenKey: boolean; meta: boolean; google: boolean; cron: boolean; agent: boolean; storage: boolean };
-type Data = { accounts: AccountView[]; posts: PublishPost[]; videos: MediaItem[]; setup: Setup; error?: string; storage?: string };
+type Setup = { tokenKey: boolean; meta: boolean; google: boolean; cron: boolean; agent: boolean; storage: boolean; ownStorage?: boolean };
+type Video = MediaItem & { source?: "own" | "kib" };
+type Data = { accounts: AccountView[]; posts: PublishPost[]; videos: Video[]; setup: Setup; error?: string; storage?: string; storageError?: string };
+
+/** Upload straight into storage (Mikey's own bucket when set up): ask the site for a signed link, then send the file to it. */
+function uploadForPublish(file: File, space: Space, onProgress: (share: number) => void): Promise<string> {
+  return fetch("/api/admin/publish/upload", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: file.name, size: file.size, space }) })
+    .then(async (r) => { const a = await r.json().catch(() => ({})); if (!r.ok) throw new Error(a.error || `The site said no (${r.status}).`); return a as { key: string; url: string }; })
+    .then((a) => new Promise<string>((resolve, reject) => {
+      const x = new XMLHttpRequest(); x.open("PUT", a.url);
+      x.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+      x.onload = () => (x.status >= 200 && x.status < 300 ? resolve(a.key) : reject(new Error(`Storage refused the file (${x.status}). If this is your own bucket, check its CORS rule.`)));
+      x.onerror = () => reject(new Error("The upload was blocked or dropped. If this is your own bucket, check its CORS rule (setup step), then try again."));
+      x.send(file.slice(0, file.size, ""));
+    }));
+}
 
 const NAMES: Record<Platform, string> = { instagram: "Instagram", facebook: "Facebook", youtube: "YouTube" };
 const ORDER: Platform[] = ["instagram", "facebook", "youtube"];
@@ -23,6 +37,9 @@ const when = (iso: string) => new Date(iso).toLocaleString([], { weekday: "short
 const nameOf = (key: string) => key.split("/").pop()?.replace(/^\d{8}-\d{6}-[a-z0-9]{4}-/, "") ?? key;
 
 export default function PublishPanel({ notice }: { notice: { ok: boolean; text: string } | null }) {
+  // Which set of accounts (Mikey, 24 Nov 2026): Football and Content are Mikey's; Knowitball is the team's.
+  const [space, setSpaceRaw] = useState<Space>(() => (typeof window === "undefined" ? "football" : spaceOf(new URLSearchParams(window.location.search).get("space"))));
+  const setSpace = (s: Space) => { setSpaceRaw(s); setVideo(""); setData(null); try { const u = new URL(window.location.href); u.searchParams.set("space", s); u.searchParams.delete("connected"); u.searchParams.delete("problem"); window.history.replaceState(null, "", u.toString()); } catch { /* ignore */ } };
   const [data, setData] = useState<Data | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -34,15 +51,16 @@ export default function PublishPanel({ notice }: { notice: { ok: boolean; text: 
   const [picked, setPicked] = useState<Record<Platform, boolean>>({ instagram: true, facebook: true, youtube: true });
   const [later, setLater] = useState(false);
   const [at, setAt] = useState("");
+  const [up, setUp] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch("/api/admin/publish", { cache: "no-store" });
+      const r = await fetch(`/api/admin/publish?space=${space}`, { cache: "no-store" });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || `Could not read Publish (${r.status}).`);
       setData(j); setErr(j.error ?? null);
     } catch (e) { setErr((e as Error).message); }
-  }, []);
+  }, [space]);
   useEffect(() => { load(); const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
 
   const connected = useMemo(() => Object.fromEntries((data?.accounts ?? []).map((a) => [a.platform, a])) as Partial<Record<Platform, AccountView>>, [data]);
@@ -53,12 +71,17 @@ export default function PublishPanel({ notice }: { notice: { ok: boolean; text: 
     try { const r = await fn(); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || `Failed (${r.status}).`); await load(); return j; }
     catch (e) { setErr((e as Error).message); return null; } finally { setBusy(null); }
   };
-  const tickNow = () => act("tick", () => fetch("/api/admin/publish/tick", { method: "POST" }));
+  const upload = async (f: File | undefined) => {
+    if (!f) return; setErr(null); setUp(0);
+    try { const key = await uploadForPublish(f, space, (x) => setUp(x)); await load(); setVideo(key); }
+    catch (e) { setErr((e as Error).message); } finally { setUp(null); }
+  };
+  const tickNow = () => act("tick", () => fetch("/api/admin/publish/tick?fresh=1", { method: "POST" }));
 
   const schedule = async () => {
     const platforms = ORDER.filter((p) => picked[p] && ready(p));
     const body = {
-      video_key: video, title, platforms,
+      space, video_key: video, title, platforms,
       captions: split ? caps : { instagram: caption, facebook: caption, youtube: caption },
       scheduled_at: later && at ? new Date(at).toISOString() : new Date().toISOString(),
     };
@@ -66,18 +89,22 @@ export default function PublishPanel({ notice }: { notice: { ok: boolean; text: 
     if (j) { setTitle(""); setCaption(""); setCaps({ instagram: "", facebook: "", youtube: "" }); if (!later) tickNow(); }
   };
   const change = (id: string, action: string) => act(action + id, () => fetch(`/api/admin/publish/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) })).then((j) => { if (j && (action === "now" || action === "retry")) tickNow(); });
-  const forget = (p: Platform) => { if (confirm(`Forget the ${NAMES[p]} login? Posts to it stop until you connect again.`)) act("forget" + p, () => fetch(`/api/admin/publish/accounts?platform=${p}`, { method: "DELETE" })); };
+  const forget = (p: Platform) => { if (confirm(`Forget the ${NAMES[p]} login? Posts to it stop until you connect again.`)) act("forget" + p, () => fetch(`/api/admin/publish/accounts?space=${space}&platform=${p}`, { method: "DELETE" })); };
 
   const s = data?.setup;
   const missing = s ? [
     !s.tokenKey && "PUBLISH_TOKEN_KEY", !s.meta && "META_APP_ID + META_APP_SECRET", !s.google && "GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET",
-    !s.cron && "PUBLISH_CRON_SECRET", !s.agent && "PUBLISH_AGENT_TOKEN", !s.storage && "R2 storage settings",
+    !s.cron && "PUBLISH_CRON_SECRET", !s.agent && "PUBLISH_AGENT_TOKEN", !s.storage && "video storage (PUBLISH_R2_ settings for your own, or the Marketing R2 settings)",
   ].filter(Boolean) as string[] : [];
   const anyReady = ORDER.some((p) => picked[p] && ready(p));
   const canPost = !!video && anyReady && (!picked.youtube || !ready("youtube") || !!title.trim()) && (!later || !!at) && busy === null;
 
   return (
     <div className="mk-up">
+      <div className="mk-chips" role="tablist" aria-label="Which accounts">
+        {SPACES.map((s) => <button key={s} className="bc-pill" role="tab" aria-pressed={space === s} onClick={() => setSpace(s)}>{SPACE_NAMES[s]}</button>)}
+      </div>
+      <p className="mk-plain">{space === "football" ? "Your football accounts. Only you." : space === "content" ? "Your other content accounts (cutting videos and the like). Only you." : "The Knowitball team accounts. Every admin."}</p>
       {notice && <div className="mk-store" data-on={notice.ok ? "true" : "false"} role="status"><b>{notice.ok ? "● Connected" : "○ Not connected"}</b><span>{notice.text}</span></div>}
       {err && <div className="mk-problems" role="alert"><p>{err}</p></div>}
       {missing.length > 0 && <div className="mk-problems"><p>Still to set up in Vercel: {missing.join(" · ")}.</p></div>}
@@ -91,8 +118,8 @@ export default function PublishPanel({ notice }: { notice: { ok: boolean; text: 
           </div>
         ))}
         <div className="mk-links">
-          <a className="bc-btn" data-main="true" href="/api/admin/publish/connect/meta">{ready("facebook") ? "Reconnect Facebook + Instagram" : "Connect Facebook + Instagram"}</a>
-          <a className="bc-btn" href="/api/admin/publish/connect/youtube">{ready("youtube") ? "Reconnect YouTube" : "Connect YouTube"}</a>
+          <a className="bc-btn" data-main="true" href={`/api/admin/publish/connect/meta?space=${space}`}>{ready("facebook") ? "Reconnect Facebook + Instagram" : "Connect Facebook + Instagram"}</a>
+          <a className="bc-btn" href={`/api/admin/publish/connect/youtube?space=${space}`}>{ready("youtube") ? "Reconnect YouTube" : "Connect YouTube"}</a>
         </div>
         <p className="mk-plain">Until Google approves our YouTube audit, YouTube keeps videos posted from here private.</p>
       </Panel>
@@ -100,10 +127,17 @@ export default function PublishPanel({ notice }: { notice: { ok: boolean; text: 
       <Panel title="New post">
         <label className="mk-field"><span>Video</span>
           <select value={video} onChange={(e) => setVideo(e.target.value)}>
-            <option value="">{data?.videos.length ? "Pick a video from Uploads" : "No videos in storage yet (Marketing → Uploads)"}</option>
-            {(data?.videos ?? []).map((v) => <option key={v.key} value={v.key}>{v.name} · {sizeLabel(v.size)}{v.uploaded ? ` · ${when(v.uploaded)}` : ""}</option>)}
+            <option value="">{data?.videos.length ? "Pick a video" : "No videos yet: upload one below"}</option>
+            {(data?.videos ?? []).map((v) => <option key={v.key} value={v.key}>{v.source === "own" ? "Mine · " : "Knowitball · "}{v.name} · {sizeLabel(v.size)}{v.uploaded ? ` · ${when(v.uploaded)}` : ""}</option>)}
           </select>
         </label>
+        <div className="mk-links">
+          <label className="bc-btn" aria-disabled={up !== null}>
+            {up !== null ? `Uploading… ${Math.round(up * 100)}%` : "⬆ Upload a video"}
+            <input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" hidden disabled={up !== null} onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ""; }} />
+          </label>
+        </div>
+        <p className="mk-plain">{s?.ownStorage ? "Uploads go to your own video storage. Knowitball videos from Marketing → Uploads show here too, marked Knowitball." : "Uploads go to the team's Marketing storage until your own storage (PUBLISH_R2_ settings) is set up."}</p>
         <div className="mk-chips">
           {ORDER.map((p) => (
             <button key={p} className="bc-pill" aria-pressed={picked[p] && ready(p)} disabled={!ready(p)} onClick={() => setPicked((x) => ({ ...x, [p]: !x[p] }))}>

@@ -13,6 +13,7 @@ import { createDirector } from "@/lib/star/cutscene/director";
 import { FIXTURES } from "@/lib/star/cutscene/fixtures";
 import { startFrameStats } from "@/lib/star/three3d/frameStats";
 import { startHome } from "@/lib/star/home3d/scene";
+import { startWorld3d } from "@/lib/star/world3d/testScene";
 import { CASUAL_SETS, BOOT_LOD } from "@/lib/star/home3d/outfits";
 import { cabinetSlots } from "@/lib/star/home3d/trophies";
 import { cabinetSize } from "@/lib/star/home3d/homes";
@@ -208,6 +209,15 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     const d = await createDirector(stage(), FIXTURES[opts.fixture ?? "trophy"](), { style: "real", tier: opts.tier ?? "medium", holdAt: opts.at ?? 2 });
     M.ready = performance.now();
     M.ctrl = d;
+    return true;
+  },
+  /** The world kit's test places (lib/star/world3d): place house|garden; mates 0 = nobody but you. */
+  async world(opts: any = {}) {
+    M.t0 = performance.now();
+    const mates = opts.mates === 0 ? [] : [{ id: "a", name: "A", number: 4 }, { id: "b", name: "B", number: 7 }, { id: "c", name: "C", number: 9 }];
+    const c = await startWorld3d(stage(), { onCard() {} }, { place: opts.place ?? "garden", quality: opts.quality ?? "medium", kit: KIT, number: 10, mates, rate: 10 });
+    M.ready = performance.now();
+    M.ctrl = c;
     return true;
   },
   /** Your house (a flat), in your kit. */

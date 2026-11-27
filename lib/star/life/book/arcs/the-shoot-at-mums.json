@@ -1,0 +1,304 @@
+{
+ "id": "arc-the-shoot-at-mums",
+ "title": "A candid shoot",
+ "owner": "sponsor",
+ "summary": "The boot sponsor wants a \"candid\" photo shoot of you at your mum's house, in her kitchen. Your mum is very excited. A season on, the photos are on a billboard.",
+ "size": "small",
+ "about": {
+  "who": [
+   "sponsor's rep",
+   "mum"
+  ],
+  "tone": [
+   "funny",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "sponsor",
+   "pick": "sponsor"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "mums-kitchen",
+   "title": "Mum's kitchen",
+   "text": "You let them shoot in your mum's kitchen. She's on a billboard now, and she's never been happier."
+  },
+  {
+   "id": "the-studio",
+   "title": "The studio",
+   "text": "You kept your mum out of it. The ad was in a studio, and you looked bored in it."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "msh-1-ask",
+   "title": "Candid",
+   "n": 1,
+   "event": {
+    "id": "arc-msh-1-ask",
+    "title": "Candid",
+    "category": "sponsor",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "sponsor",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{sponsor.name} from {sponsor.outlet} rings with an idea. She's very excited about it."
+    ],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "sponsor",
+       "say": [
+        "\"A candid shoot at your mum's. In her kitchen. You, the new boots, a cup of tea, your mum in the background. Real. People love real.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Mum would love that.\"",
+         "tone": "kind",
+         "end": "yes"
+        },
+        {
+         "id": "ask",
+         "label": "\"I'll have to ask her.\"",
+         "tone": "honest",
+         "goto": "s2"
+        },
+        {
+         "id": "no",
+         "label": "\"Leave my mum out of it.\"",
+         "tone": "cold",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "s2"
+        }
+       ]
+      },
+      "s2": {
+       "who": "sponsor",
+       "say": [
+        "\"Ask her. Though I've already asked her. She said yes and she's bought a new kettle.\""
+       ],
+       "replies": [
+        {
+         "id": "fine",
+         "label": "\"Then I suppose we're doing it.\"",
+         "tone": "calm",
+         "end": "yes"
+        },
+        {
+         "id": "no",
+         "label": "\"Then she can take the kettle back.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "The shoot takes nine hours. Mum makes the photographer a bacon sandwich every hour, and appears in every shot.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 6,
+          "respect": 2
+         },
+         {
+          "slot": "mum",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "let-them-shoot-in-my-kitchen",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kitchen"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "They shoot it in a studio with a fake kitchen. Mum takes the kettle back.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": -2
+         },
+         {
+          "slot": "mum",
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "kept-me-out-of-the-shoot",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "studio"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "The sponsor has an idea"
+  },
+  {
+   "id": "msh-2-billboard",
+   "title": "The billboard",
+   "after": {
+    "beat": "msh-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-msh-2-billboard",
+    "title": "The billboard",
+    "category": "sponsor",
+    "place": "town:street",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "driving",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{if arc.path=='kitchen'}There's a billboard on the ring road: you, the boots, and your mum behind you holding a teapot like it's a trophy.{/if}",
+     "{if arc.path=='studio'}There's a billboard on the ring road: you, the boots, and a fake kitchen.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "ring",
+      "label": "Ring Mum.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='kitchen'",
+        "text": "She's already been to look at it three times. She's taken the neighbours.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "mums-kitchen"
+        }
+       },
+       {
+        "text": "\"You look bored,\" she says. \"And that's not a real kettle.\"",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-studio"
+        }
+       }
+      ]
+     },
+     {
+      "id": "drive",
+      "label": "Keep driving.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='kitchen'",
+        "text": "You'll pass it every day for six months, and so will half the town.",
+        "arc": {
+         "end": "mums-kitchen"
+        }
+       },
+       {
+        "text": "You'll pass it every day for six months.",
+        "arc": {
+         "end": "the-studio"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     }
+    ]
+   },
+   "hint": "A season on, the photos are up"
+  }
+ ]
+}

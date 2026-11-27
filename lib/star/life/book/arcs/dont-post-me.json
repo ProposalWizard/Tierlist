@@ -1,0 +1,317 @@
+{
+ "id": "arc-dont-post-me",
+ "title": "Don't post me",
+ "owner": "sister",
+ "summary": "Your sister asks you to stop putting her in your posts. People at her work are messaging her about you. A season later she needs you to post something.",
+ "size": "small",
+ "about": {
+  "who": [
+   "sister"
+  ],
+  "tone": [
+   "awkward",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "sister",
+   "pick": "sister"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "she-asked-you-to",
+   "title": "She asked you to",
+   "text": "You took her out of your posts when she asked, and when she needed the whole internet, she asked you."
+  },
+  {
+   "id": "still-in-the-photos",
+   "title": "Still in the photos",
+   "text": "You kept posting her. She kept muting you."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "sis-1-ask",
+   "title": "Take me out of it",
+   "n": 1,
+   "event": {
+    "id": "arc-sis-1-ask",
+    "title": "Take me out of it",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "sister",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A text from {sister.short}. Then another. Then a voice note."
+    ],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "sister",
+       "say": [
+        "\"Can you please stop putting me in your posts. A man at my work has started calling me your name. Someone found my dating profile.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Done. I'll take the old ones down tonight.\"",
+         "tone": "kind",
+         "end": "took-down"
+        },
+        {
+         "id": "joke",
+         "label": "\"It's because you're photogenic.\"",
+         "tone": "confident",
+         "goto": "s2"
+        },
+        {
+         "id": "no",
+         "label": "\"It's my account, sis.\"",
+         "tone": "cold",
+         "end": "kept-up"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "s2"
+        }
+       ]
+      },
+      "s2": {
+       "who": "sister",
+       "say": [
+        "\"I'm serious. I'm not you. I don't want this.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Sorry. They're coming down.\"",
+         "tone": "humble",
+         "end": "took-down"
+        },
+        {
+         "id": "some",
+         "label": "\"I'll stop new ones. The old ones are fine.\"",
+         "tone": "calm",
+         "end": "half"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "took-down": [
+       {
+        "text": "You delete forty photos. She sends back a heart and a photo of a cat, which means thank you.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sister",
+          "tag": "took-me-out-of-the-posts",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "half": [
+       {
+        "text": "\"Fine.\" She takes a week to answer your next text.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "half"
+         }
+        }
+       }
+      ],
+      "kept-up": [
+       {
+        "text": "She mutes you. You find out at Christmas.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": -8,
+          "respect": -2,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sister",
+          "tag": "kept-me-in-the-posts",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cold"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sister",
+      "pick": "sister"
+     }
+    ]
+   },
+   "hint": "Your sister has a problem"
+  },
+  {
+   "id": "sis-2-later",
+   "title": "Please post this",
+   "after": {
+    "beat": "sis-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-sis-2-later",
+    "title": "Please post this",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "sister",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {sister.short} has started a running club for women on her estate. Nobody's turned up to the first two."
+    ],
+    "choices": [
+     {
+      "id": "post",
+      "label": "Post it.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='kind'",
+        "text": "Ninety women turn up on Tuesday. She sends a blurry photo of them all at the start line and three words: \"THIS IS YOU.\"",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 10,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sister",
+          "tag": "posted-my-running-club",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "she-asked-you-to"
+        }
+       },
+       {
+        "text": "You post it. She thanks you, a bit stiffly. Forty women turn up.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "still-in-the-photos"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ask",
+      "label": "\"Are you sure? You hated being in my posts.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='kind'",
+        "text": "\"It's not me in it. It's the club. That's different.\" You post it. Ninety women turn up.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "she-asked-you-to"
+        }
+       },
+       {
+        "text": "\"I didn't ask you,\" she says. \"Mum did.\" You post it anyway.",
+        "npc": [
+         {
+          "slot": "sister"
+         }
+        ],
+        "arc": {
+         "end": "still-in-the-photos"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sister",
+      "pick": "sister"
+     }
+    ]
+   },
+   "hint": "A season on, your sister needs something"
+  }
+ ]
+}

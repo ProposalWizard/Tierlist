@@ -1,0 +1,371 @@
+{
+ "id": "arc-the-race",
+ "title": "Fastest in the squad",
+ "owner": "mate",
+ "summary": "The quickest player in the squad says he'd beat you over forty metres in his flip-flops. The loser carries the cones for a month. A season on, he wants it again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "needsActivity": "pace-sprint",
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "where": [
+    "age<=27"
+   ],
+   "order": "best"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-quickest",
+   "title": "The quickest",
+   "text": "You beat the fastest man in the squad over forty metres. It's on the gym wall now."
+  },
+  {
+   "id": "cone-carrier",
+   "title": "Cone carrier",
+   "text": "You carried the cones for a month. Then you carried them again."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "rce-1-race",
+   "title": "Forty metres",
+   "n": 1,
+   "event": {
+    "id": "arc-rce-1-race",
+    "title": "Forty metres",
+    "category": "training",
+    "place": "compound:pitch-1",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "!injured"
+     ]
+    },
+    "setup": [
+     "{mate.name} is doing stretches that are mostly showing off. The sprint times went up on the board this morning, and you're top by a hundredth."
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "mate",
+       "say": [
+        "\"A hundredth. That's the clock being kind. Forty metres, me and you, now. Loser carries the cones for a month.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Line it up.\"",
+         "tone": "confident",
+         "goto": "race"
+        },
+        {
+         "id": "boots",
+         "label": "\"You're in flip-flops.\"",
+         "tone": "calm",
+         "goto": "race"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm top of the board. I don't need to.\"",
+         "tone": "cold",
+         "end": "declined"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "declined"
+        }
+       ]
+      },
+      "race": {
+       "activity": {
+        "mode": "pace-sprint",
+        "name": "Forty metres",
+        "intro": "Forty metres down the touchline. The lads are on the halfway line, shouting.",
+        "dials": {
+         "metres": 40,
+         "opponent": {
+          "slot": "mate"
+         }
+        },
+        "score": "first over the line",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "r-pulled"
+        ],
+        [
+         "activity.won",
+         "r-won"
+        ],
+        [
+         "",
+         "r-lost"
+        ]
+       ]
+      },
+      "r-won": {
+       "who": "mate",
+       "say": [
+        "He's on his back on the grass. \"Again. That was a false start.\""
+       ],
+       "replies": [
+        {
+         "id": "no",
+         "label": "\"The cones are by the shed.\"",
+         "tone": "confident",
+         "end": "won"
+        }
+       ]
+      },
+      "r-lost": {
+       "who": "mate",
+       "say": [
+        "He's already doing a lap of honour with his arms out."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Where are the cones, then.\"",
+         "tone": "humble",
+         "end": "lost"
+        }
+       ]
+      },
+      "r-pulled": {
+       "who": "mate",
+       "say": [
+        "You feel your hamstring at twenty metres and pull up. He jogs back to check on you, then laughs."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"That doesn't count.\"",
+         "tone": "fiery",
+         "end": "lost"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "won": [
+       {
+        "text": "He carries the cones for a month, and does a small bow every time he puts them down.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "beat-me-over-forty-metres",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "won"
+         }
+        }
+       }
+      ],
+      "lost": [
+       {
+        "text": "You carry the cones for a month. He shouts \"Cones!\" at you across the canteen.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "made-me-carry-the-cones",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lost"
+         }
+        }
+       }
+      ],
+      "declined": [
+       {
+        "text": "\"Scared.\" He says it every day for a week.",
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lost"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age<=27"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "Someone thinks he's quicker than you"
+  },
+  {
+   "id": "rce-2-again",
+   "title": "The rematch",
+   "after": {
+    "beat": "rce-1-race",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-rce-2-again",
+    "title": "The rematch",
+    "category": "training",
+    "place": "compound:pitch-1",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The sprint times are up again. He's top by a hundredth now, and he's standing by the board waiting for you."
+    ],
+    "choices": [
+     {
+      "id": "again",
+      "label": "\"Forty metres. Now.\"",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='won'",
+        "text": "You win again, by a yard this time. He carries the cones without being asked.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "the-quickest"
+        }
+       },
+       {
+        "text": "He wins by a yard. \"Cones,\" he says, and points.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "cone-carrier"
+        }
+       }
+      ]
+     },
+     {
+      "id": "shake",
+      "label": "Shake his hand. \"Fair play.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "\"You're scared,\" he says, but he shakes it.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "cone-carrier"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age<=27"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "A season on, he wants it again"
+  }
+ ]
+}

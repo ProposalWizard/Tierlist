@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { boardSizeForPlayers, briefById, fetchChallengeRound } from "@/lib/challengeDraft";
 import { playerNameKey } from "@/lib/americanDraft";
 import { createServiceClient } from "@/lib/supabase/service";
+import { overLimit, slowDown, LIMITS } from "@/lib/rateLimit";
 
 /**
  * The ten cards for one brief.
@@ -16,6 +17,8 @@ import { createServiceClient } from "@/lib/supabase/service";
  * thinner board.
  */
 export async function POST(req: Request) {
+  // Too many from one person: a friendly 429, never a crash (lib/rateLimit).
+  if (await overLimit(req, LIMITS.challengeDraft)) return slowDown(LIMITS.challengeDraft);
   const body = await req.json().catch(() => ({})) as {
     briefId?: string;
     taken?: { sofifa_id?: string; name?: string }[];

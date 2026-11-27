@@ -39,6 +39,7 @@ export default function Signing3dPage() {
   const [aviators, setAviators] = useState(false);
   // ?club=Name: sign for another club (its home kit on you and on the walls).
   const [club, setClub] = useState<string>(SAMPLE_TERMS.club);
+  const [managerName, setManagerName] = useState<string>(SAMPLE_TERMS.manager);
   const [open, setOpen] = useState(false);
   const [replay, setReplay] = useState(0);
   // ?bare=1: full screen, as before the frame; approved 3D Scene Editor edits ticked for "the test page" play here
@@ -65,6 +66,7 @@ export default function Signing3dPage() {
     }
     if (q.get("aviators") === "1") setAviators(true);
     const cl = q.get("club"); if (cl) setClub(cl);
+    const mg = q.get("manager"); if (mg) setManagerName(mg);
   }, []);
 
   // The face picture, fitted the way the home avatar fits it.
@@ -100,7 +102,8 @@ export default function Signing3dPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [skin, fitted, worn, aviators, hair, hairStyle, kit.shirt, kit.trim]);
 
-  const look = managerLook(SAMPLE_TERMS.manager);
+  // ?manager=Name: another manager's look (his skin and hair follow his name, as in the career)
+  const look = managerLook(managerName);
   const manager = { skin: look.skin, hairColour: look.hairColour, grey: look.grey, beard: look.beard !== "none", bald: look.hair === "bald", buzz: look.hair === "buzz" || look.hair === "receding" || look.hair === "ring" };
   const contract = {
     club, playerName: SAMPLE_TERMS.playerName, managerName: SAMPLE_TERMS.manager,

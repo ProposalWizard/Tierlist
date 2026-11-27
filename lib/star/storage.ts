@@ -14,6 +14,7 @@ import { toSavedForm, fromSavedForm } from "./squadSaveCodec";
 import { setActiveFoot } from "./kickFoot";
 import { addToHall, accountOfScope } from "./hallOfFame";
 import { aerialFromOld } from "./aerial";
+import { migrateLife } from "./life/migrate";
 import {
   type SaveStamp, type SyncRecord, type SyncedVersion, type DeviceKind, type OtherDeviceWarning,
   type LoadWhy, emptySyncRecord, sanitizeSyncRecord, readStamp, progressFingerprint, nextStamp,
@@ -525,6 +526,9 @@ function backfill(c: CareerState): CareerState {
   // rollover gets the same trim now (see compactPotmHistory): last season
   // and this one whole, older seasons only the months you won.
   out.potm = compactPotmHistory(out.potm, out.season - 1);
+  // The living world (lib/star/life): a save with a life block gets it put back
+  // in shape; a save without one is left alone (it starts one at its first event).
+  if (out.life !== undefined) out.life = migrateLife(out.life);
   // A save from before Star Points gets its ledger and star rating here, and
   // one from the 1.0-10.0 days is moved onto 1-100 (starPoints.ts bestOf).
   return out.stars === undefined || isOldStarScale(out) ? withStars(out) : out;

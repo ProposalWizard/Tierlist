@@ -143,6 +143,14 @@ for (const f of fs.existsSync(path.join(PUB, "star/star-pass/3d")) ? fs.readdirS
   const rel = `star/star-pass/3d/${f}`;
   if (f.endsWith(".glb") && !POLICY[rel]) POLICY[rel] = { q: /.*/ };
 }
+// Toon hair (tools/hair3d/build_hair.py, 20 Nov 2026): skinned on the wearer's own skeleton by
+// lib/star/style3d/toon/hair.ts, which reads rest-pose metres and the bone weights as written: positions
+// stay float, weights as they are.
+for (const f of fs.existsSync(path.join(PUB, "star/people3d/hair")) ? fs.readdirSync(path.join(PUB, "star/people3d/hair")) : []) {
+  if (f.endsWith(".glb")) POLICY[`star/people3d/hair/${f}`] = { q: /^(NORMAL|TEXCOORD_\d+)$/, keepWeights: true };
+}
+// New head shapes (tools/hair3d/reshape_heads.mjs, 20 Nov 2026): Style A bodies like the others.
+for (const f of ["toon-p7", "toon-p8", "toon-p9", "toon-mgr3"]) POLICY[`star/people3d/${f}.glb`] = PEOPLE.old;
 for (const id of ["control", "curl", "elite", "maestro", "power", "speed", "starter"]) POLICY[`star/shop3d/items/boot-${id}.glb`] = { skip: "Draco (smaller than meshopt)" };
 for (const id of ["1", "2", "3", "4", "classic", "suv"]) POLICY[`star/shop3d/items/car-${id}.glb`] = { skip: "Draco (smaller than meshopt)" };
 // The generated family car (Higgsfield → Tripo, 9 Oct 2026; look H): textures cut to 1024 first
@@ -168,6 +176,9 @@ for (const f of [...["family", "hatch", "suv", "sports", "classic", "super"].map
 // the garden's props the estate's terrace uses (tools/home3d/make_terrace_props.mjs): the
 // terrace joins its pieces into one draw per material, reading their vertices, so floats stay.
 POLICY["star/home3d/terrace-props.glb"] = { q: null, webp: true };
+// the house furniture (tools/home3d/make_furniture.py, Kenney CC0): pieces are cloned and joined
+// into a room's still draws (freezeStatic), so positions stay float.
+POLICY["star/home3d/furniture.glb"] = { q: null, webp: true };
 // Speed job B (9 Oct 2026): every generated shop item has a KTX2 twin (*-hf.ktx2.glb, packed
 // pictures that stay packed on the chip), written already meshopt-packed by tools/shop3d/ktx2_items.mjs
 // from the file above. Re-make it with that tool, never here.

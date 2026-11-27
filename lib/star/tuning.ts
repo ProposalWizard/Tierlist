@@ -587,7 +587,7 @@ export const TUNABLES: TunableDef[] = [
   // ── Sponsorship objectives ───────────────────────────────────────────
   {
     key: "sponsors.objectiveDifficultyPerFee", category: "Sponsorships", label: "Objective difficulty — × base fee",
-    description: "How much harder an objective gets per ★ of the category's own base fee — a cheap deal asks something easy, an expensive one asks something hard.",
+    description: "How much harder an objective gets per £ of the category's own base fee — a cheap deal asks something easy, an expensive one asks something hard.",
     default: 0.06, min: 0, max: 1, step: 0.01,
   },
   {
@@ -637,12 +637,12 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "sponsors.objectiveBonusBase", category: "Sponsorships", label: "Objective bonus — base",
-    description: "Base ★ bonus for completing an objective, before the per-deal index, star rating, seasons and difficulty scaling.",
+    description: "Base £ bonus for completing an objective, before the per-deal index, star rating, seasons and difficulty scaling.",
     default: 6, min: 0, max: 100, step: 1,
   },
   {
     key: "sponsors.objectiveBonusPerIndex", category: "Sponsorships", label: "Objective bonus — × deal index",
-    description: "Extra ★ bonus added per position in your sponsor list — a later, bigger deal pays a bigger bonus for the same difficulty.",
+    description: "Extra £ bonus added per position in your sponsor list — a later, bigger deal pays a bigger bonus for the same difficulty.",
     default: 2, min: 0, max: 20, step: 0.5,
   },
   {

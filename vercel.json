@@ -7,10 +7,6 @@
   },
   "crons": [
     {
-      "path": "/api/admin/patch-notes/media-sync",
-      "schedule": "*/5 * * * *"
-    },
-    {
       "path": "/api/cron/backup",
       "schedule": "0 2 * * *"
     },
@@ -29,10 +25,6 @@
     {
       "path": "/api/cron/recordings",
       "schedule": "30 4 * * *"
-    },
-    {
-      "path": "/api/cron/patch-bot",
-      "schedule": "*/15 * * * *"
     }
   ]
 }

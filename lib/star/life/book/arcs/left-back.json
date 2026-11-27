@@ -1,0 +1,338 @@
+{
+ "id": "arc-left-back",
+ "title": "Left back for the cup",
+ "owner": "manager",
+ "summary": "Injuries leave the gaffer with no left back for the cup game, and he asks you to play there. Next season he needs a favour again, and he remembers whether you gave him the first one.",
+ "size": "small",
+ "about": {
+  "who": [
+   "gaffer"
+  ],
+  "tone": [
+   "awkward",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.3
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-utility-man",
+   "title": "The man who'll play anywhere",
+   "text": "You played left back when he asked, and he's never forgotten it."
+  },
+  {
+   "id": "strikers-only",
+   "title": "Strikers only",
+   "text": "You wouldn't play out of position, and he stopped asking."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "oop-1-ask",
+   "title": "No left backs",
+   "n": 1,
+   "event": {
+    "id": "arc-oop-1-ask",
+    "title": "No left backs",
+    "category": "manager",
+    "place": "compound:office",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "!injured"
+     ]
+    },
+    "setup": [
+     "{manager.name} has the team sheet on the desk with a gap in it. Both left backs are injured and the cup game is on Tuesday."
+    ],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "manager",
+       "say": [
+        "\"I need a left back. You're quick, you can tackle when you're bothered, and you're left-footed enough. Will you play there?\""
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"Wherever you need me, gaffer.\"",
+         "tone": "humble",
+         "end": "yes-humble"
+        },
+        {
+         "id": "calm",
+         "label": "\"If it's one game, yes.\"",
+         "tone": "calm",
+         "end": "yes-once"
+        },
+        {
+         "id": "confident",
+         "label": "\"I'll play there and I'll still score.\"",
+         "tone": "confident",
+         "end": "yes-score"
+        },
+        {
+         "id": "fiery",
+         "label": "\"I'm a striker. Get a kid up from the under-23s.\"",
+         "tone": "fiery",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes-humble": [
+       {
+        "text": "You get booked after nine minutes and you keep a clean sheet. He shakes your hand in the dressing room.",
+        "effects": {
+         "boss": 3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "played-left-back-for-him",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "yes-once": [
+       {
+        "text": "You play there and you're fine. He doesn't say thank you, but he writes something in his notebook.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "played-left-back-for-him",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "yes-score": [
+       {
+        "text": "You don't score. You do hit the bar from left back, which the lads won't let you forget.",
+        "effects": {
+         "boss": 2,
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "played-left-back-for-him",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "The kid from the under-23s plays and gets turned inside out. Nobody says it was your fault, out loud.",
+        "effects": {
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -4,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "wouldnt-play-left-back",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The gaffer is short at the back"
+  },
+  {
+   "id": "oop-2-again",
+   "title": "Short again",
+   "after": {
+    "beat": "oop-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-oop-2-again",
+    "title": "Short again",
+    "category": "manager",
+    "place": "compound:office",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "variants": [
+     {
+      "if": "!sameClub",
+      "template": "phone-call",
+      "place": "home",
+      "setupSwap": "Your old gaffer rings. He's heard your new club has you on the bench."
+     }
+    ],
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. {manager.short} is short again, this time in midfield."
+    ],
+    "choices": [
+     {
+      "id": "again",
+      "label": "\"Where do you want me?\"",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "if": "sameClub",
+        "text": "{if arc.path=='yes'}\"Same as last time. Wherever it hurts.\" He starts you in midfield and you're the best player on the pitch.{/if}{if arc.path=='no'}He blinks. \"That's a change.\" He starts you in midfield.{/if}",
+        "effects": {
+         "boss": 3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "will-play-anywhere",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-utility-man"
+        }
+       },
+       {
+        "text": "\"I'd have you back tomorrow,\" he says. \"Remember that if it doesn't work out.\"",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "the-utility-man"
+        }
+       }
+      ]
+     },
+     {
+      "id": "striker",
+      "label": "\"I'm a striker, gaffer.\"",
+      "tone": "fiery",
+      "outcomes": [
+       {
+        "text": "\"I know. You said.\" He picks someone else and doesn't ask you again.",
+        "effects": {
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -3
+         }
+        ],
+        "arc": {
+         "end": "strikers-only"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "He might need another favour"
+  }
+ ]
+}

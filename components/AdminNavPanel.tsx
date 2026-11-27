@@ -357,7 +357,7 @@ export default function AdminNavPanel() {
           </Link>
           {GROUPS.filter((group) => group.game === game).map((group) => (
             <div key={group.label} className="mb-2">
-              <p className="mx-4 mb-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-gray-600">
+              <p className="mx-4 mb-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
                 {group.label}
               </p>
               {group.links.map((link) => {
@@ -375,7 +375,7 @@ export default function AdminNavPanel() {
                     <span className="text-sm font-bold lg:whitespace-nowrap">{link.name}</span>
                     <span
                       className={`hidden shrink-0 whitespace-nowrap font-mono text-[9px] sm:inline ${
-                        isActive ? "text-emerald-300" : "text-gray-600 group-hover:text-gray-500"
+                        isActive ? "text-emerald-300" : "text-gray-500 group-hover:text-gray-400"
                       }`}
                     >
                       {link.href}

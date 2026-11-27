@@ -7,6 +7,7 @@ import LagTestHost from "@/components/star/LagTest";
 
 export const metadata: Metadata = {
   title: "Road to the Golden Ball",
+  description: "Road to the Golden Ball: a football career game. Start at a trial, play the big moments of every match, and chase the Ballon d'Or.",
   robots: { index: false, follow: false },
   // Add to Home Screen opens the game with no browser bars (v0.25, point 3).
   // iPhone has no Fullscreen API for pages; this is the only way there.

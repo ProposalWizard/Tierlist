@@ -11,6 +11,8 @@ FACT-DAT-009 | Cloudflare R2 bucket kib-marketing folders: videos/, ledger/, pat
 FACT-DAT-010 | Nightly backup 03:00 UK copies the key tables to R2 backups/db/<day>/; the 08:00 UK limits post goes in #health. Both need CRON_SECRET. | data
 FACT-DAT-011 | ops_limits.sql is PENDING; until run, the morning limits post cannot read the database and Storage sizes. | data
 FACT-DAT-012 | Admin Videos recordings save to R2 first (recordings/<who>/), Drive is the copy; deleted after 30 days unless Keep is on; the link for Claude is /api/dev-recordings/watch. | admin,data
+FACT-DAT-013 | Vercel's free (Hobby) plan allows timed jobs once a day only, so the every-5 and every-15 minute jobs run from Supabase pg_cron (patch-notes-media-sync, team-room-quarter-hour), with CRON_SECRET read from the Supabase Vault as 'cron_secret'. | team,data
+FACT-DAT-014 | Vercel is back on the free Hobby plan since 23 Nov 2026 (Mikey switched from Pro); the frequent timed jobs run from Supabase and every Vercel cron is daily. | team,data
 PRO-DAT-001 | Run a pending migration in the Supabase SQL Editor before touching the related features. | data
 PRO-DAT-002 | Bug report? Use the supabase-bug-hunt skill: read the report and the player's save, compare normal saves, reproduce, fix the code. | data
 RUL-DAT-001 | SQL for a person to run goes out as an artifact page (each file's name, one line on what it does, a Copy all button and the full text), never as links; build it with scripts/supabase/sql-page.py. | rule,data

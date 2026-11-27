@@ -269,6 +269,7 @@ export function acquireRenderer(T: Three, container: HTMLElement, prof: Pick<Tie
   if (shared && (shared.antialias !== prof.antialias || shared.renderer.getContext().isContextLost())) dropSharedRenderer();
   if (!shared) {
     const renderer = new T.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
+    skipSameSize(renderer);
     shared = { renderer, antialias: prof.antialias, owner: 0, pending: [], flushTimer: null };
   }
   const s = shared;
@@ -311,6 +312,34 @@ export function acquireRenderer(T: Three, container: HTMLElement, prof: Pick<Tie
         shared.flushTimer = setTimeout(flushReleased, 3000);
       }
     },
+  };
+}
+
+/**
+ * A resize to the size it already is does nothing (speed fix 3, 20 Nov 2026).
+ *
+ * three.js's setSize, and setPixelRatio (which calls setSize), always write
+ * the canvas's width and height, and writing them throws the whole drawing
+ * buffer away and makes a new one, even at the same size. Entering a place
+ * did that three times over (acquireRenderer's pixel ratio, the scene's own,
+ * then its first resize): at a phone's 2x on a full screen, 0.76 s of the
+ * House's 2.1 s entry here (speed audit item 3). Now the same size keeps its
+ * buffer; the viewport and the CSS size are still set exactly as three.js
+ * sets them, so nothing drawn changes.
+ */
+function skipSameSize(renderer: THREE.WebGLRenderer) {
+  const own = renderer.setSize.bind(renderer);
+  const now = { x: 0, y: 0, set(x: number, y: number) { this.x = x; this.y = y; return this; } };
+  renderer.setSize = (width: number, height: number, updateStyle = true) => {
+    const pr = renderer.getPixelRatio();
+    const c = renderer.domElement;
+    renderer.getSize(now as unknown as THREE.Vector2);
+    if (now.x === width && now.y === height && c.width === Math.floor(width * pr) && c.height === Math.floor(height * pr) && !renderer.xr?.isPresenting) {
+      if (updateStyle === true) { c.style.width = width + "px"; c.style.height = height + "px"; }
+      renderer.setViewport(0, 0, width, height);
+      return;
+    }
+    own(width, height, updateStyle);
   };
 }
 

@@ -27,7 +27,7 @@ export interface Storage {
 }
 
 /** Who is asking. null = not signed in. */
-export type Caller = { id: string; name: string; admin: boolean } | null;
+export type Caller = { id: string; name: string; admin: boolean; email?: string } | null;
 export type Reply = { status: number; body: Record<string, unknown> };
 
 const NOT_CONNECTED = "Storage not connected here. Uploads work on the live site once the R2 settings are in Vercel.";

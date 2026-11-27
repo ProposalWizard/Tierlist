@@ -6,20 +6,21 @@
  *   now                          post at the next tick (within 5 minutes)
  */
 import { NextResponse } from "next/server";
-import { whoIs } from "@/lib/publish/auth";
+import { NOT_YOURS, mayUse, whoIs } from "@/lib/publish/auth";
 import { getPost, updatePost } from "@/lib/publish/db";
-import { overallStatus } from "@/lib/publish/types";
+import { overallStatus, spaceOf } from "@/lib/publish/types";
 
 export const dynamic = "force-dynamic";
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const who = await whoIs(req, ["admin", "agent"]);
-  if (!who) return json({ error: "Admins only." }, 403);
+  if (!who) return json({ error: NOT_YOURS }, 403);
   const b = (await req.json().catch(() => ({}))) as { action?: string; scheduled_at?: string };
   try {
     const post = await getPost(params.id);
     if (!post) return json({ error: "No such post." }, 404);
+    if (!mayUse(who, spaceOf(post.space))) return json({ error: NOT_YOURS }, 403);
     const started = post.platforms.some((p) => post.results[p] && post.results[p]!.stage !== "pending");
     if (b.action === "cancel") {
       if (started) return json({ error: "Already posted (in part). Delete it on the platform itself." }, 409);
