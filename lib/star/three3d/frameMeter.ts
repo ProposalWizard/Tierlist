@@ -40,6 +40,8 @@ function capsLine(): string {
 export function installFrameMeter(): void {
   if (installed || typeof window === "undefined") return;
   installed = true;
+  // The speed recorder (lib/star/perfRecorder.ts): team accounts and ?fps=1 phones send a sample every 5 s.
+  void import("../perfRecorder").then((m) => m.startPerfRecorder()).catch(() => { /* no recorder: the meter still works */ });
   {
     let st: ReturnType<typeof startFrameStats> | null = null;
     const el = document.createElement("div");
@@ -58,7 +60,8 @@ export function installFrameMeter(): void {
       const g = currentGovernor();
       const gov = g ? `${g.tier} (rung ${g.index}${g.index !== g.startIndex ? ` from ${g.startIndex}` : ""})` : quality3dTier();
       const caps = capsLine();
-      el.textContent = `${f.fps.toFixed(0)} fps  worst ${f.worstMs.toFixed(0)} ms  js ${f.jsMs.toFixed(1)} ms\n${f.draws} draws  ${(f.tris / 1000).toFixed(0)}k tris  shadow ${f.shadowDraws}\nskinned ${f.skinnedDraws}  post ${f.posts}\npx ${f.pixelRatio.toFixed(2)}  ${gov}${caps}`;
+      const rec = (window as unknown as { __perfRecording?: boolean }).__perfRecording ? "\n● recording" : "";
+      el.textContent = `${f.fps.toFixed(0)} fps  worst ${f.worstMs.toFixed(0)} ms  js ${f.jsMs.toFixed(1)} ms\n${f.draws} draws  ${(f.tris / 1000).toFixed(0)}k tris  shadow ${f.shadowDraws}\nskinned ${f.skinnedDraws}  post ${f.posts}\npx ${f.pixelRatio.toFixed(2)}  ${gov}${caps}${rec}`;
       (window as unknown as { __frame3dDevice?: string }).__frame3dDevice = caps.trim();
       el.style.display = "block";
     }, 500);

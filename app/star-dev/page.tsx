@@ -5,6 +5,7 @@ import { publishFavourites, unpublishFavourites } from "@/lib/star/favouriteGoal
 import { leoUpdateOn, useLeoUpdate, leoUpdateLocal, adoptLeoUpdate, LEO_UPDATE_EVENT } from "@/lib/star/leoUpdate";
 import { preloadScene } from "@/lib/star/three3d/perf";
 import { installTapFeel } from "@/lib/star/tapFeel";
+import { startPerfRecorder, perfScreen } from "@/lib/star/perfRecorder";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
 import { useUiSkin } from "@/lib/star/uiSkin";
 import { pitchFont } from "@/components/star/ui/pitchFont";
@@ -496,6 +497,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const phaseNow = useRef<StarPhase>("profile-setup");
   phaseNow.current = phase;
   useEffect(() => { if (ROOT_PHASES.includes(phase)) navStack.current = []; }, [phase]);
+  // The speed recorder (lib/star/perfRecorder.ts): team accounts and ?fps=1 phones only; it files each sample under this screen.
+  useEffect(() => { startPerfRecorder(); }, []);
+  useEffect(() => { perfScreen(phase, activeNav); }, [phase, activeNav]);
   /** Put a remembered spot back on screen. */
   const restoreSpot = useCallback((spot: NavSpot) => {
     if (spot.homePage !== undefined) setHomePage(spot.homePage);
