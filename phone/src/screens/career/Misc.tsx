@@ -11,7 +11,7 @@
  */
 import { readExitInfo, clearExitInfo } from "../../exitInfo";
 import { live3dOffByCrash } from "../../game/prefs";
-import { partsSwitchedOff, turnPartBackOn, PART_NAMES, closedWhileInfo, closedWhileLine, clearClosedWhile, lastErrorInfo, lastErrorLine } from "../../safety";
+import { partsSwitchedOff, turnPartBackOn, PART_NAMES, safeBootNote, closedWhileInfo, closedWhileLine, clearClosedWhile, lastErrorInfo, lastErrorLine } from "../../safety";
 import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { ownedPenaltyRunups, ownedFreeKickRunups, careerPenaltyRunup, careerFreeKickRunup } from "@/lib/star/runupStyles";
 import { SKIN_TONES, HAIR_COLOURS, resolveSkinTone } from "@/lib/star/playerIdentity";
@@ -185,7 +185,7 @@ const PREF_ROWS: [keyof Prefs, string, string?][] = [
   ["gameMusic", "Game music"],
   ["skipLineup", "Skip the line-up"],
   ["show3dSpeed", "Show 3D speed"],
-  ["live3dScenes", "Live 3D scenes (testing)", "The signing, the manager's office, the awards nights and Star Pass rewards play in 3D. Turn this off if the app ever closes."],
+  ["live3dScenes", "Live 3D scenes (testing)", "The signing, the manager's office, the awards nights, Star Pass rewards, the farewell, the news report's 3D face and the 3D player on the title and Home play in 3D. Turn this off if the app ever closes."],
 ];
 /** The website's little head pictures (public/star/people3d/toon-h1…h6.webp). */
 const HEAD_PIC: Record<string, number> = {
@@ -359,9 +359,18 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
 function SwitchedOffCard() {
   const [, bump] = useState(0);
   const off = partsSwitchedOff();
-  if (!off.length) return null;
+  const safe = safeBootNote();
+  if (!off.length && !safe) return null;
   return (
     <Card tone="#f59e0b">
+      {safe ? (
+        <View style={{ marginBottom: 8 }}>
+          <Text style={{ color: C.text, fontWeight: "900", fontSize: 15 }}>Safe start</Text>
+          <Text style={{ color: C.dim, fontSize: 12, marginBottom: 6 }}>{safe}</Text>
+          <View style={{ width: 120 }}><Btn small label="Turn back on" onPress={() => { turnPartBackOn("3d"); bump((n) => n + 1); }} /></View>
+        </View>
+      ) : null}
+      {off.length ? <>
       <Text style={{ color: C.text, fontWeight: "900", fontSize: 15 }}>Switched off on this phone</Text>
       <Text style={{ color: C.dim, fontSize: 12, marginBottom: 8 }}>The game closed twice while starting these, so it shows the simple version for now. It tries again by itself after a few launches.</Text>
       {off.map((p) => (
@@ -370,6 +379,7 @@ function SwitchedOffCard() {
           <View style={{ width: 120 }}><Btn small label="Turn back on" onPress={() => { turnPartBackOn(p); bump((n) => n + 1); }} /></View>
         </View>
       ))}
+      </> : null}
     </Card>
   );
 }

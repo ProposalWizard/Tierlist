@@ -61,15 +61,16 @@ export default function Boot() {
 /** After a crash in the phone's graphics code: says which part was switched off (safety.ts). */
 function TrippedNote() {
   const [parts] = useState(() => { try { return require("./safety").justTripped() as string[]; } catch { return []; } });
-  const [show, setShow] = useState(parts.length > 0);
+  const [safe] = useState(() => { try { return require("./safety").safeBootNote() as string | null; } catch { return null; } });
+  const [show, setShow] = useState(parts.length > 0 || !!safe);
   useEffect(() => { if (show) { const t = setTimeout(() => setShow(false), 15000); return () => clearTimeout(t); } }, [show]);
   if (!show) return null;
   const names = require("./safety").PART_NAMES as Record<string, string>;
   return (
     // one small line at the foot, never over a screen's header; a tap hides it
     <View pointerEvents="box-none" style={{ position: "absolute", bottom: 4, left: 0, right: 0, alignItems: "center" }}>
-      <Text onPress={() => setShow(false)} numberOfLines={2} style={{ maxWidth: "94%", backgroundColor: "rgba(20,24,30,0.92)", color: "rgba(255,255,255,0.85)", paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, fontSize: 11, fontWeight: "600", overflow: "hidden", textAlign: "center" }}>
-        Simple version of {parts.map((p) => names[p] ?? p).join(" and ")} for now. Settings: Turn back on.  ✕
+      <Text onPress={() => setShow(false)} numberOfLines={3} style={{ maxWidth: "94%", backgroundColor: "rgba(20,24,30,0.92)", color: "rgba(255,255,255,0.85)", paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, fontSize: 11, fontWeight: "600", overflow: "hidden", textAlign: "center" }}>
+        {safe ?? `Simple version of ${parts.map((p) => names[p] ?? p).join(" and ")} for now. Settings: Turn back on.`}  ✕
       </Text>
     </View>
   );

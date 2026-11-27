@@ -1,4 +1,4 @@
-import { partOff } from "../safety";
+import { automatic3dAllowed } from "../game/prefs";
 /**
  * THE FAREWELL WALK-OUT AND THE STANDING OVATION (the website's
  * components/star/Farewell.tsx GuardOfHonour and StandingOvation, and the
@@ -139,7 +139,7 @@ class Safe3D extends Component<{ onFail: () => void; children: ReactNode }, { ba
 // ── The guard of honour (page.tsx farewell-walkout) ─────────────────────────
 
 export function GuardOfHonour({ career, sides, onDone }: { career: CareerState; sides: FarewellSides; onDone: () => void }) {
-  const [mode, setMode] = useState<"3d" | "drawn">(partOff("3d") ? "drawn" : "3d");
+  const [mode, setMode] = useState<"3d" | "drawn">(!automatic3dAllowed() ? "drawn" : "3d");
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
   const finished = useRef(false);
@@ -213,7 +213,7 @@ export function ovationPlanFor(sides: FarewellSides): OvationPlan {
 }
 
 export function StandingOvation({ career, sides, minute, onDone }: { career: CareerState; sides: FarewellSides; minute: number; onDone: () => void }) {
-  const [mode, setMode] = useState<"3d" | "drawn">(partOff("3d") ? "drawn" : "3d");
+  const [mode, setMode] = useState<"3d" | "drawn">(!automatic3dAllowed() ? "drawn" : "3d");
   const plan = useMemo(() => ovationPlanFor(sides), [sides]);
   const [caption, setCaption] = useState<string | null>(null);
   const doneRef = useRef(onDone);
