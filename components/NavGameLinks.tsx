@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GAME_PATH } from "@/lib/star/gamePath";
 import { withoutPaused } from "@/lib/rankingsPaused";
+import { usePreview } from "@/lib/siteLook/usePreview";
 
 const ALL_LIVE_GAMES = [
   { name: "Draft", href: "/draft" },
@@ -25,6 +26,8 @@ function BetaBadge() {
 
 export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
+  // With the New look preview on, Rankings shows (it runs for the tester; middleware.ts).
+  const games = usePreview() ? ALL_LIVE_GAMES : LIVE_GAMES;
 
   if (mobile) {
     return (
@@ -33,7 +36,7 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
         className="md:hidden flex overflow-x-auto border-t border-gray-800/60 px-3 py-1.5 gap-1"
         style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
       >
-        {LIVE_GAMES.map(g => {
+        {games.map(g => {
           const isActive = pathname === g.href || pathname.startsWith(g.href + "/");
           return (
             <Link
@@ -59,7 +62,7 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
 
   return (
     <div data-nav-games className="hidden md:flex items-center gap-0.5 overflow-x-auto w-full" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-      {LIVE_GAMES.map(g => {
+      {games.map(g => {
         const isActive = pathname === g.href || pathname.startsWith(g.href + "/");
         return (
           <Link

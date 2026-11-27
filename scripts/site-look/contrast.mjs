@@ -82,7 +82,7 @@ function measure(min) {
     const cs = getComputedStyle(el);
     if (cs.visibility === "hidden" || cs.display === "none") continue;
     let op = 1; for (let e = el; e; e = e.parentElement) op *= parseFloat(getComputedStyle(e).opacity || "1");
-    if (op < 0.05) continue;
+    if (op < 0.4) continue; // fading in or out (a toast leaving), or deliberately ghosted
     if (el.closest("button[disabled],[aria-disabled=true]")) continue;
     if (cs.webkitTextFillColor === "rgba(0, 0, 0, 0)" || cs.backgroundClip === "text") continue; // gradient words
     const bg = bgOf(el); if (bg.photo) continue;

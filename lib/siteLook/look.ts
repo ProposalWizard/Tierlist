@@ -48,6 +48,7 @@ export function applyLook(el: HTMLElement, look: { on: boolean; theme: Theme }, 
 const YEAR = 60 * 60 * 24 * 365;
 export function setLookCookie(on: boolean): void {
   document.cookie = on ? `${LOOK_COOKIE}=v2; path=/; max-age=${YEAR}; samesite=lax` : `${LOOK_COOKIE}=; path=/; max-age=0; samesite=lax`;
+  try { window.dispatchEvent(new Event("kib-look-change")); } catch { /* not in a browser */ }
 }
 export function setThemeCookie(theme: Theme): void {
   document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=${YEAR}; samesite=lax`;

@@ -27,6 +27,90 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
   {
+      "version": "0.146",
+      "title": "Leo's patch notes: Daily Draft and the old games",
+      "author": "Leo",
+      "publishedAt": "2026-11-27T02:22:14Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Behind the New look switch: a Daily Draft (same 14 spins for everyone, ranking, share grid, streak), smarter Draft picking (what you still need, best fits first, each spot's real rating and an out-of-position warning, one-tap best spot), Tic Tac Toe opens on today's grid with a streak and Share, Ten-A-Ball gets topics, bests and Share, Rankings run for the tester. For everyone: three wrong Draft seasons removed and Ten-A-Ball's duplicate gone. Chemistry waits on one decision.",
+      "stats": [
+        {
+          "value": "14",
+          "label": "same spins for everyone each day"
+        },
+        {
+          "value": "86 → 58",
+          "label": "a striker's rating in goal, now shown"
+        },
+        {
+          "value": "3",
+          "label": "wrong seasons removed from the Draft"
+        },
+        {
+          "value": "2 of 2",
+          "label": "test players got identical spins"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Draft → Daily Draft",
+              "detail": "Switch on; play today's draft to the end; Share."
+            },
+            {
+              "title": "Draft picking",
+              "detail": "Pick a player: each spot shows his rating there; Best spot button."
+            },
+            {
+              "title": "Tic Tac Toe",
+              "detail": "Play today's grid; finish it for the streak and Share."
+            },
+            {
+              "title": "Ten-A-Ball",
+              "detail": "Topics; play one, your best shows on its card."
+            },
+            {
+              "title": "Rankings",
+              "detail": "In the game links with your switch on."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed for everyone",
+          "items": [
+            {
+              "title": "Draft seasons",
+              "detail": "Bournemouth 2012/13, Aston Villa 2018/19, Sunderland 2021/22 removed (not in the PL then)."
+            },
+            {
+              "title": "Ten-A-Ball",
+              "detail": "The same challenge no longer listed twice."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Your call",
+          "items": [
+            {
+              "title": "Chemistry",
+              "detail": "Changes results: count in the Hall of Fame or a separate board?"
+            },
+            {
+              "title": "Rankings for everyone",
+              "detail": "Mikey paused them; needs his yes."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
+  {
       "version": "0.145",
       "title": "Leo's patch notes: New look fixes and a readability check",
       "author": "Leo",
