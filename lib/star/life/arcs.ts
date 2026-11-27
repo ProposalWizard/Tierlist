@@ -255,7 +255,7 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
   for (const [id, run] of Object.entries(life.arcs ?? {})) {
     const arc = arcById(id);
     if (!arc?.start || !run.done || run.o || Object.keys(run.s).length || !Object.keys(run.v).length) continue;
-    run.v = {}; run.k = {};
+    run.v = {}; run.k = {}; run.club = "";
     run.cast = run.cast[arc.owner] ? { [arc.owner]: run.cast[arc.owner] } : {};
     for (const b of Object.keys(run.f)) run.f[b] = run.f[b].slice(-1);
     delete run.last;
@@ -300,8 +300,12 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
       if (open >= MAX_OPEN_ARCS) continue;
       const t = first.event.trigger;
       if (opts.force !== arc.id && !t.when.includes(moment)) continue;
+      // Some stories are only in some careers (start.careers): one roll per career, from the player.
+      // Their weekly roll is the career's own too, so two careers do not meet them in the same week.
+      const who = arc.start?.careers !== undefined ? `|${c.player.firstName}|${c.player.lastName}|${c.player.startYear}` : "";
+      if (opts.force !== arc.id && who && roll01(`${arc.id}${who}`) >= arc.start!.careers!) continue;
       // Pacing: one new story a moment, a few weeks apart, and each has its own odds.
-      if (opts.force !== arc.id && arc.start && (started > 0 || now - lastStart < START_GAP_WEEKS || roll01(`${arc.id}|${now}|${moment}`) >= arc.start.chance)) continue;
+      if (opts.force !== arc.id && arc.start && (started > 0 || now - lastStart < START_GAP_WEEKS || roll01(`${arc.id}|${now}|${moment}${who}`) >= arc.start.chance)) continue;
       const fresh = startRun(c, life, arc, first);
       if (!fresh) continue;
       const nl = cloneLife(life);

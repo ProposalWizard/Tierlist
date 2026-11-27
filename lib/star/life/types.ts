@@ -407,7 +407,13 @@ export interface LifeArc {
   /** Who it is about and how it feels (the writers' spread; the quest log does not read it). */
   about?: { who: string[]; tone: string[] };
   /** How often it starts when its first beat could (0-1, a seeded roll). No `start` = always (the kit man). */
-  start?: { chance: number };
+  start?: {
+    chance: number;
+    /** Share of careers that ever meet this story (0-1), rolled once per career from the player's
+     *  name (story batch 2). The save keeps every finished story, so one career cannot meet all of
+     *  them; this spreads the book across careers. No `careers` = every career can. */
+    careers?: number;
+  };
   /** A game mode this story needs that the activity host cannot mount yet. Such a story is
    *  checked but never plays (arcBook.ts WAITING_ARCS) until the mode is built. */
   needsActivity?: string;

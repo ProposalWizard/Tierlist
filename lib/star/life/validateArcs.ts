@@ -216,6 +216,7 @@ export function validateArcBook(arcs: LifeArc[], events: LifeEvent[] = []): ArcP
     if (!slots.has(arc.owner)) bad(arc.id, `the owner "${arc.owner}" is not in the cast`);
     if (arc.needsActivity && !arc.beats.some((b) => Object.values(b.event.talk?.nodes ?? {}).some((n) => n.activity?.mode === arc.needsActivity))) bad(arc.id, `waits for "${arc.needsActivity}" but no talk plays it`);
     if (arc.start && !(arc.start.chance > 0 && arc.start.chance <= 1)) bad(arc.id, "a start chance must be above 0 and at most 1");
+    if (arc.start?.careers !== undefined && !(arc.start.careers > 0 && arc.start.careers <= 1)) bad(arc.id, "a share of careers must be above 0 and at most 1");
     const checkCond = (where: string, c: string) => {
       if (!c) return;
       for (const sl of slotsIn(c)) if (!slots.has(sl) && !special.has(sl)) bad(where, `the condition "${c}" names "${sl}", who is not in the cast`);
