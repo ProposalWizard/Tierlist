@@ -35,6 +35,7 @@ import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import GardenScreen from "./GardenScreen";
 import Reload3dPill from "./Reload3d";
+import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
 import { Stick, pill } from "./Shop3D";
 
 const INK = "#f7f1e8";
@@ -115,7 +116,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
   useEffect(() => {
     let dead = false;
     const el = holder.current;
-    if (!el || restarts > 1) return;
+    if (!el || restarts > AUTO_REBUILDS) return;
     (async () => {
       try {
         const q = new URLSearchParams(window.location.search);
@@ -185,6 +186,8 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
       } catch (e) {
         if (dead) return; // closed mid-load: nothing to show
         console.error("3D garden failed to load", e);
+        // tried again by itself on a fresh renderer (three3d/autoHeal.ts) before the drawn garden and its tap
+        if (restarts < AUTO_REBUILDS) { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
         setStatus("error");
       }
     })();
@@ -196,7 +199,8 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, restarts, retry]);
-  useEffect(() => { if (restarts > 1) setStatus("error"); }, [restarts]);
+  // the phone took the 3D away: rebuilt silently AUTO_REBUILDS times (Low after the first), then the drawn garden
+  useEffect(() => { if (restarts > AUTO_REBUILDS) setStatus("error"); }, [restarts]);
 
   const drag = useRef<{ id: number; x: number; y: number; moved: number } | null>(null);
   const spot = tapped ?? near;

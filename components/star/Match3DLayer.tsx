@@ -43,6 +43,7 @@ import { SettingsGroups } from "./DeviceSettings";
 import Quality3dRow from "./Quality3dRow";
 import FhrSwitchRow from "./FhrSwitchRow";
 import { quality3dTier } from "@/lib/star/three3d/quality";
+import { afterLoss, healReset, newHealState, HEAL_DELAY_MS } from "@/lib/star/three3d/autoHeal";
 import { SetCard, SetToggle } from "./settingsKit";
 
 /** The TV camera's angle, degrees from straight down (the Style Testing page's default). */
@@ -65,6 +66,9 @@ export default function Match3DLayer({ children, tod = "golden", hold = false }:
   statusRef.current = status;
   const errRun = useRef(0);
   const autoLeft = useRef(AUTO_RETRIES);
+  /** Silent rebuilds after a lost or failed 3D (three3d/autoHeal.ts); while one waits, no "3D ↻". */
+  const heal = useRef(newHealState());
+  const [healing, setHealing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const killRef = useRef<(() => void) | null>(null);
   /** The quality the 3D view was built at: a change in the in-match Settings rebuilds it on "Back to the match". */
@@ -132,6 +136,19 @@ export default function Match3DLayer({ children, tod = "golden", hold = false }:
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [on, status, build, boxN]);
   const checkAt = useRef(0);
+  // Lost (the phone took the 3D away, or it kept failing to draw) or failed to build: it builds
+  // itself again on a fresh renderer, twice a minute at most, with the 2D match showing meanwhile;
+  // only then the amber "3D ↻" (Harry, 27 Nov 2026: "we should never have a feature where we have
+  // to press tap to reload … it shouldn't be a consistent thing").
+  useEffect(() => {
+    if (!on || (status !== "lost" && status !== "off")) { setHealing(false); return; }
+    if (afterLoss(heal.current, Date.now()) !== "rebuild") { setHealing(false); return; }
+    setHealing(true);
+    const t = window.setTimeout(() => {
+      void import("@/lib/star/three3d/perf").then((m) => { m.dropSharedRenderer(); autoLeft.current = AUTO_RETRIES; rebuildRef.current?.(); });
+    }, HEAL_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [on, status]);
 
   const onFrame = useCallback((f: EngineFrame) => {
     const v = ev.current;
@@ -172,13 +189,13 @@ export default function Match3DLayer({ children, tod = "golden", hold = false }:
   }, []);
 
   // never a sticky "off": a failed build shows "3D ↻" (tap to try again), as a lost one does
-  const buttons = match3dButtons(on, status);
+  const buttons = match3dButtons(on, healing ? "loading" : status);
   const chrome = (
     <>
       {buttons.retry && (
         <button
           data-match-3d-retry
-          onClick={() => { autoLeft.current = AUTO_RETRIES; void import("@/lib/star/three3d/perf").then((m) => { if (statusRef.current === "off") m.dropSharedRenderer(); rebuild(); }); }}
+          onClick={() => { autoLeft.current = AUTO_RETRIES; healReset(heal.current); void import("@/lib/star/three3d/perf").then((m) => { if (statusRef.current === "off") m.dropSharedRenderer(); rebuild(); }); }}
           aria-label="3D paused: tap to try 3D again"
           className="px-2 flex items-center border-l border-white/10 text-[10px] font-black tracking-wide text-amber-300 hover:text-amber-200 transition"
         >

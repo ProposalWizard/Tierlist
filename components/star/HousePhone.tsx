@@ -134,6 +134,8 @@ export default function HousePhone({ career, up, phone, house, onHome, onPutAway
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
   const homed = useRef(false);
+  /** The house is built (a ref: the put-away timer must see it even when it was ready after the tap). */
+  const readyRef = useRef(false);
 
   const clear = () => { for (const t of timers.current) clearTimeout(t); timers.current = []; };
   const after = (ms: number, fn: () => void) => { timers.current.push(window.setTimeout(fn, ms)); };
@@ -184,7 +186,11 @@ export default function HousePhone({ career, up, phone, house, onHome, onPutAway
 
   const onReady = useCallback((c: HomeController) => {
     ctrl.current = c;
-    if (sceneRef.current !== "away") { c.setPov(1); c.hold(true); }
+    // Put down while the house was still loading (Harry, 27 Nov 2026: a frozen house at your eyes,
+    // no you in it): it was built for the phone's view, so it comes out of your eyes and runs.
+    const down = sceneRef.current === "away" || sceneRef.current === "putting-away";
+    if (down) { c.setPov(null); c.hold(false); } else { c.setPov(1); c.hold(true); }
+    readyRef.current = true;
     setHouseReady(true);
   }, []);
 
@@ -196,7 +202,7 @@ export default function HousePhone({ career, up, phone, house, onHome, onPutAway
     setScene("putting-away");
     after(T.lower, () => {
       const c = ctrl.current;
-      if (!c || !houseReady) { setScene("away"); return; }
+      if (!c || !readyRef.current) { setScene("away"); return; }
       c.easePov ? c.easePov(null, T.pull, () => setScene((s) => (s === "putting-away" ? "away" : s))) : (c.setPov(null), c.hold(false), setScene("away"));
       after(T.pull + 400, () => setScene((s) => (s === "putting-away" ? "away" : s)));
     });
