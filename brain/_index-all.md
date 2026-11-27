@@ -20,3 +20,4 @@ RUL-ALL-009 | Play it before claiming it works: a type-check and a green suite c
 RUL-ALL-010 | Ask about the one ambiguous word; build the rest, then ask one question that can be answered in a word. | style,rule
 RUL-ALL-011 | When Harry points at a picture, name it back in one line (which picture you are copying) before building. | rule
 RUL-ALL-012 | Do not agree to be agreeable: before agreeing with a design call, find what argues against it. | rule
+RUL-ALL-013 | Never lie to Mikey: only say a thing is posted, live, fixed or true if you saw it in the real data this turn; otherwise say "I have not seen it"; no guessed advice dressed as fact; if a claim turns out wrong, say so first. | team,rule,style
