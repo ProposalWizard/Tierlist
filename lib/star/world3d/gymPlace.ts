@@ -22,6 +22,7 @@ import { startGame, stepGame, resultOf, botHold, GAME_NAMES, HOW_TO, TREADMILL, 
 import { standObject, type SmartObject } from "./smartObject";
 import { PoseBlend, ease } from "./gymPose";
 import type { Npc } from "./npc";
+import { poseFingers, fingersDeg, fingerTip, relaxHands } from "../people3d";
 import type { XZ } from "../tapWalk";
 
 /** What the room builder needs from the scene. */
@@ -37,6 +38,10 @@ export interface GymEnv {
   /** three's Reflector (a live mirror) and how sharp: 0 = no live mirror (Low), else its width in pixels. */
   Reflector?: any;
   mirrorPx?: number;
+  /** The live mirror's picture as a share of the screen's own pixels (each way): Medium 0.5, High 0.75. The
+   *  Reflector draws the room as the camera sees it (screen-shaped), so a mirror-shaped picture (wide and short)
+   *  stretched each of its pixels 8 screen pixels tall: the blocks up close. Unset: the old mirror-shaped picture. */
+  mirrorScale?: number;
 }
 
 export const GYM = {
@@ -50,6 +55,10 @@ export const GYM = {
   cooler: { x: 4.45, z: 3.45 },
   mat: { x: 0.6, z: 1.5 },
 };
+
+/** Where you stand behind a treadmill (m behind the belt's back end): clear of its frame by more than a body's
+ *  width (BODY_R 0.3 + 0.16), so the path finder can reach it; you walk up onto the belt from here. */
+const TREAD_STAND = 0.6;
 
 export interface GymRoomOut {
   objects: SmartObject[];
@@ -206,12 +215,25 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   // second frame on Medium (a wide, soft reflection reads as a gym mirror; Low keeps the glass above)
   let mirror: any = null;
   if (env.Reflector && env.mirrorPx) {
-    mirror = new env.Reflector(new THREE.PlaneGeometry(MW, MH), { textureWidth: env.mirrorPx, textureHeight: Math.round((env.mirrorPx * MH) / MW), color: 0xc4ccd4, clipBias: 0.003 });
+    const scale = env.mirrorScale ?? 0;
+    // screen-shaped from the first frame (resized to the real screen below); 4× smoothing only on the old mirror
+    mirror = new env.Reflector(new THREE.PlaneGeometry(MW, MH), scale
+      ? { textureWidth: 256, textureHeight: 512, color: 0xc4ccd4, clipBias: 0.003, multisample: 0 }
+      : { textureWidth: env.mirrorPx, textureHeight: Math.round((env.mirrorPx * MH) / MW), color: 0xc4ccd4, clipBias: 0.003 });
     mirror.position.set(0, 1.28, -D2 + 0.016);
-    const every = env.mirrorPx <= 512 ? 2 : 1;
+    const every = !scale && env.mirrorPx <= 512 ? 2 : 1;
     const draw = mirror.onBeforeRender.bind(mirror);
+    const rt = mirror.getRenderTarget?.(), buf = new THREE.Vector2();
     let n = 0, warm = 0;
-    mirror.onBeforeRender = (...a: any[]) => { if (warm < 2 || n++ % every === 0) { warm++; draw(...a); } };
+    mirror.onBeforeRender = (...a: any[]) => {
+      // the picture follows the screen's size (a turned phone, the frame governor's resolution steps)
+      if (scale && rt) {
+        a[0].getDrawingBufferSize(buf);
+        const w = Math.max(64, Math.round(buf.x * scale)), h = Math.max(64, Math.round(buf.y * scale));
+        if (rt.width !== w || rt.height !== h) rt.setSize(w, h);
+      }
+      if (warm < 2 || n++ % every === 0) { warm++; draw(...a); }
+    };
     meshes++;
     scene.add(mirror);
   }
@@ -396,7 +418,7 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   const gameObj = (o: Parameters<typeof standObject>[0], game: GymGameKind) => { const so = standObject(o); so.game = game; objects.push(so); return so; };
   gameObj({ id: "bench", kind: "gym", label: "Bench press", front: [B.x + 0.62, B.foot + 0.15], face: [B.x, B.foot - 0.2], verb: "Start a set", lines: [HOW_TO.bench, "Builds Strength."], pickR: 0.8, pickH: 1.3 }, "bench");
   for (const tm of GYM.treadmills) {
-    gameObj({ id: tm.id, kind: "gym", label: "Treadmill", front: [tm.x, BL.back + 0.45], face: [tm.x, BL.front], verb: "Start running", lines: [HOW_TO.treadmill, "Builds Cardio."], pickR: 0.55, pickH: 1.6 }, "treadmill");
+    gameObj({ id: tm.id, kind: "gym", label: "Treadmill", front: [tm.x, BL.back + TREAD_STAND], face: [tm.x, BL.front], verb: "Start running", lines: [HOW_TO.treadmill, "Builds Cardio."], pickR: 0.55, pickH: 1.6 }, "treadmill");
   }
   // the team-mate's run (the world kit's routine): stood on the far belt's back half, 0.2 m up, jogging. Not tappable
   // (its pick is empty): you tap the treadmill itself, which says it is taken while he is on it.
@@ -496,9 +518,18 @@ export class GymSession {
   private lastHits = 0;
   private fall = { z: 0, y: 0, started: false };
   private quitting = false;
+  /** The treadmill: no fade in, he steps up onto the belt from where he walked to (from, to, how long). */
+  private stepOn: { x: number; z: number; tz: number; secs: number } | null = null;
   private result: GameResult | null = null;
   /** Deepest skin point inside the bench pad this set (cm), for the no-body-in-the-machine check. */
   benchPierceCm = 0;
+  /** The worst gap between his grip (inside his curled fingers) and the bar this set (cm): his hands hold the bar
+   *  at every point of the rep (Harry, 27 Nov 2026: "hands actually attach to the bars, we're not phasing through"). */
+  gripGapCm = 0;
+  /** The deepest any skin went into the bar (cm, past its surface) this set. */
+  barPierceCm = 0;
+  /** The deepest any skin went into the treadmill's rails, uprights or console this run (cm). */
+  railPierceCm = 0;
   private checkN = 0;
 
   constructor(private T: any, private room: GymRoomOut, private you: Npc, private o: GymSessionOpts) {
@@ -514,8 +545,16 @@ export class GymSession {
   begin(obj: SmartObject) {
     if (this.active || !obj.game) return false;
     this.obj = obj; this.kind = obj.game as GymGameKind;
-    this.phase = "in"; this.t = 0; this.quitting = false; this.result = null; this.benchPierceCm = 0;
+    this.phase = "in"; this.t = 0; this.quitting = false; this.result = null; this.benchPierceCm = 0; this.gripGapCm = 0; this.barPierceCm = 0; this.railPierceCm = 0;
     this.game = startGame(this.kind, this.o.levelOf(this.kind), (this.o.seed ?? 1) + Math.floor(Math.random() * 1000) * (this.bot === null ? 1 : 0));
+    this.stepOn = null;
+    if (this.game.kind === "treadmill") {
+      // he walks up the back of the belt to his running spot (a walk's pace), no black screen
+      const tz = this.beltZ(this.game.pos);
+      const x = GYM.treadmills.find((t) => t.id === obj.id)?.x ?? this.you.x;
+      this.stepOn = { x: this.you.x, z: this.you.z, tz, secs: Math.max(0.6, Math.hypot(this.you.x - x, this.you.z - tz) / 1.05) };
+      this.you.act({ clip: "walk", or: ["jog"] }, 1e9);
+    }
     return true;
   }
   /** Stop the game now (the ✕): it counts what was done. */
@@ -528,7 +567,8 @@ export class GymSession {
     this.pose.restore();
     const P = this.room.props;
     if (this.phase !== "none") this.t += dt;
-    if (this.phase === "in" && this.t >= FADE) { this.setUp(); this.phase = "count"; this.t = 0; }
+    if (this.phase === "in" && this.stepOn) this.walkOn();
+    if (this.phase === "in" && this.t >= (this.stepOn ? this.stepOn.secs : FADE)) { this.setUp(); this.phase = "count"; this.t = 0; }
     else if (this.phase === "count" && this.t >= COUNT) { this.phase = "play"; this.t = 0; }
     else if (this.phase === "play" && this.game) {
       const hold = this.bot !== null ? botHold(this.game, this.bot) : this.hold;
@@ -562,6 +602,23 @@ export class GymSession {
     else this.poseBag();
   }
 
+  /** The camera glides into the game's shot (he walked on: no black screen to hide a cut). */
+  get easeIn() { return !!this.stepOn; }
+
+  /** The treadmill's walk on: up the back of the belt (a step up of the belt's height over its last 25 cm) to his spot. */
+  private walkOn() {
+    const so = this.stepOn!, you = this.you, BL = GYM.belt;
+    const x = GYM.treadmills.find((t) => t.id === this.obj?.id)?.x ?? so.x;
+    const k = Math.min(1, this.t / so.secs);
+    you.x = so.x + (x - so.x) * k;
+    you.z = so.z + (so.tz - so.z) * k;
+    const dy = Math.PI - you.yaw;
+    you.yaw += Math.atan2(Math.sin(dy), Math.cos(dy)) * Math.min(1, k * 4);
+    // the deck's end is at BL.back + 0.12: up onto it from 25 cm before (his front foot lifts first)
+    const up = Math.max(0, Math.min(1, (BL.back + 0.12 + 0.25 - you.z) / 0.3));
+    you.y = BL.top * ease(up);
+  }
+
   /** The camera's shot for this game (eye, look-at), or null: the follow camera. */
   shot(): { cam: [number, number, number]; look: [number, number, number] } | null {
     if (!(this.phase === "count" || this.phase === "play" || this.phase === "end" || (this.phase === "out" && this.t < FADE * 0.5))) return null;
@@ -580,7 +637,8 @@ export class GymSession {
   /** The screen's frame. */
   hud(): GymHudFrame {
     const k = this.kind;
-    const fade = this.phase === "in" ? Math.min(1, this.t / FADE) : this.phase === "out" ? Math.min(1, this.t / FADE) : this.phase === "count" ? Math.max(0, 1 - this.t / FADE) : 0;
+    const walked = this.kind === "treadmill" && this.stepOn;
+    const fade = this.phase === "in" ? (walked ? 0 : Math.min(1, this.t / FADE)) : this.phase === "out" ? Math.min(1, this.t / FADE) : this.phase === "count" ? (walked ? 0 : Math.max(0, 1 - this.t / FADE)) : 0;
     const g = this.game;
     const dur = g?.kind === "bench" ? BENCH.maxSecs : g?.kind === "treadmill" ? TREADMILL.secs : 25;
     return {
@@ -652,10 +710,11 @@ export class GymSession {
     you.person.root.rotation.order = "XYZ";
     you.person.root.rotation.x = 0;
     you.person.root.rotation.z = 0;
+    relaxHands(this.T, you.person);
     this.removeGloves();
     for (const b of this.room.props.belts) if (b.id === o?.id) b.speed = 0;
     you.act({ clip: "idle" }, 0.01);
-    if (o) { const s = o.slots[0]; const at: XZ = o.game === "treadmill" ? [s.stand[0], GYM.belt.back + 0.45] : s.stand; you.place(at[0], at[1], o.game === "treadmill" ? Math.PI : s.facing); }
+    if (o) { const s = o.slots[0]; const at: XZ = o.game === "treadmill" ? [s.stand[0], GYM.belt.back + TREAD_STAND] : s.stand; you.place(at[0], at[1], o.game === "treadmill" ? Math.PI : s.facing); }
     you.y = 0;
     this.obj = null;
   }
@@ -676,10 +735,11 @@ export class GymSession {
       t.set(B.x + wx * 0.34, 0.1, this.lie.hipZ + 0.5);
       pole.set(B.x + wx * 0.42, 1.4, this.lie.hipZ + 0.55);
       this.pose.reach(b[`${side}UpLeg`], b[`${side}Leg`], b[`${side}Foot`], t, pole, 1);
-      // arms: the wrists just under the bar, 0.4 m out; elbows out and down
+      // arms: the wrists just under the bar, 0.4 m out; elbows out and down; then the hand closed round the bar
       t.set(P.bar.position.x + wx * 0.4, P.bar.position.y - 0.045, P.bar.position.z + 0.01);
       pole.set(B.x + wx * 0.95, P.bar.position.y - 0.6, P.bar.position.z + 0.35);
       this.pose.reach(b[`${side}Arm`], b[`${side}ForeArm`], b[`${side}Hand`], t, pole, 1);
+      this.gripBar(side, wx, pole);
     }
     // the fit: in the first moments he settles onto the pad (lifted by however far his back or seat went into it)
     if (this.phase === "count" && this.t < 0.6 && this.checkN++ % 3 === 0) {
@@ -699,7 +759,57 @@ export class GymSession {
     you.y = this.lie.y;
     // the check: no skin inside the pad (below its top, inside its width and length; the back resting on it is allowed 1 cm)
     // (every 12th frame: it reads every skin point, about 5 ms on a slowed phone)
-    if (this.phase === "play" && this.checkN++ % 12 === 0) this.benchPierceCm = Math.max(this.benchPierceCm, padPierce(T, you, B));
+    if (this.phase === "play" && this.checkN++ % 12 === 0) {
+      this.benchPierceCm = Math.max(this.benchPierceCm, padPierce(T, you, B));
+      this.barPierceCm = Math.max(this.barPierceCm, barPierce(T, you, P.bar.position));
+    }
+  }
+
+  /**
+   * His hand on the bar: the hand turned so the fingers point up past the bar with the thumbs inwards and the
+   * palm to his feet, the fingers curled round it, and the arm moved (twice) until the middle of that curl sits
+   * on the bar's line: the bar is in his hand at every point of the rep, never beside it or through it.
+   */
+  private gripBar(side: "Left" | "Right", wx: number, pole: any) {
+    const p = this.you.person, b = p.bones, T = this.T, P = this.room.props;
+    const s = side === "Left" ? "L" : "R";
+    const rig = p.fingers?.[s];
+    const hand = b[`${side}Hand`];
+    if (!rig || !hand) return;
+    poseFingers(T, p, s, GRIP);
+    const bar = this.v.p.set(P.bar.position.x + wx * 0.4, P.bar.position.y, P.bar.position.z);
+    // the wrist's aim, moved by what is left over each time (so a reach that stops short is made up next time)
+    const aim = hand.getWorldPosition(new T.Vector3());
+    for (let k = 0; k < 8; k++) {
+      this.aimHand(hand, rig, wx);
+      const g = this.gripPoint(s);
+      if (!g) return;
+      const dy = bar.y - g.y, dz = bar.z - g.z;
+      if (k === 7 || Math.hypot(dy, dz) < 0.002) { if (this.phase === "play") this.gripGapCm = Math.max(this.gripGapCm, +(Math.hypot(dy, dz) * 100).toFixed(1)); return; }
+      aim.y += dy; aim.z += dz;
+      this.pose.reach(b[`${side}Arm`], b[`${side}ForeArm`], hand, aim, pole, 1);
+    }
+  }
+  /** Fingers straight up (the hand to the middle knuckle), the index knuckle towards the middle of the bar. */
+  private aimHand(hand: any, rig: any, wx: number) {
+    const T = this.T, H = new T.Vector3(), M = new T.Vector3(), I = new T.Vector3(), L = new T.Vector3(), q = new T.Quaternion();
+    hand.getWorldPosition(H); rig.middle.bones[0].getWorldPosition(M);
+    q.setFromUnitVectors(M.sub(H).normalize(), this.v.up);
+    this.pose.rotWorld(hand, q);
+    rig.index.bones[0].getWorldPosition(I); rig.little.bones[0].getWorldPosition(L);
+    const ax = I.x - L.x, az = I.z - L.z;
+    const want = Math.atan2(0, -wx), now = Math.atan2(az, ax);
+    this.pose.turn(hand, this.v.up, -(want - now));
+  }
+  /** The middle of his closed hand: 3 cm out from the middle knuckle on the palm's side (inside the curl). */
+  private gripPoint(s: "L" | "R") {
+    const rig = this.you.person.fingers?.[s];
+    const tip = fingerTip(this.T, this.you.person, s, "middle");
+    if (!rig || !tip) return null;
+    const m = rig.middle.bones[0].getWorldPosition(new this.T.Vector3());
+    // the palm's side: the way the curled fingers go (flat on the floor, the hand points up)
+    const pw = new this.T.Vector3(tip.x - m.x, 0, tip.z - m.z).normalize();
+    return m.addScaledVector(pw, 0.03);
   }
   /** World x sign of his left (-1) or right (+1) side as he lies (from his own shoulders). */
   private sideX(sx: -1 | 1) {
@@ -721,6 +831,10 @@ export class GymSession {
       if (a) a.timeScale = Math.max(0.3, belt / Math.max(0.5, this.o.clipSpeed(this.clip)));
       you.z += (this.beltZ(g.pos) - you.z) * Math.min(1, dt * 12);
       you.y = BL.top;
+      if (this.phase === "play" && this.checkN++ % 12 === 0) {
+        const x = GYM.treadmills.find((t) => t.id === this.obj?.id)?.x ?? 2.55;
+        this.railPierceCm = Math.max(this.railPierceCm, railPierce(this.T, you, x));
+      }
       return;
     }
     // off the back: carried by the belt, dropped off its end, onto the floor on his back; a beat; up again
@@ -847,4 +961,62 @@ function torsoFit(T: any, you: Npc, x0: number, zA: number, zB: number, barZ: nu
     }
   }
   return isFinite(minY) && isFinite(chestY) ? { minY, chestY } : null;
+}
+
+/** A closed hand round a bar (degrees per finger joint): the bar's 3 cm across fills the hook of the fingers. */
+const GRIP = fingersDeg({ thumb: [18, 28, 25], index: [39, 49, 28], middle: [41, 50, 28], ring: [43, 52, 28], little: [46, 53, 28], thumbSwing: 28 });
+
+/** The deepest any skin goes inside the bar (cm past its surface; its radius is 1.5 cm), his hands left out: they
+ *  close round it (the web of a closed toon hand folds into the bar's middle, hidden inside the fist). Arms, chest,
+ *  head: never. */
+function barPierce(T: any, you: Npc, bar: any): number {
+  const v = new T.Vector3();
+  let deep = 0;
+  for (const m of [you.person.body, you.person.body.parent?.getObjectByName?.("Cloth")].filter(Boolean) as any[]) {
+    m.skeleton?.update?.();
+    const n = m.geometry.attributes.position.count;
+    for (let i = 0; i < n; i += 2) {
+      m.getVertexPosition(i, v); v.applyMatrix4(m.matrixWorld);
+      if (Math.abs(v.x - bar.x) > 1.0) continue;
+      const d = 0.015 - Math.hypot(v.y - bar.y, v.z - bar.z);
+      if (d <= 0.004 || d <= deep) continue;
+      if (/Hand/.test(m.skeleton?.bones[mainBone(m, i)]?.name ?? "")) continue;
+      deep = d;
+    }
+  }
+  return +(deep * 100).toFixed(1);
+}
+
+/** The bone that moves a skin point most. */
+function mainBone(m: any, i: number): number {
+  const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight;
+  let bi = 0, bw = -1;
+  if (!si || !sw) return 0;
+  for (let k = 0; k < 4; k++) { const w = sw.getComponent(i, k); if (w > bw) { bw = w; bi = si.getComponent(i, k); } }
+  return bi;
+}
+
+/** The deepest any skin goes into a treadmill's side rails, front uprights or console (cm). */
+function railPierce(T: any, you: Npc, x: number): number {
+  const BL = GYM.belt, z0 = BL.consoleZ, v = new T.Vector3();
+  // boxes [x0, x1, y0, y1, z0, z1] round the rails (r 1.8 cm), the uprights and the console's front face
+  const boxes: number[][] = [];
+  for (const sx of [-1, 1]) {
+    boxes.push([x + sx * 0.38 - 0.018, x + sx * 0.38 + 0.018, 1.05 - 0.018, 1.05 + 0.018, z0 + 0.1, z0 + 0.7]);
+    boxes.push([x + sx * 0.38 - 0.03, x + sx * 0.38 + 0.03, 0.2, 1.3, z0 + 0.04, z0 + 0.12]);
+  }
+  boxes.push([x - 0.42, x + 0.42, 1.25, 1.52, z0 - 0.1, z0 + 0.12]);
+  let deep = 0;
+  for (const m of [you.person.body, you.person.body.parent?.getObjectByName?.("Cloth")].filter(Boolean) as any[]) {
+    m.skeleton?.update?.();
+    const n = m.geometry.attributes.position.count;
+    for (let i = 0; i < n; i += 3) {
+      m.getVertexPosition(i, v); v.applyMatrix4(m.matrixWorld);
+      for (const [a, b2, c, d, e, f] of boxes) {
+        if (v.x < a || v.x > b2 || v.y < c || v.y > d || v.z < e || v.z > f) continue;
+        deep = Math.max(deep, Math.min(v.x - a, b2 - v.x, v.y - c, d - v.y, v.z - e, f - v.z));
+      }
+    }
+  }
+  return +(deep * 100).toFixed(1);
 }

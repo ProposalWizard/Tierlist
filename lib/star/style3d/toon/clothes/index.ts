@@ -57,7 +57,7 @@ export function dressCloth(T: Three, p: Person3D, kind: ClothKind, who = "", opt
   const u = p.u as Record<string, { value: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
   const pat = u.uPattern?.value?.x ?? 0;
   const near = (a?: THREE.Color, b?: THREE.Color) => !!a && !!b && Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b) < 0.05;
-  const variant = kind === "kit" && Math.round(pat) === 4 ? "kit-sleeves" : kind === "suit" && (!u.uSuit?.value || near(u.uSuitTie?.value, u.uSuitShirt?.value)) ? "suit-open" : kind;
+  const variant = kind === "kit" && Math.round(pat) === 4 ? "kit-sleeves" : kind === "gym" && Math.round(pat) === 4 ? "gym-sleeves" : kind === "suit" && (!u.uSuit?.value || near(u.uSuitTie?.value, u.uSuitShirt?.value)) ? "suit-open" : kind;
   const key = `${p.meta.file ?? p.toonHead}|${p.prop ?? "a"}|${p.body.geometry.getAttribute("position").count}|${variant}`;
   let built = CACHE.get(key);
   if (!built) {
@@ -65,6 +65,7 @@ export function dressCloth(T: Three, p: Person3D, kind: ClothKind, who = "", opt
     const specs: GarmentSpec[] = OUTFITS[kind].garments(p.meta, variant);
     try { built = { ...buildClothes(T, p.body, rigOf(T, p.body, j as Record<string, [number, number, number]>), specs), names: specs.map((g) => g.name) }; }
     catch (e) { return fail(`build failed: ${String(e)}`); }
+    OUTFITS[kind].body?.(built.body, p.meta);
     CLOTH_BUILD_MS[key] = Math.round(performance.now() - t0);
     CACHE.set(key, built);
   }
@@ -95,12 +96,15 @@ export function dressCloth(T: Three, p: Person3D, kind: ClothKind, who = "", opt
   if (u.uSleeve) u.uSleeve.value.w = 0;
   if (u.uSnood) u.uSnood.value.w = 0;
   const bm = p.body.material as THREE.Material;
+  const bare = kind === "gym";
   const prev = bm.onBeforeCompile.bind(bm), prevKey = bm.customProgramCacheKey.bind(bm);
   bm.onBeforeCompile = (sh, r) => {
     prev(sh, r);
-    sh.fragmentShader = sh.fragmentShader.replace("float tnCollar = 0.0", "if (r.y > uLines.z + 0.012 && kit > 0.02) { c = mix(c, uSkinAvg, kit); diffuseColor.rgb = c; skin = min(1.0, skin + kit); kit = 0.0; }\n  float tnCollar = 0.0");
+    // bare calves (the gym's ankle socks): the old long sock's painted top edge, a ring under the knee, is skin too
+    const calf = bare ? "if (r.y > uLines.z + 0.012 && r.y < uLines.y + 0.03 && abs(r.x) < 0.3) { c = uSkinAvg; diffuseColor.rgb = c; skin = 1.0; kit = 0.0; }\n  " : "";
+    sh.fragmentShader = sh.fragmentShader.replace("float tnCollar = 0.0", "if (r.y > uLines.z + 0.012 && kit > 0.02) { c = mix(c, uSkinAvg, kit); diffuseColor.rgb = c; skin = min(1.0, skin + kit); kit = 0.0; }\n  " + calf + "float tnCollar = 0.0");
   };
-  bm.customProgramCacheKey = () => `${prevKey()}-cloth`;
+  bm.customProgramCacheKey = () => `${prevKey()}-cloth${bare ? "-calf" : ""}`;
   bm.needsUpdate = true;
   return true;
 }
@@ -198,9 +202,21 @@ function decalsFor(T: Three, kind: ClothKind, u: Record<string, { value: any }>,
       x.fillStyle = dark(i, 0.6); for (let k = 0; k < n; k++) { x.beginPath(); x.arc(X(0), Y(h / 2 - 0.02 - (k * (h - 0.03)) / Math.max(1, n - 1)), 0.0035 * px, 0, Math.PI * 2); x.fill(); }
     }), slot: i, at: [0, (top + bottom) / 2] as [number, number], size: [0.04, h] as [number, number] };
   };
-  if (kind === "kit") {
+  if (kind === "kit" || kind === "gym") {
     out.push({ tex: crest, slot: 0, at: [0.085, chestY], size: [0.075, 0.075] });
     if (u.uNumOn?.value && u.uNum?.value) out.push({ tex: u.uNum.value, slot: 0, at: [0, chestY - 0.04], size: [0.24, 0.24], back: true });
+    // the gym's trainers: a tongue and crossed laces down the instep of each (the shoes are the last slot)
+    if (kind === "gym") {
+      const si = slots.length - 1, fx = Math.abs(meta.joints.LeftFoot?.[0] ?? 0.1), top = meta.kit.bootY + 0.004;
+      const tongue = dark(si, 0.78), lace = slots[si] && slots[si].color.r + slots[si].color.g + slots[si].color.b > 1.8 ? "#8d9096" : "#f2f1ec";
+      const lh = 0.055, lw = 0.042;
+      const laces = detail(T, `laces-${tongue}-${lace}`, lw, lh, (x, X, Y, px) => {
+        x.fillStyle = tongue; x.beginPath(); x.roundRect(X(-lw * 0.32), Y(lh / 2), lw * 0.64 * px, lh * px, 0.006 * px); x.fill();
+        x.strokeStyle = lace; x.lineWidth = 0.0035 * px; x.lineCap = "round";
+        for (let k = 0; k < 4; k++) { const y = lh / 2 - 0.009 - k * 0.012; x.beginPath(); x.moveTo(X(-lw * 0.3), Y(y)); x.lineTo(X(lw * 0.3), Y(y - 0.006)); x.moveTo(X(lw * 0.3), Y(y)); x.lineTo(X(-lw * 0.3), Y(y - 0.006)); x.stroke(); }
+      });
+      for (const sx of [-1, 1]) out.push({ tex: laces, slot: si, at: [sx * fx, top - lh / 2 - 0.004], size: [lw, lh] });
+    }
   } else if (kind === "fan") {
     out.push({ tex: crest, slot: 0, at: [0.085, chestY], size: [0.075, 0.075] });
   } else if (kind === "tracksuit") {

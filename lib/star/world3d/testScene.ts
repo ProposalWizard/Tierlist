@@ -99,6 +99,8 @@ const DEMOS: Record<string, { place: WorldPlace; duration: number; rate?: number
   visitor: { place: "garden", duration: 34, rate: 10, steps: [], you: [-0.3, 1.9, 2.6], watch: "mate-2", zoom: 0.5 },
   talk: { place: "garden", duration: 11, steps: [[0.4, "tap:mate-0"], [7.4, "act:chat"]] },
   // the gym film: walk in to the bench, a set (a good thumb), up, over to the treadmill, a bad thumb: off the back
+  // bench → treadmill: a short set, up, and he walks across the room and up onto the belt (no cut)
+  walk: { place: "gym", duration: 15, steps: [[0.2, "tap:bench"], [0.4, "bot:1"], [0.4, "act:use"], [4.3, "act:gym:quit"], [5.0, "tap:treadmill"], [5.1, "act:use"]], you: [-1.4, 0.3, Math.PI] },
   gym: { place: "gym", duration: 19, steps: [[0.2, "tap:bench"], [2.9, "bot:1"], [2.9, "act:use"], [9.6, "act:gym:quit"], [10.3, "tap:treadmill"], [10.7, "bot:0"], [10.7, "act:use"]], you: [-1.2, 1.4, Math.PI] },
   bench: { place: "gym", duration: 32, steps: [[0.2, "tap:bench"], [3.6, "bot:1"], [3.6, "act:use"]], you: [-0.9, 2.4, Math.PI] },
   treadmill: { place: "gym", duration: 36, steps: [[0.2, "tap:treadmill"], [3.6, "bot:1"], [3.6, "act:use"]], you: [1.4, 1.2, Math.PI] },
@@ -106,6 +108,8 @@ const DEMOS: Record<string, { place: WorldPlace; duration: number; rate?: number
   bag: { place: "gym", duration: 31, steps: [[0.2, "tap:bag"], [3.0, "bot:1"], [3.0, "act:use"]], you: [-1.2, 2.6, Math.PI] },
 };
 export const WORLD_DEMOS = DEMOS;
+/** The gym mirror's picture, as a share of the screen's pixels each way (Low: plain dark glass, no live mirror). */
+const GYM_MIRROR_SCALE: Record<Quality3d, number> = { low: 0, medium: 0.5, high: 0.75 };
 /** Where the gym's team-mate starts (by the far treadmill). */
 const GYM_MATE_START: [number, number] = [3.9, 0.2];
 
@@ -199,7 +203,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     scene.environmentIntensity = 0.45;
     const { Reflector }: any = await import("three/examples/jsm/objects/Reflector.js");
     const { MIRROR_PX } = await import("../home3d/roomBuild");
-    gymRoom = buildGymRoom({ THREE, scene, prof, kit: opts.kit, club: opts.club, mergeGeometries, Reflector, mirrorPx: MIRROR_PX[tier] * 4 });
+    gymRoom = buildGymRoom({ THREE, scene, prof, kit: opts.kit, club: opts.club, mergeGeometries, Reflector, mirrorPx: MIRROR_PX[tier] * 4, mirrorScale: GYM_MIRROR_SCALE[tier] });
     sun = gymRoom.sun;
     const n = shadowSizeFor(prof, 1024) || 1024;
     sun.shadow.mapSize.set(n, n);
@@ -463,10 +467,11 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       const { shadeHex } = await import("../style3d/toon/clothes/casual");
       const top = o.you ? shadeHex(opts.kit.shirt, -0.12) : shadeHex(opts.kit.shirt, -0.45);
       const base: any = L ? L.dress : { skin: o.you ? "#c68642" : toonSkinFor(id), hair: o.you ? "#2b1b12" : toonHairFor(id) };
-      // trainers, not boots
-      const accessories = [...((base.accessories ?? []) as any[]).filter((a) => a.slot !== "boots"), { slot: "boots", color: o.you ? "#ecebe6" : "#2b2d33" }];
+      // trainers and ankle socks, not boots and long socks (clothes/outfits.ts "gym": a flat cupsole, laces, bare calves)
+      const shoes = o.you ? "#2f3a4c" : "#d8d4cb"; // trainers: a slate pair for you, off-white for him (never the kit's white boots)
+      const accessories = [...((base.accessories ?? []) as any[]).filter((a) => a.slot !== "boots"), { slot: "boots", color: shoes }];
       dressPerson3d(THREE, p, { ...base, accessories, kit: { shirt: top, trim: opts.kit.trim, shorts: "#1d1f24", socks: "#f2f2ef" }, number: null } as any);
-      CL.dressCloth(THREE, p, "kit", L?.id ?? id, { whiteBalance: CL.HOME_WB });
+      CL.dressCloth(THREE, p, "gym", L?.id ?? id, { whiteBalance: CL.HOME_WB, colours: { shoes } });
     }
     let rig: any = null;
     if (L) {
@@ -719,7 +724,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       // stood at the machine: the session takes it from here (the fade, the game, the result card)
       const startIt = () => gym!.begin(o);
       const s = o.slots[0];
-      if (Math.hypot(you.x - s.stand[0], you.z - s.stand[1]) > 0.5 && o.game !== "treadmill") you.walkTo(world, s.stand, { face: s.facing, onArrive: startIt });
+      // he walks to the machine (from another machine too: no cut), then the session takes over
+      if (Math.hypot(you.x - s.stand[0], you.z - s.stand[1]) > 0.3) { if (!you.walkTo(world, s.stand, { face: o.game === "treadmill" ? null : s.facing, onArrive: startIt })) startIt(); }
       else startIt();
       return;
     }
@@ -795,13 +801,18 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   const ro = new ResizeObserver(resize);
   ro.observe(container);
   let shotWas = false;
+  // stills only: a fixed camera from the test harness (window.__world3dCam([x,y,z],[x,y,z]) / null), for close-ups
+  let camPin: { cam: number[]; look: number[] } | null = null;
+  (window as any).__world3dCam = (cam: number[] | null, look?: number[]) => { camPin = cam && look ? { cam, look } : null; };
   const stepCam = (dt: number) => {
+    if (camPin) { camera.position.set(camPin.cam[0], camPin.cam[1], camPin.cam[2]); camera.lookAt(camPin.look[0], camPin.look[1], camPin.look[2]); return; }
     // a gym mini-game: its own shot (set while the screen is black, eased after)
     const sh = gym?.shot();
     if (sh) {
       want.set(sh.cam[0], sh.cam[1], sh.cam[2]); wantLook.set(sh.look[0], sh.look[1], sh.look[2]);
-      if (!shotWas) { camPos.copy(want); camLook.copy(wantLook); shotWas = true; }
-      else { camPos.lerp(want, Math.min(1, dt * 3)); camLook.lerp(wantLook, Math.min(1, dt * 3)); }
+      // a cut behind the black screen, or (he walked on: no black) a glide from where the camera is
+      if (!shotWas && !gym?.easeIn) { camPos.copy(want); camLook.copy(wantLook); shotWas = true; }
+      else { shotWas = true; camPos.lerp(want, Math.min(1, dt * 3)); camLook.lerp(wantLook, Math.min(1, dt * 3)); }
       camera.position.copy(camPos); camera.lookAt(camLook);
       return;
     }
@@ -983,13 +994,14 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       }),
       minGap: (() => { let m = Infinity; const b = world.bodies(); for (let i = 0; i < b.length; i++) for (let j = i + 1; j < b.length; j++) m = Math.min(m, Math.hypot(b[i].x - b[j].x, b[i].z - b[j].z)); return +m.toFixed(2); })(),
       card: card?.title ?? null,
-      gym: gym ? { phase: gym.phase, kind: gym.kind, benchPierceCm: gym.benchPierceCm, info: gym.active ? gym.info() : null, game: gym.game ? { t: +gym.game.t.toFixed(2), done: gym.game.done } : null, fitness: fitness() } : null,
+      gym: gym ? { phase: gym.phase, kind: gym.kind, benchPierceCm: gym.benchPierceCm, gripGapCm: gym.gripGapCm, barPierceCm: gym.barPierceCm, railPierceCm: gym.railPierceCm, info: gym.active ? gym.info() : null, game: gym.game ? { t: +gym.game.t.toFixed(2), done: gym.game.done } : null, fitness: fitness() } : null,
       stats: ctrl.stats(),
     }),
     dispose: () => {
       disposed = true;
       unpublish();
       if ((window as any).__world3d === ctrl) delete (window as any).__world3d;
+      delete (window as any).__world3dCam;
       if (isOwner()) renderer.setAnimationLoop(null);
       ro.disconnect();
       detachZoom();

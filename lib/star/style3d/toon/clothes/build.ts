@@ -57,8 +57,9 @@ export interface GarmentSpec {
     legs?: { top: number; hem: number; straight?: boolean; cuff?: number };
     /** sleeves: width as a multiple of the arm's own size at the shoulder end and at the cuff */
     arms?: { top: number; cuff: number };
-    /** shoes: a flat sole (the football boot's studs flattened to the ground) */
-    shoe?: boolean;
+    /** shoes: a flat sole (the football boot's studs flattened to the ground); "flat": a trainer's sole, the studs
+     *  pressed right down into one flat sole (the gym) */
+    shoe?: boolean | "flat";
     /** torso: the body's smoothed size times k at each height t (0 = hem line, 1 = armpits): [t, across, front-back];
      *  boxy 0..1 = held at the chest's size below it; pad = a structured shoulder (metres out and up) */
     torso?: { knots: [number, number, number][]; boxy?: number; pad?: number; hem?: number; hold?: boolean };
@@ -373,7 +374,22 @@ function shapeGarment(o: Out, sh: NonNullable<GarmentSpec["shape"]>, k: { rig: R
     // a structured shoulder (a suit): the top of the shoulder lifted and squared out
     if (sh.torso?.pad && p.y > S.armpit && Math.abs(p.x) > 0.08) { const k2 = ss(S.armpit, S.armpit + 0.08, p.y) * ss(0.08, 0.2, Math.abs(p.x)); o.pos[i * 3] += Math.sign(p.x) * sh.torso.pad * k2; o.pos[i * 3 + 1] += sh.torso.pad * 0.5 * k2; }
   }
-  if (sh.shoe) for (let i = 0; i < o.n; i++) { const y = o.pos[i * 3 + 1]; if (y < 0.035) { o.pos[i * 3 + 1] = Math.max(0.002, (y - 0.0) * 0.4); const sx = Math.sign(o.pos[i * 3]); o.pos[i * 3] += sx * 0.004; } }
+  if (sh.shoe === "flat") {
+    // each shoe's footprint (its own points, per side): the sole is pressed flat and stands 4 mm proud of the upper
+    // all round, a trainer's cupsole (a lip, never taller: his height stays the same)
+    const box = [[1e9, -1e9, 1e9, -1e9], [1e9, -1e9, 1e9, -1e9]];
+    for (let i = 0; i < o.n; i++) { const b = box[o.pos[i * 3] < 0 ? 0 : 1], x = o.pos[i * 3], z = o.pos[i * 3 + 2]; b[0] = Math.min(b[0], x); b[1] = Math.max(b[1], x); b[2] = Math.min(b[2], z); b[3] = Math.max(b[3], z); }
+    for (let i = 0; i < o.n; i++) {
+      const y = o.pos[i * 3 + 1];
+      if (y >= 0.03) continue;
+      o.pos[i * 3 + 1] = 0.002 + y * 0.1;
+      const b = box[o.pos[i * 3] < 0 ? 0 : 1], cx = (b[0] + b[1]) / 2, cz = (b[2] + b[3]) / 2;
+      const dx = (o.pos[i * 3] - cx) / ((b[1] - b[0]) / 2 || 1), dz = (o.pos[i * 3 + 2] - cz) / ((b[3] - b[2]) / 2 || 1), l = Math.hypot(dx, dz) || 1;
+      const k = 0.004 * Math.min(1, l);
+      o.pos[i * 3] += (dx / l) * k; o.pos[i * 3 + 2] += (dz / l) * k;
+    }
+  }
+  else if (sh.shoe) for (let i = 0; i < o.n; i++) { const y = o.pos[i * 3 + 1]; if (y < 0.035) { o.pos[i * 3 + 1] = Math.max(0.002, (y - 0.0) * 0.4); const sx = Math.sign(o.pos[i * 3]); o.pos[i * 3] += sx * 0.004; } }
   o.faceNormals();
   o.relax(0, 0.5, 12);
 }
