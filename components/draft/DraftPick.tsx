@@ -9,6 +9,7 @@ import type { PlayerAttributes } from "@/lib/seasonSimulator";
 import { positionFitness } from "@/lib/seasonSimulator";
 import { usePreview } from "@/lib/siteLook/usePreview";
 import { dailySpinOrder, nextDailySpin } from "@/lib/draft/daily";
+import { chemistry as teamChemistry, chemIfPlaced, MAX_TEAM_CHEM } from "@/lib/draft/chemistry";
 import { getFlagUrl } from "@/lib/nationalities";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 
@@ -493,6 +494,8 @@ export default function DraftPick({
 
   // Map slot indices to picked players for pitch rendering
   const filledSlots = new Set(slotAssignments.filter((s): s is number => s !== undefined));
+  // Chemistry rules: the squad so far, each starter in his spot (lib/draft/chemistry.ts).
+  const placedForChem: DraftPlayer[] = pickedPlayers.map((p, k) => ({ ...p, slotIndex: slotAssignments[k] }));
   const slotToPlayer = new Map<number, DraftPlayer>();
   const slotToPickIdx = new Map<number, number>();
   pickedPlayers.forEach((p, pickIdx) => {
@@ -733,6 +736,11 @@ export default function DraftPick({
           <span className="text-xs font-bold text-white tabular-nums">
             {pickedPlayers.length}/{maxPicks}
           </span>
+          {settings.chemistry && (
+            <span data-draft-chem className="ml-2 rounded-full bg-purple-700 px-2 py-0.5 text-[11px] font-black text-white tabular-nums">
+              Chem {teamChemistry(placedForChem, formation.name).team}/{MAX_TEAM_CHEM}
+            </span>
+          )}
         </div>
       </div>
 
@@ -1227,7 +1235,7 @@ export default function DraftPick({
                     "Sign a player from this roster"
                   ) : isClubFirst ? (
                     preview && filledSlots.size < formation.slots.length ? (
-                      <span data-draft-needs>Needs: <b>{Array.from(new Set(formation.slots.filter((_, i) => !filledSlots.has(i)).map((sl) => sl.label))).join(", ")}</b> · best fits first</span>
+                      <span data-draft-needs>Needs: <b>{Array.from(new Set(formation.slots.filter((_, i) => !filledSlots.has(i)).map((sl) => sl.label))).join(", ")}</b></span>
                     ) : "Pick any player — assign to XI or bench"
                   ) : isSubPick ? (
                     "Pick a substitute from this roster"
@@ -1306,13 +1314,6 @@ export default function DraftPick({
                         (b.positions || "").split(",").map((p) => p.trim()).includes(cp)
                       ) ? 1 : 0;
                       if (bCompat !== aCompat) return bCompat - aCompat;
-                    }
-                    if (preview && isClubFirst && !isSeason2Draft && !settings.hiddenRatings && filledSlots.size < formation.slots.length) {
-                      // New look preview: the best rating each could get in a spot still free.
-                      const freeLabels = formation.slots.filter((_, i) => !filledSlots.has(i)).map((sl) => sl.label);
-                      const top = (p: RosterPlayer) => Math.max(...freeLabels.map((l) => ratingIn(p, l).rating));
-                      const d = top(b) - top(a);
-                      if (d !== 0) return d;
                     }
                     if (settings.hiddenRatings) {
                       const ha = ((parseInt(a.sofifa_id, 10) * 2654435761) >>> 0);
@@ -1498,6 +1499,9 @@ export default function DraftPick({
                   if (filledSlots.has(i)) return null;
                   const r = ratingIn(pendingPlayer, slot.label);
                   const fw = fitWord(r.fit);
+                  const chemHere = settings.chemistry
+                    ? chemIfPlaced(placedForChem, { name: pendingPlayer.name, overall: pendingPlayer.overall, positions: pendingPlayer.positions, club: spinDisplay?.club ?? "", clubYear: `X ${formatSeasonYear(spinDisplay?.year ?? 0)}`, assignedPosition: slot.label, sofifa_id: pendingPlayer.sofifa_id, image_url: null, nationality: pendingPlayer.nationality, age: pendingPlayer.age }, i, formation.name)
+                    : 0;
 
                   const pendingPositions = (pendingPlayer.positions || "").split(",").map((p) => p.trim());
                   const isNatural = pendingPositions.includes(slot.label);
@@ -1519,7 +1523,10 @@ export default function DraftPick({
                         <div className={`text-[10px] font-bold mt-0.5 ${fw.cls}`} data-draft-fit={fw.word}>
                           {fw.word}{settings.hiddenRatings || r.fit >= 0.98 ? "" : ` · ${r.rating}`}
                         </div>
-                      ) : isNatural && (
+                      ) : null}
+                      {settings.chemistry ? (
+                        <div className="text-[10px] font-black text-purple-300" data-draft-chem-here>{chemHere > 0 ? `+${chemHere} chem` : "no links"}</div>
+                      ) : !preview && isNatural && (
                         <div className="text-[10px] font-bold text-emerald-500 mt-0.5">NATURAL FIT</div>
                       )}
                     </button>

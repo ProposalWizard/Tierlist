@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";
+import { matchTimeline } from "../lib/draft/matchTimeline";
+const m = { you: "Knowitball FC", them: "Chelsea", youHome: true, goalsFor: 2, goalsAgainst: 1, goalScorers: [{ player: "Henry", minute: 23 }, { player: "Pires", minute: 77 }], assistProviders: [{ player: "Bergkamp", minute: 23 }], squad: ["Henry", "Pires", "Vieira"] };
+const t = matchTimeline(m);
+assert.deepEqual(matchTimeline(m), t, "same match, same story");
+const end = t[t.length - 1];
+assert.equal(end.you, 2); assert.equal(end.them, 1); assert.match(end.text, /2-1\. You win!/);
+assert.ok(t.some((e) => e.kind === "goal-you" && e.minute === 23 && /Henry/.test(e.text) && /Assist: Bergkamp/.test(e.text)));
+assert.equal(t.filter((e) => e.kind === "goal-them").length, 1);
+for (let i = 1; i < t.length; i++) assert.ok(t[i].minute >= t[i - 1].minute, "in time order");
+const pens = matchTimeline({ ...m, goalsFor: 1, goalsAgainst: 1, goalScorers: [{ player: "Henry", minute: 50 }], extraTime: true, penalties: true, penaltyScore: { player: 4, opponent: 3 } });
+assert.ok(pens.some((e) => e.kind === "pens" && /You win the shoot-out/.test(e.text)));
+assert.ok(pens.some((e) => /Extra time/.test(e.text)));
+console.log("matchTimeline: ok", t.length, "events");

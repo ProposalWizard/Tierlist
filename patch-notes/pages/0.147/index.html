@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Test Pages Match</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Same tokens and parts as Harry's pages (0.109h). One column, stacked cards. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    --turf:#1f6b3d;--turf2:#24763f;--chalk:rgba(255,255,255,.75);
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      --turf:#2f8a50;--turf2:#358f55;--chalk:rgba(255,255,255,.85);
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    --turf:#2f8a50;--turf2:#358f55;--chalk:rgba(255,255,255,.85);
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:flex-start;gap:8px;margin:0 0 6px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none;margin-top:7px}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 10px}
+  .upd{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:var(--r);padding:9px 12px;margin:0 0 4px;font-size:14px;color:var(--ink2)}
+  .upd b{color:var(--blue);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .idea{margin:0 0 10px;color:var(--ink2);font-size:14.5px}
+  .idea b{color:var(--ink)}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b{color:var(--ink)}
+  .sub3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--ink3);margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+
+  /* drawn diagrams */
+  .fig{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);padding:10px;margin:10px 0 2px;min-width:0}
+  .fig svg{display:block;width:100%;max-width:390px;height:auto;margin:0 auto}
+  .cap{font-size:12.5px;color:var(--ink3);margin:6px 0 0;line-height:1.4}
+  .cap b{color:var(--ink2)}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  .item details{background:var(--card2)}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details li b{color:var(--ink)}
+  details h4{margin:12px 0 4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px;white-space:nowrap}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox li.done::before{background:var(--green);content:"\2713"}
+  .okbox .q{font-weight:700}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+
+  .note{border:1px dashed var(--line);border-radius:var(--r);padding:10px 12px;margin:14px 0 0;color:var(--ink2);font-size:13.5px;background:var(--card)}
+  .note b{color:var(--ink)}
+
+  /* clip card (references/clip-card.html) */
+  .clip{margin:12px auto 2px;max-width:390px;min-width:0}
+  .clip .look{font-size:14px;color:var(--ink2);margin:0 0 7px;background:var(--card2);border-radius:10px;padding:9px 12px}
+  .clip .look b{color:var(--green);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;max-height:80vh;object-fit:contain;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+  .clip .spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+  .clip .spd button.on{background:var(--ink);color:var(--bg)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .clip figcaption b{color:var(--ink2)}
+  details .clip{margin-top:4px;margin-bottom:16px}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+</head><body>
+<div class="wrap">
+<div class="wrap">
+<header>
+  <span class="ver">v0.147 &middot; 27 NOV &middot; LEO &middot; DRAFT: CHEMISTRY, RANKED, WATCH</span>
+  <h1>Draft: Chemistry, Ranked or Custom, higher-or-lower, and watching the big games</h1>
+  <p class="status"><i></i><span>Behind your New look switch. <b>Chemistry</b> (FIFA style) is a rule set with its own Hall of Fame. Every draft is now <b>Ranked</b> (standard rules, counts for the Hall of Fame) or <b>Custom</b> (your own settings, your history only), so there are only three boards. Convince to stay is a higher-or-lower card game. A <b>Match Centre</b> lets you watch finals and your biggest win with commentary. Players are sorted by rating again, and the phone spacing is fixed.</span></p>
+  <p class="sub">Made by Leo &middot; 27 Nov 2026 &middot; Manager mode and friend matches: plan in docs/DRAFT_MANAGER_PLAN.md</p>
+</header>
+<h2 class="nxt"><i></i>WHAT YOU SAID</h2>
+<p class="snote">&ldquo;Link between players thing like fifa chemistry &hellip; should be a mode or setting &hellip; not loads of diff things that make drafts too different so u cant rlly compare &hellip; convince to stay &hellip; higher or lower card minigame &hellip; football manager or chairman style &hellip; commentary &hellip; sort new picks by rating again &hellip; those ui bits are literally touching.&rdquo;</p>
+
+<h2 class="add"><i></i>CHEMISTRY</h2>
+<figure><img src="chemistry.webp" alt="Draft rules choice and the spot chooser with chemistry" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Draft Rules: Classic or Chemistry, and the Ranked line. Picking: Chem 0/33 at the top, and what each spot would give him</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>How links work</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Starters next to each other on the pitch link: same club and same season 3, same club 2, same nation 1. A player&rsquo;s chemistry is half his link points, up to 3, and only in a spot he can play. Team chemistry up to 33. Each point is +1 to his overall and every stat for the season, like FUT.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>How much it matters</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">Measured over 300 squads: full chemistry (33) is worth about 6&ndash;10 league points a season; a typical mixed squad (9&ndash;15) about 2&ndash;4. Worth chasing, doesn&rsquo;t decide everything. A test pins it: 2003/04 Arsenal together scores 33, eleven strangers 0, a man out of position 0.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>While you pick</b><span class="tag t-seen">played</span></div>
+  <p class="idea">&ldquo;Chem 12/33&rdquo; next to the pick count, and on every free spot what he&rsquo;d get there (&ldquo;+2 chem&rdquo; or &ldquo;no links&rdquo;).</p>
+</div>
+
+<h2 class="add"><i></i>RANKED OR CUSTOM: ONLY THREE BOARDS</h2>
+<div class="item">
+  <div class="ih"><b>Ranked</b><span class="tag t-seen">played</span></div>
+  <p class="idea">The standard rules (full era, 3 re-spins, ratings shown) count for the Hall of Fame: <b>Normal</b>, <b>Prime</b> or <b>Chemistry</b> (Chemistry plays with Normal ratings). The setup screen says which board, in green.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Custom</b><span class="tag t-seen">played</span></div>
+  <p class="idea">Change anything else (fewer re-spins, hidden ratings, a narrower era, Chemistry with Prime) and it says so in amber: &ldquo;Custom (1 re-spin): your history only&rdquo;. It plays the same, it just never sits next to standard drafts.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Chemistry board needs one database step</b><span class="pill p-amb">needs you</span></div>
+  <p class="idea">The Hall of Fame only accepts Normal and Prime today. Run supabase/migrations/draft_records_chemistry.sql once in the Supabase SQL editor; until then Chemistry drafts go in your history but not the board. The board&rsquo;s tab shows with your switch on.</p>
+</div>
+
+<h2 class="add"><i></i>CONVINCE TO STAY: HIGHER OR LOWER</h2>
+<div class="item">
+  <div class="ih"><b>Three right in a row and he stays</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">Cards from your own squad: is the next one&rsquo;s overall higher or lower? One wrong and he goes. A tie counts as right. Played sensibly he stays about 43% of the time (the old coin flip was 50%), but now it&rsquo;s your call.</p>
+</div>
+
+<h2 class="add"><i></i>WATCH THE BIG GAMES</h2>
+<figure><img src="match-centre.webp" alt="Watch the big games, the Match Centre live and at full time" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Under the season: your finals and biggest win. The Match Centre: scoreboard, clock, commentary with real scorers and assists, Skip to the end.</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>You decide what to watch</b><span class="tag t-seen">played</span></div>
+  <p class="idea">Under every season once it has finished revealing (so nothing is given away): the FA Cup, League Cup, Champions League and Europa League finals you reached, plus your biggest win. About 45 seconds a match, or Skip.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>It tells the real result</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Your goals keep their real scorer, assist and minute from the season; it never re-simulates, so watching changes nothing.</p>
+</div>
+
+<h2 class="add"><i></i>FIXED</h2>
+<div class="item">
+  <div class="ih"><b>Players sorted by rating again</b><span class="tag t-seen">played</span></div>
+  <p class="idea">The squad list is highest-rated first, always (I&rsquo;d changed it to &ldquo;best fit&rdquo;; undone). The &ldquo;Needs&rdquo; line stays.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Phone spacing</b><span class="tag t-seen">played</span></div>
+  <p class="idea">The Daily Draft and Challenge cards line up with the setup underneath, with even gaps; they no longer touch or run edge to edge.</p>
+</div>
+
+<h2 class="bug"><i></i>NEXT</h2>
+<div class="item">
+  <div class="ih"><b>Friend matches, watched together</b><span class="pill p-blu">next</span></div>
+  <p class="idea">In a room, both screens play the same match in the Match Centre at the same moment; finals between friends play automatically, Skip stays.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Manager mode</b><span class="pill p-blu">next</span></div>
+  <p class="idea">A separate long mode on the same players and simulator: step through 38 weeks, pick the XI and mentality, watch or quick-result each match, one half-time change, transfer windows with a budget, then the chairman layer (board targets, money). Its own Hall of Fame. Plan: docs/DRAFT_MANAGER_PLAN.md.</p>
+</div>
+<details><summary>How it was checked</summary>
+  <p>A Chemistry draft was played to the end in a real browser with the live site&rsquo;s data: the Ranked line, the chemistry count and spot hints, the season, Watch the big games, the Match Centre live and skipped to full time. New tests: chemistry (links, caps, out of position, the boost), Ranked/Custom, higher-or-lower (and its odds over 20,000 deals), the match timeline (same story every time, real scorers, extra time and penalties). Not played yet in a browser: the higher-or-lower game itself (it only appears when a player wants to leave in pre-season, which is random); its rules are tested.</p>
+</details>
+<footer>Leo &middot; site 0.147 &middot; 27 Nov 2026 &middot; behind the New look switch</footer>
+</div>
+</div>
+</div>
+<script>
+(function(){
+  var K="{CKKEY}", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+  document.addEventListener('click',function(e){
+    var r=e.target.closest&&e.target.closest('.spd button'); if(!r) return;
+    var c=r.closest('.clip'), v=c.querySelector('video');
+    c.querySelectorAll('.spd button').forEach(function(x){ x.classList.toggle('on', x===r); });
+    if(v){ var rate=parseFloat(r.getAttribute('data-r')); v.playbackRate=rate; v.defaultPlaybackRate=rate; if(v.paused) v.play().catch(function(){}); }
+  });
+  document.querySelectorAll('details').forEach(function(d){
+    d.addEventListener('toggle',function(){ if(!d.open) d.querySelectorAll('video').forEach(function(v){ v.pause(); }); });
+  });
+})();
+</script>
+<style>
+.zm-t{cursor:zoom-in}
+.zm-ov{position:fixed;inset:0;z-index:1000;background:rgba(10,14,12,.92);overflow:auto;-webkit-overflow-scrolling:touch;padding:calc(56px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.zm-ov[hidden]{display:none!important}
+.zm-bar{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));display:flex;gap:8px;z-index:1001}
+.zm-bar button{font:600 15px/1 system-ui,sans-serif;padding:10px 14px;border-radius:10px;border:0;background:#fff;color:#111;cursor:pointer}
+.zm-st{transform-origin:0 0;background:var(--bg,#fff);border-radius:10px;display:inline-block}
+.zm-st img,.zm-st svg{max-width:none!important}
+.zm-hint{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));color:#fff;font:13px system-ui,sans-serif;opacity:.8}
+</style>
+<div class="zm-ov" id="zmOv" hidden><div class="zm-hint">Pinch or + / − to zoom</div><div class="zm-bar"><button id="zmOut" aria-label="Zoom out">−</button><button id="zmIn" aria-label="Zoom in">+</button><button id="zmX" aria-label="Close">✕</button></div><div id="zmBox"></div></div>
+<script>
+(function(){
+  var sel='figure img,.fig svg';
+  var ov=document.getElementById('zmOv'),box=document.getElementById('zmBox'),st=null,sc=1,w=0,h=0;
+  function apply(){st.style.transform='scale('+sc+')';box.style.width=(w*sc)+'px';box.style.height=(h*sc)+'px';}
+  function open(el){
+    var r=el.getBoundingClientRect();
+    var c=el.cloneNode(true);c.classList.remove('zm-t');
+    st=document.createElement('div');st.className='zm-st';st.appendChild(c);
+    box.innerHTML='';box.appendChild(st);ov.hidden=false;document.body.style.overflow='hidden';
+    if(c.tagName.toLowerCase()==='img'){c.style.width=(c.naturalWidth||r.width*2)+'px';c.style.height='auto';}
+    else{c.style.width=Math.max(r.width,780)+'px';c.style.maxWidth='none';c.style.height='auto';}
+    w=st.offsetWidth;h=st.offsetHeight;
+    var fit=(ov.clientWidth-32)/w;sc=Math.min(fit,Math.max(1,fit));apply();ov.scrollTo(0,0);
+  }
+  function close(){ov.hidden=true;box.innerHTML='';document.body.style.overflow='';}
+  document.querySelectorAll(sel).forEach(function(el){el.classList.add('zm-t');el.setAttribute('title','Tap to enlarge');});
+  document.addEventListener('click',function(e){
+    if(ov.contains(e.target)){if(e.target===ov)close();return;}
+    var t=e.target.closest('.zm-t');if(!t)return;
+    if(e.target.closest('a,button,summary,input,label'))return;
+    e.preventDefault();open(t);
+  });
+  document.getElementById('zmX').onclick=close;
+  document.getElementById('zmIn').onclick=function(){sc=Math.min(sc*1.4,6);apply();};
+  document.getElementById('zmOut').onclick=function(){sc=Math.max(sc/1.4,.2);apply();};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!ov.hidden)close();});
+})();
+</script>
+</body></html>
