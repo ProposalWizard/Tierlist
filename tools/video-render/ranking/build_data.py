@@ -22,6 +22,9 @@ for rk, name, key, cut, badge, flag in L:
     p = FM[key]; assert CLUB.get(p["team"]) == badge, (name, p["team"], badge)   # the badge must be the club FotMob says they are at now
     rows.append({"rank": rk, "name": name, "cut": f"{F}/cut/{cut}.png" if cut else None, "badge": f"{F}/badge2/{badge}.png", "flag": f"{F}/flag/{flag}.png"})
 for r in rows:
+    if r["rank"] <= 5 and r["cut"]: r["endcut"] = r["cut"].replace("/cut/", "/cut_end/")   # the ending's silhouettes keep the cut-outs they were approved with
+    if r["name"] == "Lamine Yamal": r["dx"] = -120   # starts too far right otherwise
+    if r["name"] == "Rodri": r["dx"] = -45   # nudge his photo a little to the left
     if r["name"] == "Jude Bellingham": r["zoom"] = 2.0   # his photo is a wide arms-out shot: scale up so his face and chest fill the screen (arms run off the edges)
 rows.sort(key=lambda r: r["rank"])
 def bucket(m):
@@ -42,10 +45,10 @@ for p in FM.values():
     for m in p["matches"]:
         if m["date"] >= "2026-08-01" and m["comp"] != "Club Friendlies" and m["played"] is not None: last = max(last, m["date"]) if m["date"] <= "2026-11-30" else last
 asof = datetime.date.fromisoformat(max(m["date"] for k in ("Raphinha", "Kylian Mbappé", "Jude Bellingham", "Michael Olise", "Lamine Yamal") for m in FM[k]["matches"] if m["date"] <= "2026-11-30")).strftime("%d %b").upper().lstrip("0")
-mad = {"name": "Noni Madueke", "cut": f"{F}/cut/Noni_Madueke.png", "badge": f"{F}/badge2/arsenal.png", "flag": f"{F}/flag/gb-eng.png"}
+mad = {"name": "Noni Madueke", "cut": f"{F}/cut/Noni_Madueke.png", "badge": f"{F}/badge2/arsenal.png", "flag": f"{F}/flag/gb-eng.png", "dx": -170, "stats": [{"v": 4, "label": "CAPS FOR GOD"}, {"v": 15, "label": "GAMES"}, {"v": 15, "label": "APPEARANCES"}]}
 common = {"title": "BALLON D'OR RANKING", "sub": "NOV 2026", "top": 20, "podium": f"{F}/podium_cut.png", "panel": f"{F}/gold_panel.png", "stadiums": [f"{F}/stadium/s{i}.jpg" for i in (1, 2, 3)],
           "credit": "", "rows": rows}
-v1 = dict(common, mode="count", shown=3, step=2.0, t0=-0.3, endHold=5.3, front=f"{F}/cut/Noni_Madueke.png", chain="NONZINO")
+v1 = dict(common, mode="count", shown=3, step=2.0, t0=-0.3, endHold=5.3, front=f"{F}/cut_end/Noni_Madueke.png", chain="NONZINO")
 v2 = dict(common, mode="top5", madueke=mad, stats=stats, foot=f"FOTMOB · OFFICIAL MATCHES TO {asof}", timing={"step": 5.0, "mad": 2.6, "glitch": 0.9, "last": 5.8, "cta": 2.6})
 v2["duration"] = 4 * v2["timing"]["step"] + sum(v2["timing"][k] for k in ("mad", "glitch", "last"))
 json.dump(v1, open(A + "/ranking.json", "w"), ensure_ascii=False, indent=1); json.dump(v2, open(A + "/ranking_top5.json", "w"), ensure_ascii=False, indent=1)

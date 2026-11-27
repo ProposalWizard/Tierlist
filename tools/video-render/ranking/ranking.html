@@ -31,9 +31,9 @@ const hash = x => { const q = Math.sin(x * 127.1 + 311.7) * 43758.5453; return q
 const load = src => new Promise(res => { if (!src) return res(null); const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
 window.setup = async (data) => { D = data; RH = D.rowH || 64; await document.fonts.load("800 40px Mont"); await document.fonts.load("900 40px Mont"); await document.fonts.load("800 40px Mont", "ÉÜÇĞ");
   IM.podium = await load(D.podium); IM.panel = await load(D.panel); IM.st = []; for (const s of D.stadiums) IM.st.push(await load(s));
-  for (const r of D.rows) { IM["c" + r.rank] = await load(r.cut); IM["k" + r.rank] = await load(r.badge); IM["f" + r.rank] = await load(r.flag); }
+  for (const r of D.rows) { IM["c" + r.rank] = await load(r.cut); IM["k" + r.rank] = await load(r.badge); IM["f" + r.rank] = await load(r.flag); if (r.endcut) IM["e" + r.rank] = await load(r.endcut); }
   if (D.madueke) { IM.mad = await load(D.madueke.cut); IM.madBadge = await load(D.madueke.badge); IM.madFlag = await load(D.madueke.flag); }
-  IM.front = await load(D.front); for (const r of D.rows.filter(r => r.rank <= 5)) { const im = r.rank === 1 && IM.front ? IM.front : IM["c" + r.rank]; if (!im) continue; const pad = 24, cw = im.width + pad * 2, ch = im.height + pad * 2;
+  IM.front = await load(D.front); for (const r of D.rows.filter(r => r.rank <= 5)) { const im = r.rank === 1 && IM.front ? IM.front : (IM["e" + r.rank] || IM["c" + r.rank]); if (!im) continue; const pad = 24, cw = im.width + pad * 2, ch = im.height + pad * 2;
     const mk = (fill) => { const cv = document.createElement("canvas"); cv.width = cw; cv.height = ch; const x = cv.getContext("2d"); x.drawImage(im, pad, pad); x.globalCompositeOperation = "source-in"; x.fillStyle = fill(x); x.fillRect(0, 0, cw, ch); return cv; };
     const rim = mk(() => "#f0bf5c"), body = mk(x => { const gr = x.createLinearGradient(0, 0, 0, ch); gr.addColorStop(0, "#7a5520"); gr.addColorStop(0.5, "#3d2a10"); gr.addColorStop(1, "#140d05"); return gr; });
     const out = document.createElement("canvas"); out.width = cw; out.height = ch; const o = out.getContext("2d"); o.drawImage(rim, -9, -7); o.drawImage(rim, 9, -7); o.drawImage(body, 0, 0);
@@ -115,7 +115,7 @@ function drawCount(t) {
   let gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(0,0,0,.25)"); gr.addColorStop(0.55, "rgba(0,0,0,.05)"); gr.addColorStop(1, "rgba(0,0,0,.7)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
   if (!ending) sparkles(t);
   if (!ending) { const im = IM["c" + showR.rank]; if (im) { const p = t < t0 ? 1 : phase, fade = t < t0 ? 1 : cl(p * 5) * (1 - cl((p - step + 0.12) * 9));
-      figure(im, p, step, PC, showR.zoom || 1); g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); } }
+      figure(im, p, step, PC, showR.zoom || 1, showR.dx || 0); g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); } }
   else silhouettes(t, (t - endAt) * 1.2);
   goldPanel(t);
   header(t);
@@ -136,13 +136,13 @@ function drawCount(t) {
   if (D.credit) txt(D.credit, 1062, 1906, 14, "rgba(255,255,255,.55)", { w: 800, a: "right" });
 }
 // the player: the cut-out slides in, then drifts the other way; drawn on a spare canvas so its bottom fades softly into the dark
-function figure(im, p, step, cv, zoom = 1) { const cx = cv.getContext("2d"), k = ez(p * 3), asp = im.width / im.height, h = Math.min(D.playerH || 1456, (D.playerW || 1160) / asp) * zoom, w = h * asp,
-    x = (D.playerX || 825) + 260 * (1 - k) - 40 * (p / step), top = D.playerTop || 300;
+function figure(im, p, step, cv, zoom = 1, dx = 0) { const cx = cv.getContext("2d"), k = ez(p * 3), asp = im.width / im.height, h = Math.min(D.playerH || 1456, (D.playerW || 1160) / asp) * zoom, w = h * asp,
+    x = (D.playerX || 825) + dx + 260 * (1 - k) - 40 * (p / step), top = D.playerTop || 300;
   cx.clearRect(0, 0, W, H); cx.globalCompositeOperation = "source-over"; cx.drawImage(im, x - w / 2, top, w, h); cx.globalCompositeOperation = "destination-in";
   const mk = cx.createLinearGradient(0, top + h - 300, 0, top + h - 20); mk.addColorStop(0, "rgba(0,0,0,1)"); mk.addColorStop(1, "rgba(0,0,0,0)"); cx.fillStyle = mk; cx.fillRect(0, 0, W, H); cx.globalCompositeOperation = "source-over"; }
 // ---- the TOP 5 video: rows 20 to 6 already on the board, then 5, 4, 3, 2, 1 each with its season stats ----
 // the glitch: bands of one figure swapped for the other, shifted sideways, with colour-split ghosts, scan lines and noise bars
-function glitchFigure(a, b, gp, t, zb = 1) { figure(a, 1, 1, PC); figure(b, 1, 1, PC2, zb); const frame = Math.floor(t * 24), N = 20, bh = H / N, amp = Math.sin(gp * Math.PI);
+function glitchFigure(a, b, gp, t, zb = 1, dxa = 0, dxb = 0) { figure(a, 1, 1, PC, 1, dxa); figure(b, 1, 1, PC2, zb, dxb); const frame = Math.floor(t * 24), N = 20, bh = H / N, amp = Math.sin(gp * Math.PI);
   g.save(); g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 40;
   for (let i = 0; i < N; i++) { const useB = hash(i * 7.31 + frame * 1.71) < gp * 1.25 - 0.05, dx = (hash(i * 3.7 + frame * 5.3) - 0.5) * 150 * amp;
     g.save(); g.beginPath(); g.rect(0, i * bh, W, bh + 1); g.clip(); g.drawImage(useB ? PC2 : PC, dx, 0); g.restore(); }
@@ -153,12 +153,13 @@ function glitchFigure(a, b, gp, t, zb = 1) { figure(a, 1, 1, PC); figure(b, 1, 1
   if (gp < 0.1 || (gp > 0.45 && gp < 0.55)) { g.fillStyle = "rgba(255,255,255,.22)"; g.fillRect(0, 0, W, H); } }
 const scr = (word, gp, frame) => { const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ#%@&"; return word.split("").map((ch, i) => ch === " " ? " " : (hash(i * 3.3 + frame * 1.9) < gp ? chars[Math.floor(hash(i + frame * 7.7) * chars.length)] : ch)).join(""); };
 // the stats engraved into the plinth: goals, assists, games; each counts up from 0 when its rank is revealed
-function engrave(ph, st) { if (!st || ph < 0) return; const k = cl(ph * 4); if (k <= 0) return;
-  const cx = 857, y0 = 1494, gap = 130, games = st.rows.reduce((s, r) => s + (r.n || 0), 0), items = [[st.g, "GOALS"], [st.a, "ASSISTS"], [games, "GAMES"]];
+const statItems = st => st && [[st.g, "GOALS"], [st.a, "ASSISTS"], [st.rows.reduce((q, r) => q + (r.n || 0), 0), "GAMES"]];
+function engrave(ph, items) { if (!items || ph < 0) return; const k = cl(ph * 4); if (k <= 0) return;
+  const cx = 857, y0 = 1494, gap = 130;
   g.save(); g.globalAlpha = k;
   items.forEach(([v, lab], i) => { const y = y0 + i * gap, val = Math.round(v * ez(cl((ph - 0.3 - i * 0.18) / 1.1))), n = String(val);
     // engraved: a dark edge above, a light edge below, gold in the cut
-    [[0, -2.5, "rgba(0,0,0,.95)"], [0, 2.5, "rgba(255,226,160,.28)"], [0, 0, "#d9ae55"]].forEach(([dx, dy, c]) => { txt(n, cx + dx, y + 38 + dy, 88, c, { a: "center", w: 900 }); txt(lab, cx + dx, y + 100 + dy, 21, c, { a: "center", w: 900, ls: 4 }); });
+    [[0, -2.5, "rgba(0,0,0,.95)"], [0, 2.5, "rgba(255,226,160,.28)"], [0, 0, "#d9ae55"]].forEach(([dx, dy, c]) => { txt(n, cx + dx, y + 38 + dy, 88, c, { a: "center", w: 900 }); txt(lab, cx + dx, y + 100 + dy, 21, c, { a: "center", w: 900, ls: 4, maxW: 188 }); });
     if (i < 2) { const ly = y + gap - 16; g.fillStyle = "rgba(0,0,0,.9)"; g.fillRect(cx - 78, ly - 1.5, 156, 2); g.fillStyle = "rgba(255,226,160,.3)"; g.fillRect(cx - 78, ly + 1, 156, 2); } });
   g.restore(); }
 function drawTop5(t) { const T = D.timing, order = [5, 4, 3, 2, 1], len = { 5: T.step, 4: T.step, 3: T.step, 2: T.step, 1: T.mad + T.glitch + T.last }, start = {}; let acc = 0;
@@ -170,10 +171,10 @@ function drawTop5(t) { const T = D.timing, order = [5, 4, 3, 2, 1], len = { 5: T
   let gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(0,0,0,.25)"); gr.addColorStop(0.55, "rgba(0,0,0,.05)"); gr.addColorStop(1, "rgba(0,0,0,.7)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
   sparkles(t);
   // the player (rank 1: Madueke, then the glitch, then Yamal)
-  if (sub === "n") { const im = IM["c" + cur]; if (im) { const fade = cl(ph * 5) * (1 - cl((ph - step + 0.12) * 9)); figure(im, ph, step, PC, rowOf(cur).zoom || 1); g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); } }
-  else if (sub === "mad") { if (IM.mad) { figure(IM.mad, ph, step, PC); g.save(); g.globalAlpha = cl(ph * 5); g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); } }
-  else if (sub === "gl") glitchFigure(IM.mad, IM.c1, gp, t, rowOf(1).zoom || 1);
-  else { figure(IM.c1, 0.5 + py, step, PC, rowOf(1).zoom || 1); g.save(); g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); }
+  if (sub === "n") { const im = IM["c" + cur]; if (im) { const fade = cl(ph * 5) * (1 - cl((ph - step + 0.12) * 9)); figure(im, ph, step, PC, rowOf(cur).zoom || 1, rowOf(cur).dx || 0); g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); } }
+  else if (sub === "mad") { if (IM.mad) { figure(IM.mad, ph, step, PC, 1, D.madueke.dx || 0); g.save(); g.globalAlpha = cl(ph * 5); g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); } }
+  else if (sub === "gl") glitchFigure(IM.mad, IM.c1, gp, t, rowOf(1).zoom || 1, D.madueke.dx || 0, rowOf(1).dx || 0);
+  else { figure(IM.c1, 0.5 + py, step, PC, rowOf(1).zoom || 1, rowOf(1).dx || 0); g.save(); g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); }
   goldPanel(t); header(t);
   g.save(); rr(BX - 12, BY - 12, BW + 24, RH * D.top + 14, 22); g.fillStyle = "rgba(8,6,4,.45)"; g.fill(); g.restore();
   for (let rk = 1; rk <= D.top; rk++) { const r = rowOf(rk); let info = null;
@@ -183,7 +184,7 @@ function drawTop5(t) { const T = D.timing, order = [5, 4, 3, 2, 1], len = { 5: T
         else if (sub === "gl") { const first = gp < 0.5; info.name = scr(first ? D.madueke.name : r.name, first ? gp * 2 : (1 - gp) * 2, frame); const flick = hash(frame * 1.3) < 0.5; info.bd = (first ? flick : !flick) ? IM.madBadge : IM["k1"]; info.fl = (first ? flick : !flick) ? IM.madFlag : IM["f1"]; info.hl = 1 - cl(hash(frame) * 0.6); info.slide = 1; } } }
     row(rk, info); if (info && rk === cur && info.hl > 0.05) { g.fillStyle = "#fff"; rr(BX - 24, BY + (rk - 1) * RH + 10 * (RH / 64), 9, RH - 30 * (RH / 64), 5); g.fill(); } }
   podium(860, 820, 0.3 + 0.15 * Math.sin(t * 2.5));
-  if (sub !== "mad" && sub !== "gl") engrave(sub === "yam" ? py + 0.2 : ph, D.stats[cur]);
+  if (sub === "mad") engrave(ph, D.madueke.stats && D.madueke.stats.map(q => [q.v, q.label])); else if (sub !== "gl") engrave(sub === "yam" ? py + 0.2 : ph, statItems(D.stats[cur]));
   const k2 = pop(cl((t - (total - T.cta)) * 3)); if (k2 > 0) { g.save(); g.translate(300, 1738); g.scale(k2, k2); rr(-250, -42, 500, 84, 24); const b2 = g.createLinearGradient(0, -42, 0, 42); b2.addColorStop(0, GOLD1); b2.addColorStop(1, GOLD2); g.fillStyle = b2; g.fill(); g.strokeStyle = INK; g.lineWidth = 5; g.stroke(); txt("DO YOU AGREE?", 0, 0, 38, INK, { a: "center", w: 900, ls: 1 }); g.restore(); }
   if (D.credit) txt(D.credit, 1062, 1906, 14, "rgba(255,255,255,.55)", { w: 800, a: "right" }); }
 window.draw = t => D.mode === "top5" ? drawTop5(t) : drawCount(t);

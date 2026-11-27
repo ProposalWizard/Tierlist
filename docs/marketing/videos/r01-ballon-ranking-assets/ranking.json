@@ -16,14 +16,17 @@
    "name": "Lamine Yamal",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Lamine_Yamal.png",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/barcelona.png",
-   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/es.png"
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/es.png",
+   "endcut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut_end/Lamine_Yamal.png",
+   "dx": -120
   },
   {
    "rank": 2,
    "name": "Michael Olise",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Michael_Olise.png",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/bayern.png",
-   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/fr.png"
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/fr.png",
+   "endcut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut_end/Michael_Olise.png"
   },
   {
    "rank": 3,
@@ -31,6 +34,7 @@
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Jude_Bellingham.png",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/realmadrid.png",
    "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/gb-eng.png",
+   "endcut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut_end/Jude_Bellingham.png",
    "zoom": 2.0
   },
   {
@@ -38,14 +42,16 @@
    "name": "Kylian Mbappé",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Kylian_Mbappé.png",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/realmadrid.png",
-   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/fr.png"
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/fr.png",
+   "endcut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut_end/Kylian_Mbappé.png"
   },
   {
    "rank": 5,
    "name": "Raphinha",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Raphinha.png",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/barcelona.png",
-   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/br.png"
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/br.png",
+   "endcut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut_end/Raphinha.png"
   },
   {
    "rank": 6,
@@ -87,7 +93,8 @@
    "name": "Rodri",
    "cut": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Rodri.png",
    "badge": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/badge2/barcelona.png",
-   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/es.png"
+   "flag": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/flag/es.png",
+   "dx": -45
   },
   {
    "rank": 12,
@@ -158,6 +165,6 @@
  "step": 2.0,
  "t0": -0.3,
  "endHold": 5.3,
- "front": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut/Noni_Madueke.png",
+ "front": "file:///home/user/Tierlist/docs/marketing/videos/r01-ballon-ranking-assets/cut_end/Noni_Madueke.png",
  "chain": "NONZINO"
 }
