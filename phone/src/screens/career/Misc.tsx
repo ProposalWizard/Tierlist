@@ -17,9 +17,10 @@ import { ownedPenaltyRunups, ownedFreeKickRunups, careerPenaltyRunup, careerFree
 import { SKIN_TONES, HAIR_COLOURS, resolveSkinTone } from "@/lib/star/playerIdentity";
 import { TOON_BODIES, TOON_BODY_LABEL, TOON_PLAYER_HEADS, TOON_HEAD_LABEL, yourToonBody, yourToonHead } from "@/lib/star/style3d/toon/bodies";
 import { useCareer, setCareer } from "../../game/store";
+import { giveMoney, parseMoneyInput } from "../../world/giveMoney";
 import { Press } from "../../ui/Press";
 import { useEffect, useRef, useState } from "react";
-import { View, Text, Image, Platform, BackHandler, type ViewStyle } from "react-native";
+import { View, Text, TextInput, Image, Platform, BackHandler, type ViewStyle } from "react-native";
 import { FONT, LOOK, LookButton } from "../../ui/look";
 import { clubGlow, PopIn, Burst, FloatUp, ShakeX } from "./lookBits";
 import { listSlots, loadSlot, newInSlot, deleteSlot, activeSlot } from "../../world/slots";
@@ -308,6 +309,7 @@ export function SettingsScreen({ onBack, onMainMenu, onNewCareer, onOpenSave, on
           )}
         </View>
       )}
+      {career && <GiveMoneyCard />}
       <SwitchedOffCard />
       <ClosedWhileCard />
       <AndroidExitCard />
@@ -497,6 +499,34 @@ function SavesCard({ onStartNew, onSwitch, onDeleted }: { onStartNew: (slot: num
           );
         })}
       </View>
+    </Card>
+  );
+}
+
+/** Settings → "Give me money (testing)": type an amount, press Give, that much is added to your cash. */
+function GiveMoneyCard() {
+  const career = useCareer();
+  const [text, setText] = useState("");
+  const [said, setSaid] = useState<string | null>(null);
+  if (!career) return null;
+  const give = () => {
+    const n = parseMoneyInput(text);
+    if (n === null) { setSaid("Type a whole number above 0."); return; }
+    const next = giveMoney(career, text);
+    setCareer(next);
+    setText("");
+    setSaid(`Added ${money(n)}. You now have ${money(next.money)}.`);
+  };
+  return (
+    <Card>
+      <Text style={{ color: C.text, fontWeight: "900", marginBottom: 2 }}>Give me money (testing)</Text>
+      <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600", marginBottom: 8 }}>You have {money(career.money)}. Type an amount and press Give. It marks the save as a tester save.</Text>
+      <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
+        <TextInput value={text} onChangeText={(t) => { setText(t); setSaid(null); }} placeholder="Amount" placeholderTextColor="rgba(0,0,0,0.4)" keyboardType="number-pad" maxLength={18}
+          style={{ flex: 1, backgroundColor: "#fff", color: "#000", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 0, height: 44, fontSize: 16, fontWeight: "700" }} />
+        <View style={{ width: 110 }}><Btn small label="Give" onPress={give} /></View>
+      </View>
+      {said ? <Text style={{ color: "#fbbf24", fontSize: 12, fontWeight: "800", marginTop: 6 }}>{said}</Text> : null}
     </Card>
   );
 }

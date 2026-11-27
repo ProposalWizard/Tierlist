@@ -27,6 +27,7 @@ import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { formatMoney, formatWallet } from "@/lib/star/money";
 import { buildMessages, msgKey, socialUnread, type Msg } from "@/lib/star/phoneUnread";
 import { brandsOf } from "@/lib/star/sponsorDeals";
+import { sponsorTourDue, SPONSOR_TOUR_KEY } from "../../world/sponsorTour";
 import { APP_STORE, appInstalled, appIsNew, installApp, markAppOpened } from "@/lib/star/unlocks";
 import { displayOverall } from "@/lib/star/rating";
 import { starLevel } from "@/lib/star/starPoints";
@@ -98,7 +99,9 @@ export interface PhoneGlass {
 export function PhoneScreen({ params, glass }: { params?: Record<string, unknown>; glass?: PhoneGlass }) {
   const career = useCareer();
   const nav = useNav();
-  const [tour, setTour] = useState<TourStep[] | null>(params?.tour === "sponsor" ? SPONSOR_TOUR : null);
+  const [tour, setTour] = useState<TourStep[] | null>(() => (sponsorTourDue(career, params?.tour) ? SPONSOR_TOUR : null));
+  // Played once: it is marked as soon as it is up, so coming back to the Phone never replays it.
+  useEffect(() => { if (tour) markSeenKeys(SPONSOR_TOUR_KEY); }, [tour]);
   const [app, setApp] = useState<App | null>(null);
   const [soon, setSoon] = useState<string | null>(null);
   const msgs = useMemo(() => (career ? buildMessages(career, null) : []), [career]);
