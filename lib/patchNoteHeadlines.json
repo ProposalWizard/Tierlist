@@ -1,9 +1,5 @@
 [
-  {"version":"0.147","title":"Leo's patch notes: Draft chemistry, Ranked or Custom, and watching games","publishedAt":"2026-11-27T04:30:23Z","author":"Leo"},
-  {"version":"0.146","title":"Leo's patch notes: Daily Draft and the old games","publishedAt":"2026-11-27T02:22:14Z","author":"Leo"},
-  {"version":"0.145","title":"Leo's patch notes: New look fixes and a readability check","publishedAt":"2026-11-26T18:21:03Z","author":"Leo"},
-  {"version":"0.144","title":"Leo's patch notes: The new look, only for you","publishedAt":"2026-11-26T03:19:33Z","author":"Leo"},
-  {"version":"0.143","title":"Leo's patch notes: One Knowitball, the whole-site plan","publishedAt":"2026-11-24T16:19:34Z","author":"Leo"},
+  {"version":"0.143","title":"Leo's patch notes: One Knowitball, the whole website","publishedAt":"2026-11-24T16:19:34Z","updatedAt":"2026-11-27T04:46:26Z","updateNote":"Rounds 1–5 in one note: plan, the New look switch, readability check, Daily Draft and old games, Chemistry + Ranked/Custom + watching games.","author":"Leo"},
   {"version":"0.142","title":"Harry's patch notes: 3D phone, real clothes at home","publishedAt":"2026-11-21T05:25:00Z","author":"Harry"},
   {"version":"0.141","title":"Harry's patch notes: Sleep, living houses, cloth clothes","publishedAt":"2026-11-21T03:45:00Z","author":"Harry"},
   {"version":"0.140","title":"Leo's patch notes: The Knowitball Discord","publishedAt":"2026-11-19T18:14:34Z","author":"Leo"},
