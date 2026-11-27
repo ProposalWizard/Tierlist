@@ -375,7 +375,7 @@ export default function AdminNavPanel() {
                     <span className="text-sm font-bold lg:whitespace-nowrap">{link.name}</span>
                     <span
                       className={`hidden shrink-0 whitespace-nowrap font-mono text-[9px] sm:inline ${
-                        isActive ? "text-emerald-300" : "text-gray-600 group-hover:text-gray-500"
+                        isActive ? "text-emerald-300" : "text-gray-500 group-hover:text-gray-400"
                       }`}
                     >
                       {link.href}

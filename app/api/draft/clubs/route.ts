@@ -53,6 +53,21 @@ const NON_ENGLISH_PL_CLUBS = new Set(
 const CURRENT_PL_CLUBS: string[] = [...PREMIER_LEAGUE_CLUBS];
 const CURRENT_PL_SET = new Set(CURRENT_PL_CLUBS);
 
+/**
+ * Seasons where a club's players are filed under the Premier League but the
+ * club was not in it (Leo, 27 Nov 2026: three editions had 21 clubs). Keyed by
+ * FIFA edition year (2013 = 2012/13). Checked against the real tables.
+ */
+const NOT_IN_PL_THAT_SEASON: Record<number, readonly string[]> = {
+  2013: ["AFC Bournemouth"],   // 2012/13: League One
+  2019: ["Aston Villa"],       // 2018/19: Championship
+  2022: ["Sunderland"],        // 2021/22: League One
+};
+
+function wasInPL(club: string, year: number): boolean {
+  return !(NOT_IN_PL_THAT_SEASON[year] ?? []).includes(club);
+}
+
 function isEnglishPLClub(club: string): boolean {
   return !NON_ENGLISH_PL_CLUBS.has(club.trim().toLowerCase());
 }
@@ -115,6 +130,7 @@ async function buildClubList(): Promise<unknown> {
     if (year < 2000) return;
     // The edition the career is played in has exactly the game's twenty.
     if (year >= STAR_FIFA_YEAR && !CURRENT_PL_SET.has(club)) return;
+    if (!wasInPL(club, year)) return;
     if (!clubMap.has(club)) clubMap.set(club, new Set());
     clubMap.get(club)!.add(year);
   };

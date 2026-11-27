@@ -3,6 +3,8 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import DifficultyRatingPopup from "./DifficultyRatingPopup";
 import { useRouter, useSearchParams } from "next/navigation";
+import { usePreview } from "@/lib/siteLook/usePreview";
+import { currentStreak, markDaily, readDailies, todayUTC } from "@/lib/ttt/streak";
 import Link from "next/link";
 import type { TicTacToePuzzle, TicTacToeSquareData, TicTacToeAnswer } from "@/lib/types";
 import { CUSTOM_SQUARE_LABELS } from "@/lib/types";
@@ -358,6 +360,7 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
   const [ratingDismissed, setRatingDismissed] = useState(false);
   const searchParams = useSearchParams();
   const isSecondChance = searchParams.get("second-chance") === "true";
+  const preview = usePreview();
   const inputRef = useRef<HTMLInputElement>(null!);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -539,6 +542,17 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
     setGameState((s) => ({ ...s, finished: true }));
     setSelectedSquare(null);
   };
+
+  // New look preview: "Play today's grid" skips the Solo / 2 Player choice.
+  const autoSolo = !mode && preview && searchParams.get("mode") === "solo";
+  useEffect(() => {
+    if (!autoSolo) return;
+    setMode("solo");
+    setGameState(makeInitialState(["Player 1", "Player 2"]));
+    setSoloTimer(0);
+    setPlayerTimers([0, 0]);
+  }, [autoSolo]);
+  if (autoSolo) return null;
 
   if (!mode) {
     return (
@@ -1220,6 +1234,14 @@ function ResultsScreen({
   playerTimers?: [number, number];
   onPlayAgain: () => void;
 }) {
+  // A finished daily grid counts towards the streak (this device). Shown with the New look preview on.
+  const preview = usePreview();
+  const [streak, setStreak] = useState<number | null>(null);
+  useEffect(() => {
+    if (!puzzle.is_daily || !puzzle.daily_date || mode !== "solo") return;
+    setStreak(currentStreak(markDaily(puzzle.daily_date), todayUTC()));
+  }, [puzzle.is_daily, puzzle.daily_date, mode]);
+
   const is2P = mode === "2player";
   const [s1, s2] = gameState.playerScores;
   const [n1, n2] = gameState.playerNames;
@@ -1374,8 +1396,25 @@ function ResultsScreen({
         </div>
       </div>
 
+      {preview && streak !== null && streak > 0 && (
+        <p data-ttt-streak className="mt-5 text-sm font-bold text-amber-400">🔥 {streak} day{streak === 1 ? "" : "s"} in a row: come back tomorrow for the next grid</p>
+      )}
+
       {/* ── Action buttons ── */}
       <div className="mt-6 flex flex-wrap justify-center gap-3">
+        {preview && (
+          <button
+            data-ttt-share
+            onClick={async () => {
+              const text = `${shareText}\nknowitball.co.uk/tic-tac-toe`;
+              try { if (navigator.share) { await navigator.share({ text }); return; } } catch { /* cancelled */ }
+              try { await navigator.clipboard.writeText(text); } catch { /* blocked */ }
+            }}
+            className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-500"
+          >
+            Share
+          </button>
+        )}
         <button
           onClick={() => navigator.clipboard.writeText(shareText)}
           className="rounded-xl border border-gray-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-gray-800"

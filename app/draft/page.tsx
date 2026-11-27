@@ -17,6 +17,10 @@ import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
 import { shuffle } from "@/lib/shuffle";
 import { prefetchDraftClubs } from "@/lib/draft/clubList";
+import { usePreview } from "@/lib/siteLook/usePreview";
+import { DAILY_PREFIX, DAILY_SETTINGS } from "@/lib/draft/daily";
+import { ukToday } from "@/lib/tenable/daily";
+import { DailyDraftStart, DailyDraftDone } from "@/components/draft/DailyDraft";
 
 export interface DraftSettings {
   formation: string;
@@ -33,6 +37,8 @@ export interface DraftSettings {
    * Ignored in single player.
    */
   draftMode?: "normal" | "american";
+  /** The Daily Draft's date (YYYY-MM-DD): same spins for everyone today (lib/draft/daily.ts). */
+  daily?: string;
 }
 
 export interface DraftPlayer {
@@ -55,6 +61,8 @@ export interface DraftPlayer {
    * and matching by label alone let left and right swap places.
    */
   slotIndex?: number;
+  /** The best overall in the spin he came from (the Daily Draft's share squares). */
+  spinBest?: number;
 }
 
 type GamePhase = "setup" | "lobby" | "american-draft" | "formation-pick" | "draft" | "manage" | "result" | "pre-season" | "signing" | "sell" | "sell-signing" | "arrange";
@@ -483,6 +491,25 @@ export default function DraftPage() {
       });
     } catch {}
   }, [isSignedIn]);
+
+  // The Daily Draft (New look preview, Leo 27 Nov 2026): today's spins, fixed settings.
+  const preview = usePreview();
+  const [dailyResult, setDailyResult] = useState<{ points: number; finish: number } | null>(null);
+  const handleStartDaily = useCallback(() => {
+    setDailyResult(null);
+    clearProgress();
+    setResume(null);
+    setSettings({ ...DAILY_SETTINGS, formation: "4-3-3", simulationSpeed: 1, daily: ukToday() });
+    setPlayers([]);
+    setRoomCode(null);
+    setIsHost(false);
+    setSquadSubmitted(false);
+    setPreComputedSeason(null);
+    setRoomPlayers(null);
+    setRespinsRemaining(0);
+    setPhase("formation-pick");
+    scrollTop();
+  }, [scrollTop]);
 
   const handleStartDraft = useCallback((s: DraftSettings) => {
     clearProgress();
@@ -1372,6 +1399,14 @@ export default function DraftPage() {
               </div>
             </div>
           )}
+          {preview && <DailyDraftStart date={ukToday()} onStart={handleStartDaily} />}
+          {preview && isAdminUser && (
+            <a href="/draft-challenge-dev" data-challenge-draft-link className="mx-auto mb-6 block max-w-xl rounded-2xl border border-gray-700 bg-gray-900 p-4 text-white">
+              <p className="text-xs font-black uppercase tracking-widest text-amber-400">Coming next · admins only</p>
+              <p className="mt-1 text-lg font-black">Challenge Draft</p>
+              <p className="text-sm text-gray-300">Every pick is a brief: &ldquo;a Dane&rdquo;, &ldquo;under 23&rdquo;, &ldquo;a 2000s keeper&rdquo;. Work out the formation after.</p>
+            </a>
+          )}
           <DraftSetup
             onStart={handleStartDraft}
             onCreateRoom={isSignedIn ? handleCreateRoom : undefined}
@@ -1609,7 +1644,12 @@ export default function DraftPage() {
           revealStartTime={revealStartTime}
           speedMultiplier={settings?.simulationSpeed ?? 1}
           playerTeamName={teamName}
+          runKeyPrefix={settings?.daily && currentSeason === 1 ? `${DAILY_PREFIX}${settings.daily}:` : undefined}
+          onSeasonDone={settings?.daily && currentSeason === 1 ? setDailyResult : undefined}
         />
+      )}
+      {phase === "result" && settings?.daily && currentSeason === 1 && (
+        <DailyDraftDone date={settings.daily} players={players} result={dailyResult} isSignedIn={isSignedIn} />
       )}
       {phase === "pre-season" && (
         <Season2Overview

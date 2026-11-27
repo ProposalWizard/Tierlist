@@ -6,6 +6,9 @@ import { FORMATIONS, getPositionColor, getPositionTextColor, formatSeasonYear } 
 import ImageWithFallback from "@/components/ImageWithFallback";
 import type { DraftSettings, DraftPlayer } from "@/app/draft/page";
 import type { PlayerAttributes } from "@/lib/seasonSimulator";
+import { positionFitness } from "@/lib/seasonSimulator";
+import { usePreview } from "@/lib/siteLook/usePreview";
+import { dailySpinOrder, nextDailySpin } from "@/lib/draft/daily";
 import { getFlagUrl } from "@/lib/nationalities";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 
@@ -70,6 +73,19 @@ function classifyPos(pos: string): "GK" | "DEF" | "MID" | "ATT" {
   if (["CB", "RB", "LB", "RWB", "LWB", "SW"].includes(p)) return "DEF";
   if (["CDM", "CM", "CAM", "RM", "LM", "DM"].includes(p)) return "MID";
   return "ATT";
+}
+
+/** The simulator's own rating for a player in a spot (lib/seasonSimulator positionFitness). */
+function ratingIn(p: { positions: string; overall: number }, slot: string): { fit: number; rating: number } {
+  const fit = positionFitness({ positions: p.positions, assignedPosition: slot } as unknown as DraftPlayer);
+  return { fit, rating: Math.round(p.overall * fit) };
+}
+
+/** How a spot reads on the pick screen (New look preview, Leo 27 Nov 2026). */
+function fitWord(fit: number): { word: string; cls: string } {
+  if (fit >= 0.98) return { word: "Natural", cls: "text-emerald-400" };
+  if (fit >= 0.85) return { word: "Can play here", cls: "text-amber-400" };
+  return { word: "Out of position", cls: "text-red-400" };
 }
 
 function slotFitness(playerPositions: string[], slotPos: string): number {
@@ -170,6 +186,7 @@ export default function DraftPick({
 }: Props) {
   const formation = FORMATIONS.find((f) => f.name === settings.formation) ?? FORMATIONS[0];
   const isClubFirst = settings.draftOrder === "club-first";
+  const preview = usePreview();
   const maxPicks = totalPicks ?? 14;
   const isSeason2Draft = !!existingSquad;
   const [pickedPlayers, setPickedPlayers] = useState<DraftPlayer[]>(initialPicked ?? []);
@@ -283,7 +300,10 @@ export default function DraftPick({
     setSpinning(true);
     setPhase("spinning");
 
-    const target = getRandomClubYear();
+    // The Daily Draft: today's next spin, the same for everyone (lib/draft/daily.ts).
+    const target = settings.daily
+      ? nextDailySpin(availableClubs ? dailySpinOrder(availableClubs, settings.daily) : [], usedClubYears)
+      : getRandomClubYear();
     if (!target) {
       setError("No more available clubs in this era range");
       setSpinning(false);
@@ -312,7 +332,7 @@ export default function DraftPick({
       setPhase("pick");
       fetchRoster(target.club, target.year, rosterAsk);
     }, 2200));
-  }, [getRandomClubYear, generateSpinItems]);
+  }, [getRandomClubYear, generateSpinItems, settings.daily, availableClubs, usedClubYears]);
 
   const handleRespin = useCallback(() => {
     if (respinsRemaining <= 0) return;
@@ -405,6 +425,7 @@ export default function DraftPick({
         age: player.age || 0,
         isSub: currentIsSub || isSeason2Draft,
         attrs: buildAttrs(player),
+        spinBest: spinResult?.roster?.length ? Math.max(...spinResult.roster.map((r) => r.overall)) : undefined,
       };
 
       const newPicked = [...pickedPlayers, drafted];
@@ -1205,7 +1226,9 @@ export default function DraftPick({
                   {isSeason2Draft ? (
                     "Sign a player from this roster"
                   ) : isClubFirst ? (
-                    "Pick any player — assign to XI or bench"
+                    preview && filledSlots.size < formation.slots.length ? (
+                      <span data-draft-needs>Needs: <b>{Array.from(new Set(formation.slots.filter((_, i) => !filledSlots.has(i)).map((sl) => sl.label))).join(", ")}</b> · best fits first</span>
+                    ) : "Pick any player — assign to XI or bench"
                   ) : isSubPick ? (
                     "Pick a substitute from this roster"
                   ) : (
@@ -1283,6 +1306,13 @@ export default function DraftPick({
                         (b.positions || "").split(",").map((p) => p.trim()).includes(cp)
                       ) ? 1 : 0;
                       if (bCompat !== aCompat) return bCompat - aCompat;
+                    }
+                    if (preview && isClubFirst && !isSeason2Draft && !settings.hiddenRatings && filledSlots.size < formation.slots.length) {
+                      // New look preview: the best rating each could get in a spot still free.
+                      const freeLabels = formation.slots.filter((_, i) => !filledSlots.has(i)).map((sl) => sl.label);
+                      const top = (p: RosterPlayer) => Math.max(...freeLabels.map((l) => ratingIn(p, l).rating));
+                      const d = top(b) - top(a);
+                      if (d !== 0) return d;
                     }
                     if (settings.hiddenRatings) {
                       const ha = ((parseInt(a.sofifa_id, 10) * 2654435761) >>> 0);
@@ -1450,9 +1480,24 @@ export default function DraftPick({
                 <p className="text-white text-sm">Choose a position to assign this player</p>
               </div>
 
+              {preview && (() => {
+                // One tap: the free spot where he rates highest (the simulator's own numbers).
+                const free = formation.slots.map((slot, i) => ({ slot, i })).filter(({ i }) => !filledSlots.has(i));
+                if (!free.length) return null;
+                const best = free.map(({ slot, i }) => ({ i, label: slot.label, ...ratingIn(pendingPlayer, slot.label) })).sort((a, b) => b.rating - a.rating)[0];
+                return (
+                  <div className="max-w-md mx-auto mb-3" data-draft-best-spot>
+                    <button onClick={() => handleAssignSlot(best.i)} className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-base font-extrabold text-white transition-transform active:scale-95">
+                      Best spot: {best.label}{settings.hiddenRatings ? "" : ` (${best.rating})`}
+                    </button>
+                  </div>
+                );
+              })()}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-md mx-auto">
                 {formation.slots.map((slot, i) => {
                   if (filledSlots.has(i)) return null;
+                  const r = ratingIn(pendingPlayer, slot.label);
+                  const fw = fitWord(r.fit);
 
                   const pendingPositions = (pendingPlayer.positions || "").split(",").map((p) => p.trim());
                   const isNatural = pendingPositions.includes(slot.label);
@@ -1470,7 +1515,11 @@ export default function DraftPick({
                       <div className={`text-lg font-extrabold ${getPositionTextColor(slot.label)}`}>
                         {slot.label}
                       </div>
-                      {isNatural && (
+                      {preview ? (
+                        <div className={`text-[10px] font-bold mt-0.5 ${fw.cls}`} data-draft-fit={fw.word}>
+                          {fw.word}{settings.hiddenRatings || r.fit >= 0.98 ? "" : ` · ${r.rating}`}
+                        </div>
+                      ) : isNatural && (
                         <div className="text-[10px] font-bold text-emerald-500 mt-0.5">NATURAL FIT</div>
                       )}
                     </button>

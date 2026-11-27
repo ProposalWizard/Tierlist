@@ -11,7 +11,9 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function DailyTicTacToePage() {
+export default async function DailyTicTacToePage({ searchParams }: { searchParams?: { mode?: string } }) {
+  // "Play today's grid" (New look preview) goes straight into solo: keep ?mode=solo on the way.
+  const keep = searchParams?.mode === "solo" ? "?mode=solo" : "";
   const service = createServiceClient();
   const today = new Date().toISOString().slice(0, 10);
 
@@ -24,7 +26,7 @@ export default async function DailyTicTacToePage() {
     .single();
 
   if (todayPuzzle) {
-    redirect(`/tic-tac-toe/${todayPuzzle.id}`);
+    redirect(`/tic-tac-toe/${todayPuzzle.id}${keep}`);
   }
 
   const { data: latest } = await service
@@ -40,7 +42,7 @@ export default async function DailyTicTacToePage() {
     .single();
 
   if (latest) {
-    redirect(`/tic-tac-toe/${latest.id}`);
+    redirect(`/tic-tac-toe/${latest.id}${keep}`);
   }
 
   return (

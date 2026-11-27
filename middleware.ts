@@ -66,7 +66,11 @@ export async function middleware(request: NextRequest) {
   // Rankings pause (lib/rankingsPaused.ts): every Rankings page shows the
   // "not running right now" page instead; its data route answers 503.
   // Nothing is deleted. Runs after the /play/<campaign> ad pages above.
-  if (RANKINGS_PAUSED && isRankingsPath(pathname)) {
+  // Leo, 27 Nov 2026: with the New look preview on (an admin's own device,
+  // lib/siteLook/look.ts) Rankings runs, so it can be tested in the new look.
+  // Everyone else still sees the pause until Mikey and Leo bring it back.
+  const previewOn = request.cookies.get("kib_look")?.value === "v2";
+  if (RANKINGS_PAUSED && isRankingsPath(pathname) && !previewOn) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Rankings is not running right now" }, { status: 503 });
     }

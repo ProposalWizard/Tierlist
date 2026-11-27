@@ -28,6 +28,10 @@ interface Props {
   playerTeamName?: string;
   /** True only on the final season of a draft (all 5 seasons played). Gates the
    * "draft complete" XP so it's awarded once per full draft, not per season. */
+  /** The Daily Draft: tags this first season "daily:<date>:" so it counts in today's ranking. */
+  runKeyPrefix?: string;
+  /** Told once when the season is worked out (the Daily Draft's card). */
+  onSeasonDone?: (r: { points: number; finish: number }) => void;
   isFinalSeason?: boolean;
 }
 
@@ -605,12 +609,19 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
   }
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal", revealStartTime, speedMultiplier = 1, playerTeamName, isFinalSeason = false }: Props) {
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal", revealStartTime, speedMultiplier = 1, playerTeamName, isFinalSeason = false, runKeyPrefix, onSeasonDone }: Props) {
   const computedSeason = useMemo(
     () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable, previousResult ?? undefined, playerTeamName),
     [players, seasonNumber, previousResult, preComputedSeason, playerTeamName],
   );
   const season = computedSeason;
+  // The Daily Draft's card wants the season's points and finish, once.
+  const toldSeason = useRef(false);
+  useEffect(() => {
+    if (toldSeason.current || !onSeasonDone) return;
+    toldSeason.current = true;
+    onSeasonDone({ points: season.teamRecord.points, finish: season.actualFinish });
+  }, [season, onSeasonDone]);
   const [showMatches, setShowMatches] = useState(false);
   const [showTable, setShowTable] = useState(true);
   // The redesigned neon table is now the default. The classic renderer is kept
@@ -713,7 +724,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     const squadFp = players.map(p => `${p.name}:${p.overall}`).join("|");
     let sqHash = 0;
     for (let i = 0; i < squadFp.length; i++) sqHash = ((sqHash << 5) - sqHash + squadFp.charCodeAt(i)) | 0;
-    const runKey = `s${seasonNumber}-f${season.actualFinish}-p${season.teamRecord.points}-g${season.teamRecord.goalsFor}.${season.teamRecord.goalsAgainst}-q${Math.abs(sqHash).toString(36)}`;
+    const runKey = `${seasonNumber === 1 && runKeyPrefix ? runKeyPrefix : ""}s${seasonNumber}-f${season.actualFinish}-p${season.teamRecord.points}-g${season.teamRecord.goalsFor}.${season.teamRecord.goalsAgainst}-q${Math.abs(sqHash).toString(36)}`;
     let alreadyCredited = false;
     try { alreadyCredited = localStorage.getItem(`draft-credited-${runKey}`) === "1"; } catch { /* ignore */ }
     // Signed out, the history save does nothing; wait until sign-in resolves so

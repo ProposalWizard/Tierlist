@@ -3,6 +3,9 @@ import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
 import HowToPlayButton from "@/components/HowToPlayButton";
 import { pickDaily, ukToday } from "@/lib/tenable/daily";
+import { cookies } from "next/headers";
+import { oncePerTitle } from "@/lib/tenable/best";
+import TenableBestBadge from "@/components/TenableBestBadge";
 
 export const metadata: Metadata = {
   title: "Ten-A-Ball",
@@ -36,7 +39,10 @@ export default async function TenableListPage() {
     .eq("is_active", true)
     .order("daily_date", { ascending: false });
 
-  const items: TenableRow[] = (puzzles ?? []) as TenableRow[];
+  // One card per challenge: the same title was listed twice ("Danish Players …", found 24 Nov 2026).
+  const items: TenableRow[] = oncePerTitle((puzzles ?? []) as TenableRow[]);
+  // New look preview (an admin's own device): topics and your best on each card.
+  const preview = cookies().get("kib_look")?.value === "v2";
 
   // Today's challenge: a hand-dated one, else the next in turn (lib/tenable/daily.ts).
   const today = ukToday();
@@ -94,7 +100,27 @@ export default async function TenableListPage() {
         )}
 
         {/* Previous puzzles */}
-        {previous.length > 0 && (
+        {preview && previous.length > 0 && (
+          <div className="mb-8 space-y-8" data-tenable-topics>
+            {Array.from(new Set(previous.map((p) => p.category || "More"))).map((topic) => (
+              <section key={topic}>
+                <h2 className="mb-3 text-sm font-bold uppercase text-white">{topic}</h2>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {previous.filter((p) => (p.category || "More") === topic).map((p) => (
+                    <Link key={p.id} href={`/tenable/${p.id}`} className="group flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 p-4 transition-colors hover:border-emerald-600">
+                      <div>
+                        <h3 className="font-bold text-white group-hover:text-emerald-300">{p.title}</h3>
+                        <TenableBestBadge id={p.id} />
+                      </div>
+                      <span className="shrink-0 rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white">Play</span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
+        {!preview && previous.length > 0 && (
           <div className="mb-8">
             <h2 className="mb-3 text-sm font-bold uppercase text-white">
               {daily ? "Previous Challenges" : "All Challenges"}
