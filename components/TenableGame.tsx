@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { usePreview } from "@/lib/siteLook/usePreview";
+import { saveBest, shareLine } from "@/lib/tenable/best";
 import type { TenablePuzzle, TenableAnswer } from "@/lib/types";
 
 function levenshtein(a: string, b: string): number {
@@ -97,6 +99,9 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(false);
+  // New look preview: your best on this challenge (this device) and a Share button at the end.
+  const preview = usePreview();
+  const [best, setBest] = useState<number | null>(null);
   const [anim, setAnim] = useState<AnimState | null>(null);
   const [showIncorrectFlash, setShowIncorrectFlash] = useState(false);
   const [duplicateMsg, setDuplicateMsg] = useState<string | null>(null);
@@ -400,6 +405,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
                 </p>
               </div>
             )}
+            {preview && <TenableEnd id={puzzle.id} title={puzzle.title} score={score} best={best} setBest={setBest} />}
             <button
               onClick={handlePlayAgain}
               className="rounded-xl bg-indigo-600 px-8 py-3 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-indigo-500"
@@ -443,6 +449,27 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** New look preview: saves your best and offers Share (lib/tenable/best.ts). */
+function TenableEnd({ id, title, score, best, setBest }: { id: string; title: string; score: number; best: number | null; setBest: (n: number) => void }) {
+  useEffect(() => { setBest(saveBest(id, score)); }, [id, score, setBest]);
+  return (
+    <div className="space-y-3" data-tenable-end>
+      {best !== null && <p className="text-sm font-bold text-white">{score >= best && score > 0 ? "Your best on this one ⭐" : `Your best: ${best}/10`}</p>}
+      <button
+        data-tenable-share
+        onClick={async () => {
+          const text = shareLine(title, score, id);
+          try { if (navigator.share) { await navigator.share({ text }); return; } } catch { /* cancelled */ }
+          try { await navigator.clipboard.writeText(text); } catch { /* blocked */ }
+        }}
+        className="mr-2 rounded-xl bg-emerald-600 px-8 py-3 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-emerald-500"
+      >
+        Share
+      </button>
     </div>
   );
 }

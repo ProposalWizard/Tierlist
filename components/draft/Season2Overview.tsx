@@ -3,6 +3,8 @@ import { useState, useEffect, useMemo } from "react";
 import { getPositionColor } from "./formations";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { DraftPlayer } from "@/app/draft/page";
+import { usePreview } from "@/lib/siteLook/usePreview";
+import HigherLower from "./HigherLower";
 
 // Mirrors getTrainingBoost() in app/draft/page.tsx so the label shows the
 // player's ACTUAL upgrade range (lower-rated players gain far more).
@@ -56,6 +58,9 @@ export default function Season2Overview({
   const [convinceSuccess, setConvinceSuccess] = useState(false);
   const [convinceThinking, setConvinceThinking] = useState(false);
   const [thinkStep, setThinkStep] = useState(0);
+  // New look preview: "Convince to stay" is a higher-or-lower card game (components/draft/HigherLower.tsx).
+  const preview = usePreview();
+  const [playingHL, setPlayingHL] = useState(false);
 
   const convinceableIdx = useMemo(
     () => departedPlayers.findIndex(dp => dp.convinceable),
@@ -64,7 +69,8 @@ export default function Season2Overview({
   const convinceablePlayer = convinceableIdx >= 0 ? departedPlayers[convinceableIdx] : null;
 
   const handleConvince = () => {
-    if (convinceAttempted || convinceThinking) return;
+    if (convinceAttempted || convinceThinking || playingHL) return;
+    if (preview && season2Players.length >= 4) { setPlayingHL(true); return; }
     setConvinceThinking(true);
     setThinkStep(0);
   };
@@ -125,7 +131,7 @@ export default function Season2Overview({
     // is still resolving (2.3s) — otherwise the 1.5s timer fires first and a
     // successful convince is discarded. When convinceThinking flips back to
     // false the effect re-runs and starts the timer with the resolved result.
-    if (allRevealed && upgradeablePlayers.length === 0 && !convinceThinking) {
+    if (allRevealed && upgradeablePlayers.length === 0 && !convinceThinking && !playingHL) {
       const timer = setTimeout(
         () => onContinue(
           "",
@@ -135,7 +141,7 @@ export default function Season2Overview({
       );
       return () => clearTimeout(timer);
     }
-  }, [allRevealed, upgradeablePlayers.length, convinceThinking, convinceAttempted, convinceSuccess, convinceablePlayer, onContinue]);
+  }, [allRevealed, upgradeablePlayers.length, convinceThinking, playingHL, convinceAttempted, convinceSuccess, convinceablePlayer, onContinue]);
 
   return (
     <div className="max-w-2xl mx-auto p-4 pb-20">
@@ -183,7 +189,14 @@ export default function Season2Overview({
                         {dp.reason}
                       </span>
                     )}
-                    {isConvinceable && !convinceAttempted && !convinceThinking && revealStep > i && (
+                    {isConvinceable && playingHL && (
+                      <HigherLower
+                        who={dp.player.name}
+                        squad={season2Players}
+                        onDone={(stays) => { setPlayingHL(false); setConvinceSuccess(stays); setConvinceAttempted(true); }}
+                      />
+                    )}
+                    {isConvinceable && !convinceAttempted && !convinceThinking && !playingHL && revealStep > i && (
                       <button
                         onClick={handleConvince}
                         className="text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 px-2.5 py-1 rounded transition-all active:scale-95"

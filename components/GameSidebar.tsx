@@ -25,7 +25,8 @@ const ALL_GAMES: GameLink[] = [
   { name: "Football Tic Tac Toe",description: "Pick players to fill the grid",            href: "/tic-tac-toe"},
   { name: "Blind Rankings",      description: "Rank players without knowing who's next",   href: "/blind-rankings" },
 ];
-const GAMES = withoutPaused(ALL_GAMES);
+/** Exported for the phone menu (NavMenu.tsx), which lists the games too. */
+export const GAMES = withoutPaused(ALL_GAMES);
 
 const COMING_SOON: GameLink[] = [
   { name: "Player Ratings", description: "Rate and compare players", href: "#", comingSoon: true },
@@ -64,7 +65,9 @@ export default function GameSidebar() {
       <button
         data-nav-games-menu
         onClick={() => setOpen(true)}
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-white transition-colors hover:text-white"
+        // Phones show one menu only, on the right (NavMenu.tsx lists the games
+        // too): two ☰ buttons side by side was confusing (Leo's fault list, 24 Nov).
+        className="hidden h-9 w-9 items-center justify-center rounded-lg text-white transition-colors hover:text-white md:flex"
         aria-label="Open game menu"
       >
         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,6 +113,9 @@ export default function GameSidebar() {
                   <Link
                     key={game.href}
                     href={game.href}
+                  // No early download (26 Nov 2026): on every page the menus pulled in
+                  // about 5 MB of game code nobody had asked for yet.
+                  prefetch={false}
                     className={`group mx-3 my-0.5 block rounded-lg px-3 py-3 transition-colors ${
                       isActive
                         ? "bg-purple-900/30 text-white"

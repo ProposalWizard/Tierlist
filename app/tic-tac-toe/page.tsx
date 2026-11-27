@@ -1,9 +1,34 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePreview } from "@/lib/siteLook/usePreview";
+import { currentStreak, readDailies, todayUTC } from "@/lib/ttt/streak";
+
+/** New look preview (Leo, 27 Nov 2026): today's grid first, straight into solo, with your streak. */
+function TodayFirst() {
+  const [streak, setStreak] = useState(0);
+  const [doneToday, setDoneToday] = useState(false);
+  useEffect(() => {
+    const d = readDailies();
+    setStreak(currentStreak(d, todayUTC()));
+    setDoneToday(d.includes(todayUTC()));
+  }, []);
+  const date = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+  return (
+    <div className="mb-5 text-left" data-ttt-today>
+      <Link href="/tic-tac-toe/daily?mode=solo" className="group block rounded-2xl bg-emerald-700 p-5 text-white shadow-lg transition-transform hover:-translate-y-0.5">
+        <p className="text-xs font-black uppercase tracking-widest text-white/90">{date}</p>
+        <p className="mt-1 text-2xl font-black text-white">{doneToday ? "Today\u2019s grid: done ✓" : "Play today\u2019s grid"}</p>
+        <p className="mt-1 text-sm text-white">{streak > 0 ? `🔥 ${streak} day${streak === 1 ? "" : "s"} in a row` : "Nine squares. Rare players score more."}</p>
+        <span className="mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-black" style={{ background: "#fff", color: "#065f46" }}>{doneToday ? "See your grid" : "▶ Play"}</span>
+      </Link>
+    </div>
+  );
+}
 
 export default function TicTacToeMainPage() {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const preview = usePreview();
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4">
@@ -28,7 +53,9 @@ export default function TicTacToeMainPage() {
           How to Play
         </button>
 
+        {preview && <TodayFirst />}
         <div className="space-y-4">
+          {!preview && (
           <Link
             href="/tic-tac-toe/daily"
             className="group block w-full rounded-2xl border-2 border-amber-700 bg-gradient-to-r from-amber-900/30 to-amber-800/10 p-6 transition-all hover:border-amber-500 hover:from-amber-900/50 hover:to-amber-800/20"
@@ -40,6 +67,7 @@ export default function TicTacToeMainPage() {
               A new challenge every day
             </p>
           </Link>
+          )}
 
           <Link
             href="/tic-tac-toe/easy"

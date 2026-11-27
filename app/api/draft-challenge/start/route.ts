@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { buildBriefSequence } from "@/lib/challengeDraft";
 import { createServiceClient } from "@/lib/supabase/service";
+import { overLimit, slowDown, LIMITS } from "@/lib/rateLimit";
 
 /**
  * Start a Challenge draft: pick the fourteen briefs this run will play.
@@ -15,6 +16,8 @@ import { createServiceClient } from "@/lib/supabase/service";
  * server-side, so a tampered brief cannot widen its own pool.
  */
 export async function POST(req: Request) {
+  // Too many from one person: a friendly 429, never a crash (lib/rateLimit).
+  if (await overLimit(req, LIMITS.challengeDraft)) return slowDown(LIMITS.challengeDraft);
   const body = await req.json().catch(() => ({})) as {
     eraStart?: number; eraEnd?: number; prime?: boolean; playerCount?: number;
   };

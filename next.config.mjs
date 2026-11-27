@@ -94,6 +94,12 @@ const nextConfig = {
     return [
       { source: "/star-dev", destination: "/road-to-the-golden-ball", permanent: false },
       { source: "/road-to-ballon-dor", destination: "/road-to-the-golden-ball", permanent: true },
+      // The sign-in page is /auth; the addresses people type by habit went to "not found" (26 Nov 2026).
+      { source: "/login", destination: "/auth", permanent: false },
+      { source: "/signin", destination: "/auth", permanent: false },
+      { source: "/sign-in", destination: "/auth", permanent: false },
+      { source: "/register", destination: "/auth", permanent: false },
+      { source: "/signup", destination: "/auth", permanent: false },
     ];
   },
   async headers() {
@@ -131,6 +137,8 @@ const nextConfig = {
       { source: "/star/:path*", headers: gameAssetCache },
       { source: "/sfx/:path*", headers: gameAssetCache },
       { source: "/models/:path*", headers: gameAssetCache },
+      // The shrunk card pictures (26 Nov 2026): one file per card id, never changed in place.
+      { source: "/cards/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" }] },
       { source: "/shop/:path*", headers: gameAssetCache },
       { source: "/home/:path*", headers: gameAssetCache },
       { source: "/icons3d/:path*", headers: gameAssetCache },

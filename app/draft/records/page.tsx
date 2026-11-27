@@ -1,4 +1,5 @@
 "use client";
+import { usePreview } from "@/lib/siteLook/usePreview";
 import { useState, useEffect, type ComponentType } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -322,7 +323,8 @@ function RecordCard({
 
 export default function DraftRecordsPage() {
   const [competition, setCompetition] = useState<"pl" | "all">("pl");
-  const [mode, setMode] = useState<"normal" | "prime" | "best">("best");
+  const [mode, setMode] = useState<"normal" | "prime" | "best" | "chem">("best");
+  const preview = usePreview();
   const [records, setRecords] = useState<Record<string, RecordEntry[]>>({});
   // The signed-in player's own personal best per board — shown as a "Your best"
   // line so a player always sees their record even when it's outside the global
@@ -342,7 +344,7 @@ export default function DraftRecordsPage() {
     });
   }
 
-  function handleModeChange(newMode: "normal" | "prime" | "best") {
+  function handleModeChange(newMode: "normal" | "prime" | "best" | "chem") {
     setMode(newMode);
     if (newMode === "best") setCompetition("all");
   }
@@ -511,6 +513,7 @@ export default function DraftRecordsPage() {
           <AngledTab active={mode === "normal"} onClick={() => handleModeChange("normal")} tone="emerald">Normal</AngledTab>
           <AngledTab active={mode === "prime"} onClick={() => handleModeChange("prime")} tone="amber">Prime</AngledTab>
           <AngledTab active={mode === "best"} onClick={() => handleModeChange("best")} tone="violet">Best</AngledTab>
+          {preview && <AngledTab active={mode === "chem"} onClick={() => handleModeChange("chem")} tone="violet">Chemistry</AngledTab>}
         </div>
 
         {/* ── Competition tabs ── */}
@@ -568,7 +571,7 @@ export default function DraftRecordsPage() {
             return { key: k, entries: rt ? mergeWithOfficial(records[k] ?? [], k, rt) : (records[k] ?? []) };
           }).filter(b => b.entries.length > 0);
           const standings = computeHallOfFameLeaderboard(scoringBoards);
-          const modeLabel = mode === "best" ? "Best" : mode === "prime" ? "Prime" : "Normal";
+          const modeLabel = mode === "best" ? "Best" : mode === "prime" ? "Prime" : mode === "chem" ? "Chemistry" : "Normal";
 
           return (
           <div className="space-y-3">

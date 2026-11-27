@@ -1,4 +1,6 @@
 "use client";
+import { usePreview } from "@/lib/siteLook/usePreview";
+import { customReasons, isRanked } from "@/lib/draft/ranked";
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -178,6 +180,9 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
   const [draftOrder, setDraftOrder] = useState<"position-first" | "club-first">("club-first");
   const [respins, setRespins] = useState<0 | 1 | 3>(3);
   const [hiddenRatings, setHiddenRatings] = useState(false);
+  // New look preview (Leo, 27 Nov 2026): Rules (Classic / Chemistry) and the Ranked or Custom line.
+  const preview = usePreview();
+  const [chemistryOn, setChemistryOn] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [joiningRoom, setJoiningRoom] = useState(false);
@@ -199,6 +204,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
     draftOrder,
     respins,
     hiddenRatings,
+    ...(preview && chemistryOn ? { chemistry: true } : {}),
   });
 
   const handleJoin = async () => {
@@ -396,6 +402,26 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
           )}
         </div>
 
+        {preview && (
+          <div className="mb-4 sm:mb-5" data-draft-rules>
+            <SectionHeader
+              icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.8 10.2a3 3 0 00-4.2 0l-3 3a3 3 0 104.2 4.2l.9-.9m-1.5-6.3a3 3 0 004.2 0l3-3a3 3 0 10-4.2-4.2l-.9.9" /></svg>}
+              label1="DRAFT"
+              label2="RULES"
+            />
+            <div className="flex gap-2">
+              <SettingsBtn selected={!chemistryOn} onClick={() => setChemistryOn(false)} accent="teal">
+                <div className="text-xs font-black italic uppercase leading-none mb-1">Classic</div>
+                <div className="text-[9px] opacity-90 leading-snug">Best players win</div>
+              </SettingsBtn>
+              <SettingsBtn selected={chemistryOn} onClick={() => setChemistryOn(true)} accent="purple">
+                <div className="text-xs font-black italic uppercase leading-none mb-1">Chemistry</div>
+                <div className="text-[9px] opacity-90 leading-snug">Same club, season or nation next to each other: up to +3 each</div>
+              </SettingsBtn>
+            </div>
+          </div>
+        )}
+
         {/* Game Mode */}
         <div className="mb-4 sm:mb-5">
           <SectionHeader
@@ -496,7 +522,7 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
 
         {/* Start Draft button */}
         <button
-          onClick={() => onStart({ formation, eraStart, eraEnd: Math.max(eraStart, eraEnd), mode, draftOrder, respins, hiddenRatings })}
+          onClick={() => onStart(currentSettings())}
           disabled={eraStart > eraEnd}
           className="group relative w-full rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
           style={{
@@ -530,6 +556,17 @@ export default function DraftSetup({ onStart, onCreateRoom, onJoinRoom, teamName
         <p className="text-center text-white/60 text-[10px] mt-3 tracking-widest uppercase">
           14 spins · 11 starters + 3 subs · 38 matches
         </p>
+        {preview && (() => {
+          const st = currentSettings();
+          const ranked = isRanked(st);
+          return (
+            <p data-draft-ranked className={`mt-2 text-center text-xs font-bold ${ranked ? "text-emerald-400" : "text-amber-400"}`}>
+              {ranked
+                ? `Ranked: counts for the ${st.chemistry ? "Chemistry" : st.mode === "prime" ? "Prime" : "Normal"} Hall of Fame`
+                : `Custom (${customReasons(st).join(", ")}): your history only, not the Hall of Fame`}
+            </p>
+          );
+        })()}
 
         {/* Sign-in prompt — placed BELOW Start Draft so new/guest users see the
             game as the primary action, not a sign-up wall. */}

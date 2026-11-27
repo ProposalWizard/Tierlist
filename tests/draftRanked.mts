@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import { isRanked, boardFor, customReasons } from "../lib/draft/ranked";
+const std = { eraStart: 2007, eraEnd: 2026, respins: 3 as const, hiddenRatings: false, mode: "normal" as const };
+assert.equal(boardFor(std), "normal");
+assert.equal(boardFor({ ...std, mode: "prime" }), "prime");
+assert.equal(boardFor({ ...std, chemistry: true }), "chem");
+assert.equal(boardFor({ ...std, chemistry: true, mode: "prime" }), null);
+assert.equal(isRanked({ ...std, respins: 1 }), false);
+assert.equal(isRanked({ ...std, eraStart: 2015 }), false);
+assert.deepEqual(customReasons({ ...std, respins: 0, hiddenRatings: true }), ["0 re-spins", "hidden ratings"]);
+console.log("draftRanked: ok");

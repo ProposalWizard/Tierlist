@@ -146,26 +146,280 @@
   details .clip{margin-top:4px;margin-bottom:16px}
 
   footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+.round{margin-top:36px;padding-top:18px;border-top:2px solid rgba(0,0,0,.12)}
 </style>
 </head><body>
 <div class="wrap">
 <div class="wrap">
 <header>
-  <span class="ver">v0.143 &middot; 24 NOV &middot; LEO &middot; ONE KNOWITBALL (PLAN)</span>
-  <h1>One Knowitball: the whole-site plan</h1>
-  <p class="status"><i></i><span>Every page in the home page&rsquo;s look and frame, the old games brought up to date, and Draft made a lot better. <b>Plan only: nothing on the site has changed.</b> About 15 working days in 7 steps, each with its own patch note. 5 decisions for you at the bottom.</span></p>
-  <p class="sub">Made by Leo &middot; 24 Nov 2026 &middot; full plan: docs/SITE_PLAN.md</p>
+  <span class="ver">v0.143 &middot; LEO &middot; ONE KNOWITBALL &middot; UPDATED 27 NOV</span>
+  <h1>One Knowitball: the whole website</h1>
+  <p class="status"><i></i><span>One patch note for the whole job, updated each round, newest first. Every public page gets the home&rsquo;s look and frame (cream, or dark if you choose), the old games are brought up to date, and Draft gets a lot better. <b>All of it is behind your New look switch</b> (Admin &rarr; New look, or knowitball.co.uk/?look=v2) until you say go.</span></p>
+  <p class="sub">Made by Leo &middot; started 24 Nov 2026 &middot; 5 rounds so far</p>
 </header>
+<h2 class="add"><i></i>WHERE IT STANDS</h2>
+<div class="item"><div class="ih"><b>Done, behind the switch</b><span class="tag t-seen">live</span></div><p class="idea">The new look in light and dark on every public page (Mikey&rsquo;s Draft art kept as dark cards); Daily Draft with ranking, share and streak; Draft spot ratings, Best spot, Needs; Chemistry with Ranked or Custom (three boards); higher-or-lower to keep a player; Watch the big games; Tic Tac Toe today-first, streak, share; Ten-A-Ball topics, bests, share; Rankings running for you; the readability check on every round.</p></div>
+<div class="item"><div class="ih"><b>Fixed for everyone</b><span class="tag t-meas">live</span></div><p class="idea">Page titles, sign-in name, Ten-A-Ball lives line and duplicate, Objectives badge clear of Sign in on a computer, three wrong Draft seasons, faint text on the Objectives badge, Draft setup and Tic Tac Toe.</p></div>
+<div class="item"><div class="ih"><b>Needs you</b><span class="pill p-amb">to do</span></div><p class="idea">Run supabase/migrations/draft_records_chemistry.sql for the Chemistry board. Mikey&rsquo;s yes before Rankings come back for everyone. Then, when you&rsquo;re happy, say go and the switch becomes the site.</p></div>
+<div class="item"><div class="ih"><b>Next</b><span class="pill p-blu">next</span></div><p class="idea">Friend matches watched together, Manager mode (docs/DRAFT_MANAGER_PLAN.md), page-by-page polish, the Objectives badge on phones.</p></div>
+<h2 class="nxt round"><i></i>ROUND 5 &middot; 27 NOV &middot; DRAFT: CHEMISTRY, RANKED OR CUSTOM, HIGHER-OR-LOWER, WATCHING GAMES</h2>
+<div class="roundbody">
+<h2 class="nxt"><i></i>WHAT YOU SAID</h2>
+<p class="snote">&ldquo;Link between players thing like fifa chemistry &hellip; should be a mode or setting &hellip; not loads of diff things that make drafts too different so u cant rlly compare &hellip; convince to stay &hellip; higher or lower card minigame &hellip; football manager or chairman style &hellip; commentary &hellip; sort new picks by rating again &hellip; those ui bits are literally touching.&rdquo;</p>
+
+<h2 class="add"><i></i>CHEMISTRY</h2>
+<figure><img src="r0147-chemistry.webp" alt="Draft rules choice and the spot chooser with chemistry" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Draft Rules: Classic or Chemistry, and the Ranked line. Picking: Chem 0/33 at the top, and what each spot would give him</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>How links work</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Starters next to each other on the pitch link: same club and same season 3, same club 2, same nation 1. A player&rsquo;s chemistry is half his link points, up to 3, and only in a spot he can play. Team chemistry up to 33. Each point is +1 to his overall and every stat for the season, like FUT.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>How much it matters</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">Measured over 300 squads: full chemistry (33) is worth about 6&ndash;10 league points a season; a typical mixed squad (9&ndash;15) about 2&ndash;4. Worth chasing, doesn&rsquo;t decide everything. A test pins it: 2003/04 Arsenal together scores 33, eleven strangers 0, a man out of position 0.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>While you pick</b><span class="tag t-seen">played</span></div>
+  <p class="idea">&ldquo;Chem 12/33&rdquo; next to the pick count, and on every free spot what he&rsquo;d get there (&ldquo;+2 chem&rdquo; or &ldquo;no links&rdquo;).</p>
+</div>
+
+<h2 class="add"><i></i>RANKED OR CUSTOM: ONLY THREE BOARDS</h2>
+<div class="item">
+  <div class="ih"><b>Ranked</b><span class="tag t-seen">played</span></div>
+  <p class="idea">The standard rules (full era, 3 re-spins, ratings shown) count for the Hall of Fame: <b>Normal</b>, <b>Prime</b> or <b>Chemistry</b> (Chemistry plays with Normal ratings). The setup screen says which board, in green.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Custom</b><span class="tag t-seen">played</span></div>
+  <p class="idea">Change anything else (fewer re-spins, hidden ratings, a narrower era, Chemistry with Prime) and it says so in amber: &ldquo;Custom (1 re-spin): your history only&rdquo;. It plays the same, it just never sits next to standard drafts.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Chemistry board needs one database step</b><span class="pill p-amb">needs you</span></div>
+  <p class="idea">The Hall of Fame only accepts Normal and Prime today. Run supabase/migrations/draft_records_chemistry.sql once in the Supabase SQL editor; until then Chemistry drafts go in your history but not the board. The board&rsquo;s tab shows with your switch on.</p>
+</div>
+
+<h2 class="add"><i></i>CONVINCE TO STAY: HIGHER OR LOWER</h2>
+<div class="item">
+  <div class="ih"><b>Three right in a row and he stays</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">Cards from your own squad: is the next one&rsquo;s overall higher or lower? One wrong and he goes. A tie counts as right. Played sensibly he stays about 43% of the time (the old coin flip was 50%), but now it&rsquo;s your call.</p>
+</div>
+
+<h2 class="add"><i></i>WATCH THE BIG GAMES</h2>
+<figure><img src="r0147-match-centre.webp" alt="Watch the big games, the Match Centre live and at full time" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Under the season: your finals and biggest win. The Match Centre: scoreboard, clock, commentary with real scorers and assists, Skip to the end.</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>You decide what to watch</b><span class="tag t-seen">played</span></div>
+  <p class="idea">Under every season once it has finished revealing (so nothing is given away): the FA Cup, League Cup, Champions League and Europa League finals you reached, plus your biggest win. About 45 seconds a match, or Skip.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>It tells the real result</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Your goals keep their real scorer, assist and minute from the season; it never re-simulates, so watching changes nothing.</p>
+</div>
+
+<h2 class="add"><i></i>FIXED</h2>
+<div class="item">
+  <div class="ih"><b>Players sorted by rating again</b><span class="tag t-seen">played</span></div>
+  <p class="idea">The squad list is highest-rated first, always (I&rsquo;d changed it to &ldquo;best fit&rdquo;; undone). The &ldquo;Needs&rdquo; line stays.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Phone spacing</b><span class="tag t-seen">played</span></div>
+  <p class="idea">The Daily Draft and Challenge cards line up with the setup underneath, with even gaps; they no longer touch or run edge to edge.</p>
+</div>
+
+<h2 class="bug"><i></i>NEXT</h2>
+<div class="item">
+  <div class="ih"><b>Friend matches, watched together</b><span class="pill p-blu">next</span></div>
+  <p class="idea">In a room, both screens play the same match in the Match Centre at the same moment; finals between friends play automatically, Skip stays.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Manager mode</b><span class="pill p-blu">next</span></div>
+  <p class="idea">A separate long mode on the same players and simulator: step through 38 weeks, pick the XI and mentality, watch or quick-result each match, one half-time change, transfer windows with a budget, then the chairman layer (board targets, money). Its own Hall of Fame. Plan: docs/DRAFT_MANAGER_PLAN.md.</p>
+</div>
+<details><summary>How it was checked</summary>
+  <p>A Chemistry draft was played to the end in a real browser with the live site&rsquo;s data: the Ranked line, the chemistry count and spot hints, the season, Watch the big games, the Match Centre live and skipped to full time. New tests: chemistry (links, caps, out of position, the boost), Ranked/Custom, higher-or-lower (and its odds over 20,000 deals), the match timeline (same story every time, real scorers, extra time and penalties). Not played yet in a browser: the higher-or-lower game itself (it only appears when a player wants to leave in pre-season, which is random); its rules are tested.</p>
+</details></div>
+<h2 class="nxt round"><i></i>ROUND 4 &middot; 27 NOV &middot; DAILY DRAFT, BETTER PICKING, TIC TAC TOE AND TEN-A-BALL</h2>
+<div class="roundbody">
+<h2 class="nxt"><i></i>WHAT YOU SAID</h2>
+<p class="snote">&ldquo;Carry on, do em all.&rdquo;</p>
+<h2 class="add"><i></i>DRAFT: THE DAILY DRAFT</h2>
+<figure><img src="r0146-draft-daily.webp" alt="The Daily Draft result card and the setup card after playing" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>After your season: points, today&rsquo;s ranking, your 14 picks as squares, Share. Back on the setup screen: today&rsquo;s score and your streak.</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Same spins for everyone, every day</b><span class="tag t-seen">played</span></div>
+  <p class="idea">Picked from today&rsquo;s date: two separate players got exactly the same 14 club-seasons in the same order. Same settings for all (normal ratings, pick player then spot, no re-spins).</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Ranking</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Your first season&rsquo;s points against everyone else&rsquo;s today: &ldquo;Top 12% of 340&rdquo;. One score per player: their first of the day, so replaying doesn&rsquo;t help. Signed-in players are counted.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Share grid and streak</b><span class="tag t-seen">played</span></div>
+  <p class="idea">Your 14 picks as squares (green: the best player that spin had), points, finish and top-% in one tap; a streak of days played.</p>
+</div>
+<h2 class="add"><i></i>DRAFT: BETTER PICKING</h2>
+<figure><img src="r0146-draft-pick.webp" alt="Daily Draft card, roster with Needs line, spot chooser with ratings" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Left to right: the Daily Draft card; &ldquo;Needs: &hellip; best fits first&rdquo;; every spot with his real rating there and a one-tap Best spot</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Out-of-position warning</b><span class="tag t-seen">played</span></div>
+  <p class="idea">Each spot says Natural, Can play here (with his rating there) or Out of position (in red). These are the season simulator&rsquo;s own numbers: a keeper up front was rated 58, not 86.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Best spot, one tap</b><span class="tag t-seen">played</span></div>
+  <p class="idea">The free spot where he rates highest, as one green button.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Needs and best fits first</b><span class="tag t-seen">played</span></div>
+  <p class="idea">The list says which spots are still empty and puts the players who&rsquo;d rate highest in them first.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Wrong seasons fixed (for everyone)</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Three seasons had 21 clubs: Bournemouth in 2012/13 (League One), Aston Villa in 2018/19 (Championship), Sunderland in 2021/22 (League One). Removed from the spins. Strasbourg was already fixed by a teammate.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Challenge Draft link</b><span class="tag t-seen">played</span></div>
+  <p class="idea">A card for admins to the Challenge Draft test page (every pick is a brief).</p>
+</div>
+<h2 class="add"><i></i>TIC TAC TOE</h2>
+<figure><img src="r0146-ttt.webp" alt="Tic Tac Toe opens on today's grid" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Today&rsquo;s grid first, straight into solo (no Solo / 2 Player screen)</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Streak and Share</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Finishing a daily grid counts towards a streak (this device). Share opens your phone&rsquo;s share sheet with the result squares and the link.</p>
+</div>
+<h2 class="add"><i></i>TEN-A-BALL</h2>
+<div class="item">
+  <div class="ih"><b>Topics, bests, Share</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Challenges grouped by topic; your best score on each card; Share at the end (&ldquo;7/10 &#9917;&#9917;&#9917;&hellip;&rdquo;). The duplicate &ldquo;Danish players&rdquo; is gone for everyone. The challenge of the day was already added by a teammate.</p>
+</div>
+<h2 class="add"><i></i>RANKINGS (TIERLISTS)</h2>
+<div class="item">
+  <div class="ih"><b>Running for you, paused for everyone else</b><span class="pill p-amb">your call</span></div>
+  <p class="idea">Mikey paused Rankings on 17 Nov (&ldquo;make the rankings mode unavailable right now&rdquo;). With your switch on they run and show in the game links, so you can test them in the new look. Bringing them back for everyone needs Mikey&rsquo;s yes.</p>
+</div>
+<h2 class="bug"><i></i>NEXT</h2>
+<div class="item">
+  <div class="ih"><b>Links between players (chemistry)</b><span class="pill p-amb">your call</span></div>
+  <p class="idea">Built only when you decide one thing: it changes season results, so new records would beat old ones more easily. Count them in the Hall of Fame, or keep a separate board?</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Draft wave 3</b><span class="pill p-blu">next</span></div>
+  <p class="idea">Beat-my-XI links for friends, the season told as a story, levels that unlock eras and formations.</p>
+</div>
+<details><summary>How it was checked</summary>
+  <p>The Daily Draft was played to the end in a real browser twice (14 picks, pre-season, the season, the result card, back to setup); both runs got identical spins. New tests: the daily spins (same for everyone whatever order the list arrives in, new each day), ranking %, share text; Tic Tac Toe streak; Ten-A-Ball best and share. The readability check passed on Draft and Tic Tac Toe in light and dark, signed out and as admin. Tic Tac Toe&rsquo;s daily grid, Ten-A-Ball&rsquo;s list and the ranking with real players need the live database: checked on the live site after this goes up.</p>
+</details></div>
+<h2 class="nxt round"><i></i>ROUND 3 &middot; 26 NOV &middot; HALL OF FAME, HOME DARK MODE, ADMIN PANEL; THE READABILITY CHECK</h2>
+<div class="roundbody">
+<h2 class="nxt"><i></i>WHAT YOU SAID</h2>
+<p class="snote">&ldquo;You should NEVER be letting stupid shit like this pass. So so easy to check for surely. Also home page dark mode doesn&rsquo;t work. Also Mikey&rsquo;s really cool draft pictures &hellip; I rlly want them too.&rdquo;</p>
+<h2 class="bug"><i></i>WHY IT GOT THROUGH</h2>
+<div class="item">
+  <div class="ih"><b>I only looked at pages signed out</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">The Hall of Fame boards only show when you&rsquo;re signed in, so my pictures showed the &ldquo;Sign in&rdquo; box instead. The new check signs in as a pretend player (and as an admin) inside its own test browser.</p>
+</div>
+<figure><img src="r0145-before.webp" alt="Hall of Fame before: dark words on dark cards" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Before (the check found 84 unreadable words on this one page)</b></figcaption></figure>
+<h2 class="add"><i></i>FIXED</h2>
+<figure><img src="r0145-records.webp" alt="Hall of Fame in light and dark" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Hall of Fame, signed in: light and dark. Mikey&rsquo;s pictures kept.</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Mikey&rsquo;s art kept, everywhere</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">Any box drawn for a dark page (the Draft poster, Hall of Fame boards, History and Hall of Fame buttons) is found by measuring its colour and kept exactly as designed, as a dark card on the cream, like the phone picture on the home page. No page had to be listed by hand, so a new one works too.</p>
+</div>
+<figure><img src="r0145-homedraft.webp" alt="Home in dark; Draft setup in light" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Home in the dark look (was still cream); Draft setup in light with the art kept</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Home dark mode</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">The home has its own colours; it now has a dark version in the same greens.</p>
+</div>
+<figure><img src="r0145-adminpanel.webp" alt="The admin side panel, readable" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>The admin side panel on a cream page</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Admin panel</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">Keeps its own dark colours on every page in the new look.</p>
+</div>
+<h2 class="add"><i></i>ALSO FIXED FOR EVERYONE (FAINT ON TODAY&rsquo;S SITE TOO)</h2>
+<div class="item">
+  <div class="ih"><b>Objectives badge</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">Deeper orange so the white words read.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Draft setup</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">Selected options (Normal, Club first &hellip;) in deeper colours; the small lines under them, &ldquo;14 spins&rdquo;, the team name and the room-code preview brighter.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Tic Tac Toe, Draft history, admin panel labels</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">Brighter small words and the Sign In button.</p>
+</div>
+<h2 class="add"><i></i>THE CHECK (EVERY ROUND FROM NOW ON)</h2>
+<div class="item">
+  <div class="ih"><b>Every word, every page, measured</b><span class="tag t-meas">measured</span></div>
+  <p class="idea">14 pages &times; light, dark and today&rsquo;s look &times; signed out and in &times; phone and computer. Anything under 3 : 1 is listed with a picture. It runs on a local build with the real site&rsquo;s data. Brain rule RUL-UI-014: no look change ships without it.</p>
+</div>
+<details><summary>How it was checked</summary>
+  <p>Full run: 162 of 168 page checks passed; the 6 left were one greyed-out &ldquo;sign in to play with friends&rdquo; preview (now marked as disabled and lighter). Hall of Fame, home and Draft were also looked at by eye in both looks. Not covered by the check: words on top of photos (can&rsquo;t be measured from colours), and pages that need a real account&rsquo;s own data (your own history and profile show the empty versions).</p>
+</details></div>
+<h2 class="nxt round"><i></i>ROUND 2 &middot; 26 NOV &middot; THE NEW LOOK, ON THE REAL SITE, ONLY FOR YOU</h2>
+<div class="roundbody">
+<h2 class="nxt"><i></i>WHAT YOU ASKED FOR</h2>
+<p class="snote">&ldquo;Is there a way I can test all this without having to change the entire website &hellip; or maybe just make it a lil secret admin setting.&rdquo; Plus your answers: dark mode as an option, keep the game links, bring Tierlists back, everything for Draft, a daily Ten-A-Ball.</p>
+<h2 class="add"><i></i>HOW TO TRY IT</h2>
+<div class="item">
+  <div class="ih"><b>Admin &rarr; New look</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">On / Off, and Light (cream) / Dark. A list of every page to check. Only this device: sign in on another and it&rsquo;s off there.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>&ldquo;&#9679; New look&rdquo; button</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">While it&rsquo;s on, bottom-left on every page: tap for Light, Dark or Turn off.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>On a phone</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Go to knowitball.co.uk/?look=v2 while signed in as an admin (and /?look=off to stop).</p>
+</div>
+<h2 class="add"><i></i>WHAT IT LOOKS LIKE (TODAY &middot; LIGHT &middot; DARK)</h2>
+<figure><img src="r0144-draft.webp" alt="Draft setup: today, light, dark" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>PL Draft setup</b></figcaption></figure>
+<figure><img src="r0144-ttt.webp" alt="Tic Tac Toe: today, light, dark" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Tic Tac Toe</b></figcaption></figure>
+<figure><img src="r0144-auth.webp" alt="Sign in: today, light, dark" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Sign in (now says Knowitball, not Football Tierlist)</b></figcaption></figure>
+<div class="item">
+  <div class="ih"><b>Every public page at once</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">The green top bar and footer, cream Sign in, green buttons instead of purple, the page you&rsquo;re on as a cream pill in the game links. Game screens and admin pages don&rsquo;t change.</p>
+</div>
+<h2 class="add"><i></i>FIXED FOR EVERYONE (NOT JUST THE PREVIEW)</h2>
+<div class="item">
+  <div class="ih"><b>Page titles</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">No more &ldquo;Knowitball | Knowitball&rdquo; on Draft, Tic Tac Toe, Ten-A-Ball; Objectives has a title.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Sign in</b><span class="tag t-seen">seen</span></div>
+  <p class="idea">Says &ldquo;Knowitball&rdquo; and &ldquo;keep your careers, drafts and scores on every device&rdquo;.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Ten-A-Ball in the menu</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">Now says three lives (was &ldquo;ten lives&rdquo;).</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Objectives badge</b><span class="tag t-meas">tested</span></div>
+  <p class="idea">On a computer it sits under the top bar, not over Sign in.</p>
+</div>
+<h2 class="bug"><i></i>NEXT (ALL BEHIND THE SWITCH)</h2>
+<div class="item">
+  <div class="ih"><b>Page-by-page polish</b><span class="pill p-blu">next</span></div>
+  <p class="idea">Each page checked in both looks; Draft&rsquo;s own screens restyled properly (this round only made them readable).</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Old games</b><span class="pill p-blu">next</span></div>
+  <p class="idea">Tic Tac Toe (today&rsquo;s grid first, rarity, streak, share), Ten-A-Ball (challenge of the day, the duplicate removed), Tierlists back.</p>
+</div>
+<div class="item">
+  <div class="ih"><b>Draft waves 1&ndash;3</b><span class="pill p-blu">next</span></div>
+  <p class="idea">Faces, clean clubs, out-of-position warning, faster picks; Daily Draft; links; Challenge Draft; play a friend.</p>
+</div>
+<details><summary>How it was checked</summary>
+  <p>Built the site and opened 14 pages three ways (switch off, light, dark) at phone size. With the switch off the colours are exactly today&rsquo;s (same background on every page, checked). A new test checks the colour settings, which pages change, and the start-up script. Not seen yet: Draft&rsquo;s pick screens and Ten-A-Ball&rsquo;s list in the new look (they need the live database; checked on the live site after this goes up).</p>
+</details></div>
+<h2 class="nxt round"><i></i>ROUND 1 &middot; 24 NOV &middot; THE PLAN: TWO LOOKS TODAY, 10 FAULTS, DRAFT IDEAS</h2>
+<div class="roundbody">
 <h2 class="nxt"><i></i>WHAT YOU ASKED FOR</h2>
 <p class="snote">&ldquo;The home screen, that&rsquo;s perfect. Across all pages we want a consistent theme, look &hellip; header footer sidebar links &hellip; keep the other old games up to date &hellip; Draft can certainly be made a LOT better.&rdquo;</p>
 
 <h2 class="bug"><i></i>TODAY: TWO WEBSITES IN ONE</h2>
-<figure><img src="today.webp" alt="Eight pages of the live site on a phone" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Live today, phone: home and All games are cream and green; Draft, Tic Tac Toe, Ten-A-Ball, sign-in and the game&rsquo;s landing are dark navy and purple</b></figcaption></figure>
+<figure><img src="r0143-today.webp" alt="Eight pages of the live site on a phone" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Live today, phone: home and All games are cream and green; Draft, Tic Tac Toe, Ten-A-Ball, sign-in and the game&rsquo;s landing are dark navy and purple</b></figcaption></figure>
 <div class="item">
   <div class="ih"><b>The home&rsquo;s look only switches on for the home</b><span class="tag t-seen">seen</span></div>
   <p class="idea">It is a set of overrides in the home&rsquo;s own style file. So the main job is to make those colours the site&rsquo;s normal ones, then tidy each page.</p>
 </div>
-<figure><img src="headers.webp" alt="The two top bars on a computer" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Top: the home&rsquo;s bar (no game links; the Objectives badge covers Sign in). Bottom: every other page (game strip, purple Sign in).</b></figcaption></figure>
+<figure><img src="r0143-headers.webp" alt="The two top bars on a computer" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Top: the home&rsquo;s bar (no game links; the Objectives badge covers Sign in). Bottom: every other page (game strip, purple Sign in).</b></figcaption></figure>
 
 <h2 class="bug"><i></i>10 FAULTS FOUND ON THE WAY</h2>
 <div class="item">
@@ -186,8 +440,8 @@
 </div>
 
 <h2 class="add"><i></i>THE PLAN, PICTURED</h2>
-<figure><img src="before.webp" alt="Draft, Draft picks, Tic Tac Toe and Ten-A-Ball as they are now" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Now: Draft setup, a Draft pick, Tic Tac Toe, Ten-A-Ball</b></figcaption></figure>
-<figure><img src="after.webp" alt="The same games drawn in the home&rsquo;s look" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>After (a mock-up, not built): green top bar with one menu, a game bar (Back, name, How to play), cream page, white cards, green buttons, green footer</b></figcaption></figure>
+<figure><img src="r0143-before.webp" alt="Draft, Draft picks, Tic Tac Toe and Ten-A-Ball as they are now" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>Now: Draft setup, a Draft pick, Tic Tac Toe, Ten-A-Ball</b></figcaption></figure>
+<figure><img src="r0143-after.webp" alt="The same games drawn in the home&rsquo;s look" loading="lazy" style="width:100%;border-radius:10px"><figcaption><b>After (a mock-up, not built): green top bar with one menu, a game bar (Back, name, How to play), cream page, white cards, green buttons, green footer</b></figcaption></figure>
 <div class="item">
   <div class="ih"><b>1. One frame on every page &middot; 1 day</b><span class="pill p-blu">plan</span></div>
   <p class="idea">Green top bar: logo, Sign in, ONE menu (games, profile, objectives, Discord). A game bar on game pages. The green footer everywhere. No sidebars. The career game keeps its own full-screen screens.</p>
@@ -233,8 +487,8 @@
 
 <details><summary>How it was checked</summary>
   <p>22 live pages opened on a phone and a computer, with screenshots, background colour, title and heading read from each. Draft played on the live site to pick 11 of 14 (about 5 s a pick). Tic Tac Toe&rsquo;s daily, archive and Ten-A-Ball opened. The 33 Ten-A-Ball challenges counted. The &ldquo;after&rdquo; pictures are a drawn mock-up using the home&rsquo;s exact colours, not the built site. Not checked: the Draft season results screen (my test didn&rsquo;t reach it), and how many daily grids are queued (the database isn&rsquo;t reachable from here).</p>
-</details>
-<footer>Leo &middot; site 0.143 &middot; 24 Nov 2026 &middot; plan, not built</footer>
+</details></div>
+<footer>Leo &middot; site 0.143 &middot; one patch note for the whole website job</footer>
 </div>
 </div>
 </div>
