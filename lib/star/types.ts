@@ -1314,6 +1314,12 @@ export interface CareerState {
    */
   lastSleep?: { season: number; week: number };
   /**
+   * The gym's Strength, Cardio and Focus, its ring and workout window (lib/star/gym/progress.ts).
+   * Absent on every older save: no gym visit yet. Changes nothing else on the career while
+   * progress.ts GYM_CAREER_EFFECT is "off".
+   */
+  gym?: import("./gym/progress").GymState;
+  /**
    * Training sessions left this week (absent = the full 2). Refilled only
    * after a SATURDAY match, so a Saturday-Wednesday-Saturday week still has
    * just 2 between them (Mikey, 29 Sep 2026). See week.ts.
