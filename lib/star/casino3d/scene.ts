@@ -190,7 +190,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   const H = casinoRoomLook() === "new";
   // ── Renderer (the shop's settings; Old: no shadow maps here) ──
   // ONE renderer for every 3D place (three3d/perf.ts): no new WebGL context, shaders kept, at each door
-  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   own.release = release;
   rememberGpu(renderer);
   const dpr = window.devicePixelRatio || 1;
@@ -1125,7 +1125,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       savings.dispose();
       hEnh?.dispose();
       hRoom?.dispose();
-      renderer.setAnimationLoop(null);
+      if (isOwner()) renderer.setAnimationLoop(null); // a late dispose must not stop the next place's loop
       ro.disconnect();
       window.removeEventListener("keydown", kd);
       window.removeEventListener("keyup", ku);

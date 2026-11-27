@@ -21,6 +21,7 @@
  * The 3D scene is lib/star/training3d/scene.ts (the 3D shop and garden's own
  * people, in a training kit).
  */
+import Reload3dPill from "./Reload3d";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { Scenario } from "@/lib/star/canvasEngine";
@@ -220,6 +221,7 @@ export function CrossbarChallenge({ career, onExit, onFinish }: {
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
   const [result, setResult] = useState<Training3DResult | null>(null);
   const [three, setThree] = useState<"loading" | "ready" | "off">("loading");
+  const [retry3d, setRetry3d] = useState(0);
 
   const holder = useRef<HTMLDivElement>(null);
   const ctrl = useRef<TrainingController | null>(null);
@@ -244,6 +246,7 @@ export function CrossbarChallenge({ career, onExit, onFinish }: {
         const fitted = await faceFrom(mate.face);
         if (dead) return;
         const { createTrainingScene } = await import("@/lib/star/training3d/scene");
+        if (dead) return; // left while its code downloaded: build nothing
         const kit = kitsOf(career.player.club).home;
         const c = await createTrainingScene(el, {
           // a training top: the club's colour, with the trim for the shorts
@@ -261,14 +264,22 @@ export function CrossbarChallenge({ career, onExit, onFinish }: {
         c.setActive(stepRef.current !== "you-aim");
         setThree("ready");
       } catch (e) {
+        if (dead) return; // closed mid-load (three3d/perf.ts isAbandonedScene)
         console.error("3D training pitch failed to load", e);
-        if (!dead) setThree("off");
+        setThree("off");
       }
     })();
     return () => { dead = true; ctrl.current?.dispose(); ctrl.current = null; };
-    // built once per visit
+    // built once per visit (again on "Tap to reload 3D")
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [retry3d]);
+  // still loading after 20 s (a slow phone, a stuck download): offer the reload rather than "Loading…" for ever
+  const [slow3d, setSlow3d] = useState(false);
+  useEffect(() => {
+    if (three !== "loading") { setSlow3d(false); return; }
+    const t = window.setTimeout(() => setSlow3d(true), 20000);
+    return () => clearTimeout(t);
+  }, [three, retry3d]);
 
   // While you aim, the engine's own pitch is on screen and the 3D rests.
   useEffect(() => { ctrl.current?.setActive(step !== "you-aim" && step !== "done"); }, [step]);
@@ -404,6 +415,9 @@ export function CrossbarChallenge({ career, onExit, onFinish }: {
         )}
       </div>
       {three === "off" && <div className="mt-1 text-center text-[12px] font-bold text-amber-200">This phone can&apos;t show the 3D pitch — the game still plays.</div>}
+      {(three === "off" || (three === "loading" && slow3d)) && (
+        <div className="mt-1 text-center"><Reload3dPill floating={false} onReload={() => { setThree("loading"); setSlow3d(false); setRetry3d((n) => n + 1); }} /></div>
+      )}
       {result && <ResultPanel result={result} who="Team" current={team} onContinue={() => onFinish(result)} />}
     </GameShell>
   );

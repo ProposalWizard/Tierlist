@@ -133,7 +133,7 @@ export async function createPlay3DScene(
   const fb: any = await loadAnims3d(loader, "football").catch((e) => { console.error("football clips failed to load", e); return null; });
 
   // sharp (look H): the full screen's pixels, capped per tier (a 3x phone at Medium draws 2x, not 1.25x)
-  const { renderer, release } = acquireRenderer(THREE, container, opts.sharp ? { ...prof, maxPixelRatio: SHARP_PIXEL_RATIO[tier] } : prof);
+  const { renderer, release, isOwner } = acquireRenderer(THREE, container, opts.sharp ? { ...prof, maxPixelRatio: SHARP_PIXEL_RATIO[tier] } : prof);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = prof.shadows;
@@ -832,11 +832,11 @@ export async function createPlay3DScene(
       if (on === active) return;
       active = on;
       last = performance.now();
-      renderer.setAnimationLoop(on ? frame : null);
+      if (isOwner()) renderer.setAnimationLoop(on ? frame : null); // another 3D place on screen keeps its own loop
     },
     dispose() {
       ro?.disconnect();
-      renderer.setAnimationLoop(null);
+      if (isOwner()) renderer.setAnimationLoop(null);
       governed.dispose();
       release(root);
       if ((window as any).__play3d?.world === world) delete (window as any).__play3d;

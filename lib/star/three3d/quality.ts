@@ -29,7 +29,7 @@ export const QUALITY3D_KEY = "star-3d-quality";
 /** The GPU's name a scene read on this phone: { v, gpu, hint }. */
 export const QUALITY3D_AUTO_KEY = "star-3d-quality-auto";
 const VALUES: readonly Quality3dSetting[] = ["auto", "low", "medium", "high"];
-const AUTO_VERSION = 2;
+const AUTO_VERSION = 3; // 3: phone GPUs never "high" (27 Nov 2026); a saved v2 hint is read again
 
 // ─────────────────────────────── profiles ───────────────────────────────
 
@@ -181,15 +181,97 @@ export function autoTierFromDevice(d: DeviceInfo): Quality3d {
   return t;
 }
 
-/** What the GPU's name alone says (reasoned from the public GPU tables): old Mali/Adreno/PowerVR and software renderers are low; desktop and recent flagship mobile GPUs are high; Apple reports only "Apple GPU" (null). */
+/**
+ * What the GPU's name alone says (reasoned from the public GPU tables): old Mali/Adreno/PowerVR and
+ * software renderers are low; desktop GPUs are high; Apple reports only "Apple GPU" (null).
+ *
+ * 27 Nov 2026 (Mikey's Galaxy S20: "loads of lag in the garden"): phone GPUs are never "high" here any
+ * more. The S20's Mali-G77 (Exynos 990, Europe) and Adreno 650 (Snapdragon 865, US) were read as "high",
+ * the same as a desktop card; they are 2020 phone GPUs that throttle when warm. Every Android GPU now
+ * says at most "medium"; the oldest say "low". See gpuClass for the pixel caps that go with them.
+ */
 export function tierHintFromGpu(name: string): Quality3d | null {
   const n = name.toLowerCase();
   if (!n) return null;
   if (/swiftshader|llvmpipe|softpipe|software|microsoft basic/.test(n)) return "low";
-  if (/mali-(4|t)|adreno \(tm\) [2-5]\d\d\b|adreno [2-5]\d\d\b|powervr|sgx|videocore|intel\(r\) hd graphics [2-5]/.test(n)) return "low";
-  if (/mali-g(5[0-9]|7[0-6])\b|adreno \(tm\) 6[0-3]\d|adreno 6[0-3]\d/.test(n)) return "medium";
-  if (/nvidia|geforce|radeon|rtx|adreno \(tm\) (6[4-9]\d|7\d\d|8\d\d)|adreno (6[4-9]\d|7\d\d|8\d\d)|mali-g(7[7-9]|[89]\d\d?|6[1-9]\d)|immortalis|apple m\d/.test(n)) return "high";
+  if (/mali-(4|t)|mali-g(3\d|5[0-7])\b|adreno \(tm\) [2-5]\d\d\b|adreno [2-5]\d\d\b|adreno \(tm\) 6[0-1]\d|adreno 6[0-1]\d|powervr|sgx|videocore|intel\(r\) hd graphics [2-5]/.test(n)) return "low";
+  if (/mali|adreno|immortalis|xclipse|maleoon/.test(n)) return "medium";
+  if (/nvidia|geforce|radeon|rtx|apple m\d/.test(n)) return "high";
   return null;
+}
+
+/** Which family of graphics chip this is (the pixel caps and the start tier read it). */
+export type GpuClass = "apple" | "android-high" | "android-mid" | "android-low" | "software" | "desktop" | "unknown";
+
+/**
+ * The GPU family from its name (WEBGL_debug_renderer_info; "" when the browser hides it).
+ *   android-high: Adreno 7xx/8xx, Immortalis, Mali-G710 and newer, Xclipse (2022 on)
+ *   android-mid:  Adreno 640-699, Mali-G76/G77/G78 (the Galaxy S20's two chips sit here)
+ *   android-low:  older Adreno and Mali, PowerVR
+ */
+export function gpuClass(name: string): GpuClass {
+  const n = (name || "").toLowerCase();
+  if (!n) return "unknown";
+  if (/swiftshader|llvmpipe|softpipe|software|microsoft basic/.test(n)) return "software";
+  if (/apple/.test(n)) return "apple";
+  if (/adreno \(tm\) [78]\d\d|adreno [78]\d\d|immortalis|mali-g(71[0-9]|72[0-9]|6[1-9]\d|[89]\d\d)\b|xclipse/.test(n)) return "android-high";
+  if (/adreno \(tm\) 6[4-9]\d|adreno 6[4-9]\d|mali-g(7[6-9]|68)\b/.test(n)) return "android-mid";
+  if (/mali|adreno|powervr|sgx|videocore|maleoon/.test(n)) return "android-low";
+  if (/nvidia|geforce|radeon|rtx|intel|amd/.test(n)) return "desktop";
+  return "unknown";
+}
+
+/** What a device may draw: the most pixels per screen point, and how deep the governor's ordinary slow rule may go. */
+export interface DeviceCaps {
+  /** The most pixels per screen point any 3D place draws at (Infinity: no cap, as before). */
+  maxPixelRatio: number;
+  /** The fewest the automatic resolution may go to while frames are slow. */
+  minPixelRatio: number;
+  /** The governor's ordinary slow rule may step this deep (2 = pixels only, as on Apple; 4 = shadows and post too). */
+  slowFloor: number;
+  /** Is this an Android (or other non-Apple phone) — the automatic resolution scaler runs. */
+  scaled: boolean;
+}
+
+/** Most pixels per frame a mid phone GPU should colour (about 1.5x a 412-point-wide screen). */
+const MID_PIXEL_BUDGET = 900_000;
+const HIGH_PIXEL_BUDGET = 1_400_000;
+
+/**
+ * The caps for a device. Apple and desktop: exactly as before (no cap; the pixels rule stops at
+ * rung 2). Android and other non-Apple phones (27 Nov 2026): at most 1.5 pixels per point (1.75 on
+ * the newest chips), fewer still on a big screen, the automatic resolution free to go down to 1,
+ * and the slow rule allowed to drop shadows and post too, so a Galaxy S20 does not sit at 25 fps.
+ */
+export function deviceCaps(d: DeviceInfo & { gpu?: string; cssPixels?: number }): DeviceCaps {
+  const kind = deviceKind(d);
+  if (kind === "iphone" || kind === "ipad" || kind === "desktop") return { maxPixelRatio: Infinity, minPixelRatio: 1, slowFloor: 2, scaled: false };
+  const cls = gpuClass(d.gpu ?? "");
+  const css = d.cssPixels && d.cssPixels > 0 ? d.cssPixels : 412 * 915;
+  const high = cls === "android-high";
+  const budget = high ? HIGH_PIXEL_BUDGET : MID_PIXEL_BUDGET;
+  let cap = high ? 1.75 : cls === "android-low" || cls === "software" ? 1.25 : 1.5;
+  cap = Math.min(cap, Math.sqrt(budget / css));
+  cap = Math.max(1, Math.round(cap * 20) / 20);
+  return { maxPixelRatio: cap, minPixelRatio: 1, slowFloor: 4, scaled: true };
+}
+
+/** This browser's caps (the GPU name from the last scene that read it). */
+export function currentDeviceCaps(): DeviceCaps {
+  // ?pxcap=0 on any page: as before 27 Nov 2026 (no cap, no automatic resolution), for a before/after
+  try { if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("pxcap") === "0") return { maxPixelRatio: Infinity, minPixelRatio: 1, slowFloor: 2, scaled: false }; } catch { /* fine */ }
+  const d = currentDeviceInfo();
+  const css = typeof window !== "undefined" ? (window.innerWidth || 0) * (window.innerHeight || 0) : 0;
+  return deviceCaps({ ...d, gpu: savedGpuName() ?? "", cssPixels: css });
+}
+
+function savedGpuName(): string | null {
+  try {
+    const raw = typeof localStorage === "undefined" ? null : localStorage.getItem(QUALITY3D_AUTO_KEY);
+    if (!raw) return null;
+    const o = JSON.parse(raw);
+    return typeof o?.gpu === "string" ? o.gpu : null;
+  } catch { return null; }
 }
 
 function savedGpuHint(): Quality3d | null {

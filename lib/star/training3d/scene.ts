@@ -99,7 +99,7 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   // the kick, reactions and keepy-uppies (a failed load just leaves them standing)
   const fb: any = await loadAnims3d(loader, "football").catch((e) => { console.error("football clips failed to load", e); return null; });
 
-  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = prof.shadows;
@@ -570,11 +570,11 @@ export async function createTrainingScene(container: HTMLElement, data: Training
       if (on === active) return;
       active = on;
       last = performance.now();
-      renderer.setAnimationLoop(on ? frame : null);
+      if (isOwner()) renderer.setAnimationLoop(on ? frame : null); // another 3D place on screen keeps its own loop
     },
     dispose() {
       ro?.disconnect();
-      renderer.setAnimationLoop(null);
+      if (isOwner()) renderer.setAnimationLoop(null);
       governed.dispose();
       timers = [];
       release(root);

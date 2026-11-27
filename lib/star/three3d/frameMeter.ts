@@ -17,12 +17,24 @@
  * goes through. Cheap: a counter per draw call; the text changes twice a
  * second. It hides 3 s after the last 3D frame (leaving a 3D place).
  */
-import { quality3dTier } from "./quality";
+import { quality3dTier, currentDeviceCaps, gpuClass, QUALITY3D_AUTO_KEY } from "./quality";
+import { resScale } from "./resScale";
 import { currentGovernor } from "./governor";
 import { startFrameStats } from "./frameStats";
 import { frameMeterOn } from "./frameMeterPref";
 
 let installed = false;
+
+/** The device line (27 Nov 2026, for Mikey's S20 numbers): the GPU's name, its class, the pixel cap and the automatic resolution. */
+function capsLine(): string {
+  try {
+    const raw = localStorage.getItem(QUALITY3D_AUTO_KEY);
+    const gpu = raw ? String(JSON.parse(raw)?.gpu ?? "") : "";
+    const c = currentDeviceCaps();
+    const cap = c.scaled ? `cap ${c.maxPixelRatio.toFixed(2)} x${resScale.scale.toFixed(2)}` : "no cap";
+    return `\n${gpu.slice(0, 34) || "gpu ?"}  ${gpuClass(gpu)}\n${cap}  dpr ${(window.devicePixelRatio || 1).toFixed(2)}`;
+  } catch { return ""; }
+}
 
 /** Start the meter (once per page). Safe to call from every scene. */
 export function installFrameMeter(): void {
@@ -45,7 +57,9 @@ export function installFrameMeter(): void {
       if (!f) { el.style.display = "none"; return; }
       const g = currentGovernor();
       const gov = g ? `${g.tier} (rung ${g.index}${g.index !== g.startIndex ? ` from ${g.startIndex}` : ""})` : quality3dTier();
-      el.textContent = `${f.fps.toFixed(0)} fps  worst ${f.worstMs.toFixed(0)} ms  js ${f.jsMs.toFixed(1)} ms\n${f.draws} draws  ${(f.tris / 1000).toFixed(0)}k tris  shadow ${f.shadowDraws}\nskinned ${f.skinnedDraws}  post ${f.posts}\npx ${f.pixelRatio.toFixed(2)}  ${gov}`;
+      const caps = capsLine();
+      el.textContent = `${f.fps.toFixed(0)} fps  worst ${f.worstMs.toFixed(0)} ms  js ${f.jsMs.toFixed(1)} ms\n${f.draws} draws  ${(f.tris / 1000).toFixed(0)}k tris  shadow ${f.shadowDraws}\nskinned ${f.skinnedDraws}  post ${f.posts}\npx ${f.pixelRatio.toFixed(2)}  ${gov}${caps}`;
+      (window as unknown as { __frame3dDevice?: string }).__frame3dDevice = caps.trim();
       el.style.display = "block";
     }, 500);
   }
