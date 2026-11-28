@@ -136,7 +136,7 @@ export function bootColourOf(career: Pick<CareerState, "currentBoot">, boots: "p
  * garden and the shop: the casual set if you last picked one, else the kit.
  * At training: always the kit.
  */
-export function wornAt(career: Pick<CareerState, "outfit" | "currentBoot"> & Partial<Pick<CareerState, "ownedItems">>, place: Place, unsold: string[] = []): Worn {
+export function wornAt(career: Pick<CareerState, "outfit" | "currentBoot"> & Partial<Pick<CareerState, "ownedItems">>, place: Place, unsold?: string[]): Worn {
   const o = outfitOf(career);
   const bootLook = o.boots === "plain" ? { ...PLAIN_BOOTS } : bootLookOf(career.currentBoot);
   const kit: Worn = { kind: "kit", kit: o.kit, boots: bootColourOf(career, o.boots), bootLook };

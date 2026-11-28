@@ -24,7 +24,12 @@ import "../star-3d-area-dev/stage3d.css";
 import { setToonYou } from "@/lib/star/style3d/toon/bodies";
 
 // the test player's name on the back of his Style A shirt (a career sets it from the save)
-if (typeof window !== "undefined") setToonYou({ name: "Player" });
+if (typeof window !== "undefined") {
+  setToonYou({ name: "Player" });
+  // ?extras=shades,cap-l4: the sunglasses and cap designs the shop does not sell yet, put on (lib/star/wearables.ts)
+  setTryOn((new URLSearchParams(window.location.search).get("extras") ?? "").split(",").filter(Boolean));
+}
+import { setTryOn } from "@/lib/star/wearables";
 import { makeInitialCareer } from "@/lib/star/careerFlow";
 import { generateSquad } from "@/lib/star/squadData";
 import { PREMIER_LEAGUE_CLUBS } from "@/lib/star/clubs";
@@ -62,7 +67,9 @@ function Home3DTest() {
       return it ? [{ ...it }] : [];
     };
     c.ownedItems = full ? [...own("car-3", 5), ...own("suv", 3), ...own("classic", 3), ...own("car-1", 2),
-      ...own("rolex", 1), ...own("gold", 1), ...own("diamond", 1), ...own("tv", 1), ...own("console", 1), ...own("art", 1), ...own("suit", 1), ...own("bike", 1)] : [];
+      ...own("rolex", 1), ...own("gold", 1), ...own("diamond", 1), ...own("tv", 1), ...own("console", 1), ...own("art", 1), ...own("suit", 1), ...own("bike", 1),
+      // the wardrobe's Extras rail: watches, chains and headphones at several levels (lib/star/wearables.ts)
+      ...own("gold", 4), ...own("smartwatch", 2), ...own("silver", 3), ...own("silver", 5), ...own("headphones", 3), ...own("suit", 5)] : [];
     c.kibCans = full ? { basic: 6, premium: 3, elite: 1 } : { basic: 0, premium: 0, elite: 0 };
     const boot = BOOT_LEVELS.find((b) => baseIdOf(b) === "elite" && (b.level ?? 1) === 3);
     if (boot) c.currentBoot = { ...boot };

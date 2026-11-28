@@ -1831,6 +1831,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     });
     // the approved cloth kit (a body the cloth cannot dress keeps the painted one)
     if (!casual) dressCloth(THREE, person, "kit", "you", { whiteBalance: HOME_WB });
+    // your watch, chain and the rest from the wardrobe (lib/star/wearables.ts; the casual set wears them in buildWearer)
+    if (!casual && data.worn?.extras?.length && person.toon) (await import("../style3d/toon/accessories")).wearAccessories(THREE, person, data.worn.extras);
     relaxHands(THREE, person); // the one body's fingers in a natural curl
     player = person.root;
     personRef = person;

@@ -241,7 +241,7 @@ export type ExtrasChoice = Partial<Record<BodySlot, string>>;
  * What you wear on the body. A picked item you no longer own is dropped (sold, or a save from another device).
  * `unsold`: test pages only (UNSOLD_WEARABLES ids, any level 1-5 as "shades-l3").
  */
-export function wornExtras(career: Pick<CareerState, "ownedItems">, choice: ExtrasChoice | undefined, unsold: string[] = []): AccessoryLook[] {
+export function wornExtras(career: Pick<CareerState, "ownedItems">, choice: ExtrasChoice | undefined, unsold: string[] = tryOn): AccessoryLook[] {
   const owned = ownedWearables(career);
   const out: AccessoryLook[] = [];
   for (const slot of BODY_SLOTS) {
@@ -260,6 +260,10 @@ export function wornExtras(career: Pick<CareerState, "ownedItems">, choice: Extr
   }
   return out;
 }
+
+let tryOn: string[] = [];
+/** Test pages only (?extras=shades,cap-l4): unsold designs put on as well. The game never calls this. */
+export function setTryOn(list: string[]) { tryOn = list.filter((x) => /^[a-z]+(-l[1-5])?$/.test(x)).slice(0, 4); }
 
 /** The best Designer Suit you own (its level), or 0. */
 export function designerSuitLevel(career: Pick<CareerState, "ownedItems">): number {

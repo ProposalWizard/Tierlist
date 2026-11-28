@@ -1230,6 +1230,14 @@ Harry: "instead of using aim of rough cm why not try and find walking animations
 - **Checks**: `tests/star/gaitWidth.mts` holds every head and build to the library rig's own step width (`clips[name].srcFeet`); `bodyOverlap.mts` includes the new clips.
 - **Test scenes** (`lib/star/cutscene/testScenes.ts`, not in any list): `?scene=director&fixture=walkers&cam=old` (eight men crossing a pitch), `solo-walk_relaxed`, `solo-idle_relaxed`. `cam=old` because the film pass cuts away from any walk.
 - Not done: `jog_easy` is a stylised, bouncy run (5.6 m/s in place) and is not picked by anyone yet; UAL 2 (arms folded, phone) is not on this machine.
+### Shop boots and wearables on your player (28 Nov 2026)
+
+Harry: "buying boots/accessories needs to translate onto your guy (on the home screen for boots; in your wardrobe / wearable for the rest)".
+- **What maps to what** (pure, `lib/star/wearables.ts`, test `tests/star/wearables.mts`): every boot family × level → a colourway (upper, sole, studs, heel from L2, flash from L3, gold from L5); every wearable Style item (Smartwatch, Gold Watch, Diamond Rolex on the wrist; Silver Chain, Diamond Necklace, Headphones at the neck; the Designer Suit on the Clothes rail) × level → colours, stones and shine. Sunglasses and a cap are built but NOT sold (`UNSOLD_WEARABLES`; test pages: `?extras=shades,cap-l4`).
+- **Boots**: painted by the toon shader below the boot line (`uBoot2/3/4`, `uBootK`; uniforms only). `dressPerson3d` gives YOU your boots (`toonYou().boots`, set by the page from `career.currentBoot`) wherever a scene dresses you in a kit without naming boots (training, drills); the Home player and the 3D match pass them.
+- **Accessories**: `wearAccessories(T, p, looks)` (`lib/star/style3d/toon/accessories.ts`) after `dressCloth`: ONE skinned mesh, one draw, fitted to the body and cloth by measuring them in the bind pose; each vertex mapped into the geometry space through its own skin weights (a Style A head's bones carry a scale). A cap presses the hair in (`squashBody`: his own copy of the mesh, paint kept with TOON_AREST, the ink copy pressed deeper because the outline is drawn 1.5 cm nearer the camera). Worn in the house, garden and shop (`wornAt` Worn.extras; never at training or in matches). Wardrobe → Extras tab; a slot never picked wears the best you own.
+- Bench: `/star-3d-bench-dev/wearables`.
+
 ### Cloth clothes in the houses and the garden (21 Nov 2026)
 
 Harry, after the re-filmed press conference and walk-out: "yes the clothes films are better, put them in houses".

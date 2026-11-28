@@ -741,6 +741,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       for (const m of ms) m.dispose?.();
       // cloth geometry (and the cut body under it) is shared by everyone of that head and outfit: never freed here
       if (wasCasual && o.isSkinnedMesh && o.name !== "Outline" && o.name !== "Cloth" && o.name !== "ClothInk" && !o.userData?.cloth) o.geometry?.dispose?.();
+      // his watch, chain and the rest are his own (style3d/toon/accessories.ts)
+      else if (o.name === "Accessories") o.geometry?.dispose?.();
     });
   };
   const wear = (worn: Worn): Promise<void> => {
@@ -749,7 +751,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       const cur = me.worn;
       // same body, new colours: a repaint (a kit for a kit)
       if (cur.kind === "kit" && worn.kind === "kit" && repaintKit(THREE, me.person, wearIn(worn))) { me.worn = worn; return; }
-      if (cur.kind === "casual" && worn.kind === "casual" && cur.set.id === worn.set.id) return;
+      if (cur.kind === "casual" && worn.kind === "casual" && cur.set.id === worn.set.id && JSON.stringify(cur.extras ?? []) === JSON.stringify(worn.extras ?? [])) return;
       changing = true;
       try {
         const next = await dressUp(worn);

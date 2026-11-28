@@ -23,7 +23,10 @@ import { setToonYou, type ToonHead } from "@/lib/star/style3d/toon/bodies";
 if (typeof window !== "undefined") {
   const h = new URLSearchParams(window.location.search).get("head");
   setToonYou({ name: "Player", ...(h && /^h[1-6]$/.test(h) ? { head: h as ToonHead } : {}) });
+  // ?extras=shades,cap-l4: the sunglasses and cap designs the shop does not sell yet, put on (lib/star/wearables.ts)
+  setTryOn((new URLSearchParams(window.location.search).get("extras") ?? "").split(",").filter(Boolean));
 }
+import { setTryOn } from "@/lib/star/wearables";
 import Casino3D from "@/components/star/Casino3D";
 import Casino from "@/components/star/Casino";
 import TrainingPitchScreen from "@/components/star/TrainingPitchScreen";
@@ -68,7 +71,9 @@ function Garden3DTest() {
         const it = LIFESTYLE_LEVELS.find((l) => baseIdOf(l) === base && (l.level ?? 1) === level) ?? LIFESTYLE_LEVELS.find((l) => baseIdOf(l) === base);
         return it ? [{ ...it }] : [];
       };
-      c.ownedItems = [...own("house-2", 3), ...own("stable", 4), ...own("car-3", 5), ...own("suv", 3), ...own("classic", 3)];
+      // and a watch and a chain from the Style shop (worn in the garden, lib/star/wearables.ts; ?wear=0: none)
+      const wear = params.get("wear") === "0" ? [] : [...own("rolex", 4), ...own("silver", 3)];
+      c.ownedItems = [...own("house-2", 3), ...own("stable", 4), ...own("car-3", 5), ...own("suv", 3), ...own("classic", 3), ...wear];
     } else {
       c.trophies = [];
       c.horse = null;
