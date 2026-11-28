@@ -15,7 +15,7 @@ import ViewToggle3D from "./ViewToggle3D";
 import LoadingCurtain from "./loading/LoadingCurtain";
 import { afterLoss, newHealState, HEAL_DELAY_MS } from "@/lib/star/three3d/autoHeal";
 
-export default function World3D({ options, clean, onGo, noStatus, onArrival }: { options: WorldOptions; clean?: boolean; onGo?: (place: WorldOptions["place"]) => void; /** the career: no clock-and-people strip at the top */ noStatus?: boolean; /** the drive's arrival, as it goes */ onArrival?: (a: WorldArrival) => void }) {
+export default function World3D({ options, clean, onGo, onBack, backLabel = "Back", noStatus, onArrival }: { options: WorldOptions; clean?: boolean; onGo?: (place: WorldOptions["place"]) => void; /** A "‹ back" pill (the gym reached through the compound's door: back out of it). */ onBack?: () => void; backLabel?: string; /** the career: no clock-and-people strip at the top */ noStatus?: boolean; /** the drive's arrival, as it goes */ onArrival?: (a: WorldArrival) => void }) {
   const host = useRef<HTMLDivElement>(null);
   const ctrl = useRef<WorldController | null>(null);
   const [card, setCard] = useState<InteractCard | null>(null);
@@ -32,7 +32,7 @@ export default function World3D({ options, clean, onGo, noStatus, onArrival }: {
   optsRef.current = options;
   const goRef = useRef(onGo);
   goRef.current = onGo;
-  const key = `${options.place}|${options.demo ?? ""}|${options.quality ?? ""}|${options.arrive?.car ?? ""}`;
+  const key = `${options.place}|${options.demo ?? ""}|${options.quality ?? ""}|${options.homeGym ?? ""}|${options.startAt ?? ""}|${options.arrive?.car ?? ""}`;
 
   // the phone took the 3D away: rebuilt quietly (at Low) up to autoHeal's limit, then the message (3D places audit P2/P3)
   const heal = useRef(newHealState());
@@ -93,6 +93,12 @@ export default function World3D({ options, clean, onGo, noStatus, onArrival }: {
           {state === "loading" ? "Opening…" : "3D could not open on this device."}
         </div>
       )}
+      {state === "ready" && onBack && !gymOn && !arriving && (
+        <button onClick={onBack} aria-label={`Back to ${backLabel}`} data-world3d-back
+          style={{ position: "absolute", top: options.place === "gym" && !clean ? 146 : 10, left: 10, zIndex: 2, display: "inline-flex", alignItems: "center", gap: 4, height: 36, padding: "0 12px 0 10px", borderRadius: 999, background: "rgba(8,10,16,.78)", color: "#f8fafc", fontWeight: 800, fontSize: 14, border: "1px solid rgba(255,255,255,.14)", cursor: "pointer" }}>
+          <span style={{ fontSize: 20, lineHeight: 1, marginTop: -2 }}>&#8249;</span>{backLabel}
+        </button>
+      )}
       {state === "ready" && !clean && arriving && (
         <button data-arrive-skip onClick={() => ctrl.current?.skipArrive()} style={{ position: "absolute", top: 12, right: 12, padding: "7px 11px", borderRadius: 999, background: "rgba(8,10,16,.72)", color: "#f8fafc", fontSize: 12.5, fontWeight: 900, border: "none", cursor: "pointer" }}>Skip ›</button>
       )}
@@ -103,7 +109,7 @@ export default function World3D({ options, clean, onGo, noStatus, onArrival }: {
         </div>
       )}
       {state === "ready" && status && !clean && !noStatus && !gymOn && !arriving && (
-        <div style={{ position: "absolute", top: 10, left: 10, right: 10, display: "flex", gap: 6, flexWrap: "wrap", pointerEvents: "none" }} data-world3d-status>
+        <div style={{ position: "absolute", top: onBack && options.place !== "gym" ? 52 : 10, left: 10, right: 10, display: "flex", gap: 6, flexWrap: "wrap", pointerEvents: "none" }} data-world3d-status>
           <span style={chip("#facc15", "#111")}>{status.clock}</span>
           {status.people.map((p) => <span key={p.id} style={chip("rgba(8,10,16,.78)", "#f8fafc")}>{p.name}: {p.doing}</span>)}
         </div>

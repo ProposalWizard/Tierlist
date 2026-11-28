@@ -495,6 +495,22 @@ const atNight = m.career;
   check(l0 !== l1 && k0 !== k1, `each club has its own legend and canteen (${l0} / ${l1}; ${k0} / ${k1})`);
   // Your own people do not change with the club.
   check(P.clubRoleId(at(c, clubs[3]), c.life, "mum") === "fam:mum" && P.clubRoleId(at(c, clubs[3]), c.life, "reporter") === "hack:local", "your mum and the local reporter are yours, not the club's");
+  // The People page after a transfer: the club you are at now's staff, and the old clubs' people only
+  // while they can still ring you (an open story, an open promise, a text still owed).
+  {
+    const now = at(c, clubs[3]);
+    const L = P.clubPeopleLists(now);
+    check(L.now.includes(kitIds[3]) && !L.now.includes("staff:kitman") && !L.now.some((id) => P.fromOldClub(now, id)), `the People page lists the new club's kit man, not the first club's (${L.now.join(", ")})`);
+    const oldIds = L.old.flatMap((g) => g.ids);
+    check(oldIds.every((id) => P.fromOldClub(now, id) && P.canStillRing(now, id)), "every old-club person listed can still ring you");
+    // a story still open with the first club's kit man: he is listed, under the first club's name
+    const open = { ...now, life: { ...now.life!, people: { ...now.life!.people, "staff:kitman": now.life!.people["staff:kitman"] ?? { r: 45, b: 40, g: 0, m: [] } }, arcs: { ...now.life!.arcs, "arc-test-open": { at: 1, club: clubs[0], cast: { kitman: "staff:kitman" }, v: {}, k: {}, f: {}, s: {} } } } } as CareerState;
+    const L2 = P.clubPeopleLists(open);
+    check(L2.old.some((g) => g.club === clubs[0] && g.ids.includes("staff:kitman")), `an open story: the first club's kit man is under "Your old clubs" (${JSON.stringify(L2.old)})`);
+    // that story ended and nothing else is owed: he drops off the page
+    const ended = { ...open, life: { ...open.life!, arcs: Object.fromEntries(Object.entries(open.life!.arcs ?? {}).map(([k, a]) => [k, { ...a, done: "end" }])), promises: [], ech: [] } } as CareerState;
+    check(!P.clubPeopleLists(ended).old.length, "nothing open with an old club: no old-club people listed");
+  }
   // A save with the club people loads back the same.
   const again = migrateLife(JSON.parse(JSON.stringify(c.life)));
   check(again?.home === c.life?.home && JSON.stringify(again?.cpool) === JSON.stringify(c.life?.cpool), "the first club and the pins survive a save and load");

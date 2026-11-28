@@ -40,6 +40,7 @@ import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import { Stick, pill, round } from "./Shop3D";
 import { sleepNight } from "@/lib/star/home3d/sleep";
+import { setGymReturnRoom, takeGymReturnRoom } from "@/lib/star/home3d/houseBack";
 import { afterLoss, healReset, newHealState } from "@/lib/star/three3d/autoHeal";
 import LoadingCurtain from "./loading/LoadingCurtain";
 import ClockPill, { useLiveClock } from "./ClockPill";
@@ -94,6 +95,8 @@ export interface Home3DProps {
   onInvite?: (mateId: string, day: number, minute: number) => void;
   /** You used a thing in the house (lib/star/life/houseActs.ts useThing): its time and capped effect, to save on the career. */
   onUse?: (thing: string, effect: { energy?: number; mood?: number; text?: string }) => void;
+  /** "Start a workout" at the home gym (lib/star/gym/homeGym.ts): open the gym of this house's level. Absent: the gym's kit is only used as before. */
+  onGym?: (tier: HomeTier) => void;
 }
 
 type Tab = "casual" | "kit" | "boots" | "extras";
@@ -134,8 +137,10 @@ function livingFor(career: CareerState) {
   return { mates, club: career.player.club };
 }
 
-export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep, onTime, onMatch, clockRate, clockPaused, onInvite, onUse }: Home3DProps) {
+export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep, onTime, onMatch, clockRate, clockPaused, onInvite, onUse, onGym }: Home3DProps) {
   const onUseRef = useRef(onUse);
+  const onGymRef = useRef(onGym);
+  onGymRef.current = onGym;
   onUseRef.current = onUse;
   const onTimeRef = useRef(onTime);
   onTimeRef.current = onTime;
@@ -172,6 +177,8 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const [changing, setChanging] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [roomNow, setRoomNow] = useState<RoomId | null>(null);
+  const roomRef = useRef<RoomId | null>(null);
+  roomRef.current = roomNow;
 
   const tier: HomeTier = tierProp ?? homeTierOf(career.ownedItems);
   const room = roomPreset(tier);
@@ -266,6 +273,8 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           ...(alive ? { living: { ...livingFor(career), onSleep: () => { const r = sleepNight(careerRef.current); sleepRef.current?.(); return sleepRef.current ? r.text : "A good night."; }, clock: () => liveRef.current.now(), tick: (dt: number) => liveRef.current.tick(dt),
             // who is in the house each day (lib/star/life/dayPlan.ts); a test page can force one (?visit=mate|chef|quiet)
             visits: visitsFn(q.get("visit"), liveRef.current.now(), rooms, tier),
+            // the home gym's kit: "Start a workout" leaves for the gym of this level (the live clock's minutes sent first)
+            onGym: () => { if (dead) return; const pend = liveRef.current.flush(1); if (pend) onTimeRef.current?.(pend); setLeaving(true); setGymReturnRoom(roomRef.current); onGymRef.current?.(tier); },
             // a thing used: its minutes and its energy/mood within the day's caps (the career keeps it); the card says what it really did
             onEffect: (thing: string, e: { energy?: number; mood?: number; text?: string }) => {
               // the live clock's unsent minutes first (sent before the use), so the card's time is the time now
@@ -291,6 +300,9 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         (window as unknown as { __home3d?: HomeController }).__home3d = c;
         setStatus("ready");
         readyRef.current?.(c);
+        // back from the house's gym: into the room you left it from (gym/homeGym.ts)
+        const back = takeGymReturnRoom();
+        if (back && back !== c.room() && rooms.includes(back as RoomId)) void c.goToRoom(back as RoomId);
       } catch (e) {
         if (dead) return; // closed mid-load (three3d/perf.ts isAbandonedScene): nothing to show
         console.error("3D home failed to load", e);

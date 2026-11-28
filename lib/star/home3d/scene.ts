@@ -254,6 +254,8 @@ export interface HomeOptions {
     clock?: () => number;
     /** Tick the career clock by the house's own frame time (s). */
     tick?: (dt: number) => void;
+    /** "Start a workout" at the home gym's kit (gym/homeGym.ts): the page opens the gym of this house's level. */
+    onGym?: () => void;
     /** Who is in the house on a day of the gap (lib/star/life/dayPlan.ts). Absent: the old fixed team-mates. */
     visits?: (day: number) => HouseVisit[] };
 }
@@ -834,6 +836,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       // visitors on the day plan; how many your room may draw: Android (the mid phone) and Low 2, Medium 3, High 5
       visits: opts.living.visits, roomCap: roomPeople(tier, typeof navigator !== "undefined" && /Android|Mobi/i.test(navigator.userAgent) && !/iPhone|iPad/i.test(navigator.userAgent)),
       onSleep: () => { sleepSeq = { t: 0, text: "", morning: false }; },
+      onGym: opts.living.onGym,
       dip: (text, mid) => { dipSeq = { t: 0, text, mid }; },
     }).catch((e) => { console.error("home: living", e); return null; });
     life?.enterRoom(room);

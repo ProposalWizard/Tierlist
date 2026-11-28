@@ -30,6 +30,7 @@ import {
 } from "./roomBuild";
 import { viewCanvas } from "./textures";
 import { floorShade } from "./bakeShade";
+import { homeGymOf } from "../gym/homeGym";
 
 export interface RoomFx { on?: (v: boolean) => void; tick?: (dt: number) => void }
 export interface GuestPlan { obj: string; slot?: string }
@@ -275,6 +276,46 @@ function smallPlant(c: Ctx, x: number, y: number, z: number) {
 }
 
 /** A plant from the kit (taller and leafier than the built pot). */
+/**
+ * THE HOME GYM'S WAY IN (Harry, 28 Nov 2026; lib/star/gym/homeGym.ts). A thing whose card has "Start a workout":
+ * the page opens your home gym of this house's level (the club gym's own machines and games). The thing's own
+ * "use" stays what it was (a stretch, a run).
+ */
+function gymWayIn(c: Ctx, o: SmartObject) {
+  const g = homeGymOf(c.R.tier);
+  o.prompt.more = [{ id: "gym", label: "Start a workout" }];
+  o.prompt.lines = [`${g.label}: ${g.kinds.length} exercises, the club gym's own.`, "Same numbers and limits as the club gym."];
+  return o;
+}
+
+/**
+ * The workout corner of the smaller homes (starter, flat, penthouse, the house's garage): a teal mat and a pair of
+ * dumbbells, one draw. `alongX`: the mat's long side runs along x. `front`: where you stand for it.
+ */
+function homeGymCorner(c: Ctx, x: number, z: number, alongX: boolean, front: XZ, face: XZ) {
+  const { k, env, X: X0 } = c;
+  const X = X0!;
+  const P = painter(k, env);
+  const [w, d] = alongX ? [1.6, 0.7] : [0.7, 1.6];
+  P.box(w, 0.02, d, "#2d6b6b", x, 0.01, z);
+  P.box(w - 0.06, 0.004, 0.02, "#3c8383", x, 0.022, z + (alongX ? d / 2 - 0.06 : 0));
+  // the pair of dumbbells past the mat's far end, on the floor (a little solid: you walk round them)
+  const ex = alongX ? x + w / 2 + 0.22 : x, ez = alongX ? z : z - d / 2 - 0.22;
+  for (const o of [-0.13, 0.13]) {
+    const bx = alongX ? ex : ex + o, bz = alongX ? ez + o : ez;
+    P.cyl(0.014, 0.014, 0.3, "#c9cdd3", bx, 0.07, bz, alongX ? Math.PI / 2 : 0, 0, alongX ? 0 : Math.PI / 2, 8);
+    for (const e2 of [-0.13, 0.13]) P.cyl(0.07, 0.07, 0.07, "#151619", bx + (alongX ? 0 : e2), 0.07, bz + (alongX ? e2 : 0), alongX ? Math.PI / 2 : 0, 0, alongX ? 0 : Math.PI / 2, 8);
+  }
+  P.done({ roughness: 0.6 });
+  c.solids.push([ex - 0.3, ex + 0.3, ez - 0.3, ez + 0.3]);
+  const o = standObject({
+    id: "homegym", kind: "gym", label: homeGymOf(c.R.tier).label, front, face, verb: "Stretch", lines: [],
+    loop: [{ clip: "stretch", or: ["idle"], secs: 6 }], effect: { mood: 1, text: "Loose." }, stay: [6, 6], pickR: 0.9, pickH: 0.6,
+  });
+  o.pick = { at: [x, z], r: 0.9, h: 0.6 };
+  X.things.push(gymWayIn(c, o));
+}
+
 function kitPlant(c: Ctx, x: number, z: number, s = 1) {
   c.solids.push(plant(c.k, c.potM, c.leafM, x, z, { h: 1.3 * s, pot: c.R.tier === "estate" || c.R.tier === "villa" ? "#d8cfc0" : c.R.tier === "penthouse" ? "#2b2b30" : "#c4815a" }));
 }
@@ -355,6 +396,8 @@ export function buildStudio(c: Ctx, h: LivingHooks) {
   F.put("coatRackStanding", 0.25 + 0.0, D2 - 0.35, Math.PI, {});
   artPiece(c, W2 - 0.03, 1.6, D2 - 0.9, -Math.PI / 2, 0.7, 0.9, 7);
   X.guests.push({ obj: "sofa", slot: "s0" });
+  // the workout corner between the bed's foot and the sofa (lib/star/gym/homeGym.ts: the starter's gym)
+  homeGymCorner(c, 0.6, -1.0, true, [0.3, -1.0], [0.3, 2.0]);
   return shell;
 }
 
@@ -461,6 +504,8 @@ export function buildBedroom(c: Ctx, h: LivingHooks) {
   if (!hasWard) { framedShirt(k, env, inp.kits.home, "", c.woodM, -W2 + 0.04, 1.65, 0.4, Math.PI / 2); filledShelf(c, -W2 + 0.27, -0.9, Math.PI / 2); }
   else artPiece(c, W2 - 0.03, 1.6, 0.4, -Math.PI / 2, 0.8, 1.0, 9);
   if (R.chandelier) chandelier(k, metalM, H, bx, bz + 1.2);
+  // the flat and the penthouse: the workout corner by the bed's foot (gym/homeGym.ts; the bigger homes have a gym room)
+  if (R.tier === "flat" || R.tier === "penthouse") homeGymCorner(c, 0.7, D2 - 1.2, false, [0.7, D2 - 1.0], [0.7, -D2]);
   return shell;
 }
 
@@ -722,6 +767,8 @@ export function livingFinish(c: Ctx, shell: { metalM: any; glassM: any }) {
   } else if (id === "garage") {
     F.put("trashcan", W2 - 0.35, D2 - 0.35, 0, { s: 0.7 });
     F.put("washer", -W2 + 0.45, D2 - 0.45, Math.PI / 2, {});
+    // the house's garage gym: its way in is a mat by the workbench (gym/homeGym.ts); the villa and estate have a gym room
+    if (c.R.tier === "house") homeGymCorner(c, -3.0, D2 - 0.5, true, [-3.2, D2 - 0.5], [-3.2, -D2]);
   } else if (id === "gym") {
     // the treadmill (east wall, roomBuild buildGym: belt top 0.2 m, its console to the north): run on it
     const tmx = W2 - 0.6, tmz = -D2 + 1.45;
@@ -730,13 +777,17 @@ export function livingFinish(c: Ctx, shell: { metalM: any; glassM: any }) {
       loop: [{ clip: "jog", secs: 6 }], effect: { energy: -1, mood: 1, text: "Sharp. Fitness +1" }, stay: [6, 6], pickR: 0.6, pickH: 1.6,
     }));
     X.things[X.things.length - 1].slots[0].lift = 0.2;
+    gymWayIn(c, X.things[X.things.length - 1]);
     // the mat: stretch
     F.put("rugRectangle", 0.4, D2 - 1.3, 0, { s: 0.55, solid: false, tint: { carpet: "#2a6b6b" } });
     X.things.push(standObject({
       id: "mat", kind: "gym", label: "Stretching mat", front: [0.4, D2 - 1.3], face: [0.4, -D2], verb: "Stretch", lines: ["Loosen the hamstrings."],
       loop: [{ clip: "stretch", or: ["idle"], secs: 6 }], effect: { mood: 1, text: "Loose. Fitness +1" }, stay: [6, 6], pickR: 0.6, pickH: 0.5,
     }));
-    kitPlant(c, W2 - 0.4, D2 - 0.4);
+    gymWayIn(c, X.things[X.things.length - 1]);
+    // the plant on the east wall between the treadmill and the drinks fridge (it stood inside the fridge,
+    // roomBuild buildGym's south-east corner: RUL-3D-005)
+    kitPlant(c, W2 - 0.4, 0.9);
     F.put("speaker", -W2 + 0.3, -D2 + 0.3, Math.PI / 4, {});
     X.guests.push({ obj: "mat" });
   } else if (id === "games") {

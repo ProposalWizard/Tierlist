@@ -427,6 +427,7 @@ export function Stick({ onMove }: { onMove: (x: number, y: number) => void }) {
     <div
       ref={base}
       aria-label="Walk"
+      data-control
       onPointerDown={(e) => { e.stopPropagation(); id.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); move(e.clientX, e.clientY); }}
       onPointerMove={(e) => { if (id.current === e.pointerId) move(e.clientX, e.clientY); }}
       onPointerUp={end}

@@ -67,7 +67,24 @@ const TUCK_SHOW_PX = 16;
 
 /** How much is under this corner: nine points, each weighted by what it lands
  *  on — see `weight`. 0 is a clear corner. */
-function busyAt(spot: Spot): number {
+/** Things a tap passes through (pointer-events: none) are invisible to
+ *  elementsFromPoint, yet they are drawn: the 3D places' whole top bar (Back,
+ *  the trophy pill) is one such row, and the eye sat on the trophy pill while
+ *  you used the fridge (28 Nov 2026). These are their boxes, for `busyAt`. */
+function passThroughBoxes(): { el: Element; r: DOMRect }[] {
+  const out: { el: Element; r: DOMRect }[] = [];
+  const roots = document.querySelectorAll('[style*="pointer-events: none"], [style*="pointer-events:none"], .pointer-events-none');
+  roots.forEach((root) => {
+    if (root.closest("[data-page-guide]")) return;
+    for (const el of [root, ...Array.from(root.querySelectorAll("*"))]) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) out.push({ el, r });
+    }
+  });
+  return out;
+}
+
+function busyAt(spot: Spot, boxes: { el: Element; r: DOMRect }[] = []): number {
   const tucked = spot === "tucked";
   const w = tucked ? TUCK_SHOW_PX : EYE_PX;
   const x0 = tucked ? window.innerWidth - TUCK_SHOW_PX
@@ -77,21 +94,28 @@ function busyAt(spot: Spot): number {
   let busy = 0;
   for (const fx of [0.15, 0.5, 0.85]) {
     for (const fy of [0.15, 0.5, 0.85]) {
-      const under = document.elementsFromPoint(x0 + w * fx, y0 + EYE_PX * fy)
+      const x = x0 + w * fx, y = y0 + EYE_PX * fy;
+      const under = document.elementsFromPoint(x, y)
         .find((el) => !el.closest("[data-page-guide]"));
-      if (under) busy += weight(under);
+      let here = under ? weight(under) : 0;
+      for (const b of boxes) {
+        if (here >= 2) break;
+        if (x >= b.r.left && x <= b.r.right && y >= b.r.top && y <= b.r.bottom) here = Math.max(here, weight(b.el));
+      }
+      busy += here;
     }
   }
   return busy;
 }
 
 /** What covering this would cost. A control is worst (4): covering Back or
- *  Next is the complaint. Words next (2). The pitch or a picture least (1):
+ *  Next is the complaint. A control that is not a button (the 3D places' walk
+ *  stick) says so with `data-control`. Words next (2). The pitch or a picture least (1):
  *  when every corner is busy, the eye would rather sit on the edge of the
  *  grass than on a button. A bare background panel costs nothing. */
 function weight(el: Element): number {
   if (el === document.body || el === document.documentElement) return 0;
-  if (el.closest("button, a, input, select, textarea, label, [role=button]")) return 4;
+  if (el.closest("button, a, input, select, textarea, label, [role=button], [data-control]")) return 4;
   if (Array.from(el.childNodes).some((n) => n.nodeType === 3 && (n.textContent ?? "").trim().length > 0)) return 2;
   if (el.closest("canvas, svg, img")) return 1;
   return 0;
@@ -111,6 +135,11 @@ export default function PageGuide({
   const [open, setOpen] = useState(false);
   const [spot, setSpot] = useState<Spot>(corner);
   const spotRef = useRef<Spot>(corner);
+  // A walk-around 3D place has its own eye: the first-person switch
+  // (components/star/ViewToggle3D.tsx, `data-view3d`). Two eyes on one screen
+  // read as one button drawn twice (Harry, 28 Nov 2026: "exactly one eye
+  // button per screen"), so there the guide shows a "?" instead.
+  const [otherEye, setOtherEye] = useState(false);
   // createPortal needs a real document, which does not exist during SSR.
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
@@ -129,16 +158,19 @@ export default function PageGuide({
     if (!mounted || open) return;
     const move = (to: Spot) => { if (to !== spotRef.current) { spotRef.current = to; setSpot(to); } };
     const pick = () => {
+      const eye = !!document.querySelector("[data-view3d]");
+      setOtherEye((was) => (was === eye ? was : eye));
       if (window.innerWidth >= FREE_CORNER_BELOW_PX) { move(corner); return; }
       // Stay put while the current corner is clear, so it doesn't wander —
       // but a tucked eye comes back out as soon as a corner is free.
       const cur = spotRef.current;
-      const curBusy = busyAt(cur);
+      const boxes = passThroughBoxes();
+      const curBusy = busyAt(cur, boxes);
       if (curBusy === 0 && cur !== "tucked") return;
       const order: Spot[] = [corner, ...SPOTS.filter((s) => s !== corner), "tucked"];
       let best = cur, bestBusy = curBusy;
       for (const s of order) {
-        const b = busyAt(s);
+        const b = busyAt(s, boxes);
         if (b === 0 && s !== "tucked") { move(s); return; }
         if (b < bestBusy) { best = s; bestBusy = b; }
       }
@@ -167,7 +199,7 @@ export default function PageGuide({
         title="How this page works"
         className={`fixed z-[95] grid h-10 w-10 place-items-center rounded-full border border-sky-400/50 bg-gray-950/85 text-sky-300 shadow-lg shadow-black/50 backdrop-blur transition hover:border-sky-300 hover:text-white ${CORNER[spot]} ${spot === "tucked" ? "justify-items-start pl-px" : ""} ${open ? "pointer-events-none opacity-0" : "opacity-90"}`}
       >
-        <EyeIcon />
+        {otherEye ? <HelpIcon /> : <EyeIcon />}
       </button>
 
       {open && (
@@ -271,6 +303,16 @@ function Bullets({ items, tone }: { items: string[]; tone?: "amber" }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/** The guide's mark on a screen that already has an eye (a 3D place's first-person switch). */
+function HelpIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.6-3 4.5" />
+      <circle cx="12" cy="18.2" r="0.6" fill="currentColor" />
+    </svg>
   );
 }
 

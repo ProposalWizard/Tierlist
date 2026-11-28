@@ -29,7 +29,7 @@ import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
   clearCareerFromCloud, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
   reconcileCareerLoad, resolveSaveClash, deferSaveClash, hasUnsyncedProgress, type SaveClash,
-  peekSlotCareer, collectRetiredIntoHall, onSaveCorrected,
+  peekSlotCareer, collectRetiredIntoHall, onSaveCorrected, backupCareer, WHY_DELETED,
 } from "@/lib/star/storage";
 import { addToHall, loadHall, syncHall, hallEntryFor, type HallEntry } from "@/lib/star/hallOfFame";
 import { hallRecordBook, freshHallRecords, hallChaseLine, amount as hallAmount } from "@/lib/star/hallRecords";
@@ -69,6 +69,7 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { devInfoOn } from "@/lib/star/matchDayPrefs";
 import { simulateOwnMatch } from "@/lib/star/simMatch";
 import { gymSkillBonus } from "@/lib/star/gym/effect";
+import { gymBack } from "@/lib/star/gym/homeGym";
 import { doorRoute as streetDoorRoute, type StreetArrive } from "@/lib/star/street3d/plan";
 import { opponentMatchStrength } from "@/lib/star/matchInputs";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
@@ -552,6 +553,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [gymFromDrive, setGymFromDrive] = useState(false);
   /** Your 3D house was opened from the garden's door (its Back and front door lead back there). */
   const [homeFromGarden, setHomeFromGarden] = useState(false);
+  // the gym opened from your house (its home gym of that level, gym/homeGym.ts); null = the club gym from Training
+  const [gymHome, setGymHome] = useState<import("@/lib/star/home3d/homes").HomeTier | null>(null);
   // forgotten the moment you go anywhere else (the phone's HOME, the bar, a match; 3D places audit P4)
   useEffect(() => { if (!keepsHouseFromGarden(phase)) setHomeFromGarden(false); }, [phase]);
   // Settings → Look → "Casino: 3D | Classic" (8 Oct 2026)
@@ -2993,6 +2996,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleDeleteSave = useCallback((slot: number) => {
     // A retired career is kept in the Hall of Fame before its slot goes.
     keepRetiredThen(slot, () => {
+      // Kept as a backup first (Settings → Saves → Backups), never just lost.
+      const gone = slot === activeSlotRef.current && career ? career : peekSlotCareer(scopeRef.current, slot);
+      if (gone) backupCareer(scopeRef.current, slot, gone, WHY_DELETED);
       clearCareer(slotScope(scopeRef.current, slot));
       clearCareerFromCloud(slot);
       if (slot === activeSlotRef.current) {
@@ -3007,7 +3013,23 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         bumpSaves(v => v + 1);
       }
     });
-  }, [resetTransientState, keepRetiredThen]);
+  }, [career, resetTransientState, keepRetiredThen]);
+
+  /**
+   * Settings → Saves → Backups restored a backup into `slot` (storage.ts
+   * restoreCareerBackup has already written it, and sent it online). The
+   * old career's waiting upload is dropped: it is a backup now. The save
+   * being played is swapped at once; once the Backups page shuts it is
+   * loaded properly, which decides its screen.
+   */
+  const handleRestoredSave = useCallback((slot: number, restored: CareerState, closed: boolean) => {
+    if (slot !== activeSlotRef.current) { bumpSaves(v => v + 1); return; }
+    pendingCloudSave.current = null;
+    if (cloudSaveTimer.current) { clearTimeout(cloudSaveTimer.current); cloudSaveTimer.current = null; }
+    latestCareerRef.current = null;
+    if (closed) void loadCareerIntoState(slot, restored);
+    else setCareer(restored);
+  }, [loadCareerIntoState]);
 
   /**
    * "Move my saves" just wrote saves from a pasted code (MoveSavesPanel —
@@ -3068,6 +3090,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   const handleFullReset = useCallback(() => {
     const reset = () => {
+      // Kept as a backup first (Settings → Saves → Backups), never just lost.
+      if (career) backupCareer(scopeRef.current, activeSlotRef.current, career, WHY_DELETED);
       clearCareer(slotScope(scopeRef.current, activeSlotRef.current));
       clearCareerFromCloud(activeSlotRef.current);
       resetTransientState();
@@ -5060,6 +5084,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   if (phase === "gym-3d") {
     // The 3D gym from the Training page (testing, 28 Nov 2026): its own numbers saved, no career effect.
     const backToTraining = () => { setTrainingTab("training"); setActiveNav("skills"); setPhase("skills"); };
+    // from the house: its home gym (gym/homeGym.ts), back to the house; the minutes on the career clock
+    if (career && gymHome) return <Gym3D career={career} home={gymHome} backLabel={gymBack("home").label} onBack={() => setPhase("home-3d")} onCareer={(c) => setCareer(c)} onTime={(mins) => setCareer((c) => (c ? passTime(c, mins) : c))} />;
     // through the compound's gym door (the drive's setting): Back goes out to the compound, to your car
     if (career && gymFromDrive) return <Gym3D career={career} backLabel="Outside" onBack={() => { setGymFromDrive(false); setDriveStart("compound"); setPhase("drive-3d"); }} onCareer={(c) => setCareer(c)} />;
     if (career) return <Gym3D career={career} onBack={backToTraining} onCareer={(c) => setCareer(c)} />;
@@ -5308,6 +5334,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onUse: (thing, e) => setCareer((c) => (c ? applyThing(c, thing, e).career : c)),
           // the night: the week's Rest (once a gap) and the clock to 07:00 next morning
           onSleep: () => setCareer((c) => (c ? sleepClock(c, sleepNight(c).career) : c)),
+          // the home gym (gym/homeGym.ts): the gym of this house's level, back to the house after
+          onGym: (tier) => { setGymHome(tier); setPhase("gym-3d"); },
           ...clockLink,
         }}
         onHome={() => handleNavigate("home")}
@@ -5401,6 +5429,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onStartNewInSlot={handleStartNewInSlot}
         onDeleteSave={handleDeleteSave}
         moveSaves={{ scope: scopeRef.current, onImported: handleImportedSaves }}
+        onRestoredSave={handleRestoredSave}
         immersiveActive={immersive.active}
         onToggleImmersive={immersive.toggle}
         fullscreenSupport={immersive.support}
@@ -5644,7 +5673,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const trainingBody = (
         <div>
           {trainingTab === "training" ? (
-            <SkillsScreen career={career} onTrain={handleTrain} onGym={() => setPhase("gym-3d")} />
+            <SkillsScreen career={career} onTrain={handleTrain} onGym={() => { setGymHome(null); setPhase("gym-3d"); }} />
           ) : (
             <RelationsPage
               career={career}
