@@ -34,7 +34,8 @@ Preview) sets them all at once.
 | The world kit, phase 1 (people who use things: sofa, TV, fridge, a bench, a visitor at the gate, tap to talk) | `components/star/World3D.tsx` (test page only) | `lib/star/world3d/` (`smartObject.ts`, `routine.ts`, `npc.ts`, `interact.ts`, `budget.ts`; the test places `testScene.ts`, the lounge from `lib/star/home3d/roomBuild.ts`) | `/star-world3d-dev` (`?place=house\|garden`, `?demo=sofa\|fridge\|visitor\|talk` for filming) | none (not in the game yet) |
 | The training compound, phase 1: the grounds (car park, gate, crest board, security hut, the building's front with the gym door, three pitches, a stand; the coach, the kit man and team-mates on routines) | `components/star/World3D.tsx` (test page only) | `lib/star/world3d/compoundPlace.ts` (the 3D), `compoundPlan.ts` (the plan, pure: solids, doors, spots, routines, zones, budget, measured numbers), `farBodies.ts` (far people draw coarse triangles), run by `testScene.ts` | `/star-world3d-dev?place=compound` (`?sky=day\|sunset\|night`, `?demo=arrive\|compound`); stills `scripts/world3d/compound-shots.mjs`, speed `scripts/world3d/compound-measure.mjs` | none (not in the game yet) |
 | Shop | `components/star/Shop3D.tsx` | `lib/star/shop3d/scene.ts`, items in `lib/star/shop3d/catalogue.ts` | `/star-shop3d-dev` | 3D shop player (`lib/star/signing3d.ts`); 3D look H |
-| Shopping street, phase 1 (a high street out of the garden's gate: the 3D shop, KIB MOTORS, THE DRIP, the barber) | `components/star/Street3D.tsx` (phase `street-3d`) | `lib/star/street3d/scene.ts` (plan, doors and windows: `plan.ts`; pictures: `textures.ts`) | `/star-street-dev` (`?bare=1`, `?arrive=gate\|shop\|cars\|drip\|barber`, `?walkers=0..6`) | none (a new place) |
+| Shopping street, phase 1 (a high street out of the garden's gate: the 3D shop, KIB MOTORS, THE DRIP, the barber, its door open) | `components/star/Street3D.tsx` (phase `street-3d`) | `lib/star/street3d/scene.ts` (plan, doors and windows: `plan.ts`; pictures: `textures.ts`) | `/star-street-dev` (`?bare=1`, `?arrive=gate\|shop\|cars\|drip\|barber`, `?walkers=0..6`) | none (a new place) |
+| The barber's (through the street's BARBER door: the chair, a style list on your own head that swivels, pay, a cut, the mirror, back out) | `components/star/Barber3D.tsx` (phase `barber-3d`) | `lib/star/barber3d/scene.ts` (plan, shots, walk: `plan.ts`; rules, prices, growth, the save: `lib/star/barber.ts`) | `/star-street-dev?barber=1` (`&seated=1`, `&skin=`, `&head=`, `&cut=`); stills `node scripts/barber3d/shots.mjs OUTDIR deep h1 coily` | none (a new place) |
 | Casino | `components/star/Casino3D.tsx`, tables in `components/star/Casino3DTable.tsx` | `lib/star/casino3d/scene.ts` | `/star-garden3d-dev` (has a Casino tab) | Casino: 3D / Classic (`lib/star/casino3d/look.ts`); Casino look: New / Old (`lib/star/casino3d/roomLook.ts`) |
 | Signing scene | `components/star/SigningScene3D.tsx`, in a career via `components/star/SigningScene3DCareer.tsx` | `lib/star/signing3dScene.ts` (people: `lib/star/signing3dRig.ts`) | `/star-3d-area-dev/signing` | Signing scene: 3D / drawn (`lib/star/signing3d.ts`) |
 | Manager's office | `components/star/Office3D.tsx` | `lib/star/signing3dScene.ts` with stage "office" | `/star-3d-area-dev/office` | Talk to your manager: 3D / Old (`lib/star/look3d.ts`) |
@@ -140,6 +141,20 @@ exactly today's bodies. You never pick a file yourself:
   `lib/star/style3d/toon/faceShape.ts` + `faceShapeApply.ts` (`applyToonFaceShape` before `addToonFace`).
   Light skin on a toon preset is painted a touch darker and warmer (`toonSkinHex`, presets.ts), fair or grey brows darker (`browDark`).
   Sheets: `/star-3d-bench-dev/people?set=hair`, `?set=heads`, `?set=faces`, `?set=swing`.
+- YOUR hair (the barber, 28 Nov 2026): `lib/star/barber.ts` (pure: growth, prices, the save) gives `hairLook3d` (the head,
+  the modelled style, the scalp/beard cut); the page puts it on `setToonYou({ hairLook })` (`lib/star/style3d/toon/bodies.ts`),
+  so `toonYou().head` is the close-cut head a modelled style is worn on (h3, or h7/h8/h9 nearest your own face). Every
+  place that builds you (`makePerson3d` with `you: true`) puts the modelled style on by itself (`style3d/toon/yourHair.ts`),
+  and `dressPerson3d` paints the scalp and beard step on you when the scene names no haircut. A cap (accessories.ts) presses
+  modelled hair in under its crown now and when the hair loads later (`capPress`); long hair comes out from under its edge.
+  Mark a pressed geometry on the object, never in `userData` (three's `clone()` shares userData with the file's geometry).
+  Sheet: `/star-3d-bench-dev/hair` (`node scripts/bench3d/hair-sheet.mjs OUTDIR "name::cuts=afro:0,crew:2&head=h1"`).
+  Second pass (28 Nov 2026): the straight styles were rebuilt so each reads at phone size (`tools/hair3d/build_hair.py`
+  crew: sides clipped above the ears over a faded scalp, a textured top; slick back: a tall combed front, deep comb
+  lines, a side parting; tied back: a knot and a band you see from the side, the tail to the collar). Your beard off is
+  `hairCut.beard` 2: the shader fades the sideburns to the temple (no block by the ear). The cap sits 3 cm higher (eyes
+  and brows clear in every view). A change of look shows at once on a body already built (`yourHair.ts registerYou`):
+  the house's bathroom mirror has Shave / Trim beard / Tidy hair (`Home3D` `onHair`; stills `scripts/barber3d/mirror-shots.mjs`).
 - **The face system (20 Nov 2026, Harry: "straight-to-the-face build"; bench only, not in the game yet).** Each person's own face is a
   FaceId (`lib/star/style3d/toon/faceId.ts`: about fifty numbers and three colours from his id, `personLook(...).faceId`; the same id, the
   same face): eye shape (round, almond, hooded, narrow, deep-set, downturned, upturned, single lid), size, spacing and a real eye colour,

@@ -15,6 +15,7 @@ import "@/components/star/ui/glassLook.css";
 import { freshItem, isWornOut } from "@/lib/star/fame";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { setToonYou, yourToonBody, yourToonHead } from "@/lib/star/style3d/toon/bodies";
+import { yourHairLook3d, hairLookKey, withHairStarted, applyMirror } from "@/lib/star/barber";
 import { skinToneHex, hairColourHex } from "@/lib/star/playerIdentity";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay, FarewellRecord } from "@/lib/star/types";
 import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type FreeKickRunupId } from "@/lib/star/runupStyles";
@@ -311,6 +312,7 @@ const Gym3D = lazyScreen(() => import("@/components/star/Gym3D"), { fallback: lo
 // The drive to training and the compound (driving phase 2, 28 Nov 2026): only while its setting is on (drive3d/careerFlag.ts).
 const DriveToTraining = lazyScreen(() => import("@/components/star/DriveToTraining"), { fallback: loadingCover("drive") });
 const Street3D = lazyScreen(() => import("@/components/star/Street3D"), { fallback: loadingCover("street") });
+const Barber3D = lazyScreen(() => import("@/components/star/Barber3D"), { fallback: loadingCover("street") });
 const AdvertShoot = lazyScreen(() => import("@/components/star/relgames/AdvertShoot"));
 const KnockoutRoundup = lazyScreen(() => import("@/components/star/KnockoutRoundup"));
 const CupDrawReveal = lazyScreen(() => import("@/components/star/CupDrawReveal"));
@@ -1386,6 +1388,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   useEffect(() => {
     setToonYou({ body: yourBody3d, head: yourHead3d, skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d), name: yourShirtName, boots: bootLookOf(yourBootId ? { id: yourBootId, level: yourBootLevel } : null) });
   }, [yourBody3d, yourHead3d, yourSkin3d, yourHair3d, yourShirtName, yourBootId, yourBootLevel]);
+  // your barber's cut and the beard grown this week (lib/star/barber.ts), on your 3D player everywhere
+  const yourHairLook = career && yourHead3d ? yourHairLook3d(career, yourHead3d) : undefined;
+  const yourHairKey = yourHairLook ? hairLookKey(yourHairLook) : "";
+  useEffect(() => { setToonYou({ hairLook: yourHairLook }); }, [yourHairKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // an old save (or a new career): its hair and beard start growing from now, looking exactly as before
+  const hairUnstarted = !!career && !career.hair;
+  useEffect(() => { if (hairUnstarted) setCareer(c => (c && !c.hair ? withHairStarted(c, yourToonHead(c.player)) : c)); }, [hairUnstarted]);
 
   const handleSetPortrait = useCallback((portrait: string | undefined) => {
     setCareer(c => (c
@@ -5064,7 +5073,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "street-3d" && career) {
-    // The shopping street (phase 1): the 3D shop, the car showroom, the boutique, the barber (shut).
+    // The shopping street (phase 1): the 3D shop, the car showroom, the boutique, the barber.
     const toGardenGate = () => { setStreetArrive("gate"); setGardenArrive("street"); setPhase("garden"); };
     return (
       <Street3D
@@ -5074,11 +5083,17 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onLeave={toGardenGate}
         onDoor={(id) => {
           const r = streetDoorRoute(id);
+          if (r.kind === "phase" && r.phase === "barber-3d") { setStreetArrive(id); setPhase("barber-3d"); return; }
           if (r.kind === "phase") { setStreetArrive(id); setShopFromStreet(true); setShopAtDoor(true); setPhase(r.phase); return; }
           if (r.kind === "menu") { setStreetArrive(id); setMenuStart(r.cat); setActiveNav("home"); pushFrom({ phase: "street-3d", nav: activeNav }, r.phase); setPhase(r.phase); }
         }}
       />
     );
+  }
+
+  if (phase === "barber-3d" && career) {
+    // The barber's (lib/star/barber.ts): try styles on, pay, a cut; back out onto the street at its door.
+    return <Barber3D career={career} onCareer={(c) => setCareer(c)} onBack={() => { setStreetArrive("barber"); setPhase("street-3d"); }} />;
   }
 
   if (phase === "gym-3d") {
@@ -5336,6 +5351,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onSleep: () => setCareer((c) => (c ? sleepClock(c, sleepNight(c).career) : c)),
           // the home gym (gym/homeGym.ts): the gym of this house's level, back to the house after
           onGym: (tier) => { setGymHome(tier); setPhase("gym-3d"); },
+          // the bathroom mirror's Shave / Trim beard / Tidy hair (lib/star/barber.ts applyMirror): free, 10 minutes
+          onHair: (act) => setCareer((c) => (c ? applyMirror(c, act, yourToonHead(c.player)).career : c)),
           ...clockLink,
         }}
         onHome={() => handleNavigate("home")}

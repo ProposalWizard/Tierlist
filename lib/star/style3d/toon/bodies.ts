@@ -156,7 +156,17 @@ export function toonHairFor(id: string): string {
   return HAIR_COLOURS.find((h) => h.id === id_)!.hex;
 }
 
-export interface ToonPick { body: ToonBody; head: ToonHead; skin: string; hair: string; /** your surname, on the back of your Style A shirt */ name?: string; /** your shop boots (wearables.ts bootLookOf(career.currentBoot)); absent = the plain pair */ boots?: BootLook }
+/**
+ * YOUR HAIR from the barber (lib/star/barber.ts hairLook3d): the close-cut head a modelled style is worn on, the
+ * modelled hairstyle, and the haircut painted on the scalp and the beard (people3d.ts hairCut). Absent: your head
+ * exactly as you chose it, as before.
+ */
+export interface YourHairLook {
+  head: ToonHead;
+  mesh?: import("./hairStyles").ToonHair;
+  cut: { scalp: number; beard: number; stubble: number; pattern: number };
+}
+export interface ToonPick { body: ToonBody; head: ToonHead; skin: string; hair: string; /** your surname, on the back of your Style A shirt */ name?: string; /** your shop boots (wearables.ts bootLookOf(career.currentBoot)); absent = the plain pair */ boots?: BootLook; /** your barber's cut (the head above is then the one it is worn on) */ hairLook?: YourHairLook }
 export function toonPickFor(id: string, suit = false): ToonPick {
   return { body: toonBodyFor(id), head: toonHeadFor(id, suit), skin: toonSkinFor(id), hair: suit ? toonGreyHairFor(id) : toonHairFor(id) };
 }
@@ -192,9 +202,18 @@ export function yourToonBody(p: { body3d?: unknown; firstName?: string; lastName
 let you: ToonPick = { body: "c1", head: "h1", skin: SKIN_TONES[3].hex, hair: HAIR_COLOURS[1].hex };
 /** The page sets this from the career (and Settings → Your look on a change). */
 const youListeners = new Set<() => void>();
+/** The head you chose (Settings → Your look), under any barber's cut. */
+let yourOwnHead: ToonHead = you.head;
+/** The kit heads a barber's cut may be worn on (your own, or a close-cut one: barber.ts closeCutHeadFor). */
+const HAIR_LOOK_HEADS: readonly ToonHead[] = [...TOON_PLAYER_HEADS, "h7", "h8", "h9"];
 export function setToonYou(p: Partial<ToonPick>) {
-  const next = { ...you, ...p, body: resolveToonBody(p.body ?? you.body), head: resolveToonHead(p.head ?? you.head) };
-  if (next.body === you.body && next.head === you.head && next.skin === you.skin && next.hair === you.hair && next.name === you.name && JSON.stringify(next.boots ?? null) === JSON.stringify(you.boots ?? null)) return;
+  const own = resolveToonHead(p.head ?? yourOwnHead);
+  const hl = "hairLook" in p ? p.hairLook : you.hairLook;
+  const hairLook = hl && HAIR_LOOK_HEADS.includes(hl.head) ? hl : undefined;
+  const next = { ...you, ...p, body: resolveToonBody(p.body ?? you.body), head: hairLook?.head ?? own, hairLook };
+  const same = (a?: YourHairLook, b?: YourHairLook) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+  yourOwnHead = own;
+  if (next.body === you.body && next.head === you.head && next.skin === you.skin && next.hair === you.hair && next.name === you.name && JSON.stringify(next.boots ?? null) === JSON.stringify(you.boots ?? null) && same(next.hairLook, you.hairLook)) return;
   you = next;
   youListeners.forEach((f) => f());
 }

@@ -9,7 +9,7 @@
  *   the 3D shop        (east)  → the 3D shop (phase shop-3d); its front doors bring you back here
  *   the car showroom   (east)  → the shop's Cars aisle (MenuShop "cars")
  *   the boutique       (west)  → the shop's Drip aisle (MenuShop "drip")
- *   the barber         (west)  → a "coming soon" card (no barber game yet); you stay on the street
+ *   the barber         (west)  → the barber's shop (phase barber-3d: lib/star/barber3d/, the chair, a style list, a cut)
  *
  * Plan (metres): the street runs north (-z) to south (+z). The road is x in [-ROAD, ROAD], the
  * pavements run to the shop fronts at x = ±FRONT. You arrive from the garden lane at the south
@@ -46,7 +46,7 @@ export interface StreetShop {
   doorHalf: number;
   /** The fascia. Our own names only (no real brands). */
   name: string;
-  /** False: the door is shut (the barber), walking up to it shows its card instead. */
+  /** False: the door is shut, walking up to it shows its card instead (every shop's door opens since the barber did). */
   opens: boolean;
 }
 
@@ -54,7 +54,7 @@ export const STREET_SHOPS: StreetShop[] = [
   { id: "shop", side: 1, z: -7, width: 12, doorHalf: 1.2, name: "KNOWITBALL", opens: true },
   { id: "cars", side: 1, z: 9.5, width: 13, doorHalf: 1.2, name: "KIB MOTORS", opens: true },
   { id: "drip", side: -1, z: -6, width: 10, doorHalf: 1.0, name: "THE DRIP", opens: true },
-  { id: "barber", side: -1, z: 8, width: 7, doorHalf: 0.8, name: "BARBER", opens: false },
+  { id: "barber", side: -1, z: 8, width: 7, doorHalf: 0.8, name: "BARBER", opens: true },
 ];
 
 export const shopOf = (id: StreetDoor): StreetShop => STREET_SHOPS.find((s) => s.id === id)!;
@@ -63,13 +63,13 @@ export const shopOf = (id: StreetDoor): StreetShop => STREET_SHOPS.find((s) => s
 export type DoorRoute =
   | { kind: "phase"; phase: "shop-3d" }
   | { kind: "menu"; phase: "shop-lifestyle"; cat: "cars" | "drip" }
-  | { kind: "card"; card: "barber" };
+  | { kind: "phase"; phase: "barber-3d" };
 
 export function doorRoute(id: StreetDoor): DoorRoute {
   if (id === "shop") return { kind: "phase", phase: "shop-3d" };
   if (id === "cars") return { kind: "menu", phase: "shop-lifestyle", cat: "cars" };
   if (id === "drip") return { kind: "menu", phase: "shop-lifestyle", cat: "drip" };
-  return { kind: "card", card: "barber" };
+  return { kind: "phase", phase: "barber-3d" };
 }
 
 /** Where you stand when you arrive: [x, z, yaw] (yaw 0 faces south, π faces north). */

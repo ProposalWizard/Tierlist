@@ -41,6 +41,8 @@ import { passTime, sleepClock } from "@/lib/star/life/clock";
 import { applyThing } from "@/lib/star/life/houseActs";
 import { withInvite } from "@/lib/star/life/dayPlan";
 import { sleepNight } from "@/lib/star/home3d/sleep";
+import { applyMirror, yourHairLook3d } from "@/lib/star/barber";
+import { yourToonHead } from "@/lib/star/style3d/toon/bodies";
 
 const TROPHIES = [
   { competition: "Premier League", n: 2 }, { competition: "Champions League", n: 1 }, { competition: "FA Cup", n: 3 },
@@ -82,6 +84,9 @@ function Home3DTest() {
     c.ballonDorWins = full ? 1 : 0;
     if (outfit) c.outfit = outfit;
     c.energy = 60;
+    // ?cut=crew.s.3.1.1: your hair and beard (lib/star/barber.ts's save), for the bathroom mirror's Shave / Trim / Tidy
+    if (params.get("cut")) c.hair = params.get("cut")!;
+    if (params.get("head")) c.player.head3d = params.get("head") as never;
     // ?at=1080: the clock starts at that minute of day 0 (18:00); else 09:00
     const at = Number(params.get("at"));
     return at > 9 * 60 ? passTime(c, at - 9 * 60) : c;
@@ -92,6 +97,8 @@ function Home3DTest() {
   // the made-up career lives here while you play: the clock, things used, sleep and invites change it (as in a career)
   const [play, setPlay] = useState<CareerState>(career);
   useEffect(() => setPlay(career), [career]);
+  // your look on your 3D player, as the career page sets it (the mirror's changes show at once)
+  useEffect(() => { setToonYou({ head: yourToonHead(play.player), hairLook: yourHairLook3d(play, yourToonHead(play.player)) }); }, [play]);
   const btn: React.CSSProperties = { height: 28, padding: "0 9px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.6)", color: "#fff", fontWeight: 800, fontSize: 11.5, cursor: "pointer" };
   const bare = params.get("bare") === "1" || params.get("film") === "1";
   const home = (
@@ -103,6 +110,7 @@ function Home3DTest() {
       onUse={(thing, e) => setPlay((c) => applyThing(c, thing, e).career)}
       onSleep={() => setPlay((c) => sleepClock(c, sleepNight(c).career))}
       onInvite={(mateId, day, minute) => setPlay((c) => withInvite(c, day, mateId, minute).career)}
+      onHair={(act) => setPlay((c) => applyMirror(c, act, yourToonHead(c.player)).career)}
       lookH={lookH}
       house={house}
       where="test"

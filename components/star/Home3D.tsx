@@ -46,6 +46,8 @@ import LoadingCurtain from "./loading/LoadingCurtain";
 import ClockPill, { useLiveClock } from "./ClockPill";
 import { leaveAt, clockOf, dayNumber, nextMatchInfo, hhmm, passTime } from "@/lib/star/life/clock";
 import { applyThing } from "@/lib/star/life/houseActs";
+import { mirrorOptions, applyMirror as mirrorAct, type MirrorAct } from "@/lib/star/barber";
+import { yourToonHead } from "@/lib/star/style3d/toon/bodies";
 import { dayPlanFor, forcedDay, houseMates, visitsToday, inviteAnswer } from "@/lib/star/life/dayPlan";
 import ViewToggle3D from "./ViewToggle3D";
 
@@ -97,6 +99,8 @@ export interface Home3DProps {
   onUse?: (thing: string, effect: { energy?: number; mood?: number; text?: string }) => void;
   /** "Start a workout" at the home gym (lib/star/gym/homeGym.ts): open the gym of this house's level. Absent: the gym's kit is only used as before. */
   onGym?: (tier: HomeTier) => void;
+  /** The bathroom mirror's Shave / Trim beard / Tidy hair (lib/star/barber.ts applyMirror): save it on the career. Absent: no such buttons. */
+  onHair?: (act: MirrorAct) => void;
 }
 
 type Tab = "casual" | "kit" | "boots" | "extras";
@@ -137,7 +141,8 @@ function livingFor(career: CareerState) {
   return { mates, club: career.player.club };
 }
 
-export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep, onTime, onMatch, clockRate, clockPaused, onInvite, onUse, onGym }: Home3DProps) {
+export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep, onTime, onMatch, clockRate, clockPaused, onInvite, onUse, onGym, onHair }: Home3DProps) {
+  const [hairNote, setHairNote] = useState<string | null>(null);
   const onUseRef = useRef(onUse);
   const onGymRef = useRef(onGym);
   onGymRef.current = onGym;
@@ -371,6 +376,25 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           <div style={{ fontSize: 18, fontWeight: 900 }}>{lifeCard.title}</div>
           {lifeCard.lines.map((l, i) => <div key={i} style={{ fontSize: 14, lineHeight: 1.35, marginTop: 4, color: i ? "#cbd5e1" : "#f8fafc" }}>{l}</div>)}
           {lifeCard.change && <div style={{ fontSize: 12, fontWeight: 800, color: "#86efac", marginTop: 6 }}>{lifeCard.change}</div>}
+          {/* the bathroom mirror: shave, trim the beard, tidy the hair (free, 10 minutes, never a new style) */}
+          {lifeCard.key === "obj:mirror" && onHair && (
+            <div style={{ display: "flex", gap: 6, marginTop: 10 }} data-home3d-mirror>
+              {mirrorOptions(careerRef.current, yourToonHead(careerRef.current.player)).map((o) => (
+                <button key={o.act} data-mirror-act={o.act} disabled={!o.ok} title={o.why}
+                  onClick={() => {
+                    const pend = liveRef.current.flush(1);
+                    if (pend) onTimeRef.current?.(pend);
+                    const r = mirrorAct(passTime(careerRef.current, pend), o.act, yourToonHead(careerRef.current.player));
+                    setHairNote(r.ok ? `${r.text.trim()} · 10 minutes` : r.text);
+                    onHair(o.act);
+                  }}
+                  style={{ flex: 1, height: 36, borderRadius: 10, border: "1px solid rgba(255,255,255,.25)", background: o.ok ? "rgba(255,255,255,.08)" : "transparent", color: o.ok ? "#f8fafc" : "rgba(248,250,252,.4)", fontWeight: 800, fontSize: 13, cursor: o.ok ? "pointer" : "default" }}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {lifeCard.key === "obj:mirror" && hairNote && <div style={{ fontSize: 12, fontWeight: 800, color: "#86efac", marginTop: 6 }} data-mirror-note>{hairNote}</div>}
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
             {lifeCard.actions.map((a) => (
               <button key={a.id} onClick={() => ctrlRef.current?.act?.(a.id)} data-act={a.id}

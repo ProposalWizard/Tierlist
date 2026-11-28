@@ -1325,6 +1325,12 @@ export interface CareerState {
    */
   clock?: import("./life/clock").SavedClock;
   /**
+   * Your hair and beard (lib/star/barber.ts): the style, your hair type, the beard after the last shave,
+   * the weeks of the last cut and shave, and the cut's small effects (one short string, about 15 bytes:
+   * "afro.k.0.161.161"). Absent on every older save: your own haircut as before, not growing yet.
+   */
+  hair?: string;
+  /**
    * The gym's Strength, Cardio and Focus, its ring and workout window (lib/star/gym/progress.ts).
    * Absent on every older save: no gym visit yet. Changes nothing else on the career while
    * progress.ts GYM_CAREER_EFFECT is "off".
@@ -1959,8 +1965,11 @@ export type StarPhase =
    *  the gym's own numbers saved (career.gym), no career effect. See components/star/Gym3D.tsx. */
   | "gym-3d"
   /** The shopping street (28 Nov 2026), out of the garden's gate: the 3D shop, the car showroom, the boutique
-   *  and the barber (shut) on a short high street. See components/star/Street3D.tsx, lib/star/street3d/. */
+   *  and the barber on a short high street. See components/star/Street3D.tsx, lib/star/street3d/. */
   | "street-3d"
   /** The drive to training and the real compound (28 Nov 2026), from the garden's training gate while its setting
    *  is on (lib/star/drive3d/careerFlag.ts, off by default). See components/star/DriveToTraining.tsx. */
-  | "drive-3d";
+  | "drive-3d"
+  /** The barber's shop (28 Nov 2026), through the street's BARBER door: the chair, a style list on your own head,
+   *  pay, a cut, back out onto the street. See components/star/Barber3D.tsx, lib/star/barber3d/, lib/star/barber.ts. */
+  | "barber-3d";
