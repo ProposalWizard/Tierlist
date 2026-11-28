@@ -1,0 +1,258 @@
+{
+  "v": 1,
+  "id": "lag-mwzyaq6c-x348qi",
+  "person": "Harry",
+  "tier": "phone-high",
+  "device": "",
+  "startedAt": 1795842568452,
+  "endedAt": 1795842627712,
+  "facts": {
+    "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1",
+    "screen": "402×874",
+    "viewport": "402×712",
+    "dpr": 3,
+    "cores": 4,
+    "memGB": null,
+    "gpu": "Apple GPU",
+    "standalone": false,
+    "quality3d": "auto",
+    "build": "7912460838e2720fb6c9da5c71b487f7af890988",
+    "tzOffset": 0
+  },
+  "refresh": {
+    "hz": 60,
+    "intervalMs": 16.666666666666668,
+    "medianMs": 17
+  },
+  "steps": [
+    {
+      "id": "home",
+      "title": "Home, hands off",
+      "status": "done",
+      "three": true,
+      "seconds": 20.2,
+      "frames": {
+        "n": 1175,
+        "p50": 17,
+        "p95": 17,
+        "p99": 43,
+        "max": 83,
+        "over33": 17,
+        "over50": 10,
+        "over100": 0,
+        "hist": [
+          16,
+          12,
+          1095,
+          26,
+          10,
+          6,
+          10,
+          0
+        ]
+      },
+      "longTasks": null,
+      "loaf": null,
+      "heartbeat": {
+        "n": 828,
+        "p95": 5,
+        "max": 52,
+        "over50": 1
+      },
+      "frame3d": [
+        {
+          "t": 2,
+          "draws": 5,
+          "tris": 30260,
+          "jsMs": 2,
+          "pr": 2,
+          "fps": 30,
+          "worst": 49,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 4,
+          "draws": 5,
+          "tris": 30260,
+          "jsMs": 2,
+          "pr": 2,
+          "fps": 19,
+          "worst": 1525,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 6,
+          "draws": 5,
+          "tris": 30260,
+          "jsMs": 2,
+          "pr": 2,
+          "fps": 19,
+          "worst": 1525,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 8,
+          "draws": 5,
+          "tris": 30260,
+          "jsMs": 2,
+          "pr": 2,
+          "fps": 30,
+          "worst": 42,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 10,
+          "draws": 5,
+          "tris": 30260,
+          "jsMs": 2,
+          "pr": 2,
+          "fps": 30,
+          "worst": 48,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 12,
+          "draws": 5,
+          "tris": 30260,
+          "jsMs": 2,
+          "pr": 2,
+          "fps": 30,
+          "worst": 59,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 16,
+          "draws": 5,
+          "tris": 30260,
+          "jsMs": 1,
+          "pr": 2,
+          "fps": 3,
+          "worst": 3316,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 18,
+          "draws": 5,
+          "tris": 30260,
+          "jsMs": 1,
+          "pr": 2,
+          "fps": 18,
+          "worst": 768,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 20,
+          "draws": 5,
+          "tris": 30260,
+          "jsMs": 2,
+          "pr": 2,
+          "fps": 23,
+          "worst": 768,
+          "rung": null,
+          "tier": null
+        }
+      ],
+      "heapMB": null,
+      "phases": [],
+      "hiddenMs": 0
+    },
+    {
+      "id": "stats",
+      "title": "Stats and Relations",
+      "status": "stopped",
+      "three": false,
+      "seconds": 27,
+      "frames": {
+        "n": 1587,
+        "p50": 17,
+        "p95": 19,
+        "p99": 37,
+        "max": 182,
+        "over33": 19,
+        "over50": 3,
+        "over100": 2,
+        "hist": [
+          44,
+          20,
+          1417,
+          65,
+          22,
+          16,
+          1,
+          2
+        ]
+      },
+      "longTasks": null,
+      "loaf": null,
+      "heartbeat": {
+        "n": 1106,
+        "p95": 5,
+        "max": 139,
+        "over50": 3
+      },
+      "frame3d": [
+        {
+          "t": 2,
+          "draws": 5,
+          "tris": 30260,
+          "jsMs": 2,
+          "pr": 2,
+          "fps": 30,
+          "worst": 49,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 14,
+          "draws": 5,
+          "tris": 30260,
+          "jsMs": 1,
+          "pr": 2,
+          "fps": 31,
+          "worst": 46,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 16,
+          "draws": 5,
+          "tris": 30260,
+          "jsMs": 1,
+          "pr": 2,
+          "fps": 30,
+          "worst": 46,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 22,
+          "draws": 29,
+          "tris": 1160,
+          "jsMs": 0,
+          "pr": 2,
+          "fps": 6,
+          "worst": 253,
+          "rung": 1,
+          "tier": "medium"
+        }
+      ],
+      "heapMB": null,
+      "phases": [],
+      "hiddenMs": 0
+    }
+  ],
+  "reloads": 0,
+  "complete": false,
+  "saved": {
+    "at": "2026-11-28T05:10:28.777Z",
+    "build": "7912460838e2720fb6c9da5c71b487f7af890988"
+  }
+}
