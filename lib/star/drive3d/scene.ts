@@ -5,10 +5,10 @@
  *
  * Draws ./drive.ts: your street (brick semis, front hedges, lamp posts, parked cars), the
  * roundabout, the country lane (hedges, textured trees: garden3d/cardTrees.ts, never the blocky
- * ones), and a STAND-IN compound at the end (gate, barrier, hut, car park, a training block):
- * the real compound (lib/star/world3d/compound*, another builder's) is not merged yet; swap it
- * in at `buildCompound`. Your car is the cut-wheel copy (tools/cars/cut_wheels.py): wheels spin
- * with the distance, the fronts steer. Two team-mates by the door turn to look.
+ * ones), and the compound road at the end with its sign: the drive in fades out there and HANDS OVER to the
+ * real training compound (phase 2: lib/star/world3d/testScene.ts opts.arrive, ./arrival.ts), which plays the
+ * barrier, the bay shot and the door moment in the real car park. Your car is the cut-wheel copy
+ * (tools/cars/cut_wheels.py, ./rig.ts): wheels spin with the distance, the fronts steer.
  *
  * Speed (S20 Low target: ≤37 draws, ≤35k triangles): the scenery is joined by material (one
  * draw each: road, verges, hedges, house walls, roofs, props, trees), your car is the light copy
@@ -24,8 +24,9 @@ import { blobCanvas } from "../shop3d/textures";
 import { brickCanvas, hedgeCanvas, slateCanvas, meadowCanvas, skyCanvas } from "../garden3d/textures";
 import { addCardTree, addCardBush, cardGeometry, cardMaterial, loadCardAtlas, newCardBin, placeCardsSince } from "../garden3d/cardTrees";
 import { at, offsetAt, LANE, ROAD_HALF, type Route } from "./route";
-import { newDrive, stepDrive, answerCall, chooseFork, skipDrive, cycleCam, liveCam, barrierLift, arrivalShot, matesTurn, arrivalLine, INTRO_S, STEP, type DriveSession, type DriveScript, type ForkChoice, type DriveCam } from "./drive";
+import { newDrive, stepDrive, answerCall, chooseFork, skipDrive, cycleCam, liveCam, INTRO_S, STEP, type DriveSession, type DriveScript, type ForkChoice, type DriveCam } from "./drive";
 import { DRIVE_CARS, carFile, toLinear, type DriveCarId } from "./cars";
+import { rigCar } from "./rig";
 import type { SteerMode } from "./car";
 import type { CallMemory } from "./calls";
 
@@ -63,7 +64,8 @@ export interface DriveUi {
 
 export interface DriveCallbacks {
   onUi: (ui: DriveUi) => void;
-  onDone: (r: { skipped: boolean; fork: ForkChoice | null; memories: CallMemory[] }) => void;
+  /** `handover`: the drive in ended on the compound road; the compound's own arrival (testScene opts.arrive) takes over. */
+  onDone: (r: { skipped: boolean; fork: ForkChoice | null; memories: CallMemory[]; handover: boolean }) => void;
   onMemory?: (m: CallMemory) => void;
   onContextLost?: () => void;
 }
@@ -80,7 +82,6 @@ export interface DriveController {
   dispose: () => void;
 }
 
-const COMPOUND_HALF = 26;
 /** Your garden gate along your street (your house is the first on the left); the car waits 6 m before it. */
 const GATE_S = 6;
 
@@ -147,6 +148,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
   const S = newDrive({
     leg: opts.leg, tier, seed: opts.seed ?? 7, mode: opts.mode, spec: { wheelR: 0.42, wheelbase: 2.6 },
     call: opts.call, names: { mate: opts.names.mate, car: opts.names.car, club: opts.names.club },
+    handover: opts.leg === "in",
   });
   S.script = opts.script;
   const R: Route = S.route;
@@ -176,7 +178,15 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
   const roadM = new THREE.MeshStandardMaterial({ map: roadT, roughness: 0.92, color: "#ffffff" });
   const roadGs: any[] = [];
   // the roundabout and the car park are plain asphalt (u from the clean column); streets and lanes have lines
-  roadGs.push(ribbon(THREE, R, 0, R.length, -ROAD_HALF, ROAD_HALF, 0.0, (k) => (k === "roundabout" || k === "park" ? [0.02, 0.06] : [0, 1])));
+  // the drive in: the road runs straight on past the compound's way in (the drive hands over before it)
+  const roadEnd = opts.leg === "in" ? R.gateS : R.length;
+  roadGs.push(ribbon(THREE, R, 0, roadEnd, -ROAD_HALF, ROAD_HALF, 0.0, (k) => (k === "roundabout" || k === "park" ? [0.02, 0.06] : [0, 1])));
+  if (opts.leg === "in") {
+    const e = at(R, R.gateS);
+    const g = new THREE.PlaneGeometry(ROAD_HALF * 2, 70); g.rotateX(-Math.PI / 2); g.translate(0, 0, 35); g.rotateY(e.h); g.translate(e.x, 0.0, e.z);
+    setUv(g, 0.5, 0.5, true);
+    roadGs.push(g);
+  }
   {
     const I = R.island;
     const ring = new THREE.RingGeometry(I.r, I.ringOuter, 48, 1); ring.rotateX(-Math.PI / 2); ring.translate(I.x, 0.004, I.z);
@@ -298,7 +308,6 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
     }
     // the roundabout island: a tree and bushes
     { const I = R.island; const from = bin.p.length / 9; addCardTree(THREE, bin, { h: 1.3, w: 0.8, pine: false, seed: 77, lod: lod as 0 | 1 | 2 }); placeCardsSince(bin, from, I.x, 0, I.z, 8 / 1.3, 0); for (let i = 0; i < 6; i++) addCardBush(THREE, bin, { x: I.x + Math.cos(i) * 5, z: I.z + Math.sin(i) * 5, s: 1.4, seed: 90 + i, lod: lod as 0 | 1 | 2 }); }
-    if (opts.leg === "in") { const end = at(R, R.gateS); for (let i = 0; i < 9; i++) treeAt(R.gateS + 8 + i * 4, (i % 2 ? 1 : -1) * (COMPOUND_HALF + 4 + rnd() * 5), 9 + rnd() * 3); void end; }
     // cut into 70 m squares, one draw each, so only the squares in view are drawn (the whole route is
     // one long strip: one joined mesh would send every tree every frame)
     const tmat = cardMaterial(THREE, atlas.map, tier === "low" ? null : atlas.nrm);
@@ -316,18 +325,12 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
     }
   }
 
-  // ── the compound (stand-in) or the fork ──
+  // ── the compound road's sign (the drive in) or the fork ──
   const loader = new GLTFLoader();
   await withMeshopt(loader);
-  let barrierArm: any = null;
   const parkedFiles: { file: string; x: number; z: number; ry: number; paint?: string; from: [number, number, number] }[] = [];
-  let doorSpot: { x: number; z: number; face: number; cam: [number, number]; look: [number, number]; car: [number, number] } | null = null;
-  if (opts.leg === "in") {
-    const r = buildCompound(THREE, tier === "low", roadM, R, propBox, propGs, roadGs.length >= 0 ? scene : scene, tex, merge, parkedFiles);
-    barrierArm = r.arm; doorSpot = r.door;
-  } else {
-    buildFork(THREE, R, propBox, scene, tex);
-  }
+  if (opts.leg === "in") buildRoadSign(THREE, R, propBox, scene, tex, opts.names.club);
+  else buildFork(THREE, R, propBox, scene, tex);
   // parked cars in your street (the light copies, as they are; one draw each)
   if (opts.leg === "in") {
     // on the neighbours' drives, nose to the house (the road stays clear for you and the traffic)
@@ -378,18 +381,12 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
   mine.root.add(cabin.group);
   cabin.group.visible = false;
 
-  // ── the two team-mates by the door (the arrival) ──
-  const mates: { root: any; mixer: any; faceTo: number; turnTo: number }[] = [];
-  if (opts.leg === "in" && doorSpot && !opts.noPeople) {
-    try { await addMates(THREE, loader, scene, doorSpot, opts, tier, mates); } catch (e) { console.warn("drive: team-mates", e); }
-  }
 
   // ── run ──
   let holding = false, tapQ: -1 | 1 | 0 = 0, side = 0;
   let lastUi = "";
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
   let camInit = false;
-  let bayT0 = -1;
   let fps = 0, frames = 0, fpsT = performance.now();
   const memSent = new Set<number>();
   let doneSent = false;
@@ -412,16 +409,6 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
       T.rig.root.visible = t.s > 0 && t.s < R.length;
     });
     for (let i = traffic.length - 1; i >= 0; i--) if (!S.traffic.some((t) => t.id === traffic[i].id)) traffic[i].rig.root.visible = false;
-    if (barrierArm) barrierArm.rotation.z = barrierLift(S) * 1.45;
-    const turn = matesTurn(S);
-    // the team-mates only exist for the arrival (skinned bodies are never culled by distance)
-    // (and only in the bay shot: the barrier shot looks away from them, and a skinned body is not culled reliably)
-    const matesOn = (S.phase === "arrive" && arrivalShot(S) === "bay") || (S.phase === "done" && !S.skipped);
-    for (const m of mates) {
-      m.root.visible = matesOn;
-      let d = m.turnTo - m.faceTo; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
-      m.root.rotation.y = m.faceTo + d * turn;
-    }
   };
 
   const aimCam = (dt: number) => {
@@ -429,9 +416,8 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
     const fwd = [Math.sin(c.yaw), Math.cos(c.yaw)];
     const carP = mine.root.position;
     let pos: number[], look: number[], fov = 55, snap = false;
-    const which = S.phase === "arrive" ? arrivalShot(S) : null;
     const cam = liveCam(S);
-    cabin.group.visible = !which && cam === "cabin" && S.phase !== "intro";
+    cabin.group.visible = cam === "cabin" && S.phase !== "intro";
     // the car's own shell stays: from inside it is see-through (back faces), and the bonnet shows ahead
     mine.body.visible = true;
     if (S.phase === "intro") {
@@ -442,24 +428,6 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
       const lk = offsetAt(R, 2.0, 3.3);
       look = [lk.x, 1.3, lk.z];
       fov = 68; snap = true;
-    } else if (which === "barrier") {
-      // THE SHOT: low and wide by the barrier post, the car coming at you, the arm going up
-      // inside the gate, just off your line, looking back through the barrier at the car coming
-      const g = offsetAt(R, R.gateS + 7.5, -(ROAD_HALF + 2.2));
-      pos = [g.x, 0.62, g.z];
-      look = [carP.x, 0.9, carP.z];
-      fov = 62; snap = true;
-    } else if (which === "bay" && doorSpot) {
-      // behind the two team-mates by the door, the car swinging into its bay towards them
-      // from the side of the bay: the training block's glass front behind, the two by its door, your car swinging in
-      const d = doorSpot;
-      // a slow push in while it rolls into the bay (0.35 m/s, up to 2.5 m)
-      if (bayT0 < 0) bayT0 = S.ta;
-      const push = Math.min(2.5, (S.ta - bayT0) * 0.35);
-      const dx = d.look[0] - d.cam[0], dz = d.look[1] - d.cam[1], dl = Math.hypot(dx, dz) || 1;
-      pos = [d.cam[0] + (dx / dl) * push, 1.3, d.cam[1] + (dz / dl) * push];
-      look = [d.look[0], 1.6, d.look[1]];
-      fov = 44; snap = true;
     } else if (cam === "cabin" && S.callState === "ringing" && S.t - S.callSince < 2.6) {
       // the call: over the driver's shoulder onto the phone in its mount, the road through the glass above it
       pos = local(c.yaw, carP, -0.3, 1.3, 0.02);
@@ -495,7 +463,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
       reply: S.callAnswer === "yes" ? S.call.yes.reply : S.callAnswer === "no" ? S.call.no.reply : undefined,
       effect: S.callAnswer === "yes" ? S.call.yes.effect : S.callAnswer === "no" ? S.call.no.effect : undefined, since: S.callSince,
     } : null;
-    const caption = S.phase === "arrive" && S.fade > 0.6 ? arrivalLine(opts.car, opts.names.mate) : null;
+    const caption = null;
     const u: DriveUi = {
       phase: S.phase, mph: Math.round(S.car.v * 2.237), cam: liveCam(S), call, fade: S.fade, caption,
       fork: S.phase === "fork", forkChoice: S.fork, blocked: S.car.horn > 0, lane: S.car.off >= 0 ? "left" : "right", t: S.t,
@@ -503,7 +471,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
     const key = JSON.stringify({ ...u, t: Math.round(u.t * 4), fade: Math.round(u.fade * 10) });
     if (key !== lastUi) { lastUi = key; cb.onUi(u); }
     S.memories.forEach((m, i) => { if (!memSent.has(i)) { memSent.add(i); cb.onMemory?.(m); } });
-    if (S.phase === "done" && !doneSent) { doneSent = true; cb.onDone({ skipped: S.skipped, fork: S.fork, memories: S.memories }); }
+    if (S.phase === "done" && !doneSent) { doneSent = true; cb.onDone({ skipped: S.skipped, fork: S.fork, memories: S.memories, handover: opts.leg === "in" }); }
   };
 
   const sim = (dt: number) => {
@@ -513,7 +481,6 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
       stepDrive(S, { hold: holding, tap: tapQ, side });
       tapQ = 0;
       left -= h;
-      for (const m of mates) m.mixer.update(h);
     }
   };
 
@@ -752,25 +719,6 @@ function hedgeRibbon(T: any, R: Route, s0: number, s1: number, off: number, h: n
   return g;
 }
 
-/** Your car's parts: the body under a tilt group (roll, pitch), the wheels on the root (they stay on the road). */
-function rigCar(T: any, root: any) {
-  const out = new T.Group();
-  const tilt = new T.Group();
-  out.add(tilt);
-  const wheels: { node: any; front: boolean }[] = [];
-  const kids = [...root.children];
-  let body: any = null;
-  for (const k of kids) {
-    if (/^wheel_/.test(k.name)) { k.rotation.order = "YXZ"; out.add(k); wheels.push({ node: k, front: /^wheel_F/.test(k.name) }); }
-    else { tilt.add(k); if (!body) body = k; }
-  }
-  const box = new T.Box3().setFromObject(tilt);
-  const fz = wheels.filter((w) => w.front).map((w) => w.node.position.z), rz = wheels.filter((w) => !w.front).map((w) => w.node.position.z);
-  const wheelbase = fz.length && rz.length ? Math.abs(fz.reduce((a, b) => a + b, 0) / fz.length - rz.reduce((a, b) => a + b, 0) / rz.length) : 2.6;
-  const wheelR = wheels.length ? wheels.reduce((a, w) => a + w.node.position.y, 0) / wheels.length : 0.4;
-  return { root: out, tilt, body: tilt, wheels, wheelbase, wheelR, width: box.max.x - box.min.x, length: box.max.z - box.min.z };
-}
-
 /** The home's light copies come facing +x at their own size: fit to a length, on the ground, centred. */
 function fitCar(T: any, root: any, length: number) {
   root.updateMatrixWorld(true);
@@ -807,89 +755,6 @@ function repaint(T: any, root: any, from: [number, number, number], to: string) 
   });
 }
 
-/** The stand-in compound: a fence line, the gate with its barrier and hut, the car park, the training block. */
-function buildCompound(T: any, low: boolean, roadM: any, R: Route, propBox: (...a: any[]) => void, propGs: any[], scene: any, tex: (cv: HTMLCanvasElement, rep?: [number, number]) => any, merge: (g: any[]) => any, parked: any[]) {
-  void propGs; void merge;
-  const g = at(R, R.gateS);
-  const h = g.h;
-  const fx = Math.sin(h), fz = Math.cos(h), lx = Math.cos(h), lz = -Math.sin(h);
-  const P = (along: number, left: number) => [g.x + fx * along + lx * left, g.z + fz * along + lz * left];
-  // the fence: dark green railings either side of the gate, out to the compound's corners, then down its sides
-  for (const side of [1, -1]) {
-    for (let k = 0; k < 9; k++) {
-      const [x, z] = P(0, side * (ROAD_HALF + 2 + k * 2.6 + 1.3));
-      propBox(2.6, 0.08, 0.06, x, 1.9, z, h + Math.PI / 2, "#25362c");
-      propBox(2.6, 0.08, 0.06, x, 0.3, z, h + Math.PI / 2, "#25362c");
-      for (let j = 0; j < 6; j++) { const [bx, bz] = P(0, side * (ROAD_HALF + 2 + k * 2.6 + j * 0.44)); propBox(0.05, 2.1, 0.05, bx, 1.05, bz, h, "#25362c"); }
-    }
-  }
-  // the barrier: a post on the right, the red-and-white arm across your lane (it lifts about the post)
-  const [px, pz] = P(0, -(ROAD_HALF + 0.6));
-  propBox(0.45, 1.05, 0.45, px, 0.52, pz, h, "#d9d6cf");
-  propBox(0.5, 0.12, 0.5, px, 1.1, pz, h, "#c0392b");
-  const armT = tex(stripesCanvas());
-  const arm = new T.Group();
-  arm.position.set(px, 0.95, pz);
-  arm.rotation.order = "YZX";
-  arm.rotation.y = h; // its +x runs from the post across the road (the left)
-  const bar = new T.Mesh(new T.BoxGeometry(ROAD_HALF * 2 + 0.6, 0.11, 0.09), new T.MeshStandardMaterial({ map: armT, roughness: 0.5 }));
-  bar.position.x = -(ROAD_HALF + 0.3) * -1; // from the post across the road
-  arm.add(bar);
-  scene.add(arm);
-  // the gatehouse: a small white hut with a dark window, on the right
-  const [hx, hz] = P(-2.5, -(ROAD_HALF + 3.2));
-  propBox(2.6, 2.5, 2.4, hx, 1.25, hz, h, "#e8e6e0");
-  propBox(2.8, 0.18, 2.6, hx, 2.6, hz, h, "#3a3f46");
-  const [wx, wz] = P(-2.5 + 1.21, -(ROAD_HALF + 3.2));
-  propBox(1.6, 0.9, 0.05, wx, 1.55, wz, h, "#22303c");
-  // the car park: the bays end at the route's end; the training block beyond them
-  // the bay is where your car comes to rest (the road line's end, your lane's offset to the left)
-  const endL = offsetAt(R, R.length, LANE);
-  const end = { x: endL.x, z: endL.z, h: endL.h };
-  const ef = [Math.sin(end.h), Math.cos(end.h)], el = [Math.cos(end.h), -Math.sin(end.h)];
-  const E = (fwd: number, left: number) => [end.x + ef[0] * fwd + el[0] * left, end.z + ef[1] * fwd + el[1] * left];
-  // bay lines: white strips either side of each bay (yours in the middle), five bays
-  for (let b = -2; b <= 3; b++) {
-    const [lx2, lz2] = E(0, b * 2.8 - 1.4);
-    propBox(0.1, 0.012, 5.0, lx2, 0.01, lz2, end.h, "#f1efe8");
-  }
-  // team-mates' cars in the bays either side of yours (the light copies, repainted)
-  // all on the left of your bay, behind the two team-mates: the bay shot looks across from the right, nothing in its way
-  // the bay next to yours stays empty: the two team-mates stand in front of it, nothing between them and the bay shot
-  const mates: [number, string, string][] = [[5.6, "sports", "#1d2733"], [8.4, "suv", "#e9e6df"], [-5.6, "family", "#6b1f24"]];
-  // Low: one team-mate's car (the two people are most of the arrival's triangles)
-  for (const [off, id, col] of mates.slice(0, low ? 1 : 2)) {
-    const [x, z] = E(0, off);
-    parked.push({ file: `/star/home3d/car-${id}-lod.glb`, x, z, ry: end.h, paint: col, from: DRIVE_CARS[id as DriveCarId].paint });
-  }
-  // the training block: long, low, grey cladding with a glass front and the club's band; the door in front of your bay
-  const [bx, bz] = E(12, 0);
-  const blockT = tex(blockCanvas());
-  const block = new T.Mesh(new T.BoxGeometry(30, 6.5, 7).toNonIndexed(), new T.MeshStandardMaterial({ map: blockT, roughness: 0.6 }));
-  { const U = block.geometry.getAttribute("uv"), N = block.geometry.getAttribute("normal"); for (let i = 0; i < U.count; i++) if (N.getZ(i) < 0.5) U.setXY(i, 0.98, 0.02); }
-  block.position.set(bx, 3.25, bz);
-  block.rotation.y = end.h + Math.PI; // its picture faces the car park
-  scene.add(block);
-  // a flat roof edge
-  propBox(30.6, 0.35, 7.6, bx, 6.6, bz, end.h, "#2c3036");
-  // the two team-mates on the walkway at the front corner of your bay, on the way to the door
-  const [dx, dz] = E(3.0, 2.6);
-  // the bay shot: from the block's wall, over the team-mates' shoulders, at your car coming in
-  // the bay shot: low, from behind the bay on the aisle side; your car sweeps in past the lens and rolls
-  // away into the bay, towards the two by the door (they turn: their faces to camera), the block behind
-  const [cx, cz] = E(-11.5, -1.5);
-  const [kx, kz] = E(2, 1.0);
-  // the car park's tarmac: from the gate road to the block, either side of the bays
-  {
-    const a = E(-16, 0), w = 30, d = 25;
-    const slab = new T.PlaneGeometry(w, d); slab.rotateX(-Math.PI / 2);
-    const U = slab.getAttribute("uv"); for (let i = 0; i < U.count; i++) U.setXY(i, 0.04, U.getY(i) * 4);
-    slab.rotateY(end.h); slab.translate((a[0] + E(8.5, 0)[0]) / 2, 0.002, (a[1] + E(8.5, 0)[1]) / 2);
-    const m = new T.Mesh(slab, roadM); m.receiveShadow = false; scene.add(m);
-  }
-  return { arm, door: { x: dx, z: dz, face: end.h + Math.PI, cam: [cx, cz] as [number, number], look: [kx, kz] as [number, number], car: [end.x, end.z] as [number, number] } };
-}
-
 /** The fork at the end of the drive back: a signpost (Home / Casino / Shop) and the three roads. */
 function buildFork(T: any, R: Route, propBox: (...a: any[]) => void, scene: any, tex: (cv: HTMLCanvasElement, rep?: [number, number]) => any) {
   const end = R.pts[R.pts.length - 1];
@@ -902,26 +767,25 @@ function buildFork(T: any, R: Route, propBox: (...a: any[]) => void, scene: any,
   scene.add(sign);
 }
 
-function stripesCanvas(): HTMLCanvasElement {
-  const c = document.createElement("canvas"); c.width = 256; c.height = 16;
-  const g = c.getContext("2d")!;
-  for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? "#f4f2ec" : "#c0392b"; g.fillRect(i * 32, 0, 32, 16); }
-  return c;
+/** The drive in: on the compound road, a club sign on the left ("Training ground, next left") and, on Medium and
+ *  up, the compound's hedge in the fog ahead; the drive fades out here and the real compound takes over. */
+function buildRoadSign(T: any, R: Route, propBox: (...a: any[]) => void, scene: any, tex: (cv: HTMLCanvasElement, rep?: [number, number]) => any, club: string) {
+  const p = offsetAt(R, R.gateS - 44, ROAD_HALF + 1.6);
+  for (const d of [-0.9, 0.9]) { const q = offsetAt(R, R.gateS - 44 + d, ROAD_HALF + 1.6); propBox(0.1, 2.2, 0.1, q.x, 1.1, q.z, p.h, "#3b3f45"); }
+  const sign = new T.Mesh(new T.PlaneGeometry(2.2, 1.2), new T.MeshStandardMaterial({ map: tex(roadSignCanvas(club)), roughness: 0.5, side: T.DoubleSide }));
+  sign.position.set(p.x, 2.0, p.z); sign.rotation.y = p.h + Math.PI;
+  scene.add(sign);
 }
 
-function blockCanvas(): HTMLCanvasElement {
-  const c = document.createElement("canvas"); c.width = 1024; c.height = 256;
+function roadSignCanvas(club: string): HTMLCanvasElement {
+  const c = document.createElement("canvas"); c.width = 512; c.height = 280;
   const g = c.getContext("2d")!;
-  g.fillStyle = "#8a9099"; g.fillRect(0, 0, 1024, 256);
-  for (let x = 0; x < 1024; x += 32) { g.fillStyle = x % 64 ? "#858b94" : "#8f959e"; g.fillRect(x, 0, 32, 256); }
-  // the glass front, the door in the middle
-  const gr = g.createLinearGradient(0, 70, 0, 230); gr.addColorStop(0, "#9fb6c8"); gr.addColorStop(1, "#30414f");
-  g.fillStyle = gr; g.fillRect(40, 80, 944, 150);
-  g.fillStyle = "#3a3f46"; for (let x = 40; x <= 984; x += 59) g.fillRect(x - 2, 80, 4, 150);
-  g.fillStyle = "#1c242c"; g.fillRect(482, 110, 60, 120);
-  // the band and the sign
-  g.fillStyle = "#b3122e"; g.fillRect(0, 30, 1024, 30);
-  g.fillStyle = "#ffffff"; g.font = "bold 22px system-ui, sans-serif"; g.textAlign = "center"; g.fillText("FIRST TEAM TRAINING CENTRE", 512, 53);
+  g.fillStyle = "#0f2f6b"; g.fillRect(0, 0, 512, 280);
+  g.strokeStyle = "#ffffff"; g.lineWidth = 8; g.strokeRect(8, 8, 496, 264);
+  g.fillStyle = "#ffffff"; g.textAlign = "center";
+  g.font = "bold 40px system-ui, sans-serif"; g.fillText(club.toUpperCase().slice(0, 18), 256, 78);
+  g.font = "bold 54px system-ui, sans-serif"; g.fillText("Training Ground", 256, 160);
+  g.font = "bold 44px system-ui, sans-serif"; g.fillText("Next left ←", 256, 236);
   return c;
 }
 
@@ -1065,52 +929,3 @@ function buildCabin(T: any, mine: ReturnType<typeof rigCar>, RB: any, merge?: (g
   }
   return { group: g, phone: draw };
 }
-
-/** The two team-mates by the door, chatting, who turn to look when you pull in. */
-async function addMates(T: any, loader: any, scene: any, door: { x: number; z: number; face: number; car: [number, number] }, opts: DriveSceneOptions, tier: Quality3d, out: { root: any; mixer: any; faceTo: number; turnTo: number }[]) {
-  const SkeletonUtils: any = await import("three/examples/jsm/utils/SkeletonUtils.js");
-  const SK = SkeletonUtils.default ?? SkeletonUtils;
-  const { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, toonHeadsFor } = await import("../people3d");
-  const { people3dLook } = await import("../look3d");
-  const { addClips, loadAnims3d } = await import("../three3d/footballAnims");
-  const PR = await import("../people/presets");
-  const looks = PR.castScene([0, 1].map((i) => ({ id: `drive-mate-${i}`, role: "player" as const, club: opts.names.club || "Arsenal" })));
-  const heads = Array.from(new Set([...toonHeadsFor([]), ...looks.map((l: any) => l.head)]));
-  const [charG, animG, footG] = await Promise.all([loadPeople3d(loader, "player", people3dLook(), heads), loadPeople3d(loader, "anims", people3dLook()), loadAnims3d(loader, "football")]);
-  const FI = await import("../style3d/toon/faceIdApply");
-  const FACE = await import("../style3d/toon/face");
-  const HAIR = await import("../style3d/toon/hair");
-  // two at the door, a step apart, side-on to each other
-  const fx = Math.sin(door.face), fz = Math.cos(door.face), lx = Math.cos(door.face), lz = -Math.sin(door.face);
-  const spots = [[-0.5, 0.35], [0.5, -0.35]];
-  // Low: one team-mate (each body is 14.6k triangles; the arrival keeps to the phone budget)
-  for (let i = 0; i < (tier === "low" ? 1 : 2); i++) {
-    const L: any = looks[i];
-    const p: any = makePerson3d(T, SK, charG, animG, { outline: 0, castShadow: false, who: L.id, toonHead: L.head, toonBody: L.build } as any);
-    dressPerson3d(T, p, { ...L.dress, kit: { ...(L.kit ?? {}), shirt: shade(opts.kit.shirt), trim: opts.kit.trim, shorts: "#1d1f24", socks: "#1d1f24" }, number: null } as any);
-    try { FI.applyToonFaceId(T, p, L.faceId, { detail: FI.FACE_DETAIL[tier] }); const rig = FACE.addToonFace(T, p); rig?.set({ face: FACE.toonFaceFor({}), blink: 0 }); } catch { /* no face */ }
-    if (L.hairMesh) { try { await HAIR.wearToonHair(T, loader, p, L.hairMesh, { outline: 0 }); } catch { /* bald */ } }
-    relaxHands(T, p);
-    addClips(T, p, footG);
-    const at2 = (k: number) => [door.x + lx * spots[k][0] + fx * spots[k][1], door.z + lz * spots[k][0] + fz * spots[k][1]];
-    const [x, z] = at2(i), [ox, oz] = at2(1 - i);
-    p.root.position.set(x, 0, z);
-    // facing each other (chatting), then round to your car in its bay
-    const faceTo = Math.atan2(ox - x, oz - z);
-    const turnTo = Math.atan2(door.car[0] - x, door.car[1] - z);
-    p.root.rotation.y = faceTo;
-    const idle = p.actions.idle ?? Object.values(p.actions)[0];
-    (idle as any)?.reset().play();
-    (idle as any)?.setEffectiveTime?.(i * 1.3);
-    scene.add(p.root);
-    out.push({ root: p.root, mixer: p.mixer, faceTo, turnTo });
-  }
-}
-
-/** The club's training top: the shirt colour a shade darker. */
-function shade(hex: string): string {
-  const n = parseInt(hex.replace("#", ""), 16);
-  const f = (v: number) => Math.max(0, Math.round(v * 0.62)).toString(16).padStart(2, "0");
-  return `#${f((n >> 16) & 255)}${f((n >> 8) & 255)}${f(n & 255)}`;
-}
-

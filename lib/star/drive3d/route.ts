@@ -66,10 +66,13 @@ export const DRIVE_IN: Piece[] = [
 /** Index of the roundabout's middle arc in DRIVE_IN (its centre is the island). */
 const ISLAND_PIECE = 3;
 
-export function buildRoute(pieces: Piece[] = DRIVE_IN, step = 1): Route {
+/** Where a route starts (the road line) and which way it heads; the drive itself starts at the origin facing +z. */
+export interface RouteStart { x: number; z: number; h: number }
+
+export function buildRoute(pieces: Piece[] = DRIVE_IN, step = 1, start: RouteStart = { x: 0, z: 0, h: 0 }): Route {
   const pts: RoutePoint[] = [];
   const zone: number[] = [];
-  let x = 0, z = 0, h = 0, s = 0;
+  let x = start.x, z = start.z, h = start.h, s = 0;
   let island = { x: 0, z: 0, r: 9, ringOuter: 18 };
   let gateS = 0;
   pieces.forEach((p, i) => {

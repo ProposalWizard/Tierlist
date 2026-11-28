@@ -2641,18 +2641,19 @@ export const ADMIN_GUIDES = {
 
   "/star-drive3d-dev": {
     title: "The drive",
-    what: "Driving, phase 1. You leave your garden gate, get in your car and drive to training: your street, a roundabout, a country lane, then the compound gate. At the gate the camera drops low by the barrier, the arm lifts, you park in your bay and two team-mates by the door turn to look; it cuts on the door. A call may ring on the phone on the dash (a team-mate wants to borrow something, or your agent). The drive back ends at a fork: Home, Casino or Shop. Not in the career yet.",
+    what: "Driving, phases 1 and 2. You leave your garden gate, get in your car and drive to training: your street, a roundabout, a country lane, then the compound road. There it fades and the REAL training compound opens (the same as /star-world3d-dev?place=compound): the camera is low by the car park's barrier, the arm lifts, you swing into your bay in front of the crest board, the gate and the building, two team-mates by the gate turn to look, and on the door moment you are standing at your car's door. Walk to the gym door from there. A call may ring on the phone on the dash (a team-mate wants to borrow something, or your agent). The drive back ends at a fork: Home, Casino or Shop. Not in the career yet.",
     buttons: [
       {
         items: [
           ["Hatchback / Family Car / Luxury SUV / Sports Car / Classic Car / Supercar", "Which of your cars you drive (the shop's own cars, with their wheels cut so they turn). In the career it will be the car you own; the Hatchback when you own none."],
-          ["Drive in / Drive back", "To training (ends at the car park) or home from training (ends at the fork: Home / Casino / Shop, then a fade)."],
+          ["Drive in / Drive back", "To training (the drive, then the real compound's arrival: barrier, bay, you at your car; walk to the gym door) or home from training (ends at the fork: Home / Casino / Shop, then a fade)."],
           ["Steer: Lanes / Thumb stick / Tilt", "How you steer. Lanes: the car drives itself, tap the left or right half of the screen to change lane. Thumb stick: a stick bottom left slides you across the road. Tilt: tilt the phone. The car can never leave the road or crash. Remembered on this device only."],
           ["Call: by chance / No call / a call's name", "By chance: one drive in three rings. No call, or force one call to see it."],
           ["Hold anywhere on the picture", "Faster (about a third). Let go to ease off. It still slows for the roundabout and the gate."],
           ["Tap the left or right half", "Lanes only: change lane, e.g. to overtake the slow car on the lane. If someone is coming the horn sounds and you stay put."],
           ["🎥 (top right)", "The camera: behind the car, the bumper, or in the car (the dash, the wheel, the phone)."],
-          ["Skip › (top right)", "Ends the drive from any frame (a fade, then you are there)."],
+          ["Skip › (top right)", "Ends the drive from any frame (a fade, then the compound). In the compound's arrival, Skip puts you straight at your car's door."],
+          ["The gym door (in the compound, after the arrival)", "Walk up and Go in: the page says where the career would take you (the gym)."],
           ["The call's two buttons", "Your answer (e.g. Go on then / Not the car). It changes nothing yet: it shows what it would do, and leaves a memory for the people plan (listed under the picture)."],
           ["← Home / ↑ Casino / Shop → (the fork)", "Where you go after training. Just the choice and a fade for now."],
           ["↻ Restart", "Starts the drive again."],
@@ -2661,7 +2662,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing is saved. No career is touched. The steer choice is remembered on this device only."],
     inGame: ["Not in the game yet. The career will open it from the garden gate and after training."],
-    dev: "components/star/Drive3D.tsx · app/star-drive3d-dev/page.tsx · lib/star/drive3d/{route,car,drive,calls,cars,scene}.ts · the cut cars: tools/cars/ (public/star/drive3d/) · test: tests/star/drive.mts",
+    dev: "components/star/Drive3D.tsx · app/star-drive3d-dev/page.tsx · lib/star/drive3d/{route,car,drive,calls,cars,scene,rig,arrival}.ts · the arrival is drawn by lib/star/world3d/testScene.ts (opts.arrive) · stills: scripts/drive3d/arrival-shots.mjs · the cut cars: tools/cars/ (public/star/drive3d/) · tests: tests/star/drive.mts, tests/star/driveArrival.mts",
   },
 
   "/star-world3d-dev": {
@@ -2695,7 +2696,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: [
       "Nothing is saved. The made-up career lives on this page only and is gone when you leave or restart.",
-      "The address can hold a set-up: ?place=house|garden|gym|compound, ?sky=day|sunset|night (the compound), ?q=low|medium|high (the quality tier), ?fps=1 for the frame meter, ?bare=1 full screen, ?demo=sofa|fridge|visitor|talk|arrive|compound (a scripted run for filming; arrive = car park, through the gate, in at the gym door).",
+      "The address can hold a set-up: ?place=house|garden|gym|compound, ?sky=day|sunset|night (the compound), ?q=low|medium|high (the quality tier), ?fps=1 for the frame meter, ?bare=1 full screen, ?demo=sofa|fridge|visitor|talk|arrive|compound|drive (a scripted run for filming; arrive = car park, through the gate, in at the gym door; drive = the drive's arrival, then in at the gym door), ?arrive=hatch|family|suv|sports|classic|super (the compound opens with that car's arrival: under the barrier into your bay, then you at its door; Skip › top right).",
       "The compound's speed is measured from every viewpoint on a Galaxy S20 screen (scripts/world3d/compound-measure.mjs) and written into lib/star/world3d/compoundPlan.ts; the test tests/star/compound.mts holds it to the budget (Medium 90 draws and 90k triangles, Low 60 draws). Nothing is committed from this page.",
     ],
     inGame: [

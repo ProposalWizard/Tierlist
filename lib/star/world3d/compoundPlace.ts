@@ -14,7 +14,7 @@
  * (cars, wheels, lamps, cones, poles, mannequins, goals) are one instanced draw each. Materials are
  * shared. Zones wholly behind the building (seen from the camera) are left out too (`hiddenZones`).
  */
-import { COMPOUND, ZONES, PARKED, DOORS, type CarModel, LAMPS, MASTS, FLAG, PLANTERS, CONES, POLES, MANNEQUINS, FORECOURT_BENCH, SPOTS, bayAt, compoundSolids, goalsOf, pitchBox, doorFront, type Solid } from "./compoundPlan";
+import { COMPOUND, ZONES, PARKED as ALL_PARKED, DOORS, type CarModel, LAMPS, MASTS, FLAG, PLANTERS, CONES, POLES, MANNEQUINS, FORECOURT_BENCH, SPOTS, bayAt, compoundSolids, goalsOf, pitchBox, doorFront, type Solid } from "./compoundPlan";
 import { seatObject, standObject, type SmartObject } from "./smartObject";
 import { lawnCanvasSoft, hedgeCanvas, brickCanvas, skyCanvas, glowCanvas } from "../garden3d/textures";
 import { buildPlantZones, hiddenBehind, type TreeAt, type BushAt, type Occluder } from "../garden3d/plantZones";
@@ -51,6 +51,8 @@ export interface CompoundEnv {
   sky: CompoundSky;
   /** The garden's textured trees (garden3d/cardTrees.ts cardMaterial on its atlas): Harry's pick, 28 Nov. Null: the low-poly ones. */
   cardMaterial?: any;
+  /** The drive's arrival (lib/star/drive3d/arrival.ts): the barrier arm starts DOWN and moves (`barrier.lift`). */
+  arrival?: boolean;
 }
 
 export interface CompoundOut {
@@ -71,6 +73,8 @@ export interface CompoundOut {
   carPark: any;
   /** Things that move on their own (left out of the joining): the flag. */
   moving: any[];
+  /** The drive's arrival only: the barrier arm, 0 = down across the way in, 1 = up. */
+  barrier: { lift: (k: number) => void } | null;
   tick: (dt: number) => void;
   stats: () => Record<string, unknown>;
   dispose: () => void;
@@ -491,6 +495,7 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
 
   // ── THE GATE, the fence, the crest board, the security hut ──
   const fz = C.fenceZ;
+  let barrierArm: any = null;
   {
     const G = zone.gate;
     // the hedge either side (the long runs go in the open group: they are thin and long)
@@ -551,7 +556,20 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
     platePanel(G, "SECURITY", 1.6, 0.36, H.x0 - 0.04, H.h - 0.35, hcz, -Math.PI / 2);
     // a car barrier arm across the way in (lifted)
     box(zone.carpark, M.white, 0.3, 1.0, 0.3, cp.x1 - 7.4, 0.5, cp.z1 - 0.3);
-    const arm = box(zone.carpark, M.trim, 0.1, 4.2, 0.1, cp.x1 - 7.4, 3.0, cp.z1 - 0.3, { cast: false }); arm.rotation.z = 0.1;
+    if (!env.arrival) { const arm = box(zone.carpark, M.trim, 0.1, 4.2, 0.1, cp.x1 - 7.4, 3.0, cp.z1 - 0.3, { cast: false }); arm.rotation.z = 0.1; }
+    else {
+      // the drive's arrival: the arm down across the way in (red and white), lifted about the post as you roll up
+      const [sc, sg] = cv(128, 8);
+      for (let k = 0; k < 8; k++) { sg.fillStyle = k % 2 ? "#f4f1ea" : "#c0392b"; sg.fillRect(k * 16, 0, 16, 8); }
+      const pivot = new THREE.Group();
+      pivot.position.set(cp.x1 - 7.4, 0.95, cp.z1 - 0.3);
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.1, 0.1), mat("#ffffff", { map: tex(sc), roughness: 0.5 }));
+      bar.position.x = 2.1; bar.castShadow = false;
+      disposables.push(bar.geometry);
+      pivot.add(bar);
+      scene.add(pivot);
+      barrierArm = pivot;
+    }
   }
 
   // ── FORECOURT: paving, the path, planters, the bench, the flag ──
@@ -919,7 +937,8 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
     camBox: [bx0 - 2, bx1 + 2, bz0 - 2, bz1 + 4],
     sun,
     update, hidden, follow, tick,
-    moving: [flag, skyG],
+    moving: barrierArm ? [flag, skyG, barrierArm] : [flag, skyG],
+    barrier: barrierArm ? { lift: (k: number) => { barrierArm.rotation.z = Math.max(0, Math.min(1, k)) * (Math.PI / 2 - 0.1); } } : null,
     carPark: zone.carpark,
     stats: () => ({ zones: ZONES.length, plantZones: plants.zones, behind: Array.from(behind), trees: trees.length, bushes: bushes.length, pitchBoxes: C.pitches.map(pitchBox) }),
     dispose: () => { plants.dispose(); for (const d of disposables) d.dispose?.(); zoneMeshes.clear(); },
@@ -934,9 +953,11 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
  */
 /** A parked car nearer the camera than this (m) draws all its triangles; farther, the coarse set. */
 export const CAR_NEAR: Record<Quality3d, number> = { low: 9, medium: 10, high: 18 };
-export async function addParkedCars(THREE: any, parent: any, glb: (url: string) => Promise<any>, tier: Quality3d = "medium"): Promise<{ draws: number; triangles: number; update: (camera: any) => void }> {
+export async function addParkedCars(THREE: any, parent: any, glb: (url: string) => Promise<any>, tier: Quality3d = "medium", o: { omitYours?: boolean } = {}): Promise<{ draws: number; triangles: number; update: (camera: any) => void }> {
   const { CAR_LOD, CAR_LENGTH } = await import("../home3d/outfits");
   const { carPaint } = await import("../home3d/roomBuild");
+  // the drive's arrival: your own car (the one you drove) stands in your bay instead (lib/star/drive3d/arrival.ts)
+  const PARKED = o.omitYours ? ALL_PARKED.filter((p) => !(p.bay === COMPOUND.yourBay && p.row === "N")) : ALL_PARKED;
   const used = Array.from(new Set(PARKED.map((p) => p.model))) as CarModel[];
   let draws = 0, triangles = 0;
   /** Each model's near and far sets: a car within CAR_NEAR m of the camera draws all its triangles, a farther one

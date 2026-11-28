@@ -72,7 +72,13 @@ export interface DriveOptions {
   call?: string;
   names: { mate: string; car: string; club: string };
   day?: number;
+  /** The drive in hands over to the real compound (./arrival.ts, lib/star/world3d/testScene.ts opts.arrive): it fades
+   *  out on the compound road, HANDOVER_AT before the barrier, instead of playing the old stand-in arrival. */
+  handover?: boolean;
 }
+
+/** The drive in hands over this far before the barrier (m): on the compound road, its fence in the fog. */
+export const HANDOVER_AT = 24;
 
 export interface DriveSession {
   opts: DriveOptions;
@@ -144,7 +150,14 @@ export function stepDrive(S: DriveSession, input: DriveInput, dt = STEP): void {
   if (S.callState === "answered" && S.t - S.callSince > 3.2) S.callState = "over";
   if (S.callState === "ringing" && S.phase !== "drive") { S.callState = "over"; S.callAnswer = "missed"; S.memories.push(callMemory(S.call!, "missed", S.opts.day ?? 0)); }
 
-  if (S.phase === "drive") {
+  if (S.phase === "drive" && S.opts.handover && S.opts.leg === "in" && S.car.s >= S.route.gateS - HANDOVER_AT) {
+    // the hand-over: a fade on the compound road, then the compound's own arrival takes the car in
+    S.fade = Math.min(1, S.fade + dt / FADE_S);
+    if (S.fade >= 1) {
+      S.phase = "done";
+      if (S.callState === "ringing") { S.callState = "over"; S.callAnswer = "missed"; S.memories.push(callMemory(S.call!, "missed", S.opts.day ?? 0)); }
+    }
+  } else if (S.phase === "drive") {
     if (S.opts.leg === "in" && S.car.s >= S.route.gateS - ARRIVE_FROM) { S.phase = "arrive"; S.ta = 0; }
     if (S.opts.leg === "back" && S.car.s >= S.route.length - 0.05 && S.car.v < 0.05) { S.phase = "fork"; S.forkAt = S.t; }
   } else if (S.phase === "arrive") {

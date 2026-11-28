@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { InteractCard } from "@/lib/star/world3d/interact";
 import { GymHud, type GymHudHandle } from "@/components/star/GymHud";
-import type { WorldController, WorldOptions, WorldStatus } from "@/lib/star/world3d/testScene";
+import type { WorldArrival, WorldController, WorldOptions, WorldStatus } from "@/lib/star/world3d/testScene";
 import ViewToggle3D from "./ViewToggle3D";
 import LoadingCurtain from "./loading/LoadingCurtain";
 
@@ -22,11 +22,14 @@ export default function World3D({ options, clean, onGo }: { options: WorldOption
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
   const hud = useRef<GymHudHandle>(null);
   const [gymOn, setGymOn] = useState(false);
+  // the drive's arrival (options.arrive): Skip while the car comes in, then the team-mate's line
+  const [arrival, setArrival] = useState<WorldArrival | null>(null);
+  const arriving = !!options.arrive && (!arrival || arrival.phase === "roll" || arrival.phase === "door");
   const optsRef = useRef(options);
   optsRef.current = options;
   const goRef = useRef(onGo);
   goRef.current = onGo;
-  const key = `${options.place}|${options.demo ?? ""}|${options.quality ?? ""}`;
+  const key = `${options.place}|${options.demo ?? ""}|${options.quality ?? ""}|${options.arrive?.car ?? ""}`;
 
   useEffect(() => {
     const el = host.current;
@@ -42,6 +45,7 @@ export default function World3D({ options, clean, onGo }: { options: WorldOption
         onStatus: (s) => { if (!gone) setStatus(s); },
         onContextLost: () => { if (!gone) setState("failed"); },
         onGo: (p) => { if (!gone) goRef.current?.(p); },
+        onArrive: (a) => { if (!gone) setArrival(a); },
         onGym: (f) => { if (gone) return; hud.current?.frame(f); const on = !!f.kind; setGymOn((was) => (was === on ? was : on)); },
       }, { ...optsRef.current, chat: (id) => optsRef.current.chat?.(id) ?? null }))
       .then((c) => { if (gone) { c.dispose(); return; } ctrl.current = c; setState("ready"); })
@@ -68,7 +72,16 @@ export default function World3D({ options, clean, onGo }: { options: WorldOption
           {state === "loading" ? "Opening…" : "3D could not open on this device."}
         </div>
       )}
-      {state === "ready" && status && !clean && !gymOn && (
+      {state === "ready" && !clean && arriving && (
+        <button data-arrive-skip onClick={() => ctrl.current?.skipArrive()} style={{ position: "absolute", top: 12, right: 12, padding: "7px 11px", borderRadius: 999, background: "rgba(8,10,16,.72)", color: "#f8fafc", fontSize: 12.5, fontWeight: 900, border: "none", cursor: "pointer" }}>Skip ›</button>
+      )}
+      {arrival?.caption && (
+        <div data-arrive-caption style={{ position: "absolute", left: 20, right: 20, top: "30%", textAlign: "center", color: "#fff", fontSize: 21, fontWeight: 900, lineHeight: 1.3, textShadow: "0 2px 10px rgba(0,0,0,.6)", pointerEvents: "none" }}>
+          {arrival.caption}
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#facc15", marginTop: 10, letterSpacing: 1.5, textTransform: "uppercase" }}>Training ground</div>
+        </div>
+      )}
+      {state === "ready" && status && !clean && !gymOn && !arriving && (
         <div style={{ position: "absolute", top: 10, left: 10, right: 10, display: "flex", gap: 6, flexWrap: "wrap", pointerEvents: "none" }} data-world3d-status>
           <span style={chip("#facc15", "#111")}>{status.clock}</span>
           {status.people.map((p) => <span key={p.id} style={chip("rgba(8,10,16,.78)", "#f8fafc")}>{p.name}: {p.doing}</span>)}
@@ -77,7 +90,7 @@ export default function World3D({ options, clean, onGo }: { options: WorldOption
       {state === "ready" && options.place === "gym" && (
         <GymHud ref={hud} fitness={clean ? undefined : status?.fitness} body={status?.fitness?.body ?? null} film={!!options.demo} onHold={(on) => ctrl.current?.gymHold(on)} onAct={(id) => ctrl.current?.act(id)} />
       )}
-      {state === "ready" && !(options.place === "gym" && gymOn) && <ViewToggle3D onChange={(m) => ctrl.current?.setView(m)} style={{ top: "auto", bottom: card ? 200 : 16 }} />}
+      {state === "ready" && !(options.place === "gym" && gymOn) && !arriving && <ViewToggle3D onChange={(m) => ctrl.current?.setView(m)} style={{ top: "auto", bottom: card ? 200 : 16 }} />}
       {card && (
         <div data-world3d-card style={{ position: "absolute", left: 12, right: 12, bottom: 16, maxWidth: 460, margin: "0 auto", padding: "12px 14px", borderRadius: 14, background: "rgba(8,10,16,.9)", color: "#f8fafc", borderTop: "3px solid #facc15", boxShadow: "0 10px 30px rgba(0,0,0,.4)" }}>
           {card.sub && <div style={{ fontSize: 11, fontWeight: 900, color: "#facc15", textTransform: "uppercase", letterSpacing: 0.5 }}>{card.sub}</div>}

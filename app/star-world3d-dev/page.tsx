@@ -20,7 +20,9 @@
  * the grounds; lib/star/world3d/compoundPlace.ts): you have just parked; the gate with the crest board and the security
  * hut, the forecourt, the building's front (the gym door opens the gym above; reception and the canteen are coming
  * soon), three pitches, a stand, the coach, the kit man and team-mates on their routines. ?sky=day|sunset|night.
- * Demos: ?demo=arrive (the film: car park, the gate, in at the gym door) | compound (the people at work).
+ * Demos: ?demo=arrive (the film: car park, the gate, in at the gym door) | compound (the people at work) |
+ * drive (the drive's arrival: your car in under the barrier, into your bay, then out and in at the gym door).
+ * ?arrive=hatch|family|suv|sports|classic|super: the compound opens with that car's arrival (lib/star/drive3d/arrival.ts).
  *
  * ?place=house|garden, ?demo=sofa|fridge|visitor|talk (a scripted run, for
  * filming with scripts/film/frames3d.mjs), ?bare=1 / ?film=1 full screen,
@@ -36,6 +38,7 @@ import { useSearchParams } from "next/navigation";
 import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Btn, Pill } from "@/components/admin/broadcast/BroadcastPage";
 import World3D from "@/components/star/World3D";
+import { DRIVE_CAR_IDS, type DriveCarId } from "@/lib/star/drive3d/cars";
 import Home3D from "@/components/star/Home3D";
 import { parseHomeTier, HOME_TIERS, type HomeTier } from "@/lib/star/home3d/homes";
 import "../star-3d-area-dev/stage3d.css";
@@ -59,7 +62,10 @@ function World3DTest() {
   const params = useSearchParams();
   const demo = params.get("demo");
   const GYM_DEMOS = ["gym", "walk", "bench", "treadmill", "fall", "bag", "tour", "pullup", "squat", "pushup", "plank", "nordic", "copenhagen", "boxjump", "ladder", "landing", "mobility", "body1", "body2", "body3", "body4"];
-  const COMPOUND_DEMOS = ["arrive", "compound"];
+  const COMPOUND_DEMOS = ["arrive", "compound", "drive"];
+  // the drive's arrival (lib/star/drive3d/arrival.ts): ?arrive=hatch|family|suv|sports|classic|super (?demo=drive films it)
+  const ac = params.get("arrive") ?? (demo === "drive" ? "sports" : null);
+  const arriveCar = ac && (DRIVE_CAR_IDS as string[]).includes(ac) ? (ac as DriveCarId) : null;
   const [place, setPlace] = useState<WorldPlace>(params.get("place") === "house" || demo === "sofa" || demo === "fridge" ? "house" : params.get("place") === "gym" || GYM_DEMOS.includes(demo ?? "") ? "gym" : params.get("place") === "compound" || COMPOUND_DEMOS.includes(demo ?? "") ? "compound" : "garden");
   const sky = params.get("sky");
   // a door that leads on (the compound's gym door): the demo only belongs to the place it started in
@@ -80,6 +86,7 @@ function World3DTest() {
     const mates = (c.squad ?? []).filter((p) => p.position !== "GK").slice(0, 4).map((p, i) => ({ id: p.id, name: p.shortName || p.name, number: [8, 14, 21, 4][i] }));
     return {
       place, demo: went ? null : demo, quality, number: 9, mates, club: "Arsenal", sky,
+      arrive: place === "compound" && arriveCar && !went ? { car: arriveCar } : null,
       kit: { shirt: kit.shirt, trim: kit.trim },
       // the living world's chat (lib/star/life/social.ts): pure, on this page's made-up career only
       chat: (slot: string) => {

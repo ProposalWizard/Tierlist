@@ -19,7 +19,8 @@ import LoadingCurtain from "@/components/star/loading/LoadingCurtain";
 export interface Drive3DProps {
   options: DriveSceneOptions;
   clean?: boolean;
-  onDone?: (r: { skipped: boolean; fork: ForkChoice | null; memories: CallMemory[] }) => void;
+  /** `handover`: the drive in ended on the compound road: open the compound with its arrival (World3D options.arrive). */
+  onDone?: (r: { skipped: boolean; fork: ForkChoice | null; memories: CallMemory[]; handover: boolean }) => void;
   onMemory?: (m: CallMemory) => void;
 }
 
@@ -45,11 +46,16 @@ export default function Drive3D({ options, clean, onDone, onMemory }: Drive3DPro
     const go = window.setTimeout(() => import("@/lib/star/drive3d/scene")
       .then(({ startDrive }) => startDrive(el, {
         onUi: (u) => { if (!gone) setUi(u); },
-        onDone: (r) => { if (gone) return; setDone(r.fork ? `→ ${r.fork[0].toUpperCase()}${r.fork.slice(1)}` : r.skipped ? "Skipped: at training" : "At training"); cbRef.current.onDone?.(r); },
+        onDone: (r) => { if (gone) return; if (!r.handover) setDone(r.fork ? `→ ${r.fork[0].toUpperCase()}${r.fork.slice(1)}` : r.skipped ? "Skipped: at training" : "At training"); cbRef.current.onDone?.(r); },
         onMemory: (m) => cbRef.current.onMemory?.(m),
         onContextLost: () => { if (!gone) setState("failed"); },
       }, optsRef.current))
-      .then((c) => { if (gone) { c.dispose(); return; } ctrl.current = c; setState("ready"); })
+      .then((c) => {
+        if (gone) { c.dispose(); return; }
+        ctrl.current = c; setState("ready");
+        // the drive in hands over to the compound: fetch its code while you drive, so its loading screen is short
+        if (optsRef.current.leg === "in") window.setTimeout(() => { void import("@/lib/star/world3d/testScene"); void import("@/lib/star/world3d/compoundPlace"); }, 4000);
+      })
       .catch((e) => { console.error("drive3d", e); if (!gone) setState("failed"); }), 0);
     return () => { gone = true; window.clearTimeout(go); ctrl.current?.dispose(); ctrl.current = null; };
   }, [key]);

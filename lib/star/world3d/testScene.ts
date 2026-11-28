@@ -43,6 +43,8 @@ import { DayClock, RoutineRunner, planRoutine, GARDEN_VISITOR, BENCH_MATE, type 
 import { npcBudget, planBudget, animatesOn } from "./budget";
 import { objectCard, personCard, smallTalk, talkSpot, type InteractCard } from "./interact";
 
+type CarRig = ReturnType<typeof import("../drive3d/rig").rigCar>;
+
 export type WorldPlace = "house" | "garden" | "gym" | "compound";
 
 export interface WorldPerson { id: string; name: string; number: number }
@@ -71,7 +73,13 @@ export interface WorldOptions {
   onExercise?: (r: import("../gym/games").GameResult) => import("../gym/progress").ExerciseOut | null;
   /** The compound's sky (the garden's looks): "day" | "sunset" | "night". */
   sky?: string | null;
+  /** The compound: the drive's arrival (lib/star/drive3d/arrival.ts). Your car comes in off the road, under the
+   *  barrier, into your bay; then you stand at its door. `mate`: the team-mate who says something about the car. */
+  arrive?: { car: import("../drive3d/cars").DriveCarId; mate?: string; skip?: boolean } | null;
 }
+
+/** The drive's arrival as the page sees it: the black, the caption, whether Skip still shows. */
+export interface WorldArrival { phase: import("../drive3d/arrival").ArrivalPhase; fade: number; caption: string | null }
 
 export interface WorldStatus { clock: string; people: { id: string; name: string; doing: string }[]; fitness?: GymFitness }
 
@@ -86,6 +94,8 @@ export interface WorldCallbacks {
   onGym?: (f: import("./gymPlace").GymHudFrame) => void;
   /** A door that leads to another place (the compound's gym door): the page opens it. */
   onGo?: (place: WorldPlace) => void;
+  /** The drive's arrival (opts.arrive): each change of phase or caption. */
+  onArrive?: (a: WorldArrival) => void;
 }
 
 export interface WorldController {
@@ -106,6 +116,8 @@ export interface WorldController {
   viewMode: () => ViewMode;
   /** Tests and the measuring script: stand you here, facing `yaw`, the camera settled behind you. */
   teleport: (x: number, z: number, yaw: number) => void;
+  /** The drive's arrival: Skip (straight to standing at your car). */
+  skipArrive: () => void;
   dispose: () => void;
 }
 
@@ -134,6 +146,8 @@ const DEMOS: Record<string, Demo> = {
   bag: { place: "gym", duration: 31, steps: [[0.2, "tap:bag"], [3.0, "bot:1"], [3.0, "act:use"]], you: [-1.2, 2.6, Math.PI] },
   // the compound: just parked, through the gate, across the forecourt, in at the gym door (go: = tap it, go in when there)
   arrive: { place: "compound", duration: 26, steps: [[0.8, "go:door-gym"]] },
+  // the drive's arrival (opts.arrive): under the barrier, into your bay, out at the door, then in at the gym door
+  drive: { place: "compound", duration: 34, steps: [[15.5, "go:door-gym"]] },
   // the compound: the people at work (a check that nobody sticks)
   compound: { place: "compound", duration: 60, steps: [] },
   // phase 2 (gymPoses2.ts): one demo per new exercise (walk up, the fade, a good thumb), ?demo=pullup etc.
@@ -228,6 +242,9 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   let gymRoom: import("./gymPlace").GymRoomOut | null = null;
   let compound: import("./compoundPlace").CompoundOut | null = null;
   let carsLod: { update: (camera: any) => void } | null = null;
+  let myCar: CarRig | null = null;
+  /** Medium and High: the same car's light copy (~4k triangles), drawn instead when the camera is past CAR_FAR_M. */
+  let myCarFar: CarRig | null = null;
   const CP = place === "compound" ? await import("./compoundPlan") : null;
   if (place === "house") built = await buildHouse();
   else if (place === "gym") built = await buildGym();
@@ -241,7 +258,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const CT = await import("../garden3d/cardTrees");
     const atlas = await CT.loadCardAtlas(THREE, renderer).catch((e: unknown) => { console.error("compound tree atlas", e); return null; });
     const cardMaterial = atlas ? CT.cardMaterial(THREE, atlas.map, atlas.nrm) : null;
-    const c = buildCompound({ THREE, scene, prof, tier, kit: opts.kit, club: opts.club, sky, cardMaterial });
+    const c = buildCompound({ THREE, scene, prof, tier, kit: opts.kit, club: opts.club, sky, cardMaterial, arrival: !!opts.arrive });
     compound = c;
     renderer.toneMappingExposure = sky === "night" ? 1.15 : 1.0;
     scene.environmentIntensity = sky === "night" ? 0.15 : 0.35;
@@ -250,7 +267,24 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const { addParkedCars } = await import("./compoundPlace");
     const carLoader = new GLTFLoader();
     await withMeshopt(carLoader);
-    carsLod = await addParkedCars(THREE, c.carPark, (u) => carLoader.loadAsync(u), tier);
+    carsLod = await addParkedCars(THREE, c.carPark, (u) => carLoader.loadAsync(u), tier, { omitYours: !!opts.arrive });
+    // the drive's arrival: the car you drove (its wheels cut: they turn and steer), not the parked copy
+    if (opts.arrive) {
+      const { carFile } = await import("../drive3d/cars");
+      const { rigCar } = await import("../drive3d/rig");
+      const g: any = await loadGltfCached(carLoader, carFile(opts.arrive.car, tier === "low"));
+      myCar = rigCar(THREE, g.scene.clone(true));
+      myCar.root.name = "your-car";
+      myCar.root.traverse((o: any) => { if (o.isMesh) { o.castShadow = prof.shadows; o.receiveShadow = true; } });
+      scene.add(myCar.root);
+      if (tier !== "low") {
+        const gl: any = await loadGltfCached(carLoader, carFile(opts.arrive.car, true));
+        myCarFar = rigCar(THREE, gl.scene.clone(true));
+        myCarFar.root.name = "your-car-far";
+        myCarFar.root.visible = false;
+        scene.add(myCarFar.root);
+      }
+    }
     sun = c.sun;
     const n = shadowSizeFor(prof, 2048) || 1024;
     sun.shadow.mapSize.set(n, n);
@@ -258,6 +292,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
     const { freezeStatic } = await import("../freezeStatic");
     const keep = new Set<any>(c.moving);
+    if (myCar) keep.add(myCar.root);
+    if (myCarFar) keep.add(myCarFar.root);
     scene.traverse((o: any) => { if (o.userData?.kind === "plants") keep.add(o); });
     freezeStatic(THREE, mergeGeometries, scene, keep);
     return { objects: c.objects, solids: c.solids, bounds: c.bounds, you: c.you, ceil: c.ceil, camBox: c.camBox };
@@ -674,6 +710,79 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       if (pp.prop) holdProp(n, pp.prop);
     });
   }
+  // ── The drive's arrival (opts.arrive; lib/star/drive3d/arrival.ts): your car in off the road, into your bay ──
+  const mc = myCar as CarRig | null; // (set inside buildCompoundPlace: TS can't see it)
+  const mcFar = myCarFar as CarRig | null;
+  const CAR_FAR_M = 11;
+  const AR = CP && opts.arrive && mc ? await import("../drive3d/arrival") : null;
+  const DRV = AR ? await import("../drive3d/drive") : null;
+  const arr = AR && mc ? AR.newArrival({ wheelR: mc.wheelR, wheelbase: mc.wheelbase }) : null;
+  // two team-mates wait by the gate, chatting (paused off their routines), and turn to look as you pull in
+  const arrMates = arr ? npcs.filter((n) => /^mate-[01]$/.test(n.id)) : [];
+  // the rest of the team-mates are not drawn while the car comes in (the arrival's budget: Low 35k, Medium 60k
+  // triangles a frame); they carry on with their routines unseen and are there when you get out
+  const arrUnseen = arr ? npcs.filter((n) => /^mate-/.test(n.id) && !arrMates.includes(n)) : [];
+  let arrTurned = false, arrLast = "", arrCaptionUntil = -1, arrAcc = 0, arrOut = false;
+  const camFov0 = camera.fov;
+  // a soft shadow under your car (Low and Medium phones have no shadow map)
+  const carBlob = arr && mc ? blob(1, 0.85) : null;
+  if (carBlob && mc) carBlob.scale.set(mc.width * 1.25, mc.length * 1.12, 1);
+  if (arr && AR) {
+    you.show(false);
+    arrUnseen.forEach((n) => { n.root.visible = false; });
+    arrMates.forEach((n, i) => { paused.add(n); const [x, z] = AR.MATES_AT[i], o = AR.MATES_AT[1 - i]; n.place(x, z, yawTo([x, z], o)); });
+    if (opts.arrive?.skip) AR.skipArrival(arr);
+  }
+  const arrCaption = () => (opts.arrive && DRV ? DRV.arrivalLine(opts.arrive.car, opts.arrive.mate ?? arrMates[0]?.name ?? "Kai") : null);
+  /** One frame of the arrival: the car, the barrier, the two at the gate, then you at the door. */
+  const stepArrive = (dt: number) => {
+    if (!arr || !AR || !mc) return;
+    arrAcc += dt;
+    while (arrAcc >= AR.ASTEP) { AR.stepArrival(arr); arrAcc -= AR.ASTEP; }
+    const c = arr.car, p = AR.carPose(arr);
+    for (const rig of mcFar ? [mc, mcFar] : [mc]) {
+      rig.root.position.set(p.x, 0, p.z); rig.root.rotation.y = p.yaw;
+      rig.tilt.rotation.set(c.pitch, 0, c.roll);
+      for (const w of rig.wheels) { w.node.rotation.x = c.spin; w.node.rotation.y = w.front ? c.steer : 0; }
+    }
+    // the light copy: in the barrier shot (the car moving through, mid-distance) and whenever the camera is far
+    if (mcFar) { const far = (!arrOut && AR.shotOf(arr) === "barrier") || Math.hypot(p.x - camera.position.x, p.z - camera.position.z) > CAR_FAR_M; mc.root.visible = !far; mcFar.root.visible = far; }
+    if (carBlob) { carBlob.position.set(p.x, 0.05, p.z); carBlob.rotation.z = p.yaw; }
+    compound?.barrier?.lift(AR.liftOf(arr));
+    if (!arrTurned && AR.turnOf(arr) > 0) { arrTurned = true; arrMates.forEach((n) => n.face(yawTo([n.x, n.z], [p.x, p.z]))); }
+    if (!arrOut) {
+      // hidden, you ride along (the sun's shadow box follows the car)
+      you.place(p.x, p.z, p.yaw);
+      if (arr.phase === "out" || arr.phase === "done") {
+        arrOut = true;
+        const o = AR.youOut();
+        you.place(o.x, o.z, o.yaw); you.show(true);
+        arrUnseen.forEach((n) => { if (n.state !== "hidden") n.root.visible = true; });
+        camYaw = o.yaw + Math.PI; first = true;
+        camera.fov = camFov0; camera.updateProjectionMatrix();
+        compound?.barrier?.lift(0);
+        arrCaptionUntil = simT + 3.6;
+        arrMates.forEach((n) => { if (arrTurned === false) n.face(yawTo([n.x, n.z], [o.x, o.z])); });
+        renderer.shadowMap.needsUpdate = true;
+      }
+    }
+    // the two at the gate go back to their routines a few seconds after you are out
+    if (arrOut && simT > arrCaptionUntil && arrMates.some((n) => paused.has(n))) {
+      for (const n of arrMates) { paused.delete(n); const r = runners.get(n); const cur = r?.current; if (r && cur) startStep(n, cur, r); }
+    }
+    fade = fadeWant = arr.fade; fadeM.opacity = fade; fadeQ.visible = fade > 0.001;
+    const caption = arrOut && simT < arrCaptionUntil ? arrCaption() : null;
+    const key = `${arr.phase}|${Math.round(arr.fade * 10)}|${caption ?? ""}`;
+    if (key !== arrLast) { arrLast = key; cb.onArrive?.({ phase: arr.phase, fade: arr.fade, caption }); }
+  };
+  /** The arrival's own camera (until you are out of the car). */
+  const arriveCam = (): boolean => {
+    if (!arr || !AR || arrOut) return false;
+    const k = AR.arrivalCam(arr);
+    if (Math.abs(camera.fov - k.fov) > 0.01) { camera.fov = k.fov; camera.updateProjectionMatrix(); }
+    camera.position.set(k.pos[0], k.pos[1], k.pos[2]); camera.lookAt(k.look[0], k.look[1], k.look[2]);
+    return true;
+  };
   const objOf = (target: string): SmartObject | undefined => target.startsWith("kind:") ? objects.ofKind(target.slice(5) as any)[0] : objects.get(target);
   /** A step's game minutes in real seconds (rate = times faster than real time). */
   const realSecs = (s: PlannedStep) => Math.max(1, ((s.until - s.at) * 60) / rate);
@@ -1018,6 +1127,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   let camPin: { cam: number[]; look: number[] } | null = null;
   (window as any).__world3dCam = (cam: number[] | null, look?: number[]) => { camPin = cam && look ? { cam, look } : null; };
   const stepCam = (dt: number) => {
+    if (arriveCam()) return;
     if (camPin) { camera.position.set(camPin.cam[0], camPin.cam[1], camPin.cam[2]); camera.lookAt(camPin.look[0], camPin.look[1], camPin.look[2]); return; }
     // a gym mini-game: its own shot (set while the screen is black, eased after)
     const sh = gym?.shot();
@@ -1130,6 +1240,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       const on = npcs.some((n) => n.using?.id === "treadmill2" && n.state === "use");
       if (b2) b2.speed += ((on ? mateBeltSpeed : 0) - b2.speed) * Math.min(1, dt * 3);
     }
+    stepArrive(dt);
     you.update(dt, world, true);
     gym?.afterPose(dt);
     mateGym.forEach((m) => m.ex.restore());
@@ -1155,7 +1266,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       carsLod?.update(camera);
       compound.tick(dt);
       if (compound.follow(you.x, you.z)) renderer.shadowMap.needsUpdate = true;
-      stepFade(dt);
+      if (!arr || arrOut) stepFade(dt);
       stepSame(dt);
     }
     if (gym && cb.onGym) cb.onGym(gym.hud());
@@ -1180,7 +1291,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   if (c0) {
     const { tightCull } = await import("../three3d/tightCull");
     const c = c0;
-    cull = tightCull(THREE, scene, renderer, { moving: new Set<any>([...people.map((p) => p.root), ...c.moving, camera]), extraHide: (cam) => c.hidden(cam) });
+    cull = tightCull(THREE, scene, renderer, { moving: new Set<any>([...people.map((p) => p.root), ...c.moving, camera, ...(mc ? [mc.root] : []), ...(mcFar ? [mcFar.root] : [])]), extraHide: (cam) => c.hidden(cam) });
   }
   try { await safeCompileAsync(renderer, scene, camera); } catch { /* compiled on first use */ }
   if (disposed) throw new Error("disposed");
@@ -1221,6 +1332,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     perf: () => { const o = { ...perf }; perf.frames = 0; perf.stepMs = 0; perf.renderMs = 0; return o; },
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, tier, people: people.filter((p) => p.root.visible).length, animated }),
     setView: (m) => { view.set(m); },
+    skipArrive: () => { if (arr && AR) AR.skipArrival(arr); },
     teleport: (x, z, yaw) => { if (you.seated) return; you.stop(); you.place(x, z, yaw); camYaw = yaw + Math.PI; first = true; if (compound?.follow(x, z)) renderer.shadowMap.needsUpdate = true; },
     viewMode: () => view.mode,
     debug: () => ({
@@ -1260,6 +1372,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       }),
       minGap: (() => { let m = Infinity; const b = world.bodies(); for (let i = 0; i < b.length; i++) for (let j = i + 1; j < b.length; j++) m = Math.min(m, Math.hypot(b[i].x - b[j].x, b[i].z - b[j].z)); return +m.toFixed(2); })(),
       card: card?.title ?? null,
+      arrival: arr && AR ? { phase: arr.phase, shot: AR.shotOf(arr), t: +arr.t.toFixed(2), s: +arr.car.s.toFixed(2), fade: +arr.fade.toFixed(2) } : null,
       compound: compound ? { ...compound.stats(), cull: cull?.stats(), far: farB?.stats(), fade: +fade.toFixed(2), mostSameS: npcs.map((n) => ({ id: n.id, now: +(same.get(n)?.t ?? 0).toFixed(1), most: +(same.get(n)?.most ?? 0).toFixed(1), doing: same.get(n)?.key })) } : null,
       gym: gym ? { ex2: gym.ex2.stats, mate: mateGym.size ? Array.from(mateGym.values()).map((m) => ({ kind: m.kind, stats: m.ex.stats })) : null, body: (() => { const inner = you.person.root.children[0]; return inner ? [+inner.scale.x.toFixed(4), +inner.scale.y.toFixed(4), +inner.scale.z.toFixed(4)] : null; })(), phase: gym.phase, kind: gym.kind, benchPierceCm: gym.benchPierceCm, gripGapCm: gym.gripGapCm, barPierceCm: gym.barPierceCm, railPierceCm: gym.railPierceCm, info: gym.active ? gym.info() : null, game: gym.game ? { t: +gym.game.t.toFixed(2), done: gym.game.done } : null, fitness: fitness() } : null,
       stats: ctrl.stats(),

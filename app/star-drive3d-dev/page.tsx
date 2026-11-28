@@ -16,6 +16,7 @@ import { useSearchParams } from "next/navigation";
 import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Btn, Pill } from "@/components/admin/broadcast/BroadcastPage";
 import Drive3D from "@/components/star/Drive3D";
+import World3D from "@/components/star/World3D";
 import { parseQuality3d } from "@/lib/star/three3d/quality";
 import { kitsOf } from "@/lib/star/kits";
 import { DRIVE_CARS, DRIVE_CAR_IDS, type DriveCarId } from "@/lib/star/drive3d/cars";
@@ -43,6 +44,9 @@ function Drive3DTest() {
   const [call, setCall] = useState<string | undefined>(params.get("call") ?? undefined);
   const [run, setRun] = useState(0);
   const [memories, setMemories] = useState<CallMemory[]>([]);
+  // the drive in hands over to the real compound (its own arrival: lib/star/drive3d/arrival.ts); null = still driving
+  const [atCompound, setAtCompound] = useState<{ skipped: boolean } | null>(null);
+  const [walked, setWalked] = useState<string | null>(null);
   const quality = parseQuality3d(params.get("q")) ?? undefined;
   const demo = params.get("demo") === "1";
   const options = useMemo<DriveSceneOptions>(() => {
@@ -59,7 +63,19 @@ function Drive3DTest() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [car, leg, mode, quality, call, run, demo]);
   const bare = params.get("bare") === "1" || params.get("film") === "1";
-  const stage = <Drive3D key={run} options={options} clean={params.get("clean") === "1"} onMemory={(m) => setMemories((x) => [...x, m])} />;
+  const kitH = kitsOf("Arsenal").home;
+  const stage = atCompound
+    ? (
+      <div style={{ position: "absolute", inset: 0 }}>
+        <World3D key={`c-${run}`} clean={params.get("clean") === "1"} onGo={(p) => setWalked(p)}
+          options={{ place: "compound", quality, number: 9, club: "Aston Villa", kit: { shirt: kitH.shirt, trim: kitH.trim },
+            mates: [{ id: "m1", name: "Kai", number: 8 }, { id: "m2", name: "Marcus", number: 14 }, { id: "m3", name: "Theo", number: 21 }, { id: "m4", name: "Dion", number: 4 }],
+            arrive: { car, mate: "Kai", skip: atCompound.skipped } }} />
+        {walked && <div data-drive-walked style={{ position: "absolute", left: 0, right: 0, top: "45%", textAlign: "center", color: "#fff", fontWeight: 900, fontSize: 22 }}>→ The {walked} (the career opens it)</div>}
+      </div>
+    )
+    : <Drive3D key={run} options={options} clean={params.get("clean") === "1"} onMemory={(m) => setMemories((x) => [...x, m])}
+        onDone={(r) => { if (r.handover) setAtCompound({ skipped: r.skipped }); }} />;
   if (bare) {
     return (
       <>
@@ -75,8 +91,8 @@ function Drive3DTest() {
           {DRIVE_CAR_IDS.map((c) => <Pill key={c} on={car === c} onClick={() => setCar(c)}>{DRIVE_CARS[c].name}</Pill>)}
         </div>
         <div className="s3-bar">
-          <Pill on={leg === "in"} onClick={() => setLeg("in")}>Drive in</Pill>
-          <Pill on={leg === "back"} onClick={() => setLeg("back")}>Drive back</Pill>
+          <Pill on={leg === "in"} onClick={() => { setLeg("in"); setAtCompound(null); }}>Drive in</Pill>
+          <Pill on={leg === "back"} onClick={() => { setLeg("back"); setAtCompound(null); }}>Drive back</Pill>
           <span style={{ width: 12 }} />
           <Pill on={mode === "lanes"} onClick={() => setMode("lanes")}>Steer: Lanes</Pill>
           <Pill on={mode === "stick"} onClick={() => setMode("stick")}>Thumb stick</Pill>
@@ -85,7 +101,7 @@ function Drive3DTest() {
           <Pill on={!call} onClick={() => setCall(undefined)}>Call: by chance</Pill>
           <Pill on={call === "none"} onClick={() => setCall("none")}>No call</Pill>
           {DRIVE_CALLS.map((c) => <Pill key={c.id} on={call === c.id} onClick={() => setCall(c.id)}>{c.id}</Pill>)}
-          <Btn onClick={() => { setRun((k) => k + 1); setMemories([]); }}>↻ Restart</Btn>
+          <Btn onClick={() => { setRun((k) => k + 1); setMemories([]); setAtCompound(null); setWalked(null); }}>↻ Restart</Btn>
         </div>
         <div className="s3-stage">{stage}</div>
         {memories.length > 0 && (
