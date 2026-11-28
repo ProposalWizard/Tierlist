@@ -614,7 +614,7 @@
        },
        {
         "if": "arc.path=='yes'",
-        "text": "\"The one who'll play anywhere I ask.\" He doesn't say your name. He doesn't need to.",
+        "text": "\"The one who'll play anywhere I ask.\" He doesn't say your name. Your mum rings anyway, and says it for him.",
         "effects": {
          "boss": 2
         },
