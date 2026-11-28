@@ -26,10 +26,13 @@ import { allHold, holds, type CondCtx, type V2Ctx } from "./cond";
 import { ctxFor, factsOf, type FactOverride } from "./facts";
 import { castEvent, cloneLife, lifeOf, type LiveEvent } from "./director";
 import { chooseOption, pickOutcome, type ChoiceResult, type LifeChange } from "./resolve";
-import { clubOfId, lifeWeek, personInfo, remember, roleOf, tidy } from "./people";
+import { clubOfId, lifeWeek, meet, personInfo, remember, roleOf, tidy } from "./people";
 import { fillLine } from "./text";
 import { breakPromise, keepPromise, makePromise, openPromises, promiseDef } from "./promises";
-import { allRuns, isPacked, packDone, runIn, unpackRun } from "./arcPack";
+import { allRuns, arcCode, isPacked, packDone, runIn, unpackRun } from "./arcPack";
+import { ITEM_WORDS, UNLOCK_BY_ID, grantUnlocks, unlockParts } from "./unlocks";
+import { addEcho, bookWrite, tagOfCode } from "./scrapbook";
+import { noteMilestones } from "./milestones";
 
 /** lifeWeek counts 50 weeks to a season. */
 export const LIFE_SEASON = 50;
@@ -289,6 +292,11 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
   // Club people (people.ts): in a tiered book the club you are at the first time is the one whose
   // people keep the plain ids. (An old book's replay never writes it.)
   if (!life.home && ARCS.some((a) => a.start?.tier)) life.home = c.player.club;
+  // The story world (job B): what just happened (just(...)), from a tiny snapshot of the career. Only a
+  // tiered book writes it, so an old book's replay leaves the save exactly as it was.
+  if (ARCS.some((a) => a.start?.tier)) noteMilestones(c, life, now);
+  // Echoes due now: a text from someone in a story seasons ago, or dropped if he has been forgotten.
+  if (life.ech?.length) deliverEchoes(c, life, now, (n) => notices.push(n));
   // The stories meet people too: keep the remembered list inside its cap (people.ts tidy).
   if (Object.keys(life.people).length > PEOPLE_CAP) tidy(life, c, now);
   // A story finished and shrunk at an earlier moment is packed into one short word (arcPack.ts).
@@ -408,6 +416,32 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
   return { career: c, screens, offers, notices };
 }
 
+/** The echoes that are due (scrapbook.ts): each one a notice from its person, or dropped if the
+ *  60-person cap has forgotten him. Mutates `life`. */
+function deliverEchoes(c: CareerState, life: LifeState, now: number, note: (n: ArcNotice) => void): void {
+  const keep: NonNullable<LifeState["ech"]> = [];
+  for (const e of life.ech ?? []) {
+    const [due, who, tagCode, code] = e;
+    const tag = tagOfCode(tagCode);
+    if (due > now) { keep.push(e); continue; }
+    if (!life.people[who] || !tag) continue;
+    const arc = ARCS.find((a) => arcCode(a) === code);
+    if (!arc) continue;
+    let found: { slot: string; line: string } | null = null;
+    for (const bt of arc.beats) for (const [, outs] of [...Object.entries(bt.event.talk?.ends ?? {}), ...bt.event.choices.map((ch) => [ch.id, ch.outcomes] as [string, ArcOutcome[]])]) for (const o of outs) {
+      const bw = typeof o.book === "object" ? o.book : null;
+      if (!found && bw?.tag === tag && bw.echo) found = { slot: bw.echo.who, line: bw.echo.line };
+    }
+    if (!found) continue;
+    const cc: CareerState = { ...c, life };
+    const cast = { [found.slot]: who };
+    const ctx = ctxFor(cc, life, cast, factsOf(cc));
+    note({ kind: "echo", arc: arc.id, title: fillLine(arc.title, cc, cast, ctx), text: fillLine(found.line, cc, cast, ctx), who: personInfo(cc, who)?.short, w: now });
+  }
+  if (keep.length) life.ech = keep;
+  else delete life.ech;
+}
+
 /** The day ends: a "today only" offer goes, and its ifIgnored ending plays. */
 export function endOfDay(c: CareerState, rng: () => number): { career: CareerState; notices: ArcNotice[] } {
   const notices: ArcNotice[] = [];
@@ -491,6 +525,8 @@ export interface ArcExtras {
   promisesBroken: { text: string; who: string }[];
   objective?: { text: string; window: number; why: string };
   got?: { what: string; text: string };
+  /** Unlocks this ending opened (unlocks.ts): "Unlocked · <name>" and its one line. */
+  unlocked?: { name: string; line: string }[];
   /** The story's next step, as the quest log says it. */
   next: string;
   /** The story ended this way. */
@@ -501,9 +537,6 @@ export interface ArcExtras {
 
 export interface PlayOpts { rng: () => number; facts?: FactOverride }
 
-const ITEM_WORDS: Record<string, [string, string]> = {
-  "item:dens-ball-bag": ["{kitman.short}'s ball bag", "\"{kitman.short}'s hundred\" is now a drill in your own garden."],
-};
 
 /** Play an ending of a beat's talk (or a card's choice): the outcome through
  *  resolve.ts, then the story's own parts. */
@@ -564,7 +597,24 @@ function applyArcOutcome(c0: CareerState, b: BeatLive, o: ArcOutcome, endId: str
     if (!nextIf || holds(nextIf, ctx())) run.s[a.next] = now + (a.afterWeeks ? pickIn(a.afterWeeks, `${b.arc}|${a.next}|${now}`) : 0);
   }
   if (o.noteSquad) life.squad = remember(life.squad, o.noteSquad, now, 3);
-  if (o.give || o.unlock) {
+  // The unlocks registry (job B): ids from unlocks.ts go in life.ul, never trimmed. A word in the old
+  // shape ("item:dens-ball-bag", "garden:…", "trophy:…"; any part with a colon) goes the old way into
+  // life.got, exactly as before, so an old book's replay is unchanged.
+  const parts = [...(o.give ? [o.give] : []), ...unlockParts(o.unlock)];
+  const registry = parts.length > 0 && parts.every((x) => !x.includes(":") && UNLOCK_BY_ID.has(x));
+  if (registry) {
+    const added = grantUnlocks(life, parts);
+    const fw = (x: string) => fillLine(x, c, b.cast, ctx());
+    for (const u of added) {
+      if (u.id === o.give) {
+        const w = o.giveWords ?? ITEM_WORDS[u.id] ?? [u.name, u.line];
+        ex.got = { what: fw(w[0]), text: fw(w[1]) }; changes.push({ kind: "item", label: fw(w[0]) });
+      } else {
+        ex.unlocked = [...(ex.unlocked ?? []), { name: u.name, line: u.line }];
+        changes.push({ kind: "item", label: `Unlocked · ${u.name}` });
+      }
+    }
+  } else if (o.give || o.unlock) {
     life.got = Array.from(new Set([...(life.got ?? []), ...(o.give ? [o.give] : []), ...(o.unlock ?? "").split(/[+]/).filter(Boolean).map((u) => (u.includes(":") ? u : `garden:${u}`))])).slice(-20);
     const w = o.give ? ITEM_WORDS[o.give] ?? o.giveWords : undefined;
     if (w) {
@@ -572,6 +622,17 @@ function applyArcOutcome(c0: CareerState, b: BeatLive, o: ArcOutcome, endId: str
       ex.got = { what: fw(w[0]), text: fw(w[1]) }; changes.push({ kind: "item", label: fw(w[0]) });
     }
     else if (o.unlock) changes.push({ kind: "item", label: o.unlock.startsWith("trophy:") ? "On the kit room door" : "Unlocked" });
+  }
+  // The scrapbook (job B): the world remembers it; an echo books a text from someone, seasons on.
+  const bw = typeof o.book === "string" ? { tag: o.book } : o.book;
+  if (bw && bookWrite(life, bw.tag, now, "strength" in bw && bw.strength ? bw.strength : 3)) {
+    changes.push({ kind: "memory", label: "In your scrapbook" });
+    const echo = "echo" in bw ? bw.echo : undefined;
+    const who = echo ? b.cast[echo.who] : "";
+    if (echo && who) {
+      meet(life, who, now);
+      addEcho(life, now + pickIn(echo.seasons, `${b.arc}|${bw.tag}|${now}`) * LIFE_SEASON, who, bw.tag, arcCode(arc));
+    }
   }
   if (o.objective && (life.objs ?? []).length < MAX_OBJECTIVES) {
     const t = fillLine(o.objective.text, { ...c, life }, b.cast, ctx());

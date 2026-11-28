@@ -8,6 +8,7 @@
 import type { ArcRun, LifeMemory, LifePerson, LifeState, ObjectiveRun, PromiseRun } from "./types";
 import { PEOPLE_CAP, PERSON_MEMORY_CAP } from "./types";
 import { freshLife } from "./people";
+import { MAX_ECHOES, MAX_SCRAPBOOK } from "./scrapbook";
 
 /** A sanity bound on stories in one save, far above what a career can meet. */
 const MAX_SAVED_ARCS = 2000;
@@ -118,5 +119,24 @@ function migrateV2(o: Record<string, unknown>): Partial<LifeState> {
     }));
   }
   if (Array.isArray(o.got)) out.got = o.got.filter(str).slice(-20) as string[];
+  // The story world (job B, 28 Nov 2026). Each part only when present and well formed, so a save
+  // without them loads exactly as before.
+  if (str(o.ul)) {
+    const codes = Array.from(new Set((o.ul as string).split(" ").filter((w) => /^[0-9a-z]{3}$/.test(w))));
+    if (codes.length) out.ul = codes.join(" ");
+  }
+  if (str(o.sb)) {
+    const lines = (o.sb as string).split(" ").filter((w) => /^[0-9a-z]{4}\.-?\d+\.[123]$/.test(w)).slice(-MAX_SCRAPBOOK);
+    if (lines.length) out.sb = lines.join(" ");
+  }
+  if (Array.isArray(o.ms) && o.ms.length === 6 && o.ms.slice(0, 5).every((x) => typeof x === "number" && Number.isFinite(x)) && str(o.ms[5])) out.ms = o.ms as NonNullable<LifeState["ms"]>;
+  if (o.msw && typeof o.msw === "object") {
+    const msw = Object.fromEntries(Object.entries(obj(o.msw)).filter(([k, x]) => /^[a-z]{2}$/.test(k) && typeof x === "number" && Number.isFinite(x))) as Record<string, number>;
+    if (Object.keys(msw).length) out.msw = msw;
+  }
+  if (Array.isArray(o.ech)) {
+    const ech = o.ech.filter((e): e is [number, string, string, string] => Array.isArray(e) && e.length === 4 && typeof e[0] === "number" && str(e[1]) && str(e[2]) && str(e[3])).slice(0, MAX_ECHOES);
+    if (ech.length) out.ech = ech.map((e) => [e[0], e[1], e[2], e[3]]);
+  }
   return out;
 }
