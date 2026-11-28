@@ -520,7 +520,7 @@ export class Npc {
       this.speed = Math.max(0, this.speed - dt * 4);
       return;
     }
-    // (his own pace, 8% either way: the stride clock follows the ground, so his feet keep up)
+    // (his own pace, 12% either way: the stride clock follows the ground, so his feet keep up)
     let want = this.goal?.run ? NPC_JOG * this.own.pace : NPC_WALK * this.own.pace * Math.min(1, s.push / 0.9);
     let dirYaw = s.yaw;
     // ── people ahead: slow down and step aside ──

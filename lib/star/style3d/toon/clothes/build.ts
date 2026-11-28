@@ -40,6 +40,12 @@ export interface GarmentSpec {
   tube?: boolean;
   /** a tie down the front of this garment (drawn in the material's second trim colour) */
   tie?: { top: number; bottom: number; w: number };
+  /**
+   * INNER THIGHS (Harry: "legs like squeezing past each other"): below `belowY`, the side of each leg that faces the
+   * other sits only (1 - k) of `offset` off the skin. Two shorts legs 1.4 cm off the skin each went up to 1.6 cm into
+   * each other at the hem as the thighs passed in a walk (scripts/walk3d/measure.mts); real cloth presses flat there.
+   */
+  innerLegs?: { k: number; belowY: number };
   /** shell relax: point passes, normal passes */
   relax?: [number, number];
   /** extra smoothing passes on the sleeves only (a jacket or shirt sleeve: no biceps showing through) */
@@ -257,7 +263,7 @@ export function buildClothes(T: Three, body: THREE.SkinnedMesh, rig: Rig, garmen
         for (const q of rec) { const r2 = Math.max(q.r, Math.min(sm[q.b], q.r + 0.018)); o.pos[q.i * 3] += q.d[0] * (r2 - q.r); o.pos[q.i * 3 + 2] += q.d[2] * (r2 - q.r); }
       }
     }
-    o.shell(gm.offset, gm.lip, gm.collar ? { ...gm.collar, neck: rig.j("neck") } : undefined);
+    o.shell(gm.offset, gm.lip, gm.collar ? { ...gm.collar, neck: rig.j("neck") } : undefined, gm.innerLegs);
     if (gm.tie) o.addTie(gm.tie);
     const geo = o.geometry(T, false);
     stats[`${gm.name}Tris`] = geo.index!.count / 3;
@@ -500,10 +506,17 @@ class Out {
     for (let i = 0; i < this.n; i++) { const a = acc.get(this.wid[i])!; const l = Math.hypot(a[0], a[1], a[2]) || 1; this.nor[i * 3] = a[0] / l; this.nor[i * 3 + 1] = a[1] / l; this.nor[i * 3 + 2] = a[2] / l; }
   }
   /** Push off the skin; a thickness lip down to the skin at every open edge; a collar piece on the neck edge loop. */
-  shell(off: number, lip: number, collar?: { kind?: CollarKind; h: number; out: number; fold?: number; neck: V3 }) {
+  shell(off: number, lip: number, collar?: { kind?: CollarKind; h: number; out: number; fold?: number; neck: V3 }, innerLegs?: { k: number; belowY: number }) {
     const n0 = this.n;
     this.n0 = n0;
-    for (let i = 0; i < n0; i++) for (let k = 0; k < 3; k++) this.pos[i * 3 + k] += this.nor[i * 3 + k] * off;
+    // (a leg's inner side, facing the other leg, closer to the skin: GarmentSpec.innerLegs)
+    const offAt = (i: number) => {
+      if (!innerLegs || this.pos[i * 3 + 1] > innerLegs.belowY) return off;
+      const inward = Math.max(0, -Math.sign(this.pos[i * 3]) * this.nor[i * 3]);
+      return off * (1 - innerLegs.k * Math.min(1, inward * 1.4));
+    };
+    const offs = Array.from({ length: n0 }, (_, i) => offAt(i));
+    for (let i = 0; i < n0; i++) for (let k = 0; k < 3; k++) this.pos[i * 3 + k] += this.nor[i * 3 + k] * offs[i];
     // open edges: an edge used once (on welded ids)
     const count = new Map<string, number>(), dir = new Map<string, [number, number]>();
     for (let t = 0; t < this.ind.length; t += 3) for (let e = 0; e < 3; e++) {
@@ -518,7 +531,7 @@ class Out {
     for (const [a, b] of ring) {
       for (const v of [a, b]) if (!inner.has(v)) {
         const d = this.dup(v);
-        for (let k = 0; k < 3; k++) this.pos[d * 3 + k] -= this.nor[v * 3 + k] * (off + lip);
+        for (let k = 0; k < 3; k++) this.pos[d * 3 + k] -= this.nor[v * 3 + k] * ((v < n0 ? offs[v] : off) + lip);
         this.lip[d] = 1; this.lip[v] = Math.max(this.lip[v], 0.5);
         inner.set(v, d);
       }

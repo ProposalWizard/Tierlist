@@ -106,6 +106,8 @@ interface Cast { id: string; role: string; body: string; actor: CutsceneActor; c
 
 // (sit_idle, sit_down and stand_up are the motion-capture sits the "sit" stand-ins ask for first: missing here,
 // a seated man was pulled down to put his hanging feet on the floor, into the seat, knees up: "scrunched")
+/** The small flickers of a face at rest (director step 4): mostly mild, now and then nothing at all. */
+const MICRO_FACES: (import("./types").Expression | null)[] = ["smile", "focused", null, "determined", "smirk", "smile", null, "proud", "tense"];
 /** The face a scene's feeling gives anyone with no expression of his own set. */
 const MOOD_FACE: Partial<Record<string, import("./types").Expression>> = {
   joy: "smile", pride: "proud", relief: "smile", defiance: "determined", anger: "angry", sadness: "sad", shock: "shocked",
@@ -312,6 +314,25 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   };
 
   const tracksOf = <K extends string>(id: string, type: K) => (C.byActor.get(id) ?? []).filter((x) => x.type === type) as any[];
+  /**
+   * HIS HABIT WHILE HE WALKS (Harry: "no variations… no life in their faces, everyone static"; people/life.ts
+   * Habit): on a walk of 2.5 s or more, once, at his own moment, for up to 2.2 s: a glance at the man beside him, a
+   * look up at the stands, a clap, a pull at his sleeve, a wave. Never "you", never over anything the script asks of
+   * him (a pose, a reach, a look of his own), so a story's beats are untouched. From t and his id alone.
+   */
+  const habitAt = (id: string, t: number): { habit: string; w: number; local: number } | null => {
+    if (id === script.cast.find((m) => m.role === "you")?.id || id === "you") return null;
+    const own = ownMotion(id);
+    if (own.habit === "none") return null;
+    const mv = (tracksOf(id, "move") as { at: number; dur: number; gait?: string }[]).find((m) => t >= m.at && t <= m.at + m.dur && m.dur >= 2.5 && m.gait !== "none");
+    if (!mv) return null;
+    const at = mv.at + own.habitAt * mv.dur, len = Math.min(2.2, mv.dur * 0.4);
+    const w = trackWeight({ at, dur: len, blendIn: 0.35, blendOut: 0.4 }, t);
+    if (w <= 0) return null;
+    const busy = (k: string) => (tracksOf(id, k) as { at: number; dur?: number; blendIn?: number; blendOut?: number }[]).some((x) => trackWeight(x, t, 0.3, 0.35) > 0.05);
+    if (busy("pose") || busy("reach") || busy("look")) return null;
+    return { habit: own.habit, w, local: t - at };
+  };
 
   /** Hold the tool's grip point (not the wrist) on `want` (hold.ts). */
   const toolTo = (a: CutsceneActor, hand: "L" | "R", grip: any, want: any, along: any, palm: any, pole: any, w: number) => gripTo(T, a, hand, grip, want, along, palm, pole, w);
@@ -329,7 +350,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     for (const c of Array.from(cast.values())) {
       const a = c.actor;
       a.beginFrame();
-      const cs = clipsAt(C, c.id, t, (n) => c.clipSet.has(n), (n) => a.clipDuration(n), c.role, c.body);
+      const cs = clipsAt(C, c.id, t, (n) => c.clipSet.has(n), (n) => a.clipDuration(n), c.role, c.body, (n) => a.groundSpeed?.(n));
       a.poseClips(cs.entries);
       const r = rootAt(C, c.id, t);
       a.setRoot(r.pos, r.yaw);
@@ -372,6 +393,16 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         }
       }
       liveArms(a, ctx, own.arms);
+      // his habit, the hands' part (a clap, a wave, a pull at the sleeve)
+      const hab = habitAt(c.id, t);
+      if (hab?.habit === "clap") applyPose(a, "applaud", hab.w * 0.85, { ...ctx, local: hab.local });
+      else if (hab?.habit === "wave") applyPose(a, "salute-crowd", hab.w * 0.9, { ...ctx, local: hab.local });
+      else if (hab?.habit === "sleeve") {
+        a.root.updateMatrixWorld(true);
+        const hl = a.point("hand.L"), sl = a.point("shoulder.L");
+        a.reach("R", hl.clone().add(sl.clone().sub(hl).normalize().multiplyScalar(0.07)), null, null, hab.w * 0.85);
+        a.hand("R", "pinch", hab.w);
+      }
       for (const pt of tracksOf(c.id, "pose") as PoseTrack[]) {
         const amt = pt.amount ?? 1;
         const w = trackWeight(pt, t, 0.3, 0.35) * amt;
@@ -445,6 +476,23 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         }
       }
       if (moodFace && !(tracksOf(c.id, "face") as FaceTrack[]).some((ft) => t >= ft.at && t <= ft.at + (ft.dur ?? 999))) a.setExpression(moodFace, 0.55);
+      // his habit, the eyes' part: a look up at the stands, a glance at the nearest man
+      const hab = habitAt(c.id, t);
+      if (hab?.habit === "look-up") { const hd = a.point("head"), yw = rootAt(C, c.id, t).yaw + own.head * 3; a.lookAt(new T.Vector3(hd.x + Math.sin(yw) * 4, hd.y + 3.2, hd.z + Math.cos(yw) * 4), hab.w * 0.8); }
+      else if (hab?.habit === "glance") {
+        const me = a.point("head");
+        let best: CutsceneActor | null = null, bd = 9;
+        for (const o of Array.from(cast.values())) { if (o.id === c.id) continue; const d = o.actor.point("head").distanceTo(me); if (d < bd) { bd = d; best = o.actor; } }
+        if (best) a.lookAt(best.point("eyes"), hab.w * 0.75);
+      }
+      // SMALL CHANGES IN HIS FACE (Harry: "no life in their faces"): with no face of his own set, every few seconds
+      // (his own rhythm) a flicker of something, a third strength, then back: a half smile, a focus, a set jaw
+      if (!(tracksOf(c.id, "face") as FaceTrack[]).some((ft) => t >= ft.at && t <= ft.at + (ft.dur ?? 999))) {
+        const per = 4.2 + 2.6 * own.rate, u = t / per + own.phase * 3.1, slot = Math.floor(u), f = u - slot;
+        const pickF = MICRO_FACES[(slot * 7 + Math.floor(own.phase * 97)) % MICRO_FACES.length];
+        const bump = Math.max(0, Math.sin(Math.PI * Math.min(1, Math.max(0, (f - 0.35) / 0.4))));
+        if (pickF && bump > 0) a.setExpression(pickF, 0.35 * bump);
+      }
       for (const lt of tracksOf(c.id, "look") as LookTrack[]) {
         const w = trackWeight(lt, t, 0.35, 0.35) * (lt.amount ?? 1);
         if (w > 0) a.lookAt(targetPoint(lt.target, t), w);

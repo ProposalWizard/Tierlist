@@ -154,12 +154,21 @@ export function rootAt(c: Compiled, id: string, t: number, depth = 0): RootState
         moveCache.set(mv, cache);
       }
       const { path } = cache;
-      const s = clamp((t - mv.at) / Math.max(1e-3, mv.dur));
+      const s0 = clamp((t - mv.at) / Math.max(1e-3, mv.dur));
+      // HIS OWN PACE (Harry: "22 players walking at the same pace in the same time"): on a walk of any length a
+      // brisker man (people/life.ts pace, 12% either way) draws ahead in the middle and a slower one drops back;
+      // every man still starts and arrives where and when the script says.
+      // (and over the walk he surges and eases off a little on his own rhythm, so two men who happen to share a
+      // cadence still drift in and out of step)
+      const own0 = ownMotion(id);
+      const pw = mv.gait !== "none" && path.length > 0.8 ? (own0.pace - 1) * 0.9 : 0;
+      const sv = pw ? own0.surge : 0;
+      const s = clamp(s0 + pw * 2 * s0 * (1 - s0) + (sv / (2 * Math.PI)) * Math.sin(2 * Math.PI * s0));
       const e = mv.ease ?? 0.35;
       const u = lerp(s, smooth(s), e);
       st.pos = path.at(u);
       // speed (m/s) now: d(u)/dt * length
-      const du = (1 - e) + e * 6 * s * (1 - s);
+      const du = ((1 - e) + e * 6 * s * (1 - s)) * (1 + pw * 2 * (1 - 2 * s0) + sv * Math.cos(2 * Math.PI * s0));
       const speed = (path.length / Math.max(1e-3, mv.dur)) * du;
       const pathYaw = (() => { const d = path.dir(Math.min(0.995, u)); return Math.atan2(d[0], d[2]); })();
       const startYaw = st.yaw;
@@ -201,7 +210,7 @@ export { ownMotion, type OwnMotion };
  * Body clips for an actor at t: [real clip, time, weight][]. `has` / `dur`
  * describe the body (which clips it has, how long each is).
  */
-export function clipsAt(c: Compiled, id: string, t: number, has: (n: string) => boolean, dur: (n: string) => number, role: string, body: string): ClipSample {
+export function clipsAt(c: Compiled, id: string, t: number, has: (n: string) => boolean, dur: (n: string) => number, role: string, body: string, ground?: (n: string) => number | undefined): ClipSample {
   const tracks = (c.byActor.get(id) ?? []).filter((x): x is ClipTrack => x.type === "clip");
   const out = new Map<string, [number, number]>();
   let upright = 0;
@@ -264,7 +273,12 @@ export function clipsAt(c: Compiled, id: string, t: number, has: (n: string) => 
     if (ch) {
       const d = Math.max(0.1, dur(ch.clip));
       // his own place in the stride: no two men's feet land together (the walk-out marched in step)
-      const time = ((r.gait.time * (ch.speed ?? 1) * rate + own.phase * d) % d + d) % d;
+      // THE FEET KEEP UP (Harry: "the quality is like jittering"): the stride clock is the distance walked over the
+      // clip's own ground speed on this body (three3d/stride.ts, measured). The old fixed speeds (walk 1.35 m/s
+      // against legs that cover 0.93 to 1.04) slid every planted foot 13 to 15 cm a step.
+      const gs = ground?.(ch.clip);
+      const clock = gs && gs > 0.2 ? (r.gait.time * (GAIT_SPEED[r.gait.clip] ?? 1.3)) / gs : r.gait.time * (ch.speed ?? 1) * rate;
+      const time = ((clock + own.phase * d) % d + d) % d;
       const gw = r.gait.weight;
       entries = entries.map(([n, tt, w]) => [n, tt, w * (1 - gw)] as [string, number, number]);
       upright = upright * (1 - gw) + (ch.upright ?? 0) * gw;

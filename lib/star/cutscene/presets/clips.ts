@@ -14,7 +14,8 @@ export interface ClipChoice { clip: string; speed?: number; from?: number; hold?
 export const CLIP_ALIASES: Record<string, ClipChoice[]> = {
   // gaits
   walk: [{ clip: "walk" }, { clip: "slump_walk", speed: 1.05, upright: 1 }, { clip: "jog", speed: 0.55 }],
-  "walk-proud": [{ clip: "walk-proud" }, { clip: "walk_confident" }, { clip: "walk" }, { clip: "slump_walk", speed: 1.0, upright: 1 }],
+  // (walk_confident left out: its file holds a standing pose, people/life.ts WALKS)
+  "walk-proud": [{ clip: "walk-proud" }, { clip: "walk_formal" }, { clip: "walk" }, { clip: "slump_walk", speed: 1.0, upright: 1 }],
   "walk-sad": [{ clip: "walk-sad" }, { clip: "slump_walk", speed: 0.9 }],
   jog: [{ clip: "jog" }, { clip: "celebrate_safe", speed: 0.8 }],
   run: [{ clip: "run" }, { clip: "sprint", speed: 0.8 }, { clip: "jog", speed: 1.3 }],
@@ -29,7 +30,7 @@ export const CLIP_ALIASES: Record<string, ClipChoice[]> = {
   "wave-boss": [{ clip: "boss-wave" }, { clip: "wave" }],
   applaud: [{ clip: "applaud" }, { clip: "applause" }, { clip: "idle" }],
   // acting (Motion: Mocap — captured or adapted from captures, tools/mocap3d; Old plays the stand-in)
-  "walk-confident": [{ clip: "walk_confident" }, { clip: "walk" }, { clip: "slump_walk", speed: 1.0, upright: 1 }],
+  "walk-confident": [{ clip: "walk_formal" }, { clip: "walk" }, { clip: "slump_walk", speed: 1.0, upright: 1 }],
   handshake: [{ clip: "handshake" }, { clip: "wave", speed: 0.8 }, { clip: "idle" }],
   hug: [{ clip: "hug" }, { clip: "idle" }],
   nod: [{ clip: "nod" }, { clip: "idle" }],

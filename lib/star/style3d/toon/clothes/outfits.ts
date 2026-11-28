@@ -36,6 +36,8 @@ export function landmarks(meta: PersonMeta) {
     waist: hips[1] + 0.035,
     tuck: hips[1] + 0.015,
     shortsEnd: (mk.shortsLoY ?? 0.65) - 0.015,
+    // below this, a leg of shorts or trousers faces the other leg (GarmentSpec.innerLegs)
+    crotch: j("LeftUpLeg")[1] - 0.06,
     sockTop: meta.kit.sockY + 0.02,
     sockEnd: meta.kit.bootY + 0.006,
     shoeTop: meta.kit.bootY + 0.004,
@@ -169,7 +171,7 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
         g.push({ name: "shirt", offset: 0.007, lip: 0.004, shape, collar: { kind: "crew", h: 0.016, out: 0.010 }, fields: (pt, a, s) => ({ ...torso(pt, a, s), cut: Math.abs(pt.x) - LM.seamX }) });
         g.push({ name: "sleeves", offset: 0.007, lip: 0.004, shape, fields: (pt, a, s) => ({ ...torso(pt, a, s), cut: LM.seamX - Math.abs(pt.x) }) });
       } else g.push({ name: "shirt", offset: 0.007, lip: 0.004, shape, collar: { kind: "crew", h: 0.016, out: 0.010 }, fields: torso });
-      g.push({ name: "shorts", offset: 0.014, lip: 0.005,
+      g.push({ name: "shorts", offset: 0.014, lip: 0.005, innerLegs: { k: 0.8, belowY: LM.crotch },
         fields: (pt, arm, _a, leg) => ({ neck: arm > 0.5 ? 1 : pt.y - LM.waist, sleeve: NONE, hem: NONE, leg: leg > 0.35 ? LM.shortsEnd - pt.y : NONE }) });
       g.push({ name: "socks", offset: 0.004, lip: 0.003, relax: [2, 8],
         fields: (pt, arm, _a, leg) => (leg > 0.5 && arm < 0.5 ? { neck: pt.y - LM.sockTop, sleeve: NONE, hem: LM.sockEnd - pt.y, leg: NONE } : OFF) });
