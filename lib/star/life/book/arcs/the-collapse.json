@@ -719,6 +719,19 @@
        },
        {
         "text": "He's moved near his mum. He talks for an hour, which he never used to.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "saved-my-life",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-quiet-one"
         }
@@ -728,12 +741,41 @@
        {
         "if": "arc.box>=2",
         "text": "\"Ours,\" he sends back, and a photo of the box with his old number on the side.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "saved-my-life",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "every-pitch"
         }
        },
        {
         "text": "He sends a thumbs up. Every year on that Tuesday, one line.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "saved-my-life",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-quiet-one"
         }

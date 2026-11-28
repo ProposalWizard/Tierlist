@@ -580,6 +580,19 @@
        {
         "if": "arc.path=='honest' && !arc.mid=='rang'",
         "text": "He owns up. The gaffer fines him and lets him play. He sends the next one to you, though, in March.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "sent-me-to-talk-to-the-lad",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "trusted"
         }
@@ -610,6 +623,12 @@
        },
        {
         "text": "\"Like you did?\" the lad says. You haven't got an answer. He owns up anyway.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 1
+         }
+        ],
         "arc": {
          "end": "on-a-short-lead"
         }
@@ -633,6 +652,15 @@
        },
        {
         "text": "He says nothing. The gaffer looks at you over his head the whole time.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 1
+         }
+        ],
         "arc": {
          "end": "on-a-short-lead"
         }

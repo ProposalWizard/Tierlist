@@ -487,12 +487,32 @@
        {
         "if": "arc.met=='past'",
         "text": "\"Walked past me. Good for him.\" You read it twice.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 3,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "walked-past"
         }
        },
        {
         "text": "\"Got this one wrong. Glad I did.\" You read it three times.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "framed-the-too-small-letter",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "he-got-it-wrong"
         }
@@ -507,6 +527,13 @@
        {
         "if": "arc.met=='past'",
         "text": "Your dad reads it to you down the phone. \"He says good for you for walking past.\" Your dad sounds pleased about that.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "walked-past"
         }
@@ -514,12 +541,38 @@
        {
         "if": "arc.letter=='framed' || arc.met=='letter'",
         "text": "Your dad rings you. He reads it out. Then he goes and gets the frame.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "framed-the-too-small-letter",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-letter"
         }
        },
        {
         "text": "Your dad reads it out: \"Got this one wrong.\" He says it twice, the second time for himself.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "framed-the-too-small-letter",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "he-got-it-wrong"
         }

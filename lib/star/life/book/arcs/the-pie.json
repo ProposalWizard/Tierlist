@@ -349,6 +349,12 @@
        },
        {
         "text": "\"Pie? Eat the quiche, love.\" You eat the quiche.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "no-pie"
         }
@@ -364,12 +370,33 @@
         "if": "arc.path=='pie'",
         "chance": 0.5,
         "text": "You score on Saturday anyway. You tell her on Monday. She looks a bit put out, and makes you a pie anyway.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "makes-my-friday-pie",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-pie-man"
         }
        },
        {
         "text": "You eat the quiche. You score. You never have the pie again, and she pretends not to mind.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": -3,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "no-pie"
         }

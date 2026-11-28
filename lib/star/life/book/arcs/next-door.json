@@ -626,6 +626,23 @@
        {
         "if": "!arc.peace=='war'",
         "text": "You eat the cake, all of it, standing up in the kitchen.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "tea-with-the-neighbour",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "biggest-fan"
         }

@@ -998,12 +998,31 @@
        {
         "if": "arc.shirt=='kept'",
         "text": "Not in it. Your mum texts a photo of the frame in the hall. No words.",
+        "effects": {
+         "fame": -1
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "never-got-the-first-cap-shirt",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "a-shirt-for-mum"
         }
        },
        {
         "text": "Not in it. You turn the telly off.",
+        "effects": {
+         "fame": -1
+        },
         "arc": {
          "end": "his-shirt"
         }

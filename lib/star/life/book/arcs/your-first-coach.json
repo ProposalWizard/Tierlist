@@ -468,12 +468,31 @@
        {
         "if": "arc.whistle=='peg' || arc.whistle=='drawer'",
         "text": "You go. He's poorly and can't come. You give out the awards with his whistle round your neck.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "saw-me-meet-my-first-coach",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "his-whistle"
         }
        },
        {
         "text": "You go. He waves at you from his son's car, with a programme, the way he did in the stand.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
         "arc": {
          "end": "a-wave"
         }
@@ -488,12 +507,27 @@
        {
         "if": "arc.whistle=='peg' || arc.whistle=='drawer'",
         "text": "You get his whistle out and blow it at the start of training that day, once, for him. The kit man asks why. You tell him.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
         "arc": {
          "end": "his-whistle"
         }
        },
        {
         "text": "Your dad goes instead. He sends a photo of the old man in a folding chair, waving.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "a-wave"
         }

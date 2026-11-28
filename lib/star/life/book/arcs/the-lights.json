@@ -699,6 +699,20 @@
        },
        {
         "text": "The lights come on. He shakes your hand and goes back to his car before the game.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "held-the-torch",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-dark"
         }
@@ -725,12 +739,44 @@
        {
         "if": "arc.path=='kickabout'",
         "text": "Good photo. The groundsman is just out of it, on the left, with his hands in his pockets.",
+        "effects": {
+         "fans": 4
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "the-night-the-lights-went",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-kickabout"
         }
        },
        {
         "text": "Good photo. The groundsman is just out of it, on the left, with his hands in his pockets.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "held-the-torch",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-dark"
         }

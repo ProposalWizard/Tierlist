@@ -857,6 +857,20 @@
        {
         "if": "arc.path=='saved'",
         "text": "He knocks on the window as you go past and holds up a bacon roll.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "lent-me-the-cafe-money",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-sandwich"
         }
@@ -864,12 +878,32 @@
        {
         "if": "arc.path=='shut'",
         "text": "You keep walking. You've got a mug at home with the café's name on it.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "lent-me-the-cafe-money",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-shutter"
         }
        },
        {
         "text": "You keep walking. You'll go in on Saturday.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 2,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "just-a-customer"
         }

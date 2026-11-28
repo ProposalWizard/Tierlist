@@ -387,6 +387,10 @@ function chainOf(a: LifeArc): LifeArc[] {
   }
   return out;
 }
+// Careers holding a story before the reach pass gives up on its unseen endings (was 60; 150 since
+// 28 Nov 2026: a very-rare story's narrow ending, the-flood "the-bucket-night", fell just past 60
+// when unrelated ending effects moved the dice). Costs nothing once every ending is seen.
+const REACH_TRIES = 150;
 let reachCareers = 0;
 const reachTries = new Map<string, number>(), reachFor = new Map<string, number>();
 if (process.env.REACH !== "0") {
@@ -394,7 +398,7 @@ if (process.env.REACH !== "0") {
   const MAX = Number(process.env.REACH_MAX ?? 260);
   let k = 0;
   while (reachCareers < MAX) {
-    const need = ARCS.filter((a) => a.start && (reachTries.get(a.id) ?? 0) < 60 && a.ends.some((e) => !reached(`${a.id}:${e.id}`)));
+    const need = ARCS.filter((a) => a.start && (reachTries.get(a.id) ?? 0) < REACH_TRIES && a.ends.some((e) => !reached(`${a.id}:${e.id}`)));
     if (!need.length) break;
     need.sort((a, b) => (reachTries.get(a.id) ?? 0) - (reachTries.get(b.id) ?? 0));
     const target = need[0];
@@ -408,7 +412,7 @@ if (process.env.REACH !== "0") {
       if (score > bestN) { bestN = score; best = p.lastName; }
     }
     for (const x of need) if (chainOf(x).every((y) => inCareer(y, { firstName: "Soak", lastName: best, startYear: 2027 }))) reachTries.set(x.id, (reachTries.get(x.id) ?? 0) + 1);
-    if (!best) { reachTries.set(target.id, 99); continue; }
+    if (!best) { reachTries.set(target.id, REACH_TRIES); continue; }
     const before = new Set([...reachEnds.keys()]);
     // A late-career story gets a player who starts at 20 (career numbers 3, 7, 11 ... start at 20),
     // so its last seasons fit inside the soak's seasons.

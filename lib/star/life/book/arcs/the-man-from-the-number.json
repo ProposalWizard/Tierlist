@@ -187,12 +187,41 @@
        {
         "if": "arc.path=='talk'",
         "text": "He sees you at the back and loses his place for a second. Then he tells them about the text he sent you.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "heard-the-fixers-talk",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "five-minutes"
         }
        },
        {
         "text": "He sees you at the back and does the whole talk without looking your way.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 1
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "shut-the-gate-on-the-fixer",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "the-gate-shut"
         }
@@ -207,12 +236,34 @@
        {
         "if": "arc.path=='talk'",
         "text": "The academy manager says it was the best talk they've had.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 3
+         }
+        ],
         "arc": {
          "end": "five-minutes"
         }
        },
        {
         "text": "You hear it was good. You stay in the gym.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -1
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "shut-the-gate-on-the-fixer",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "the-gate-shut"
         }

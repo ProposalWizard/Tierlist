@@ -448,6 +448,16 @@
        {
         "if": "arc.path=='good'",
         "text": "He runs the handshake clip again anyway, with a headline about how it used to be.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "the-good-clip",
          "set": {
@@ -573,12 +583,31 @@
        {
         "if": "arc.path=='good'",
         "text": "He runs your handshake clip anyway, under \"HOW IT'S DONE\".",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "the-good-clip"
         }
        },
        {
         "text": "He runs your clip anyway, under \"NOT THE FIRST\".",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-bad-clip"
         }

@@ -573,6 +573,23 @@
        },
        {
         "text": "She doesn't laugh. Later you see her in the away end on her day off, with a ticket she paid for.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "came-back-after-the-ban",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-banned-season"
         }
@@ -609,12 +626,36 @@
        {
         "if": "arc.path=='away' || arc.later=='file'",
         "text": "She nods back. Next away trip, there's a padlock on the hold.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "grudge": 4,
+          "bond": -4
+         }
+        ],
         "arc": {
          "end": "home-on-the-flight"
         }
        },
        {
         "text": "She nods back. Next away game you see her in the away end on her day off.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "came-back-after-the-ban",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-banned-season"
         }

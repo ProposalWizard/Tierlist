@@ -215,6 +215,20 @@
        },
        {
         "text": "She failed the practical. \"You improvised.\" She passed next year without you, and tells everyone why.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -3,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "ran-the-wrong-drill-at-my-badge",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-wrong-drill"
         }
@@ -229,12 +243,40 @@
        {
         "if": "arc.path=='hers' || arc.path=='no'",
         "text": "\"PASSED.\" All in capitals.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 5,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "ran-my-badge-session",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "her-session"
         }
        },
        {
         "text": "\"Failed. Your drill.\" Then a laughing face, a long time later.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -2,
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "ran-the-wrong-drill-at-my-badge",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-wrong-drill"
         }

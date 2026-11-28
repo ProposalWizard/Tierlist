@@ -16,7 +16,12 @@ npx tsx tests/star/lifeArcs.mts     # the checker, every story played by the dic
 npx tsx tests/star/lifeEvents.mts
 npx tsx scripts/soak/lifeSoak.mts   # every beat and ending reached across 200 careers
 npx tsx tests/star/lifeSaveFixture.mts  # old saves still load and play the same
+npx tsx scripts/life/ending-effects-check.mts  # every ending changes something (must print 0)
 ```
+
+Every outcome that ends a story (`arc.end`) must change something in the game: a bar
+(`effects`), a person (`npc`), a memory (`remember`), an item (`give` / `unlock`) or a flag.
+The ending check fails otherwise (Harry, 28 Nov 2026: "endings need to have effects").
 
 ### 0. Who meets it: `start`
 

@@ -534,6 +534,12 @@
        },
        {
         "text": "You eat the cake on the bus home.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
         "arc": {
          "end": "just-mum",
          "set": {
@@ -632,6 +638,19 @@
        },
        {
         "text": "Mum's there, with a new carrier bag and a new cake.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "only-got-two-tickets",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "just-mum"
         }
@@ -646,12 +665,35 @@
        {
         "if": "arc.path=='street'",
         "text": "They don't mind. The banner goes up when you score, and down when you don't.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "got-tickets-for-the-whole-street",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-banner"
         }
        },
        {
         "text": "You wave. Mum waves back. It's enough.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
         "arc": {
          "end": "just-mum"
         }

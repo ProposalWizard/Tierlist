@@ -991,12 +991,46 @@
        {
         "if": "arc.pen=='missed' && arc.deal=='yes'",
         "text": "It's still in the drawer. So is the piece of paper with the phone number on it.",
+        "effects": {
+         "reputation": -2
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 2,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "missed-a-penalty-on-purpose",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-fix"
         }
        },
        {
         "text": "It's still in the drawer.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "scored-the-penalty-they-wanted-missed",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "clean-hands"
         }

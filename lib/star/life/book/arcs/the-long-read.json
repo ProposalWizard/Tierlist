@@ -509,6 +509,12 @@
        },
        {
         "text": "It's very good. You read it twice.",
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "the-stock-answers",
          "set": {
@@ -551,6 +557,12 @@
        },
        {
         "text": "You leave it.",
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "the-stock-answers",
          "set": {
@@ -642,12 +654,34 @@
        {
         "if": "arc.path=='open'",
         "text": "\"Once was enough,\" Dad says, kindly. {broadsheet.short} understands.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8,
+          "respect": 2
+         },
+         {
+          "slot": "broadsheet",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "the-piece"
         }
        },
        {
         "text": "Dad says no. {broadsheet.short} says he thought he might. \"Your piece was short,\" he says. \"I think that's where you get it.\"",
+        "npc": [
+         {
+          "slot": "dad",
+          "respect": 2
+         },
+         {
+          "slot": "broadsheet",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "the-stock-answers"
         }
@@ -662,12 +696,32 @@
        {
         "if": "arc.path=='open'",
         "text": "You pick him up at six from the gate. He's got a cake from the lads in a carrier bag.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "had-his-own-piece-written",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-piece"
         }
        },
        {
         "text": "You pick him up at six. He doesn't say much. Neither do you.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-stock-answers"
         }

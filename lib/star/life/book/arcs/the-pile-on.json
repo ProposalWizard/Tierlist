@@ -620,12 +620,37 @@
        {
         "if": "arc.path=='gave' || arc.post=='none'",
         "text": "Someone else scores it. You never did turn the app back on. Your sister tells you what people think, edited.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sister",
+          "tag": "reads-my-messages-for-me",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "phone-off"
         }
        },
        {
         "text": "Someone else misses it. You know exactly what his phone looks like right now. You text him first.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 4
+         }
+        ],
         "arc": {
          "end": "phone-off"
         }

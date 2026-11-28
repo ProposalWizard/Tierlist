@@ -256,12 +256,38 @@
        {
         "if": "arc.path=='gate'",
         "text": "He watches the whole session and leaves before the end, so you won't feel watched.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "was-at-the-works-gate",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-gate"
         }
        },
        {
         "text": "He watches the whole session and says nothing about it after, except the cones were wrong.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "sent-the-video-to-the-works",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-video"
         }

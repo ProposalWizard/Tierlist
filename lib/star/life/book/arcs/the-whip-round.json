@@ -604,12 +604,31 @@
        {
         "if": "arc.path=='skipped'",
         "text": "She cries. {mate.short} takes her back, politely.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "left-out"
         }
        },
        {
         "text": "She pats your face very seriously and goes back to her dad.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "came-to-the-christening",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "godparent"
         }
@@ -624,12 +643,31 @@
        {
         "if": "arc.path=='skipped'",
         "text": "She waves back, at everyone. You're one of everyone.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -1
+         }
+        ],
         "arc": {
          "end": "left-out"
         }
        },
        {
         "text": "She waves back with both hands and sits down hard.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "came-to-the-christening",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "godparent"
         }

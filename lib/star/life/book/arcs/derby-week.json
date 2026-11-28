@@ -939,12 +939,25 @@
        {
         "if": "arc.day=='wind'",
         "text": "She waves back with the sign. Their whole end does your ear-cup at you. It's been a year and they're still doing it.",
+        "effects": {
+         "fans": -2
+        },
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "posted-see-you-saturday",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-wind-up"
         }
        },
        {
         "text": "She waves back, small. Her dad sees, and lets her.",
+        "effects": {
+         "fans": 3
+        },
         "arc": {
          "end": "derby-day"
         }
@@ -959,6 +972,22 @@
        {
         "if": "arc.day=='wind' || arc.path=='wind'",
         "text": "Their end's waiting. \"See you Saturday,\" they sing, with your own words. It's a long ninety minutes.",
+        "effects": {
+         "fans": -3
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "posted-see-you-saturday",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-wind-up"
         }
@@ -966,6 +995,20 @@
        {
         "if": "arc.day=='shook' || arc.press=='cool'",
         "text": "{rival.short} catches you up in the tunnel and holds his hand out first this time.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "shook-on-derby-day",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "shook-on-it"
         }

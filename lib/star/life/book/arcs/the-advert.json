@@ -385,12 +385,24 @@
        {
         "if": "arc.path=='line'",
         "text": "You sign them. One of them shouts the line as you drive off.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-line"
         }
        },
        {
         "text": "You sign them. Nobody shouts anything.",
+        "effects": {
+         "fans": 1
+        },
         "arc": {
          "end": "the-hands"
         }

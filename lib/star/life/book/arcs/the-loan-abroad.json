@@ -518,12 +518,36 @@
        {
         "if": "arc.gaffer=='blocked' || arc.gaffer=='deal'",
         "text": "You've played every week since. The gaffer kept his side. The postcard stays on the fridge next to your mum's.",
+        "effects": {
+         "boss": 4
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 4,
+          "respect": 2
+         },
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-gaffer-kept-you"
         }
        },
        {
         "text": "Next to it you put a photo of your own stadium in the rain. Your mum says that's the better one.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         },
+         {
+          "slot": "agent",
+          "bond": -1
+         }
+        ],
         "arc": {
          "end": "the-sunshine-lad"
         }
@@ -538,12 +562,32 @@
        {
         "if": "arc.gaffer=='blocked'",
         "text": "You bin it. You wanted that cliff. The gaffer plays you every week, and you don't say thank you.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "grudge": 4,
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "the-gaffer-kept-you"
         }
        },
        {
         "text": "You bin it. You don't regret staying. You don't look at the cliff again.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         },
+         {
+          "slot": "agent",
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "stayed-home"
         }

@@ -596,6 +596,20 @@
        },
        {
         "text": "You don't ring back. Neither does he.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": -6,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "wouldnt-put-a-word-in",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "he-went-without-you"
         }

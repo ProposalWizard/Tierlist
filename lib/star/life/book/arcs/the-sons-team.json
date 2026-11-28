@@ -197,12 +197,40 @@
        {
         "if": "arc.path=='go'",
         "text": "They win on penalties. The son lifts the cup and points at his dad in the crowd.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "talked-to-my-sons-team",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "what-it-takes"
         }
        },
        {
         "text": "They win on penalties. In the bar he tells his lads the story of the lie, and you buy a round for it.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 4,
+          "grudge": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "talked-to-my-sons-team",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-old-favour"
         }
@@ -217,12 +245,24 @@
        {
         "if": "!arc.path=='sorry'",
         "text": "\"Cheers. Dad says you're a gentleman.\"",
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": 4
+         }
+        ],
         "arc": {
          "end": "what-it-takes"
         }
        },
        {
         "text": "\"Cheers. Still owe you that round.\"",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-old-favour"
         }

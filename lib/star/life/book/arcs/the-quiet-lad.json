@@ -607,6 +607,12 @@
        },
        {
         "text": "He nods and goes. You hear later the new lad went home in October.",
+        "npc": [
+         {
+          "slot": "vet",
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "still-a-stranger"
         }
@@ -621,12 +627,38 @@
        {
         "if": "arc.path=='roomed'",
         "text": "He buys two. The back of the bus becomes a quiz team.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "lad",
+          "tag": "saved-me-a-seat",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-lad-came-good"
         }
        },
        {
         "text": "He buys one. You don't hear how it went.",
+        "npc": [
+         {
+          "slot": "vet",
+          "respect": -1
+         }
+        ],
+        "effects": {
+         "team": -1
+        },
         "arc": {
          "end": "still-a-stranger"
         }

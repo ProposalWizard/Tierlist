@@ -223,6 +223,15 @@
        },
        {
         "text": "He looks at you. \"You jumped last time.\" You don't, this time. You stay dry anyway.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "effects": {
+         "boss": 1
+        },
         "arc": {
          "end": "dry-land"
         }
@@ -237,12 +246,31 @@
        {
         "if": "arc.path=='sank'",
         "text": "He's on your raft again. It sinks again. You give him the second towel.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "sank-the-raft-with-me",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-raft"
         }
        },
        {
         "text": "You don't need them. Nobody sinks. It's a bit flat, really.",
+        "effects": {
+         "boss": 1
+        },
         "arc": {
          "end": "dry-land"
         }

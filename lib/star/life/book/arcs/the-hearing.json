@@ -220,12 +220,45 @@
        {
         "if": "arc.path=='slow' || arc.path=='angry'",
         "text": "Eight years. Your evidence is in paragraph four, and nobody could move it.",
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 3,
+          "respect": 4
+         }
+        ],
+        "effects": {
+         "reputation": 2
+        },
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "stood-up-at-the-hearing",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-truth-told"
         }
        },
        {
         "text": "Four years. Paragraph four says a witness was \"confused\". You read it six times.",
+        "effects": {
+         "reputation": -2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "froze-at-the-hearing",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-bad-day"
         }
@@ -252,6 +285,16 @@
        },
        {
         "text": "The lads tell you it was four, and don't look at you while they do.",
+        "effects": {
+         "team": -2
+        },
+        "remember": [
+         {
+          "slot": "squad",
+          "tag": "froze-at-the-hearing",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-bad-day"
         }

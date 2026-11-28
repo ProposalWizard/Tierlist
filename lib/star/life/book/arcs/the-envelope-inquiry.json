@@ -217,12 +217,34 @@
        {
         "if": "arc.path=='hand'",
         "text": "Page forty-one: one player handed back the full amount. The serious paper puts that line in bold.",
+        "effects": {
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "respect": 6
+         }
+        ],
         "arc": {
          "end": "handed-it-in"
         }
        },
        {
         "text": "Page forty-one: \"insufficient evidence\". Your name, and eight others.",
+        "effects": {
+         "reputation": -2
+        },
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "respect": -4
+         },
+         {
+          "slot": "agent",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-drawer"
         }
@@ -237,12 +259,31 @@
        {
         "if": "arc.path=='hand'",
         "text": "{broadsheet.short} sends you the page anyway, with the line underlined.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "bond": 2,
+          "respect": 6
+         }
+        ],
         "arc": {
          "end": "handed-it-in"
         }
        },
        {
         "text": "The envelope is still in the drawer.",
+        "effects": {
+         "reputation": -1
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-drawer"
         }

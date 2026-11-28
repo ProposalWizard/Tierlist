@@ -659,12 +659,36 @@
        {
         "if": "arc.path=='helped'",
         "text": "It's a good one. {lad.short} watches you more than he watches {ring.short}. Fair's fair.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 4,
+          "grudge": -2
+         },
+         {
+          "slot": "ring",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "got-you-back"
         }
        },
        {
         "text": "You fill it. {lad.short} helps, but he leaves before the door opens.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "the-tip-off"
         }
@@ -679,12 +703,29 @@
        {
         "if": "arc.path=='helped'",
         "text": "\"Peace?\" says {lad.short}. \"You had my car full of balls.\" He does it anyway, without you.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 2,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "got-you-back"
         }
        },
        {
         "text": "He does it on his own anyway. You hear the cheer from the gym.",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "the-tip-off"
         }

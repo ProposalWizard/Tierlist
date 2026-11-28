@@ -201,12 +201,40 @@
        {
         "if": "!arc.path=='no'",
         "text": "THE STRIKER'S ROOM. The polo shirt is on a hook inside the door.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "said-yes-to-the-polo-shirt",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-polo-shirt"
         }
        },
        {
         "text": "THE STRIKER'S ROOM. \"Seeing as you won't come,\" he says.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 3,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "named-the-office-after-me",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-office"
         }
@@ -221,12 +249,40 @@
        {
         "if": "arc.path=='yes'",
         "text": "He sends a photo of the shirt on its hook.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "said-yes-to-the-polo-shirt",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-polo-shirt"
         }
        },
        {
         "text": "He sends a photo of the sign with your name on it.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 3,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "named-the-office-after-me",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-office"
         }

@@ -612,6 +612,24 @@
        },
        {
         "text": "\"You can paint whatever you like now,\" she says. You're out of contract.",
+        "effects": {
+         "moneyWeeks": -2,
+         "fame": -2
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "respect": -6,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sponsor",
+          "tag": "got-caught-in-painted-boots",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "dropped-by-the-brand"
         }

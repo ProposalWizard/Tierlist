@@ -627,6 +627,15 @@
        },
        {
         "text": "He names three other players. Mum says something rude about him to the radio.",
+        "effects": {
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -3
+         }
+        ],
         "arc": {
          "end": "strikers-only"
         }
@@ -641,12 +650,37 @@
        {
         "if": "arc.path=='yes'",
         "text": "Mum tells you anyway: \"Anywhere he asks, he said. Anywhere.\"",
+        "effects": {
+         "boss": 3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "will-play-anywhere",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-utility-man"
         }
        },
        {
         "text": "Mum doesn't ring back. You assume that means something.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -3
+         }
+        ],
         "arc": {
          "end": "strikers-only"
         }

@@ -340,12 +340,35 @@
        {
         "if": "arc.path=='lift'",
         "text": "There's a bacon roll on your peg with a note: \"Petrol money, a year late.\"",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "drove-me-in-every-morning",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-car-pool"
         }
        },
        {
         "text": "You hear him laughing in the car park with the young lads.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 2
+         }
+        ],
+        "effects": {
+         "team": 1
+        },
         "arc": {
          "end": "the-bus"
         }

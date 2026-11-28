@@ -350,6 +350,23 @@
        },
        {
         "text": "{roomie.short} is rooming with the goalkeeper. He doesn't look at you in reception.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": -6,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "didnt-cover-for-me",
+          "strength": 2
+         }
+        ],
+        "effects": {
+         "team": -2
+        },
         "arc": {
          "end": "the-knock"
         }
@@ -364,12 +381,45 @@
        {
         "if": "arc.path=='covered'",
         "text": "\"Same room. I had the shower checked. It's a very loud shower.\" He knows. He's always known.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "covered-for-me-in-214",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "covered"
         }
        },
        {
         "text": "\"Your room-mate asked for a change. Can't think why.\"",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": -6,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "didnt-cover-for-me",
+          "strength": 2
+         }
+        ],
+        "effects": {
+         "team": -2
+        },
         "arc": {
          "end": "the-knock"
         }

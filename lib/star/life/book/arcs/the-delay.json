@@ -265,12 +265,30 @@
        {
         "if": "arc.path=='sat'",
         "text": "They boo you, as a joke. Mostly as a joke.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 4
+         }
+        ],
         "arc": {
          "end": "gate-fourteen"
         }
        },
        {
         "text": "Same glass, same faces. Same as last time.",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "the-lounge"
         }

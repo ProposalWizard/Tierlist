@@ -406,12 +406,31 @@
        {
         "if": "arc.went==1",
         "text": "She waves the scissors at you.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 6
+         }
+        ],
         "arc": {
          "end": "still-open"
         }
        },
        {
         "text": "She waves. She's busy.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sister",
+          "tag": "missed-my-opening",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "the-sign"
         }

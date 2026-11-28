@@ -543,6 +543,23 @@
        {
         "if": "arc.path=='kitchen'",
         "text": "You'll pass it every day for six months, and so will half the town.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "let-them-shoot-in-my-kitchen",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "mums-kitchen",
          "set": {
@@ -557,6 +574,12 @@
        },
        {
         "text": "You'll pass it every day for six months.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-studio",
          "set": {

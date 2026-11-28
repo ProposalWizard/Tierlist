@@ -685,12 +685,39 @@
        {
         "if": "arc.shootout==2",
         "text": "Your name, eleven times, nine of them in. {striker.short}'s name isn't on it once. He's written \"LET HIM\" at the bottom in marker.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "striker",
+          "respect": 4,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "striker",
+          "tag": "took-the-penalties-off-me",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "your-penalties"
         }
        },
        {
         "text": "His name, twelve times. Ten in. You count them twice. You think about the one he took off you.",
+        "npc": [
+         {
+          "slot": "striker",
+          "respect": 2
+         },
+         {
+          "slot": "coach",
+          "respect": -1
+         }
+        ],
         "arc": {
          "end": "his-penalties"
         }
@@ -705,6 +732,22 @@
        {
         "if": "arc.shootout==2",
         "text": "You don't need to look. You know it's yours.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "striker",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "striker",
+          "tag": "took-the-penalties-off-me",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "your-penalties"
         }
@@ -712,12 +755,28 @@
        {
         "if": "arc.shootout==1",
         "text": "He tells you anyway: \"We're level. Again.\"",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "striker",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "shared"
         }
        },
        {
         "text": "You don't need to look. It's his.",
+        "npc": [
+         {
+          "slot": "striker",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "his-penalties"
         }

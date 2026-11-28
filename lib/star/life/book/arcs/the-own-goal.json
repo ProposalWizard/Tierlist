@@ -343,6 +343,19 @@
        },
        {
         "text": "She looks surprised you've seen it. You feel worse than you expected.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -1
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "the-own-goal",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-end"
         }
@@ -357,12 +370,41 @@
        {
         "if": "arc.path=='kind'",
         "text": "She holds the sign up the whole game. When you go off she's waving your old shirt.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "wrote-me-a-letter",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-letter"
         }
        },
        {
         "text": "You don't look at that front row. You can't, still.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "the-own-goal",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-end"
         }

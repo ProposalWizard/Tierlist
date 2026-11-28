@@ -337,6 +337,19 @@
        {
         "if": "arc.path=='cheat'",
         "text": "You stand at the bar, banned, and shout answers to the team next to you. They win. They buy you both a drink.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "got-us-banned-from-the-quiz",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-cheats"
         }
@@ -363,12 +376,38 @@
        {
         "if": "arc.path=='cheat'",
         "text": "He goes on his own and stands at the bar shouting answers. Somebody has to.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "got-us-banned-from-the-quiz",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "the-cheats"
         }
        },
        {
         "text": "He sends a photo: the toilet seat, on a table, with a new team round it.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "won-the-quiz-with-me",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-trophy"
         }

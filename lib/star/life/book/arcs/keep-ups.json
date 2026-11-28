@@ -347,6 +347,16 @@
       "outcomes": [
        {
         "text": "She does them on her own at the front, and the kids count her.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "keepy-rivals"
         }

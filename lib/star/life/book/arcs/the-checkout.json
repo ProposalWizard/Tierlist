@@ -357,6 +357,12 @@
        },
        {
         "text": "\"Bag?\" she says, before you've said anything.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "self-service"
         }
@@ -371,12 +377,33 @@
        {
         "if": "arc.path=='notes'",
         "text": "\"Unexpected item in bagging area,\" says the machine, in what you'd swear is her voice. She shouts across: \"Thirty-first minute!\"",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "gave-me-notes-at-the-till",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "her-notes"
         }
        },
        {
         "text": "She waves from till four. You wave back. Neither of you says anything about Saturday.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": -1,
+          "respect": 1
+         }
+        ],
         "arc": {
          "end": "self-service"
         }

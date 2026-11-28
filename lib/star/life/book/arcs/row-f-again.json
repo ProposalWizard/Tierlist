@@ -193,12 +193,38 @@
        {
         "if": "arc.path=='tell' || arc.path=='honest'",
         "text": "The young lad's name, once, when he beats his man. Then quiet.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "taught-me-to-shout-for-the-lad",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "row-f-quiet"
         }
        },
        {
         "text": "The same old stuff, at the young lad.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "row-f-loud"
         }
@@ -213,12 +239,38 @@
        {
         "if": "!arc.path=='laugh'",
         "text": "He waves back and points at the young lad, thumbs up.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "taught-me-to-shout-for-the-lad",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "row-f-quiet"
         }
        },
        {
         "text": "He waves back and goes straight back to the lad.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 1
+         }
+        ],
         "arc": {
          "end": "row-f-loud"
         }

@@ -443,6 +443,23 @@
        {
         "if": "arc.path=='signed'",
         "text": "He waves the sign at you anyway.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "signed-my-lads-shirt",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "his-sons-shirt",
          "set": {
@@ -457,6 +474,20 @@
        },
        {
         "text": "He puts the sign down.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "said-no-to-the-shirt",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "no-shirt",
          "set": {
@@ -521,12 +552,36 @@
        {
         "if": "arc.path=='signed'",
         "text": "His lad is waiting by the dressing room door with the shirt you signed, two sizes too small now.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "signed-my-lads-shirt",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "his-sons-shirt"
         }
        },
        {
         "text": "He shakes it, and blows the whistle for the last time ten minutes later.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "no-shirt"
         }
@@ -565,12 +620,43 @@
        {
         "if": "arc.path=='signed'",
         "text": "He gives it to his lad to give you. The lad says, \"Thanks for the shirt,\" and goes red.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "signed-my-lads-shirt",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "his-sons-shirt"
         }
        },
        {
         "text": "He keeps the coin. \"Rules,\" he says, and smiles, and you never do find out which rule.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "gave-me-the-coin",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "no-shirt"
         }

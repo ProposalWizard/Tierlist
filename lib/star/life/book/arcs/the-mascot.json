@@ -256,6 +256,13 @@
        },
        {
         "text": "The new badger high fives you without much in it.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": -4,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "a-new-badger"
         }
@@ -270,12 +277,35 @@
        {
         "if": "arc.path=='saved'",
         "text": "He does another backflip at your back.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "saved-the-lad-in-the-badger",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-badger"
         }
        },
        {
         "text": "The new badger stands where he's been told to.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": -4,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "a-new-badger"
         }

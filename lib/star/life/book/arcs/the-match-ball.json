@@ -339,12 +339,39 @@
        {
         "if": "arc.path=='given'",
         "text": "\"Yours is still the only one I gave away,\" he says. \"Behave today.\" You don't get booked.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "gave-me-the-hat-trick-ball",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-ball"
         }
        },
        {
         "text": "He shows you a photo on his phone: your ball, in the shed, on its own shelf, with a little label.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "gave-me-the-hat-trick-ball",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "his-shed"
         }
@@ -359,12 +386,33 @@
        {
         "if": "arc.path=='kept'",
         "text": "\"After you retire.\" He means it. He sends you a photo of shelf four hundred and thirteen every year.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "let-me-keep-the-ball-for-his-shed",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "his-shed"
         }
        },
        {
         "text": "\"There's a gap where yours should be,\" he says. \"I look at it every week.\"",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "the-ball"
         }

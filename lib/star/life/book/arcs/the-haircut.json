@@ -587,6 +587,14 @@
        },
        {
         "text": "He reads it and doesn't answer for an hour. Then: \"You never said that to me.\"",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 2,
+          "grudge": -6
+         }
+        ],
         "arc": {
          "end": "his-own-look"
         }
@@ -601,12 +609,35 @@
        {
         "if": "arc.path=='nice'",
         "text": "He sends one back, then a photo of the two of you bleached, from the old days.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "got-matching-hair",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-twins"
         }
        },
        {
         "text": "A thumbs up. That's all.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "his-own-look"
         }

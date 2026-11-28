@@ -262,6 +262,20 @@
        },
        {
         "text": "He drives like the instructor's still in the car. He tells you it took four goes \"because nobody would help\".",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": -2,
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "wouldnt-let-me-learn-in-his-car",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-instructor"
         }
@@ -276,12 +290,39 @@
        {
         "if": "arc.path=='taught'",
         "text": "He comes anyway, and parks outside your house, and beeps. You get in.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "taught-me-to-drive",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "he-drives-you"
         }
        },
        {
         "text": "\"Fair.\" He drives your mum to the game instead.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": -1,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "wouldnt-let-me-learn-in-his-car",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "the-instructor"
         }
