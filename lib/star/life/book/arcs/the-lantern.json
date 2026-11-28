@@ -16,7 +16,9 @@
   ]
  },
  "start": {
-  "chance": 0.25
+  "chance": 0.0064,
+  "tier": "common",
+  "stage": "any"
  },
  "cast": [
   {
@@ -35,7 +37,8 @@
  "vars": {
   "lean": "none",
   "secret": 0,
-  "leak": "none"
+  "leak": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -338,6 +341,148 @@
    "hint": "The local reporter wants a quote"
   },
   {
+   "id": "lan-1d-deep",
+   "title": "Her editor",
+   "after": {
+    "beat": "lan-2-call",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-lan-1d-deep",
+    "title": "Her editor",
+    "category": "press",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{reporter.name} rings from the office, quietly. \"My editor wants a piece on the dressing room. Who's not talking to who. He wants it from you.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "reporter",
+       "say": [
+        "\"I said I'd ask. I'm asking. You can say no.\""
+       ],
+       "replies": [
+        {
+         "id": "no",
+         "label": "\"No. But thank you for asking first.\"",
+         "tone": "honest",
+         "end": "no"
+        },
+        {
+         "id": "some",
+         "label": "\"Give me a nice story to give him instead.\"",
+         "tone": "kind",
+         "end": "some"
+        },
+        {
+         "id": "yes",
+         "label": "Give her the dressing room.",
+         "tone": "reckless",
+         "end": "yes"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "no": [
+       {
+        "text": "\"Thought so,\" she says. She writes about the youth team instead.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "said-no-to-her-editor",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "no"
+         }
+        }
+       }
+      ],
+      "some": [
+       {
+        "text": "You give her the kit man's birthday diary. Her editor loves it.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "some"
+         }
+        }
+       }
+      ],
+      "yes": [
+       {
+        "text": "It runs on the Saturday. The dressing room works out who it was by Monday.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "squad",
+          "tag": "talked-to-the-paper",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "yes"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "The reporter's editor wants a word"
+  },
+  {
    "id": "lan-2-call",
    "title": "She rings",
    "after": {
@@ -494,7 +639,10 @@
     },
     "setup": [
      "The {tabloid.outlet} printed the team on Friday, a day before the gaffer read it out. {manager.name} has the paper on his desk and you in the chair.",
-     "\"You were seen in the car park with the woman from the {reporter.outlet}. Twice.\""
+     "\"You were seen in the car park with the woman from the {reporter.outlet}. Twice.\"",
+     "{if arc.deep=='no'}She still remembers you said no to her editor, and that she was glad.{/if}",
+     "{if arc.deep=='some'}Her kit-man piece is still on the canteen wall.{/if}",
+     "{if arc.deep=='yes'}The dressing room still hasn't forgotten the piece.{/if}"
     ],
     "talk": {
      "start": "k1",

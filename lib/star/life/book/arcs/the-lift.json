@@ -14,7 +14,14 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0061,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
  },
  "needsActivity": "drive",
  "cast": [

@@ -1,0 +1,231 @@
+{
+ "id": "arc-the-wellbeing-day",
+ "title": "The wellbeing day",
+ "owner": "physio",
+ "summary": "The physio is running a wellbeing day for the academy, about the weeks when a player isn't all right. She asks you to talk about the team-mate in the car, and what you did when you noticed.",
+ "size": "small",
+ "about": {
+  "who": [
+   "the physio"
+  ],
+  "tone": [
+   "serious",
+   "moving"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-dark-week:sunday-walks|he-spoke-up)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "physio",
+   "pick": "physio"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "you-spoke",
+   "title": "You spoke",
+   "text": "You talked to the academy about the team-mate in the car. Two lads knocked on the physio's door that week."
+  },
+  {
+   "id": "you-listened",
+   "title": "You listened",
+   "text": "You sat at the back of the wellbeing day and didn't speak. A lad sat next to you at lunch and did."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "wbd-1-ask",
+   "title": "The wellbeing day",
+   "n": 1,
+   "event": {
+    "id": "arc-wbd-1-ask",
+    "title": "The wellbeing day",
+    "category": "life",
+    "place": "club:academy",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{physio.short} has a sheet of paper with the day on it: nine o'clock, the academy, forty lads. \"I want you to talk about the car park. What you noticed, and what you did. Ten minutes.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "physio",
+       "say": [
+        "\"They listen to players. They don't listen to me.\""
+       ],
+       "replies": [
+        {
+         "id": "talk",
+         "label": "\"Ten minutes. I'll tell them all of it.\"",
+         "tone": "brave",
+         "end": "talk"
+        },
+        {
+         "id": "back",
+         "label": "\"I'll come. I can't talk about it.\"",
+         "tone": "humble",
+         "end": "back"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "talk": [
+       {
+        "text": "Forty lads in a room that smells of sandwiches. You talk for twelve minutes. Nobody looks at their phone.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "spoke-at-the-wellbeing-day",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "talk"
+         }
+        }
+       }
+      ],
+      "back": [
+       {
+        "text": "You sit at the back. At lunch a lad sits next to you and talks about his dad for half an hour.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "back"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     }
+    ]
+   },
+   "hint": "The physio wants you to talk at the academy"
+  },
+  {
+   "id": "wbd-2-later",
+   "title": "Her door",
+   "after": {
+    "beat": "wbd-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-wbd-2-later",
+    "title": "Her door",
+    "category": "life",
+    "place": "club:physio-room",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. There's a sign on the physio's door now: KNOCK, about anything."
+    ],
+    "choices": [
+     {
+      "id": "ask",
+      "label": "Ask her if it worked.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='talk'",
+        "text": "\"Two of them knocked the week after you spoke. One still does.\"",
+        "arc": {
+         "end": "you-spoke"
+        }
+       },
+       {
+        "text": "\"The lad from lunch knocked. He said you listened.\"",
+        "arc": {
+         "end": "you-listened"
+        }
+       }
+      ]
+     },
+     {
+      "id": "knock",
+      "label": "Knock yourself.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='talk'",
+        "text": "She laughs and puts the kettle on. \"About anything,\" she says.",
+        "arc": {
+         "end": "you-spoke"
+        }
+       },
+       {
+        "text": "She puts the kettle on. You talk about nothing for ten minutes and feel better.",
+        "arc": {
+         "end": "you-listened"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     }
+    ]
+   },
+   "hint": "A season on, the physio's door"
+  }
+ ]
+}

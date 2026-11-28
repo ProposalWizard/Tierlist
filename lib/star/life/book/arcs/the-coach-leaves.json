@@ -15,7 +15,14 @@
   ]
  },
  "start": {
-  "chance": 0.25
+  "chance": 0.0061,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
  },
  "cast": [
   {
@@ -28,7 +35,8 @@
   }
  ],
  "vars": {
-  "word": 0
+  "word": 0,
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -254,6 +262,138 @@
    "hint": "The coach has news"
   },
   {
+   "id": "cch-1d-deep",
+   "title": "His first squad",
+   "after": {
+    "beat": "cch-2-chair",
+    "weeks": [
+     2,
+     8
+    ]
+   },
+   "event": {
+    "id": "arc-cch-1d-deep",
+    "title": "His first squad",
+    "category": "staff",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{coach.name} rings late. He's been offered the job, or he's still waiting to hear. He's got a squad list for a club two leagues down on his kitchen table and he can't stop looking at it."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "coach",
+       "say": [
+        "\"Who would you keep? Be honest. I don't know any of them yet.\""
+       ],
+       "replies": [
+        {
+         "id": "help",
+         "label": "Go through it with him, player by player.",
+         "tone": "kind",
+         "end": "help"
+        },
+        {
+         "id": "joke",
+         "label": "\"Keep the keeper. Sell the rest.\"",
+         "tone": "confident",
+         "end": "joke"
+        },
+        {
+         "id": "nope",
+         "label": "\"You'll know. That's the job.\"",
+         "tone": "calm",
+         "end": "nope"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "help": [
+       {
+        "text": "Two hours on the phone. He writes your notes in the margin in green pen.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 6,
+          "respect": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "went-through-my-first-squad",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "help"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "He laughs for the first time in a week.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "joke"
+         }
+        }
+       }
+      ],
+      "nope": [
+       {
+        "text": "\"Right,\" he says, and you can hear he wanted more.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "nope"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The coach wants you to look at his first squad list"
+  },
+  {
    "id": "cch-2-chair",
    "title": "The directors' lounge",
    "after": {
@@ -392,7 +532,8 @@
      ]
     },
     "setup": [
-     "{coach.name} rings. It's his first summer as a manager. His team stayed up on the last day."
+     "{coach.name} rings. It's his first summer as a manager. His team stayed up on the last day.",
+     "{if arc.deep=='help'}He still has his first squad list with your notes in green.{/if}"
     ],
     "choices": [
      {

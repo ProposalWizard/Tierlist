@@ -1,0 +1,612 @@
+{
+ "id": "arc-the-last-number",
+ "title": "The last number",
+ "owner": "kid",
+ "summary": "It's your last season and the chairman wants to retire your shirt number at the final home game. Then the youngest lad in the academy tells you he's had that number on his bedroom wall since he was six. A season on, somebody is wearing it, or nobody is.",
+ "size": "big",
+ "about": {
+  "who": [
+   "the chairman",
+   "the youngest lad",
+   "your mum"
+  ],
+  "tone": [
+   "moving",
+   "farewell"
+  ]
+ },
+ "start": {
+  "chance": 0.0187,
+  "careers": 0.08,
+  "tier": "very-rare",
+  "stage": "last-seasons",
+  "when": [
+   "age>=32",
+   "clubApps>=20"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  },
+  {
+   "slot": "kid",
+   "pick": "squad",
+   "order": "youngest"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "framed",
+   "title": "Framed",
+   "text": "Your number is retired. The shirt is framed in the main stand bar, and kids touch the glass on their way to the toilets."
+  },
+  {
+   "id": "passed-on",
+   "title": "Passed on",
+   "text": "The youngest lad wears your number now. He rings you after every goal, and he scores more than you did."
+  },
+  {
+   "id": "the-fans-vote",
+   "title": "The fans' vote",
+   "text": "The fans voted to keep your number in use, for the next lad who earns it. Nobody has, yet."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "lnm-1-offer",
+   "title": "The chairman's idea",
+   "n": 1,
+   "event": {
+    "id": "arc-lnm-1-offer",
+    "title": "The chairman's idea",
+    "category": "life",
+    "place": "club:boardroom",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The chairman has had a mock-up made: your shirt in a frame, the number in gold, RETIRED underneath. \"Last home game. Lap of honour, the frame, the lot. Nobody wears it again.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "chairman",
+       "say": [
+        "\"Well? I thought you'd be pleased.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'd be proud.\"",
+         "tone": "humble",
+         "end": "yes"
+        },
+        {
+         "id": "think",
+         "label": "\"Let me think about it.\"",
+         "tone": "calm",
+         "end": "think"
+        },
+        {
+         "id": "vote",
+         "label": "\"Let the fans decide.\"",
+         "tone": "confident",
+         "end": "vote"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "He shakes your hand and has the frame ordered by lunch.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "think": [
+       {
+        "text": "\"Don't think too long,\" he says. \"The framers are busy in May.\"",
+        "arc": {
+         "set": {
+          "path": "think"
+         }
+        }
+       }
+      ],
+      "vote": [
+       {
+        "text": "The club puts it on the website. Seven thousand votes in a day, and a lot of arguments.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "set": {
+          "path": "vote"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "order": "youngest"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "The chairman wants to retire your number"
+  },
+  {
+   "id": "lnm-1b-wall",
+   "title": "His bedroom wall",
+   "after": {
+    "beat": "lnm-1-offer",
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "event": {
+    "id": "arc-lnm-1b-wall",
+    "title": "His bedroom wall",
+    "category": "life",
+    "place": "club:boot-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{kid.name} catches you in the boot room, {kid.age} and still with spots. He's heard about the frame. He has a photo on his phone: a bedroom wall, a poster of you, a six-year-old in your shirt under it."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kid",
+       "say": [
+        "\"I'm not asking. I just... I always wanted that number. That's all. Sorry.\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"Earn it. If you do, it's yours.\"",
+         "tone": "brave",
+         "end": "earn"
+        },
+        {
+         "id": "frame",
+         "label": "\"It's going in a frame, mate. Pick another.\"",
+         "tone": "honest",
+         "end": "frame"
+        },
+        {
+         "id": "laugh",
+         "label": "\"Nice haircut, by the way.\"",
+         "tone": "kind",
+         "end": "laugh"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "earn": [
+       {
+        "text": "He goes red and says he will. He trains like a madman for a month.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 10,
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "said-i-could-earn-the-number",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "earn"
+         }
+        }
+       }
+      ],
+      "frame": [
+       {
+        "text": "He nods too quickly and says of course. He picks a number in the forties.",
+        "npc": [
+         {
+          "slot": "kid",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "frame"
+         }
+        }
+       }
+      ],
+      "laugh": [
+       {
+        "text": "\"Me mum did it.\" He laughs, and you don't answer the question, and he notices.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "laugh"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "order": "youngest"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "The youngest lad has something to tell you about your number"
+  },
+  {
+   "id": "lnm-2-last",
+   "title": "The last home game",
+   "after": {
+    "beat": "lnm-1-offer",
+    "weeks": [
+     8,
+     20
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-lnm-2-last",
+    "title": "The last home game",
+    "category": "life",
+    "place": "ground:pitch",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Your last home game. Full time. The ground stays. Your mum is in the directors' box in a hat she's had since the christening. The chairman has the frame under a sheet on the halfway line.",
+     "{if arc.mid=='earn'}{kid.short} is one of the ball boys tonight. He hasn't taken his eyes off you.{/if}"
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "chairman",
+       "say": [
+        "The microphone. \"Before we unveil it...\" He looks at you. You've got about ten seconds."
+       ],
+       "replies": [
+        {
+         "id": "unveil",
+         "label": "Let him pull the sheet.",
+         "tone": "humble",
+         "end": "unveil"
+        },
+        {
+         "id": "give",
+         "label": "Take the mic and give the number to the lad.",
+         "tone": "brave",
+         "requires": [
+          "arc.mid=='earn' || arc.mid=='laugh'"
+         ],
+         "end": "give"
+        },
+        {
+         "id": "fans",
+         "label": "\"The fans voted. Read it out.\"",
+         "tone": "confident",
+         "requires": [
+          "arc.path=='vote'"
+         ],
+         "end": "fans"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing. Wave to your mum.",
+         "tone": "calm",
+         "silent": true,
+         "end": "unveil"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "unveil": [
+       {
+        "text": "The sheet comes off. Eight thousand people stand up for a shirt in a frame. Your mum is crying into the hat.",
+        "effects": {
+         "fans": 6
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "framed"
+         }
+        }
+       }
+      ],
+      "give": [
+       {
+        "text": "You say his name into the mic and the lad nearly drops the ball he's holding. The chairman looks at the frame, then puts his arm round the boy.",
+        "effects": {
+         "fans": 8
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 15
+         },
+         {
+          "slot": "chairman",
+          "grudge": 3
+         },
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "given"
+         }
+        }
+       }
+      ],
+      "fans": [
+       {
+        "text": "The chairman reads it out: keep it in use, for whoever earns it. The ground claps for the next one, whoever he is.",
+        "effects": {
+         "fans": 5
+        },
+        "arc": {
+         "set": {
+          "path": "vote"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "order": "youngest"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Your last home game"
+  },
+  {
+   "id": "lnm-3-after",
+   "title": "A season on",
+   "after": {
+    "beat": "lnm-2-last",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-lnm-3-after",
+    "title": "A season on",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. A text from {kid.short}: a photo of the dressing room peg with a shirt on it."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kid",
+       "say": [
+        "{if arc.path=='given'}\"First goal in it. Thought you should see first.\"{/if}{if !arc.path=='given'}\"Got my first start. Number 44. Still counts.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "ring",
+         "label": "Ring him.",
+         "tone": "kind",
+         "end": "ring"
+        },
+        {
+         "id": "text",
+         "label": "\"Proud of you. Keep going.\"",
+         "tone": "calm",
+         "end": "text"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ring": [
+       {
+        "if": "arc.path=='given'",
+        "text": "He talks for twenty minutes about one goal. He's doing your celebration, badly.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "passed-on"
+        }
+       },
+       {
+        "if": "arc.path=='framed'",
+        "text": "He talks for twenty minutes about one start. Your shirt is still in its frame in the bar.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "framed"
+        }
+       },
+       {
+        "text": "He tells you he's going to earn the number the fans kept open. Then he hangs up to go to the gym.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-fans-vote"
+        }
+       }
+      ],
+      "text": [
+       {
+        "if": "arc.path=='vote'",
+        "text": "He sends a thumbs up, then: \"I'll get it.\"",
+        "arc": {
+         "end": "the-fans-vote"
+        }
+       },
+       {
+        "if": "arc.path=='framed'",
+        "text": "He sends back a photo of your old shirt in its frame, with him pulling a face next to it.",
+        "arc": {
+         "end": "framed"
+        }
+       },
+       {
+        "text": "He sends back a photo of himself in your number, doing your celebration, badly.",
+        "arc": {
+         "end": "passed-on"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "order": "youngest"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, your number"
+  }
+ ]
+}

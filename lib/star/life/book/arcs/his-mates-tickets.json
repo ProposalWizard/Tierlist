@@ -14,8 +14,10 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.18
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
  },
  "cast": [
   {
@@ -24,7 +26,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -176,6 +179,134 @@
    "hint": "Your brother wants derby tickets"
   },
   {
+   "id": "tkt-1d-deep",
+   "title": "The ban letter",
+   "after": {
+    "beat": "tkt-1",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-tkt-1d-deep",
+    "title": "The ban letter",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A letter from the club's safety officer, addressed to you: eight named people, banned from the ground for the rest of the season, because the tickets were in your name."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "brother",
+       "say": [
+        "Your brother, on the phone: \"It was Gaz. It's always Gaz.\""
+       ],
+       "replies": [
+        {
+         "id": "pay",
+         "label": "Pay the fine yourself and tell him to sort Gaz out.",
+         "tone": "kind",
+         "end": "pay"
+        },
+        {
+         "id": "him",
+         "label": "\"You pay it. They're your mates.\"",
+         "tone": "honest",
+         "end": "him"
+        },
+        {
+         "id": "gaffer",
+         "label": "Ask the club to drop it.",
+         "tone": "confident",
+         "end": "gaffer"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "pay": [
+       {
+        "text": "He sorts Gaz out. Gaz sends you a card with a drawing of a policeman on it.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "paid-the-ticket-fine",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "pay"
+         }
+        }
+       }
+      ],
+      "him": [
+       {
+        "text": "He pays it, in coins, at the ticket office.",
+        "npc": [
+         {
+          "slot": "brother",
+          "grudge": 2,
+          "respect": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "him"
+         }
+        }
+       }
+      ],
+      "gaffer": [
+       {
+        "text": "The safety officer drops it. He tells you it's once.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "gaffer"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     }
+    ]
+   },
+   "hint": "A letter from the club about your brother's mates"
+  },
+  {
    "id": "tkt-2",
    "title": "Again",
    "after": {
@@ -204,7 +335,9 @@
     "setup": [
      "A season on, the same derby. {brother.short} rings.",
      "{if arc.path=='eight'}\"Six of them are still banned. So just three this time. Gaz is coming.\"{/if}",
-     "{if arc.path=='one'}\"One, I know. One.\"{/if}"
+     "{if arc.path=='one'}\"One, I know. One.\"{/if}",
+     "{if arc.deep=='pay'}Your brother still owes you for the fine, and says so every time.{/if}",
+     "{if arc.deep=='him'}He paid the fine in coins. The ticket office remembers.{/if}"
     ],
     "choices": [
      {

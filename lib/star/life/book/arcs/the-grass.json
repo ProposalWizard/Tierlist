@@ -15,7 +15,13 @@
   ]
  },
  "start": {
-  "chance": 0.25
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "divisionLevel>=3"
+  ]
  },
  "cast": [
   {
@@ -28,7 +34,8 @@
   }
  ],
  "vars": {
-  "spoke": 0
+  "spoke": 0,
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -242,6 +249,141 @@
    "hint": "The groundsman is worried"
   },
   {
+   "id": "grd-1d-deep",
+   "title": "The mower shed",
+   "after": {
+    "beat": "grd-2-forum",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-grd-1d-deep",
+    "title": "The mower shed",
+    "category": "staff",
+    "place": "club:shed",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{groundsman.short} takes you behind the mower shed. A square of turf in a seed tray, the size of a tea towel, under a lamp. \"Same seed as 1991. Same as the cup run. If they rip it up I'm keeping this.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "groundsman",
+       "say": [
+        "He waters it with a teapot."
+       ],
+       "replies": [
+        {
+         "id": "help",
+         "label": "\"I'll take a tray home too. Just in case.\"",
+         "tone": "kind",
+         "end": "help"
+        },
+        {
+         "id": "photo",
+         "label": "Take a photo for the fans' group.",
+         "tone": "confident",
+         "end": "photo"
+        },
+        {
+         "id": "laugh",
+         "label": "\"It's grass, mate.\"",
+         "tone": "cold",
+         "end": "laugh"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "help": [
+       {
+        "text": "He gives you a tray and a sheet of instructions in capitals. You forget to water it once and he can tell.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "took-a-tray-of-the-pitch",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "help"
+         }
+        }
+       }
+      ],
+      "photo": [
+       {
+        "text": "Four thousand people like a photo of a seed tray. The chairman is not pleased.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 4
+         },
+         {
+          "slot": "chairman",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "photo"
+         }
+        }
+       }
+      ],
+      "laugh": [
+       {
+        "text": "He turns the lamp off.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "laugh"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The groundsman wants to show you something"
+  },
+  {
    "id": "grd-2-forum",
    "title": "The fans' forum",
    "after": {
@@ -397,7 +539,9 @@
     },
     "setup": [
      "{if arc.spoke==1}First day of pre-season. The pitch is green and striped, and {groundsman.short} is on the mower with his headphones in.{/if}",
-     "{if arc.spoke==0}First day of pre-season. The pitch is plastic, bright green, and it smells like a new car. The mower shed is a store room.{/if}"
+     "{if arc.spoke==0}First day of pre-season. The pitch is plastic, bright green, and it smells like a new car. The mower shed is a store room.{/if}",
+     "{if arc.deep=='help'}Your tray of the old pitch is on your kitchen windowsill.{/if}",
+     "{if arc.deep=='photo'}The seed-tray photo went round the whole town.{/if}"
     ],
     "choices": [
      {

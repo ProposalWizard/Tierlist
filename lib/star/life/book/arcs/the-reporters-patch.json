@@ -1,0 +1,279 @@
+{
+ "id": "arc-the-reporters-patch",
+ "title": "Her patch",
+ "owner": "reporter",
+ "summary": "The young reporter you gave her first interview to is the paper's chief football writer now. The club wants to shut the academy to save money, and she has the papers to prove it. She needs one person inside the club to say so.",
+ "size": "small",
+ "about": {
+  "who": [
+   "local reporter"
+  ],
+  "tone": [
+   "press",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.01,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-young-reporter:her-first)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "on-the-record",
+   "title": "On the record",
+   "text": "You said it on the record and the academy stayed open. Her piece is framed in the academy office."
+  },
+  {
+   "id": "the-tip",
+   "title": "The tip",
+   "text": "You gave her the story and kept your name out of it. She never told anyone where it came from."
+  },
+  {
+   "id": "closed",
+   "title": "Closed",
+   "text": "The academy closed. She wrote it anyway, with nobody's name in it."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "rpt-1-papers",
+   "title": "The papers",
+   "n": 1,
+   "event": {
+    "id": "arc-rpt-1-papers",
+    "title": "The papers",
+    "category": "media",
+    "place": "club:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{reporter.name} is in the car park in a better coat than she used to have. She was a girl with a recorder that wasn't on. Now she's chief football writer, and she has a brown envelope.",
+     "\"They're shutting the academy in the summer. Board minutes. I need one person at the club to say it out loud.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "reporter",
+       "say": [
+        "\"You owe me nothing. But you remember my first interview, so I'm asking you first.\""
+       ],
+       "replies": [
+        {
+         "id": "record",
+         "label": "\"Put my name on it.\"",
+         "tone": "brave",
+         "end": "record"
+        },
+        {
+         "id": "tip",
+         "label": "\"Not my name. But it's true.\"",
+         "tone": "calm",
+         "end": "tip"
+        },
+        {
+         "id": "no",
+         "label": "\"I can't. I'm sorry.\"",
+         "tone": "humble",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "record": [
+       {
+        "text": "Her piece runs on the back page with your name in the first line. The chairman calls you in. The fans' trust calls you a hero.",
+        "effects": {
+         "fans": 3,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 8,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "went-on-record-for-the-academy",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "record"
+         }
+        }
+       }
+      ],
+      "tip": [
+       {
+        "text": "\"A senior player said.\" Everyone wonders who. She sends you a text with one word: Thanks.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "gave-me-the-academy-story",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "tip"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "She nods and puts the envelope away. \"I'll find somebody.\"",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "The reporter has papers about the academy"
+  },
+  {
+   "id": "rpt-2-summer",
+   "title": "The summer",
+   "after": {
+    "beat": "rpt-1-papers",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-rpt-2-summer",
+    "title": "The summer",
+    "category": "life",
+    "place": "club:academy",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The academy pitches are still there{if arc.path=='no'}, for now{/if}. {reporter.short} rings to ask if you've seen the board's new plan."
+    ],
+    "choices": [
+     {
+      "id": "read",
+      "label": "\"Read it to me.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='record' || arc.path=='tip'",
+        "text": "The academy stays. The board say it was always the plan. She laughs down the phone for a long time.",
+        "arc": {
+         "end": "on-the-record"
+        }
+       },
+       {
+        "text": "It closes in June. She writes it with no names in it, and sends you the cutting.",
+        "arc": {
+         "end": "closed"
+        }
+       }
+      ]
+     },
+     {
+      "id": "busy",
+      "label": "\"Not now. I've training.\"",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "if": "arc.path=='tip'",
+        "text": "She texts you the headline instead: ACADEMY SAVED. A source close to the club.",
+        "arc": {
+         "end": "the-tip"
+        }
+       },
+       {
+        "if": "arc.path=='record'",
+        "text": "She texts you the headline: ACADEMY TO STAY.",
+        "arc": {
+         "end": "on-the-record"
+        }
+       },
+       {
+        "text": "She texts you the headline: ACADEMY TO CLOSE.",
+        "arc": {
+         "end": "closed"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "A season on, the academy"
+  }
+ ]
+}

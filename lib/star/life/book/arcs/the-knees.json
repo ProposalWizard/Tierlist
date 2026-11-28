@@ -15,8 +15,12 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.18
+  "chance": 0.0093,
+  "tier": "common",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
  },
  "cast": [
   {
@@ -25,7 +29,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -178,6 +183,127 @@
    "hint": "The physio wants to talk about your knees"
   },
   {
+   "id": "kne-1d-deep",
+   "title": "The stairs",
+   "after": {
+    "beat": "kne-1",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-kne-1d-deep",
+    "title": "The stairs",
+    "category": "injury",
+    "place": "club:stairs",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{physio.short} has timed you going down the training ground stairs with a stopwatch, without telling you. She shows you the number."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "physio",
+       "say": [
+        "\"That's a man of fifty. I'm not being funny.\""
+       ],
+       "replies": [
+        {
+         "id": "work",
+         "label": "\"What do I do?\"",
+         "tone": "humble",
+         "end": "work"
+        },
+        {
+         "id": "laugh",
+         "label": "\"Fifty's young.\"",
+         "tone": "confident",
+         "end": "laugh"
+        },
+        {
+         "id": "deny",
+         "label": "\"My knees are fine.\"",
+         "tone": "lie",
+         "end": "deny"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "work": [
+       {
+        "text": "She gives you three exercises and a rubber band. You do them in the kitchen while the kettle boils.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "asked-about-my-knees",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "work"
+         }
+        }
+       }
+      ],
+      "laugh": [
+       {
+        "text": "She writes FIFTY on the board in the physio room.",
+        "arc": {
+         "set": {
+          "deep": "laugh"
+         }
+        }
+       }
+      ],
+      "deny": [
+       {
+        "text": "She times you again on Friday. Fifty-one.",
+        "npc": [
+         {
+          "slot": "physio",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "deny"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     }
+    ]
+   },
+   "hint": "The physio has timed you on the stairs"
+  },
+  {
    "id": "kne-2",
    "title": "Every morning",
    "after": {
@@ -206,7 +332,8 @@
     "setup": [
      "A season on. The training ground stairs at half eight.",
      "{if arc.path=='sheet'}The sheet on your fridge has gone soft at the corners from being touched.{/if}",
-     "{if arc.path=='fine'}You've worked out you can use the lift if you get in before the lads.{/if}"
+     "{if arc.path=='fine'}You've worked out you can use the lift if you get in before the lads.{/if}",
+     "{if arc.deep=='work'}She can tell from the stairs that you've been doing the exercises.{/if}"
     ],
     "choices": [
      {

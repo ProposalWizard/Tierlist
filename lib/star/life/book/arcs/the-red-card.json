@@ -15,7 +15,12 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0093,
+  "tier": "common",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
  },
  "cast": [
   {

@@ -14,8 +14,10 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0021,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any"
  },
  "cast": [
   {
@@ -24,7 +26,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -163,6 +166,127 @@
    "hint": "A ball girl has had a bad night"
   },
   {
+   "id": "bbo-1d-deep",
+   "title": "The letter from her school",
+   "after": {
+    "beat": "bbo-1-throw",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-bbo-1d-deep",
+    "title": "The letter from her school",
+    "category": "fans",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A letter from a primary school two towns away. The ball girl's class wants to know if a throw-in is a skill or luck. They've drawn pictures."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kidfan",
+       "say": [
+        "One picture is of the girl with a very long arm."
+       ],
+       "replies": [
+        {
+         "id": "visit",
+         "label": "Go and do an assembly about throw-ins.",
+         "tone": "kind",
+         "end": "visit"
+        },
+        {
+         "id": "write",
+         "label": "Write back: \"Skill.\"",
+         "tone": "calm",
+         "end": "write"
+        },
+        {
+         "id": "bin",
+         "label": "Too busy.",
+         "tone": "cold",
+         "end": "bin"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "visit": [
+       {
+        "text": "Thirty kids throw beanbags at you in a hall. She throws hers quickest.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "came-to-my-school",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "visit"
+         }
+        }
+       }
+      ],
+      "write": [
+       {
+        "text": "The teacher puts your letter up in the corridor.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "write"
+         }
+        }
+       }
+      ],
+      "bin": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "bin"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "The ball girl's school has written"
+  },
+  {
    "id": "bbo-2-again",
    "title": "Quick hands",
    "after": {
@@ -190,7 +314,8 @@
      ]
     },
     "setup": [
-     "A season on, the same ground. The same ball girl, taller, on the same stool by the corner flag."
+     "A season on, the same ground. The same ball girl, taller, on the same stool by the corner flag.",
+     "{if arc.deep=='visit'}She still talks about the beanbags.{/if}"
     ],
     "choices": [
      {

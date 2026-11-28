@@ -14,8 +14,13 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0093,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
  },
  "cast": [
   {
@@ -24,7 +29,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -156,6 +162,127 @@
    "hint": "Something's happening downstairs"
   },
   {
+   "id": "wdp-1d-deep",
+   "title": "The breakfast",
+   "after": {
+    "beat": "wdp-1-bride",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-wdp-1d-deep",
+    "title": "The breakfast",
+    "category": "fans",
+    "place": "away:hotel",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Breakfast at the team hotel. The bride's father is at the next table in last night's suit. He's telling the gaffer about you."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "manager",
+       "say": [
+        "{manager.short} looks over his coffee at you. You can't tell what face that is."
+       ],
+       "replies": [
+        {
+         "id": "own",
+         "label": "Go over and say it was your idea.",
+         "tone": "brave",
+         "end": "own"
+        },
+        {
+         "id": "eat",
+         "label": "Eat your eggs.",
+         "tone": "calm",
+         "end": "eat"
+        },
+        {
+         "id": "blame",
+         "label": "\"The lads made me.\"",
+         "tone": "lie",
+         "end": "blame"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "own": [
+       {
+        "text": "The father shakes your hand. The gaffer fines you fifty quid and smiles while he does it.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "owned-up-at-breakfast",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "own"
+         }
+        }
+       }
+      ],
+      "eat": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "eat"
+         }
+        }
+       }
+      ],
+      "blame": [
+       {
+        "text": "The lads hear about it. You buy the coffees for a fortnight.",
+        "npc": [
+         {
+          "slot": "manager",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "blame"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The gaffer saw you at breakfast"
+  },
+  {
    "id": "wdp-2-post",
    "title": "A parcel",
    "after": {
@@ -183,7 +310,8 @@
      ]
     },
     "setup": [
-     "A season on, a parcel at the training ground: a christening photo. A baby in your shirt. A card: \"From the wedding at the hotel. He wanted the other shirt. I won.\""
+     "A season on, a parcel at the training ground: a christening photo. A baby in your shirt. A card: \"From the wedding at the hotel. He wanted the other shirt. I won.\"",
+     "{if arc.deep=='own'}The gaffer still mentions the fifty quid at weddings.{/if}"
     ],
     "choices": [
      {

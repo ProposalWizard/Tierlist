@@ -16,7 +16,13 @@
   ]
  },
  "start": {
-  "chance": 0.25
+  "chance": 0.0061,
+  "tier": "common",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
  },
  "cast": [
   {
@@ -42,7 +48,8 @@
  ],
  "vars": {
   "said": "none",
-  "helped": 0
+  "helped": 0,
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -330,6 +337,150 @@
     ]
    },
    "hint": "A watch has gone missing from the dressing room"
+  },
+  {
+   "id": "wat-1d-deep",
+   "title": "The veteran",
+   "after": {
+    "beat": "wat-2-confess",
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "event": {
+    "id": "arc-wat-1d-deep",
+    "title": "The veteran",
+    "category": "teammates",
+    "place": "club:dressing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{vet.name} sits down next to you on the bench after training. He's been quiet for a fortnight. \"It's not the watch. It's that it was from her. She's not well.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "vet",
+       "say": [
+        "He's looking at the floor. \"If the lad took it, I want to know why. That's all.\""
+       ],
+       "replies": [
+        {
+         "id": "tell",
+         "label": "\"Let me talk to the lad first.\"",
+         "tone": "kind",
+         "end": "tell"
+        },
+        {
+         "id": "sorry",
+         "label": "\"I'm sorry about your wife.\"",
+         "tone": "kind",
+         "end": "sorry"
+        },
+        {
+         "id": "dunno",
+         "label": "\"I don't know anything.\"",
+         "tone": "lie",
+         "end": "dunno"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "tell": [
+       {
+        "text": "He nods. \"First. Then me.\"",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 5,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "talked-to-me-about-the-watch",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "tell"
+         }
+        }
+       }
+      ],
+      "sorry": [
+       {
+        "text": "He looks at you, surprised, and says thanks.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "sorry"
+         }
+        }
+       }
+      ],
+      "dunno": [
+       {
+        "text": "He nods slowly. He knows you do.",
+        "npc": [
+         {
+          "slot": "vet",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "dunno"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The veteran wants to talk about his watch"
   },
   {
    "id": "wat-2-confess",
@@ -636,7 +787,9 @@
      ]
     },
     "setup": [
-     "The club finally fixed the camera in the corridor. Somebody went back through last season's recordings for a laugh, and now {vet.name} knows exactly who was at his peg that morning."
+     "The club finally fixed the camera in the corridor. Somebody went back through last season's recordings for a laugh, and now {vet.name} knows exactly who was at his peg that morning.",
+     "{if arc.deep=='tell'}He hasn't forgotten you asked to talk to the lad first.{/if}",
+     "{if arc.deep=='dunno'}He knows you said you didn't know.{/if}"
     ],
     "talk": {
      "start": "t1",

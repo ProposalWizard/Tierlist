@@ -15,7 +15,14 @@
   ]
  },
  "start": {
-  "chance": 0.2
+  "chance": 0.0061,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
  },
  "cast": [
   {
@@ -35,7 +42,8 @@
   "shirt": "none",
   "feel": "none",
   "ally": 0,
-  "fed": 0
+  "fed": 0,
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -651,6 +659,136 @@
    "hint": "The other striker wants the nine"
   },
   {
+   "id": "n9-1d-deep",
+   "title": "The car home",
+   "after": {
+    "beat": "n9-1-shirt",
+    "weeks": [
+     4,
+     12
+    ]
+   },
+   "event": {
+    "id": "arc-n9-1d-deep",
+    "title": "The car home",
+    "category": "teammates",
+    "place": "club:bus-stop",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "driving"
+     ]
+    },
+    "setup": [
+     "Rain, a Tuesday. {mate.name}'s car has a flat and he's at the bus stop outside the training ground in his club coat."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mate",
+       "say": [
+        "He sees your car slow down and looks the other way."
+       ],
+       "replies": [
+        {
+         "id": "lift",
+         "label": "Pull in and open the door.",
+         "tone": "kind",
+         "end": "lift"
+        },
+        {
+         "id": "horn",
+         "label": "Beep the horn and drive past.",
+         "tone": "reckless",
+         "end": "horn"
+        },
+        {
+         "id": "drive",
+         "label": "Keep driving.",
+         "tone": "cold",
+         "end": "drive"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "lift": [
+       {
+        "text": "Forty minutes in traffic. You talk about everything but the shirt. At his door he says, \"Cheers, nine.\"",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "gave-me-a-lift-in-the-rain",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "lift"
+         }
+        }
+       }
+      ],
+      "horn": [
+       {
+        "text": "In the mirror he gives you a finger, and nearly laughs.",
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "horn"
+         }
+        }
+       }
+      ],
+      "drive": [
+       {
+        "text": "He gets the bus.",
+        "arc": {
+         "set": {
+          "deep": "drive"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "samePosition"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The other striker needs a lift home"
+  },
+  {
    "id": "n9-2-gaffer",
    "title": "The gaffer on the nine",
    "after": {
@@ -1018,7 +1156,9 @@
     },
     "setup": [
      "{mate.name} has been out for nine weeks with his ankle. He's on pitch two with a bag of balls, on his own, in a protective boot on the bad foot.",
-     "{if arc.feel=='sour'}You haven't said much to each other since the nine.{/if}"
+     "{if arc.feel=='sour'}You haven't said much to each other since the nine.{/if}",
+     "{if arc.deep=='lift'}He still calls you \"nine\" when nobody's listening.{/if}",
+     "{if arc.deep=='horn'}He hasn't forgotten the horn.{/if}"
     ],
     "talk": {
      "start": "a1",

@@ -13,8 +13,13 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0046,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
  },
  "cast": [
   {
@@ -23,7 +28,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -158,6 +164,128 @@
    "hint": "A Sunday morning with a whistle"
   },
   {
+   "id": "crf2-1d-deep",
+   "title": "The pub after",
+   "after": {
+    "beat": "crf2-1-red",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-crf2-1d-deep",
+    "title": "The pub after",
+    "category": "family",
+    "place": "town:pub",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The pub after the charity match. {pal.short} is at the bar with the other lot, and he isn't looking at you."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "pal",
+       "say": [
+        "His mate leans over. \"He's been told he's banned for six weeks by the Sunday league. For a charity match. Because of you.\""
+       ],
+       "replies": [
+        {
+         "id": "drink",
+         "label": "Buy him a pint and stand next to him.",
+         "tone": "kind",
+         "end": "drink"
+        },
+        {
+         "id": "league",
+         "label": "Ring the Sunday league for him.",
+         "tone": "brave",
+         "end": "league"
+        },
+        {
+         "id": "leave",
+         "label": "Go home.",
+         "tone": "calm",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "drink": [
+       {
+        "text": "He drinks half before he says anything. \"Fair red,\" he says. \"Don't tell anyone I said.\"",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "bought-me-a-pint-after-the-red",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "drink"
+         }
+        }
+       }
+      ],
+      "league": [
+       {
+        "text": "They cut it to two weeks. He finds out and doesn't know what to do with his face.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4,
+          "respect": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "league"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "Your mate is in the pub after the charity match"
+  },
+  {
    "id": "crf2-2-again",
    "title": "The rematch",
    "after": {
@@ -184,7 +312,8 @@
      ]
     },
     "setup": [
-     "A season on. {pal.short}: \"Charity match again. They've asked for you to ref. I've asked for a different ref. They said no.\""
+     "A season on. {pal.short}: \"Charity match again. They've asked for you to ref. I've asked for a different ref. They said no.\"",
+     "{if arc.deep=='drink'}He still says it was a fair red, when nobody's listening.{/if}"
     ],
     "choices": [
      {

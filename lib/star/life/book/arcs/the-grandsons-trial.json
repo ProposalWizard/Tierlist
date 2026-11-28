@@ -1,0 +1,247 @@
+{
+ "id": "arc-the-grandsons-trial",
+ "title": "The grandson's trial",
+ "owner": "fan",
+ "summary": "The boy you gave the old man's 1971 scarf to is fourteen now and on trial at the academy. He's wearing the scarf to it, in May.",
+ "size": "small",
+ "about": {
+  "who": [
+   "the fan",
+   "the coach"
+  ],
+  "tone": [
+   "moving",
+   "years on"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-lucky-scarf:the-boy-has-it)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "fan",
+   "pick": "fan"
+  },
+  {
+   "slot": "coach",
+   "pick": "coach"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-scarf-signed",
+   "title": "The scarf signed",
+   "text": "The boy with the 1971 scarf signed for the academy. He hangs it on his peg."
+  },
+  {
+   "id": "the-scarf-in-the-stand",
+   "title": "In the stand",
+   "text": "The boy with the 1971 scarf wasn't kept on. He's in his grandad's seat every home game."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "gst-1-trial",
+   "title": "In May",
+   "n": 1,
+   "event": {
+    "id": "arc-gst-1-trial",
+    "title": "In May",
+    "category": "life",
+    "place": "club:academy",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The academy pitches, a Wednesday in May. A boy of fourteen in boots too big for him and a woollen scarf that's older than his dad. It's the scarf from 1971."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "coach",
+       "say": [
+        "{coach.short} sees you looking. \"Not bad, that one. Bit scared. Know him?\""
+       ],
+       "replies": [
+        {
+         "id": "know",
+         "label": "\"I know his grandad's scarf.\"",
+         "tone": "kind",
+         "end": "know"
+        },
+        {
+         "id": "talk",
+         "label": "Go and say something to the boy.",
+         "tone": "kind",
+         "end": "talk"
+        },
+        {
+         "id": "leave",
+         "label": "\"No. Judge him on what he does.\"",
+         "tone": "honest",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "know": [
+       {
+        "text": "You tell {coach.short} about the old man in the seat by the tunnel. He doesn't say anything. He watches the boy for the rest of the session.",
+        "arc": {
+         "set": {
+          "path": "know"
+         }
+        }
+       }
+      ],
+      "talk": [
+       {
+        "text": "You tell him his grandad said 1971 was the best day of his life. The boy scores twice in the second half.",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "talk"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "The boy has a quiet game. He looks up at the stand once, at the seat by the tunnel.",
+        "arc": {
+         "set": {
+          "path": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The boy with the 1971 scarf is on trial"
+  },
+  {
+   "id": "gst-2-later",
+   "title": "His peg",
+   "after": {
+    "beat": "gst-1-trial",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-gst-2-later",
+    "title": "His peg",
+    "category": "life",
+    "place": "club:academy",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The academy dressing room has new names on the pegs."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Look for his.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "!arc.path=='leave'",
+        "text": "There's a woollen scarf on the third peg from the door.",
+        "arc": {
+         "end": "the-scarf-signed"
+        }
+       },
+       {
+        "text": "Not this year. The scarf's on the seat by the tunnel on Saturday, with the boy in it.",
+        "arc": {
+         "end": "the-scarf-in-the-stand"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ask",
+      "label": "Ask the coach.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='talk' || arc.path=='know'",
+        "text": "\"Kept him on. He wears that scarf to the bus. In August.\"",
+        "arc": {
+         "end": "the-scarf-signed"
+        }
+       },
+       {
+        "text": "\"Not this year. He'll grow.\"",
+        "arc": {
+         "end": "the-scarf-in-the-stand"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "A season on, the boy with the scarf"
+  }
+ ]
+}

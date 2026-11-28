@@ -15,7 +15,14 @@
   ]
  },
  "start": {
-  "chance": 0.25
+  "chance": 0.0121,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
  },
  "cast": [
   {
@@ -28,7 +35,8 @@
   }
  ],
  "vars": {
-  "went": "none"
+  "went": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -276,6 +284,137 @@
    "hint": "Your partner has news"
   },
   {
+   "id": "wed-1d-deep",
+   "title": "The table plan",
+   "after": {
+    "beat": "wed-1-date",
+    "weeks": [
+     1,
+     2
+    ]
+   },
+   "event": {
+    "id": "arc-wed-1d-deep",
+    "title": "The table plan",
+    "category": "family",
+    "place": "home:kitchen",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{partner.short} has the wedding table plan spread over the kitchen table with coloured pens. Her sister has put you on the top table, next to the groom's dad, who supports the other lot."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "partner",
+       "say": [
+        "\"She did it on purpose. She thinks it's funny. Is it funny?\""
+       ],
+       "replies": [
+        {
+         "id": "fine",
+         "label": "\"It's funny. I'll bring him a scarf.\"",
+         "tone": "confident",
+         "end": "fine"
+        },
+        {
+         "id": "move",
+         "label": "\"Can I sit at the back?\"",
+         "tone": "humble",
+         "end": "move"
+        },
+        {
+         "id": "game",
+         "label": "\"I might not make the meal. The fixtures.\"",
+         "tone": "honest",
+         "end": "game"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "fine": [
+       {
+        "text": "She laughs, the proper one. Her sister sends a crying-laughing face to the family group.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "laughed-about-the-table-plan",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "fine"
+         }
+        }
+       }
+      ],
+      "move": [
+       {
+        "text": "\"No,\" she says, and draws a heart next to your name.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "move"
+         }
+        }
+       }
+      ],
+      "game": [
+       {
+        "text": "She puts the pen down very carefully.",
+        "npc": [
+         {
+          "slot": "partner",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "game"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your partner has the wedding table plan"
+  },
+  {
    "id": "wed-2-saturday",
    "title": "The Saturday in March",
    "after": {
@@ -451,7 +590,9 @@
      ]
     },
     "setup": [
-     "A year on. Her sister has had the wedding album printed, and {partner.short} has it open on the coffee table."
+     "A year on. Her sister has had the wedding album printed, and {partner.short} has it open on the coffee table.",
+     "{if arc.deep=='fine'}Her sister still tells everyone about the scarf.{/if}",
+     "{if arc.deep=='game'}She still has the table plan, and the pen mark where she stopped.{/if}"
     ],
     "choices": [
      {

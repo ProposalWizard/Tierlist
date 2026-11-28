@@ -18,7 +18,8 @@ import { CHATS, EVENTS } from "./book";
 import { allHold, parsePersonCond, personHolds } from "./cond";
 import { cantPay, cloneLife, lifeOf, pickEvent, startEvent, type LiveEvent } from "./director";
 import { carTier, ctxFor, factsOf, personView, type FactOverride } from "./facts";
-import { lifeWeek, meet, moveTeamFromPerson, noteSquad, nudge, personInfo, roleOf } from "./people";
+import { lifeWeek, meet, moveTeamFromPerson, noteSquad, nudge, personInfo, roleOf, tidy } from "./people";
+import { PEOPLE_CAP } from "./types";
 import { fillLine } from "./text";
 import type { LifeChange } from "./resolve";
 import { actionsLeft } from "../week";
@@ -91,6 +92,7 @@ export function chat(c0: CareerState, id: string, rng: () => number, facts?: Fac
   const life = cloneLife(lifeOf(c));
   const now = lifeWeek(c);
   const p = meet(life, id, now, c.squad?.find((s) => s.id === id)?.name);
+  if (Object.keys(life.people).length > PEOPLE_CAP) tidy(life, c, now);
   const info = personInfo(c, id);
   const who = info?.short ?? "He";
   const cast = { mate: id };
@@ -153,6 +155,7 @@ export function startOuting(c0: CareerState, id: string, kind: "drive" | "races"
     let c = countSocial(c0, id);
     const life = cloneLife(lifeOf(c));
     const p = meet(life, id, lifeWeek(c), c.squad?.find((s) => s.id === id)?.name);
+    if (Object.keys(life.people).length > PEOPLE_CAP) tidy(life, c, lifeWeek(c));
     const db = nudge(p, "b", 6);
     const who = personInfo(c, id)?.short ?? "He";
     const tm = moveTeamFromPerson(life, id, db);

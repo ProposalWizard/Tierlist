@@ -14,7 +14,7 @@ import type { CastSlot, LifeChoice, LifeEvent, LifeMoment, LifeState } from "./t
 import { EVENTS, eventById } from "./book";
 import { allHold, hasMemory, holds, parsePersonCond, personHolds, type PersonView } from "./cond";
 import { ctxFor, factsOf, squadViews, weekOfMoney, type FactOverride } from "./facts";
-import { freshLife, lifeWeek, meet, noteSquad, peek, ROLE_ID, roleOf, tidy } from "./people";
+import { clubRoleId, freshLife, lifeWeek, meet, noteSquad, peek, ROLE_ID, roleOf, tidy } from "./people";
 import { fillLine } from "./text";
 import { actionsLeft } from "../week";
 
@@ -98,7 +98,8 @@ function castSlot(c: CareerState, life: LifeState, s: CastSlot, taken: Set<strin
       break;
     }
     case "manager": id = c.manager ? ROLE_ID.manager : null; break;
-    default: id = ROLE_ID[s.pick];
+    // A club's people (kit man, physio, legend ...) are the club you are at now's (people.ts).
+    default: id = clubRoleId(c, life, s.pick);
   }
   if (id && s.pick !== "squad" && s.pick !== "stranger" && s.where?.length) {
     const v = { id, rec: peek(life, id), isNew: false, veteran: false } as PersonView;

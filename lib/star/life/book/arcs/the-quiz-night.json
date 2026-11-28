@@ -13,8 +13,10 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0021,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any"
  },
  "cast": [
   {
@@ -23,7 +25,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -175,6 +178,127 @@
    "hint": "Your old mate has plans for Thursday"
   },
   {
+   "id": "qzn-1d-deep",
+   "title": "The quizmaster",
+   "after": {
+    "beat": "qzn-1-quiz",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-qzn-1d-deep",
+    "title": "The quizmaster",
+    "category": "family",
+    "place": "town:pub",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The quizmaster stops you outside the gents. He's seventy and wears a bow tie. \"I know what your mate did with his phone. I'm not cross. I'm writing a football round next month, and you're going to help me.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "pal",
+       "say": [
+        "He has a pencil behind each ear."
+       ],
+       "replies": [
+        {
+         "id": "help",
+         "label": "Help him write it.",
+         "tone": "kind",
+         "end": "help"
+        },
+        {
+         "id": "own",
+         "label": "\"It was my idea. Fine me.\"",
+         "tone": "honest",
+         "end": "own"
+        },
+        {
+         "id": "no",
+         "label": "\"Not me.\"",
+         "tone": "lie",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "help": [
+       {
+        "text": "You write ten questions with him. Your mate's team gets the lot wrong and he never knows why.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "sabotaged-my-quiz",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "help"
+         }
+        }
+       }
+      ],
+      "own": [
+       {
+        "text": "He fines you a round of drinks.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "own"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He smiles, and you know he's going to write about you.",
+        "arc": {
+         "set": {
+          "deep": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "The quizmaster has a question for you"
+  },
+  {
    "id": "qzn-2-again",
    "title": "Thursday again",
    "after": {
@@ -201,7 +325,8 @@
      ]
     },
     "setup": [
-     "A season on. {pal.short}: \"Quiz Thursday. Defending champions. Or banned. Whichever we are.\""
+     "A season on. {pal.short}: \"Quiz Thursday. Defending champions. Or banned. Whichever we are.\"",
+     "{if arc.deep=='help'}Your mate still doesn't know why he lost the football round.{/if}"
     ],
     "choices": [
      {

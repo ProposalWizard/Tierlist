@@ -14,8 +14,10 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.18
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
  },
  "cast": [
   {
@@ -24,7 +26,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -189,6 +192,133 @@
    "hint": "Their centre half wants your shirt"
   },
   {
+   "id": "shs-1d-deep",
+   "title": "The return game",
+   "after": {
+    "beat": "shs-1",
+    "weeks": [
+     6,
+     20
+    ]
+   },
+   "event": {
+    "id": "arc-shs-1d-deep",
+    "title": "The return game",
+    "category": "rivals",
+    "place": "ground:pitch",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "The return game. In the warm-up their centre half jogs over with a carrier bag. Inside is your shirt from the first game, washed and folded. {if arc.path=='no'}You didn't swap. He's got one of yours from somewhere.{/if}"
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "rival",
+       "say": [
+        "\"My lad wants it signed. To him. His name's Kai. Don't tell the lads.\""
+       ],
+       "replies": [
+        {
+         "id": "sign",
+         "label": "Sign it: To Kai.",
+         "tone": "kind",
+         "end": "sign"
+        },
+        {
+         "id": "deal",
+         "label": "\"If you stop kicking me.\"",
+         "tone": "confident",
+         "end": "deal"
+        },
+        {
+         "id": "no",
+         "label": "\"Not before a game.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "sign": [
+       {
+        "text": "He puts it back in the bag like it's made of glass.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "signed-it-for-kai",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "sign"
+         }
+        }
+       }
+      ],
+      "deal": [
+       {
+        "text": "\"No chance,\" he says, and kicks you in the first minute.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "deal"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He takes the bag back.",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     }
+    ]
+   },
+   "hint": "Their centre half has something for you"
+  },
+  {
    "id": "shs-2",
    "title": "The lad",
    "after": {
@@ -217,7 +347,8 @@
     "setup": [
      "A season on. You're walking out against {rival.short}'s team. One of the mascots is a boy of about eight.",
      "{if !arc.path=='no'}He's wearing your shirt from last season. It comes down to his knees.{/if}",
-     "{if arc.path=='no'}He's holding a ball boy's shirt with his dad's number on it.{/if}"
+     "{if arc.path=='no'}He's holding a ball boy's shirt with his dad's number on it.{/if}",
+     "{if arc.deep=='sign'}He still mentions Kai's shirt, gruffly, every time.{/if}"
     ],
     "choices": [
      {

@@ -13,7 +13,9 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0064,
+  "tier": "common",
+  "stage": "any"
  },
  "cast": [
   {
@@ -22,7 +24,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -242,6 +245,127 @@
    "hint": "A kid at the front has a sign"
   },
   {
+   "id": "sig-1d-deep",
+   "title": "The letter",
+   "after": {
+    "beat": "sig-1-sign",
+    "weeks": [
+     4,
+     12
+    ]
+   },
+   "event": {
+    "id": "arc-sig-1d-deep",
+    "title": "The letter",
+    "category": "fans",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A letter in big round writing, with a drawing of a shirt on the envelope. It's from the girl with the sign. She's started playing for a girls' team. She's put a photo in: her in a kit three sizes too big."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kidfan",
+       "say": [
+        "\"I want to be a striker like you. Do I have to be tall?\""
+       ],
+       "replies": [
+        {
+         "id": "write",
+         "label": "Write back: \"No. Just quick.\"",
+         "tone": "kind",
+         "end": "write"
+        },
+        {
+         "id": "photo",
+         "label": "Send a signed photo.",
+         "tone": "calm",
+         "end": "photo"
+        },
+        {
+         "id": "busy",
+         "label": "Put it on the pile.",
+         "tone": "cold",
+         "end": "busy"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "write": [
+       {
+        "text": "She writes back by return with a list of her goals. There are four.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "wrote-me-back",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "write"
+         }
+        }
+       }
+      ],
+      "photo": [
+       {
+        "text": "Her mum sends a thank-you card with a picture of the photo on her wall.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "photo"
+         }
+        }
+       }
+      ],
+      "busy": [
+       {
+        "text": "The pile gets bigger.",
+        "arc": {
+         "set": {
+          "deep": "busy"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "The girl from the sign has written to you"
+  },
+  {
    "id": "sig-2-later",
    "title": "The girl from the barrier",
    "after": {
@@ -276,7 +400,8 @@
     },
     "setup": [
      "A teenager in a club scarf is waiting by the players' entrance with her dad. It takes you a second.",
-     "{if arc.path=='gave'}She's wearing your old shirt over her coat. It still comes down to her knees.{/if}{if !arc.path=='gave'}She's holding a bit of old cardboard, folded in four.{/if}"
+     "{if arc.path=='gave'}She's wearing your old shirt over her coat. It still comes down to her knees.{/if}{if !arc.path=='gave'}She's holding a bit of old cardboard, folded in four.{/if}",
+     "{if arc.deep=='write'}She still has your letter. She tells you which drawer it's in.{/if}"
     ],
     "talk": {
      "start": "g1",

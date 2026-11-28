@@ -235,6 +235,11 @@ export interface LifeState {
   got?: string[];
   /** Notices waiting to be shown once (a promise kept or broken, a reminder text). */
   notes?: ArcNotice[];
+  /** Club people (people.ts, 28 Nov 2026): the club whose people have the plain ids (your first club,
+   *  set at the first story moment of a tiered book), and another club's person pinned when a story
+   *  first met him: "kitman@ab12" → pool id. */
+  home?: string;
+  cpool?: Record<string, string>;
 }
 
 export const PERSON_MEMORY_CAP = 6;
@@ -400,6 +405,11 @@ export interface ArcPromiseDef {
   broken?: ArcOutcome;
 }
 
+/** How rare a story is: common (most careers) down to legendary (about 1 career in 30 to 50). */
+export type StoryTier = "common" | "uncommon" | "rare" | "very-rare" | "legendary";
+/** Where in a career a story belongs (the map's columns). */
+export type StoryStage = "first-seasons" | "breaking-through" | "established" | "peak" | "veteran" | "last-seasons" | "any";
+
 export interface LifeArc {
   id: string;
   /** Its short code in the save (arcPack.ts), 4 letters or digits. Leave it out: the code is made
@@ -412,13 +422,22 @@ export interface LifeArc {
   size?: LifeSize;
   /** Who it is about and how it feels (the writers' spread; the quest log does not read it). */
   about?: { who: string[]; tone: string[] };
-  /** How often it starts when its first beat could (0-1, a seeded roll). No `start` = always (the kit man). */
+  /** How often it starts when its first beat could (0-1, a seeded roll). No `start` = always (none in the book since 28 Nov; the kit man rolls too). */
   start?: {
     chance: number;
     /** Share of careers that ever meet this story (0-1), rolled once per career from the player's
      *  name (story batch 2). The save keeps every finished story, so one career cannot meet all of
      *  them; this spreads the book across careers. No `careers` = every career can. */
     careers?: number;
+    /** How rare the story is (28 Nov 2026; the checker holds `careers` inside the tier's band,
+     *  STORY_TIERS in validateArcs.ts). A book with tiers also starts its stories in a fair draw
+     *  (arcs.ts), not first-come in file order. */
+    tier?: StoryTier;
+    /** The career stage it belongs to, in words for the map (docs/plans/STORY_BOOK_MAP.md). */
+    stage?: StoryStage;
+    /** Conditions checked only when the story would start (its stage window: age, season, level,
+     *  a story it follows). Once started, the story plays on wherever the career goes. */
+    when?: string[];
   };
   /** A game mode this story needs that the activity host cannot mount yet. Such a story is
    *  checked but never plays (arcBook.ts WAITING_ARCS) until the mode is built. */

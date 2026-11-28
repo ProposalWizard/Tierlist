@@ -15,7 +15,13 @@
   ]
  },
  "start": {
-  "chance": 0.25
+  "chance": 0.0061,
+  "tier": "common",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
  },
  "cast": [
   {
@@ -28,7 +34,8 @@
   }
  ],
  "vars": {
-  "peace": "none"
+  "peace": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -284,6 +291,137 @@
    "hint": "Someone's at the door"
   },
   {
+   "id": "nbr-1d-deep",
+   "title": "The bins",
+   "after": {
+    "beat": "nbr-1-door",
+    "weeks": [
+     3,
+     8
+    ]
+   },
+   "event": {
+    "id": "arc-nbr-1d-deep",
+    "title": "The bins",
+    "category": "home",
+    "place": "home:street",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Bin day. {neighbour.name} is on the pavement in her slippers with your recycling box. \"There's a pizza box in here with your face on it. On the box. Somebody's going through your bins.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "neighbour",
+       "say": [
+        "She lowers her voice. \"A man in a car's been parked opposite since six.\""
+       ],
+       "replies": [
+        {
+         "id": "thank",
+         "label": "\"Thanks. Would you keep an eye out?\"",
+         "tone": "kind",
+         "end": "thank"
+        },
+        {
+         "id": "go",
+         "label": "Go and knock on the car window.",
+         "tone": "fiery",
+         "end": "go"
+        },
+        {
+         "id": "shrug",
+         "label": "\"It's part of it. Don't worry.\"",
+         "tone": "calm",
+         "end": "shrug"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "thank": [
+       {
+        "text": "She takes it very seriously. She writes down every number plate for a month, in a notebook.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "asked-me-to-keep-watch",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "thank"
+         }
+        }
+       }
+      ],
+      "go": [
+       {
+        "text": "He drives off before you get there. She claps from her gate.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "go"
+         }
+        }
+       }
+      ],
+      "shrug": [
+       {
+        "text": "She doesn't like that answer, and she goes in.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "shrug"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Your neighbour has a problem with the bins"
+  },
+  {
    "id": "nbr-2-party",
    "title": "After the win",
    "after": {
@@ -430,7 +568,9 @@
     },
     "setup": [
      "{if !arc.peace=='war'}There's a lemon cake on your doorstep with a note: \"For Saturday. Score one for my husband.\"{/if}",
-     "{if arc.peace=='war'}The {tabloid.outlet} has a story: \"PARTY HOUSE HELL, SAYS STAR'S NEIGHBOUR.\" There's a photo of your drive.{/if}"
+     "{if arc.peace=='war'}The {tabloid.outlet} has a story: \"PARTY HOUSE HELL, SAYS STAR'S NEIGHBOUR.\" There's a photo of your drive.{/if}",
+     "{if arc.deep=='thank'}She still has the notebook of number plates.{/if}",
+     "{if arc.deep=='shrug'}She's been funny since the bins.{/if}"
     ],
     "choices": [
      {

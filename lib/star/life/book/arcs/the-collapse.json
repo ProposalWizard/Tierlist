@@ -1,0 +1,765 @@
+{
+ "id": "arc-the-collapse",
+ "title": "The collapse",
+ "owner": "mate",
+ "summary": "A team-mate goes down in a passing drill on a Tuesday with nobody near him, and he doesn't move. The physio is forty yards away. What you do in the next minute matters. Months later he's alive and asking you to help put a defibrillator at every pitch in town.",
+ "size": "big",
+ "about": {
+  "who": [
+   "a team-mate",
+   "the physio",
+   "the gaffer"
+  ],
+  "tone": [
+   "serious",
+   "moving"
+  ]
+ },
+ "start": {
+  "chance": 0.0061,
+  "careers": 0.08,
+  "tier": "very-rare",
+  "stage": "established",
+  "when": [
+   "age>=21",
+   "age<=32"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "order": "bond-desc"
+  },
+  {
+   "slot": "physio",
+   "pick": "physio"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none",
+  "box": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "every-pitch",
+   "title": "Every pitch",
+   "text": "There's a defibrillator at every pitch in town now, in a yellow box, with your team-mate's number on the side."
+  },
+  {
+   "id": "the-coach",
+   "title": "The coach",
+   "text": "Your team-mate never played again. He coaches the under-twelves now and makes them all learn first aid before they learn a step-over."
+  },
+  {
+   "id": "the-quiet-one",
+   "title": "Quiet",
+   "text": "He came through it and moved away to be near his mum. He texts on the anniversary, one line, every year."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "col-1-down",
+   "title": "Tuesday",
+   "n": 1,
+   "event": {
+    "id": "arc-col-1-down",
+    "title": "Tuesday",
+    "category": "life",
+    "place": "club:pitch-two",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A passing drill on pitch two on a Tuesday, nothing in it. {mate.name} turns to take one and goes down like somebody's switched him off. Nobody touched him. He doesn't put his hands out.",
+     "The physio is at the far end with somebody's ankle. Forty yards."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "physio",
+       "say": [
+        "Somebody screams for {physio.short}. The lads are frozen in a ring. {mate.short} isn't breathing right."
+       ],
+       "replies": [
+        {
+         "id": "cpr",
+         "label": "Get on your knees and start pushing on his chest.",
+         "tone": "brave",
+         "goto": "b"
+        },
+        {
+         "id": "run",
+         "label": "Sprint for the defibrillator in the clubhouse.",
+         "tone": "brave",
+         "goto": "c"
+        },
+        {
+         "id": "froze",
+         "label": "You can't move.",
+         "tone": "humble",
+         "silent": true,
+         "end": "froze"
+        }
+       ]
+      },
+      "b": {
+       "who": "physio",
+       "say": [
+        "You remember the course in the academy you thought was a waste of a morning. Hard and fast, the middle of the chest. Somebody counts out loud. It might be you."
+       ],
+       "replies": [
+        {
+         "id": "keep",
+         "label": "Keep going till she gets there.",
+         "tone": "brave",
+         "end": "cpr"
+        }
+       ]
+      },
+      "c": {
+       "who": "physio",
+       "say": [
+        "The clubhouse. The yellow box by the canteen door. The alarm goes off when you open it, which you didn't know it did."
+       ],
+       "replies": [
+        {
+         "id": "back",
+         "label": "Run it back.",
+         "tone": "brave",
+         "end": "box"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "cpr": [
+       {
+        "text": "{physio.short} takes over after a minute that lasts a year. The ambulance comes on to the pitch. In the car park the gaffer can't light his cigarette.",
+        "effects": {
+         "team": 6,
+         "energy": -10
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 20,
+          "respect": 10
+         },
+         {
+          "slot": "physio",
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "saved-my-life",
+          "strength": 3
+         },
+         {
+          "slot": "physio",
+          "tag": "did-cpr-on-pitch-two",
+          "strength": 3
+         }
+        ],
+        "noteSquad": "the-tuesday-on-pitch-two",
+        "arc": {
+         "set": {
+          "path": "cpr"
+         }
+        }
+       }
+      ],
+      "box": [
+       {
+        "text": "The box goes on his chest and a calm voice tells everyone to stand clear. It shocks him once. {physio.short} says that was the right thing, and her hands are shaking.",
+        "effects": {
+         "team": 6,
+         "energy": -10
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 20,
+          "respect": 10
+         },
+         {
+          "slot": "physio",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "saved-my-life",
+          "strength": 3
+         }
+        ],
+        "noteSquad": "the-tuesday-on-pitch-two",
+        "arc": {
+         "set": {
+          "path": "box"
+         }
+        }
+       }
+      ],
+      "froze": [
+       {
+        "text": "{physio.short} gets there and does it all. Afterwards you sit in your car for an hour and don't go home.",
+        "effects": {
+         "energy": -15
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 3
+         }
+        ],
+        "noteSquad": "the-tuesday-on-pitch-two",
+        "arc": {
+         "set": {
+          "path": "froze"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     },
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A team-mate has gone down in training"
+  },
+  {
+   "id": "col-1b-hospital",
+   "title": "The hospital",
+   "after": {
+    "beat": "col-1-down",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-col-1b-hospital",
+    "title": "The hospital",
+    "category": "life",
+    "place": "town:hospital",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "He's awake, in a ward with a view of the multi-storey, with a box on his chest the size of a matchbox they've put in under the skin. The doctors say his heart has a fault he was born with. Nobody could have known."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mate",
+       "say": [
+        "\"They say I can't play again.\" He laughs, and stops because it hurts. \"Twenty-six. What am I going to do, work?\""
+       ],
+       "replies": [
+        {
+         "id": "stay",
+         "label": "Sit with him till they throw you out.",
+         "tone": "kind",
+         "end": "stay"
+        },
+        {
+         "id": "joke",
+         "label": "\"You could be a pundit. You're wrong about everything.\"",
+         "tone": "confident",
+         "end": "joke"
+        },
+        {
+         "id": "cry",
+         "label": "Tell him you thought he'd died.",
+         "tone": "honest",
+         "end": "cry"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "stay": [
+       {
+        "text": "You watch the darts on a telly on a bracket. When the nurse throws you out he's asleep.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "stay"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "He laughs till the nurse tells you off. He says it's the best he's felt all week.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "joke"
+         }
+        }
+       }
+      ],
+      "cry": [
+       {
+        "text": "He goes quiet and holds your wrist for a while. Neither of you says anything for a long time.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "cry"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     },
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your team-mate is awake"
+  },
+  {
+   "id": "col-2-boxes",
+   "title": "The yellow boxes",
+   "after": {
+    "beat": "col-1-down",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-col-2-boxes",
+    "title": "The yellow boxes",
+    "category": "life",
+    "place": "town:rec",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. {mate.short} has a spreadsheet: every pitch in town, from the club down to the Rec, and which ones have a defibrillator. Two of forty-one do. They're fifteen hundred pounds each.",
+     "He wants a penalty night at the Rec. A tenner a ball."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mate",
+       "say": [
+        "\"Ten balls,\" he says. \"I'm in goal. Doctor says I can stand still, and I'm brilliant at standing still.\""
+       ],
+       "replies": [
+        {
+         "id": "play",
+         "label": "Take your ten.",
+         "tone": "confident",
+         "goto": "g"
+        },
+        {
+         "id": "pay",
+         "label": "\"I'll pay for ten boxes. Forget the night.\"",
+         "tone": "kind",
+         "end": "pay"
+        }
+       ]
+      },
+      "g": {
+       "who": "mate",
+       "say": [
+        "The Rec, the two old floodlights, three hundred people in coats. He's in goal in a hat."
+       ],
+       "activity": {
+        "mode": "challenge",
+        "name": "Ten balls for the boxes",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "corners",
+           "balls": 2
+          },
+          {
+           "kind": "keeper",
+           "balls": 3,
+           "line": "{mate.short} in goal, very much standing still."
+          },
+          {
+           "kind": "call-it",
+           "balls": 2
+          },
+          {
+           "kind": "crossbar",
+           "balls": 1
+          },
+          {
+           "kind": "far",
+           "balls": 1
+          },
+          {
+           "kind": "double"
+          }
+         ],
+         "keeperSlot": "mate",
+         "lines": {
+          "keeper:saved": "\"{name} hasn't lost it!\"",
+          "hit": "Three hundred people in coats go up."
+         }
+        },
+        "caller": {
+         "slot": "mate"
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "technique",
+         "target": 60
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "r-stop"
+        ],
+        [
+         "activity.score>=6",
+         "r-good"
+        ],
+        [
+         "",
+         "r-poor"
+        ]
+       ]
+      },
+      "r-stop": {
+       "who": "mate",
+       "say": [
+        "You stop there and hand the ball back."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Walk off.",
+         "tone": "calm",
+         "end": "stop"
+        }
+       ]
+      },
+      "r-good": {
+       "who": "mate",
+       "say": [
+        "{activity.score} out of ten. Not bad at all."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "good"
+        }
+       ]
+      },
+      "r-poor": {
+       "who": "mate",
+       "say": [
+        "{activity.score} out of ten."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "poor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "Every pitch in town. Forty-one yellow boxes. He insists on fitting the first one himself, with a drill he doesn't know how to use.",
+        "effects": {
+         "fans": 8,
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "box": 2
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "You miss half and he saves three and is unbearable about it. Twenty-two boxes, and a list for the rest.",
+        "effects": {
+         "fans": 5
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "box": 1
+         }
+        }
+       }
+      ],
+      "stop": [
+       {
+        "text": "You stop when it starts to sleet. Twelve boxes. He says it's twelve more than there were.",
+        "effects": {
+         "fans": 3
+        },
+        "arc": {
+         "set": {
+          "box": 1
+         }
+        }
+       }
+      ],
+      "pay": [
+       {
+        "text": "You pay for ten. He puts your name on none of them, at your asking. He still does the penalty night, with the gaffer.",
+        "effects": {
+         "moneyWeeks": -3,
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "box": 1
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     },
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, he wants a defibrillator at every pitch in town"
+  },
+  {
+   "id": "col-3-later",
+   "title": "Years on",
+   "after": {
+    "beat": "col-2-boxes",
+    "seasons": [
+     1,
+     2
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-col-3-later",
+    "title": "Years on",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Years on. A text from a number you've kept: a photo of a yellow box on the wall of a Sunday league changing room, and a man in a tracksuit being hugged by a whole under-twelves team."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mate",
+       "say": [
+        "\"A lad's dad went down on the touchline Sunday. Box on the wall. He's fine. Thought you'd want to know.\""
+       ],
+       "replies": [
+        {
+         "id": "ring",
+         "label": "Ring him straight away.",
+         "tone": "kind",
+         "end": "ring"
+        },
+        {
+         "id": "text",
+         "label": "\"That's yours, that.\"",
+         "tone": "calm",
+         "end": "text"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ring": [
+       {
+        "if": "arc.box>=1 && !arc.path=='froze'",
+        "text": "He's coaching the under-twelves now. Every one of them can do CPR before they can do a step-over.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "end": "the-coach"
+        }
+       },
+       {
+        "text": "He's moved near his mum. He talks for an hour, which he never used to.",
+        "arc": {
+         "end": "the-quiet-one"
+        }
+       }
+      ],
+      "text": [
+       {
+        "if": "arc.box>=2",
+        "text": "\"Ours,\" he sends back, and a photo of the box with his old number on the side.",
+        "arc": {
+         "end": "every-pitch"
+        }
+       },
+       {
+        "text": "He sends a thumbs up. Every year on that Tuesday, one line.",
+        "arc": {
+         "end": "the-quiet-one"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     },
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Years on, your old team-mate"
+  }
+ ]
+}
