@@ -16,7 +16,7 @@ const PERIOD = 0.9;
 const COUNT = 60;
 
 const PLACE: Partial<Record<LoadSection, string>> = {
-  garden: "The garden", house: "Your house", shop: "The shop", casino: "The casino", gym: "The gym", street: "High Street", drive: "Your car",
+  garden: "The garden", house: "Your house", shop: "The shop", casino: "The casino", gym: "The gym", street: "High Street", drive: "Your car", compound: "The training ground",
 };
 
 export default function Keepie({ variant, section, box, t0 }: { variant: LoadVariant; section: LoadSection; box?: boolean; t0: number }) {

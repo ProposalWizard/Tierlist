@@ -14,6 +14,9 @@
  *   street      keepie-uppies over a still of the shopping street (28 Nov 2026)
  *   gym         keepie-uppies over a still of the 3D gym (opened from the
  *               Training page while it is tested, 28 Nov 2026)
+ *   compound    keepie-uppies over a still of the training compound (the
+ *               car park, the gate, the crest board, the building; day,
+ *               sunset, night): lib/star/world3d/compoundPlace.ts, 28 Nov
  *   training    the coach's drill board (three boards)
  *   ballon-dor / awards
  *               the gala: the golden ball, the invitation
@@ -28,7 +31,8 @@ export type LoadSection =
   | "garden" | "house" | "shop" | "casino" | "gym" | "street"
   | "training" | "ballon-dor" | "awards"
   // the drive to training (driving phase 1, 28 Nov 2026: /star-drive3d-dev)
-  | "drive";
+  | "drive"
+  | "compound";
 
 /** What a variant is drawn as. */
 export type LoadKind = "keepie" | "programme" | "tunnel" | "board" | "gala" | "boot";
@@ -83,6 +87,12 @@ export const LOAD_VARIANTS: Record<LoadSection, LoadVariant[]> = {
   street: [
     K("keepie-street", "street"),
     K("keepie-street-lamp", "street", "lamp"),
+  ],
+  compound: [
+    K("keepie-compound-day", "compound-day"),
+    K("keepie-compound-sunset", "compound-sunset"),
+    K("keepie-compound-night", "compound-night", "night"),
+    K("keepie-compound-rain", "compound-day", "rain"),
   ],
   training: [
     { id: "board-white", kind: "board", look: "white" },
