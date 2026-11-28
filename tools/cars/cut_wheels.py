@@ -204,7 +204,19 @@ for w in wheels:
     bpy.ops.object.select_all(action="DESELECT"); ob.select_set(True); bpy.context.view_layer.objects.active = ob
     bpy.ops.object.mode_set(mode="EDIT"); bpy.ops.mesh.select_mode(type="VERT"); bpy.ops.mesh.select_all(action="DESELECT")
     bm = bmesh.from_edit_mesh(ob.data); bm.verts.ensure_lookup_table()
-    for i in np.nonzero(sel)[0]: bm.verts[int(i)].select = True
+    # only what is joined to the tyre itself: grow from the wheel's core (inside 0.75 r) through the
+    # allowed vertices, so loose chips of bumper or arch inside the circle stay on the body (a chip
+    # cut with the wheel would spin round the hub: seen in the 28 Nov film)
+    allowed = set(int(i) for i in np.nonzero(sel)[0])
+    seed = [i for i in allowed if d[i] < w["r"] * 0.75]
+    keep = set(seed); stack = list(seed)
+    while stack:
+        v = bm.verts[stack.pop()]
+        for e in v.link_edges:
+            o = e.other_vert(v).index
+            if o in allowed and o not in keep: keep.add(o); stack.append(o)
+    sel = np.zeros(len(sel), bool); sel[list(keep)] = True
+    for i in keep: bm.verts[i].select = True
     bm.select_flush(True); bmesh.update_edit_mesh(ob.data)
     bpy.ops.mesh.separate(type="SELECTED")
     bpy.ops.object.mode_set(mode="OBJECT")

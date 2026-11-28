@@ -373,7 +373,8 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
   }
 
   // ── the cabin (in-car view): dash, wheel, the phone in its mount ──
-  const cabin = buildCabin(THREE, mine);
+  const { RoundedBoxGeometry }: any = await import("three/examples/jsm/geometries/RoundedBoxGeometry.js");
+  const cabin = buildCabin(THREE, mine, RoundedBoxGeometry, merge);
   mine.root.add(cabin.group);
   cabin.group.visible = false;
 
@@ -414,7 +415,8 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
     if (barrierArm) barrierArm.rotation.z = barrierLift(S) * 1.45;
     const turn = matesTurn(S);
     // the team-mates only exist for the arrival (skinned bodies are never culled by distance)
-    const matesOn = S.phase === "arrive" || (S.phase === "done" && !S.skipped);
+    // (and only in the bay shot: the barrier shot looks away from them, and a skinned body is not culled reliably)
+    const matesOn = (S.phase === "arrive" && arrivalShot(S) === "bay") || (S.phase === "done" && !S.skipped);
     for (const m of mates) {
       m.root.visible = matesOn;
       let d = m.turnTo - m.faceTo; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
@@ -430,8 +432,8 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
     const which = S.phase === "arrive" ? arrivalShot(S) : null;
     const cam = liveCam(S);
     cabin.group.visible = !which && cam === "cabin" && S.phase !== "intro";
-    mine.body.visible = !cabin.group.visible;
-    for (const w of mine.wheels) w.node.visible = !cabin.group.visible;
+    // the car's own shell stays: from inside it is see-through (back faces), and the bonnet shows ahead
+    mine.body.visible = true;
     if (S.phase === "intro") {
       // from the pavement across the road: your car at the kerb, your gate and your house behind it; a slow push in
       const k = Math.min(1, S.t / INTRO_S);
@@ -443,7 +445,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
     } else if (which === "barrier") {
       // THE SHOT: low and wide by the barrier post, the car coming at you, the arm going up
       // inside the gate, just off your line, looking back through the barrier at the car coming
-      const g = offsetAt(R, R.gateS + 6.5, -1.0);
+      const g = offsetAt(R, R.gateS + 7.5, -(ROAD_HALF + 2.2));
       pos = [g.x, 0.62, g.z];
       look = [carP.x, 0.9, carP.z];
       fov = 62; snap = true;
@@ -455,13 +457,13 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
       if (bayT0 < 0) bayT0 = S.ta;
       const push = Math.min(2.5, (S.ta - bayT0) * 0.35);
       const dx = d.look[0] - d.cam[0], dz = d.look[1] - d.cam[1], dl = Math.hypot(dx, dz) || 1;
-      pos = [d.cam[0] + (dx / dl) * push, 1.15, d.cam[1] + (dz / dl) * push];
+      pos = [d.cam[0] + (dx / dl) * push, 1.3, d.cam[1] + (dz / dl) * push];
       look = [d.look[0], 1.6, d.look[1]];
-      fov = 37; snap = true;
+      fov = 44; snap = true;
     } else if (cam === "cabin" && S.callState === "ringing" && S.t - S.callSince < 2.6) {
       // the call: over the driver's shoulder onto the phone in its mount, the road through the glass above it
-      pos = local(c.yaw, carP, -0.14, 1.27, 0.18);
-      look = local(c.yaw, carP, 0.0, 1.0, 1.6); fov = 58; snap = true;
+      pos = local(c.yaw, carP, -0.3, 1.3, 0.02);
+      look = local(c.yaw, carP, -0.16, 1.0, 0.6); fov = 62; snap = true;
     } else if (cam === "cabin") {
       // the driver's seat (on the right: a UK car), looking down the road over the dash
       pos = local(c.yaw, carP, -0.36, 1.28, 0.02);
@@ -786,7 +788,7 @@ function repaint(T: any, root: any, from: [number, number, number], to: string) 
   const tc = new T.Color(to);
   const fl = Math.max(1e-3, 0.2126 * f.x + 0.7152 * f.y + 0.0722 * f.z);
   root.traverse((o: any) => {
-    if (!o.isMesh || !o.material?.map) return;
+    if (!o.isMesh || !o.material?.map || o.material.name === "plate") return; // the plates keep their colours
     const m = o.material.clone();
     m.onBeforeCompile = (sh: any) => {
       sh.uniforms.uFrom = { value: f }; sh.uniforms.uTo = { value: new T.Vector3(tc.r, tc.g, tc.b) }; sh.uniforms.uFromL = { value: fl };
@@ -853,9 +855,10 @@ function buildCompound(T: any, low: boolean, roadM: any, R: Route, propBox: (...
   }
   // team-mates' cars in the bays either side of yours (the light copies, repainted)
   // all on the left of your bay, behind the two team-mates: the bay shot looks across from the right, nothing in its way
-  const mates: [number, string, string][] = [[2.8, "sports", "#1d2733"], [5.6, "suv", "#e9e6df"], [8.4, "family", "#6b1f24"]];
+  // the bay next to yours stays empty: the two team-mates stand in front of it, nothing between them and the bay shot
+  const mates: [number, string, string][] = [[5.6, "sports", "#1d2733"], [8.4, "suv", "#e9e6df"], [-5.6, "family", "#6b1f24"]];
   // Low: one team-mate's car (the two people are most of the arrival's triangles)
-  for (const [off, id, col] of mates.slice(0, low ? 1 : 3)) {
+  for (const [off, id, col] of mates.slice(0, low ? 1 : 2)) {
     const [x, z] = E(0, off);
     parked.push({ file: `/star/home3d/car-${id}-lod.glb`, x, z, ry: end.h, paint: col, from: DRIVE_CARS[id as DriveCarId].paint });
   }
@@ -870,7 +873,7 @@ function buildCompound(T: any, low: boolean, roadM: any, R: Route, propBox: (...
   // a flat roof edge
   propBox(30.6, 0.35, 7.6, bx, 6.6, bz, end.h, "#2c3036");
   // the two team-mates on the walkway at the front corner of your bay, on the way to the door
-  const [dx, dz] = E(3.1, 3.1);
+  const [dx, dz] = E(3.0, 2.6);
   // the bay shot: from the block's wall, over the team-mates' shoulders, at your car coming in
   // the bay shot: low, from behind the bay on the aisle side; your car sweeps in past the lens and rolls
   // away into the bay, towards the two by the door (they turn: their faces to camera), the block behind
@@ -932,44 +935,134 @@ function forkSignCanvas(): HTMLCanvasElement {
   return c;
 }
 
-/** The in-car view: a dark dash with dials, the wheel, and the phone in its mount (its screen lights up for a call). */
-function buildCabin(T: any, mine: ReturnType<typeof rigCar>) {
+/**
+ * The in-car view: a moulded dashboard (soft-touch dark plastic, a binnacle over the dials in front of the
+ * driver, vents, a centre screen), a three-spoke wheel, and the phone in a vent mount. The phone is the
+ * game's phone (components/star/HousePhone: thin black frame, rounded glass), drawn here in 3D: its screen
+ * shows the incoming call (`phone(glow, caller)`). Right-hand drive: the driver sits at −x.
+ */
+function buildCabin(T: any, mine: ReturnType<typeof rigCar>, RB: any, merge?: (g: any[]) => any) {
   const g = new T.Group();
-  const dark = new T.MeshStandardMaterial({ color: "#16181c", roughness: 0.8 });
-  const trim = new T.MeshStandardMaterial({ color: "#3a3d44", roughness: 0.5, metalness: 0.3 });
-  const dash = new T.Mesh(new T.BoxGeometry(1.7, 0.28, 0.55), dark); dash.position.set(0, 0.88, 0.95); g.add(dash);
-  const top = new T.Mesh(new T.BoxGeometry(1.7, 0.06, 0.35), trim); top.position.set(0, 1.03, 1.02); g.add(top);
-  // windscreen frame: the A-pillars and the roof's front edge
-  for (const x of [-0.8, 0.8]) { const p = new T.Mesh(new T.BoxGeometry(0.08, 0.75, 0.08), dark); p.position.set(x, 1.38, 0.95); p.rotation.x = -0.55; g.add(p); }
-  const roof = new T.Mesh(new T.BoxGeometry(1.75, 0.08, 0.5), dark); roof.position.set(0, 1.72, 0.55); g.add(roof);
-  // the wheel, in front of the driver (on the right: −x)
-  const wheel = new T.Mesh(new T.TorusGeometry(0.17, 0.022, 8, 28), trim); wheel.position.set(-0.36, 0.9, 0.56); wheel.rotation.x = -0.45; g.add(wheel);
-  const hub = new T.Mesh(new T.CylinderGeometry(0.05, 0.05, 0.05, 12), dark); hub.rotation.x = Math.PI / 2 - 0.45; hub.position.copy(wheel.position); g.add(hub);
-  // the phone in its mount, middle of the dash, its screen a canvas
-  const cv = document.createElement("canvas"); cv.width = 128; cv.height = 256;
-  const ct = new T.CanvasTexture(cv); ct.colorSpace = T.SRGBColorSpace;
-  const screenM = new T.MeshBasicMaterial({ map: ct, toneMapped: false });
+  const soft = new T.MeshStandardMaterial({ color: "#26282d", roughness: 0.82 });
+  const top = new T.MeshStandardMaterial({ color: "#1b1c20", roughness: 0.9 });
+  const trim = new T.MeshStandardMaterial({ color: "#5d6168", roughness: 0.35, metalness: 0.6 });
+  const leather = new T.MeshStandardMaterial({ color: "#151619", roughness: 0.6 });
+  // the dash: a side profile (forward z, up y) extruded across the car
+  const prof = new T.Shape();
+  prof.moveTo(1.12, 0.98);                                    // under the windscreen
+  prof.bezierCurveTo(0.95, 1.07, 0.78, 1.06, 0.66, 1.0);      // the top, rolling towards you
+  prof.bezierCurveTo(0.6, 0.97, 0.58, 0.9, 0.6, 0.82);        // its face
+  prof.lineTo(0.66, 0.6); prof.lineTo(1.12, 0.6); prof.closePath();
+  const dashG = new T.ExtrudeGeometry(prof, { depth: 1.62, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 3, curveSegments: 14 });
+  dashG.rotateY(-Math.PI / 2); // the shape's x (forward) → +z, extruded along −x
+  dashG.translate(0.81, 0, 0);
+  g.add(new T.Mesh(dashG, soft));
+  // the binnacle hood over the dials (driver's side)
+  const hood = new T.Mesh(new RB(0.4, 0.07, 0.2, 3, 0.03), top);
+  hood.position.set(-0.36, 1.07, 0.74); hood.rotation.x = 0.08; g.add(hood);
+  // the dials: a glowing cluster behind the wheel
+  const dcv = document.createElement("canvas"); dcv.width = 256; dcv.height = 96;
+  {
+    const x = dcv.getContext("2d")!; x.fillStyle = "#07080a"; x.fillRect(0, 0, 256, 96);
+    for (const cx of [64, 192]) { x.strokeStyle = "#3ec5ff"; x.lineWidth = 4; x.beginPath(); x.arc(cx, 56, 34, Math.PI * 0.8, Math.PI * 2.2); x.stroke(); x.strokeStyle = "#ff5a3c"; x.lineWidth = 3; x.beginPath(); x.moveTo(cx, 56); x.lineTo(cx + 24, 36); x.stroke(); }
+    x.fillStyle = "#e8f6ff"; x.font = "bold 18px system-ui"; x.textAlign = "center"; x.fillText("D", 128, 62);
+  }
+  const dtex = new T.CanvasTexture(dcv); dtex.colorSpace = T.SRGBColorSpace;
+  const dials = new T.Mesh(new T.PlaneGeometry(0.3, 0.11), new T.MeshBasicMaterial({ map: dtex, toneMapped: false }));
+  dials.position.set(-0.36, 0.97, 0.69); dials.rotation.y = Math.PI; dials.rotation.x = -0.25; g.add(dials);
+  // the centre screen (the route), two vents either side of it
+  const scv = document.createElement("canvas"); scv.width = 256; scv.height = 160;
+  {
+    const x = scv.getContext("2d")!; const gr = x.createLinearGradient(0, 0, 0, 160); gr.addColorStop(0, "#0e2233"); gr.addColorStop(1, "#06121c"); x.fillStyle = gr; x.fillRect(0, 0, 256, 160);
+    x.strokeStyle = "#2b6f9e"; x.lineWidth = 6; x.beginPath(); x.moveTo(30, 120); x.bezierCurveTo(90, 60, 150, 140, 226, 40); x.stroke();
+    x.fillStyle = "#cfe9ff"; x.font = "bold 20px system-ui"; x.fillText("Training ground · 6 min", 14, 30);
+  }
+  const stex = new T.CanvasTexture(scv); stex.colorSpace = T.SRGBColorSpace;
+  const scr = new T.Mesh(new T.PlaneGeometry(0.24, 0.15), new T.MeshBasicMaterial({ map: stex, toneMapped: false }));
+  scr.position.set(0.12, 0.96, 0.64); scr.rotation.y = Math.PI; scr.rotation.x = -0.3; g.add(scr);
+  // a brushed trim strip across the dash face, a darker lower face
+  const strip = new T.Mesh(new T.BoxGeometry(1.5, 0.012, 0.01), trim); strip.position.set(0.05, 0.915, 0.6); g.add(strip);
+  const lower = new T.Mesh(new T.BoxGeometry(1.55, 0.2, 0.02), top); lower.position.set(0, 0.76, 0.66); g.add(lower);
+  for (const vx of [-0.05, 0.3]) {
+    const vent = new T.Mesh(new T.BoxGeometry(0.13, 0.055, 0.02), leather); vent.position.set(vx, 0.875, 0.615); g.add(vent);
+    for (let k = 0; k < 3; k++) { const slat = new T.Mesh(new T.BoxGeometry(0.12, 0.004, 0.012), trim); slat.position.set(vx, 0.86 + k * 0.015, 0.603); g.add(slat); }
+  }
+  // the windscreen frame: A-pillars, the roof's front edge, the mirror (the car's shell is see-through from inside)
+  for (const x of [-0.82, 0.82]) { const p = new T.Mesh(new T.BoxGeometry(0.07, 0.8, 0.09), top); p.position.set(x, 1.38, 0.92); p.rotation.x = -0.6; p.rotation.z = x < 0 ? 0.08 : -0.08; g.add(p); }
+  const roof = new T.Mesh(new T.BoxGeometry(1.75, 0.07, 0.55), top); roof.position.set(0, 1.74, 0.5); g.add(roof);
+  const rmirror = new T.Mesh(new T.BoxGeometry(0.22, 0.06, 0.02), top); rmirror.position.set(0, 1.62, 0.62); g.add(rmirror);
+  // the wheel: a thick leather rim, three spokes, the hub
+  const wheel = new T.Group();
+  wheel.add(new T.Mesh(new T.TorusGeometry(0.175, 0.024, 12, 40), leather));
+  for (const a of [-Math.PI / 2, 0.15, Math.PI - 0.15]) { const sp = new T.Mesh(new T.BoxGeometry(0.15, 0.03, 0.02), soft); sp.position.set(Math.cos(a) * 0.08, Math.sin(a) * 0.08, 0); sp.rotation.z = a; wheel.add(sp); }
+  const hub = new T.Mesh(new T.CylinderGeometry(0.06, 0.065, 0.05, 24), soft); hub.rotation.x = Math.PI / 2; wheel.add(hub);
+  const badge = new T.Mesh(new T.CircleGeometry(0.02, 20), trim); badge.position.z = -0.026; badge.rotation.y = Math.PI; wheel.add(badge);
+  wheel.position.set(-0.36, 0.9, 0.5); wheel.rotation.x = -0.42;
+  const column = new T.Mesh(new T.CylinderGeometry(0.035, 0.04, 0.25, 12), soft); column.rotation.x = Math.PI / 2 - 0.42; column.position.set(-0.36, 0.86, 0.6); g.add(column);
+  g.add(wheel);
+  // the mount on the centre vent: a short arm with a ball joint, a cradle with side grips
+  const mx = -0.08, my = 1.06, mz = 0.58; // on the vent just left of the wheel, where a driver can reach it
+  const arm = new T.Mesh(new T.CylinderGeometry(0.008, 0.008, 0.08, 10), trim); arm.position.set(mx, 0.93, mz - 0.01); g.add(arm);
+  const ball = new T.Mesh(new T.SphereGeometry(0.015, 14, 10), trim); ball.position.set(mx, 0.97, mz - 0.015); g.add(ball);
   const phone = new T.Group();
-  const caseM = new T.Mesh(new T.BoxGeometry(0.085, 0.165, 0.012), dark); phone.add(caseM);
-  const scr = new T.Mesh(new T.PlaneGeometry(0.077, 0.155), screenM); scr.position.z = -0.0065; scr.rotation.y = Math.PI; phone.add(scr);
-  phone.position.set(-0.02, 1.13, 0.86); phone.rotation.x = 0.25;
+  const cradle = new T.Mesh(new RB(0.09, 0.05, 0.012, 3, 0.004), leather); cradle.position.set(0, -0.06, 0.008); phone.add(cradle);
+  for (const sx of [-1, 1]) { const grip = new T.Mesh(new T.BoxGeometry(0.008, 0.05, 0.016), leather); grip.position.set(sx * 0.041, -0.01, 0.004); phone.add(grip); }
+  // the phone itself: thin dark frame, rounded corners, edge-to-edge glass
+  phone.add(new T.Mesh(new RB(0.074, 0.156, 0.008, 4, 0.009), new T.MeshStandardMaterial({ color: "#1c1d21", roughness: 0.35, metalness: 0.5 })));
+  const cv = document.createElement("canvas"); cv.width = 236; cv.height = 500;
+  const ct = new T.CanvasTexture(cv); ct.colorSpace = T.SRGBColorSpace;
+  const glass = new T.Mesh(new T.PlaneGeometry(0.068, 0.15), new T.MeshBasicMaterial({ map: ct, toneMapped: false, transparent: true }));
+  glass.position.z = -0.0042; glass.rotation.y = Math.PI; phone.add(glass);
+  phone.position.set(mx, my, mz - 0.02); phone.rotation.x = 0.18; phone.rotation.y = 0.35; // the glass faces the driver (−z), turned towards his seat
   g.add(phone);
   let last = "";
+  const rr = (x: CanvasRenderingContext2D, X: number, Y: number, W: number, H: number, R: number) => { x.beginPath(); x.moveTo(X + R, Y); x.arcTo(X + W, Y, X + W, Y + H, R); x.arcTo(X + W, Y + H, X, Y + H, R); x.arcTo(X, Y + H, X, Y, R); x.arcTo(X, Y, X + W, Y, R); x.closePath(); };
   const draw = (glow: number, caller: string) => {
     const key = `${glow.toFixed(2)}|${caller}`;
     if (key === last) return; last = key;
     const x = cv.getContext("2d")!;
-    x.fillStyle = glow < 0.1 ? "#0b0d12" : "#0f2a1c"; x.fillRect(0, 0, 128, 256);
-    if (glow >= 0.1) {
-      x.fillStyle = `rgba(34,197,94,${glow})`; x.beginPath(); x.arc(64, 90, 34, 0, Math.PI * 2); x.fill();
-      x.fillStyle = "#ffffff"; x.font = "bold 40px system-ui"; x.textAlign = "center"; x.fillText((caller[0] ?? "?").toUpperCase(), 64, 104);
-      x.font = "bold 16px system-ui"; x.fillText(caller.slice(0, 13), 64, 152);
-      x.font = "12px system-ui"; x.fillStyle = "#bbf7d0"; x.fillText("calling…", 64, 172);
+    x.clearRect(0, 0, 236, 500);
+    rr(x, 0, 0, 236, 500, 30); x.save(); x.clip();
+    if (glow < 0.1) { x.fillStyle = "#050607"; x.fillRect(0, 0, 236, 500); }
+    else {
+      const gr = x.createLinearGradient(0, 0, 0, 500); gr.addColorStop(0, "#1d3b2c"); gr.addColorStop(0.55, "#0f1d17"); gr.addColorStop(1, "#090d0b"); x.fillStyle = gr; x.fillRect(0, 0, 236, 500);
+      x.textAlign = "center";
+      x.fillStyle = "rgba(255,255,255,.75)"; x.font = "600 15px system-ui"; x.fillText("09:12", 118, 30);
+      x.fillStyle = "#e5e7eb"; x.font = "500 15px system-ui"; x.fillText("mobile", 118, 82);
+      x.fillStyle = "#ffffff"; x.font = "bold 30px system-ui"; x.fillText(caller.slice(0, 14), 118, 118);
+      // the avatar, pulsing with the ring
+      x.fillStyle = `rgba(34,197,94,${0.25 + 0.35 * glow})`; x.beginPath(); x.arc(118, 205, 56 + 8 * glow, 0, Math.PI * 2); x.fill();
+      x.fillStyle = "#16a34a"; x.beginPath(); x.arc(118, 205, 48, 0, Math.PI * 2); x.fill();
+      x.fillStyle = "#fff"; x.font = "bold 44px system-ui"; x.fillText((caller[0] ?? "?").toUpperCase(), 118, 221);
+      // decline / accept
+      x.fillStyle = "#ef4444"; x.beginPath(); x.arc(60, 420, 30, 0, Math.PI * 2); x.fill();
+      x.fillStyle = "#22c55e"; x.beginPath(); x.arc(176, 420, 30, 0, Math.PI * 2); x.fill();
+      x.fillStyle = "#fff"; x.font = "bold 13px system-ui"; x.fillText("Decline", 60, 470); x.fillText("Accept", 176, 470);
+      x.strokeStyle = "#fff"; x.lineWidth = 5; x.lineCap = "round";
+      x.beginPath(); x.moveTo(48, 424); x.lineTo(72, 424); x.stroke();
+      x.beginPath(); x.arc(176, 420, 12, Math.PI * 0.8, Math.PI * 1.9); x.stroke();
     }
+    x.restore();
     ct.needsUpdate = true;
   };
   draw(0.08, "");
   void mine;
+  // join the still parts by material (one draw each): the cabin is ~30 small pieces
+  if (merge) {
+    g.updateMatrixWorld(true);
+    const byMat = new Map<any, any[]>();
+    const drop: any[] = [];
+    g.traverse((o: any) => {
+      if (!o.isMesh || o.material.map) return;
+      let p = o.parent; while (p && p !== g) { if (p === phone) return; p = p.parent; }
+      const geo = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld);
+      for (const k of Object.keys(geo.attributes)) if (k !== "position" && k !== "normal") geo.deleteAttribute(k);
+      (byMat.get(o.material) ?? byMat.set(o.material, []).get(o.material)!).push(geo);
+      drop.push(o);
+    });
+    for (const o of drop) o.parent.remove(o);
+    for (const [m, geos] of Array.from(byMat.entries())) g.add(new T.Mesh(merge(geos), m));
+  }
   return { group: g, phone: draw };
 }
 
@@ -990,7 +1083,8 @@ async function addMates(T: any, loader: any, scene: any, door: { x: number; z: n
   // two at the door, a step apart, side-on to each other
   const fx = Math.sin(door.face), fz = Math.cos(door.face), lx = Math.cos(door.face), lz = -Math.sin(door.face);
   const spots = [[-0.5, 0.35], [0.5, -0.35]];
-  for (let i = 0; i < 2; i++) {
+  // Low: one team-mate (each body is 14.6k triangles; the arrival keeps to the phone budget)
+  for (let i = 0; i < (tier === "low" ? 1 : 2); i++) {
     const L: any = looks[i];
     const p: any = makePerson3d(T, SK, charG, animG, { outline: 0, castShadow: false, who: L.id, toonHead: L.head, toonBody: L.build } as any);
     dressPerson3d(T, p, { ...L.dress, kit: { ...(L.kit ?? {}), shirt: shade(opts.kit.shirt), trim: opts.kit.trim, shorts: "#1d1f24", socks: "#1d1f24" }, number: null } as any);

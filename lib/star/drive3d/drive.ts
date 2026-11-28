@@ -178,7 +178,7 @@ export function barrierLift(S: DriveSession): number {
 }
 
 /** The bay shot takes over this far past the barrier (the car is past the low camera, turning in). */
-export const BAY_SHOT_FROM = 13;
+export const BAY_SHOT_FROM = 8.5;
 
 /** The arrival's shots: the barrier (low, wide) until you are through, then the bay with the two team-mates. */
 export function arrivalShot(S: DriveSession): "barrier" | "bay" {
@@ -189,7 +189,7 @@ export function arrivalShot(S: DriveSession): "barrier" | "bay" {
 export function matesTurn(S: DriveSession): number {
   const into = S.car.s - (S.route.gateS + BAY_SHOT_FROM);
   if (into <= 0) return 0;
-  const x = Math.max(0, Math.min(1, (into - 1.5) / 6));
+  const x = Math.max(0, Math.min(1, (into - 5) / 6));
   return x * x * (3 - 2 * x);
 }
 
