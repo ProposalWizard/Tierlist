@@ -23,6 +23,7 @@ const { validateArcs } = await import("../../lib/star/life/validateArcs.ts");
 const { ARCS } = await import("../../lib/star/life/arcBook.ts");
 const { migrateLife } = await import("../../lib/star/life/migrate.ts");
 const DR = await import("../../lib/star/life/drill.ts");
+const UL = await import("../../lib/star/life/unlocks.ts");
 const { makeInitialCareer } = await import("../../lib/star/careerFlow.ts");
 const { NATIONAL_LEAGUE_CLUBS } = await import("../../lib/star/clubs.ts");
 const { mulberry32 } = await import("../../lib/star/season.ts");
@@ -178,7 +179,7 @@ check(PR.openPromises(c).length === 1, "Thursdays kept nothing they should not")
 m = A.arcMoment({ ...c, week: c.week + 1 }, "arrive:training", { rng });
 check(m.screens.some((x) => x.beat === "b4-the-door"), `the kit room door (${JSON.stringify(m.screens)})`);
 c = T.autoBeat(m.career, ARC, "b4-the-door", { rng: () => 0.01, pick: () => 0 })!.career;
-check(run(c).v.best === 100 && (c.life!.got ?? []).includes("trophy:the-kit-room-door"), "a hundred on the door");
+check(run(c).v.best === 100 && UL.unlocksOf(c.life).has("kit-room-door"), "a hundred on the door");
 
 // 6: the clock.
 const seasonEnd = (x: CareerState) => A.arcMoment({ ...x, week: 46 }, "season-end", { rng });
@@ -203,7 +204,7 @@ const atNight = m.career;
   const r = T.autoBeat(atNight, ARC, "b6-the-night", { rng, pick: (n, ids) => Math.max(0, ids.indexOf("take")), answer: "attend" })!;
   const k = r.career;
   check(r.end === "took-the-bag" || r.end === "attend", `you went (end ${r.end})`);
-  check((k.life!.got ?? []).includes("item:dens-ball-bag") && (k.life!.got ?? []).includes("garden:hundred-balls-corner"), "his 1994 bag, and the drill for your garden");
+  check(UL.unlocksOf(k.life).has("item-dens-ball-bag") && UL.unlocksOf(k.life).has("hundred-balls-corner"), "his 1994 bag, and the drill for your garden");
   check(PR.promiseList(k).filter((p) => p.st === "kept").length >= 2, "both promises kept");
   // 8: years on.
   let y = { ...k, season: k.season + 6, week: 2, player: { ...k.player, age: 28 } };

@@ -66,6 +66,9 @@ import { ARCS, arcById } from "../../lib/star/life/arcBook";
 import { POOL } from "../../lib/star/life/pool";
 import { endedIn } from "../../lib/star/life/cond";
 import { writeFileSync } from "node:fs";
+import { UNLOCKS, grantUnlocks } from "../../lib/star/life/unlocks";
+import { SCRAPBOOK, MAX_SCRAPBOOK, MAX_ECHOES } from "../../lib/star/life/scrapbook";
+import { freshLife as freshLifeBlock } from "../../lib/star/life/people";
 
 /**
  * The most the living world (career.life: people, memories, promises, stories) may take in one
@@ -79,6 +82,21 @@ import { writeFileSync } from "node:fs";
  * nothing the book needs and costs every upload.
  */
 const LIFE_BLOCK_LIMIT = 50_000;
+/**
+ * The story world's new parts (job B, 28 Nov 2026; plan part 4b/4c), each with its own budget in
+ * bytes (as JSON in the save). Together ≤ 1.2 KB. The soak prints the biggest seen in real play and a
+ * worst case built by hand (every unlock, a full scrapbook, every milestone at once, six echoes),
+ * and fails if either passes its budget.
+ */
+const PART_BUDGET = { ul: 200, sb: 600, ms: 100, ech: 300 } as const;
+type Part = keyof typeof PART_BUDGET;
+const partBytes = (l: Partial<Record<string, unknown>> | undefined): Record<Part, number> => ({
+  ul: l?.ul === undefined ? 0 : JSON.stringify(l.ul).length,
+  sb: l?.sb === undefined ? 0 : JSON.stringify(l.sb).length,
+  ms: (l?.ms === undefined ? 0 : JSON.stringify(l.ms).length) + (l?.msw === undefined ? 0 : JSON.stringify(l.msw).length),
+  ech: l?.ech === undefined ? 0 : JSON.stringify(l.ech).length,
+});
+const partMax: Record<Part, number> = { ul: 0, sb: 0, ms: 0, ech: 0 };
 const CAREERS = Number(process.argv[2] ?? 200);
 const SEASONS = Number(process.argv[3] ?? 15);
 const WEEKS = 46;
@@ -344,6 +362,7 @@ function runCareer(n: number, lastName = `Life${n}`): { events: number; lifeByte
     kitMenMet += new Set(Object.values(arcsOf(c)).map((r) => r.cast.kitman).filter(Boolean)).size;
   }
   storyBytesMax = Math.max(storyBytesMax, JSON.stringify(c.life?.arcs ?? {}).length + (c.life?.fin?.length ?? 0));
+  { const pb = partBytes(c.life as unknown as Record<string, unknown>); for (const k of Object.keys(pb) as Part[]) partMax[k] = Math.max(partMax[k], pb[k]); }
   const words = (c.life?.fin ?? "").split(" ").filter(Boolean).length;
   packedMax = Math.max(packedMax, words); finWords += words; finChars += (c.life?.fin ?? "").length;
   pendingLeft += c.life?.pending.length ?? 0;
@@ -506,6 +525,22 @@ console.log(`the kit man (a chance until 21): met in ${kitByAge.map((k, i) => `$
 console.log(`never started in the main careers: ${notMet.length} (${notMet.join(", ") || "none"})`);
 console.log(`reach pass: ${reachCareers} extra careers; endings first seen there: ${[...reachFor.entries()].map(([k, v]) => `${k.replace(/^arc-/, "")} ${v}`).join(", ") || "none"}`);
 if (process.env.SOAK_JSON) writeFileSync(process.env.SOAK_JSON, JSON.stringify({ careers: CAREERS, seasons: SEASONS, stageRows, levelRows, situWeeks, situStarts, bigOverlapWeeks, twoBigBeatWeeks, tierRows, chainRows, arcRows, reachCareers, maxLife, meanLife: sumLife / CAREERS, kitByAge, clubPinBytesMax, clubPinsPerCareer: clubPins / CAREERS, kitMenPerCareer: kitMenMet / CAREERS }, null, 1));
+// The story world's parts (job B): the biggest seen in play, and a worst case built by hand.
+{
+  const worst = freshLifeBlock();
+  grantUnlocks(worst, UNLOCKS.map((u) => u.id));
+  const codes = Object.values(SCRAPBOOK).map((t) => t.code);
+  worst.sb = Array.from({ length: MAX_SCRAPBOOK }, (_, i) => `${codes[i % codes.length]}${""}.${9999 - i}.3`).map((w, i) => (i < codes.length ? w : `x${String(i).padStart(3, "0")}${w.slice(4)}`)).join(" ");
+  worst.ms = [40, 100, 99, 99, 25, "zzzz"];
+  worst.msw = { bd: 9999, sl: 9999, nc: 9999, fc: 9999, tr: 9999, tn: 99, pr: 9999 };
+  worst.ech = Array.from({ length: MAX_ECHOES }, (_, i) => [9999, `staff:kitman@ab1${i}`, "numh", "ab12"] as [number, string, string, string]);
+  const wb = partBytes(worst as unknown as Record<string, unknown>);
+  console.log(`story world parts (bytes; budget): ${(Object.keys(PART_BUDGET) as Part[]).map((k) => `${k} ${partMax[k]} in play, ${wb[k]} worst case (${PART_BUDGET[k]})`).join(" · ")}; total worst ${Object.values(wb).reduce((a, b) => a + b, 0)} of 1200`);
+  for (const k of Object.keys(PART_BUDGET) as Part[]) {
+    check(partMax[k] <= PART_BUDGET[k], `the story world's ${k} part passed its budget in play (${partMax[k]} > ${PART_BUDGET[k]} bytes)`);
+    check(wb[k] <= PART_BUDGET[k], `the story world's ${k} part passed its budget at worst (${wb[k]} > ${PART_BUDGET[k]} bytes)`);
+  }
+}
 for (const [k, n] of problems) console.log(`  ✗ ${k} ×${n}`);
 if (!problems.size) console.log("all held");
 process.exit(problems.size ? 1 : 0);

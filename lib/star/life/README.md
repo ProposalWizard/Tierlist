@@ -209,3 +209,82 @@ Mark the story `"needsActivity": "<mode>"` and write the talk with that mode. It
   Never regenerate Den's clips.
 - Pictures: a pool person's drawn stills (`POOL[...].stills`) show only for him; anyone else
   gets the empty backdrop and the drawn head.
+
+### 6. The story world's words (job B, 28 Nov 2026; `docs/plans/STORY_WORLD_PLAN.md` parts 1-4)
+
+Every word below works in `start.when`, a beat's `requires`, a reply's `requires`, an outcome's
+`if`, a result row and `{if …}` inside a line. The checker fails an unknown club, unlock,
+competition, milestone or scrapbook tag. Tests: `tests/star/lifeWorld.mts`.
+
+**Club words.** A club is its slug: its name in `lib/star/clubs.ts`, lower case, accents and `&`
+dropped, spaces as dashes (`Manchester United` → `manchester-united`, `Brighton & Hove Albion` →
+`brighton-hove-albion`, `FC Bayern München` → `fc-bayern-munchen`; `unlocks.ts clubSlug`).
+
+| word | example | true when |
+|---|---|---|
+| `club:<slug>` | `club:chelsea` | you play for them now |
+| `everClub:<slug>` | `everClub:leeds-united` | you have played for them, any season (or now) |
+| `opponent:<slug>` | `europe && opponent:real-madrid` | your last or next match is against them |
+| `derby` | `derby && club:everton` | your last or next match is a derby |
+| `clubTop26` | `clubTop26 && clubApps<=10` | you are at one of the 26 hook clubs (`unlocks.ts TOP26`) |
+| `seasonsAtClub` | `seasonsAtClub>=3` | this is your Nth season in a row at the club (1 = your first) |
+
+**Caps, trophies, awards.**
+
+| word | example | reads |
+|---|---|---|
+| `callUps` | `callUps>=1` | international call-ups |
+| `intlGoals` | `intlGoals>=5` | international goals |
+| `inTournament` | `inTournament` | in this summer's tournament squad |
+| `won(<comp>)` | `won(champions-league)`, `won(fa-cup)>=2` | trophies won, counted |
+| `wonAt(<comp>,<slug>)` | `wonAt(league,sunderland)` | a trophy won at that club |
+| `ballonDor` | `ballonDor>=1` | Ballon d'Or wins |
+
+Competitions: `league` (any division title), `premier-league`, `championship`, `league-one`,
+`league-two`, `national-league(-north/-south)`, `fa-cup`, `league-cup`, `lower-league-trophy`,
+`champions-league`, `europa-league`, `conference-league`, `community-shield`, `super-cup`,
+`world-cup`, `european-championship`, `nations-league`.
+
+**Milestones: `just(<milestone>)`**, true for 3 weeks after it happened (`milestones.ts`):
+`birthday`, `star-level` (crossed 10, 25, 50, 75 or 100), `new-club`, `first-call-up`, `call-up`
+(a later one), `trophy`, `trophy:<comp>`, `promoted`, `relegated`. Example:
+`"when": ["just(birthday)", "age==30"]`, or `just(new-club) && club:manchester-united`.
+`starLevel>=50` and `age==30` still work as before (true for a whole season).
+
+**Unlocks: `"unlock": "<id>"` and `has(<id>)`.** Every id is in `lib/star/life/unlocks.ts` (43:
+places, cut scenes, skills, items, game modes). An outcome:
+
+```json
+{ "text": "He walks you to the door.", "unlock": "legends-lounge" }
+```
+
+The ending card shows "Unlocked · The legends lounge" and its one line. Items are given with
+`"give": "item-stopped-watch"` (only `kind: item` ids; card words in `ITEM_WORDS`, or the story's own
+`giveWords`). Two at once: `"unlock": "hundred-balls-corner+den-visits"`. Read it back anywhere:
+`has(heritage-room)`. Saved in `life.ul`, never trimmed. The old words (`item:dens-ball-bag`,
+`garden:…`, `trophy:…`) fail the checker now; old saves that hold them still read as the new ids.
+
+**The scrapbook: `"book"`, `book('tag')`, `since('tag')`.** What the whole world remembers about
+you, for a story seasons later. Add the tag to `book/scrapbook.json` first (a 4-letter code and one
+plain line), then write it from an outcome:
+
+```json
+{ "text": "The minute on the watch. He just nods.", "book": "watch-minute" }
+{ "text": "…", "book": { "tag": "watch-minute", "strength": 3,
+  "echo": { "seasons": [2, 4], "who": "legend", "line": "\"Still got the watch going, son? {legend.signoff}\"" } } }
+```
+
+- `book('watch-minute')` (or `book('a'|'b')`): it is in the scrapbook. `since('watch-minute')>=3`:
+  three whole seasons or more since it was written. Example chain start:
+  `"when": ["since('watch-minute')>=3", "club:manchester-united"]`.
+- Strength 3 (the default) is kept for good, 2 fades after about three seasons, 1 after one; 48
+  lines at most.
+- An `echo` books one text from that person (`who` is a cast slot; the line may name only him and
+  you), due `seasons` [from, to] later. If he has been forgotten by then (the 60-person cap), it is
+  dropped. Six at most.
+- The checker fails a tag not in `scrapbook.json`, and a tag a story reads that no story writes.
+- A big moment should be both: a strength-3 memory on the person (`remember`) and a scrapbook line.
+
+**The 26 legends** (`clubLegends.ts`): at a club you MOVE to among the 26, `{legend.…}` is that
+club's fixed invented legend (the same man in every career). Your first club keeps its pool legend,
+and a legend already met at a club stays. Never write their names into a story.

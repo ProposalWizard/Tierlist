@@ -16,7 +16,9 @@
  */
 import type { ArcBeat, ArcOutcome, LifeArc, LifeEvent } from "./types";
 import { LIFE_MOMENTS } from "./types";
-import { endedIn, flagsIn, parseCond, slotsIn, tagsIn } from "./cond";
+import { bookTagsIn, endedIn, flagsIn, parseCond, slotsIn, tagsIn } from "./cond";
+import { ITEM_WORDS, OLD_UNLOCK_WORDS, UNLOCK_BY_ID, unlockParts } from "./unlocks";
+import { SCRAPBOOK } from "./scrapbook";
 import type { StoryTier } from "./types";
 
 /** The share of careers (start.careers; none = all) each rarity tier allows (28 Nov 2026). The
@@ -211,6 +213,16 @@ function allOutcomes(arc: LifeArc): { where: string; o: ArcOutcome; size: string
  * stories, no real names, and a waiting story really names the game it waits for.
  * `events` is the v1 book, so a story can read a memory a v1 event writes (and back).
  */
+/** Every scrapbook tag some story's outcome writes (ArcOutcome.book). */
+export function scrapbookWritten(arcs: LifeArc[]): Set<string> {
+  const out = new Set<string>();
+  for (const a of arcs) for (const { o } of allOutcomes(a)) {
+    const t = typeof o.book === "string" ? o.book : o.book?.tag;
+    if (t) out.add(t);
+  }
+  return out;
+}
+
 export function validateArcBook(arcs: LifeArc[], events: LifeEvent[] = []): ArcProblem[] {
   // Save codes (arcPack.ts): a finished story is stored as its code and its ending's code.
   const out: ArcProblem[] = [...validateArcs(arcs), ...packProblems(arcs)];
@@ -219,6 +231,8 @@ export function validateArcBook(arcs: LifeArc[], events: LifeEvent[] = []): ArcP
   for (const a of arcs) for (const { o } of allOutcomes(a)) { for (const r of o.remember ?? []) written.add(r.tag); if (o.noteSquad) written.add(o.noteSquad); }
   // Chains (28 Nov 2026): a story that waits on another (ended(...), a flag, a memory) must wait on
   // something that can happen. Flags are set by outcomes; ended() names a real story and endings.
+  // The scrapbook (job B): the tags some story writes, so a read of one nothing writes fails.
+  const bookWritten = scrapbookWritten(arcs);
   const flagsSet = new Set<string>();
   for (const e of events) for (const c of e.choices ?? []) for (const o of c.outcomes ?? []) if (o.effects?.flag) flagsSet.add(o.effects.flag);
   for (const a of arcs) for (const { o } of allOutcomes(a)) if (o.effects?.flag) flagsSet.add(o.effects.flag);
@@ -261,6 +275,7 @@ export function validateArcBook(arcs: LifeArc[], events: LifeEvent[] = []): ArcP
       if (typeof p === "string") out.push({ id: arc.id, problem: `start.when: ${p}` });
       for (const sl of slotsIn(c)) if (sl !== "squad" && sl !== "you") out.push({ id: arc.id, problem: `start.when "${c}" names "${sl}": nobody is cast before the story starts` });
       for (const t of tagsIn(c)) if (!written.has(t)) out.push({ id: arc.id, problem: `start.when "${c}" reads the memory "${t}", which nothing writes` });
+      for (const t of bookTagsIn(c)) if (!bookWritten.has(t)) out.push({ id: arc.id, problem: `start.when "${c}" reads the scrapbook tag "${t}", which no story writes` });
     }
   }
   // A story cannot wait on itself, or on a story that waits on it.
@@ -283,6 +298,9 @@ export function validateArcBook(arcs: LifeArc[], events: LifeEvent[] = []): ArcP
     if (arc.start?.careers !== undefined && !(arc.start.careers > 0 && arc.start.careers <= 1)) bad(arc.id, "a share of careers must be above 0 and at most 1");
     const checkCond = (where: string, c: string) => {
       if (!c) return;
+      const parsed = parseCond(c);
+      if (typeof parsed === "string") { bad(where, parsed); return; }
+      for (const t of bookTagsIn(c)) if (!bookWritten.has(t)) bad(where, `the condition "${c}" reads the scrapbook tag "${t}", which no story writes`);
       for (const sl of slotsIn(c)) if (!slots.has(sl) && !special.has(sl)) bad(where, `the condition "${c}" names "${sl}", who is not in the cast`);
       for (const t of tagsIn(c)) if (!written.has(t)) bad(where, `the condition "${c}" reads the memory "${t}", which nothing writes`);
     };
@@ -370,6 +388,37 @@ export function validateArcBook(arcs: LifeArc[], events: LifeEvent[] = []): ArcP
       for (const [k, v] of Object.entries(o.arc?.set ?? {})) if (!(k in arc.vars)) bad(where, `sets "${k}", which is not one of the story's values (${String(v)})`);
       for (const k of Object.keys(o.arc?.add ?? {})) if (!(k in arc.vars)) bad(where, `adds to "${k}", which is not one of the story's values`);
       for (const [k, n] of Object.entries(o.train ?? {})) if (Math.abs(n ?? 0) > 3) bad(where, `trains ${k} by ${n}: more than 3`);
+      // Unlocks and items (job B): every id in unlocks.ts; an item's card words name only people in the story.
+      for (const [field, val] of [["unlock", o.unlock], ["give", o.give]] as const) {
+        for (const id of unlockParts(val)) {
+          if (OLD_UNLOCK_WORDS[id]) { bad(where, `${field} "${id}" is an old word: write "${OLD_UNLOCK_WORDS[id]}" (unlocks.ts)`); continue; }
+          const u = UNLOCK_BY_ID.get(id);
+          if (!u) { bad(where, `${field} "${id}" is not in the unlocks list (lib/star/life/unlocks.ts)`); continue; }
+          if (field === "give" && u.kind !== "item") bad(where, `gives "${id}", which is a ${u.kind}, not an item: use "unlock"`);
+          if (field === "give" && !o.giveWords) for (const m of Array.from((ITEM_WORDS[id] ?? []).join(" ").matchAll(/\{([a-z]+)\./g))) if (m[1] !== "you" && !slots.has(m[1])) bad(where, `gives "${id}", whose card names "${m[1]}", who is not in the cast`);
+        }
+      }
+      if (o.give && unlockParts(o.give).length > 1) bad(where, "give names one item (use unlock for more)");
+      // The scrapbook (job B): a known tag, and an echo from someone in the story.
+      if (o.book !== undefined) {
+        const bw = typeof o.book === "string" ? { tag: o.book } : o.book;
+        if (!bw || typeof bw.tag !== "string") bad(where, "a scrapbook write needs a tag");
+        else {
+          if (!SCRAPBOOK[bw.tag]) bad(where, `writes the scrapbook tag "${bw.tag}", which is not in lib/star/life/book/scrapbook.json`);
+          if ("strength" in bw && bw.strength !== undefined && ![1, 2, 3].includes(bw.strength)) bad(where, "a scrapbook strength must be 1, 2 or 3");
+          const e = "echo" in bw ? bw.echo : undefined;
+          if (e) {
+            if (!slots.has(e.who)) bad(where, `an echo from "${e.who}", who is not in the cast`);
+            if (!(Array.isArray(e.seasons) && e.seasons[0] >= 1 && e.seasons[1] >= e.seasons[0])) bad(where, "an echo's seasons must be [from, to] with to ≥ from ≥ 1");
+            if (!e.line) bad(where, "an echo with no line");
+            if ((e.line ?? "").length > MAX_LINE) bad(where, `an echo line is too long (${e.line.length} > ${MAX_LINE})`);
+            for (const m of Array.from((e.line ?? "").matchAll(/\{([a-z]+)\.([a-zA-Z]+)\}/g))) if (m[1] !== "you" && m[1] !== e.who) bad(where, `an echo line names {${m[1]}.${m[2]}}: an echo knows only its person ("${e.who}") and you`);
+            for (const m of Array.from((e.line ?? "").matchAll(/\{if ([^}]+)\}/g))) { const k = m[1].trim(); if (!/^!?[a-z]+$/.test(k)) checkCond(where, k); }
+            const low = (e.line ?? "").toLowerCase();
+            for (const n of REAL_NAMES) if (new RegExp(`\\b${n}\\b`).test(low)) bad(where, `an echo uses a real name or brand: "${n}"`);
+          }
+        }
+      }
     }
     // Talk values set by replies are story values too.
     for (const b of arc.beats) for (const n of Object.values(b.event.talk?.nodes ?? {})) for (const r of n.replies ?? []) for (const k of Object.keys(r.var ?? {})) if (!(k in arc.vars)) bad(`${arc.id}/${b.id}`, `reply "${r.id}" sets "${k}", which is not one of the story's values`);
