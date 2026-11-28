@@ -136,7 +136,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-relgames-dev", "Relationship games", "Play the boss, team-mate and fan mini-games", "rbd", "career", "Mikey", "live", "none", "team"),
   P("/star-life-dev", "Living world", "People who remember, events with weight, time with team-mates (phase 1, off in the game)", "rbd", "career", "Harry", "live", "none", "team"),
   P("/star-goals-gallery-dev", "Career goals", "Stats → Goals with a made-up career; Hall of Fame best goals", "rbd", "career", "Leo", "live", "browser", "team"),
-  P("/star-aerials-dev", "Headers and volleys", "Force any aerial move (header, volley, bicycle, scorpion) on a real chance", "rbd", "chances", "Harry", "live", "none", "team"),
+  P("/star-aerials-dev", "Headers and volleys", "Five ways to hit a header or volley, side by side on the real match; force any aerial move", "rbd", "chances", "Harry", "live", "none", "team"),
   P("/star-goal-clips-dev", "Goal videos", "Record a goal and turn it into a video with sound", "rbd", "career", "Leo", "live", "browser", "team"),
   P("/star-season-reel-dev", "Your season video", "The end-of-season reel of every goal, on a made-up season", "rbd", "career", "Leo", "live", "none", "team"),
   P("/star-dev/media-lab", "Media lab", "Media-feed graphics bench", "rbd", "career", "Harry", "live", "none", "team"),

@@ -1752,3 +1752,37 @@ that leaks a kind nobody selected (0 leaks in 120 presses of a three-kind
 pool), a selected kind that never comes up, and a flagged chance that cannot
 be got back to — a flag stores `{kind, seed, planId}` and is rebuilt through a
 real JSON round trip, because localStorage is what actually holds it.
+
+---
+
+## `airControl.mts`: five ways to hit a header or volley (test page only)
+
+`npx tsx tests/star/airControl.mts` · numbers: `npx tsx scripts/aerial/control-measure.mts`
+
+Harry, 28 Nov 2026: "the headers and volleys system just has never worked with
+WHEN you hit the ball." `/star-aerials-dev` plays four new controls on the real
+match (`lib/star/airControl.ts`); the fifth, a first-person camera, is drawn
+only. The game keeps today's ball screen: the switch is `"screen"` unless the
+test page sets another, and that is the first thing this file checks.
+
+All four share one clock: the whole cross is drawn on the pitch and reaches you
+at D. Clean is within ±0.13 s of D for a header at Aerial 60 (0.10 / 0.16 at
+30 / 90). A volley's window is 0.7 of that, and its power is capped at 0.92,
+the ball screen's own. Early gets under it (a header loops up, a volley
+balloons), late catches its edge (glanced, scuffed), past three windows is the
+ball screen's late touch.
+
+Measured, 400 chances a cell, an ASSUMED average thumb (not people), goals per
+100 at Aerial 30 / 60 / 90:
+
+    ball screen (today)    header 13 / 22 / 28   volley 16 / 24 / 29
+    1 landing ring         header 13 / 18 / 27   volley 30 / 36 / 44
+    2 aim first            header  9 / 15 / 23   volley 21 / 29 / 41
+    3 swipe through        header  8 / 14 / 16   volley 18 / 23 / 28
+    4 tap-hold-release     header 10 / 15 / 22   volley 25 / 30 / 37
+
+What the numbers caught: the volley scores too often in ideas 1, 2 and 4 even
+after the smaller window and the power cap (real volleys score far less often
+than headers). The goals there come from placement, not timing. Tune once Harry
+has picked one, on real thumbs. Ground shots, same bot: one-on-one 45, tight
+angle 23, long range 23.5.
