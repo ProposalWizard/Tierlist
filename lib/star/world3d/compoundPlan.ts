@@ -207,7 +207,7 @@ export function tallSolids(): Solid[] {
   const C = COMPOUND;
   const fz = C.fenceZ, h = C.hut, b = C.building, st = C.stand;
   return [
-    [C.bounds[0], C.gate.x0, fz - 0.5, fz + 0.6], [C.gate.x1, C.bounds[1], fz - 0.5, fz + 0.6],
+    [C.bounds[0], C.gate.x0, fz - 0.8, fz + 0.6], [C.gate.x1, C.bounds[1], fz - 0.8, fz + 0.6], // the gates slide behind the railings
     [h.x0, h.x1, h.z0, h.z1], [b.x0, b.x1, b.z0, b.z1], [st.x0, st.x1, st.z0, st.z1],
   ];
 }

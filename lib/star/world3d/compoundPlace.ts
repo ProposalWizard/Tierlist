@@ -460,7 +460,7 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
   };
   const flat = (parent: any, m: any, w: number, d: number, x: number, y: number, z: number, ry = 0) => {
     const me = new THREE.Mesh(new THREE.PlaneGeometry(w, d), m);
-    me.rotation.set(-Math.PI / 2, 0, ry); me.position.set(x, y, z); me.receiveShadow = true; me.castShadow = false;
+    me.rotation.set(-Math.PI / 2, 0, ry); me.position.set(x, y === 0 ? 0 : y * 2.5, z); // layers lifted (2.5x): over 400 m of view the grass showed through the paving in steps me.receiveShadow = true; me.castShadow = false;
     parent.add(me);
     return me;
   };
@@ -518,10 +518,11 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
       box(G, M.metal, 0.22, 0.32, 0.22, x, 2.8, fz, { cast: false });
       box(G, M.lit, 0.16, 0.22, 0.16, x, 2.8, fz, { cast: false });
     }
-    // the gate's two black leaves, swung open into the grounds
+    // the gate's two black leaves, slid open behind the railings either side (sliding gates: nothing stands in
+    // the grounds for the following camera to pass through, 28 Nov)
     for (const sx of [-1, 1]) {
       const leaf = new THREE.Group();
-      leaf.position.set(sx * (C.gate.x1 - 0.05), 0, fz - 0.05); leaf.rotation.y = -sx * 1.35;
+      leaf.position.set(sx * (C.gate.x1 + C.gate.pillar + (C.gate.x1 - 0.1) + 0.1), 0, fz - 0.62);
       G.add(leaf);
       const lw = C.gate.x1 - 0.1;
       box(leaf, M.metal, lw, 0.08, 0.06, -sx * lw / 2, 1.85, 0, { cast: false });
@@ -653,7 +654,7 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
     if (!low) flat(Bz, shadeM, 14, 6, 0, 0.011, F + 2.2);
     // the sign over the canopy (lit): the crest and the club's name
     const signM = basic({ map: tex(buildingSign(club, kit.shirt, kit.trim)), toneMapped: false });
-    panel(Bz, signM, 10.4, 1.62, 0, 4.42 + 0.02, F + 0.07);
+    panel(Bz, signM, 10.4, 1.62, 0, 4.42 + 0.02, F + 0.18); // in front of the window rail below the glass
     // the side doors (gym, canteen): a recessed steel frame, two glass leaves onto the lit room, push bars, a canopy
     for (const dr of DOORS) {
       const wide = dr.id === "door-reception";

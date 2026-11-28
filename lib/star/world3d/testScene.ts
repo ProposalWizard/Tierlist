@@ -239,7 +239,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     compound = c;
     renderer.toneMappingExposure = sky === "night" ? 1.15 : 1.0;
     scene.environmentIntensity = sky === "night" ? 0.15 : 0.35;
-    camera.far = 420; camera.updateProjectionMatrix();
+    camera.far = 420; camera.near = 0.15; camera.updateProjectionMatrix(); // a far view needs a farther near plane (at 0.05 the paving and the grass fought in steps)
     // the parked cars: the game's own car models (the house's drive cars), loaded before the joining
     const { addParkedCars } = await import("./compoundPlace");
     const carLoader = new GLTFLoader();
@@ -1136,7 +1136,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     for (const n of npcs) if (!n.root.visible) n.update(dt, world, false);
     if (place === "gym") for (const n of npcs) if (n.root.visible) mateGymFrame(n, dt);
     // the soft shadow under each person (the compound: not past 22 m from the camera, where it is a few pixels and still a draw)
-    blobs.forEach((b, n) => { const [x, z] = n.bodyXZ(); b.visible = n.root.visible && (!CP || Math.hypot(x - camera.position.x, z - camera.position.z) < 22); b.position.set(x, 0.012, z); });
+    blobs.forEach((b, n) => { const [x, z] = n.bodyXZ(); b.visible = n.root.visible && (!CP || Math.hypot(x - camera.position.x, z - camera.position.z) < 22); b.position.set(x, CP ? 0.045 : 0.012, z); });
     faces.forEach((f, n) => { if (n.root.visible) f.rig.set({ blink: FACE.blinkAt(simT, f.seed) }); });
     for (const h of hairs) h.update?.(dt);
     tvScreen?.tick(dt);
