@@ -73,11 +73,9 @@ const PURCHASABLE_HORSES: { horse: Omit<Horse, "energy" | "racesRun" | "racesWon
   { horse: { name: "Thunderhoof", breed: "Champion", speed: 88, stamina: 84 }, price: 480000 },
 ];
 
-export const HORSE_NAMES = [
-  "Thunder Bolt", "Golden Arrow", "Midnight Star", "Silver Streak", "Red Comet",
-  "Wild Spirit", "Iron Duke", "Bold Ruler", "Grey Storm", "Nimbus",
-  "Blaze", "Royal Flash", "Diamond Dash", "Lucky Strike", "Storm Chaser",
-];
+// every name invented, none real (lib/star/horseNames.ts, checked by tests/star/gardenLevels.mts)
+import { HORSE_NAMES } from "@/lib/star/horseNames";
+export { HORSE_NAMES };
 
 const MY_HORSE_RACE_COST = 40;
 
