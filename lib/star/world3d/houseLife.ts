@@ -324,6 +324,8 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     walkT: number;
     /** Walking in through the doorway (off the floor grid): nothing else starts until he is in. */
     entering?: boolean;
+    /** The step whose walk was given up for a free spot (the watchdog). */
+    redirected?: number;
     /** Real seconds in a stand-up (the watchdog). */
     exitT?: number;
   }
@@ -487,7 +489,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     g.walkT = 0;
     const gone = () => { if (g.token !== tok) return; n.show(false); hold(n, null); n.lookAt = null; g.mode = "out"; };
     const through = () => { if (g.token !== tok) return; if (!n.walkLine([inside(d, -0.6)], gone)) gone(); };
-    if (!n.walkTo(world, inside(d, 0.55), { onArrive: through })) through();
+    if (!n.walkTo(world, inside(d, 0.35), { onArrive: through })) through();
   };
   /** Come in through a door (from the next room or the front door) and on to the step. */
   const walkIn = (g: Guest, i: number, from: string | null) => {
@@ -533,8 +535,9 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       }
       g.walkT += dt;
       if (g.mode === "leaving") {
+        // out of the doorway: once he is in it (the floor stops at the wall, so the last step can stall) he is gone;
         // the watchdog: a walk out that has not finished in 12 s ends out of sight
-        if (g.walkT > 12) { g.token++; n.show(false); g.mode = "out"; }
+        if ((g.walkT > 1 && n.state === "stand") || g.walkT > 12) { g.token++; n.show(false); hold(n, null); n.lookAt = null; g.mode = "out"; }
         continue;
       }
       // mode in
@@ -563,8 +566,15 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
         g.stepI = i;
         continue;
       }
-      // the watchdog: a walk that has gone on 15 s (blocked) ends where it was going
-      if ((n.state === "walk" || n.state === "turn") && g.walkT > 15) doStep(g, g.stepI, true);
+      // a walk that is getting nowhere (you are standing in his way, say): after 8 s he gives up on that
+      // thing and goes to stand somewhere free instead; never a jump to the spot
+      if ((n.state === "walk" || n.state === "turn") && g.walkT > 8 && g.redirected !== g.stepI) {
+        g.redirected = g.stepI;
+        const spot = spotFor(`${g.v.id}|re|${g.stepI}`), tok = g.token;
+        n.stop();
+        if (spot && n.walkTo(world, spot.at, { face: spot.face, onArrive: () => { if (g.token === tok) n.act("idle", 9999); } })) g.walkT = 0;
+        else n.act("idle", 9999);
+      }
       // the step began: he looks at you now and then (not while you talk to someone else)
       if (n !== talking && n.state === "act" && !n.lookAt) { const ph = Math.floor((t + g.v.from) / 4.2) % 4; if (ph === 0) n.lookAt = [o.you().x, o.you().z]; }
       else if (n !== talking && n.state === "act" && Math.floor((t + g.v.from) / 4.2) % 4 !== 0 && g.v.steps[g.stepI]?.kind !== "meet") n.lookAt = null;
