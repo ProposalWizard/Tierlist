@@ -56,7 +56,7 @@ const VIDEO = val("--video", null); // also film the whole run (a .webm in this 
 // (filming uses a full-height phone, 390x844: the film's phone screen is that shape)
 const ctx = await browser.newContext({ ...devices["iPhone 13"], ...(VP ? { viewport: { width: Number(VP[1]), height: Number(VP[2]) } } : {}), ...(VIDEO ? { viewport: { width: 390, height: 844 }, recordVideo: { dir: path.resolve(VIDEO), size: { width: 780, height: 1688 } } } : {}) });
 if (OFFLINE) {
-  await ctx.route("**/*", (r) => { const u = r.request().url(); if (u.startsWith(BASE)) return r.continue(); fs.appendFileSync(path.join(OUT, "blocked.txt"), u + "\n"); return r.abort("internetdisconnected"); });
+  await ctx.route("**/*", (r) => { const u = r.request().url(); if (u.startsWith(BASE) || u.startsWith("blob:") || u.startsWith("data:")) return r.continue(); // blob: and data: are made inside the page, not the internet fs.appendFileSync(path.join(OUT, "blocked.txt"), u + "\n"); return r.abort("internetdisconnected"); });
   ctx.on("response", (r) => { if (r.status() >= 400) fs.appendFileSync(path.join(OUT, "failed.txt"), `${r.status()} ${r.url()}\n`); });
 }
 const page = await ctx.newPage();
