@@ -15,6 +15,9 @@
  *  - crossbar      5 shots from 16 m at the bar; his 5 are rolled and shown.
  *  - feed-drill    You roll ten passes through the cones; a good pass gives
  *                  the kid a better chance, and his shot is rolled.
+ *  - penalties, gym, two-touch, pace-sprint: StoryModes.tsx (penalties on the
+ *                  match engine, keep-ups on the 3D engine, the gym board and
+ *                  the sprint as small one-thumb games).
  *
  * Stop is a real result (abandoned), with its own line in the talk.
  */
@@ -35,6 +38,7 @@ import { EngineFeature } from "../EnginePlay";
 import { buildStrike, DRILL_SCENE, type StrikeSetup } from "../TrainingMinigame";
 import type { ChanceResolved } from "../CanvasMatch";
 import HundredDrill from "./HundredDrill";
+import StoryMode, { isStoryMode } from "./StoryModes";
 import "./decision.css";
 
 /** A ball counts as "low in the corner": under this height, within this of a post. */
@@ -67,7 +71,15 @@ type HostProps = {
 export default function ActivityHost(props: HostProps) {
   // Den's hundred is its own screen (ten balls, six rounds); the other modes share this one.
   if (props.activity.mode === "strike-drill" || props.activity.mode === "challenge") return <HundredHost {...props} />;
+  // The four the waiting stories needed (StoryModes.tsx): penalties, the gym board, keep-ups, the sprint.
+  if (isStoryMode(props.activity.mode)) return <StoryModeHost {...props} />;
   return <GamesHost {...props} />;
+}
+
+function StoryModeHost({ career, live, activity, onDone, allowDice, onDice }: HostProps) {
+  const ctx = useMemo(() => arcCtx(career, live.arc, live), [career, live]);
+  const fill = useCallback((s: string) => fillLine(s, career, live.cast, ctx), [career, live.cast, ctx]);
+  return <StoryMode career={career} live={live} activity={activity} onDone={onDone} allowDice={allowDice} onDice={onDice} fill={fill} />;
 }
 
 /** Den's hundred: the arc's dials and Den's counts into HundredDrill. */

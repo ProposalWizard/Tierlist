@@ -141,8 +141,12 @@ Titles, clock labels, bubbles, items and endings are filled too.
 | `strike-drill` | Den's hundred (the same screen with his six rounds). |
 | `crossbar` | Five at the bar against someone's rolled five. |
 | `feed-drill` | You pass through cones; a team-mate's shot is rolled. |
+| `penalties` | Penalties on the real match engine, a keeper (`dials.shots`, default 1). Won = at least half in. `dials.missIf` (a condition) tells the dice he means to miss. |
+| `gym` | The gym board: the plank (or the bench press after a reply with id `bench`) against a record (`gymBoard.ts`). Score 1 = beat it. |
+| `two-touch` | Keep-ups in 3D (`play3d/keepUps.ts`), one go up to 100; `dials.opponent` is who goes after you (her count rolled, `oppScore`). Won = beat it. |
+| `pace-sprint` | A sprint race on your legs (`sprint.ts`, `dials.metres`, `dials.opponent`). Won = first over the line. |
 
-Every game is the real match engine (`EngineFeature` → `CanvasMatch`; one-engine skill). A
+Every game with a ball is the real match engine (`EngineFeature` → `CanvasMatch`; one-engine skill), except keep-ups on the 3D engine (the 3D exception, RUL-3D-001); the gym board and the sprint have no ball and are small one-thumb games (`components/star/life/StoryModes.tsx`). A
 result row reads `activity.score` (balls that counted), `activity.tens` (×10, the last ball
 double), `activity.won`, `activity.abandoned`; the checker wants a stop row, a fallback row
 and a doing-well row.

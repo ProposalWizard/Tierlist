@@ -150,6 +150,33 @@ export function diceActivity(c: CareerState, b: BeatLive, act: LifeActivity, rng
     const r = rollHundred((c.skills as unknown as Record<string, number> | undefined)?.technique ?? 50, rng, (Number.parseFloat(from) || 12) - 12);
     return { score: r.score, tens: r.tens, won: r.score >= 5, abandoned: false, byDice: true };
   }
+  const sk = (c.skills as unknown as Record<string, number> | undefined) ?? {};
+  const p01 = (v: number) => Math.max(0.1, Math.min(0.9, v));
+  if (act.mode === "penalties") {
+    // Each kick: about three in four go in against a typical keeper (penaltyTaking.ts measured 76%).
+    // A story that knows he means to miss (dials.missIf, e.g. he took the money): the dice aim wide.
+    const k = act.dials.shots ?? act.dials.balls ?? 1;
+    const meansToMiss = !!act.dials.missIf && holds(act.dials.missIf, arcCtx(c, b.arc, b));
+    let score = 0;
+    for (let i = 0; i < k; i++) if (rng() < (meansToMiss ? 0.1 : p01(0.76 + ((sk.freeKick ?? 60) - 60) / 200))) score++;
+    return { score, tens: score * 10, won: score >= Math.ceil(k / 2), abandoned: false, byDice: true };
+  }
+  if (act.mode === "gym") {
+    // The board (gymBoard.ts): a strong man beats it more often.
+    const won = rng() < p01(0.35 + ((sk.power ?? 55) - 55) / 80);
+    return { score: won ? 1 : 0, tens: 0, won, abandoned: false, byDice: true };
+  }
+  if (act.mode === "two-touch") {
+    // Keep-ups: your count from your technique, hers rolled as on the pitch (keepUps.ts kidCount).
+    const you = Math.round(Math.max(3, Math.min(100, 8 + ((sk.technique ?? 55) - 30) * 0.9 + (rng() - 0.5) * 40)));
+    const kid = Math.round(18 + 44 * (rng() + rng()) / 2);
+    return { score: you, tens: 0, won: you > kid, abandoned: false, oppScore: kid, byDice: true };
+  }
+  if (act.mode === "pace-sprint") {
+    // Forty metres: your pace against his, and the start (sprint.ts measured ~0.03 s per pace point).
+    const won = rng() < p01(0.45 + ((sk.pace ?? 60) - 60) / 40);
+    return { score: won ? 1 : 0, tens: 0, won, abandoned: false, byDice: true };
+  }
   const n = act.dials.balls ?? act.dials.shots ?? 10;
   const f = act.fallback ?? { stat: "technique" as const, target: 55 };
   const skill = (c.skills as unknown as Record<string, number> | undefined)?.[f.stat] ?? 50;

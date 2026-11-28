@@ -38,7 +38,7 @@ import { packProblems } from "./arcPack";
 
 export interface ArcProblem { id: string; problem: string }
 
-const MODES = ["strike-drill", "crossbar", "feed-drill", "challenge"];
+const MODES = ["strike-drill", "crossbar", "feed-drill", "challenge", "penalties", "gym", "two-touch", "pace-sprint"];
 
 function outcomesOf(b: ArcBeat): [string, ArcOutcome[]][] {
   const e = b.event;
@@ -91,6 +91,7 @@ export function validateArc(arc: LifeArc): string[] {
           if (!rows.some(([c]) => c === "")) bad(nw, "the game has no fallback result");
           if (!rows.some(([c]) => /activity\.(won|score|tens)/.test(c))) bad(nw, "no result for doing well");
           if (typeof a.dials.from === "object") cond(nw, a.dials.from.if);
+          if (a.dials.missIf) cond(nw, a.dials.missIf);
           // A challenge (drill.ts's round library): known rounds, ten balls at most, a double only last,
           // and whoever goes in goal is someone the story has.
           if (a.mode === "challenge") {

@@ -14,6 +14,9 @@
  * Decision screens (Harry 20 Nov 15:35): ?clock=normal|long|off · ?screens=card
  * shows every event on the plain card · ?round=1 opens the round menu on a
  * team-mate over the bench still.
+ * Stories with a game: ?story=<arc id> starts it now (arc-ten-minutes,
+ * arc-the-gym-board, arc-keep-ups, arc-the-race); &beat=<beat id> opens the beat
+ * with the game in it.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
@@ -114,6 +117,14 @@ const MOMENTS: [LifeMoment, string][] = [
   ["driving", "Driving"], ["walkout", "The walk-out"], ["leave:casino", "Leaving the casino"], ["season-end", "Season end"],
 ];
 const MOMENT_WORD = Object.fromEntries(MOMENTS) as Record<string, string>;
+
+/** The stories whose game was built in job D1 (story world plan 5a): the story, and the beat with the game. */
+const GAME_STORIES = [
+  { arc: "arc-ten-minutes", beat: "fix-2-penalty", label: "Miss it", game: "The penalty" },
+  { arc: "arc-the-gym-board", beat: "gym-1", label: "The board", game: "The gym board" },
+  { arc: "arc-keep-ups", beat: "kup-1-bet", label: "Bet you can't do fifty", game: "Keep-ups" },
+  { arc: "arc-the-race", beat: "rce-1-race", label: "Fastest in the squad", game: "Forty metres" },
+];
 
 /** The sample: a 22-year-old striker in the National League, season 3, a car, a real money ladder. */
 function sampleCareer(carLevel = 3, horse = false): CareerState {
@@ -311,6 +322,9 @@ export default function LifeTestPage() {
     if (prep === "followup" && !ev) setTimeout(() => runMoments(c, ["arrive:training"]), 0);
     const ck = q.get("clock"); if (ck === "normal" || ck === "long" || ck === "off") { writeClock(ck); setClock(ck); } else setClock(readClock());
     if (q.get("screens") === "card") setPlainCards(true);
+    // ?story=<arc id> starts a story now; &beat=<beat id> opens that beat (the games' screens).
+    const st = q.get("story");
+    if (st) { const k = c; setTimeout(() => story.act.story(st, q.get("beat") ?? undefined, k), 0); }
     if (q.get("round") === "1") { const id = c.squad.find((s) => c.life?.people[s.id])?.id ?? c.squad[0]?.id; if (id) setView({ kind: "round", id }); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -490,6 +504,16 @@ export default function LifeTestPage() {
                 </div>
                 <Pill on={diceOk} onClick={() => setDiceOk(!diceOk)}>Show &quot;Roll it instead&quot; on the drill</Pill>
                 <Note>{career.player.club} · age {career.player.age} · season {career.season} week {career.week}. {(() => { const r = arcsOf(career)["arc-hundred-balls"]; return r ? `Best ${r.v.best}, nights ${r.v.nights}, clock ${r.k["den-retires"] ?? "-"}/3${r.done ? `, ended: ${r.done}` : ""}.` : "Not started."; })()}</Note>
+              </Panel>
+              <Panel title="Stories with a game" note="Penalties, the gym board, keep-ups, the sprint">
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {GAME_STORIES.map((g) => <Btn key={g.arc} onClick={() => story.act.story(g.arc)}>▶ {g.label}</Btn>)}
+                </div>
+                <Label>Straight to the game</Label>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {GAME_STORIES.map((g) => <Btn key={g.arc} onClick={() => story.act.story(g.arc, g.beat)}>{g.game}</Btn>)}
+                </div>
+                <Note>The first row starts the story at its first beat (Miss it: the penalty is the next Saturday, so press &quot;Saturday&quot; after the car). The second row opens the beat with the game in it. Nothing is saved.</Note>
               </Panel>
               <Panel title="A moment, now" note="The director decides">
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

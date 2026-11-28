@@ -292,11 +292,19 @@ export interface IfValue { if: string; then: string; else: string }
 export interface LifeActivity {
   /** "challenge": a list of rounds from the round library (drill.ts), any story; "strike-drill" is
    *  Den's hundred (the same screen with his six rounds). */
-  mode: "strike-drill" | "crossbar" | "feed-drill" | "challenge";
+  mode: "strike-drill" | "crossbar" | "feed-drill" | "challenge"
+    /** Story world D1-D4 (components/star/life/StoryModes.tsx): one penalty on the match engine;
+     *  the gym board (plank or bench against a record); keep-ups in 3D; a sprint race on your legs. */
+    | "penalties" | "gym" | "two-touch" | "pace-sprint";
   name: string;
   intro?: string;
   dials: {
     balls?: number; shots?: number; from?: string | IfValue; keeper?: boolean;
+    /** two-touch: the bet (keep-ups). pace-sprint: the distance (m). penalties: words only. */
+    target?: number; metres?: number; choice?: string;
+    /** penalties: when this holds, the player means to miss (the dice then aim wide: 9 in 10 miss).
+     *  On the pitch the player aims it himself; this only tells the dice what he meant. */
+    missIf?: string;
     targets?: ("bottom-left" | "bottom-right" | "bar")[]; light?: string; feed?: string;
     opponent?: { slot: string; else?: string }; shooter?: { slot: string };
     /** challenge: the rounds, in order (drill.ts RoundSpec: kind, balls, name, line, calls). */
