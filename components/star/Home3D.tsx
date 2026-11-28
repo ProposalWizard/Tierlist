@@ -40,7 +40,7 @@ import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import { Stick, pill, round } from "./Shop3D";
 import { sleepNight } from "@/lib/star/home3d/sleep";
-import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
+import { afterLoss, healReset, newHealState } from "@/lib/star/three3d/autoHeal";
 import LoadingCurtain from "./loading/LoadingCurtain";
 import ViewToggle3D from "./ViewToggle3D";
 
@@ -169,6 +169,8 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
     return () => document.body.classList.remove("knowitball-immersive");
   }, []);
 
+  // (counted by three3d/autoHeal.ts afterLoss: two a minute, so one loss an hour ago is forgotten)
+  const heal = useRef(newHealState());
   const [restarts, setRestarts] = useState(0);
   /** "Tap to reload 3D": a fresh start (restarts back to 0 may not change it, so this does). */
   const [retry, setRetry] = useState(0);
@@ -176,8 +178,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
     let dead = false;
     const el = holder.current;
     if (!el) return;
-    // the phone took the 3D away: rebuilt silently AUTO_REBUILDS times (Low after the first), then the card
-    if (restarts > AUTO_REBUILDS) { setErrText("The phone stopped the 3D (out of memory?)"); setStatus("error"); return; }
+    // the phone took the 3D away: rebuilt silently AUTO_REBUILDS times a minute (Low after the first), then the card
     (async () => {
       try {
         const { startHome } = await import("@/lib/star/home3d/scene");
@@ -195,6 +196,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
             console.error("3D home: the phone took the 3D away");
             ctrlRef.current?.dispose();
             ctrlRef.current = null;
+            if (afterLoss(heal.current, Date.now()) === "give-up") { setErrText("The phone stopped the 3D (out of memory?)"); setStatus("error"); return; }
             setStatus("loading");
             setRestarts((n) => n + 1);
           },
@@ -203,6 +205,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           lookH,
           fixedStep: q.get("film") === "1" ? 1 / 30 : undefined,
           edit: approvedRef.current,
+          isDead: () => dead,
           ...(pov ? { pov: true } : {}),
           ...(houseCam && houseCam !== "D" ? { houseCam } : {}),
           ...(alive ? { living: { ...livingFor(career), onSleep: () => { const r = sleepNight(careerRef.current); if (r.rested) sleepRef.current?.(); return sleepRef.current ? r.text : "A good night."; } } } : {}),
@@ -226,7 +229,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         if (dead) return; // closed mid-load (three3d/perf.ts isAbandonedScene): nothing to show
         console.error("3D home failed to load", e);
         // tried again by itself on a fresh renderer (three3d/autoHeal.ts) before the card and its tap
-        if (restarts < AUTO_REBUILDS) { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
+        if (afterLoss(heal.current, Date.now()) === "rebuild") { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
         if (!dead) { setErrText(e instanceof Error ? `${e.name}: ${e.message}` : String(e)); setStatus("error"); }
       }
     })();
@@ -324,7 +327,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
               <div style={{ fontWeight: 900, fontSize: 17, marginBottom: 6 }}>Your house didn&apos;t load</div>
               <div style={{ fontWeight: 600, color: MUTED, fontSize: 14, lineHeight: 1.5 }}>This phone or browser may not run 3D.</div>
               {errText && <div style={{ fontWeight: 600, color: MUTED, fontSize: 10.5, marginTop: 10, opacity: 0.7, wordBreak: "break-word" }}>{errText.slice(0, 200)}</div>}
-              <button onClick={() => { void import("@/lib/star/three3d/perf").then((m) => { m.dropSharedRenderer(); setErrText(""); setStatus("loading"); setRestarts(0); setRetry((n) => n + 1); }); }} style={{ ...ctaStyle, marginTop: 14 }} data-reload-3d>Tap to reload 3D</button>
+              <button onClick={() => { void import("@/lib/star/three3d/perf").then((m) => { m.dropSharedRenderer(); healReset(heal.current); setErrText(""); setStatus("loading"); setRestarts(0); setRetry((n) => n + 1); }); }} style={{ ...ctaStyle, marginTop: 14 }} data-reload-3d>Tap to reload 3D</button>
               <button onClick={onBack} style={{ ...ctaStyle, marginTop: 10, background: "transparent", color: INK, border: "1px solid rgba(255,255,255,.3)" }}>Back to {backLabel}</button>
             </div>
           )}

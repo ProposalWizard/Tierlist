@@ -16,6 +16,7 @@
  * The 3D is lib/star/shop3d/scene.ts; three.js only loads when this opens.
  */
 import Reload3dPill from "./Reload3d";
+import { afterLoss, healReset, newHealState } from "@/lib/star/three3d/autoHeal";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { shopDisplays, type DisplayId, type ShopPrices } from "@/lib/star/shop3d/catalogue";
@@ -117,14 +118,16 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
     return () => document.body.classList.remove("knowitball-immersive");
   }, []);
 
-  // Start the 3D once (again if the phone takes the 3D away: once, at "low").
+  // Start the 3D once; again, silently, if the phone takes the 3D away or the build fails (Low after
+  // the first), up to three3d/autoHeal.ts AUTO_REBUILDS times a minute, as the garden and the house
+  // (3D places audit P3, 28 Nov 2026; it gave up after one before and never retried a failed build).
+  const heal = useRef(newHealState());
   const [restarts, setRestarts] = useState(0);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
     if (!el) return;
-    if (restarts > 1) { setErrText("The phone stopped the 3D (out of memory?)"); setStatus("error"); return; }
     (async () => {
       try {
         const { startShop } = await import("@/lib/star/shop3d/scene");
@@ -141,12 +144,14 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
             console.error("3D shop: the phone took the 3D away");
             ctrlRef.current?.dispose();
             ctrlRef.current = null;
+            if (afterLoss(heal.current, Date.now()) === "give-up") { setErrText("The phone stopped the 3D (out of memory?)"); setStatus("error"); return; }
             setStatus("loading");
             setRestarts((n) => n + 1);
           },
         }, kit, displays, {
           atDoor,
           edit: approvedRef.current,
+          isDead: () => dead,
           number: career?.squadNumber ?? 10,
           // Settings → Look → "3D quality" (Auto, else the player's pick; ?q=
           // on the test page). After the phone took the 3D away: Low.
@@ -182,6 +187,8 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
       } catch (e) {
         if (dead) return; // closed mid-load: nothing to show
         console.error("3D shop failed to load", e);
+        // tried again by itself on a fresh renderer (three3d/autoHeal.ts) before the error card and its tap
+        if (afterLoss(heal.current, Date.now()) === "rebuild") { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
         if (!dead) {
           setErrText(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
           setStatus("error");
@@ -319,7 +326,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
                   {errText.slice(0, 200)}
                 </div>
               )}
-              <Reload3dPill floating={false} onReload={() => { setErrText(""); setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} />
+              <Reload3dPill floating={false} onReload={() => { healReset(heal.current); setErrText(""); setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} />
               <div><button onClick={onBack} style={{ ...cta, marginTop: 10 }}>Back to the {backLabel}</button></div>
             </div>
           )}

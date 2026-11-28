@@ -58,7 +58,7 @@ import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality
 import { Governor, sessionStartTier } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
 import { tightCull } from "../three3d/tightCull";
-import { DynamicResolution, rememberGpu, loadGltfCached, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, loadGltfCached, noteSceneFiles, acquireRenderer, awaitSmoothFrame, abandonedSceneError, abandonedContainer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
 import { loadRealNature, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
@@ -163,6 +163,8 @@ export interface GardenController {
 }
 
 export interface GardenOptions {
+  /** The screen was closed while this was still building (3D places audit P1): stop at the next step, never take the canvas. */
+  isDead?: () => boolean;
   /** Settings → Look → "3D quality" (lib/star/three3d/quality.ts). Unset: the setting, else Auto. */
   quality?: Quality3d;
   fixedStep?: number;
@@ -228,6 +230,8 @@ const SKY: Record<GardenSky, { top: string; mid: string; low: string; fog: strin
 };
 
 async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions, own: { release?: (root?: any) => void; root?: any }): Promise<GardenController> {
+  /** The screen closed while this was still building (3D places audit P1): stop at the next step. */
+  const gone = () => !!opts.isDead?.() || abandonedContainer(container);
   // ── 3D quality (Settings → Look → "3D quality"): one tier, chosen before the
   // renderer (antialias is fixed when the context is made). High is the New
   // look exactly as it was on 5 Oct 2026. ──
@@ -260,6 +264,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // ONE renderer for every 3D place (three3d/perf.ts): garden → shop → garden
   // keeps the same WebGL context and its compiled shaders (Mikey's video, 12 Oct:
   // 1.5-1.7 s freezes coming back into the garden were a new context + every shader again)
+  // closed while its files loaded (3D places audit P1, 28 Nov 2026): never take the canvas from the place on screen
+  if (gone()) throw abandonedSceneError();
   const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   own.release = release;
   rememberGpu(renderer);
@@ -334,7 +340,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
    */
   const breathe = async () => {
     await new Promise<void>((r) => setTimeout(r, 0));
-    if (disposed) throw new Error("disposed");
+    if (disposed || gone()) throw new Error("disposed");
   };
 
   const canvasTex = (c: HTMLCanvasElement, repeat?: [number, number]) => {
@@ -479,7 +485,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 
   // Look H: real trees, hay, flowers and paving (./realNature.ts); Old: exactly as before
   const nature = look3dStyle() === "h" ? await loadRealNature(THREE, renderer).catch((e) => { console.error("garden nature maps failed", e); return null; }) : null;
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
 
   /** Look H: the lawn in look H's scanned grass (blades, normals), a copy every 2.4 m. */
   function realLawn() {
@@ -488,7 +494,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     return mat("#e6f2d2", { map: c, normalMap: n, normalScale: new THREE.Vector2(0.9, 0.9), roughness: 0.95 });
   }
   const hGrass = nature ? await grassMaps(THREE).catch(() => null) : null;
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
 
   // ── The ground ──
   // the mown lawn stops at the boundary; long meadow grass beyond it
@@ -589,7 +595,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     load("/star/shop3d/anims.glb").then((g: any) => withMocapOwn(loader, g, "ual")),
     load("/star/garden3d/anims.glb"),
   ]);
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
   // Each piece by its key, as ALL its parts (a tree is trunk + leaves, two
   // meshes). The old garden kept only single-mesh pieces, so every tree, the
   // paddock fence, the fountain basin and the potted plants never appeared.
@@ -818,7 +824,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // made cheap; the low-poly styles stay only as an option (?trees=facet|clump|leafy)
   const lowPolyPick = (["clump", "facet", "leafy"] as TreeStyle[]).find((t) => t === dbg.get("trees"));
   const cardAtlas = lowPolyPick ? null : await loadCardAtlas(THREE, renderer).catch((e) => { console.error("garden tree atlas", e); return null; });
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
   const treeStyle: PlantStyle = lowPolyPick ?? (cardAtlas ? "cards" : TREE_STYLE);
   const cardMat = cardAtlas ? cardMaterial(THREE, cardAtlas.map, cardAtlas.nrm) : null;
   // zones wholly behind the shop or the casino are left out of the picture (a little inside their walls, to be safe)
@@ -2499,7 +2505,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       ...[impostor, ...carImpostors].filter(Boolean).map((im) => im!.prime()),
     ]);
   } catch { /* older browsers: compiled on first use */ }
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
 
   // the shared renderer's loop is set and stopped only by its owner: a build thrown away while a
   // newer one is starting (React's double effects in dev, a quick switch) never stops the live one
@@ -3030,7 +3036,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // the loading cover stays up until the real first frames are drawn and the
   // page runs at ~30 a second again (perf.ts awaitSmoothFrame): the first
   // draws' leftover building (shadow shaders, uploads) happens behind it
-  await awaitSmoothFrame(renderer, { isDead: () => disposed });
+  await awaitSmoothFrame(renderer, { isDead: () => disposed || gone(), isOwner });
   return ctrl;
 }
 

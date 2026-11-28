@@ -43,6 +43,8 @@ import { isInRoomGame } from "@/lib/star/casino3d/plan";
 import { CASINO_ON_SERVER } from "@/lib/star/casinoRules";
 import LoadingCurtain from "./loading/LoadingCurtain";
 import ViewToggle3D from "./ViewToggle3D";
+import { wornAt } from "@/lib/star/home3d/outfits";
+import { afterLoss, healReset, newHealState } from "@/lib/star/three3d/autoHeal";
 
 const INK = "#f7f1e8";
 const GOLD = "#facc15";
@@ -100,6 +102,8 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
       skin: skinToneHex(career.player.skinTone),
       hair: hairColourHex(career.player.hairColour),
       hairStyle: resolveHairStyle(career.player.hairStyle),
+      // the clothes from your home's wardrobe, as in the garden and the shop (3D places audit P5)
+      worn: wornAt(career, "casino"),
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), []);
@@ -109,12 +113,19 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
     return () => document.body.classList.remove("knowitball-immersive");
   }, []);
 
+  // The phone took the 3D away, or the build failed: rebuilt silently (Low after the first), up to
+  // autoHeal.ts AUTO_REBUILDS times a minute, as the garden and the house (3D places audit P3);
+  // only then the classic casino with "Tap to reload 3D".
+  const heal = useRef(newHealState());
   const [restarts, setRestarts] = useState(0);
   const [retry, setRetry] = useState(0);
+  /** The walk out of the doors waits 0.35 s for the fade: cleared if you leave first (audit P6). */
+  const doorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (doorTimer.current) clearTimeout(doorTimer.current); doorTimer.current = null; }, []);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
-    if (!el || restarts > 1) return;
+    if (!el) return;
     (async () => {
       try {
         const mod = await import("@/lib/star/casino3d/scene");
@@ -126,19 +137,21 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
           onDoor: () => {
             if (dead || !doorRef.current) return;
             setLeaving(true);
-            setTimeout(() => doorRef.current?.(), 350);
+            if (doorTimer.current) return; // one walk out per visit
+            doorTimer.current = setTimeout(() => { doorTimer.current = null; if (!dead) doorRef.current?.(); }, 350);
           },
           onContextLost: () => {
             if (dead) return;
             console.error("3D casino: the phone took the 3D away");
             ctrlRef.current?.dispose();
             ctrlRef.current = null;
+            if (afterLoss(heal.current, Date.now()) === "give-up") { setStatus("error"); return; }
             setStatus("loading");
             setRestarts((n) => n + 1);
           },
         };
         const fixedStep = q0("film") === "1" ? 1 / 30 : undefined;
-        const start = () => mod.startCasino(el, onDoor ? cbs : { ...cbs, onDoor: undefined }, { ...opts, quality: tier, fixedStep });
+        const start = () => mod.startCasino(el, onDoor ? cbs : { ...cbs, onDoor: undefined }, { ...opts, quality: tier, fixedStep, isDead: () => dead });
         let c: CasinoController;
         try {
           c = await start();
@@ -154,8 +167,11 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
         (window as unknown as { __casino3d?: CasinoController }).__casino3d = c;
         setStatus("ready");
       } catch (e) {
+        if (dead) return; // closed mid-load (three3d/perf.ts isAbandonedScene): nothing to show or log
         console.error("3D casino failed to load", e);
-        if (!dead) setStatus("error");
+        // tried again by itself on a fresh renderer (three3d/autoHeal.ts) before the classic casino and its tap
+        if (afterLoss(heal.current, Date.now()) === "rebuild") { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
+        setStatus("error");
       }
     })();
     return () => {
@@ -166,7 +182,6 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restarts, retry]);
-  useEffect(() => { if (restarts > 1) setStatus("error"); }, [restarts]);
 
   // a game over the room: the room stops drawing until it closes. Closing
   // it, he cheers if the money went up while it was open, groans if it fell.
@@ -192,7 +207,7 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
 
   const drag = useRef<{ id: number; x: number; y: number; moved: number } | null>(null);
 
-  if (status === "error") return <>{renderGame(undefined, onBack)}<Reload3dPill onReload={() => { setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} /></>;
+  if (status === "error") return <>{renderGame(undefined, onBack)}<Reload3dPill onReload={() => { healReset(heal.current); setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} /></>;
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "#14070b", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-casino3d>
@@ -217,7 +232,7 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
       />
 
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", gap: 8, padding: "max(12px, env(safe-area-inset-top)) 12px 0", pointerEvents: "none" }}>
-        <button onClick={onBack} aria-label="Back" disabled={atTable} style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 4, paddingLeft: 10, opacity: atTable ? 0 : 1 }}>
+        <button onClick={() => { if (doorTimer.current) { clearTimeout(doorTimer.current); doorTimer.current = null; } onBack(); }} aria-label="Back" disabled={atTable} style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 4, paddingLeft: 10, opacity: atTable ? 0 : 1 }}>
           <span style={{ fontSize: 20, lineHeight: 1, marginTop: -2 }}>&#8249;</span>{backLabel}
         </button>
         <div style={{ flex: 1 }} />

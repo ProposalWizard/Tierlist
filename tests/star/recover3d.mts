@@ -10,6 +10,8 @@
  *   4. the device caps: Apple and desktop unchanged, Android capped at 1.5 pixels per point;
  *   5. the automatic resolution: down fast, up slowly, never under its floor, no flicker (resScale.ts);
  *   6. the governor on an Android phone: pixels first, then shadows and post (governor.ts).
+ *   8. (3D places audit, 28 Nov 2026) every place heals the same way, drills and Crossbar too; a place
+ *      left mid-load stops building and never draws on the one renderer.
  *   7. the freeze (Harry, 27 Nov 2026: "it just shows like a frozen screen … we should never have a
  *      feature where we have to press tap to reload"): a 3D picture the phone took away is rebuilt
  *      silently twice a minute, and only then is "Tap to reload 3D" shown (three3d/autoHeal.ts).
@@ -139,6 +141,63 @@ check(cappedPixelRatio(0.8, 1.5, 1, 1) === 0.8, "a place asking less than the fl
   const healing = true;
   check(match3dButtons(true, healing ? "loading" : "lost").toggle, "match healing after a lost 3D: no '3D ↻' shown");
   check(match3dButtons(true, "lost").retry, "match after two failed heals: '3D ↻' (last resort)");
+}
+
+// ── 8. every 3D place heals the same way, and a place left mid-load stops (3D places audit, 28 Nov 2026) ──
+{
+  const fs = await import("node:fs");
+  const read = (f: string) => fs.readFileSync(new URL("../../" + f, import.meta.url), "utf8");
+  // P2: the drills and the Crossbar Challenge hear the phone take the 3D away, and rebuild
+  for (const f of ["lib/star/play3d/scene.ts", "lib/star/training3d/scene.ts"]) {
+    const src = read(f);
+    check(src.includes('addEventListener("webglcontextlost"') && src.includes('removeEventListener("webglcontextlost"'), `${f}: listens for a lost 3D (and stops listening on dispose)`);
+    check(/if \(opts\.isDead\?\.\(\)\) throw abandonedSceneError\(\);\s*\n\s*const \{ renderer, release, isOwner \} = acquireRenderer/.test(src), `${f}: a screen closed mid-load never takes the one renderer`);
+  }
+  // P2 + P3: every place asks afterLoss (two silent rebuilds a minute, the first at Low), and the tap resets it
+  for (const f of ["components/star/Garden3D.tsx", "components/star/Home3D.tsx", "components/star/Shop3D.tsx", "components/star/Casino3D.tsx", "components/star/Play3D.tsx", "components/star/Training3D.tsx"]) {
+    const src = read(f);
+    const asks = (src.match(/afterLoss\(heal\.current, Date\.now\(\)\)/g) ?? []).length;
+    check(asks >= 1, `${f}: decides each lost or failed 3D with afterLoss (${asks})`);
+    check(src.includes("healReset(heal.current)"), `${f}: "Tap to reload 3D" starts the count again`);
+    check(/"low"/.test(src), `${f}: rebuilds at Low after a loss`);
+    check(!/restarts > 1\b|restarts > AUTO_REBUILDS|restarts < AUTO_REBUILDS/.test(src), `${f}: no counter that never forgets (restarts > 1 / > AUTO_REBUILDS)`);
+    check(/isDead: \(\) => dead/.test(src), `${f}: tells its scene when its screen has closed (P1)`);
+  }
+  // the walk-round places' own failed builds now also retry (the shop and the casino gave up at once)
+  for (const f of ["components/star/Garden3D.tsx", "components/star/Home3D.tsx", "components/star/Shop3D.tsx", "components/star/Casino3D.tsx"]) {
+    const src = read(f);
+    check((src.match(/afterLoss\(heal\.current, Date\.now\(\)\)/g) ?? []).length >= 2, `${f}: both a lost 3D and a failed build go through afterLoss`);
+  }
+  // P1: the four walk-round scenes stop building when their screen closes
+  for (const f of ["lib/star/garden3d/scene.ts", "lib/star/shop3d/scene.ts", "lib/star/home3d/scene.ts", "lib/star/casino3d/scene.ts"]) {
+    const src = read(f);
+    check(src.includes("const gone = () => !!opts.isDead?.() || abandonedContainer(container);"), `${f}: knows when its screen has gone`);
+    check(/if \(gone\(\)\) throw abandonedSceneError\(\);\s*\n\s*const \{ renderer, release, isOwner \} = acquireRenderer/.test(src), `${f}: never takes the renderer once its screen has gone`);
+    check(src.includes("awaitSmoothFrame(renderer, { isDead: () => disposed || gone(), isOwner })"), `${f}: stops waiting for smooth frames that are not its own`);
+    check(!/if \(disposed\) throw new Error\("disposed"\)/.test(src), `${f}: every build checkpoint also checks the screen`);
+  }
+  // P6: the casino's walk out of the doors cannot fire after Back
+  const cas = read("components/star/Casino3D.tsx");
+  check(cas.includes("clearTimeout(doorTimer.current)") && !cas.includes("setTimeout(() => doorRef.current?.(), 350)"), "casino: the door's 0.35 s wait is cleared on Back and on leaving");
+  // P5: the casino dresses you from the wardrobe, as the garden and the shop
+  check(cas.includes('wornAt(career, "casino")') && read("lib/star/casino3d/scene.ts").includes("buildWearer"), "casino: your wardrobe outfit, not always the club kit");
+
+  // warmUp and awaitSmoothFrame do nothing for a place that no longer holds the renderer
+  const { warmUp, awaitSmoothFrame } = await import("../../lib/star/three3d/perf");
+  let touched = 0;
+  const poison = { traverse: () => { touched++; } } as never;
+  await warmUp(fakeT as never, { initTexture: () => { touched++; } } as never, poison, {} as never, { isOwner: () => false });
+  check(touched === 0, "warmUp: skipped (no compile, no draw) when another place holds the renderer");
+  const g = globalThis as unknown as { requestAnimationFrame?: (f: (t: number) => void) => number };
+  const hadRaf = g.requestAnimationFrame;
+  let t = 0;
+  g.requestAnimationFrame = (f) => { t += 16; setTimeout(() => f(t), 0); return 1; };
+  const fakeR = { info: { render: { frame: 0 } } };
+  const frames = setInterval(() => { fakeR.info.render.frame++; }, 1); // the NEW place drawing
+  const r = await awaitSmoothFrame(fakeR as never, { isOwner: () => false, timeoutMs: 2000 });
+  clearInterval(frames);
+  check(!r.smooth && r.ms < 100, `awaitSmoothFrame: does not count another place's frames (${r.ms} ms, smooth ${r.smooth})`);
+  g.requestAnimationFrame = hadRaf;
 }
 
 if (problems.length) {

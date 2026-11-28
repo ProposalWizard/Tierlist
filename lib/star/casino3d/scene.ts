@@ -64,7 +64,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, type Quality3d } from "../three3d/quality";
 import { Governor, sessionStartTier } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
-import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows, compileForBake, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows, compileForBake, noteSceneFiles, acquireRenderer, awaitSmoothFrame, abandonedSceneError, abandonedContainer } from "../three3d/perf";
 import { OrbitCam } from "../three3d/orbitCam";
 import { FOLLOW_CAM_D, FollowCarry, boxRoom, FollowZoom, attachFollowZoom, loadFollowZoom, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
 import { ViewCam, findHeadBone, headWorld, loadViewMode, showBody, type ViewMode } from "../three3d/viewCam";
@@ -97,9 +97,16 @@ export interface CasinoCallbacks {
   onContextLost?: () => void;
 }
 
-export interface CasinoPlayer { look: "new" | "old"; skin?: string; hair?: string; hairStyle?: "short" | "long" | "buzz" | "none" }
+export interface CasinoPlayer {
+  look: "new" | "old"; skin?: string; hair?: string; hairStyle?: "short" | "long" | "buzz" | "none";
+  /** What you wear (lib/star/home3d/outfits.ts wornAt, as the garden and the shop): a casual set from your
+   *  home's wardrobe; absent or a kit: the club kit as before. New player only (3D places audit P5). */
+  worn?: import("../home3d/outfits").Worn;
+}
 
 export interface CasinoOptions {
+  /** The screen was closed while this was still building (3D places audit P1): stop at the next step, never take the canvas. */
+  isDead?: () => boolean;
   quality?: Quality3d;
   fixedStep?: number;
   player?: CasinoPlayer;
@@ -178,6 +185,8 @@ export async function startCasino(container: HTMLElement, cb: CasinoCallbacks, o
 }
 
 async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: CasinoOptions, own: { release?: (root?: any) => void; root?: any }): Promise<CasinoController> {
+  /** The screen closed while this was still building (3D places audit P1): stop at the next step. */
+  const gone = () => !!opts.isDead?.() || abandonedContainer(container);
   // the scene's own tier (Settings, else Auto); built lower if this session's
   // governor already settled lower (three3d/governor.ts sessionStartTier), so a
   // door never opens a place too heavy for the phone and then steps it down
@@ -194,6 +203,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   const H = casinoRoomLook() === "new";
   // ── Renderer (the shop's settings; Old: no shadow maps here) ──
   // ONE renderer for every 3D place (three3d/perf.ts): no new WebGL context, shaders kept, at each door
+  // closed while its files loaded (3D places audit P1, 28 Nov 2026): never take the canvas from the place on screen
+  if (gone()) throw abandonedSceneError();
   const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   own.release = release;
   rememberGpu(renderer);
@@ -605,14 +616,26 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       if (!pl.play(base, { from: own.phase * 3 })) pl.play("idle");
       npcs.push({ p: d, pl, role: sp.role, base, next: 3 + Math.random() * 6, until: 0, x: sp.x, z: sp.z, own, seed: lifeSeed(id), face: addToonFace(THREE, d), clock: own.phase * 7 });
     }
-    person = makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false, you: true });
+    // the casual set from your home's wardrobe, exactly as the shop dresses it (shop3d/scene.ts): not repainted in a kit
+    const casual = opts.player?.worn?.kind === "casual" ? opts.player.worn : null;
+    person = casual
+      ? await (await import("../home3d/wear")).buildWearer(THREE, SkeletonUtils, loader, {
+        worn: casual, kits: { home: opts.kit, away: opts.kit }, number: null,
+        skin: opts.player?.skin ?? "#c68642", hair: opts.player?.hair ?? "#2b1b12", hairStyle: opts.player?.hairStyle,
+        outline: 0, castShadow: false,
+      })
+      : makePerson3d(THREE, SkeletonUtils as any, g, a, { outline: prof.outlines ? 0.006 : 0, castShadow: false, you: true });
+    if (disposed || gone()) throw new Error("disposed");
     player = person.root;
     mixer = person.mixer;
     idleA = person.actions.idle;
     walkA = mixer.clipAction(makeWalkClip(THREE, person.actions.jog.getClip(), person.actions.idle.getClip()));
     walkA.play(); walkA.setEffectiveWeight(0);
     jogA = person.actions.jog;
-    dressPerson3d(THREE, person, { skin: opts.player?.skin ?? "#c68642", hair: opts.player?.hair ?? "#2b1b12", kit: opts.kit, number: numT });
+    if (!casual) dressPerson3d(THREE, person, { skin: opts.player?.skin ?? "#c68642", hair: opts.player?.hair ?? "#2b1b12", kit: opts.kit, number: numT });
+    // your watch, chain and the rest from the wardrobe (lib/star/wearables.ts; the casual set wears them in buildWearer)
+    const ex = opts.player?.worn?.extras;
+    if (!casual && ex?.length && person.toon) (await import("../style3d/toon/accessories")).wearAccessories(THREE, person, ex);
     relaxHands(THREE, person);
     if (cas) {
       addClips(THREE, person, cas);
@@ -651,7 +674,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
     sitA = take("slot_sit");
     pullA = take("slot_pull");
   }
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
   // your legs walk / jog on the shared stride clock, as in the garden and the shop (Motion: Mocap; Old keeps the blend below)
   let gaitBlend: GaitBlend | null = null;
   strideFor(THREE, person, mixer, { idle: idleA, walk: walkA, jog: jogA })
@@ -785,7 +808,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       room: ROOM, floorM, paperM, panelMs, tier, chandeliers: chandelierAt,
       plants: [[-2.3, ROOM.z - 0.55, 0.645], [2.3, ROOM.z - 0.55, 0.645]], stools, blobTex: blobT,
     }).catch((e) => { console.error("casino new look failed", e); return null; });
-    if (disposed) throw new Error("disposed");
+    if (disposed || gone()) throw new Error("disposed");
     if (renderer.shadowMap.enabled) {
       // everything solid casts and takes the key light's shadow; flat paint, glow and lamps don't
       scene.traverse((o: any) => {
@@ -808,14 +831,14 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   // mapping), where it used to build them all again on the page thread, and
   // the first frame a third time. Same picture.
   try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* compiled on first use */ }
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
   if (hRoom) {
     if (!hEnh) await compileForBake(THREE, renderer, scene, camera);
-    if (disposed) throw new Error("disposed");
+    if (disposed || gone()) throw new Error("disposed");
     hRoom.bakeReflections();
     // the reflections are a new light on every shiny material: anything it changed is built now, not on the first frame
     try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* first use */ }
-    if (disposed) throw new Error("disposed");
+    if (disposed || gone()) throw new Error("disposed");
   }
   /** New: the shared look-around camera (eased drag, a tilt) with the boom kept out of lamps and walls. */
   const orb = new OrbitCam();
@@ -1151,6 +1174,6 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   // the loading cover stays up until the real first frames are drawn and the
   // page runs at ~30 a second again (perf.ts awaitSmoothFrame): the first
   // draws' leftover building (shadow shaders, uploads) happens behind it
-  await awaitSmoothFrame(renderer, { isDead: () => disposed });
+  await awaitSmoothFrame(renderer, { isDead: () => disposed || gone(), isOwner });
   return ctrl;
 }

@@ -43,7 +43,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor, sessionStartTier } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
-import { DynamicResolution, rememberGpu, compileForBake, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, compileForBake, noteSceneFiles, acquireRenderer, awaitSmoothFrame, abandonedSceneError, abandonedContainer } from "../three3d/perf";
 import { ktx2LoaderForModels } from "../three3d/ktx2";
 import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
@@ -173,6 +173,8 @@ const JOG = 3.3;
 export type ShopQuality = Quality3d;
 
 export interface ShopOptions {
+  /** The screen was closed while this was still building (3D places audit P1): stop at the next step, never take the canvas. */
+  isDead?: () => boolean;
   quality?: ShopQuality;
   /** Filming only: every drawn frame moves the game on by exactly this many
    *  seconds, however long it took to draw. Off in normal use. */
@@ -230,6 +232,8 @@ async function buildShop(
   container: HTMLElement, cb: ShopCallbacks, kit0: KitColours,
   displays: Record<DisplayId, Display>, opts: ShopOptions, own: { release?: (root?: any) => void; root?: any },
 ): Promise<ShopController> {
+  /** The screen closed while this was still building (3D places audit P1): stop at the next step. */
+  const gone = () => !!opts.isDead?.() || abandonedContainer(container);
   // 3D quality: one tier, chosen before the renderer (Settings, else Auto).
   // High is the New look exactly as it was on 5 Oct 2026.
   // the scene's own tier (Settings, else Auto); built lower if this session's
@@ -249,6 +253,8 @@ async function buildShop(
   // ONE renderer for every 3D place (three3d/perf.ts): garden → shop → garden
   // keeps the same WebGL context and its compiled shaders, instead of a new
   // context (and every shader built again) at each door.
+  // closed while its files loaded (3D places audit P1, 28 Nov 2026): never take the canvas from the place on screen
+  if (gone()) throw abandonedSceneError();
   const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   own.release = release;
   rememberGpu(renderer);
@@ -1168,7 +1174,7 @@ async function buildShop(
   buyA.clampWhenFinished = false;
   let buying = 0; // seconds left of the buy gesture
 
-  if (hRoom) { await compileForBake(THREE, renderer, scene, camera); if (disposed) throw new Error("disposed"); hRoom.bakeReflections(); }
+  if (hRoom) { await compileForBake(THREE, renderer, scene, camera); if (disposed || gone()) throw new Error("disposed"); hRoom.bakeReflections(); }
 
   // ── State ──
   let stick = { x: 0, y: 0 };
@@ -1370,7 +1376,7 @@ async function buildShop(
   const savings = sceneSavings(THREE, renderer, scene);
   // look H draws into its pass's picture: build the shaders for THAT (enhance.ts compile), not the screen
   try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* compiled on first use instead */ }
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
 
   const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
   // the shared renderer's loop is set and stopped only by its owner: a build thrown away while a
@@ -1731,7 +1737,7 @@ async function buildShop(
   // the loading cover stays up until the real first frames are drawn and the
   // page runs at ~30 a second again (perf.ts awaitSmoothFrame): the first
   // draws' leftover building (shadow shaders, uploads) happens behind it
-  await awaitSmoothFrame(renderer, { isDead: () => disposed });
+  await awaitSmoothFrame(renderer, { isDead: () => disposed || gone(), isOwner });
   return ctrl;
 }
 

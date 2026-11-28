@@ -39,7 +39,7 @@ import type { Person3D } from "../people3d";
 import { turnTo } from "../three3d/animBlend";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor, sessionStartTier } from "../three3d/governor";
-import { DynamicResolution, rememberGpu, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, noteSceneFiles, acquireRenderer, awaitSmoothFrame, abandonedSceneError, abandonedContainer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
@@ -227,6 +227,8 @@ export interface HomeCallbacks {
 }
 
 export interface HomeOptions {
+  /** The screen was closed while this was still building (3D places audit P1): stop at the next step, never take the canvas. */
+  isDead?: () => boolean;
   quality?: Quality3d;
   /** Look H (the broadcast pass) or the plain look. Unset: Settings → Look → "3D look". */
   lookH?: boolean;
@@ -319,6 +321,8 @@ export async function startHome(container: HTMLElement, cb: HomeCallbacks, data:
 }
 
 async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeData, opts: HomeOptions, own: { release?: (root?: any) => void; root?: any }): Promise<HomeController> {
+  /** The screen closed while this was still building (3D places audit P1): stop at the next step. */
+  const gone = () => !!opts.isDead?.() || abandonedContainer(container);
   // the scene's own tier (Settings, else Auto); built lower if this session's
   // governor already settled lower (three3d/governor.ts sessionStartTier), so a
   // door never opens a place too heavy for the phone and then steps it down
@@ -340,6 +344,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
 
   // ── Renderer (as the shop: one tier chosen first, the governor, still/moving pixels) ──
   // ONE renderer for every 3D place (three3d/perf.ts): no new WebGL context, shaders kept, at each door
+  // closed while its files loaded (3D places audit P1, 28 Nov 2026): never take the canvas from the place on screen
+  if (gone()) throw abandonedSceneError();
   const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   own.release = release;
   rememberGpu(renderer);
@@ -534,7 +540,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     return { person, worn, gait, idle, walk, jog };
   };
   let me = await dressUp(data.worn);
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
   // camera D opens settled: he starts far enough inside the front door for its whole boom (followCam.ts settledArrival)
   const START = (() => {
     const door = room.plan.doors[0];
@@ -550,7 +556,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
 
   // look H draws into its pass's picture: build the shaders for THAT (enhance.ts compile), not the screen
   try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* compiled on first use */ }
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
 
   // ── State ──
   let stick = { x: 0, y: 0 };
@@ -1316,6 +1322,6 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   // the loading cover stays up until the real first frames are drawn and the
   // page runs at ~30 a second again (perf.ts awaitSmoothFrame): the first
   // draws' leftover building (shadow shaders, uploads) happens behind it
-  await awaitSmoothFrame(renderer, { isDead: () => disposed });
+  await awaitSmoothFrame(renderer, { isDead: () => disposed || gone(), isOwner });
   return ctrl;
 }
