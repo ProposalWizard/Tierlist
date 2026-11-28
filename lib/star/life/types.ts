@@ -400,6 +400,11 @@ export interface ArcPromiseDef {
   broken?: ArcOutcome;
 }
 
+/** How rare a story is: common (most careers) down to legendary (about 1 career in 30 to 50). */
+export type StoryTier = "common" | "uncommon" | "rare" | "very-rare" | "legendary";
+/** Where in a career a story belongs (the map's columns). */
+export type StoryStage = "first-seasons" | "breaking-through" | "established" | "peak" | "veteran" | "last-seasons" | "any";
+
 export interface LifeArc {
   id: string;
   /** Its short code in the save (arcPack.ts), 4 letters or digits. Leave it out: the code is made
@@ -419,6 +424,15 @@ export interface LifeArc {
      *  name (story batch 2). The save keeps every finished story, so one career cannot meet all of
      *  them; this spreads the book across careers. No `careers` = every career can. */
     careers?: number;
+    /** How rare the story is (28 Nov 2026; the checker holds `careers` inside the tier's band,
+     *  STORY_TIERS in validateArcs.ts). A book with tiers also starts its stories in a fair draw
+     *  (arcs.ts), not first-come in file order. */
+    tier?: StoryTier;
+    /** The career stage it belongs to, in words for the map (docs/plans/STORY_BOOK_MAP.md). */
+    stage?: StoryStage;
+    /** Conditions checked only when the story would start (its stage window: age, season, level,
+     *  a story it follows). Once started, the story plays on wherever the career goes. */
+    when?: string[];
   };
   /** A game mode this story needs that the activity host cannot mount yet. Such a story is
    *  checked but never plays (arcBook.ts WAITING_ARCS) until the mode is built. */

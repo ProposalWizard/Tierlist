@@ -47,6 +47,25 @@ function roll01(key: string): number {
   return (h % 10007) / 10007;
 }
 
+/** The book in a seeded order (Fisher-Yates on a small seeded generator), for the fair draw. */
+function shuffled<T>(list: readonly T[], key: string): T[] {
+  const out = list.slice();
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619) >>> 0;
+  for (let i = out.length - 1; i > 0; i--) {
+    h = (Math.imul(h, 1664525) + 1013904223) >>> 0;
+    const j = h % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Is this story in this career at all (start.careers, rolled once from the player's name)? The soak
+ *  uses it to find careers that hold a rare story. */
+export function inCareer(arc: LifeArc, p: { firstName: string; lastName: string; startYear: number }): boolean {
+  return arc.start?.careers === undefined || roll01(`${arc.id}|${p.firstName}|${p.lastName}|${p.startYear}`) < arc.start.careers;
+}
+
 // ── The talk on screen (talk.ts moves it; kept out of the save) ─────────────
 
 export interface ActivityResult {
@@ -298,7 +317,15 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
   const offers: MomentResult["offers"] = [];
   const lastStart = Math.max(-999, ...Object.values(arcsOf(c)).map((r) => r.at));
   let started = 0;
-  for (const arc of ARCS) {
+  // Story stages and tiers (28 Nov 2026). A book with tiers draws the next story fairly: the stories
+  // are tried in a seeded shuffle each moment, so one early in the file no longer starves the rest,
+  // and a big story never starts while another big one is open. A book without tiers (an old save's
+  // replay, tests/star/lifeSaveFixture.mts) plays exactly as before: first come, in file order.
+  const fair = ARCS.some((a) => a.start?.tier);
+  const me = `${c.player.firstName}|${c.player.lastName}|${c.player.startYear}`;
+  const order = fair ? shuffled(ARCS, `${now}|${moment}|${me}`) : ARCS;
+  const bigOpen = fair && Object.entries(lifeOf(c).arcs ?? {}).some(([id, r]) => !r.done && arcById(id)?.size === "big");
+  for (const arc of order) {
     life = lifeOf(c);
     // A packed story is over with nothing scheduled: no beat of it can open (beatOpen), unless the
     // test page forces it, which needs the full record back.
@@ -322,6 +349,9 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
       if (opts.force !== arc.id && who && roll01(`${arc.id}${who}`) >= arc.start!.careers!) continue;
       // Pacing: one new story a moment, a few weeks apart, and each has its own odds.
       if (opts.force !== arc.id && arc.start && (started > 0 || now - lastStart < START_GAP_WEEKS || roll01(`${arc.id}|${now}|${moment}${who}`) >= arc.start.chance)) continue;
+      // Its stage window (start.when) and, in a tiered book, one big story at a time.
+      if (opts.force !== arc.id && arc.start?.when?.length && !allHold(arc.start.when, arcCtx(c, arc.id, null, opts.facts))) continue;
+      if (opts.force !== arc.id && bigOpen && arc.size === "big") continue;
       const fresh = startRun(c, life, arc, first);
       if (!fresh) continue;
       const nl = cloneLife(life);

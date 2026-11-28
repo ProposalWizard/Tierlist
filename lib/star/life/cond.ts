@@ -9,11 +9,15 @@
  *   career:  age>=18 · fame>=30 · lastLost · !injured · owns:car · carTier>=3
  *            mem(mate,'refused-car'|'crashed-your-car') · squad.any(bond>=35 && age<=19)
  *            hack.grudge>=20 · cast.source · outscored(rival) · flag:duel-shirt
- *            minigame.won · roll<0.3 · a||b (either)
+ *            minigame.won · roll<0.3 · a||b (either) · caps>=1 · europe
+ *            ended(arc-the-snorer) · ended(arc-the-snorer:good-sleep|the-machine)  (a story is over,
+ *            any way or one of these ways. Read from the save's finished stories, which keep their
+ *            ending for good, so a follow-on story can wait for it; 28 Nov 2026)
  *   person:  bond>=35 · grudge>=20 · age<=19 · overall>=70 · !mem('borrowed-car')
  *            samePosition · new · veteran
  */
 import type { LifeState, LifePerson } from "./types";
+import { runIn } from "./arcPack";
 
 export type Op = ">=" | "<=" | ">" | "<" | "==";
 
@@ -22,9 +26,11 @@ export const FACT_NUMBERS = [
   "age", "season", "week", "clubApps", "fame", "reputation", "energy", "boss", "team", "fans",
   "starLevel", "moneyWeeks", "carTier", "divisionLevel", "lastRating", "lastGoals", "seasonGoals",
   "matchFitness", "overall",
+  // Story stages (28 Nov 2026): international caps.
+  "caps",
 ] as const;
 export type FactNumber = (typeof FACT_NUMBERS)[number];
-export const FACT_FLAGS = ["lastLost", "lastWon", "injured", "hasPartner", "captain"] as const;
+export const FACT_FLAGS = ["lastLost", "lastWon", "injured", "hasPartner", "captain", "europe"] as const;
 export type FactFlag = (typeof FACT_FLAGS)[number];
 export const OWNABLE = ["car", "horse", "house"] as const;
 export const PERSON_NUMBERS = ["bond", "respect", "grudge", "age", "overall", "goals"] as const;
@@ -98,6 +104,7 @@ type Atom =
   | { t: "sameClub" }
   | { t: "act"; what: "won" | "lost" | "abandoned" }
   | { t: "v2cmp"; l: V2Val; op: Op; r: V2Val }
+  | { t: "ended"; arc: string; ends: string[] }
   | { t: "and"; parts: AtomN[] };
 type AtomN = { neg: boolean; a: Atom };
 type PAtom =
@@ -172,6 +179,8 @@ function splitTop(src: string, sep: string): string[] {
 function parseV2(s: string, neg: boolean): AtomN | string | null {
   let m = /^said:([a-z0-9-]+)$/.exec(s);
   if (m) return { neg, a: { t: "said", tag: m[1] } };
+  m = /^ended\(([a-z0-9-]+)(?::([a-z0-9|-]+))?\)$/.exec(s);
+  if (m) return { neg, a: { t: "ended", arc: m[1], ends: m[2] ? m[2].split("|").filter(Boolean) : [] } };
   m = /^promise\(([a-z0-9-]+)\)$/.exec(s);
   if (m) return { neg, a: { t: "promise", id: m[1] } };
   if (s === "sameClub" || s === "sameClub(arc.start)") return { neg, a: { t: "sameClub" } };
@@ -280,6 +289,27 @@ export function tagsIn(src: string): string[] {
   return out;
 }
 
+/** The stories (and endings) a condition waits on: [arc id, endings ([] = any)]. The checker makes
+ *  sure each is a real story that can end that way. */
+export function endedIn(src: string): [string, string[]][] {
+  const p = parseCond(src);
+  if (typeof p === "string") return [];
+  const out: [string, string[]][] = [];
+  const walk = (list: AtomN[]) => { for (const { a } of list) { if (a.t === "and") walk(a.parts); if (a.t === "ended") out.push([a.arc, a.ends]); } };
+  walk(p);
+  return out;
+}
+
+/** The life flags a condition reads (the checker makes sure something sets them). */
+export function flagsIn(src: string): string[] {
+  const p = parseCond(src);
+  if (typeof p === "string") return [];
+  const out: string[] = [];
+  const walk = (list: AtomN[]) => { for (const { a } of list) { if (a.t === "and") walk(a.parts); if (a.t === "lifeFlag") out.push(a.name); } };
+  walk(p);
+  return out;
+}
+
 export function hasMemory(rec: { m: [string, number, number][] } | undefined, tags: string[]): boolean {
   return !!rec && rec.m.some(([t]) => tags.includes(t));
 }
@@ -332,6 +362,7 @@ function atomHolds(x: AtomN, ctx: CondCtx): boolean {
     case "and": v = a.parts.every((p) => atomHolds(p, ctx)); break;
     case "said": v = !!ctx.v2?.talk?.said.includes(a.tag); break;
     case "promise": v = !!ctx.v2?.promise?.(a.id); break;
+    case "ended": { const d = runIn(ctx.life, a.arc)?.done; v = !!d && (!a.ends.length || a.ends.includes(d)); break; }
     case "sameClub": v = !ctx.v2?.arc || ctx.v2.arc.club === ctx.v2.club; break;
     case "act": { const x = ctx.v2?.activity; v = !!x && (a.what === "abandoned" ? x.abandoned : a.what === "won" ? x.won && !x.abandoned : !x.won && !x.abandoned); break; }
     case "v2cmp": {
