@@ -6,6 +6,8 @@
  *  - the save: an exercise at home is the club gym's own numbers (career.gym): a machine done at the club
  *    is done at home too (and the other way), the visit's ring of three is shared, the gap's cap is shared;
  *  - the effect flag: OFF, exactly as the club gym (no energy, Power, Pace, week action);
+ *  - the clock: a home exercise costs its minutes (life/houseActs.ts GYM_MINS), never past time to leave;
+ *    the club gym's exercise costs none;
  *  - back routes: Training → Training, the house → the house, the compound → the compound.
  */
 import { makeInitialCareer } from "../../lib/star/careerFlow";
@@ -13,6 +15,8 @@ import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import { HOME_GYMS, MACHINE_FOOT, homeGymKinds, homeGymOf, homeGymStart, homeGymExercise, gymBack } from "../../lib/star/gym/homeGym";
 import { gymExercise, gymOf, GYM_CAREER_EFFECT } from "../../lib/star/gym/progress";
 import { GYM_GAME_KINDS } from "../../lib/star/gym/games";
+import { GYM_MINS } from "../../lib/star/life/houseActs";
+import { absOf, clockOf, leaveAt, passTime } from "../../lib/star/life/clock";
 import { HOME_TIERS } from "../../lib/star/home3d/homes";
 import type { CareerState, StarPlayer } from "../../lib/star/types";
 
@@ -86,6 +90,23 @@ check(GYM_CAREER_EFFECT === "off", "the gym effect is off (as the club gym)");
     "effect off: no energy, no week action, no Power or Pace from the home gym");
 }
 
+// ── the clock ──
+{
+  const t0 = absOf(clockOf(base));
+  const h = homeGymExercise(base, { kind: "treadmill", quality: 1 });
+  check(absOf(clockOf(h.career)) - t0 === GYM_MINS.treadmill && h.mins === GYM_MINS.treadmill, `a home run costs ${GYM_MINS.treadmill} minutes (${h.mins})`);
+  check(/minutes later/.test(h.sub) && h.out.words.includes(h.sub), `its card says so ("${h.out.words}")`);
+  const club = gymExercise(base, { kind: "treadmill", quality: 1 });
+  check(absOf(clockOf(club.career)) === t0, "the club gym costs no clock minutes");
+  for (const k of GYM_GAME_KINDS) check((GYM_MINS[k] ?? 0) >= 10 && (GYM_MINS[k] ?? 0) <= 30, `${k}: 10 to 30 minutes`);
+  // never past time to leave for a match
+  const late = passTime(base, leaveAt(base) - t0 - 5);
+  const lh = homeGymExercise(late, { kind: "bench", quality: 1 });
+  check(absOf(clockOf(lh.career)) <= leaveAt(base) && lh.mins <= 5, `five minutes before time to leave: the set stops the clock there (${lh.mins})`);
+  const at = homeGymExercise(lh.career, { kind: "squat", quality: 1 });
+  check(at.mins === 0 && /time to leave/.test(at.sub), `at time to leave: no minutes pass ("${at.sub}")`);
+}
+
 // ── back routes ──
 check(gymBack("training").to === "skills" && gymBack("training").label === "Training", "from Training: back to Training");
 check(gymBack("home").to === "home-3d" && gymBack("home").label === "House", "from the house: back to the house");
@@ -94,4 +115,4 @@ if (problems.length) {
   console.error(`homeGym: ${problems.length} problem(s)\n - ${problems.join("\n - ")}`);
   process.exit(1);
 }
-console.log("homeGym: 2/2/4/6/9/13 exercises by house level, every machine inside its room, the club gym's own numbers and limits, the effect off, back routes — all OK");
+console.log("homeGym: 2/2/4/6/9/13 exercises by house level, every machine inside its room, the club gym's own numbers and limits, the effect off, home minutes on the clock, back routes — all OK");

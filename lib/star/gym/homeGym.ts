@@ -14,7 +14,8 @@
  *
  * Same save, same limits: an exercise at home is the club gym's own `gymExercise` on `career.gym`
  * (the daily ring, the gap's cap, the window), with the gym effect flag exactly as the club gym
- * (GYM_CAREER_EFFECT "off" today).
+ * (GYM_CAREER_EFFECT "off" today). On top, a home exercise costs game minutes on the career clock
+ * (life/houseActs.ts GYM_MINS, life/clock.ts passTime), like every other thing in the house.
  *
  * Where each room's walls stand: a box in the club gym's own metres (the machines keep their spots, so
  * every pose and contact is the club gym's), checked in tests/star/homeGym.mts: every machine of the
@@ -26,6 +27,8 @@ import type { CareerState } from "../types";
 import type { HomeTier } from "../home3d/homes";
 import type { GymGameKind, GameResult } from "./games";
 import { gymExercise, GYM_CAREER_EFFECT, type GymCareerOut, type GymEffectMode } from "./progress";
+import { passTime, clockOf, absOf, hhmm } from "../life/clock";
+import { GYM_MINS } from "../life/houseActs";
 
 export type HomeGymKind = "corner" | "room" | "garage" | "full" | "private";
 
@@ -98,12 +101,25 @@ export function homeGymStart(tier: HomeTier): { x: number; z: number; yaw: numbe
   return { x: p.doorX - 0.9, z: p.box[3] - 1.5, yaw: Math.PI };
 }
 
+export interface HomeExerciseOut extends GymCareerOut {
+  /** Game minutes it took (the clock stops at time to leave for a match, so maybe fewer). */
+  mins: number;
+  /** "20 minutes later · 14:30". */
+  sub: string;
+}
+
 /**
  * One exercise in your home gym: the club gym's own `gymExercise` (the same numbers, ring, caps and window
- * in the save; the effect flag as the club gym).
+ * in the save; the effect flag as the club gym), then its minutes on the career clock.
  */
-export function homeGymExercise(c: CareerState, result: Pick<GameResult, "kind" | "quality">, mode: GymEffectMode = GYM_CAREER_EFFECT): GymCareerOut {
-  return gymExercise(c, result, mode);
+export function homeGymExercise(c: CareerState, result: Pick<GameResult, "kind" | "quality">, mode: GymEffectMode = GYM_CAREER_EFFECT): HomeExerciseOut {
+  const r = gymExercise(c, result, mode);
+  const before = absOf(clockOf(r.career));
+  const spent = passTime(r.career, GYM_MINS[result.kind] ?? 20);
+  const mins = absOf(clockOf(spent)) - before;
+  const at = hhmm(clockOf(spent).m);
+  const sub = mins > 0 ? `${mins} minutes later · ${at}` : `${at} · time to leave for the match`;
+  return { ...r, career: spent, out: { ...r.out, words: [r.out.words, sub].filter(Boolean).join(" ") }, mins, sub };
 }
 
 /** Where the gym came from, and so where its "‹ back" goes. */

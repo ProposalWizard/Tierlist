@@ -13,7 +13,8 @@
  *
  * HOME GYMS (28 Nov 2026): `home` set = your house's gym of that level (lib/star/gym/homeGym.ts): only its
  * machines, inside its own walls in the house's look, no team-mate, the same saved numbers and limits
- * (homeGymExercise = the club's gymExercise on career.gym). Back → the house.
+ * (homeGymExercise = the club's gymExercise on career.gym), and each exercise costs game minutes on the career
+ * clock (the clock pill shows it; `onTime` sends the minutes that pass while you stand about). Back → the house.
  *
  * Later (not now): the gym at the training compound in the career (today on /star-world3d-dev only).
  *
@@ -35,6 +36,8 @@ import { afterLoss, newHealState, HEAL_DELAY_MS } from "@/lib/star/three3d/autoH
 import { parseQuality3d } from "@/lib/star/three3d/quality";
 import type { HomeTier } from "@/lib/star/home3d/homes";
 import { homeGymExercise, homeGymOf } from "@/lib/star/gym/homeGym";
+import { useLiveClock } from "./ClockPill";
+import { hhmm, passTime } from "@/lib/star/life/clock";
 
 const BG = "#0b0d12";
 const PILL: React.CSSProperties = {
@@ -51,9 +54,11 @@ export interface Gym3DProps {
   onCareer: (c: CareerState) => void;
   /** Your HOME gym of this house level (gym/homeGym.ts). Absent: the club gym. */
   home?: HomeTier;
+  /** A home gym: game minutes that passed while you were in it (the career clock, as the house's). */
+  onTime?: (mins: number) => void;
 }
 
-export default function Gym3D({ career, onBack, backLabel = "Training", onCareer, home }: Gym3DProps) {
+export default function Gym3D({ career, onBack, backLabel = "Training", onCareer, home, onTime }: Gym3DProps) {
   const host = useRef<HTMLDivElement>(null);
   const ctrl = useRef<WorldController | null>(null);
   const hud = useRef<GymHudHandle>(null);
@@ -68,6 +73,12 @@ export default function Gym3D({ career, onBack, backLabel = "Training", onCareer
   const saveRef = useRef(onCareer);
   saveRef.current = onCareer;
   const effectOff = gymEffectMode() === "off";
+  // a home gym runs the career clock like the house does (stopped while loading and during a set)
+  const live = useLiveClock(career, home ? onTime : undefined, { paused: !home || state !== "ready" || gymOn });
+  const liveRef = useRef(live.clock);
+  liveRef.current = live.clock;
+  const timeRef = useRef(onTime);
+  timeRef.current = onTime;
 
   // built once per visit, from the career as it was on the way in (the gym's numbers then follow the saves)
   const options = useMemo<WorldOptions>(() => {
@@ -86,7 +97,16 @@ export default function Gym3D({ career, onBack, backLabel = "Training", onCareer
       gym: c.gym,
       gap: gapOf(c),
       onExercise: (r) => {
-        const res = (home ? homeGymExercise : gymExercise)(careerRef.current, r, gymEffectMode());
+        if (home) {
+          // the minutes that ticked by first (sent before the set), then the set's own minutes on top
+          const pend = liveRef.current.flush(1);
+          if (pend) timeRef.current?.(pend);
+          const hr = homeGymExercise(passTime(careerRef.current, pend), r, gymEffectMode());
+          careerRef.current = hr.career;
+          saveRef.current(hr.career);
+          return hr.out;
+        }
+        const res = gymExercise(careerRef.current, r, gymEffectMode());
         careerRef.current = res.career;
         saveRef.current(res.career);
         return res.out;
@@ -178,7 +198,7 @@ export default function Gym3D({ career, onBack, backLabel = "Training", onCareer
           </button>
           <div style={{ flex: 1 }} />
           {home && <div style={{ ...PILL }} data-gym-home>{homeGymOf(home).label}</div>}
-          {status && <div style={{ ...PILL, gap: 6 }} aria-label="Clock"><span aria-hidden>🕒</span><b style={{ color: "#facc15" }}>{status.clock}</b></div>}
+          {(home || status) && <div style={{ ...PILL, gap: 6 }} aria-label="Clock"><span aria-hidden>🕒</span><b style={{ color: "#facc15" }}>{home ? hhmm(Math.floor(live.abs) % 1440) : status!.clock}</b></div>}
         </div>
       )}
 

@@ -5057,8 +5057,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   if (phase === "gym-3d") {
     // The 3D gym from the Training page (testing, 28 Nov 2026): its own numbers saved, no career effect.
     const backToTraining = () => { setTrainingTab("training"); setActiveNav("skills"); setPhase("skills"); };
-    // from the house: its home gym (gym/homeGym.ts), back to the house
-    if (career && gymHome) return <Gym3D career={career} home={gymHome} backLabel={gymBack("home").label} onBack={() => setPhase("home-3d")} onCareer={(c) => setCareer(c)} />;
+    // from the house: its home gym (gym/homeGym.ts), back to the house; the minutes on the career clock
+    if (career && gymHome) return <Gym3D career={career} home={gymHome} backLabel={gymBack("home").label} onBack={() => setPhase("home-3d")} onCareer={(c) => setCareer(c)} onTime={(mins) => setCareer((c) => (c ? passTime(c, mins) : c))} />;
     if (career) return <Gym3D career={career} onBack={backToTraining} onCareer={(c) => setCareer(c)} />;
   }
 
