@@ -110,7 +110,8 @@ export const LAMPS: [number, number][] = [];
 export const TREES: [number, number][] = [];
 for (const side of [-1, 1] as const) {
   for (let z = -22; z <= 20; z += 8.5) if (clearOfDoors(side, z, 1.4)) LAMPS.push([side * FURN, z]);
-  for (let z = -17.75; z <= 20; z += 8.5) if (clearOfDoors(side, z, 2.2)) TREES.push([side * FURN, z]);
+  // (none at the bottom of the street: you arrive there and see up it, not into a crown)
+  for (let z = -17.75; z <= 12; z += 8.5) if (clearOfDoors(side, z, 2.2)) TREES.push([side * FURN, z]);
 }
 /** Benches along the pavement: [x, z, facing yaw]. */
 export const BENCHES: [number, number, number][] = [[FURN, 5.2, -Math.PI / 2], [-FURN, -11.6, Math.PI / 2], [-FURN, 14.0, Math.PI / 2]];

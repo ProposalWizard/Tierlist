@@ -199,8 +199,17 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
     if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
     return t;
   };
-  const mat = (c: string, o: any = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0, ...o });
-  const glow = (c: string, i = 1.6) => new THREE.MeshStandardMaterial({ color: "#000000", emissive: c, emissiveIntensity: i });
+  // one material per look: two pieces with the same plain colour and finish share it, so they join into one draw
+  const matMemo = new Map<string, any>();
+  const mat = (c: string, o: any = {}) => {
+    const plain = Object.values(o).every((v) => v === null || typeof v !== "object");
+    const key = plain ? c + JSON.stringify(o) : "";
+    if (plain && matMemo.has(key)) return matMemo.get(key);
+    const m = new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0, ...o });
+    if (plain) matMemo.set(key, m);
+    return m;
+  };
+  const glow = (c: string, i = 1.6) => mat("#000000", { emissive: c, emissiveIntensity: i, roughness: 1 });
   /** A tiling material whose repeat goes in each piece's own UVs (so every piece shares it and they merge). */
   const tileMat = (c: HTMLCanvasElement, tu: number, tv: number, o: any = {}) => {
     const t = canvasTex(c, [1, 1]);
@@ -270,18 +279,23 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
   sunSprite.position.copy(sunDir).multiplyScalar(120);
   scene.add(sunSprite);
   const cloudM = mat("#ffffff", { transparent: true, opacity: 0.88, emissive: "#ffe4c4", emissiveIntensity: 0.4 });
+  // six clouds of four puffs each, joined into one draw (it drifts as one)
   const clouds: any[] = [];
-  for (let i = 0; i < 6; i++) {
-    const c = new THREE.Group();
-    for (let k = 0; k < 4; k++) {
-      const p = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 2), cloudM);
-      p.scale.set(2.6 + ((i * 7 + k * 3) % 5) * 0.35, 1.2 + (k % 2) * 0.4, 1.8);
-      p.position.set(k * 2.2 - 3.2, (k % 3) * 0.3, (k % 2) * 1.0);
-      c.add(p);
+  {
+    const puffs: any[] = [];
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + 0.4;
+      const cx = Math.cos(a) * 62, cy = 30 + (i % 3) * 5, cz = Math.sin(a) * 62;
+      q.setFromAxisAngle(up, Math.atan2(-cx, -cz));
+      for (let k = 0; k < 4; k++) {
+        const g = new THREE.IcosahedronGeometry(1, 2);
+        g.applyMatrix4(m4.compose(v.set(k * 2.2 - 3.2, (k % 3) * 0.3, (k % 2) * 1.0), new THREE.Quaternion(), sc.set(2.6 + ((i * 7 + k * 3) % 5) * 0.35, 1.2 + (k % 2) * 0.4, 1.8)));
+        g.applyMatrix4(m4.compose(v.set(cx, cy, cz), q, sc.set(1, 1, 1)));
+        puffs.push(g);
+      }
     }
-    const a = (i / 6) * Math.PI * 2 + 0.4;
-    c.position.set(Math.cos(a) * 62, 30 + (i % 3) * 5, Math.sin(a) * 62);
-    c.lookAt(0, c.position.y, 0);
+    const c = new THREE.Mesh(mergeGeometries(puffs), cloudM);
     clouds.push(c);
     scene.add(c);
   }
@@ -491,12 +505,12 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
     // a house front on the ground floor: a front door with a fanlight, a window either side
     if (b.ground === "house") {
       const dz = zc;
-      bodyB.box(0.06, 2.3, 1.05, mat(["#22324a", "#5b1e1e", "#1f3d2c", "#2b2b2b"][Math.abs(Math.round(zc)) % 4], { roughness: 0.4 }), X(b.side, W0 - FRONT - 0.02), 1.15 + PH, dz);
+      bodyB.box(0.06, 2.3, 1.05, mat("#22324a", { roughness: 0.4 }), X(b.side, W0 - FRONT - 0.02), 1.15 + PH, dz);
       bodyB.box(0.1, 0.42, 1.05, winM, X(b.side, W0 - FRONT - 0.02), 2.55 + PH, dz);
       for (const e of [-1, 1]) bodyB.box(0.14, 2.9, 0.12, trimM, X(b.side, W0 - FRONT - 0.06), 1.45 + PH, dz + e * 0.6);
       bodyB.box(0.2, 0.14, 1.4, trimM, X(b.side, W0 - FRONT - 0.08), 2.95 + PH, dz);
       bodyB.box(0.5, 0.16, 1.4, stoneTrimM, X(b.side, W0 - FRONT - 0.2), PH + 0.08, dz); // the step
-      bodyB.box(0.04, 0.05, 0.12, mat("#c9a14f", { metalness: 0.8, roughness: 0.3 }), X(b.side, W0 - FRONT - 0.07), 1.2 + PH, dz + 0.3);
+      bodyB.box(0.04, 0.05, 0.12, mat("#c9a14f", { roughness: 0.3, metalness: 0.85 }), X(b.side, W0 - FRONT - 0.07), 1.2 + PH, dz + 0.3);
       if (L > 3.4) for (const e of [-1, 1]) sash(b.side, dz + e * Math.min(1.6, L / 2 - 0.8), 1.9, 1.05, 1.6);
     }
   };
@@ -507,6 +521,7 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
   const signAt = (s: (typeof signs)[number]) => { signs.push(s); return signs.length - 1; };
   const signJobs: { i: number; side: number; z: number; w: number }[] = [];
   const shopB = batch(scene);
+  const bayM = mat("#ffffff", { map: canvasTex(hedgeCanvas("#2c5a25"), [1, 1]), roughness: 0.95 });
   /** A shopfront between z0 and z1: pilasters, fascia, two windows and a door in the middle. */
   const shopfront = (side: 1 | -1, zc: number, w: number, o: { paint: any; sign: number; doorHalf: number; door: "open" | "shut"; window: any; awning?: [string, string]; lamps?: boolean; pilaster?: any; inside?: any; through?: any }) => {
     const paint = o.paint, pil = o.pilaster ?? paint, gold = mat("#c9a14f", { roughness: 0.3, metalness: 0.85 });
@@ -580,6 +595,7 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
       scene.add(aw);
       const val = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.24, w - 0.2), awnM);
       val.position.set(X(side, -reach + 0.04), fy0 - 0.08 - drop - 0.1, zc);
+      val.castShadow = true; val.receiveShadow = true; // as the awning: the two join into one draw (freezeStatic)
       scene.add(val);
     }
     if (o.lamps) for (const k of [-1, 1]) {
@@ -592,7 +608,7 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
       shopB.box(0.56, 0.56, 0.56, paint, X(side, -0.45), PH + 0.28, pz);
       shopB.box(0.62, 0.05, 0.62, gold, X(side, -0.45), PH + 0.58, pz);
       shopB.box(0.05, 0.7, 0.05, mat("#5a3b25"), X(side, -0.45), PH + 0.95, pz);
-      shopB.put(new THREE.IcosahedronGeometry(0.42, 2), mat("#ffffff", { map: canvasTex(hedgeCanvas("#2c5a25"), [1, 1]), roughness: 0.95 }), X(side, -0.45), PH + 1.55, pz);
+      shopB.put(new THREE.IcosahedronGeometry(0.42, 2), bayM, X(side, -0.45), PH + 1.55, pz);
     }
   };
 
@@ -787,7 +803,7 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
     // the fingerpost
     const fp = { x: -(FRONT - 0.7), z: SOUTH + 0.1 };
     lb.put(new THREE.CylinderGeometry(0.07, 0.08, 3.0, 12), mat("#1f3d2c", { roughness: 0.5 }), fp.x, PH + 1.5, fp.z);
-    lb.put(new THREE.SphereGeometry(0.1, 12, 8), mat("#c9a14f", { roughness: 0.3, metalness: 0.8 }), fp.x, PH + 3.05, fp.z);
+    lb.put(new THREE.SphereGeometry(0.1, 12, 8), mat("#c9a14f", { roughness: 0.3, metalness: 0.85 }), fp.x, PH + 3.05, fp.z);
     lb.done();
     const armM = (t: string, left = false) => new THREE.MeshStandardMaterial({ map: canvasTex(fingerCanvas(t, left)), roughness: 0.6, side: THREE.DoubleSide });
     // both arms face the street (east); the plane's right end is north, so the south arm points left
@@ -808,8 +824,9 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
 
   // ── Street furniture: lamps, benches, bins, bollards, the zebra's beacons, bunting ──
   const furn = batch(scene);
-  const ironM = mat("#1d2024", { roughness: 0.45, metalness: 0.55 });
+  const ironM = blackM;
   const lampGlowM = glow("#ffd59a", 1.4);
+  const bloomM = mat("#ff6f86", { roughness: 0.6, emissive: "#ff6f86", emissiveIntensity: 0.12 });
   for (const [x, z] of LAMPS) {
     furn.put(new THREE.CylinderGeometry(0.2, 0.24, 0.5, 12), ironM, x, PH + 0.25, z);
     furn.put(new THREE.CylinderGeometry(0.06, 0.09, 4.2, 10), ironM, x, PH + 2.3, z);
@@ -824,7 +841,7 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
     furn.put(new THREE.IcosahedronGeometry(0.36, 1), mat("#3f7d34", { roughness: 0.9, flatShading: true }), x, PH + 3.25, z, 0, 0, 0, 1, 0.6, 1);
     for (let k = 0; k < 9; k++) {
       const a = (k / 9) * Math.PI * 2, rr = 0.3;
-      furn.put(new THREE.IcosahedronGeometry(0.06, 0), mat(["#ff5a6e", "#ffd23f", "#b47cff", "#ffffff"][k % 4], { roughness: 0.6, emissive: ["#ff5a6e", "#ffd23f", "#b47cff", "#ffffff"][k % 4], emissiveIntensity: 0.1 }), x + Math.cos(a) * rr, PH + 3.2 + (k % 3) * 0.07, z + Math.sin(a) * rr);
+      furn.put(new THREE.IcosahedronGeometry(0.06, 0), bloomM, x + Math.cos(a) * rr, PH + 3.2 + (k % 3) * 0.07, z + Math.sin(a) * rr);
     }
   }
   // tree pits: a dark iron grate round each trunk
@@ -1308,7 +1325,7 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
     for (const b of beacons) b.material.emissiveIntensity = on ? 1.6 : 0.15;
     if (pole.tex) pole.tex.offset.y = (gameT * 0.35) % 1;
     if (showroom.car) showroom.car.rotation.y = 0.6 + gameT * 0.18;
-    clouds.forEach((c, i) => { c.position.x += Math.sin(i) * dt * 0.2; });
+    for (const c of clouds) c.position.x += dt * 0.15;
 
     // camera D behind him; kept inside the street and out of the tree crowns
     zoom.step(dt);

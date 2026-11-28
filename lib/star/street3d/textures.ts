@@ -27,7 +27,7 @@ const SERIF = "Georgia, 'Times New Roman', serif";
 export function asphaltCanvas(): HTMLCanvasElement {
   const [c, g] = cv(512, 512);
   const r = rnd(41);
-  g.fillStyle = "#3d3f43";
+  g.fillStyle = "#4b4d52";
   g.fillRect(0, 0, 512, 512);
   for (let i = 0; i < 14; i++) {
     g.fillStyle = `rgba(${r() > 0.5 ? "20,20,22" : "80,80,84"},${0.06 + r() * 0.08})`;
