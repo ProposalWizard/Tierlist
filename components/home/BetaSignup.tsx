@@ -19,7 +19,7 @@ const MESSAGE: Record<Exclude<State, "idle" | "sending">, string> = {
   error: "That didn't send. Please try again.",
 };
 
-export default function BetaSignup() {
+export default function BetaSignup({ source = "home" }: { source?: string } = {}) {
   const [email, setEmail] = useState("");
   const [trap, setTrap] = useState("");
   const [state, setState] = useState<State>("idle");
@@ -34,7 +34,7 @@ export default function BetaSignup() {
       const res = await fetch("/api/beta-signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: value, website: trap }),
+        body: JSON.stringify({ email: value, website: trap, source }),
       });
       const data = (await res.json().catch(() => null)) as { ok?: boolean; reason?: string } | null;
       if (data?.ok) setState("done");
