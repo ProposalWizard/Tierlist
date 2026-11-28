@@ -10,8 +10,9 @@ import { NextResponse } from "next/server";
 import { NOT_YOURS, mayUse, whoIs } from "@/lib/publish/auth";
 import { accountViews, insertPost, listPosts } from "@/lib/publish/db";
 import { PLATFORMS, spaceOf, type Platform } from "@/lib/publish/types";
-import { itemsFromList, type MediaItem } from "@/lib/marketing/r2";
-import { OWN, isPublishVideo, kibStorage, listPrefixes, ownStorage, uploadTarget } from "@/lib/publish/storage";
+import { detailsMap } from "@/lib/publish/libdb";
+import { listSpaceVideos } from "@/lib/publish/spaceVideos";
+import { isPublishVideo, kibStorage, ownStorage } from "@/lib/publish/storage";
 
 export const dynamic = "force-dynamic";
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -22,16 +23,14 @@ export async function GET(req: Request) {
   if (!mayUse(who, space)) return json({ error: NOT_YOURS }, 403);
   const out: Record<string, unknown> = { space, setup: setupState() };
   try { out.accounts = await accountViews(space); out.posts = await listPosts(space); } catch (e) { out.error = (e as Error).message; out.accounts = []; out.posts = []; }
-  // This space's videos: Mikey's own bucket for football/content (marked "own:"), the team's bucket for kib.
-  const videos: (MediaItem & { source: "own" | "kib" })[] = [];
-  const errors: string[] = [];
-  const target = uploadTarget(space);
-  if (target) for (const prefix of listPrefixes(space)) {
-    try { for (const v of itemsFromList(await target.store.list(prefix)).filter((x) => x.kind === "video").slice(0, 200)) videos.push({ ...v, key: (target.source === "own" ? OWN : "") + v.key, source: target.source }); }
-    catch (e) { errors.push((e as Error).message); }
-  }
-  out.videos = videos; out.storage = target ? target.source : "off";
-  if (errors.length) out.storageError = errors.join(" ");
+  // This space's videos (Mikey's own bucket for football/content, marked "own:"; the team's bucket for kib), and the
+  // words saved for them in Marketing → Library, so the post form can fill itself in.
+  // ?lite=1 (the Results page) skips the video list: it only needs the posts and their numbers.
+  if (new URL(req.url).searchParams.get("lite") === "1") return json(out);
+  const listed = await listSpaceVideos(space);
+  out.videos = listed.videos; out.storage = listed.storage;
+  if (listed.error) out.storageError = listed.error;
+  try { out.details = await detailsMap(space); } catch { out.details = {}; }
   return json(out);
 }
 

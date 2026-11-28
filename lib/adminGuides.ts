@@ -3238,14 +3238,18 @@ export const ADMIN_GUIDES = {
         ["Forget", "Removes that platform's saved login. Posts to it stop until you connect again."],
       ] },
       { group: "New post", items: [
-        ["Video", "Pick a video. \"Mine\" = Mikey's own storage; \"Knowitball\" = the team's Marketing → Uploads."],
+        ["1 · Pick the video", "Pick a video. \"Mine\" = Mikey's own storage; \"Knowitball\" = the team's Cloudflare storage (Marketing → Uploads and Library). If the video has saved words in Library, the title, captions and hashtags fill in by themselves. You can also arrive here from Library's Post this button."],
         ["⬆ Upload a video", "Sends a video from this device straight into Mikey's own storage (or the team's, if his is not set up). Shows the percentage, then picks it in Video."],
         ["Instagram / Facebook / YouTube", "Tick where it goes. A platform that is not connected cannot be ticked."],
         ["Title (YouTube and Facebook)", "The video title. YouTube needs one."],
         ["Caption (all platforms)", "Caption and hashtags. On YouTube it is the description."],
         ["Different caption per platform", "Gives each platform its own caption box."],
         ["Post now / Schedule", "Now posts within a few minutes. Schedule shows a date and time box."],
+        ["Facebook: I post it by hand", "Takes Facebook out of the automatic post. Facebook only lets apps post to Pages, so a personal profile has to be done by you. A green box then gives you Open the video, Copy the caption and Copy the title. Starts ticked on Football."],
+        ["Open the video", "Opens the video so you can save it to your phone or computer and upload it to Facebook yourself."],
+        ["Copy the caption / Copy the title", "Copies the Facebook words to paste into Facebook."],
         ["Post now / Schedule post (big button)", "Puts the post in the queue."],
+        ["Start again", "Clears the whole form: video, words, apps and time."],
       ] },
       { group: "Posts and numbers", items: [
         ["↻ Check now", "Runs the poster straight away instead of waiting for the 5-minute timer, and re-reads every recent post's numbers from Instagram, Facebook and YouTube now (live numbers)."],
@@ -3262,6 +3266,7 @@ export const ADMIN_GUIDES = {
       "A timer in the database runs the poster every 5 minutes. Instagram takes a few extra minutes to process a Reel; it shows \"Instagram is processing it\" meanwhile.",
       "Numbers refresh every 3 hours for 30 days after a post goes up.",
       "A chat can also post: it uploads the video and queues it the same way (scripts/publish/post.mjs).",
+      "While a post is on its way the page checks every 10 seconds (a minute otherwise). A check that gets no answer for 20 seconds stops and says so, then tries again.",
     ],
     inGame: ["Nowhere. This posts our own videos to our own accounts."],
     needs: [
@@ -3270,6 +3275,72 @@ export const ADMIN_GUIDES = {
       "Until Google approves our YouTube audit, YouTube keeps every video posted from here private. Instagram must be a Professional account linked to the Facebook Page.",
     ],
     dev: "app/admin/marketing/publish/page.tsx · components/admin/marketing/PublishPanel.tsx · lib/publish/{engine,live,meta,youtube,db,crypto,auth,video,storage,types}.ts · /api/admin/publish{,/[id],/tick,/upload,/accounts,/connect/[platform],/callback/[platform]} · supabase/migrations/publishing.sql · scripts/publish/post.mjs · tests/star/publishEngine.mts",
+  },
+
+  "/admin/marketing/library": {
+    title: "Library",
+    what: "Every video in a set of accounts' Cloudflare storage, each with its saved name, captions and hashtags, ready to post. Add a video here (or in Marketing → Uploads, or ask a Claude chat to) and it appears for everyone.",
+    buttons: [
+      { group: "Which library", items: [
+        ["Football / Content / Knowitball", "Switches the whole page. Knowitball is the team's Cloudflare storage and is open to every admin. Football and Content are Mikey's own storage and only he sees them."],
+      ] },
+      { group: "Videos", items: [
+        ["⬆ Upload a video", "Sends a video from this device straight into storage (not through the site), then opens it so you can fill in its words."],
+        ["Needs details (N)", "Shows only the videos that have no saved name and captions yet."],
+        ["Search", "Finds videos by name, series or what they are."],
+        ["A video card", "Opens that video below: a player and its words."],
+      ] },
+      { group: "A video's words", items: [
+        ["Post this", "Opens Publish with this video picked and its title, captions and hashtags already filled in."],
+        ["Open the video", "Opens the video in its own tab, so you can save it."],
+        ["Copy the Facebook caption", "Copies the Facebook caption with its hashtags, to paste when you post to Facebook by hand."],
+        ["Name", "What the video is called in the lists. Needed to save."],
+        ["What it is and when to post it", "One line for the team."],
+        ["Series (optional) / Length", "A label like Explainer or Stat twin, and the running time, for example 0:29."],
+        ["YouTube title / Facebook title", "The titles used when posting. YouTube allows 100 characters at most."],
+        ["Instagram / Facebook / YouTube / TikTok caption and hashtags", "The words for each app. TikTok is kept for copying: it is not posted from here."],
+        ["Save", "Saves the words for everyone."],
+        ["Forget the words", "Deletes the saved words for this video. The video file stays in storage."],
+        ["Close", "Closes the editor without saving."],
+      ] },
+    ],
+    saving: [
+      "The videos are files in Cloudflare (Mikey's own bucket for Football and Content, the team's bucket for Knowitball). Nothing is copied into the website.",
+      "The words are saved in the database (table marketing_videos) the moment you press Save, and are shared with everyone who can use that library.",
+      "A Claude chat can add or change the words too (scripts/publish/library.mjs).",
+    ],
+    inGame: ["Nowhere. This is for our own marketing videos."],
+    needs: [
+      "The database tables: run supabase/migrations/marketing_library.sql once. Without it the page says the Library tables are missing.",
+      "Video storage for the library you are on (the Cloudflare settings in Vercel). Without it the page says no storage is connected.",
+    ],
+    dev: "app/admin/marketing/library/page.tsx · components/admin/marketing/{LibraryPanel,uploadForPublish}.ts(x) · lib/publish/{library,libdb,spaceVideos}.ts · /api/admin/marketing/library (GET, PUT, DELETE) · /api/admin/publish/play (signed play link)",
+  },
+  "/admin/marketing/results": {
+    title: "Results",
+    what: "How every post is doing on Instagram, Facebook and YouTube side by side, the totals, and a list of lessons the team writes down about what worked.",
+    buttons: [
+      { group: "Which accounts", items: [
+        ["Football / Content / Knowitball", "Switches the page to that set of accounts' posts and lessons."],
+      ] },
+      { group: "Totals and posts", items: [
+        ["↻ Refresh numbers", "Asks Instagram, Facebook and YouTube for every recent post's numbers right now (about 20 seconds). Without it the site refreshes them by itself every 3 hours for 30 days."],
+        ["Newest first / Most views first", "Sorts the list of posts."],
+        ["open", "Opens the live post on that app."],
+      ] },
+      { group: "What worked", items: [
+        ["Add a lesson", "A short line for the team, for example what got views or what flopped."],
+        ["Add", "Saves the lesson for everyone."],
+        ["Remove", "Deletes that lesson."],
+      ] },
+    ],
+    saving: [
+      "The numbers come from the posting queue (table publish_posts); this page only reads them.",
+      "Lessons are saved in the database (table marketing_lessons) when you press Add, and shared with everyone who can use that set of accounts.",
+    ],
+    inGame: ["Nowhere. This is for our own marketing videos."],
+    needs: ["The Library tables: run supabase/migrations/marketing_library.sql once. Without it the lessons part says the tables are missing; the numbers still work."],
+    dev: "app/admin/marketing/results/page.tsx · components/admin/marketing/ResultsPanel.tsx · lib/publish/{library,libdb}.ts · /api/admin/publish?lite=1, /api/admin/publish/tick?fresh=1, /api/admin/marketing/library/lessons",
   },
 
 } satisfies Record<string, AdminGuide>;
