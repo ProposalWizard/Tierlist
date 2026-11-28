@@ -358,5 +358,181 @@
   "text": "Right.",
   "file": "b1-the-offer.n2.say0.c0.mp3",
   "seconds": 0.73
+ },
+ {
+  "id": "b3-thursdays.t1.say0.c0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Did you want something?",
+  "file": "b3-thursdays.t1.say0.c0.mp3",
+  "seconds": 0.91
+ },
+ {
+  "id": "b3-thursdays.t1.say1.c0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "You came, then. I'd half put the bag away.",
+  "file": "b3-thursdays.t1.say1.c0.mp3",
+  "seconds": 1.93
+ },
+ {
+  "id": "b3-thursdays.t-stop.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Stopping there? Suit yourself, there's a game Saturday.",
+  "file": "b3-thursdays.t-stop.say0.q0.mp3",
+  "seconds": 3.76
+ },
+ {
+  "id": "b4-the-door.d2.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "All of one winter. He did it the week after his dad's funeral and he never came out again after, he said he'd done it.",
+  "file": "b4-the-door.d2.say0.q0.mp3",
+  "seconds": 7.03
+ },
+ {
+  "id": "b4-the-door.d-stop.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Stopping there? The door's been on its hinges since 1987, so it'll wait for you.",
+  "file": "b4-the-door.d-stop.say0.q0.mp3",
+  "seconds": 5.43
+ },
+ {
+  "id": "b4-the-door.end.left-it.0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "He'd like that.",
+  "file": "b4-the-door.end.left-it.0.q0.mp3",
+  "seconds": 0.71
+ },
+ {
+  "id": "b5-last-season.s1.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "I've told the gaffer and I've told the chairman, so I'm telling you. I'm finishing in May. The wife was right about the knees.",
+  "file": "b5-last-season.s1.say0.q0.mp3",
+  "seconds": 8.57
+ },
+ {
+  "id": "b5-last-season.s1.say1.c0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "They're giving me a night at the ground, the last Friday of the season. You said you'd come, on the van step, and I wrote it down.",
+  "file": "b5-last-season.s1.say1.c0.mp3",
+  "seconds": 8.72
+ },
+ {
+  "id": "b5-last-season.s1.say2.c0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "They're giving me a night at the ground, the last Friday of the season. I'd like you there, if you're about.",
+  "file": "b5-last-season.s1.say2.c0.mp3",
+  "seconds": 6.24
+ },
+ {
+  "id": "b5-last-season.s-hedge.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "I know it is. I've done the last week of the season thirty-odd times.",
+  "file": "b5-last-season.s-hedge.say0.q0.mp3",
+  "seconds": 4.52
+ },
+ {
+  "id": "b5-last-season.s2.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Good. There's one more thing and you can say no. They want somebody to stand up and say a few words, and the chairman asked who. I said you.",
+  "file": "b5-last-season.s2.say0.q0.mp3",
+  "seconds": 11.05
+ },
+ {
+  "id": "b5-last-season.s3.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "I have. But they went in when training finished.",
+  "file": "b5-last-season.s3.say0.q0.mp3",
+  "seconds": 2.77
+ },
+ {
+  "id": "b5-last-season.end.coming.0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "That'll do me.",
+  "file": "b5-last-season.end.coming.0.q0.mp3",
+  "seconds": 0.65
+ },
+ {
+  "id": "b5-last-season.end.speech.0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "Keep it short. And don't tell them about the soup, they'll all want some.",
+  "file": "b5-last-season.end.speech.0.q0.mp3",
+  "seconds": 4.6
+ },
+ {
+  "id": "b6-the-night.sp-freeze.say0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "He's better with a ball. Somebody give him a ball.",
+  "file": "b6-the-night.sp-freeze.say0.q0.mp3",
+  "seconds": 2.25
+ },
+ {
+  "id": "b6-the-night.sp2.say1.c0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "I told you not to mention the soup",
+  "file": "b6-the-night.sp2.say1.c0.mp3",
+  "seconds": 1.57
+ },
+ {
+  "id": "b6-the-night.c1.say1.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "I'll count.",
+  "file": "b6-the-night.c1.say1.q0.mp3",
+  "seconds": 0.57
+ },
+ {
+  "id": "b6-the-night.c-after.say1.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "I'm not allowed to take anything that belongs to the club. But the bag's mine, I bought it in 1994.",
+  "file": "b6-the-night.c-after.say1.q0.mp3",
+  "seconds": 5.49
+ },
+ {
+  "id": "b6-the-night.c-after.say1.q1",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "There's forty in there. Some of them are older than you.",
+  "file": "b6-the-night.c-after.say1.q1.mp3",
+  "seconds": 3.16
+ },
+ {
+  "id": "b6-the-night.end.took-the-bag-thursdays.0.q0",
+  "speaker": "den",
+  "voice": "Peter - Mature Northern British",
+  "text": "I'll bring the soup.",
+  "file": "b6-the-night.end.took-the-bag-thursdays.0.q0.mp3",
+  "seconds": 0.86
+ },
+ {
+  "id": "b2-the-gaffer.g3.say0.c0",
+  "speaker": "gaffer",
+  "voice": "Paul - Deep & Warm Yorkshire",
+  "text": "He's right about the keeper. I've had the video lads clip it for you and it's on the laptop in my office when you want it.",
+  "file": "b2-the-gaffer.g3.say0.c0.mp3",
+  "seconds": 6.01
+ },
+ {
+  "id": "b6-the-night.sp1.say0.q0",
+  "speaker": "gaffer",
+  "voice": "Paul - Deep & Warm Yorkshire",
+  "text": "He asked for one of the players to say something, and he picked this one.",
+  "file": "b6-the-night.sp1.say0.q0.mp3",
+  "seconds": 3.03
  }
 ]
