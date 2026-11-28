@@ -69,6 +69,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          show_full_output: true
           prompt: ${{ github.event_name == 'workflow_dispatch' && inputs.prompt || '' }}
           claude_args: >-
             --model ${{ github.event_name == 'workflow_dispatch' && inputs.model || 'claude-opus-5-5' }}
