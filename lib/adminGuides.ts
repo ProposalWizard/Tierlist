@@ -2624,6 +2624,9 @@ export const ADMIN_GUIDES = {
           ["House / Garden (above the scene)", "Which place opens: the house's lounge (sofa, TV, fridge) or the garden (bench, gate, team-mates)."],
           ["starter / flat / penthouse / house / villa / estate", "Opens the LIVING HOUSE of that home (the real house screen with every room of that home): things to use in every room (sofa and TV, fridge, bed, shower, mirror, coffee machine, treadmill, pool table, loungers, cinema seats) and team-mates round (1 in the starter flat up to 4 at the estate). Walk through a doorway to the next room. Same as ?place=house&tier=villa. Nothing is saved; a home reaches the real game only once it is switched on in the code (LIVING_TIERS)."],
           ["Gym (above the scene)", "THE GYM, GTA 6 style (same as ?place=gym): a bench press, two treadmills, a heavy bag, mirrors, mats and a water cooler; one team-mate runs, drinks and stretches on his own. Tap a machine, then Start: a mini-game of its own (not football). Hold anywhere (or the space bar) to push: the bar up, run on the belt, the cursor right; let go to ease off. Drop the bar too fast and it bounces; let the belt take you and you fall off. Not in the career yet."],
+          ["Compound (above the scene)", "THE TRAINING COMPOUND (same as ?place=compound; Harry, 28 Nov 2026, phase 1: the grounds). You have just parked: your car in the front row, the gate with the club's crest board and the security hut, the forecourt, the main building (the gym door, reception, the canteen), three pitches with goals, mannequins, cones and poles, a small stand, lamps and floodlights. The coach (with his clipboard), Den the kit man and four team-mates go about their morning. Tap a door: the gym door takes you into the gym; reception and the canteen say what is coming. ?sky=day|sunset|night picks the light. Not in the career yet; no car driving yet (a later phase)."],
+          ["Gym door / Reception / Canteen (compound)", "Tap a door, walk up, then Go in / Sign in / Look in. Go in fades to black and opens the gym (the Gym button above shows it is on). Sign in and Look in show a 'coming soon' card: the changing room, the physio and the canteen come in a later phase."],
+          ["The gate and the crest board (compound)", "Tap the gate: Walk in takes you through. Tap the crest board: Take a photo (a line on the card; nothing is saved)."],
           ["Strength / Cardio / Focus strip (gym)", "Your three gym levels (1 to 4), today's ring (one dot per machine; all three close it, more does nothing) and the workout window. Only on this page, never saved."],
           ["Play a match ▸ (gym)", "Moves the gym on one gap between matches: the window counts down. Train inside it for full points; miss it and Strength and Cardio slip back."],
           ["✕ (during a gym game)", "Stops the game; what you did still counts."],
@@ -2641,7 +2644,8 @@ export const ADMIN_GUIDES = {
     ],
     saving: [
       "Nothing is saved. The made-up career lives on this page only and is gone when you leave or restart.",
-      "The address can hold a set-up: ?place=house|garden, ?q=low|medium|high (the quality tier), ?fps=1 for the frame meter, ?bare=1 full screen, ?demo=sofa|fridge|visitor|talk (a scripted run for filming).",
+      "The address can hold a set-up: ?place=house|garden|gym|compound, ?sky=day|sunset|night (the compound), ?q=low|medium|high (the quality tier), ?fps=1 for the frame meter, ?bare=1 full screen, ?demo=sofa|fridge|visitor|talk|arrive|compound (a scripted run for filming; arrive = car park, through the gate, in at the gym door).",
+      "The compound's speed is measured from every viewpoint on a Galaxy S20 screen (scripts/world3d/compound-measure.mjs) and written into lib/star/world3d/compoundPlan.ts; the test tests/star/compound.mts holds it to the budget (Medium 90 draws and 90k triangles, Low 60 draws). Nothing is committed from this page.",
     ],
     inGame: [
       "Nowhere yet. This is phase 1 of the shared world kit (docs/research/world-3d-2026-11-20.md); the real house and garden get it once Harry approves.",
@@ -2649,7 +2653,7 @@ export const ADMIN_GUIDES = {
     needs: [
       "A phone or browser that runs 3D (WebGL).",
     ],
-    dev: "components/star/World3D.tsx · app/star-world3d-dev/page.tsx · lib/star/world3d/{smartObject,routine,npc,interact,budget,testScene}.ts · test: tests/star/routine.mts · the lounge itself is lib/star/home3d/roomBuild.ts (unchanged)",
+    dev: "components/star/World3D.tsx · app/star-world3d-dev/page.tsx · lib/star/world3d/{smartObject,routine,npc,interact,budget,testScene}.ts · the compound: lib/star/world3d/{compoundPlan,compoundPlace,farBodies}.ts, scripts/world3d/{compound-shots,compound-measure}.mjs · tests: tests/star/routine.mts, tests/star/compound.mts · the lounge itself is lib/star/home3d/roomBuild.ts (unchanged)",
   },
 
   "/star-sprites-dev": {

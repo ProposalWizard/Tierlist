@@ -177,7 +177,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-garden3d-dev", "3D garden", "Walk round the 3D garden", "rbd", "places3d", "Mikey", "live", "none", "team"),
   P("/star-home3d-dev", "3D house", "Walk round the 3D house", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-loading-dev", "Loading screens", "Every loading screen, by the section you're going into", "rbd", "places3d", "Harry", "live", "none", "team"),
-  P("/star-world3d-dev", "3D world kit", "People who use things: sofa, TV, fridge, a bench, a visitor at the gate, tap to talk", "rbd", "places3d", "Harry", "live", "none", "team"),
+  P("/star-world3d-dev", "3D world kit", "People who use things: sofa, TV, fridge, a bench, a visitor at the gate, tap to talk; the gym; the training compound", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-training3d-dev", "3D training", "3D training pitch", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-scene-editor-dev", "3D scene editor", "Camera and light for every 3D scene (director, signing, office, shop, garden, house); Approve; Commit to game", "rbd", "places3d", "Harry", "live", "repo", "team"),
   P("/star-animations-dev", "2D animations", "2D New vs Old animations", "rbd", "players", "Leo", "live", "browser", "team"),

@@ -15,6 +15,12 @@
  * Strength / Cardio / Focus with the ring and the workout window (lib/star/gym/progress.ts), a team-mate
  * on his own session. Demos: ?demo=gym (the film: walk in, a set, off the treadmill) | walk (bench, then the walk to the treadmill and up onto it) | bench | treadmill | fall | bag.
  *
+ * ?place=compound: THE TRAINING COMPOUND (Harry, 27-28 Nov 2026, phase 1 of docs/research/gym-compound-driving-2026-11-27.md:
+ * the grounds; lib/star/world3d/compoundPlace.ts): you have just parked; the gate with the crest board and the security
+ * hut, the forecourt, the building's front (the gym door opens the gym above; reception and the canteen are coming
+ * soon), three pitches, a stand, the coach, the kit man and team-mates on their routines. ?sky=day|sunset|night.
+ * Demos: ?demo=arrive (the film: car park, the gate, in at the gym door) | compound (the people at work).
+ *
  * ?place=house|garden, ?demo=sofa|fridge|visitor|talk (a scripted run, for
  * filming with scripts/film/frames3d.mjs), ?bare=1 / ?film=1 full screen,
  * ?q=low|medium|high the quality tier. Nothing is saved.
@@ -52,7 +58,11 @@ function World3DTest() {
   const params = useSearchParams();
   const demo = params.get("demo");
   const GYM_DEMOS = ["gym", "walk", "bench", "treadmill", "fall", "bag"];
-  const [place, setPlace] = useState<WorldPlace>(params.get("place") === "house" || demo === "sofa" || demo === "fridge" ? "house" : params.get("place") === "gym" || GYM_DEMOS.includes(demo ?? "") ? "gym" : "garden");
+  const COMPOUND_DEMOS = ["arrive", "compound"];
+  const [place, setPlace] = useState<WorldPlace>(params.get("place") === "house" || demo === "sofa" || demo === "fridge" ? "house" : params.get("place") === "gym" || GYM_DEMOS.includes(demo ?? "") ? "gym" : params.get("place") === "compound" || COMPOUND_DEMOS.includes(demo ?? "") ? "compound" : "garden");
+  const sky = params.get("sky");
+  // a door that leads on (the compound's gym door): the demo only belongs to the place it started in
+  const [went, setWent] = useState(false);
   const [run, setRun] = useState(0);
   const quality = parseQuality3d(params.get("q")) ?? undefined;
   // a made-up career: the squad gives the team-mates their names, numbers and the living world's chat
@@ -66,9 +76,9 @@ function World3DTest() {
   const options = useMemo<WorldOptions>(() => {
     const c = career.current!;
     const kit = kitsOf("Arsenal").home;
-    const mates = (c.squad ?? []).filter((p) => p.position !== "GK").slice(0, 3).map((p, i) => ({ id: p.id, name: p.shortName || p.name, number: [8, 14, 21][i] }));
+    const mates = (c.squad ?? []).filter((p) => p.position !== "GK").slice(0, 4).map((p, i) => ({ id: p.id, name: p.shortName || p.name, number: [8, 14, 21, 4][i] }));
     return {
-      place, demo, quality, number: 9, mates, club: "Arsenal",
+      place, demo: went ? null : demo, quality, number: 9, mates, club: "Arsenal", sky,
       kit: { shirt: kit.shirt, trim: kit.trim },
       // the living world's chat (lib/star/life/social.ts): pure, on this page's made-up career only
       chat: (slot: string) => {
@@ -85,14 +95,14 @@ function World3DTest() {
       },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [place, demo, quality, run]);
+  }, [place, demo, quality, run, sky, went]);
 
   const bare = params.get("bare") === "1" || params.get("film") === "1";
   const houseTier: HomeTier | null = parseHomeTier(params.get("tier"));
   const [tier, setTier] = useState<HomeTier | null>(houseTier);
   const stage = place === "house" && tier
     ? <Home3D key={`${tier}-${run}`} career={career.current!} tier={tier} living house="new" where="test" embedded={!bare} backLabel="Back" onBack={() => setTier(null)} />
-    : <World3D key={`${place}-${run}`} options={options} clean={params.get("clean") === "1"} />;
+    : <World3D key={`${place}-${run}`} options={options} clean={params.get("clean") === "1"} onGo={(p) => { setWent(true); setPlace(p); }} />;
   if (bare) {
     return (
       <>
@@ -108,6 +118,7 @@ function World3DTest() {
           <Pill on={place === "house"} onClick={() => setPlace("house")}>House</Pill>
           <Pill on={place === "garden"} onClick={() => setPlace("garden")}>Garden</Pill>
           <Pill on={place === "gym"} onClick={() => setPlace("gym")}>Gym</Pill>
+          <Pill on={place === "compound"} onClick={() => setPlace("compound")}>Compound</Pill>
           {HOME_TIERS.map((t) => <Pill key={t} on={place === "house" && tier === t} onClick={() => { setPlace("house"); setTier(t); }}>{t}</Pill>)}
           <Btn onClick={() => setRun((k) => k + 1)}>↻ Restart</Btn>
         </div>

@@ -12,8 +12,9 @@ import type { InteractCard } from "@/lib/star/world3d/interact";
 import { GymHud, type GymHudHandle } from "@/components/star/GymHud";
 import type { WorldController, WorldOptions, WorldStatus } from "@/lib/star/world3d/testScene";
 import ViewToggle3D from "./ViewToggle3D";
+import LoadingCurtain from "./loading/LoadingCurtain";
 
-export default function World3D({ options, clean }: { options: WorldOptions; clean?: boolean }) {
+export default function World3D({ options, clean, onGo }: { options: WorldOptions; clean?: boolean; onGo?: (place: WorldOptions["place"]) => void }) {
   const host = useRef<HTMLDivElement>(null);
   const ctrl = useRef<WorldController | null>(null);
   const [card, setCard] = useState<InteractCard | null>(null);
@@ -23,6 +24,8 @@ export default function World3D({ options, clean }: { options: WorldOptions; cle
   const [gymOn, setGymOn] = useState(false);
   const optsRef = useRef(options);
   optsRef.current = options;
+  const goRef = useRef(onGo);
+  goRef.current = onGo;
   const key = `${options.place}|${options.demo ?? ""}|${options.quality ?? ""}`;
 
   useEffect(() => {
@@ -38,6 +41,7 @@ export default function World3D({ options, clean }: { options: WorldOptions; cle
         onCard: (c) => { if (!gone) setCard(c); },
         onStatus: (s) => { if (!gone) setStatus(s); },
         onContextLost: () => { if (!gone) setState("failed"); },
+        onGo: (p) => { if (!gone) goRef.current?.(p); },
         onGym: (f) => { if (gone) return; hud.current?.frame(f); const on = !!f.kind; setGymOn((was) => (was === on ? was : on)); },
       }, { ...optsRef.current, chat: (id) => optsRef.current.chat?.(id) ?? null }))
       .then((c) => { if (gone) { c.dispose(); return; } ctrl.current = c; setState("ready"); })
@@ -57,7 +61,9 @@ export default function World3D({ options, clean }: { options: WorldOptions; cle
   return (
     <div style={{ position: "absolute", inset: 0, background: "#0b0d12", overflow: "hidden", fontFamily: "system-ui, sans-serif" }} data-world3d={state}>
       <div ref={host} style={{ position: "absolute", inset: 0 }} />
-      {state !== "ready" && (
+      {/* the compound opens behind its own loading screen (keepie-uppies over a still of the compound) */}
+      {options.place === "compound" && !options.demo && <LoadingCurtain section="compound" loading={state === "loading"} box />}
+      {state !== "ready" && (options.place !== "compound" || options.demo || state === "failed") && (
         <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", color: "#cbd5e1", fontWeight: 800, fontSize: 14, background: "#0b0d12" }}>
           {state === "loading" ? "Opening…" : "3D could not open on this device."}
         </div>

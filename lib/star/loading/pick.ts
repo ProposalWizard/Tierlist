@@ -13,6 +13,9 @@
  *               keepie-uppies over a real still of the place (several lights).
  *               The gym (test page only, its own builder's files) has no
  *               section yet: its room has no good portrait still.
+ *   compound    keepie-uppies over a still of the training compound (the
+ *               car park, the gate, the crest board, the building; day,
+ *               sunset, night): lib/star/world3d/compoundPlace.ts, 28 Nov
  *   training    the coach's drill board (three boards)
  *   ballon-dor / awards
  *               the gala: the golden ball, the invitation
@@ -25,7 +28,7 @@
 export type LoadSection =
   | "first-load" | "match"
   | "garden" | "house" | "shop" | "casino"
-  | "training" | "ballon-dor" | "awards";
+  | "compound" | "training" | "ballon-dor" | "awards";
 
 /** What a variant is drawn as. */
 export type LoadKind = "keepie" | "programme" | "tunnel" | "board" | "gala" | "boot";
@@ -71,6 +74,12 @@ export const LOAD_VARIANTS: Record<LoadSection, LoadVariant[]> = {
   casino: [
     K("keepie-casino", "casino"),
     K("keepie-casino-neon", "casino", "neon"),
+  ],
+  compound: [
+    K("keepie-compound-day", "compound-day"),
+    K("keepie-compound-sunset", "compound-sunset"),
+    K("keepie-compound-night", "compound-night", "night"),
+    K("keepie-compound-rain", "compound-day", "rain"),
   ],
   training: [
     { id: "board-white", kind: "board", look: "white" },
