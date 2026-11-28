@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import SaveFailedBanner from "@/components/star/SaveFailedBanner";
 import OtherDeviceBanner from "@/components/star/OtherDeviceBanner";
+import StaleSaveBanner from "@/components/star/StaleSaveBanner";
+import ThreeDNotice from "@/components/star/ThreeDNotice";
 import GameFullScreen from "@/components/star/GameFullScreen";
 import ConfirmHost from "@/components/star/ConfirmHost";
 import LagTestHost from "@/components/star/LagTest";
@@ -27,6 +29,10 @@ export default function StarDevLayout({ children }: { children: React.ReactNode 
       <SaveFailedBanner />
       {/* "Open on your phone right now" — see components/star/OtherDeviceBanner.tsx. */}
       <OtherDeviceBanner />
+      {/* "Saved on another device since you opened it" — see components/star/StaleSaveBanner.tsx. */}
+      <StaleSaveBanner />
+      {/* "3D isn't running in this browser" — see components/star/ThreeDNotice.tsx. */}
+      <ThreeDNotice />
       {/* The game's own "Are you sure?" — never the browser's (lib/star/askConfirm.ts). */}
       <ConfirmHost />
       {/* The Lag test's pill (Settings → 🛠 Dev → Lag test, or ?lagtest=1): nothing until opened. */}

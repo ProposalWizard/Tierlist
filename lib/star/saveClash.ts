@@ -227,6 +227,40 @@ export function recordAfterTake(version: SyncedVersion | null): SyncRecord {
   return { base: version, pending: [] };
 }
 
+// ── The server's check on an upload ─────────────────────────────────────────
+
+/**
+ * May this upload replace the cloud copy? (app/api/star/career/route.ts.)
+ *
+ * Mikey, 27 Nov 2026: a computer opened an older Leicester save and uploaded
+ * it over the phone's newer one, with no question asked. Whatever the device
+ * decided at load, the server now refuses an upload that was not built on the
+ * copy it would replace. "Built on" is the lineage every upload already
+ * carries (nextStamp): the ids of the cloud versions it grew from.
+ *
+ * Accepts when: nothing is stored yet (or only a stamp-less / deleted save),
+ * the upload has no stamp (an old copy of the game: it could not be judged
+ * before, so it is not judged now), it is the same upload sent again, it
+ * lists the stored version in its lineage, or its lineage was cut short by
+ * LINEAGE_CAP so far back that the stored version cannot be looked for.
+ * Anything else is "stale": the cloud moved on without it.
+ */
+export type UploadVerdict =
+  | { ok: true; why: "nothing-stored" | "unstamped" | "same-upload" | "built-on-stored" | "lineage-cut" }
+  | { ok: false; why: "stale" };
+
+export function mayReplaceCloud(stored: SaveStamp | null, incoming: SaveStamp | null): UploadVerdict {
+  if (!stored) return { ok: true, why: "nothing-stored" };
+  if (!incoming) return { ok: true, why: "unstamped" };
+  if (incoming.id === stored.id) return { ok: true, why: "same-upload" };
+  if (incoming.lineage.includes(stored.id)) return { ok: true, why: "built-on-stored" };
+  if (incoming.lineage.length >= LINEAGE_CAP) {
+    const oldest = revOfId(incoming.lineage[0]);
+    if (Number.isFinite(oldest) && stored.rev < oldest) return { ok: true, why: "lineage-cut" };
+  }
+  return { ok: false, why: "stale" };
+}
+
 // ── The load decision ────────────────────────────────────────────────────────
 
 export interface LoadInput {

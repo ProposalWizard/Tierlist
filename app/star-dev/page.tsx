@@ -28,6 +28,7 @@ import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
   clearCareerFromCloud, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
   reconcileCareerLoad, resolveSaveClash, deferSaveClash, hasUnsyncedProgress, type SaveClash,
+  syncSlotsFromCloud, cloudIsAheadOfDevice,
   peekSlotCareer, collectRetiredIntoHall, onSaveCorrected,
 } from "@/lib/star/storage";
 import { addToHall, loadHall, syncHall, hallEntryFor, type HallEntry } from "@/lib/star/hallOfFame";
@@ -755,6 +756,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * left it.
    */
   const [titleOpen, setTitleOpen] = useState(true);
+  // The Load Game list shows this device's copies. Opening it brings every
+  // other slot up to the cloud's version (storage.ts syncSlotsFromCloud), then
+  // this makes the list draw again (Mikey, 27 Nov 2026).
+  const [, setSlotsTick] = useState(0);
+  useEffect(() => {
+    if (!titleOpen || !signedIn || PACKED_APP) return;
+    let dead = false;
+    void syncSlotsFromCloud(scopeRef.current, activeSlotRef.current).then((r) => {
+      if (!dead && (r.updated.length > 0 || r.clash.length > 0)) setSlotsTick((n) => n + 1);
+    }).catch(() => { /* a list refresh never breaks the title */ });
+    return () => { dead = true; };
+  }, [titleOpen, signedIn]);
   /** Settings opened FROM the title: its back button returns there, to the
    *  phase the game was on underneath. */
   const [settingsFromTitle, setSettingsFromTitle] = useState<StarPhase | null>(null);
@@ -2988,8 +3001,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, [career, handleStartNewInSlot]);
   const handleTitleLoad = useCallback((slot: number) => {
     setTitleOpen(false);
-    if (slot !== activeSlotRef.current) handleSwitchSave(slot);
-  }, [handleSwitchSave]);
+    if (slot !== activeSlotRef.current) { handleSwitchSave(slot); return; }
+    // The save you were last in: another device may have saved a newer version
+    // since this page loaded. Ask the cloud, and load again only if it has.
+    if (PACKED_APP) return;
+    void cloudIsAheadOfDevice(scopeRef.current, slot).then((ahead) => { if (ahead) void loadCareerIntoState(slot); });
+  }, [handleSwitchSave, loadCareerIntoState]);
   // The title's Tutorial button (P64): a save on Home replays the pointer tour
   // there; no save starts a new career, whose first Home runs the tutorial.
   // Early download (Harry, 6 Oct 2026: "let's try early download for 3d

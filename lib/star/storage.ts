@@ -779,6 +779,28 @@ export function saveActiveSlot(accountScope: string, slot: number): void {
 
 // ── Cloud save (Supabase) ────────────────────────────────────────────────────
 
+/** An upload the server refused never landed: drop it from "sent, not confirmed". */
+function forgetSent(rec: SyncRecord, sent: SyncedVersion | null): SyncRecord {
+  return sent ? { base: rec.base, pending: rec.pending.filter((p) => p.id !== sent.id) } : rec;
+}
+
+/**
+ * The server refused an upload because the cloud copy had moved on (HTTP 409,
+ * app/api/star/career/route.ts). Shown by components/star/StaleSaveBanner.tsx.
+ */
+export interface StaleSave { slot: number; at: number }
+let staleSave: StaleSave | null = null;
+const staleListeners = new Set<(s: StaleSave | null) => void>();
+export function getStaleSave(): StaleSave | null { return staleSave; }
+export function onStaleSaveChange(fn: (s: StaleSave | null) => void): () => void {
+  staleListeners.add(fn);
+  return () => { staleListeners.delete(fn); };
+}
+function setStaleSave(next: StaleSave | null): void {
+  staleSave = next;
+  staleListeners.forEach((fn) => { try { fn(next); } catch {} });
+}
+
 /**
  * Persist the career to Supabase so it survives a device wipe or re-login.
  *
@@ -838,6 +860,16 @@ export async function saveCareerToCloud(
       // phone that is merely backgrounded (the common case) still finishes.
       keepalive: !!opts.leavingPage && body.length < KEEPALIVE_BODY_LIMIT,
     });
+    if (res.status === 409 && opts.scope) {
+      // The cloud copy moved on since this device last saw it (another device
+      // saved): the server kept it. Hold this save's uploads so nothing here
+      // can push the other copy aside, forget the refused upload, and say so
+      // (StaleSaveBanner). Reloading the game asks which progress to keep.
+      saveSyncRecord(opts.scope, forgetSent(loadSyncRecord(opts.scope), sent));
+      heldScopes.add(opts.scope);
+      setStaleSave({ slot, at: Date.now() });
+      return;
+    }
     if (!res.ok) return;
     const data = await res.json().catch(() => null) as { ok?: boolean; corrected?: unknown; career?: unknown } | null;
     // Only a real "ok" moves the base: signed out, the route answers `null`.
@@ -1020,6 +1052,7 @@ export async function reconcileCareerLoad(accountScope: string, slot: number): P
     now: Date.now(),
   });
   setOtherDeviceWarning(decision.warn);
+  logLoadDecision(slot, decision.use, decision.why, cloud?.stamp ?? null, loadSyncRecord(scope));
 
   if (decision.use === "clash" && local && cloud) {
     saveSyncRecord(scope, decision.record);
@@ -1046,6 +1079,107 @@ export async function reconcileCareerLoad(accountScope: string, slot: number): P
   }
   saveSyncRecord(scope, decision.record);
   return { kind: "career", career: decision.use === "local" ? local : null, why: decision.why };
+}
+
+// ── Why each load picked the copy it did ─────────────────────────────────────
+
+const LOAD_LOG_KEY = "star-load-log-v1";
+const LOAD_LOG_KEEP = 12;
+
+/**
+ * The last few load decisions on THIS device (which copy, and why, with the
+ * cloud version and this device's base). Mikey, 27 Nov 2026: a computer
+ * quietly used an old save instead of asking, and nothing recorded why. Read
+ * it in the browser console with `__starLoadLog()` or send it with a bug report.
+ */
+export function logLoadDecision(
+  slot: number, use: string, why: string, cloud: SaveStamp | null, rec: SyncRecord,
+): void {
+  try {
+    const raw = localStorage.getItem(LOAD_LOG_KEY);
+    const list = raw ? (JSON.parse(raw) as unknown[]) : [];
+    list.push({
+      at: new Date().toISOString(), slot, use, why,
+      cloud: cloud ? { id: cloud.id, device: cloud.device } : null,
+      base: rec.base?.id ?? null, pending: rec.pending.length,
+    });
+    localStorage.setItem(LOAD_LOG_KEY, JSON.stringify(list.slice(-LOAD_LOG_KEEP)));
+  } catch { /* the log never breaks a load */ }
+}
+
+export function readLoadLog(): unknown[] {
+  try { return JSON.parse(localStorage.getItem(LOAD_LOG_KEY) ?? "[]") as unknown[]; } catch { return []; }
+}
+if (typeof window !== "undefined") (window as unknown as { __starLoadLog?: () => unknown[] }).__starLoadLog = readLoadLog;
+
+// ── Is this device's copy of a slot behind the cloud's? ──────────────────────
+
+export interface CloudSlotLine {
+  slot: number;
+  updatedAt: string;
+  deleted: boolean;
+  stampId: string | null;
+  device: DeviceKind | null;
+}
+
+/** One small line per slot (no saves downloaded). Null when signed out or offline. */
+export async function loadCloudStamps(): Promise<CloudSlotLine[] | null> {
+  try {
+    const res = await fetch("/api/star/career?stamps=1");
+    if (!res.ok) return null;
+    const data = await res.json() as { slots?: CloudSlotLine[] } | null;
+    return Array.isArray(data?.slots) ? data!.slots! : null;
+  } catch {
+    return null;
+  }
+}
+
+/** This device already holds (or sent) exactly the cloud's version of the slot. */
+function holdsCloudVersion(scope: string, line: CloudSlotLine): boolean {
+  if (!line.stampId) return true;
+  const rec = loadSyncRecord(scope);
+  return rec.base?.id === line.stampId || rec.pending.some((p) => p.id === line.stampId);
+}
+
+/** True when the cloud has a version of `slot` this device has not seen. */
+export async function cloudIsAheadOfDevice(accountScope: string, slot: number): Promise<boolean> {
+  const lines = await loadCloudStamps();
+  const line = lines?.find((l) => l.slot === slot);
+  if (!line || line.deleted) return false;
+  return !holdsCloudVersion(slotScope(accountScope, slot), line);
+}
+
+/**
+ * The Load Game list shows what is on THIS device, so it went stale for any
+ * slot not opened lately (Mikey, 27 Nov 2026: the same Leicester career was
+ * Season 3 on the phone and Season 2 on the computer). This brings every slot
+ * but `skipSlot` up to the cloud's version when the cloud has one this device
+ * has not seen: the same decision a load makes (reconcileCareerLoad), so a
+ * slot where both copies moved on is left alone for the clash question.
+ * Returns the slots it changed or found in a clash.
+ */
+export async function syncSlotsFromCloud(
+  accountScope: string, skipSlot: number,
+): Promise<{ updated: number[]; clash: number[] }> {
+  const out = { updated: [] as number[], clash: [] as number[] };
+  if (accountScope === ANON_SCOPE || accountScope.startsWith(`${ANON_SCOPE}#`)) return out;
+  const lines = await loadCloudStamps();
+  if (!lines) return out;
+  const keep = getOtherDeviceWarning();
+  for (const line of lines) {
+    if (line.slot === skipSlot || line.deleted || line.slot < 1 || line.slot > MAX_SAVE_SLOTS) continue;
+    const scope = slotScope(accountScope, line.slot);
+    const haveLocal = !!(line.slot === 1 ? loadCareer(scope) : loadCareerRaw(scope));
+    // A cloud save from before stamps, with a local save already here: the old
+    // rule gives no sign of change, so leave it to the load.
+    if (!line.stampId && haveLocal) continue;
+    if (haveLocal && holdsCloudVersion(scope, line)) continue;
+    const outcome = await reconcileCareerLoad(accountScope, line.slot);
+    if (outcome.kind === "clash") out.clash.push(line.slot);
+    else if (outcome.why === "no-local" || outcome.why === "cloud-ahead" || outcome.why === "same-progress" || outcome.why === "legacy-cloud-newer") out.updated.push(line.slot);
+  }
+  setOtherDeviceWarning(keep); // a list refresh is not "you opened this career"
+  return out;
 }
 
 async function findSpareSlot(accountScope: string, current: number): Promise<number | null> {

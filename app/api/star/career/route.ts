@@ -9,6 +9,7 @@ import {
 import { NextResponse } from "next/server";
 import { casinoNetBetween } from "@/lib/star/casinoDb";
 import { CASINO_ON_SERVER } from "@/lib/star/casinoRules";
+import { mayReplaceCloud, readStamp } from "@/lib/star/saveClash";
 
 const MIN_SLOT = 1;
 const MAX_SLOT = 3; // MAX_SAVE_SLOTS, lib/star/storage.ts
@@ -23,6 +24,19 @@ function parseSlot(req: Request): number {
   const raw = new URL(req.url).searchParams.get("slot");
   const n = raw === null ? NaN : parseInt(raw, 10);
   return Number.isInteger(n) && n >= MIN_SLOT && n <= MAX_SLOT ? n : MIN_SLOT;
+}
+
+/**
+ * STAR_SAVE_CHECK — the server's check that an upload was built on the cloud
+ * copy it would replace (lib/star/saveClash.ts, mayReplaceCloud).
+ *   enforce (default)  a stale upload is refused with 409 and nothing is written
+ *   observe            a stale upload is logged and stored anyway (the old way)
+ *   off                no check
+ * The way back if the check ever refuses an honest save: set it to observe.
+ */
+function saveCheckMode(): "enforce" | "observe" | "off" {
+  const v = (process.env.STAR_SAVE_CHECK ?? "").toLowerCase();
+  return v === "observe" || v === "off" ? v : "enforce";
 }
 
 type Db = Awaited<ReturnType<typeof createClient>>;
@@ -117,10 +131,36 @@ async function upsertCareer(db: Db, userId: string, slot: number, career: unknow
   return error;
 }
 
+/**
+ * `?stamps=1`: one small line per slot (which version, when, who) instead of
+ * the saves themselves, so the Load Game list can tell which slots are out of
+ * date on this device without downloading 3 x 400 KB (Mikey, 27 Nov 2026).
+ */
+async function stampsOf(db: Db, userId: string) {
+  const { data, error } = await db
+    .from("star_careers")
+    .select("slot, updated_at, sync:career->sync, tomb:career->tombstone")
+    .eq("user_id", userId);
+  if (error || !Array.isArray(data)) return [];
+  return (data as { slot: number; updated_at: string; sync: unknown; tomb: unknown }[]).map((r) => {
+    const st = readStamp(r.sync);
+    return {
+      slot: r.slot,
+      updatedAt: r.updated_at,
+      deleted: r.tomb === true,
+      stampId: st?.id ?? null,
+      device: st?.device ?? null,
+    };
+  });
+}
+
 export async function GET(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json(null);
+  if (new URL(req.url).searchParams.get("stamps") === "1") {
+    return NextResponse.json({ slots: await stampsOf(supabase, user.id) });
+  }
   const row = await readRow(supabase, user.id, parseSlot(req));
   if (!row || isTombstone(row.career)) return NextResponse.json(null);
   // The timestamp travels WITH the career — see loadCareerFromCloud.
@@ -150,6 +190,31 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not a save" }, { status: 400 });
   }
 
+  // ── Was this built on what it would replace? (lib/star/saveClash.ts) ──
+  // A device can decide wrongly at load (an old copy, a lost record) and
+  // upload over a newer save from another device. Whatever it decided, the
+  // cloud copy only gives way to an upload that grew from it. Fails open: a
+  // read error here never stops an honest save.
+  const checkMode = saveCheckMode();
+  let prevRow: { career: unknown; updated_at: string } | null | undefined;
+  if (checkMode !== "off") {
+    try {
+      prevRow = await readRow(db, user.id, slot);
+      const stored = prevRow && !isTombstone(prevRow.career)
+        ? readStamp((prevRow.career as { sync?: unknown } | null)?.sync) : null;
+      const incoming = readStamp((career as { sync?: unknown }).sync);
+      const verdict = mayReplaceCloud(stored, incoming);
+      if (!verdict.ok) {
+        console.warn(`[star/career] stale upload (${checkMode}) user=${user.id} slot=${slot} stored=${stored?.id} incoming=${incoming?.id} from=${incoming?.device}`);
+        if (checkMode === "enforce") {
+          return NextResponse.json({ ok: false, stale: true, cloudDevice: stored?.device ?? null }, { status: 409 });
+        }
+      }
+    } catch (e) {
+      console.error("[star/career] save check skipped:", e instanceof Error ? e.message : e);
+    }
+  }
+
   // ── The save guard (lib/star/saveGuard.ts) ──
   // Compared with the last trusted save in this slot (or, after a delete,
   // the tombstone that kept it). Admins and testers are never checked: they
@@ -160,7 +225,7 @@ export async function POST(req: Request) {
   let corrected: string[] = [];
   if (mode !== "off") {
     try {
-      const prev = await readRow(db, user.id, slot);
+      const prev = prevRow !== undefined ? prevRow : await readRow(db, user.id, slot);
       const exempt = await isTester(user.id);
       const prevSavedAt = prev ? new Date(prev.updated_at).getTime() : null;
       // The server casino's own record since the last trusted save
