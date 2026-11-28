@@ -155,7 +155,12 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     paddock: mat("#7f9446", { roughness: 1 }),
     field: mat("#ffffff", { map: tex(stripeCanvas("#7ea24b", "#73963f")), roughness: 1 }),
     white: mat("#f4f1ea", { roughness: 0.6 }),
-    timber: mat("#d9cbbd", { map: tex(boardsCanvas("#8a6448")), roughness: 0.8 }), // weathered timber, not orange
+    // dark stained timber with its grain (golden hour turned the first, lighter boards orange)
+    timber: mat("#b9ab9d", { map: tex(boardsCanvas("#5a3e2b")), roughness: 0.78 }),
+    stall: mat("#6e5038", { map: tex(boardsCanvas("#4a3322")), roughness: 0.9, emissive: "#24160b", emissiveIntensity: 0.55 }),
+    iron: mat("#2b2724", { roughness: 0.5, metalness: 0.6 }),
+    lampGlass: new THREE.MeshStandardMaterial({ color: "#fff1cf", emissive: "#ffc66b", emissiveIntensity: d.night ? 1.6 : 0.5, roughness: 0.3 }),
+    brass: mat("#b58a3a", { roughness: 0.35, metalness: 0.7 }),
     darkTimber: mat("#5c3d27", { roughness: 0.8 }),
     slate: mat("#ffffff", { map: tex(slateCanvas()), roughness: 0.75 }),
     hedge: mat("#ffffff", { map: tex(hedgeCanvas("#33612a")), roughness: 0.95 }),
@@ -304,8 +309,24 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
       A.box(1.62, 0.1, 0.18, M.white, x, 2.62, fz + 0.04); // white trim
       A.box(0.1, 2.2, 0.18, M.white, x - 0.8, 1.55, fz + 0.04); A.box(0.1, 2.2, 0.18, M.white, x + 0.8, 1.55, fz + 0.04);
       if (i === 2) A.box(1.4, 1.1, 0.06, M.darkTimber, x, 1.75, fz - 0.05); // the tack room's top half shut
-      else A.box(1.4, 1.1, 0.02, mat("#150e09"), x, 1.75, fz - 0.12); // dark inside the open stalls
+      else {
+        // inside the open stalls: boarded walls in the stable's own warm half-light, straw on the floor
+        A.box(1.48, 2.4, 0.06, M.stall, x, 0.45 + 1.2, fz - 2.9); // the back (deep enough for a horse)
+        for (const sx of [-1, 1]) A.box(0.06, 2.4, 2.9, M.stall, x + sx * 0.74, 0.45 + 1.2, fz - 1.45); // the sides
+        A.box(1.48, 0.06, 2.9, M.stall, x, 2.62, fz - 1.45); // the ceiling
+        A.box(1.44, 0.12, 2.86, M.straw, x, 0.5, fz - 1.45); // straw
+      }
+      // the door's hinges and its bolt
+      for (const yy of [0.75, 1.45]) A.box(0.28, 0.05, 0.03, M.iron, x - 0.55, yy, fz + 0.1);
+      A.box(0.22, 0.05, 0.04, M.iron, x + 0.5, 1.2, fz + 0.1);
     });
+    // a hay net hanging in the second stall, its rope to the beam
+    {
+      const net = new THREE.IcosahedronGeometry(0.26, 1);
+      net.scale(1, 1.25, 0.8);
+      A.put(net, M.straw, doors[1] - 0.35, 2.0, fz - 0.55);
+      A.box(0.02, 0.32, 0.02, M.darkTimber, doors[1] - 0.35, 2.46, fz - 0.55);
+    }
     // the roof: two slopes of slate, gable ends of timber, a ridge
     const rise = b.ridge - b.h, half = dd / 2 + 0.35, slope = Math.hypot(half, rise), ang = Math.atan2(rise, half);
     for (const s of [-1, 1]) {
@@ -319,10 +340,16 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
       const g = new THREE.ShapeGeometry(sh); tile(g, 1 / 1.2, 1 / 1.2);
       A.put(g, M.timber, x, b.h, cz, 0, (x < cx ? -1 : 1) * Math.PI / 2, 0);
     }
-    // a lantern over each stall door and the horse's name board over his stall
-    for (const x of doors.slice(0, 2)) A.box(0.18, 0.28, 0.18, M.gold, x, 2.95, fz + 0.18);
-    const nb = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.36), new THREE.MeshStandardMaterial({ map: signTex([opt.horse.name], 512, 154), roughness: 0.7 }));
-    nb.position.set(doors[0], 3.2, fz + 0.1); scene.add(nb); signs.push(nb);
+    // stable lamps between the doors (an iron bracket and a warm glass), and a brass-edged name plate over his stall
+    for (const x of [(doors[0] + doors[1]) / 2, (doors[1] + doors[2]) / 2]) {
+      A.box(0.05, 0.05, 0.3, M.iron, x, 2.5, fz + 0.15);
+      A.box(0.16, 0.04, 0.16, M.iron, x, 2.46, fz + 0.3);
+      A.box(0.12, 0.2, 0.12, M.lampGlass, x, 2.33, fz + 0.3);
+      A.box(0.16, 0.04, 0.16, M.iron, x, 2.21, fz + 0.3);
+    }
+    A.box(1.08, 0.34, 0.03, M.brass, doors[0], 2.98, fz + 0.09);
+    const nb = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.27), new THREE.MeshStandardMaterial({ map: signTex([opt.horse.name], 512, 138, "#1d2a22", "#f3e3b8"), roughness: 0.6 }));
+    nb.position.set(doors[0], 2.98, fz + 0.111); scene.add(nb); signs.push(nb);
     // hay bales stacked by the tack room, a mounting block and a water trough by the paddock gate
     for (const [x, y, z] of [[b.x1 + 0.9, 0.3, b.z1 - 0.6], [b.x1 + 0.9, 0.3, b.z1 - 1.75], [b.x1 + 0.9, 0.9, b.z1 - 1.2]] as [number, number, number][]) A.box(1.1, 0.58, 1.05, M.straw, x, y, z);
     A.box(1.2, 0.55, 0.6, M.stone, -35.7, 0.27, 3.55);
@@ -408,7 +435,7 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     // the next gate's marker: a gold chevron that bobs above it
     const chev = new THREE.Shape();
     chev.moveTo(-0.45, 0.35); chev.lineTo(0, -0.1); chev.lineTo(0.45, 0.35); chev.lineTo(0.45, 0.1); chev.lineTo(0, -0.35); chev.lineTo(-0.45, 0.1); chev.lineTo(-0.45, 0.35);
-    marker = new THREE.Mesh(new THREE.ExtrudeGeometry(chev, { depth: 0.08, bevelEnabled: false }), M.gold);
+    marker = new THREE.Mesh(new THREE.ExtrudeGeometry(chev, { depth: 0.08, bevelEnabled: false }), new THREE.MeshStandardMaterial({ color: "#facc15", emissive: "#a87d00", emissiveIntensity: d.night ? 0.9 : 0.45, roughness: 0.4, transparent: true }));
     marker.name = "course-marker";
     marker.visible = false;
     scene.add(marker); movers.push(marker);
@@ -493,7 +520,11 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
   scene.add(dyn);
   movers.push(dyn);
   let horse: HorseRig | null = null;
-  const hp = { x: HORSE_HOME.x, z: HORSE_HOME.z, yaw: Math.PI * 0.75, speed: 0, energy: Math.max(0, Math.min(100, opt.horse.energy)), y: 0, pitch: 0 };
+  // He waits in his stall (the first door), head out over the half door; ridden and left, he grazes where he is.
+  const STALL = { x: (BARN.x0 + BARN.x1) / 2 - 2.8, z: BARN.z1 - 0.08 - 0.7, y: 0.45 };
+  let stalled = true;
+  const hp = { x: STALL.x, z: STALL.z, yaw: 0, speed: 0, energy: Math.max(0, Math.min(100, opt.horse.energy)), y: STALL.y, pitch: 0 };
+  void HORSE_HOME;
   let graze = 0, grazeT = 0, wanderTo: [number, number] | null = null, wanderWait = 3;
   d.load("/star/garden3d/horse.glb").then((g: any) => {
     if (disposed) return;
@@ -507,6 +538,8 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     if (!horse) return;
     horse.root.position.set(hp.x, hp.y, hp.z);
     horse.root.rotation.set(hp.pitch, hp.yaw, 0, "YXZ");
+    horse.blob.visible = !stalled;
+    horse.saddle.visible = !stalled; // untacked in his stall
     horse.blob.position.set(hp.x, 0.02, hp.z);
     horse.blob.rotation.z = hp.yaw;
     horse.blob.material.opacity = 0.62 * Math.max(0.35, 1 - hp.y / 1.2);
@@ -616,9 +649,11 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     startFade(() => {
       mounted = true;
       graze = 0;
-      // he turns to face where you were looking, standing where he is
+      // he turns to face where you were looking, standing where he is (led out into the yard from his stall)
       const py = rider!.player.rotation.y;
-      hp.yaw = py; hp.speed = 0;
+      // from his stall: led out into the yard, on the path to the paddock gate, facing it (clear of the stable for the camera)
+      if (stalled) { stalled = false; hp.x = STALL.x; hp.z = AXIS_Z - 0.2; hp.y = 0; hp.yaw = -Math.PI / 2; } else hp.yaw = py;
+      hp.speed = 0;
       placeHorse();
       horse!.reinL.visible = horse!.reinR.visible = true;
     });
@@ -627,7 +662,7 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
   const dismountNow = () => {
     if (!mounted) return;
     startFade(() => {
-      mounted = false; jumpState = null; hp.speed = 0; hp.y = 0; hp.pitch = 0; gallopHeld = false;
+      mounted = false; jumpState = null; hp.speed = 0; hp.y = 0; hp.pitch = 0; gallopHeld = false; flash = null;
       placeHorse();
       horse!.reinL.visible = horse!.reinR.visible = false;
       // you stand on his left (near) side, facing him, clear of his body
@@ -650,6 +685,8 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
   const ink = "#f7f1e8", GOLDC = "#facc15";
   const el = (tag: string, css: string, html = "") => { const e = document.createElement(tag); e.style.cssText = css; if (html) e.innerHTML = html; return e; };
   const stop = (e: Event) => e.stopPropagation();
+  /** A player-chosen name, safe inside the HUD's markup. */
+  const esc = (t: string) => t.replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
   const hud = el("div", "position:absolute;inset:0;pointer-events:none;z-index:5;font-family:system-ui,-apple-system,sans-serif;color:" + ink);
   hud.setAttribute("data-garden-levels-hud", "");
   const glass = "background:rgba(14,12,10,0.82);border:1px solid rgba(250,204,21,0.25);border-radius:16px;backdrop-filter:blur(8px);box-shadow:0 14px 30px -14px rgba(0,0,0,.85);";
@@ -679,7 +716,8 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
   gallop.addEventListener("pointerdown", gOn); gallop.addEventListener("pointerup", gOff); gallop.addEventListener("pointerleave", gOff); gallop.addEventListener("pointercancel", gOff);
   const clock = el("div", `position:absolute;left:12px;top:calc(max(12px, env(safe-area-inset-top)) + 96px);${glass}padding:8px 14px;display:none;text-align:center;min-width:150px`);
   clock.setAttribute("data-lap-clock", "");
-  const flashEl = el("div", `position:absolute;left:50%;transform:translateX(-50%);top:42%;font-size:26px;font-weight:950;text-shadow:0 3px 12px rgba(0,0,0,.7);opacity:0;transition:opacity .2s;white-space:nowrap`);
+  // what just happened (a lap start, a clear jump, a rail down): the garden's own prompt chip, low on the screen, never text in the world
+  const flashEl = el("div", `position:absolute;left:50%;transform:translateX(-50%);bottom:calc(max(24px, calc(env(safe-area-inset-bottom) + 16px)) + 150px);${glass}border-radius:999px;padding:9px 16px;font-size:14px;font-weight:900;opacity:0;transition:opacity .2s;white-space:nowrap;display:flex;align-items:center;gap:8px`);
   const gaitEl = el("div", `position:absolute;right:12px;top:calc(max(12px, env(safe-area-inset-top)) + 96px);${glass}padding:8px 12px;display:none;min-width:120px;font-size:12px;font-weight:900`);
   const signCard = el("div", `position:absolute;right:12px;bottom:max(24px, calc(env(safe-area-inset-bottom) + 16px));${glass}padding:12px;display:none;flex-direction:column;gap:8px;pointer-events:auto`);
   for (const ev of ["pointerdown", "pointerup"]) signCard.addEventListener(ev, stop);
@@ -705,7 +743,8 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
   const near = (): ExtSpot | null => {
     if (mounted || !rider) return null;
     const p = rider.player.position;
-    if (horse && Math.hypot(p.x - hp.x, p.z - hp.z) < 2.6) return "ride";
+    // (in his stall: stand by the half door, where his head is)
+    if (horse && Math.hypot(p.x - hp.x, p.z - (stalled ? hp.z + 2.0 : hp.z)) < (stalled ? 3.2 : 2.6)) return "ride";
     if (level >= 5 && SIGNPOSTS.some((s) => Math.hypot(p.x - s.x, p.z - s.z) < 2.2)) return "signpost";
     return null;
   };
@@ -719,7 +758,7 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
       if (key !== lastCard) {
         lastCard = key;
         const e = Math.round(hp.energy);
-        cardWords.innerHTML = `<div style="font-weight:900;font-size:15px">🐎 ${opt.horse.name}</div><div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800"><span>⚡</span><span style="flex:1;height:7px;border-radius:2px;background:rgba(255,255,255,.14);overflow:hidden;min-width:60px"><span style="display:block;height:100%;width:${e}%;background:${e < 15 ? "#f87171" : GOLDC}"></span></span><b>${e}</b></div>`;
+        cardWords.innerHTML = `<div style="font-weight:900;font-size:15px">🐎 ${esc(opt.horse.name)}</div><div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800"><span>⚡</span><span style="flex:1;height:7px;border-radius:2px;background:rgba(255,255,255,.14);overflow:hidden;min-width:60px"><span style="display:block;height:100%;width:${e}%;background:${e < 15 ? "#f87171" : GOLDC}"></span></span><b>${e}</b></div>`;
       }
       rideBtn.style.opacity = hp.energy > 0.5 ? "1" : "0.45";
     }
@@ -752,8 +791,8 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     }
     if (flash) {
       flash.t -= dt;
-      flashEl.textContent = flash.text;
-      flashEl.style.color = flash.good ? GOLDC : "#fca5a5";
+      if (flashEl.dataset.t !== flash.text + flash.good) { flashEl.dataset.t = flash.text + flash.good; const dot = el("span", `width:9px;height:9px;border-radius:9px;background:${flash.good ? GOLDC : "#f87171"}`); const words = el("span", ""); words.textContent = flash.text; flashEl.replaceChildren(dot, words); }
+      flashEl.style.color = ink;
       flashEl.style.opacity = flash.t > 0 ? "1" : "0";
       if (flash.t <= -0.3) flash = null;
     }
@@ -886,8 +925,8 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
       if (!mounted) {
         // the horse at rest: grazes, now and then ambles to a new spot in the paddock
         if (horse) {
-          const inPaddock = inRect(hp.x, hp.z, PADDOCK2);
-          const nearYou = Math.hypot(px - hp.x, pz - hp.z) < 3;
+          const inPaddock = !stalled && inRect(hp.x, hp.z, PADDOCK2);
+          const nearYou = Math.hypot(px - hp.x, pz - hp.z) < 3 || (stalled && Math.hypot(px - hp.x, pz - hp.z - 1.2) < 4);
           if (inPaddock && !nearYou) {
             if (!wanderTo) { wanderWait -= dt; if (wanderWait <= 0) wanderTo = [PADDOCK2[0] + 2 + Math.random() * (PADDOCK2[1] - PADDOCK2[0] - 4), PADDOCK2[2] + 3 + Math.random() * (PADDOCK2[3] - PADDOCK2[2] - 6)]; }
             if (wanderTo) {
@@ -902,7 +941,7 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
             }
           } else { hp.speed = 0; wanderTo = null; }
           grazeT -= dt;
-          if (grazeT <= 0) { grazeT = 4 + Math.random() * 6; graze = hp.speed > 0.1 || nearYou ? 0 : Math.random() < 0.65 ? 1 : 0; }
+          if (grazeT <= 0) { grazeT = 4 + Math.random() * 6; graze = stalled || hp.speed > 0.1 || nearYou ? 0 : Math.random() < 0.65 ? 1 : 0; }
           if (nearYou) graze = Math.max(0, graze - dt * 2);
           placeHorse();
           // off screen: his clips don't run (nobody sees them)
@@ -916,7 +955,11 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
         marker.visible = !!g;
         if (g) {
           horseT += 0;
-          marker.position.set((g.x0 + g.x1) / 2, 2.35 + 0.18 * Math.sin(performance.now() / 260), (g.z0 + g.z1) / 2);
+          // high over the gate itself, fading out as the horse comes within ~6 m (it never sits on his head from behind)
+          const gx = (g.x0 + g.x1) / 2, gz = (g.z0 + g.z1) / 2, dist = Math.hypot(gx - hp.x, gz - hp.z);
+          const op = Math.max(0, Math.min(1, (dist - 4) / 3));
+          marker.material.opacity = op; marker.visible = op > 0.02;
+          marker.position.set(gx, 3.7 + 0.15 * Math.sin(horseT * 3.5), gz);
           marker.rotation.y += dt * 1.6;
         }
       }
@@ -942,7 +985,7 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
         pose: poseNumbers(),
       }),
       travel: (to) => travelTo(to),
-      horseAt: (x, z, yaw) => { hp.x = x; hp.z = z; hp.yaw = yaw; hp.speed = 0; placeHorse(); },
+      horseAt: (x, z, yaw) => { stalled = false; hp.x = x; hp.z = z; hp.y = 0; hp.yaw = yaw; hp.speed = 0; placeHorse(); },
       scene: () => scene,
     },
     dispose: () => {

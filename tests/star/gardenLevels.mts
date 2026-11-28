@@ -20,6 +20,7 @@ import {
 import { roundSkinned } from "../../lib/star/garden3d/rideHorse";
 import { GARDEN_BUDGET, GARDEN_LEVELS_MEASURED, RIDER_MEASURED } from "../../lib/star/garden3d/gardenBudget";
 import type { CareerState } from "../../lib/star/types";
+import { HORSE_NAMES, REAL_HORSE_BLOCKLIST } from "../../lib/star/horseNames";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -223,6 +224,14 @@ for (const m of GARDEN_LEVELS_MEASURED) {
   if (m.over) { check(m.draws <= m.over.ceiling, `level ${m.level} ${m.view}: ${m.draws} draws, held at ${m.over.ceiling}`); console.log(`  KNOWN OVER: level ${m.level} ${m.view}: ${m.draws} draws > ${b.draws} (${m.over.why})`); }
   else if (!m.baselineOver) check(m.draws <= b.draws, `level ${m.level} ${m.view}${m.walking ? " (moving)" : ""}: ${m.draws} draws ≤ ${b.draws}`);
   else check(m.draws <= m.baselineOver, `level ${m.level} ${m.view}: ${m.draws} draws, no more than the garden itself there (${m.baselineOver})`);
+}
+
+// ── names: every horse name invented (Harry: no real names) ──
+{
+  const ours = [...HORSE_NAMES, STABLE_HORSE_NAME, "Thunder Bolt", "Copper Kettle"];
+  const norm = (n: string) => n.toLowerCase().replace(/[^a-z]/g, "");
+  for (const n of ours) check(!REAL_HORSE_BLOCKLIST.some((r) => norm(r) === norm(n)), `"${n}" is a real horse or person`);
+  check(new Set(HORSE_NAMES).size === HORSE_NAMES.length, "no name twice in the race field list");
 }
 
 if (problems.length) { console.error(`gardenLevels: ${problems.length} problem(s)\n - ` + problems.join("\n - ")); process.exit(1); }

@@ -83,7 +83,7 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
   async garden(opts: any = {}) {
     M.t0 = performance.now();
     const c = await startGarden(stage(), { onNear() {}, onFps() {}, onShopDoor() {}, onRide(r: any) { (window as any).__rides = [...((window as any).__rides ?? []), r]; } } as any, {
-      kit: KIT, number: 10, tier: opts.tier ?? 3, stable: 3, horse: { name: "Shergar" },
+      kit: KIT, number: 10, tier: opts.tier ?? 3, stable: 3, horse: { name: "Copper Kettle" },
       trophies: [{ name: "Premier League", count: 2, art: null }, { name: "FA Cup", count: 1, art: null }],
       cars: ["/star/shop3d/items/car-1.glb", "/star/shop3d/items/car-suv.glb"],
       sky: opts.sky ?? "day", mates: [4, 7, 9], arrive: "gate",

@@ -267,6 +267,16 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const gLevel = opts.levels ? gardenLevelOf(opts.levels.xp).level : 1;
   const gCleared = clearedRects(gLevel);
   const levelCleared = (x: number, z: number) => gCleared.some((r) => inRect(x, z, r));
+  /** Take out every triangle whose middle is in one of the rects (an indexed geometry, in place). */
+  const dropTrianglesIn = (g: any, rects: [number, number, number, number][]) => {
+    if (!g.index) return;
+    const ix = g.index.array, p = g.attributes.position, keep: number[] = [];
+    for (let t = 0; t < ix.length; t += 3) {
+      const cx = (p.getX(ix[t]) + p.getX(ix[t + 1]) + p.getX(ix[t + 2])) / 3, cz = (p.getZ(ix[t]) + p.getZ(ix[t + 1]) + p.getZ(ix[t + 2])) / 3;
+      if (!rects.some((r) => inRect(cx, cz, r))) keep.push(ix[t], ix[t + 1], ix[t + 2]);
+    }
+    g.setIndex(keep);
+  };
 
   // ── Renderer ──
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
@@ -2535,8 +2545,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // Look H: shade where things meet the grass, and long-grass tufts round them and along the boundary
   if (nature) {
     const spots: [number, number, number][] = CIRCLES.filter(([, , rr]) => rr >= 0.45 && rr <= 1.2).map(([x, z, rr]) => [x, z, rr]);
-    for (const list of Object.values(treeAt)) for (const [x, z, s] of list) if (Math.hypot(x, z) < 30) spots.push([x, z, Math.min(1.1, 0.16 * s)]);
+    for (const list of Object.values(treeAt)) for (const [x, z, s] of list) if (Math.hypot(x, z) < 30 && !levelCleared(x, z)) spots.push([x, z, Math.min(1.1, 0.16 * s)]);
     const gd = makeGroundDetail(THREE, nature, spots, B, 11);
+    // garden levels: no long grass in the west gate, on its path or on the new areas' gravel and paths
+    if (gLevel >= 2) for (const m of [gd.contacts, gd.tufts]) dropTrianglesIn(m.geometry, [...gCleared, [-19.8, -17.4, -3.2, -0.4], [-19, -10, -2.7, -0.9]]);
     scene.add(gd.contacts, gd.tufts);
   }
   // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
