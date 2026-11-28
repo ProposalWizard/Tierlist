@@ -3800,9 +3800,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <SaveClashPrompt
         clash={saveClash}
-        onKeep={(keep) => {
+        onKeep={(keep, other) => {
           const clash = saveClash;
-          const chosen = resolveSaveClash(scopeRef.current, clash, keep);
+          const chosen = resolveSaveClash(scopeRef.current, clash, keep, other);
           setSaveClash(null);
           loadCareerIntoState(clash.slot, chosen);
         }}

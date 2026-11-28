@@ -212,6 +212,7 @@ export default function SettingsScreen({
         onStartNew={onStartNewInSlot}
         onDelete={onDeleteSave}
         glow={glow}
+        accountScope={moveSaves?.scope}
       />
       {moveSaves && <MoveSavesPanel scope={moveSaves.scope} onImported={moveSaves.onImported} glow={glow} />}
 

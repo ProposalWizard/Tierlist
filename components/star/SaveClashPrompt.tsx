@@ -16,7 +16,7 @@
  */
 import { useState } from "react";
 import type { SaveClash } from "@/lib/star/storage";
-import { summariseSave, timeAgo, deviceName } from "@/lib/star/saveClash";
+import { summariseSave, timeAgo, deviceName, deviceKindFromUA } from "@/lib/star/saveClash";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import ClubBadge from "./ClubBadge";
 import { PressButton, rgba, clubTheme } from "./ui";
@@ -26,9 +26,21 @@ const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|A
 
 type Side = "local" | "cloud";
 
+/** Same player both sides: two copies of one career. Otherwise two careers. */
+function sameCareer(clash: SaveClash): boolean {
+  const a = clash.local.career.player, b = clash.cloud.career.player;
+  return a.firstName === b.firstName && a.lastName === b.lastName && a.startYear === b.startYear;
+}
+
+/**
+ * 28 Nov 2026 (Harry: "my saves are completely different on my phone and
+ * PC"): three plain choices. Keep both (the other moves to a free slot), or
+ * keep one; the one not kept goes to a 30-day backup on this device, never
+ * deleted outright (resolveSaveClash, lib/star/storage.ts).
+ */
 export default function SaveClashPrompt({ clash, onKeep, onLater }: {
   clash: SaveClash;
-  onKeep: (keep: Side) => void;
+  onKeep: (keep: Side, other: "spare" | "backup") => void;
   /** No free slot: play this device's copy without uploading it, ask again next time. */
   onLater: () => void;
 }) {
@@ -37,16 +49,21 @@ export default function SaveClashPrompt({ clash, onKeep, onLater }: {
   const glow = clubTheme(clash.local.career.player.club || clash.cloud.career.player.club).glow;
   const spare = clash.spareSlot;
 
-  const pick = (side: Side) => {
-    if (spare !== null) onKeep(side);
-    else setConfirm(side);
-  };
+  const twoCareers = !sameCareer(clash);
+  let here: string = "computer";
+  try { here = deviceKindFromUA(navigator.userAgent); } catch { /* computer */ }
+  const hereName = deviceName(here as "phone" | "tablet" | "computer");
+  // Phone and phone (Safari and the Home Screen app): "the online copy".
+  const cloudName = clash.cloud.device && deviceName(clash.cloud.device) !== hereName ? deviceName(clash.cloud.device) : null;
+  const sideName = (side: Side) => side === "local" ? `This ${hereName}` : cloudName ? `Your ${cloudName}` : "Online copy";
+  const keepLabel = (side: Side) => side === "local" ? `Keep this ${hereName} only` : cloudName ? `Keep ${cloudName} only` : "Keep online copy only";
+  const pick = (side: Side) => setConfirm(side);
 
   const card = (side: Side) => {
     const copy = side === "local" ? clash.local : clash.cloud;
     const s = summariseSave(copy.career);
     const theme = clubTheme(s.club ?? "", copy.career);
-    const where = side === "local" ? "This device" : "Another device";
+    const where = sideName(side);
     const what = side === "cloud" && clash.cloud.device ? `Saved from a ${deviceName(clash.cloud.device)}` : side === "local" ? "Saved here" : "Saved in the cloud";
     const chosen = confirm === side;
     return (
@@ -82,10 +99,10 @@ export default function SaveClashPrompt({ clash, onKeep, onLater }: {
           variant={chosen ? "danger" : "primary"}
           size="none"
           data-testid={`clash-keep-${side}`}
-          onClick={() => (chosen ? onKeep(side) : pick(side))}
+          onClick={() => (chosen ? onKeep(side, "backup") : pick(side))}
           className="mt-2.5 w-full rounded-xl py-2.5 text-[13px] font-black uppercase tracking-wide"
         >
-          {chosen ? "Keep this · delete the other" : "Keep this one"}
+          {chosen ? "Sure? The other goes to a backup" : keepLabel(side)}
         </PressButton>
       </div>
     );
@@ -94,10 +111,14 @@ export default function SaveClashPrompt({ clash, onKeep, onLater }: {
   return (
     <Screen glow={glow} className="max-w-sm px-4 pb-6 pt-5">
       <div data-testid="save-clash-prompt" className="w-full">
-        <Kicker color="#fcd34d">Save clash</Kicker>
-        <div className="mt-2 text-[22px] font-black leading-tight text-white">Which progress do you want to keep?</div>
+        <Kicker color="#fcd34d">{twoCareers ? `Two careers in Save ${clash.slot}` : "Save clash"}</Kicker>
+        <div className="mt-2 text-[22px] font-black leading-tight text-white">
+          {twoCareers ? `Two different careers in Save ${clash.slot}` : "Which progress do you want to keep?"}
+        </div>
         <p className="mt-1 text-[13px] font-bold leading-snug text-white/85">
-          This career was played on two devices without syncing, so there are two different saves.
+          {twoCareers
+            ? "This device and your account online hold a different career in this slot. Nothing has been replaced. Choose what to keep."
+            : "This career was played on two devices without syncing, so there are two different saves."}
         </p>
         <div
           className="mt-2.5 rounded-xl px-3 py-2 text-[12px] font-bold leading-snug"
@@ -106,9 +127,21 @@ export default function SaveClashPrompt({ clash, onKeep, onLater }: {
             : { background: "rgba(245,158,11,.16)", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.5)", color: "#fef3c7" }}
         >
           {spare !== null
-            ? <>The other one won&apos;t be lost — it moves to <b>Save {spare}</b>.</>
-            : <>All save slots are full, so the one you don&apos;t keep will be <b>deleted</b>. To keep both, tap <b>Decide later</b>, free a slot in Settings → Saves, then open the game again.</>}
+            ? <><b>Keep both</b> moves the {cloudName ? `${cloudName}'s` : "online"} copy to <b>Save {spare}</b>. Keeping only one puts the other in a backup on this device for 30 days.</>
+            : <>Keep both needs a free slot, and all 3 saves are full. The one you don&apos;t keep goes to a <b>backup on this device for 30 days</b>, not deleted. Or tap <b>Decide later</b>, free a slot in Settings → Saves, and open the game again.</>}
         </div>
+
+        {spare !== null && (
+          <PressButton
+            variant="gold"
+            size="none"
+            data-testid="clash-keep-both"
+            onClick={() => onKeep("local", "spare")}
+            className="mt-3 w-full rounded-xl py-3 text-[14px] font-black uppercase tracking-wide"
+          >
+            Keep both · other to Save {spare}
+          </PressButton>
+        )}
 
         <div className="mt-3 space-y-2.5">
           {card("local")}
@@ -126,7 +159,7 @@ export default function SaveClashPrompt({ clash, onKeep, onLater }: {
             Cancel
           </PressButton>
         )}
-        {spare === null && !confirm && (
+        {!confirm && (
           <PressButton
             variant="secondary"
             size="none"
@@ -137,7 +170,7 @@ export default function SaveClashPrompt({ clash, onKeep, onLater }: {
             Decide later
           </PressButton>
         )}
-        {spare === null && !confirm && (
+        {!confirm && (
           <p className="mt-1.5 text-center text-[11px] font-bold leading-snug text-white/65">
             Plays this device&apos;s save without uploading it. Both copies stay as they are, and you&apos;ll be asked again.
           </p>
