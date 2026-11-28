@@ -1,0 +1,258 @@
+{
+ "id": "arc-the-agents-party",
+ "title": "Fifty",
+ "owner": "agent",
+ "summary": "Your agent is fifty and having a party in a hotel with a fountain. He wants you to give a speech about him. You don't know very much about him. A season on, the photo from the party.",
+ "size": "small",
+ "about": {
+  "who": [
+   "agent"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "agent",
+   "pick": "agent"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-speech",
+   "title": "The speech",
+   "text": "You gave a speech at your agent's fiftieth. You found out he has a daughter and a fear of swans. He has the speech framed in his office."
+  },
+  {
+   "id": "the-fountain",
+   "title": "The fountain",
+   "text": "At your agent's fiftieth you ended up in the fountain. It's the only photo of the night anyone remembers."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "agp-1-party",
+   "title": "Fifty",
+   "n": 1,
+   "event": {
+    "id": "arc-agp-1-party",
+    "title": "Fifty",
+    "category": "money",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{agent.name}'s fiftieth, in a hotel with a fountain in the lobby. Three hundred people, most of them other agents. He pulls you aside at the bar. \"You're doing a speech. Five minutes. About me.\""
+    ],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "agent",
+       "say": [
+        "\"Just say something nice. And true. Mostly nice.\" You realise you don't know if he's married."
+       ],
+       "replies": [
+        {
+         "id": "ask",
+         "label": "Ask his mum, at table one, what to say.",
+         "tone": "kind",
+         "end": "ask"
+        },
+        {
+         "id": "wing",
+         "label": "Wing it.",
+         "tone": "confident",
+         "end": "wing"
+        },
+        {
+         "id": "no",
+         "label": "\"I don't do speeches.\"",
+         "tone": "honest",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ask": [
+       {
+        "text": "His mum tells you everything: the daughter, the paper round, the swan. Your speech makes him cry in front of three hundred agents.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "heard-my-mum-in-the-speech",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "speech"
+         }
+        }
+       }
+      ],
+      "wing": [
+       {
+        "text": "You say \"he gets the job done\" four times. Then you step backwards into the fountain. It gets the biggest cheer of the night.",
+        "effects": {
+         "fame": 1
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "fountain"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fine.\" Another client does it, very well. He thanks you anyway, for coming.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "none"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     }
+    ]
+   },
+   "hint": "Your agent has a big birthday"
+  },
+  {
+   "id": "agp-2-photo",
+   "title": "The photo",
+   "after": {
+    "beat": "agp-1-party",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-agp-2-photo",
+    "title": "The photo",
+    "category": "money",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. You're in your agent's office for the first time in months. On the wall behind his desk, in a frame, there's something from the party."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Look closer.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='speech'",
+        "text": "Your speech, typed up, with a photo of his mum laughing at table one. He catches you looking. \"Don't,\" he says, and smiles.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-speech"
+        }
+       },
+       {
+        "text": "A photo of you, up to your knees in the fountain, holding a glass in the air. \"Best client I've got,\" he says, and means something by it.",
+        "arc": {
+         "end": "the-fountain"
+        }
+       }
+      ]
+     },
+     {
+      "id": "sit",
+      "label": "Sit down and talk business.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='speech'",
+        "text": "He keeps looking past you at the frame. He's softer in negotiations than he used to be, with you.",
+        "arc": {
+         "end": "the-speech"
+        }
+       },
+       {
+        "text": "He keeps looking past you at the photo, and laughing.",
+        "arc": {
+         "end": "the-fountain"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     }
+    ]
+   },
+   "hint": "A season on, your agent's office"
+  }
+ ]
+}
