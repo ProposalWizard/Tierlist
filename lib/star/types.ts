@@ -1943,4 +1943,7 @@ export type StarPhase =
   /** Your house in 3D (9 Oct 2026): the wardrobe and mirror, the trophy
    *  cabinet, your cars out of the window. From the garden's house door or
    *  Home's "Your house". See components/star/Home3D.tsx. */
-  | "home-3d";
+  | "home-3d"
+  /** The 3D gym (28 Nov 2026), from the Training page's Gym card while it is tested: all 13 exercises,
+   *  the gym's own numbers saved (career.gym), no career effect. See components/star/Gym3D.tsx. */
+  | "gym-3d";

@@ -299,6 +299,7 @@ const Home3D = lazyScreen(() => import("@/components/star/Home3D"), { fallback: 
 const Casino3D = lazyScreen(() => import("@/components/star/Casino3D"), { fallback: loadingCover("casino") });
 const TrainingPitchScreen = lazyScreen(() => import("@/components/star/TrainingPitchScreen"));
 const Training3D = lazyScreen(() => import("@/components/star/Training3D"), { fallback: loadingCover("training") });
+const Gym3D = lazyScreen(() => import("@/components/star/Gym3D"), { fallback: loadingCover("gym") });
 const AdvertShoot = lazyScreen(() => import("@/components/star/relgames/AdvertShoot"));
 const KnockoutRoundup = lazyScreen(() => import("@/components/star/KnockoutRoundup"));
 const CupDrawReveal = lazyScreen(() => import("@/components/star/CupDrawReveal"));
@@ -328,7 +329,7 @@ const LAZY_PRELOAD = [
   ContractInOffice, ManagerNewsInOffice, CaptainInOffice, GlobalSettingsScreen, Casino, Investments,
   OwnershipScreen, VoteCeremony, RuleBookScreen, RelationshipGame, AdvertShoot, GoalClipViewer, HallOfFame,
   CareerOverview, SaveClashPrompt, FaceEditorScreen, FakeFaceEditorScreen, Match3DLayer, Home3D, Garden3D,
-  Shop3D, Casino3D, Training3D, ProfileSetup, TrialSequence, FreeAgentShell, TrialReward, ManagerTalk,
+  Shop3D, Casino3D, Training3D, Gym3D, ProfileSetup, TrialSequence, FreeAgentShell, TrialReward, ManagerTalk,
   ScoutOffers, FinalSeasonNotice, FinalWhistle, FarewellInvite, FarewellResult, GuardOfHonour,
   StandingOvation, ShareLinkSheet,
 ];
@@ -3799,9 +3800,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <SaveClashPrompt
         clash={saveClash}
-        onKeep={(keep) => {
+        onKeep={(keep, other) => {
           const clash = saveClash;
-          const chosen = resolveSaveClash(scopeRef.current, clash, keep);
+          const chosen = resolveSaveClash(scopeRef.current, clash, keep, other);
           setSaveClash(null);
           loadCareerIntoState(clash.slot, chosen);
         }}
@@ -5005,6 +5006,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  if (phase === "gym-3d") {
+    // The 3D gym from the Training page (testing, 28 Nov 2026): its own numbers saved, no career effect.
+    const backToTraining = () => { setTrainingTab("training"); setActiveNav("skills"); setPhase("skills"); };
+    if (career) return <Gym3D career={career} onBack={backToTraining} onCareer={(c) => setCareer(c)} />;
+  }
+
   if (phase === "training-3d") {
     // The 3D training pitch: Crossbar Challenge (you vs one team-mate), on the
     // real engine. Same reward and cost as the Team game (Woodwork Challenge).
@@ -5547,7 +5554,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const trainingBody = (
         <div>
           {trainingTab === "training" ? (
-            <SkillsScreen career={career} onTrain={handleTrain} />
+            <SkillsScreen career={career} onTrain={handleTrain} onGym={() => setPhase("gym-3d")} />
           ) : (
             <RelationsPage
               career={career}

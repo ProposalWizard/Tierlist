@@ -191,6 +191,34 @@ if (strideOn() && !process.env.SKIP_CLOTH) {
   const { ownMotion } = await import("../../lib/star/people/life");
   const dealt = Array.from({ length: 2000 }, (_, i) => ownMotion(`p${i}`).walk);
   check(!dealt.includes("walk_confident" as never), "walk_confident (a standing pose) is dealt to someone");
+  // LIGHT, NOT HEAVY (28 Nov 2026, Harry: "seems a bit heavy for some"): the Quaternius walks stood up
+  // (stride.ts CARRIAGE; before: back 8-11 deg forward, neck 40-42 deg, face 7-9 deg down, formal hands 7 cm)
+  if (strideOn() && process.env.CARRIAGE !== "0") {
+    const { loadAll, person, pose, dur, wp } = await import("../../scripts/walk3d/lib.mts");
+    const F = await loadAll();
+    for (const build of ["c1", "c3"] as ToonBody[]) {
+      const m = await person(F, "h1" as ToonHead, build, false);
+      const B = m.p.bones;
+      for (const clip of ["walk_relaxed", "walk_formal"]) {
+        const D = dur(m, clip), N = 40;
+        let lean = 0, neck = 0, face = 0; const hz: number[] = [];
+        for (let i = 0; i < N; i++) {
+          pose(m, clip, (i / N) * D);
+          const h = wp(B.Hips), nk = wp(B.neck), hd = wp(B.Head), hf = wp(B.headfront);
+          lean += (Math.atan2(nk.z - h.z, nk.y - h.y) * 180) / Math.PI / N;
+          neck += (Math.atan2(hd.z - nk.z, hd.y - nk.y) * 180) / Math.PI / N;
+          face += (Math.atan2(hd.y - hf.y, Math.hypot(hf.x - hd.x, hf.z - hd.z)) * 180) / Math.PI / N;
+          hz.push(wp(B.LeftHand).z - h.z);
+        }
+        const swing = Math.max(...hz) - Math.min(...hz);
+        check(lean < 6, `${build} ${clip}: the back leans ${lean.toFixed(1)} deg forward (want under 6: a trudge)`);
+        check(neck < 18, `${build} ${clip}: the neck stands ${neck.toFixed(0)} deg in front of upright (want under 18)`);
+        check(Math.abs(face) < 5, `${build} ${clip}: the face looks ${face.toFixed(0)} deg down (want level, within 5)`);
+        check(swing > 0.12, `${build} ${clip}: the hands swing ${cm(swing)} cm (want over 12: hanging arms read heavy)`);
+        rows.push(`${build} ${clip}: back ${lean.toFixed(1)} deg, neck ${neck.toFixed(0)} deg, face ${face.toFixed(0)} deg down, hands swing ${cm(swing)} cm`);
+      }
+    }
+  }
   // 22 men walking out: no two in step
   const { TEST_SCENES } = await import("../../lib/star/cutscene/testScenes");
   const { compileScript, clipsAt } = await import("../../lib/star/cutscene/timeline");
