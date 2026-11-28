@@ -1,0 +1,284 @@
+{
+ "id": "arc-the-neighbours-lad",
+ "title": "Over the fence",
+ "owner": "neighbour",
+ "summary": "Your neighbour's son is fifteen and kicks a ball against your fence every night. Your neighbour asks you to get him a trial. You've seen him play. A season on, he's somewhere.",
+ "size": "small",
+ "about": {
+  "who": [
+   "neighbour"
+  ],
+  "tone": [
+   "warm",
+   "honest"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "neighbour",
+   "pick": "neighbour"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-trial",
+   "title": "The trial",
+   "text": "You got your neighbour's lad a trial. He was good, but not good enough, and he says you were the only one who told him why."
+  },
+  {
+   "id": "the-fence",
+   "title": "The fence",
+   "text": "Your neighbour's lad still kicks a ball against your fence every night. You still haven't said anything about it, either way."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "nbl-1-ask",
+   "title": "The fence",
+   "n": 1,
+   "event": {
+    "id": "arc-nbl-1-ask",
+    "title": "The fence",
+    "category": "neighbours",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Every night, ten till half nine: thump, thump, thump. Your neighbour's son against your fence. {neighbour.name} knocks at your door. \"He's fifteen. He's mad about it. Could you get him a trial? Just a look.\""
+    ],
+    "talk": {
+     "start": "n1",
+     "nodes": {
+      "n1": {
+       "who": "neighbour",
+       "say": [
+        "\"I know it's a lot to ask. He doesn't know I'm asking. He'd die.\""
+       ],
+       "replies": [
+        {
+         "id": "trial",
+         "label": "\"I'll ask the academy to have a look.\"",
+         "tone": "kind",
+         "end": "trial"
+        },
+        {
+         "id": "watch",
+         "label": "\"Let me watch him first.\"",
+         "tone": "honest",
+         "goto": "n2"
+        },
+        {
+         "id": "no",
+         "label": "\"I can't do that, sorry.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      },
+      "n2": {
+       "who": "neighbour",
+       "say": [
+        "You watch through the fence on Wednesday. He's quick. His first touch goes everywhere. He never stops."
+       ],
+       "replies": [
+        {
+         "id": "trial",
+         "label": "Ask the academy anyway.",
+         "tone": "kind",
+         "end": "trial"
+        },
+        {
+         "id": "tell",
+         "label": "Go round and tell him what you saw. All of it.",
+         "tone": "honest",
+         "end": "told"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "trial": [
+       {
+        "text": "The academy says yes, as a favour to you. He doesn't sleep for a week. Neither does your neighbour.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "got-my-lad-a-trial",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "trial"
+         }
+        }
+       }
+      ],
+      "told": [
+       {
+        "text": "You tell him: quick, never stops, first touch everywhere. He listens with his mouth open. The thumping changes. It's two touches now: control, then hit.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "told-my-lad-the-truth",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "told"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"No, course.\" The thumping goes on, every night.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": -3,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "Your neighbour wants a favour"
+  },
+  {
+   "id": "nbl-2-later",
+   "title": "A season on",
+   "after": {
+    "beat": "nbl-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-nbl-2-later",
+    "title": "A season on",
+    "category": "neighbours",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. It's quiet over the fence tonight. {neighbour.short} is in her front garden. \"He's got a trial result,\" she says. Or: \"He's at college now,\" depending on how you look at it."
+    ],
+    "choices": [
+     {
+      "id": "ask",
+      "label": "\"How did he get on?\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='trial' || arc.path=='told'",
+        "text": "\"Not good enough, they said. But he said you were the only one who told him why. He's doing a sports science course. He wants to be a physio.\" The thumping starts again at ten. Control, then hit.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-trial"
+        }
+       },
+       {
+        "text": "\"He's fine.\" The thumping starts again at ten past.",
+        "arc": {
+         "end": "the-fence"
+        }
+       }
+      ]
+     },
+     {
+      "id": "nod",
+      "label": "Nod, and go in.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='told'",
+        "text": "At ten the thumping starts. Two touches. Control, then hit. You smile at your own wall.",
+        "arc": {
+         "end": "the-trial"
+        }
+       },
+       {
+        "text": "At ten the thumping starts. You put the telly up.",
+        "arc": {
+         "end": "the-fence"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "A season on, the lad next door"
+  }
+ ]
+}

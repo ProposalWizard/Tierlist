@@ -1,0 +1,249 @@
+{
+ "id": "arc-the-chip-shop-special",
+ "title": "The special",
+ "owner": "reporter",
+ "summary": "The chip shop by the ground has named a meal after you: chips, gravy, a pickled egg and a battered sausage cut into your shirt number. The local paper wants your review. A season on, it's still on the board.",
+ "size": "small",
+ "about": {
+  "who": [
+   "reporter"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "on-the-board",
+   "title": "On the board",
+   "text": "There's a meal named after you at the chip shop by the ground. You said it was the best thing you'd ever eaten. It isn't. It's still on the board."
+  },
+  {
+   "id": "off-the-board",
+   "title": "Off the board",
+   "text": "The chip shop took your meal off the board after you said what you thought of the pickled egg. They named it after the goalkeeper instead."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "chp-1-special",
+   "title": "The special",
+   "n": 1,
+   "event": {
+    "id": "arc-chp-1-special",
+    "title": "The special",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The chip shop by the ground has a new board: THE {you.short} SPECIAL. Chips, gravy, a pickled egg, and a battered sausage cut to make your shirt number. {reporter.name} from the {reporter.outlet} has brought you one, with a photographer."
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "reporter",
+       "say": [
+        "\"One bite for the camera, then your honest review. Out of ten.\" The pickled egg is looking at you."
+       ],
+       "replies": [
+        {
+         "id": "ten",
+         "label": "\"Ten. Best thing I've ever eaten.\"",
+         "tone": "kind",
+         "end": "ten"
+        },
+        {
+         "id": "honest",
+         "label": "\"Seven. Lose the egg.\"",
+         "tone": "honest",
+         "end": "honest"
+        },
+        {
+         "id": "egg",
+         "label": "Eat the egg first, whole, for the camera.",
+         "tone": "reckless",
+         "end": "egg"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ten": [
+       {
+        "text": "\"TEN OUT OF TEN\" goes in the window. The queue goes round the corner on match days.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "ten"
+         }
+        }
+       }
+      ],
+      "honest": [
+       {
+        "text": "The owner reads it and takes the egg off. Then takes your name off. It's THE GOALKEEPER SPECIAL by Friday.",
+        "effects": {
+         "fans": -1
+        },
+        "arc": {
+         "set": {
+          "path": "honest"
+         }
+        }
+       }
+      ],
+      "egg": [
+       {
+        "text": "The photo of your face is on the front page. The owner frames it. It sells more eggs than anything ever has.",
+        "effects": {
+         "fans": 3,
+         "fame": 1
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "ate-the-pickled-egg-whole",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "ten"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "The local paper wants a taste test"
+  },
+  {
+   "id": "chp-2-board",
+   "title": "The board",
+   "after": {
+    "beat": "chp-1-special",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-chp-2-board",
+    "title": "The board",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "walkout",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. Walking past the chip shop to the ground, you look at the board."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Read the board.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='ten'",
+        "text": "Still there, top of the board, with a gold star stuck on it. The owner waves a spatula at you.",
+        "arc": {
+         "end": "on-the-board"
+        }
+       },
+       {
+        "text": "THE GOALKEEPER SPECIAL. With an egg.",
+        "arc": {
+         "end": "off-the-board"
+        }
+       }
+      ]
+     },
+     {
+      "id": "go",
+      "label": "Go in and order one.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='ten'",
+        "text": "He won't let you pay. The queue claps when you eat the egg.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "on-the-board"
+        }
+       },
+       {
+        "text": "You order the goalkeeper special. It's very good. Don't tell him.",
+        "arc": {
+         "end": "off-the-board"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "A season on, the chip shop"
+  }
+ ]
+}

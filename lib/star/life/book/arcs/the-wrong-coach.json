@@ -1,0 +1,248 @@
+{
+ "id": "arc-the-wrong-coach",
+ "title": "The wrong coach",
+ "owner": "kidfan",
+ "summary": "The team bus leaves an away ground without you while you're signing things. The only way home is the supporters' coach, where a young fan and her dad have a spare seat. A season on, the seat has your name on it.",
+ "size": "small",
+ "about": {
+  "who": [
+   "kidfan",
+   "manager"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "seat-fourteen",
+   "title": "Seat fourteen",
+   "text": "The team bus left without you once and you got the supporters' coach home. Seat fourteen has your name on it now, on a bit of tape."
+  },
+  {
+   "id": "a-taxi",
+   "title": "A taxi",
+   "text": "The team bus left without you and you got a taxi home. It cost four hundred pounds. The supporters' coach went past you on the motorway, waving."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "wcc-1-bus",
+   "title": "Left behind",
+   "n": 1,
+   "event": {
+    "id": "arc-wcc-1-bus",
+    "title": "Left behind",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "You were signing shirts by the away end. When you come round the corner, the team bus has gone. Your phone's on the bus. The supporters' coach is still in the car park with its engine running, and {kidfan.name} and her dad are on the step."
+    ],
+    "talk": {
+     "start": "f1",
+     "nodes": {
+      "f1": {
+       "who": "kidfan",
+       "say": [
+        "\"They've left you, haven't they.\" She's delighted. Her dad says, \"Seat fourteen's free. We stop at the services. You're buying.\""
+       ],
+       "replies": [
+        {
+         "id": "get",
+         "label": "Get on.",
+         "tone": "kind",
+         "end": "coach"
+        },
+        {
+         "id": "taxi",
+         "label": "\"Can I borrow your phone? I'll get a taxi.\"",
+         "tone": "calm",
+         "end": "taxi"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "coach": [
+       {
+        "text": "Four hours. They sing every song they've got, twice, and make you do the one about you. At the services you buy forty-one cups of tea. {manager.short} rings the coach driver at ten to ask if you're on it.",
+        "effects": {
+         "fans": 3,
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "got-the-supporters-coach-with-us",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "coach"
+         }
+        }
+       }
+      ],
+      "taxi": [
+       {
+        "text": "Four hundred pounds. On the motorway the supporters' coach overtakes your taxi and forty people wave at you through the back window.",
+        "effects": {
+         "moneyWeeks": -0.5
+        },
+        "arc": {
+         "set": {
+          "path": "taxi"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The team bus has gone"
+  },
+  {
+   "id": "wcc-2-seat",
+   "title": "Seat fourteen",
+   "after": {
+    "beat": "wcc-1-bus",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-wcc-2-seat",
+    "title": "Seat fourteen",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "after-match",
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on, the same away ground. {kidfan.short} catches you before the warm-up. \"We've kept it. Seat fourteen. If they leave you again.\""
+    ],
+    "choices": [
+     {
+      "id": "coach",
+      "label": "\"Save it. I'm coming with you.\"",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "if": "arc.path=='coach'",
+        "text": "You tell the gaffer. He says no. You go anyway, and buy forty-one teas again. It costs you a fine. It's worth it.",
+        "effects": {
+         "fans": 3,
+         "boss": -3
+        },
+        "arc": {
+         "end": "seat-fourteen"
+        }
+       },
+       {
+        "text": "You get on this time. They make you pay for the taxi you got last year, in teas.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "seat-fourteen"
+        }
+       }
+      ]
+     },
+     {
+      "id": "laugh",
+      "label": "\"I'll be quick signing tonight.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='coach'",
+        "text": "You're not. You get the team bus. But on seat fourteen of the supporters' coach there's a bit of tape with your name on it, and there always will be.",
+        "arc": {
+         "end": "seat-fourteen"
+        }
+       },
+       {
+        "text": "\"Taxi man.\" They've been calling you that all season.",
+        "arc": {
+         "end": "a-taxi"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, the supporters' club"
+  }
+ ]
+}

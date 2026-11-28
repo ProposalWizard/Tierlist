@@ -1,0 +1,547 @@
+{
+ "id": "arc-the-food-bank",
+ "title": "Tuesday mornings",
+ "owner": "mum",
+ "summary": "Your mum volunteers at the food bank on Tuesday mornings and they're short. Stack tins, send a cheque, or say you're training. Somebody takes a photo. A boy you met there turns up at a game. A season on, the van.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "mum",
+   "tabloid"
+  ],
+  "tone": [
+   "warm",
+   "serious"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "mum",
+   "pick": "mum"
+  },
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "photo": "none",
+  "boy": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "tuesday-mornings",
+   "title": "Tuesday mornings",
+   "text": "You stack tins at the food bank on Tuesday mornings when you can. Nobody takes photos any more. Your mum says you're slow."
+  },
+  {
+   "id": "the-photo-op",
+   "title": "The photo",
+   "text": "You stacked tins once and the photo went round the world. The food bank got a lot of tins. You never went back."
+  },
+  {
+   "id": "the-cheque",
+   "title": "The cheque",
+   "text": "You sent the food bank a cheque every year. Your mum stacked the tins."
+  }
+ ],
+ "promises": {
+  "p-tins": {
+   "id": "p-tins",
+   "to": "mum",
+   "text": "Stack tins at the food bank on Tuesday",
+   "due": {
+    "weeks": [
+     3,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "fbk-2-tuesday",
+    "ends": [
+     "back",
+     "desk"
+    ]
+   },
+   "dueText": "Tuesday morning, at eight",
+   "remind": "\"Tuesday. Eight. Wear something you don't mind getting dusty.\"",
+   "kept": {
+    "text": "You told your mum you'd stack tins on Tuesday, and you did.",
+    "npc": [
+     {
+      "slot": "mum",
+      "bond": 6,
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You told your mum you'd be at the food bank on Tuesday.",
+    "npc": [
+     {
+      "slot": "mum",
+      "bond": -6,
+      "respect": -4,
+      "grudge": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "mum",
+      "tag": "missed-the-food-bank",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "fbk-1-ask",
+   "title": "Tins",
+   "n": 1,
+   "event": {
+    "id": "arc-fbk-1-ask",
+    "title": "Tins",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "mum",
+       "say": [
+        "{mum.short}: \"We're short at the food bank Tuesday. Two of the regulars have got flu. It's stacking tins in the back, mostly. Nobody will make a fuss.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll be there Tuesday.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-tins"
+        },
+        {
+         "id": "cheque",
+         "label": "\"I'll send them a cheque, Mum.\"",
+         "tone": "calm",
+         "end": "cheque"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm training, Mum.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "\"Eight o'clock. Don't be famous.\"",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "cheque": [
+       {
+        "text": "\"That's kind.\" She says it the way she says it about birthday cards with money in.",
+        "effects": {
+         "moneyWeeks": -1
+        },
+        "arc": {
+         "set": {
+          "path": "cheque"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Training finishes at one.\" She's right. She doesn't push.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Mum needs a hand on Tuesday"
+  },
+  {
+   "id": "fbk-2-tuesday",
+   "title": "Tuesday",
+   "after": {
+    "beat": "fbk-1-ask",
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-fbk-2-tuesday",
+    "title": "Tuesday",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The food bank is a church hall with a leaking roof. {if arc.path=='yes'}Your mum hands you an apron.{/if}{if !arc.path=='yes'}Your mum texts a photo of the queue, out of the door and round the bins. You go anyway.{/if}",
+     "There's a boy of about ten on a plastic chair in the corner, waiting for his mum, in your shirt from two seasons ago, with the number peeling off."
+    ],
+    "choices": [
+     {
+      "id": "back",
+      "label": "Stack tins in the back.",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "text": "Four hours of beans. Nobody makes a fuss. The boy in your shirt comes and helps, and doesn't say a word about who you are.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "stacked-tins-with-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "boy": "helped"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "desk",
+      "label": "Do the front desk.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "People recognise you, and then pretend they don't, which is kind of them. The boy's mum thanks you three times and won't look up.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "set": {
+          "boy": "desk"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "boy",
+      "label": "Go and sit with the boy.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You talk about the left back. He thinks the left back is rubbish. He's right. When his mum's ready he says \"see you\" like you'll see him.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "boy": "talked"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Tuesday at the food bank"
+  },
+  {
+   "id": "fbk-3-photo",
+   "title": "The photo",
+   "after": {
+    "beat": "fbk-2-tuesday",
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "event": {
+    "id": "arc-fbk-3-photo",
+    "title": "The photo",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Somebody took a photo of you with a box of beans. It's everywhere. {tabloid.name} rings: \"Lovely story. Can we come down next Tuesday with a photographer?\""
+    ],
+    "choices": [
+     {
+      "id": "no",
+      "label": "\"No. Leave the food bank alone.\"",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "\"Your loss.\" He runs the old photo anyway, with the food bank's address at the bottom. Two hundred tins turn up that week.",
+        "effects": {
+         "reputation": 2
+        },
+        "arc": {
+         "set": {
+          "photo": "no"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "yes",
+      "label": "\"Come down. Bring tins.\"",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "text": "He brings a photographer and four tins. The photos are lovely. The queue is in the back of one of them, and the people in it didn't ask to be.",
+        "effects": {
+         "fans": 3,
+         "fame": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -4,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "photo": "yes"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "own",
+      "label": "Post the food bank's address yourself, no photo.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "Eleven thousand people share it. The church hall runs out of room for tins for the first time ever.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "photo": "own"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Somebody took a photo"
+  },
+  {
+   "id": "fbk-4-van",
+   "title": "The van",
+   "after": {
+    "beat": "fbk-2-tuesday",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-fbk-4-van",
+    "title": "The van",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The food bank has a van now, a white one, second hand. Your mum sends a photo of it. The boy from the plastic chair is standing next to it in a new shirt with your number on."
+    ],
+    "choices": [
+     {
+      "id": "tuesday",
+      "label": "\"I'll be in Tuesday.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.photo=='yes'",
+        "text": "You go. A photographer is waiting in the car park, because somebody tipped him off. You go home.",
+        "arc": {
+         "end": "the-photo-op"
+        }
+       },
+       {
+        "text": "You stack tins. The boy's there with his mum, helping now. He tells you the left back's still rubbish.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "tuesday-mornings"
+        }
+       }
+      ]
+     },
+     {
+      "id": "cheque",
+      "label": "Send a cheque for the van's petrol.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.photo=='yes'",
+        "text": "They thank you on their website. Your photo with the beans is still at the top.",
+        "arc": {
+         "end": "the-photo-op"
+        }
+       },
+       {
+        "if": "arc.path=='cheque'",
+        "text": "\"That's kind,\" your mum says, again. She does the Tuesdays.",
+        "arc": {
+         "end": "the-cheque"
+        }
+       },
+       {
+        "text": "Your mum tells you they've named the van after you. They haven't. She's joking. You check.",
+        "arc": {
+         "end": "tuesday-mornings"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "A season on, Tuesday mornings"
+  }
+ ]
+}

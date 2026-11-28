@@ -1,0 +1,538 @@
+{
+ "id": "arc-the-scout-who-said-no",
+ "title": "Too small",
+ "owner": "dad",
+ "summary": "A big club's chief scout is coming on Saturday. Your dad knows the name: the man who told you at fourteen you were too small. He waits by the players' entrance. Dad still has the letter. A season on, the scout retires.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "agent",
+   "dad"
+  ],
+  "tone": [
+   "proud",
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "agent",
+   "pick": "agent"
+  },
+  {
+   "slot": "dad",
+   "pick": "dad"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "met": "none",
+  "letter": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "he-got-it-wrong",
+   "title": "He got it wrong",
+   "text": "The scout who said you were too small at fourteen told you to your face that he got it wrong. You said he did."
+  },
+  {
+   "id": "the-letter",
+   "title": "The letter",
+   "text": "Your dad kept the letter that said you were too small. It's framed now, next to a photo of you, taller than the scout."
+  },
+  {
+   "id": "walked-past",
+   "title": "Walked past",
+   "text": "The man who said you were too small waited by the players' entrance. You walked past him. He nodded, like he understood."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "sno-1-name",
+   "title": "The name",
+   "n": 1,
+   "event": {
+    "id": "arc-sno-1-name",
+    "title": "The name",
+    "category": "career",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "clubApps>=10"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "agent",
+       "say": [
+        "{agent.name}: \"A big club's chief scout is coming Saturday. He asked for you by name. Says he's watched you for a year.\" He says the name. You know it."
+       ],
+       "replies": [
+        {
+         "id": "know",
+         "label": "\"I know who he is.\"",
+         "tone": "cold",
+         "goto": "a2"
+        },
+        {
+         "id": "fine",
+         "label": "\"Great. I'll play well.\"",
+         "tone": "calm",
+         "end": "fine"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "a2"
+        }
+       ]
+      },
+      "a2": {
+       "who": "agent",
+       "say": [
+        "\"You know him?\""
+       ],
+       "replies": [
+        {
+         "id": "small",
+         "label": "\"He told me at fourteen I was too small.\"",
+         "tone": "honest",
+         "end": "small"
+        },
+        {
+         "id": "long",
+         "label": "\"Long story.\"",
+         "tone": "calm",
+         "end": "fine"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "small": [
+       {
+        "text": "\"Ha. Then let him watch.\" When you ring your dad, he goes quiet, then goes to the loft.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "small"
+         }
+        }
+       }
+      ],
+      "fine": [
+       {
+        "text": "\"That's the spirit.\" When you tell your dad the name, he says, \"Oh,\" and nothing else.",
+        "arc": {
+         "set": {
+          "path": "fine"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Your agent has news about Saturday"
+  },
+  {
+   "id": "sno-2-saturday",
+   "title": "By the door",
+   "after": {
+    "beat": "sno-1-name",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-sno-2-saturday",
+    "title": "By the door",
+    "category": "career",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "dad",
+       "say": [
+        "After the game, by the players' entrance. Your dad's come. A man in a big club's coat is waiting by the door, older than you remember. \"That's him,\" your dad says. \"He's shrunk.\""
+       ],
+       "replies": [
+        {
+         "id": "shake",
+         "label": "Go and shake his hand.",
+         "tone": "kind",
+         "goto": "d2"
+        },
+        {
+         "id": "past",
+         "label": "Walk past him.",
+         "tone": "cold",
+         "end": "past"
+        }
+       ]
+      },
+      "d2": {
+       "who": "dad",
+       "say": [
+        "He shakes it. \"I got you wrong. I say that to maybe one player a year. You were fourteen and five foot one and I wrote 'too small'. I'm sorry.\""
+       ],
+       "replies": [
+        {
+         "id": "did",
+         "label": "\"You did get me wrong.\"",
+         "tone": "cold",
+         "end": "did"
+        },
+        {
+         "id": "grew",
+         "label": "\"You were right then. I grew.\"",
+         "tone": "kind",
+         "end": "grew"
+        },
+        {
+         "id": "letter",
+         "label": "\"My dad kept your letter.\"",
+         "tone": "honest",
+         "end": "letter"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "past": [
+       {
+        "text": "He nods as you go by, as if he's had this before. Your dad walks past him too, very slowly.",
+        "arc": {
+         "set": {
+          "met": "past"
+         }
+        }
+       }
+      ],
+      "did": [
+       {
+        "text": "\"I did.\" He doesn't argue. He writes something in his notebook and you'd give a lot to know what.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "met": "did"
+         }
+        }
+       }
+      ],
+      "grew": [
+       {
+        "text": "He laughs. \"Not much.\" Your dad laughs too, which surprises everyone.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "met": "grew"
+         }
+        }
+       }
+      ],
+      "letter": [
+       {
+        "text": "\"Course he did.\" The scout looks at your dad. Your dad looks back. Nobody says anything for a while.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "met": "letter"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Someone is waiting after the game"
+  },
+  {
+   "id": "sno-3-letter",
+   "title": "The letter",
+   "after": {
+    "beat": "sno-2-saturday",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-sno-3-letter",
+    "title": "The letter",
+    "category": "career",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your dad turns up with a brown envelope from the loft. Inside, a letter from a big club, dated the year you were fourteen. Halfway down: \"physically too small for our programme at this time.\""
+    ],
+    "choices": [
+     {
+      "id": "frame",
+      "label": "\"Frame it.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "He's already bought the frame. It's in the car.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "framed-the-too-small-letter",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "letter": "framed"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "send",
+      "label": "Post it to the scout with a signed photo.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "You sign the photo \"5 foot 11\". A week later a card comes back: \"Fair.\"",
+        "arc": {
+         "set": {
+          "letter": "sent"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "bin",
+      "label": "\"Bin it, Dad.\"",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "\"I'll keep it,\" he says. \"You can bin it when I'm dead.\" He puts it back in the envelope.",
+        "arc": {
+         "set": {
+          "letter": "kept"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Dad's found something in the loft"
+  },
+  {
+   "id": "sno-4-retires",
+   "title": "His last report",
+   "after": {
+    "beat": "sno-2-saturday",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-sno-4-retires",
+    "title": "His last report",
+    "category": "career",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {agent.short} forwards a note: the scout has retired. He's sent you a photocopy of one page from his last notebook. Your name, a date, and one line."
+    ],
+    "choices": [
+     {
+      "id": "read",
+      "label": "Read the line.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.letter=='framed'",
+        "text": "\"Wrong at fourteen. Right now. Tell his dad.\" You take it round to your dad's. It goes in the frame, under the letter.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "the-letter"
+        }
+       },
+       {
+        "if": "arc.met=='past'",
+        "text": "\"Walked past me. Good for him.\" You read it twice.",
+        "arc": {
+         "end": "walked-past"
+        }
+       },
+       {
+        "text": "\"Got this one wrong. Glad I did.\" You read it three times.",
+        "arc": {
+         "end": "he-got-it-wrong"
+        }
+       }
+      ]
+     },
+     {
+      "id": "dad",
+      "label": "Send it to your dad without reading it.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.met=='past'",
+        "text": "Your dad reads it to you down the phone. \"He says good for you for walking past.\" Your dad sounds pleased about that.",
+        "arc": {
+         "end": "walked-past"
+        }
+       },
+       {
+        "if": "arc.letter=='framed' || arc.met=='letter'",
+        "text": "Your dad rings you. He reads it out. Then he goes and gets the frame.",
+        "arc": {
+         "end": "the-letter"
+        }
+       },
+       {
+        "text": "Your dad reads it out: \"Got this one wrong.\" He says it twice, the second time for himself.",
+        "arc": {
+         "end": "he-got-it-wrong"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A season on, the scout retires"
+  }
+ ]
+}

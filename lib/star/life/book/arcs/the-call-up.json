@@ -1,0 +1,1029 @@
+{
+ "id": "arc-the-call-up",
+ "title": "The call-up",
+ "owner": "mum",
+ "summary": "Your name is on the telly: the senior national squad. Mum wants a shirt from your first cap. The gaffer wants you back in one piece. The debut, the flight home at three in the morning, and a season on, the next squad.",
+ "size": "big",
+ "about": {
+  "who": [
+   "mum",
+   "manager",
+   "coach",
+   "reporter"
+  ],
+  "tone": [
+   "proud",
+   "warm",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.3
+ },
+ "cast": [
+  {
+   "slot": "mum",
+   "pick": "mum"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "coach",
+   "pick": "coach"
+  },
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "shirt": "none",
+  "gaffer": "none",
+  "sharp": 0,
+  "legs": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "a-shirt-for-mum",
+   "title": "A shirt for Mum",
+   "text": "You got one cap and brought the shirt home. It's framed in your mum's hall, and she tells the postman about it."
+  },
+  {
+   "id": "his-shirt",
+   "title": "Their captain's shirt",
+   "text": "You swapped your first international shirt with their captain. It's on your wall. Your mum mentions it every Christmas."
+  },
+  {
+   "id": "back-in",
+   "title": "Back in the squad",
+   "text": "One cap became two. Your mum has started a second frame."
+  }
+ ],
+ "promises": {
+  "p-mums-shirt": {
+   "id": "p-mums-shirt",
+   "to": "mum",
+   "text": "Bring Mum the shirt from your first cap",
+   "due": {
+    "beat": "cup-3-debut"
+   },
+   "keptBy": {
+    "beat": "cup-3-debut",
+    "ends": [
+     "keep"
+    ]
+   },
+   "dueText": "When you win your first cap",
+   "kept": {
+    "text": "You said she'd have the shirt from your first cap, and she does.",
+    "npc": [
+     {
+      "slot": "mum",
+      "bond": 6,
+      "respect": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "mum",
+      "tag": "got-my-first-cap-shirt",
+      "strength": 3
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said she'd have the shirt from your first cap.",
+    "npc": [
+     {
+      "slot": "mum",
+      "bond": -6,
+      "respect": -2,
+      "grudge": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "mum",
+      "tag": "never-got-the-first-cap-shirt",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "cup-1-call",
+   "title": "The squad",
+   "n": 1,
+   "event": {
+    "id": "arc-cup-1-call",
+    "title": "The squad",
+    "category": "career",
+    "place": "home:sofa",
+    "size": "big",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "fame>=15",
+      "clubApps>=10"
+     ]
+    },
+    "setup": [
+     "The phone goes at five past one. It's {mum.short}, and she's screaming. The national squad has just been read out on the telly. Your name was eleventh."
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "mum",
+       "say": [
+        "\"You're on the telly! The senior squad! Your nan's crying. Your dad's gone out to the shed so nobody sees him.\""
+       ],
+       "replies": [
+        {
+         "id": "shirt",
+         "label": "\"I'll bring you the shirt from my first game, Mum.\"",
+         "tone": "kind",
+         "end": "shirt",
+         "promise": "p-mums-shirt"
+        },
+        {
+         "id": "calm",
+         "label": "\"It's only the squad. I might not get on.\"",
+         "tone": "calm",
+         "end": "calm"
+        },
+        {
+         "id": "nan",
+         "label": "\"Put Nan on.\"",
+         "tone": "kind",
+         "end": "nan"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "calm"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "shirt": [
+       {
+        "text": "\"Don't you dare give it to anyone else.\" She's already planning where the frame goes. The answer is the hall.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "promised"
+         }
+        }
+       }
+      ],
+      "calm": [
+       {
+        "text": "\"You'll get on.\" She says it like she's arranged it. Your phone has ninety messages by teatime.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "calm"
+         }
+        }
+       }
+      ],
+      "nan": [
+       {
+        "text": "Nan doesn't say anything for a while. Then she says, \"Your grandad would have been unbearable,\" and gives the phone back.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "put-nan-on-the-phone",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "nan"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "Mum's ringing, and she's screaming"
+  },
+  {
+   "id": "cup-2-gaffer",
+   "title": "The gaffer",
+   "after": {
+    "beat": "cup-1-call",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-cup-2-gaffer",
+    "title": "The gaffer",
+    "category": "career",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "manager",
+       "screen": "dial",
+       "say": [
+        "{manager.name} has the international fixtures on his desk. \"Two games in five days, a flight either side, and I've got a cup tie on the Saturday. They'll run you into the ground. I want you back in one piece.\""
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"I'll come back fit, gaffer. You've my word.\"",
+         "tone": "humble",
+         "end": "humble"
+        },
+        {
+         "id": "calm",
+         "label": "\"I'll do what they ask and rest on the plane.\"",
+         "tone": "calm",
+         "end": "calm"
+        },
+        {
+         "id": "show",
+         "label": "\"I'll show you I'm sharp before I go.\"",
+         "tone": "confident",
+         "goto": "c1"
+        },
+        {
+         "id": "fiery",
+         "label": "\"It's my country, gaffer.\"",
+         "tone": "fiery",
+         "end": "fiery"
+        }
+       ]
+      },
+      "c1": {
+       "who": "coach",
+       "say": [
+        "{coach.name} has a bag of balls on pitch two. \"Ten balls, me in goal. If you're sharp, you go with his blessing. If you're not, you go anyway, but he'll know.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Get in goal.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm sharp. Trust me.\"",
+         "tone": "calm",
+         "end": "calm"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "{coach.short}'s ten before you go",
+        "intro": "Ten balls on pitch two. Show the gaffer you're not on the plane already.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "corners",
+           "balls": 2,
+           "line": "\"Corners. Low. Like you'd do it in their stadium.\""
+          },
+          {
+           "kind": "keeper",
+           "balls": 3,
+           "line": "\"Me in goal. I've seen you take a hundred of these.\""
+          },
+          {
+           "kind": "far",
+           "balls": 2,
+           "line": "\"From twenty. Their keeper's six foot five.\""
+          },
+          {
+           "kind": "call-it",
+           "balls": 2,
+           "line": "\"I'll call it. Hit the one I call.\""
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. For the anthem.\""
+          }
+         ],
+         "keeperSlot": "coach",
+         "lines": {
+          "keeper:saved": "\"Not past {name}. Not yet.\"",
+          "hit": "\"That'll do.\"",
+          "streak3": "\"Right. Go and win us a cap.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "coach",
+         "lines": [
+          "\"One.\"",
+          "\"Two.\"",
+          "\"Three.\"",
+          "\"Four.\"",
+          "\"Five.\"",
+          "\"Six.\"",
+          "\"Seven.\"",
+          "\"Eight.\"",
+          "\"Nine.\"",
+          "\"Ten.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "c-stop"
+        ],
+        [
+         "activity.score>=6",
+         "c-good"
+        ],
+        [
+         "",
+         "c-poor"
+        ]
+       ]
+      },
+      "c-good": {
+       "who": "coach",
+       "say": [
+        "\"{activity.score}.\" He picks the balls up himself. \"I'll tell him you're sharp. You are.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Cheers, coach.\"",
+         "tone": "kind",
+         "end": "sharp"
+        }
+       ]
+      },
+      "c-poor": {
+       "who": "coach",
+       "say": [
+        "\"{activity.score}. You're already on the plane, son. Go on. Bring us back a story.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"I'll be sharp there.\"",
+         "tone": "humble",
+         "end": "blunt"
+        }
+       ]
+      },
+      "c-stop": {
+       "who": "coach",
+       "say": [
+        "You feel your hamstring and stop. He goes quiet. \"Don't tell the gaffer I let you do that.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Tell him what?\"",
+         "tone": "calm",
+         "end": "blunt"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "humble": [
+       {
+        "text": "\"Your word.\" He writes the date you're back on the whiteboard behind him and draws a box round it.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "gaffer": "ok"
+         }
+        }
+       }
+      ],
+      "calm": [
+       {
+        "text": "\"Rest on the plane. Nobody rests on the plane.\" He lets you go.",
+        "effects": {
+         "boss": 1
+        },
+        "arc": {
+         "set": {
+          "gaffer": "ok"
+         }
+        }
+       }
+      ],
+      "fiery": [
+       {
+        "text": "\"And it's my cup tie.\" You both mean it. Neither of you says sorry.",
+        "effects": {
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": -2,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "said-its-my-country",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "gaffer": "annoyed"
+         }
+        }
+       }
+      ],
+      "sharp": [
+       {
+        "text": "{coach.short} goes into the gaffer's office. You hear the gaffer laugh, once. You go with his blessing.",
+        "effects": {
+         "boss": 3
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4,
+          "respect": 4
+         },
+         {
+          "slot": "manager",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "said-i-was-sharp-for-the-call-up",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "gaffer": "ok",
+          "sharp": 1
+         }
+        }
+       }
+      ],
+      "blunt": [
+       {
+        "text": "You go. The gaffer shakes your hand at the door, which he doesn't do, and says, \"Come back.\"",
+        "effects": {
+         "boss": 1
+        },
+        "arc": {
+         "set": {
+          "gaffer": "ok"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "The gaffer wants a word before you go"
+  },
+  {
+   "id": "cup-3-debut",
+   "title": "The first cap",
+   "after": {
+    "beat": "cup-1-call",
+    "weeks": [
+     2,
+     3
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-cup-3-debut",
+    "title": "The first cap",
+    "category": "career",
+    "place": "training:corridor",
+    "size": "big",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Seventy-eighth minute, two-nil up, and the national manager turns round and points at you. You come on for your first cap. Your mum is somewhere in a stand that holds sixty thousand people.",
+     "At the whistle their captain jogs over with his shirt already off, holding it out to you."
+    ],
+    "choices": [
+     {
+      "id": "keep",
+      "label": "\"Sorry, mate. This one's for my mum.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "He laughs and pats your head. \"Mine was for my mum too.\" You keep it on under your tracksuit all the way to the hotel.",
+        "effects": {
+         "fans": 4,
+         "fame": 4
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "shirt": "kept"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "swap",
+      "label": "Swap with him.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='promised'",
+        "text": "You swap. You don't think about it until you see your mum outside the players' entrance, holding an empty frame she's brought from home.",
+        "effects": {
+         "fans": 2,
+         "fame": 4
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -4,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "shirt": "swapped"
+         }
+        },
+        "promiseBroken": [
+         "p-mums-shirt"
+        ]
+       },
+       {
+        "text": "You swap. His shirt smells of a dressing room you'll never see again. It's going on your wall.",
+        "effects": {
+         "fans": 2,
+         "fame": 4
+        },
+        "arc": {
+         "set": {
+          "shirt": "swapped"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "fans",
+      "label": "Throw it to your country's away end.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "if": "arc.path=='promised'",
+        "text": "A man in a bucket hat catches it and cries. Your mum, in the next block, watches it go over her head.",
+        "effects": {
+         "fans": 6,
+         "fame": 4
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -6,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "shirt": "fans"
+         }
+        },
+        "promiseBroken": [
+         "p-mums-shirt"
+        ]
+       },
+       {
+        "text": "A man in a bucket hat catches it and cries. It's on the news at ten.",
+        "effects": {
+         "fans": 6,
+         "fame": 4
+        },
+        "arc": {
+         "set": {
+          "shirt": "fans"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "The national team plays"
+  },
+  {
+   "id": "cup-4-flight",
+   "title": "Three in the morning",
+   "after": {
+    "beat": "cup-3-debut",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-cup-4-flight",
+    "title": "Three in the morning",
+    "category": "career",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "You landed at ten past three this morning. You've had four hours' sleep. {manager.name} is waiting in the car park with his arms folded.",
+     "{if arc.gaffer=='annoyed'}\"Your country,\" he says. \"How was it?\"{/if}{if !arc.gaffer=='annoyed'}\"Well done, son. Now. Can you start on Saturday?\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "start",
+      "label": "\"I can start.\"",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.sharp==1",
+        "text": "You start. You're flat for an hour and then you score, and the gaffer looks at the coach like they planned it.",
+        "effects": {
+         "boss": 3,
+         "energy": -8
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "legs": "started"
+         }
+        }
+       },
+       {
+        "text": "You start, and you're dead on your feet by half time. He takes you off at the break and doesn't say anything.",
+        "effects": {
+         "boss": -1,
+         "energy": -10
+        },
+        "arc": {
+         "set": {
+          "legs": "dead"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "rest",
+      "label": "\"I'm shattered, gaffer. Bench me.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.gaffer=='annoyed'",
+        "text": "\"I thought you might be.\" You're on the bench. He doesn't put you on.",
+        "effects": {
+         "boss": -2
+        },
+        "arc": {
+         "set": {
+          "legs": "rested"
+         }
+        }
+       },
+       {
+        "text": "\"Thanks for telling me.\" You come on for the last twenty, fresh, and set one up.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "legs": "rested"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "The flight home, and a game on Saturday"
+  },
+  {
+   "id": "cup-5-next",
+   "title": "The next squad",
+   "after": {
+    "beat": "cup-3-debut",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-cup-5-next",
+    "title": "The next squad",
+    "category": "career",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {reporter.name} rings at five to one. \"The new squad's out at one. I've seen it. Do you want to hear it from me, or from the telly?\"",
+     "{if arc.shirt=='kept'}In your mum's hall the shirt from your first cap is in a frame, with the date on a little card.{/if}{if arc.shirt=='swapped'}Their captain's shirt is on your wall. Your mum has never once looked at it.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "her",
+      "label": "\"Read it out.\"",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "chance": 0.45,
+        "text": "\"…and you. Eleventh again.\" Your mum rings the second she's off the phone with someone else. You can hear her saying \"two\" to your nan.",
+        "effects": {
+         "fame": 4,
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "saw-my-second-cap",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "back-in"
+        }
+       },
+       {
+        "if": "arc.shirt=='kept'",
+        "text": "You're not in it. {reporter.short} goes quiet. You ring your mum and she says, \"Well, you've got one,\" and goes and stands in the hall.",
+        "effects": {
+         "fame": -1
+        },
+        "arc": {
+         "end": "a-shirt-for-mum"
+        }
+       },
+       {
+        "text": "You're not in it. You look at their captain's shirt on the wall for a while.",
+        "effects": {
+         "fame": -1
+        },
+        "arc": {
+         "end": "his-shirt"
+        }
+       }
+      ]
+     },
+     {
+      "id": "wait",
+      "label": "\"I'll wait for the telly.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "chance": 0.45,
+        "text": "Eleventh again. You watch it with your mum on the phone, both of you saying nothing, both of you grinning.",
+        "effects": {
+         "fame": 4,
+         "fans": 3
+        },
+        "arc": {
+         "end": "back-in"
+        }
+       },
+       {
+        "if": "arc.shirt=='kept'",
+        "text": "Not in it. Your mum texts a photo of the frame in the hall. No words.",
+        "arc": {
+         "end": "a-shirt-for-mum"
+        }
+       },
+       {
+        "text": "Not in it. You turn the telly off.",
+        "arc": {
+         "end": "his-shirt"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "The next national squad"
+  }
+ ]
+}

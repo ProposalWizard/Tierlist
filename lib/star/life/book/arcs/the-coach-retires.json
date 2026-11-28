@@ -1,0 +1,691 @@
+{
+ "id": "arc-the-coach-retires",
+ "title": "Thirty years",
+ "owner": "coach",
+ "summary": "The first-team coach is sixty-four and this is his last pre-season. He wants one of the players at his last session with the kids. He shows you the drill he's run for thirty years. His last day. A season on, he's in the stand with his wife.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "coach",
+   "manager"
+  ],
+  "tone": [
+   "warm",
+   "sad",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "coach",
+   "pick": "coach"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "drill": 0,
+  "last": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "his-drill",
+   "title": "His drill",
+   "text": "The coach retired after thirty years. You run his drill with the young lads now, and you say his words before every ball without meaning to."
+  },
+  {
+   "id": "the-last-session",
+   "title": "The last session",
+   "text": "You were there at the coach's last session, with the kids, in the rain. He shook every kid's hand and then yours."
+  },
+  {
+   "id": "the-speech",
+   "title": "The speech",
+   "text": "You gave the speech at the coach's leaving do. His wife has it on her fridge."
+  }
+ ],
+ "promises": {
+  "p-last-session": {
+   "id": "p-last-session",
+   "to": "coach",
+   "text": "Be at the coach's last session",
+   "due": {
+    "weeks": [
+     8,
+     10
+    ]
+   },
+   "keptBy": {
+    "beat": "cre-3-last",
+    "ends": [
+     "back",
+     "drill",
+     "speech"
+    ]
+   },
+   "dueText": "His last session, with the kids",
+   "kept": {
+    "text": "You told the coach you'd be at his last session, and you were.",
+    "npc": [
+     {
+      "slot": "coach",
+      "bond": 6,
+      "respect": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "coach",
+      "tag": "came-to-my-last-session",
+      "strength": 3
+     }
+    ]
+   },
+   "broken": {
+    "text": "You told the coach you'd be at his last session.",
+    "npc": [
+     {
+      "slot": "coach",
+      "bond": -6,
+      "respect": -4,
+      "grudge": 4
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "cre-1-news",
+   "title": "Thirty years",
+   "n": 1,
+   "event": {
+    "id": "arc-cre-1-news",
+    "title": "Thirty years",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "coach",
+       "say": [
+        "{coach.name} is pumping up balls in the shed. \"Last pre-season, this. Sixty-four. Thirty years. My last session's with the under-twelves, and I'd like one of you lot there. Not a fuss. Just there.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll be there.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-last-session"
+        },
+        {
+         "id": "squad",
+         "label": "\"I'll bring the whole squad.\"",
+         "tone": "confident",
+         "end": "squad",
+         "promise": "p-last-session"
+        },
+        {
+         "id": "joke",
+         "label": "\"Sixty-four? You don't look a day over sixty.\"",
+         "tone": "reckless",
+         "end": "joke"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "\"Good.\" He pumps the next ball up a bit too hard.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "squad": [
+       {
+        "text": "\"I said no fuss.\" He's pleased. You can tell because he tells you to get out of his shed.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "squad"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "\"Cheeky sod.\" He throws a ball at you. He doesn't ask again.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "joke"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The coach has news"
+  },
+  {
+   "id": "cre-2-drill",
+   "title": "His drill",
+   "after": {
+    "beat": "cre-1-news",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-cre-2-drill",
+    "title": "His drill",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "coach",
+       "say": [
+        "After training. \"Thirty years I've run one drill. Every lad I've had. Ten balls, every kind of finish. I want someone to have it after me.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Show me.\"",
+         "tone": "kind",
+         "goto": "play"
+        },
+        {
+         "id": "no",
+         "label": "\"Another day, coach.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "Thirty years",
+        "intro": "His drill. Ten balls, every kind of finish, the way he's run it for thirty years.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "far",
+           "balls": 2,
+           "line": "\"From the D. Low. Always low.\""
+          },
+          {
+           "kind": "corners",
+           "balls": 2,
+           "line": "\"Pick a corner before it gets to you.\""
+          },
+          {
+           "kind": "crossbar",
+           "balls": 1,
+           "line": "\"The bar. For nothing. For fun.\""
+          },
+          {
+           "kind": "props",
+           "balls": 2,
+           "line": "\"The tyre. Then the bucket. I nicked that off a kit man in 1996.\""
+          },
+          {
+           "kind": "keeper",
+           "balls": 2,
+           "line": "\"Me in goal. One more time.\""
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. Every lad's last one is the double.\""
+          }
+         ],
+         "keeperSlot": "coach",
+         "lines": {
+          "hit": "\"That's it.\"",
+          "over": "\"Head over it. Thirty years I've said that.\"",
+          "keeper:saved": "\"Not past {name}. Not yet.\"",
+          "streak3": "\"Now you've got it.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "coach",
+         "lines": [
+          "\"One.\"",
+          "\"Two.\"",
+          "\"Three.\"",
+          "\"Four.\"",
+          "\"Five.\"",
+          "\"Six.\"",
+          "\"Seven.\"",
+          "\"Eight.\"",
+          "\"Nine.\"",
+          "\"Ten.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "d-stop"
+        ],
+        [
+         "activity.score>=6",
+         "d-good"
+        ],
+        [
+         "",
+         "d-poor"
+        ]
+       ]
+      },
+      "d-good": {
+       "who": "coach",
+       "say": [
+        "\"{activity.score}.\" He hands you his clipboard. The drill's on the back, in biro, gone soft at the folds. \"Yours.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Take it.",
+         "tone": "kind",
+         "end": "good"
+        }
+       ]
+      },
+      "d-poor": {
+       "who": "coach",
+       "say": [
+        "\"{activity.score}. You'll get it. Everyone does by the hundredth time.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Again tomorrow.\"",
+         "tone": "humble",
+         "end": "poor"
+        }
+       ]
+      },
+      "d-stop": {
+       "who": "coach",
+       "say": [
+        "You stop. He shrugs. \"It's not going anywhere. Neither am I. Well. I am.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Tomorrow.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "You keep the clipboard sheet in your locker. You catch yourself saying \"low, always low\" to a kid two days later.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "gave-me-his-drill",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "drill": 2
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "You do it every day for a fortnight. He stands behind the goal saying the same things.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "drill": 1
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Another day.\" He puts the bucket back in the shed.",
+        "arc": {
+         "set": {
+          "drill": 0
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The coach wants to show you something"
+  },
+  {
+   "id": "cre-3-last",
+   "title": "The last session",
+   "after": {
+    "beat": "cre-1-news",
+    "weeks": [
+     5,
+     8
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-cre-3-last",
+    "title": "The last session",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "His last session. The under-twelves, pitch four, rain. {if arc.path=='squad'}Half the first team have turned up in tracksuits.{/if} He's in the same coat he's worn for thirty years."
+    ],
+    "choices": [
+     {
+      "id": "back",
+      "label": "Stand at the back and clap at the end.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "He shakes every kid's hand. Then he comes over and shakes yours, and doesn't let go for a second.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "last": "clapped"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "drill",
+      "label": "Run his drill with the kids.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You run his drill. You say his words. He stands behind the goal and doesn't say anything, and has to wipe his face, and says it's the rain.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "last": "drill"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "speech",
+      "label": "Say a few words at the end.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "You say he was the first coach who told you the truth. The kids clap because everyone's clapping. His wife, by the fence, doesn't clap. She's crying.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "last": "speech"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The coach's last day"
+  },
+  {
+   "id": "cre-4-stand",
+   "title": "In the stand",
+   "after": {
+    "beat": "cre-3-last",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-cre-4-stand",
+    "title": "In the stand",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "walkout",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. {coach.short} is in the stand with his wife and a flask, in the same coat. He has a season ticket now, two rows behind the dugout, and he shouts the same things he used to shout on the training pitch."
+    ],
+    "choices": [
+     {
+      "id": "wave",
+      "label": "Give him a wave.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.drill>=1",
+        "text": "He shouts \"LOW\" at you. You score low. You point at him. His wife hits him with the programme.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "his-drill"
+        }
+       },
+       {
+        "if": "arc.last=='speech'",
+        "text": "His wife waves back. She's brought a copy of your speech in her handbag, and she shows the people next to her.",
+        "arc": {
+         "end": "the-speech"
+        }
+       },
+       {
+        "text": "He waves back. He's wet. He looks happy.",
+        "arc": {
+         "end": "the-last-session"
+        }
+       }
+      ]
+     },
+     {
+      "id": "play",
+      "label": "Get on with the game.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.drill>=2",
+        "text": "In the warm-up you run his drill with the young lads. You hear him in the stand, saying the words with you.",
+        "arc": {
+         "end": "his-drill"
+        }
+       },
+       {
+        "if": "arc.last=='speech'",
+        "text": "His wife sends you a photo after: your speech, on her fridge, under a magnet shaped like a football.",
+        "arc": {
+         "end": "the-speech"
+        }
+       },
+       {
+        "text": "You hear him behind the dugout all game. It's like he never left.",
+        "arc": {
+         "end": "the-last-session"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, a face in the stand"
+  }
+ ]
+}

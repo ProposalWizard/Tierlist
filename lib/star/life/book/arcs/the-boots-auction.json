@@ -1,0 +1,259 @@
+{
+ "id": "arc-the-boots-auction",
+ "title": "The auction",
+ "owner": "dad",
+ "summary": "Your boots from your first goal are in a charity auction online. With ten minutes to go, someone called BOOTS4EVER is bidding against your dad. A season on, you find out who BOOTS4EVER is.",
+ "size": "small",
+ "about": {
+  "who": [
+   "dad"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "dad",
+   "pick": "dad"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "dads-boots",
+   "title": "Dad's boots",
+   "text": "Your dad paid far too much for your old boots at a charity auction, bidding against a man with a tiny car. They're on his mantelpiece."
+  },
+  {
+   "id": "the-other-bidder",
+   "title": "The other bidder",
+   "text": "Your old boots went to a man who bid against your dad at a charity auction. He sends you a photo of them once a year."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "auc-1-bids",
+   "title": "Ten minutes",
+   "n": 1,
+   "event": {
+    "id": "arc-auc-1-bids",
+    "title": "Ten minutes",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your boots from your first goal are in the hospice's online auction. Ten minutes left. {dad.short} rings you in a state. \"Someone called BOOTS4EVER keeps outbidding me. Who is BOOTS4EVER?\""
+    ],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "dad",
+       "say": [
+        "\"It's at four hundred. Your mum says I'm not allowed over five. It's for charity, so it doesn't count, does it?\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Go to six. I'll give you the difference.\"",
+         "tone": "kind",
+         "end": "won"
+        },
+        {
+         "id": "stop",
+         "label": "\"Dad. Let BOOTS4EVER have them.\"",
+         "tone": "calm",
+         "end": "lost"
+        },
+        {
+         "id": "new",
+         "label": "\"I'll give you a pair I've worn this season.\"",
+         "tone": "kind",
+         "end": "new"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "won": [
+       {
+        "text": "He wins at six hundred and forty with one second left, then rings back to tell you about the one second. Twice. The hospice gets a new kettle and a lot more.",
+        "effects": {
+         "moneyWeeks": -0.5
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "won-my-boots-at-the-auction",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "dad"
+         }
+        }
+       }
+      ],
+      "lost": [
+       {
+        "text": "BOOTS4EVER wins at four hundred and ten. Your dad says he's fine about it in the voice he uses when he isn't.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "other"
+         }
+        }
+       }
+      ],
+      "new": [
+       {
+        "text": "\"It's not the same,\" he says, and lets BOOTS4EVER win. The new pair goes on his mantelpiece. He tells people they're the old ones.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "other"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Your old boots are for sale"
+  },
+  {
+   "id": "auc-2-who",
+   "title": "BOOTS4EVER",
+   "after": {
+    "beat": "auc-1-bids",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-auc-2-who",
+    "title": "BOOTS4EVER",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. A message from a stranger: a photo of your old boots on a shelf in a tiny flat, next to a photo of a boy in your shirt. \"BOOTS4EVER here. My lad's nine. Thought you'd want to know where they ended up.\""
+    ],
+    "choices": [
+     {
+      "id": "reply",
+      "label": "Reply and ask about his lad.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='dad'",
+        "text": "He was the other bidder. He's not bitter. He's bought the lad a ticket for Saturday with the money he didn't spend. You leave two more at the gate.",
+        "arc": {
+         "end": "dads-boots"
+        }
+       },
+       {
+        "text": "His lad plays left wing for the under-tens. You send a signed card. Your dad, when you tell him, goes very quiet and then says, \"Good.\"",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-other-bidder"
+        }
+       }
+      ]
+     },
+     {
+      "id": "dad",
+      "label": "Forward it to your dad.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='dad'",
+        "text": "Your dad rings him. They talk for an hour about the one second. Now they're mates.",
+        "arc": {
+         "end": "dads-boots"
+        }
+       },
+       {
+        "text": "Your dad reads it twice. \"Fair enough,\" he says. \"Good home.\"",
+        "arc": {
+         "end": "the-other-bidder"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A season on, the other bidder"
+  }
+ ]
+}
