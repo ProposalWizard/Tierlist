@@ -131,3 +131,21 @@ bill the credit, run each job with a clean environment and its own config folder
 `env -i HOME PATH proxy vars NODE_EXTRA_CA_CERTS CLAUDE_CONFIG_DIR=<own dir>
 ANTHROPIC_API_KEY="$KIB_API_KEY" claude -p ...`. Proof check: the same command
 with a fake key must fail with "Invalid API key".
+
+## Seen on screen: 11 problems the Story Book capture found (28 Nov, 06:10)
+
+From 1,954 real screenshots of 206 playable stories (Story Book v8,
+https://claude.ai/artifact/NbhaQ4z6SJPUiErUiQHQW7, "More → Seen on screen").
+Fix these before stories are switched on:
+1. 247 of 277 talk scenes show pitch two at dusk, whatever the place (casino, hotel, home, hospital).
+2. Name tags float over empty scenery; nobody is drawn where they point.
+3. 69 moments in 43 stories have no spoken line, so a narration line is shown under the person's name as if they said it.
+4. The drill target card says "BEAT DEN" whoever is in goal (HundredDrill.tsx line 223).
+5. All 35 game screens are taller than the phone; ball counter and energy cost need scrolling.
+6. Grandad's team-mate: the round card says the caller is DAD, the line under it is "Wilf: …".
+7. Name clashes: three Priyas in one career (mum, physio, canteen); two Marks (coach and tabloid reporter).
+8. Female physios and reporters are drawn as men by the 3D renderer.
+9. Three 3D looks show skin-coloured blocks at the collar.
+10. Side beats show the main line's "Beat 1 of 4".
+11. Tone dial result screen: the story strip repeats below the "will remember that" card.
+Also: each story's film card shows a black box until played (no poster frame).
