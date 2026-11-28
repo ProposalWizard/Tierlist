@@ -16,10 +16,12 @@ import { fileURLToPath } from "node:url";
 const MOBILE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const RES = path.join(MOBILE, "android/app/src/main/res");
 const ICON = path.join(MOBILE, "../public/star/app-icon-512.png");
+// The full-size original (2048, golden-ball trophy, 28 Nov 2026): the iPhone's 1024 icon is made from it.
+const MASTER = path.join(MOBILE, "../public/brand/app-icon-master.png");
 const SPLASH_BG = "#0b100e";
 
-// The icon's own green (its top-left corner), for the shaped-icon background.
-const { data } = await sharp(ICON).extract({ left: 4, top: 4, width: 1, height: 1 }).raw().toBuffer({ resolveWithObject: true });
+// The icon's average colour, for the shaped-icon background (the picture covers it anyway).
+const { data } = await sharp(ICON).resize(1, 1).raw().toBuffer({ resolveWithObject: true });
 const green = "#" + [data[0], data[1], data[2]].map((v) => v.toString(16).padStart(2, "0")).join("");
 
 const DENSITY = { mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 };
@@ -31,10 +33,10 @@ for (const [d, k] of Object.entries(DENSITY)) {
   const circle = Buffer.from(`<svg width="${s}" height="${s}"><circle cx="${s / 2}" cy="${s / 2}" r="${s / 2}"/></svg>`);
   await sharp(ICON).resize(s, s).composite([{ input: circle, blend: "dest-in" }]).png().toFile(path.join(dir, "ic_launcher_round.png"));
   // Shaped icons (Android 8+): the phone cuts its own shape out of the middle
-  // two thirds, so the picture sits at 66% on its own green.
-  const f = Math.round(108 * k), inner = Math.round(f * 0.66);
-  const art = await sharp(ICON).resize(inner, inner).png().toBuffer();
-  await sharp({ create: { width: f, height: f, channels: 4, background: green } }).composite([{ input: art, gravity: "centre" }]).png().toFile(path.join(dir, "ic_launcher_foreground.png"));
+  // two thirds. The picture sits at 80% and its edges are stretched outwards to
+  // fill the rest, so no frame shows.
+  const f = Math.round(108 * k), inner = Math.round(f * 0.8), pad = Math.floor((f - inner) / 2);
+  await sharp(ICON).resize(inner, inner).extend({ top: pad, bottom: f - inner - pad, left: pad, right: f - inner - pad, extendWith: "copy" }).png().toFile(path.join(dir, "ic_launcher_foreground.png"));
 }
 fs.writeFileSync(path.join(RES, "values/ic_launcher_background.xml"), `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">${green}</color>\n</resources>\n`);
 
@@ -56,7 +58,7 @@ for (const dir of fs.readdirSync(RES).filter((x) => x.startsWith("drawable"))) {
 // a true 1024 original before the App Store upload if one exists.
 const IOS = path.join(MOBILE, "ios/App/App/Assets.xcassets");
 if (fs.existsSync(IOS)) {
-  await sharp(ICON).resize(1024, 1024, { kernel: "lanczos3" }).flatten({ background: green }).png().toFile(path.join(IOS, "AppIcon.appiconset/AppIcon-512@2x.png"));
+  await sharp(fs.existsSync(MASTER) ? MASTER : ICON).resize(1024, 1024, { kernel: "lanczos3" }).flatten({ background: green }).png().toFile(path.join(IOS, "AppIcon.appiconset/AppIcon-512@2x.png"));
   const side = 2732, art = Math.round(side * 0.2);
   const circle = Buffer.from(`<svg width="${art}" height="${art}"><circle cx="${art / 2}" cy="${art / 2}" r="${art / 2}"/></svg>`);
   const ball = await sharp(ICON).resize(art, art).composite([{ input: circle, blend: "dest-in" }]).png().toBuffer();
