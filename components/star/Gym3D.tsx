@@ -11,7 +11,11 @@
  * effect flag (progress.ts GYM_CAREER_EFFECT) is "off", so no Power, Pace or energy changes and no week
  * action is taken; the HUD says so in small words. With the flag on, gymExercise takes the week's action.
  *
- * Later (not now): a gym at the training compound, and home gyms at the bigger house levels.
+ * HOME GYMS (28 Nov 2026): `home` set = your house's gym of that level (lib/star/gym/homeGym.ts): only its
+ * machines, inside its own walls in the house's look, no team-mate, the same saved numbers and limits
+ * (homeGymExercise = the club's gymExercise on career.gym). Back → the house.
+ *
+ * Later (not now): the gym at the training compound in the career (today on /star-world3d-dev only).
  *
  * A lost 3D rebuilds itself (three3d/autoHeal.ts): twice in a minute, Low after the first, then a plain
  * screen with "Tap to reload 3D" and the way back.
@@ -29,6 +33,8 @@ import { gapOf, gymExercise } from "@/lib/star/gym/progress";
 import { gymEffectMode } from "@/lib/star/gym/effect";
 import { afterLoss, newHealState, HEAL_DELAY_MS } from "@/lib/star/three3d/autoHeal";
 import { parseQuality3d } from "@/lib/star/three3d/quality";
+import type { HomeTier } from "@/lib/star/home3d/homes";
+import { homeGymExercise, homeGymOf } from "@/lib/star/gym/homeGym";
 
 const BG = "#0b0d12";
 const PILL: React.CSSProperties = {
@@ -43,9 +49,11 @@ export interface Gym3DProps {
   backLabel?: string;
   /** A new career after an exercise (the gym's numbers; with the effect on, the week's action too). */
   onCareer: (c: CareerState) => void;
+  /** Your HOME gym of this house level (gym/homeGym.ts). Absent: the club gym. */
+  home?: HomeTier;
 }
 
-export default function Gym3D({ career, onBack, backLabel = "Training", onCareer }: Gym3DProps) {
+export default function Gym3D({ career, onBack, backLabel = "Training", onCareer, home }: Gym3DProps) {
   const host = useRef<HTMLDivElement>(null);
   const ctrl = useRef<WorldController | null>(null);
   const hud = useRef<GymHudHandle>(null);
@@ -69,6 +77,8 @@ export default function Gym3D({ career, onBack, backLabel = "Training", onCareer
       .map((p, i) => ({ id: p.id, name: p.shortName || p.name, number: [8, 14, 21][i] }));
     return {
       place: "gym",
+      homeGym: home ?? null,
+      fadeIn: !!home,
       number: c.squadNumber ?? 10,
       club: c.player.club,
       kit: { shirt: kit.shirt, trim: kit.trim },
@@ -76,7 +86,7 @@ export default function Gym3D({ career, onBack, backLabel = "Training", onCareer
       gym: c.gym,
       gap: gapOf(c),
       onExercise: (r) => {
-        const res = gymExercise(careerRef.current, r, gymEffectMode());
+        const res = (home ? homeGymExercise : gymExercise)(careerRef.current, r, gymEffectMode());
         careerRef.current = res.career;
         saveRef.current(res.career);
         return res.out;
@@ -152,7 +162,7 @@ export default function Gym3D({ career, onBack, backLabel = "Training", onCareer
     <div style={{ position: "fixed", inset: 0, zIndex: 80, background: BG, overflow: "hidden", fontFamily: "system-ui, sans-serif", touchAction: "none", userSelect: "none" }} data-gym3d={state}>
       <div ref={host} style={{ position: "absolute", inset: 0 }} />
       {state === "loading" && <div style={{ position: "absolute", inset: 0, background: BG }} />}
-      <LoadingCurtain section="gym" loading={state === "loading"} />
+      <LoadingCurtain section={home ? "house" : "gym"} loading={state === "loading"} />
 
       {state === "ready" && (
         <GymHud ref={hud} inGame fitness={status?.fitness} body={null}
@@ -167,6 +177,7 @@ export default function Gym3D({ career, onBack, backLabel = "Training", onCareer
             <span style={{ fontSize: 20, lineHeight: 1, marginTop: -2 }}>&#8249;</span>{backLabel}
           </button>
           <div style={{ flex: 1 }} />
+          {home && <div style={{ ...PILL }} data-gym-home>{homeGymOf(home).label}</div>}
           {status && <div style={{ ...PILL, gap: 6 }} aria-label="Clock"><span aria-hidden>🕒</span><b style={{ color: "#facc15" }}>{status.clock}</b></div>}
         </div>
       )}

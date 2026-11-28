@@ -64,6 +64,10 @@ function World3DTest() {
   const sky = params.get("sky");
   // a door that leads on (the compound's gym door): the demo only belongs to the place it started in
   const [went, setWent] = useState(false);
+  // the home gym opened from a living house: its "‹ House" goes back to it
+  const [from, setFrom] = useState<"house" | null>(null);
+  // ?homeGym=<tier>: that house level's home gym (gym/homeGym.ts), its machines only
+  const [homeGym, setHomeGym] = useState<HomeTier | null>(() => parseHomeTier(params.get("homeGym")));
   const [run, setRun] = useState(0);
   const quality = parseQuality3d(params.get("q")) ?? undefined;
   // a made-up career: the squad gives the team-mates their names, numbers and the living world's chat
@@ -80,6 +84,8 @@ function World3DTest() {
     const mates = (c.squad ?? []).filter((p) => p.position !== "GK").slice(0, 4).map((p, i) => ({ id: p.id, name: p.shortName || p.name, number: [8, 14, 21, 4][i] }));
     return {
       place, demo: went ? null : demo, quality, number: 9, mates, club: "Arsenal", sky,
+      homeGym: place === "gym" ? homeGym : null,
+      fadeIn: !!from,
       kit: { shirt: kit.shirt, trim: kit.trim },
       // the living world's chat (lib/star/life/social.ts): pure, on this page's made-up career only
       chat: (slot: string) => {
@@ -96,14 +102,17 @@ function World3DTest() {
       },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [place, demo, quality, run, sky, went]);
+  }, [place, demo, quality, run, sky, went, from, homeGym]);
 
   const bare = params.get("bare") === "1" || params.get("film") === "1";
   const houseTier: HomeTier | null = parseHomeTier(params.get("tier"));
   const [tier, setTier] = useState<HomeTier | null>(houseTier);
   const stage = place === "house" && tier
-    ? <Home3D key={`${tier}-${run}`} career={career.current!} tier={tier} living house="new" where="test" embedded={!bare} backLabel="Back" onBack={() => setTier(null)} />
-    : <World3D key={`${place}-${run}`} options={options} clean={params.get("clean") === "1"} onGo={(p) => { setWent(true); setPlace(p); }} />;
+    ? <Home3D key={`${tier}-${run}`} career={career.current!} tier={tier} living house="new" where="test" embedded={!bare} backLabel="Back" onBack={() => setTier(null)}
+      onGym={(t) => { setHomeGym(t); setFrom("house"); setPlace("gym"); }} />
+    : <World3D key={`${place}-${run}`} options={options} clean={params.get("clean") === "1"} onGo={(p) => { setWent(true); setPlace(p); }}
+      onBack={place === "gym" && from === "house" ? () => { setFrom(null); setPlace("house"); } : undefined}
+      backLabel="House" />;
   if (bare) {
     return (
       <>

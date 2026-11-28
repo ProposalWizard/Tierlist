@@ -81,6 +81,8 @@ export interface LifeOptions {
   tickClock?: (dt: number) => void;
   /** "Sleep till morning": you are down on the bed; the house plays the night (scene.ts) and then calls `wake`. */
   onSleep?: () => void;
+  /** "Start a workout" on a home-gym thing (livingRooms.ts homeGymThing): the page opens the home gym. */
+  onGym?: () => void;
   /** A short dip to dark with a caption ("Half an hour later"): `mid` runs in the dark. The bath's soak. */
   dip?: (caption: string, mid: () => void) => void;
   /** Who is in the house on a day of the gap (life/dayPlan.ts): visitors come and go on their routines. Absent: the fixed team-mates. */
@@ -660,6 +662,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       show(personCard({ id: talking.id, name: talking.name, lines: res ? [res.line] : ["You already had a proper chat this week."], chat: false, change: res?.change }));
       return;
     }
+    if (a === "gym") { endTalk(); pending = null; show(null); o.onGym?.(); return; }
     if (a === "leave") {
       const ob = pending?.obj ?? using;
       pending = null;

@@ -68,6 +68,7 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { devInfoOn } from "@/lib/star/matchDayPrefs";
 import { simulateOwnMatch } from "@/lib/star/simMatch";
 import { gymSkillBonus } from "@/lib/star/gym/effect";
+import { gymBack } from "@/lib/star/gym/homeGym";
 import { doorRoute as streetDoorRoute, type StreetArrive } from "@/lib/star/street3d/plan";
 import { opponentMatchStrength } from "@/lib/star/matchInputs";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
@@ -546,6 +547,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [gardenArrive, setGardenArrive] = useState<"shop" | "gate" | "casino" | "training" | "house" | "street">("gate");
   /** Your 3D house was opened from the garden's door (its Back and front door lead back there). */
   const [homeFromGarden, setHomeFromGarden] = useState(false);
+  // the gym opened from your house (its home gym of that level, gym/homeGym.ts); null = the club gym from Training
+  const [gymHome, setGymHome] = useState<import("@/lib/star/home3d/homes").HomeTier | null>(null);
   // forgotten the moment you go anywhere else (the phone's HOME, the bar, a match; 3D places audit P4)
   useEffect(() => { if (!keepsHouseFromGarden(phase)) setHomeFromGarden(false); }, [phase]);
   // Settings → Look → "Casino: 3D | Classic" (8 Oct 2026)
@@ -5054,6 +5057,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   if (phase === "gym-3d") {
     // The 3D gym from the Training page (testing, 28 Nov 2026): its own numbers saved, no career effect.
     const backToTraining = () => { setTrainingTab("training"); setActiveNav("skills"); setPhase("skills"); };
+    // from the house: its home gym (gym/homeGym.ts), back to the house
+    if (career && gymHome) return <Gym3D career={career} home={gymHome} backLabel={gymBack("home").label} onBack={() => setPhase("home-3d")} onCareer={(c) => setCareer(c)} />;
     if (career) return <Gym3D career={career} onBack={backToTraining} onCareer={(c) => setCareer(c)} />;
   }
 
@@ -5279,6 +5284,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onUse: (thing, e) => setCareer((c) => (c ? applyThing(c, thing, e).career : c)),
           // the night: the week's Rest (once a gap) and the clock to 07:00 next morning
           onSleep: () => setCareer((c) => (c ? sleepClock(c, sleepNight(c).career) : c)),
+          // the home gym (gym/homeGym.ts): the gym of this house's level, back to the house after
+          onGym: (tier) => { setGymHome(tier); setPhase("gym-3d"); },
           ...clockLink,
         }}
         onHome={() => handleNavigate("home")}
@@ -5615,7 +5622,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const trainingBody = (
         <div>
           {trainingTab === "training" ? (
-            <SkillsScreen career={career} onTrain={handleTrain} onGym={() => setPhase("gym-3d")} />
+            <SkillsScreen career={career} onTrain={handleTrain} onGym={() => { setGymHome(null); setPhase("gym-3d"); }} />
           ) : (
             <RelationsPage
               career={career}

@@ -71,6 +71,11 @@ export interface WorldOptions {
   onExercise?: (r: import("../gym/games").GameResult) => import("../gym/progress").ExerciseOut | null;
   /** The compound's sky (the garden's looks): "day" | "sunset" | "night". */
   sky?: string | null;
+  /** place "gym" only: your HOME gym of this house level (gym/homeGym.ts): its machines only, its walls, the
+   *  house's look; no team-mate. Absent: the club gym. */
+  homeGym?: import("../home3d/homes").HomeTier | null;
+  /** Came in through a door: open on black and fade in (the house's gym). */
+  fadeIn?: boolean;
 }
 
 export interface WorldStatus { clock: string; people: { id: string; name: string; doing: string }[]; fitness?: GymFitness }
@@ -270,7 +275,15 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     scene.environmentIntensity = 0.45;
     const { Reflector }: any = await import("three/examples/jsm/objects/Reflector.js");
     const { MIRROR_PX } = await import("../home3d/roomBuild");
-    gymRoom = buildGymRoom({ THREE, scene, prof, kit: opts.kit, club: opts.club, mergeGeometries, Reflector, mirrorPx: MIRROR_PX[tier] * 4, mirrorScale: GYM_MIRROR_SCALE[tier] });
+    // a home gym: the tier's plan and the house's own finish (home3d/homes.ts roomPreset)
+    let home: import("./gymPlace").HomeGymLook | undefined;
+    if (opts.homeGym) {
+      const { homeGymOf } = await import("../gym/homeGym");
+      const { roomPreset } = await import("../home3d/homes");
+      const R = roomPreset(opts.homeGym);
+      home = { plan: homeGymOf(opts.homeGym), floor: R.floor, wall: R.wall, trim: R.trim, view: R.view, h: R.h };
+    }
+    gymRoom = buildGymRoom({ THREE, scene, prof, kit: opts.kit, club: opts.club, mergeGeometries, Reflector, mirrorPx: MIRROR_PX[tier] * 4, mirrorScale: GYM_MIRROR_SCALE[tier], home });
     sun = gymRoom.sun;
     const n = shadowSizeFor(prof, 1024) || 1024;
     sun.shadow.mapSize.set(n, n);
@@ -509,7 +522,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const pl = opts.mates[pi++];
     return pl ? [{ ...pl, slot: pp.slot, role: "player", title: pp.title }] : [];
   }) : null;
-  const mates: Cast[] = place === "garden" ? opts.mates.slice(0, 3) : place === "gym" ? opts.mates.slice(0, 1) : (cast ?? []).slice(0, budget.present - 1); // the tier's cap on people in a place (budget.ts: Low 6 with you)
+  const mates: Cast[] = place === "garden" ? opts.mates.slice(0, 3) : place === "gym" ? (opts.homeGym ? [] : opts.mates.slice(0, 1)) : (cast ?? []).slice(0, budget.present - 1); // the tier's cap on people in a place (budget.ts: Low 6 with you)
   // the team-mates are cast from the people presets (lib/star/people/presets.ts): their own
   // head, build, hair and drawn face (the face system), no two alike
   const PR = await import("../people/presets");
@@ -885,6 +898,11 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       show({ key: "gym:week", sub: `Week ${gymGap.week}`, title: "A match later", lines: [v.window >= 0 ? `Workout window: ${v.window === 0 ? "last week to train" : `${v.window + 1} weeks left`}.` : v.slipping ? `You missed the window: Strength and Cardio will slip ${GP.SLIP * v.slipping}.` : "No workout window open: your next visit opens one."], actions: [{ id: "close", label: "OK", primary: true }] });
       return;
     }
+    if (a === "use" && pending?.obj.id === "sauna") {
+      pending = null; marker.fade();
+      show({ key: "obj:sauna", sub: "Coming soon", title: "Sauna", lines: ["The sauna is being fitted. Coming soon."], actions: [{ id: "close", label: "OK", primary: true }] });
+      return;
+    }
     if (a === "use" && pending?.obj.game && gym) {
       marker.fade();
       const o = pending.obj;
@@ -1023,6 +1041,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const sh = gym?.shot();
     if (sh) {
       want.set(sh.cam[0], sh.cam[1], sh.cam[2]); wantLook.set(sh.look[0], sh.look[1], sh.look[2]);
+      // a home gym's walls are nearer than the club's: the shot comes in along its own line until it is inside
+      if (opts.homeGym) insideBox(want, wantLook, cx0, cx1, cz0, cz1, built.ceil);
       // a cut behind the black screen, or (he walked on: no black) a glide from where the camera is
       if (!shotWas && !gym?.easeIn) { camPos.copy(want); camLook.copy(wantLook); shotWas = true; }
       else { shotWas = true; camPos.lerp(want, Math.min(1, dt * 3)); camLook.lerp(wantLook, Math.min(1, dt * 3)); }
@@ -1058,10 +1078,11 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   };
 
   // ── The fade to black through a door (the compound's gym door) ──
-  let fade = 0, fadeWant = 0, goingTo: WorldPlace | null = null, went = false;
+  // in through a door (the house's gym): the place opens on black and fades in
+  let fade = opts.fadeIn && !demo ? 1 : 0, fadeWant = 0, goingTo: WorldPlace | null = null, went = false;
   const fadeM = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, depthTest: false, depthWrite: false, toneMapped: false, fog: false });
   const fadeQ = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), fadeM);
-  fadeQ.position.z = -0.3; fadeQ.renderOrder = 999; fadeQ.frustumCulled = false; fadeQ.visible = false;
+  fadeQ.position.z = -0.3; fadeQ.renderOrder = 999; fadeQ.frustumCulled = false; fadeQ.visible = fade > 0; fadeM.opacity = fade;
   camera.add(fadeQ); scene.add(camera);
   const stepFade = (dt: number) => {
     if (fade === fadeWant) return;
@@ -1329,4 +1350,17 @@ function hashSeed(id: string): number {
   let h = 7;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 9973;
   return h;
+}
+
+/** Pull a camera in along its line to the look point until it is inside the box (x0..x1, z0..z1) and under the ceiling. */
+function insideBox(cam: { x: number; y: number; z: number }, look: { x: number; y: number; z: number }, x0: number, x1: number, z0: number, z1: number, ceil: number) {
+  let t = 1;
+  const dx = cam.x - look.x, dy = cam.y - look.y, dz = cam.z - look.z;
+  if (cam.x < x0 && dx < 0) t = Math.min(t, (x0 - look.x) / dx);
+  if (cam.x > x1 && dx > 0) t = Math.min(t, (x1 - look.x) / dx);
+  if (cam.z < z0 && dz < 0) t = Math.min(t, (z0 - look.z) / dz);
+  if (cam.z > z1 && dz > 0) t = Math.min(t, (z1 - look.z) / dz);
+  if (cam.y > ceil && dy > 0) t = Math.min(t, (ceil - look.y) / dy);
+  t = Math.max(0.2, t);
+  cam.x = look.x + dx * t; cam.y = look.y + dy * t; cam.z = look.z + dz * t;
 }
