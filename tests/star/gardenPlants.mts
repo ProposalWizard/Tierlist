@@ -1,6 +1,7 @@
 import * as T from "three";
 import { addTree, addBush, newBin, treeTriangles, TREE_STYLE, type TreeShape } from "../../lib/star/garden3d/lowPolyTrees";
-import { buildPlantZones, lodFor, zoneOf, hiddenBehind, LOD_DIST, type TreeAt, type BushAt } from "../../lib/star/garden3d/plantZones";
+import { buildPlantZones, lodFor, zoneOf, hiddenBehind, LOD_DIST, CARD_LOD_DIST, type TreeAt, type BushAt } from "../../lib/star/garden3d/plantZones";
+import { addCardTree, newCardBin, cardTreeTriangles, cardMaterial, CARDS } from "../../lib/star/garden3d/cardTrees";
 import { tightCull } from "../../lib/star/three3d/tightCull";
 import { GARDEN_BUDGET, GARDEN_MEASURED } from "../../lib/star/garden3d/gardenBudget";
 
@@ -25,7 +26,7 @@ for (const style of ["clump", "facet", "leafy"] as const) {
     else check(a <= 760, `leafy ${shape}: near ≤ 760 triangles with its single leaves (${a})`);
   }
 }
-check(TREE_STYLE === "facet", "the game's trees are the facet style (picked 28 Nov 2026)");
+check(TREE_STYLE === "facet", "the low-poly option (?trees=facet, and the fallback with no tree picture) is the facet style");
 
 // ── sizes never change (RUL-3D-006): the tree fills the box of the tree it stands in for ──
 for (const shape of ["round", "wide", "tall", "pine"] as TreeShape[]) {
@@ -130,6 +131,38 @@ check(LOD_DIST.low[0] < LOD_DIST.medium[0] && LOD_DIST.medium[0] < LOD_DIST.high
   check(n === 2, `checks the big still pieces only (${n})`);
 }
 
+// ── the textured trees (the game's default since 28 Nov 2026: Harry kept the scanned-leaf look) ──
+{
+  const ct = cardTreeTriangles(T);
+  for (const k of ["broad", "pine"] as const) {
+    const [a, b, c] = ct[k];
+    check(a > b && b > c, `textured ${k}: each level lighter (${a} / ${b} / ${c})`);
+  }
+  check(ct.broad[0] <= 520 && ct.broad[0] < 788, `textured broadleaf near: ≤ 520 triangles, the old tree was 788 (${ct.broad[0]})`);
+  check(ct.broad[2] <= 130 && ct.pine[2] <= 90, `far trees ~100 triangles (${ct.broad[2]} / ${ct.pine[2]})`);
+  check(CARDS.broad[0] < 340 && CARDS.pine[0] < 200, "fewer sprays than the old 340 / 200");
+  check(lodFor(0, "low", CARD_LOD_DIST) === 2 && lodFor(100, "low", CARD_LOD_DIST) === 2, "on Low the simplest level everywhere");
+  check(lodFor(5, "medium", CARD_LOD_DIST) === 0 && lodFor(20, "medium", CARD_LOD_DIST) === 1 && lodFor(60, "medium", CARD_LOD_DIST) === 2, "Medium: near, middle, far");
+  // the crown keeps the old tree's outline: the bigger sprays sit a little further in
+  const box = (cards?: number) => {
+    const b = newCardBin(); addCardTree(T, b, { h: 1.3, w: 0.75, pine: false, seed: 101, lod: 0, cards });
+    let r = 0, top = 0; for (let i = 0; i < b.p.length; i += 3) { r = Math.max(r, Math.hypot(b.p[i], b.p[i + 2])); top = Math.max(top, b.p[i + 1]); }
+    return [r, top];
+  };
+  const [r340, t340] = box(340), [r200, t200] = box();
+  check(Math.abs(r200 - r340) / r340 < 0.15 && Math.abs(t200 - t340) / t340 < 0.12, `same outline as the 340-spray crown (radius ${r200.toFixed(2)} vs ${r340.toFixed(2)}, top ${t200.toFixed(2)} vs ${t340.toFixed(2)})`);
+  const mat = cardMaterial(T, new T.Texture(), null);
+  check(mat.alphaTest > 0 && !mat.transparent && mat.userData.depth && mat.userData.noBake === true, "cut-out (alpha test, not blended), its shadow cut out too, no baked light");
+  const cz = buildPlantZones(T, trees, bushes, { style: "cards", cardMaterial: mat });
+  const cm = cz.group.children as T.Mesh[];
+  check(new Set(cm.map((m) => m.material)).size === 1 && cm.length === cz.zones, `textured zones: one material, one mesh a zone (${cz.zones})`);
+  check(cm.every((m) => m.customDepthMaterial === mat.userData.depth), "every zone's shadow cut out by the leaves");
+  const z0 = cz.stats()[0];
+  (cm[0] as any).onBeforeShadow();
+  check(cm[0].geometry.drawRange.count === z0.tris[0] * 3, "textured trees cast their shadow from the near level (the crown shades itself as the old one did)");
+  (cm[0] as any).onAfterShadow();
+}
+
 // ── the measured garden against its budget ──
 for (const m of GARDEN_MEASURED.after.filter((x) => x.tier === "medium")) {
   const b = m.walking ? GARDEN_BUDGET.mediumWalking : GARDEN_BUDGET.medium;
@@ -145,4 +178,4 @@ if (problems.length) {
   console.error(`gardenPlants: ${problems.length} problem(s)\n - ${problems.join("\n - ")}`);
   process.exit(1);
 }
-console.log(`gardenPlants: trees ${JSON.stringify(treeTriangles(T))} triangles (near/middle/far), ${pz.zones} zones, culling, budget — all OK`);
+console.log(`gardenPlants: textured trees ${JSON.stringify(cardTreeTriangles(T))}, low-poly option ${JSON.stringify(treeTriangles(T))} triangles (near/middle/far), ${pz.zones} zones, culling, budget — all OK`);

@@ -105,6 +105,8 @@ export const ASSET_VERSIONS: Record<string, string> = {
   "/star/garden3d/h/straw-nrm.webp": "045948dd",
   "/star/garden3d/h/straw.ktx2": "9b6520ce",
   "/star/garden3d/h/straw.webp": "c9a594c0",
+  "/star/garden3d/h/trees-atlas-nrm.webp": "b65a687a",
+  "/star/garden3d/h/trees-atlas.webp": "6f2879ea",
   "/star/garden3d/h/tuft.webp": "006976d8",
   "/star/garden3d/horse.glb": "316b24e9",
   "/star/garden3d/props.glb": "ce942f3f",
