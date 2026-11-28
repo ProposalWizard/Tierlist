@@ -61,7 +61,9 @@ export function useLiveClock(career: CareerState | null | undefined, onTime?: (m
 
 export interface ClockVisit { from: number; name: string; why: string }
 
-export default function ClockPill({ career, abs, held, visits, onMatch, title }: {
+export default function ClockPill({ career, abs, held, visits, onMatch, title, invite }: {
+  /** "Text Kyle: come round?" (the house only): the label, and what sending it does (his answer, in words). */
+  invite?: { label: string; send: () => string } | null;
   career: CareerState | null | undefined;
   /** The minute shown (since day 0), from useLiveClock. */
   abs: number;
@@ -75,6 +77,7 @@ export default function ClockPill({ career, abs, held, visits, onMatch, title }:
   title?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [reply, setReply] = useState<string | null>(null);
   const m = abs - Math.floor(abs / DAY_MINS) * DAY_MINS;
   const sub = career ? clockSubline(career, abs) : "";
   const rows = open && career ? todayList(career, abs, visits) : [];
@@ -106,6 +109,13 @@ export default function ClockPill({ career, abs, held, visits, onMatch, title }:
               </div>
             </div>
           ))}
+          {reply && <div data-invite-reply style={{ marginTop: 6, padding: "8px 10px", borderRadius: 12, background: "rgba(74,222,128,0.12)", fontSize: 13, fontWeight: 800 }}>{reply}</div>}
+          {!reply && invite && !held && (
+            <button type="button" data-invite onClick={(e) => { e.stopPropagation(); setReply(invite.send()); }}
+              style={{ marginTop: 8, width: "100%", height: 40, borderRadius: 12, border: "1px solid rgba(250,204,21,0.45)", background: "rgba(250,204,21,0.1)", color: INK, fontWeight: 900, fontSize: 14, cursor: "pointer" }}>
+              💬 {invite.label}
+            </button>
+          )}
           {held && onMatch && (
             <button type="button" onClick={onMatch} style={{ marginTop: 8, width: "100%", height: 42, borderRadius: 12, border: "none", background: GOLD, color: "#111", fontWeight: 900, fontSize: 15, cursor: "pointer" }}>Go to the match ›</button>
           )}

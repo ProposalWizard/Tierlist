@@ -57,6 +57,8 @@ import { buildRoom, disposeGroup, roomFree, MIRROR_LAYER, MIRROR_PX, type BuiltR
 import { safeCompileAsync } from "../three3d/safeCompile";
 import type { InteractCard } from "../world3d/interact";
 import type { HouseLife, LifeMate } from "../world3d/houseLife";
+import type { HouseVisit } from "../life/dayPlan";
+import { roomPeople } from "../life/houseRoutines";
 import { FURNITURE, isLiving } from "./rooms";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
 import { ViewCam, headWorld, loadViewMode, showBody, type ViewMode } from "../three3d/viewCam";
@@ -246,7 +248,9 @@ export interface HomeOptions {
     /** "Sleep till morning" in your bed: called in the dark, once the night has passed; returns the card's words (home3d/sleep.ts). */
     onSleep?: () => string;
     /** The career clock (lib/star/life/liveClock.ts): minutes since day 0 of this gap, now. Absent: the house's own clock (15:00). */
-    clock?: () => number };
+    clock?: () => number;
+    /** Who is in the house on a day of the gap (lib/star/life/dayPlan.ts). Absent: the old fixed team-mates. */
+    visits?: (day: number) => HouseVisit[] };
 }
 
 export interface HomeController {
@@ -816,6 +820,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       setYaw: (y) => { yaw = y; yawTurn.vel = 0; me.person.root.rotation.y = y; },
       onCard: (c) => cb.onCard?.(c),
       chat: opts.living.chat, onEffect: opts.living.onEffect, clockNow: opts.living.clock,
+      // visitors on the day plan; how many your room may draw: Android (the mid phone) and Low 2, Medium 3, High 5
+      visits: opts.living.visits, roomCap: roomPeople(tier, typeof navigator !== "undefined" && /Android|Mobi/i.test(navigator.userAgent) && !/iPhone|iPad/i.test(navigator.userAgent)),
       onSleep: () => { sleepSeq = { t: 0, text: "", morning: false }; },
       dip: (text, mid) => { dipSeq = { t: 0, text, mid }; },
     }).catch((e) => { console.error("home: living", e); return null; });

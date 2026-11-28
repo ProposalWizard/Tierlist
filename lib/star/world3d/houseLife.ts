@@ -27,7 +27,11 @@ import { buildGrid, type WalkGrid, type XZ } from "../tapWalk";
 import { SmartSet, SlotBook, yawTo, type SmartObject } from "./smartObject";
 import { Npc, measureSit, sitRootFor, BODY_R, type NpcWorld, type SitFit } from "./npc";
 import { objectCard, personCard, smallTalk, talkSpot, type InteractCard } from "./interact";
-import { phaseOf, DAY_MIN } from "./routine";
+import { phaseOf, DAY_MIN, seeded, hashId } from "./routine";
+import { arrivalAt } from "../home3d/rooms";
+import { whereAt } from "../life/houseRoutines";
+import type { HouseVisit } from "../life/dayPlan";
+import { houseTalk } from "../life/houseTalk";
 
 /** How many team-mates are round, by home. */
 export const GUESTS_BY_TIER: Record<HomeTier, number> = { starter: 1, flat: 1, penthouse: 2, house: 2, villa: 3, estate: 4 };
@@ -77,6 +81,10 @@ export interface LifeOptions {
   onSleep?: () => void;
   /** A short dip to dark with a caption ("Half an hour later"): `mid` runs in the dark. The bath's soak. */
   dip?: (caption: string, mid: () => void) => void;
+  /** Who is in the house on a day of the gap (life/dayPlan.ts): visitors come and go on their routines. Absent: the fixed team-mates. */
+  visits?: (day: number) => HouseVisit[];
+  /** People (not you) drawn in your room at once (life/houseRoutines.ts roomPeople). */
+  roomCap?: number;
 }
 
 export interface HouseLife {
@@ -156,8 +164,8 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
   const fxOn = (id: string, v: boolean) => room?.fx?.[id]?.on?.(v);
 
   // things in the hand: a can (fridge), a cup (coffee), the remote (TV)
-  const propG = { can: new THREE.CylinderGeometry(0.033, 0.033, 0.12, 12), cup: new THREE.CylinderGeometry(0.04, 0.034, 0.09, 12), remote: new THREE.BoxGeometry(0.045, 0.02, 0.17) };
-  const propM = { can: new THREE.MeshStandardMaterial({ color: "#d7263d", roughness: 0.3, metalness: 0.7 }), cup: new THREE.MeshStandardMaterial({ color: "#f4f1ea", roughness: 0.5 }), remote: new THREE.MeshStandardMaterial({ color: "#16181c", roughness: 0.4 }) };
+  const propG = { can: new THREE.CylinderGeometry(0.033, 0.033, 0.12, 12), cup: new THREE.CylinderGeometry(0.04, 0.034, 0.09, 12), remote: new THREE.BoxGeometry(0.045, 0.02, 0.17), phone: new THREE.BoxGeometry(0.075, 0.01, 0.15) };
+  const propM = { can: new THREE.MeshStandardMaterial({ color: "#d7263d", roughness: 0.3, metalness: 0.7 }), cup: new THREE.MeshStandardMaterial({ color: "#f4f1ea", roughness: 0.5 }), remote: new THREE.MeshStandardMaterial({ color: "#16181c", roughness: 0.4 }), phone: new THREE.MeshStandardMaterial({ color: "#0d0f13", roughness: 0.25, metalness: 0.4 }) };
   const hold = (n: Npc, what: keyof typeof propG | null) => {
     const hand = n.person.bones.RightHand;
     if (n.prop) { n.prop.parent?.remove(n.prop); n.prop = null; }
@@ -165,7 +173,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     const c = new THREE.Mesh(propG[what], propM[what]);
     c.scale.setScalar(1 / n.person.unit);
     c.position.set(0, 0.07 / n.person.unit, 0.03 / n.person.unit);
-    if (what === "remote") c.rotation.x = Math.PI / 2;
+    if (what === "remote" || what === "phone") c.rotation.x = Math.PI / 2;
     c.castShadow = false;
     hand.add(c);
     n.prop = c;
@@ -196,7 +204,45 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
 
   // ── team-mates ──
   let peopleReady: Promise<void> | null = null;
-  const where = guestRooms(o.rooms, Math.min(o.mates.length, GUESTS_BY_TIER[o.tier] ?? 1));
+  // with a day plan (o.visits) nobody sits in a fixed place: visitors come and go (the section below)
+  const where = o.visits ? [] : guestRooms(o.rooms, Math.min(o.mates.length, GUESTS_BY_TIER[o.tier] ?? 1));
+
+  /** One body, dressed: a team-mate (player look, his casual or training wear) or staff (the chef in whites). */
+  let kitP: Promise<any> | null = null;
+  const peopleKit = () => kitP ??= (async () => {
+    const [P3, L3, PR, FI, FACE, HAIR, CL] = await Promise.all([import("../people3d"), import("../look3d"), import("../people/presets"), import("../style3d/toon/faceIdApply"), import("../style3d/toon/face"), import("../style3d/toon/hair"), import("../style3d/toon/clothes")]);
+    const animG = await P3.loadPeople3d(o.loader, "anims", L3.people3dLook());
+    return { P3, L3, PR, FI, FACE, HAIR, CL, animG, charG: new Map<string, any>() };
+  })();
+  const makeBody = async (lookId: string, who: "mate" | "chef" | "cleaner", npcId: string, name: string): Promise<Npc | null> => {
+    const K = await peopleKit();
+    if (disposed) return null;
+    const L: any = K.PR.castScene([{ id: lookId, role: "player" as const, club: o.club ?? "Arsenal" }])[0];
+    let charG = K.charG.get(L.head);
+    if (!charG) { charG = await K.P3.loadPeople3d(o.loader, "player", K.L3.people3dLook(), [L.head] as any); K.charG.set(L.head, charG); }
+    if (disposed) return null;
+    const p = K.P3.makePerson3d(THREE, o.SK, charG, K.animG, { outline: o.outline, castShadow: o.quality === "high", who: L.id, toonHead: L.head, toonBody: L.build } as any);
+    K.P3.dressPerson3d(THREE, p, { ...L.dress, kit: { ...(L.kit ?? {}), ...o.kit }, number: null } as any);
+    const ow = K.CL.offPitchWear(L.id, who === "mate" ? "mate" : "family", o.kit);
+    // the chef in whites, the cleaner in a plain navy tee
+    const cloth = who === "chef" ? { kind: "tee", colours: { ...ow.colours, top: "#f2efe8", trim: "#f2efe8", trousers: "#2b2d33" } } : who === "cleaner" ? { kind: "tee", colours: { ...ow.colours, top: "#2f4566", trim: "#2f4566" } } : ow;
+    K.CL.dressCloth(THREE, p, cloth.kind as any, L.id, { colours: cloth.colours, whiteBalance: K.CL.HOME_WB });
+    K.FI.applyToonFaceId(THREE, p, L.faceId, { detail: K.FI.FACE_DETAIL[o.quality] });
+    const rig = K.FACE.addToonFace(THREE, p);
+    rig?.set({ face: K.FACE.toonFaceFor({}), blink: 0 });
+    if (L.hairMesh) await K.HAIR.wearToonHair(THREE, o.loader, p, L.hairMesh, { outline: o.outline ? 0.0045 : 0 });
+    if (disposed) return null;
+    K.P3.relaxHands(THREE, p);
+    addClips(THREE, p, footG);
+    if (casinoG) addClips(THREE, p, casinoG);
+    const loco = [{ name: "walk", speed: 1.4 }, { name: "jog", speed: 3.0 }].filter((l) => !!(p.actions as any)[l.name]);
+    const n = new Npc(THREE, p, { id: npcId, loco, sit: measureSit(THREE, p) });
+    n.name = name;
+    n.show(false);
+    o.scene.add(p.root);
+    return n;
+  };
+
   const loadPeople = () => peopleReady ??= (async () => {
     if (!where.length) return;
     const P3 = await import("../people3d");
@@ -259,6 +305,245 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     });
   };
 
+  // ── VISITORS WHO COME AND GO (o.visits: lib/star/life/dayPlan.ts + houseRoutines.ts) ──
+  // Each visitor follows his day's steps on the career clock. Only the people whose step is in YOUR room
+  // are drawn (at most o.roomCap of them); everyone else is hidden and costs nothing. A step that starts
+  // while you watch is walked: through the doorway, to the thing, sit or use it, stand up, a look round,
+  // on to the next. Walking into a room finds people already mid-step, in place.
+  interface Guest {
+    v: HouseVisit; n: Npc | null; loading: boolean;
+    /** The step he is playing (index), -1 none; `token` cancels a stale walk's callback. */
+    stepI: number; token: number;
+    /** in: drawn in your room; out: not; leaving: walking out of your room. */
+    mode: "in" | "out" | "leaving";
+    /** Real seconds since his last move began (the watchdog: nobody walks for ever). */
+    walkT: number;
+  }
+  let guests: Guest[] = [];
+  let plannedDay = Number.NaN;
+  const bodyOf = new Map<string, Npc>();
+  /** Which visit a body is on now (for the tap card). */
+  const visitOf = new Map<Npc, Guest>();
+  const visitDay = () => Math.floor(now() / DAY_MIN);
+  const minuteOfDay = () => now() - visitDay() * DAY_MIN;
+  const bodyKey = (v: HouseVisit) => v.who === "mate" ? `mate:${v.mateId}` : v.who;
+
+  let planCheckT = 0;
+  const planDay = (dt = 0) => {
+    if (!o.visits) return;
+    const d = visitDay();
+    if (d === plannedDay) {
+      // every 2 s: a visit added since (you texted someone "come round?") joins the day
+      planCheckT += dt;
+      if (planCheckT < 2) return;
+      planCheckT = 0;
+      for (const v of o.visits(d)) if (!guests.some((g) => g.v.id === v.id && g.v.from === v.from)) guests.push({ v, n: null, loading: false, stepI: -1, token: 0, mode: "out", walkT: 0 });
+      return;
+    }
+    plannedDay = d;
+    for (const g of guests) if (g.n) { if (g.n.seated) g.n.leave(); book.release(g.n.id); g.n.show(false); visitOf.delete(g.n); }
+    guests = o.visits(d).map((v) => ({ v, n: null, loading: false, stepI: -1, token: 0, mode: "out", walkT: 0 }));
+  };
+  const ensureBody = (g: Guest) => {
+    if (g.n || g.loading) return;
+    const key = bodyKey(g.v);
+    const have = bodyOf.get(key);
+    if (have) { g.n = have; visitOf.set(have, g); return; }
+    g.loading = true;
+    const lookId = g.v.who === "mate" ? `world-mate-${g.v.mateId}` : `house-${g.v.who}-${o.club ?? ""}`;
+    void makeBody(lookId, g.v.who, `guest-${key}`, g.v.name).then((n) => {
+      g.loading = false;
+      if (!n) return;
+      bodyOf.set(key, n);
+      npcs.push(n);
+      if (g.v.mateId) { const m = o.mates.find((x) => x.id === g.v.mateId); if (m) mateOf.set(n, m); }
+      // the body may be wanted by a later visit of the same person (lunch, then dinner)
+      for (const h of guests) if (bodyKey(h.v) === key && !h.n) { h.n = n; }
+      visitOf.set(n, g);
+    }).catch((e) => { g.loading = false; console.error("house: visitor", e); });
+  };
+
+  /** A door of this room: to `to` if there is one, else the front door, else the first. */
+  const doorTo = (to: string | null) => {
+    const ds = room?.plan.doors ?? [];
+    return ds.find((d) => d.to === to) ?? ds.find((d) => d.to === "garden") ?? ds[0] ?? null;
+  };
+  const inside = (d: NonNullable<ReturnType<typeof doorTo>>, k: number): XZ => { const a = arrivalAt(d, k); return [a.x, a.z]; };
+  /** The room he comes from / goes to for this step (for the door he uses). */
+  const neighbour = (g: Guest, i: number, dir: -1 | 1): string | null => {
+    const s = g.v.steps;
+    for (let k = i + dir; k >= 0 && k < s.length; k += dir) if (s[k].room !== "away" && s[k].room !== room?.id) return s[k].room;
+    return dir === -1 ? "garden" : "garden";
+  };
+  /** A free spot in this room, seeded (somewhere to stand on the phone or wipe down). */
+  const spotFor = (seed: string, nearWall = true): { at: XZ; face: number } | null => {
+    if (!room || !grid) return null;
+    const r = seeded(hashId(seed));
+    for (let tries = 0; tries < 40; tries++) {
+      const x = (r() * 2 - 1) * (room.w2 - 0.7), z = (r() * 2 - 1) * (room.d2 - 0.7);
+      // near a wall: pushed out to 0.75 m off the nearest one, facing it (a window, a worktop)
+      let px = x, pz = z, face = 0;
+      if (nearWall) {
+        const dx = room.w2 - Math.abs(x), dz = room.d2 - Math.abs(z);
+        if (dx < dz) { px = Math.sign(x || 1) * (room.w2 - 0.75); face = Math.sign(x || 1) > 0 ? Math.PI / 2 : -Math.PI / 2; }
+        else { pz = Math.sign(z || 1) * (room.d2 - 0.75); face = Math.sign(z || 1) > 0 ? 0 : Math.PI; }
+      }
+      if (!roomFree(room, px, pz)) continue;
+      // not in a doorway, not on someone
+      if ((room.plan.doors ?? []).some((d) => Math.hypot(d.x - px, d.z - pz) < 1.4)) continue;
+      if (world.bodies().some((b) => Math.hypot(b.x - px, b.z - pz) < 0.8)) continue;
+      return { at: [px, pz], face };
+    }
+    return null;
+  };
+  /** The thing a step uses, in this room (by id, then by kind). */
+  const thingFor = (target: string | undefined): SmartObject | null => {
+    if (!target) return null;
+    const id = target === "hob" ? "coffee" : target === "seatsL" ? "seatsL" : target;
+    const ob = objects.get(id);
+    if (ob) return objects.host(ob);
+    if (target === "sofa") return objects.ofKind("seat").find((x) => x.id !== "bed") ?? null;
+    if (target === "fridge") return objects.ofKind("fridge")[0] ?? null;
+    return null;
+  };
+  const LOOPS: Record<string, any[]> = {
+    cook: [{ clip: "bartender_idle", or: ["lean_table", "idle"], secs: 6 }, { clip: "lean_table", or: ["idle"], secs: 4 }],
+    clean: [{ clip: "bartender_idle", or: ["idle"], secs: 8 }],
+    call: [{ clip: "idle", secs: 5 }, { clip: "idle", secs: 5, gesture: "look" }],
+    talk: [{ clip: "idle", secs: 3 }, { clip: "nod", or: ["idle"], secs: 2 }],
+    stand: [{ clip: "idle", secs: 6 }],
+  };
+
+  /** Play step i for this guest, from where he is (walks). `snap`: put him straight there (you just walked in). */
+  const doStep = (g: Guest, i: number, snap: boolean) => {
+    const n = g.n!, s = g.v.steps[i];
+    const tok = ++g.token;
+    const alive = () => g.token === tok && g.mode === "in";
+    g.stepI = i;
+    g.walkT = 0;
+    hold(n, null);
+    const standAt = (spot: { at: XZ; face: number } | null, loop: any[], prop: keyof typeof propG | null = null) => {
+      if (!spot) { if (!n.busy) n.act(loop[0], 9999); return; }
+      const go = () => { if (!alive()) return; hold(n, prop); n.act(loop[0], 9999); };
+      if (snap) { n.place(spot.at[0], spot.at[1], spot.face); go(); }
+      else if (!n.walkTo(world, spot.at, { face: spot.face, onArrive: go })) go();
+    };
+    const useThing = (ob: SmartObject | null, loop?: any[], prop: keyof typeof propG | null = null) => {
+      if (!ob || !book.free(ob).length) { standAt(spotFor(`${g.v.id}|${i}`), LOOPS.stand); return; }
+      if (snap && ob.slots[0]?.seat) { if (n.sitNow(world, ob, { loop })) return; }
+      if (snap) { const sl = book.free(ob)[0]; const at = sitRootFor(sl, n.sit).at; n.place(at[0], at[1], sl.facing); }
+      const ok = n.use(world, ob, { secs: Infinity, loop, onIn: () => { if (alive()) hold(n, prop ?? (ob.kind === "fridge" ? "can" : ob.id === "coffee" && g.v.who === "mate" ? "cup" : null)); } });
+      if (!ok) standAt(spotFor(`${g.v.id}|${i}`), LOOPS.stand);
+    };
+    switch (s.kind) {
+      case "use": useThing(thingFor(s.target)); break;
+      case "cook": useThing(thingFor("hob"), LOOPS.cook); break;
+      case "clean": { const ob = s.target ? thingFor(s.target) : null; if (ob) useThing(ob, LOOPS.clean); else standAt(spotFor(`${g.v.id}|clean|${i}`), LOOPS.clean); break; }
+      case "call": standAt(spotFor(`${g.v.id}|call|${i}`), LOOPS.call, "phone"); break;
+      case "meet": {
+        const other = guests.find((x) => x.v.id === s.target && x.mode === "in" && x.n?.root.visible);
+        if (!other?.n) { standAt(spotFor(`${g.v.id}|${i}`), LOOPS.stand); break; }
+        const him = other.n.bodyXZ();
+        const spot = talkSpot(him, other.n.yaw, [n.x, n.z], 1.1);
+        const face = yawTo(spot, him);
+        n.lookAt = him;
+        if (snap) { n.place(spot[0], spot[1], face); n.act(LOOPS.talk[0], 9999); }
+        else if (!n.walkTo(world, spot, { face, onArrive: () => { if (alive()) n.act(LOOPS.talk[1], 9999); } })) n.act(LOOPS.talk[0], 9999);
+        break;
+      }
+      case "leave": {
+        // out through the front door (this room's way towards it)
+        const d = doorTo("garden");
+        if (!d) { n.show(false); g.mode = "out"; break; }
+        walkOut(g, d, tok);
+        break;
+      }
+      default: {
+        // arrive / go: he has just come in: a few steps into the room, a look round
+        const d = doorTo(neighbour(g, i, -1));
+        const at = d ? inside(d, 1.6) : null;
+        if (at && !snap) { if (!n.walkTo(world, at, { onArrive: () => { if (alive()) n.act("idle", 9999); } })) n.act("idle", 9999); }
+        else if (at) { n.place(at[0], at[1], n.yaw); n.act("idle", 9999); }
+      }
+    }
+  };
+  /** Walk to a door and through it, then hide. */
+  const walkOut = (g: Guest, d: NonNullable<ReturnType<typeof doorTo>>, tok: number) => {
+    const n = g.n!;
+    g.mode = "leaving";
+    g.walkT = 0;
+    const gone = () => { if (g.token !== tok) return; n.show(false); hold(n, null); n.lookAt = null; g.mode = "out"; };
+    const through = () => { if (g.token !== tok) return; if (!n.walkLine([inside(d, -0.6)], gone)) gone(); };
+    if (!n.walkTo(world, inside(d, 0.55), { onArrive: through })) through();
+  };
+  /** Come in through a door (from the next room or the front door) and on to the step. */
+  const walkIn = (g: Guest, i: number, from: string | null) => {
+    const n = g.n!, d = doorTo(from);
+    g.mode = "in";
+    const tok = ++g.token;
+    g.walkT = 0;
+    if (!d) { doStep(g, i, true); return; }
+    const out = inside(d, -0.6), inn = inside(d, 0.7);
+    n.place(out[0], out[1], yawTo(out, inn));
+    n.show(true);
+    if (!n.walkLine([inn], () => { if (g.token === tok) doStep(g, i, false); })) doStep(g, i, false);
+  };
+
+  /** Each frame (cheap: a few comparisons per visitor). */
+  const stepGuests = (dt: number) => {
+    if (!o.visits || !room) return;
+    planDay(dt);
+    const m = minuteOfDay();
+    let drawn = 0;
+    for (const g of guests) {
+      const w = whereAt(g.v.steps, m);
+      if (w) ensureBody(g);
+      const n = g.n;
+      if (!n) continue;
+      if (visitOf.get(n) !== g && w) visitOf.set(n, g);
+      if (visitOf.get(n) !== g) continue;
+      // in your room now, within the room's budget (over it: he is in another room, out of sight)
+      const here = !!w && w.step.room === room.id && drawn < (o.roomCap ?? 2);
+      if (here) drawn++;
+      if (g.mode === "out") {
+        if (!here) continue;
+        // a step that began a moment ago in a walk: he walks in through the door; else he is already there
+        const fresh = (m - w!.step.at) < 1.5 && (w!.step.kind === "arrive" || w!.step.kind === "go" || (w!.i > 0 && g.v.steps[w!.i - 1].room !== room.id));
+        if (fresh) walkIn(g, w!.i, w!.step.kind === "arrive" ? "garden" : neighbour(g, w!.i, -1));
+        else { g.mode = "in"; n.show(true); doStep(g, w!.i, true); }
+        continue;
+      }
+      g.walkT += dt;
+      if (g.mode === "leaving") {
+        // the watchdog: a walk out that has not finished in 12 s ends out of sight
+        if (g.walkT > 12) { g.token++; n.show(false); g.mode = "out"; }
+        continue;
+      }
+      // mode in
+      if (!here) {
+        const tok = ++g.token;
+        const next = w ? (w.step.room === "away" ? null : w.step.room) : "garden";
+        const d = doorTo(next ?? neighbour(g, g.stepI, 1));
+        const off = () => { if (g.token !== tok) return; if (d) walkOut(g, d, tok); else { n.show(false); g.mode = "out"; } };
+        if (n.seated) n.leave(off); else { n.stop(); off(); }
+        continue;
+      }
+      if (w!.i !== g.stepI) {
+        // the next step, in this room: stand up (if sat), a short look round, then on
+        const i = w!.i, tok = ++g.token;
+        const on = () => { if (g.token !== tok) return; n.lookAt = null; n.act("idle", 1.2 + ((i * 7) % 10) / 10, () => { if (g.token === tok) doStep(g, i, false); }); };
+        if (n.seated) n.leave(on); else { n.stop(); on(); }
+        g.stepI = i;
+        continue;
+      }
+      // the watchdog: a walk that has gone on 15 s (blocked) ends where it was going
+      if ((n.state === "walk" || n.state === "turn") && g.walkT > 15) doStep(g, g.stepI, true);
+      // the step began: he looks at you now and then (not while you talk to someone else)
+      if (n !== talking && n.state === "act" && !n.lookAt) { const ph = Math.floor((t + g.v.from) / 4.2) % 4; if (ph === 0) n.lookAt = [o.you().x, o.you().z]; }
+      else if (n !== talking && n.state === "act" && Math.floor((t + g.v.from) / 4.2) % 4 !== 0 && g.v.steps[g.stepI]?.kind !== "meet") n.lookAt = null;
+    }
+  };
+
   const buildRoomGrid = (r: BuiltRoom) => buildGrid(-r.w2, r.w2, -r.d2, r.d2, 0.2, (x, z) => roomFree(r, x, z) && Math.abs(x) < r.w2 - BODY_R && Math.abs(z) < r.d2 - BODY_R);
 
   // ── tapping ──
@@ -273,6 +558,14 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       if (talking !== n) return;
       n.lookAt = [o.you().x, o.you().z];
       if (!n.seated && n.state === "stand") n.face(yawTo([n.x, n.z], [o.you().x, o.you().z]));
+      // a visitor says what fits what he is doing in YOUR house (life/houseTalk.ts); the old fixed team-mates, as before
+      const g = visitOf.get(n);
+      if (g) {
+        const st = g.v.steps[g.stepI];
+        const ht = houseTalk({ who: g.v.who, step: st?.kind ?? "arrive", target: st?.target, phase: phaseOf(now() % DAY_MIN), why: g.v.why, seed: `${g.v.id}|${g.stepI}|${Math.floor(now() / DAY_MIN)}` });
+        show({ ...personCard({ id: n.id, name: n.name, lines: ht.lines, chat: g.v.who === "mate" && !!o.chat }), sub: ht.role });
+        return;
+      }
       show(personCard({ id: n.id, name: n.name, lines: smallTalk(n.id, n.seated ? "sat" : "stand", phaseOf(now() % DAY_MIN), Math.floor(now() / DAY_MIN) + 1), chat: !!o.chat }));
     };
     if (Math.hypot(spot[0] - y.x, spot[1] - y.z) < 0.4 || !o.walkTo(spot, him, arrive)) arrive();
@@ -377,6 +670,8 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
   };
 
   let t = 0;
+  /** The routines' cost per frame (ms, smoothed): the frame meter's "routines" line. */
+  let routineMs = 0;
   const life: HouseLife = {
     enterRoom: (r) => {
       if (meNpc) { meNpc.leave(); handBack(); }
@@ -384,7 +679,9 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       room = r;
       objects = new SmartSet(r.things ?? []);
       grid = buildRoomGrid(r);
-      for (const n of npcs) { if (n.seated) n.leave(); book.release(n.id); }
+      // visitors: out of sight; the next frame puts those whose step is in this room in place (mid-step)
+      for (const g of guests) { g.token++; g.mode = "out"; g.stepI = -1; if (g.n) { g.n.show(false); hold(g.n, null); g.n.lookAt = null; } }
+      for (const n of npcs) { if (visitOf.has(n)) { book.release(n.id); continue; } if (n.seated) n.leave(); book.release(n.id); }
       if (where.length) { void loadPeople(); if (npcs.length) seatGuests(); }
     },
     tap: (origin, d) => {
@@ -406,11 +703,14 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     update: (dt) => {
       t += dt;
       if (meNpc && !lying) meNpc.update(dt, world, true);
+      const t0 = typeof performance !== "undefined" ? performance.now() : 0;
+      stepGuests(dt);
+      if (t0) routineMs = routineMs * 0.95 + (performance.now() - t0) * 0.05;
       // seated team-mates chat: each looks at a neighbour now and then (seeded by the clock)
       for (let i = 0; i < npcs.length; i++) {
         const n = npcs[i];
         if (!n.root.visible) continue;
-        if (n !== talking) {
+        if (n !== talking && !visitOf.has(n)) {
           const nb = npcs.filter((m) => m !== n && m.root.visible);
           const ph = Math.floor((t + i * 2.3) / 3.1) % 3;
           n.lookAt = ph === 2 ? [o.you().x, o.you().z] : nb.length ? nb[ph % nb.length].bodyXZ() : null;
@@ -505,6 +805,9 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     debug: () => ({
       room: room?.id, clock: now(), sleeping, lying: !!lying, things: objects.list.map((x) => x.id), using: using?.id ?? null, card: card?.title ?? null,
       you: meNpc?.info() ?? null, people: npcs.map((n) => ({ ...n.info(), visible: n.root.visible })), book: book.all(), where,
+      // visitors (life/dayPlan.ts): who, what step, drawn or not; the routines' cost per frame
+      day: o.visits ? visitDay() : null, minute: o.visits ? Math.round(minuteOfDay()) : null, routineMs: +routineMs.toFixed(4),
+      guests: guests.map((g) => { const w = whereAt(g.v.steps, minuteOfDay()); return { id: g.v.id, name: g.v.name, mode: g.mode, step: w?.step.label ?? null, room: w?.step.room ?? null, state: g.n?.state ?? "loading", visible: !!g.n?.root.visible, from: g.v.from, to: g.v.to }; }),
       // the seat check (RUL-3D-005): every skin point of each seated person inside his seat's top 8 cm (cm, 0 = clear)
       seats: [...npcs, ...(meNpc ? [meNpc] : [])].filter((p) => p.state === "use" && p.using?.slots[0]?.seat && !(lying && p === meNpc)).map((p) => seatCheck(THREE, p, book)),
     }),

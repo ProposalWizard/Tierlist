@@ -43,7 +43,8 @@ import { sleepNight } from "@/lib/star/home3d/sleep";
 import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
 import LoadingCurtain from "./loading/LoadingCurtain";
 import ClockPill, { useLiveClock } from "./ClockPill";
-import { leaveAt } from "@/lib/star/life/clock";
+import { leaveAt, clockOf, dayNumber, nextMatchInfo, hhmm } from "@/lib/star/life/clock";
+import { dayPlanFor, forcedDay, houseMates, visitsToday, inviteAnswer } from "@/lib/star/life/dayPlan";
 import ViewToggle3D from "./ViewToggle3D";
 
 const INK = "#f7f1e8";
@@ -88,6 +89,8 @@ export interface Home3DProps {
   clockRate?: number;
   /** Menus are up (the phone in your hand): the clock stops. */
   clockPaused?: boolean;
+  /** "Come round?" texted to a team-mate (lib/star/life/dayPlan.ts withInvite): save it on the career. */
+  onInvite?: (mateId: string, day: number, minute: number) => void;
 }
 
 type Tab = "casual" | "kit" | "boots" | "extras";
@@ -128,11 +131,17 @@ function livingFor(career: CareerState) {
   return { mates, club: career.player.club };
 }
 
-export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep, onTime, onMatch, clockRate, clockPaused }: Home3DProps) {
+export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep, onTime, onMatch, clockRate, clockPaused, onInvite }: Home3DProps) {
   // the career clock, ticking while you are in the house (stopped while the phone is up); the house's people read it
   const live = useLiveClock(career, onTime, { paused: clockPaused || !chrome, rate: clockRate });
   const liveRef = useRef(live.clock);
   liveRef.current = live.clock;
+  /** The house's day plan, by day of the gap (read off the career as it is then); `forced` a test page's day. */
+  const visitsFn = (forced: string | null, openAbs: number, rms: RoomId[], t: HomeTier) => (d: number) => {
+    const c = careerRef.current;
+    if (forced && d === Math.floor(openAbs / 1440)) { const f = forcedDay(forced, Math.floor(openAbs % 1440) + 1, rms, t, houseMates(c)); if (f) return f; }
+    return dayPlanFor(c, d, rms, t, houseMates(c));
+  };
   // the night's words come from the career as it is when you fall asleep (sleep.ts is pure: the page's setCareer gets the same result)
   const careerRef = useRef(career);
   careerRef.current = career;
@@ -160,6 +169,28 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const slots = useMemo(() => cabinetSlots(career, cabinetSize(tier)), [career, tier]);
   const alive = livingOn(tier, living) && (house ?? houseLook()) === "new";
   const rooms = useMemo(() => roomsFor(tier, house ?? houseLook(), alive), [tier, house, alive]);
+  // who is coming round today, for the clock's Today list
+  const liveDay = Math.floor(live.abs / 1440);
+  const todayVisits = useMemo(() => (alive ? visitsToday(career, liveDay) : []), [alive, career, liveDay]);
+  // "Text Kyle: come round?" (once a day, not on match day, someone not already coming)
+  const inviteOffer = useMemo(() => {
+    if (!alive || !onInvite) return null;
+    const s = clockOf(career);
+    if (s.inv && s.inv[0] === dayNumber(career, liveDay)) return null;
+    if (nextMatchInfo(career)?.day === liveDay) return null;
+    const coming = new Set(dayPlanFor(career, liveDay, rooms, tier, houseMates(career)).map((v) => v.mateId));
+    const m = houseMates(career).find((x) => !coming.has(x.id));
+    if (!m) return null;
+    return {
+      label: `Text ${m.name}: come round?`,
+      send: () => {
+        const minute = Math.floor(liveRef.current.now() % 1440);
+        const a = inviteAnswer(careerRef.current, liveDay, m.id, minute);
+        onInvite(m.id, liveDay, minute);
+        return a.yes ? `${m.name}: "Yeah, go on. See you at ${hhmm(a.at)}."` : `${m.name}: "Can't today, sorry. Another time."`;
+      },
+    };
+  }, [alive, onInvite, career, liveDay, rooms, tier]);
   const [lifeCard, setLifeCard] = useState<InteractCard | null>(null);
   const cars = useMemo(() => carsOnDrive(career, Math.max(room.cars, rooms.includes("garage") ? carsIn("garage", tier) : 0)), [career, room.cars, rooms, tier]);
   const boots = useMemo(() => bootChoices(career), [career]);
@@ -219,7 +250,9 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           edit: approvedRef.current,
           ...(pov ? { pov: true } : {}),
           ...(houseCam && houseCam !== "D" ? { houseCam } : {}),
-          ...(alive ? { living: { ...livingFor(career), onSleep: () => { const r = sleepNight(careerRef.current); sleepRef.current?.(); return sleepRef.current ? r.text : "A good night."; }, clock: () => liveRef.current.now() } } : {}),
+          ...(alive ? { living: { ...livingFor(career), onSleep: () => { const r = sleepNight(careerRef.current); sleepRef.current?.(); return sleepRef.current ? r.text : "A good night."; }, clock: () => liveRef.current.now(),
+            // who is in the house each day (lib/star/life/dayPlan.ts); a test page can force one (?visit=mate|chef|quiet)
+            visits: visitsFn(q.get("visit"), liveRef.current.now(), rooms, tier) } } : {}),
         });
         let c: HomeController;
         try {
@@ -353,7 +386,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           {ROOM_HINT[roomNow ?? "main"] ?? ""}
         </div>
       )}
-      {chrome && <ClockPill career={career} abs={live.abs} held={live.abs >= leaveAt(career)} onMatch={onMatch} title={homeName} />}
+      {chrome && <ClockPill career={career} abs={live.abs} held={live.abs >= leaveAt(career)} onMatch={onMatch} title={homeName} visits={todayVisits} invite={inviteOffer} />}
       {status === "ready" && chrome && rooms.length > 1 && roomNow && (
         <div style={{ position: "absolute", top: "calc(max(12px, env(safe-area-inset-top)) + 60px)", left: 0, right: 0, display: "grid", justifyItems: "center", gap: 6, pointerEvents: "none" }} data-home3d-room={roomNow}>
           <div style={{ ...pill, fontWeight: 900, fontSize: 13, height: 30 }}>{ROOM_LABEL[roomNow]}</div>

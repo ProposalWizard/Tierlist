@@ -51,6 +51,7 @@ import type { ChanceResolved } from "./CanvasMatch";
 import type { HubPhase } from "./HomeHub";
 import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
 import { clockOf, hhmm, longDate, dateOf, todayList } from "@/lib/star/life/clock";
+import { visitsToday } from "@/lib/star/life/dayPlan";
 import { ClubCard, CountUp, RiseIn, Glow, Badge, EmptySlots, glowOf, rgba, useClubTheme } from "./ui";
 
 type AppId = "social" | "kickabout" | "squad" | "fixtures" | "messages" | "appstore" | "scout" | "relationships";
@@ -346,8 +347,10 @@ function Grid({ career, glow, badges, onOpen, onClose, installed, isNew }: {
  */
 function TodayWidget({ career }: { career: CareerState }) {
   const s = clockOf(career);
-  const rows = todayList(career).filter((r) => !r.now).slice(0, 2);
-  const now = todayList(career)[0];
+  // who is coming round today (lib/star/life/dayPlan.ts), then the match
+  const all = todayList(career, undefined, visitsToday(career, s.d));
+  const rows = all.filter((r) => !r.now).slice(0, 2);
+  const now = all[0];
   return (
     <div className="mb-2 px-1" data-phone-today>
       <div className="flex items-baseline justify-between gap-2">

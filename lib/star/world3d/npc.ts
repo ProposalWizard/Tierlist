@@ -225,6 +225,17 @@ export class Npc {
     else if (this.state === "hidden") this.state = "stand";
   }
 
+  /** Walk a straight line through these points, no path finding (through a doorway, off the room's floor grid). */
+  walkLine(points: XZ[], onArrive?: () => void): boolean {
+    if (this.seated || !points.length) return false;
+    this.gestureWant.drink = 0;
+    this.goal = { to: points[points.length - 1], face: null, onArrive, tries: 6, run: false };
+    this.walker.go(points, { onArrive: () => this.arrived() });
+    this.state = "walk";
+    this.blockedT = 0;
+    return true;
+  }
+
   /** Walk to a point (round things); `face` = the facing to turn to there. */
   walkTo(world: NpcWorld, to: XZ, o: { face?: number | null; onArrive?: () => void; run?: boolean } = {}): boolean {
     if (this.seated) return false;

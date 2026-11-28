@@ -50,6 +50,8 @@ export interface SavedClock {
   td?: number;
   /** Phase 3: energy the house things gave today. */
   te?: number;
+  /** Phase 3: mood the house things gave today. */
+  tm?: number;
   /** Phase 3: uses of each thing today. */
   tu?: Record<string, number>;
   /** Phase 3: your mood, -10..+10 (drifts back to 0, a point a day). */
@@ -104,7 +106,7 @@ export function clockOf(c: CareerState): SavedClock {
   const s = c.clock;
   if (s && s.k === gapKey(c) && Number.isFinite(s.d) && Number.isFinite(s.m)) return s;
   // a new gap: the time starts again; the day's counters and the mood carry over (`td` tells which day they are)
-  return { ...freshClock(c), ...(s ? { td: s.td, te: s.te, tu: s.tu, mo: s.mo, inv: s.inv } : null) };
+  return { ...freshClock(c), ...(s ? { td: s.td, te: s.te, tm: s.tm, tu: s.tu, mo: s.mo, inv: s.inv } : null) };
 }
 
 /** Minutes since day 0's midnight. */
