@@ -1,0 +1,331 @@
+<title>Harry v0.149</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one phone-width column; numbered points, each an idea + a picture; numbers in one closed toggle. */
+  :root{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --pillink:#fff;--r:12px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+      --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+      --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+      --pillink:#06170e;color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --pillink:#06170e;color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 70px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--green);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 22px}
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:38px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix{color:var(--green)} .fix i{background:var(--green)}
+  .add{color:var(--blue)} .add i{background:var(--blue)}
+  .chg{color:var(--violet)} .chg i{background:var(--violet)}
+  .bug{color:var(--amber)} .bug i{background:var(--amber)}
+  .nxt{color:var(--ink3)} .nxt i{background:var(--ink3)}
+  .idea{font-size:16px;font-weight:700;margin:0 0 10px;color:var(--ink)}
+  .pwf{display:grid;gap:8px;margin:0 0 12px}
+  .pwf div{min-width:0}
+  .pwf b{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+  .pwf span{color:var(--ink2);font-size:14.5px}
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:14px}
+  .tw svg{display:block;width:100%;height:auto}
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  .shots3{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:12px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .seen{font-size:12px;color:var(--ink3);margin-top:8px}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+
+
+  .steps{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .steps li{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
+  .steps li:last-child{border-bottom:0}
+  .steps li span{color:var(--ink2);font-size:14px}
+  .steps li.ok b{color:var(--green)} .steps li.no b{color:var(--ink3)}
+
+  .bars{margin:10px 0 4px}
+  .bar{display:grid;grid-template-columns:minmax(78px,100px) minmax(0,1fr) auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden;display:block}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)} .fill.now{background:var(--green);opacity:.85}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;margin-right:4px}
+  .steps li{grid-template-columns:28px minmax(0,1fr)}
+  .steps li i{font-style:normal;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums}
+  .steps li .hd{display:block}
+  .cmp{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+  .cmp th,.cmp td{text-align:left;vertical-align:top;padding:8px 8px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+  .cmp th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  .cmp td:first-child{font-weight:700;color:var(--ink);width:26%}
+  .cmp td{color:var(--ink2)}
+  .cmp tr:last-child td{border-bottom:0}
+  .cmpw{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:2px 4px;min-width:0}
+  .calls{list-style:none;margin:0;padding:0}
+  .calls li{padding:12px 0;border-bottom:1px solid var(--line)}
+  .calls li:last-child{border-bottom:0}
+  .who{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:6px;background:var(--card2);border:1px solid var(--line);color:var(--ink2);margin-right:6px}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">v0.149 · 28 NOV · HARRY</span>
+  <h1>The 60-day launch, the studio and the Discord</h1>
+  <p class="sub">Made by Harry · 28 Nov 2026 · a plan for Mikey and Leo to see and react to · nothing in the game changes from this page</p>
+</header>
+
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<ul class="ck">
+  <li><label><input type="checkbox" data-k="days"><span><span class="q">The 60 days: closed beta, open beta, app</span><span class="a">Point 1 below.</span></span></label></li>
+  <li><label><input type="checkbox" data-k="add"><span><span class="q">Updates only add, so every save carries through</span><span class="a">Point 2 below.</span></span></label></li>
+  <li><label><input type="checkbox" data-k="funnel"><span><span class="q">How a viewer becomes a Founding Player</span><span class="a">Point 3 below.</span></span></label></li>
+  <li><label><input type="checkbox" data-k="server"><span><span class="q">Our day-1 Discord layout</span><span class="a">Point 4 below.</span></span></label></li>
+  <li><label><input type="checkbox" data-k="leo"><span><span class="q">Leo's Discord plan beside ours</span><span class="a">Point 5 below.</span></span></label></li>
+  <li><label><input type="checkbox" data-k="codes"><span><span class="q">Beta codes, waves and safety rules</span><span class="a">Point 6 below.</span></span></label></li>
+  <li><label><input type="checkbox" data-k="studio"><span><span class="q">The marketing studio in Admin → Marketing</span><span class="a">Point 7 below.</span></span></label></li>
+  <li><label><input type="checkbox" data-k="up"><span><span class="q">Upload one big file (after Harry's push)</span><span class="a">Admin → Marketing → Uploads. Up to 4.9 GB now.</span></span></label></li>
+  <li><label><input type="checkbox" data-k="r2"><span><span class="q">Storage works again</span><span class="a">Admin → Marketing → Studio → open any cut.</span></span></label></li>
+</ul>
+
+<h2 class="fix"><i></i>1 · THE 60 DAYS</h2>
+<p class="idea">Days 1–30 are a closed beta. You get in only through Discord, with a code. Days 31–60 are an open beta on the website. The phone app comes on day 60.</p>
+<div class="tw">
+<svg viewBox="0 0 360 250" role="img" aria-label="Timeline: get ready, closed beta days 1 to 30, open beta days 31 to 60, app on day 60, then paid ads and Steam" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+  <rect x="10" y="22" width="28" height="22" rx="5" fill="var(--line)"/>
+  <rect x="40" y="22" width="148" height="22" rx="5" fill="var(--violet)" opacity=".85"/>
+  <rect x="190" y="22" width="132" height="22" rx="5" fill="var(--blue)" opacity=".85"/>
+  <circle cx="330" cy="33" r="11" fill="var(--green)"/>
+  <text x="330" y="37" text-anchor="middle" font-size="11" font-weight="800" fill="var(--pillink)">📱</text>
+  <path d="M342 33H356" stroke="var(--ink3)" stroke-width="2" stroke-dasharray="3 3"/>
+  <g font-size="10.5" fill="var(--ink3)" text-anchor="middle"><text x="40" y="60">day 1</text><text x="190" y="60">day 31</text><text x="330" y="60">day 60</text></g>
+  <g font-size="12" font-weight="800" fill="#fff" text-anchor="middle"><text x="114" y="37">CLOSED · Discord</text><text x="256" y="37">OPEN · website</text></g>
+  <g font-size="13" font-weight="700" fill="var(--ink)">
+    <circle cx="18" cy="88" r="6" fill="var(--line)"/><text x="32" y="92">Get ready (1–2 weeks)</text>
+    <circle cx="18" cy="126" r="6" fill="var(--violet)"/><text x="32" y="130">Closed beta, days 1–30</text>
+    <circle cx="18" cy="164" r="6" fill="var(--blue)"/><text x="32" y="168">Open beta, days 31–60</text>
+    <circle cx="18" cy="202" r="6" fill="var(--green)"/><text x="32" y="206">Phone app, day 60</text>
+    <circle cx="18" cy="236" r="6" fill="none" stroke="var(--ink3)" stroke-dasharray="2 2"/><text x="32" y="240">Later: paid ads, then Steam</text>
+  </g>
+  <g font-size="11.5" fill="var(--ink2)">
+    <text x="32" y="107">finish the game · build the studio · bank videos</text>
+    <text x="32" y="145">website game shut · Discord players get a code</text>
+    <text x="32" y="183">starts on a "safe version" · new features each day</text>
+    <text x="32" y="221">same account, same save</text>
+  </g>
+</svg></div>
+<figcaption>Look at the two bars: 30 days closed, 30 days open. Every post sends people to one place: Discord first, then the website.</figcaption>
+<div class="dt" style="margin-top:10px"><b>The safe version.</b> The game is already built. On day 31 only part of it is switched on. Each morning the next set of features switches on, and Discord gets "here's what went in today, please test it". It is one copy of the game, so a bug fix still reaches everyone at once.</div>
+
+<h2 class="fix"><i></i>2 · UPDATES ONLY ADD, SO NOBODY RESTARTS</h2>
+<p class="idea">A game update can add or fix a thing. It can never take a finished feature away. So a save from the closed beta still loads in the app on day 60.</p>
+<div class="tw">
+<svg viewBox="0 0 360 170" role="img" aria-label="One save follows the account from closed beta to open beta to the app; the app needs sign-in and cloud saves first" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+  <defs><marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+  <g fill="var(--card2)" stroke="var(--line)" stroke-width="1.5"><rect x="6" y="10" width="100" height="54" rx="10"/><rect x="130" y="10" width="100" height="54" rx="10"/></g>
+  <rect x="254" y="10" width="100" height="54" rx="10" fill="rgba(245,185,66,.12)" stroke="var(--amber)" stroke-width="1.5"/>
+  <g font-size="13" font-weight="700" fill="var(--ink)" text-anchor="middle"><text x="56" y="34">Closed beta</text><text x="180" y="34">Open beta</text><text x="304" y="34">App</text></g>
+  <g font-size="11" fill="var(--ink2)" text-anchor="middle"><text x="56" y="52">signed in</text><text x="180" y="52">same account</text><text x="304" y="52">same account</text></g>
+  <g stroke="var(--ink3)" stroke-width="1.8" fill="none" marker-end="url(#m2)"><path d="M106 37H128"/><path d="M230 37H252"/></g>
+  <rect x="6" y="84" width="348" height="30" rx="8" fill="rgba(61,220,132,.12)" stroke="var(--green)"/>
+  <text x="180" y="104" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--green)">One save, in our database, follows the account</text>
+  <text x="180" y="140" text-anchor="middle" font-size="12" font-weight="700" fill="var(--amber)">Gap today: the app saves on the phone only</text>
+  <text x="180" y="158" text-anchor="middle" font-size="11.5" fill="var(--ink2)">It needs sign-in + cloud saves before day 60</text>
+</svg></div>
+<figcaption>The amber box is the one gap. Without cloud saves in the app, app players start again.</figcaption>
+<div class="dt" style="margin-top:10px">Saves already live in our database: three slots per signed-in account. Old saves already upgrade themselves (an old six-round FA Cup save keeps its own rounds). Every new feature must do the same. At launch the leaderboards reset; careers carry on.</div>
+
+<h2 class="add"><i></i>3 · FROM A VIDEO TO A FOUNDING PLAYER</h2>
+<p class="idea">Videos bring people in. Discord keeps them. In the closed beta, Discord is the only door, so the ask on every video is "get a beta code in our Discord".</p>
+<div class="tw">
+<svg viewBox="0 0 360 290" role="img" aria-label="Funnel: sees a video, wants to play, joins Discord, redeems a code in the game, becomes a Founding Player" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+  <path d="M10 6H350L332 58H28Z" fill="rgba(111,184,255,.18)" stroke="var(--blue)"/>
+  <path d="M30 62H330L314 114H46Z" fill="rgba(111,184,255,.14)" stroke="var(--blue)"/>
+  <path d="M48 118H312L296 170H64Z" fill="rgba(177,140,255,.16)" stroke="var(--violet)"/>
+  <path d="M66 174H294L278 226H82Z" fill="rgba(177,140,255,.12)" stroke="var(--violet)"/>
+  <path d="M84 230H276L262 282H98Z" fill="rgba(61,220,132,.16)" stroke="var(--green)"/>
+  <g font-size="14" font-weight="800" fill="var(--ink)" text-anchor="middle">
+    <text x="180" y="28">1 · Sees a video</text><text x="180" y="84">2 · Wants to play</text><text x="180" y="140">3 · Joins the Discord</text><text x="180" y="196">4 · Redeems a code</text><text x="180" y="252">5 · Founding Player</text></g>
+  <g font-size="11" fill="var(--ink2)" text-anchor="middle">
+    <text x="180" y="46">TikTok and every other account</text><text x="180" y="102">"link in bio"</text><text x="180" y="158">the only way in, days 1–30</text><text x="180" y="214">in the game · one use, one account</text><text x="180" y="270">first ~100, kept for ever</text></g>
+</svg></div>
+<figcaption>Read it top to bottom. Each step loses people, so each step must be one tap.</figcaption>
+<div class="dt" style="margin-top:10px">From day 31 the order flips: the first ask on a video is "play now in your browser", and Discord becomes the second ask, inside the game ("Found a bug? Want a say? Join the Discord"). Why: only a few viewers ever join a Discord. In the research, one game's 1.9-million-view video brought 120 people into its Discord.</div>
+
+<h2 class="add"><i></i>4 · THE DISCORD: OUR DAY-1 LAYOUT</h2>
+<p class="idea">A small server that feels busy, not a big one that feels empty. The research's lean layout, plus four things Leo already planned that Harry chose to keep.</p>
+<div class="tw">
+<svg viewBox="0 0 360 494" role="img" aria-label="The day-1 server: Start here, Beta, Play and a private Team group" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+  <rect x="0" y="0" width="360" height="494" rx="12" fill="#1e2124"/>
+  <g font-size="11" font-weight="800" letter-spacing="1" fill="#949ba4">
+    <text x="16" y="26">START HERE · everyone</text><text x="16" y="138">BETA · code holders</text><text x="16" y="294">PLAY · code holders</text><text x="16" y="404">🔒 TEAM · us only</text></g>
+  <g font-size="14" fill="#dbdee1">
+    <text x="24" y="50"># rules</text><text x="24" y="76"># announcements</text><text x="24" y="102"># get-your-code</text>
+    <text x="24" y="162"># general</text><text x="24" y="188"># introductions</text><text x="24" y="214">💬 bugs</text><text x="24" y="240">💬 ideas</text><text x="24" y="266"># updates</text>
+    <text x="24" y="318"># my-career</text><text x="24" y="344"># goal-of-the-week</text><text x="24" y="370"># challenges</text>
+    <text x="24" y="428"># dev-chat</text><text x="24" y="454"># mod-log</text><text x="24" y="480"># reports</text></g>
+  <g font-size="11" fill="#949ba4" text-anchor="end">
+    <text x="344" y="50">banter vs abuse</text><text x="344" y="76">short daily update</text><text x="344" y="102">wave rules + redeem link</text>
+    <text x="344" y="162">football + game chat</text><text x="344" y="188">your club + where you found us</text><text x="344" y="214">forum, one post per bug</text><text x="344" y="240">forum, vote with 👍</text>
+    <text x="344" y="454">AutoMod alerts</text><text x="344" y="480">player reports, 24 h</text></g>
+  <g font-size="10" font-weight="800"><rect x="248" y="253" width="96" height="18" rx="9" fill="#f5b942"/><text x="296" y="266" text-anchor="middle" fill="#1e2124">LEO'S · BUILT</text>
+    <rect x="248" y="305" width="96" height="18" rx="9" fill="#f5b942"/><text x="296" y="318" text-anchor="middle" fill="#1e2124">LEO'S</text>
+    <rect x="248" y="331" width="96" height="18" rx="9" fill="#f5b942"/><text x="296" y="344" text-anchor="middle" fill="#1e2124">LEO'S</text>
+    <rect x="212" y="357" width="132" height="18" rx="9" fill="#f5b942"/><text x="278" y="370" text-anchor="middle" fill="#1e2124">LEO'S · DAILY+WEEKLY</text></g>
+</svg></div>
+<figcaption>Drawn as a Discord sidebar. Amber pills are Leo's pieces we keep. 11 channels you can see, 3 private, never more than 5 in a group.</figcaption>
+<ul class="n" style="margin-top:8px">
+  <li><div class="hd">Roles</div><div class="dt">Founder (the three of you) · Moderator (18+, none at launch) · Founding Player · Beta · Bug Hunter · Creator (Leo's) · club roles you pick · an opt-in news ping.</div></li>
+  <li><div class="hd">One of the three replies every day</div><div class="dt">A founder rota: one of you is "on Discord" each day, in chat and the forums. Discord's own advice: one reply from the team a day matters more than long posts now and then.</div></li>
+  <li><div class="hd">Leo's built pieces stay as they are</div><div class="dt">The Discord buttons in the game and the site footer, and patch notes posting themselves to #updates.</div></li>
+</ul>
+
+<h2 class="chg"><i></i>5 · LEO'S PLAN AND OURS, SIDE BY SIDE</h2>
+<p class="idea">Leo's plan is good for a server that is open to everyone. Ours is built for a closed beta first. Most of the difference is that one thing.</p>
+<div class="cmpw"><table class="cmp">
+  <tr><th>What</th><th>Leo's (19 Nov)</th><th>Ours</th></tr>
+  <tr><td>Size</td><td>21 channels in 6 groups</td><td>11 + 3 private in 4 groups</td></tr>
+  <tr><td>Built for</td><td>An open server</td><td>A closed beta, then open</td></tr>
+  <tr><td>Beta gate</td><td>None</td><td>Codes redeemed in the game</td></tr>
+  <tr><td>Email</td><td>None</td><td>Opt-in box from day 1</td></tr>
+  <tr><td>Safety</td><td>AutoMod, verified email</td><td>+ 18+ mods, banter vs abuse rules, free draws</td></tr>
+  <tr><td>Who replies</td><td>Not set</td><td>A rota, one of three daily</td></tr>
+  <tr><td>Feedback</td><td>Forums tagged Planned / In the game / Not doing</td><td>Kept: the same forums and tags</td></tr>
+  <tr><td>Sharing</td><td>#my-career, goal of the week, weekly challenge, Creator role</td><td>All kept</td></tr>
+</table></div>
+<figcaption>Leo's plan was written before the closed beta was decided. Its forums, sharing channels and built pieces carry straight over.</figcaption>
+
+<h2 class="add"><i></i>6 · CODES, WAVES AND SAFETY</h2>
+<p class="idea">Codes live in the game, not in Discord. People come in waves, under rules everyone can read. Football banter is fine; abuse is a ban.</p>
+<div class="tw">
+<svg viewBox="0 0 360 150" role="img" aria-label="Waves of 20 to 25 players every 3 to 4 days, up to about 100 Founding Players" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+  <g font-size="11" fill="var(--ink3)" text-anchor="middle"><text x="40" y="140">wave 1</text><text x="110" y="140">wave 2</text><text x="180" y="140">wave 3</text><text x="250" y="140">wave 4</text><text x="321" y="140">≈ day 14</text></g>
+  <g fill="var(--violet)" opacity=".85"><rect x="20" y="96" width="40" height="28" rx="5"/><rect x="90" y="72" width="40" height="52" rx="5"/><rect x="160" y="48" width="40" height="76" rx="5"/><rect x="230" y="24" width="40" height="100" rx="5"/></g>
+  <rect x="290" y="14" width="62" height="110" rx="5" fill="var(--green)" opacity=".85"/>
+  <g font-size="11.5" font-weight="800" fill="#fff" text-anchor="middle"><text x="40" y="114">25</text><text x="110" y="90">50</text><text x="180" y="66">75</text><text x="250" y="42">100</text><text x="321" y="34">~100</text></g>
+  <text x="321" y="62" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Founding</text><text x="321" y="74" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Players</text>
+</svg></div>
+<figcaption>Players in the beta after each wave. A new wave every 3–4 days, 20–25 places each. Drawing, not measured.</figcaption>
+<ul class="n" style="margin-top:8px">
+  <li><div class="hd">One-use codes, tied to one account</div><div class="dt">A used code cannot be resold, and the game knows who invited whom. The Discord role only opens the channels.</div></li>
+  <li><div class="hd">Wave rules in public</div><div class="dt">For example: "20 places every 3–4 days, by sign-up order". People get angry at hidden picking, not at waiting.</div></li>
+  <li><div class="hd">Email opt-in from day 1</div><div class="dt">One unticked box at sign-in: "Tell me when the app and Steam launch". Email beats Discord on launch day.</div></li>
+  <li><div class="hd">Google Play test by about day 40</div><div class="dt">Google needs 12 testers opted in for 14 days in a row before a new app goes public. We aim for 20–25 Android testers from the Discord, to cover drop-outs.</div></li>
+  <li><div class="hd">UK safety habits</div><div class="dt">Moderators 18+ only, no access to the admin or emails · written rules: banter yes, abuse a ban · no age-restricted channels (teen accounts cannot see them) · every giveaway is a free random draw · staff never DM links.</div></li>
+</ul>
+
+<h2 class="add"><i></i>7 · THE MARKETING STUDIO</h2>
+<p class="idea">It lives in Knowitball's admin: Admin → Marketing. It works like an ad studio, with Knowitball as the client. Nothing is built yet.</p>
+<ul class="steps">
+  <li><i>1</i><span><span class="hd">Cards in the database</span>The video cards save the moment you change them, not on a push.</span></li>
+  <li><i>2</i><span><span class="hd">Calendar</span>The 60 days on one screen: each day's game update and its posts.</span></li>
+  <li><i>3</i><span><span class="hd">Footage hub</span>Every clip coded, tagged and searchable ("late winner").</span></li>
+  <li><i>4</i><span><span class="hd">Research + scripts</span>What works out there, then scripts that say why each line is there.</span></li>
+  <li><i>5</i><span><span class="hd">Approve</span>Watch, title, caption, where, when: one checklist on the card.</span></li>
+  <li><i>6</i><span><span class="hd">Numbers</span>Views per post, and which opening won after 48 hours.</span></li>
+</ul>
+<figcaption>Built in this order, one piece at a time, each checked before the next.</figcaption>
+<div class="dt" style="margin-top:10px">Posting and TikTok are Mikey's lane. The studio only reads his Publish queue and its numbers; it does not touch his files. Every free post is treated as an ad test; paid boosts come later, only for posts that already won.</div>
+<ul class="n" style="margin-top:8px">
+  <li><div class="hd">A Discord bot is being set up <span class="pill p-amb">in progress</span></div><div class="dt">Read-only to start, so Claude can check the real server instead of guessing.</div></li>
+</ul>
+
+<h2 class="chg"><i></i>SHIPPED ON BRANCH HARRY · NOT LIVE YET</h2>
+<ul class="n">
+  <li><div class="hd">Uploads take much bigger files <span class="pill p-amb">waits for "push"</span></div><div class="dt">Admin → Marketing → Uploads. Recordings stay at 500 MB.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">One file</span><span class="track"><span class="fill now" style="width:100%;opacity:.55"></span><span class="fill was" style="width:10%;background:var(--ink3)"></span></span><span class="vv"><s>500 MB</s>4.9 GB</span></div>
+      <div class="bar"><span class="lb">Per day, each</span><span class="track"><span class="fill now" style="width:100%;opacity:.55"></span><span class="fill was" style="width:10%;background:var(--ink3)"></span></span><span class="vv"><s>5 GB</s>50 GB</span></div>
+    </div></li>
+  <li><div class="hd">Marketing storage connected again (fixed today)</div><div class="dt">New Cloudflare keys. Uploads, the Studio editing suite, patch-note pictures and the nightly backup work again.</div></li>
+</ul>
+
+<h2 class="bug"><i></i>OPEN POINTS</h2>
+<ul class="n">
+  <li><div class="hd">Invite-a-friend rewards <span class="pill p-amb">to check</span></div><div class="dt">Leo says they break Discord's rules. The research did not confirm that either way. Check before any "invite 3 friends" reward.</div></li>
+  <li><div class="hd">The app saves on the phone only</div><div class="dt">Sign-in + cloud saves must be in the app before day 60 (point 2).</div></li>
+  <li><div class="hd">The nightly backup is not seen working yet</div><div class="dt">Confirmed only after the next 03:00 run.</div></li>
+  <li><div class="hd">Nothing in this plan is built</div><div class="dt">Not the beta gate, the codes, the server or the studio rooms.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>YOUR CALLS</h2>
+<ul class="calls">
+  <li><span class="who">Mikey</span><span class="hd">Rebuild the app in React Native/Expo, or wrap the website? <span class="pill p-amb">your call</span></span><div class="dt">Suggested: a 3-day test. Build the Home screen and one match in Expo, then time one ordinary change reaching both web and app.</div></li>
+  <li><span class="who">Mikey</span><span class="hd">OK to fold your Brain-page approve checklist into the studio later? <span class="pill p-amb">yes / no</span></span><div class="dt">Step 5 of point 7. Your pages keep working until the studio matches them.</div></li>
+  <li><span class="who">Leo</span><span class="hd">OK to slim the Discord to our day-1 layout? <span class="pill p-amb">yes / no</span></span><div class="dt">Your built pieces stay: the buttons, #updates, the forums and tags, #my-career, goal of the week, challenges, the Creator role.</div></li>
+  <li><span class="who">All</span><span class="hd">Which date is day 1? <span class="pill p-amb">your call</span></span><div class="dt">Suggested: when the first two weeks of the calendar are full.</div></li>
+</ul>
+
+<details><summary>The numbers, if you want them</summary>
+<p><b>Plan:</b> 30 days closed, 30 days open, app on day 60. About 180 posts at 3 a day.</p>
+<p><b>Discord, from the research:</b> Copa City (a small football game) gave out 200 beta keys through its Discord. Omno's 1.9-million-view TikTok brought 120 people into its Discord. Discord calls about 30% of members chatting each week "a healthy goal". Its guide says to start with about 8 channels and no more than 5 per group.</p>
+<p><b>Email:</b> one small comparison had 38–46% of email readers clicking against 27% for a Discord post (from a search preview, not fully checked).</p>
+<p><b>App stores:</b> Google Play: at least 12 testers opted in for 14 days in a row (personal developer accounts). Apple TestFlight: up to 10,000 outside testers; builds expire after 90 days.</p>
+<p><b>Leo's server, counted from his blueprint file:</b> 21 channels (one is voice) in 6 groups, 10 roles. Ours: 11 visible + 3 private in 4 groups.</p>
+<p><b>Studio build times</b> (guesses): cards 1 day, calendar 1–2, footage 2, research + scripts 2, approve 1, numbers 1.</p>
+<p><b>Full plans:</b> launch plan v2 claude.ai/artifact/1rsfJgR7mAV4NwEC2kePia · studio plan claude.ai/artifact/4WbheT7P8hYiH5JAegpDnb · Leo's plan docs/DISCORD.md.</p>
+</details>
+
+<h2 class="nxt"><i></i>PREVIOUS VERSIONS</h2>
+<details><summary>v0.142 · 21 Nov 2026 · 3D phone, real clothes at home</summary>
+<ul><li>The Phone tab opens onto your own hand holding the phone in your house.</li><li>Real clothes at home and in the garden, not match kits.</li></ul>
+<p>Still open: phone text size, house load stall, clothes leftovers, the shop in cloth.</p>
+</details>
+
+<footer>Harry · v0.149 · 28 Nov 2026. A plan page: nothing in the game has changed from it. Seen: the plans and the research, read. Reasoned: the layout and the wave drawing.</footer>
+</div>
+<script>
+(function(){
+  var K="kib-pn-0.149-checks", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||"{}")||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll(".ck input");
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute("data-k"); if(s[id]) b.checked=true;
+    b.addEventListener("change",function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>
