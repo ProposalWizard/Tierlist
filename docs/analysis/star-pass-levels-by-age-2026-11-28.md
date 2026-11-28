@@ -48,7 +48,7 @@ Level, the 10th percentile (slow), the median (middle), the 90th percentile (fas
 | 37 | 40 | 29 / 63 / 74 | 1,032 |
 | 38 | 40 | 29 / 64 / 76 | 1,076 |
 
-The slow column sits on **29** from age 25. That is the League Two gate: the weak, never-promoted players are held there. Level 29 needs 10 games in League Two or higher, but the weak players only stop at 29 because the next gate (level 39) needs League One games.
+The slow column sits on **29** from age 25. That is the gate for the next band: level 39 needs 10 League One games, and the weakest players (my `low` type) never leave the lower leagues.
 
 ## Today: when each level arrives
 
@@ -124,7 +124,7 @@ A new player waits 20 matches for the first card. If Mikey wants a quick first c
 4. `lib/star/rewardCatalogue.ts`, the comment above `DEFAULT_PASS_LEVELS` (line ~204) says non-league lasts "to level 13" and the Premier League starts "from 38". Those would be about "to level 25" and "from 45". The card positions (the numbers in `DEFAULT_PASS_LEVELS`, `starPassClaim.ts`, `StarRatingSheet.tsx`) do not move. Cards are tied to a level, not an age, so every card stays where Mikey put it. The cards just arrive later.
 5. Not touched: gates, Legend tasks, the XP Book (`xpConfig.ts`, `/admin/star-xp`), `starPassClaim.ts`.
 
-If Harry wants level 10 nearer 19 instead, use +100,000 less: the flat part at about 80,000. I did not run that exact number. F2 sits between my "+100,000" and "+130,000" runs and gave a median of exactly 20.
+To aim nearer age 19, use smaller numbers in the list (flat part about 80,000 instead of 120,000). I did not run that exact list. It is a guess that it lands near 19.
 
 ### Open items for Mikey
 
