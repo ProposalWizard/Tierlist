@@ -2429,6 +2429,7 @@ export const ADMIN_GUIDES = {
       { items: [
           ["Eye button (top right; bottom right on the world kit)", "First person | third person: tap to see through his eyes (gold = on), tap again to go back behind him. Drag to look round. Using something (a seat, a card, a machine) shows him in third person and goes back into his eyes after. Remembered on this device only (lib/star/three3d/viewCam.ts), never in the save."],
         ["‹ Home", "Back to the 3D places group page."],
+        ["Walk out of the garden gate / High Street ›", "Opens the shopping street test page (in a career: the street itself, phase 1: the 3D shop, KIB MOTORS, THE DRIP, the barber)."],
         ["Day / Sunset / Night (above the scene)", "Changes the time of day. In a career it follows the time of your next kick-off."],
         ["Full career / New career (above the scene)", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
         ["↻ Restart (above the scene)", "Builds the garden again from the start."],
@@ -2651,6 +2652,39 @@ export const ADMIN_GUIDES = {
       "A phone or browser that runs 3D (WebGL).",
     ],
     dev: "components/star/World3D.tsx · app/star-world3d-dev/page.tsx · lib/star/world3d/{smartObject,routine,npc,interact,budget,testScene}.ts · test: tests/star/routine.mts · the lounge itself is lib/star/home3d/roomBuild.ts (unchanged)",
+  },
+
+  "/star-street-dev": {
+    title: "Shopping street",
+    what: "The shopping street (phase 1): a short high street at golden hour you walk down from your garden's gate. Four shop fronts with doors: KNOWITBALL (the 3D shop), KIB MOTORS (the car showroom: the next car you could buy turns behind the glass with its real shop price), THE DRIP (the boutique, real price tags) and the BARBER (shut: opening soon). People walk the pavements and cross at the zebra; cars are parked along the kerbs. In a career it opens out of the garden's gate.",
+    buttons: [
+      {
+        items: [
+          ["From the garden / At shop / At cars / At drip / At barber", "Where you appear: at the bottom of the street (as from your garden's gate), or just outside that door (as when you come back out of it)."],
+          ["New career / Rich career", "A brand-new career, or one that owns the first cars and the cap: the showroom and the boutique windows then show the next thing to buy."],
+          ["↻ Restart", "Opens the street again from the start."],
+          ["‹ Garden (top left)", "Leaves the page (in a career: back to your garden's gate)."],
+          ["Stick (bottom left), W A S D / arrows (+ Shift)", "Walk, jog. Drag the street to look round."],
+          ["Tap the ground / tap a shop front", "You walk there / to that shop's door."],
+          ["Walk through an open door, or its card's button (Shop ›, Cars ›, Drip ›)", "Here: the 3D shop's door opens the 3D shop test page; the Cars and Drip doors only show a note (in a career they open the shop's Cars and Drip aisles, and Back comes out of that door again)."],
+          ["Barber › / walking up to the barber's door", "A card: Barber, opening soon. There is no barber game yet. OK closes it."],
+          ["Walking off the bottom of the street", "Here: a note. In a career: down the lane, back to your garden's gate."],
+          ["Eye button (top right)", "First person | third person, as in the garden and the 3D shop (remembered on this device)."],
+          ["Pinch or scroll the wheel", "Zooms the camera out behind you and back in (camera D)."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. The made-up career lives on this page only.",
+      "The address can hold a set-up: ?bare=1 full screen, ?arrive=gate|shop|cars|drip|barber, ?outfit=hoodie|tee|shirt|tracksuit|coat, ?q=low|medium|high, ?walkers=0..6, ?film=1.",
+    ],
+    inGame: [
+      "Your garden's gate: walk out of it (or tap High Street › at the gate) and you are at the bottom of the street. Its doors open the 3D shop, the shop's Cars aisle and its Drip aisle; their way back brings you out of the same door.",
+    ],
+    needs: [
+      "A phone or browser that runs 3D (WebGL).",
+    ],
+    dev: "components/star/Street3D.tsx · app/star-street-dev/page.tsx · lib/star/street3d/{plan,scene,textures}.ts · app/star-dev/page.tsx phase street-3d · test: tests/star/street3d.mts",
   },
 
   "/star-sprites-dev": {

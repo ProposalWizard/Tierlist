@@ -59,6 +59,8 @@ export interface Garden3DProps {
   onTraining?: () => void;
   /** Walked through your house's back door (9 Oct 2026): your 3D home. Absent: the door stays shut. */
   onHouse?: () => void;
+  /** Walked out of the garden gate: the shopping street (28 Nov 2026). Absent: the gate stays shut. */
+  onStreet?: () => void;
   /** "📱 Phone" in the top bar: the 3D phone in your hand (components/star/HousePhone.tsx). Absent: no button. */
   onPhone?: () => void;
   /** Where you appear: at the shop's doors (coming out of it), the casino's,
@@ -72,7 +74,7 @@ export interface Garden3DProps {
   embedded?: boolean;
 }
 
-export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, onHouse, onPhone, arrive = "gate", sky, where = "career", embedded = false }: Garden3DProps) {
+export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, onHouse, onStreet, onPhone, arrive = "gate", sky, where = "career", embedded = false }: Garden3DProps) {
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<GardenController | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -87,6 +89,8 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
   trainingRef.current = onTraining;
   const houseRef = useRef(onHouse);
   houseRef.current = onHouse;
+  const streetRef = useRef(onStreet);
+  streetRef.current = onStreet;
 
   // Three real team-mates, picked at random each visit (as before).
   const [visitors] = useState(() => {
@@ -155,6 +159,11 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
             if (dead) return;
             setLeaving(true);
             houseRef.current?.();
+          } : undefined,
+          onStreetGate: onStreet ? () => {
+            if (dead) return;
+            setLeaving(true);
+            streetRef.current?.();
           } : undefined,
           onContextLost: () => {
             if (dead) return;
@@ -272,7 +281,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
       {status === "ready" && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
 
       {status === "ready" && spot && spot !== "fountain" && (
-        <SpotCard spot={spot} career={career} info={info} visitors={visitors} onClose={tapped ? () => setTapped(null) : undefined} onShop={onShop} onCasino={onCasino} onTraining={onTraining} onHouse={onHouse} />
+        <SpotCard spot={spot} career={career} info={info} visitors={visitors} onClose={tapped ? () => setTapped(null) : undefined} onShop={onShop} onCasino={onCasino} onTraining={onTraining} onHouse={onHouse} onStreet={onStreet} />
       )}
 
       {/* a quick fade as you step into the shop */}
@@ -282,7 +291,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
 }
 
 /** The small card for wherever you are standing. */
-function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onTraining, onHouse }: {
+function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onTraining, onHouse, onStreet }: {
   spot: GardenSpot;
   career: CareerState;
   info: ReturnType<typeof gardenData>;
@@ -292,6 +301,7 @@ function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onT
   onCasino?: () => void;
   onTraining?: () => void;
   onHouse?: () => void;
+  onStreet?: () => void;
 }) {
   const card: React.CSSProperties = {
     position: "absolute", right: 12, bottom: "max(24px, calc(env(safe-area-inset-bottom) + 16px))", maxWidth: "min(62vw, 300px)",
@@ -306,6 +316,16 @@ function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onT
       <div style={{ ...card, display: "flex", alignItems: "center", gap: 10 }}>
         <span aria-hidden style={{ fontSize: 24 }}>🛍️</span>
         <button onClick={onShop} style={{ height: 38, padding: "0 16px", borderRadius: 12, border: "none", background: GOLD, color: "#111", fontWeight: 900, fontSize: 15, cursor: "pointer" }}>Shop &#8250;</button>
+        {close}
+      </div>
+    );
+  }
+  if (spot === "street") {
+    if (!onStreet) return null;
+    return (
+      <div style={{ ...card, display: "flex", alignItems: "center", gap: 10 }} data-garden-street>
+        <span aria-hidden style={{ fontSize: 24 }}>🛍️</span>
+        <button onClick={onStreet} style={{ height: 38, padding: "0 16px", borderRadius: 12, border: "none", background: GOLD, color: "#111", fontWeight: 900, fontSize: 15, cursor: "pointer" }}>High Street &#8250;</button>
         {close}
       </div>
     );
