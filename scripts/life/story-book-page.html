@@ -1,4 +1,5 @@
 <title>The Story Book</title>
+<link rel="artifact-thumbnail" href="thumb.jpg">
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 /* Layout: a lean grid of story tiles (one real screenshot each); a story opens as its own page, a
@@ -81,6 +82,13 @@ a { color: var(--accent); }
 .tile .m { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
 .size { display: inline-block; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 0 6px; border-radius: 999px; margin-right: 4px; background: var(--accent-weak); color: var(--accent); }
 .size.big { background: var(--gold-weak); color: var(--gold); }
+.size.tier-common { background: var(--card2); color: var(--muted); }
+.size.tier-uncommon { background: var(--accent-weak); color: var(--accent); }
+.size.tier-rare { background: var(--blue-weak); color: var(--blue); }
+.size.tier-very-rare { background: var(--gold-weak); color: var(--gold); }
+.size.tier-legendary { background: var(--gold); color: var(--surface); }
+.chain { margin: 8px 0 0; font-size: 14px; }
+.lab3 { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted2); }
 .size.wait { background: var(--red-weak); color: var(--red); }
 .empty { padding: 30px 0; text-align: center; color: var(--muted); }
 
@@ -171,6 +179,7 @@ details.more2 > summary { cursor: pointer; font-weight: 600; font-size: 14px; co
   </header>
   <div class="tools" id="tools">
     <input class="search" id="q" type="search" placeholder="Search a title, a person, any word" aria-label="Search" autocomplete="off">
+    <select id="f-tier" aria-label="Rarity"><option value="">Any rarity</option><option value="legendary">Legendary</option><option value="very-rare">Very rare</option><option value="rare">Rare</option><option value="uncommon">Uncommon</option><option value="common">Common</option></select>
     <select id="f-size" aria-label="Size"><option value="">Any size</option><option value="big">Big</option><option value="medium">Medium</option><option value="small">Small</option></select>
     <select id="f-role" aria-label="Who is in it"><option value="">Anyone</option></select>
     <button class="btn" id="f-video" aria-pressed="false">Has a film</button>
@@ -197,7 +206,7 @@ details.more2 > summary { cursor: pointer; font-weight: 600; font-size: 14px; co
 (function () {
   var PH0 = "", PH1 = "", IF0 = "", IF1 = "", IFS = "";
   var D = null, SH = null, V = {}, S = [], bySlug = {}, byId = {};
-  var F = { q: "", size: "", role: "", video: false, game: false };
+  var F = { q: "", size: "", role: "", video: false, game: false, tier: "" };
 
   function h(tag, attrs, kids) {
     var e = document.createElement(tag);
@@ -257,12 +266,30 @@ details.more2 > summary { cursor: pointer; font-weight: 600; font-size: 14px; co
 
   /* ── home: the grid ── */
   function sizeOf(s) { return s.size === "unspecified" ? "big" : s.size; }
-  function rarity(s) { var c = s.start && s.start.careers, ch = s.start && s.start.chance; if (s.waiting) return "not playable yet"; if (c) return "1 career in " + Math.round(1 / c); return ch ? "every career can meet it" : "always starts"; }
+  var TIER = { common: "Common", uncommon: "Uncommon", rare: "Rare", "very-rare": "Very rare", legendary: "Legendary" };
+  var STAGE = { "first-seasons": "First seasons", "breaking-through": "Breaking through", established: "Established", peak: "At the peak", veteran: "Veteran", "last-seasons": "Last seasons", any: "Any time" };
+  var TIERS = ["legendary", "very-rare", "rare", "uncommon", "common"];
+  function tierOf(s) { return (s.start && s.start.tier) || "common"; }
+  function tierWord(s) { return TIER[tierOf(s)] || tierOf(s); }
+  function stageWord(s) { return STAGE[(s.start && s.start.stage) || "any"] || s.start.stage; }
+  function rarity(s) { var c = s.start && s.start.careers; if (s.waiting) return "not playable yet"; return c ? "1 career in " + Math.round(1 / c) : "every career can meet it"; }
+  function chainLine(list, lead) {
+    if (!list || !list.length) return null;
+    var p = h("p", { class: "chain" }, [h("b", { text: lead + " " })]);
+    list.forEach(function (x, i) {
+      if (i) p.appendChild(document.createTextNode("; "));
+      if (x.neg) p.appendChild(document.createTextNode("not "));
+      var a = h("a", { href: "#s-" + x.slug }); a.appendChild(fmt(x.title)); p.appendChild(a);
+      p.appendChild(document.createTextNode(x.ends.length ? " ended “" + x.ends.map(function (e) { return plain(e.title); }).join("” or “") + "”" : " ended (any way)"));
+    });
+    return p;
+  }
   function whoLine(s) { var seen = {}, out = []; (s.cast || []).forEach(function (c) { var w = c.role === "squad" ? "a team-mate" : c.label.replace(/ \(.*/, ""); if (!seen[w]) { seen[w] = 1; out.push(w); } }); return out.slice(0, 3).join(", "); }
   function matches(s) {
     if (F.size && sizeOf(s) !== F.size) return false;
     if (F.role && s.roles.indexOf(F.role) < 0) return false;
     if (F.video && !V[s.slug]) return false;
+    if (F.tier && tierOf(s) !== F.tier) return false;
     if (F.game && !s.flags.hasGame) return false;
     if (F.q) { if (!s._blob) s._blob = plain([s.title, s.premise, s.summary, whoLine(s), (s.cast || []).map(function (c) { return c.label; }).join(" "), JSON.stringify(s.beats.map(function (b) { return [b.title, b.setup, (b.nodes || []).map(function (n) { return [n.say, n.replies.map(function (r) { return r.label; })]; }), (b.choices || []).map(function (c) { return c.label; })]; }))].join(" ")).toLowerCase(); var ps = F.q.toLowerCase().split(/\s+/); for (var i = 0; i < ps.length; i++) if (ps[i] && s._blob.indexOf(ps[i]) < 0) return false; }
     return true;
@@ -276,7 +303,7 @@ details.more2 > summary { cursor: pointer; font-weight: 600; font-size: 14px; co
       if (st) shotBg(th, s, firstOpen(s), 0.58);
       if (V[s.slug]) th.appendChild(h("span", { class: "vid", text: "▶ " + mmss(V[s.slug].seconds) }));
       var sz = sizeOf(s);
-      var t = h("button", { class: "tile", type: "button" }, [th, h("div", { class: "m" }, [h("span", { class: "size" + (s.waiting ? " wait" : sz === "big" ? " big" : ""), text: s.waiting ? "waiting" : sz }), rarity(s)]), h("div", { class: "t", text: plain(s.title) }), h("div", { class: "one", text: whoLine(s) + ": " + plain(s.premise) })]);
+      var t = h("button", { class: "tile", type: "button" }, [th, h("div", { class: "m" }, [h("span", { class: "size tier-" + tierOf(s) + (s.waiting ? " wait" : ""), text: s.waiting ? "waiting" : tierWord(s) }), sz + " · " + stageWord(s)]), h("div", { class: "t", text: plain(s.title) }), h("div", { class: "one", text: (s.after && s.after.length ? "Follows “" + plain(s.after[0].title) + "”. " : "") + whoLine(s) + ": " + plain(s.premise) })]);
       t.addEventListener("click", function () { cameFromGrid = true; location.hash = "s-" + s.slug; });
       g.appendChild(t);
     });
@@ -304,13 +331,15 @@ details.more2 > summary { cursor: pointer; font-weight: 600; font-size: 14px; co
     var v = openSheet(plain(s.title));
     var sz = sizeOf(s), st = s.start || {};
     var hd = h("div", { class: "shead" }, [h("h2", { text: plain(s.title) }),
-      h("div", { class: "line", text: (s.waiting ? "Not playable yet · " : sz + " · ") + rarity(s) + " · starts " + (st.moments || []).join(" or ") + (st.chance ? " (" + Math.round(st.chance * 100) + " times in 100 when it can)" : "") + " · " + s.beats.length + " beats · " + s.ends.length + " endings" })]);
+      h("div", { class: "line" }, [h("span", { class: "size tier-" + tierOf(s), text: tierWord(s) }), (s.waiting ? "Not playable yet · " : sz + " story · ") + stageWord(s) + " · " + rarity(s) + " · starts " + (st.moments || []).join(" or ") + (st.chance ? " (" + Math.round(st.chance * 100) + " times in 100 when it can)" : "") + " · " + s.beats.length + " beats · " + s.ends.length + " endings"])]);
     hd.appendChild(el("p", "prem", s.premise));
+    var c1 = chainLine(s.after, "Unlocks after:");
+    if (c1) hd.appendChild(c1);
+    if (s.leadsTo && s.leadsTo.length) { var lp = h("p", { class: "chain" }, [h("b", { text: "Leads to: " })]); s.leadsTo.forEach(function (x, i) { if (i) lp.appendChild(document.createTextNode("; ")); var a = h("a", { href: "#s-" + x.slug }); a.appendChild(fmt(x.title)); lp.appendChild(a); lp.appendChild(document.createTextNode(x.neg ? " (only if this did NOT end so)" : x.ends.length ? " if this ends “" + x.ends.map(function (e) { return plain(e.title); }).join("” or “") + "”" : " once this has ended")); }); hd.appendChild(lp); }
     v.appendChild(hd);
     if (V[s.slug]) {
-      var w = h("div", { class: "watch" }), b = h("button", { class: "btn main", type: "button", text: "▶ Watch the story · " + mmss(V[s.slug].seconds) });
-      b.addEventListener("click", function () { if (w.querySelector("video")) return; var vd = h("video", { src: V[s.slug].file, controls: true, playsinline: true, preload: "metadata" }); w.appendChild(vd); vd.play().catch(function () {}); b.textContent = "The story, as a film made from its screenshots · " + mmss(V[s.slug].seconds); });
-      w.appendChild(b); v.appendChild(w);
+      var w = h("div", { class: "watch" }, [h("div", { class: "lab3", text: "Watch the story · " + mmss(V[s.slug].seconds) + " · made only from its screenshots" }), h("video", { src: V[s.slug].file, controls: true, playsinline: true, preload: "metadata" })]);
+      v.appendChild(w);
     }
     if (s.waiting) v.appendChild(h("p", { class: "result", text: "This story waits for a game that is not built (“" + s.waiting + "”). The game never starts such a story, so no part of it could be photographed yet. Its lines are below." }));
     var path = h("nav", { class: "path", "aria-label": "Beats", id: "path" });
@@ -497,16 +526,17 @@ details.more2 > summary { cursor: pointer; font-weight: 600; font-size: 14px; co
     S = D.stories; S.forEach(function (s) { bySlug[s.slug] = s; byId[s.id] = s; });
     var T = D.summary.totals;
     var sum = document.getElementById("sum"); sum.innerHTML = "";
-    var by = { big: 0, medium: 0, small: 0 }, wait = 0, rare = 0;
-    S.forEach(function (s) { by[sizeOf(s)] = (by[sizeOf(s)] || 0) + 1; if (s.waiting) wait++; if (s.start && s.start.careers && s.start.careers <= 0.25) rare++; });
+    var by = { big: 0, medium: 0, small: 0 }, wait = 0, tiers = {}, chains = 0;
+    S.forEach(function (s) { by[sizeOf(s)] = (by[sizeOf(s)] || 0) + 1; if (s.waiting) wait++; tiers[tierOf(s)] = (tiers[tierOf(s)] || 0) + 1; if (s.after && s.after.length) chains++; });
     function nrow(label, list) { var p = h("p"), b = h("div", { class: "bars" }); list.forEach(function (x) { b.appendChild(h("span", { class: "n" }, [h("b", { text: String(x[1]) }), x[0]])); }); p.appendChild(h("div", { class: "lab2", text: label })); p.appendChild(b); return p; }
-    sum.appendChild(nrow(T.stories + " stories, by size", [["big", by.big], ["medium", by.medium], ["small", by.small], ["waiting for a game", wait]]));
-    sum.appendChild(nrow("How often a career meets them", [["rare: 1 career in 4 or fewer", rare], ["more common", S.length - rare]]));
+    sum.appendChild(nrow(T.stories + " stories, by rarity", TIERS.map(function (t) { return [TIER[t].toLowerCase(), tiers[t] || 0]; })));
+    sum.appendChild(nrow("By size", [["big", by.big], ["medium", by.medium], ["small", by.small], ["follow-ons", chains], ["waiting for a game", wait]]));
     sum.appendChild(h("p", null, [h("b", { text: (SH ? SH.beatsSeen : 0) + " of " + T.beats + " beats" }), " photographed in the running game. ", h("b", { text: Object.keys(V).length + " story films" }), " made from those screenshots. Tap a story to play it through."]));
     sum.appendChild(h("p", null, [h("b", { text: "Not switched on" }), " in a real career yet."]));
     var rs = document.getElementById("f-role"); D.roleFilter.forEach(function (r) { rs.appendChild(h("option", { value: r.key, text: r.label })); });
     document.getElementById("q").addEventListener("input", function () { F.q = this.value.trim(); home(); });
     document.getElementById("f-size").addEventListener("change", function () { F.size = this.value; home(); });
+    document.getElementById("f-tier").addEventListener("change", function () { F.tier = this.value; home(); });
     rs.addEventListener("change", function () { F.role = this.value; home(); });
     ["video"].forEach(function (k) { var b = document.getElementById("f-" + k); b.addEventListener("click", function () { F[k] = !F[k]; b.setAttribute("aria-pressed", F[k] ? "true" : "false"); home(); }); });
     route();

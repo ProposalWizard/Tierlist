@@ -52,7 +52,7 @@ import { StoryScreen, useStory } from "@/components/star/life/StoryPlayer";
 import { StoryFace } from "@/components/star/life/StoryCards";
 import { questLog, arcsOf, arcMoment, openBeat } from "@/lib/star/life/arcs";
 import { arcById } from "@/lib/star/life/arcBook";
-import { cardLive, diceActivity, nodeLive } from "@/lib/star/life/talk";
+import { autoBeat, cardLive, diceActivity, nodeLive } from "@/lib/star/life/talk";
 import { promiseList } from "@/lib/star/life/promises";
 
 type View =
@@ -199,10 +199,35 @@ export default function LifeTestPage() {
           ["lived", () => autoPlay(sampleCareer(3), 30, mulberry32(20261120))],
           ["kitman", kitmanSample],
         ];
-        const m = (arc.beats[0].event.trigger.when.find((w) => w !== "followUp") ?? "arrive:training") as LifeMoment;
+        const momentOf1 = (x: NonNullable<ReturnType<typeof arcById>>) => (x.beats[0].event.trigger.when.find((w) => w !== "followUp") ?? "arrive:training") as LifeMoment;
+        const m = momentOf1(arc);
+        // A follow-on story starts only after another story ended a certain way: play that one
+        // through first by the dice (each first answer in turn until it ends the right way).
+        const parents: { id: string; ends: string[] }[] = [];
+        for (const w of arc.start?.when ?? []) {
+          const re = /ended\(([a-z0-9-]+)(?::([a-z0-9|-]+))?\)/g;
+          for (let x = re.exec(w); x; x = re.exec(w)) parents.push({ id: x[1], ends: x[2] ? x[2].split("|") : [] });
+        }
+        const withParents = (c0: CareerState): CareerState => {
+          let c = c0;
+          for (const p of parents) {
+            const pa = arcById(p.id);
+            if (!pa) continue;
+            let best = c;
+            for (let k = 0; k < 4; k++) {
+              let t = arcMoment(c, momentOf1(pa), { rng: () => 0.5, facts: latest.current.facts, force: p.id }).career;
+              for (const b of pa.beats) { const a = autoBeat(t, p.id, b.id, { rng: () => 0.5, facts: latest.current.facts, pick: (n) => Math.min(k, n - 1) }); if (a) t = a.career; }
+              best = t;
+              const done = arcsOf(t)[p.id]?.done;
+              if (done && (!p.ends.length || p.ends.includes(done))) break;
+            }
+            c = best;
+          }
+          return c;
+        };
         for (const [name, make] of bases) {
           rng.current = mulberry32(20261120);
-          const r = arcMoment(make(), m, { rng: () => rng.current(), facts: latest.current.facts, force: id });
+          const r = arcMoment(withParents(make()), m, { rng: () => rng.current(), facts: latest.current.facts, force: id });
           if (arcsOf(r.career)[id]) { setCareer(r.career); setView({ kind: "people" }); latest.current.story.act.close(); return { ok: true, base: name }; }
         }
         return { ok: false, why: "its people cannot be cast in any sample career" };

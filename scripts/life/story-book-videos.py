@@ -2,7 +2,7 @@
 screenshots (scripts/life/story-book-shots.mjs). No voice, no generated pictures.
 
 Each film: a title card, then the story as it played on screen (the first answer each time, and for
-big stories where the other first answers lead), each screenshot slowly zooming (a Ken Burns move)
+big stories where the other first answers lead), each screenshot slowly panning (a Ken Burns move)
 with the story's own words as a caption under it, then a card for every ending the story has, then
 the story in the phone's list. Music: the game's own track "Lobby" (public/star/music, played with
 CC0 samples), quiet. 720 x 1560, H.264 CRF 32, 20 frames a second.
@@ -175,16 +175,18 @@ def build(story, rec, out):
         for k, (kind, png, sec, shot) in enumerate(slides):
             seg = os.path.join(tmp, f"v{k:03d}.mp4")
             nf = int(round(sec * FPS))
-            enc = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "32", "-pix_fmt", "yuv420p", "-r", str(FPS), "-an"]
+            enc = ["-c:v", "libx264", "-preset", "faster", "-crf", "32", "-pix_fmt", "yuv420p", "-r", str(FPS), "-an"]
             if kind == "card":
                 cmd = ["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-t", f"{sec:.2f}", "-i", png,
                        "-vf", f"fps={FPS},fade=t=in:st=0:d=0.4", *enc, seg]
             else:
                 down = k % 2 == 0
-                y = f"(ih-ih/zoom)*on/{nf}" if down else "0"
-                cmd = ["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-t", f"{sec:.2f}", "-i", png, "-i", shot,
+                # A slow Ken Burns pan: the screenshot a little larger than its window, drifting down (or up).
+                y = f"(ih-oh)*t/{sec:.2f}" if down else f"(ih-oh)*(1-t/{sec:.2f})"
+                x = f"(iw-ow)*(0.5+0.35*sin(t/{sec:.2f}*3.14))" if down else "(iw-ow)/2"
+                cmd = ["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-t", f"{sec:.2f}", "-i", png, "-loop", "1", "-t", f"{sec:.2f}", "-i", shot,
                        "-filter_complex",
-                       f"[1]scale={SW * 3 // 2}:{SH * 3 // 2},zoompan=z='1+0.07*on/{nf}':x='iw/2-(iw/zoom/2)':y='{y}':d={nf}:s={SW}x{SH}:fps={FPS}[s];"
+                       f"[1]scale={SW * 108 // 100}:{SH * 108 // 100},fps={FPS},crop={SW}:{SH}:x='{x}':y='{y}'[s];"
                        f"[0]fps={FPS}[b];[b][s]overlay=(W-w)/2:28:shortest=1,fade=t=in:st=0:d=0.3",
                        "-frames:v", str(nf), *enc, seg]
             subprocess.run(cmd, check=True)

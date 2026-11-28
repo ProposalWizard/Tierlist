@@ -37,12 +37,22 @@ const HIDE = `div.fixed.inset-x-0.bottom-0[class*="z-[200]"], .tr-float, .tr-var
 
 fs.mkdirSync(path.join(OUT, "stories"), { recursive: true });
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({ args: ["--disable-dev-shm-usage"] });
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, reducedMotion: "reduce" });
 let page;
 const consoleErrors = [];
 
+/** A fresh page; a crashed one (memory on a busy machine) gets up to three more tries, 20 s apart. */
 async function load() {
+  for (let t = 0; ; t++) {
+    try { return await load1(); } catch (e) {
+      if (t >= 3) throw e;
+      console.log(`page load failed (${String(e).slice(0, 80)}), trying again`);
+      await new Promise((r) => setTimeout(r, 20000));
+    }
+  }
+}
+async function load1() {
   if (page) await page.close().catch(() => {});
   page = await ctx.newPage();
   page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text().slice(0, 300)); });

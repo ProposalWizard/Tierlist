@@ -791,7 +791,7 @@ function buildStory(arc: A, file: string, order: number, batch: { label: string;
   const stage = stageOf(first, cx);
 
   // Starting
-  const startCond = [...allWords(first.requires, cx), ...allWords(first.event.trigger.requires, cx)];
+  const startCond = [...allWords(arc.start?.when, cx), ...allWords(first.requires, cx), ...allWords(first.event.trigger.requires, cx)];
   const moments = first.event.trigger.when.map((m: string) => MOMENT_WORDS[m] ?? m);
   const st = arc.start;
   const chanceText = st ? `Each time that moment comes up and the conditions fit, it starts ${Math.round(st.chance * 100)} times in 100 (${oneIn(st.chance)}). The roll is the career's own, so careers do not all meet it in the same week.` : "It has no start roll: it always starts when its first beat can.";
@@ -810,7 +810,7 @@ function buildStory(arc: A, file: string, order: number, batch: { label: string;
     tones: arc.about?.tone ?? [], who: arc.about?.who ?? [], roles: Array.from(new Set((arc.cast ?? []).map((c: A) => c.pick))), owner: cx.tag(arc.owner),
     batch: batch.label, batchKey: batch.key, summary: fillText(arc.summary, cx), premise: premise.length > 220 ? premise.slice(0, 217).replace(/\s+\S*$/, "") + "…" : premise,
     stage: stage.stage, stageKey: stage.key, waiting: arc.needsActivity ?? "",
-    start: { moments, conditions: startCond, chanceText, careersText, chance: st?.chance ?? null, careers: st?.careers ?? null, needs: [] as any[] },
+    start: { moments, conditions: startCond, chanceText, careersText, chance: st?.chance ?? null, careers: st?.careers ?? null, needs: [] as any[], tier: st?.tier ?? "", stage: st?.stage ?? "" },
     cast, newPeople: beats.flatMap((b: any) => b.newPeople.map((p: any) => ({ ...p, beat: b.title }))), vars, clocks, beats, promises, ends, speakers: spk,
     counts: { beats: beats.length, say: sayCount, narration: narrCount, choices: choiceCount, outcomes: outcomeCount, endings: ends.length, promises: promises.length, games: gameCount, callbacks: callbackCount, variants: variantCount },
     _col: col, _raw: arc,
@@ -1028,6 +1028,24 @@ const stories: any[] = orderIds.filter((id) => byId.has(id)).map((id, i) => {
   return s;
 });
 const storyById = new Map(stories.map((s) => [s.id, s]));
+
+// ───────── chains: a follow-on starts only after another story ended (a certain way) ─────────
+// Read from the story's start window (start.when) and its first beat's conditions: ended(arc-x:end|end).
+for (const s of stories) { s.after = []; s.leadsTo = []; }
+for (const s of stories) {
+  const raw = byId.get(s.id)!.arc;
+  const srcs: string[] = [...(raw.start?.when ?? []), ...(raw.beats[0].requires ?? []), ...(raw.beats[0].event.trigger.requires ?? [])];
+  for (const src of srcs) {
+    const neg = /^\s*(!|NOT\b)/.test(src);
+    for (const m of src.matchAll(/ended\(([a-z0-9-]+)(?::([a-z0-9|-]+))?\)/g)) {
+      const from = storyById.get(m[1]);
+      if (!from) continue;
+      const ends = (m[2] ? m[2].split("|") : []).map((e: string) => ({ id: e, title: from.ends.find((x: any) => x.id === e)?.title ?? e }));
+      s.after.push({ id: from.id, slug: from.slug, title: from.title, ends, neg });
+      from.leadsTo.push({ id: s.id, slug: s.slug, title: s.title, ends, neg });
+    }
+  }
+}
 
 // ───────── memories, flags: who writes, who reads → the links between stories ─────────
 interface Writer { story: string; beat: string; via: string; role: string; end?: string }
