@@ -79,6 +79,7 @@ import { kitsOf } from "./kits";
 import { surname } from "./media/grammar";
 import { pickAfterMatch, pickAfterMissed } from "./managerMoments";
 import { MONEY_SIGN } from "./money";
+import { lateEnergyBack, recoveryScale, resilienceInjuryScale } from "./gym/effect";
 
 export const SPONSOR_CATEGORIES = [
   "Boots", "Sports Drink", "Sports Clothing", "Casual Clothing", "Food",
@@ -680,7 +681,8 @@ export function restRecoveryAfter(career: CareerState, settled: Fixture, fixture
   // hands you one after game 2 (lib/star/story.ts, the "can" beat).
   if (career.unlocks?.story && !career.unlocks.seen.includes("beat-can") && (career.careerStats?.appearances ?? 0) < 1) return 100;
   // Happiness decides how well you recover (relationships.ts, Mikey 4 Oct 2026).
-  return days * dailyRecovery(ownsProperty, tier) * happinessEnergyFactor(happinessOf(career));
+  // The gym's Resilience (gym/effect.ts, behind its flag: x1 while it is off).
+  return days * dailyRecovery(ownsProperty, tier) * happinessEnergyFactor(happinessOf(career)) * recoveryScale(career);
 }
 
 export function creditMatchResult(
@@ -817,9 +819,11 @@ export function creditMatchResult(
   // minutes played instead. Then the rest days until the next fixture give
   // energy back. The old "+20 for every unused weekly action" is gone.
   // Guarded on `alreadyPlayed` so a replayed fixture changes nothing twice.
-  const afterMatch = stats.endEnergy !== undefined
+  const afterMatch0 = stats.endEnergy !== undefined
     ? stats.endEnergy
     : career.energy - ENERGY_FULL_MATCH_MEDIUM * energyFactorFor(career, fixture) * minuteShare;
+  // The gym's Resilience gives back part of what the last half hour cost (gym/effect.ts; 0 while its flag is off).
+  const afterMatch = afterMatch0 + lateEnergyBack(career, Math.max(0, career.energy - afterMatch0), stats.minutes ?? 90);
   const nextEnergy = alreadyPlayed
     ? career.energy
     : Math.round(clampEnergy(clampEnergy(afterMatch) + restRecoveryAfter(career, fixture, fixtures)));
@@ -835,7 +839,8 @@ export function creditMatchResult(
   //    outcome on a replay regardless, but the energy it is weighed against
   //    must not have silently drifted from the double-drain above.
   const fatigueAtFullTime = stats.endEnergy ?? career.energy;
-  const injuryRisk = injuryRiskFor(fatigueAtFullTime);
+  // THE INJURY HOOK: the gym's Resilience keeps a share of the chance (gym/effect.ts; x1 while its flag is off).
+  const injuryRisk = injuryRiskFor(fatigueAtFullTime) * resilienceInjuryScale(career);
   const injuryRng = mulberry32(career.season * 8191 + fixture.week * 97 + fixture.opponent.length * 3);
   const nextInjury = INJURIES_ON && !alreadyPlayed && !career.injury && injuryRng() < injuryRisk
     ? rollInjury(injuryRng)

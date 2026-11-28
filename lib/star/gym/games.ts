@@ -20,7 +20,11 @@
  * Test: tests/star/gym.mts.
  */
 
-export type GymGameKind = "bench" | "treadmill" | "bag";
+import { start2, step2, result2, botHold2, HOW_TO2, NAMES2, MAX_SECS2, GYM2_KINDS, type Gym2Kind, type Gym2State } from "./games2";
+
+/** The three from phase 1 (this file) and the ten from phase 2 (./games2.ts). */
+export type GymGameKind = "bench" | "treadmill" | "bag" | Gym2Kind;
+export const GYM_GAME_KINDS: GymGameKind[] = ["bench", "treadmill", "bag", ...GYM2_KINDS];
 
 /** What one finished game gave: a grade 0..1 and the words for the result card. */
 export interface GameResult {
@@ -324,30 +328,34 @@ export function bagResult(s: BagState): GameResult {
 
 // ── one door for the scene ────────────────────────────────────────────────
 
-export type GameState = BenchState | TreadmillState | BagState;
+export type GameState = BenchState | TreadmillState | BagState | Gym2State;
 
 export function startGame(kind: GymGameKind, level = 1, seed = 1): GameState {
-  return kind === "bench" ? benchStart(level) : kind === "treadmill" ? treadmillStart(level, seed) : bagStart(level, seed);
+  return kind === "bench" ? benchStart(level) : kind === "treadmill" ? treadmillStart(level, seed) : kind === "bag" ? bagStart(level, seed) : start2(kind, level, seed);
 }
 export function stepGame(s: GameState, dt: number, hold: boolean): GameState {
-  return s.kind === "bench" ? benchStep(s, dt, hold) : s.kind === "treadmill" ? treadmillStep(s, dt, hold) : bagStep(s, dt, hold);
+  return s.kind === "bench" ? benchStep(s, dt, hold) : s.kind === "treadmill" ? treadmillStep(s, dt, hold) : s.kind === "bag" ? bagStep(s, dt, hold) : step2(s, dt, hold);
 }
 export function resultOf(s: GameState): GameResult {
-  return s.kind === "bench" ? benchResult(s) : s.kind === "treadmill" ? treadmillResult(s) : bagResult(s);
+  return s.kind === "bench" ? benchResult(s) : s.kind === "treadmill" ? treadmillResult(s) : s.kind === "bag" ? bagResult(s) : result2(s);
 }
+/** The longest a game can run (s), for the screen's clock. */
+export const MAX_SECS: Record<GymGameKind, number> = { bench: BENCH.maxSecs, treadmill: TREADMILL.secs, bag: BAG.secs, ...MAX_SECS2 };
 /** The words under each game's meter: what your thumb does. */
 export const HOW_TO: Record<GymGameKind, string> = {
   bench: "Hold to push up. Let go to lower. Tap to brake: lower it slowly.",
   treadmill: "Hold to run. Let go and the belt takes you back. Stay in the green.",
   bag: "Hold to push right. Let go to drift left. Keep it in the pink.",
+  ...HOW_TO2,
 };
-export const GAME_NAMES: Record<GymGameKind, string> = { bench: "Bench press", treadmill: "Treadmill", bag: "Heavy bag" };
+export const GAME_NAMES: Record<GymGameKind, string> = { bench: "Bench press", treadmill: "Treadmill", bag: "Heavy bag", ...NAMES2 };
 
 /**
  * A bot thumb for tests and films: how a decent player plays each game. `skill` 0..1: 1 plays
  * it well, 0 lets go too early. Pure: reads the state only.
  */
 export function botHold(s: GameState, skill = 1): boolean {
+  if (s.kind !== "bench" && s.kind !== "treadmill" && s.kind !== "bag") return botHold2(s, skill);
   if (s.kind === "bench") {
     if (s.phase === "up") return true;
     // coming down: brake whenever it falls faster than a slow, safe speed

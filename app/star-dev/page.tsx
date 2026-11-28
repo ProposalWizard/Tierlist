@@ -66,6 +66,7 @@ import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { devInfoOn } from "@/lib/star/matchDayPrefs";
 import { simulateOwnMatch } from "@/lib/star/simMatch";
+import { gymSkillBonus } from "@/lib/star/gym/effect";
 import { opponentMatchStrength } from "@/lib/star/matchInputs";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound, lastSixteenIndex } from "@/lib/star/cups";
@@ -4332,7 +4333,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // arrow is a fixed-scale drag indicator and never grows with power.
     const bootMatchesLeft = career.currentBoot.matches > 0;
     const effectivePower = Math.min(100, career.skills.power
-      + (bootMatchesLeft ? career.currentBoot.power : 0));
+      + (bootMatchesLeft ? career.currentBoot.power : 0) + gymSkillBonus(career).power);
     const effectiveTechnique = Math.min(100, career.skills.technique
       + (bootMatchesLeft ? career.currentBoot.technique : 0));
     // Your boots, or a Premium/Elite KIB can drunk before this match.

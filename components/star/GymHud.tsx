@@ -67,7 +67,7 @@ export const GymHud = forwardRef<GymHudHandle, { onHold: (on: boolean) => void; 
         if (big.current) big.current.textContent = `${g.kmh} km/h`;
         if (g.fell) setFlash("WHOA!", "#ef4444", Math.max(0, g.fellT - 0.1));
         else if (flash.current) flash.current.style.opacity = "0";
-      } else {
+      } else if (g.kind === "bag") {
         if (marker.current) marker.current.style.left = `${g.x * 100}%`;
         if (zone.current) { zone.current.style.left = `${(g.zone - g.half) * 100}%`; zone.current.style.width = `${g.half * 200}%`; }
         if (big.current) big.current.textContent = g.combo > 1 ? `×${g.combo}` : `${g.hits}`;
