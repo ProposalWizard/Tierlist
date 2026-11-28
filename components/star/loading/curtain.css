@@ -1,0 +1,342 @@
+/*
+ * THE LOADING SCREENS (components/star/loading/, Harry 27 Nov 2026).
+ *
+ * Light by rule: every moving thing is a transform or an opacity, so the
+ * phone's compositor plays it on its own thread and it keeps moving while
+ * the place it covers is busy building (a garden's models, a shader
+ * compile). No JS loop, no canvas, no 3D. Every animation starts at
+ * var(--lc-t) (a negative delay): a screen that is handed on (the place's
+ * file arriving, then the place itself) carries on where it was.
+ */
+
+.lc-root {
+  position: fixed; inset: 0; z-index: 9000; overflow: hidden; isolation: isolate;
+  background: #0b1220; color: #fff; contain: strict;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased;
+  transition: opacity 200ms ease-out; user-select: none; -webkit-user-select: none; touch-action: manipulation;
+}
+.lc-root.lc-box { position: absolute; z-index: 45; border-radius: inherit; }
+.lc-root.lc-new { animation: lc-in 160ms ease-out 90ms both; }
+.lc-root.lc-out { opacity: 0 !important; pointer-events: none; animation: none; }
+@keyframes lc-in { from { opacity: 0; } to { opacity: 1; } }
+.lc-root * { box-sizing: border-box; }
+.lc-root img { max-width: none; }
+.lc-a { animation-delay: var(--lc-t, 0s); }
+.lc-display { font-family: var(--font-pitch), Oswald, Impact, "Arial Narrow", sans-serif; text-transform: uppercase; font-weight: 400; letter-spacing: .01em; }
+.lc-caps { font-weight: 900; text-transform: uppercase; letter-spacing: .22em; font-size: 11px; }
+
+/* What is loading, quietly, at the bottom: words, three dots, and (when there is real progress) a small ring. No bar. */
+.lc-where {
+  position: absolute; left: 0; right: 0; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 30;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.72);
+  text-shadow: 0 1px 6px rgba(0,0,0,.7);
+}
+.lc-box .lc-where { bottom: 10px; }
+.lc-dots { display: inline-flex; gap: 3px; margin-left: 1px; }
+.lc-dots i { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: .2; animation: lc-dot 1.2s ease-in-out infinite; animation-delay: calc(var(--lc-t, 0s) + var(--d, 0s)); }
+@keyframes lc-dot { 30% { opacity: 1; } 60%, 100% { opacity: .2; } }
+.lc-ring { width: 14px; height: 14px; transform: rotate(-90deg); opacity: 0; transition: opacity 300ms; }
+.lc-ring.on { opacity: 1; }
+.lc-ring circle { fill: none; stroke-width: 2.4; }
+.lc-ring .bg { stroke: rgba(255,255,255,.18); }
+.lc-ring .fg { stroke: #34d399; stroke-linecap: round; transition: stroke-dashoffset 400ms ease-out; }
+
+/* ═════════════════════ KEEPIE-UPPIES (the 3D places) ═════════════════════ */
+/* Still on purpose: a whole-screen layer that moves makes the phone redraw the whole screen every
+   frame (measured on the garden: 18.3 s to ready with it moving, 15.2 s without the screen). Only
+   small things move: the ball, the boot, the count. */
+.lc-kp-bg { position: absolute; inset: 0; background-size: cover; background-position: center 55%; }
+.lc-kp-shade { position: absolute; inset: 0; background:
+  linear-gradient(180deg, rgba(6,10,20,.78) 0%, rgba(6,10,20,.28) 34%, rgba(6,10,20,.05) 55%, rgba(6,10,20,.35) 80%, rgba(4,10,8,.7) 100%); }
+.lc-kp-head { position: absolute; top: calc(52px + env(safe-area-inset-top)); left: 0; right: 0; text-align: center; z-index: 10; }
+.lc-box .lc-kp-head { top: 14px; }
+.lc-kp-head .lc-caps { color: #fde68a; text-shadow: 0 0 10px rgba(251,191,36,.45), 0 1px 3px rgba(0,0,0,.8); }
+.lc-kp-count { height: 1em; overflow: hidden; font-size: clamp(84px, 30vw, 132px); line-height: 1; margin: 8px auto 0; width: 3em; position: relative;
+  text-shadow: 0 6px 0 rgba(0,0,0,.35), 0 0 30px rgba(250,204,21,.35);
+  animation: lc-pop .9s cubic-bezier(.3,.7,.4,1) infinite; animation-delay: var(--lc-t, 0s); }
+.lc-box .lc-kp-count { font-size: 64px; }
+/* transform only: a colour that changes every frame is redrawn on the page's own thread, the one building the place */
+@keyframes lc-pop { 0% { transform: scale(1.16); } 35%, 100% { transform: scale(1); } }
+.lc-kp-strip { display: flex; flex-direction: column; will-change: transform;
+  animation: lc-kp-count calc(59 * .9s) steps(59, end) forwards; animation-delay: var(--lc-t, 0s); }
+.lc-kp-strip span { display: block; height: 1em; }
+@keyframes lc-kp-count { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, -59em, 0); } }
+.lc-kp-place { margin-top: 6px; font-size: 13px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.78); text-shadow: 0 1px 4px rgba(0,0,0,.8); }
+
+/* the ball: x drifts between touches, y bounces, the ball spins — three nested transforms */
+.lc-kp-x { position: absolute; left: 50%; bottom: calc(176px + env(safe-area-inset-bottom)); width: 0; height: 0; z-index: 8; will-change: transform;
+  animation: lc-kp-x 3.6s linear infinite; animation-delay: var(--lc-t, 0s); }
+.lc-box .lc-kp-x { bottom: 46px; }
+@keyframes lc-kp-x { 0% { transform: translate3d(0,0,0); } 25% { transform: translate3d(-15vw,0,0); } 50% { transform: translate3d(11vw,0,0); } 75% { transform: translate3d(-5vw,0,0); } 100% { transform: translate3d(0,0,0); } }
+.lc-kp-y { position: absolute; left: 0; top: 0; will-change: transform; animation: lc-kp-y 3.6s infinite; animation-delay: var(--lc-t, 0s); }
+@keyframes lc-kp-y {
+  0%    { transform: translate3d(0,0,0);      animation-timing-function: cubic-bezier(.2,.65,.4,1); }
+  12.5% { transform: translate3d(0,-31vh,0);  animation-timing-function: cubic-bezier(.6,0,.8,.35); }
+  25%   { transform: translate3d(0,0,0);      animation-timing-function: cubic-bezier(.2,.65,.4,1); }
+  37.5% { transform: translate3d(0,-24vh,0);  animation-timing-function: cubic-bezier(.6,0,.8,.35); }
+  50%   { transform: translate3d(0,0,0);      animation-timing-function: cubic-bezier(.2,.65,.4,1); }
+  62.5% { transform: translate3d(0,-35vh,0);  animation-timing-function: cubic-bezier(.6,0,.8,.35); }
+  75%   { transform: translate3d(0,0,0);      animation-timing-function: cubic-bezier(.2,.65,.4,1); }
+  87.5% { transform: translate3d(0,-27vh,0);  animation-timing-function: cubic-bezier(.6,0,.8,.35); }
+  100%  { transform: translate3d(0,0,0); }
+}
+.lc-box .lc-kp-y { animation-name: lc-kp-y-box; }
+@keyframes lc-kp-y-box {
+  0%, 25%, 50%, 75% { transform: translate3d(0,0,0); animation-timing-function: cubic-bezier(.2,.65,.4,1); }
+  12.5%, 62.5% { transform: translate3d(0,-120px,0); animation-timing-function: cubic-bezier(.6,0,.8,.35); }
+  37.5%, 87.5% { transform: translate3d(0,-96px,0); animation-timing-function: cubic-bezier(.6,0,.8,.35); }
+  100% { transform: translate3d(0,0,0); }
+}
+.lc-kp-ball { position: absolute; width: min(22vw, 92px); height: min(22vw, 92px); left: calc(min(22vw, 92px) / -2); top: calc(min(22vw, 92px) * -1); }
+.lc-box .lc-kp-ball { width: 54px; height: 54px; left: -27px; top: -54px; }
+.lc-kp-ball img { width: 100%; height: 100%; display: block; will-change: transform; animation: lc-spin .9s linear infinite; animation-delay: var(--lc-t, 0s); }
+@keyframes lc-spin { to { transform: rotate(360deg); } }
+.lc-kp-sh { position: absolute; left: -46px; top: 4px; width: 92px; height: 16px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.55), transparent);
+  will-change: transform, opacity; animation: lc-kp-sh 3.6s infinite; animation-delay: var(--lc-t, 0s); }
+@keyframes lc-kp-sh {
+  0%, 25%, 50%, 75%, 100% { transform: scale(1); opacity: 1; animation-timing-function: cubic-bezier(.2,.65,.4,1); }
+  12.5%, 37.5%, 62.5%, 87.5% { transform: scale(.42); opacity: .35; animation-timing-function: cubic-bezier(.6,0,.8,.35); }
+}
+/* your boot, flicking up to meet each touch (first person: the camera is you) */
+.lc-kp-boot { position: absolute; width: 112px; left: -76px; top: -6px; transform-origin: 70% 30%; will-change: transform;
+  animation: lc-kp-boot .9s infinite; animation-delay: var(--lc-t, 0s); }
+.lc-box .lc-kp-boot { width: 80px; left: -54px; }
+@keyframes lc-kp-boot {
+  0%   { transform: translate3d(0, 0, 0) rotate(-16deg); animation-timing-function: cubic-bezier(.3,.6,.5,1); }
+  28%  { transform: translate3d(-10px, 46px, 0) rotate(4deg); }
+  70%  { transform: translate3d(-10px, 46px, 0) rotate(4deg); animation-timing-function: cubic-bezier(.5,0,.8,.5); }
+  100% { transform: translate3d(0, 0, 0) rotate(-16deg); }
+}
+.lc-kp-ring { position: absolute; left: -44px; top: -86px; width: 88px; height: 88px; border-radius: 50%; border: 3px solid rgba(255,255,255,.85);
+  opacity: 0; will-change: transform, opacity; animation: lc-kp-ring .9s ease-out infinite; animation-delay: var(--lc-t, 0s); }
+@keyframes lc-kp-ring { 0% { opacity: .85; transform: scale(.5); } 40%, 100% { opacity: 0; transform: scale(1.5); } }
+.lc-box .lc-kp-ring { display: none; }
+.lc-kp-plus { position: absolute; left: 44px; top: -70px; font-size: 26px; color: #facc15; text-shadow: 0 2px 6px rgba(0,0,0,.7);
+  opacity: 0; will-change: transform, opacity; animation: lc-kp-plus .9s ease-out infinite; animation-delay: var(--lc-t, 0s); }
+@keyframes lc-kp-plus { 0% { opacity: 0; transform: translate3d(0,6px,0) scale(.8); } 15% { opacity: 1; transform: translate3d(0,-4px,0) scale(1.1); } 70%, 100% { opacity: 0; transform: translate3d(0,-44px,0) scale(1); } }
+.lc-box .lc-kp-plus { display: none; }
+/* the optional tap (only offered once the wait is long): a word where the ball is */
+.lc-kp-tap { position: absolute; left: 0; right: 0; top: 49%; text-align: center; z-index: 12; font-size: 14px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase;
+  text-shadow: 0 2px 8px rgba(0,0,0,.85); opacity: 0; transition: opacity 400ms; pointer-events: none; }
+.lc-kp-tap.on { opacity: 1; }
+.lc-kp-judge { position: absolute; left: 0; right: 0; top: 42%; text-align: center; z-index: 13; font-size: 34px; pointer-events: none; text-shadow: 0 3px 10px rgba(0,0,0,.8);
+  animation: lc-judge 700ms ease-out both; }
+@keyframes lc-judge { 0% { opacity: 0; transform: scale(.7); } 20% { opacity: 1; transform: scale(1.08); } 70% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: translateY(-16px); } }
+
+/* weather and light over the still */
+.lc-wx { position: absolute; inset: 0; pointer-events: none; }
+.lc-wx-rain { background: linear-gradient(180deg, rgba(20,34,56,.55), rgba(10,18,30,.35)); }
+.lc-wx-rain .lc-drops { position: absolute; left: -10%; right: -10%; top: -100%; height: 200%; will-change: transform; opacity: .55;
+  /* rain steps at about 14 a second, not 60: the whole screen redraws only then */
+  background-image:
+    repeating-linear-gradient(103deg, transparent 0 22px, rgba(210,225,255,.38) 22px 23px, transparent 23px 61px),
+    repeating-linear-gradient(98deg, transparent 0 37px, rgba(210,225,255,.24) 37px 38px, transparent 38px 89px);
+  background-size: 100% 140px, 100% 210px;
+  animation: lc-rain .56s steps(8) infinite; animation-delay: var(--lc-t, 0s); }
+.lc-wx-rain .lc-drops.b { opacity: .35; animation-duration: .8s; background-size: 100% 90px, 100% 160px; }
+@keyframes lc-rain { from { transform: translate3d(0,0,0); } to { transform: translate3d(-4%,50%,0); } }
+.lc-wx-rain .lc-splash { position: absolute; left: 0; right: 0; bottom: 0; height: 30%; background: radial-gradient(60% 40% at 50% 100%, rgba(180,200,230,.18), transparent); }
+.lc-wx-night { background: radial-gradient(70% 50% at 50% 60%, rgba(120,150,255,.1), transparent 70%), linear-gradient(180deg, rgba(4,8,24,.35), rgba(4,8,24,.1)); }
+.lc-wx-lamp { background: radial-gradient(70% 55% at 55% 35%, rgba(255,170,80,.34), rgba(40,18,4,.45) 75%); }
+@keyframes lc-flick { 0%, 100% { opacity: 1; } 47% { opacity: .82; } 50% { opacity: .96; } 53% { opacity: .86; } }
+.lc-wx-neon { background:
+  radial-gradient(45% 30% at 15% 30%, rgba(236,72,153,.38), transparent 70%),
+  radial-gradient(45% 30% at 85% 45%, rgba(34,211,238,.32), transparent 70%),
+  linear-gradient(180deg, rgba(20,6,30,.35), rgba(6,4,20,.25)); }
+
+/* ═════════════════════ THE MATCHDAY PROGRAMME ═════════════════════ */
+.lc-pg-desk { position: absolute; inset: 0; background: radial-gradient(120% 70% at 50% 40%, #3a2a1c 0%, #1a120c 70%); }
+.lc-pg-desk::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(255,255,255,.018) 0 2px, transparent 2px 9px); }
+.lc-pg-lamp { position: absolute; inset: 0; background: radial-gradient(60% 45% at 50% 42%, rgba(255,220,160,.22), transparent 70%); }
+.lc-pg-cap { position: absolute; top: calc(40px + env(safe-area-inset-top)); left: 0; right: 0; text-align: center; color: #fde68a; }
+.lc-pg-book { position: absolute; left: 50%; top: 50%; width: min(82vw, 330px); height: min(121vw, 486px); margin-left: calc(min(82vw, 330px) / -2); margin-top: calc(min(121vw, 486px) / -2 - 10px);
+  perspective: 1400px; transform: rotate(-2.5deg); }
+.lc-pg-page { position: absolute; inset: 0; transform-origin: 0 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  border-radius: 2px 6px 6px 2px; overflow: hidden; background: #f4efe4; color: #1b1b1b; box-shadow: 0 26px 34px -8px rgba(0,0,0,.6); }
+.lc-pg-page::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(0,0,0,.16) 0, rgba(0,0,0,0) 14px), radial-gradient(rgba(0,0,0,.05) 1px, transparent 1.4px) 0 0 / 5px 5px; }
+.lc-pg-turn { will-change: transform; animation: lc-turn 900ms cubic-bezier(.55,.05,.35,1) both; animation-delay: calc(var(--lc-t, 0s) + var(--at)); }
+@keyframes lc-turn { from { transform: rotateY(0); } to { transform: rotateY(-178deg); } }
+.lc-pg-gloss { position: absolute; inset: 0; z-index: 3; background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,.35)); opacity: 0;
+  animation: lc-gloss 900ms ease-in both; animation-delay: calc(var(--lc-t, 0s) + var(--at)); }
+@keyframes lc-gloss { 50% { opacity: 1; } 100% { opacity: 0; } }
+.lc-pg-in { position: absolute; inset: 0; padding: 20px 18px; }
+.lc-pg-kicker { font-size: 10px; font-weight: 900; letter-spacing: .24em; text-transform: uppercase; color: var(--club, #b91c1c); }
+.lc-pg-h { font-size: 34px; line-height: .95; margin-top: 6px; }
+.lc-pg-rule { height: 3px; background: #1b1b1b; margin: 12px 0; }
+.lc-pg-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lc-pg-stat { background: #fff; border: 2px solid #1b1b1b; padding: 8px 10px; }
+.lc-pg-stat b { display: block; font-size: 36px; line-height: 1; font-weight: 400; }
+.lc-pg-stat span { font-size: 10px; font-weight: 900; letter-spacing: .16em; color: #555; text-transform: uppercase; }
+.lc-pg-body { font: 600 14px/1.45 Georgia, "Times New Roman", serif; }
+.lc-pg-no { position: absolute; right: 12px; bottom: 9px; font-size: 10px; font-weight: 900; color: #888; }
+.lc-pg-photo { height: 140px; margin: 2px 0 12px; background-size: cover; background-position: center 60%; filter: grayscale(.2) contrast(1.05); }
+.lc-pg-form { display: flex; gap: 6px; margin-top: 6px; }
+.lc-pg-form i { font-style: normal; width: 34px; height: 34px; display: grid; place-items: center; font-weight: 900; font-size: 15px; color: #fff; border: 2px solid #1b1b1b; }
+.lc-pg-form i.W { background: #15803d; } .lc-pg-form i.D { background: #a3a3a3; } .lc-pg-form i.L { background: #b91c1c; }
+.lc-pg-vsrow { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; text-align: center; margin-top: 6px; }
+.lc-pg-vsrow b { display: block; font-size: 46px; line-height: 1; font-weight: 400; }
+.lc-pg-vsrow span { font-size: 10px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: #555; }
+/* covers */
+.lc-cv-classic { background: linear-gradient(160deg, var(--club) 0%, var(--club-dk) 100%); color: var(--ink); }
+.lc-cv-band { position: absolute; left: 0; right: 0; top: 0; padding: 12px 16px; display: flex; justify-content: space-between; font-size: 10px; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; background: rgba(0,0,0,.22); color: #fff; }
+.lc-cv-title { position: absolute; left: 16px; right: 12px; top: 46px; font-size: clamp(42px, 15vw, 58px); line-height: .86; }
+.lc-cv-title span { color: #facc15; }
+.lc-cv-vs { position: absolute; left: 0; right: 0; top: 54%; display: flex; align-items: center; justify-content: center; gap: 16px; }
+.lc-cv-vs .v { font-size: 34px; color: #facc15; }
+.lc-cv-crest { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; background: rgba(255,255,255,.92); box-shadow: 0 4px 12px rgba(0,0,0,.35); }
+.lc-cv-names { position: absolute; left: 10px; right: 10px; top: calc(54% + 98px); text-align: center; font-size: 20px; line-height: 1.05; }
+.lc-cv-date { position: absolute; left: 0; right: 0; bottom: 78px; text-align: center; font-weight: 900; letter-spacing: .12em; font-size: 12px; text-transform: uppercase; padding: 0 12px; }
+.lc-cv-price { position: absolute; right: 14px; bottom: 12px; width: 56px; height: 56px; border-radius: 50%; background: #facc15; color: #1a1a1a; display: grid; place-items: center; font-size: 18px; transform: rotate(10deg); }
+.lc-cv-photo { background: #0f1115; color: #fff; }
+.lc-cv-photo .pic { position: absolute; left: 0; right: 0; top: 0; height: 58%; background-size: cover; background-position: center 45%; }
+.lc-cv-photo .pic::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.2), rgba(15,17,21,0) 50%, #0f1115 100%); }
+.lc-cv-photo .ribbon { position: absolute; left: 0; top: 18px; padding: 6px 14px 6px 16px; background: var(--club); color: var(--ink); font-size: 11px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; clip-path: polygon(0 0, 100% 0, 92% 100%, 0 100%); }
+.lc-cv-photo .stack { position: absolute; left: 18px; right: 18px; top: 52%; font-size: clamp(36px, 12vw, 48px); line-height: .9; }
+.lc-cv-photo .stack .vv { color: var(--club-lt); font-size: .6em; display: block; margin: 4px 0; }
+.lc-cv-photo .crests { position: absolute; right: 16px; top: calc(58% - 44px); display: flex; gap: 6px; }
+.lc-cv-photo .crests > div { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.95); box-shadow: 0 4px 10px rgba(0,0,0,.4); }
+.lc-cv-photo .foot { position: absolute; left: 18px; right: 18px; bottom: 16px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.75); }
+.lc-cv-retro { background: #efe6cf; color: #1f1a12; }
+.lc-cv-retro .stripes { position: absolute; inset: 0; background: repeating-linear-gradient(135deg, var(--club) 0 26px, var(--trim2) 26px 52px); clip-path: polygon(0 0, 100% 0, 100% 30%, 0 46%); }
+.lc-cv-retro .frame { position: absolute; inset: 10px; border: 3px double #1f1a12; }
+.lc-cv-retro .off { position: absolute; left: 0; right: 0; top: 48%; text-align: center; font-size: 12px; font-weight: 900; letter-spacing: .36em; text-transform: uppercase; }
+.lc-cv-retro .big { position: absolute; left: 0; right: 0; top: calc(48% + 20px); text-align: center; font-size: clamp(40px, 14vw, 56px); line-height: .9; }
+.lc-cv-retro .crests { position: absolute; left: 0; right: 0; top: 17%; display: flex; justify-content: center; gap: 46px; }
+.lc-cv-retro .crests > div { width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; background: #efe6cf; border: 3px solid #1f1a12; box-shadow: 0 3px 0 #1f1a12; }
+.lc-cv-retro .bottom { position: absolute; left: 22px; right: 22px; bottom: 26px; display: flex; justify-content: space-between; align-items: end; font: 700 13px/1.2 Georgia, serif; }
+.lc-cv-retro .bottom b { font-family: var(--font-pitch), Oswald, Impact, sans-serif; font-weight: 400; font-size: 22px; }
+.lc-cv-retro::before { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(rgba(60,40,10,.08) 1px, transparent 1.6px) 0 0 / 4px 4px; }
+
+/* ═════════════════════ THE TUNNEL (the walk-out cut scene's look) ═════════════════════ */
+.lc-tn-shot { position: absolute; inset: -3%; background-size: cover; background-position: center; will-change: transform, opacity; transform-origin: 50% 46%;
+  animation: lc-tn-shot 6.4s linear infinite; animation-delay: calc(var(--lc-t, 0s) + var(--at, 0s)); }
+.lc-tn-shot.b { transform-origin: 38% 52%; }
+/* each shot holds for half the cycle with a slow push in, then hands over */
+@keyframes lc-tn-shot { 0% { opacity: 1; transform: scale(1.02); } 46% { opacity: 1; transform: scale(1.09); } 54% { opacity: 0; transform: scale(1.1); } 96% { opacity: 0; transform: scale(1.02); } 100% { opacity: 1; transform: scale(1.02); } }
+.lc-tn-glow { position: absolute; inset: 0; background: radial-gradient(50% 35% at 50% 40%, rgba(255,236,190,.18), transparent 70%); animation: lc-flick 3.1s ease-in-out infinite; animation-delay: var(--lc-t, 0s); }
+.lc-tn-vig { position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 50%, transparent 55%, rgba(0,0,0,.6)); }
+.lc-tn-bar { position: absolute; left: 0; right: 0; height: 9vh; background: #000; z-index: 5; }
+.lc-tn-bar.t { top: 0; } .lc-tn-bar.b { bottom: 0; }
+.lc-tn-low { position: absolute; left: 18px; right: 18px; bottom: calc(9vh + 26px); z-index: 6; }
+.lc-tn-low .k { display: inline-block; padding: 4px 8px; background: var(--club); color: var(--ink); font-size: 10px; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; }
+.lc-tn-low .h { font-size: clamp(28px, 9vw, 38px); line-height: .95; margin-top: 8px; text-shadow: 0 3px 12px rgba(0,0,0,.8); }
+.lc-tn-low .s { font-size: 13px; font-weight: 800; color: rgba(255,255,255,.8); margin-top: 6px; text-shadow: 0 1px 6px rgba(0,0,0,.9); }
+.lc-tn-low { animation: lc-low 900ms ease-out both; animation-delay: calc(var(--lc-t, 0s) + .2s); }
+@keyframes lc-low { from { opacity: 0; transform: translate3d(-14px,0,0); } to { opacity: 1; transform: none; } }
+.lc-root .lc-tn-where { bottom: calc(9vh + 2px); }
+
+/* ═════════════════════ THE DRILL BOARD (training) ═════════════════════ */
+.lc-bd-wall { position: absolute; inset: 0; background: radial-gradient(110% 70% at 50% 35%, #2b3442 0%, #111722 75%); }
+.lc-bd-board { position: absolute; left: 50%; top: 50%; width: min(90%, 360px); aspect-ratio: 3 / 4; transform: translate(-50%, -52%) rotate(-1deg);
+  border-radius: 6px; box-shadow: 0 20px 40px -10px rgba(0,0,0,.7), inset 0 0 0 8px var(--rim, #c9ced6); overflow: hidden; }
+.lc-box .lc-bd-board { width: auto; height: 86%; }
+.lc-bd-white { --ink: #1d3a8a; --ink2: #c0262d; --rim: #c9ced6; background: linear-gradient(160deg, #ffffff, #e8ecf1); color: #1d3a8a; }
+.lc-bd-white::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.7) 45%, transparent 60%); opacity: .5; }
+.lc-bd-chalk { --ink: #f3f4f6; --ink2: #fde68a; --rim: #6b4a2b; background: radial-gradient(120% 90% at 40% 30%, #2f3b35, #1f2823); color: #f3f4f6; }
+.lc-bd-chalk::after { content: ""; position: absolute; inset: 0; background: radial-gradient(rgba(255,255,255,.04) 1px, transparent 1.5px) 0 0 / 6px 6px; }
+.lc-bd-pitch { --ink: #ffffff; --ink2: #fde047; --rim: #1b1f24; background: repeating-linear-gradient(180deg, #2f8a4c 0 34px, #297c43 34px 68px); color: #fff; }
+.lc-bd-title { position: absolute; left: 18px; right: 18px; top: 18px; font-size: clamp(22px, 7.4vw, 30px); line-height: .95; color: var(--ink); transform: rotate(-1.5deg); }
+.lc-bd-title small { display: block; font-family: system-ui, sans-serif; font-weight: 900; font-size: 10px; letter-spacing: .22em; color: var(--ink2); margin-bottom: 4px; }
+.lc-bd-svg { position: absolute; left: 6%; right: 6%; top: 22%; bottom: 14%; }
+.lc-bd-svg svg { width: 100%; height: 100%; overflow: visible; }
+.lc-bd-line { fill: none; stroke: var(--ink); stroke-width: 2; opacity: .55; }
+.lc-bd-wipe { overflow: hidden; }
+.lc-bd-note { position: absolute; left: 18px; right: 18px; bottom: 16px; font: italic 700 14px/1.3 Georgia, serif; color: var(--ink); transform: rotate(-1deg); }
+/* a stroke "drawn" by sliding its cover away (two opposite transforms: compositor only) */
+.lc-bd-reveal { position: absolute; inset: 0; overflow: hidden; will-change: transform; transform: translate3d(-100%,0,0);
+  animation: lc-wipe-a 700ms cubic-bezier(.5,.1,.3,1) forwards; animation-delay: calc(var(--lc-t, 0s) + var(--at)); }
+.lc-bd-reveal > div { position: absolute; inset: 0; will-change: transform; transform: translate3d(100%,0,0);
+  animation: lc-wipe-b 700ms cubic-bezier(.5,.1,.3,1) forwards; animation-delay: calc(var(--lc-t, 0s) + var(--at)); }
+.lc-bd-reveal.y { transform: translate3d(0,100%,0); }
+.lc-bd-reveal.y > div { transform: translate3d(0,-100%,0); }
+.lc-bd-mag.you { font-size: 9px; letter-spacing: .02em; }
+@keyframes lc-wipe-a { to { transform: translate3d(0,0,0); } }
+@keyframes lc-wipe-b { to { transform: translate3d(0,0,0); } }
+.lc-bd-mag { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 900;
+  box-shadow: 0 3px 4px rgba(0,0,0,.35), inset 0 -3px 0 rgba(0,0,0,.2); opacity: 0;
+  animation: lc-mag 420ms cubic-bezier(.3,1.5,.5,1) forwards; animation-delay: calc(var(--lc-t, 0s) + var(--at)); }
+@keyframes lc-mag { from { opacity: 0; transform: translate3d(0,-14px,0) scale(1.3); } to { opacity: 1; transform: none; } }
+.lc-bd-cone { position: absolute; width: 0; height: 0; margin: -10px 0 0 -7px; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 12px solid #f97316; filter: drop-shadow(0 2px 1px rgba(0,0,0,.3)); }
+.lc-bd-marker { position: absolute; width: 16px; height: 70px; border-radius: 3px; background: linear-gradient(90deg, #1e293b, #334155); transform: rotate(28deg); right: 18px; bottom: 26%;
+  box-shadow: 0 6px 10px rgba(0,0,0,.35); animation: lc-marker 2.4s ease-in-out infinite; animation-delay: var(--lc-t, 0s); }
+.lc-bd-marker::before { content: ""; position: absolute; left: 3px; right: 3px; top: -10px; height: 12px; border-radius: 2px 2px 6px 6px; background: var(--ink2); }
+@keyframes lc-marker { 50% { transform: rotate(24deg) translate3d(-4px, -6px, 0); } }
+
+/* ═════════════════════ THE GALA (Golden Ball night, season awards) ═════════════════════ */
+.lc-ga-room { position: absolute; inset: 0; background: radial-gradient(90% 60% at 50% 30%, #1b1630 0%, #07060f 70%); }
+.lc-ga-curtain { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(120,20,30,.0) 0 18px, rgba(0,0,0,.22) 18px 30px, rgba(120,20,30,0) 30px 44px); opacity: .7; }
+.lc-ga-spot { position: absolute; top: -10%; width: 46vw; height: 120%; transform-origin: 50% 0; will-change: transform, opacity;
+  background: radial-gradient(60% 100% at 50% 0%, rgba(255,240,200,.30), rgba(255,240,200,.10) 55%, rgba(255,240,200,0) 85%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 4%, #000 42%, #000 58%, transparent 96%); mask-image: linear-gradient(90deg, transparent 4%, #000 42%, #000 58%, transparent 96%);
+  animation: lc-sweep 6s ease-in-out infinite alternate; animation-delay: calc(var(--lc-t, 0s) + var(--d, 0s)); }
+.lc-ga-spot.l { left: -2%; --a: -18deg; --b: 14deg; } .lc-ga-spot.r { right: -2%; --a: 18deg; --b: -14deg; --d: -2s; }
+@keyframes lc-sweep { from { transform: rotate(var(--a)); opacity: .85; } to { transform: rotate(var(--b)); opacity: 1; } }
+.lc-ga-ball { position: absolute; left: 50%; top: 40%; width: min(46vw, 190px); height: min(46vw, 190px); margin: calc(min(46vw, 190px) / -2) 0 0 calc(min(46vw, 190px) / -2); }
+.lc-ga-ball .glow { position: absolute; inset: -40%; border-radius: 50%; background: radial-gradient(closest-side, rgba(251,191,36,.45), transparent); animation: lc-glow 2.4s ease-in-out infinite alternate; animation-delay: var(--lc-t, 0s); }
+@keyframes lc-glow { from { opacity: .6; transform: scale(.92); } to { opacity: 1; transform: scale(1.05); } }
+.lc-ga-ball img { position: absolute; inset: 0; width: 100%; height: 100%;
+  will-change: transform; animation: lc-spin 7s linear infinite; animation-delay: var(--lc-t, 0s); }
+.lc-ga-ball .shine { position: absolute; inset: 0; border-radius: 50%; background:
+  radial-gradient(22% 16% at 33% 26%, rgba(255,255,255,.95), rgba(255,255,255,0) 100%),
+  radial-gradient(60% 50% at 36% 30%, rgba(255,236,170,.35), transparent 70%),
+  radial-gradient(closest-side, transparent 62%, rgba(70,35,0,.6) 100%);
+  mix-blend-mode: normal; }
+.lc-ga-ball .rim { position: absolute; inset: -2px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,214,120,.35), 0 0 40px 6px rgba(251,191,36,.35); }
+.lc-ga-ball .plinth { position: absolute; left: 14%; right: 14%; top: 104%; height: 30%; background: linear-gradient(180deg, #2a2438, #0f0c18); clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%); }
+.lc-ga-spark { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #fff7d6; box-shadow: 0 0 8px 2px rgba(253,230,138,.8); opacity: 0;
+  animation: lc-twinkle 2.2s ease-in-out infinite; animation-delay: calc(var(--lc-t, 0s) + var(--d, 0s)); }
+@keyframes lc-twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1); } }
+.lc-ga-head { position: absolute; left: 0; right: 0; top: calc(44px + env(safe-area-inset-top)); text-align: center; }
+.lc-ga-head .lc-caps { color: #fde68a; }
+.lc-ga-head h1 { font-size: clamp(34px, 11vw, 46px); line-height: 1; margin-top: 6px; color: #fff; text-shadow: 0 0 22px rgba(251,191,36,.45); }
+.lc-ga-card { position: absolute; left: 50%; top: 46%; width: min(78vw, 310px); aspect-ratio: 5 / 7; margin-left: calc(min(78vw, 310px) / -2); transform: translateY(-50%);
+  perspective: 900px; }
+.lc-ga-card .c { position: absolute; inset: 0; border-radius: 6px; background: linear-gradient(160deg, #fbf6e8, #efe3c2); color: #2b2210; text-align: center;
+  box-shadow: 0 30px 50px -10px rgba(0,0,0,.7), inset 0 0 0 10px #fbf6e8, inset 0 0 0 12px #c99a2e, inset 0 0 0 15px #fbf6e8, inset 0 0 0 16px #c99a2e;
+  will-change: transform; animation: lc-tilt 6s ease-in-out infinite alternate; animation-delay: var(--lc-t, 0s); }
+@keyframes lc-tilt { from { transform: rotateX(8deg) rotateY(-10deg); } to { transform: rotateX(-4deg) rotateY(9deg); } }
+.lc-ga-card .c { overflow: hidden; }
+.lc-ga-card .c::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 60%; background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,.6) 50%, transparent 80%); opacity: .7;
+  will-change: transform; animation: lc-sheen 4.5s ease-in-out infinite; animation-delay: var(--lc-t, 0s); }
+@keyframes lc-sheen { from { transform: translate3d(-110%,0,0); } to { transform: translate3d(230%,0,0); } }
+.lc-ga-card .emb { width: 64px; height: 64px; margin: 34px auto 10px; border-radius: 50%; background: radial-gradient(40% 35% at 35% 30%, #fff3c4, #d4a12a 60%, #8a5f0d); box-shadow: 0 2px 0 #8a5f0d; }
+.lc-ga-card .t1 { font: italic 600 14px/1.4 Georgia, serif; color: #6b5420; }
+.lc-ga-card .nm { font-size: 30px; line-height: 1; margin: 6px 14px; }
+.lc-ga-card .t2 { font-size: 34px; line-height: .95; color: #a8781b; margin: 10px 12px 0; }
+.lc-ga-card .t3 { position: absolute; left: 0; right: 0; bottom: 30px; font-size: 10px; font-weight: 900; letter-spacing: .3em; text-transform: uppercase; color: #6b5420; }
+.lc-ga-carpet { position: absolute; left: 0; right: 0; bottom: 0; height: 64%; background: linear-gradient(180deg, #7f1018, #b3141f 60%, #8d0f17);
+  clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%); }
+.lc-ga-carpet::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(180deg, rgba(0,0,0,.08) 0 3px, transparent 3px 9px); }
+.lc-ga-rope { position: absolute; bottom: 0; width: 6px; height: 64%; background: linear-gradient(180deg, #e7c25a, #8a6a1a); transform-origin: 50% 100%; }
+.lc-ga-rope.l { left: 18%; transform: skewX(24deg); } .lc-ga-rope.r { right: 18%; transform: skewX(-24deg); }
+.lc-ga-flash { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,1), rgba(255,255,255,.5) 30%, transparent);
+  opacity: 0; will-change: opacity, transform; animation: lc-flash 2.7s linear infinite; animation-delay: calc(var(--lc-t, 0s) + var(--d, 0s)); }
+@keyframes lc-flash { 0%, 90%, 100% { opacity: 0; transform: scale(.6); } 92% { opacity: 1; transform: scale(1); } 96% { opacity: 0; transform: scale(1.2); } }
+
+/* ═════════════════════ THE FIRST LOAD (server-drawn: BootScreen.tsx) ═════════════════════ */
+.lc-boot-v { display: none; position: absolute; inset: 0; }
+.lc-boot-v[data-v="boot-floodlights"] { display: block; }
+.lc-bt-bg { position: absolute; inset: 0; background-size: cover; background-position: center 60%; }
+.lc-bt-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4,8,18,.85) 0%, rgba(4,8,18,.25) 40%, rgba(4,8,18,.15) 62%, rgba(4,8,18,.8) 100%); }
+.lc-bt-fl { position: absolute; top: 15%; width: 26vw; height: 26vw; margin-left: -13vw; border-radius: 50%; opacity: 0; will-change: opacity;
+  background: radial-gradient(closest-side, rgba(255,255,255,.95), rgba(210,230,255,.45) 35%, transparent 72%);
+  animation: lc-fl 4.8s ease-out infinite; animation-delay: var(--d); }
+@keyframes lc-fl { 0% { opacity: 0; } 4% { opacity: 1; } 6% { opacity: .4; } 9%, 70% { opacity: .95; } 100% { opacity: 0; } }
+.lc-bt-word { position: absolute; left: 0; right: 0; top: calc(16% + env(safe-area-inset-top)); text-align: center; z-index: 5; }
+.lc-bt-word .lc-caps { color: #6ee7b7; letter-spacing: .34em; }
+.lc-bt-word h1 { margin: 10px 0 0; font-size: clamp(44px, 15vw, 64px); line-height: .88; color: #fff; text-shadow: 0 6px 24px rgba(0,0,0,.7); }
+.lc-bt-word h1 span { color: #facc15; display: block; }
+.lc-bt-word { animation: lc-in 700ms ease-out both; }
+.lc-bt-ball { position: absolute; left: 50%; bottom: 24%; width: 70px; height: 70px; margin-left: -35px; }
+.lc-bt-ball img { width: 100%; height: 100%; animation: lc-spin 1.6s linear infinite; }
+.lc-bt-ball::after { content: ""; position: absolute; left: -10px; right: -10px; bottom: -8px; height: 14px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.6), transparent); z-index: -1; }
+.lc-bt-slow { position: absolute; left: 0; right: 0; bottom: calc(46px + env(safe-area-inset-bottom)); text-align: center; z-index: 31; font-size: 12px; font-weight: 800; color: rgba(255,255,255,.7);
+  opacity: 0; animation: lc-in 400ms ease-out 25s both; }
+.lc-bt-slow a { color: #6ee7b7; text-decoration: underline; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-root *, .lc-root *::before, .lc-root *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+  .lc-kp-strip { animation: none !important; }
+}

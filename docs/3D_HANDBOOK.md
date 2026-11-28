@@ -162,6 +162,10 @@ exactly today's bodies. You never pick a file yourself:
   `TOON_HEADS` in `bodies.ts` → `node scripts/assets3d-manifest.mjs`.
   Inputs live in `tools/modeltest/` (one folder per tag).
 
+### The loading screen (27 Nov 2026)
+
+Every 3D place shows the ONE loading screen while it builds: `<LoadingCurtain section="garden" loading={status === "loading"} />` (`components/star/loading/LoadingCurtain.tsx`; `box` covers only the parent, e.g. a drill's pitch box). Harry: "loading screens must match the section you're going into, with several options per section"; "a plain moving bar … that's dead". The section picks the screen (`lib/star/loading/pick.ts`: keepie-uppies over a real still of the place, the matchday programme or the tunnel for a match, the drill board for training, the gala for the award nights), never the same one twice in a row. It runs no 3D and no JS loop (CSS transforms only, `curtain.css`), so it does not slow the build; it lifts the moment `loading` is false. A new place: add a section and its variants in `pick.ts`, shoot its backdrop (`node scripts/loading-stills/shoot.mjs`, people hidden), and pass the curtain. A lazy screen gets the same screen from the tap: `lazyScreen(load, { fallback: loadingCover("garden") })` in `app/star-dev/page.tsx`. All screens: `/star-loading-dev`.
+
 ### Kits
 
 - `lib/star/kits.ts` — `kitsOf(club)` gives a club's real colours.

@@ -34,6 +34,7 @@ import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
 import { wornAt } from "@/lib/star/home3d/outfits";
 import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
+import LoadingCurtain from "./loading/LoadingCurtain";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -305,10 +306,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
       {status !== "ready" && (
         <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: 24, textAlign: "center", background: "#120e0b" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }}>
           {status === "loading" ? (
-            <div>
-              <div style={{ fontWeight: 900, fontSize: 17 }}>Opening the shop…</div>
-              <div style={{ fontWeight: 700, color: MUTED, fontSize: 13, marginTop: 6 }}>Loading the 3D models</div>
-            </div>
+            null
           ) : (
             <div style={{ maxWidth: 300 }}>
               <div style={{ fontWeight: 900, fontSize: 17, marginBottom: 6 }}>The 3D shop didn&apos;t load</div>
@@ -326,6 +324,9 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
           )}
         </div>
       )}
+
+      {/* the loading screen: keepie-uppies in the shop (components/star/loading) */}
+      <LoadingCurtain section="shop" loading={status === "loading"} box={embedded} />
 
       {status === "ready" && !open && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
       {status === "ready" && !open && !near && (

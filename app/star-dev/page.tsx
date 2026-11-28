@@ -155,6 +155,14 @@ import PitchScope from "@/components/star/ui/PitchScope";
 import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
 import { applyLevelResult, starsOf } from "@/lib/star/trainingLevels";
 import CanvasMatch from "@/components/star/CanvasMatch";
+// The loading screens (Harry, 27 Nov 2026: "must match the section you're going into"): components/star/loading.
+import LoadingCurtain from "@/components/star/loading/LoadingCurtain";
+import BootScreen from "@/components/star/loading/BootScreen";
+import type { LoadSection } from "@/lib/star/loading/pick";
+import { setLoadContext } from "@/lib/star/loading/context";
+import { programmeFor } from "@/lib/star/loading/programme";
+/** A lazy screen's waiting cover: its section's loading screen, from the tap (the place carries the same one on). */
+const loadingCover = (section: LoadSection) => () => <LoadingCurtain section={section} loading />;
 import { careerBuildUp } from "@/lib/star/leadInGen";
 import { pressureForDivision } from "@/lib/star/pressure";
 import PostMatch, { achievementToastDelay } from "@/components/star/PostMatch";
@@ -245,7 +253,7 @@ const PressConference = lazyScreen(() => import("@/components/star/PressConferen
 const TransferHub = lazyScreen(() => import("@/components/star/TransferHub"));
 const RelegationMove = lazyScreen(() => import("@/components/star/RelegationMove"));
 const TransferSigning = lazyScreen(() => import("@/components/star/TransferSigning"));
-const VersusScreen = lazyScreen(() => import("@/components/star/VersusScreen"));
+const VersusScreen = lazyScreen(() => import("@/components/star/VersusScreen"), { fallback: loadingCover("match") });
 const ProfileSetup = lazyScreen(() => import("@/components/star/ProfileSetup"));
 const TrialSequence = lazyScreen(() => import("@/components/star/TrialSequence"));
 const FreeAgentShell = lazyScreen(() => import("@/components/star/FreeAgentShell"));
@@ -253,15 +261,15 @@ const TrialReward = lazyScreen(() => import("@/components/star/TrialReward"));
 const LadderScreen = lazyScreen(() => import("@/components/star/LadderScreen"));
 const SeasonAwardsScreen = lazyScreen(() => import("@/components/star/SeasonAwardsScreen"));
 // The season awards as a night in a small hall, then the screen above (Leo, 22 Oct 2026).
-const SeasonAwardsNight = lazyScreen(() => import("@/components/star/SeasonAwardsNight"));
+const SeasonAwardsNight = lazyScreen(() => import("@/components/star/SeasonAwardsNight"), { fallback: loadingCover("awards") });
 // "Your season": every goal of the season in one video (Leo, 22 Oct 2026).
 const SeasonReel = lazyScreen(() => import("@/components/star/SeasonReel"));
 const PotmWinModal = lazyScreen(() => import("@/components/star/PotmWinModal"));
-const LineupIntro = lazyScreen(() => import("@/components/star/LineupIntro"));
+const LineupIntro = lazyScreen(() => import("@/components/star/LineupIntro"), { fallback: loadingCover("match") });
 const MatchWeek = lazyScreen(() => import("@/components/star/MatchWeek"));
 const TrainingMinigame = lazyScreen(() => import("@/components/star/TrainingMinigame"));
 const TrainingLevelSelect = lazyScreen(() => import("@/components/star/TrainingLevelSelect"));
-const Match3DLayer = lazyScreen(() => import("@/components/star/Match3DLayer"));
+const Match3DLayer = lazyScreen(() => import("@/components/star/Match3DLayer"), { fallback: loadingCover("match") });
 const PlayOffRoundup = lazyScreen(() => import("@/components/star/PlayOffRoundup"));
 const DeadlineDayRoundup = lazyScreen(() => import("@/components/star/DeadlineDayRoundup"));
 const SettingsScreen = lazyScreen(() => import("@/components/star/SettingsScreen"));
@@ -271,11 +279,11 @@ const FakeFaceEditorScreen = lazyScreen(() => import("@/components/star/FakeFace
 const MediaFeed = lazyScreen(() => import("@/components/star/MediaFeed"));
 const BallonDor = lazyScreen(() => import("@/components/star/BallonDor"));
 // The Ballon d'Or night: the ceremony (New) or the screen above (Old) — Settings → Look.
-const BallonDorNight = lazyScreen(() => import("@/components/star/BallonDorNight"));
+const BallonDorNight = lazyScreen(() => import("@/components/star/BallonDorNight"), { fallback: loadingCover("ballon-dor") });
 const Shop = lazyScreen(() => import("@/components/star/Shop"));
 const MenuShop = lazyScreen(() => import("@/components/star/shop/MenuShop"));
 const ShowroomShop = lazyScreen(() => import("@/components/star/shop2d/ShowroomShop"));
-const Shop3D = lazyScreen(() => import("@/components/star/Shop3D"));
+const Shop3D = lazyScreen(() => import("@/components/star/Shop3D"), { fallback: loadingCover("shop") });
 const CareerStore = lazyScreen(() => import("@/components/star/store/CareerStore"));
 const Casino = lazyScreen(() => import("@/components/star/Casino"));
 const Investments = lazyScreen(() => import("@/components/star/Investments"));
@@ -283,11 +291,11 @@ const OwnershipScreen = lazyScreen(() => import("@/components/star/OwnershipScre
 const VoteCeremony = lazyScreen(() => import("@/components/star/VoteCeremony"));
 const RuleBookScreen = lazyScreen(() => import("@/components/star/RuleBookScreen"));
 const DilemmaModal = lazyScreen(() => import("@/components/star/DilemmaModal"));
-const Garden3D = lazyScreen(() => import("@/components/star/Garden3D"));
-const Home3D = lazyScreen(() => import("@/components/star/Home3D"));
-const Casino3D = lazyScreen(() => import("@/components/star/Casino3D"));
+const Garden3D = lazyScreen(() => import("@/components/star/Garden3D"), { fallback: loadingCover("garden") });
+const Home3D = lazyScreen(() => import("@/components/star/Home3D"), { fallback: loadingCover("house") });
+const Casino3D = lazyScreen(() => import("@/components/star/Casino3D"), { fallback: loadingCover("casino") });
 const TrainingPitchScreen = lazyScreen(() => import("@/components/star/TrainingPitchScreen"));
-const Training3D = lazyScreen(() => import("@/components/star/Training3D"));
+const Training3D = lazyScreen(() => import("@/components/star/Training3D"), { fallback: loadingCover("training") });
 const AdvertShoot = lazyScreen(() => import("@/components/star/relgames/AdvertShoot"));
 const KnockoutRoundup = lazyScreen(() => import("@/components/star/KnockoutRoundup"));
 const CupDrawReveal = lazyScreen(() => import("@/components/star/CupDrawReveal"));
@@ -1044,6 +1052,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // Ordered by week, not by array position — a knockout round earned mid-season
   // is appended to the fixture list and would otherwise sort to the very end.
   const nextFixture = career ? nextFixtureFor(career) : null;
+  // The matchday programme the match's loading screen shows (lib/star/loading/programme.ts).
+  const programmeKey = career && nextFixture ? `${career.season}|${nextFixture.week}|${nextFixture.opponent}|${nextFixture.competition ?? ""}|${career.fixtures?.length ?? 0}` : "";
+  useEffect(() => {
+    if (!career || !nextFixture) return;
+    try { setLoadContext("match", { programme: programmeFor(career, nextFixture) }); } catch { /* the programme falls back to its plain cover */ }
+  }, [programmeKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // International breaks (lib/star/international.ts): the window that has
   // come round and not been decided yet, and — for an international — the
   // stand-in career the match is handed (your side is the nation).
@@ -3732,6 +3746,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   useEffect(() => () => clearMusicScene("page"), []);
 
   // ---------- RENDER ----------
+  // The first load's opening (BootScreen) stays up through this "Loading career…" and lifts here.
+  if (!cloudLoading) bootDone();
   if (cloudLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -5794,10 +5810,42 @@ function OldUiMatch(props: React.ComponentProps<typeof CanvasMatch>) {
   return <CanvasMatch {...props} />;
 }
 
+// The first load's opening (components/star/loading/BootScreen.tsx): drawn on the
+// server with the first bytes, it covers the code download and "Loading
+// career…", and goes the moment the game's first real screen is up.
+const BOOT_DONE = "kib-boot-done";
+let booted = false;
+function bootDone() {
+  if (booted || typeof window === "undefined") return;
+  booted = true;
+  // after this render is on the screen, so the opening never uncovers a blank frame
+  requestAnimationFrame(() => window.dispatchEvent(new Event(BOOT_DONE)));
+}
+function Boot({ ui }: { ui: string | null }) {
+  const [phase, setPhase] = useState<"up" | "leaving" | "gone">(booted ? "gone" : "up");
+  useEffect(() => {
+    if (ui === "old") bootDone(); // the Old UI has its own loading
+    const lift = () => setPhase((p) => (p === "up" ? "leaving" : p));
+    if (booted) lift();
+    window.addEventListener(BOOT_DONE, lift);
+    return () => window.removeEventListener(BOOT_DONE, lift);
+  }, [ui]);
+  useEffect(() => {
+    if (phase !== "leaving") return;
+    const t = window.setTimeout(() => setPhase("gone"), 220);
+    return () => clearTimeout(t);
+  }, [phase]);
+  return phase === "gone" ? null : <BootScreen leaving={phase === "leaving"} />;
+}
+
 export default function StarDevPage() {
   const ui = useUiVersionOrNull();
   // Nothing until this device's choice is known: each UI loads and saves the
   // career the moment it mounts, so the wrong one must never flash up.
-  if (ui === null) return null;
-  return ui === "old" ? <LegacyStarDevPage Match={OldUiMatch} /> : <NewUiStarDevPage />;
+  return (
+    <>
+      {ui === null ? null : ui === "old" ? <LegacyStarDevPage Match={OldUiMatch} /> : <NewUiStarDevPage />}
+      <Boot ui={ui} />
+    </>
+  );
 }
