@@ -596,7 +596,9 @@ function shades(T: Three, c: Cloud, W: (n: string) => V, look: AccessoryLook): T
     if (Math.abs(y - eyeY) < 0.01 * hs && Math.abs(x) < 0.012 * hs) zn = Math.max(zn, z);
     else if (Math.abs(y - eyeY + 0.002) < 0.019 * hs && Math.abs(x) < 0.06 * hs) zc = Math.max(zc, z);
   }
-  const frame = 0.0022, half = Math.max(0.05 * hs, xs + 0.002);
+  // a frame thick enough to read at phone size from any side (28 Nov 2026: 2.2 mm × 2.6 mm and 1.4 mm wire arms broke
+  // into dashes from the side)
+  const frame = 0.0028, half = Math.max(0.05 * hs, xs + 0.002);
   // (the bridge wide enough to sit on the nose, never across it: the lens's inner lower corner was cut by the nose)
   const bw = 0.014 * hs;
   const lensW = Math.min(0.05 * hs, half - bw - frame * 2), lensH = 0.027 * hs, lensX = bw + frame + lensW / 2;
@@ -612,45 +614,82 @@ function shades(T: Three, c: Cloud, W: (n: string) => V, look: AccessoryLook): T
   const zl = Math.max(zn + 0.005, zBox + 0.0045 + Math.max(0, hs - 1.12) * 0.12);
   if ((globalThis as { __accDebug?: boolean }).__accDebug) console.info(`[accessories] shades head ${head.toArray().map((v) => v.toFixed(3))} zn ${zn.toFixed(3)} zBox ${zBox.toFixed(3)} zl ${zl.toFixed(3)} lensX ${lensX.toFixed(3)} lensW ${lensW.toFixed(3)} hs ${hs.toFixed(2)}`);
   for (const sd of [-1, 1]) {
-    const lens = roundedPlate(T, lensW, lensH, 0.011, 0.0016);
+    const lens = roundedPlate(T, lensW, lensH, 0.011, 0.0022);
     lens.rotateY(sd * 0.05);
     lens.translate(head.x + sd * lensX, lensY, zl);
     out.push(finish(T, lens, look.second, 1, w));
-    const rim = roundedRing(T, lensW + frame * 2, lensH + frame * 2, 0.012, frame, 0.0026);
+    const rim = roundedRing(T, lensW + frame * 2, lensH + frame * 2, 0.012, frame, RIM_D);
     rim.rotateY(sd * 0.05);
-    rim.translate(head.x + sd * lensX, lensY, zl + 0.0004);
+    rim.translate(head.x + sd * lensX, lensY, zl + RIM_D / 2 - 0.0011);
     out.push(finish(T, rim, look.main, look.shine, w));
   }
   // the bridge over the nose
-  const bridge = new T.TubeGeometry(new T.QuadraticBezierCurve3(new T.Vector3(head.x - bw, lensY + 0.007, zl), new T.Vector3(head.x, lensY + 0.011, zl + 0.0015), new T.Vector3(head.x + bw, lensY + 0.007, zl)), 6, 0.0014, 5, false);
+  const bridge = new T.TubeGeometry(new T.QuadraticBezierCurve3(new T.Vector3(head.x - bw, lensY + 0.007, zl), new T.Vector3(head.x, lensY + 0.011, zl + 0.0015), new T.Vector3(head.x + bw, lensY + 0.007, zl)), 6, 0.0019, 6, false);
   out.push(finish(T, bridge, look.main, look.shine, w));
   // the arms: from the frame's outer corner back along the side of the head, 2 mm off it, to over the ear
   const outer = lensX + lensW / 2 + frame;
   const armY = lensY + 0.008;
+  // the side of the head at a depth: the outermost point near the arm's line. A low-poly head has few points there,
+  // so the window widens until it finds some (28 Nov 2026: an empty window read 0, the arm's middle went inside
+  // the head and it showed as two dashes from the side)
   const sideAt = (z: number, sd: number) => {
-    let m = 0;
-    for (const i of pts) {
-      const y = c.p[i * 3 + 1], zz = c.p[i * 3 + 2], x = (c.p[i * 3] - head.x) * sd;
-      if (x <= 0 || Math.abs(y - armY) > 0.012 || Math.abs(zz - z) > 0.008) continue;
-      m = Math.max(m, x);
+    for (const [dy, dz] of [[0.012, 0.008], [0.02, 0.014], [0.03, 0.022]]) {
+      let m = 0;
+      for (const i of pts) {
+        const y = c.p[i * 3 + 1], zz = c.p[i * 3 + 2], x = (c.p[i * 3] - head.x) * sd;
+        if (x <= 0 || Math.abs(y - armY) > dy || Math.abs(zz - z) > dz) continue;
+        m = Math.max(m, x);
+      }
+      if (m > 0) return m;
     }
-    return m;
+    return half;
   };
   const zEnd = head.z - 0.025 * hs;
+  // the arms: flat bars (4.2 mm tall, 2 mm thick, a real temple's shape), from a hinge block on the frame's outer
+  // corner back along the head, their inner face 1.2 mm off the skin or hair at every step
+  const AH = 0.0042, AT = 0.002;
   for (const sd of [-1, 1]) {
-    const pts3: V[] = [new T.Vector3(head.x + sd * (outer - 0.001), armY, zl - 0.001)];
-    const steps = 6;
-    let lastX = outer;
+    const hingeX = outer + AT / 2;
+    const pts3: V[] = [new T.Vector3(head.x + sd * hingeX, armY, zl - 0.0015)];
+    const steps = 8;
     for (let k = 1; k <= steps; k++) {
       const z = zl - 0.006 + ((zEnd - (zl - 0.006)) * k) / steps;
       const sx = sideAt(z, sd);
-      lastX = Math.max(sx + 0.0022, k === 1 ? outer - 0.002 : 0);
-      pts3.push(new T.Vector3(head.x + sd * lastX, armY - (k === steps ? 0.006 : 0), z));
+      const x = Math.max(sx + 0.0012 + AT / 2, k <= 2 ? hingeX - 0.001 * k : 0);
+      pts3.push(new T.Vector3(head.x + sd * x, armY - (k === steps ? 0.007 : k === steps - 1 ? 0.002 : 0), z));
     }
-    const arm = new T.TubeGeometry(new T.CatmullRomCurve3(pts3), 18, 0.0014, 5, false);
-    out.push(finish(T, arm, look.detail, look.shine, w));
+    out.push(finish(T, flatBar(T, new T.CatmullRomCurve3(pts3).getPoints(24), AH, AT), look.detail, look.shine, w));
+    // the hinge: a small block joining the frame's corner to the arm
+    const hinge = new T.BoxGeometry(AT + 0.0016, AH + 0.0014, 0.007);
+    hinge.translate(head.x + sd * (outer - 0.0004), armY, zl - 0.0025);
+    out.push(finish(T, hinge, look.main, look.shine, w));
   }
   return mergeGeometries(out, false);
+}
+
+const RIM_D = 0.0042;
+
+/** A flat bar along a path: `h` tall (world up), `t` thick (across the path, level), closed at both ends. */
+function flatBar(T: Three, path: V[], h: number, t: number): THREE.BufferGeometry {
+  const pos: number[] = [], ind: number[] = [];
+  const up = new T.Vector3(0, 1, 0), d = new T.Vector3(), side = new T.Vector3();
+  path.forEach((p, i) => {
+    d.subVectors(path[Math.min(i + 1, path.length - 1)], path[Math.max(i - 1, 0)]).normalize();
+    side.crossVectors(up, d).normalize().multiplyScalar(t / 2);
+    for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) pos.push(p.x + side.x * sx, p.y + (h / 2) * sy, p.z + side.z * sx);
+  });
+  for (let i = 0; i < path.length - 1; i++) for (let f = 0; f < 4; f++) {
+    const a = i * 4 + f, b = i * 4 + ((f + 1) % 4), c = a + 4, e = b + 4;
+    ind.push(a, b, e, a, e, c);
+  }
+  const L = (path.length - 1) * 4;
+  ind.push(0, 2, 1, 0, 3, 2, L, L + 1, L + 2, L, L + 2, L + 3);
+  const g = new T.BufferGeometry();
+  g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
+  g.setIndex(ind);
+  const ng = g.toNonIndexed(); g.dispose();
+  ng.computeVertexNormals();
+  return ng;
 }
 
 /** A flat plate with rounded corners, centred, facing +z. */
@@ -714,17 +753,21 @@ function cap(T: Three, c: Cloud, W: (n: string) => V, look: AccessoryLook): { ge
   const ybA: number[] = [], rbRaw: number[] = [];
   for (let a = 0; a < NA; a++) {
     const th = (a / NA) * Math.PI * 2, front = Math.cos(th);
-    // (a baseball cap sits at the brow in front and rides up at the sides and back: his hair shows below it there)
-    const yb = browY + 0.014 * hs + (1 - front) * 0.012 * hs;
+    // a baseball cap sits ON the head: on the brow in front, just over the ears at the sides, down on the back of
+    // the skull behind (28 Nov 2026: the old line rode UP at the sides and back, so the cap sat on top of the hair
+    // like a plate and read "flat and weak")
+    const yb = browY + 0.011 * hs - (1 - front) * 0.012 * hs;
     ybA.push(yb);
-    // the head's own width there, read a little higher up too (the skull, not an ear or a tuft at the brim line)
+    // the head's own width there and a little higher up (the skull, not a tuft at the brim line): the wider of the
+    // two, so the crown's edge is never inside the hair
     const hz = horiz(Math.sin(th), front, yb), hHi = horiz(Math.sin(th), front, yb + 0.022 * hs);
-    rbRaw.push((front > 0.5 ? Math.max(hz, hHi) : Math.min(hz, hHi + 0.006)) + 0.003);
+    rbRaw.push(Math.max(hz, hHi) + 0.003);
   }
   const rb = dilateSmooth(rbRaw, 3);
-  const top = browY + 0.094 * hs; // a shallow crown (a deeper one read as a helmet)
-  /** The crown at a height fraction s (0 brim, 1 top): its horizontal radius at azimuth index a. */
-  const crownR = (a: number, s: number) => rb[a] * Math.pow(Math.max(0, 1 - Math.pow(Math.min(1, s), 2)), 0.55);
+  const top = browY + 0.104 * hs; // a real crown's depth over the brow (0.094 read flat once the cap sat lower)
+  /** The crown at a height fraction s (0 brim, 1 top): its horizontal radius at azimuth index a. Upright sides and
+   *  a round top (a superellipse; the old 1 − s² dome leaned in from the brim and read as a beret). */
+  const crownR = (a: number, s: number) => rb[a] * Math.pow(Math.max(0, 1 - Math.pow(Math.min(1, s), 2.4)), 1 / 2.4 + 0.08);
   const crownY = (a: number, s: number) => ybA[a] + (top - ybA[a]) * s;
   const TH = 0.003;
   const pos: number[] = [], ind: number[] = [];
@@ -749,36 +792,42 @@ function cap(T: Three, c: Cloud, W: (n: string) => V, look: AccessoryLook): { ge
   const out: THREE.BufferGeometry[] = [finish(T, cn, look.main, 0.08, w)]; // cotton: hardly any shine
   // the six panel seams: thin raised lines from the brim to the top
   const seamHex = `#${new T.Color(look.main).multiplyScalar(0.78).getHexString()}`;
-  for (const k of [0, 3]) {
+  for (const k of [0, 1, 2, 3, 4, 5]) {
     const a = Math.round((k / 6) * NA) % NA;
     const line: V[] = [];
     for (let e = 0; e <= NE; e++) { const s = Math.sin((e / NE) * Math.PI / 2), th = (a / NA) * Math.PI * 2, r = crownR(a, s) + TH + 0.0006; line.push(new T.Vector3(C.x + Math.sin(th) * r, crownY(a, s) + (TH + 0.0006) * s, C.z + Math.cos(th) * r)); }
-    const seam = new T.TubeGeometry(new T.CatmullRomCurve3(line), 12, 0.0007, 4, false);
+    const seam = new T.TubeGeometry(new T.CatmullRomCurve3(line), 12, 0.0009, 4, false);
     out.push(finish(T, seam, seamHex, look.shine * 0.3, w));
   }
-  // the peak: from the front of the brim, 6.5 cm forward, tipped down a little, curved across
+  // the peak: from the front of the brim, 7.4 cm forward at the middle, tipped down, curved across (the sides bend
+  // down: a worn-in peak). Straight forward (+z), not along each azimuth: a fan of directions splayed the sides out
+  // and drew a flat half-disc
   const peak: number[] = [], pi: number[] = [];
-  const span = 7, rows = 5;
+  const span = 8, rows = 6, PEAK = 0.074 * hs;
   for (let rI = 0; rI <= rows; rI++) for (let s = -span; s <= span; s++) {
     const a = (s + NA) % NA, th = (a / NA) * Math.PI * 2;
-    const fwd = new T.Vector3(Math.sin(th), 0, Math.cos(th));
-    const t = (rI / rows) * 0.068 * hs * Math.pow(Math.max(0, 1 - Math.pow(Math.abs(s) / (span + 0.5), 2)), 0.55);
+    const k = Math.abs(s) / (span + 0.4);
+    const fwd = new T.Vector3(Math.sin(th) * 0.35, 0, Math.cos(th)).normalize();
+    const t = (rI / rows) * PEAK * Math.pow(Math.max(0, 1 - Math.pow(k, 2.2)), 0.5);
     const base = new T.Vector3(C.x + Math.sin(th) * (rb[a] + TH * 0.5), ybA[a] + 0.002, C.z + Math.cos(th) * (rb[a] + TH * 0.5));
-    // forward and a little down, the sides curved down more (a worn-in peak)
-    const v = base.addScaledVector(fwd, t).add(new T.Vector3(0, -t * 0.2 - Math.pow(Math.abs(s) / span, 2) * (0.004 + t * 0.35), 0));
+    const v = base.addScaledVector(fwd, t).add(new T.Vector3(0, -t * 0.16 - k * k * (0.003 + t * 0.5), 0));
     peak.push(v.x, v.y, v.z);
   }
   const PW = span * 2 + 1, pg = (rI: number, s: number) => rI * PW + s;
   for (let rI = 0; rI < rows; rI++) for (let s = 0; s < PW - 1; s++) pi.push(pg(rI, s), pg(rI + 1, s), pg(rI + 1, s + 1), pg(rI, s), pg(rI + 1, s + 1), pg(rI, s + 1));
   const topG = new T.BufferGeometry(); topG.setAttribute("position", new T.Float32BufferAttribute(peak, 3)); topG.setIndex(pi);
-  const under = new T.BufferGeometry(); under.setAttribute("position", new T.Float32BufferAttribute(peak.map((v, i) => (i % 3 === 1 ? v - 0.004 : v)), 3));
+  const PT = 0.0045; // the peak's thickness: it reads as a stiff peak from the side, not a sheet of paper
+  const under = new T.BufferGeometry(); under.setAttribute("position", new T.Float32BufferAttribute(peak.map((v, i) => (i % 3 === 1 ? v - PT : v)), 3));
   under.setIndex(pi.map((_, i) => pi[i - (i % 3) + [0, 2, 1][i % 3]]));
   // the peak's top in the crown's colour, its underside the second colour
   for (const [g, hex] of [[topG, look.main], [under, look.second]] as const) { g.computeVertexNormals(); const ng = g.toNonIndexed(); g.dispose(); out.push(finish(T, ng, hex, look.shine * 0.4, w)); }
-  // the peak's front edge
+  // the peak's rim: round the front edge and down both sides to the crown, as thick as the peak (closes the gap
+  // between its top and its underside from every side)
   const edge: V[] = [];
-  for (let s = -span; s <= span; s++) edge.push(new T.Vector3(peak[pg(rows, s + span) * 3], peak[pg(rows, s + span) * 3 + 1] - 0.002, peak[pg(rows, s + span) * 3 + 2]));
-  out.push(finish(T, new T.TubeGeometry(new T.CatmullRomCurve3(edge), 24, 0.0019, 5, false), seamHex, look.shine * 0.4, w));
+  for (let rI = 0; rI < rows; rI++) edge.push(new T.Vector3(peak[pg(rI, 0) * 3], peak[pg(rI, 0) * 3 + 1] - PT / 2, peak[pg(rI, 0) * 3 + 2]));
+  for (let s = -span; s <= span; s++) edge.push(new T.Vector3(peak[pg(rows, s + span) * 3], peak[pg(rows, s + span) * 3 + 1] - PT / 2, peak[pg(rows, s + span) * 3 + 2]));
+  for (let rI = rows - 1; rI >= 0; rI--) edge.push(new T.Vector3(peak[pg(rI, PW - 1) * 3], peak[pg(rI, PW - 1) * 3 + 1] - PT / 2, peak[pg(rI, PW - 1) * 3 + 2]));
+  out.push(finish(T, new T.TubeGeometry(new T.CatmullRomCurve3(edge), 48, PT / 2 + 0.0004, 6, false), look.main, look.shine * 0.4, w));
   // the button on top and a small badge on the front panel
   const btn = new T.SphereGeometry(0.0065, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2);
   btn.translate(C.x, top + TH - 0.001, C.z);
