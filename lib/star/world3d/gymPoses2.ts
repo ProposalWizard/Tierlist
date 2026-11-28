@@ -76,7 +76,8 @@ export function shot2(kind: Gym2Kind, g: Gym2State | null): { cam: [number, numb
     case "boxjump": return { cam: [-0.1, 2.15, 3.3], look: [G.box.x, 1.0, G.box.z + 0.3] };
     case "copenhagen": {
       const side = g?.kind === "copenhagen" ? g.side : 0;
-      return side ? { cam: [4.7, 1.9, -1.5], look: [G.copenMat.x - 0.35, 0.3, G.copenMat.z] } : { cam: [2.9, 1.8, 3.5], look: [G.copenMat.x - 0.3, 0.35, G.copenMat.z] };
+      // the same shot either side (mirrored across the body), from in front of him, the whole body from the box to his head
+      return side ? { cam: [3.0, 2.0, -2.4], look: [G.copenMat.x - 0.2, 0.35, G.copenMat.z] } : { cam: [3.0, 2.0, 3.9], look: [G.copenMat.x - 0.2, 0.35, G.copenMat.z] };
     }
     case "ladder": return { cam: [0.6, 2.2, 1.2], look: [(G.ladder.x0 + G.ladder.x1) / 2, 0.4, G.ladder.z] };
     case "landing": return { cam: [1.3, 2.1, -0.6], look: [G.pad.x, 0.85, G.pad.z] };
@@ -376,12 +377,14 @@ export class Exercise2 {
   /** The deepest skin inside a solid box [x0,x1, y0,y1, z0,z1]. */
   private boxPierce(bx: number[], name: string, parts: Part[] = ["T", "LA", "RA", "LS", "RS", "LF", "RF", "LH", "RH"]) {
     if (!this.skin) return;
-    let deep = 0;
+    let deep = 0, who = "";
     for (const p of parts) this.skin.each(p, (v) => {
       if (v.x < bx[0] || v.x > bx[1] || v.y < bx[2] || v.y > bx[3] || v.z < bx[4] || v.z > bx[5]) return;
-      deep = Math.max(deep, Math.min(v.x - bx[0], bx[1] - v.x, v.y - bx[2], bx[3] - v.y, v.z - bx[4], bx[5] - v.z));
+      const d = Math.min(v.x - bx[0], bx[1] - v.x, v.y - bx[2], bx[3] - v.y, v.z - bx[4], bx[5] - v.z);
+      if (d > deep) { deep = d; who = p; }
     });
     this.rec("pierce", name, deep * 100);
+    if (deep > 0.005) this.stats.pierce[`${name} [${who}]`] = Math.max(this.stats.pierce[`${name} [${who}]`] ?? 0, +(deep * 100).toFixed(2));
   }
 
   /** Where he does it, and the camera on it (spot2, shot2). */
@@ -591,45 +594,84 @@ export class Exercise2 {
     void T;
   }
 
-  // ── the Copenhagen plank: on his side, the top ankle on the box, the elbow on the mat ──
+  // ── the Copenhagen plank (exercise 8): a side plank on the forearm, the top leg's inner ankle on the box (the bench),
+  // the bottom leg hanging free under it, body straight from ankle to head, hips up; both sides ──
+  //   Placed from two measured points, not guessed: the top ankle's joint on the box top, the low shoulder's joint
+  //   an upper arm above the elbow on the mat. The body (as stood) is turned so its own ankle-to-shoulder line
+  //   runs through those two points, his side straight down; then the game's hip height (h: 0.7 straight, lower =
+  //   a sag, higher = hips piked) hinges the body at the hips, a slow breath lifts the chest and a tremor that
+  //   grows as the side goes on shakes it (never frozen).
   private copen(g: Extract<Gym2State, { kind: "copenhagen" }>) {
-    const T = this.T, X = GYM2.box, M = GYM2.copenMat, top = GYM2.matTop, m = this.m;
-    const side = g.side; // 0: left side down, facing south; 1: right side down, facing north
+    const T = this.T, X = GYM2.box, M = GYM2.copenMat, top = GYM2.matTop, m = this.m, b = this.bones();
+    const side = g.side; // 0: left side down, facing south (+z); 1: right side down, facing north (-z)
     const boxTop = X.h[0];
-    const ankle = this.v.a.set(X.x + X.half - 0.09, boxTop + 0.045, X.z);
-    const shoulder = this.v.b.set(ankle.x + m.shY - m.ankle - 0.08, top + m.upper + 0.16 + 0.17, X.z);
-    // the sag: hips lower than the straight line (the game's h: 0.7 straight; lower = sagging)
-    const sag = Math.max(0, 0.72 - g.h) * 0.16;
-    const up = this.v.up.subVectors(shoulder, ankle).normalize();
-    const downSide = side === 0 ? 1 : -1; // left side down: his left is the world's down
-    const left = this.v.rt.set(0, -downSide, 0);
-    // the root (his soles' middle) a hip's half-width from the top ankle, towards the floor
-    const pos = this.v.c.copy(ankle).addScaledVector(up, -m.ankle).add(this.v.d.set(0, -0.1, 0)).add(this.v.e.set(0, -sag, 0));
-    this.orient(pos, up, left);
-    const { f, l } = this.frame();
     const topLeg = side === 0 ? "Right" : "Left", lowLeg = side === 0 ? "Left" : "Right";
-    // top leg: straight, the inside of the ankle on the box top
-    const pole1 = this.v.f.copy(ankle).addScaledVector(up, 0.5).addScaledVector(f, 0.5);
-    this.onSurface(topLeg, true, topLeg === "Left" ? "LF" : "RF", ankle, boxTop, pole1, "Copenhagen: ankle on the box");
-    // bottom leg: bent under, the foot by the box's foot, off the mat or on it
-    const lowFoot = this.v.g.set(X.x + X.half + 0.16, 0, X.z + f.z * 0.05);
-    const pole2 = this.v.h.copy(lowFoot).addScaledVector(up, 0.35).addScaledVector(f, 0.6);
-    this.onSurface(lowLeg, true, lowLeg === "Left" ? "LF" : "RF", lowFoot, 0, pole2, "Copenhagen: lower foot on the floor");
-    // lower arm: elbow under the shoulder, forearm along the mat in front; top arm: hand on the hip
     const lowArm = side === 0 ? "Left" : "Right", topArm = side === 0 ? "Right" : "Left";
+    const face = side === 0 ? 1 : -1; // his front along z
+    // the top ankle's joint on the box (a hand's width in from its east edge), the low shoulder's above the elbow
+    const ankleAt = this.v.a.set(X.x + X.half - 0.1, boxTop + 0.05, X.z);
+    const shY = top + 0.075 + m.upper; // the upper arm upright, its elbow joint 7.5 cm over the mat (the skin under it on the mat, measured)
+    const fatigue = Math.min(1, g.sideT / COPEN.side);
+    const breath = Math.sin(g.t * ((2 * Math.PI) / 3.6)); // a breath every 3.6 s
+    const shake = (0.0015 + 0.004 * fatigue) * (Math.sin(g.t * 53) * 0.6 + Math.sin(g.t * 71 + 1.3) * 0.4);
+    const r = this.you.person.root;
+    // first lay him feet to head along +x, his left straight down (side 0) or up (side 1)
+    this.orient(this.v.c.copy(ankleAt), this.v.up.set(1, 0, 0), this.v.rt.set(0, side === 0 ? -1 : 1, 0));
+    const ankleB = b[`${topLeg}Foot`], shB = b[`${lowArm}Arm`];
+    const A = new T.Vector3(), S = new T.Vector3(), axis = new T.Vector3(0, 0, 1), q = new T.Quaternion();
+    const turnAbout = (p: V3, ang: number) => { q.setFromAxisAngle(axis, ang); r.position.sub(p).applyQuaternion(q).add(p); r.quaternion.premultiply(q); r.updateMatrixWorld(true); };
+    // then turned (round z, through the ankle) and slid until both joints sit on their points (three goes)
+    for (let k = 0; k < 3; k++) {
+      ankleB.getWorldPosition(A); shB.getWorldPosition(S);
+      const len = Math.hypot(S.x - A.x, S.y - A.y);
+      const wantX = ankleAt.x + Math.sqrt(Math.max(0.01, len * len - (shY - ankleAt.y) ** 2));
+      turnAbout(A, Math.atan2(shY - ankleAt.y, wantX - ankleAt.x) - Math.atan2(S.y - A.y, S.x - A.x));
+      ankleB.getWorldPosition(A);
+      r.position.add(this.v.d.subVectors(ankleAt, A));
+      r.updateMatrixWorld(true);
+    }
+    // the hips: the legs hinged down round the top ankle by the game's height (and the breath, and the shake) ...
+    const hipLift = Math.max(-0.1, Math.min(0.035, (g.h - 0.72) * 0.22)) + breath * 0.004 + shake;
+    const hip = b.Hips.getWorldPosition(new T.Vector3());
+    turnAbout(ankleAt, Math.atan2(hipLift, Math.max(0.3, hip.x - ankleAt.x)));
+    this.you.x = r.position.x; this.you.y = r.position.y; this.you.z = r.position.z;
+    // ... and the trunk turned back at the spine until the low shoulder is at its height again
+    // (the chest lifts a touch with each breath first; then two goes, the spine's three bones share the turn)
+    this.bend(this.v.e.set(0, 1, 0), breath * 0.015);
+    const hip2 = b.Hips.getWorldPosition(new T.Vector3());
+    for (let k = 0; k < 2; k++) { shB.getWorldPosition(S); this.bend(axis, Math.atan2(shY - S.y, Math.max(0.3, S.x - hip2.x))); }
+    const { f, u } = this.frame();
+    // top leg: straight, the inside of the ankle on the box top
+    const pole1 = this.v.f.copy(ankleAt).addScaledVector(u, 0.5).addScaledVector(f, 0.6);
+    this.onSurface(topLeg, true, topLeg === "Left" ? "LF" : "RF", ankleAt, boxTop, pole1, "Copenhagen: ankle on the box");
+    // bottom leg: hanging free under the top one, nearly straight, down and a little forward past the box's side
+    // (a box is solid to the floor, so the foot hangs beside it, not under it as under a bench); the foot clear
+    const lowHip = b[`${lowLeg}UpLeg`].getWorldPosition(new T.Vector3());
+    const lowFoot = this.v.g.set(X.x + X.half + 0.02, m.ankle + 0.07 + 0.006 * breath, X.z + face * (X.half + 0.2));
+    const reachLen = (m.thigh + m.shin) * 0.97, d0 = lowFoot.distanceTo(lowHip);
+    if (d0 > reachLen) lowFoot.sub(lowHip).multiplyScalar(reachLen / d0).add(lowHip);
+    const pole2 = this.v.h.copy(lowHip).lerp(lowFoot, 0.5).addScaledVector(f, 0.7).add(this.v.d.set(0, -0.2, 0));
+    this.reach(lowLeg, true, lowFoot, pole2);
+    if (this.skin) {
+      const lowP: Part = lowLeg === "Left" ? "LF" : "RF";
+      const low = this.skin.minY(lowP);
+      if (low < 0.03) { lowFoot.y += 0.03 - low; this.reach(lowLeg, true, lowFoot, pole2); }
+      if (this.n % 6 === 0) this.rec("contact", "Copenhagen: lower foot clear of the floor (gap)", this.skin.minY(lowP) * 100);
+    }
+    // lower arm: the elbow under the shoulder, the forearm flat on the mat in front of him, a loose fist
     const sh = this.world(`${lowArm}Arm`);
-    const wrist = this.v.e.set(sh.x - 0.02, top + 0.035, sh.z).addScaledVector(f, m.fore * 0.97);
-    const pole3 = this.v.f.set(sh.x + 0.1, sh.y - 0.2, sh.z).addScaledVector(f, -0.45);
-    this.onSurface(lowArm, false, lowArm === "Left" ? ["LA", "LH"] : ["RA", "RH"], wrist, top, pole3, "Copenhagen: forearm on the mat", () => this.flatHand(lowArm, f, FIST));
-    const hipTop = this.world(`${topLeg}UpLeg`).addScaledVector(l, -downSide * 0.1).addScaledVector(up, 0.06);
-    const pole4 = this.v.g.copy(hipTop).addScaledVector(up, 0.35).addScaledVector(f, -0.4).add(this.v.h.set(0, 0.3, 0));
+    const wrist = this.v.e.set(sh.x + 0.02, top + 0.035, sh.z + face * m.fore * 0.97);
+    const pole3 = this.v.f.set(sh.x + 0.05, top - 0.6, sh.z - face * 0.35);
+    this.onSurface(lowArm, false, lowArm === "Left" ? ["LA", "LH"] : ["RA", "RH"], wrist, top, pole3, "Copenhagen: forearm on the mat", () => this.flatHand(lowArm, this.v.fw.set(0, 0, face), FIST));
+    // top arm (the top side is up on either side): the hand on the top hip, the elbow up and back
+    const hipTop = this.world(`${topLeg}UpLeg`).add(this.v.d.set(0.03, 0.07, face * 0.06));
+    const pole4 = this.v.g.copy(hipTop).add(this.v.h.set(0.25, 0.65, -face * 0.25));
     this.reach(topArm, false, hipTop, pole4);
     if (this.n % 12 === 0) {
       this.floorPierce(top, "Copenhagen: nothing through the mat", undefined, [M.x - 0.5, M.x + 0.5, M.z - 0.3, M.z + 0.3]);
       this.floorPierce(0, "Copenhagen: nothing through the floor");
       this.boxPierce([X.x - X.half, X.x + X.half, 0, boxTop, X.z - X.half, X.z + X.half], "Copenhagen: nothing through the box");
     }
-    void T;
   }
 
   // ── box jumps: crouch with the swing, jump onto the box, step down ──
