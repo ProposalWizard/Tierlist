@@ -25,6 +25,7 @@
  *    backdrop and the drawn head (StoryPlayer, StoryCards).
  */
 import type { CareerState } from "../types";
+import { clubLegendAt, clubLegendById } from "./clubLegends";
 
 export interface PoolPerson {
   /** Stable id (never shown); also the `speaker` of his voice clips. */
@@ -112,7 +113,10 @@ export function poolPerson(c: Pick<CareerState, "player"> & { life?: { pool?: Re
     // the career and the club pick him, skipping anyone this career already has at another club
     // (while the pool has someone left), so two clubs never share a kit man.
     const pin = c.life?.cpool?.[`${role}@${club}`];
-    if (pin) { const p = list.find((x) => x.id === pin); if (p) return p; }
+    if (pin) { const p = list.find((x) => x.id === pin) ?? (role === "legend" ? clubLegendById(pin) : undefined); if (p) return p; }
+    // The 26 hook clubs (clubLegends.ts, story world job B): a fixed legend at a club you moved to.
+    // Only after the pin above, so a legend a story already met at that club stays.
+    if (role === "legend") { const fixed = clubLegendAt(club); if (fixed) return fixed; }
     const used = new Set<string>([poolPerson(c, role)!.id]);
     for (const [k, v] of Object.entries(c.life?.cpool ?? {})) if (k.startsWith(`${role}@`) && k !== `${role}@${club}`) used.add(v);
     const start = hash(`${c.player.firstName}|${c.player.lastName}|${c.player.startYear}|${role}|${club}`) % list.length;

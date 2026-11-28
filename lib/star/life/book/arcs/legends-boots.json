@@ -323,7 +323,7 @@
           "won": 1
          }
         },
-        "give": "item:legends-boots",
+        "give": "item-legends-boots",
         "giveWords": [
          "The legend's boots",
          "The boots from his cup final, in a box with his name on."

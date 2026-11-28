@@ -1,0 +1,12 @@
+{
+  "watch-minute": { "code": "wtch", "line": "Scored at the minute on the legend's stopped watch." },
+  "gave-watch-away": { "code": "gwat", "line": "Gave the legend's watch to an academy lad." },
+  "derby-penalty-miss": { "code": "dpmi", "line": "Missed a penalty in a derby." },
+  "derby-winner": { "code": "dwin", "line": "Scored the winner in a derby." },
+  "clay-tray-cracked": { "code": "clay", "line": "Your boot print cracked in the clay tray the day you arrived." },
+  "fined-at-court": { "code": "fcrt", "line": "Fined at the Thursday court in the boot room." },
+  "walked-up-the-hill": { "code": "hill", "line": "Walked up the hill with the fans before the first home game." },
+  "white-rose": { "code": "wros", "line": "Given the white rose as a visiting captain." },
+  "testimonial-played": { "code": "test", "line": "Played your testimonial." },
+  "number-handed-on": { "code": "numh", "line": "Handed your shirt number to a young lad." }
+}

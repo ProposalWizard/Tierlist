@@ -9,6 +9,24 @@ import { isNewSigning, lifeWeek, peek, roleOf } from "./people";
 import { starLevel } from "../starPoints";
 import { divisionOf } from "../calendar";
 import { typicalWeeklyWage } from "../economy";
+import { isDerby } from "../rivalries";
+import { clubSlug, TOP26 } from "./unlocks";
+import { compSlugs } from "./milestones";
+
+/** The next match on your calendar (not played yet, not a watch-only international). */
+export function nextMatch(c: CareerState): Fixture | null {
+  let best: Fixture | null = null;
+  for (const f of c.fixtures ?? []) if (!f.played && !f.watch && f.week >= c.week && (!best || f.week < best.week)) best = f;
+  return best;
+}
+
+/** This season is your Nth in a row at the club (1 in your first). */
+export function seasonsAtClub(c: CareerState): number {
+  const rows = c.seasonHistory ?? [];
+  let n = 1;
+  for (let i = rows.length - 1; i >= 0 && rows[i].club === c.player.club; i--) if (rows[i].season < c.season) n++;
+  return n;
+}
 
 const DIV_LEVEL: Record<string, number> = {
   premier: 1, championship: 2, league_one: 3, league_two: 4, national_league: 5, national_league_north: 6, national_league_south: 6,
@@ -41,6 +59,9 @@ export function factsOf(c: CareerState, o: FactOverride = {}): LifeFacts {
   const lm = lastMatch(c);
   const us = lm ? (lm.home ? lm.homeScore : lm.awayScore) ?? 0 : 0;
   const them = lm ? (lm.home ? lm.awayScore : lm.homeScore) ?? 0 : 0;
+  const nm = nextMatch(c);
+  const club = clubSlug(c.player.club);
+  const opps = [lm, nm].filter((f): f is Fixture => !!f);
   return {
     num: {
       age: c.player.age, season: c.season, week: c.week, clubApps: c.clubAppearances ?? c.careerStats?.appearances ?? 0,
@@ -50,18 +71,29 @@ export function factsOf(c: CareerState, o: FactOverride = {}): LifeFacts {
       seasonGoals: c.seasonStats?.goals ?? 0, matchFitness: c.matchFitness ?? 100,
       overall: Math.round(((c.skills?.pace ?? 50) + (c.skills?.power ?? 50) + (c.skills?.technique ?? 50) + (c.skills?.vision ?? 50)) / 4),
       caps: c.caps ?? 0,
+      // The story world (job B, 28 Nov 2026).
+      seasonsAtClub: seasonsAtClub(c), callUps: c.international?.callUps ?? 0, intlGoals: c.internationalGoals ?? 0, ballonDor: c.ballonDorWins ?? 0,
     },
     flag: {
       lastLost: o.lastLost ?? (!!lm && us < them), lastWon: o.lastWon ?? (!!lm && us > them),
       injured: !!c.injury, hasPartner: !!c.girlfriend, captain: !!c.captain,
       // In Europe this season (the place last season's finish earned).
       europe: !!c.europeanQualification,
+      // The story world (job B): the last or next match is a derby; in this summer's tournament squad;
+      // at one of the 26 clubs with their own hooks (unlocks.ts TOP26).
+      derby: opps.some((f) => !!f.derby || isDerby(c.player.club, f.opponent)),
+      inTournament: !!c.tournament?.selected && c.tournament.season === c.season,
+      clubTop26: TOP26.includes(club),
     },
     owns: {
       car: carTier(c) > 0, horse: !!c.horse,
       house: (c.ownedItems ?? []).some((i) => i.category === "property"),
     },
     position: c.player.position,
+    club,
+    clubsEver: Array.from(new Set([club, ...(c.seasonHistory ?? []).map((r) => clubSlug(r.club))])),
+    opponents: opps.map((f) => clubSlug(f.opponent)),
+    trophies: (c.trophies ?? []).map((t) => [compSlugs(t.competition), clubSlug(t.club)] as [string[], string]),
   };
 }
 

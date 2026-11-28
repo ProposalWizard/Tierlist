@@ -89,10 +89,16 @@ export function AfterCards({ extras }: { extras: ArcExtras }) {
           <div><div className="k" style={{ color: "#f5c542" }}><span>You got · {extras.got.what}</span></div><div className="s" style={{ color: "#fff", fontSize: 13 }}>{extras.got.text}</div></div>
         </div>
       )}
+      {extras.unlocked?.map((u) => (
+        <div key={u.name} className="dd-card2 gold" style={{ display: "flex", gap: 12, alignItems: "center" }} data-unlocked>
+          <div style={{ fontSize: 32 }}>🔓</div>
+          <div><div className="k" style={{ color: "#f5c542" }}><span>Unlocked · {u.name}</span></div><div className="s" style={{ color: "#fff", fontSize: 13 }}>{u.line}</div></div>
+        </div>
+      ))}
       {extras.ended && (
         <div className="dd-card2" data-ended><div className="k" style={{ color: "rgba(255,255,255,.7)" }}><span>The story ends</span></div><div className="h">{extras.ended.title}</div><div className="s">{extras.ended.text}</div></div>
       )}
-      {!extras.ended && (extras.got ? <div className="dd-card2" data-next><div className="k" style={{ color: "rgba(255,255,255,.7)" }}><span>Next</span></div><div className="s">{extras.next}</div></div> : <NextDots dots={extras.dots} next={extras.next} />)}
+      {!extras.ended && (extras.got || extras.unlocked?.length ? <div className="dd-card2" data-next><div className="k" style={{ color: "rgba(255,255,255,.7)" }}><span>Next</span></div><div className="s">{extras.next}</div></div> : <NextDots dots={extras.dots} next={extras.next} />)}
     </div>
   );
 }
@@ -224,6 +230,7 @@ export function InviteScreen({ career, b, onAnswer }: { career: CareerState; b: 
 
 const NOTE_LOOK: Record<ArcNotice["kind"], [string, string, string]> = {
   kept: ["🤝", "gold", "#f5c542"], broken: ["✕", "red", "#ff8a80"], remind: ["💬", "", "#9fb3c8"], ignored: ["↻", "", "#9fb3c8"], objective: ["◎", "teal", "#5eead4"],
+  echo: ["💬", "", "#9fb3c8"],
 };
 
 export function NoticeScreen({ career, notices, onContinue }: { career: CareerState; notices: ArcNotice[]; onContinue: () => void }) {
@@ -234,7 +241,7 @@ export function NoticeScreen({ career, notices, onContinue }: { career: CareerSt
         const arc = arcById(n.arc);
         return (
           <div key={i} className={`dd-card2 ${cls}`} data-notice={n.kind}>
-            <div className="k" style={{ color: col }}><span>{icon} {n.kind === "remind" ? `A text from ${n.who ?? "him"}` : n.title}</span><span style={{ color: "rgba(255,255,255,.5)" }}>{arc?.title}</span></div>
+            <div className="k" style={{ color: col }}><span>{icon} {n.kind === "remind" || n.kind === "echo" ? `A text from ${n.who ?? "him"}` : n.title}</span><span style={{ color: "rgba(255,255,255,.5)" }}>{arc?.title}</span></div>
             {n.kind === "remind" && <div className="s" style={{ marginTop: 6 }}>About: {n.title}</div>}
             <div className="h" style={{ fontWeight: 700 }}>{n.text}</div>
             {n.changes && n.changes.length > 0 && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}><ChangeList changes={n.changes} /></div>}
