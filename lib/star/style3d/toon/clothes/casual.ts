@@ -16,6 +16,9 @@ export interface OffPitchWear { kind: ClothKind; colours: ClothColours }
 export function homeSetCloth(id: string, c: Partial<Record<"main" | "second" | "accent" | "trousers" | "shoes" | "scarf", string>>): OffPitchWear {
   const main = c.main ?? "#7a7f87";
   const kind: ClothKind = id === "tee" ? "tee" : id === "shirt" ? "shirt" : id === "tracksuit" ? "tracksuit" : id === "coat" ? "suit" : "hoodie";
+  // the shop's Designer Suit (home3d/outfits.ts designerSet): a closed suit with its tie; the shirt and tie come from
+  // the body's suit colours (wear.ts paints them), only the coat, trousers and shoes are given here
+  if (id === "designer") return { kind: "suit", colours: { top: main, trousers: c.trousers, shoes: c.shoes } };
   return { kind, colours: { top: main, trim: id === "tracksuit" ? c.second : undefined, inner: c.second, trousers: c.trousers, shoes: c.shoes } };
 }
 

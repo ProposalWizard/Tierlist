@@ -205,6 +205,7 @@ import { allInvestableClubs } from "@/lib/star/investments";
 import { facilitiesFor, renameStadium, upgradeStadiumCapacity, upgradeTrainingGround, upgradeYouthAcademy } from "@/lib/star/facilities";
 import { captainMomentDue } from "@/lib/star/managerMoments";
 import { withOutfit } from "@/lib/star/home3d/outfits";
+import { bootLookOf } from "@/lib/star/wearables";
 import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
 import { useCasino3dLook, casino3dPossible } from "@/lib/star/casino3d/look";
 import type { RelationshipKind } from "@/components/star/RelationshipMinigame";
@@ -1338,9 +1339,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // Every 3D scene builds YOUR player from this (lib/star/style3d/toon/bodies.ts).
   const yourHead3d = career ? yourToonHead(career.player) : undefined, yourBody3d = career ? yourToonBody(career.player) : undefined, yourSkin3d = career?.player.skinTone, yourHair3d = career?.player.hairColour;
   const yourShirtName = career?.player.nickname ?? career?.player.lastName;
+  // your shop boots on your feet in every 3D place that dresses you in a kit (lib/star/wearables.ts)
+  const yourBootId = career?.currentBoot?.id, yourBootLevel = career?.currentBoot?.level;
   useEffect(() => {
-    setToonYou({ body: yourBody3d, head: yourHead3d, skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d), name: yourShirtName });
-  }, [yourBody3d, yourHead3d, yourSkin3d, yourHair3d, yourShirtName]);
+    setToonYou({ body: yourBody3d, head: yourHead3d, skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d), name: yourShirtName, boots: bootLookOf(yourBootId ? { id: yourBootId, level: yourBootLevel } : null) });
+  }, [yourBody3d, yourHead3d, yourSkin3d, yourHair3d, yourShirtName, yourBootId, yourBootLevel]);
 
   const handleSetPortrait = useCallback((portrait: string | undefined) => {
     setCareer(c => (c

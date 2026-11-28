@@ -17,8 +17,9 @@ import type { CareerState } from "../types";
 import type { Outfit, HumanSpec } from "../human3d/human";
 import { baseIdOf } from "../shopDefaults";
 import { BOOT_COLOURS } from "../shop3d/catalogue";
+import { bootLookOf, PLAIN_BOOTS, wornExtras, designerSuitLevel, designerSuitColours, BODY_SLOTS, type BootLook, type AccessoryLook, type ExtrasChoice } from "../wearables";
 
-export type CasualId = "hoodie" | "tee" | "shirt" | "tracksuit" | "coat";
+export type CasualId = "hoodie" | "tee" | "shirt" | "tracksuit" | "coat" | "designer";
 export type KitId = "home" | "away";
 export type OutfitChoice = NonNullable<CareerState["outfit"]>;
 
@@ -69,21 +70,42 @@ export const CASUAL_SETS: CasualSet[] = [
 
 // No choice yet: casual off the pitch (Harry, 21 Nov 2026, the cloth clothes in houses; "why would someone … be
 // wearing … a football kit … that doesn't make sense"). Was the kit. Training and the match always show the kit.
+/**
+ * The Designer Suit from the shop (lib/star/wearables.ts): a suit with a tie, its colours by the best level you
+ * own. Only on the rail when you own one; a saved choice of it falls back to the hoodie once it is gone.
+ */
+export function designerSet(level: number): CasualSet {
+  const c = designerSuitColours(level);
+  return {
+    id: "designer", label: "Designer suit", line: "From the shop: suit, shirt and tie", outfit: "coat",
+    colours: () => ({ main: c.coat, second: c.shirt, accent: c.tie, trousers: c.trousers, shoes: "#16110e", scarf: c.tie }),
+    swatch: () => [c.coat, c.trousers],
+  };
+}
+/** The Clothes rail: the five sets, and the Designer Suit when you own one. */
+export function casualSetsFor(career: Pick<CareerState, "ownedItems">): CasualSet[] {
+  const lv = designerSuitLevel(career);
+  return lv > 0 ? [...CASUAL_SETS, designerSet(lv)] : CASUAL_SETS;
+}
+
 export const DEFAULT_OUTFIT: OutfitChoice = { wear: "casual", casual: "hoodie", kit: "home", boots: "own" };
 
 export function casualSet(id: string | undefined): CasualSet {
   return CASUAL_SETS.find((s) => s.id === id) ?? CASUAL_SETS[0];
 }
 
-/** The saved choice, tidied (an unknown casual id falls back to the hoodie). */
+/** The saved choice, tidied (an unknown casual id falls back to the hoodie; Extras keep only short ids). */
 export function outfitOf(career: Pick<CareerState, "outfit">): OutfitChoice {
   const o = career.outfit;
   if (!o) return { ...DEFAULT_OUTFIT };
+  const extras: ExtrasChoice = {};
+  for (const k of BODY_SLOTS) { const v = o.extras?.[k]; if (typeof v === "string" && v.length > 0 && v.length <= 40) extras[k] = v; }
   return {
     wear: o.wear === "casual" ? "casual" : "kit",
-    casual: casualSet(o.casual).id,
+    casual: o.casual === "designer" ? "designer" : casualSet(o.casual).id,
     kit: o.kit === "away" ? "away" : "home",
     boots: o.boots === "plain" ? "plain" : "own",
+    ...(Object.keys(extras).length ? { extras } : {}),
   };
 }
 
@@ -96,10 +118,10 @@ export function withOutfit<C extends Pick<CareerState, "outfit">>(career: C, cho
 /** Where you are: what you wear there follows from the choice. */
 export type Place = "home" | "garden" | "shop" | "training";
 
-/** What to dress the 3D player in. */
+/** What to dress the 3D player in. `extras`: the watches, chains and the rest on the body (wearables.ts). */
 export type Worn =
-  | { kind: "kit"; kit: KitId; boots: string }
-  | { kind: "casual"; set: CasualSet };
+  | { kind: "kit"; kit: KitId; boots: string; bootLook?: BootLook; extras?: AccessoryLook[] }
+  | { kind: "casual"; set: CasualSet; extras?: AccessoryLook[] };
 
 /** The boot colour on your feet: your current boot's, or plain black. */
 export function bootColourOf(career: Pick<CareerState, "currentBoot">, boots: "plain" | "own" | undefined): string {
@@ -114,11 +136,17 @@ export function bootColourOf(career: Pick<CareerState, "currentBoot">, boots: "p
  * garden and the shop: the casual set if you last picked one, else the kit.
  * At training: always the kit.
  */
-export function wornAt(career: Pick<CareerState, "outfit" | "currentBoot">, place: Place): Worn {
+export function wornAt(career: Pick<CareerState, "outfit" | "currentBoot"> & Partial<Pick<CareerState, "ownedItems">>, place: Place, unsold: string[] = []): Worn {
   const o = outfitOf(career);
-  const kit: Worn = { kind: "kit", kit: o.kit, boots: bootColourOf(career, o.boots) };
+  const bootLook = o.boots === "plain" ? { ...PLAIN_BOOTS } : bootLookOf(career.currentBoot);
+  const kit: Worn = { kind: "kit", kit: o.kit, boots: bootColourOf(career, o.boots), bootLook };
+  // training is football: kit and boots, nothing on the wrist or neck
   if (place === "training") return kit;
-  return o.wear === "casual" ? { kind: "casual", set: casualSet(o.casual) } : kit;
+  const extras = wornExtras({ ownedItems: career.ownedItems ?? [] }, o.extras, unsold);
+  if (o.wear !== "casual") return { ...kit, extras };
+  const lv = designerSuitLevel({ ownedItems: career.ownedItems ?? [] });
+  const set = o.casual === "designer" ? (lv > 0 ? designerSet(lv) : casualSet("hoodie")) : casualSet(o.casual);
+  return { kind: "casual", set, extras };
 }
 
 /** The boots on the wardrobe shelf: plain ones always, and the pair you own now. */
