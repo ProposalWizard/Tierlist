@@ -1,0 +1,300 @@
+{
+ "id": "arc-the-column",
+ "title": "Your column",
+ "owner": "broadsheet",
+ "summary": "The serious paper wants a weekly column in your name. A writer will do it from a phone call on Mondays. In week four he writes something you'd never say. A season on, the column's still going.",
+ "size": "small",
+ "about": {
+  "who": [
+   "broadsheet writer",
+   "fame"
+  ],
+  "tone": [
+   "awkward",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.008,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "peak",
+  "when": [
+   "age>=24",
+   "age<=31",
+   "divisionLevel<=2 || fame>=45"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "broadsheet",
+   "pick": "broadsheet"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "your-words",
+   "title": "Your words",
+   "text": "You had a column in the serious paper, and you made the writer use your words."
+  },
+  {
+   "id": "his-words",
+   "title": "His words",
+   "text": "You had a column in the serious paper. Most of it was his."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "col-1",
+   "title": "Week four",
+   "n": 1,
+   "event": {
+    "id": "arc-col-1",
+    "title": "Week four",
+    "category": "media",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "broadsheet",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "fame>=15"
+     ]
+    },
+    "setup": [
+     "Week four of your column in the {broadsheet.outlet}. {broadsheet.name} writes it from a twenty-minute call on Mondays. This week's says the gaffer's tactics are \"brave, and in places baffling\". You've never said baffling in your life."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "broadsheet",
+       "say": [
+        "\"It's what you meant. I made it read better. Everyone's talking about it, which is the point.\""
+       ],
+       "replies": [
+        {
+         "id": "change",
+         "label": "\"Use my words or I'm out.\"",
+         "tone": "brave",
+         "end": "change"
+        },
+        {
+         "id": "fine",
+         "label": "\"Fine. Just ask me first.\"",
+         "tone": "calm",
+         "end": "fine"
+        },
+        {
+         "id": "out",
+         "label": "\"I'm stopping the column.\"",
+         "tone": "cold",
+         "end": "out"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "fine"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "change": [
+       {
+        "text": "Week five is your words. It's shorter and it says \"to be fair\" three times. The gaffer reads it out at training in a voice.",
+        "effects": {
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "respect": 4
+         },
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "broadsheet",
+          "tag": "made-me-use-his-words",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "mine"
+         }
+        }
+       }
+      ],
+      "fine": [
+       {
+        "text": "The gaffer has the column pinned to his office door, with \"baffling\" circled. He doesn't mention it. He doesn't have to.",
+        "effects": {
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "bond": 2
+         },
+         {
+          "slot": "manager",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "his"
+         }
+        }
+       }
+      ],
+      "out": [
+       {
+        "text": "The paper runs a last column, written by him, about how footballers don't like words.",
+        "effects": {
+         "fame": -1
+        },
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "his"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "broadsheet",
+      "pick": "broadsheet"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your column has a problem"
+  },
+  {
+   "id": "col-2",
+   "title": "A season on",
+   "after": {
+    "beat": "col-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-col-2",
+    "title": "A season on",
+    "category": "media",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "broadsheet",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. The {broadsheet.outlet} wants to renew the column.",
+     "{if arc.path=='mine'}{broadsheet.short} says it's the only column in the paper with \"to be fair\" in it, and the readers like it.{/if}",
+     "{if arc.path=='his'}He's sent you this week's in advance. You've used the word \"hitherto\".{/if}"
+    ],
+    "choices": [
+     {
+      "id": "renew",
+      "label": "Renew it, your words.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='mine'",
+        "text": "You do a year. Your mum cuts every one out.",
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "your-words"
+        }
+       },
+       {
+        "text": "You make him rewrite this week's in your words. He sighs, and does it.",
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "your-words"
+        }
+       }
+      ]
+     },
+     {
+      "id": "stop",
+      "label": "Let it go.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "The column ends. A lad from another club gets it, with \"hitherto\".",
+        "arc": {
+         "end": "his-words"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "broadsheet",
+      "pick": "broadsheet"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, the column"
+  }
+ ]
+}

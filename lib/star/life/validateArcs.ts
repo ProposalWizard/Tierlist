@@ -16,10 +16,23 @@
  */
 import type { ArcBeat, ArcOutcome, LifeArc, LifeEvent } from "./types";
 import { LIFE_MOMENTS } from "./types";
-import { parseCond, slotsIn, tagsIn } from "./cond";
+import { endedIn, flagsIn, parseCond, slotsIn, tagsIn } from "./cond";
+import type { StoryTier } from "./types";
+
+/** The share of careers (start.careers; none = all) each rarity tier allows (28 Nov 2026). The
+ *  start chance is set by how long the story's window is (docs/plans/STORY_BOOK_MAP.md). */
+export const STORY_TIERS: Record<StoryTier, [number, number]> = {
+  common: [0.85, 1],
+  uncommon: [0.45, 0.85],
+  rare: [0.18, 0.45],
+  "very-rare": [0.06, 0.18],
+  legendary: [0.015, 0.06],
+};
+export const STORY_STAGES = ["first-seasons", "breaking-through", "established", "peak", "veteran", "last-seasons", "any"];
 import { BAND, MAX_LINE, MAX_TELLTALE_LINE, PICKS, REAL_NAMES } from "./validate";
 import { PLACEHOLDER_KEYS, YOU_KEYS } from "./text";
 import { ROUND_LIBRARY, type RoundKind } from "./drill";
+import { packProblems } from "./arcPack";
 
 export interface ArcProblem { id: string; problem: string }
 
@@ -199,12 +212,63 @@ function allOutcomes(arc: LifeArc): { where: string; o: ArcOutcome; size: string
  * `events` is the v1 book, so a story can read a memory a v1 event writes (and back).
  */
 export function validateArcBook(arcs: LifeArc[], events: LifeEvent[] = []): ArcProblem[] {
-  const out: ArcProblem[] = [...validateArcs(arcs)];
+  // Save codes (arcPack.ts): a finished story is stored as its code and its ending's code.
+  const out: ArcProblem[] = [...validateArcs(arcs), ...packProblems(arcs)];
   const written = new Set<string>();
   for (const e of events) for (const c of e.choices ?? []) for (const o of c.outcomes ?? []) for (const r of o.remember ?? []) written.add(r.tag);
   for (const a of arcs) for (const { o } of allOutcomes(a)) { for (const r of o.remember ?? []) written.add(r.tag); if (o.noteSquad) written.add(o.noteSquad); }
-  const beatIds = new Map<string, string>(), eventIds = new Map<string, string>();
+  // Chains (28 Nov 2026): a story that waits on another (ended(...), a flag, a memory) must wait on
+  // something that can happen. Flags are set by outcomes; ended() names a real story and endings.
+  const flagsSet = new Set<string>();
+  for (const e of events) for (const c of e.choices ?? []) for (const o of c.outcomes ?? []) if (o.effects?.flag) flagsSet.add(o.effects.flag);
+  for (const a of arcs) for (const { o } of allOutcomes(a)) if (o.effects?.flag) flagsSet.add(o.effects.flag);
+  const byId = new Map(arcs.map((a) => [a.id, a]));
+  const tiered = arcs.some((a) => a.start?.tier);
+  const waitsOn = new Map<string, Set<string>>();
   const bars = ["boss", "team", "fans", "fame", "reputation"] as const;
+  for (const arc of arcs) {
+    const chainBad = (where: string, c: string) => {
+      for (const f of flagsIn(c)) if (!flagsSet.has(f)) out.push({ id: arc.id, problem: `${where}: the condition "${c}" reads the flag "${f}", which nothing sets (a chain whose parent can never start it)` });
+      for (const [pid, ends] of endedIn(c)) {
+        const p = byId.get(pid);
+        if (!p) { out.push({ id: arc.id, problem: `${where}: the condition "${c}" waits on the story "${pid}", which is not in the book` }); continue; }
+        if (p.needsActivity) out.push({ id: arc.id, problem: `${where}: waits on "${pid}", which waits for a game not built yet, so it can never end` });
+        for (const e of ends) {
+          if (!p.ends.some((x) => x.id === e)) out.push({ id: arc.id, problem: `${where}: waits on "${pid}" ending "${e}", which that story does not have` });
+          else if (!allOutcomes(p).some(({ o }) => o.arc?.end === e)) out.push({ id: arc.id, problem: `${where}: waits on "${pid}" ending "${e}", but nothing in that story ever ends it that way` });
+        }
+        if (where.endsWith("start")) (waitsOn.get(arc.id) ?? waitsOn.set(arc.id, new Set()).get(arc.id)!).add(pid);
+      }
+    };
+    for (const c of arc.start?.when ?? []) chainBad(`${arc.id}/start`, c);
+    for (const b of arc.beats) {
+      for (const c of [...(b.requires ?? []), ...(b.event.trigger.requires ?? [])]) chainBad(`${arc.id}/${b.id}`, c);
+      for (const n of Object.values(b.event.talk?.nodes ?? {})) { for (const r of n.replies ?? []) for (const c of r.requires ?? []) chainBad(`${arc.id}/${b.id}`, c); for (const [c] of n.result ?? []) chainBad(`${arc.id}/${b.id}`, c); }
+      for (const ch of b.event.choices) for (const c of ch.requires ?? []) chainBad(`${arc.id}/${b.id}`, c);
+    }
+    for (const { where, o } of allOutcomes(arc)) if (o.if) chainBad(where, o.if);
+    // Rarity and stage.
+    if (tiered && arc.start && !arc.start.tier) out.push({ id: arc.id, problem: "the book has rarity tiers, but this story has none (start.tier)" });
+    if (arc.start?.tier) {
+      const band = STORY_TIERS[arc.start.tier];
+      const share = arc.start.careers ?? 1;
+      if (!band) out.push({ id: arc.id, problem: `unknown tier "${arc.start.tier}"` });
+      else if (share < band[0] - 1e-9 || share > band[1] + 1e-9) out.push({ id: arc.id, problem: `a ${arc.start.tier} story must be in ${band[0]} to ${band[1]} of careers (start.careers is ${share})` });
+    }
+    if (arc.start?.stage && !STORY_STAGES.includes(arc.start.stage)) out.push({ id: arc.id, problem: `unknown stage "${arc.start.stage}"` });
+    for (const c of arc.start?.when ?? []) {
+      const p = parseCond(c);
+      if (typeof p === "string") out.push({ id: arc.id, problem: `start.when: ${p}` });
+      for (const sl of slotsIn(c)) if (sl !== "squad" && sl !== "you") out.push({ id: arc.id, problem: `start.when "${c}" names "${sl}": nobody is cast before the story starts` });
+      for (const t of tagsIn(c)) if (!written.has(t)) out.push({ id: arc.id, problem: `start.when "${c}" reads the memory "${t}", which nothing writes` });
+    }
+  }
+  // A story cannot wait on itself, or on a story that waits on it.
+  for (const id of Array.from(waitsOn.keys())) {
+    const seen = new Set<string>(), todo = Array.from(waitsOn.get(id) ?? []);
+    while (todo.length) { const x = todo.pop()!; if (x === id) { out.push({ id, problem: "its start waits on a chain that comes back to itself, so it can never start" }); break; } if (seen.has(x)) continue; seen.add(x); todo.push(...Array.from(waitsOn.get(x) ?? [])); }
+  }
+  const beatIds = new Map<string, string>(), eventIds = new Map<string, string>();
   for (const arc of arcs) {
     const bad = (where: string, p: string) => out.push({ id: arc.id, problem: `${where}: ${p}` });
     const slots = new Set(arc.cast.map((x) => x.slot));
@@ -216,6 +280,7 @@ export function validateArcBook(arcs: LifeArc[], events: LifeEvent[] = []): ArcP
     if (!slots.has(arc.owner)) bad(arc.id, `the owner "${arc.owner}" is not in the cast`);
     if (arc.needsActivity && !arc.beats.some((b) => Object.values(b.event.talk?.nodes ?? {}).some((n) => n.activity?.mode === arc.needsActivity))) bad(arc.id, `waits for "${arc.needsActivity}" but no talk plays it`);
     if (arc.start && !(arc.start.chance > 0 && arc.start.chance <= 1)) bad(arc.id, "a start chance must be above 0 and at most 1");
+    if (arc.start?.careers !== undefined && !(arc.start.careers > 0 && arc.start.careers <= 1)) bad(arc.id, "a share of careers must be above 0 and at most 1");
     const checkCond = (where: string, c: string) => {
       if (!c) return;
       for (const sl of slotsIn(c)) if (!slots.has(sl) && !special.has(sl)) bad(where, `the condition "${c}" names "${sl}", who is not in the cast`);

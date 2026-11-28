@@ -15,7 +15,7 @@ import type { PersonMeta } from "../../../people3d";
 import type { GarmentSpec } from "./build";
 import type { ClothSlot } from "./index";
 
-export type ClothKind = "kit" | "tracksuit" | "press" | "suit" | "polo" | "fan" | "hoodie" | "tee" | "shirt";
+export type ClothKind = "kit" | "gym" | "tracksuit" | "press" | "suit" | "polo" | "fan" | "hoodie" | "tee" | "shirt";
 type V3 = [number, number, number];
 type U = Record<string, { value: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const NONE = -1;
@@ -36,6 +36,8 @@ export function landmarks(meta: PersonMeta) {
     waist: hips[1] + 0.035,
     tuck: hips[1] + 0.015,
     shortsEnd: (mk.shortsLoY ?? 0.65) - 0.015,
+    // below this, a leg of shorts or trousers faces the other leg (GarmentSpec.innerLegs)
+    crotch: j("LeftUpLeg")[1] - 0.06,
     sockTop: meta.kit.sockY + 0.02,
     sockEnd: meta.kit.bootY + 0.006,
     shoeTop: meta.kit.bootY + 0.004,
@@ -90,6 +92,68 @@ const shoeSlot = (u: U, Color: typeof THREE.Color, fb: [number, number, number] 
 export interface OutfitDef {
   garments(meta: PersonMeta, variant: string): GarmentSpec[];
   slots(u: U, variant: string, Color: typeof THREE.Color, meta: PersonMeta): ClothSlot[];
+  /** A change to the bare body left showing (once, on the built body geometry, rest pose, metres). */
+  body?(geo: THREE.BufferGeometry, meta: PersonMeta): void;
+}
+
+/**
+ * Smooth the bare skin between two heights (Taubin smoothing: no shrinking), the legs only. The Style A bodies
+ * have the long sock's top modelled in (a ridge under the knee): hidden by a long sock, it shows on a bare calf.
+ * Each welded point moves to its neighbours' average, faded in over 1.5 cm at each end; normals follow.
+ */
+export function smoothSkin(geo: THREE.BufferGeometry, y0: number, y1: number, maxAbsX = 0.3, iters = 14) {
+  const pos = geo.getAttribute("position") as THREE.BufferAttribute, nor = geo.getAttribute("normal") as THREE.BufferAttribute | undefined;
+  const idx = geo.index;
+  if (!idx) return;
+  const n = pos.count, id = new Int32Array(n), keys = new Map<string, number>(), first: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const k = `${Math.round(pos.getX(i) * 1e3)}|${Math.round(pos.getY(i) * 1e3)}|${Math.round(pos.getZ(i) * 1e3)}`;
+    let w = keys.get(k);
+    if (w === undefined) { w = first.length; keys.set(k, w); first.push(i); }
+    id[i] = w;
+  }
+  const W = first.length, P = new Float64Array(W * 3);
+  for (let w = 0; w < W; w++) { P[w * 3] = pos.getX(first[w]); P[w * 3 + 1] = pos.getY(first[w]); P[w * 3 + 2] = pos.getZ(first[w]); }
+  const ss = (a: number, b: number, x: number) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const wt = new Float64Array(W);
+  for (let w = 0; w < W; w++) { const y = P[w * 3 + 1]; wt[w] = Math.abs(P[w * 3]) > maxAbsX ? 0 : ss(y0, y0 + 0.015, y) * (1 - ss(y1 - 0.015, y1, y)); }
+  const nb: Set<number>[] = [];
+  const tris: number[] = [];
+  for (let t = 0; t < idx.count; t += 3) {
+    const a = id[idx.getX(t)], b = id[idx.getX(t + 1)], c = id[idx.getX(t + 2)];
+    if (!(wt[a] || wt[b] || wt[c])) continue;
+    tris.push(a, b, c);
+    for (const [u, v] of [[a, b], [b, c], [c, a]]) { (nb[u] ??= new Set()).add(v); (nb[v] ??= new Set()).add(u); }
+  }
+  const step = (lam: number) => {
+    const out = new Float64Array(P);
+    for (let w = 0; w < W; w++) {
+      if (!wt[w] || !nb[w]?.size) continue;
+      let x = 0, y = 0, z = 0;
+      nb[w].forEach((v) => { x += P[v * 3]; y += P[v * 3 + 1]; z += P[v * 3 + 2]; });
+      const k = nb[w].size, f = lam * wt[w];
+      out[w * 3] += (x / k - P[w * 3]) * f; out[w * 3 + 1] += (y / k - P[w * 3 + 1]) * f; out[w * 3 + 2] += (z / k - P[w * 3 + 2]) * f;
+    }
+    P.set(out);
+  };
+  for (let i = 0; i < iters; i++) { step(0.5); step(-0.53); }
+  // normals of the moved skin: area-weighted from its faces
+  const N = new Float64Array(W * 3);
+  for (let t = 0; t < tris.length; t += 3) {
+    const [a, b, c] = [tris[t], tris[t + 1], tris[t + 2]];
+    const ux = P[b * 3] - P[a * 3], uy = P[b * 3 + 1] - P[a * 3 + 1], uz = P[b * 3 + 2] - P[a * 3 + 2];
+    const vx = P[c * 3] - P[a * 3], vy = P[c * 3 + 1] - P[a * 3 + 1], vz = P[c * 3 + 2] - P[a * 3 + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    for (const v of [a, b, c]) { N[v * 3] += nx; N[v * 3 + 1] += ny; N[v * 3 + 2] += nz; }
+  }
+  for (let i = 0; i < n; i++) {
+    const w = id[i];
+    if (!wt[w]) continue;
+    pos.setXYZ(i, P[w * 3], P[w * 3 + 1], P[w * 3 + 2]);
+    if (nor && wt[w] > 0.5) { const l = Math.hypot(N[w * 3], N[w * 3 + 1], N[w * 3 + 2]) || 1; nor.setXYZ(i, N[w * 3] / l, N[w * 3 + 1] / l, N[w * 3 + 2] / l); }
+  }
+  pos.needsUpdate = true; if (nor) nor.needsUpdate = true;
+  geo.computeBoundingSphere();
 }
 
 export const OUTFITS: Record<ClothKind, OutfitDef> = {
@@ -107,7 +171,7 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
         g.push({ name: "shirt", offset: 0.007, lip: 0.004, shape, collar: { kind: "crew", h: 0.016, out: 0.010 }, fields: (pt, a, s) => ({ ...torso(pt, a, s), cut: Math.abs(pt.x) - LM.seamX }) });
         g.push({ name: "sleeves", offset: 0.007, lip: 0.004, shape, fields: (pt, a, s) => ({ ...torso(pt, a, s), cut: LM.seamX - Math.abs(pt.x) }) });
       } else g.push({ name: "shirt", offset: 0.007, lip: 0.004, shape, collar: { kind: "crew", h: 0.016, out: 0.010 }, fields: torso });
-      g.push({ name: "shorts", offset: 0.014, lip: 0.005,
+      g.push({ name: "shorts", offset: 0.014, lip: 0.005, innerLegs: { k: 0.8, belowY: LM.crotch },
         fields: (pt, arm, _a, leg) => ({ neck: arm > 0.5 ? 1 : pt.y - LM.waist, sleeve: NONE, hem: NONE, leg: leg > 0.35 ? LM.shortsEnd - pt.y : NONE }) });
       g.push({ name: "socks", offset: 0.004, lip: 0.003, relax: [2, 8],
         fields: (pt, arm, _a, leg) => (leg > 0.5 && arm < 0.5 ? { neck: pt.y - LM.sockTop, sleeve: NONE, hem: LM.sockEnd - pt.y, leg: NONE } : OFF) });
@@ -124,6 +188,24 @@ export const OUTFITS: Record<ClothKind, OutfitDef> = {
       s.push({ color: col(Color, socks), trim: col(Color, same(socks, trim) ? shirt : trim), fabric: "cotton", bands: [0.022, 0, 0, 0] });
       return s;
     },
+  },
+  // the gym (Harry, 27 Nov 2026: "they should wear trainers and short socks"): the kit's own shirt and shorts, ankle
+  // socks (6 cm over the shoe) and the tracksuit's trainers (the flat-soled shoe). Same pieces, same sizes.
+  gym: {
+    garments(meta, variant) {
+      const { LM } = landmarks(meta);
+      const g = OUTFITS.kit.garments(meta, variant === "gym-sleeves" ? "kit-sleeves" : "kit").filter((x) => x.name !== "socks");
+      g.push({ name: "socks", offset: 0.004, lip: 0.003, relax: [2, 8],
+        fields: (pt, arm, _a, leg) => (leg > 0.5 && arm < 0.5 ? { neck: pt.y - (LM.shoeTop + 0.06), sleeve: NONE, hem: LM.sockEnd - pt.y, leg: NONE } : OFF) });
+      g.push({ ...shoes(LM), shape: { shoe: "flat" } });
+      return g;
+    },
+    slots(u, variant, Color, meta) {
+      // a trainer: a thick light rubber sole (3.3 cm showing) whatever the upper (the football boot's is a thin dark edge)
+      return [...OUTFITS.kit.slots(u, variant === "gym-sleeves" ? "kit-sleeves" : "kit", Color, meta), { ...shoeSlot(u, Color, [0.85, 0.84, 0.8]), trim: new Color(0.8, 0.79, 0.76), bands: [0, 0, 0, 0.038] }];
+    },
+    // the bare calf: the long sock's modelled top smoothed away (from the ankle sock up to over the old sock top)
+    body(geo, meta) { const { LM } = landmarks(meta); smoothSkin(geo, LM.shoeTop + 0.04, LM.sockTop + 0.07, 0.3, 30); },
   },
   tracksuit: {
     garments(meta) {

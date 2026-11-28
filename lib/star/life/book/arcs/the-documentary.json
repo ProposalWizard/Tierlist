@@ -1,0 +1,983 @@
+{
+ "id": "arc-the-documentary",
+ "title": "The documentary",
+ "owner": "agent",
+ "summary": "Your agent has sold a fly-on-the-wall documentary about you. A crew in your kitchen, in the car, at your mum's. They want a stunt for the trailer, they want the row with the gaffer, and a season on it comes out.",
+ "size": "big",
+ "about": {
+  "who": [
+   "agent",
+   "gaffer",
+   "mum",
+   "fame"
+  ],
+  "tone": [
+   "funny",
+   "awkward",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.008,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "peak",
+  "when": [
+   "age>=24",
+   "age<=31",
+   "divisionLevel<=2 || fame>=45"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "agent",
+   "pick": "agent"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "best": 0,
+  "row": 0,
+  "mum": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-good-one",
+   "title": "The good one",
+   "text": "You did the documentary, and it's the one people say is good."
+  },
+  {
+   "id": "the-row",
+   "title": "The row",
+   "text": "You did the documentary. Everyone remembers the bit with the gaffer."
+  },
+  {
+   "id": "pulled-it",
+   "title": "Pulled it",
+   "text": "You stopped the documentary halfway, and your agent has never quite forgiven you."
+  },
+  {
+   "id": "said-no",
+   "title": "Said no",
+   "text": "Your agent sold a documentary about you and you sent the crew off your doorstep."
+  }
+ ],
+ "promises": {
+  "p-mums-kitchen": {
+   "id": "p-mums-kitchen",
+   "to": "mum",
+   "text": "Keep the cameras out of Mum's kitchen",
+   "due": {
+    "weeks": [
+     2,
+     8
+    ]
+   },
+   "keptBy": {
+    "beat": "doc-3",
+    "ends": [
+     "mumsay"
+    ]
+   },
+   "dueText": "Before the crew go to your mum's",
+   "kept": {
+    "text": "You said you'd keep them out of her kitchen.",
+    "npc": [
+     {
+      "slot": "mum",
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd keep the cameras out of her kitchen.",
+    "npc": [
+     {
+      "slot": "mum",
+      "bond": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "mum",
+      "tag": "let-the-cameras-in-my-kitchen",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "doc-1",
+   "title": "Eight episodes",
+   "n": 1,
+   "event": {
+    "id": "arc-doc-1",
+    "title": "Eight episodes",
+    "category": "fame",
+    "place": "home:door",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "fame>=20"
+     ]
+    },
+    "setup": [
+     "{agent.name} is at your door with a man in a gilet and a woman holding a camera on her shoulder. \"Eight episodes,\" he says. \"A streaming one. They follow you for a season.\""
+    ],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "agent",
+       "say": [
+        "\"Twenty weeks' wages, near enough, and they'll pay your mum for her kitchen. They want real. Rows, tears, you in the bath, whatever.\""
+       ],
+       "replies": [
+        {
+         "id": "no",
+         "label": "\"No. Get them off my step.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "yes",
+         "label": "\"Real. Fine.\"",
+         "tone": "reckless",
+         "goto": "d2"
+        },
+        {
+         "id": "limits",
+         "label": "\"Not my mum's house.\"",
+         "tone": "honest",
+         "goto": "d2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "d2"
+        }
+       ]
+      },
+      "d2": {
+       "who": "mum",
+       "say": [
+        "You ring your mum. \"I'm not having a camera in my kitchen. Promise me. I've not done the grouting.\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"No cameras in your kitchen. Promise.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-mums-kitchen"
+        },
+        {
+         "id": "money",
+         "label": "\"They'll pay you, Mum.\"",
+         "tone": "confident",
+         "end": "yes"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "The woman with the camera films you signing. The man in the gilet asks if you could sign it again, slower.",
+        "effects": {
+         "moneyWeeks": 6,
+         "fame": 4
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "sold-the-documentary",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "doing"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He sends them away. He doesn't speak to you for nine days and then rings about something else as if nothing happened.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -8
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         },
+         "end": "said-no"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Your agent has sold something"
+  },
+  {
+   "id": "doc-2",
+   "title": "The trailer",
+   "after": {
+    "beat": "doc-1",
+    "weeks": [
+     2,
+     3
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-doc-2",
+    "title": "The trailer",
+    "category": "fame",
+    "place": "compound:pitch-2",
+    "size": "big",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Week three of filming. The director wants something for the trailer. Ten balls on pitch two, filmed from a drone. {agent.short} is feeding them in his good suit."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "agent",
+       "say": [
+        "\"They want the bar, the tyre and a bucket. Something that looks good slowed down. Don't mess it up, the drone's on hire by the hour.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Fly the drone, then.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "suit",
+         "label": "\"You're feeding in that suit?\"",
+         "tone": "calm",
+         "goto": "t2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "play"
+        }
+       ]
+      },
+      "t2": {
+       "who": "agent",
+       "say": [
+        "\"It's my good one. Get on with it.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Get on with it.",
+         "tone": "confident",
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "For the drone",
+        "intro": "Ten balls on pitch two, filmed from above. Your agent feeds, in his good suit.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "crossbar",
+           "balls": 1,
+           "line": "\"Bar first. They want the sound of it.\""
+          },
+          {
+           "kind": "props",
+           "balls": 2,
+           "line": "\"Tyre, then the bucket. That's the trailer.\""
+          },
+          {
+           "kind": "call-it",
+           "balls": 2
+          },
+          {
+           "kind": "corners",
+           "balls": 2
+          },
+          {
+           "kind": "lights-out",
+           "balls": 2,
+           "line": "\"They want one in the dark. Moody.\""
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. Twenty or ten off. Make it look easy.\""
+          }
+         ],
+         "lines": {
+          "hit": "\"That's going in.\"",
+          "wide": "\"Cut. Again. No, we can't, it counts.\"",
+          "streak3": "\"The director's clapping.\"",
+          "over": "\"That's my suit, that.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "agent",
+         "lines": [
+          "\"Ten.\"",
+          "\"Twenty.\"",
+          "\"Thirty.\"",
+          "\"Forty.\"",
+          "\"Fifty.\"",
+          "\"Sixty.\"",
+          "\"Seventy.\"",
+          "\"Eighty.\"",
+          "\"Ninety.\"",
+          "\"And a hundred. Wrap.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "c-stop"
+        ],
+        [
+         "activity.score>=6",
+         "c-good"
+        ],
+        [
+         "",
+         "c-poor"
+        ]
+       ]
+      },
+      "c-good": {
+       "who": "agent",
+       "say": [
+        "\"{activity.tens}.\" The director wants to use the tyre one as the poster."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Put the bucket on the poster.\"",
+         "tone": "confident",
+         "end": "good"
+        }
+       ]
+      },
+      "c-poor": {
+       "who": "agent",
+       "say": [
+        "\"{activity.tens}. They'll cut round it.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Cut round it, then.\"",
+         "tone": "humble",
+         "end": "poor"
+        }
+       ]
+      },
+      "c-stop": {
+       "who": "agent",
+       "say": [
+        "\"The drone's dead anyway.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Good.\"",
+         "tone": "humble",
+         "end": "poor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "The trailer is forty seconds of you hitting a bucket in slow motion. It gets a million views in a day.",
+        "effects": {
+         "fame": 4
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": "activity.tens"
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "The trailer uses the one hit and a lot of music. Your agent's suit has mud up the back.",
+        "effects": {
+         "fame": 2
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": "activity.tens"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "The crew want a stunt for the trailer"
+  },
+  {
+   "id": "doc-3",
+   "title": "Mum's kitchen",
+   "after": {
+    "beat": "doc-1",
+    "weeks": [
+     5,
+     6
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-doc-3",
+    "title": "Mum's kitchen",
+    "category": "fame",
+    "place": "home:mums-kitchen",
+    "size": "big",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Week nine. The director wants a scene at your mum's. \"Her making your tea. Real. Ten minutes.\" The van is already outside her house."
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "mum",
+       "say": [
+        "Your mum is at the front door in her apron with her arms folded. She looks at you, then the van, then you."
+       ],
+       "replies": [
+        {
+         "id": "mumsay",
+         "label": "\"Not the kitchen. Film us on the step.\"",
+         "tone": "kind",
+         "end": "mumsay"
+        },
+        {
+         "id": "in",
+         "label": "\"Ten minutes, Mum. That's all.\"",
+         "tone": "reckless",
+         "end": "in"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "in"
+        },
+        {
+         "id": "off",
+         "label": "\"Turn it off. All of it.\"",
+         "tone": "brave",
+         "goto": "m2"
+        }
+       ]
+      },
+      "m2": {
+       "who": "agent",
+       "say": [
+        "{agent.short} goes pale. \"You can't stop it at episode four. There's a contract.\""
+       ],
+       "replies": [
+        {
+         "id": "step",
+         "label": "\"Fine. The step, not the kitchen.\"",
+         "tone": "calm",
+         "end": "mumsay"
+        },
+        {
+         "id": "stop",
+         "label": "\"Watch me.\"",
+         "tone": "fiery",
+         "end": "stopped"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "mumsay": [
+       {
+        "text": "They film you and your mum on her front step eating toast. Your mum asks for a copy of that bit for her sister.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "respect": 4,
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "kept-the-cameras-out",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mum": 1
+         }
+        }
+       }
+      ],
+      "in": [
+       {
+        "text": "They film in the kitchen. Your mum is lovely and stiff and very aware of the grouting, and afterwards she doesn't ring you for a week.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -6
+         }
+        ],
+        "arc": {
+         "set": {
+          "mum": 0
+         }
+        },
+        "promiseBroken": [
+         "p-mums-kitchen"
+        ]
+       }
+      ],
+      "stopped": [
+       {
+        "text": "You pull out. It costs you most of the fee back and a lot of shouting. The van goes.",
+        "effects": {
+         "moneyWeeks": -6,
+         "fame": -2
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -12,
+          "grudge": 10
+         },
+         {
+          "slot": "mum",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "pulled"
+         }
+        },
+        "promiseBroken": [
+         "p-mums-kitchen"
+        ]
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "The crew want your mum's kitchen"
+  },
+  {
+   "id": "doc-4",
+   "title": "The row",
+   "after": {
+    "beat": "doc-1",
+    "weeks": [
+     8,
+     10
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-doc-4",
+    "title": "The row",
+    "category": "fame",
+    "place": "compound:office",
+    "size": "big",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Week fourteen. You've been dropped. The camera woman is in the corridor outside the gaffer's office and the red light is on.",
+     "{if arc.path=='pulled'}There's no camera now. You've still been dropped.{/if}"
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "manager",
+       "say": [
+        "The gaffer looks past you at the red light. \"Shut the door. Then say what you came to say.\""
+       ],
+       "replies": [
+        {
+         "id": "shut",
+         "label": "Shut the door on the camera.",
+         "tone": "calm",
+         "end": "shut"
+        },
+        {
+         "id": "open",
+         "label": "Leave it open and have it out.",
+         "tone": "fiery",
+         "end": "row"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "shut": [
+       {
+        "text": "You shut the door. You have it out with him in private and he puts you on the bench on Saturday. The episode has four minutes of a closed door.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "row": 0
+         }
+        }
+       }
+      ],
+      "row": [
+       {
+        "text": "You have it out with the door open. He calls you a word they have to bleep. By Monday the clip has four million views.",
+        "effects": {
+         "boss": -6,
+         "fame": 5
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -4,
+          "grudge": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "rowed-with-me-on-camera",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "row": 1
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "The crew want the row with the gaffer"
+  },
+  {
+   "id": "doc-5",
+   "title": "It comes out",
+   "after": {
+    "beat": "doc-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 5,
+   "event": {
+    "id": "arc-doc-5",
+    "title": "It comes out",
+    "category": "fame",
+    "place": "home:sofa",
+    "size": "big",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. The documentary comes out on a Friday. The dressing room watches all eight episodes on the coach to an away game.",
+     "{if arc.path=='pulled'}It came out without you in the end, four episodes about a lad at another club and one about you pulling out.{/if}",
+     "{if arc.row==1}Episode seven is the door.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "watch",
+      "label": "Watch it with the lads.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.row==1 && !arc.path=='pulled'",
+        "text": "They cheer the bucket and boo the gaffer. The gaffer watches episode seven at the front of the coach and doesn't turn round.",
+        "effects": {
+         "team": 2,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "end": "the-row"
+        }
+       },
+       {
+        "if": "!arc.path=='pulled'",
+        "text": "They cheer the bucket and the toast on your mum's step. Somebody's mum texts yours.",
+        "effects": {
+         "team": 3,
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 4
+         },
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-good-one"
+        }
+       },
+       {
+        "text": "They watch the episode about you pulling out and go quiet when you walk past.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "pulled-it"
+        }
+       }
+      ]
+     },
+     {
+      "id": "dont",
+      "label": "Don't watch it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.row==1 && !arc.path=='pulled'",
+        "text": "You go to bed. In the morning your phone has two hundred messages about episode seven.",
+        "npc": [
+         {
+          "slot": "manager",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "the-row"
+        }
+       },
+       {
+        "if": "!arc.path=='pulled'",
+        "text": "You never watch it. Your mum watches it four times.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-good-one"
+        }
+       },
+       {
+        "text": "You don't watch it. {agent.short} sends you the viewing figures for the other lad's anyway.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "pulled-it"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, the documentary comes out"
+  }
+ ]
+}

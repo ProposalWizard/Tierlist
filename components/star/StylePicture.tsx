@@ -60,7 +60,8 @@ export default function StylePicture({ base, level, className = "" }: { base: st
   const uid = useId().replace(/:/g, "");
   const lv = Math.max(1, Math.min(5, Math.round(level || 1))) as Lv;
   // The phone is one item at one level (W5): one picture whatever level is asked for.
-  const src = base in DRAW ? `/shop/${base}-L${base === "phone" ? 1 : lv}.webp` : "";
+  // (the cap and sunglasses, added 28 Nov 2026, have no render yet: their drawing straight away)
+  const src = base in DRAW && !DRAWN_ONLY.has(base) ? `/shop/${base}-L${base === "phone" ? 1 : lv}.webp` : "";
   const failed = useRenderFailed(src);
   if (src && !failed) {
     return (
@@ -600,6 +601,39 @@ function SmartWatch(lv: Lv) {
   );
 }
 
+function CapPic(lv: Lv) {
+  const crown = ["#6b7280", "#2e3a55", "#f1efe9", "#16161a", "#16161a"][lv - 1];
+  const peak = ["#4b5160", "#2e3a55", "#16161a", "#16161a", "#16161a"][lv - 1];
+  const badge = ["#4b5160", "#f1efe9", "#d6b35a", "#c9ced5", "url(#GOLD)"][lv - 1];
+  return (
+    <>
+      <Shadow w={62} y={56} />
+      <path d="M24 44 Q22 14 50 12 Q76 12 76 42 Z" fill={crown} stroke="#0b0e14" strokeWidth="1.2" />
+      <path d="M50 12 L50 43" stroke="rgba(0,0,0,.25)" strokeWidth="1" />
+      {lv >= 3 && <path d="M36 15 Q32 28 33 43 M64 15 Q68 28 67 43" stroke="rgba(0,0,0,.18)" strokeWidth="1" fill="none" />}
+      <path d="M20 44 Q50 38 78 42 Q96 44 94 52 Q60 56 22 50 Z" fill={peak} stroke="#0b0e14" strokeWidth="1.2" />
+      <circle cx="50" cy="12.5" r="2.4" fill={crown} stroke="#0b0e14" strokeWidth=".8" />
+      <circle cx="50" cy="29" r={lv >= 4 ? 6 : 5} fill={badge} stroke="rgba(0,0,0,.3)" strokeWidth=".8" />
+    </>
+  );
+}
+
+function ShadesPic(lv: Lv) {
+  const frame = ["#16161a", "#16161a", "#d6b35a", "#c9ced5", "url(#GOLD)"][lv - 1];
+  const lens = ["#1c2430", "#2a1f17", "#3b2a14", "#1f3a5a", "#2a2a2e"][lv - 1];
+  const r = lv === 2 ? 12 : lv === 3 ? 6 : 4;
+  return (
+    <>
+      <Shadow w={66} y={52} />
+      <path d="M8 22 L4 18 M92 22 L96 18" stroke={frame} strokeWidth="2.4" strokeLinecap="round" />
+      <rect x="10" y="20" width="34" height="22" rx={r} fill={lens} stroke={frame} strokeWidth="3" />
+      <rect x="56" y="20" width="34" height="22" rx={r} fill={lens} stroke={frame} strokeWidth="3" />
+      <path d="M44 25 Q50 20 56 25" stroke={frame} strokeWidth="2.6" fill="none" />
+      <path d="M15 25 L24 25 M61 25 L70 25" stroke="rgba(255,255,255,.45)" strokeWidth="2" strokeLinecap="round" />
+    </>
+  );
+}
+
 function Tv(lv: Lv) {
   if (lv === 1) return (<><Shadow w={44} /><rect x="28" y="14" width="44" height="36" rx="5" fill="#8b6b4a" stroke="#4b3621" /><rect x="32" y="18" width="30" height="26" rx="5" fill="#334155" /><circle cx="67" cy="22" r="2" fill="#d1d5db" /><circle cx="67" cy="29" r="2" fill="#d1d5db" /><path d="M42 14 L36 4 M50 14 L58 4" stroke="#6b7280" strokeWidth="1.2" /><path d="M36 50 L34 56 M64 50 L66 56" stroke="#4b3621" strokeWidth="2" /></>);
   const w = [0, 40, 56, 76, 64][lv - 1], h = w * 0.56;
@@ -752,6 +786,9 @@ function Art(lv: Lv) {
 //  WHICH DRAWING FOR WHICH ITEM
 // ═══════════════════════════════════════════════════════════════════════
 
+/** Items with no shop render yet: their drawing is the picture (no request for a missing file). */
+export const DRAWN_ONLY = new Set(["cap", "shades"]);
+
 const DRAW: Record<string, (lv: Lv) => JSX.Element> = {
   phone: (lv) => Phone(lv),
   console: (lv) => Console(lv),
@@ -759,6 +796,8 @@ const DRAW: Record<string, (lv: Lv) => JSX.Element> = {
   music: (lv) => Music(lv),
   tablet: (lv) => Tablet(lv),
   smartwatch: (lv) => SmartWatch(lv),
+  cap: (lv) => CapPic(lv),
+  shades: (lv) => ShadesPic(lv),
   tv: (lv) => Tv(lv),
   "gaming-pc": (lv) => GamingPc(lv),
   suit: (lv) => Suit(lv),

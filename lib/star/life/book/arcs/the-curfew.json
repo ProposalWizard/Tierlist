@@ -1,0 +1,395 @@
+{
+ "id": "arc-the-curfew",
+ "title": "Room 214",
+ "owner": "roomie",
+ "summary": "The night before an away game your room-mate climbs out of the window at eleven to meet someone. He asks you to cover if the gaffer knocks. The gaffer knocks. A season on, the same hotel.",
+ "size": "small",
+ "about": {
+  "who": [
+   "roomie",
+   "manager"
+  ],
+  "tone": [
+   "tense",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "roomie",
+   "pick": "squad"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "covered",
+   "title": "Covered",
+   "text": "You covered for your room-mate the night he went out of the hotel window. The gaffer knew. Your room-mate owes you, and reminds you of it."
+  },
+  {
+   "id": "the-knock",
+   "title": "The knock",
+   "text": "You didn't cover for your room-mate when the gaffer knocked. He was fined. He asked for a different room-mate."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "crf-1-window",
+   "title": "The window",
+   "n": 1,
+   "event": {
+    "id": "arc-crf-1-window",
+    "title": "The window",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "roomie",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Room 214, eleven o'clock, the night before an away game. {roomie.name} has his good shirt on and one leg out of the window. It's the first floor."
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "roomie",
+       "say": [
+        "\"One hour. Someone I knew at school lives round the corner. If he knocks, I'm in the shower. Please.\""
+       ],
+       "replies": [
+        {
+         "id": "cover",
+         "label": "\"One hour. Go.\"",
+         "tone": "kind",
+         "end": "cover"
+        },
+        {
+         "id": "no",
+         "label": "\"Get back in. You'll get us both fined.\"",
+         "tone": "honest",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "cover"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "cover": [
+       {
+        "text": "At twenty past eleven the gaffer knocks. You say he's in the shower. You turn the shower on. The gaffer stands there listening to it for a long time, then goes.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 8,
+          "respect": 2
+         },
+         {
+          "slot": "manager",
+          "respect": -2,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "covered-for-me-in-214",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "covered"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He goes anyway. At twenty past eleven the gaffer knocks. You open the door and say nothing, and the open window says the rest.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": -6,
+          "grudge": 6
+         },
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "didnt-cover-for-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "knock"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "roomie",
+      "pick": "squad"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your room-mate has plans tonight"
+  },
+  {
+   "id": "crf-1d-deep",
+   "title": "The someone",
+   "after": {
+    "beat": "crf-1-window",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-crf-1d-deep",
+    "title": "The someone",
+    "category": "teammates",
+    "place": "club:lounge",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "roomie",
+    "trigger": {
+     "when": [
+      "after-match",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{roomie.name} brings someone to the players' lounge after a home game: the someone from the window. She's lovely and she knows exactly who covered for him."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "roomie",
+       "say": [
+        "\"So you're the one,\" she says."
+       ],
+       "replies": [
+        {
+         "id": "charm",
+         "label": "\"I'm the one. He owes me.\"",
+         "tone": "confident",
+         "end": "charm"
+        },
+        {
+         "id": "warn",
+         "label": "\"Don't let him climb out of windows.\"",
+         "tone": "honest",
+         "end": "warn"
+        },
+        {
+         "id": "polite",
+         "label": "Say hello and go.",
+         "tone": "calm",
+         "end": "polite"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "charm": [
+       {
+        "text": "She laughs. He goes red. They buy you dinner on Sunday.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "met-her-at-the-lounge",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "charm"
+         }
+        }
+       }
+      ],
+      "warn": [
+       {
+        "text": "She says she's already told him. She looks at him the way your mum looks at your dad.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "warn"
+         }
+        }
+       }
+      ],
+      "polite": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "polite"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "roomie",
+      "pick": "squad"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your room-mate wants you to meet someone"
+  },
+  {
+   "id": "crf-2-hotel",
+   "title": "The same hotel",
+   "after": {
+    "beat": "crf-1-window",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-crf-2-hotel",
+    "title": "The same hotel",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "roomie",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on, the same hotel. The rooming list is on the board in reception. {manager.short} is standing next to it with his arms folded.",
+     "{if arc.deep=='charm'}His girlfriend still calls you \"the one\".{/if}"
+    ],
+    "choices": [
+     {
+      "id": "list",
+      "label": "Look at the list.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='covered'",
+        "text": "You and {roomie.short}, room 214 again. Next to it the gaffer has written, in pen: \"Window's been screwed shut.\"",
+        "effects": {
+         "team": 2
+        },
+        "arc": {
+         "end": "covered"
+        }
+       },
+       {
+        "text": "{roomie.short} is rooming with the goalkeeper. He doesn't look at you in reception.",
+        "arc": {
+         "end": "the-knock"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ask",
+      "label": "\"Same room, gaffer?\"",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "if": "arc.path=='covered'",
+        "text": "\"Same room. I had the shower checked. It's a very loud shower.\" He knows. He's always known.",
+        "arc": {
+         "end": "covered"
+        }
+       },
+       {
+        "text": "\"Your room-mate asked for a change. Can't think why.\"",
+        "arc": {
+         "end": "the-knock"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "roomie",
+      "pick": "squad"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, the same hotel"
+  }
+ ]
+}

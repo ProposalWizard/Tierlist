@@ -40,7 +40,7 @@ export const KEEP_SUFFIX = ".keep";
 export const READ_SUFFIX = ".read";
 
 export const RECORDING_CAPS = {
-  maxFileBytes: CAPS.maxFileBytes,
+  maxFileBytes: 500 * 1024 * 1024, // recordings keep 500 MB; the Uploads page went to 4.9 GB (28 Nov)
   /** Per person, per UK day. */
   dailyFiles: 40,
   dailyBytes: 5 * 1024 * 1024 * 1024,

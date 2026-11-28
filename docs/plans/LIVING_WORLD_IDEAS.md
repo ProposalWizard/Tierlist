@@ -142,3 +142,15 @@ API cost note: the 50-event trial cost about $1.50 (Harry read it from the Usage
 ## Harry, 21 Nov 2026, ~03:10: clothes approved for houses
 
 - "yes the clothes films are better, put them in houses" (the press conference and walk-out re-filmed with cloth clothes). Next: the same cloth clothes on house and garden people (team-mates visiting, you at home), by role. The match stays on the old clothes until measured on a phone.
+
+## Harry, 27 Nov 2026: after phone-testing the 20-21 Nov pushes
+
+- 3D phone: "really good, but each app has to work natively inside the phone, not just taking you to a screen." Opening speed: "an in-between. The slower blink was good."
+- Bugs: "The 3D toggle in-game doesn't take you to the 3D engine anymore, and then it takes you to a random house, I'm guessing your house. So that is really broken, and sometimes the 3D just toggles off, it breaks, and then I can't get back into it."
+- Android lag: "no lag for me on my iPhone 16 … no lag on my MacBook … but for my cousin or obviously for Mikey he gets loads of lag when he's in the garden, he gets loads of lag in 3D areas and he's on an Android, he's on an S20 … we've only been testing in Apple environments or the scaling of the 3D areas and lag just doesn't work."
+- Cut scenes: "getting better … definitely not ready to be shipped … they will probably be the last thing that we do because we need to figure out the story, … all of this sim stuff, how do side missions work, how do cutscenes work, like secrets."
+- Wants: "tons of stories"; training compounds, shops, driving to training and back, "a gym based on the GTA 6 gym"; the rest of the 3D upgrades; loading the match later to shrink the first load.
+- Loading screens: "adding loading screens is huge. I don't want to just see a blank screen … Let's have loading screens that are either really interactive or just really good to look at … rather than just showing a bar moving. That's dead."
+- Clothes: "definitely are better, but they still need work."
+- API/Actions: has Pro; "$12 on Harry Dev Actions"; may add Apify for TikTok research.
+- Process: "plan bit by bit what you're going to do and then start working through them and give me progress updates every 5-10 minutes with images of what you're doing."

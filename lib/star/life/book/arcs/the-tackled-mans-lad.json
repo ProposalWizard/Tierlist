@@ -1,0 +1,264 @@
+{
+ "id": "arc-the-tackled-mans-lad",
+ "title": "His lad",
+ "owner": "rival",
+ "summary": "The centre half you put on a stretcher years ago rings you. His lad is sixteen, a centre half like his dad, and he's on trial at your club next week. He doesn't want a favour. He wants you to watch.",
+ "size": "small",
+ "about": {
+  "who": [
+   "the rival",
+   "the coach"
+  ],
+  "tone": [
+   "warm",
+   "years on"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "ended(arc-the-tackle:the-visit|his-leeks)",
+   "age>=26"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "rival",
+   "pick": "rival"
+  },
+  {
+   "slot": "coach",
+   "pick": "coach"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-lad-signed",
+   "title": "The lad signed",
+   "text": "The son of the man you once hurt signed for your club. His dad still sends you leeks."
+  },
+  {
+   "id": "the-lad-went-home",
+   "title": "The lad went home",
+   "text": "His lad wasn't kept on. His dad thanked you for watching anyway."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "tml-1-ring",
+   "title": "His lad",
+   "n": 1,
+   "event": {
+    "id": "arc-tml-1-ring",
+    "title": "His lad",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{rival.name} rings. You haven't heard his voice since his last game. \"My lad's on trial at yours on Tuesday. Centre half. Better than me. Don't do him any favours. Just watch.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "rival",
+       "say": [
+        "\"And if he goes through anyone, tell him that's not how we do it.\""
+       ],
+       "replies": [
+        {
+         "id": "watch",
+         "label": "\"I'll be there Tuesday.\"",
+         "tone": "kind",
+         "end": "watch"
+        },
+        {
+         "id": "coach",
+         "label": "\"I'll put a word in with the coach.\"",
+         "tone": "confident",
+         "end": "word"
+        },
+        {
+         "id": "no",
+         "label": "\"Best I stay out of it.\"",
+         "tone": "honest",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "watch": [
+       {
+        "text": "Tuesday, the far pitch. The lad is his dad at sixteen, all elbows. He wins every header and then says sorry to the striker.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "watch"
+         }
+        }
+       }
+      ],
+      "word": [
+       {
+        "text": "{coach.short} says he'll judge the lad himself, thanks. He still watches him for the whole session.",
+        "npc": [
+         {
+          "slot": "coach",
+          "grudge": 2
+         },
+         {
+          "slot": "rival",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "word"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He says that's fair. You hear later the lad did well.",
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The man you once tackled has rung about his son"
+  },
+  {
+   "id": "tml-2-later",
+   "title": "A season on",
+   "after": {
+    "beat": "tml-1-ring",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-tml-2-later",
+    "title": "A season on",
+    "category": "life",
+    "place": "club:board",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The coach puts the new under-eighteens list on the board."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Look for the name.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "!arc.path=='word'",
+        "text": "He's on it. His dad sends you a photo of the letter and a bag of leeks.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-lad-signed"
+        }
+       },
+       {
+        "text": "He isn't on it. His dad rings to say thanks for watching, and means it.",
+        "arc": {
+         "end": "the-lad-went-home"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ask",
+      "label": "Ask the coach.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='watch'",
+        "text": "\"Signed him Friday. Don't tell him I said he's good.\"",
+        "arc": {
+         "end": "the-lad-signed"
+        }
+       },
+       {
+        "text": "\"Not this year. He'll be all right.\"",
+        "arc": {
+         "end": "the-lad-went-home"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "A season on, his lad"
+  }
+ ]
+}

@@ -1,0 +1,384 @@
+{
+ "id": "arc-the-wall",
+ "title": "The wall",
+ "owner": "mum",
+ "summary": "Your old primary school wants to paint you on the playground wall. Your mum has already said yes. The painter has never seen you play. A season on, the kids have added something.",
+ "size": "small",
+ "about": {
+  "who": [
+   "mum"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0187,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "last-seasons",
+  "when": [
+   "age>=32"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-mural",
+   "title": "The mural",
+   "text": "There's a painting of you on your old primary school's playground wall. It looks a bit like you. The kids have given you a moustache."
+  },
+  {
+   "id": "no-wall",
+   "title": "No wall",
+   "text": "You said no to the playground wall. They painted a rainbow instead. It's a very good rainbow."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "wal-1-ask",
+   "title": "The wall",
+   "n": 1,
+   "event": {
+    "id": "arc-wal-1-ask",
+    "title": "The wall",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{mum.short}: \"Your old school wants to paint you on the playground wall. I've already said yes. The man doing it does dragons, mostly.\""
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "mum",
+       "say": [
+        "\"He wants a photo. Not a posh one. One of you as a lad, in the old kit. I've got just the one.\" You know which one. It has a bowl cut."
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Go on, then. Send him the bowl cut.\"",
+         "tone": "brave",
+         "end": "yes"
+        },
+        {
+         "id": "new",
+         "label": "\"Send him a new one. Please.\"",
+         "tone": "calm",
+         "end": "new"
+        },
+        {
+         "id": "no",
+         "label": "\"Mum. No. Ask them to paint something else.\"",
+         "tone": "honest",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "The man who does dragons paints the bowl cut eight feet high. The whole school comes out to watch the last brushstroke.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "sent-the-bowl-cut-photo",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "new": [
+       {
+        "text": "She sends the bowl cut anyway. \"He liked it better.\"",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fine. A rainbow.\" She sounds like she's been told she can't have a dog.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -3,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Your old school has an idea"
+  },
+  {
+   "id": "wal-1d-deep",
+   "title": "The painter",
+   "after": {
+    "beat": "wal-1-ask",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-wal-1d-deep",
+    "title": "The painter",
+    "category": "family",
+    "place": "town:school",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The man painting the playground wall rings your mum, and your mum rings you. He's got your shoulders and he's stuck on your face. He wants you to come and stand still for an hour."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mum",
+       "say": [
+        "\"I've told him you'll come Wednesday,\" says your mum."
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Go and stand still for an hour.",
+         "tone": "kind",
+         "end": "go"
+        },
+        {
+         "id": "photo",
+         "label": "Send him a photo.",
+         "tone": "calm",
+         "end": "photo"
+        },
+        {
+         "id": "no",
+         "label": "\"Mum, no.\"",
+         "tone": "honest",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "The kids come out at break and watch you stand still. He gets your nose right at the third go.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "stood-for-the-painter",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "go"
+         }
+        }
+       }
+      ],
+      "photo": [
+       {
+        "text": "He paints from the photo. The nose is a bit wrong.",
+        "arc": {
+         "set": {
+          "deep": "photo"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "Your mum goes very quiet.",
+        "npc": [
+         {
+          "slot": "mum",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "The painter wants a photo of you"
+  },
+  {
+   "id": "wal-2-kids",
+   "title": "The playground",
+   "after": {
+    "beat": "wal-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-wal-2-kids",
+    "title": "The playground",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on, your mum sends a photo from the school gates.",
+     "{if arc.path=='yes'}The bowl cut, eight feet high. Someone has drawn a moustache on it in chalk.{/if}{if arc.path=='no'}The rainbow. Underneath it, in chalk, someone has written your name anyway.{/if}",
+     "{if arc.deep=='go'}The nose on the wall is right because you stood still.{/if}",
+     "{if arc.deep=='photo'}The nose on the wall is a bit wrong.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "visit",
+      "label": "Go and see it.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "Break time. A hundred kids. One of them points at you, then at the wall, then at you. \"Where's your moustache?\"",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "the-mural"
+        }
+       },
+       {
+        "text": "The rainbow's very good. The kids show you your name in chalk, proudly. You sign the wall under it.",
+        "arc": {
+         "end": "no-wall"
+        }
+       }
+      ]
+     },
+     {
+      "id": "laugh",
+      "label": "Send back a laughing face.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "\"I'm not having it cleaned,\" says your mum. \"It suits you.\"",
+        "arc": {
+         "end": "the-mural"
+        }
+       },
+       {
+        "text": "\"It's a lovely rainbow,\" says your mum, for the hundredth time.",
+        "arc": {
+         "end": "no-wall"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, the playground"
+  }
+ ]
+}

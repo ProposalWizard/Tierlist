@@ -1,0 +1,332 @@
+{
+ "id": "arc-his-boots",
+ "title": "His boots",
+ "owner": "vet",
+ "summary": "At seventeen you clean an old pro's boots, the old way. One morning he throws them back at you. A season on he's leaving, and there's an envelope on his peg.",
+ "size": "small",
+ "about": {
+  "who": [
+   "veteran team-mate",
+   "academy years"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0107,
+  "tier": "common",
+  "stage": "first-seasons",
+  "when": [
+   "age<=20",
+   "season<=3"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "vet",
+   "pick": "squad",
+   "where": [
+    "veteran"
+   ],
+   "order": "best"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-envelope",
+   "title": "The envelope",
+   "text": "You cleaned his boots for a year, and when he left he paid for your driving lessons."
+  },
+  {
+   "id": "cleaned-my-own",
+   "title": "Clean your own",
+   "text": "You told an old pro to clean his own boots. He did, and he never spoke to you again."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "hbt-1",
+   "title": "Not clean enough",
+   "n": 1,
+   "event": {
+    "id": "arc-hbt-1",
+    "title": "Not clean enough",
+    "category": "squad",
+    "place": "compound:boot-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "age<=19",
+      "squad.any(veteran)"
+     ]
+    },
+    "setup": [
+     "You clean {vet.short}'s boots every morning before the first team comes in. It's how it's always been done. Today he comes into the boot room holding them by the laces."
+    ],
+    "talk": {
+     "start": "v1",
+     "nodes": {
+      "v1": {
+       "who": "vet",
+       "say": [
+        "He drops them at your feet. \"There's mud in the studs. I've told you. Do them again before I'm out of the shower.\""
+       ],
+       "replies": [
+        {
+         "id": "again",
+         "label": "Do them again.",
+         "tone": "humble",
+         "end": "again"
+        },
+        {
+         "id": "where",
+         "label": "\"Show me where.\"",
+         "tone": "honest",
+         "goto": "v2"
+        },
+        {
+         "id": "own",
+         "label": "\"Do your own.\"",
+         "tone": "fiery",
+         "end": "own"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "again"
+        }
+       ]
+      },
+      "v2": {
+       "who": "vet",
+       "say": [
+        "He crouches and digs a matchstick of mud out of the front stud with his thumbnail. \"There. That's a slip in the box in March. That's a goal.\""
+       ],
+       "replies": [
+        {
+         "id": "again",
+         "label": "\"Right. Again.\"",
+         "tone": "humble",
+         "end": "again"
+        },
+        {
+         "id": "own",
+         "label": "\"It's one bit of mud.\"",
+         "tone": "fiery",
+         "end": "own"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "again": [
+       {
+        "text": "You do them with a toothpick. He checks every stud and puts them on without a word. On Saturday he scores with his left.",
+        "npc": [
+         {
+          "slot": "vet",
+          "respect": 6,
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "did-his-boots-again",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "again"
+         }
+        }
+       }
+      ],
+      "own": [
+       {
+        "text": "The boot room goes quiet. He picks the boots up and cleans them himself on the bench next to you. It takes him two minutes.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "respect": -4,
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "told-me-to-clean-my-own",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "own"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The old pro's boots"
+  },
+  {
+   "id": "hbt-2",
+   "title": "His last day",
+   "after": {
+    "beat": "hbt-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-hbt-2",
+    "title": "His last day",
+    "category": "squad",
+    "place": "compound:dressing-room",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. {vet.short} has been released. His peg is empty except for an envelope with your name on it.",
+     "{if arc.path=='own'}You haven't cleaned his boots since that morning.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "open",
+      "label": "Open it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='again'",
+        "text": "It's a voucher for ten driving lessons and a note: \"Studs.\" One of the old lads tells you he's done it for every boot boy for nine years.",
+        "npc": [
+         {
+          "slot": "vet",
+          "respect": 4,
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "left-me-the-driving-lessons",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-envelope"
+        }
+       },
+       {
+        "text": "It's the boot room key. A note on the back says: \"Your turn to teach one.\" Nothing else.",
+        "npc": [
+         {
+          "slot": "vet",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "cleaned-my-own"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ring",
+      "label": "Ring him first.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='again'",
+        "text": "He answers on the first ring. \"Open it, then.\" It's ten driving lessons, already paid for.",
+        "npc": [
+         {
+          "slot": "vet",
+          "respect": 4,
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "left-me-the-driving-lessons",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-envelope"
+        }
+       },
+       {
+        "text": "It rings out. The envelope has the boot room key in it and nothing else.",
+        "npc": [
+         {
+          "slot": "vet",
+          "grudge": -2
+         }
+        ],
+        "arc": {
+         "end": "cleaned-my-own"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "A season on, the old pro is leaving"
+  }
+ ]
+}

@@ -1,0 +1,491 @@
+{
+ "id": "arc-the-armband",
+ "title": "The armband",
+ "owner": "manager",
+ "summary": "The captain is suspended for the cup game and the gaffer gives you the armband. The captain asks you to do one thing for him while you've got it. A season on, it's yours.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "gaffer",
+   "team-mate: the captain",
+   "captaincy"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "peak",
+  "when": [
+   "age>=24",
+   "age<=31",
+   "divisionLevel<=2 || fame>=45",
+   "!captain"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "capt",
+   "pick": "squad",
+   "where": [
+    "veteran"
+   ],
+   "order": "best"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "kept": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-armband",
+   "title": "Captain",
+   "text": "You had the armband for one game and did it his way. A season on, it was yours."
+  },
+  {
+   "id": "one-game",
+   "title": "One game",
+   "text": "You were captain for one cup game. The armband went back to him after."
+  }
+ ],
+ "promises": {
+  "p-the-toss": {
+   "id": "p-the-toss",
+   "to": "capt",
+   "text": "Call tails at the toss, for {capt.short}",
+   "due": {
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "keptBy": {
+    "beat": "arm-2",
+    "ends": [
+     "tails"
+    ]
+   },
+   "dueText": "At the cup game",
+   "kept": {
+    "text": "You called tails for him.",
+    "npc": [
+     {
+      "slot": "capt",
+      "respect": 2,
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd call tails.",
+    "npc": [
+     {
+      "slot": "capt",
+      "bond": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "capt",
+      "tag": "didnt-call-tails",
+      "strength": 1
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "arm-1",
+   "title": "The armband",
+   "n": 1,
+   "event": {
+    "id": "arc-arm-1",
+    "title": "The armband",
+    "category": "club",
+    "place": "compound:pitch-1",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "squad.any(veteran)",
+      "clubApps>=6"
+     ]
+    },
+    "setup": [
+     "{capt.name} is suspended for the cup game. The gaffer calls you over at the end of training and holds out the armband. It's frayed at one end where the captain chews it."
+    ],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "manager",
+       "say": [
+        "\"One game. Don't make a speech, don't change anything, toss the coin and lead them out. Can you do that?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I can do that.\"",
+         "tone": "confident",
+         "goto": "a2"
+        },
+        {
+         "id": "him",
+         "label": "\"Shouldn't one of the older lads have it?\"",
+         "tone": "humble",
+         "goto": "a3"
+        },
+        {
+         "id": "proud",
+         "label": "\"I've wanted this since I was six.\"",
+         "tone": "honest",
+         "goto": "a2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "a2"
+        }
+       ]
+      },
+      "a3": {
+       "who": "manager",
+       "say": [
+        "\"I've asked you.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Then I'll do it.\"",
+         "tone": "calm",
+         "goto": "a2"
+        }
+       ]
+      },
+      "a2": {
+       "who": "capt",
+       "say": [
+        "In the car park {capt.short} stops you. \"Call tails. I always call tails. We haven't lost a cup game on tails in four years.\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"Tails. I promise.\"",
+         "tone": "kind",
+         "end": "promised",
+         "promise": "p-the-toss"
+        },
+        {
+         "id": "mine",
+         "label": "\"I'll call what I like.\"",
+         "tone": "fiery",
+         "end": "mine"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "promised": [
+       {
+        "text": "He taps the armband on your arm twice. \"Don't chew it. That's mine.\"",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         },
+         {
+          "slot": "capt",
+          "respect": 2,
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "promised"
+         }
+        }
+       }
+      ],
+      "mine": [
+       {
+        "text": "\"Course you will.\" He gets in his car and slams the door harder than it needs.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         },
+         {
+          "slot": "capt",
+          "grudge": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "mine"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The gaffer wants a word about the cup"
+  },
+  {
+   "id": "arm-2",
+   "title": "The toss",
+   "after": {
+    "beat": "arm-1",
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-arm-2",
+    "title": "The toss",
+    "category": "club",
+    "place": "stadium:pitch",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "capt",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "Cup night. You're at the front of the tunnel with the armband on. The referee holds the coin up and looks at you."
+    ],
+    "choices": [
+     {
+      "id": "tails",
+      "label": "\"Tails.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "Tails. You win it. You win the game too, two-one, and {capt.short} is on his feet in the stand for the whole second half.",
+        "effects": {
+         "team": 2,
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "respect": 4,
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "capt",
+          "tag": "called-tails-for-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "kept": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "heads",
+      "label": "\"Heads.\"",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "text": "Heads. You lose the toss and the game. Nobody blames the coin except one man in the stand.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "kept": 0
+         }
+        },
+        "promiseBroken": [
+         "p-the-toss"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The cup game: the coin toss"
+  },
+  {
+   "id": "arm-3",
+   "title": "Yours",
+   "after": {
+    "beat": "arm-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-arm-3",
+    "title": "Yours",
+    "category": "club",
+    "place": "compound:dressing-room",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. {capt.short} has gone to another club. The gaffer throws the armband at you across the dressing room without a word.",
+     "{if arc.kept==1}There's a text from {capt.short} the same afternoon: \"Tails.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "wear",
+      "label": "Put it on.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.kept==1",
+        "text": "It's a new one, not frayed. You wear it in the first game and call tails.",
+        "effects": {
+         "team": 2,
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         },
+         {
+          "slot": "capt",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-armband"
+        }
+       },
+       {
+        "text": "It's a new one. You wear it for the first game and forget to call anything at the toss.",
+        "effects": {
+         "team": 1,
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "one-game"
+        }
+       }
+      ]
+     },
+     {
+      "id": "give",
+      "label": "Throw it to the next oldest.",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "text": "The next oldest catches it and puts it on without looking at you. The gaffer looks at you for a long time.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "end": "one-game"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "A season on, the armband"
+  }
+ ]
+}

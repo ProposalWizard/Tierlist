@@ -1,0 +1,544 @@
+{
+ "id": "arc-the-investment",
+ "title": "Student flats",
+ "owner": "agent",
+ "summary": "Your agent's friend has a scheme: student flats in a town you've never been to, money back in a year. You put some in, or you don't. Then he wants more. A season on, you find out what the flats are.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "agent",
+   "money"
+  ],
+  "tone": [
+   "dark",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.0091,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "agent",
+   "pick": "agent"
+  },
+  {
+   "slot": "dad",
+   "pick": "dad"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "in": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-car-park",
+   "title": "A car park",
+   "text": "You put money into student flats. They were a car park, and they still are."
+  },
+  {
+   "id": "kept-it",
+   "title": "Kept it",
+   "text": "You didn't put your money in the flats. Your dad says that was the best save you ever made."
+  },
+  {
+   "id": "got-out",
+   "title": "Got out",
+   "text": "You put money in the flats and got most of it back out before the end."
+  }
+ ],
+ "promises": {
+  "p-ask-dad": {
+   "id": "p-ask-dad",
+   "to": "dad",
+   "text": "Show Dad the paperwork before putting in any more",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "inv-2",
+    "ends": [
+     "dad"
+    ]
+   },
+   "dueText": "Before the next payment",
+   "kept": {
+    "text": "You said you'd show your dad first, and you did.",
+    "npc": [
+     {
+      "slot": "dad",
+      "respect": 4,
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd show your dad first.",
+    "npc": [
+     {
+      "slot": "dad",
+      "bond": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "dad",
+      "tag": "didnt-show-me-the-flats-paperwork",
+      "strength": 1
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "inv-1",
+   "title": "The brochure",
+   "n": 1,
+   "event": {
+    "id": "arc-inv-1",
+    "title": "The brochure",
+    "category": "money",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "moneyWeeks>=6"
+     ]
+    },
+    "setup": [
+     "{agent.name} brings a man to your flat called Clive, with a glossy brochure. Student flats in a town two hours away, twelve per cent a year, the first ones open in September."
+    ],
+    "talk": {
+     "start": "i1",
+     "nodes": {
+      "i1": {
+       "who": "agent",
+       "say": [
+        "\"Four weeks' wages in, and you're on the ground floor. Half the lads at your last club are in. I'm in.\""
+       ],
+       "replies": [
+        {
+         "id": "in",
+         "label": "\"Go on. I'm in.\"",
+         "tone": "reckless",
+         "goto": "i2"
+        },
+        {
+         "id": "show",
+         "label": "\"Can I see where it is?\"",
+         "tone": "honest",
+         "goto": "i3"
+        },
+        {
+         "id": "no",
+         "label": "\"I'll keep it in the bank.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "i3"
+        }
+       ]
+      },
+      "i3": {
+       "who": "agent",
+       "say": [
+        "Clive shows you a drawing. It's a lot of grass and some trees and a building that hasn't been built yet."
+       ],
+       "replies": [
+        {
+         "id": "no",
+         "label": "\"I'll leave it.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "in",
+         "label": "\"Fine. Four weeks.\"",
+         "tone": "reckless",
+         "goto": "i2"
+        }
+       ]
+      },
+      "i2": {
+       "who": "dad",
+       "say": [
+        "You ring your dad after they've gone. \"Before you put any more in, show me the paperwork. Promise me.\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"I promise.\"",
+         "tone": "humble",
+         "end": "in",
+         "promise": "p-ask-dad"
+        },
+        {
+         "id": "fine",
+         "label": "\"It's fine, Dad.\"",
+         "tone": "confident",
+         "end": "in"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "in": [
+       {
+        "text": "You transfer it. Clive sends you a picture of a spade going into the grass.",
+        "effects": {
+         "moneyWeeks": -4
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "got-me-into-the-flats",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "in": 1,
+          "path": "in"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "Clive keeps smiling all the way to his car. {agent.short} doesn't.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -4
+         },
+         {
+          "slot": "dad",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Your agent has a friend with a scheme"
+  },
+  {
+   "id": "inv-2",
+   "title": "The second payment",
+   "after": {
+    "beat": "inv-1",
+    "weeks": [
+     2,
+     3
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-inv-2",
+    "title": "The second payment",
+    "category": "money",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "arc.in==1"
+     ]
+    },
+    "setup": [
+     "Clive rings. \"Slight delay with the foundations. We need the second payment to keep your place. Same again.\""
+    ],
+    "choices": [
+     {
+      "id": "dad",
+      "label": "Send the paperwork to your dad first.",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "text": "Your dad rings back at midnight. \"There's no planning permission. There's no anything. Get out.\" You ask for your money back and get most of it.",
+        "effects": {
+         "moneyWeeks": 3
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "respect": 6,
+          "bond": 8
+         },
+         {
+          "slot": "agent",
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "read-the-flats-paperwork",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "out"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "stop",
+      "label": "Ask for your money back.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "Clive says he'll look into it. He looks into it for eleven weeks. You get half back.",
+        "effects": {
+         "moneyWeeks": 2
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "out"
+         }
+        },
+        "promiseBroken": [
+         "p-ask-dad"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "pay",
+      "label": "Pay it.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "You pay it. Clive sends a picture of the same spade.",
+        "effects": {
+         "moneyWeeks": -4
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "deeper"
+         }
+        },
+        "promiseBroken": [
+         "p-ask-dad"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Clive wants more"
+  },
+  {
+   "id": "inv-3",
+   "title": "The flats",
+   "after": {
+    "beat": "inv-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-inv-3",
+    "title": "The flats",
+    "category": "money",
+    "place": "driving:coach",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. You're on the coach to an away game and it goes through the town from the brochure.",
+     "{if arc.in==1}Where the flats should be is a car park with a sign that says the flats are coming soon. The sign has faded.{/if}",
+     "{if arc.in==0}There's a car park where the brochure said the flats would be. A left back from another club is in the paper about it.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Look out of the window.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='deeper'",
+        "text": "You look at the car park until the coach turns the corner. You never see the money again.",
+        "npc": [
+         {
+          "slot": "agent",
+          "grudge": 6
+         }
+        ],
+        "arc": {
+         "end": "the-car-park"
+        }
+       },
+       {
+        "if": "arc.path=='out'",
+        "text": "You look at the car park. You got most of yours out. Half the lads at your old club didn't.",
+        "arc": {
+         "end": "got-out"
+        }
+       },
+       {
+        "text": "You look at the car park and text your dad a picture of it.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "kept-it"
+        }
+       }
+      ]
+     },
+     {
+      "id": "agent",
+      "label": "Ring your agent.",
+      "tone": "fiery",
+      "outcomes": [
+       {
+        "if": "arc.path=='deeper'",
+        "text": "{agent.short} doesn't pick up. He hasn't picked up since Christmas.",
+        "npc": [
+         {
+          "slot": "agent",
+          "grudge": 8
+         }
+        ],
+        "arc": {
+         "end": "the-car-park"
+        }
+       },
+       {
+        "if": "arc.path=='out'",
+        "text": "\"I lost more than you,\" he says. It's probably true.",
+        "npc": [
+         {
+          "slot": "agent",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "got-out"
+        }
+       },
+       {
+        "text": "\"I know,\" he says, before you've said anything. \"I know.\"",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "end": "kept-it"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A season on, the student flats"
+  }
+ ]
+}

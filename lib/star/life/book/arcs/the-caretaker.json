@@ -1,0 +1,459 @@
+{
+ "id": "arc-the-caretaker",
+ "title": "Two games in charge",
+ "owner": "coach",
+ "summary": "The gaffer is in hospital for two weeks and the first-team coach is in charge. He asks you to back him in front of the dressing room. A season on, he has a job of his own.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "coach",
+   "gaffer",
+   "manager change"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0093,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "coach",
+   "pick": "coach"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "backed-him",
+   "title": "Backed him",
+   "text": "When the coach was in charge for two games you stood up for him, and he hasn't forgotten."
+  },
+  {
+   "id": "two-games",
+   "title": "Two games",
+   "text": "The coach had two games in charge. You kept your head down for both."
+  }
+ ],
+ "promises": {
+  "p-back-the-coach": {
+   "id": "p-back-the-coach",
+   "to": "coach",
+   "text": "Back {coach.short} in the dressing room while he's in charge",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "ctk-2",
+    "ends": [
+     "speak"
+    ]
+   },
+   "dueText": "At the next team meeting",
+   "kept": {
+    "text": "You said you'd back him, and you did.",
+    "npc": [
+     {
+      "slot": "coach",
+      "respect": 4,
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd back him.",
+    "npc": [
+     {
+      "slot": "coach",
+      "respect": -4,
+      "bond": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "coach",
+      "tag": "didnt-back-me-when-i-had-the-job",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "ctk-1",
+   "title": "In charge",
+   "n": 1,
+   "event": {
+    "id": "arc-ctk-1",
+    "title": "In charge",
+    "category": "club",
+    "place": "compound:office",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The gaffer had his appendix out on Sunday night. {coach.name} is in charge for the next two games. He's wearing the gaffer's coat because he forgot his own."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "coach",
+       "say": [
+        "\"The senior lads think I'm keeping his seat warm. I am. But I need two results. Tomorrow at the meeting, if I change the shape, will you say something? They listen to you.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll say something.\"",
+         "tone": "brave",
+         "goto": "t2",
+         "promise": "p-back-the-coach"
+        },
+        {
+         "id": "shape",
+         "label": "\"What are you changing?\"",
+         "tone": "honest",
+         "goto": "t3"
+        },
+        {
+         "id": "no",
+         "label": "\"Keep me out of it.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "t3"
+        }
+       ]
+      },
+      "t3": {
+       "who": "coach",
+       "say": [
+        "\"Three at the back. The gaffer hates it. I've wanted to try it for four years.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Fine. I'll back you.\"",
+         "tone": "brave",
+         "goto": "t2",
+         "promise": "p-back-the-coach"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm not getting involved.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      },
+      "t2": {
+       "who": "coach",
+       "say": [
+        "\"Don't make a speech. Just say you're up for it.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"I won't make a speech.\"",
+         "tone": "calm",
+         "end": "promised"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "promised": [
+       {
+        "text": "He takes the coat off and hangs it on the gaffer's hook.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 4,
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "said-hed-back-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "promised"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fair.\" He puts the magnets back on the board the gaffer's way.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The coach is in charge"
+  },
+  {
+   "id": "ctk-2",
+   "title": "The meeting",
+   "after": {
+    "beat": "ctk-1",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-ctk-2",
+    "title": "The meeting",
+    "category": "club",
+    "place": "compound:meeting-room",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "promise(p-back-the-coach)"
+     ]
+    },
+    "setup": [
+     "The meeting. {coach.short} puts three magnets across the back of the board. Two of the senior lads look at each other. Nobody says anything."
+    ],
+    "choices": [
+     {
+      "id": "speak",
+      "label": "\"I'm up for it. Let's try it.\"",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "One of the senior lads shrugs and says he's up for it too. You win on Saturday, three at the back, and the gaffer rings from his hospital bed to complain about it.",
+        "effects": {
+         "team": 2,
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 6,
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "backed-me-in-the-meeting",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "backed"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "quiet",
+      "label": "Look at the board and say nothing.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "The silence goes on too long. {coach.short} takes one of the magnets off and goes back to four.",
+        "arc": {
+         "set": {
+          "path": "quiet"
+         }
+        },
+        "promiseBroken": [
+         "p-back-the-coach"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The team meeting with the new shape"
+  },
+  {
+   "id": "ctk-3",
+   "title": "His own job",
+   "after": {
+    "beat": "ctk-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-ctk-3",
+    "title": "His own job",
+    "category": "club",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {coach.short} has got a job of his own, manager of a club two divisions down. He texts you from his new office.",
+     "{if arc.path=='backed'}\"Three at the back. Every week. Your fault.\"{/if}",
+     "{if !arc.path=='backed'}\"Got my own board now. Nobody looks at each other.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "reply",
+      "label": "Text him good luck.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='backed'",
+        "text": "He sends a photo of a magnet board with three at the back.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "backed-him"
+        }
+       },
+       {
+        "text": "He sends back a thumbs up.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "two-games"
+        }
+       }
+      ]
+     },
+     {
+      "id": "later",
+      "label": "Leave it till later.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='backed'",
+        "text": "You forget. He doesn't mind. He sends you a scarf from his new club in the post.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "backed-him"
+        }
+       },
+       {
+        "text": "You forget, and so does he.",
+        "arc": {
+         "end": "two-games"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, the coach has news"
+  }
+ ]
+}

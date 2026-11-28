@@ -1,0 +1,290 @@
+{
+ "id": "arc-the-wrong-like",
+ "title": "One like",
+ "owner": "manager",
+ "summary": "At one in the morning, half asleep, you like a post that says the gaffer should be sacked. By breakfast it's a story. What you tell him decides how he takes it. A season on, a new gaffer's post.",
+ "size": "small",
+ "about": {
+  "who": [
+   "manager",
+   "tabloid"
+  ],
+  "tone": [
+   "funny",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-thumb",
+   "title": "The thumb",
+   "text": "You liked a post saying the gaffer should be sacked, by accident. He's called you \"Thumbs\" ever since, in front of everyone."
+  },
+  {
+   "id": "the-like",
+   "title": "The like",
+   "text": "You liked the wrong post and said it was on purpose. He never really forgave the like."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "lik-1-like",
+   "title": "One like",
+   "n": 1,
+   "event": {
+    "id": "arc-lik-1-like",
+    "title": "One like",
+    "category": "media",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "At one in the morning you liked a post that says \"SACK HIM NOW\" under a photo of the gaffer. By breakfast the {tabloid.outlet} has it: \"STAR BACKS SACKING.\""
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "manager",
+       "screen": "dial",
+       "say": [
+        "{manager.name} has the paper on his desk, face up. \"Go on, then.\""
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"My thumb, gaffer. I was asleep. I'm sorry.\"",
+         "tone": "humble",
+         "end": "humble"
+        },
+        {
+         "id": "calm",
+         "label": "\"It was an accident. I'll take it down and say so.\"",
+         "tone": "calm",
+         "end": "calm"
+        },
+        {
+         "id": "confident",
+         "label": "\"It's one like. I've liked a photo of a dog this week as well.\"",
+         "tone": "confident",
+         "end": "confident"
+        },
+        {
+         "id": "fiery",
+         "label": "\"Maybe I meant it.\"",
+         "tone": "fiery",
+         "end": "fiery"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "humble": [
+       {
+        "text": "He looks at you for a long time and then laughs, properly. \"Your thumb.\" He shows you his phone: he's liked worse.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "thumb"
+         }
+        }
+       }
+      ],
+      "calm": [
+       {
+        "text": "\"Do that.\" You post \"wrong button, sorry gaffer\" and it gets more likes than the first one.",
+        "effects": {
+         "boss": 1,
+         "fans": 1
+        },
+        "arc": {
+         "set": {
+          "path": "thumb"
+         }
+        }
+       }
+      ],
+      "confident": [
+       {
+        "text": "\"Was the dog sacked?\" You're on the bench Saturday. It's not the like. It's the dog.",
+        "effects": {
+         "boss": -2
+        },
+        "arc": {
+         "set": {
+          "path": "like"
+         }
+        }
+       }
+      ],
+      "fiery": [
+       {
+        "text": "\"Then you'd better be good on Saturday.\" You're not playing Saturday.",
+        "effects": {
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": -4,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "said-i-meant-the-like",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "like"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Something on your phone"
+  },
+  {
+   "id": "lik-2-again",
+   "title": "Another post",
+   "after": {
+    "beat": "lik-1-like",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-lik-2-again",
+    "title": "Another post",
+    "category": "media",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. Someone posts a photo of the gaffer looking at his watch. Your thumb hovers."
+    ],
+    "choices": [
+     {
+      "id": "like",
+      "label": "Like it. It's a funny photo.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "if": "arc.path=='thumb'",
+        "text": "The next morning there's a sticker on your peg: a thumb, with a plaster on it. The gaffer's handwriting. \"Steady.\"",
+        "arc": {
+         "end": "the-thumb"
+        }
+       },
+       {
+        "text": "He calls you in again. It's a shorter conversation this time.",
+        "effects": {
+         "boss": -2
+        },
+        "arc": {
+         "end": "the-like"
+        }
+       }
+      ]
+     },
+     {
+      "id": "away",
+      "label": "Put the phone face down.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='thumb'",
+        "text": "The next morning he says, \"Morning, Thumbs,\" in front of everyone. It's stuck.",
+        "arc": {
+         "end": "the-thumb"
+        }
+       },
+       {
+        "text": "Face down. You're learning.",
+        "arc": {
+         "end": "the-like"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "A season on, another post"
+  }
+ ]
+}

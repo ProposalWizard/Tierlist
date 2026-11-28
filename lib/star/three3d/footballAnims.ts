@@ -72,6 +72,7 @@ import { loadGltfCached } from "./perf";
 import { FadeWeights, LocoPhase, locoWeights, type LocoLoop } from "./animBlend";
 import { footMark } from "./locomotion";
 import { withMeshopt } from "./meshopt";
+import { fitStride, strideKey, groundSpeedOf } from "./stride";
 import type { Person3D } from "../people3d";
 import { motionLook } from "../motionLook";
 
@@ -315,6 +316,8 @@ export function addClips(T: Three, p: Person3D, g: GLTF): string[] {
     for (const tr of c.tracks) {
       if (tr.name.endsWith(".position")) { const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= k; tr.values = v; }
     }
+    // the walks and runs fitted to this body: feet planted apart, its own ground speed (stride.ts)
+    if (p.root.children[0]) fitStride(T, p.root.children[0], p.bones, c, strideKey(p.meta, p.toonHead, p.prop));
     const a = p.mixer.clipAction(c);
     a.play();
     a.setEffectiveWeight(0);
@@ -442,7 +445,10 @@ export class ClipPlayer {
    * it fades to at a stop. Loops the body lacks are skipped.
    */
   setLoco(loops: LocoSpec[], idle: string | null = "idle") {
-    this.locoSpecs = loops.filter((l) => this.actions[l.name] && l.speed > 0).sort((x, y) => x.speed - y.speed);
+    // each loop at its own ground speed on THIS body when it was measured (stride.ts): the feet keep up exactly
+    this.locoSpecs = loops.filter((l) => this.actions[l.name] && l.speed > 0)
+      .map((l) => { const g = groundSpeedOf(this.actions[l.name].getClip()); return g && g > 0.2 ? { ...l, speed: g } : l; })
+      .sort((x, y) => x.speed - y.speed);
     this.locoIdle = idle && this.actions[idle] ? idle : null;
     this.members = [];
   }

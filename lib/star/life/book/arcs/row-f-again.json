@@ -1,0 +1,240 @@
+{
+ "id": "arc-row-f-again",
+ "title": "Row F, again",
+ "owner": "fan",
+ "summary": "The man in row F who used to shout at you, and then started shouting for you, has a new target: the young lad who's taken your old place on the wing. He asks you how to stop himself.",
+ "size": "small",
+ "about": {
+  "who": [
+   "the fan in row F"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-heckler:row-f)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "fan",
+   "pick": "fan"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "row-f-quiet",
+   "title": "Row F, quiet",
+   "text": "The man in row F learned to shout for the young lad too. He says you taught him."
+  },
+  {
+   "id": "row-f-loud",
+   "title": "Row F, loud",
+   "text": "The man in row F still shouts at the young lad. Some people don't change."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "rfa-1-ask",
+   "title": "A word in the car park",
+   "n": 1,
+   "event": {
+    "id": "arc-rfa-1-ask",
+    "title": "A word in the car park",
+    "category": "life",
+    "place": "club:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "{fan.name}, row F, catches you by the car. \"That new lad on the wing. I've been at him all season. I can hear myself and I can't stop. How did you put up with me?\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "fan",
+       "say": [
+        "He means it. He's holding his season ticket like it might bite him."
+       ],
+       "replies": [
+        {
+         "id": "tell",
+         "label": "\"Shout his name when he gets it right. Just once.\"",
+         "tone": "kind",
+         "end": "tell"
+        },
+        {
+         "id": "honest",
+         "label": "\"I didn't. I hated it.\"",
+         "tone": "honest",
+         "end": "honest"
+        },
+        {
+         "id": "laugh",
+         "label": "\"Shout at the ref instead.\"",
+         "tone": "confident",
+         "end": "laugh"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "tell": [
+       {
+        "text": "He writes it on the back of his ticket. YOU NAME. ONCE.",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "tell"
+         }
+        }
+       }
+      ],
+      "honest": [
+       {
+        "text": "He goes quiet and nods for a long time.",
+        "npc": [
+         {
+          "slot": "fan",
+          "respect": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "honest"
+         }
+        }
+       }
+      ],
+      "laugh": [
+       {
+        "text": "He laughs. The next home game, the referee gets the lot.",
+        "arc": {
+         "set": {
+          "path": "laugh"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "The man from row F wants a word"
+  },
+  {
+   "id": "rfa-2-later",
+   "title": "Row F",
+   "after": {
+    "beat": "rfa-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-rfa-2-later",
+    "title": "Row F",
+    "category": "life",
+    "place": "ground:pitch",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. You can hear row F from the pitch, same as ever."
+    ],
+    "choices": [
+     {
+      "id": "listen",
+      "label": "Listen for what he's shouting.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='tell' || arc.path=='honest'",
+        "text": "The young lad's name, once, when he beats his man. Then quiet.",
+        "arc": {
+         "end": "row-f-quiet"
+        }
+       },
+       {
+        "text": "The same old stuff, at the young lad.",
+        "arc": {
+         "end": "row-f-loud"
+        }
+       }
+      ]
+     },
+     {
+      "id": "wave",
+      "label": "Wave at row F.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "!arc.path=='laugh'",
+        "text": "He waves back and points at the young lad, thumbs up.",
+        "arc": {
+         "end": "row-f-quiet"
+        }
+       },
+       {
+        "text": "He waves back and goes straight back to the lad.",
+        "arc": {
+         "end": "row-f-loud"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "A season on, row F"
+  }
+ ]
+}

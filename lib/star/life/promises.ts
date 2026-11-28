@@ -11,6 +11,7 @@
 import type { CareerState } from "../types";
 import type { ArcOutcome, ArcPromiseDef, LifeEvent, PromiseRun } from "./types";
 import { arcById } from "./arcBook";
+import { runIn } from "./arcPack";
 import { cloneLife, lifeOf, type LiveEvent } from "./director";
 import { chooseOption, type LifeChange } from "./resolve";
 import { ctxFor, factsOf } from "./facts";
@@ -46,7 +47,7 @@ export function makePromise(c: CareerState, arcId: string, id: string, cast: Rec
 /** Play a kept or broken outcome on the promise's people. */
 function play(c: CareerState, arcId: string, o: ArcOutcome | undefined, rng: () => number): { career: CareerState; text: string; changes: LifeChange[] } {
   if (!o || (!o.npc?.length && !o.remember?.length && !o.effects)) return { career: c, text: o?.text ?? "", changes: [] };
-  const cast = lifeOf(c).arcs?.[arcId]?.cast ?? {};
+  const cast = runIn(lifeOf(c), arcId)?.cast ?? {};
   const live: LiveEvent = {
     id: `${arcId}-promise`, event: { id: `${arcId}-promise`, title: "", category: "promise", place: "home", size: "small", rarity: "follow-up", template: "text-thread", trigger: { when: ["followUp"] }, cast: [], setup: [], choices: [], callbacks: [] } as LifeEvent,
     moment: "followUp", cast, lines: [], callbacks: [], followUp: true, social: false,

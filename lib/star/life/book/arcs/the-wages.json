@@ -1,0 +1,849 @@
+{
+ "id": "arc-the-wages",
+ "title": "The wages",
+ "owner": "capt",
+ "summary": "The wages haven't gone in. The captain calls a meeting: do you train? The canteen staff aren't paid either. Fans shake buckets at the turnstiles. A fans' meeting with a buyer in the room. A season on, you find out who owns the club.",
+ "size": "big",
+ "about": {
+  "who": [
+   "capt",
+   "canteen",
+   "chairman",
+   "kidfan",
+   "reporter"
+  ],
+  "tone": [
+   "tense",
+   "warm",
+   "angry"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "divisionLevel>=3"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "capt",
+   "pick": "squad",
+   "where": [
+    "veteran"
+   ]
+  },
+  {
+   "slot": "canteen",
+   "pick": "canteen"
+  },
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  },
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  },
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "staff": "none",
+  "bucket": "none",
+  "said": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "saved-by-the-buckets",
+   "title": "Saved by the buckets",
+   "text": "The fans bought the club a bucket at a time. Your name is on the wall by the turnstiles with everyone else who stayed."
+  },
+  {
+   "id": "the-new-man",
+   "title": "The new man",
+   "text": "A businessman bought the club. The wages go in on time now. Nobody in the boardroom remembers that winter, and you don't remind them."
+  },
+  {
+   "id": "your-speech",
+   "title": "Your speech",
+   "text": "You stood up at the fans' meeting and said what you knew. It's painted on the wall of the social club now, spelling mistake and all."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "wag-1-late",
+   "title": "The wages",
+   "n": 1,
+   "event": {
+    "id": "arc-wag-1-late",
+    "title": "The wages",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "capt",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "clubApps>=5",
+      "squad.any(veteran)"
+     ]
+    },
+    "setup": [
+     "Payday was Friday. Nothing's gone in. Not yours, not anyone's. {capt.name} has shut the dressing room door and is standing on the physio bench."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "capt",
+       "say": [
+        "\"Right. No wages, no word from upstairs. Some of the lads want to not train today. I want to hear from everyone. You first.\""
+       ],
+       "replies": [
+        {
+         "id": "train",
+         "label": "\"We train. It's not the kids in the stand's fault.\"",
+         "tone": "brave",
+         "end": "train"
+        },
+        {
+         "id": "no",
+         "label": "\"No wages, no training. That's how they'll listen.\"",
+         "tone": "fiery",
+         "end": "strike"
+        },
+        {
+         "id": "chair",
+         "label": "\"Get the chairman down here to tell us himself.\"",
+         "tone": "calm",
+         "end": "chair"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "train"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "train": [
+       {
+        "text": "You train. It's the best session of the season, for some reason. The staff watch from the canteen window.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "trained"
+         }
+        }
+       }
+      ],
+      "strike": [
+       {
+        "text": "You sit in the dressing room for an hour in your kit. The local paper has it by lunchtime: \"PLAYERS DOWN TOOLS.\"",
+        "effects": {
+         "fans": -2,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "led-the-sit-in",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "sat-in"
+         }
+        }
+       }
+      ],
+      "chair": [
+       {
+        "text": "{chairman.name} comes down in his coat and says \"cash flow\" eleven times. The capt counts them out loud.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -4,
+          "respect": -4,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "chair"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ]
+     },
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "Something's wrong with the wages"
+  },
+  {
+   "id": "wag-2-staff",
+   "title": "The canteen",
+   "after": {
+    "beat": "wag-1-late",
+    "weeks": [
+     1,
+     2
+    ]
+   },
+   "event": {
+    "id": "arc-wag-2-staff",
+    "title": "The canteen",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "capt",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{canteen.name} is still coming in at six to do the breakfasts, unpaid, with her own bread. {capt.short} has an envelope. \"The lads are paying the staff this month out of their own pockets. Kit man, canteen, laundry. You in?\""
+    ],
+    "choices": [
+     {
+      "id": "in",
+      "label": "\"I'm in. Put me down for double.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "The envelope goes round twice. {canteen.short} finds hers in her apron pocket and has to go and stand in the walk-in fridge for a bit.",
+        "effects": {
+         "moneyWeeks": -2,
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 10,
+          "respect": 6
+         },
+         {
+          "slot": "capt",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "paid-my-wages-that-winter",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "staff": "paid"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "share",
+      "label": "\"I'm in. Same as everyone.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "Your share goes in. Nobody says anything about it, which is right.",
+        "effects": {
+         "moneyWeeks": -1,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "staff": "share"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "no",
+      "label": "\"That's the club's job, not ours.\"",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "\"It is,\" says {capt.short}. \"They're not doing it.\" He moves on to the next peg.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": -2,
+          "respect": -4,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "staff": "no"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ]
+     },
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "Not everyone at the club has been paid"
+  },
+  {
+   "id": "wag-3-bucket",
+   "title": "The buckets",
+   "after": {
+    "beat": "wag-1-late",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-wag-3-bucket",
+    "title": "The buckets",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "Fans are shaking buckets at every turnstile. {kidfan.name} and her dad are on the one by the tunnel, with a bucket she has written SAVE OUR CLUB on in felt tip."
+    ],
+    "choices": [
+     {
+      "id": "stand",
+      "label": "Go and hold a bucket with him for half an hour before the warm-up.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You stand there in your tracksuit. People put in twenties when they see who's holding it. {kidfan.short} counts every note out loud. Her dad keeps shaking your hand.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "held-a-bucket-with-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "bucket": "held"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "money",
+      "label": "Put a week's wages in, quietly.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You fold it small. She sees it go in and her eyes go very wide, and her dad puts his hand on her shoulder so she doesn't shout.",
+        "effects": {
+         "moneyWeeks": -1,
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "bucket": "money"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "past",
+      "label": "Walk past. You're not being paid either.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "Her dad nods. He knows. She shakes the bucket at the next man, a bit harder.",
+        "arc": {
+         "set": {
+          "bucket": "past"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ]
+     },
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "Something at the turnstiles"
+  },
+  {
+   "id": "wag-4-forum",
+   "title": "The fans' meeting",
+   "after": {
+    "beat": "wag-1-late",
+    "weeks": [
+     3,
+     6
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-wag-4-forum",
+    "title": "The fans' meeting",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "chairman",
+       "screen": "dial",
+       "say": [
+        "The social club, three hundred people, a man in a good suit at the back who might buy the club. {chairman.short} asks you to say a few words. He's hoping you'll say everything's fine. {reporter.name} is in the front row."
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"We just want to play. We'll keep turning up.\"",
+         "tone": "humble",
+         "end": "humble"
+        },
+        {
+         "id": "calm",
+         "label": "\"We're owed two months. We're still turning up. That's all I know.\"",
+         "tone": "calm",
+         "end": "calm"
+        },
+        {
+         "id": "confident",
+         "label": "\"Whoever buys this club gets a squad that stayed.\"",
+         "tone": "confident",
+         "end": "confident"
+        },
+        {
+         "id": "fiery",
+         "label": "\"We've had the excuses. Where's the money gone?\"",
+         "tone": "fiery",
+         "end": "fiery"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "humble": [
+       {
+        "text": "They clap. The man at the back writes something down. {chairman.short} looks relieved, which you notice.",
+        "effects": {
+         "fans": 3,
+         "boss": 2
+        },
+        "arc": {
+         "set": {
+          "said": "humble"
+         }
+        }
+       }
+      ],
+      "calm": [
+       {
+        "text": "There's a silence, and then three hundred people stand up. {reporter.short} uses it word for word.",
+        "effects": {
+         "fans": 6,
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -4,
+          "respect": 2,
+          "grudge": 2
+         },
+         {
+          "slot": "reporter",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "spoke-at-the-fans-meeting",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "truth"
+         }
+        }
+       }
+      ],
+      "confident": [
+       {
+        "text": "Somebody shouts \"get him signed up\" and the room laughs. The man at the back laughs too.",
+        "effects": {
+         "fans": 4,
+         "fame": 2
+        },
+        "arc": {
+         "set": {
+          "said": "squad"
+         }
+        }
+       }
+      ],
+      "fiery": [
+       {
+        "text": "The room goes up. {chairman.short} walks out. It's on the front page, and the man at the back rings his solicitor.",
+        "effects": {
+         "fans": 6,
+         "boss": -6
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -8,
+          "respect": -6,
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "asked-where-the-money-went",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "said": "fiery"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ]
+     },
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "A meeting at the social club"
+  },
+  {
+   "id": "wag-5-summer",
+   "title": "Who owns it",
+   "after": {
+    "beat": "wag-1-late",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-wag-5-summer",
+    "title": "Who owns it",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The wages go in on the twenty-eighth now, every month. There's a new sign by the turnstiles.",
+     "{if arc.bucket=='held'}{kidfan.short} is at the tunnel again, no bucket. Her dad has a badge on his coat: FAN OWNER. So does she.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "sign",
+      "label": "Go and read the sign.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.said=='truth' || arc.said=='fiery'",
+        "chance": 0.5,
+        "text": "It's the fans' trust's sign. Under the list of names there's a line in quotes, from the meeting. It's what you said. Someone has spelt \"owed\" wrong.",
+        "effects": {
+         "fans": 3
+        },
+        "arc": {
+         "end": "your-speech"
+        }
+       },
+       {
+        "if": "arc.bucket=='held' || arc.bucket=='money' || arc.staff=='paid'",
+        "text": "\"OWNED BY ITS SUPPORTERS.\" Two thousand names in small writing. Yours is in there, between a plumber and a dinner lady.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "saved-by-the-buckets"
+        }
+       },
+       {
+        "text": "\"WELCOME TO THE NEW ERA.\" The man in the good suit owns it. He's nice enough. He's never heard of the buckets.",
+        "arc": {
+         "end": "the-new-man"
+        }
+       }
+      ]
+     },
+     {
+      "id": "train",
+      "label": "Go in and train.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.said=='truth' || arc.said=='fiery'",
+        "text": "In the canteen there's a framed cutting from the local paper on the wall, your words from the meeting. {canteen.short} put it there.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "your-speech"
+        }
+       },
+       {
+        "if": "arc.bucket=='held'",
+        "text": "{kidfan.short} waves at you from the turnstile, with her badge. The fans own it now.",
+        "arc": {
+         "end": "saved-by-the-buckets"
+        }
+       },
+       {
+        "text": "The man in the good suit owns it now. The wages go in. You train.",
+        "arc": {
+         "end": "the-new-man"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ]
+     },
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "A season on, the club's new owner"
+  }
+ ]
+}

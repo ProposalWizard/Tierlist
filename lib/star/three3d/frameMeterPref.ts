@@ -8,8 +8,9 @@ const KEY = "star-frame-meter";
 export function frameMeterOn(): boolean {
   if (typeof window === "undefined") return false;
   const q = new URLSearchParams(window.location.search).get("fps");
-  if (q === "1") return true;
-  if (q === "0") return false;
+  // ?fps=1 once keeps it on for this phone (27 Nov 2026: Mikey's S20 test; the game's own links drop the query); ?fps=0 turns it off
+  if (q === "1") { setFrameMeterOn(true); return true; }
+  if (q === "0") { setFrameMeterOn(false); return false; }
   try { return localStorage.getItem(KEY) === "1"; } catch { return false; }
 }
 export function setFrameMeterOn(on: boolean): void {

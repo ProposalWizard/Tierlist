@@ -1166,7 +1166,12 @@ export interface CareerState {
    * garden and the 3D shop show the casual set when `wear` is "casual"; the
    * training pitch and matches always show the kit. Absent: the kit, as before.
    */
-  outfit?: { wear: "casual" | "kit"; casual: string; kit: "home" | "away"; boots?: "plain" | "own" };
+  outfit?: {
+    wear: "casual" | "kit"; casual: string; kit: "home" | "away"; boots?: "plain" | "own";
+    /** The wardrobe's Extras (28 Nov 2026, lib/star/wearables.ts): per body slot an owned item id, or "none".
+     *  A slot left out wears the best you own there, so a new buy shows at once. Absent on older saves. */
+    extras?: { wrist?: string; neck?: string; eyes?: string; head?: string };
+  };
   /** Date key → daily-special ids already bought at the discount that day. */
   storeSpecialsBought?: Record<string, string[]>;
   /** The store's "first Coin pack: double" offer has been used. */
@@ -1313,6 +1318,12 @@ export interface CareerState {
    * sleep is that week's Rest, once per gap. Absent on every older save: no night slept yet.
    */
   lastSleep?: { season: number; week: number };
+  /**
+   * The gym's Strength, Cardio and Focus, its ring and workout window (lib/star/gym/progress.ts).
+   * Absent on every older save: no gym visit yet. Changes nothing else on the career while
+   * progress.ts GYM_CAREER_EFFECT is "off".
+   */
+  gym?: import("./gym/progress").GymState;
   /**
    * Training sessions left this week (absent = the full 2). Refilled only
    * after a SATURDAY match, so a Saturday-Wednesday-Saturday week still has
@@ -1932,4 +1943,7 @@ export type StarPhase =
   /** Your house in 3D (9 Oct 2026): the wardrobe and mirror, the trophy
    *  cabinet, your cars out of the window. From the garden's house door or
    *  Home's "Your house". See components/star/Home3D.tsx. */
-  | "home-3d";
+  | "home-3d"
+  /** The 3D gym (28 Nov 2026), from the Training page's Gym card while it is tested: all 13 exercises,
+   *  the gym's own numbers saved (career.gym), no career effect. See components/star/Gym3D.tsx. */
+  | "gym-3d";

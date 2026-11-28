@@ -1,0 +1,584 @@
+{
+ "id": "arc-the-kit-row",
+ "title": "The shirt",
+ "owner": "capt",
+ "summary": "The club's new shirt sponsor is a payday loan firm, and the fans are furious. The launch photo is Thursday. A fan offers you a shirt of his own. A season on, there's a new shirt.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "capt",
+   "chairman",
+   "kidfan"
+  ],
+  "tone": [
+   "tense",
+   "angry",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0093,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "capt",
+   "pick": "squad",
+   "where": [
+    "veteran"
+   ]
+  },
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  },
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "photo": "none",
+  "fanshirt": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-food-bank-shirt",
+   "title": "The food bank shirt",
+   "text": "The payday loan firm came off the shirt after one season. The food bank's name went on it instead, for nothing. You wore their homemade one first."
+  },
+  {
+   "id": "the-loan-shirt",
+   "title": "The sponsor stayed",
+   "text": "The payday loan firm stayed on the shirt. You wore it. Half the stand still wears the homemade one."
+  },
+  {
+   "id": "the-zip",
+   "title": "The zip",
+   "text": "In the launch photo for a payday loan shirt, your jacket was zipped to the chin. It's the most shared picture the club has ever put out."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "kit-1-sponsor",
+   "title": "The sponsor",
+   "n": 1,
+   "event": {
+    "id": "arc-kit-1-sponsor",
+    "title": "The sponsor",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "capt",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "squad.any(veteran)"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "capt",
+       "say": [
+        "{capt.name} has a copy of the new shirt. Across the front: QUIDNOW. \"Payday loans. Twelve hundred per cent. The fans are going mad. Launch photo's Thursday. What are we doing?\""
+       ],
+       "replies": [
+        {
+         "id": "photo",
+         "label": "\"We do the photo. It's the club's call.\"",
+         "tone": "calm",
+         "end": "photo"
+        },
+        {
+         "id": "speak",
+         "label": "\"I'll do it, but I'll say what I think.\"",
+         "tone": "brave",
+         "end": "speak"
+        },
+        {
+         "id": "refuse",
+         "label": "\"I'm not wearing it for the photo.\"",
+         "tone": "fiery",
+         "end": "refuse"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "photo"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "photo": [
+       {
+        "text": "{capt.short} nods. \"Fair. It's not our name on the cheque.\"",
+        "arc": {
+         "set": {
+          "path": "photo"
+         }
+        }
+       }
+      ],
+      "speak": [
+       {
+        "text": "\"Good. Me too.\" He writes your name on a list in his phone.",
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "speak"
+         }
+        }
+       }
+      ],
+      "refuse": [
+       {
+        "text": "\"The chairman will love that.\" He doesn't say don't.",
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "wouldnt-do-the-shirt-photo",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "refuse"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ]
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "The new shirt sponsor is a problem"
+  },
+  {
+   "id": "kit-2-launch",
+   "title": "The launch",
+   "after": {
+    "beat": "kit-1-sponsor",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-kit-2-launch",
+    "title": "The launch",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The launch photo, on the pitch, with a photographer and a man from the loan firm in a very shiny suit. {chairman.name} is doing the smiling for everyone."
+    ],
+    "choices": [
+     {
+      "id": "smile",
+      "label": "Smile for the camera.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='refuse'",
+        "text": "You came in the end. You smile. The fans see the photo. The forum has a thread about it with four hundred replies.",
+        "effects": {
+         "fans": -2,
+         "boss": 2
+        },
+        "arc": {
+         "set": {
+          "photo": "smiled"
+         }
+        }
+       },
+       {
+        "text": "You smile. The man in the suit shakes your hand for too long.",
+        "effects": {
+         "fans": -1,
+         "boss": 2
+        },
+        "arc": {
+         "set": {
+          "photo": "smiled"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "zip",
+      "label": "Zip your jacket up over the logo.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "Your jacket's zipped to your chin. The photographer asks you twice to unzip it. You say you're cold. It's eighteen degrees.",
+        "effects": {
+         "fans": 3,
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -4,
+          "respect": -2,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "zipped-the-jacket-at-the-launch",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "photo": "zipped"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "miss",
+      "label": "Don't turn up.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "You're \"injured\". The chairman sends the physio a long email asking what with.",
+        "effects": {
+         "boss": -2
+        },
+        "arc": {
+         "set": {
+          "photo": "missed"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ]
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "The launch photo"
+  },
+  {
+   "id": "kit-3-fans",
+   "title": "The other shirt",
+   "after": {
+    "beat": "kit-1-sponsor",
+    "weeks": [
+     2,
+     5
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-kit-3-fans",
+    "title": "The other shirt",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "Before the warm-up {kidfan.name} leans over the rail with her dad, in a homemade shirt: club colours, and across the front, where the loan firm should be, the name of the town's food bank. \"My dad had four hundred made. One's for you.\""
+    ],
+    "choices": [
+     {
+      "id": "wear",
+      "label": "Wear it in the warm-up.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "You warm up in it. The stand sees and stands up. The man from the loan firm leaves at half time.",
+        "effects": {
+         "fans": 4,
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 8,
+          "respect": 6
+         },
+         {
+          "slot": "chairman",
+          "bond": -2,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "wore-our-shirt-in-the-warm-up",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "fanshirt": "wore"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "home",
+      "label": "Take it home.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "You take it and nod. It's on the back of your bedroom door by tea time.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "fanshirt": "home"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "back",
+      "label": "\"I can't, mate. Sorry.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "text": "Her dad says, \"Understood.\" She puts it back in the bag. She wears hers in the stand all game, and doesn't wave.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -2,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "fanshirt": "back"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ]
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "A young fan has a shirt for you"
+  },
+  {
+   "id": "kit-4-next",
+   "title": "The new shirt",
+   "after": {
+    "beat": "kit-3-fans",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-kit-4-next",
+    "title": "The new shirt",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "capt",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on, the new shirt arrives in a box. {capt.short} opens it in the dressing room with everyone watching."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Look at the front.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.fanshirt=='wore'",
+        "text": "Across the front: the food bank. The loan firm pulled out after the warm-up photos. The food bank pays nothing. {capt.short} throws you the first one out of the box.",
+        "effects": {
+         "fans": 3
+        },
+        "arc": {
+         "end": "the-food-bank-shirt"
+        }
+       },
+       {
+        "if": "arc.photo=='zipped'",
+        "text": "Still QUIDNOW. But in the club shop window there's a poster of you zipped to the chin, and someone's written \"COLD?\" on it.",
+        "arc": {
+         "end": "the-zip"
+        }
+       },
+       {
+        "text": "Still QUIDNOW. {capt.short} holds it up. Nobody says anything. You all put it on.",
+        "arc": {
+         "end": "the-loan-shirt"
+        }
+       }
+      ]
+     },
+     {
+      "id": "zip",
+      "label": "Check the jacket's still got a zip.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "if": "arc.photo=='zipped'",
+        "text": "It has. The lads laugh. The chairman, passing the door, doesn't.",
+        "arc": {
+         "end": "the-zip"
+        }
+       },
+       {
+        "if": "arc.fanshirt=='wore'",
+        "text": "No need. It's the food bank on the front now. You put it on without a jacket.",
+        "arc": {
+         "end": "the-food-bank-shirt"
+        }
+       },
+       {
+        "text": "It has. You don't use it. It's still QUIDNOW.",
+        "arc": {
+         "end": "the-loan-shirt"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ]
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "A season on, the new shirt"
+  }
+ ]
+}

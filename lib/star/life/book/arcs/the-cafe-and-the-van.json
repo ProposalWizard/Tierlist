@@ -1,0 +1,286 @@
+{
+ "id": "arc-the-cafe-and-the-van",
+ "title": "The café and the van",
+ "owner": "pal",
+ "summary": "Your mate's van firm has grown, and on a whim he's bought the café by the ground as well. Now he's running out of hours and money at the same time. He can keep one. He wants you to tell him which.",
+ "size": "small",
+ "about": {
+  "who": [
+   "school mate",
+   "your mum"
+  ],
+  "tone": [
+   "money",
+   "after football"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "veteran",
+  "when": [
+   "ended(arc-the-vans-business)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "pal",
+   "pick": "pal"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "kept-the-cafe",
+   "title": "The café",
+   "text": "Your mate sold the vans and kept the café. Your sandwich is still on the board."
+  },
+  {
+   "id": "kept-the-vans",
+   "title": "The vans",
+   "text": "Your mate sold the café and kept the vans. The new owners kept the sandwich and spelt your name wrong."
+  },
+  {
+   "id": "both-somehow",
+   "title": "Both, somehow",
+   "text": "You put money in and your mate kept both. He hasn't had a day off since."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "cav-1-choice",
+   "title": "Which one",
+   "n": 1,
+   "event": {
+    "id": "arc-cav-1-choice",
+    "title": "Which one",
+    "category": "life",
+    "place": "town:cafe",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Closing time in the café he bought last spring. {pal.short} has two piles of paper on the table, one for the café and one for the vans, and the vans' pile is taller. He looks about fifty."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "pal",
+       "say": [
+        "\"I can't do both. The bank says pick. You pick. I can't.\""
+       ],
+       "replies": [
+        {
+         "id": "cafe",
+         "label": "\"The café. It's where people come.\"",
+         "tone": "kind",
+         "end": "cafe"
+        },
+        {
+         "id": "vans",
+         "label": "\"The vans. They make the money.\"",
+         "tone": "honest",
+         "end": "vans"
+        },
+        {
+         "id": "money",
+         "label": "\"Neither. I'll put some in.\"",
+         "tone": "brave",
+         "end": "money"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "cafe": [
+       {
+        "text": "He breathes out like he's been holding it for a month. Your mum, who has been listening from the counter, makes three teas.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 5
+         },
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cafe"
+         }
+        }
+       }
+      ],
+      "vans": [
+       {
+        "text": "He nods. \"I knew you'd say that.\" He looks round the café for a long time.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "vans"
+         }
+        }
+       }
+      ],
+      "money": [
+       {
+        "text": "Six weeks' wages. He says he'll pay you back. He won't, and you knew that when you said it.",
+        "effects": {
+         "moneyWeeks": -2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "money"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Your mate can only keep the café or the vans"
+  },
+  {
+   "id": "cav-2-later",
+   "title": "A season on",
+   "after": {
+    "beat": "cav-1-choice",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-cav-2-later",
+    "title": "A season on",
+    "category": "life",
+    "place": "town:cafe",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. You walk past the café on the way to the ground."
+    ],
+    "choices": [
+     {
+      "id": "in",
+      "label": "Go in.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='cafe'",
+        "text": "Still his. Your sandwich is still on the board, and he looks his age again.",
+        "arc": {
+         "end": "kept-the-cafe"
+        }
+       },
+       {
+        "if": "arc.path=='money'",
+        "text": "Still his, and he's on the phone to a van driver. He waves the sandwich at you.",
+        "arc": {
+         "end": "both-somehow"
+        }
+       },
+       {
+        "text": "New owners. They kept the sandwich and spelt your name wrong.",
+        "arc": {
+         "end": "kept-the-vans"
+        }
+       }
+      ]
+     },
+     {
+      "id": "past",
+      "label": "Walk on.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='cafe'",
+        "text": "Through the window he's laughing with a customer.",
+        "arc": {
+         "end": "kept-the-cafe"
+        }
+       },
+       {
+        "if": "arc.path=='vans'",
+        "text": "A green van is parked outside, his, with your number on it.",
+        "arc": {
+         "end": "kept-the-vans"
+        }
+       },
+       {
+        "text": "Through the window he's asleep in the back booth.",
+        "arc": {
+         "end": "both-somehow"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, your mate"
+  }
+ ]
+}

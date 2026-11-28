@@ -26,6 +26,7 @@
  * casino's doors. If the phone can't run the 3D, the classic casino menu
  * shows instead, so nothing is lost.
  */
+import Reload3dPill from "./Reload3d";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { CasinoController, CasinoStation, CasinoCallbacks } from "@/lib/star/casino3d/scene";
@@ -40,6 +41,8 @@ import { Stick, pill } from "./Shop3D";
 import Casino3DTable from "./Casino3DTable";
 import { isInRoomGame } from "@/lib/star/casino3d/plan";
 import { CASINO_ON_SERVER } from "@/lib/star/casinoRules";
+import LoadingCurtain from "./loading/LoadingCurtain";
+import ViewToggle3D from "./ViewToggle3D";
 
 const INK = "#f7f1e8";
 const GOLD = "#facc15";
@@ -107,6 +110,7 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
   }, []);
 
   const [restarts, setRestarts] = useState(0);
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
@@ -161,7 +165,7 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
       delete (window as unknown as { __casino3d?: CasinoController }).__casino3d;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restarts]);
+  }, [restarts, retry]);
   useEffect(() => { if (restarts > 1) setStatus("error"); }, [restarts]);
 
   // a game over the room: the room stops drawing until it closes. Closing
@@ -188,7 +192,7 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
 
   const drag = useRef<{ id: number; x: number; y: number; moved: number } | null>(null);
 
-  if (status === "error") return <>{renderGame(undefined, onBack)}</>;
+  if (status === "error") return <>{renderGame(undefined, onBack)}<Reload3dPill onReload={() => { setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} /></>;
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "#14070b", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-casino3d>
@@ -223,12 +227,12 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
       </div>
 
       {status === "loading" && (
-        <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: "#14070b" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }}>
-          <div style={{ width: 44, height: 44, borderRadius: 999, border: "4px solid rgba(255,255,255,0.15)", borderTopColor: GOLD, animation: "c3dspin 0.9s linear infinite" }} />
-          <style>{"@keyframes c3dspin{to{transform:rotate(360deg)}}"}</style>
-        </div>
+        <div style={{ position: "absolute", inset: 0, background: "#14070b" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }} />
       )}
+      {/* the loading screen: keepie-uppies in the casino (components/star/loading) */}
+      <LoadingCurtain section="casino" loading={status === "loading"} />
 
+      {status === "ready" && !open && ctrlRef.current?.setView && <ViewToggle3D onChange={(m) => ctrlRef.current?.setView?.(m)} />}
       {status === "ready" && !open && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
 
       {status === "ready" && !open && near && (

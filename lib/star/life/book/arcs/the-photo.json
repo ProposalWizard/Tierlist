@@ -1,0 +1,502 @@
+{
+ "id": "arc-the-photo",
+ "title": "The photo",
+ "owner": "tabloid",
+ "summary": "A photo of you holding a rival club's shirt at a party turns up. It was a joke at a kid's birthday. The paper wants your side by six. You promise the gaffer you'll keep your head down. A season on, you play the rival club.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "tabloid reporter",
+   "gaffer",
+   "fans"
+  ],
+  "tone": [
+   "tense",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0061,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "fan",
+   "pick": "fan"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "quiet": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-birthday",
+   "title": "The birthday",
+   "text": "A photo of you with a rival shirt nearly finished you. It was a kid's birthday, and in the end everyone knew."
+  },
+  {
+   "id": "the-shirt",
+   "title": "The shirt",
+   "text": "A photo of you with a rival shirt is still the first thing fans of both clubs send you."
+  }
+ ],
+ "promises": {
+  "p-head-down": {
+   "id": "p-head-down",
+   "to": "manager",
+   "text": "Keep your head down and say nothing about the photo",
+   "due": {
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "keptBy": {
+    "beat": "pht-2",
+    "ends": [
+     "nothing",
+     "kid"
+    ]
+   },
+   "dueText": "Until Saturday",
+   "kept": {
+    "text": "You said you'd keep your head down, and you did.",
+    "npc": [
+     {
+      "slot": "manager",
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd keep your head down.",
+    "npc": [
+     {
+      "slot": "manager",
+      "respect": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "manager",
+      "tag": "didnt-keep-my-head-down",
+      "strength": 1
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "pht-1",
+   "title": "Five o'clock",
+   "n": 1,
+   "event": {
+    "id": "arc-pht-1",
+    "title": "Five o'clock",
+    "category": "media",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Five o'clock. {tabloid.name} rings. They have a photo of you holding up a rival club's shirt at a party, smiling. It was your cousin's lad's seventh birthday, and he supports them. It goes in tomorrow."
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "tabloid",
+       "say": [
+        "\"I need your side by six or it runs as it is. 'TRAITOR?' with a question mark. The question mark's me being nice.\""
+       ],
+       "replies": [
+        {
+         "id": "truth",
+         "label": "\"It was a seven-year-old's birthday.\"",
+         "tone": "honest",
+         "goto": "p2"
+        },
+        {
+         "id": "nothing",
+         "label": "\"No comment.\"",
+         "tone": "calm",
+         "goto": "p2"
+        },
+        {
+         "id": "angry",
+         "label": "\"Print it and I'll sue.\"",
+         "tone": "fiery",
+         "goto": "p2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "p2"
+        }
+       ]
+      },
+      "p2": {
+       "who": "manager",
+       "say": [
+        "The gaffer rings two minutes later. He's seen it too. \"Stay off your phone and keep your head down until Saturday. Promise me.\""
+       ],
+       "replies": [
+        {
+         "id": "post",
+         "label": "\"I'm posting the truth tonight.\"",
+         "tone": "brave",
+         "end": "post"
+        },
+        {
+         "id": "promise",
+         "label": "\"Head down. Promise.\"",
+         "tone": "humble",
+         "end": "promised",
+         "promise": "p-head-down"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "promised": [
+       {
+        "text": "It runs. \"TRAITOR?\" The question mark is very small. Your phone is unusable.",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2
+         },
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "quiet"
+         }
+        }
+       }
+      ],
+      "post": [
+       {
+        "text": "You post the whole photo, uncropped, with the birthday cake and the seven-year-old in it. The paper's story is dead by nine. The gaffer is not pleased you did it anyway.",
+        "effects": {
+         "fans": 2,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "grudge": 6
+         },
+         {
+          "slot": "manager",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "posted"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "A photo of you is going in the paper"
+  },
+  {
+   "id": "pht-2",
+   "title": "Saturday",
+   "after": {
+    "beat": "pht-1",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-pht-2",
+    "title": "Saturday",
+    "category": "media",
+    "place": "stadium:tunnel",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "Saturday. The walk-out. {fan.short} and half the stand behind the dugout are holding up the newspaper. Somebody has drawn a moustache on you."
+    ],
+    "choices": [
+     {
+      "id": "nothing",
+      "label": "Keep your head down. Play.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "You play. You score. You don't celebrate. On Monday the seven-year-old's mum posts the full photo herself, and the stand behind the dugout sings your name a week later.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 4
+         },
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "quiet": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "kid",
+      "label": "Point at the badge on your shirt.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "text": "You point at the badge. Half the stand cheers and half boos. The papers call it defiant.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "quiet": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "react",
+      "label": "Go over to the stand.",
+      "tone": "fiery",
+      "outcomes": [
+       {
+        "text": "You go over to the stand to explain and a steward has to pull you back. It's on every channel.",
+        "effects": {
+         "fans": -3,
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "grudge": 8
+         },
+         {
+          "slot": "manager",
+          "respect": -4
+         }
+        ],
+        "arc": {
+         "set": {
+          "quiet": 0
+         }
+        },
+        "promiseBroken": [
+         "p-head-down"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "Saturday, after the photo"
+  },
+  {
+   "id": "pht-3",
+   "title": "Their club",
+   "after": {
+    "beat": "pht-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-pht-3",
+    "title": "Their club",
+    "category": "media",
+    "place": "away:stadium",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on. You're away at the rival club. Their fans have a banner with the photo on it, blown up, and the words WELCOME HOME.",
+     "{if arc.path=='posted' || arc.quiet==1}Underneath somebody has written, smaller: HAPPY BIRTHDAY JAYDEN.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "wave",
+      "label": "Wave at the banner.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='posted' || arc.quiet==1",
+        "text": "Their fans laugh. Your fans laugh. Jayden, now eight, is in the away end in your shirt, which his mum says is the end of it.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-birthday"
+        }
+       },
+       {
+        "text": "You wave. It goes viral the wrong way, again.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-shirt"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ignore",
+      "label": "Ignore it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='posted' || arc.quiet==1",
+        "text": "You ignore it and win. The banner goes back in somebody's loft.",
+        "arc": {
+         "end": "the-birthday"
+        }
+       },
+       {
+        "text": "You ignore it. The banner is in the paper on Monday anyway.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-shirt"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "A season on, you play the rival club"
+  }
+ ]
+}

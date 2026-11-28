@@ -1,0 +1,375 @@
+{
+ "id": "arc-the-tattoo",
+ "title": "The tattoo",
+ "owner": "mum",
+ "summary": "You get your first tattoo, your mum's name and a date, and it's spelt wrong. You have to show her. A season on, the tattoo artist wants a photo for his window.",
+ "size": "small",
+ "about": {
+  "who": [
+   "mum"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.008,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "breaking-through",
+  "when": [
+   "age>=19",
+   "age<=23"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "spelt-wrong",
+   "title": "Spelt wrong",
+   "text": "Your first tattoo is your mum's name, spelt wrong. She loves it. She shows people."
+  },
+  {
+   "id": "covered-up",
+   "title": "Covered",
+   "text": "Your first tattoo was spelt wrong. There's a rose over it now. Your mum still knows what's under there."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "tat-1-arm",
+   "title": "The tattoo",
+   "n": 1,
+   "event": {
+    "id": "arc-tat-1-arm",
+    "title": "The tattoo",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your first tattoo: your mum's name and the day you signed, on the inside of your arm. It's healing. It's also missing a letter. You noticed in the car."
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "mum",
+       "say": [
+        "{mum.short} has come round with a lasagne. \"Go on, then. Your brother says you've had something done.\""
+       ],
+       "replies": [
+        {
+         "id": "show",
+         "label": "Roll your sleeve up.",
+         "tone": "brave",
+         "end": "show"
+        },
+        {
+         "id": "hide",
+         "label": "Keep your sleeve down. \"It's nothing, Mum.\"",
+         "tone": "lie",
+         "end": "hide"
+        },
+        {
+         "id": "warn",
+         "label": "\"Before I show you: it's spelt wrong.\"",
+         "tone": "honest",
+         "end": "warn"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "show": [
+       {
+        "text": "She reads it. She reads it again. She sits down on the arm of the sofa and laughs until she cries. Then she takes a photo for your nan.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "saw-the-spelling-mistake",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "shown"
+         }
+        }
+       }
+      ],
+      "hide": [
+       {
+        "text": "\"Nothing.\" She pulls your sleeve up herself, like you're six. \"Oh, love.\"",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "shown"
+         }
+        }
+       }
+      ],
+      "warn": [
+       {
+        "text": "\"How wrong?\" You show her. \"That's very wrong.\" She's delighted.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "warned"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "You've got something to show Mum"
+  },
+  {
+   "id": "tat-1d-deep",
+   "title": "Sunday lunch",
+   "after": {
+    "beat": "tat-1-arm",
+    "weeks": [
+     3,
+     8
+    ]
+   },
+   "event": {
+    "id": "arc-tat-1d-deep",
+    "title": "Sunday lunch",
+    "category": "family",
+    "place": "home:mums",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Sunday lunch at your mum's, and your auntie is there. \"Go on,\" says your mum. \"Show her.\" Your sleeve is down."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mum",
+       "say": [
+        "Your mum is smiling the smile she uses at the doctor's."
+       ],
+       "replies": [
+        {
+         "id": "show",
+         "label": "Roll your sleeve up.",
+         "tone": "brave",
+         "end": "show"
+        },
+        {
+         "id": "plaster",
+         "label": "\"It's under a plaster. It's healing.\"",
+         "tone": "lie",
+         "end": "plaster"
+        },
+        {
+         "id": "joke",
+         "label": "\"It's a limited edition.\"",
+         "tone": "confident",
+         "end": "joke"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "show": [
+       {
+        "text": "Your auntie reads it out loud, spelling and all. Your mum laughs till she has to sit down.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "showed-auntie-the-tattoo",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "show"
+         }
+        }
+       }
+      ],
+      "plaster": [
+       {
+        "text": "Your mum knows. She passes you the gravy without a word.",
+        "npc": [
+         {
+          "slot": "mum",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "plaster"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "Your auntie says that's what your uncle said about his.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "joke"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Your mum wants to see the tattoo again"
+  },
+  {
+   "id": "tat-2-window",
+   "title": "The window",
+   "after": {
+    "beat": "tat-1-arm",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-tat-2-window",
+    "title": "The window",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on, the tattoo artist texts. He wants a photo of your arm for his window. \"Famous client. I'll fix the spelling for free first, obviously.\" Your mum sends a text a minute later: \"Don't you dare fix it.\"",
+     "{if arc.deep=='show'}Your auntie still calls you by the wrong spelling.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "keep",
+      "label": "Keep it as it is.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "It goes in his window, spelt wrong. Your mum goes past it on the bus twice a week and tells whoever's next to her.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "spelt-wrong"
+        }
+       }
+      ]
+     },
+     {
+      "id": "rose",
+      "label": "Have a rose done over it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "A rose, very good. Your mum looks at it and says, \"I know what's under there,\" every time.",
+        "arc": {
+         "end": "covered-up"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, the tattoo artist"
+  }
+ ]
+}

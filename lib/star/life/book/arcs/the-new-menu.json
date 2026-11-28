@@ -1,0 +1,402 @@
+{
+ "id": "arc-the-new-menu",
+ "title": "The new menu",
+ "owner": "canteen",
+ "summary": "The club has hired a nutritionist and the canteen has to do quinoa. The woman who runs it asks what you think of the quinoa. A season on, there's a shepherd's pie on Fridays again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "canteen"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "canteen",
+   "pick": "canteen"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "fridays",
+   "title": "Friday's pie",
+   "text": "You told the canteen the truth about the quinoa, and now there's shepherd's pie on Fridays."
+  },
+  {
+   "id": "the-quinoa",
+   "title": "The quinoa",
+   "text": "You said the quinoa was lovely. It's on every day now."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "mnu-1",
+   "title": "The quinoa",
+   "n": 1,
+   "event": {
+    "id": "arc-mnu-1",
+    "title": "The quinoa",
+    "category": "staff",
+    "place": "compound:canteen",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "There's a laminated menu on the canteen hatch from the new nutritionist. Quinoa, three ways. {canteen.name} is behind the hatch with a ladle, waiting for you to say something."
+    ],
+    "talk": {
+     "start": "q1",
+     "nodes": {
+      "q1": {
+       "who": "canteen",
+       "say": [
+        "\"Be honest with me. I've made it three ways. Which way is least bad?\""
+       ],
+       "replies": [
+        {
+         "id": "honest",
+         "label": "\"Honestly? I miss your pie.\"",
+         "tone": "honest",
+         "end": "honest"
+        },
+        {
+         "id": "nice",
+         "label": "\"It's lovely. Really.\"",
+         "tone": "lie",
+         "end": "nice"
+        },
+        {
+         "id": "mix",
+         "label": "\"Put gravy on it.\"",
+         "tone": "confident",
+         "end": "gravy"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "nice"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "honest": [
+       {
+        "text": "She nods slowly and writes something on the back of an order pad. She doesn't say what.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "respect": 4,
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "told-me-about-the-quinoa",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "honest"
+         }
+        }
+       }
+      ],
+      "nice": [
+       {
+        "text": "\"Lovely,\" she says. She gives you double. Then triple.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "nice"
+         }
+        }
+       }
+      ],
+      "gravy": [
+       {
+        "text": "She puts gravy on it. It's much better. The nutritionist sees and goes very quiet.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "honest"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     }
+    ]
+   },
+   "hint": "The canteen has a new menu"
+  },
+  {
+   "id": "mnu-1d-deep",
+   "title": "The nutritionist",
+   "after": {
+    "beat": "mnu-1",
+    "weeks": [
+     3,
+     8
+    ]
+   },
+   "event": {
+    "id": "arc-mnu-1d-deep",
+    "title": "The nutritionist",
+    "category": "staff",
+    "place": "club:canteen",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The nutritionist has a clipboard and very white trainers. \"The canteen's been doing chips for the reserves. Off menu. Do you know anything about that?\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "canteen",
+       "say": [
+        "Behind her, through the hatch, {canteen.short} is very busy with a tray."
+       ],
+       "replies": [
+        {
+         "id": "cover",
+         "label": "\"Never seen a chip.\"",
+         "tone": "lie",
+         "end": "cover"
+        },
+        {
+         "id": "truth",
+         "label": "\"Once a week. They earn them.\"",
+         "tone": "honest",
+         "end": "truth"
+        },
+        {
+         "id": "joke",
+         "label": "\"Chips are a vegetable.\"",
+         "tone": "confident",
+         "end": "joke"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "cover": [
+       {
+        "text": "{canteen.short} gives you double crumble on Friday and never says why.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "covered-for-the-chips",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "cover"
+         }
+        }
+       }
+      ],
+      "truth": [
+       {
+        "text": "The nutritionist writes it down. The chips stop. {canteen.short} isn't cross. She's tired.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "truth"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "She doesn't laugh. The canteen does.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "joke"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     }
+    ]
+   },
+   "hint": "The nutritionist wants a word"
+  },
+  {
+   "id": "mnu-2",
+   "title": "Friday",
+   "after": {
+    "beat": "mnu-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-mnu-2",
+    "title": "Friday",
+    "category": "staff",
+    "place": "compound:canteen",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The laminated menu on the hatch has a new line at the bottom in her handwriting.",
+     "{if arc.path=='honest'}\"FRIDAY: SHEPHERD'S PIE (OFF THE RECORD).\" She winks at you.{/if}",
+     "{if arc.path=='nice'}\"QUINOA: EVERY DAY (BY POPULAR DEMAND).\" She points at you with the ladle.{/if}",
+     "{if arc.deep=='cover'}She still does you double crumble because of the chips.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "pie",
+      "label": "Have the pie.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='honest'",
+        "text": "It's Friday and it's shepherd's pie. The nutritionist has some too and asks for the recipe.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "fridays"
+        }
+       },
+       {
+        "text": "There's no pie, only quinoa. She gives you triple.",
+        "arc": {
+         "end": "the-quinoa"
+        }
+       }
+      ]
+     },
+     {
+      "id": "quinoa",
+      "label": "Have the quinoa.",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "if": "arc.path=='honest'",
+        "text": "She looks at you like you've let her down. You have the pie as well.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "fridays"
+        }
+       },
+       {
+        "text": "Quinoa, triple. Somebody behind you in the queue says \"thanks for that\".",
+        "effects": {
+         "team": -1
+        },
+        "arc": {
+         "end": "the-quinoa"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     }
+    ]
+   },
+   "hint": "A season on, the canteen menu"
+  }
+ ]
+}

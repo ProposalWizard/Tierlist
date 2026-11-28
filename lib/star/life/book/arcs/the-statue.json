@@ -1,0 +1,411 @@
+{
+ "id": "arc-the-statue",
+ "title": "The statue",
+ "owner": "legend",
+ "summary": "The club is putting up a statue of the legend outside the main stand, and he wants you to pull the sheet off. It doesn't look much like him. A season on, somebody puts a scarf on it.",
+ "size": "small",
+ "about": {
+  "who": [
+   "club legend"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0187,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "last-seasons",
+  "when": [
+   "age>=32"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "legend",
+   "pick": "legend"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-sheet",
+   "title": "The sheet",
+   "text": "You pulled the sheet off the legend's statue. He says it's got your nose."
+  },
+  {
+   "id": "the-crowd",
+   "title": "In the crowd",
+   "text": "You watched the statue go up from the crowd."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "stu-1",
+   "title": "Under the sheet",
+   "n": 1,
+   "event": {
+    "id": "arc-stu-1",
+    "title": "Under the sheet",
+    "category": "club",
+    "place": "stadium:forecourt",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "clubApps>=8"
+     ]
+    },
+    "setup": [
+     "There's a shape under a white sheet outside the main stand. {legend.name} is standing next to it in the club tie, looking worried. He saw it this morning."
+    ],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "legend",
+       "say": [
+        "\"They want a current player to pull the sheet. I asked for you. Before you say yes, it doesn't look like me. It looks like a postman.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll pull it.\"",
+         "tone": "kind",
+         "goto": "s2"
+        },
+        {
+         "id": "look",
+         "label": "\"Can I have a look first?\"",
+         "tone": "honest",
+         "goto": "s2"
+        },
+        {
+         "id": "no",
+         "label": "\"Get the captain to do it.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "s2"
+        }
+       ]
+      },
+      "s2": {
+       "who": "legend",
+       "say": [
+        "\"Saturday, half two. Pull from the left, it catches on the right ear.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Left. Got it.\"",
+         "tone": "calm",
+         "end": "yes"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "Saturday. You pull from the left. It's very much a postman, a bronze postman with a ball. {legend.short} says \"lovely\" four times and goes for a sit down.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "respect": 4,
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "pulled-the-sheet-off-my-statue",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "pulled"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "The captain pulls it, from the right. It catches on the ear. The photo is the captain with a sheet over his head.",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     }
+    ]
+   },
+   "hint": "The legend is getting a statue"
+  },
+  {
+   "id": "stu-1d-deep",
+   "title": "The sculptor",
+   "after": {
+    "beat": "stu-1",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-stu-1d-deep",
+    "title": "The sculptor",
+    "category": "club",
+    "place": "ground:main-stand",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The sculptor rings the legend, and the legend rings you. The sculptor wants to fix the face before the season starts. He needs somebody to stand where the legend stood for the old photo."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "legend",
+       "say": [
+        "\"You've got my shape,\" says {legend.short}. \"Mostly.\""
+       ],
+       "replies": [
+        {
+         "id": "stand",
+         "label": "Stand for the sculptor.",
+         "tone": "kind",
+         "end": "stand"
+        },
+        {
+         "id": "photo",
+         "label": "Find the legend a better photo.",
+         "tone": "calm",
+         "end": "photo"
+        },
+        {
+         "id": "leave",
+         "label": "\"Leave it. It's character.\"",
+         "tone": "confident",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "stand": [
+       {
+        "text": "Two hours with your arms up. The new face is a bit like the legend and a bit like you.",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "stood-for-my-statue",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "stand"
+         }
+        }
+       }
+      ],
+      "photo": [
+       {
+        "text": "The club's archive has one from 1972. The sculptor is delighted.",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "photo"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "The legend laughs. \"It's not your face.\"",
+        "arc": {
+         "set": {
+          "deep": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     }
+    ]
+   },
+   "hint": "The sculptor wants to fix the statue"
+  },
+  {
+   "id": "stu-2",
+   "title": "The scarf",
+   "after": {
+    "beat": "stu-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-stu-2",
+    "title": "The scarf",
+    "category": "club",
+    "place": "stadium:forecourt",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on, a derby. Somebody has put a scarf on the statue, and it's the wrong club's.",
+     "{if arc.path=='pulled'}{legend.short} rang you about it at seven this morning.{/if}",
+     "{if arc.deep=='stand'}The statue has a bit of your chin. He says so.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "take",
+      "label": "Take the scarf off before kick-off.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='pulled'",
+        "text": "You climb up on the plinth in your suit and take it off. The fans queuing at the turnstiles sing your name. {legend.short} sends you a text with eleven exclamation marks.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "the-sheet"
+        }
+       },
+       {
+        "text": "You climb up and take it off. Somebody films it.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-crowd"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Leave it for the stewards.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='pulled'",
+        "text": "The stewards get it down with a broom. {legend.short} says the broom was worse.",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "the-sheet"
+        }
+       },
+       {
+        "text": "The stewards get it down.",
+        "arc": {
+         "end": "the-crowd"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     }
+    ]
+   },
+   "hint": "A season on, the legend's statue"
+  }
+ ]
+}

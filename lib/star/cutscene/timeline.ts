@@ -63,6 +63,8 @@ export interface Compiled {
   byActor: Map<string, Track[]>;
   cameras: CameraTrack[];
   career?: CareerContext;
+  /** No spacing pass: every man exactly where the script puts him (tests, and the before/after films). */
+  noCrowd?: boolean;
 }
 
 export function compileScript(script: CutsceneScript, career?: CareerContext, ev?: StoryEvent): Compiled {
@@ -129,7 +131,10 @@ function facingYaw(c: Compiled, from: Vec3, f: number | Target, t: number, depth
   return p ? yawTo(from, p) : fallback;
 }
 
-export function rootAt(c: Compiled, id: string, t: number, depth = 0): RootState {
+/** How much of his own pace (people/life.ts, +-12%) a cut-scene walk takes, and of his surge (+-10%). */
+export const WALK_PACE = { shift: 0.35, surge: 0.7 };
+
+function rootAtRaw(c: Compiled, id: string, t: number, depth = 0): RootState {
   const st = initialRoot(c, id, depth);
   const tracks = c.byActor.get(id) ?? [];
   let gait: RootState["gait"];
@@ -154,12 +159,25 @@ export function rootAt(c: Compiled, id: string, t: number, depth = 0): RootState
         moveCache.set(mv, cache);
       }
       const { path } = cache;
-      const s = clamp((t - mv.at) / Math.max(1e-3, mv.dur));
+      const s0 = clamp((t - mv.at) / Math.max(1e-3, mv.dur));
+      // HIS OWN PACE (Harry: "22 players walking at the same pace in the same time"): on a walk of any length a
+      // brisker man (people/life.ts pace, 12% either way) draws ahead in the middle and a slower one drops back;
+      // every man still starts and arrives where and when the script says.
+      // (and over the walk he surges and eases off a little on his own rhythm, so two men who happen to share a
+      // cadence still drift in and out of step)
+      // LIGHTER (28 Nov 2026, Harry: "seems a bit heavy for some"): the pace shift was (pace - 1) x 0.9 and the
+      // surge +-10%, so a slow man set off 22% under the scene's speed and his legs, stepping at the clip's own
+      // length, slowed to 1.3 to 1.6 steps a second: a plod. Now +-8% at either end and a +-4% surge (each man still
+      // draws ahead or drops back up to 4% of the walk, and the spacing pass below keeps him off the man ahead).
+      const own0 = ownMotion(id);
+      const pw = mv.gait !== "none" && path.length > 0.8 ? (own0.pace - 1) * WALK_PACE.shift : 0;
+      const sv = pw ? own0.surge * WALK_PACE.surge : 0;
+      const s = clamp(s0 + pw * 2 * s0 * (1 - s0) + (sv / (2 * Math.PI)) * Math.sin(2 * Math.PI * s0));
       const e = mv.ease ?? 0.35;
       const u = lerp(s, smooth(s), e);
       st.pos = path.at(u);
       // speed (m/s) now: d(u)/dt * length
-      const du = (1 - e) + e * 6 * s * (1 - s);
+      const du = ((1 - e) + e * 6 * s * (1 - s)) * (1 + pw * 2 * (1 - 2 * s0) + sv * Math.cos(2 * Math.PI * s0));
       const speed = (path.length / Math.max(1e-3, mv.dur)) * du;
       const pathYaw = (() => { const d = path.dir(Math.min(0.995, u)); return Math.atan2(d[0], d[2]); })();
       const startYaw = st.yaw;
@@ -177,6 +195,237 @@ export function rootAt(c: Compiled, id: string, t: number, depth = 0): RootState
     }
   }
   return gait ? { ...st, gait } : st;
+}
+
+// ── Walking together: nobody walks through anybody ───────────────────────
+
+/**
+ * ROOM TO WALK (28 Nov 2026, Harry on the 22-man walk-out: "players walking through each other on the cut scene").
+ * With each man on his own pace and surge, a brisker man caught the man ahead and walked through him. Every group
+ * walk (two or more men on a walk at the same time, the same way, within a few metres) is now walked once, ahead of
+ * time, in small steps (1/60 s), from the script alone, so seek(t) still gives the same picture from any frame:
+ *   - each man aims for where the script puts him (his path, his start and his arrival), at its speed, and makes up
+ *     ground gently if he fell behind (up to 25% quicker, never more than CROWD.catchUp m/s);
+ *   - closing on the man ahead, he eases off so he keeps CROWD.gap behind him, and a step to the side (at most
+ *     CROWD.aside) while he is held up; side by side, two men keep CROWD.side between them; men who have stopped
+ *     stand CROWD.stand apart in a line;
+ *   - and on every step, whatever the speeds, no two men are nearer than CROWD.gapMin front to back or CROWD.side
+ *     side by side (the man behind gives way).
+ * His legs follow the ground he really covers (the stride clock is the distance walked), so a man who waits stands.
+ * Runs, sprints and celebrations are left alone (men run into each other on purpose), and so is anyone not walking.
+ */
+export const CROWD = { gap: 0.85, gapMin: 0.7, stand: 0.75, side: 0.55, aside: 0.22, catchUp: 1.45, dt: 1 / 60 };
+const WALKING = new Set(["walk", "walk-proud", "walk-sad", "walk-confident", "walk_relaxed", "walk_formal", "walk_confident", "slump_walk"]);
+
+interface CrowdSim {
+  ids: string[]; t0: number; n: number;
+  x: Float32Array[]; z: Float32Array[]; w: Float32Array[]; v: Float32Array[]; turn: Float32Array[];
+  /** the walk clip each man is on at each step ("" = none) */
+  clip: string[][];
+  /** where he ended against where the script leaves him (kept after the walk, if he never got there) */
+  off: [number, number][];
+}
+const crowdCache = new WeakMap<Compiled, CrowdSim | null>();
+let crowdBuilding = false;
+
+function walkMovesOf(c: Compiled, id: string): MoveTrack[] {
+  return (c.byActor.get(id) ?? []).filter((t): t is MoveTrack => {
+    if (t.type !== "move") return false;
+    const mv = t as MoveTrack;
+    if (mv.gait === "none") return false;
+    const pts = mv.path.map((p) => resolvePoint(c.loc, p));
+    let len = 0; for (let i = 1; i < pts.length; i++) len += v3.dist(pts[i - 1], pts[i]);
+    const g = mv.gait ?? (len / Math.max(0.1, mv.dur) > 2.4 ? "jog" : "walk");
+    return WALKING.has(g) && mv.dur > 0.3;
+  });
+}
+
+/** The group walks of a script, walked once (null: nobody walks with anybody). */
+export function crowdOf(c: Compiled): CrowdSim | null {
+  if (c.noCrowd || crowdOff()) return null;
+  const hit = crowdCache.get(c);
+  if (hit !== undefined) return hit;
+  crowdBuilding = true;
+  let sim: CrowdSim | null = null;
+  try { sim = buildCrowd(c); } finally { crowdBuilding = false; }
+  crowdCache.set(c, sim);
+  return sim;
+}
+
+function buildCrowd(c: Compiled): CrowdSim | null {
+  const moves = new Map<string, MoveTrack[]>();
+  for (const m of c.cast) { const w = walkMovesOf(c, m.id); if (w.length) moves.set(m.id, w); }
+  const ids0 = Array.from(moves.keys());
+  if (ids0.length < 2) return null;
+  // who walks with whom: overlapping in time, the same way, within 2.5 m at some moment
+  const dirOf = (id: string, mv: MoveTrack): [number, number] => {
+    const a = rootAtRaw(c, id, mv.at), b = rootAtRaw(c, id, mv.at + mv.dur);
+    const dx = b.pos[0] - a.pos[0], dz = b.pos[2] - a.pos[2], l = Math.hypot(dx, dz);
+    return l < 1e-3 ? [0, 0] : [dx / l, dz / l];
+  };
+  const parent = new Map(ids0.map((id) => [id, id]));
+  const find = (a: string): string => { while (parent.get(a) !== a) a = parent.get(a)!; return a; };
+  const joined = new Set<string>();
+  for (let i = 0; i < ids0.length; i++) for (let j = i + 1; j < ids0.length; j++) {
+    const A = ids0[i], B = ids0[j];
+    let together = false;
+    for (const ma of moves.get(A)!) for (const mb of moves.get(B)!) {
+      const s = Math.max(ma.at, mb.at), e = Math.min(ma.at + ma.dur, mb.at + mb.dur);
+      if (e - s < 0.3) continue;
+      const da = dirOf(A, ma), db = dirOf(B, mb);
+      if (da[0] * db[0] + da[1] * db[1] < 0.6) continue;
+      for (let t = s; t <= e + 1e-6; t += 0.25) { const pa = rootAtRaw(c, A, t).pos, pb = rootAtRaw(c, B, t).pos; if (Math.hypot(pa[0] - pb[0], pa[2] - pb[2]) < 2.5) { together = true; break; } }
+      if (together) break;
+    }
+    if (together) { parent.set(find(A), find(B)); joined.add(A); joined.add(B); }
+  }
+  const ids = ids0.filter((id) => joined.has(id));
+  if (ids.length < 2) return null;
+  const all = ids.flatMap((id) => moves.get(id)!);
+  const t0 = Math.min(...all.map((m) => m.at));
+  const tEnd = Math.max(...all.map((m) => m.at + m.dur));
+  const dt = CROWD.dt;
+  const nMax = Math.ceil((tEnd + 6 - t0) / dt) + 1;
+  const K = ids.length;
+  // the script's own places (raw), every step
+  const rx = ids.map(() => new Float32Array(nMax)), rz = ids.map(() => new Float32Array(nMax)), ryaw = ids.map(() => new Float32Array(nMax));
+  const rclip: string[][] = ids.map(() => new Array(nMax).fill(""));
+  ids.forEach((id, i) => {
+    for (let k = 0; k < nMax; k++) {
+      const r = rootAtRaw(c, id, t0 + k * dt);
+      rx[i][k] = r.pos[0]; rz[i][k] = r.pos[2]; ryaw[i][k] = r.yaw; rclip[i][k] = r.gait && r.gait.weight > 0 ? r.gait.clip : "";
+    }
+  });
+  const x = ids.map((_, i) => new Float32Array(nMax)), z = ids.map(() => new Float32Array(nMax)), w = ids.map(() => new Float32Array(nMax));
+  const v = ids.map(() => new Float32Array(nMax)), turn = ids.map(() => new Float32Array(nMax));
+  const clip: string[][] = ids.map(() => new Array(nMax).fill(""));
+  const vx = new Float64Array(K), vz = new Float64Array(K);
+  const lastClip = ids.map(() => "walk");
+  ids.forEach((_, i) => { x[i][0] = rx[i][0]; z[i][0] = rz[i][0]; });
+  const bias = ids.map((id) => ((hashSide(id) & 1) ? 1 : -1));
+  const breath = ids.map((id) => [3 + ((hashSide(id) >>> 3) % 1000) / 333, ((hashSide(id) >>> 13) % 628) / 100] as [number, number]);
+  let n = nMax;
+  for (let k = 0; k < nMax - 1; k++) {
+    const nx = new Float64Array(K), nz = new Float64Array(K);
+    for (let i = 0; i < K; i++) {
+      const px = x[i][k], pz = z[i][k];
+      const vrx = (rx[i][k + 1] - rx[i][k]) / dt, vrz = (rz[i][k + 1] - rz[i][k]) / dt;
+      const vr = Math.hypot(vrx, vrz);
+      const ex = rx[i][k + 1] - px, ez = rz[i][k + 1] - pz, err = Math.hypot(ex, ez);
+      // aim: the script's own speed, plus a gentle catch-up
+      let dx = vrx + ex * 1.5, dz = vrz + ez * 1.5;
+      const cap = Math.max(vr * 1.15, Math.min(CROWD.catchUp, err * 1.5));
+      const dl = Math.hypot(dx, dz);
+      if (dl > cap) { dx *= cap / dl; dz *= cap / dl; }
+      // his way forward
+      let fx = dx, fz = dz; const fl = Math.hypot(fx, fz);
+      if (fl > 1e-4) { fx /= fl; fz /= fl; } else { fx = Math.sin(ryaw[i][k]); fz = Math.cos(ryaw[i][k]); }
+      let along = dx * fx + dz * fz;
+      let lat = 0;
+      for (let j = 0; j < K; j++) {
+        if (j === i) continue;
+        const ox = x[j][k] - px, oz = z[j][k] - pz;
+        const a = ox * fx + oz * fz, l = ox * -fz + oz * fx; // ahead, and to his left (+)
+        if (a <= 0 || Math.abs(l) > CROWD.side + 0.15) continue;
+        // the man ahead: keep CROWD.gap behind him, closing no quicker than he goes
+        const va = vx[j] * fx + vz[j] * fz;
+        // (the gap breathes a little, each man on his own slow rhythm: a line that keeps one speed marches in step)
+        // (and standing in a line, as men stop at the end of a walk, they stand closer: CROWD.stand)
+        const gapWalk = CROWD.gap + 0.12 * Math.sin((2 * Math.PI * (t0 + k * dt)) / breath[i][0] + breath[i][1]);
+        const gapNow = CROWD.stand + (gapWalk - CROWD.stand) * clamp(va / 0.6);
+        const lim = Math.max(0, va + (a - gapNow) * 2.5);
+        const held = along - lim;
+        if (along > lim) along = lim;
+        // held up while the script still has him walking on: a step to the side, away from the man ahead (his own
+        // side if square behind)
+        if (held > 0.15 && vr > 0.3 && a < CROWD.gap + 0.5 && Math.abs(l) < CROWD.side) {
+          const sgn = Math.abs(l) > 0.04 ? -Math.sign(l) : bias[i];
+          lat += sgn * 0.35 * (1 - Math.max(0, a - CROWD.gapMin) / (CROWD.gap + 0.5 - CROWD.gapMin));
+        }
+      }
+      // never more than CROWD.aside off the script's line
+      const offL = (px - rx[i][k]) * -fz + (pz - rz[i][k]) * fx;
+      if (lat === 0) lat = Math.max(-0.4, Math.min(0.4, -offL * 1.5));
+      if (offL + lat * dt > CROWD.aside) lat = Math.min(lat, (CROWD.aside - offL) / dt);
+      if (offL + lat * dt < -CROWD.aside) lat = Math.max(lat, (-CROWD.aside - offL) / dt);
+      let wx = fx * along - fz * lat, wz = fz * along + fx * lat;
+      // no sudden starts or stops (2.5 m/s/s)
+      const ax2 = wx - vx[i], az2 = wz - vz[i], al = Math.hypot(ax2, az2), amax = 2.5 * dt;
+      if (al > amax) { wx = vx[i] + (ax2 * amax) / al; wz = vz[i] + (az2 * amax) / al; }
+      nx[i] = px + wx * dt; nz[i] = pz + wz * dt;
+    }
+    // nobody inside anybody: the man behind gives way (three passes)
+    for (let pass = 0; pass < 3; pass++) for (let i = 0; i < K; i++) for (let j = 0; j < K; j++) {
+      if (i === j) continue;
+      const ox = nx[j] - nx[i], oz = nz[j] - nz[i];
+      const sp = Math.hypot(nx[i] - x[i][k], nz[i] - z[i][k]) / dt;
+      let fx = nx[i] - x[i][k], fz = nz[i] - z[i][k];
+      const fl = Math.hypot(fx, fz);
+      if (fl > 1e-5) { fx /= fl; fz /= fl; } else { fx = Math.sin(ryaw[i][k]); fz = Math.cos(ryaw[i][k]); }
+      const a = ox * fx + oz * fz, l = ox * -fz + oz * fx;
+      if (a > 0 && Math.abs(l) < CROWD.side && a < CROWD.gapMin && sp > 1e-3) {
+        const back = CROWD.gapMin - a;
+        nx[i] -= fx * back; nz[i] -= fz * back;
+      } else {
+        const d = Math.hypot(ox, oz);
+        if (d < CROWD.side && d > 1e-6) { const p = (CROWD.side - d) / 2; nx[i] -= (ox / d) * p; nz[i] -= (oz / d) * p; nx[j] += (ox / d) * p; nz[j] += (oz / d) * p; }
+      }
+    }
+    for (let i = 0; i < K; i++) {
+      const ux = nx[i] - x[i][k], uz = nz[i] - z[i][k], d = Math.hypot(ux, uz);
+      vx[i] = ux / dt; vz[i] = uz / dt;
+      x[i][k + 1] = nx[i]; z[i][k + 1] = nz[i];
+      w[i][k + 1] = w[i][k] + d; v[i][k + 1] = d / dt;
+      if (rclip[i][k + 1]) lastClip[i] = rclip[i][k + 1];
+      clip[i][k + 1] = d / dt > 0.04 || rclip[i][k + 1] ? lastClip[i] : "";
+      // facing: the script's, turned a little towards where he really steps (a step aside)
+      const want = d / dt > 0.15 ? angleDiff(Math.atan2(ux, uz), ryaw[i][k + 1]) : 0;
+      turn[i][k + 1] = turn[i][k] + (clamp(want, -0.35, 0.35) - turn[i][k]) * Math.min(1, dt * 6);
+    }
+    // all there (and the script is done with them): stop
+    if (t0 + (k + 1) * dt > tEnd + 0.5 && ids.every((_, i) => Math.hypot(x[i][k + 1] - rx[i][k + 1], z[i][k + 1] - rz[i][k + 1]) < 0.01 && v[i][k + 1] < 0.01)) { n = k + 2; break; }
+  }
+  const off = ids.map((_, i) => [x[i][n - 1] - rx[i][n - 1], z[i][n - 1] - rz[i][n - 1]] as [number, number]);
+  return { ids, t0, n, x, z, w, v, turn, clip, off };
+}
+
+/** ?spacing=0 on the bench (SPACING=0 in node): the old walk, men through each other (before/after films). */
+function crowdOff(): boolean {
+  try {
+    if (typeof window === "undefined") return typeof process !== "undefined" && process.env?.SPACING === "0";
+    return new URLSearchParams(window.location.search).get("spacing") === "0";
+  } catch { return false; }
+}
+
+function hashSide(id: string): number { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; return h >>> 0; }
+
+export function rootAt(c: Compiled, id: string, t: number, depth = 0): RootState {
+  const raw = rootAtRaw(c, id, t, depth);
+  if (crowdBuilding) return raw;
+  const sim = crowdOf(c);
+  const i = sim ? sim.ids.indexOf(id) : -1;
+  if (!sim || i < 0 || t < sim.t0) return raw;
+  const f = (t - sim.t0) / CROWD.dt;
+  if (f >= sim.n - 1) {
+    const [ox, oz] = sim.off[i];
+    return Math.abs(ox) + Math.abs(oz) < 1e-3 ? raw : { ...raw, pos: [raw.pos[0] + ox, raw.pos[1], raw.pos[2] + oz] };
+  }
+  const k = Math.floor(f), u = f - k;
+  const L = (a: Float32Array) => a[k] + (a[k + 1] - a[k]) * u;
+  const pos: Vec3 = [L(sim.x[i]), raw.pos[1], L(sim.z[i])];
+  const yaw = raw.yaw + L(sim.turn[i]);
+  const speed = L(sim.v[i]);
+  const name = sim.clip[i][k + 1] || sim.clip[i][k];
+  let gait: RootState["gait"];
+  if (name) {
+    const clipName = raw.gait?.clip ?? name;
+    const nat = GAIT_SPEED[clipName] ?? 1.3;
+    // his legs walk the ground he covers: a man held up stands, a man making up ground walks on
+    const base = raw.gait ? raw.gait.weight : 1;
+    const weight = Math.min(base, clamp(speed / 0.35));
+    if (weight > 1e-3) gait = { clip: clipName, time: L(sim.w[i]) / nat, weight, speed };
+  }
+  return { pos, yaw, ...(gait ? { gait } : {}) };
 }
 
 // ── Which clips, how much ────────────────────────────────────────────────
@@ -201,7 +450,7 @@ export { ownMotion, type OwnMotion };
  * Body clips for an actor at t: [real clip, time, weight][]. `has` / `dur`
  * describe the body (which clips it has, how long each is).
  */
-export function clipsAt(c: Compiled, id: string, t: number, has: (n: string) => boolean, dur: (n: string) => number, role: string, body: string): ClipSample {
+export function clipsAt(c: Compiled, id: string, t: number, has: (n: string) => boolean, dur: (n: string) => number, role: string, body: string, ground?: (n: string) => number | undefined): ClipSample {
   const tracks = (c.byActor.get(id) ?? []).filter((x): x is ClipTrack => x.type === "clip");
   const out = new Map<string, [number, number]>();
   let upright = 0;
@@ -264,7 +513,14 @@ export function clipsAt(c: Compiled, id: string, t: number, has: (n: string) => 
     if (ch) {
       const d = Math.max(0.1, dur(ch.clip));
       // his own place in the stride: no two men's feet land together (the walk-out marched in step)
-      const time = ((r.gait.time * (ch.speed ?? 1) * rate + own.phase * d) % d + d) % d;
+      // THE FEET KEEP UP (Harry: "the quality is like jittering"): the stride clock is the distance walked over the
+      // clip's own ground speed on this body (three3d/stride.ts, measured). The old fixed speeds (walk 1.35 m/s
+      // against legs that cover 0.93 to 1.04) slid every planted foot 13 to 15 cm a step.
+      const gs = ground?.(ch.clip);
+      // (and each man's stride a touch his own, 2% either way, as real men of one build differ: two men held to
+      // one speed by the line still drift out of step; a planted foot gives about 1 cm a step for it)
+      const clock = gs && gs > 0.2 ? ((r.gait.time * (GAIT_SPEED[r.gait.clip] ?? 1.3)) / gs) * (1 + (own.rate - 1) * 0.17) : r.gait.time * (ch.speed ?? 1) * rate;
+      const time = ((clock + own.phase * d) % d + d) % d;
       const gw = r.gait.weight;
       entries = entries.map(([n, tt, w]) => [n, tt, w * (1 - gw)] as [string, number, number]);
       upright = upright * (1 - gw) + (ch.upright ?? 0) * gw;

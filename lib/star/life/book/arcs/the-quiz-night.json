@@ -1,0 +1,390 @@
+{
+ "id": "arc-the-quiz-night",
+ "title": "Quiz night",
+ "owner": "pal",
+ "summary": "Your old school mate drags you to the pub quiz. You're the footballer, so everyone expects you to get the football round. You don't know any of it. He has his phone under the table. A season on, the quiz again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "pal"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "pal",
+   "pick": "pal"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-trophy",
+   "title": "The trophy",
+   "text": "You won the pub quiz with your old mate on the strength of a question about your own goal. The trophy is a toilet seat. It's in his downstairs loo."
+  },
+  {
+   "id": "the-cheats",
+   "title": "The cheats",
+   "text": "You and your old mate were banned from the pub quiz for his phone. You still go and stand at the bar and shout answers."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "qzn-1-quiz",
+   "title": "The football round",
+   "n": 1,
+   "event": {
+    "id": "arc-qzn-1-quiz",
+    "title": "The football round",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The pub quiz. {pal.name} has called your team \"Two Men One Ball\". The football round comes up and every table turns round to watch you. You don't know a single answer."
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "pal",
+       "say": [
+        "Under the table, {pal.short} has his phone out. \"I've got them all. Just write them down.\""
+       ],
+       "replies": [
+        {
+         "id": "write",
+         "label": "Write them down.",
+         "tone": "reckless",
+         "end": "cheat"
+        },
+        {
+         "id": "own",
+         "label": "One of them is about you. You know that one.",
+         "tone": "confident",
+         "end": "own"
+        },
+        {
+         "id": "no",
+         "label": "\"Put it away. We'll guess.\"",
+         "tone": "honest",
+         "end": "guess"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "guess": [
+       {
+        "text": "You get two out of ten. One of them's a question about your own debut and you get it wrong. The pub enjoys that more than anything.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "honest"
+         }
+        }
+       }
+      ],
+      "cheat": [
+       {
+        "text": "Ten out of ten. The quizmaster saw the phone. You're banned. {pal.short} says it was worth it.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "got-us-banned-from-the-quiz",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cheat"
+         }
+        }
+       }
+      ],
+      "own": [
+       {
+        "text": "\"Who scored the winner in the cup on the fourteenth?\" You write your own name. You win by one point. The trophy is a toilet seat painted gold.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "won-the-quiz-with-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "won"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "Your old mate has plans for Thursday"
+  },
+  {
+   "id": "qzn-1d-deep",
+   "title": "The quizmaster",
+   "after": {
+    "beat": "qzn-1-quiz",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-qzn-1d-deep",
+    "title": "The quizmaster",
+    "category": "family",
+    "place": "town:pub",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The quizmaster stops you outside the gents. He's seventy and wears a bow tie. \"I know what your mate did with his phone. I'm not cross. I'm writing a football round next month, and you're going to help me.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "pal",
+       "say": [
+        "He has a pencil behind each ear."
+       ],
+       "replies": [
+        {
+         "id": "help",
+         "label": "Help him write it.",
+         "tone": "kind",
+         "end": "help"
+        },
+        {
+         "id": "own",
+         "label": "\"It was my idea. Fine me.\"",
+         "tone": "honest",
+         "end": "own"
+        },
+        {
+         "id": "no",
+         "label": "\"Not me.\"",
+         "tone": "lie",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "help": [
+       {
+        "text": "You write ten questions with him. Your mate's team gets the lot wrong and he never knows why.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "sabotaged-my-quiz",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "help"
+         }
+        }
+       }
+      ],
+      "own": [
+       {
+        "text": "He fines you a round of drinks.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "own"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He smiles, and you know he's going to write about you.",
+        "arc": {
+         "set": {
+          "deep": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "The quizmaster has a question for you"
+  },
+  {
+   "id": "qzn-2-again",
+   "title": "Thursday again",
+   "after": {
+    "beat": "qzn-1-quiz",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-qzn-2-again",
+    "title": "Thursday again",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {pal.short}: \"Quiz Thursday. Defending champions. Or banned. Whichever we are.\"",
+     "{if arc.deep=='help'}Your mate still doesn't know why he lost the football round.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "\"I'm in.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='cheat'",
+        "text": "You stand at the bar, banned, and shout answers to the team next to you. They win. They buy you both a drink.",
+        "arc": {
+         "end": "the-cheats"
+        }
+       },
+       {
+        "text": "The football round has a question about you again. You get it right this time. You come second. The toilet seat stays in his loo.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-trophy"
+        }
+       }
+      ]
+     },
+     {
+      "id": "no",
+      "label": "\"Can't, mate. Early night.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='cheat'",
+        "text": "He goes on his own and stands at the bar shouting answers. Somebody has to.",
+        "arc": {
+         "end": "the-cheats"
+        }
+       },
+       {
+        "text": "He sends a photo: the toilet seat, on a table, with a new team round it.",
+        "arc": {
+         "end": "the-trophy"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "A season on, the quiz"
+  }
+ ]
+}

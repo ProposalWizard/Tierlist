@@ -2,6 +2,7 @@
 ID | summary | tags
 FACT-3D-001 | Low tier (old Android, low PC) may run 3D at a steady 30 fps with the same picture. | three-d
 FACT-3D-002 | scripts/perf3d/shrink-models.mjs packs the GLBs in place (meshopt, WebP, Draco); a new file needs a POLICY line. | three-d
+FACT-3D-003 | The speed recorder sends a sample every 5 s for team accounts (admins, testers) and ?fps=1 phones only, at most 2 hours a tab; read it with scripts/perf-report.mts. | admin,team,three-d
 PRO-3D-001 | Any 3D, animation, mocap, model or cut-scene work: merge main first, then read docs/3D_HANDBOOK.md. | three-d,deploy
 RUL-3D-001 | Fully 3D games are the exception: own physics and rules in lib/star/play3d/, never importing canvasEngine.ts. | engine,three-d,rule
 RUL-3D-002 | No Higgsfield use by any builder until Harry says otherwise (about 730 credits used on 20 Oct). | three-d

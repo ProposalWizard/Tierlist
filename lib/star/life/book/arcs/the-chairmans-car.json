@@ -1,0 +1,294 @@
+{
+ "id": "arc-the-chairmans-car",
+ "title": "The chairman's car",
+ "owner": "chairman",
+ "summary": "Your car's in the garage, and the chairman throws you the keys to his for the week. It's old and very, very clean. A season on, he wants to know who scratched it.",
+ "size": "small",
+ "about": {
+  "who": [
+   "chairman"
+  ],
+  "tone": [
+   "funny",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.008,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "breaking-through",
+  "when": [
+   "age>=19",
+   "age<=23"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "owned-up",
+   "title": "Owned up",
+   "text": "You put a scratch on the chairman's old car and told him. He still lends it to you."
+  },
+  {
+   "id": "the-scratch",
+   "title": "The scratch",
+   "text": "Somebody put a scratch on the chairman's old car. He still asks about it."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "chc-1",
+   "title": "The keys",
+   "n": 1,
+   "event": {
+    "id": "arc-chc-1",
+    "title": "The keys",
+    "category": "club",
+    "place": "compound:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "clubApps>=5"
+     ]
+    },
+    "setup": [
+     "Your car's in the garage until Friday. {chairman.short} walks past in the car park and throws you a set of keys on a leather fob. \"Have mine. I've got the wife's. Don't touch the radio.\""
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "chairman",
+       "say": [
+        "It's thirty years old, cream, with leather seats and a smell of polish. On Thursday, in the training ground car park, you reverse it into the bollard by the bins. There's a scratch on the back bumper the length of your finger."
+       ],
+       "replies": [
+        {
+         "id": "tell",
+         "label": "Ring him straight away.",
+         "tone": "honest",
+         "end": "tell"
+        },
+        {
+         "id": "fix",
+         "label": "Get it fixed before Friday.",
+         "tone": "calm",
+         "end": "fix"
+        },
+        {
+         "id": "hide",
+         "label": "Give the keys back and say nothing.",
+         "tone": "lie",
+         "end": "hide"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "hide"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "tell": [
+       {
+        "text": "He's quiet for a long time on the phone. Then he says he did the same thing in 1994, to the bollard by the bins. He pays for it himself.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": 6,
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "owned-up-about-the-car",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "told"
+         }
+        }
+       }
+      ],
+      "fix": [
+       {
+        "text": "A man in an industrial unit fixes it for two weeks' wages, cash, and the colour is nearly right.",
+        "effects": {
+         "moneyWeeks": -2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "fixed"
+         }
+        }
+       }
+      ],
+      "hide": [
+       {
+        "text": "You give him the keys back on Friday with a thank you card. He finds it on Saturday.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": -4,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "hid"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The chairman lends you his car"
+  },
+  {
+   "id": "chc-2",
+   "title": "The bollard",
+   "after": {
+    "beat": "chc-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-chc-2",
+    "title": "The bollard",
+    "category": "club",
+    "place": "compound:car-park",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The car park. {chairman.short} is standing by the bollard by the bins with his hands in his pockets.",
+     "{if arc.path=='told'}\"Do you want the car again? Mine's free on Tuesday. Mind the bollard.\"{/if}",
+     "{if !arc.path=='told'}\"Somebody touched my car last season. I've had a year to think about who.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "own",
+      "label": "\"It was me.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "!arc.path=='told'",
+        "text": "\"I know. I just wanted to hear it.\" He throws you the keys again.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": 4,
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "owned-up"
+        }
+       },
+       {
+        "text": "\"I know, you daft lad. Tuesday.\" He throws you the keys.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "owned-up"
+        }
+       }
+      ]
+     },
+     {
+      "id": "shrug",
+      "label": "Shrug.",
+      "tone": "lie",
+      "outcomes": [
+       {
+        "if": "!arc.path=='told'",
+        "text": "He looks at you, then at the bollard. \"Hm.\" He walks off.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "end": "the-scratch"
+        }
+       },
+       {
+        "text": "\"Tuesday, then.\" He throws you the keys anyway.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "owned-up"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "A season on, the chairman"
+  }
+ ]
+}

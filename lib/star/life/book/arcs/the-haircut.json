@@ -2,7 +2,7 @@
  "id": "arc-the-haircut",
  "title": "Same haircut",
  "owner": "kid",
- "summary": "The youngest lad turns up with your haircut, exactly. The dressing room loves it. What you say to him decides whether it's a laugh or a scar, and next season he's got a new one.",
+ "summary": "The youngest lad turns up with your haircut, exactly. Weeks later he scores his first goal and does your celebration. Next season he's got a new look, and later someone at his new club has copied him.",
  "size": "small",
  "about": {
   "who": [
@@ -14,7 +14,12 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0093,
+  "tier": "common",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
  },
  "cast": [
   {
@@ -27,7 +32,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -40,6 +47,11 @@
    "id": "his-own-look",
    "title": "His own look",
    "text": "You laughed at him in front of everyone. He's had his own look ever since."
+  },
+  {
+   "id": "passed-on",
+   "title": "Passed on",
+   "text": "The kid who copied your haircut has a kid copying his now. He told him it looked better on him, because you told him that."
   }
  ],
  "promises": {},
@@ -235,6 +247,135 @@
    "hint": "The kid has a new haircut"
   },
   {
+   "id": "hcut-1b-goal",
+   "title": "His first goal",
+   "after": {
+    "beat": "hcut-1-cut",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-hcut-1b-goal",
+    "title": "His first goal",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "{kid.name} comes off the bench and scores his first goal for the club, a scuffed one off his shin. Then he does your celebration, exactly, down to the finger at the end.",
+     "{if arc.path=='mean'}He does it facing you. You can't tell if it's a compliment.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "with",
+      "label": "Run over and do it with him.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You both do it in front of the away end. It's on the club's channel by the time you're in the shower, and his mum sends him forty hearts.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 8,
+          "respect": 4,
+          "grudge": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "did-my-celebration-with-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "together"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "clap",
+      "label": "Clap him from halfway.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "He looks over for you after. You clap again. He seems to think that'll do.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "clap"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "own",
+      "label": "\"Get your own one, son.\"",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "You say it with a smile in the dressing room. He laughs. He doesn't do it again.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "told-me-to-get-my-own-celebration",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "own"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=20"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "The kid might get his chance"
+  },
+  {
    "id": "hcut-2-new",
    "title": "A new look",
    "after": {
@@ -291,7 +432,15 @@
          }
         ],
         "arc": {
-         "end": "the-twins"
+         "end": "the-twins",
+         "set": {
+          "ended": "the-twins"
+         },
+         "next": "hcut-3-passed",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -305,7 +454,15 @@
          }
         ],
         "arc": {
-         "end": "his-own-look"
+         "end": "his-own-look",
+         "set": {
+          "ended": "his-own-look"
+         },
+         "next": "hcut-3-passed",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -325,7 +482,15 @@
          }
         ],
         "arc": {
-         "end": "the-twins"
+         "end": "the-twins",
+         "set": {
+          "ended": "the-twins"
+         },
+         "next": "hcut-3-passed",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -335,6 +500,113 @@
           "slot": "kid"
          }
         ],
+        "arc": {
+         "end": "his-own-look",
+         "set": {
+          "ended": "his-own-look"
+         },
+         "next": "hcut-3-passed",
+         "afterWeeks": [
+          40,
+          60
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=20"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "Next season, he's got a new look"
+  },
+  {
+   "id": "hcut-3-passed",
+   "title": "Passed on",
+   "after": {
+    "beat": "hcut-2-new",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-hcut-3-passed",
+    "title": "Passed on",
+    "category": "teammates",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{kid.short} has moved on to a bigger club. He sends you a photo from their dressing room: a sixteen-year-old with his haircut, exactly, down to the line shaved in on the left."
+    ],
+    "choices": [
+     {
+      "id": "tell",
+      "label": "\"Tell him it looks better on him.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='nice'",
+        "text": "He sends back: \"Already did. Told him who told me.\" The sixteen-year-old is grinning behind him in the next photo.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "passed-on-the-haircut-line",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "passed-on"
+        }
+       },
+       {
+        "text": "He reads it and doesn't answer for an hour. Then: \"You never said that to me.\"",
+        "arc": {
+         "end": "his-own-look"
+        }
+       }
+      ]
+     },
+     {
+      "id": "laugh",
+      "label": "Send a laughing face.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='nice'",
+        "text": "He sends one back, then a photo of the two of you bleached, from the old days.",
+        "arc": {
+         "end": "the-twins"
+        }
+       },
+       {
+        "text": "A thumbs up. That's all.",
         "arc": {
          "end": "his-own-look"
         }
@@ -354,7 +626,7 @@
      }
     ]
    },
-   "hint": "Next season, he's got a new look"
+   "hint": "A photo from the kid"
   }
  ]
 }

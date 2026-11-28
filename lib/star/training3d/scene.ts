@@ -28,6 +28,8 @@ import { withMeshopt } from "../three3d/meshopt";
 import { addClips, clipInfo, ClipPlayer, KICK_FALLBACK, loadAnims3d } from "../three3d/footballAnims";
 import type { KitColours } from "../shop3d/scene";
 import { CROSSBAR_SPOT, MATE_AFTER_S, MATE_FLIGHT_S, mateBallAt, type MateShot } from "./crossbar";
+import * as LPT from "../garden3d/lowPolyTrees";
+import * as CT from "../garden3d/cardTrees";
 
 /**
  * When, in the 3D kick (the hand-made "kick_r" clip: run-up, plant, strike),
@@ -99,7 +101,7 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   // the kick, reactions and keepy-uppies (a failed load just leaves them standing)
   const fb: any = await loadAnims3d(loader, "football").catch((e) => { console.error("football clips failed to load", e); return null; });
 
-  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = prof.shadows;
@@ -243,11 +245,33 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   const hedge = new THREE.Mesh(new THREE.BoxGeometry(120, 3.5, 1.5), new THREE.MeshStandardMaterial({ color: "#2f5a28", roughness: 1 }));
   hedge.position.set(0, 1.75, -14);
   root.add(hedge);
-  const treeMat = new THREE.MeshStandardMaterial({ color: "#3a6b30", roughness: 1 });
-  for (let i = 0; i < 18; i++) {
-    const t = new THREE.Mesh(new THREE.SphereGeometry(2.4 + (i % 3) * 0.6, 10, 8), treeMat);
-    t.position.set(-50 + i * 6 + (i % 2) * 1.5, 3.6 + (i % 3) * 0.5, -17 - (i % 2) * 2);
-    root.add(t);
+  // the garden's textured trees (garden3d/cardTrees.ts: scanned leaf sprays, one atlas), the crowns
+  // where the old plain green balls were, all eighteen joined into ONE draw (they were 18 draws);
+  // if the atlas can't load, the low-poly ones (garden3d/lowPolyTrees.ts)
+  {
+    const atlas = await CT.loadCardAtlas(THREE, renderer).catch(() => null);
+    if (atlas) {
+      const cb = CT.newCardBin();
+      for (let i = 0; i < 18; i++) {
+        const rad = 2.4 + (i % 3) * 0.6, cy = 3.6 + (i % 3) * 0.5;
+        const from = cb.p.length / 9;
+        CT.addCardTree(THREE, cb, { h: cy + rad * 1.05, w: 2 * rad, pine: i % 5 === 2, seed: 31 + i * 17, lod: 1 });
+        CT.placeCardsSince(cb, from, -50 + i * 6 + (i % 2) * 1.5, 0, -17 - (i % 2) * 2, 1, i * 1.7);
+      }
+      const m = CT.cardMaterial(THREE, atlas.map, atlas.nrm);
+      const trees = new THREE.Mesh(CT.cardGeometry(THREE, cb), m);
+      trees.customDepthMaterial = m.userData.depth;
+      root.add(trees);
+    } else {
+      const bin = LPT.newBin();
+      for (let i = 0; i < 18; i++) {
+        const rad = 2.4 + (i % 3) * 0.6, cy = 3.6 + (i % 3) * 0.5;
+        const from = bin.p.length / 9;
+        LPT.addTree(THREE, bin, { h: cy + rad, w: (2 * rad) / 1.2, shape: i % 5 === 2 ? "pine" : i % 3 === 1 ? "wide" : "round", seed: 31 + i * 17, style: LPT.TREE_STYLE, lod: 1 });
+        LPT.placeSince(bin, from, -50 + i * 6 + (i % 2) * 1.5, 0, -17 - (i % 2) * 2, 1, i * 1.7);
+      }
+      root.add(new THREE.Mesh(LPT.binGeometry(THREE, bin), LPT.plantMaterial(THREE)));
+    }
   }
 
   // ── The ball in play, and its shadow ──
@@ -570,11 +594,11 @@ export async function createTrainingScene(container: HTMLElement, data: Training
       if (on === active) return;
       active = on;
       last = performance.now();
-      renderer.setAnimationLoop(on ? frame : null);
+      if (isOwner()) renderer.setAnimationLoop(on ? frame : null); // another 3D place on screen keeps its own loop
     },
     dispose() {
       ro?.disconnect();
-      renderer.setAnimationLoop(null);
+      if (isOwner()) renderer.setAnimationLoop(null);
       governed.dispose();
       timers = [];
       release(root);

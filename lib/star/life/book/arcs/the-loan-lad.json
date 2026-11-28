@@ -1,0 +1,297 @@
+{
+ "id": "arc-the-loan-lad",
+ "title": "Out on loan",
+ "owner": "kid",
+ "summary": "The youngest lad in the squad is going out on loan to a club in the sixth tier. He's scared of it. A season on, he's back.",
+ "size": "small",
+ "about": {
+  "who": [
+   "academy kid",
+   "loan spell"
+  ],
+  "tone": [
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0093,
+  "tier": "common",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "kid",
+   "pick": "squad",
+   "where": [
+    "age<=20"
+   ],
+   "order": "youngest"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "came-back",
+   "title": "Came back",
+   "text": "The youngest lad went on loan to a club on a slope and came back a footballer."
+  },
+  {
+   "id": "just-back",
+   "title": "Back",
+   "text": "The loan lad came back. He has his own peg now."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "lnl-1",
+   "title": "The sixth tier",
+   "n": 1,
+   "event": {
+    "id": "arc-lnl-1",
+    "title": "The sixth tier",
+    "category": "squad",
+    "place": "compound:dressing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "squad.any(age<=20)"
+     ]
+    },
+    "setup": [
+     "{kid.name} is going on loan for the rest of the season, to a club with a stand that holds four hundred and a pitch on a slope. He's packing his peg into a carrier bag."
+    ],
+    "talk": {
+     "start": "l1",
+     "nodes": {
+      "l1": {
+       "who": "kid",
+       "say": [
+        "\"They play every Tuesday on a slope and the centre halves are about forty. Mum's crying. Is it bad? You can tell me if it's bad.\""
+       ],
+       "replies": [
+        {
+         "id": "good",
+         "label": "\"It's the best thing that'll happen to you.\"",
+         "tone": "confident",
+         "goto": "l2"
+        },
+        {
+         "id": "honest",
+         "label": "\"It's hard. Then it's brilliant.\"",
+         "tone": "honest",
+         "goto": "l2"
+        },
+        {
+         "id": "joke",
+         "label": "\"Take shin pads. Big ones.\"",
+         "tone": "calm",
+         "end": "joke"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "joke"
+        }
+       ]
+      },
+      "l2": {
+       "who": "kid",
+       "say": [
+        "\"Will you watch? They stream it. It's one camera on a ladder.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll watch the first one.\"",
+         "tone": "kind",
+         "end": "watch"
+        },
+        {
+         "id": "busy",
+         "label": "\"If I can.\"",
+         "tone": "calm",
+         "end": "joke"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "watch": [
+       {
+        "text": "Tuesday night, one camera on a ladder. He scores with his shin in the eightieth minute. You text him before he's off the pitch.",
+        "npc": [
+         {
+          "slot": "kid",
+          "respect": 4,
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "watched-my-first-loan-game",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "watched"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "He laughs, which is what he needed. He takes your old shin pads.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "joked"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=20"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "The youngest lad is going on loan"
+  },
+  {
+   "id": "lnl-2",
+   "title": "Back",
+   "after": {
+    "beat": "lnl-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-lnl-2",
+    "title": "Back",
+    "category": "squad",
+    "place": "compound:dressing-room",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. {kid.short} is back. He's broader and quieter, and he's got a scar on his eyebrow from a forty-year-old centre half.",
+     "{if arc.path=='watched'}He's still got the text you sent him from the first game, saved.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "ask",
+      "label": "\"Go on, then. Tell me about it.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='watched'",
+        "text": "Forty-one games, nine goals, two broken noses, not his. He talks for an hour. That afternoon he nutmegs you in training and doesn't say sorry.",
+        "npc": [
+         {
+          "slot": "kid",
+          "respect": 4,
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "came-back-from-loan-a-man",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "came-back"
+        }
+       },
+       {
+        "text": "He tells you about the slope and the Tuesdays. He's not scared of anything now. You can see it.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "came-back"
+        }
+       }
+      ]
+     },
+     {
+      "id": "train",
+      "label": "Nod and get changed.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "He nods back. He's got his own peg now, two along from yours.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "just-back"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=20"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "A season on, the loan lad is back"
+  }
+ ]
+}

@@ -65,6 +65,22 @@ const Headphones: Glyph = () => (
   </>
 );
 
+const Cap: Glyph = () => (
+  <>
+    <path d="M4 15 Q4 6 12 6 Q19 6 19.6 13.4" {...stroke} />
+    <path d="M4 15 L19.6 13.4 Q22.6 13.6 22.4 15.6 Q16 17.4 4 15 Z" {...stroke} />
+    <circle cx="12" cy="5.6" r="0.9" fill="currentColor" />
+  </>
+);
+
+const Sunglasses: Glyph = () => (
+  <>
+    <path d="M2.6 9.6 H10 V12.6 Q10 16 6.4 16 Q2.6 16 2.6 12.6 Z" {...stroke} />
+    <path d="M14 9.6 H21.4 V12.6 Q21.4 16 17.6 16 Q14 16 14 12.6 Z" {...stroke} />
+    <path d="M10 10.6 Q12 9.4 14 10.6" {...stroke} />
+  </>
+);
+
 const MusicPlayer: Glyph = () => (
   <>
     <rect x="7" y="2" width="10" height="17" rx="2" {...stroke} />
@@ -350,6 +366,8 @@ const ICONS: Record<string, Glyph> = {
   phone: Phone,
   console: Console,
   headphones: Headphones,
+  cap: Cap,
+  shades: Sunglasses,
   music: MusicPlayer,
   tablet: Tablet,
   smartwatch: Smartwatch,

@@ -10,6 +10,7 @@
  *     always has the same head, build, skin and hair).
  */
 import { SKIN_TONES, HAIR_COLOURS } from "../../playerIdentity";
+import type { BootLook } from "../../wearables";
 
 /**
  * BUILD: Slim / Strong / Tall (Settings → Your look → Body). One build works on
@@ -155,7 +156,7 @@ export function toonHairFor(id: string): string {
   return HAIR_COLOURS.find((h) => h.id === id_)!.hex;
 }
 
-export interface ToonPick { body: ToonBody; head: ToonHead; skin: string; hair: string; /** your surname, on the back of your Style A shirt */ name?: string }
+export interface ToonPick { body: ToonBody; head: ToonHead; skin: string; hair: string; /** your surname, on the back of your Style A shirt */ name?: string; /** your shop boots (wearables.ts bootLookOf(career.currentBoot)); absent = the plain pair */ boots?: BootLook }
 export function toonPickFor(id: string, suit = false): ToonPick {
   return { body: toonBodyFor(id), head: toonHeadFor(id, suit), skin: toonSkinFor(id), hair: suit ? toonGreyHairFor(id) : toonHairFor(id) };
 }
@@ -193,7 +194,7 @@ let you: ToonPick = { body: "c1", head: "h1", skin: SKIN_TONES[3].hex, hair: HAI
 const youListeners = new Set<() => void>();
 export function setToonYou(p: Partial<ToonPick>) {
   const next = { ...you, ...p, body: resolveToonBody(p.body ?? you.body), head: resolveToonHead(p.head ?? you.head) };
-  if (next.body === you.body && next.head === you.head && next.skin === you.skin && next.hair === you.hair && next.name === you.name) return;
+  if (next.body === you.body && next.head === you.head && next.skin === you.skin && next.hair === you.hair && next.name === you.name && JSON.stringify(next.boots ?? null) === JSON.stringify(you.boots ?? null)) return;
   you = next;
   youListeners.forEach((f) => f());
 }

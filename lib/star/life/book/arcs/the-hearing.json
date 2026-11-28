@@ -1,0 +1,277 @@
+{
+ "id": "arc-the-hearing",
+ "title": "The hearing",
+ "owner": "manager",
+ "summary": "The fixer who texted you is in front of the league. They want you as a witness, in a room in London with a long table, and his lawyer is going to say you were in on it. The gaffer will drive you.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "the gaffer",
+   "tabloid reporter"
+  ],
+  "tone": [
+   "serious"
+  ]
+ },
+ "start": {
+  "chance": 0.01,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "ended(arc-unknown-number:reported-it|the-witness)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-truth-told",
+   "title": "The truth told",
+   "text": "You gave evidence at the fixer's hearing and his lawyer couldn't move you. He got eight years."
+  },
+  {
+   "id": "the-bad-day",
+   "title": "The bad day",
+   "text": "You gave evidence at the fixer's hearing and his lawyer made a mess of you. He got four years, and the papers asked about you for a month."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "hrg-1-room",
+   "title": "The long table",
+   "n": 1,
+   "event": {
+    "id": "arc-hrg-1-room",
+    "title": "The long table",
+    "category": "life",
+    "place": "town:london",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A room in London with a long table and water jugs nobody touches. The man who texted you is at the far end in a suit that doesn't fit him. His lawyer smiles at you like you're old friends."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "manager",
+       "say": [
+        "The gaffer drove you down at five. In the corridor he says, \"Just say what happened. Slow. He wants you to rush.\"",
+        "The lawyer: \"You kept the number live for three weeks. Why would an innocent man do that?\""
+       ],
+       "replies": [
+        {
+         "id": "slow",
+         "label": "Answer slowly, every date.",
+         "tone": "calm",
+         "end": "slow"
+        },
+        {
+         "id": "angry",
+         "label": "\"Because the league asked me to.\"",
+         "tone": "fiery",
+         "end": "angry"
+        },
+        {
+         "id": "rush",
+         "label": "Answer fast, to get it over.",
+         "tone": "reckless",
+         "end": "rush"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "slow": [
+       {
+        "text": "Forty minutes. The lawyer gets nothing. The gaffer buys you a pasty at the services and doesn't say a word all the way home, in a good way.",
+        "effects": {
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 8,
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "slow"
+         }
+        }
+       }
+      ],
+      "angry": [
+       {
+        "text": "It's true, and it's on the record, and the papers lead with you shouting.",
+        "effects": {
+         "reputation": 1,
+         "fame": 2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "angry"
+         }
+        }
+       }
+      ],
+      "rush": [
+       {
+        "text": "You get two dates wrong. The lawyer is very polite about it. You feel sick on the train.",
+        "effects": {
+         "reputation": -2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "rush"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "The league want you as a witness"
+  },
+  {
+   "id": "hrg-2-verdict",
+   "title": "The verdict",
+   "after": {
+    "beat": "hrg-1-room",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-hrg-2-verdict",
+    "title": "The verdict",
+    "category": "media",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "feed-post",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. The league's verdict is on every phone in the dressing room."
+    ],
+    "choices": [
+     {
+      "id": "read",
+      "label": "Read it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='slow' || arc.path=='angry'",
+        "text": "Eight years. Your evidence is in paragraph four, and nobody could move it.",
+        "arc": {
+         "end": "the-truth-told"
+        }
+       },
+       {
+        "text": "Four years. Paragraph four says a witness was \"confused\". You read it six times.",
+        "arc": {
+         "end": "the-bad-day"
+        }
+       }
+      ]
+     },
+     {
+      "id": "dont",
+      "label": "Don't read it. Train.",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "if": "arc.path=='slow'",
+        "text": "The gaffer reads it for you and says, \"Eight. Good lad.\"",
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "end": "the-truth-told"
+        }
+       },
+       {
+        "text": "The lads tell you it was four, and don't look at you while they do.",
+        "arc": {
+         "end": "the-bad-day"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "A season on, the verdict"
+  }
+ ]
+}

@@ -1,0 +1,384 @@
+{
+ "id": "arc-the-passport",
+ "title": "The passport",
+ "owner": "mate",
+ "summary": "Pre-season tour, the airport, and a team-mate has left his passport in a taxi. The squad is boarding. Somebody has to stay behind with him, and the gaffer is looking at you. A season on, the same airport.",
+ "size": "small",
+ "about": {
+  "who": [
+   "mate",
+   "manager"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0064,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any",
+  "when": [
+   "europe || divisionLevel<=2"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "stayed-behind",
+   "title": "Stayed behind",
+   "text": "You stayed at the airport with a team-mate who'd lost his passport. You got the next day's flight. He's kept your seat on every coach since."
+  },
+  {
+   "id": "boarded",
+   "title": "Boarded",
+   "text": "You got on the plane. Your team-mate found his passport in his other jacket, at home, the next morning."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "psp-1-taxi",
+   "title": "Gate closing",
+   "n": 1,
+   "event": {
+    "id": "arc-psp-1-taxi",
+    "title": "Gate closing",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Pre-season tour, the airport, the gate's closing. {mate.name} has left his passport in a taxi. He's ringing the taxi firm with shaking hands. {manager.short} looks at the squad, then at you."
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "manager",
+       "say": [
+        "\"Somebody stays with him. Next flight's tomorrow at six. Anyone?\""
+       ],
+       "replies": [
+        {
+         "id": "stay",
+         "label": "\"I'll stay.\"",
+         "tone": "kind",
+         "end": "stay"
+        },
+        {
+         "id": "board",
+         "label": "Get on the plane.",
+         "tone": "calm",
+         "end": "board"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "stay": [
+       {
+        "text": "Twenty hours in an airport hotel. The taxi brings the passport at midnight. You play cards with the driver. {mate.short} buys you a breakfast the size of a door.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 10,
+          "respect": 4
+         },
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "stayed-at-the-airport-with-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stayed"
+         }
+        }
+       }
+      ],
+      "board": [
+       {
+        "text": "You get on. He waves at the window like it's a ship. Somebody from the club's office stays with him.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "boarded"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Someone's lost something at the airport"
+  },
+  {
+   "id": "psp-1d-deep",
+   "title": "The hotel",
+   "after": {
+    "beat": "psp-1-taxi",
+    "weeks": [
+     1,
+     2
+    ]
+   },
+   "event": {
+    "id": "arc-psp-1d-deep",
+    "title": "The hotel",
+    "category": "teammates",
+    "place": "away:hotel",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your team-mate's passport is still lost. At the tour hotel he's sharing your room, three days behind everyone else, sunburnt from the airport car park."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mate",
+       "say": [
+        "\"The lads are calling me Passport. They've had a T-shirt made.\""
+       ],
+       "replies": [
+        {
+         "id": "shirt",
+         "label": "Wear the T-shirt to dinner.",
+         "tone": "confident",
+         "end": "shirt"
+        },
+        {
+         "id": "stop",
+         "label": "Tell the lads to drop it.",
+         "tone": "kind",
+         "end": "stop"
+        },
+        {
+         "id": "join",
+         "label": "\"Passport,\" you say. \"Pass the salt.\"",
+         "tone": "reckless",
+         "end": "join"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "shirt": [
+       {
+        "text": "He laughs so hard he has to leave the table. The T-shirt goes round the whole squad.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "wore-the-passport-shirt",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "shirt"
+         }
+        }
+       }
+      ],
+      "stop": [
+       {
+        "text": "They drop it to his face. Behind his back it gets worse.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "stop"
+         }
+        }
+       }
+      ],
+      "join": [
+       {
+        "text": "He doesn't pass the salt.",
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "join"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your team-mate's passport is still lost"
+  },
+  {
+   "id": "psp-2-again",
+   "title": "The same airport",
+   "after": {
+    "beat": "psp-1-taxi",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-psp-2-again",
+    "title": "The same airport",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on, the same airport. {mate.short} is holding his passport up above his head at the check-in desk, for you to see.",
+     "{if arc.deep=='shirt'}He's still called Passport. He doesn't mind any more.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "laugh",
+      "label": "Hold yours up too.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='stayed'",
+        "text": "He's saved you the seat next to him. He always does now. He has his passport in a little pouch round his neck, like a child.",
+        "effects": {
+         "team": 2
+        },
+        "arc": {
+         "end": "stayed-behind"
+        }
+       },
+       {
+        "text": "He laughs. He sits with someone else.",
+        "arc": {
+         "end": "boarded"
+        }
+       }
+      ]
+     },
+     {
+      "id": "check",
+      "label": "\"Got your other jacket?\"",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "if": "arc.path=='stayed'",
+        "text": "\"Never again,\" he says. He's got two passports' worth of photocopies in his bag, just in case.",
+        "arc": {
+         "end": "stayed-behind"
+        }
+       },
+       {
+        "text": "He doesn't find it funny. It was his other jacket.",
+        "arc": {
+         "end": "boarded"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, the airport again"
+  }
+ ]
+}

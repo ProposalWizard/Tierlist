@@ -1,0 +1,393 @@
+{
+ "id": "arc-her-song",
+ "title": "The song he hums",
+ "owner": "kitman",
+ "summary": "The kit man hums the same tune every time the kit's in a state. It was his wife's. A season on, before a big game, you can get it played at the ground.",
+ "size": "small",
+ "about": {
+  "who": [
+   "kit man"
+  ],
+  "tone": [
+   "warm",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "kitman",
+   "pick": "kitman"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "her-song",
+   "title": "Her song",
+   "text": "They played his wife's song at the ground before kick-off, and he heard it from the tunnel."
+  },
+  {
+   "id": "the-kit-room",
+   "title": "In the kit room",
+   "text": "He still hums it, and only in the kit room."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "hsg-1",
+   "title": "The song he hums",
+   "n": 1,
+   "event": {
+    "id": "arc-hsg-1",
+    "title": "The song he hums",
+    "category": "staff",
+    "place": "compound:kit-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kitman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The kit room after a wet Saturday. Twenty muddy shirts on the floor and {kitman.short} is humming the same tune he always hums, over and over."
+    ],
+    "talk": {
+     "start": "h1",
+     "nodes": {
+      "h1": {
+       "who": "kitman",
+       "say": [
+        "He sees you listening. \"My wife's. We had it at the wedding and we had it at the funeral. I hum it when the kit's in a mess. Keeps me calm.\""
+       ],
+       "replies": [
+        {
+         "id": "her",
+         "label": "\"What was she like?\"",
+         "tone": "kind",
+         "goto": "h2"
+        },
+        {
+         "id": "sorry",
+         "label": "\"I'm sorry. I didn't know.\"",
+         "tone": "honest",
+         "goto": "h2"
+        },
+        {
+         "id": "hand",
+         "label": "Pick up a shirt and start folding.",
+         "tone": "kind",
+         "end": "folded"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "left"
+        }
+       ]
+      },
+      "h2": {
+       "who": "kitman",
+       "say": [
+        "\"Forty-one years. She came to every home game and she never once knew the score. She came for the pies and the singing.\""
+       ],
+       "replies": [
+        {
+         "id": "fold",
+         "label": "Pick up a shirt and start folding.",
+         "tone": "kind",
+         "end": "folded"
+        },
+        {
+         "id": "go",
+         "label": "\"I'd better get in the gym.\"",
+         "tone": "calm",
+         "end": "left"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "folded": [
+       {
+        "text": "You fold badly and he redoes every one of them behind you. He hums the whole song twice and tells you her name.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "respect": 4,
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "folded-with-me-after-the-rain",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "folded"
+         }
+        }
+       }
+      ],
+      "left": [
+       {
+        "text": "He goes back to humming. You can hear it from the corridor.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "left"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     }
+    ]
+   },
+   "hint": "The kit man is humming again"
+  },
+  {
+   "id": "hsg-1d-deep",
+   "title": "The record",
+   "after": {
+    "beat": "hsg-1",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-hsg-1d-deep",
+    "title": "The record",
+    "category": "staff",
+    "place": "club:kit-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kitman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{kitman.short} has brought in an old record in a paper sleeve and propped it on the shelf by the kettle. Her song. The sleeve has a coffee ring on it and a date in pencil."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kitman",
+       "say": [
+        "\"Found it in the loft. Don't know what to do with it. Haven't got anything to play it on.\""
+       ],
+       "replies": [
+        {
+         "id": "play",
+         "label": "Find a record player and bring it in.",
+         "tone": "kind",
+         "end": "play"
+        },
+        {
+         "id": "frame",
+         "label": "\"Frame it.\"",
+         "tone": "calm",
+         "end": "frame"
+        },
+        {
+         "id": "leave",
+         "label": "\"Leave it in the loft, mate.\"",
+         "tone": "cold",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "play": [
+       {
+        "text": "You find one at a car boot for six pounds. He plays it once, on his own, with the kit room door shut.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "found-me-a-record-player",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "play"
+         }
+        }
+       }
+      ],
+      "frame": [
+       {
+        "text": "He frames the sleeve and hangs it by the kettle.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "frame"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "He takes it home.",
+        "arc": {
+         "set": {
+          "deep": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     }
+    ]
+   },
+   "hint": "The kit man has brought something in"
+  },
+  {
+   "id": "hsg-2",
+   "title": "Before kick-off",
+   "after": {
+    "beat": "hsg-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-hsg-2",
+    "title": "Before kick-off",
+    "category": "staff",
+    "place": "stadium:tunnel",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kitman",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on, a cup night at home. The stadium announcer is in the tunnel with a clipboard, asking if anyone has a song for the warm-up.",
+     "{if arc.path=='folded'}You know the name of the song. You know hers too.{/if}",
+     "{if arc.deep=='play'}The record player from the car boot is still in the kit room.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "ask",
+      "label": "Ask for the kit man's song.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "It comes on as you walk out for the warm-up. {kitman.short} stops at the end of the tunnel with a towel over his shoulder and stands there until it finishes.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "respect": 4,
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "got-her-song-played",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "her-song"
+        }
+       }
+      ]
+     },
+     {
+      "id": "usual",
+      "label": "Say the usual is fine.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "They play the usual. In the kit room at full time he's humming his own.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "the-kit-room"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     }
+    ]
+   },
+   "hint": "A season on, there's a big game at home"
+  }
+ ]
+}

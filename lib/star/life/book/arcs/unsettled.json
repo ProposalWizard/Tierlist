@@ -16,7 +16,13 @@
   ]
  },
  "start": {
-  "chance": 0.25
+  "chance": 0.003,
+  "tier": "common",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
  },
  "cast": [
   {
@@ -34,7 +40,8 @@
  ],
  "vars": {
   "leak": 0,
-  "gaffer": "none"
+  "gaffer": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -244,6 +251,135 @@
    "hint": "Your agent has a plan"
   },
   {
+   "id": "agl-1d-deep",
+   "title": "The photographer",
+   "after": {
+    "beat": "agl-2-office",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-agl-1d-deep",
+    "title": "The photographer",
+    "category": "agent",
+    "place": "home:street",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Since the \"unsettled\" story there's been a photographer outside your house, a lad in a hoodie with a long lens, sitting on your neighbour's wall."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "tabloid",
+       "say": [
+        "He waves. He's very young. \"Sorry,\" he mouths."
+       ],
+       "replies": [
+        {
+         "id": "tea",
+         "label": "Take him a cup of tea.",
+         "tone": "kind",
+         "end": "tea"
+        },
+        {
+         "id": "blinds",
+         "label": "Shut the blinds.",
+         "tone": "calm",
+         "end": "blinds"
+        },
+        {
+         "id": "agent",
+         "label": "Ring your agent and shout.",
+         "tone": "fiery",
+         "end": "agent"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "tea": [
+       {
+        "text": "He takes a photo of you holding the tea. It runs with the caption STAR NOT LEAVING: MAKES TEA.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "tabloid",
+          "tag": "made-the-photographer-tea",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "tea"
+         }
+        }
+       }
+      ],
+      "blinds": [
+       {
+        "text": "He's there for three days, then he isn't.",
+        "arc": {
+         "set": {
+          "deep": "blinds"
+         }
+        }
+       }
+      ],
+      "agent": [
+       {
+        "text": "Your agent says it's working. That's worse.",
+        "npc": [
+         {
+          "slot": "agent",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "agent"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "There's a photographer outside your house"
+  },
+  {
    "id": "agl-2-office",
    "title": "Sunday paper",
    "after": {
@@ -414,7 +550,9 @@
      ]
     },
     "setup": [
-     "{tabloid.name} from the {tabloid.outlet} rings you, not your agent. \"Off the record. Did you know your agent was taking a fee from one of the clubs that asked about you? A big one. If you'd moved, he'd have been paid twice.\""
+     "{tabloid.name} from the {tabloid.outlet} rings you, not your agent. \"Off the record. Did you know your agent was taking a fee from one of the clubs that asked about you? A big one. If you'd moved, he'd have been paid twice.\"",
+     "{if arc.deep=='tea'}The photographer with the tea still waves when he sees you.{/if}",
+     "{if arc.deep=='agent'}You still haven't forgiven your agent for the photographer on the wall.{/if}"
     ],
     "choices": [
      {

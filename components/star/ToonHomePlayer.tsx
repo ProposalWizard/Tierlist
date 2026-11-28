@@ -24,6 +24,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { toonYou, subscribeToonYou } from "@/lib/star/style3d/toon/bodies";
+import { afterLoss, newHealState, HEAL_DELAY_MS } from "@/lib/star/three3d/autoHeal";
 
 export default function ToonHomePlayer({ career, width, height, where, kitShirt, kitTrim, fallback }: {
   career: CareerState; width: number; height: number; where: "home" | "title"; kitShirt: string; kitTrim: string; fallback: ReactNode;
@@ -31,22 +32,36 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
   const wrap = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  /** Bumped to build him again after the phone took his 3D away (three3d/autoHeal.ts). */
+  const [gen, setGen] = useState(0);
   const turn = useRef({ yaw: where === "title" ? -0.35 : 0, drag: null as null | number, from: 0 });
   const you = useSyncExternalStore(subscribeToonYou, toonYou, toonYou);
   const num = career.squadNumber ?? 9;
+  // the boots you bought, on his feet (lib/star/wearables.ts; Harry, 28 Nov 2026): the pair and its level
+  const bootKey = career.currentBoot?.id ? `${career.currentBoot.id}:${career.currentBoot.level ?? ""}` : "plain";
   // what he looks like now: the kept picture is shown only while it still matches
-  const sig = [where, width, height, kitShirt, kitTrim, num, you.head, you.body, you.skin, you.hair].join("|");
+  const sig = [where, width, height, kitShirt, kitTrim, num, you.head, you.body, you.skin, you.hair, bootKey].join("|");
   const [snap, setSnap] = useState<string | null>(null);
   useEffect(() => { setSnap(readSnap(where, sig)); }, [where, sig]);
 
   useEffect(() => {
     const el = wrap.current;
     if (!el) return;
-    // Back to Home with him already built: put him straight back.
+    // The phone took his 3D away (Android/iOS, short of graphics memory; Harry, 27 Nov 2026: "it just
+    // shows like a frozen screen"): the kept canvas would stay frozen, or Chrome's grey sad-face box,
+    // on every return to Home. He is thrown away and built again on a fresh context, silently
+    // (his kept picture shows meanwhile); after AUTO_REBUILDS in a minute, the old figure.
+    const onLost = () => {
+      setReady(false);
+      if (afterLoss(heal, Date.now()) === "rebuild") setTimeout(() => setGen((n) => n + 1), HEAL_DELAY_MS);
+      else setFailed(true);
+    };
+    // Back to Home with him already built: put him straight back (unless his 3D was taken meanwhile).
+    if (kept && kept.sig === sig && !kept.alive()) { console.warn("Style A home player: his 3D was lost while away, building him again"); freeKept(); }
     if (kept && kept.sig === sig) {
       const k = kept;
       turn.current = k.turn;
-      k.attach(el);
+      k.attach(el, onLost);
       setReady(true);
       return () => k.detach();
     }
@@ -69,8 +84,21 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
         const JUGGLE_BEAT = { from: jb?.from ?? 6, dur: jb?.dur ?? 6, round: HOME_IDLE_ROUND };
         const { makeHomeSet, homeBallAt } = await import("@/lib/star/homeSet3d");
         const { numberTexture } = await import("@/lib/star/style3d/gameplay");
+        const { bootLookOf, bootWorn } = await import("@/lib/star/wearables");
         if (dead) return;
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
+        let notify: (() => void) | null = null;
+        let lostOnce = false;
+        const lost = () => {
+          if (lostOnce) return;
+          lostOnce = true;
+          console.warn("Style A home player: the phone took the 3D away, building him again");
+          const n = notify;
+          if (kept === entry) kept = null;
+          entry?.free();
+          n?.();
+        };
+        renderer.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); lost(); });
         renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
         renderer.setSize(width, height);
         renderer.setClearColor(0x000000, 0);
@@ -91,7 +119,7 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
         if (dead) { renderer.dispose(); renderer.forceContextLoss(); return; }
         const SK = (SkeletonUtils as unknown as { default?: unknown }).default ?? SkeletonUtils;
         const p = makePerson3d(THREE, SK as never, g, anims, { outline: 0.006, you: true });
-        dressPerson3d(THREE, p, { skin: you.skin, hair: you.hair, kit: { shirt: kitShirt, trim: kitTrim }, number: numberTexture(THREE, num) });
+        dressPerson3d(THREE, p, { skin: you.skin, hair: you.hair, kit: { shirt: kitShirt, trim: kitTrim }, number: numberTexture(THREE, num), accessories: [bootWorn(bootLookOf(career.currentBoot))] });
         if (fb) addClips(THREE, p, fb);
         scene.add(p.root);
         // his face moves: blinks, eyes that look round, lips when he talks (toon/face.ts)
@@ -147,6 +175,7 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
         const frame = (now: number) => {
           raf = requestAnimationFrame(frame);
           if (document.hidden || !onScreen || now - last < 33) return;
+          if (renderer.getContext().isContextLost()) { lost(); return; } // the event can be missed (a hidden tab)
           last = now;
           // stills and films (the bench): window.__homeT holds one moment
           const held = (window as unknown as { __homeT?: number }).__homeT;
@@ -157,7 +186,9 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
         const stop = () => { cancelAnimationFrame(raf); raf = 0; seen?.disconnect(); setToonRim(THREE, { color: "#ffffff", strength: 0 }); };
         entry = {
           sig, turn: tr0,
-          attach: (host) => {
+          alive: () => !lostOnce && !renderer.getContext().isContextLost(),
+          attach: (host, onLost) => {
+            notify = onLost ?? null;
             if (timer) { clearTimeout(timer); timer = null; }
             host.appendChild(renderer.domElement);
             rim();
@@ -166,11 +197,13 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
             if (!raf) raf = requestAnimationFrame(frame);
           },
           detach: () => {
+            notify = null;
             stop();
             renderer.domElement.remove();
             timer = setTimeout(() => { if (kept === entry) freeKept(); }, KEEP_MS);
           },
           free: () => {
+            lostOnce = true; // our own forceContextLoss below is not "the phone took it"
             if (timer) clearTimeout(timer);
             stop();
             face?.dispose();
@@ -190,18 +223,20 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
             renderer.domElement.remove();
           },
         };
+        // taken while he was still loading: build again (onLost), never a dead canvas on Home
+        if (lostOnce || renderer.getContext().isContextLost()) { lostOnce = true; entry.free(); if (!dead) onLost(); return; }
         kept = entry;
-        entry.attach(el);
+        entry.attach(el, onLost);
         setReady(true);
         dispose = () => entry?.detach();
       } catch (e) {
         console.error("Style A home player", e);
-        if (!dead) setFailed(true);
+        if (!dead) onLost(); // a failed build: tried again silently, then the old figure
       }
     })();
     return () => { dead = true; if (!entry) cancelAnimationFrame(raf); dispose(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [width, height, where, kitShirt, kitTrim, num, you.head, you.body, you.skin, you.hair]);
+  }, [width, height, where, kitShirt, kitTrim, num, you.head, you.body, you.skin, you.hair, bootKey, gen]);
 
   const onDown = (e: React.PointerEvent) => { if (where !== "home") return; turn.current.drag = e.clientX; turn.current.from = turn.current.yaw; (e.target as Element).setPointerCapture?.(e.pointerId); };
   const onMove = (e: React.PointerEvent) => { const t = turn.current; if (t.drag !== null) t.yaw = t.from + (e.clientX - t.drag) * 0.02; };
@@ -224,11 +259,16 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
 interface Kept {
   sig: string;
   turn: { yaw: number; drag: null | number; from: number };
-  attach: (host: HTMLElement) => void;
+  /** His 3D context is still there (false: the phone took it; build him again). */
+  alive: () => boolean;
+  /** `onLost`: told when the phone takes his 3D away while he is on this screen. */
+  attach: (host: HTMLElement, onLost?: () => void) => void;
   detach: () => void;
   free: () => void;
 }
 let kept: Kept | null = null;
+/** His silent rebuilds after a lost 3D (three3d/autoHeal.ts): two a minute, then the old figure. */
+const heal = newHealState();
 /** How long he is kept after you leave Home: a quick look at League and back costs nothing. */
 const KEEP_MS = 90_000;
 function freeKept() {

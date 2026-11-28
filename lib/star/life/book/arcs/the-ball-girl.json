@@ -1,0 +1,376 @@
+{
+ "id": "arc-the-ball-girl",
+ "title": "The ball girl",
+ "owner": "kidfan",
+ "summary": "A ball girl throws you the ball quickly for a throw-in and you score from it. Their gaffer has a go at her on the touchline, and she's in tears. A season on, she's a bit taller and still holding a ball.",
+ "size": "small",
+ "about": {
+  "who": [
+   "kidfan"
+  ],
+  "tone": [
+   "warm",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "quick-hands",
+   "title": "Quick hands",
+   "text": "A ball girl gave you a quick throw and got told off for it. You went over. She's a ball girl every week now, and quick about it."
+  },
+  {
+   "id": "just-a-throw",
+   "title": "Just a throw",
+   "text": "A ball girl threw you a quick one, you scored, and you never knew what happened to her after."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "bbo-1-throw",
+   "title": "The throw",
+   "n": 1,
+   "event": {
+    "id": "arc-bbo-1-throw",
+    "title": "The throw",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Seventy-ninth minute. A ball girl, about eleven, gets you the ball quick for a throw. You take it fast, and you score from it. Their gaffer goes over and shouts at her in front of everyone. At full time she's crying on her stool."
+    ],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "kidfan",
+       "say": [
+        "{kidfan.name} is wiping her face on her bib. She sees you coming and sits up straight, like she's in trouble again."
+       ],
+       "replies": [
+        {
+         "id": "boots",
+         "label": "Give her your boots.",
+         "tone": "kind",
+         "end": "boots"
+        },
+        {
+         "id": "word",
+         "label": "\"Best throw I've had all season.\"",
+         "tone": "kind",
+         "end": "word"
+        },
+        {
+         "id": "tunnel",
+         "label": "Go down the tunnel.",
+         "tone": "calm",
+         "end": "tunnel"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "boots": [
+       {
+        "text": "She takes them like they're hot. Her mum, in the front row, has her hand over her mouth.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "gave-me-his-boots-after-the-throw",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "word": [
+       {
+        "text": "She nods very hard. You fist-bump her. The crying stops.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "tunnel": [
+       {
+        "text": "You go in. In the dressing room someone says the ball girl's still out there.",
+        "arc": {
+         "set": {
+          "path": "tunnel"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "A ball girl has had a bad night"
+  },
+  {
+   "id": "bbo-1d-deep",
+   "title": "The letter from her school",
+   "after": {
+    "beat": "bbo-1-throw",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-bbo-1d-deep",
+    "title": "The letter from her school",
+    "category": "fans",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A letter from a primary school two towns away. The ball girl's class wants to know if a throw-in is a skill or luck. They've drawn pictures."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kidfan",
+       "say": [
+        "One picture is of the girl with a very long arm."
+       ],
+       "replies": [
+        {
+         "id": "visit",
+         "label": "Go and do an assembly about throw-ins.",
+         "tone": "kind",
+         "end": "visit"
+        },
+        {
+         "id": "write",
+         "label": "Write back: \"Skill.\"",
+         "tone": "calm",
+         "end": "write"
+        },
+        {
+         "id": "bin",
+         "label": "Too busy.",
+         "tone": "cold",
+         "end": "bin"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "visit": [
+       {
+        "text": "Thirty kids throw beanbags at you in a hall. She throws hers quickest.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "came-to-my-school",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "visit"
+         }
+        }
+       }
+      ],
+      "write": [
+       {
+        "text": "The teacher puts your letter up in the corridor.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "write"
+         }
+        }
+       }
+      ],
+      "bin": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "bin"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "The ball girl's school has written"
+  },
+  {
+   "id": "bbo-2-again",
+   "title": "Quick hands",
+   "after": {
+    "beat": "bbo-1-throw",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-bbo-2-again",
+    "title": "Quick hands",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "walkout",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on, the same ground. The same ball girl, taller, on the same stool by the corner flag.",
+     "{if arc.deep=='visit'}She still talks about the beanbags.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "nod",
+      "label": "Give her a nod as you go past.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='kind'",
+        "text": "She nods back. In the second half she throws you the ball before it's even stopped. Their gaffer glares. She doesn't care.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "quick-hands"
+        }
+       },
+       {
+        "text": "She doesn't look up. She gives you the ball slowly all night.",
+        "arc": {
+         "end": "just-a-throw"
+        }
+       }
+      ]
+     },
+     {
+      "id": "focus",
+      "label": "Keep your eyes on the game.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='kind'",
+        "text": "You don't see her. At full time she shouts your name. She's got your boots on, two sizes too big.",
+        "arc": {
+         "end": "quick-hands"
+        }
+       },
+       {
+        "text": "You don't see her. You don't think about the throw.",
+        "arc": {
+         "end": "just-a-throw"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "A season on, the same ground"
+  }
+ ]
+}

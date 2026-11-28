@@ -1,0 +1,290 @@
+{
+ "id": "arc-the-scout",
+ "title": "A man with a notebook",
+ "owner": "coach",
+ "summary": "At an under-18 game on a Wednesday night there's a man in the stand with a notebook and a big club's coat. The coach says play your game. A season on, you know who he was.",
+ "size": "small",
+ "about": {
+  "who": [
+   "coach",
+   "academy years"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0053,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "first-seasons",
+  "when": [
+   "age<=20",
+   "season<=3",
+   "age<=18"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "coach",
+   "pick": "coach"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "played-my-game",
+   "title": "Played your game",
+   "text": "A scout came to watch you at eighteen and you played your own game."
+  },
+  {
+   "id": "showed-off",
+   "title": "Showed off",
+   "text": "A scout came to watch you at eighteen. You tried every trick you had."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "sct-1",
+   "title": "Wednesday night",
+   "n": 1,
+   "event": {
+    "id": "arc-sct-1",
+    "title": "Wednesday night",
+    "category": "career",
+    "place": "compound:pitch-1",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ],
+     "requires": [
+      "age<=19"
+     ]
+    },
+    "setup": [
+     "Under-18s, Wednesday night, a crowd of forty. {coach.name} leans in during the warm-up. \"Man in the blue coat, middle of the stand. He's not here for their lot.\""
+    ],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "coach",
+       "say": [
+        "\"Play your game. Pass it simple, run hard, go home. Don't do anything you wouldn't do on a Tuesday.\""
+       ],
+       "replies": [
+        {
+         "id": "simple",
+         "label": "\"Simple. Got it.\"",
+         "tone": "calm",
+         "end": "simple"
+        },
+        {
+         "id": "show",
+         "label": "\"I'm going to show him something.\"",
+         "tone": "reckless",
+         "end": "show"
+        },
+        {
+         "id": "who",
+         "label": "\"Which club?\"",
+         "tone": "honest",
+         "goto": "s2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "simple"
+        }
+       ]
+      },
+      "s2": {
+       "who": "coach",
+       "say": [
+        "\"Doesn't matter. Play like he's not there.\""
+       ],
+       "replies": [
+        {
+         "id": "simple",
+         "label": "\"Okay.\"",
+         "tone": "calm",
+         "end": "simple"
+        },
+        {
+         "id": "show",
+         "label": "\"He's there, though.\"",
+         "tone": "reckless",
+         "end": "show"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "simple": [
+       {
+        "text": "You play simple. Sixty passes, one goal from four yards. The man in the blue coat leaves at seventy minutes.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 6,
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "played-it-simple-for-the-scout",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "simple"
+         }
+        }
+       }
+      ],
+      "show": [
+       {
+        "text": "You try a rabona in the first minute and lose the ball. You try it again in the second half and it works, and nobody's watching because they're scoring.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "show"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "There's a scout at the under-18 game"
+  },
+  {
+   "id": "sct-2",
+   "title": "The blue coat",
+   "after": {
+    "beat": "sct-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-sct-2",
+    "title": "The blue coat",
+    "category": "career",
+    "place": "compound:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. The man in the blue coat is at your club now, as head of recruitment. He nods at you in the corridor.",
+     "{if arc.path=='simple'}He says your name before you say his.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "ask",
+      "label": "Ask what he wrote that night.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='simple'",
+        "text": "\"Boring. Good boring. That's the best thing I write.\" {coach.short} hears it and grins at the floor.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "played-my-game"
+        }
+       },
+       {
+        "text": "\"Rabona. Lost it. Rabona. Lost it.\" He laughs. \"Then the goal. I nearly wrote you down.\"",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "showed-off"
+        }
+       }
+      ]
+     },
+     {
+      "id": "nod",
+      "label": "Nod and keep walking.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='simple'",
+        "text": "He nods back. {coach.short} tells you later he's the reason you got the contract.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "played-my-game"
+        }
+       },
+       {
+        "text": "He nods back. He's got a different notebook now.",
+        "arc": {
+         "end": "showed-off"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "A season on, the man in the blue coat"
+  }
+ ]
+}

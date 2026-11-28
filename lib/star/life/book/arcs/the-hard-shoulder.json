@@ -1,0 +1,290 @@
+{
+ "id": "arc-the-hard-shoulder",
+ "title": "The hard shoulder",
+ "owner": "manager",
+ "summary": "The team coach breaks down on the motorway two hours before kick-off. The gaffer wants a plan. A season on, the same coach, the same driver.",
+ "size": "small",
+ "about": {
+  "who": [
+   "gaffer",
+   "away trips"
+  ],
+  "tone": [
+   "funny",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "divisionLevel>=3"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "order": "random"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-minibus",
+   "title": "The minibus",
+   "text": "When the coach broke down on the motorway, you got the squad to the game in a stranger's minibus."
+  },
+  {
+   "id": "the-hard-shoulder",
+   "title": "The hard shoulder",
+   "text": "The coach broke down and the squad sat on the hard shoulder until the police came."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "hsh-1",
+   "title": "Junction twelve",
+   "n": 1,
+   "event": {
+    "id": "arc-hsh-1",
+    "title": "Junction twelve",
+    "category": "squad",
+    "place": "driving:motorway",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Junction twelve, two hours before kick-off. The team coach is on the hard shoulder with smoke coming out of the back. Twenty-two of you are on the grass behind the barrier in suits."
+    ],
+    "talk": {
+     "start": "h1",
+     "nodes": {
+      "h1": {
+       "who": "manager",
+       "say": [
+        "The gaffer is on the phone to the club and the club is not answering. \"Ideas. Anybody. Now.\""
+       ],
+       "replies": [
+        {
+         "id": "taxis",
+         "label": "\"Taxis. Eight of them. Put it on the club.\"",
+         "tone": "confident",
+         "end": "taxis"
+        },
+        {
+         "id": "mate",
+         "label": "\"{mate.short}'s cousin has a minibus.\"",
+         "tone": "reckless",
+         "end": "minibus"
+        },
+        {
+         "id": "wait",
+         "label": "\"Wait for the recovery.\"",
+         "tone": "calm",
+         "end": "wait"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "wait"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "taxis": [
+       {
+        "text": "Eight taxis, a fortune. You arrive in ones and twos, the last car at quarter to three. You win.",
+        "effects": {
+         "boss": 2,
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "taxis"
+         }
+        }
+       }
+      ],
+      "minibus": [
+       {
+        "text": "{mate.short}'s cousin turns up in a minibus with a hen party's banner still on the side. You get there at ten past two. It's the best warm-up the squad has ever had.",
+        "effects": {
+         "team": 3,
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         },
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "got-us-the-minibus",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "minibus"
+         }
+        }
+       }
+      ],
+      "wait": [
+       {
+        "text": "You wait. The recovery comes at twenty to three. The game kicks off at four with the gaffer's permission and the other gaffer's sulk.",
+        "effects": {
+         "boss": -1
+        },
+        "arc": {
+         "set": {
+          "path": "wait"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "random"
+     }
+    ]
+   },
+   "hint": "The team coach has broken down"
+  },
+  {
+   "id": "hsh-2",
+   "title": "The same coach",
+   "after": {
+    "beat": "hsh-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-hsh-2",
+    "title": "The same coach",
+    "category": "squad",
+    "place": "driving:coach",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. Same away trip, same coach, same driver. There's a sign above the driver's seat: DO NOT ASK ABOUT JUNCTION TWELVE.",
+     "{if arc.path=='minibus'}{mate.short} has his cousin's number on speed dial, just in case.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "ask",
+      "label": "Ask about junction twelve.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "if": "arc.path=='minibus'",
+        "text": "The driver doesn't answer, and the whole coach sings the hen party song from the banner. The gaffer joins in at the second verse.",
+        "effects": {
+         "team": 2
+        },
+        "arc": {
+         "end": "the-minibus"
+        }
+       },
+       {
+        "text": "The driver goes very quiet. Somebody plays a siren noise on their phone.",
+        "effects": {
+         "team": 1
+        },
+        "arc": {
+         "end": "the-hard-shoulder"
+        }
+       }
+      ]
+     },
+     {
+      "id": "sleep",
+      "label": "Put your headphones in.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='minibus'",
+        "text": "You sleep. The coach gets there with an hour to spare.",
+        "arc": {
+         "end": "the-minibus"
+        }
+       },
+       {
+        "text": "You sleep. You wake at junction twelve because everybody is cheering.",
+        "arc": {
+         "end": "the-hard-shoulder"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "random"
+     }
+    ]
+   },
+   "hint": "A season on, the same coach"
+  }
+ ]
+}

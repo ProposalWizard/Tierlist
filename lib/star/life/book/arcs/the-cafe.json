@@ -1,0 +1,895 @@
+{
+ "id": "arc-the-cafe",
+ "title": "His café",
+ "owner": "pal",
+ "summary": "Your old school friend wants to open a café by the ground and needs money. You lend it, or you don't. The opening, the crossbar night to pay the rent, the month he can't pay you back, and years on, a sandwich with your name on it, or a shutter.",
+ "size": "big",
+ "about": {
+  "who": [
+   "old school friend",
+   "money",
+   "a friend's business"
+  ],
+  "tone": [
+   "warm",
+   "tense",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.0061,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "pal",
+   "pick": "pal"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "lent": 0,
+  "best": 0,
+  "debt": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-sandwich",
+   "title": "The sandwich",
+   "text": "You lent your old friend the money for a café. There's a sandwich on the menu with your name on it."
+  },
+  {
+   "id": "the-shutter",
+   "title": "The shutter",
+   "text": "Your friend's café closed. You still have a mug with the name on it."
+  },
+  {
+   "id": "just-a-customer",
+   "title": "Just a customer",
+   "text": "You didn't lend him the money. You still buy your coffee there."
+  }
+ ],
+ "promises": {
+  "p-opening": {
+   "id": "p-opening",
+   "to": "pal",
+   "text": "Be at the café's opening at seven in the morning",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "caf-2",
+    "ends": [
+     "go"
+    ]
+   },
+   "dueText": "The first Monday of next month, seven",
+   "remind": "\"Seven. Monday. First coffee's yours.\"",
+   "kept": {
+    "text": "You said you'd be at his opening, and you were.",
+    "npc": [
+     {
+      "slot": "pal",
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd come to the opening.",
+    "npc": [
+     {
+      "slot": "pal",
+      "bond": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "pal",
+      "tag": "missed-the-cafe-opening",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "caf-1",
+   "title": "The empty shop",
+   "n": 1,
+   "event": {
+    "id": "arc-caf-1",
+    "title": "The empty shop",
+    "category": "money",
+    "place": "town:empty-shop",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{pal.name} takes you to an empty shop on the road to the ground. Damp on one wall, a counter, a sign from the last place that says CHIPS. He's been saving for four years and he's four weeks of your wages short."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "pal",
+       "say": [
+        "\"A café. Bacon rolls, proper coffee, open at seven on match days. I'll pay you back in a year. I've written it all down. Look.\" He has a notebook full of numbers in three colours."
+       ],
+       "replies": [
+        {
+         "id": "lend",
+         "label": "\"Four weeks. You've got it.\"",
+         "tone": "kind",
+         "goto": "c2"
+        },
+        {
+         "id": "numbers",
+         "label": "Read the notebook properly.",
+         "tone": "honest",
+         "goto": "c3"
+        },
+        {
+         "id": "no",
+         "label": "\"I can't, mate. Not with money.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "c3"
+        }
+       ]
+      },
+      "c3": {
+       "who": "pal",
+       "say": [
+        "The numbers are good, mostly. Page nine assumes four hundred bacon rolls on a Saturday."
+       ],
+       "replies": [
+        {
+         "id": "lend",
+         "label": "\"Fine. But sell four hundred bacon rolls.\"",
+         "tone": "kind",
+         "goto": "c2"
+        },
+        {
+         "id": "no",
+         "label": "\"I'd rather not lend to a mate.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      },
+      "c2": {
+       "who": "pal",
+       "say": [
+        "\"Opening's the first Monday of next month. Seven. Will you come? First coffee's yours.\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"Seven. I'll be there.\"",
+         "tone": "kind",
+         "end": "lend",
+         "promise": "p-opening"
+        },
+        {
+         "id": "maybe",
+         "label": "\"I'll try. It's early.\"",
+         "tone": "calm",
+         "end": "lend"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "lend": [
+       {
+        "text": "You transfer it from his kitchen. He writes your name and the amount on page one of the notebook and underlines it.",
+        "effects": {
+         "moneyWeeks": -4
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "respect": 4,
+          "bond": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "lent-me-for-the-cafe",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "lent": 1,
+          "path": "lent"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"No, you're right.\" He borrows it off a bank at a terrible rate and opens anyway.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -4
+         }
+        ],
+        "arc": {
+         "set": {
+          "lent": 0,
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Your old friend has an idea"
+  },
+  {
+   "id": "caf-2",
+   "title": "Seven o'clock",
+   "after": {
+    "beat": "caf-1",
+    "weeks": [
+     2,
+     3
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-caf-2",
+    "title": "Seven o'clock",
+    "category": "money",
+    "place": "town:cafe",
+    "size": "big",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The first Monday of the month, ten to seven, still dark. The CHIPS sign is gone. There's a new one, hand-painted, and a queue of three builders."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go in.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "He makes your coffee with his hands shaking. The builders ask for a photo with you. By eight there are thirty people and he's run out of bread.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "came-to-the-cafe-opening",
+          "strength": 2
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "sleep",
+      "label": "Stay in bed.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "You stay in bed. He sends a photo at seven of the coffee he made you, going cold on the counter.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -4
+         }
+        ],
+        "promiseBroken": [
+         "p-opening"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "The café opens"
+  },
+  {
+   "id": "caf-3",
+   "title": "The crossbar night",
+   "after": {
+    "beat": "caf-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-caf-3",
+    "title": "The crossbar night",
+    "category": "money",
+    "place": "town:rec",
+    "size": "big",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The café's quiet in the summer and the rent's gone up. {pal.short} has an idea: a crossbar night on the rec behind the ground. A pound a go for the punters, and you do ten balls at the end, a fiver a hit off the regulars.",
+     "{if arc.lent==1}He hasn't paid any of it back yet. He hasn't mentioned it.{/if}"
+    ],
+    "talk": {
+     "start": "n1",
+     "nodes": {
+      "n1": {
+       "who": "pal",
+       "say": [
+        "\"A fiver a hit. A tenner on the last one. I've told everyone you'll do it. You'll do it, won't you?\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Get the balls out.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "told",
+         "label": "\"You've told everyone?\"",
+         "tone": "honest",
+         "goto": "n2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "play"
+        }
+       ]
+      },
+      "n2": {
+       "who": "pal",
+       "say": [
+        "\"I've told my mum, and my mum's told everyone.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Get the balls out.",
+         "tone": "confident",
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "The crossbar night",
+        "intro": "The rec behind the ground. Sixty people with paper cups. A fiver a hit for the café.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "crossbar",
+           "balls": 1,
+           "line": "\"The bar first. That's what they paid for.\""
+          },
+          {
+           "kind": "corners",
+           "balls": 2
+          },
+          {
+           "kind": "props",
+           "balls": 2,
+           "line": "\"The tyre's off my van.\""
+          },
+          {
+           "kind": "lights-out",
+           "balls": 2,
+           "line": "\"The floodlight's on a timer. Sorry.\""
+          },
+          {
+           "kind": "far",
+           "balls": 2,
+           "line": "\"From the bench.\""
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. A tenner, or nothing.\""
+          }
+         ],
+         "lines": {
+          "hit": "\"That's a fiver.\"",
+          "wide": "\"That's a fiver for me, then.\"",
+          "streak3": "\"The rent's paid. Keep going.\"",
+          "double:hit": "\"That's the boiler fixed.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "pal",
+         "lines": [
+          "\"Ten.\"",
+          "\"Twenty.\"",
+          "\"Thirty.\"",
+          "\"Forty.\"",
+          "\"Fifty.\"",
+          "\"Sixty.\"",
+          "\"Seventy.\"",
+          "\"Eighty.\"",
+          "\"Ninety.\"",
+          "\"And a hundred. That's the rent.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "c-stop"
+        ],
+        [
+         "activity.score>=6",
+         "c-good"
+        ],
+        [
+         "",
+         "c-poor"
+        ]
+       ]
+      },
+      "c-good": {
+       "who": "pal",
+       "say": [
+        "\"{activity.tens}.\" He counts the bucket on the bonnet of his van. \"That's two months.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Two months.\"",
+         "tone": "kind",
+         "end": "good"
+        }
+       ]
+      },
+      "c-poor": {
+       "who": "pal",
+       "say": [
+        "\"{activity.tens}. It's alright. They had a nice night.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Sorry, mate.\"",
+         "tone": "humble",
+         "end": "poor"
+        }
+       ]
+      },
+      "c-stop": {
+       "who": "pal",
+       "say": [
+        "\"The light's gone. Never mind.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Sorry, mate.\"",
+         "tone": "humble",
+         "end": "poor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "Two months' rent in a bucket. He puts your score on the board where the specials go.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": "activity.tens",
+          "debt": 0
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "One month's rent in a bucket, and the bacon rolls sold out by nine.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": "activity.tens",
+          "debt": 1
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "The café needs a good night"
+  },
+  {
+   "id": "caf-4",
+   "title": "Page one",
+   "after": {
+    "beat": "caf-3",
+    "weeks": [
+     6,
+     10
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-caf-4",
+    "title": "Page one",
+    "category": "money",
+    "place": "home:kitchen",
+    "size": "big",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "arc.lent==1"
+     ]
+    },
+    "setup": [
+     "{pal.short} comes round with the notebook open at page one. It's a year to the day."
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "pal",
+       "say": [
+        "\"I can't pay it this year. I can do half by Christmas, maybe. I'm sorry. I didn't want to text it.\""
+       ],
+       "replies": [
+        {
+         "id": "forget",
+         "label": "\"Forget it. Pay me in bacon rolls.\"",
+         "tone": "kind",
+         "end": "forget"
+        },
+        {
+         "id": "half",
+         "label": "\"Half by Christmas is fine.\"",
+         "tone": "calm",
+         "end": "half"
+        },
+        {
+         "id": "need",
+         "label": "\"I need it back, mate.\"",
+         "tone": "honest",
+         "end": "need"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "half"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "forget": [
+       {
+        "text": "He looks at the notebook and crosses out page one. Then he writes BACON ROLLS: FOREVER under it.",
+        "npc": [
+         {
+          "slot": "pal",
+          "respect": 6,
+          "bond": 14
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "let-me-off-the-cafe-money",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "saved"
+         }
+        }
+       }
+      ],
+      "half": [
+       {
+        "text": "Half comes at Christmas, in cash, in a card with a robin on it.",
+        "effects": {
+         "moneyWeeks": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "saved"
+         }
+        }
+       }
+      ],
+      "need": [
+       {
+        "text": "He nods. He sells the coffee machine to pay you, and you watch him carry it to a van.",
+        "effects": {
+         "moneyWeeks": 3
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "respect": 2,
+          "bond": -10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "made-me-sell-the-machine",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "shut"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "He can't pay you back"
+  },
+  {
+   "id": "caf-5",
+   "title": "Years on",
+   "after": {
+    "beat": "caf-1",
+    "seasons": [
+     3,
+     4
+    ]
+   },
+   "n": 5,
+   "event": {
+    "id": "arc-caf-5",
+    "title": "Years on",
+    "category": "money",
+    "place": "town:cafe",
+    "size": "big",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Years on. You walk past on the way to the ground.",
+     "{if arc.path=='saved'}It's open. There's a sandwich on the board with your name on it, and it's the most expensive thing on there.{/if}",
+     "{if arc.path=='shut'}There's a shutter down. Someone has sprayed CHIPS on it.{/if}",
+     "{if arc.path=='no'}It's open, just about. He waves at you through the window like nothing happened.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "in",
+      "label": "Go in and order your sandwich.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='saved'",
+        "text": "He won't take your money. He never has.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "the-sandwich"
+        }
+       },
+       {
+        "if": "arc.path=='shut'",
+        "text": "You stand at the shutter for a minute and then go to training.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "the-shutter"
+        }
+       },
+       {
+        "text": "You go in and pay full price. He gives you an extra hash brown and says nothing about it.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "just-a-customer"
+        }
+       }
+      ]
+     },
+     {
+      "id": "past",
+      "label": "Keep walking.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='saved'",
+        "text": "He knocks on the window as you go past and holds up a bacon roll.",
+        "arc": {
+         "end": "the-sandwich"
+        }
+       },
+       {
+        "if": "arc.path=='shut'",
+        "text": "You keep walking. You've got a mug at home with the café's name on it.",
+        "arc": {
+         "end": "the-shutter"
+        }
+       },
+       {
+        "text": "You keep walking. You'll go in on Saturday.",
+        "arc": {
+         "end": "just-a-customer"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Years on, the café"
+  }
+ ]
+}

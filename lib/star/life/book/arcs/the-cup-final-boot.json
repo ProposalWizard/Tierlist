@@ -1,0 +1,414 @@
+{
+ "id": "arc-the-cup-final-boot",
+ "title": "The cup final boot",
+ "owner": "kitman",
+ "summary": "The kit man keeps one old boot on a shelf and says it scored in a cup final. Wear it for ten balls and see. A season on, a man turns up who says it was his.",
+ "size": "small",
+ "about": {
+  "who": [
+   "kit man"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "kitman",
+   "pick": "kitman"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "best": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "on-the-shelf",
+   "title": "On the shelf",
+   "text": "The boot is back on the shelf with your score under it in biro."
+  },
+  {
+   "id": "half-true",
+   "title": "Half true",
+   "text": "The boot did play in a final. It just didn't score."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "cfb-1",
+   "title": "One boot",
+   "n": 1,
+   "event": {
+    "id": "arc-cfb-1",
+    "title": "One boot",
+    "category": "staff",
+    "place": "compound:boot-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kitman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "There's one brown boot on the top shelf of the boot room, laces gone hard. You've never asked about it. Today {kitman.short} catches you looking."
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "kitman",
+       "say": [
+        "\"Cup final. Scored the winner in that, he did. Left foot, bottom corner. I've had it on that shelf thirty years. Want to try it on? Ten balls. Your size, near enough.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Go on, then. Ten balls.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "who",
+         "label": "\"Who scored in it?\"",
+         "tone": "honest",
+         "goto": "m2"
+        },
+        {
+         "id": "no",
+         "label": "\"It'll fall apart.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "no"
+        }
+       ]
+      },
+      "m2": {
+       "who": "kitman",
+       "say": [
+        "\"A lad. Long time ago. Never mind who. Are you putting it on or not?\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Fine. Give it here.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "no",
+         "label": "\"Not today.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "{kitman.short}'s cup final boot",
+        "intro": "Ten balls on pitch two in a boot from before you were born.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "corners",
+           "balls": 2,
+           "line": "\"Bottom corner. Like he did.\""
+          },
+          {
+           "kind": "call-it",
+           "balls": 2
+          },
+          {
+           "kind": "crossbar",
+           "balls": 1,
+           "line": "\"The bar. He never hit the bar. Too good.\""
+          },
+          {
+           "kind": "props",
+           "balls": 2
+          },
+          {
+           "kind": "far",
+           "balls": 2,
+           "line": "\"From twenty. He did that in the semi.\""
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. Twenty or ten off.\""
+          }
+         ],
+         "lines": {
+          "hit": "\"That's the boot, that.\"",
+          "wide": "\"That's you, not the boot.\"",
+          "streak3": "\"See? It knows.\"",
+          "broken": "\"You've upset it now.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "kitman",
+         "lines": [
+          "\"Ten.\"",
+          "\"Twenty.\"",
+          "\"Thirty.\"",
+          "\"Forty.\"",
+          "\"Fifty.\"",
+          "\"Sixty.\"",
+          "\"Seventy.\"",
+          "\"Eighty.\"",
+          "\"Ninety.\"",
+          "\"And a hundred. In my boot.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "c-stop"
+        ],
+        [
+         "activity.score>=6",
+         "c-good"
+        ],
+        [
+         "",
+         "c-poor"
+        ]
+       ]
+      },
+      "c-good": {
+       "who": "kitman",
+       "say": [
+        "\"{activity.tens}.\" He takes the boot back like it's a baby. \"I'll put that under it.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Put my name on it and all.\"",
+         "tone": "confident",
+         "end": "good"
+        }
+       ]
+      },
+      "c-poor": {
+       "who": "kitman",
+       "say": [
+        "\"{activity.tens}. It's not the boot.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"It's a bit the boot.\"",
+         "tone": "humble",
+         "end": "poor"
+        }
+       ]
+      },
+      "c-stop": {
+       "who": "kitman",
+       "say": [
+        "\"It's rubbing, is it? It used to rub him.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"It's rubbing.\"",
+         "tone": "humble",
+         "end": "poor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "By the morning there's a strip of tape under the boot: \"{you.short} {activity.tens}.\" in biro.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "respect": 4,
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "wore-the-cup-final-boot",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "played",
+          "best": "activity.tens"
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "He tells the boot room you've got a big toe like a parsnip. The boot goes back on the shelf.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "wore-the-cup-final-boot",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "played",
+          "best": "activity.tens"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Your loss.\" He puts it back up. It's the only thing in the room he dusts.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     }
+    ]
+   },
+   "hint": "The kit man's boot on the shelf"
+  },
+  {
+   "id": "cfb-2",
+   "title": "The man in the car park",
+   "after": {
+    "beat": "cfb-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-cfb-2",
+    "title": "The man in the car park",
+    "category": "staff",
+    "place": "compound:car-park",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kitman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. An old man in a club tie is in the car park asking for {kitman.short}. He tells you he played for the club in a cup final, and they lost. He missed a penalty. He wants his boot back.",
+     "{if arc.path=='played'}Your name is on a strip of tape under it.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "take",
+      "label": "Take him to the boot room.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "{kitman.short} goes red, then shakes his hand for a full minute. The old man holds the boot and says it still smells of that day. He leaves it on the shelf.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "respect": 2,
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "half-true"
+        }
+       }
+      ]
+     },
+     {
+      "id": "cover",
+      "label": "\"He's not in today.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "The old man drives off. You tell {kitman.short} at lunch and he goes quiet, then says the winner story is better.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "kept-the-boot-story-going",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "on-the-shelf"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     }
+    ]
+   },
+   "hint": "A season on, someone asks about the boot"
+  }
+ ]
+}

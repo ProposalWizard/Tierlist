@@ -1,0 +1,402 @@
+{
+ "id": "arc-the-envelope",
+ "title": "The envelope",
+ "owner": "agent",
+ "summary": "Your agent hands you an envelope of cash from a club that wants you, a \"loyalty bonus\" for saying nice things about them. It's thick. A season on, someone at that club gets caught.",
+ "size": "small",
+ "about": {
+  "who": [
+   "agent"
+  ],
+  "tone": [
+   "tense",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.003,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "agent",
+   "pick": "agent"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "handed-it-back",
+   "title": "Handed it back",
+   "text": "Your agent gave you a thick envelope from another club and you handed it straight back. When they got caught, you weren't in the story."
+  },
+  {
+   "id": "the-envelope",
+   "title": "Kept it",
+   "text": "You kept the envelope. It's in a drawer. You think about it whenever that club is in the news."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "env-1-cash",
+   "title": "The envelope",
+   "n": 1,
+   "event": {
+    "id": "arc-env-1-cash",
+    "title": "The envelope",
+    "category": "money",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "driving",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{agent.name} is in your car park in his car with the engine running. He passes you an envelope through the window. It's thick, and it smells of money. \"From a club that likes you. A thank you. For being nice about them in interviews.\""
+    ],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "agent",
+       "say": [
+        "\"Nobody signs anything. Nobody's asking you to move. It's a gift, and gifts are legal, mostly.\""
+       ],
+       "replies": [
+        {
+         "id": "back",
+         "label": "Hand it straight back.",
+         "tone": "brave",
+         "end": "back"
+        },
+        {
+         "id": "what",
+         "label": "\"Mostly?\"",
+         "tone": "honest",
+         "goto": "a2"
+        },
+        {
+         "id": "keep",
+         "label": "Put it in your pocket.",
+         "tone": "reckless",
+         "end": "kept"
+        }
+       ]
+      },
+      "a2": {
+       "who": "agent",
+       "say": [
+        "\"Mostly. Look, nobody's ever been caught for an envelope.\" That's not true and you both know it."
+       ],
+       "replies": [
+        {
+         "id": "back",
+         "label": "\"Give it back to them.\"",
+         "tone": "brave",
+         "end": "back"
+        },
+        {
+         "id": "keep",
+         "label": "Keep it.",
+         "tone": "reckless",
+         "end": "kept"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "back": [
+       {
+        "text": "He holds it for a second, then puts it on the passenger seat. \"Your loss.\" It's not.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "handed-back-the-envelope",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "back"
+         }
+        }
+       }
+      ],
+      "kept": [
+       {
+        "text": "Five thousand pounds in fifties. You put it in a drawer and don't spend it.",
+        "effects": {
+         "moneyWeeks": 2,
+         "scandal": true
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "kept-the-envelope",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kept"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     }
+    ]
+   },
+   "hint": "Your agent has something in his car"
+  },
+  {
+   "id": "env-1d-deep",
+   "title": "The second envelope",
+   "after": {
+    "beat": "env-1-cash",
+    "weeks": [
+     4,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-env-1d-deep",
+    "title": "The second envelope",
+    "category": "money",
+    "place": "club:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "driving",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your agent's car again, the engine running. Another envelope, thinner. \"Same club. A thank you for the last thank you.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "agent",
+       "say": [
+        "{if arc.path=='back'}\"I know you gave the last one back. They're persistent.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "back",
+         "label": "Give it back again.",
+         "tone": "honest",
+         "end": "back"
+        },
+        {
+         "id": "take",
+         "label": "Take it.",
+         "tone": "reckless",
+         "end": "take"
+        },
+        {
+         "id": "drive",
+         "label": "Walk away from the car.",
+         "tone": "cold",
+         "end": "drive"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "back": [
+       {
+        "text": "He puts it on the dashboard and sighs. \"You're bad for business.\"",
+        "npc": [
+         {
+          "slot": "agent",
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "gave-two-envelopes-back",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "back"
+         }
+        }
+       }
+      ],
+      "take": [
+       {
+        "text": "It goes in the drawer with the first.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "take"
+         }
+        }
+       }
+      ],
+      "drive": [
+       {
+        "text": "He drives off with the window down, calling your name.",
+        "npc": [
+         {
+          "slot": "agent",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "drive"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     }
+    ]
+   },
+   "hint": "Your agent has another envelope"
+  },
+  {
+   "id": "env-2-news",
+   "title": "The news",
+   "after": {
+    "beat": "env-1-cash",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-env-2-news",
+    "title": "The news",
+    "category": "money",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. On the news: that club's director of football has been charged over cash payments to players and agents. They're asking players to come forward.",
+     "{if arc.deep=='back'}Your agent still says you're bad for business.{/if}",
+     "{if arc.deep=='take'}There are two envelopes in your drawer now.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "come",
+      "label": "Come forward.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.path=='back'",
+        "text": "You tell them you were offered it and handed it back. It's one line in the report. Your name is on the right side of it.",
+        "effects": {
+         "reputation": 3
+        },
+        "arc": {
+         "end": "handed-it-back"
+        }
+       },
+       {
+        "text": "You take the envelope to the league yourself, still sealed. It doesn't save you from the story, but it helps.",
+        "effects": {
+         "reputation": -2,
+         "moneyWeeks": -2
+        },
+        "arc": {
+         "end": "the-envelope"
+        }
+       }
+      ]
+     },
+     {
+      "id": "quiet",
+      "label": "Turn the news off.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='back'",
+        "text": "You turn it off. You're not in it. You never were.",
+        "arc": {
+         "end": "handed-it-back"
+        }
+       },
+       {
+        "text": "You turn it off. The drawer stays shut.",
+        "arc": {
+         "end": "the-envelope"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     }
+    ]
+   },
+   "hint": "A season on, the news"
+  }
+ ]
+}

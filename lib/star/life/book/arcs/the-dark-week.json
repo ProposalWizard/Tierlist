@@ -1,0 +1,906 @@
+{
+ "id": "arc-the-dark-week",
+ "title": "The car park",
+ "owner": "mate",
+ "summary": "A team-mate has sat in his car with the engine off for forty minutes before training, three days running. What you do when you notice matters. The days he isn't in, the gaffer's question, the text, the first ten balls when he's back, and a season on.",
+ "size": "big",
+ "about": {
+  "who": [
+   "mate",
+   "physio",
+   "manager"
+  ],
+  "tone": [
+   "serious",
+   "warm",
+   "hopeful"
+  ]
+ },
+ "start": {
+  "chance": 0.0061,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad"
+  },
+  {
+   "slot": "physio",
+   "pick": "physio"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "gaffer": "none",
+  "walk": "none",
+  "back": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "sunday-walks",
+   "title": "Sunday walks",
+   "text": "You noticed a team-mate who wasn't all right, and you stayed. You still go for a walk on Sundays, the two of you. No football talk."
+  },
+  {
+   "id": "he-spoke-up",
+   "title": "He spoke up",
+   "text": "Your team-mate got help, and a season on he talked to the academy about it. He told them about the knock on the car window. He didn't say it was you."
+  },
+  {
+   "id": "someone-else-knocked",
+   "title": "Someone else knocked",
+   "text": "You saw him in his car and walked past. Someone else knocked on the window. He's all right now. You think about the car park sometimes."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "dwk-1-car",
+   "title": "The car park",
+   "n": 1,
+   "event": {
+    "id": "arc-dwk-1-car",
+    "title": "The car park",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.name} has sat in his car with the engine off for forty minutes before training, three days running. He's just looking at the wheel. Today you've parked next to him."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "mate",
+       "say": [
+        "He doesn't see you. His phone's face down on the passenger seat. It's raining."
+       ],
+       "replies": [
+        {
+         "id": "knock",
+         "label": "Knock on the window. \"All right, mate?\"",
+         "tone": "kind",
+         "goto": "c2"
+        },
+        {
+         "id": "physio",
+         "label": "Go in and mention it to the physio.",
+         "tone": "calm",
+         "end": "physio"
+        },
+        {
+         "id": "leave",
+         "label": "Leave him be. Everyone has weeks.",
+         "tone": "cold",
+         "end": "left"
+        }
+       ]
+      },
+      "c2": {
+       "who": "mate",
+       "say": [
+        "He winds it down. \"Yeah. Fine. Just tired.\" He's not looking at you."
+       ],
+       "replies": [
+        {
+         "id": "time",
+         "label": "\"You don't have to be fine. I've got time.\"",
+         "tone": "kind",
+         "goto": "c3"
+        },
+        {
+         "id": "ok",
+         "label": "\"Fair enough. See you in there.\"",
+         "tone": "calm",
+         "end": "left"
+        }
+       ]
+      },
+      "c3": {
+       "who": "mate",
+       "say": [
+        "A long time. Then: he hasn't slept properly for weeks. Everything feels heavy, even the good stuff. He hasn't told his partner. He hasn't told anyone. \"I don't know what's wrong with me.\""
+       ],
+       "replies": [
+        {
+         "id": "doctor",
+         "label": "\"Will you see the club doctor? I'll come in with you.\"",
+         "tone": "kind",
+         "end": "doctor"
+        },
+        {
+         "id": "between",
+         "label": "\"This stays with me. Unless I'm worried about you.\"",
+         "tone": "honest",
+         "end": "between"
+        },
+        {
+         "id": "sit",
+         "label": "Get in the passenger side. Sit with him.",
+         "tone": "kind",
+         "end": "sat"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "doctor": [
+       {
+        "text": "He nods. You walk in with him, past the canteen, to the doctor's door. You wait outside. It's an hour. When he comes out he looks the same, but he's breathing differently.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 10,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "walked-me-to-the-doctor",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "doctor"
+         }
+        }
+       }
+      ],
+      "between": [
+       {
+        "text": "\"Ok.\" He sits for a bit. Then he says he'll ring his GP tonight. You tell him you'll text him at nine to check. You do. He has.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "listened-in-the-car-park",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "listened"
+         }
+        }
+       }
+      ],
+      "sat": [
+       {
+        "text": "You sit in the passenger seat for twenty minutes. You're both late in. The physio doesn't say anything. When you get out he says, \"Will you come with me to see the doctor? Tomorrow?\" You will.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "sat-in-my-car-with-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "doctor"
+         }
+        }
+       }
+      ],
+      "physio": [
+       {
+        "text": "{physio.name} listens and puts her coffee down. \"Thank you. Leave it with me.\" She goes out to the car park in the rain without a coat.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 2,
+          "respect": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "physio"
+         }
+        }
+       }
+      ],
+      "left": [
+       {
+        "text": "You go in. Through the dressing room window you can see his car. It's another ten minutes before he comes in, and he's fine in training, and he isn't.",
+        "arc": {
+         "set": {
+          "path": "left"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     },
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Someone's sitting in his car"
+  },
+  {
+   "id": "dwk-2-gaffer",
+   "title": "The corridor",
+   "after": {
+    "beat": "dwk-1-car",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-dwk-2-gaffer",
+    "title": "The corridor",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.short} hasn't been in for two days. {manager.name} stops you in the corridor. \"You two are close. Do you know what's going on with him?\""
+    ],
+    "choices": [
+     {
+      "id": "help",
+      "label": "\"He's not well, gaffer. He needs time, and people around him.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='doctor' || arc.path=='listened'",
+        "text": "He nods slowly. \"The doctor's told me as much as she can. Thanks for being straight.\" He rings {mate.short} himself that night, and talks about anything but football.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 2,
+          "respect": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "gaffer": "told"
+         }
+        }
+       },
+       {
+        "text": "\"Right.\" He goes straight to the physio's room. By the afternoon the club's welfare officer has been round to {mate.short}'s house.",
+        "effects": {
+         "boss": 1
+        },
+        "arc": {
+         "set": {
+          "gaffer": "told"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "ring",
+      "label": "\"Let me ring him first.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "He answers on the sixth ring. He says it's ok to tell the gaffer he's off sick, \"sick sick\". You do.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4,
+          "respect": 2
+         },
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "gaffer": "rang"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "dunno",
+      "label": "\"No idea, gaffer.\"",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "if": "arc.path=='left'",
+        "text": "\"Right.\" He finds out from the physio, who found out because someone else knocked on the window.",
+        "arc": {
+         "set": {
+          "gaffer": "none"
+         }
+        }
+       },
+       {
+        "text": "He looks at you a second too long. He finds out from the doctor, the proper way.",
+        "arc": {
+         "set": {
+          "gaffer": "none"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     },
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "He hasn't been in"
+  },
+  {
+   "id": "dwk-3-text",
+   "title": "A text",
+   "after": {
+    "beat": "dwk-1-car",
+    "weeks": [
+     2,
+     5
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-dwk-3-text",
+    "title": "A text",
+    "category": "teammates",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "mate",
+       "say": [
+        "A text from {mate.short}. \"Doc's signed me off for a bit. Talking to someone every week. It's helping I think. Sorry for being weird.\""
+       ],
+       "replies": [
+        {
+         "id": "walk",
+         "label": "\"Nothing to be sorry for. Fancy a walk Sunday? No football talk.\"",
+         "tone": "kind",
+         "end": "walk"
+        },
+        {
+         "id": "time",
+         "label": "\"Take all the time you need, mate.\"",
+         "tone": "calm",
+         "end": "time"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "none"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "walk": [
+       {
+        "text": "Sunday, the reservoir, an hour and a half. You talk about his dog, a film, the price of petrol. On the way back to the cars he says, \"Same time next week?\"",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "walked-with-me-on-sundays",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "walk": "walks"
+         }
+        }
+       }
+      ],
+      "time": [
+       {
+        "text": "\"Cheers.\" A thumbs up. He sends you a photo of his dog the next week, for no reason.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "walk": "time"
+         }
+        }
+       }
+      ],
+      "none": [
+       {
+        "text": "You mean to reply, and then it's Wednesday. He doesn't text again.",
+        "arc": {
+         "set": {
+          "walk": "none"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     },
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your phone"
+  },
+  {
+   "id": "dwk-4-back",
+   "title": "Ten balls",
+   "after": {
+    "beat": "dwk-1-car",
+    "weeks": [
+     6,
+     10
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-dwk-4-back",
+    "title": "Ten balls",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.short} is back. First day. {physio.short} has a word with you in the corridor. \"No pressure today. Take him on pitch three after, just you and him and a bag of balls. Let him kick something.\""
+    ],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "mate",
+       "say": [
+        "Pitch three, nobody else around. He's quieter than he was. He goes in goal without being asked. \"Go on, then. I've not missed this.\" Then, \"I have, actually.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Ten. You feed them.\"",
+         "tone": "kind",
+         "goto": "play"
+        },
+        {
+         "id": "talk",
+         "label": "\"We can just talk, if you want.\"",
+         "tone": "calm",
+         "end": "talk"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "Pitch three",
+        "intro": "Ten balls, no pressure, nobody watching.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "corners",
+           "balls": 2,
+           "line": "\"Corners. Easy. I'm not diving.\""
+          },
+          {
+           "kind": "props",
+           "balls": 2,
+           "line": "\"The tyre and the bucket. Like the kids do.\""
+          },
+          {
+           "kind": "crossbar",
+           "balls": 1,
+           "line": "\"Bar. You never can.\""
+          },
+          {
+           "kind": "keeper",
+           "balls": 3,
+           "line": "\"Right. I'll go in. Properly.\""
+          },
+          {
+           "kind": "far",
+           "balls": 2,
+           "line": "\"From miles out. Go on.\""
+          }
+         ],
+         "keeperSlot": "mate",
+         "lines": {
+          "keeper:saved": "\"Ha. Not past {name}.\"",
+          "hit": "\"Good one.\"",
+          "missed-it": "\"The bucket wins again.\"",
+          "streak3": "\"Show off.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -2
+        },
+        "caller": {
+         "slot": "mate",
+         "lines": [
+          "\"One.\"",
+          "\"Two.\"",
+          "\"Three.\"",
+          "\"Four.\"",
+          "\"Five.\"",
+          "\"Six.\"",
+          "\"Seven.\"",
+          "\"Eight.\"",
+          "\"Nine.\"",
+          "\"Ten.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "b-stop"
+        ],
+        [
+         "activity.score>=1",
+         "b-done"
+        ],
+        [
+         "",
+         "b-done"
+        ]
+       ]
+      },
+      "b-done": {
+       "who": "mate",
+       "say": [
+        "\"{activity.score}.\" He's laughing at something, a miss, the bucket. It's the first time you've heard it in months. \"Same time tomorrow?\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Same time tomorrow.\"",
+         "tone": "kind",
+         "end": "played"
+        }
+       ]
+      },
+      "b-stop": {
+       "who": "mate",
+       "say": [
+        "You stop halfway. He doesn't mind. You sit on the ball bag and he tells you about the someone he's been talking to."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Listen.",
+         "tone": "kind",
+         "end": "talk"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "played": [
+       {
+        "text": "You do it every day for a fortnight. Then he's back in the squad, and he doesn't need pitch three, and you both still go some days.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 2
+         },
+         {
+          "slot": "physio",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "kicked-a-ball-with-me-on-pitch-three",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "back": 1
+         }
+        }
+       }
+      ],
+      "talk": [
+       {
+        "text": "You talk for half an hour on the ball bag. He goes in first. At the door he turns round and says, \"Thanks for knocking.\"",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "back": 1
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     },
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "He's back"
+  },
+  {
+   "id": "dwk-5-later",
+   "title": "A season on",
+   "after": {
+    "beat": "dwk-4-back",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-dwk-5-later",
+    "title": "A season on",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {mate.short} is the one telling the jokes in the canteen again. The academy has asked a first-team player to talk to the under-eighteens about the bad weeks, and he's said he'll do it."
+    ],
+    "choices": [
+     {
+      "id": "sunday",
+      "label": "\"Walk on Sunday instead? I'll hear it there.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.walk=='walks'",
+        "text": "\"Sunday,\" he says. \"Obviously.\" The reservoir, the dog, an hour and a half, no football talk. Same as every week.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "sunday-walks"
+        }
+       },
+       {
+        "if": "arc.path=='left'",
+        "text": "\"Maybe.\" He's kind about it. Someone else walks with him on Sundays now.",
+        "arc": {
+         "end": "someone-else-knocked"
+        }
+       },
+       {
+        "text": "You walk on Sunday. He does the talk on Tuesday anyway, and you go to that too.",
+        "arc": {
+         "end": "he-spoke-up"
+        }
+       }
+      ]
+     },
+     {
+      "id": "go",
+      "label": "Go and sit at the back.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='left'",
+        "text": "He tells them about the car park, and a knock on the window, and the man who knocked. It wasn't you. You sit at the back and clap with everyone else.",
+        "arc": {
+         "end": "someone-else-knocked"
+        }
+       },
+       {
+        "text": "He tells them about a car park, and the rain, and somebody knocking on the window. He doesn't say who. He doesn't look at the back row. Three of the kids stay behind to talk to him.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "told-the-academy-about-the-car-park",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "he-spoke-up"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     },
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, your team-mate"
+  }
+ ]
+}

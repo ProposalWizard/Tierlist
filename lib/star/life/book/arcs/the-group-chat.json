@@ -1,0 +1,317 @@
+{
+ "id": "arc-the-group-chat",
+ "title": "The screenshot",
+ "owner": "mate",
+ "summary": "Someone screenshots the players' group chat, and a joke about the gaffer ends up in his inbox. It's your message in the picture. A season on, you find out who sent it.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate",
+   "gaffer",
+   "dressing room"
+  ],
+  "tone": [
+   "dark",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "order": "bond-asc"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "never-knew",
+   "title": "Never knew",
+   "text": "You named a team-mate to the gaffer, and you never found out if it was him."
+  },
+  {
+   "id": "it-was-him",
+   "title": "It was him",
+   "text": "You kept quiet about the screenshot. A season on, the lad who sent it owned up."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "gch-1",
+   "title": "The screenshot",
+   "n": 1,
+   "event": {
+    "id": "arc-gch-1",
+    "title": "The screenshot",
+    "category": "squad",
+    "place": "compound:office",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The gaffer has a printout on his desk. It's a screenshot of the players' group chat, and the message at the top is yours: a joke about his tan."
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "manager",
+       "say": [
+        "\"I don't care about the tan. I care that somebody in that room wanted me to see this. Who sent it?\""
+       ],
+       "replies": [
+        {
+         "id": "guess",
+         "label": "\"I could guess.\"",
+         "tone": "confident",
+         "goto": "g3"
+        },
+        {
+         "id": "dunno",
+         "label": "\"I honestly don't know.\"",
+         "tone": "honest",
+         "goto": "g2"
+        },
+        {
+         "id": "sorry",
+         "label": "\"It was a joke. I'm sorry.\"",
+         "tone": "humble",
+         "end": "sorry"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "g2"
+        }
+       ]
+      },
+      "g2": {
+       "who": "manager",
+       "say": [
+        "\"Then find out. And be careful what you type.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"I will.\"",
+         "tone": "calm",
+         "end": "sorry"
+        }
+       ]
+      },
+      "g3": {
+       "who": "manager",
+       "say": [
+        "\"Go on.\""
+       ],
+       "replies": [
+        {
+         "id": "name",
+         "label": "Say {mate.short}'s name.",
+         "tone": "reckless",
+         "end": "named"
+        },
+        {
+         "id": "no",
+         "label": "\"No. I'm not doing that.\"",
+         "tone": "brave",
+         "end": "sorry"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "sorry": [
+       {
+        "text": "He folds the printout and puts it in his drawer. The group chat goes very quiet for a week.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kept"
+         }
+        }
+       }
+      ],
+      "named": [
+       {
+        "text": "He writes the name down. {mate.short} is on the bench on Saturday and nobody says why.",
+        "effects": {
+         "boss": 1,
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "named-me-to-the-gaffer",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "named"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-asc"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The gaffer has seen the group chat"
+  },
+  {
+   "id": "gch-2",
+   "title": "Who sent it",
+   "after": {
+    "beat": "gch-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-gch-2",
+    "title": "Who sent it",
+    "category": "squad",
+    "place": "home:bed",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {mate.short} is leaving. He texts you at midnight.",
+     "{if arc.path=='named'}\"It wasn't me, you know. I'd have told you if it was.\"{/if}",
+     "{if arc.path=='kept'}\"It was me. The screenshot. Sorry. I wanted him to know you lot laugh at him.\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "reply",
+      "label": "Reply.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='named'",
+        "text": "\"Sorry, mate.\" He reads it and doesn't answer. You never find out who sent it.",
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": -4
+         }
+        ],
+        "arc": {
+         "end": "never-knew"
+        }
+       },
+       {
+        "text": "\"I know,\" you type, which isn't true. He sends a thumbs up and leaves the group.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "it-was-him"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Leave him on read.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "if": "arc.path=='named'",
+        "text": "You leave it. He leaves the group chat the next morning.",
+        "arc": {
+         "end": "never-knew"
+        }
+       },
+       {
+        "text": "You leave it. You mute the group chat for good.",
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "it-was-him"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-asc"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, the screenshot"
+  }
+ ]
+}

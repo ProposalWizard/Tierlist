@@ -1,0 +1,573 @@
+{
+ "id": "arc-the-loan-abroad",
+ "title": "Sunshine",
+ "owner": "agent",
+ "summary": "Your agent has a loan for you abroad: six months in the sun, their top division, every game. Mum has questions about your washing. The gaffer has his own answer. A season on, someone else's postcards.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "agent",
+   "mum",
+   "manager"
+  ],
+  "tone": [
+   "funny",
+   "warm",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.008,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "breaking-through",
+  "when": [
+   "age>=19",
+   "age<=23"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "agent",
+   "pick": "agent"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mum": "none",
+  "gaffer": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "stayed-home",
+   "title": "Stayed home",
+   "text": "You turned down six months in the sun. You still look at the photos of that stadium sometimes."
+  },
+  {
+   "id": "the-gaffer-kept-you",
+   "title": "Kept",
+   "text": "You wanted the loan abroad and the gaffer said no. He played you every week after, which you think was the point."
+  },
+  {
+   "id": "the-sunshine-lad",
+   "title": "The postcards",
+   "text": "The lad who went on that loan instead of you sends postcards. He's a captain over there now, and very brown."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "lab-1-call",
+   "title": "Sunshine",
+   "n": 1,
+   "event": {
+    "id": "arc-lab-1-call",
+    "title": "Sunshine",
+    "category": "career",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "age<=25",
+      "clubApps>=3"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "agent",
+       "say": [
+        "{agent.name}, very excited. \"A loan. Abroad. Six months, their top division, sea view, every game. Their coach played for his country for ten years.\""
+       ],
+       "replies": [
+        {
+         "id": "more",
+         "label": "\"Tell me more.\"",
+         "tone": "confident",
+         "goto": "a2"
+        },
+        {
+         "id": "gaffer",
+         "label": "\"Ask the gaffer first.\"",
+         "tone": "calm",
+         "end": "ask"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm not going anywhere.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      },
+      "a2": {
+       "who": "agent",
+       "say": [
+        "\"Thirty-one degrees in February. A stadium on a cliff. They want an answer by the weekend.\" He sends you a photo. It's a stadium on a cliff."
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Get me on the plane.\"",
+         "tone": "reckless",
+         "end": "keen"
+        },
+        {
+         "id": "ask",
+         "label": "\"Let me talk to my mum. And the gaffer.\"",
+         "tone": "calm",
+         "end": "ask"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "keen": [
+       {
+        "text": "\"That's my boy.\" He rings the gaffer before you can stop him.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "keen"
+         }
+        }
+       }
+      ],
+      "ask": [
+       {
+        "text": "\"By the weekend,\" he says, three times.",
+        "arc": {
+         "set": {
+          "path": "ask"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"You're mad. Sun. Cliff.\" He sends you the photo again anyway.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your agent has an offer from abroad"
+  },
+  {
+   "id": "lab-2-mum",
+   "title": "Mum",
+   "after": {
+    "beat": "lab-1-call",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-lab-2-mum",
+    "title": "Mum",
+    "category": "career",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{mum.short}: \"Abroad? Six months? Who's doing your washing? Do they have washing? What do they eat?\" Then, quieter: \"Your dad says you should go.\""
+    ],
+    "choices": [
+     {
+      "id": "visit",
+      "label": "\"You'd come out every month, Mum. Sea view.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "\"I've not got a passport.\" A pause. \"I could get a passport.\"",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mum": "visit"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "stay",
+      "label": "\"I don't think I want to go, Mum.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "text": "\"Good,\" she says, too fast. Then: \"Only if you're sure.\"",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "mum": "stay"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "dad",
+      "label": "\"Put Dad on.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "Your dad says, \"Go. I'd have gone,\" and gives the phone back before your mum can argue.",
+        "arc": {
+         "set": {
+          "mum": "dad"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Mum has questions"
+  },
+  {
+   "id": "lab-3-gaffer",
+   "title": "The gaffer",
+   "after": {
+    "beat": "lab-1-call",
+    "weeks": [
+     1,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-lab-3-gaffer",
+    "title": "The gaffer",
+    "category": "career",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "manager",
+       "screen": "dial",
+       "say": [
+        "{manager.name}: \"Your agent's been on. Sunshine and a cliff. I'll be straight: I need you here, and I'm telling the chairman no. Unless you look me in the eye and tell me you want to go.\""
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"If you need me, I'll stay.\"",
+         "tone": "humble",
+         "end": "stay"
+        },
+        {
+         "id": "calm",
+         "label": "\"I was only listening, gaffer.\"",
+         "tone": "calm",
+         "end": "listening"
+        },
+        {
+         "id": "confident",
+         "label": "\"Then play me every week.\"",
+         "tone": "confident",
+         "end": "deal"
+        },
+        {
+         "id": "fiery",
+         "label": "\"I want to go.\"",
+         "tone": "fiery",
+         "end": "go"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "stay": [
+       {
+        "text": "\"Good.\" He rings your agent while you're still in the room and enjoys it.",
+        "effects": {
+         "boss": 4
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 4,
+          "respect": 4
+         },
+         {
+          "slot": "agent",
+          "bond": -4,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "gaffer": "stay"
+         }
+        }
+       }
+      ],
+      "listening": [
+       {
+        "text": "\"Listening's fine. Going's not.\" He tells the chairman no.",
+        "effects": {
+         "boss": 1
+        },
+        "arc": {
+         "set": {
+          "gaffer": "no"
+         }
+        }
+       }
+      ],
+      "deal": [
+       {
+        "text": "\"Deal.\" He starts you on Saturday. And the Saturday after.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "promised-to-play-me-every-week",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "gaffer": "deal"
+         }
+        }
+       }
+      ],
+      "go": [
+       {
+        "text": "He looks at you for a long time. \"No.\" The chairman agrees with him. Your agent says a word down the phone you didn't know he knew.",
+        "effects": {
+         "boss": -4
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": -2,
+          "respect": 2,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "gaffer": "blocked"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The gaffer's heard"
+  },
+  {
+   "id": "lab-4-postcard",
+   "title": "A postcard",
+   "after": {
+    "beat": "lab-3-gaffer",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-lab-4-postcard",
+    "title": "A postcard",
+    "category": "career",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. A postcard through your door: a stadium on a cliff. It's from the lad your agent sent instead. \"Thirty-one degrees. Captain now. You'd have loved it. Your agent says hello.\""
+    ],
+    "choices": [
+     {
+      "id": "fridge",
+      "label": "Put it on the fridge.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.gaffer=='blocked' || arc.gaffer=='deal'",
+        "text": "You've played every week since. The gaffer kept his side. The postcard stays on the fridge next to your mum's.",
+        "arc": {
+         "end": "the-gaffer-kept-you"
+        }
+       },
+       {
+        "text": "Next to it you put a photo of your own stadium in the rain. Your mum says that's the better one.",
+        "arc": {
+         "end": "the-sunshine-lad"
+        }
+       }
+      ]
+     },
+     {
+      "id": "bin",
+      "label": "Bin it.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "if": "arc.gaffer=='blocked'",
+        "text": "You bin it. You wanted that cliff. The gaffer plays you every week, and you don't say thank you.",
+        "arc": {
+         "end": "the-gaffer-kept-you"
+        }
+       },
+       {
+        "text": "You bin it. You don't regret staying. You don't look at the cliff again.",
+        "arc": {
+         "end": "stayed-home"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, something in the post"
+  }
+ ]
+}

@@ -4,7 +4,9 @@
  *
  *  - A story lives in `career.life.arcs[id]` (ArcRun): its cast, a few values
  *    (your best, the path you took), its clocks, the weeks each beat played
- *    and the beats an ending scheduled. About 0.5 KB.
+ *    and the beats an ending scheduled. About 0.5 KB. Once it is over it is
+ *    packed into one short word in `life.fin` (arcPack.ts, ~12 bytes); read
+ *    every story, open or packed, with `arcsOf`.
  *  - `arcMoment` is called at each moment (after a match, arriving at
  *    training, season end …). It expires a "today only" offer (its
  *    ifIgnored ending plays), breaks promises past their date, sends a
@@ -24,9 +26,10 @@ import { allHold, holds, type CondCtx, type V2Ctx } from "./cond";
 import { ctxFor, factsOf, type FactOverride } from "./facts";
 import { castEvent, cloneLife, lifeOf, type LiveEvent } from "./director";
 import { chooseOption, pickOutcome, type ChoiceResult, type LifeChange } from "./resolve";
-import { lifeWeek, personInfo, remember, roleOf, tidy } from "./people";
+import { clubOfId, lifeWeek, personInfo, remember, roleOf, tidy } from "./people";
 import { fillLine } from "./text";
 import { breakPromise, keepPromise, makePromise, openPromises, promiseDef } from "./promises";
+import { allRuns, isPacked, packDone, runIn, unpackRun } from "./arcPack";
 
 /** lifeWeek counts 50 weeks to a season. */
 export const LIFE_SEASON = 50;
@@ -34,7 +37,7 @@ export const LIFE_SEASON = 50;
 export const MAX_OPEN_ARCS = 12;
 export const MAX_OBJECTIVES = 2;
 /** Story pacing (batch 1, 60 stories): a story with a `start` chance begins at most one per moment,
- *  and never within this many weeks of the last story that began. The kit man (no `start`) is not paced. */
+ *  and never within this many weeks of the last story that began. A story with no `start` (none in the book since 28 Nov) is not paced. */
 export const START_GAP_WEEKS = 3;
 
 /** A seeded 0-1 number for a story's start roll (does not use the caller's rng, so the dice stay as they were). */
@@ -42,6 +45,38 @@ function roll01(key: string): number {
   let h = 2166136261;
   for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619) >>> 0;
   return (h % 10007) / 10007;
+}
+
+/** Pin the pool people a story has just cast (pool.ts): the first club's in `life.pool` (by role),
+ *  another club's in `life.cpool` (by role and club), so they are this career's for good. Mutates `life`. */
+function pinPeople(c: CareerState, life: LifeState, ids: string[], clubOnly = false): void {
+  for (const id of ids) {
+    if (!id) continue;
+    const pp = personInfo({ ...c, life }, id)?.pool;
+    if (!pp) continue;
+    const club = clubOfId(id);
+    if (club) life.cpool = { ...(life.cpool ?? {}), [`${roleOf(id)}@${club}`]: pp.id };
+    else if (!clubOnly) life.pool = { ...(life.pool ?? {}), [roleOf(id)]: pp.id };
+  }
+}
+
+/** The book in a seeded order (Fisher-Yates on a small seeded generator), for the fair draw. */
+function shuffled<T>(list: readonly T[], key: string): T[] {
+  const out = list.slice();
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619) >>> 0;
+  for (let i = out.length - 1; i > 0; i--) {
+    h = (Math.imul(h, 1664525) + 1013904223) >>> 0;
+    const j = h % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Is this story in this career at all (start.careers, rolled once from the player's name)? The soak
+ *  uses it to find careers that hold a rare story. */
+export function inCareer(arc: LifeArc, p: { firstName: string; lastName: string; startYear: number }): boolean {
+  return arc.start?.careers === undefined || roll01(`${arc.id}|${p.firstName}|${p.lastName}|${p.startYear}`) < arc.start.careers;
 }
 
 // ── The talk on screen (talk.ts moves it; kept out of the save) ─────────────
@@ -87,15 +122,16 @@ export interface BeatLive {
 
 // ── Reading the story ──────────────────────────────────────────────────────
 
+/** Every story, open and finished (packed ones unpacked, read only), in the order they started. */
 export function arcsOf(c: CareerState): Record<string, ArcRun> {
-  return lifeOf(c).arcs ?? {};
+  return allRuns(lifeOf(c));
 }
 
 /** The condition context for a story: the career, the arc's values (with
  *  what this talk has set so far), the talk, the game just played. */
 export function arcCtx(c: CareerState, arcId: string, b?: BeatLive | null, facts?: FactOverride): CondCtx {
   const life = lifeOf(c);
-  const run = life.arcs?.[arcId];
+  const run = runIn(life, arcId);
   const cast = b?.cast ?? run?.cast ?? {};
   return ctxFor(c, life, cast, factsOf(c, facts), { v2: v2Of(c, life, run, b) });
 }
@@ -192,7 +228,7 @@ export function openBeat(c: CareerState, arcId: string, beatId: string): { caree
   const arc = arcById(arcId);
   const beat = arc && beatOf(arc, beatId);
   const life = cloneLife(lifeOf(c));
-  const run = life.arcs?.[arcId];
+  const run = unpackRun(life, arcId);
   if (!arc || !beat || !run) return null;
   const cast = castFor(c, arc, run, beat);
   if (!cast) return null;
@@ -200,6 +236,8 @@ export function openBeat(c: CareerState, arcId: string, beatId: string): { caree
   const first = beat.id === arc.beats[0].id;
   const when = whenWords(c, run, beat, first);
   run.cast = cast;
+  // Somebody a later beat brings in at another club is pinned too (club people).
+  pinPeople(c, life, Object.values(cast), true);
   run.f[beat.id] = [...(run.f[beat.id] ?? []), now].slice(-12);
   delete run.s[beat.id];
   run.last = beat.id;
@@ -248,14 +286,20 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
   // 2. Promises: a reminder a week out, broken once the date is gone.
   c = promiseClock(c, (n) => notices.push(n), opts.rng);
   let life = cloneLife(lifeOf(c));
+  // Club people (people.ts): in a tiered book the club you are at the first time is the one whose
+  // people keep the plain ids. (An old book's replay never writes it.)
+  if (!life.home && ARCS.some((a) => a.start?.tier)) life.home = c.player.club;
   // The stories meet people too: keep the remembered list inside its cap (people.ts tidy).
   if (Object.keys(life.people).length > PEOPLE_CAP) tidy(life, c, now);
+  // A story finished and shrunk at an earlier moment is packed into one short word (arcPack.ts).
+  // It reads exactly as the shrunk record did; packing it first keeps the shrink below unchanged.
+  packDone(life);
   // A finished story (with nothing still scheduled) keeps only what the quest log shows: its
   // ending, its owner, and the weeks its beats played. Sixty stories stay small in the save.
   for (const [id, run] of Object.entries(life.arcs ?? {})) {
     const arc = arcById(id);
     if (!arc?.start || !run.done || run.o || Object.keys(run.s).length || !Object.keys(run.v).length) continue;
-    run.v = {}; run.k = {};
+    run.v = {}; run.k = {}; run.club = "";
     run.cast = run.cast[arc.owner] ? { [arc.owner]: run.cast[arc.owner] } : {};
     for (const b of Object.keys(run.f)) run.f[b] = run.f[b].slice(-1);
     delete run.last;
@@ -289,10 +333,28 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
   // 5. What wants to play now.
   const screens: ArcPick[] = [];
   const offers: MomentResult["offers"] = [];
-  const lastStart = Math.max(-999, ...Object.values(lifeOf(c).arcs ?? {}).map((r) => r.at));
+  const lastStart = Math.max(-999, ...Object.values(arcsOf(c)).map((r) => r.at));
   let started = 0;
-  for (const arc of ARCS) {
+  // Story stages and tiers (28 Nov 2026). A book with tiers draws the next story fairly: the stories
+  // are tried in a seeded shuffle each moment, so one early in the file no longer starves the rest,
+  // and a big story never starts while another big one is open. A book without tiers (an old save's
+  // replay, tests/star/lifeSaveFixture.mts) plays exactly as before: first come, in file order.
+  const fair = ARCS.some((a) => a.start?.tier);
+  const me = `${c.player.firstName}|${c.player.lastName}|${c.player.startYear}`;
+  // A story with no `start` (never paced; none in the book since 28 Nov, the kit man rolls too) stays first.
+  const order = fair ? [...ARCS.filter((a) => !a.start), ...shuffled(ARCS.filter((a) => !!a.start), `${now}|${moment}|${me}`)] : ARCS;
+  const bigOpen = fair && Object.entries(lifeOf(c).arcs ?? {}).some(([id, r]) => !r.done && arcById(id)?.size === "big");
+  for (const arc of order) {
     life = lifeOf(c);
+    // A packed story is over with nothing scheduled: no beat of it can open (beatOpen), unless the
+    // test page forces it, which needs the full record back.
+    if (isPacked(life, arc.id)) {
+      if (opts.force !== arc.id) continue;
+      const nl = cloneLife(life);
+      unpackRun(nl, arc.id);
+      c = { ...c, life: nl };
+      life = nl;
+    }
     let run = life.arcs?.[arc.id];
     if (!run) {
       const first = arc.beats[0];
@@ -300,17 +362,24 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
       if (open >= MAX_OPEN_ARCS) continue;
       const t = first.event.trigger;
       if (opts.force !== arc.id && !t.when.includes(moment)) continue;
+      // Some stories are only in some careers (start.careers): one roll per career, from the player.
+      // Their weekly roll is the career's own too, so two careers do not meet them in the same week.
+      const who = arc.start?.careers !== undefined ? `|${c.player.firstName}|${c.player.lastName}|${c.player.startYear}` : "";
+      if (opts.force !== arc.id && who && roll01(`${arc.id}${who}`) >= arc.start!.careers!) continue;
       // Pacing: one new story a moment, a few weeks apart, and each has its own odds.
-      if (opts.force !== arc.id && arc.start && (started > 0 || now - lastStart < START_GAP_WEEKS || roll01(`${arc.id}|${now}|${moment}`) >= arc.start.chance)) continue;
+      // In a tiered book every story's weekly roll is the career's own (an old book's stories with no
+      // `careers` rolled the same weeks in every career).
+      const mine = fair && !who ? `|${me}` : who;
+      if (opts.force !== arc.id && arc.start && (started > 0 || now - lastStart < START_GAP_WEEKS || roll01(`${arc.id}|${now}|${moment}${mine}`) >= arc.start.chance)) continue;
+      // Its stage window (start.when) and, in a tiered book, one big story at a time.
+      if (opts.force !== arc.id && arc.start?.when?.length && !allHold(arc.start.when, arcCtx(c, arc.id, null, opts.facts))) continue;
+      if (opts.force !== arc.id && bigOpen && arc.size === "big") continue;
       const fresh = startRun(c, life, arc, first);
       if (!fresh) continue;
       const nl = cloneLife(life);
       nl.arcs = { ...(nl.arcs ?? {}), [arc.id]: fresh };
       // The story's pool people are this career's for good (pool.ts): pinned the day it starts.
-      for (const id of Object.values(fresh.cast)) {
-        const pp = personInfo(c, id)?.pool;
-        if (pp) nl.pool = { ...(nl.pool ?? {}), [roleOf(id)]: pp.id };
-      }
+      pinPeople(c, nl, Object.values(fresh.cast));
       const trial: CareerState = { ...c, life: nl };
       if (opts.force !== arc.id && !beatOpen(trial, arc, fresh, first, moment, opts.facts)) continue;
       c = trial;
@@ -442,7 +511,7 @@ export function playEnding(c0: CareerState, b: BeatLive, endId: string, opts: Pl
   const now = lifeWeek(c0);
   // The values this talk set are the arc's now.
   const life0 = cloneLife(lifeOf(c0));
-  const run0 = life0.arcs?.[b.arc];
+  const run0 = unpackRun(life0, b.arc);
   if (run0) run0.v = { ...run0.v, ...b.tv };
   let c: CareerState = { ...c0, life: life0 };
   const ctx = arcCtx(c, b.arc, { ...b, tv: {} }, opts.facts);
@@ -478,7 +547,7 @@ function applyArcOutcome(c0: CareerState, b: BeatLive, o: ArcOutcome, endId: str
   let c = c0;
   const arc = arcById(b.arc)!;
   let life = cloneLife(lifeOf(c));
-  const run = life.arcs![b.arc];
+  const run = unpackRun(life, b.arc)!;
   const ctx = () => arcCtx({ ...c, life }, b.arc, { ...b, tv: {} }, opts.facts);
   const a = o.arc;
   if (a?.set) for (const [k, x] of Object.entries(a.set)) run.v[k] = resolveVar(x, run.v, b);

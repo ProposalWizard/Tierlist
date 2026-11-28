@@ -67,6 +67,7 @@ import { sceneSavings } from "../three3d/sceneSavings";
 import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows, compileForBake, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
 import { OrbitCam } from "../three3d/orbitCam";
 import { FOLLOW_CAM_D, FollowCarry, boxRoom, FollowZoom, attachFollowZoom, loadFollowZoom, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
+import { ViewCam, findHeadBone, headWorld, loadViewMode, showBody, type ViewMode } from "../three3d/viewCam";
 import { casinoRoomLook } from "./roomLook";
 import { dressCasinoH, type CasinoH } from "./hRoom";
 import { clampBoom, type V3 } from "./camera";
@@ -110,6 +111,9 @@ export interface CasinoController {
   setStick: (x: number, y: number) => void;
   /** A drag of dx, dy pixels (New: eased and tilting, the shared look-around camera; Old: a yaw turn only). */
   orbit: (dxPixels: number, dyPixels?: number) => void;
+  /** First person | third person (the eye button; lib/star/three3d/viewCam.ts), remembered per device. New look only. */
+  setView?: (m: ViewMode) => void;
+  viewMode?: () => ViewMode;
   /** What station is under a tap, if any. */
   pick: (clientX: number, clientY: number) => CasinoStation | null;
   /** Tap to move: a station walks you up to it (cb.onArrive as you get
@@ -190,7 +194,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   const H = casinoRoomLook() === "new";
   // ── Renderer (the shop's settings; Old: no shadow maps here) ──
   // ONE renderer for every 3D place (three3d/perf.ts): no new WebGL context, shaders kept, at each door
-  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   own.release = release;
   rememberGpu(renderer);
   const dpr = window.devicePixelRatio || 1;
@@ -695,6 +699,10 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   const CS: FollowCam = zoomedFollowCam(zoom?.now ?? 0, FOLLOW_CAM_D);
   const detachZoom = zoom ? attachFollowZoom(container, zoom) : () => {};
   const carry = new FollowCarry(); // New: his steps go straight into the camera (only turning is eased)
+  /** New: first person | third person (the eye button), eased; a game or the slot seat steps back out to third (../three3d/viewCam.ts). */
+  const view = new ViewCam(opts.fixedStep || !H ? "third" : loadViewMode());
+  const viewHead = new THREE.Vector3();
+  let headBone: any = null;
   const resize = () => {
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
@@ -993,10 +1001,11 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       const p = clampBoom([player.position.x, 1.55, player.position.z], [camPos.x, camPos.y, camPos.z], ROOM, lampsAt);
       camPos.set(p[0], p[1], p[2]);
     }
-    camera.position.copy(camPos);
+    view.step(dt, !!focused || glideOut > 0 || seatWant > 0 || seat > 0.05);
+    headBone ??= findHeadBone(player);
+    showBody(player, view.place(camera, camPos, camLook, headWorld(headBone, player, viewHead), -Math.sin(camYaw), -Math.cos(camYaw), 99, dt)); // in his eyes: not drawn (root.visible left alone)
     hRoom?.update(camera);
     if (H) for (const s of tableSigns) { const o = Math.max(0, Math.min(1, (camera.position.distanceTo(s.position) - 1.3) / 1.5)); s.material.opacity = o; s.visible = o > 0.01; }
-    camera.lookAt(camLook);
 
     const now: CasinoStation | null = stationAt(player.position.x, player.position.z);
     if (now !== near) {
@@ -1009,7 +1018,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
 
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
     drawn++;
-    busy = !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || camPos.distanceToSquared(want) > 1e-4
+    busy = view.moving || !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || !!faceTo || camPos.distanceToSquared(want) > 1e-4
       || games.busy() || pullT >= 0 || Math.abs(seat - seatWant) > 0.01;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
@@ -1041,7 +1050,8 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
   };
   const ctrl: CasinoController = {
     setStick: (x, y) => { stick = { x, y }; if (Math.hypot(x, y) > 0.05) stopWalk(); },
-    orbit: (dx, dy = 0) => { if (focused) return; if (H) orb.drag(dx, dy); else camYaw -= dx * 0.008; orbitHold = 1.5; },
+    orbit: (dx, dy = 0) => { if (focused) return; if (H) { orb.drag(dx, view.first ? 0 : dy); view.drag(dy); } else camYaw -= dx * 0.008; orbitHold = 1.5; },
+    ...(H ? { setView: (m: ViewMode) => { view.set(m); }, viewMode: () => view.mode } : {}),
     pick: (px, py) => { aim(px, py); return pickStation(); },
     tap: (px, py) => {
       if (focused) return null;
@@ -1125,7 +1135,7 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       savings.dispose();
       hEnh?.dispose();
       hRoom?.dispose();
-      renderer.setAnimationLoop(null);
+      if (isOwner()) renderer.setAnimationLoop(null); // a late dispose must not stop the next place's loop
       ro.disconnect();
       window.removeEventListener("keydown", kd);
       window.removeEventListener("keyup", ku);

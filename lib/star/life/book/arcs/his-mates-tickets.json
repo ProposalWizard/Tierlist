@@ -1,0 +1,406 @@
+{
+ "id": "arc-his-mates-tickets",
+ "title": "His mates' tickets",
+ "owner": "brother",
+ "summary": "Your brother wants eight tickets for his mates for the derby. You get them. They get thrown out at half time. A season on, he wants tickets again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "brother"
+  ],
+  "tone": [
+   "funny",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "brother",
+   "pick": "brother"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-ban",
+   "title": "The ban",
+   "text": "You got your brother's mates tickets for the derby, and they're all still banned."
+  },
+  {
+   "id": "just-him",
+   "title": "Just him",
+   "text": "You get your brother one ticket now. Just one."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "tkt-1",
+   "title": "Eight tickets",
+   "n": 1,
+   "event": {
+    "id": "arc-tkt-1",
+    "title": "Eight tickets",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{brother.short} wants eight tickets for the derby, for his five-a-side team. \"They're good lads. Mostly. Gaz is alright now.\""
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "brother",
+       "say": [
+        "\"Eight. Together. Near the away end, they like a sing.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Fine. Eight.\"",
+         "tone": "kind",
+         "end": "eight"
+        },
+        {
+         "id": "mick",
+         "label": "\"What did Gaz do?\"",
+         "tone": "honest",
+         "goto": "t2"
+        },
+        {
+         "id": "one",
+         "label": "\"You can have one. For you.\"",
+         "tone": "calm",
+         "end": "one"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "t2"
+        }
+       ]
+      },
+      "t2": {
+       "who": "brother",
+       "say": [
+        "\"Nothing. Something at a wedding. It was ages ago.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Fine. Eight. Behave.\"",
+         "tone": "kind",
+         "end": "eight"
+        },
+        {
+         "id": "one",
+         "label": "\"One. Yours.\"",
+         "tone": "calm",
+         "end": "one"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "eight": [
+       {
+        "text": "Half time. Six of the eight are walked out by stewards for something involving a flag and a pie. Your brother and Gaz are fine. Gaz behaved.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "got-my-mates-tickets",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "eight"
+         }
+        }
+       }
+      ],
+      "one": [
+       {
+        "text": "\"Tight.\" He comes on his own and sings louder than the eight would have.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "one"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     }
+    ]
+   },
+   "hint": "Your brother wants derby tickets"
+  },
+  {
+   "id": "tkt-1d-deep",
+   "title": "The ban letter",
+   "after": {
+    "beat": "tkt-1",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-tkt-1d-deep",
+    "title": "The ban letter",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A letter from the club's safety officer, addressed to you: eight named people, banned from the ground for the rest of the season, because the tickets were in your name."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "brother",
+       "say": [
+        "Your brother, on the phone: \"It was Gaz. It's always Gaz.\""
+       ],
+       "replies": [
+        {
+         "id": "pay",
+         "label": "Pay the fine yourself and tell him to sort Gaz out.",
+         "tone": "kind",
+         "end": "pay"
+        },
+        {
+         "id": "him",
+         "label": "\"You pay it. They're your mates.\"",
+         "tone": "honest",
+         "end": "him"
+        },
+        {
+         "id": "gaffer",
+         "label": "Ask the club to drop it.",
+         "tone": "confident",
+         "end": "gaffer"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "pay": [
+       {
+        "text": "He sorts Gaz out. Gaz sends you a card with a drawing of a policeman on it.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "paid-the-ticket-fine",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "pay"
+         }
+        }
+       }
+      ],
+      "him": [
+       {
+        "text": "He pays it, in coins, at the ticket office.",
+        "npc": [
+         {
+          "slot": "brother",
+          "grudge": 2,
+          "respect": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "him"
+         }
+        }
+       }
+      ],
+      "gaffer": [
+       {
+        "text": "The safety officer drops it. He tells you it's once.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "gaffer"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     }
+    ]
+   },
+   "hint": "A letter from the club about your brother's mates"
+  },
+  {
+   "id": "tkt-2",
+   "title": "Again",
+   "after": {
+    "beat": "tkt-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-tkt-2",
+    "title": "Again",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on, the same derby. {brother.short} rings.",
+     "{if arc.path=='eight'}\"Six of them are still banned. So just three this time. Gaz is coming.\"{/if}",
+     "{if arc.path=='one'}\"One, I know. One.\"{/if}",
+     "{if arc.deep=='pay'}Your brother still owes you for the fine, and says so every time.{/if}",
+     "{if arc.deep=='him'}He paid the fine in coins. The ticket office remembers.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "three",
+      "label": "\"Three. Gaz sits next to you.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='eight'",
+        "text": "Gaz behaves. So does your brother. The third lad is thrown out before kick-off for something in the car park.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-ban"
+        }
+       },
+       {
+        "text": "You get him three, and he brings his mates from work who've never been. They buy a scarf each.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "just-him"
+        }
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "label": "\"One. Just you.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "He comes on his own. Gaz watches it in the pub and texts you at half time.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "just-him"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     }
+    ]
+   },
+   "hint": "A season on, your brother wants tickets"
+  }
+ ]
+}

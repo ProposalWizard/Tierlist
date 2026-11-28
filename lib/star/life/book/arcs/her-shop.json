@@ -1,0 +1,433 @@
+{
+ "id": "arc-her-shop",
+ "title": "The opening",
+ "owner": "sister",
+ "summary": "Your sister is opening a nail bar on the high street and wants you to cut the ribbon. It's the same Saturday as a home game, at nine in the morning. A season on, she's still open, or she isn't.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "sister",
+   "money",
+   "fame"
+  ],
+  "tone": [
+   "warm",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "sister",
+   "pick": "sister"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "went": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "still-open",
+   "title": "Still open",
+   "text": "You cut the ribbon at your sister's shop. There's a photo of it behind the till."
+  },
+  {
+   "id": "the-sign",
+   "title": "The sign",
+   "text": "You missed the opening of your sister's shop. She opened it anyway, and she's doing fine."
+  }
+ ],
+ "promises": {
+  "p-ribbon": {
+   "id": "p-ribbon",
+   "to": "sister",
+   "text": "Cut the ribbon at {sister.short}'s shop at nine",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "shp-2",
+    "ends": [
+     "go"
+    ]
+   },
+   "dueText": "The Saturday after next, at nine",
+   "remind": "\"Nine. Not ten past. I've got a photographer from the local paper and he charges by the hour.\"",
+   "kept": {
+    "text": "You said you'd cut her ribbon, and you did.",
+    "npc": [
+     {
+      "slot": "sister",
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd cut her ribbon.",
+    "npc": [
+     {
+      "slot": "sister",
+      "bond": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "sister",
+      "tag": "missed-my-opening",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "shp-1",
+   "title": "The ribbon",
+   "n": 1,
+   "event": {
+    "id": "arc-shp-1",
+    "title": "The ribbon",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "sister",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{sister.name} has spent her savings on a nail bar on the high street, between the bakery and the bookies. She opens the Saturday after next and she wants you to cut the ribbon."
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "sister",
+       "say": [
+        "\"Nine in the morning. Five minutes. People will come if you come. Please. I've done the sign in the club colours.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll be there. Nine.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-ribbon"
+        },
+        {
+         "id": "game",
+         "label": "\"I've got a game that day.\"",
+         "tone": "honest",
+         "goto": "r2"
+        },
+        {
+         "id": "money",
+         "label": "\"Do you need money for it?\"",
+         "tone": "kind",
+         "goto": "r3"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "r2"
+        }
+       ]
+      },
+      "r2": {
+       "who": "sister",
+       "say": [
+        "\"At three. It's at three. This is at nine.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Okay. Nine. I promise.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-ribbon"
+        },
+        {
+         "id": "no",
+         "label": "\"I can't risk it.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      },
+      "r3": {
+       "who": "sister",
+       "say": [
+        "\"No. I want my brother there with some scissors.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Nine. I'll bring scissors.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-ribbon"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "She screams down the phone and then hangs up to tell the photographer.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fine.\" She doesn't sound fine. She sends you a photo of the sign anyway.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": -4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sister",
+      "pick": "sister"
+     }
+    ]
+   },
+   "hint": "Your sister is opening a shop"
+  },
+  {
+   "id": "shp-2",
+   "title": "Nine o'clock",
+   "after": {
+    "beat": "shp-1",
+    "weeks": [
+     1,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-shp-2",
+    "title": "Nine o'clock",
+    "category": "family",
+    "place": "town:high-street",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "sister",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ],
+     "requires": [
+      "promise(p-ribbon)"
+     ]
+    },
+    "setup": [
+     "Saturday, quarter to nine. The high street is cold. You can see the shop from your car: a red ribbon, about twelve people, and your sister checking her phone."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Get out and cut it.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You cut it on the dot of nine. The twelve people become sixty. The man from the local paper gets a photo of your sister crying and laughing at the same time.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "sister",
+          "respect": 4,
+          "bond": 14
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sister",
+          "tag": "cut-the-ribbon-at-my-shop",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "drive",
+      "label": "Drive on to the ground.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "You drive on. She cuts it herself at twenty past. The photo in the paper is her and the baker.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": -12
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": 0
+         }
+        },
+        "promiseBroken": [
+         "p-ribbon"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sister",
+      "pick": "sister"
+     }
+    ]
+   },
+   "hint": "Your sister's opening"
+  },
+  {
+   "id": "shp-3",
+   "title": "A season on",
+   "after": {
+    "beat": "shp-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-shp-3",
+    "title": "A season on",
+    "category": "family",
+    "place": "town:high-street",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "sister",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. You walk past the nail bar on the high street.",
+     "{if arc.went==1}There's a queue. The photo of you with the scissors is behind the till.{/if}",
+     "{if arc.went==0}There's a queue. The photo behind the till is your sister and the baker.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "in",
+      "label": "Go in.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.went==1",
+        "text": "She does your nails for free while you sit there. You let her paint one in the club colours.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "still-open"
+        }
+       },
+       {
+        "text": "She does your nails without talking. Then she talks. It takes an hour.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "end": "the-sign"
+        }
+       }
+      ]
+     },
+     {
+      "id": "wave",
+      "label": "Wave through the window.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.went==1",
+        "text": "She waves the scissors at you.",
+        "arc": {
+         "end": "still-open"
+        }
+       },
+       {
+        "text": "She waves. She's busy.",
+        "arc": {
+         "end": "the-sign"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sister",
+      "pick": "sister"
+     }
+    ]
+   },
+   "hint": "A season on, your sister's shop"
+  }
+ ]
+}

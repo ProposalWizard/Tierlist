@@ -1,0 +1,358 @@
+{
+ "id": "arc-the-coin",
+ "title": "The coin",
+ "owner": "manager",
+ "summary": "A coin from the crowd hits you above the eye taking a corner. The police find the man who threw it, and he writes to you. A season on, there's a man in the family stand with his daughter.",
+ "size": "small",
+ "about": {
+  "who": [
+   "manager"
+  ],
+  "tone": [
+   "tense",
+   "dark",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0011,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-letter-back",
+   "title": "The letter back",
+   "text": "A man threw a coin at you and wrote to say sorry. You wrote back. He sits in the family stand now with his daughter."
+  },
+  {
+   "id": "the-ban",
+   "title": "The ban",
+   "text": "A man threw a coin and got a three-year ban. You didn't read his letter."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "con-1-corner",
+   "title": "A pound coin",
+   "n": 1,
+   "event": {
+    "id": "arc-con-1-corner",
+    "title": "A pound coin",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "after-match",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Taking a corner in front of the away end, something hits you above the eye. A pound coin. Three stitches at half time.",
+     "On Tuesday {manager.name} hands you a letter the police have passed on. Very neat handwriting. \"I threw the coin. I've got a daughter of eight and she saw. I'm not asking for anything. I wanted to say sorry to your face, and I can't.\""
+    ],
+    "talk": {
+     "start": "l1",
+     "nodes": {
+      "l1": {
+       "who": "manager",
+       "say": [
+        "\"Up to you what you do with it. The club's lawyer wants it for court.\""
+       ],
+       "replies": [
+        {
+         "id": "write",
+         "label": "Write back to him.",
+         "tone": "kind",
+         "end": "wrote"
+        },
+        {
+         "id": "court",
+         "label": "Give it to the club's lawyer.",
+         "tone": "cold",
+         "end": "lawyer"
+        },
+        {
+         "id": "bin",
+         "label": "Don't read the rest. Bin it.",
+         "tone": "cold",
+         "end": "binned"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "wrote": [
+       {
+        "text": "You write four lines. You say the stitches are fine, and that his daughter should come to a game with him, in the family stand. You don't know why you say that.",
+        "effects": {
+         "reputation": 2
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "wrote-back-to-the-coin-man",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "wrote"
+         }
+        }
+       }
+      ],
+      "lawyer": [
+       {
+        "text": "The lawyer reads it out in court as proof he knew what he'd done. He gets a three-year ban.",
+        "arc": {
+         "set": {
+          "path": "ban"
+         }
+        }
+       }
+      ],
+      "binned": [
+       {
+        "text": "It goes in the bin in the boot room. He gets a three-year ban. You never read the rest.",
+        "arc": {
+         "set": {
+          "path": "ban"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Something from the crowd"
+  },
+  {
+   "id": "con-1d-deep",
+   "title": "The letter",
+   "after": {
+    "beat": "con-1-corner",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-con-1d-deep",
+    "title": "The letter",
+    "category": "fans",
+    "place": "club:office",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A letter, through the club, from the man who threw the coin. Two pages. He's lost his season ticket for life and his job, and his daughter won't speak to him. He doesn't ask for anything."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "manager",
+       "say": [
+        "{manager.short} has read it first. \"Up to you, son. The club won't reply.\""
+       ],
+       "replies": [
+        {
+         "id": "reply",
+         "label": "Write back. Short.",
+         "tone": "kind",
+         "end": "reply"
+        },
+        {
+         "id": "keep",
+         "label": "Keep the letter. Don't reply.",
+         "tone": "calm",
+         "end": "keep"
+        },
+        {
+         "id": "bin",
+         "label": "Bin it.",
+         "tone": "cold",
+         "end": "bin"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "reply": [
+       {
+        "text": "You write four lines. He writes one back: \"Thank you. I'll be better.\"",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "replied-to-the-coin-man",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "reply"
+         }
+        }
+       }
+      ],
+      "keep": [
+       {
+        "text": "It's in your drawer, under the passport.",
+        "arc": {
+         "set": {
+          "deep": "keep"
+         }
+        }
+       }
+      ],
+      "bin": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "bin"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A letter from the man who threw the coin"
+  },
+  {
+   "id": "con-2-family",
+   "title": "The family stand",
+   "after": {
+    "beat": "con-1-corner",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-con-2-family",
+    "title": "The family stand",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on. Warming up, you spot a man in the family stand with a girl of nine. He's not looking at you. She is, and she's holding up a pound coin.",
+     "{if arc.deep=='reply'}The gaffer still asks if the coin man wrote again.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "over",
+      "label": "Go over at the end.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='wrote'",
+        "text": "She gives you the coin. \"Dad says it's yours.\" He shakes your hand and can't say anything. You keep the coin.",
+        "effects": {
+         "fans": 2,
+         "reputation": 2
+        },
+        "arc": {
+         "end": "the-letter-back"
+        }
+       },
+       {
+        "text": "It isn't him. It's just a girl who found a pound. You sign her programme anyway.",
+        "arc": {
+         "end": "the-ban"
+        }
+       }
+      ]
+     },
+     {
+      "id": "play",
+      "label": "Get on with the warm-up.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='wrote'",
+        "text": "You wave once. She waves back with the coin. He keeps his eyes on the pitch.",
+        "arc": {
+         "end": "the-letter-back"
+        }
+       },
+       {
+        "text": "You don't know if it's him. You'll never know.",
+        "arc": {
+         "end": "the-ban"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, the family stand"
+  }
+ ]
+}

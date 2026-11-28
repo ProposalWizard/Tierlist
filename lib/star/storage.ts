@@ -20,6 +20,7 @@ import {
   type LoadWhy, emptySyncRecord, sanitizeSyncRecord, readStamp, progressFingerprint, nextStamp,
   recordAfterSend, recordAfterConfirm, recordAfterTake, decideLoad, deviceKindFromUA, pickSpareSlot,
 } from "./saveClash";
+import { SLOT_CHECK_HEADER, type OnlineSlot } from "./onlineSlots";
 
 const KEY = "star-career-v2";
 const OLD_KEY = "star-career-v1";
@@ -258,7 +259,10 @@ export function loadStarPhase(scope: string): SavedPhase | null {
  */
 export interface SaveFailure {
   id: number;
-  reason: "quota" | "other";
+  /** "slot-taken": the server would not let this upload replace another
+   *  device's career in the slot (lib/star/onlineSlots.ts). The save on
+   *  THIS device worked; only the online copy was kept as it was. */
+  reason: "quota" | "other" | "slot-taken" | "cloud";
   signedIn: boolean;
   message: string;
 }
@@ -313,7 +317,9 @@ export function saveCareer(state: CareerState, scope: string): boolean {
     // The other clubs' squads go in thin — see lib/star/squadSaveCodec.ts.
     localStorage.setItem(scoped(KEY, scope), JSON.stringify(toSavedForm(withStars(state))));
     localStorage.setItem(scoped(SAVED_AT_KEY, scope), String(Date.now()));
-    if (saveFailure) setSaveFailure(null);
+    // A refused upload is not cured by saving on this device: it stays up
+    // until an upload of that slot is accepted (saveCareerToCloud).
+    if (saveFailure && saveFailure.reason !== "slot-taken" && saveFailure.reason !== "cloud") setSaveFailure(null);
     // A retired career goes in the Hall of Fame the first time it is saved
     // retired (hallOfFame.ts). Both UIs save through here, so both feed it,
     // and a career retired before the Hall existed goes in when next opened.
@@ -565,6 +571,10 @@ export function clearCareer(scope: string) {
  * app/star-dev/page.tsx) always reconciles against the cloud properly first,
  * the same way loading slot 1 always has. An "Empty" card here is a day-one
  * hint, never a claim that nothing exists anywhere for that slot.
+ *
+ * Since 28 Nov 2026 the Saves panel also asks the server (fetchOnlineSlots)
+ * and merges the two (lib/star/onlineSlots.ts mergeSaveCards), so a slot
+ * made on another device shows as "On another device · Open", not "Empty".
  */
 export interface SaveSlotSummary {
   slot: number;
@@ -795,6 +805,7 @@ export function saveActiveSlot(accountScope: string, slot: number): void {
 export async function saveCareerToCloud(
   state: CareerState, slot: number = 1, opts: { leavingPage?: boolean; scope?: string } = {},
 ): Promise<void> {
+  let job: RetryJob | null = null;
   try {
     // Stamped, so the next load on any device can tell a cloud copy that is
     // simply newer from one that went its own way — see lib/star/saveClash.ts.
@@ -803,6 +814,16 @@ export async function saveCareerToCloud(
     // "Decide later" on a save clash with no free slot: this device plays
     // its own copy, but it must not overwrite the other one in the cloud.
     if (opts.scope && heldScopes.has(opts.scope)) return;
+    // Refused a moment ago (the slot holds another device's career): wait a
+    // little before sending the whole save again, so a phone does not upload
+    // it every few seconds for nothing.
+    if (opts.scope && (refusedUntil.get(opts.scope) ?? 0) > Date.now() && !wantsReplaceOnline(opts.scope)) return;
+    // The newest upload of this save wins any retry still waiting.
+    const retryKey = opts.scope ?? `slot${slot}`;
+    const gen = (uploadGen.get(retryKey) ?? 0) + 1;
+    uploadGen.set(retryKey, gen);
+    cancelRetry(retryKey);
+    job = { key: retryKey, gen, state, slot, opts };
     let sent: SyncedVersion | null = null;
     let payload: object = toSavedForm(state);
     if (opts.scope) {
@@ -822,13 +843,17 @@ export async function saveCareerToCloud(
     // leaving the page: squeezing takes a moment the page may not have, so
     // that save goes exactly as it always did. The route reads both.
     const packed = opts.leavingPage || typeof document === "undefined" ? null : await gzipText(body);
+    // Asks the server never to replace a DIFFERENT career in this slot that
+    // this device never saw (lib/star/onlineSlots.ts), unless the player
+    // chose "Replace online copy" for it.
+    const slotCheck = opts.scope && wantsReplaceOnline(opts.scope) ? "replace" : "check";
     const res = await fetch(`/api/star/career?slot=${slot}`, packed ? {
       method: "POST",
-      headers: { "Content-Type": "application/octet-stream", [SAVE_BODY_HEADER]: "gzip" },
+      headers: { "Content-Type": "application/octet-stream", [SAVE_BODY_HEADER]: "gzip", [SLOT_CHECK_HEADER]: slotCheck },
       body: packed,
     } : {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", [SLOT_CHECK_HEADER]: slotCheck },
       body,
       // Leaving the page (tab hidden, app backgrounded, tab closed): a
       // keepalive request survives the page being torn down, but browsers
@@ -838,10 +863,16 @@ export async function saveCareerToCloud(
       // phone that is merely backgrounded (the common case) still finishes.
       keepalive: !!opts.leavingPage && body.length < KEEPALIVE_BODY_LIMIT,
     });
-    if (!res.ok) return;
+    if (res.status === 409) {
+      const refused = await res.json().catch(() => null) as { error?: string; message?: string } | null;
+      if (refused?.error === "slot-taken") { cloudWorked(job); noteSlotRefused(slot, opts.scope, refused.message); }
+      return;
+    }
+    if (!res.ok) { cloudFailed(job); return; }
     const data = await res.json().catch(() => null) as { ok?: boolean; corrected?: unknown; career?: unknown } | null;
     // Only a real "ok" moves the base: signed out, the route answers `null`.
     if (sent && opts.scope && data?.ok === true) saveSyncRecord(opts.scope, recordAfterConfirm(loadSyncRecord(opts.scope), sent));
+    if (data?.ok === true) { noteSlotAccepted(opts.scope); cloudWorked(job); }
     // The server's save guard (lib/star/saveGuard.ts, enforce mode) put back
     // fields that no honest play could have reached. Its copy is the save
     // now: this device keeps it and the game reloads it.
@@ -855,7 +886,182 @@ export async function saveCareerToCloud(
         window.dispatchEvent(new CustomEvent(SAVE_CORRECTED_EVENT, { detail: { slot, career: fixed } }));
       }
     }
-  } catch {}
+  } catch {
+    // No signal, or the request died: say so, and try again (below).
+    cloudFailed(job);
+  }
+}
+
+// ── A failed upload says so, and tries again (Harry, 28 Nov 2026) ───────────
+//
+// Uploads used to fail silently. Now a failed one puts up "Couldn't save
+// online — will retry" (SaveFailedBanner) and is sent again after 20 s, then
+// 40 s, 80 s ... up to 5 minutes apart, until one gets through. A newer
+// upload of the same save replaces the one waiting. The save on this device
+// is never touched by any of this.
+
+interface RetryJob { key: string; gen: number; state: CareerState; slot: number; opts: { leavingPage?: boolean; scope?: string } }
+export const RETRY_FIRST_MS = 20_000;
+export const RETRY_MAX_MS = 5 * 60_000;
+const uploadGen = new Map<string, number>();
+const retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const retryDelay = new Map<string, number>();
+
+function cancelRetry(key: string): void {
+  const t = retryTimers.get(key);
+  if (t) { clearTimeout(t); retryTimers.delete(key); }
+}
+
+/** For tests: is an upload of this save waiting to be retried? */
+export function pendingUploadRetry(scope: string): boolean {
+  return retryTimers.has(scope);
+}
+
+function cloudFailed(job: RetryJob | null): void {
+  // Signed out (and the packed app) never saves online: nothing to say.
+  if (!job?.opts.scope || !isSignedInScope(job.opts.scope)) return;
+  // A failing save on THIS device is the bigger news: that message stays.
+  if (!saveFailure || saveFailure.reason === "slot-taken") {
+    failureCount += 1;
+    setSaveFailure({ id: failureCount, reason: "cloud", signedIn: true, message: "Couldn't save online — will retry. Your save on this device is safe." });
+  }
+  if (!job || job.opts.leavingPage) return;
+  if (uploadGen.get(job.key) !== job.gen) return; // a newer upload is in charge
+  const delay = Math.min(RETRY_MAX_MS, retryDelay.get(job.key) ?? RETRY_FIRST_MS);
+  retryDelay.set(job.key, Math.min(RETRY_MAX_MS, delay * 2));
+  cancelRetry(job.key);
+  const t = setTimeout(() => {
+    retryTimers.delete(job.key);
+    if (uploadGen.get(job.key) !== job.gen) return;
+    void saveCareerToCloud(job.state, job.slot, job.opts);
+  }, delay);
+  (t as { unref?: () => void }).unref?.();
+  retryTimers.set(job.key, t);
+}
+
+function cloudWorked(job: RetryJob | null): void {
+  if (job) retryDelay.delete(job.key);
+  if (saveFailure?.reason === "cloud") setSaveFailure(null);
+}
+
+// ── Another device's career in this slot (lib/star/onlineSlots.ts) ──────────
+
+/** How long a refused slot waits before its next upload is tried. */
+export const REFUSED_RETRY_MS = 2 * 60_000;
+const refusedUntil = new Map<string, number>();
+const REPLACE_KEY = "star-career-replace-online-v1";
+
+/** The player chose, in Saves, to replace the online copy of this slot with
+ *  the career on this device. Kept until an upload is accepted. */
+export function allowReplaceOnline(scope: string): void {
+  try { localStorage.setItem(scoped(REPLACE_KEY, scope), "1"); } catch {}
+  refusedUntil.delete(scope);
+}
+export function wantsReplaceOnline(scope: string): boolean {
+  try { return localStorage.getItem(scoped(REPLACE_KEY, scope)) === "1"; } catch { return false; }
+}
+
+function noteSlotRefused(slot: number, scope: string | undefined, message: string | undefined): void {
+  if (scope) refusedUntil.set(scope, Date.now() + REFUSED_RETRY_MS);
+  if (!saveFailure || saveFailure.reason !== "slot-taken") failureCount += 1;
+  setSaveFailure({
+    id: failureCount,
+    reason: "slot-taken",
+    signedIn: true,
+    message: message || `Not saved online: Save ${slot} holds a different career from another device. Open Settings → Saves.`,
+  });
+}
+
+function noteSlotAccepted(scope: string | undefined): void {
+  if (scope) {
+    refusedUntil.delete(scope);
+    try { localStorage.removeItem(scoped(REPLACE_KEY, scope)); } catch {}
+  }
+  if (saveFailure?.reason === "slot-taken") setSaveFailure(null);
+}
+
+/** What the server said about this account's slots online. */
+export type OnlineSlotsAnswer =
+  | { check: "ok"; slots: OnlineSlot[] }
+  | { check: "device-only" }
+  | { check: "failed" };
+
+/**
+ * Ask the server which slots hold a career online (headline only — see
+ * app/api/star/career/slots/route.ts). Never throws. A timeout, no signal or
+ * a server error is "failed": the Saves list then says "Couldn't check your
+ * other devices" instead of calling those slots empty.
+ */
+export async function fetchOnlineSlots(timeoutMs = 4000): Promise<OnlineSlotsAnswer> {
+  const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = ctl ? setTimeout(() => ctl.abort(), timeoutMs) : null;
+  try {
+    const res = await fetch("/api/star/career/slots", { cache: "no-store", ...(ctl ? { signal: ctl.signal } : {}) });
+    if (!res.ok) return { check: "failed" };
+    const data = await res.json() as { mode?: string; slots?: unknown };
+    if (data?.mode === "device-only") return { check: "device-only" };
+    if (data?.mode !== "online" || !Array.isArray(data.slots)) return { check: "failed" };
+    const slots = (data.slots as OnlineSlot[]).filter((s) => s && typeof s.slot === "number" && typeof s.live === "boolean");
+    return { check: "ok", slots };
+  } catch {
+    return { check: "failed" };
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+// ── Backups of a career that lost a choice (kept 30 days) ───────────────────
+//
+// When two copies of a slot are settled with no free slot, the one not kept
+// is NOT thrown away: it goes here, on this device, for at least 30 days.
+// Nothing deletes a backup younger than that.
+
+const BACKUP_KEY = "star-career-backups-v1";
+export const BACKUP_KEEP_MS = 30 * 24 * 3600_000;
+
+export interface CareerBackup {
+  at: number;
+  slot: number;
+  why: string;
+  playerName: string;
+  season: number;
+  /** The thin saved form (squadSaveCodec), as saveCareer writes it. */
+  career: unknown;
+}
+
+export function listCareerBackups(accountScope: string): CareerBackup[] {
+  try {
+    const raw = localStorage.getItem(scoped(BACKUP_KEY, accountScope));
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list.filter((b) => b && typeof b.at === "number") : [];
+  } catch { return []; }
+}
+
+/** One backup back as a career, or null. */
+export function careerFromBackup(b: CareerBackup): CareerState | null {
+  return loadCareerFromStoredForm(b.career);
+}
+
+/**
+ * Keep a copy of `career`. Returns false if this device would not store it.
+ * Only backups older than 30 days are ever dropped, and only to make room.
+ */
+export function backupCareer(accountScope: string, slot: number, career: CareerState, why: string, now = Date.now()): boolean {
+  const entry: CareerBackup = {
+    at: now, slot, why,
+    playerName: `${career.player?.firstName ?? ""} ${career.player?.lastName ?? ""}`.trim(),
+    season: career.season,
+    career: toSavedForm(withStars(career)),
+  };
+  const all = [...listCareerBackups(accountScope), entry];
+  const young = all.filter((b) => now - b.at < BACKUP_KEEP_MS);
+  for (const list of [all, young]) {
+    try {
+      localStorage.setItem(scoped(BACKUP_KEY, accountScope), JSON.stringify(list));
+      return true;
+    } catch { /* full: try again without the old ones */ }
+  }
+  return false;
 }
 
 /** Fired when the server corrected a save (see saveCareerToCloud). */
@@ -1019,7 +1225,15 @@ export async function reconcileCareerLoad(accountScope: string, slot: number): P
     deviceId: getDeviceId(),
     now: Date.now(),
   });
-  setOtherDeviceWarning(decision.warn);
+  // Two DIFFERENT careers in one slot (a different player each side): never
+  // pick one by its time. That rule is for two copies of ONE career; here
+  // it would replace one career with another (Harry, 28 Nov 2026: "my saves
+  // are completely different on my phone and PC"). The player chooses.
+  if (local && cloud && differentCareers(local, cloud.career) && decision.use !== "clash") {
+    decision.use = "clash";
+    decision.why = "cloud-overwrote";
+  }
+  setOtherDeviceWarning(decision.use === "clash" ? null : decision.warn);
 
   if (decision.use === "clash" && local && cloud) {
     saveSyncRecord(scope, decision.record);
@@ -1048,6 +1262,13 @@ export async function reconcileCareerLoad(accountScope: string, slot: number): P
   return { kind: "career", career: decision.use === "local" ? local : null, why: decision.why };
 }
 
+/** Not the same player: a different career, not another copy of this one. */
+export function differentCareers(a: CareerState, b: CareerState): boolean {
+  const pa = a.player ?? ({} as CareerState["player"]), pb = b.player ?? ({} as CareerState["player"]);
+  return pa.firstName !== pb.firstName || pa.lastName !== pb.lastName
+    || (pa as { startYear?: unknown }).startYear !== (pb as { startYear?: unknown }).startYear;
+}
+
 async function findSpareSlot(accountScope: string, current: number): Promise<number | null> {
   const slots: { slot: number; localEmpty: boolean; cloudEmpty: boolean }[] = [];
   for (const s of listSaveSlots(accountScope)) {
@@ -1066,20 +1287,37 @@ async function findSpareSlot(accountScope: string, current: number): Promise<num
  * when there is none, is let go: the prompt has already said so and been
  * told "Overwrite". Returns the career to open.
  */
-export function resolveSaveClash(accountScope: string, clash: SaveClash, keep: "local" | "cloud"): CareerState {
+export function resolveSaveClash(
+  accountScope: string, clash: SaveClash, keep: "local" | "cloud",
+  /** "spare" (the default, and the Old UI's only way): the other copy moves
+   *  to the free slot, or to a backup when there is none. "backup": the
+   *  player chose to keep only one; the other goes to a 30-day backup. */
+  other: "spare" | "backup" = "spare",
+): CareerState {
   const scope = slotScope(accountScope, clash.slot);
   const chosen = keep === "local" ? clash.local.career : clash.cloud.career;
-  const other = keep === "local" ? clash.cloud.career : clash.local.career;
-  if (clash.spareSlot !== null) {
+  const otherCopy = keep === "local" ? clash.cloud.career : clash.local.career;
+  if (clash.spareSlot !== null && other === "spare") {
     const spareScope = slotScope(accountScope, clash.spareSlot);
-    saveCareer(other, spareScope);
-    void saveCareerToCloud(other, clash.spareSlot, { scope: spareScope });
+    saveCareer(otherCopy, spareScope);
+    void saveCareerToCloud(otherCopy, clash.spareSlot, { scope: spareScope });
+  } else {
+    // No free slot: the other copy is kept as a backup for 30 days, on this
+    // device. If this device will not even store that, nothing is replaced:
+    // the choice is put off exactly like "Decide later".
+    const why = keep === "local" ? "kept this device's copy" : "kept the online copy";
+    if (!backupCareer(accountScope, clash.slot, otherCopy, why)) {
+      heldScopes.add(scope);
+      return clash.local.career;
+    }
   }
   // Whichever was kept, this device has now SEEN the cloud copy, so it is
   // the base: keeping this device's copy then reads as "ahead" and uploads
   // over it (the cloud copy is safe in the spare slot), and keeping the
   // cloud copy reads as "in sync".
   heldScopes.delete(scope);
+  // A choice was made: the next upload may go straight away.
+  refusedUntil.delete(scope);
   if (saveCareer(chosen, scope)) saveSyncRecord(scope, recordAfterTake(clash.cloudVersion));
   return chosen;
 }

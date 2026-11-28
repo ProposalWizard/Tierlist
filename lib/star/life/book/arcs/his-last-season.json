@@ -1,0 +1,948 @@
+{
+ "id": "arc-his-last-season",
+ "title": "His last season",
+ "owner": "vet",
+ "summary": "The club's best old pro tells only you: this is his last season, and he wants no fuss. Penalties after training, him in goal. A reporter who's heard something. His last home game, and a penalty in the eighty-ninth minute. A season on, he's coaching the kids.",
+ "size": "big",
+ "about": {
+  "who": [
+   "vet",
+   "reporter",
+   "manager"
+  ],
+  "tone": [
+   "warm",
+   "proud",
+   "sad"
+  ]
+ },
+ "start": {
+  "chance": 0.0061,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "vet",
+   "pick": "squad",
+   "where": [
+    "veteran"
+   ],
+   "order": "best"
+  },
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "pens": 0,
+  "told": "none",
+  "last": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "his-last-penalty",
+   "title": "His last penalty",
+   "text": "You gave him the penalty in his last home game. He scored it, just. He says it's the only goal of his he remembers."
+  },
+  {
+   "id": "kept-his-secret",
+   "title": "Kept it",
+   "text": "He told you first that it was his last season, and you told nobody. He told the dressing room himself, in May, and looked at you while he did."
+  },
+  {
+   "id": "the-leak",
+   "title": "It got out",
+   "text": "His last season got into the papers before he could tell anyone. He knows it wasn't you. He doesn't know for sure."
+  }
+ ],
+ "promises": {
+  "p-his-secret": {
+   "id": "p-his-secret",
+   "to": "vet",
+   "text": "Keep his last season quiet until he says",
+   "due": {
+    "beat": "hls-3-paper"
+   },
+   "keptBy": {
+    "beat": "hls-3-paper",
+    "ends": [
+     "hold",
+     "ring"
+    ]
+   },
+   "dueText": "Until he tells everyone himself",
+   "kept": {
+    "text": "You said you'd keep it quiet, and you did.",
+    "npc": [
+     {
+      "slot": "vet",
+      "bond": 6,
+      "respect": 6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "vet",
+      "tag": "kept-my-last-season-quiet",
+      "strength": 3
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd keep his last season quiet.",
+    "npc": [
+     {
+      "slot": "vet",
+      "bond": -8,
+      "respect": -8,
+      "grudge": 8
+     }
+    ],
+    "remember": [
+     {
+      "slot": "vet",
+      "tag": "let-my-last-season-out",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "hls-1-told",
+   "title": "His last season",
+   "n": 1,
+   "event": {
+    "id": "arc-hls-1-told",
+    "title": "His last season",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "squad.any(veteran)"
+     ]
+    },
+    "setup": [
+     "{vet.name} has played four hundred games for this club. He catches you alone in the boot room and shuts the door with his foot."
+    ],
+    "talk": {
+     "start": "v1",
+     "nodes": {
+      "v1": {
+       "who": "vet",
+       "say": [
+        "\"This is my last season. I'm telling you because somebody has to know, and you won't make a fuss. I don't want a fuss. Not till I say.\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"Nobody hears it from me.\"",
+         "tone": "kind",
+         "end": "promise",
+         "promise": "p-his-secret"
+        },
+        {
+         "id": "sure",
+         "label": "\"Are you sure? You're still the best we've got.\"",
+         "tone": "honest",
+         "goto": "v2"
+        },
+        {
+         "id": "lads",
+         "label": "\"The lads should know.\"",
+         "tone": "honest",
+         "end": "lads"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "v2"
+        }
+       ]
+      },
+      "v2": {
+       "who": "vet",
+       "say": [
+        "\"My knees are sure. My wife's very sure.\" He laughs. \"I want to go while people still say that. Keep it quiet for me?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Course. Till you say.\"",
+         "tone": "kind",
+         "end": "promise",
+         "promise": "p-his-secret"
+        },
+        {
+         "id": "lads",
+         "label": "\"I'll try. You should tell them.\"",
+         "tone": "honest",
+         "end": "lads"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "promise": [
+       {
+        "text": "He nods once and goes out to train. He's the best player on the pitch, again, and only you know why he keeps looking at the stand.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "promised"
+         }
+        }
+       }
+      ],
+      "lads": [
+       {
+        "text": "\"When I'm ready.\" He goes out. He's quieter with you after that, for a bit.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": -2,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lads"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The old pro wants a word"
+  },
+  {
+   "id": "hls-2-pens",
+   "title": "One more",
+   "after": {
+    "beat": "hls-1-told",
+    "weeks": [
+     2,
+     5
+    ]
+   },
+   "event": {
+    "id": "arc-hls-2-pens",
+    "title": "One more",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "After training {vet.short} goes and stands in goal on pitch one, in his gloves from twenty years ago. \"I want to beat a young lad at penalties one last time. Ten. Go on.\""
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "vet",
+       "say": [
+        "\"I played in goal for a season when I was sixteen. Nobody remembers. I do.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Ten, then.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm not putting your knees through that.\"",
+         "tone": "kind",
+         "end": "knees"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "Ten past {vet.short}",
+        "intro": "Ten penalties and a few from further out. Him in goal, in gloves from twenty years ago.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "keeper",
+           "balls": 3,
+           "line": "\"Penalty spot. Pick a side and mean it.\""
+          },
+          {
+           "kind": "corners",
+           "balls": 2,
+           "line": "\"Corners. I'll not dive for these. My knees.\""
+          },
+          {
+           "kind": "keeper",
+           "balls": 2,
+           "line": "\"Two more. I've got your number now.\""
+          },
+          {
+           "kind": "lights-out",
+           "balls": 2,
+           "line": "\"Lights. Let's see you in the dark.\""
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. For four hundred games.\""
+          }
+         ],
+         "keeperSlot": "vet",
+         "lines": {
+          "keeper:saved": "\"Ha! Still got it. {name} still has it.\"",
+          "hit": "\"Good pen.\"",
+          "streak3": "\"Don't you dare.\"",
+          "double:miss": "\"There it is. One last time.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "vet",
+         "lines": [
+          "\"One.\"",
+          "\"Two.\"",
+          "\"Three.\"",
+          "\"Four.\"",
+          "\"Five.\"",
+          "\"Six.\"",
+          "\"Seven.\"",
+          "\"Eight.\"",
+          "\"Nine.\"",
+          "\"Ten.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "p-stop"
+        ],
+        [
+         "activity.score>=6",
+         "p-good"
+        ],
+        [
+         "",
+         "p-poor"
+        ]
+       ]
+      },
+      "p-good": {
+       "who": "vet",
+       "say": [
+        "\"{activity.score}.\" He takes the gloves off and looks at them. \"You'd have scored them against me at twenty-five as well.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Not a chance.\"",
+         "tone": "kind",
+         "end": "beat"
+        }
+       ]
+      },
+      "p-poor": {
+       "who": "vet",
+       "say": [
+        "\"{activity.score}!\" He does a lap of the six-yard box with his arms up. \"One last time. Told you.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Clap him round.",
+         "tone": "kind",
+         "end": "lost"
+        }
+       ]
+      },
+      "p-stop": {
+       "who": "vet",
+       "say": [
+        "You stop. He looks almost relieved. \"Probably for the best. My knees.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Your knees.\"",
+         "tone": "calm",
+         "end": "lost"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "beat": [
+       {
+        "text": "He gives you the gloves. \"Don't wear them. Just have them.\"",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "gave-me-his-old-gloves",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "pens": 1
+         }
+        }
+       }
+      ],
+      "lost": [
+       {
+        "text": "He walks off happier than you've seen him all season.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "pens": 2
+         }
+        }
+       }
+      ],
+      "knees": [
+       {
+        "text": "\"Fair,\" he says, and stays in goal on his own for a while, catching nothing.",
+        "arc": {
+         "set": {
+          "pens": 0
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The old pro wants you after training"
+  },
+  {
+   "id": "hls-3-paper",
+   "title": "A phone call",
+   "after": {
+    "beat": "hls-1-told",
+    "weeks": [
+     6,
+     12
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-hls-3-paper",
+    "title": "A phone call",
+    "category": "teammates",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{reporter.name} rings. \"I'm hearing he's finishing at the end of the season. Four hundred games. Can you give me anything? Off the record.\""
+    ],
+    "choices": [
+     {
+      "id": "hold",
+      "label": "\"It's not my news to tell.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "\"So it's news.\" She's clever. But she doesn't print it, because you didn't give her anything to print.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "told": "held"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "ring",
+      "label": "\"Give me ten minutes.\" Ring him first.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "He rings her himself, from his kitchen. She gets the story, the right way round. He texts you: \"Cheers.\"",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 4,
+          "respect": 4
+         },
+         {
+          "slot": "reporter",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "told": "rang"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "tell",
+      "label": "\"Off the record? Yes.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='promised'",
+        "text": "It's the back page in the morning. He reads it at his peg, folds it in half and puts it in the bin by the door, and goes out to train without a word to anyone.",
+        "effects": {
+         "team": -3
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "told": "told"
+         }
+        },
+        "promiseBroken": [
+         "p-his-secret"
+        ]
+       },
+       {
+        "text": "It's the back page. He tells the dressing room himself that morning, early, before you're in.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": -4,
+          "respect": -2,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "told": "told"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Somebody's heard something"
+  },
+  {
+   "id": "hls-4-last",
+   "title": "His last home game",
+   "after": {
+    "beat": "hls-1-told",
+    "weeks": [
+     14,
+     22
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-hls-4-last",
+    "title": "His last home game",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "His last home game. A guard of honour before kick-off, his kids as mascots. Eighty-ninth minute, two-nil, and you win a penalty. You're on them.",
+     "{vet.short} is standing at the edge of the box with his hands on his hips, not asking."
+    ],
+    "choices": [
+     {
+      "id": "give",
+      "label": "Give him the ball.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.pens==2",
+        "text": "He takes it like it's heavy. He scores it, just, under the keeper. He runs to his kids. You're the second one to reach him.",
+        "effects": {
+         "fans": 6,
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 10,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "gave-me-my-last-penalty",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "last": "gave"
+         }
+        }
+       },
+       {
+        "chance": 0.75,
+        "text": "He scores it, off the post and in. Forty thousand people stand up. He points at you with both hands.",
+        "effects": {
+         "fans": 6,
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 10,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "gave-me-my-last-penalty",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "last": "gave"
+         }
+        }
+       },
+       {
+        "text": "He misses. The whole ground groans, and then claps him anyway, louder than for any goal. He laughs at you all the way back.",
+        "effects": {
+         "fans": 4,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "last": "missed"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "take",
+      "label": "Take it yourself.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "text": "You score. He's the first to you, and he means it. But you see him look at the spot afterwards.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "last": "took"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "His last game at home"
+  },
+  {
+   "id": "hls-5-coach",
+   "title": "The under-eighteens",
+   "after": {
+    "beat": "hls-4-last",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-hls-5-coach",
+    "title": "The under-eighteens",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {vet.short} coaches the under-eighteens now, in a tracksuit with his initials on. He asks you to come and talk to them on a Tuesday.",
+     "{if arc.told=='told'}It's the first thing he's asked you for since the back page.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go on Tuesday.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.last=='gave'",
+        "text": "He introduces you: \"This one gave me my last goal.\" Thirty kids look at you like you've done something brave. You tell them it was just a pass.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "his-last-penalty"
+        }
+       },
+       {
+        "if": "arc.told=='told'",
+        "text": "You talk to them for twenty minutes. On the way out he says, \"I know it wasn't you,\" and you're not sure he does.",
+        "arc": {
+         "end": "the-leak"
+        }
+       },
+       {
+        "text": "You talk for twenty minutes. On the way out he says, \"You never told a soul,\" and that's all he says about it.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "kept-his-secret"
+        }
+       }
+      ]
+     },
+     {
+      "id": "busy",
+      "label": "\"I'm busy Tuesday. Another time.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.told=='told'",
+        "text": "\"Another time.\" He doesn't ask again.",
+        "arc": {
+         "end": "the-leak"
+        }
+       },
+       {
+        "if": "arc.last=='gave'",
+        "text": "He sends you a photo of the under-eighteens' dressing room. Above the door: a photo of him scoring that penalty, and your back, in the corner of it.",
+        "arc": {
+         "end": "his-last-penalty"
+        }
+       },
+       {
+        "text": "He understands. He sends you a thumbs up and a photo of his kids in your shirt.",
+        "arc": {
+         "end": "kept-his-secret"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, he's got a new job"
+  }
+ ]
+}

@@ -1,0 +1,701 @@
+{
+ "id": "arc-the-flood",
+ "title": "The flood",
+ "owner": "groundsman",
+ "summary": "The river comes over in the night and the ground is under four feet of brown water. The groundsman is wading through it in waders at five in the morning. Half the town is flooded too. You play the rest of the season at a rival's ground, and a season on you go home.",
+ "size": "big",
+ "about": {
+  "who": [
+   "the groundsman",
+   "the chairman",
+   "your neighbour"
+  ],
+  "tone": [
+   "dramatic",
+   "moving"
+  ]
+ },
+ "start": {
+  "chance": 0.0011,
+  "careers": 0.08,
+  "tier": "very-rare",
+  "stage": "any",
+  "when": [
+   "age>=19",
+   "divisionLevel>=3"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "groundsman",
+   "pick": "groundsman"
+  },
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  },
+  {
+   "slot": "neighbour",
+   "pick": "neighbour"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none",
+  "back": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "home-again",
+   "title": "Home again",
+   "text": "The first game back at the ground after the flood was a sell-out. There's a line painted on the stand where the water came up to, and the kids measure themselves against it."
+  },
+  {
+   "id": "the-bucket-night",
+   "title": "The bucket night",
+   "text": "You raised the money for the new pitch at a crossbar night in a sports hall. The groundsman put the crossbar in his shed."
+  },
+  {
+   "id": "the-new-ground",
+   "title": "The new ground",
+   "text": "The club never went back. The old ground is flats now, and the groundsman's shed is a bike store."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "fld-1-water",
+   "title": "Four feet",
+   "n": 1,
+   "event": {
+    "id": "arc-fld-1-water",
+    "title": "Four feet",
+    "category": "life",
+    "place": "ground:pitch",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Five in the morning, a text from the club: DON'T COME IN. You go in. The river is over the wall and the pitch is a lake with a corner flag sticking out of it.",
+     "{groundsman.short} is up to his chest by the dugouts in his waders, carrying the club's old photos out of the boardroom one frame at a time."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "groundsman",
+       "say": [
+        "\"Don't just stand there,\" he says. \"Unless you've got waders.\""
+       ],
+       "replies": [
+        {
+         "id": "wade",
+         "label": "Get in the water and carry.",
+         "tone": "brave",
+         "end": "wade"
+        },
+        {
+         "id": "town",
+         "label": "Go and help on the estate by the river.",
+         "tone": "kind",
+         "end": "town"
+        },
+        {
+         "id": "home",
+         "label": "Go home. The club said don't come.",
+         "tone": "calm",
+         "silent": true,
+         "end": "home"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "wade": [
+       {
+        "text": "Three hours, forty frames, two trophies and the kit man's kettle. Your hands go white. {groundsman.short} gives you his flask and says nothing, which from him is a speech.",
+        "effects": {
+         "energy": -15,
+         "fans": 4
+        },
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 10,
+          "respect": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "waded-in-the-flood",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "wade"
+         }
+        }
+       }
+      ],
+      "town": [
+       {
+        "text": "{neighbour.name}'s street is a river. You carry sandbags till dark, and an old man gives you a tin of biscuits for it.",
+        "effects": {
+         "energy": -15,
+         "fans": 6
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "sandbagged-my-street",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "town"
+         }
+        }
+       }
+      ],
+      "home": [
+       {
+        "text": "You watch it on the news. The groundsman is on the news too, in the background, carrying a frame.",
+        "arc": {
+         "set": {
+          "path": "home"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "The river has come over at the ground"
+  },
+  {
+   "id": "fld-1b-away",
+   "title": "Somebody else's ground",
+   "after": {
+    "beat": "fld-1-water",
+    "weeks": [
+     2,
+     5
+    ]
+   },
+   "event": {
+    "id": "arc-fld-1b-away",
+    "title": "Somebody else's ground",
+    "category": "life",
+    "place": "away:ground",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Home games are forty minutes up the road at the other lot's ground, where your fans aren't welcome and their stewards make sure of it. The first 'home' game: three thousand of yours in their stand."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "chairman",
+       "say": [
+        "The chairman catches you in their tunnel. \"Their chairman wants a photo of us shaking hands. Their fans boo every time our name's said.\""
+       ],
+       "replies": [
+        {
+         "id": "shake",
+         "label": "\"Do the photo. They took us in.\"",
+         "tone": "kind",
+         "end": "shake"
+        },
+        {
+         "id": "no",
+         "label": "\"Not in our shirt. Not here.\"",
+         "tone": "fiery",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "shake": [
+       {
+        "text": "The photo goes in both papers. Their fans boo it, then one of them puts a quid in your bucket on the way out.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "shake"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "Your fans love you for it. The rival's chairman puts the rent up.",
+        "effects": {
+         "fans": 3,
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "The club is playing at a rival's ground"
+  },
+  {
+   "id": "fld-2-money",
+   "title": "The new pitch",
+   "after": {
+    "beat": "fld-1-water",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-fld-2-money",
+    "title": "The new pitch",
+    "category": "life",
+    "place": "town:sports-hall",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The insurance has paid for the stand and not the pitch. A new one is eighty thousand pounds. {groundsman.short} has hired the sports hall and borrowed a crossbar from the school: a fiver a go, all night."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "groundsman",
+       "say": [
+        "The hall is full. {neighbour.short} is on the door with a bucket. \"Ten balls,\" says {groundsman.short}. \"Every one in, the lads match it.\""
+       ],
+       "replies": [
+        {
+         "id": "play",
+         "label": "Take your ten.",
+         "tone": "confident",
+         "goto": "g"
+        },
+        {
+         "id": "pay",
+         "label": "\"I'll just write a cheque.\"",
+         "tone": "humble",
+         "end": "cheque"
+        }
+       ]
+      },
+      "g": {
+       "who": "groundsman",
+       "say": [
+        "A sports hall, the school's crossbar on two goals full of PE mats, and the whole town on the climbing bars."
+       ],
+       "activity": {
+        "mode": "challenge",
+        "name": "The crossbar night",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "crossbar",
+           "balls": 1
+          },
+          {
+           "kind": "props",
+           "balls": 2,
+           "line": "Through the tyre off the climbing frame, then the bucket."
+          },
+          {
+           "kind": "corners",
+           "balls": 2
+          },
+          {
+           "kind": "far",
+           "balls": 1
+          },
+          {
+           "kind": "crossbar",
+           "balls": 1
+          },
+          {
+           "kind": "keeper",
+           "balls": 2,
+           "line": "{groundsman.short} in goal in his waders, for a laugh."
+          },
+          {
+           "kind": "double"
+          }
+         ],
+         "keeperSlot": "groundsman",
+         "lines": {
+          "crossbar:hit": "The bar rings and the hall goes up.",
+          "keeper:saved": "\"Not past {name}. I've been in four foot of water.\""
+         }
+        },
+        "caller": {
+         "slot": "groundsman"
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "technique",
+         "target": 60
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "r-stop"
+        ],
+        [
+         "activity.score>=6",
+         "r-good"
+        ],
+        [
+         "",
+         "r-poor"
+        ]
+       ]
+      },
+      "r-stop": {
+       "who": "groundsman",
+       "say": [
+        "You stop there and hand the ball back."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Walk off.",
+         "tone": "calm",
+         "end": "stop"
+        }
+       ]
+      },
+      "r-good": {
+       "who": "groundsman",
+       "say": [
+        "{activity.score} out of ten. Not bad at all."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "good"
+        }
+       ]
+      },
+      "r-poor": {
+       "who": "groundsman",
+       "say": [
+        "{activity.score} out of ten."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "poor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "The lads match every one. With the buckets it's eighty-one thousand four hundred pounds. {groundsman.short} counts it twice.",
+        "effects": {
+         "fans": 8,
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "back": "bucket"
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "You miss more than you hit and the hall cheers every miss louder. It's sixty-two thousand, and a new pitch is eighty. The chairman says he'll find the rest. He says it twice.",
+        "effects": {
+         "fans": 5
+        },
+        "arc": {
+         "set": {
+          "back": "short"
+         }
+        }
+       }
+      ],
+      "stop": [
+       {
+        "text": "You stop after four with a sore foot. The hall still raises fifty thousand. It isn't enough yet.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "set": {
+          "back": "short"
+         }
+        }
+       }
+      ],
+      "cheque": [
+       {
+        "text": "A cheque for ten thousand. It's the biggest single amount. {groundsman.short} would have rather had the ten balls.",
+        "effects": {
+         "moneyWeeks": -2,
+         "fans": 3
+        },
+        "arc": {
+         "set": {
+          "back": "home"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "A season on, the club needs money for a new pitch"
+  },
+  {
+   "id": "fld-3-home",
+   "title": "The first game back",
+   "after": {
+    "beat": "fld-2-money",
+    "weeks": [
+     8,
+     20
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-fld-3-home",
+    "title": "The first game back",
+    "category": "life",
+    "place": "ground:pitch",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "walkout",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{if arc.back=='short'}The money never quite came. The chairman has an offer for the land.{/if}The first game back, or the last at the rival's ground. {groundsman.short} has painted a line on the main stand: the water came up to here."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "groundsman",
+       "say": [
+        "He's walked the new pitch every morning for a week. \"Want to be first on it?\""
+       ],
+       "replies": [
+        {
+         "id": "first",
+         "label": "\"You first. It's yours.\"",
+         "tone": "kind",
+         "end": "first"
+        },
+        {
+         "id": "me",
+         "label": "Run out first.",
+         "tone": "confident",
+         "end": "me"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "first": [
+       {
+        "if": "arc.back=='bucket'",
+        "text": "He walks out to the centre circle on his own and stands there with his hands in his pockets. The ground fills up behind him.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "end": "the-bucket-night"
+        }
+       },
+       {
+        "if": "!arc.back=='short'",
+        "text": "He walks out to the centre circle on his own. The kids measure themselves against his line on the stand.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "home-again"
+        }
+       },
+       {
+        "text": "There is no new pitch. The club stays at the rival's ground, and then moves to a new one by the bypass.",
+        "arc": {
+         "end": "the-new-ground"
+        }
+       }
+      ],
+      "me": [
+       {
+        "if": "!arc.back=='short'",
+        "text": "You run out to a sell-out. The kids measure themselves against the line on the stand.",
+        "effects": {
+         "fans": 3
+        },
+        "arc": {
+         "end": "home-again"
+        }
+       },
+       {
+        "text": "You run out at the rival's ground one more time. The old ground's sold that summer.",
+        "arc": {
+         "end": "the-new-ground"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "The club is going home"
+  }
+ ]
+}

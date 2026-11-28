@@ -1,0 +1,264 @@
+{
+ "id": "arc-the-woods",
+ "title": "Team building",
+ "owner": "manager",
+ "summary": "The gaffer's idea of team building: a day in the woods building rafts. Your raft is going to sink, and the gaffer is on it. A season on, he's booked the woods again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "manager"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0093,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-raft",
+   "title": "The raft",
+   "text": "On the gaffer's team-building day your raft sank with him on it. The photo is in his office. He says it was the best day of the season."
+  },
+  {
+   "id": "dry-land",
+   "title": "Dry land",
+   "text": "On the team-building day you kept the gaffer dry. He's never mentioned it. You think he wanted to go in."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "wds-1-raft",
+   "title": "The raft",
+   "n": 1,
+   "event": {
+    "id": "arc-wds-1-raft",
+    "title": "The raft",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Team building: a lake in the woods, four barrels, some rope, a man in shorts with a whistle. {manager.name} has picked your team to be on, and he's climbing on to your raft, which is leaning."
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "manager",
+       "say": [
+        "\"Right. I'm captain. Paddle when I say paddle.\" The left barrel is filling with water."
+       ],
+       "replies": [
+        {
+         "id": "tell",
+         "label": "\"Gaffer, the barrel's going.\"",
+         "tone": "honest",
+         "end": "tell"
+        },
+        {
+         "id": "paddle",
+         "label": "Paddle when he says paddle.",
+         "tone": "reckless",
+         "end": "sank"
+        },
+        {
+         "id": "jump",
+         "label": "Jump off first and save yourself.",
+         "tone": "cold",
+         "end": "jumped"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "tell": [
+       {
+        "text": "\"It's fine.\" It isn't. He goes in up to his chest. He comes up laughing, which nobody's seen before. The photo is in his office by Monday.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "sank-the-raft-with-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "sank"
+         }
+        }
+       }
+      ],
+      "sank": [
+       {
+        "text": "You paddle. You sink. Everyone sinks. The gaffer stands up in four feet of water in his tracksuit and blows the man in shorts's whistle.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "sank-the-raft-with-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "sank"
+         }
+        }
+       }
+      ],
+      "jumped": [
+       {
+        "text": "You jump to the bank. The raft rights itself without you. The gaffer gets across dry and looks at you on the bank.",
+        "effects": {
+         "team": -1
+        },
+        "arc": {
+         "set": {
+          "path": "dry"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The gaffer has a day out planned"
+  },
+  {
+   "id": "wds-2-again",
+   "title": "The woods again",
+   "after": {
+    "beat": "wds-1-raft",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-wds-2-again",
+    "title": "The woods again",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. On the whiteboard in the canteen: TEAM DAY. THE WOODS. BRING A TOWEL. Underneath, someone has drawn a raft sinking."
+    ],
+    "choices": [
+     {
+      "id": "volunteer",
+      "label": "\"I'll be on your raft, gaffer.\"",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.path=='sank'",
+        "text": "\"Course you will.\" You sink again, on purpose, in the first ten metres. He goes under laughing. The man in shorts says he's never seen a team so happy to be wet.",
+        "effects": {
+         "team": 3
+        },
+        "arc": {
+         "end": "the-raft"
+        }
+       },
+       {
+        "text": "He looks at you. \"You jumped last time.\" You don't, this time. You stay dry anyway.",
+        "arc": {
+         "end": "dry-land"
+        }
+       }
+      ]
+     },
+     {
+      "id": "towel",
+      "label": "Bring two towels.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='sank'",
+        "text": "He's on your raft again. It sinks again. You give him the second towel.",
+        "arc": {
+         "end": "the-raft"
+        }
+       },
+       {
+        "text": "You don't need them. Nobody sinks. It's a bit flat, really.",
+        "arc": {
+         "end": "dry-land"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, the gaffer books the woods"
+  }
+ ]
+}

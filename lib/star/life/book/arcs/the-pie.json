@@ -1,0 +1,391 @@
+{
+ "id": "arc-the-pie",
+ "title": "The pie",
+ "owner": "canteen",
+ "summary": "The canteen does you a steak pie on a Friday because there's nothing else left, and you score twice on the Saturday. Now you need the pie. Every Friday. A season on, she's off sick on a Friday.",
+ "size": "small",
+ "about": {
+  "who": [
+   "canteen"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "canteen",
+   "pick": "canteen"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-pie-man",
+   "title": "The pie",
+   "text": "You've had the same steak pie every Friday for two seasons. You don't believe in it. You're not stopping."
+  },
+  {
+   "id": "no-pie",
+   "title": "No pie",
+   "text": "You had the lucky pie for a season, then the woman from the canteen was off sick one Friday, and you scored anyway. You never had the pie again."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "pie-1-friday",
+   "title": "Steak pie",
+   "n": 1,
+   "event": {
+    "id": "arc-pie-1-friday",
+    "title": "Steak pie",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "clubApps>=2"
+     ]
+    },
+    "setup": [
+     "Friday. You're last to the canteen. {canteen.name} has one steak pie left. \"That or nothing.\" You have the pie. On Saturday you score twice."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "canteen",
+       "say": [
+        "The next Friday, before you've said anything: \"I've done you one. With your name on.\" It's a pie with your initials in pastry on the lid."
+       ],
+       "replies": [
+        {
+         "id": "eat",
+         "label": "Eat the pie.",
+         "tone": "kind",
+         "end": "pie"
+        },
+        {
+         "id": "salad",
+         "label": "\"I'll have the salad, thanks.\"",
+         "tone": "calm",
+         "end": "salad"
+        },
+        {
+         "id": "two",
+         "label": "\"Can I have two?\"",
+         "tone": "reckless",
+         "end": "two"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "pie": [
+       {
+        "text": "You eat it. You score on Saturday. She doesn't say anything, but there's a pie with your initials on the next Friday, and the next.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "makes-my-friday-pie",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "pie"
+         }
+        }
+       }
+      ],
+      "salad": [
+       {
+        "text": "\"Suit yourself.\" She eats the pie herself, in front of you.",
+        "arc": {
+         "set": {
+          "path": "salad"
+         }
+        }
+       }
+      ],
+      "two": [
+       {
+        "text": "\"One. You'll be sick.\" One. You score. Two pies would have been a hat-trick, the lads reckon.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "makes-my-friday-pie",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "pie"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     }
+    ]
+   },
+   "hint": "The canteen has one thing left"
+  },
+  {
+   "id": "pie-1d-deep",
+   "title": "The pie superstition",
+   "after": {
+    "beat": "pie-1-friday",
+    "weeks": [
+     3,
+     8
+    ]
+   },
+   "event": {
+    "id": "arc-pie-1d-deep",
+    "title": "The pie superstition",
+    "category": "club",
+    "place": "club:canteen",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The whole squad has heard about the Friday pie. On Friday there are eleven lads in the queue asking for a steak pie, and {canteen.short} has made four."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "canteen",
+       "say": [
+        "She looks at you over the hatch. \"Your pie. You decide.\""
+       ],
+       "replies": [
+        {
+         "id": "share",
+         "label": "\"Cut them in half. Everyone gets some luck.\"",
+         "tone": "kind",
+         "end": "share"
+        },
+        {
+         "id": "mine",
+         "label": "\"It's my pie.\"",
+         "tone": "confident",
+         "end": "mine"
+        },
+        {
+         "id": "none",
+         "label": "\"Nobody has it. It's daft.\"",
+         "tone": "honest",
+         "end": "none"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "share": [
+       {
+        "text": "Eight halves and a lot of noise. You win on Saturday. Now she makes twelve.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "shared-out-the-pie",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "share"
+         }
+        }
+       }
+      ],
+      "mine": [
+       {
+        "text": "The lads boo. She gives you the biggest one with a wink.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "mine"
+         }
+        }
+       }
+      ],
+      "none": [
+       {
+        "text": "You lose on Saturday. The lads blame you for a fortnight.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "none"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     }
+    ]
+   },
+   "hint": "The lads have heard about the pie"
+  },
+  {
+   "id": "pie-2-sick",
+   "title": "No pie",
+   "after": {
+    "beat": "pie-1-friday",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-pie-2-sick",
+    "title": "No pie",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. Friday, and {canteen.short} is off sick. The relief cook has never heard of the pie. There's a quiche.",
+     "{if arc.deep=='share'}She makes twelve pies on Fridays now. She blames you.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "ring",
+      "label": "Ring her.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='pie'",
+        "text": "She's in bed with flu. At half nine that night her husband knocks on your door with a pie in a tea towel. Your initials. You score on Saturday.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-pie-man"
+        }
+       },
+       {
+        "text": "\"Pie? Eat the quiche, love.\" You eat the quiche.",
+        "arc": {
+         "end": "no-pie"
+        }
+       }
+      ]
+     },
+     {
+      "id": "quiche",
+      "label": "Eat the quiche.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.path=='pie'",
+        "chance": 0.5,
+        "text": "You score on Saturday anyway. You tell her on Monday. She looks a bit put out, and makes you a pie anyway.",
+        "arc": {
+         "end": "the-pie-man"
+        }
+       },
+       {
+        "text": "You eat the quiche. You score. You never have the pie again, and she pretends not to mind.",
+        "arc": {
+         "end": "no-pie"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     }
+    ]
+   },
+   "hint": "A season on, a Friday without her"
+  }
+ ]
+}

@@ -1,0 +1,318 @@
+{
+ "id": "arc-deadline-day",
+ "title": "Deadline day",
+ "owner": "agent",
+ "summary": "It's the last night of the summer window and your agent is ringing every twenty minutes about a club that might want you. A season on, the same club comes up again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "agent",
+   "transfer window"
+  ],
+  "tone": [
+   "tense",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0061,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "agent",
+   "pick": "agent"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-other-one",
+   "title": "The other one",
+   "text": "A club nearly went for you on deadline day. They went for a lad in Belgium."
+  },
+  {
+   "id": "stayed-put",
+   "title": "Stayed put",
+   "text": "On deadline day you told your agent you were happy where you were, and you still are."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "ddy-1",
+   "title": "Eleven o'clock",
+   "n": 1,
+   "event": {
+    "id": "arc-ddy-1",
+    "title": "Eleven o'clock",
+    "category": "agent",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "clubApps>=10"
+     ]
+    },
+    "setup": [
+     "Last night of the summer window. {agent.name} has rung six times since tea. He says a club is interested. He won't say which one on the phone."
+    ],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "agent",
+       "say": [
+        "\"They want to know if you'd talk. Not sign. Talk. I need a yes or a no by eleven or they go for the lad in Belgium.\""
+       ],
+       "replies": [
+        {
+         "id": "talk",
+         "label": "\"I'll talk.\"",
+         "tone": "confident",
+         "goto": "a2"
+        },
+        {
+         "id": "who",
+         "label": "\"Who is it?\"",
+         "tone": "honest",
+         "goto": "a3"
+        },
+        {
+         "id": "stay",
+         "label": "\"I'm happy here.\"",
+         "tone": "calm",
+         "end": "stay"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "a3"
+        }
+       ]
+      },
+      "a3": {
+       "who": "agent",
+       "say": [
+        "\"Can't say. Big kit, small stadium, nice chairman. That's all you're getting.\""
+       ],
+       "replies": [
+        {
+         "id": "talk",
+         "label": "\"Fine. I'll talk.\"",
+         "tone": "confident",
+         "goto": "a2"
+        },
+        {
+         "id": "stay",
+         "label": "\"Then no.\"",
+         "tone": "calm",
+         "end": "stay"
+        }
+       ]
+      },
+      "a2": {
+       "who": "agent",
+       "say": [
+        "Ten to eleven. He rings back. \"They've gone for the lad in Belgium.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Good luck to him.\"",
+         "tone": "calm",
+         "end": "missed"
+        },
+        {
+         "id": "angry",
+         "label": "\"You said eleven.\"",
+         "tone": "fiery",
+         "end": "missed"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "stay": [
+       {
+        "text": "He sighs down the phone. In the morning the gaffer finds out you were asked and said no, and he puts you in the team.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -2
+         },
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "stayed-on-deadline-day",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stayed"
+         }
+        }
+       }
+      ],
+      "missed": [
+       {
+        "text": "You go to bed at midnight with the phone on your chest. Nobody at the club ever knows.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "missed"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your agent keeps ringing"
+  },
+  {
+   "id": "ddy-2",
+   "title": "The lad in Belgium",
+   "after": {
+    "beat": "ddy-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-ddy-2",
+    "title": "The lad in Belgium",
+    "category": "agent",
+    "place": "stadium:pitch",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. You play against the club that wanted you. Their striker, the lad from Belgium, has scored nine all season.",
+     "{if arc.path=='stayed'}The gaffer hasn't dropped you since that night.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "swap",
+      "label": "Swap shirts with the lad from Belgium.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "He knows exactly who you are. \"You were the other one,\" he says, and laughs. He has a lovely shirt.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "the-other-one"
+        }
+       }
+      ]
+     },
+     {
+      "id": "agent",
+      "label": "Ring your agent from the coach.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='missed'",
+        "text": "\"I told you,\" {agent.short} says, before you've said anything. You can hear he's been waiting a year to say it.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-other-one"
+        }
+       },
+       {
+        "text": "\"Happy?\" he asks. You say yes and ask him about his holiday.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "stayed-put"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, the other club comes up"
+  }
+ ]
+}

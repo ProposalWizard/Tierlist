@@ -1,0 +1,496 @@
+{
+ "id": "arc-the-standby-list",
+ "title": "The standby list",
+ "owner": "manager",
+ "summary": "You're on the under-21 standby list. A lad has a tight hamstring, and if he's out by Friday you're on the plane. You promise your mum a shirt from the camp. A season on, the list comes out again.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "gaffer",
+   "mum",
+   "international duty"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0096,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "breaking-through",
+  "when": [
+   "age>=19",
+   "age<=23",
+   "age<=21"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "went": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-shirt",
+   "title": "The shirt on her wall",
+   "text": "You went with the under-21s. Your mum has the shirt in a frame in the hall."
+  },
+  {
+   "id": "next-time",
+   "title": "Next time",
+   "text": "You were on the standby list and the plane went without you. Your mum still says next time."
+  }
+ ],
+ "promises": {
+  "p-mums-shirt": {
+   "id": "p-mums-shirt",
+   "to": "mum",
+   "text": "Bring Mum a shirt from the under-21 camp",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "sbl-2",
+    "ends": [
+     "pack"
+    ]
+   },
+   "dueText": "If you go, by the end of the camp",
+   "remind": "\"Don't forget my shirt. Medium. Your auntie wants one and all but she's not getting one.\"",
+   "kept": {
+    "text": "You said you'd bring her a shirt.",
+    "npc": [
+     {
+      "slot": "mum",
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd bring her a shirt.",
+    "npc": [
+     {
+      "slot": "mum",
+      "bond": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "mum",
+      "tag": "no-shirt-from-the-camp",
+      "strength": 1
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "sbl-1",
+   "title": "Standby",
+   "n": 1,
+   "event": {
+    "id": "arc-sbl-1",
+    "title": "Standby",
+    "category": "career",
+    "place": "compound:office",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "fame>=12"
+     ]
+    },
+    "setup": [
+     "The gaffer calls you into his office and shuts the door. He has a printed email on the desk with the national badge at the top and your name on the second page."
+    ],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "manager",
+       "say": [
+        "\"Under-21 standby. One of their lads has a tight hamstring. If he fails a test on Friday, you're on a plane Monday. Don't tell the world yet.\""
+       ],
+       "replies": [
+        {
+         "id": "great",
+         "label": "\"Brilliant. I'll be ready.\"",
+         "tone": "confident",
+         "goto": "s2"
+        },
+        {
+         "id": "club",
+         "label": "\"What about Saturday here?\"",
+         "tone": "humble",
+         "goto": "s3"
+        },
+        {
+         "id": "calm",
+         "label": "\"Okay.\"",
+         "tone": "calm",
+         "goto": "s2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "s2"
+        }
+       ]
+      },
+      "s3": {
+       "who": "manager",
+       "say": [
+        "\"Saturday you play for me. Monday you might play for them. Both, if you behave.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Then both.\"",
+         "tone": "confident",
+         "goto": "s2"
+        }
+       ]
+      },
+      "s2": {
+       "who": "mum",
+       "say": [
+        "You ring your mum in the car park before you've told anyone else. She screams. Then she says, \"Bring me a shirt. Promise me.\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"I promise. If I go.\"",
+         "tone": "kind",
+         "end": "promised",
+         "promise": "p-mums-shirt"
+        },
+        {
+         "id": "maybe",
+         "label": "\"Mum, I might not even go.\"",
+         "tone": "honest",
+         "end": "maybe"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "promised": [
+       {
+        "text": "She's told her sister before you've hung up. You can hear her sister through the phone.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6
+         },
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "promised-a-camp-shirt",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "promised"
+         }
+        }
+       }
+      ],
+      "maybe": [
+       {
+        "text": "\"You'll go,\" she says. She says it three more times before she lets you go.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         },
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "maybe"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "You're on the under-21 standby list"
+  },
+  {
+   "id": "sbl-2",
+   "title": "Friday",
+   "after": {
+    "beat": "sbl-1",
+    "weeks": [
+     1,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-sbl-2",
+    "title": "Friday",
+    "category": "career",
+    "place": "home:kitchen",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Friday. The under-21 coach rings at half four. The lad with the hamstring took his test this morning."
+    ],
+    "choices": [
+     {
+      "id": "pack",
+      "label": "Pack your bag and wait for the word.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "chance": 0.5,
+        "text": "He failed it. You fly Monday, train four days at a hotel with very good grass and come on for the last eleven minutes. You keep your shirt on the plane home in a carrier bag.",
+        "effects": {
+         "fame": 3,
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         },
+         {
+          "slot": "mum",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "brought-me-the-camp-shirt",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": 1
+         }
+        }
+       },
+       {
+        "chance": 0.5,
+        "text": "He passed it. You unpack. The coach says you're next on the list and he means it.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": 0
+         }
+        },
+        "promiseBroken": [
+         "p-mums-shirt"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "dont",
+      "label": "Don't get your hopes up. Go to bed.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "He passed it. You're asleep before the coach rings to say so.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "set": {
+          "went": 0
+         }
+        },
+        "promiseBroken": [
+         "p-mums-shirt"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Friday: the fitness test"
+  },
+  {
+   "id": "sbl-3",
+   "title": "The list again",
+   "after": {
+    "beat": "sbl-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-sbl-3",
+    "title": "The list again",
+    "category": "career",
+    "place": "home:hall",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. The under-21 squad is announced on the radio while you're in the car.",
+     "{if arc.went==1}Your mum's hall has a frame in it now, with a shirt that's too big for her.{/if}",
+     "{if arc.went==0}You're on the standby list again. Second page.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "ring",
+      "label": "Ring your mum.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.went==1",
+        "text": "She's already heard. \"Next time,\" she says, \"I'm coming with you.\"",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-shirt"
+        }
+       },
+       {
+        "text": "\"Next time,\" she says. She's said it every time since you were nine.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "next-time"
+        }
+       }
+      ]
+     },
+     {
+      "id": "train",
+      "label": "Turn it off and go to training.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.went==1",
+        "text": "You train well. The shirt in her hall is still the first thing anyone sees.",
+        "effects": {
+         "boss": 1
+        },
+        "arc": {
+         "end": "the-shirt"
+        }
+       },
+       {
+        "text": "You train well, and the gaffer notices.",
+        "effects": {
+         "boss": 1
+        },
+        "arc": {
+         "end": "next-time"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, the list comes out again"
+  }
+ ]
+}

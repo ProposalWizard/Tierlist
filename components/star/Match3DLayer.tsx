@@ -37,13 +37,15 @@ import { EngineFrameContext, type EngineFrame, type EngineFrameObserver } from "
 import type { EngineView } from "@/lib/star/style3d/engineView";
 import { resolveStyle } from "@/lib/star/style3d/styles";
 import type { TimeOfDay } from "@/lib/star/style3d/real/assets";
-import { useMatchView3d, setMatchView3d } from "@/lib/star/matchView3d";
+import { useMatchView3d, setMatchView3d, match3dButtons } from "@/lib/star/matchView3d";
 import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
 import { SettingsGroups } from "./DeviceSettings";
 import Quality3dRow from "./Quality3dRow";
 import FhrSwitchRow from "./FhrSwitchRow";
 import { quality3dTier } from "@/lib/star/three3d/quality";
+import { afterLoss, healReset, newHealState, HEAL_DELAY_MS } from "@/lib/star/three3d/autoHeal";
 import { SetCard, SetToggle } from "./settingsKit";
+import LoadingCurtain from "./loading/LoadingCurtain";
 
 /** The TV camera's angle, degrees from straight down (the Style Testing page's default). */
 const CAREER_3D_TILT = 45;
@@ -65,6 +67,9 @@ export default function Match3DLayer({ children, tod = "golden", hold = false }:
   statusRef.current = status;
   const errRun = useRef(0);
   const autoLeft = useRef(AUTO_RETRIES);
+  /** Silent rebuilds after a lost or failed 3D (three3d/autoHeal.ts); while one waits, no "3D ↻". */
+  const heal = useRef(newHealState());
+  const [healing, setHealing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const killRef = useRef<(() => void) | null>(null);
   /** The quality the 3D view was built at: a change in the in-match Settings rebuilds it on "Back to the match". */
@@ -105,7 +110,7 @@ export default function Match3DLayer({ children, tod = "golden", hold = false }:
         if (lost) { v.setVisible(false); return; }
         setStatus("ready");
       })
-      .catch((e) => { console.error("Career match 3D failed to load", e); if (!dead) setStatus("off"); });
+      .catch((e) => { if (dead) return; /* closed mid-load (three3d/perf.ts isAbandonedScene) */ console.error("Career match 3D failed to load", e); setStatus("off"); });
     killRef.current = () => { dead = true; try { ev.current?.dispose(); } catch (e) { console.error("Career match 3D: dispose failed", e); } ev.current = null; holder.remove(); };
   }, []);
 
@@ -123,15 +128,42 @@ export default function Match3DLayer({ children, tod = "golden", hold = false }:
     return () => { killRef.current?.(); killRef.current = null; box.current = null; };
   }, []);
 
-  // 3D wanted: build it the first time, show it after; 2D wanted: hide it (kept, so flipping back is instant)
+  // 3D wanted: build it the first time, show it after; 2D wanted: hide it (kept, so flipping back is instant).
+  // Flipping to 3D with a view that lost the one renderer to another 3D place builds it again (Harry, 27 Nov 2026).
   useEffect(() => {
+    if (on && killRef.current && ev.current && statusRef.current === "ready" && !ev.current.holdsRenderer()) { rebuild(); return; }
     if (on && !killRef.current) build();
     ev.current?.setVisible(on && status !== "lost");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [on, status, build, boxN]);
+  const checkAt = useRef(0);
+  // Lost (the phone took the 3D away, or it kept failing to draw) or failed to build: it builds
+  // itself again on a fresh renderer, twice a minute at most, with the 2D match showing meanwhile;
+  // only then the amber "3D ↻" (Harry, 27 Nov 2026: "we should never have a feature where we have
+  // to press tap to reload … it shouldn't be a consistent thing").
+  useEffect(() => {
+    if (!on || (status !== "lost" && status !== "off")) { setHealing(false); return; }
+    if (afterLoss(heal.current, Date.now()) !== "rebuild") { setHealing(false); return; }
+    setHealing(true);
+    const t = window.setTimeout(() => {
+      void import("@/lib/star/three3d/perf").then((m) => { m.dropSharedRenderer(); autoLeft.current = AUTO_RETRIES; rebuildRef.current?.(); });
+    }, HEAL_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [on, status]);
 
   const onFrame = useCallback((f: EngineFrame) => {
     const v = ev.current;
     if (!v || statusRef.current === "lost") return;
+    // once a second: still holding the renderer? (a 3D place left loading behind can take it) — build again, never a blank pitch
+    const now = performance.now();
+    if (now - checkAt.current > 1000) {
+      checkAt.current = now;
+      if (statusRef.current === "ready" && !v.holdsRenderer()) {
+        console.warn("Career match 3D: another 3D place took the renderer — building the 3D again");
+        rebuildRef.current?.();
+        return;
+      }
+    }
     try {
       v.frame(f);
       errRun.current = 0;
@@ -157,20 +189,21 @@ export default function Match3DLayer({ children, tod = "golden", hold = false }:
     }
   }, []);
 
-  const can3d = status !== "off";
+  // never a sticky "off": a failed build shows "3D ↻" (tap to try again), as a lost one does
+  const buttons = match3dButtons(on, healing ? "loading" : status);
   const chrome = (
     <>
-      {on && status === "lost" && (
+      {buttons.retry && (
         <button
           data-match-3d-retry
-          onClick={() => { autoLeft.current = AUTO_RETRIES; rebuild(); }}
+          onClick={() => { autoLeft.current = AUTO_RETRIES; healReset(heal.current); void import("@/lib/star/three3d/perf").then((m) => { if (statusRef.current === "off") m.dropSharedRenderer(); rebuild(); }); }}
           aria-label="3D paused: tap to try 3D again"
           className="px-2 flex items-center border-l border-white/10 text-[10px] font-black tracking-wide text-amber-300 hover:text-amber-200 transition"
         >
           3D ↻
         </button>
       )}
-      {can3d && !(on && status === "lost") && (
+      {buttons.toggle && (
         <button
           data-match-view-toggle
           onClick={() => setMatchView3d(on ? "off" : "on")}
@@ -194,16 +227,26 @@ export default function Match3DLayer({ children, tod = "golden", hold = false }:
     </>
   );
 
+  // The loading screen (the matchday programme, components/star/loading) covers only the first
+  // build at kick-off, with 3D on from the start: never a rebuild or a 2D/3D flip mid-match,
+  // where the 2D match carries on underneath and is the screen. While it is up the
+  // match is held, so its clock and its first tip start when it lifts.
+  const kickOff3d = useRef(on);
+  const firstDone = useRef(false);
+  if (status === "ready" || status === "off" || status === "lost") firstDone.current = true;
+  const curtainOn = kickOff3d.current && on && !firstDone.current && (status === "idle" || status === "loading");
+
   // Until the 3D picture is ready the 2D match shows, so the screen is never blank.
   const obs = useMemo<EngineFrameObserver>(() => ({
-    hide2D: on && status === "ready", attach, onFrame, hold: settingsOpen || hold, chrome,
+    hide2D: on && status === "ready", attach, onFrame, hold: settingsOpen || hold || curtainOn, chrome,
     warming: on && (status === "idle" || status === "loading"),
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [on, status, attach, onFrame, settingsOpen, hold, can3d, rebuild]);
+  }), [on, status, attach, onFrame, settingsOpen, hold, rebuild, curtainOn]);
 
   return (
     <div className="relative" data-career-3d={on ? status : "2d"}>
       <EngineFrameContext.Provider value={obs}>{children}</EngineFrameContext.Provider>
+      <LoadingCurtain section="match" loading={curtainOn} />
       {settingsOpen && <MatchSettings onClose={() => {
         setSettingsOpen(false);
         // 3D quality changed while the match was held: build the 3D again at the new quality now

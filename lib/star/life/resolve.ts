@@ -15,7 +15,8 @@ import { formatMoney, MONEY_SIGN } from "../money";
 import { cloneLife, cantPay, lifeOf, type LiveEvent } from "./director";
 import { ctxFor, factsOf, weekOfMoney, type FactOverride } from "./facts";
 import { holds, type V2Ctx } from "./cond";
-import { lifeWeek, meet, moveTeamFromPerson, nudge, personInfo, remember } from "./people";
+import { lifeWeek, meet, moveTeamFromPerson, nudge, personInfo, remember, tidy } from "./people";
+import { PEOPLE_CAP } from "./types";
 import { fillLine, tagWords } from "./text";
 import { noteVoice, type Remembered } from "./decision";
 
@@ -157,6 +158,8 @@ export function chooseOption(c0: CareerState, live: LiveEvent, choiceId: string,
     changes.push({ kind: "item", label: "KIB cans" });
   }
   if (fx.flag && !life.flags.includes(fx.flag)) life.flags = [...life.flags, fx.flag].slice(-12);
+  // The remembered list stays inside its cap after an event meets somebody new (a story ending tidies in arcs.ts).
+  if (Object.keys(life.people).length > PEOPLE_CAP && !live.id.startsWith("arc-")) tidy(life, c, now);
   c = { ...c, happiness: happinessOf(c), life };
 
   const text = fillLine(outcome.text, c0, live.cast, ctx);

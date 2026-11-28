@@ -22,11 +22,13 @@ import { createHash, createHmac } from "node:crypto";
 
 /* ── The caps (Harry asked about cost risks) ─────────────────────────── */
 export const CAPS = {
-  /** One file, at most. A full-size phone recording is 50 to 500 MB. */
-  maxFileBytes: 500 * 1024 * 1024,
+  /** One file, at most. Harry, 28 Nov 2026: "make it up to 10gb or smth".
+   *  4.9 GB is the most one plain upload to R2 can take (its limit is 5 GB);
+   *  bigger needs uploading in parts, not built yet. */
+  maxFileBytes: 4900 * 1024 * 1024,
   /** Per admin, per UK day. */
   dailyFiles: 30,
-  dailyBytes: 5 * 1024 * 1024 * 1024,
+  dailyBytes: 50 * 1024 * 1024 * 1024,
   /** How long an upload link works. */
   putSeconds: 15 * 60,
   /** How long a play link works (a long cut can still be scrubbed to the end). */

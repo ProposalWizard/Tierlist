@@ -42,6 +42,8 @@
  * — more often than 20 times a second.
  */
 import type { Quality3d } from "./quality";
+import { currentDeviceCaps } from "./quality";
+import { resScale, resScaleState } from "./resScale";
 
 export type GovShadows = "full" | "lite" | "off";
 export type GovPost = "full" | "lite" | "off";
@@ -91,6 +93,8 @@ export interface GovernorOptions {
   fastSeconds?: number;
   /** Open at the rung this session settled on (default: in a browser, yes). */
   remember?: boolean;
+  /** How deep the ordinary slow rule may step (default: the device's, three3d/quality.ts deviceCaps: 2 on Apple and desktop, 4 on Android). */
+  slowFloor?: number;
   /** A clock for tests. */
   now?: () => number;
 }
@@ -161,6 +165,7 @@ export class Governor {
   private paused = new Set<string>();
   private frozen: boolean;
   private remember: boolean;
+  private slowFloor: number;
   /** Steps taken, for the meter and tests. */
   downs = 0;
   ups = 0;
@@ -172,6 +177,7 @@ export class Governor {
   constructor(private o: GovernorOptions) {
     this.name = o.name ?? "3d";
     this.frozen = !!o.frozen || governorFrozenByUrl();
+    this.slowFloor = o.slowFloor ?? (typeof window === "undefined" ? SLOW_FLOOR : currentDeviceCaps().slowFloor);
     this.remember = !this.frozen && (o.remember ?? typeof window !== "undefined");
     // the ceiling: the scene's own tier (it may climb back up to it, never past)
     this.startIndex = rungForTier(o.ceiling ?? o.start);
@@ -221,6 +227,13 @@ export class Governor {
     if (ms <= 0) return false;
     if (ms > 250) { this.samples.length = 0; return false; } // a pause, a hidden tab, a load, a stall: never judged; the window starts again
     if (now < this.hushUntil) return false; // a chance start / a camera cut
+    // Android: the page's automatic resolution moves first, on the same frames (three3d/resScale.ts);
+    // while it still has pixels to give, the rungs below (shadows, post) wait.
+    let scaling = false;
+    if (resScaleState.active && !this.frozen) {
+      resScale.frame(now, ms, cap);
+      scaling = resScale.scale > resScale.floor + 1e-3;
+    }
     // a single frame far over the running median is a one-off stall
     if (this.samples.length >= 8) {
       const m = median(this.samples.slice(-30).map((s) => s.ms));
@@ -236,10 +249,11 @@ export class Governor {
     if (recent.length >= 4 && now - recent[0].t >= slowWin * 0.9) {
       const m = median(recent.map((s) => s.slow));
       this.lastMedian = m;
-      if (m > 1 && this.index < SLOW_FLOOR) return this.step(+1, now);
+      // pixels first: on a scaled device the ordinary rule waits until the resolution is at its floor
+      if (m > 1 && this.index < this.slowFloor && !(scaling && this.index >= SLOW_FLOOR)) return this.step(+1, now);
     }
     // the emergency rungs: only a sustained median under DEEP_FPS for DEEP_SECONDS
-    if (this.index >= SLOW_FLOOR && this.index < GOV_LADDER.length - 1) {
+    if (this.index >= Math.max(SLOW_FLOOR, this.slowFloor) && this.index < GOV_LADDER.length - 1) {
       const win = DEEP_SECONDS * 1000;
       const deep = this.samples.filter((s) => now - s.t <= win);
       if (deep.length >= 8 && now - deep[0].t >= win * 0.9 && median(deep.map((s) => s.ms)) > 1000 / DEEP_FPS) return this.step(+1, now);

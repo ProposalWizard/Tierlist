@@ -2,7 +2,7 @@
  "id": "arc-the-reality-show",
  "title": "Eight weeks in a villa",
  "owner": "agent",
- "summary": "Your agent has been offered a lot of money for you to go on a reality show in the summer, eight weeks in a villa with cameras. A season on, the show is back on telly, and you're in it or you aren't.",
+ "summary": "Your agent has been offered a lot of money for you to go on a reality show in the summer. Pre-season, the gaffer has seen it, or the agent finds you something smaller. A season on it's repeated, and a season after that they want you for the all-stars series.",
  "size": "small",
  "about": {
   "who": [
@@ -14,7 +14,15 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.008,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "peak",
+  "when": [
+   "age>=24",
+   "age<=31",
+   "divisionLevel<=2 || fame>=45"
+  ]
  },
  "cast": [
   {
@@ -27,7 +35,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -40,6 +50,11 @@
    "id": "kept-it-football",
    "title": "Kept it football",
    "text": "You said no to the villa. Your agent still mentions the money."
+  },
+  {
+   "id": "the-good-summer",
+   "title": "One more summer",
+   "text": "You went back to the villa for the all-stars, with the gaffer's blessing, and came back fitter than you left."
   }
  ],
  "promises": {},
@@ -194,6 +209,244 @@
    "hint": "Your agent has an offer"
   },
   {
+   "id": "tvs-1b-preseason",
+   "title": "Pre-season",
+   "after": {
+    "beat": "tvs-1-offer",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-tvs-1b-preseason",
+    "title": "Pre-season",
+    "category": "agent",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='villa'",
+      "then": "v1",
+      "else": "n1"
+     },
+     "nodes": {
+      "v1": {
+       "who": "manager",
+       "screen": "dial",
+       "say": [
+        "{manager.name} has the tablet on his desk. It's paused on you in the villa, in a hat, crying about a hammock. \"I found out from my daughter.\""
+       ],
+       "replies": [
+        {
+         "id": "sorry",
+         "label": "\"I'm sorry, gaffer. I'll be the fittest lad here by August.\"",
+         "tone": "humble",
+         "end": "sorry"
+        },
+        {
+         "id": "calm",
+         "label": "\"It was eight weeks. I'm back now.\"",
+         "tone": "calm",
+         "end": "calm"
+        },
+        {
+         "id": "blame",
+         "label": "\"My agent said you'd been told.\"",
+         "tone": "confident",
+         "end": "blame"
+        },
+        {
+         "id": "fiery",
+         "label": "\"It's my summer, gaffer.\"",
+         "tone": "fiery",
+         "end": "fiery"
+        }
+       ]
+      },
+      "n1": {
+       "who": "agent",
+       "say": [
+        "{agent.name} again. \"Fine. No villa. One night, then. A quiz show, Saturday teatime, celebrities against brainy people. Half a week's wages for an hour.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"One hour. Go on.\"",
+         "tone": "confident",
+         "end": "quiz"
+        },
+        {
+         "id": "no",
+         "label": "\"I said I'm a footballer.\"",
+         "tone": "calm",
+         "end": "kept"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "kept"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "sorry": [
+       {
+        "text": "He makes you do the bleep test on your own, twice. You do it. He writes something in his notebook and doesn't say what.",
+        "effects": {
+         "boss": 2,
+         "energy": -6
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "came-back-from-the-villa-and-ran",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "sorry"
+         }
+        }
+       }
+      ],
+      "calm": [
+       {
+        "text": "\"Eight weeks I didn't have you.\" He lets it go, mostly.",
+        "effects": {
+         "boss": -1
+        },
+        "arc": {
+         "set": {
+          "mid": "calm"
+         }
+        }
+       }
+      ],
+      "blame": [
+       {
+        "text": "He rings your agent on speaker, in front of you. Your agent says he's in a tunnel and hangs up.",
+        "effects": {
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -4,
+          "respect": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "blamed-the-agent-for-the-villa",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "blamed"
+         }
+        }
+       }
+      ],
+      "fiery": [
+       {
+        "text": "\"And it's my pre-season.\" You're on the bench for the first two games.",
+        "effects": {
+         "boss": -3
+        },
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "said-the-villa-summer-was-mine",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "fiery"
+         }
+        }
+       }
+      ],
+      "quiz": [
+       {
+        "text": "You know who wrote the national anthem and nothing about rivers. The brainy people win by forty points. Your mum records it.",
+        "effects": {
+         "fame": 1,
+         "moneyWeeks": 0.5
+        },
+        "arc": {
+         "set": {
+          "mid": "quiz"
+         }
+        }
+       }
+      ],
+      "kept": [
+       {
+        "text": "\"Footballer. Right.\" He sends a sad face and the fee in words, so you can see all the noughts.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "turned-down-the-quiz-show",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "kept"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Somebody wants a word about the summer"
+  },
+  {
    "id": "tvs-2-repeat",
    "title": "The repeat",
    "after": {
@@ -237,13 +490,29 @@
          "fame": 1
         },
         "arc": {
-         "end": "the-villa"
+         "end": "the-villa",
+         "set": {
+          "ended": "the-villa"
+         },
+         "next": "tvs-3-allstars",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
         "text": "He's got a clothing line now, and a podcast about the hammock.",
         "arc": {
-         "end": "kept-it-football"
+         "end": "kept-it-football",
+         "set": {
+          "ended": "kept-it-football"
+         },
+         "next": "tvs-3-allstars",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -257,13 +526,29 @@
         "if": "arc.path=='villa'",
         "text": "They do the catchphrase for you.",
         "arc": {
-         "end": "the-villa"
+         "end": "the-villa",
+         "set": {
+          "ended": "the-villa"
+         },
+         "next": "tvs-3-allstars",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
         "text": "You turn it off and go to bed at ten.",
         "arc": {
-         "end": "kept-it-football"
+         "end": "kept-it-football",
+         "set": {
+          "ended": "kept-it-football"
+         },
+         "next": "tvs-3-allstars",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -278,6 +563,124 @@
     ]
    },
    "hint": "A season on, the show is back on telly"
+  },
+  {
+   "id": "tvs-3-allstars",
+   "title": "The all-stars",
+   "after": {
+    "beat": "tvs-2-repeat",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-tvs-3-allstars",
+    "title": "The all-stars",
+    "category": "agent",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{if arc.path=='villa'}{agent.name} rings. \"The all-stars series. Everyone from the old villas, one summer, twice the money. They asked for you by name. And the hammock.\"{/if}",
+     "{if !arc.path=='villa'}{agent.name} rings. \"The lad who took your place in the villa is doing the all-stars. They want a footballer for one night, keepy-up by the pool.\"{/if}",
+     "{if arc.mid=='sorry'}Last time you ran the bleep test twice to make it up to the gaffer.{/if}{if arc.mid=='blamed'}Last time the gaffer rang him on speaker.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "ask",
+      "label": "Ask the gaffer before you say anything.",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "if": "arc.mid=='sorry'",
+        "text": "{manager.short} reads the dates. \"Four weeks, not eight. And you do the bleep test on day one.\" You go. You come back fit.",
+        "effects": {
+         "fame": 2,
+         "moneyWeeks": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "the-good-summer"
+        }
+       },
+       {
+        "if": "arc.path=='villa'",
+        "text": "\"You're asking me this time?\" He says no. You don't go, and the hammock gets a new man.",
+        "effects": {
+         "boss": 2
+        },
+        "arc": {
+         "end": "kept-it-football"
+        }
+       },
+       {
+        "text": "\"One night by a pool? Go. Don't fall in.\" You fall in. It's the most watched bit of the series.",
+        "effects": {
+         "fame": 2
+        },
+        "arc": {
+         "end": "the-villa"
+        }
+       }
+      ]
+     },
+     {
+      "id": "no",
+      "label": "\"Tell them no. For good this time.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='villa'",
+        "text": "\"For good,\" he says, like he's writing it down. They still repeat the first one every summer.",
+        "arc": {
+         "end": "the-villa"
+        }
+       },
+       {
+        "text": "He sighs down the phone. \"You're the only client I've got who costs me money by being sensible.\"",
+        "npc": [
+         {
+          "slot": "agent",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "end": "kept-it-football"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The villa people haven't finished with you"
   }
  ]
 }

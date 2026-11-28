@@ -2,7 +2,7 @@
  "id": "arc-the-shoot-at-mums",
  "title": "A candid shoot",
  "owner": "sponsor",
- "summary": "The boot sponsor wants a \"candid\" photo shoot of you at your mum's house, in her kitchen. Your mum is very excited. A season on, the photos are on a billboard.",
+ "summary": "The boot sponsor wants a \"candid\" photo shoot at your mum's house. Weeks later Mum gets an offer of her own, or asks why you kept her out. A season on the photos are on a billboard, and a season after that the boot deal is up and Mum has opinions.",
  "size": "small",
  "about": {
   "who": [
@@ -15,7 +15,15 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.008,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "peak",
+  "when": [
+   "age>=24",
+   "age<=31",
+   "divisionLevel<=2 || fame>=45"
+  ]
  },
  "cast": [
   {
@@ -28,7 +36,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -41,6 +51,11 @@
    "id": "the-studio",
    "title": "The studio",
    "text": "You kept your mum out of it. The ad was in a studio, and you looked bored in it."
+  },
+  {
+   "id": "her-own-advert",
+   "title": "Her own advert",
+   "text": "Your mum got an advert of her own, the washing line one. She did your renewal for you and got more than your agent ever has."
   }
  ],
  "promises": {},
@@ -198,6 +213,245 @@
    "hint": "The sponsor has an idea"
   },
   {
+   "id": "msh-1b-mum",
+   "title": "Mum rings",
+   "after": {
+    "beat": "msh-1-ask",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-msh-1b-mum",
+    "title": "Mum rings",
+    "category": "sponsor",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='kitchen'",
+      "then": "k1",
+      "else": "s1"
+     },
+     "nodes": {
+      "k1": {
+       "who": "mum",
+       "say": [
+        "\"They want me on my own now. Me and a washing line, for a kit wash advert. They'll pay me. Is that daft? Tell me if it's daft.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Do it, Mum. You've earned it.\"",
+         "tone": "kind",
+         "end": "go"
+        },
+        {
+         "id": "read",
+         "label": "\"Send me the contract first.\"",
+         "tone": "calm",
+         "end": "read"
+        },
+        {
+         "id": "no",
+         "label": "\"I'd rather you didn't.\"",
+         "tone": "cold",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "read"
+        }
+       ]
+      },
+      "s1": {
+       "who": "mum",
+       "say": [
+        "\"I've seen the studio ones. That's not a kitchen. Nobody's kettle is that clean.\" A pause. \"I'm not cross. I'm asking why.\""
+       ],
+       "replies": [
+        {
+         "id": "protect",
+         "label": "\"I didn't want people knowing where you live.\"",
+         "tone": "honest",
+         "end": "protect"
+        },
+        {
+         "id": "job",
+         "label": "\"It's my job, Mum. Not yours.\"",
+         "tone": "cold",
+         "end": "job"
+        },
+        {
+         "id": "next",
+         "label": "\"Next time. I promise.\"",
+         "tone": "kind",
+         "end": "next"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "She does the washing line in one take and makes the director a bacon sandwich. She rings you after to say she's \"a professional now\".",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "said-go-on-to-the-advert",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "mum-ad"
+         }
+        }
+       }
+      ],
+      "read": [
+       {
+        "text": "You read it on the coach. It's fine. It pays her more per day than your first contract did.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 3,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "read-my-contract",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "read"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Right.\" She says it the way she said it when you were twelve and wanted a motorbike.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -4,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "told-me-not-to-do-the-advert",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "no"
+         }
+        }
+       }
+      ],
+      "protect": [
+       {
+        "text": "She goes quiet. \"That's a nice reason. A daft one, but a nice one.\"",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 5,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "kept-me-out-to-protect-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "protect"
+         }
+        }
+       }
+      ],
+      "job": [
+       {
+        "text": "\"Right you are.\" She takes the new kettle back as well.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -4,
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "cold"
+         }
+        }
+       }
+      ],
+      "next": [
+       {
+        "text": "\"I'll hold you to that.\" She will. She has a list of every next time you've ever said.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "next"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Your mum wants to ask you something"
+  },
+  {
    "id": "msh-2-billboard",
    "title": "The billboard",
    "after": {
@@ -248,7 +502,15 @@
          }
         ],
         "arc": {
-         "end": "mums-kitchen"
+         "end": "mums-kitchen",
+         "set": {
+          "ended": "mums-kitchen"
+         },
+         "next": "msh-3-renewal",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -260,7 +522,15 @@
          }
         ],
         "arc": {
-         "end": "the-studio"
+         "end": "the-studio",
+         "set": {
+          "ended": "the-studio"
+         },
+         "next": "msh-3-renewal",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -274,13 +544,29 @@
         "if": "arc.path=='kitchen'",
         "text": "You'll pass it every day for six months, and so will half the town.",
         "arc": {
-         "end": "mums-kitchen"
+         "end": "mums-kitchen",
+         "set": {
+          "ended": "mums-kitchen"
+         },
+         "next": "msh-3-renewal",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
         "text": "You'll pass it every day for six months.",
         "arc": {
-         "end": "the-studio"
+         "end": "the-studio",
+         "set": {
+          "ended": "the-studio"
+         },
+         "next": "msh-3-renewal",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -299,6 +585,144 @@
     ]
    },
    "hint": "A season on, the photos are up"
+  },
+  {
+   "id": "msh-3-renewal",
+   "title": "The renewal",
+   "after": {
+    "beat": "msh-2-billboard",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-msh-3-renewal",
+    "title": "The renewal",
+    "category": "sponsor",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "sponsor",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The boot deal is up for renewal. {sponsor.name} wants a meeting at the hotel by the ring road, the one under the billboard.",
+     "{if arc.mid=='mum-ad'}Mum's washing line advert has been on at teatime for months. A woman at her bus stop asked for her autograph.{/if}{if arc.mid=='protect'}Mum has never mentioned the studio again, but she's kept a cutting of it.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "mum",
+      "label": "Ring Mum and ask her to come.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.mid=='mum-ad'",
+        "text": "She brings her own folder. She asks for more than your agent would have, and {sponsor.short} says yes before she's finished the sentence.",
+        "effects": {
+         "moneyWeeks": 1,
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6,
+          "respect": 4
+         },
+         {
+          "slot": "sponsor",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "came-to-the-renewal",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "her-own-advert"
+        }
+       },
+       {
+        "if": "arc.path=='kitchen'",
+        "text": "She sits next to you and says nothing until the end, then asks if they still do the teapot shot. They do.",
+        "effects": {
+         "moneyWeeks": 1
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "mums-kitchen"
+        }
+       },
+       {
+        "text": "She waits in reception with a flask. On the way out she says the studio photos were nicer than the real thing, and you can tell she's lying.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "end": "the-studio"
+        }
+       }
+      ]
+     },
+     {
+      "id": "alone",
+      "label": "Go on your own and let the agent talk.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='kitchen'",
+        "text": "They want the kitchen again, and the teapot. You sign. Mum's already bought a better teapot.",
+        "effects": {
+         "moneyWeeks": 1
+        },
+        "arc": {
+         "end": "mums-kitchen"
+        }
+       },
+       {
+        "text": "Another studio. Another fake kettle. The money's good and you look bored again.",
+        "effects": {
+         "moneyWeeks": 1
+        },
+        "arc": {
+         "end": "the-studio"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "The boot deal is up again"
   }
  ]
 }

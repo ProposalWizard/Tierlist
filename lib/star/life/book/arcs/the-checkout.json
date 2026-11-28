@@ -1,0 +1,398 @@
+{
+ "id": "arc-the-checkout",
+ "title": "The checkout",
+ "owner": "neighbour",
+ "summary": "Your neighbour works the till at the supermarket, and while she scans your shopping she tells you exactly why you were rubbish on Saturday. She's right. A season on, she's got notes.",
+ "size": "small",
+ "about": {
+  "who": [
+   "neighbour"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "divisionLevel>=3"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "neighbour",
+   "pick": "neighbour"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "her-notes",
+   "title": "Her notes",
+   "text": "Your neighbour tells you what you did wrong every week at the supermarket till. You go to her till on purpose."
+  },
+  {
+   "id": "self-service",
+   "title": "Self-service",
+   "text": "Your neighbour told you why you were rubbish at the supermarket till. You use the self-service now. She waves from her till."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "chk-1-till",
+   "title": "Till four",
+   "n": 1,
+   "event": {
+    "id": "arc-chk-1-till",
+    "title": "Till four",
+    "category": "neighbours",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The supermarket, till four. {neighbour.name} from next door is scanning your shopping. She scans a cucumber. \"You kept drifting inside on Saturday. Left the full back on his own. Twice.\""
+    ],
+    "talk": {
+     "start": "n1",
+     "nodes": {
+      "n1": {
+       "who": "neighbour",
+       "say": [
+        "She scans the milk. \"And you never looked up before you passed. My husband says the same.\""
+       ],
+       "replies": [
+        {
+         "id": "agree",
+         "label": "\"You're right. I did.\"",
+         "tone": "honest",
+         "end": "agree"
+        },
+        {
+         "id": "ask",
+         "label": "\"What else?\"",
+         "tone": "humble",
+         "end": "ask"
+        },
+        {
+         "id": "joke",
+         "label": "\"Can I just have a bag?\"",
+         "tone": "reckless",
+         "end": "joke"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "agree": [
+       {
+        "text": "\"I know I'm right.\" She gives you the bag for free.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "gave-me-notes-at-the-till",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "notes"
+         }
+        }
+       }
+      ],
+      "ask": [
+       {
+        "text": "There's a queue behind you by the time she's finished. Three of them join in. You leave with notes and no bananas.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "gave-me-notes-at-the-till",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "notes"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "\"Five pence.\" She charges you for the bag. And for two.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "bag"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "A trip to the supermarket"
+  },
+  {
+   "id": "chk-1d-deep",
+   "title": "The match",
+   "after": {
+    "beat": "chk-1-till",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-chk-1d-deep",
+    "title": "The match",
+    "category": "neighbours",
+    "place": "ground:barrier",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Your neighbour from till four has bought a season ticket. She's in the main stand with a notebook. After the game she's waiting at the barrier."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "neighbour",
+       "say": [
+        "\"You did three of the four things I said. The fourth one, the first touch, still rubbish.\""
+       ],
+       "replies": [
+        {
+         "id": "ask",
+         "label": "\"Show me the notebook.\"",
+         "tone": "humble",
+         "end": "ask"
+        },
+        {
+         "id": "laugh",
+         "label": "\"See you Monday at the till.\"",
+         "tone": "kind",
+         "end": "laugh"
+        },
+        {
+         "id": "enough",
+         "label": "\"I've got a coach.\"",
+         "tone": "cold",
+         "end": "enough"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ask": [
+       {
+        "text": "She shows you. Six pages, a diagram. Some of it is better than the coach's.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "showed-me-her-notebook",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "ask"
+         }
+        }
+       }
+      ],
+      "laugh": [
+       {
+        "text": "She laughs. On Monday she charges you for a carrier bag you didn't take.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "laugh"
+         }
+        }
+       }
+      ],
+      "enough": [
+       {
+        "text": "She closes the notebook.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "enough"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "Your neighbour has come to a game"
+  },
+  {
+   "id": "chk-2-notes",
+   "title": "Notes",
+   "after": {
+    "beat": "chk-1-till",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-chk-2-notes",
+    "title": "Notes",
+    "category": "neighbours",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on, the supermarket. Till four has a queue. The self-service is empty.",
+     "{if arc.deep=='ask'}She has a whole notebook on you now.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "till",
+      "label": "Queue for till four.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='notes'",
+        "text": "She's got a notebook by the till now. \"Saturday. Thirty-first minute.\" You listen. You looked up before you passed, she says. She saw.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "her-notes"
+        }
+       },
+       {
+        "text": "\"Bag?\" she says, before you've said anything.",
+        "arc": {
+         "end": "self-service"
+        }
+       }
+      ]
+     },
+     {
+      "id": "self",
+      "label": "Use the self-service.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='notes'",
+        "text": "\"Unexpected item in bagging area,\" says the machine, in what you'd swear is her voice. She shouts across: \"Thirty-first minute!\"",
+        "arc": {
+         "end": "her-notes"
+        }
+       },
+       {
+        "text": "She waves from till four. You wave back. Neither of you says anything about Saturday.",
+        "arc": {
+         "end": "self-service"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "A season on, the supermarket"
+  }
+ ]
+}

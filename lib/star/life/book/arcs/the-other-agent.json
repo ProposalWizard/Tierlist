@@ -1,0 +1,502 @@
+{
+ "id": "arc-the-other-agent",
+ "title": "A better offer",
+ "owner": "agent",
+ "summary": "A flash agent you've never met wants to represent you and has a car outside to prove it. You promise yourself, and your agent, you'll hear him out first. A season on, one of them is still yours.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "agent",
+   "transfer window"
+  ],
+  "tone": [
+   "tense",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.0073,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "agent",
+   "pick": "agent"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "loyal": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "stuck-with-him",
+   "title": "Stuck with him",
+   "text": "A flash agent tried to take you off your agent. You told your agent first, and he's still yours."
+  },
+  {
+   "id": "signed-the-other",
+   "title": "The other one",
+   "text": "You left your agent for a flash one. He rings you on your birthday anyway."
+  }
+ ],
+ "promises": {
+  "p-tell-agent": {
+   "id": "p-tell-agent",
+   "to": "agent",
+   "text": "Talk to {agent.short} before you sign anything with anyone else",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "oag-2",
+    "ends": [
+     "tell"
+    ]
+   },
+   "dueText": "Before the meeting at the hotel",
+   "kept": {
+    "text": "You said you'd talk to him first, and you did.",
+    "npc": [
+     {
+      "slot": "agent",
+      "respect": 4,
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd talk to him first.",
+    "npc": [
+     {
+      "slot": "agent",
+      "bond": -8
+     }
+    ],
+    "remember": [
+     {
+      "slot": "agent",
+      "tag": "went-behind-my-back",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "oag-1",
+   "title": "The car outside",
+   "n": 1,
+   "event": {
+    "id": "arc-oag-1",
+    "title": "The car outside",
+    "category": "agent",
+    "place": "stadium:car-park",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "fame>=15"
+     ]
+    },
+    "setup": [
+     "There's a white car with tinted windows outside the players' entrance and a man in sunglasses leaning on it. He's an agent. He represents two lads you've heard of, and he wants you."
+    ],
+    "talk": {
+     "start": "a1",
+     "nodes": {
+      "a1": {
+       "who": "agent",
+       "say": [
+        "Your phone goes as you're looking at him. It's {agent.name}. \"I've heard. Whatever he says, ring me before you sign anything. Will you do that?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll ring you first. Promise.\"",
+         "tone": "honest",
+         "end": "yes",
+         "promise": "p-tell-agent"
+        },
+        {
+         "id": "hear",
+         "label": "\"I'm going to hear him out.\"",
+         "tone": "confident",
+         "end": "hear"
+        },
+        {
+         "id": "who",
+         "label": "\"How did you even hear?\"",
+         "tone": "honest",
+         "goto": "a2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "hear"
+        }
+       ]
+      },
+      "a2": {
+       "who": "agent",
+       "say": [
+        "\"He's been telling people since Tuesday. That's how he works. Ring me first.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I will.\"",
+         "tone": "honest",
+         "end": "yes",
+         "promise": "p-tell-agent"
+        },
+        {
+         "id": "hear",
+         "label": "\"I'll see.\"",
+         "tone": "calm",
+         "end": "hear"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "The man in sunglasses gives you a card with only a phone number on it and says the Grand Hotel, Thursday, eight.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "hear": [
+       {
+        "text": "The man in sunglasses gives you a card and says the Grand Hotel, Thursday, eight. {agent.short} goes quiet on the phone.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "hear"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Another agent wants you"
+  },
+  {
+   "id": "oag-2",
+   "title": "Thursday at eight",
+   "after": {
+    "beat": "oag-1",
+    "weeks": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-oag-2",
+    "title": "Thursday at eight",
+    "category": "agent",
+    "place": "town:hotel-bar",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Thursday, the Grand Hotel bar, ten to eight. The man in sunglasses is in a booth with a contract already printed and a pen on top of it."
+    ],
+    "talk": {
+     "start": "h1",
+     "nodes": {
+      "h1": {
+       "who": "agent",
+       "say": [
+        "\"More money, better boots, a move in the summer. Sign it tonight and I'll ring your old fella myself. Save you the bother.\""
+       ],
+       "replies": [
+        {
+         "id": "tell",
+         "label": "Step outside and ring {agent.short} first.",
+         "tone": "honest",
+         "end": "tell"
+        },
+        {
+         "id": "leave",
+         "label": "\"I'm alright, thanks.\"",
+         "tone": "calm",
+         "end": "leave"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "leave"
+        },
+        {
+         "id": "sign",
+         "label": "Sign it.",
+         "tone": "reckless",
+         "end": "sign"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "tell": [
+       {
+        "text": "{agent.short} drives over and sits down in the booth without being asked. The other man leaves in nine minutes. Your agent orders a lime and soda and doesn't say I told you so.",
+        "effects": {
+         "moneyWeeks": 1
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "respect": 6,
+          "bond": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "rang-me-from-the-hotel",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "loyal": 1
+         }
+        }
+       }
+      ],
+      "sign": [
+       {
+        "text": "You sign. He takes a photo of you signing and posts it before you're back at the car. {agent.short} sees it on his phone in bed.",
+        "effects": {
+         "moneyWeeks": 2,
+         "reputation": -2
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -16,
+          "grudge": 10
+         }
+        ],
+        "arc": {
+         "set": {
+          "loyal": 0,
+          "path": "signed"
+         }
+        },
+        "promiseBroken": [
+         "p-tell-agent"
+        ]
+       }
+      ],
+      "leave": [
+       {
+        "text": "You leave him the bill. In the car park you ring {agent.short}, who is somehow already in the car park.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "loyal": 1
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "The meeting at the hotel"
+  },
+  {
+   "id": "oag-3",
+   "title": "Your birthday",
+   "after": {
+    "beat": "oag-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-oag-3",
+    "title": "Your birthday",
+    "category": "agent",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on, your birthday.",
+     "{if arc.path=='signed'}The flash agent has sent a text with a cake emoji. He's got eleven players now and calls you by your surname. Your old agent rings at nine and sings.{/if}",
+     "{if !arc.path=='signed'}{agent.short} rings at nine and sings, badly, the whole song.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "thank",
+      "label": "Thank him.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "!arc.path=='signed'",
+        "text": "\"Thirty-four years I've done this,\" he says. \"You're the best one.\" You don't believe him, and it's nice to hear.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "stuck-with-him"
+        }
+       },
+       {
+        "text": "\"Any time,\" he says. \"You know where I am.\"",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 4,
+          "grudge": -4
+         }
+        ],
+        "arc": {
+         "end": "signed-the-other"
+        }
+       }
+      ]
+     },
+     {
+      "id": "mum",
+      "label": "Put him on to your mum.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "!arc.path=='signed'",
+        "text": "He sings it again for her. She joins in.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 4
+         },
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "stuck-with-him"
+        }
+       },
+       {
+        "text": "Your mum tells him he should never have been dropped. He agrees.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "signed-the-other"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, your agent"
+  }
+ ]
+}

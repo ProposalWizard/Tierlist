@@ -2,7 +2,7 @@
  "id": "arc-his-old-club",
  "title": "Not in front of my old lot",
  "owner": "mate",
- "summary": "Saturday's opponents are a team-mate's old club, and he asks you not to celebrate in front of their fans if you score. Next season it's the same fixture, and he's watching what you do.",
+ "summary": "Saturday's opponents are a team-mate's old club, and he asks you not to celebrate in front of their fans. Weeks later his old club is going under and the fans are selling shares at a fiver. Next season it's the same fixture, and after that he goes home to them.",
  "size": "small",
  "about": {
   "who": [
@@ -14,7 +14,9 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0021,
+  "tier": "common",
+  "stage": "any"
  },
  "cast": [
   {
@@ -27,7 +29,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -40,6 +44,11 @@
    "id": "the-knee-slide",
    "title": "The knee slide",
    "text": "You went to the away end. He laughed in the end, but his old fans never did."
+  },
+  {
+   "id": "a-share-in-it",
+   "title": "A share in it",
+   "text": "You bought shares in a team-mate's old club when it was going under. Your name is on the wall by their turnstiles now, between a butcher and a vicar."
   }
  ],
  "promises": {},
@@ -214,6 +223,142 @@
    "hint": "A team-mate has an odd request"
   },
   {
+   "id": "occ-1b-shares",
+   "title": "A fiver a share",
+   "after": {
+    "beat": "occ-1-ask",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-occ-1b-shares",
+    "title": "A fiver a share",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "o1",
+     "nodes": {
+      "o1": {
+       "who": "mate",
+       "say": [
+        "{mate.short} has a leaflet. His old club has missed two wage days and the fans are trying to buy it. \"A fiver a share. They want a few players to buy one in public. Mine's not enough.\""
+       ],
+       "replies": [
+        {
+         "id": "ten",
+         "label": "\"Put me down for a hundred. Take the photo.\"",
+         "tone": "kind",
+         "end": "ten"
+        },
+        {
+         "id": "one",
+         "label": "\"I'll buy one. Quietly.\"",
+         "tone": "calm",
+         "end": "one"
+        },
+        {
+         "id": "no",
+         "label": "\"Not my club, mate.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ten": [
+       {
+        "text": "The photo of you holding a share certificate gets their fans' forum talking about something nice for a day.",
+        "effects": {
+         "moneyWeeks": -0.5,
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "bought-shares-in-my-old-club",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "shares"
+         }
+        }
+       }
+      ],
+      "one": [
+       {
+        "text": "You buy one on your phone in the car park. He sees the email over your shoulder and says nothing.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 3,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "one"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fair.\" He folds the leaflet back into his pocket.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age>=24"
+      ],
+      "order": "random"
+     }
+    ]
+   },
+   "hint": "The team-mate has a favour to ask"
+  },
+  {
    "id": "occ-2-again",
    "title": "Same fixture",
    "after": {
@@ -271,7 +416,15 @@
          }
         ],
         "arc": {
-         "end": "respect-in-the-away-end"
+         "end": "respect-in-the-away-end",
+         "set": {
+          "ended": "respect-in-the-away-end"
+         },
+         "next": "occ-3-home",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -295,7 +448,15 @@
          }
         ],
         "arc": {
-         "end": "the-knee-slide"
+         "end": "the-knee-slide",
+         "set": {
+          "ended": "the-knee-slide"
+         },
+         "next": "occ-3-home",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -314,6 +475,115 @@
     ]
    },
    "hint": "Same fixture next season"
+  },
+  {
+   "id": "occ-3-home",
+   "title": "Going home",
+   "after": {
+    "beat": "occ-2-again",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-occ-3-home",
+    "title": "Going home",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{mate.short} is leaving. His old club survived, just, and they've asked him back to finish his career. He's got his boots in a carrier bag and he's going round the dressing room."
+    ],
+    "choices": [
+     {
+      "id": "luck",
+      "label": "Wish him well.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.mid=='shares'",
+        "text": "\"They've put the names on a wall by the turnstiles. The people who saved it. Yours is on there, between a butcher and a vicar.\"",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "put-my-name-on-the-wall",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "a-share-in-it"
+        }
+       },
+       {
+        "if": "arc.path=='slid'",
+        "text": "\"Don't come to our end when you play us,\" he says, and grins, and doesn't grin.",
+        "arc": {
+         "end": "the-knee-slide"
+        }
+       },
+       {
+        "text": "He hugs you, which he's never done. \"You never went to their end. They noticed.\"",
+        "arc": {
+         "end": "respect-in-the-away-end"
+        }
+       }
+      ]
+     },
+     {
+      "id": "back",
+      "label": "\"You'll be back.\"",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='slid'",
+        "text": "\"Not while you're here.\" It's a joke. It's mostly a joke.",
+        "arc": {
+         "end": "the-knee-slide"
+        }
+       },
+       {
+        "text": "\"I won't.\" He won't. He sends you a photo from his first game back, in front of their end, arm up.",
+        "arc": {
+         "end": "respect-in-the-away-end"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age>=24"
+      ],
+      "order": "random"
+     }
+    ]
+   },
+   "hint": "The team-mate has news"
   }
  ]
 }

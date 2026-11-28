@@ -1,0 +1,515 @@
+{
+ "id": "arc-your-first-coach",
+ "title": "Your first coach",
+ "owner": "dad",
+ "summary": "Your first coach, the under-tens man with a whistle on a bootlace, is eighty, and he's coming to Saturday's game. Dad wants you to meet him at the door. Then a parcel with the whistle in it. A season on, the under-tens awards.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "dad"
+  ],
+  "tone": [
+   "warm",
+   "proud",
+   "sad"
+  ]
+ },
+ "start": {
+  "chance": 0.0061,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "dad",
+   "pick": "dad"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "game": "none",
+  "whistle": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "his-whistle",
+   "title": "The whistle",
+   "text": "Your first coach sent you his whistle on its bootlace. It hangs on your peg. Nobody touches it, not even the kit man."
+  },
+  {
+   "id": "the-awards",
+   "title": "The awards",
+   "text": "You gave out the under-tens awards at your first club, with your first coach in a folding chair beside you, telling you what to say."
+  },
+  {
+   "id": "a-wave",
+   "title": "A wave",
+   "text": "Your first coach came to watch you once, at eighty. You waved at him from the pitch. He waved back with a programme."
+  }
+ ],
+ "promises": {
+  "p-first-coach": {
+   "id": "p-first-coach",
+   "to": "dad",
+   "text": "Meet your first coach at the door on Saturday",
+   "due": {
+    "weeks": [
+     2,
+     3
+    ]
+   },
+   "keptBy": {
+    "beat": "yfc-2-game",
+    "ends": [
+     "lounge"
+    ]
+   },
+   "dueText": "Saturday, after the game",
+   "kept": {
+    "text": "You told your dad you'd meet your first coach at the door, and you did.",
+    "npc": [
+     {
+      "slot": "dad",
+      "bond": 6,
+      "respect": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "dad",
+      "tag": "saw-me-meet-my-first-coach",
+      "strength": 3
+     }
+    ]
+   },
+   "broken": {
+    "text": "You told your dad you'd meet your first coach at the door.",
+    "npc": [
+     {
+      "slot": "dad",
+      "bond": -6,
+      "respect": -4,
+      "grudge": 4
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "yfc-1-call",
+   "title": "Eighty",
+   "n": 1,
+   "event": {
+    "id": "arc-yfc-1-call",
+    "title": "Eighty",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "dad",
+       "say": [
+        "{dad.short}: \"Your first coach. Under-tens. The whistle on the bootlace. He's eighty Saturday, and his son's bringing him to your game. Can you get him into the lounge after?\""
+       ],
+       "replies": [
+        {
+         "id": "door",
+         "label": "\"I'll meet him at the door myself.\"",
+         "tone": "kind",
+         "end": "door",
+         "promise": "p-first-coach"
+        },
+        {
+         "id": "ticket",
+         "label": "\"I'll sort him a ticket.\"",
+         "tone": "calm",
+         "end": "ticket"
+        },
+        {
+         "id": "who",
+         "label": "\"Remind me which one he was?\"",
+         "tone": "honest",
+         "goto": "d2"
+        }
+       ]
+      },
+      "d2": {
+       "who": "dad",
+       "say": [
+        "\"Made you go in goal for a season because you sulked. Drove you to every game in his van when I was on nights. That one.\""
+       ],
+       "replies": [
+        {
+         "id": "door",
+         "label": "\"Him. I'll meet him at the door.\"",
+         "tone": "kind",
+         "end": "door",
+         "promise": "p-first-coach"
+        },
+        {
+         "id": "ticket",
+         "label": "\"I'll get him a good seat.\"",
+         "tone": "calm",
+         "end": "ticket"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "door": [
+       {
+        "text": "\"He'll pretend he doesn't care,\" your dad says. \"He'll care.\"",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "door"
+         }
+        }
+       }
+      ],
+      "ticket": [
+       {
+        "text": "\"Lovely.\" Your dad sounds like he wanted more, and won't say so.",
+        "arc": {
+         "set": {
+          "path": "ticket"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Dad has news about an old face"
+  },
+  {
+   "id": "yfc-2-game",
+   "title": "Saturday",
+   "after": {
+    "beat": "yfc-1-call",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-yfc-2-game",
+    "title": "Saturday",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Your first coach is in the stand, in a club coat from forty years ago, with his son holding his arm. {if lastGoals>=1}You scored. You saw him stand up for it.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "lounge",
+      "label": "Go up to the lounge in your kit.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "He's in a corner chair with a cup of tea. He looks you up and down. \"You still sulk?\" \"Sometimes.\" \"Good. Means you care.\" He holds your hand longer than a handshake.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "came-with-my-first-coach",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "game": "lounge"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "wave",
+      "label": "Wave to him from the pitch.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "He waves back with his programme. His son takes a photo. It's blurry and it's the best photo anyone's taken of you this season.",
+        "arc": {
+         "set": {
+          "game": "wave"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Get straight on the bus.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "Your dad texts a photo of him, alone, in the corner of the lounge. He waited forty minutes.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -4,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "game": "skip"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Your first coach is at the game"
+  },
+  {
+   "id": "yfc-3-parcel",
+   "title": "A parcel",
+   "after": {
+    "beat": "yfc-2-game",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-yfc-3-parcel",
+    "title": "A parcel",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A parcel at the training ground, addressed in shaky capitals. Inside: a whistle on a bootlace. A note: \"Don't need it any more. You might. Don't sulk.\""
+    ],
+    "choices": [
+     {
+      "id": "peg",
+      "label": "Hang it on your peg.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "It hangs on your peg. The lads ask. You tell them. Nobody touches it after that.",
+        "effects": {
+         "team": 2
+        },
+        "arc": {
+         "set": {
+          "whistle": "peg"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "back",
+      "label": "Send it back with a signed shirt.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "His son sends a photo: the shirt on the back of his chair, the whistle back round his neck.",
+        "arc": {
+         "set": {
+          "whistle": "back"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "drawer",
+      "label": "Put it in a drawer.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "It goes in the drawer with your first boots. You know where it is.",
+        "arc": {
+         "set": {
+          "whistle": "drawer"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Something in the post"
+  },
+  {
+   "id": "yfc-4-awards",
+   "title": "The awards",
+   "after": {
+    "beat": "yfc-2-game",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-yfc-4-awards",
+    "title": "The awards",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. Your first club, the one in the park, wants someone to give out the under-tens awards. Your first coach is eighty-one. He's asked if it could be you."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.game=='lounge' || arc.whistle=='peg'",
+        "text": "He sits next to you in a folding chair and tells you what to say to each kid. Most of it's \"don't sulk\". You bring the whistle and blow it once for the last award, and he laughs till he coughs.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-awards"
+        }
+       },
+       {
+        "if": "arc.whistle=='peg' || arc.whistle=='drawer'",
+        "text": "You go. He's poorly and can't come. You give out the awards with his whistle round your neck.",
+        "arc": {
+         "end": "his-whistle"
+        }
+       },
+       {
+        "text": "You go. He waves at you from his son's car, with a programme, the way he did in the stand.",
+        "arc": {
+         "end": "a-wave"
+        }
+       }
+      ]
+     },
+     {
+      "id": "busy",
+      "label": "\"I've got a game, Dad.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.whistle=='peg' || arc.whistle=='drawer'",
+        "text": "You get his whistle out and blow it at the start of training that day, once, for him. The kit man asks why. You tell him.",
+        "arc": {
+         "end": "his-whistle"
+        }
+       },
+       {
+        "text": "Your dad goes instead. He sends a photo of the old man in a folding chair, waving.",
+        "arc": {
+         "end": "a-wave"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A season on, your first club asks a favour"
+  }
+ ]
+}

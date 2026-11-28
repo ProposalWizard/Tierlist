@@ -77,6 +77,8 @@ export interface SmartObject {
   via?: string;
   /** A bed you can sleep in (home3d/livingRooms.ts): its middle, the way from its foot to its head, the mattress top, the duvet's colour. */
   bed?: { at: XZ; head: number; top: number; duvet: string };
+  /** A gym machine you play a mini-game on (lib/star/gym/games.ts): "bench" | "treadmill" | "bag". */
+  game?: string;
 }
 
 /** Forward and right on the floor for a facing. */

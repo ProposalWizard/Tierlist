@@ -1,0 +1,423 @@
+{
+ "id": "arc-the-under-nines",
+ "title": "The under-nines",
+ "owner": "neighbour",
+ "summary": "Your neighbour runs an under-nines team that loses every week by double figures, and the coach has quit. Four Sunday mornings, he says, until he finds someone. A season on, the under-nines are still going.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "neighbour",
+   "kids"
+  ],
+  "tone": [
+   "warm",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0093,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "neighbour",
+   "pick": "neighbour"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "sundays": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-league",
+   "title": "The league",
+   "text": "You coached your neighbour's under-nines for four Sundays. A season on they won a game, and then another."
+  },
+  {
+   "id": "the-cones",
+   "title": "The cones",
+   "text": "You lent your neighbour some cones for his under-nines. They still lose by double figures."
+  }
+ ],
+ "promises": {
+  "p-sundays": {
+   "id": "p-sundays",
+   "to": "neighbour",
+   "text": "Coach {neighbour.short}'s under-nines on Sunday mornings for a month",
+   "due": {
+    "weeks": [
+     1,
+     5
+    ]
+   },
+   "keptBy": {
+    "beat": "u9-2",
+    "ends": [
+     "go"
+    ]
+   },
+   "dueText": "Sunday at ten, the rec",
+   "remind": "\"Sunday. Ten. The rec. Bring a whistle and a lot of patience.\"",
+   "kept": {
+    "text": "You said you'd do the Sundays, and you did.",
+    "npc": [
+     {
+      "slot": "neighbour",
+      "respect": 4,
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd do the Sundays.",
+    "npc": [
+     {
+      "slot": "neighbour",
+      "bond": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "neighbour",
+      "tag": "didnt-do-the-sundays",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "u9-1",
+   "title": "Over the fence",
+   "n": 1,
+   "event": {
+    "id": "arc-u9-1",
+    "title": "Over the fence",
+    "category": "community",
+    "place": "home:garden",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{neighbour.name} is over the garden fence with a bag of bibs. His under-nines lost fourteen-nil on Sunday, and their coach has packed it in. Eleven kids, one goal net, no coach."
+    ],
+    "talk": {
+     "start": "n1",
+     "nodes": {
+      "n1": {
+       "who": "neighbour",
+       "say": [
+        "\"Four Sunday mornings. Ten till twelve at the rec. Just until I find someone. They don't know who you are. Well, two of them do.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Four Sundays. Fine.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-sundays"
+        },
+        {
+         "id": "match",
+         "label": "\"I play on Saturdays. I'm wrecked on Sundays.\"",
+         "tone": "honest",
+         "goto": "n2"
+        },
+        {
+         "id": "cones",
+         "label": "\"I'll lend you some cones.\"",
+         "tone": "calm",
+         "end": "cones"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "n2"
+        }
+       ]
+      },
+      "n2": {
+       "who": "neighbour",
+       "say": [
+        "\"They're eight. You can sit on a chair and shout. That's what the last one did.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Fine. Four Sundays, from my chair.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-sundays"
+        },
+        {
+         "id": "cones",
+         "label": "\"I'll find you some cones.\"",
+         "tone": "calm",
+         "end": "cones"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "He passes the bag of bibs over the fence. They smell of a car boot.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "cones": [
+       {
+        "text": "You give him twenty cones from your garage. He says thanks and means it a bit.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cones"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "Your neighbour needs a coach"
+  },
+  {
+   "id": "u9-2",
+   "title": "Sunday at the rec",
+   "after": {
+    "beat": "u9-1",
+    "weeks": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-u9-2",
+    "title": "Sunday at the rec",
+    "category": "community",
+    "place": "town:rec",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "promise(p-sundays)"
+     ]
+    },
+    "setup": [
+     "Sunday, ten o'clock, the rec. Eleven eight-year-olds in bibs to their knees. One of them is already in the goal net. You're stiff from yesterday."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Blow the whistle.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You don't sit down once. By the fourth Sunday they can pass it to each other, mostly, and they lose six-two, which is a party.",
+        "effects": {
+         "fans": 2,
+         "energy": -6
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "respect": 6,
+          "bond": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "coached-the-under-nines",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "sundays": 4
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "one",
+      "label": "Do one Sunday, then text him you can't.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "You do one. On the second Sunday you text him at nine. He does it himself, from the chair.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": -6
+         }
+        ],
+        "arc": {
+         "set": {
+          "sundays": 1
+         }
+        },
+        "promiseBroken": [
+         "p-sundays"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "The under-nines on Sunday"
+  },
+  {
+   "id": "u9-3",
+   "title": "A season on",
+   "after": {
+    "beat": "u9-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-u9-3",
+    "title": "A season on",
+    "category": "community",
+    "place": "home:door",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. There's a note through your door in felt tip: \"WE WON.\" It's signed by eleven eight-year-olds, now nine.",
+     "{if arc.path=='cones'}It's on the back of a photo of the cones, in a line, very neat.{/if}",
+     "{if arc.sundays==4}One of them has drawn you, with a whistle and a chair.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go and watch them on Sunday.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.sundays==4",
+        "text": "They win again. {neighbour.short} has you stand in the team photo, at the end, holding the bibs.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "the-league"
+        }
+       },
+       {
+        "text": "They lose eleven-one. The one was a belter. You clap it like it's a cup final.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-cones"
+        }
+       }
+      ]
+     },
+     {
+      "id": "fridge",
+      "label": "Put the note on your fridge.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.sundays==4",
+        "text": "It goes on your fridge next to the physio's exercises.",
+        "arc": {
+         "end": "the-league"
+        }
+       },
+       {
+        "text": "It goes on your fridge. The next week's note says \"LOST\".",
+        "arc": {
+         "end": "the-cones"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "A season on, the under-nines"
+  }
+ ]
+}

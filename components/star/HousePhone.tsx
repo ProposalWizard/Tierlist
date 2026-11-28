@@ -5,11 +5,12 @@
  *
  * Your house (Home3D) and the phone in your hand, as one screen, so the
  * house never reloads between them:
- *   - `up` (the page's phase "media", the Phone tab): an eye-opening (B, 0.6 s)
+ *   - `up` (the page's phase "media", the Phone tab): an eye-opening (B, 0.9 s)
  *     onto your hand holding the phone, your house behind it from your own
  *     eyes, blurred and still. The REAL phone (PhoneHome) is on the glass:
  *     a normal page box bent with a CSS matrix3d, so the browser sends each
- *     tap to the button under the finger.
+ *     tap to the button under the finger. Every app works inside the glass
+ *     (PhoneHome `apps`, components/star/PhoneApps.tsx; Harry 27 Nov 2026).
  *       HOME (the phone's own, on its home screen) → `onHome` (the Home screen);
  *       BACK (the phone's own, on its home screen) → `onPutAway`: the page goes
  *       to the house (phase "home-3d"), `up` turns false here, the hand
@@ -33,7 +34,7 @@ import type { CareerState } from "@/lib/star/types";
 import type { HomeController } from "@/lib/star/home3d/scene";
 import type { Home3DProps } from "./Home3D";
 import { lazyScreen } from "@/lib/star/lazyScreen";
-import { quality3dTier } from "@/lib/star/three3d/quality";
+import { quality3dTier, quality3dSetting } from "@/lib/star/three3d/quality";
 import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
 import { STAGE, SCREEN, GLASS_MATRIX } from "@/lib/star/phone3dGlass";
 import "./housePhone.css";
@@ -42,8 +43,9 @@ const Home3D = lazyScreen(() => import("./Home3D"));
 
 const HAND = "/star/phone3d/hand.webp";
 const ROOM = "/star/phone3d/room-blur.webp";
-/** How long each move takes (ms). Opening ≤ 0.6 s (the instant-feel rule). */
-const T = { open: 600, lower: 300, pull: 700, pullIn: 300, raise: 300 };
+/** How long each move takes (ms). Opening 0.9 s (Harry, 27 Nov 2026: "an in-between. The slower blink was good";
+ *  was 0.6 s; the test page's B is 1.2 s). A tap skips it. */
+const T = { open: 900, lower: 300, pull: 700, pullIn: 300, raise: 300 };
 /** The phone up this long (ms) before the house behind it starts loading. */
 const HOUSE_AFTER = 2500;
 /** Kickabout: the glass flat, in the middle of the picture. */
@@ -65,10 +67,19 @@ export function phone3dCan(): boolean {
   return (lastAnswer = phone3dNow());
 }
 
+/** Auto's answer is read once per visit to the game (27 Nov 2026: a scene reading the GPU's name could move
+ *  Auto to Low between two Phone taps, so the 3D phone "toggled off" by itself). Only the player's own
+ *  Settings → 3D quality: Low turns it off mid-visit. */
+let autoLowOnce: boolean | undefined;
 function phone3dNow(): boolean {
   if (typeof window === "undefined" || !HOME3D_IN_CAREER) return false;
   try { if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false; } catch { /* old browser */ }
-  if (quality3dTier() === "low") return false;
+  const set = quality3dSetting();
+  if (set === "low") return false;
+  if (set === "auto") {
+    if (autoLowOnce === undefined) autoLowOnce = quality3dTier() === "low";
+    if (autoLowOnce) return false;
+  }
   if (webgl === undefined) {
     try {
       const g = document.createElement("canvas").getContext("webgl2");
@@ -123,6 +134,8 @@ export default function HousePhone({ career, up, phone, house, onHome, onPutAway
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
   const homed = useRef(false);
+  /** The house is built (a ref: the put-away timer must see it even when it was ready after the tap). */
+  const readyRef = useRef(false);
 
   const clear = () => { for (const t of timers.current) clearTimeout(t); timers.current = []; };
   const after = (ms: number, fn: () => void) => { timers.current.push(window.setTimeout(fn, ms)); };
@@ -173,7 +186,11 @@ export default function HousePhone({ career, up, phone, house, onHome, onPutAway
 
   const onReady = useCallback((c: HomeController) => {
     ctrl.current = c;
-    if (sceneRef.current !== "away") { c.setPov(1); c.hold(true); }
+    // Put down while the house was still loading (Harry, 27 Nov 2026: a frozen house at your eyes,
+    // no you in it): it was built for the phone's view, so it comes out of your eyes and runs.
+    const down = sceneRef.current === "away" || sceneRef.current === "putting-away";
+    if (down) { c.setPov(null); c.hold(false); } else { c.setPov(1); c.hold(true); }
+    readyRef.current = true;
     setHouseReady(true);
   }, []);
 
@@ -185,7 +202,7 @@ export default function HousePhone({ career, up, phone, house, onHome, onPutAway
     setScene("putting-away");
     after(T.lower, () => {
       const c = ctrl.current;
-      if (!c || !houseReady) { setScene("away"); return; }
+      if (!c || !readyRef.current) { setScene("away"); return; }
       c.easePov ? c.easePov(null, T.pull, () => setScene((s) => (s === "putting-away" ? "away" : s))) : (c.setPov(null), c.hold(false), setScene("away"));
       after(T.pull + 400, () => setScene((s) => (s === "putting-away" ? "away" : s)));
     });

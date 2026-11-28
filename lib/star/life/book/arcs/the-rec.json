@@ -1,0 +1,695 @@
+{
+ "id": "arc-the-rec",
+ "title": "The Rec",
+ "owner": "dad",
+ "summary": "The Rec, the pitch where you started, is being sold for flats. Dad wants you at the fundraiser, where it's a pound a go at the crossbar. Then the council meeting. A season on, there's a gate, or a fence.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "dad"
+  ],
+  "tone": [
+   "warm",
+   "proud",
+   "sad"
+  ]
+ },
+ "start": {
+  "chance": 0.0187,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "last-seasons",
+  "when": [
+   "age>=32"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "dad",
+   "pick": "dad"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "raised": 0,
+  "council": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-rec-saved",
+   "title": "The Rec",
+   "text": "The Rec is still a pitch. The under-nines play on it on Sundays, in the mud, the way you did."
+  },
+  {
+   "id": "flats-on-the-rec",
+   "title": "Flats",
+   "text": "There are flats on the Rec now. Your dad drives the long way round so he doesn't have to see them."
+  },
+  {
+   "id": "the-gate",
+   "title": "The gate",
+   "text": "They saved the Rec and put a new gate on it. There's a little sign on the gate with your name on, and your dad's."
+  }
+ ],
+ "promises": {
+  "p-the-rec": {
+   "id": "p-the-rec",
+   "to": "dad",
+   "text": "Be at the Rec fundraiser",
+   "due": {
+    "weeks": [
+     4,
+     6
+    ]
+   },
+   "keptBy": {
+    "beat": "rec-2-fundraiser",
+    "ends": [
+     "good",
+     "poor",
+     "stop"
+    ]
+   },
+   "dueText": "The twelfth, at the cricket club",
+   "remind": "\"Fundraiser Saturday. Cricket club. Six o'clock. Bring a pen.\"",
+   "kept": {
+    "text": "You told your dad you'd be at the fundraiser, and you were.",
+    "npc": [
+     {
+      "slot": "dad",
+      "bond": 6,
+      "respect": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "dad",
+      "tag": "came-to-the-rec-fundraiser",
+      "strength": 3
+     }
+    ]
+   },
+   "broken": {
+    "text": "You told your dad you'd be at the Rec fundraiser.",
+    "npc": [
+     {
+      "slot": "dad",
+      "bond": -6,
+      "respect": -4,
+      "grudge": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "dad",
+      "tag": "missed-the-rec-fundraiser",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "rec-1-news",
+   "title": "The Rec",
+   "n": 1,
+   "event": {
+    "id": "arc-rec-1-news",
+    "title": "The Rec",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "dad",
+       "say": [
+        "{dad.short}: \"They're selling the Rec. For flats. Where you started, the under-sevens, the pitch with the slope. There's a fundraiser at the cricket club on the twelfth.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll be there, Dad.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-the-rec"
+        },
+        {
+         "id": "money",
+         "label": "\"I'll send some money.\"",
+         "tone": "calm",
+         "end": "money"
+        },
+        {
+         "id": "council",
+         "label": "\"Dad, it's the council's business.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "\"Good.\" He's been saving that word up, you can hear it.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "money": [
+       {
+        "text": "\"Money's good. You'd be better.\" He takes the money.",
+        "effects": {
+         "moneyWeeks": -0.5
+        },
+        "arc": {
+         "set": {
+          "path": "money"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Right.\" He tells you about the slope for five minutes anyway.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -3,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Dad's got news about the Rec"
+  },
+  {
+   "id": "rec-2-fundraiser",
+   "title": "A pound a go",
+   "after": {
+    "beat": "rec-1-news",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-rec-2-fundraiser",
+    "title": "A pound a go",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "promise(p-the-rec)",
+      "then": "f1",
+      "else": "g1"
+     },
+     "nodes": {
+      "g1": {
+       "who": "dad",
+       "say": [
+        "A photo from your dad: a queue at the cricket club, a goal with a tyre hanging off the bar. \"A pound a go at the crossbar. They're asking where you are.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"On my way.\"",
+         "tone": "kind",
+         "goto": "f1"
+        },
+        {
+         "id": "no",
+         "label": "\"Can't tonight, Dad.\"",
+         "tone": "cold",
+         "end": "missed"
+        }
+       ]
+      },
+      "f1": {
+       "who": "dad",
+       "say": [
+        "The cricket club's car park, a goal, a tyre hung off the bar with string, a bucket for money. Your dad is holding the balls. \"Ten. They pay a pound for every one you hit. I'll call them.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Feed me.\"",
+         "tone": "confident",
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "A pound a go",
+        "intro": "Ten balls in the cricket club car park. A pound in the bucket for every one that counts.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "crossbar",
+           "balls": 1,
+           "line": "\"The bar. That's what they've paid for.\""
+          },
+          {
+           "kind": "props",
+           "balls": 2,
+           "line": "\"Through the tyre, then the bucket. Don't kick the money.\""
+          },
+          {
+           "kind": "corners",
+           "balls": 2,
+           "line": "\"Corners. Like the slope's still there.\""
+          },
+          {
+           "kind": "call-it",
+           "balls": 2,
+           "line": "\"I'll call it. Like I did when you were seven.\""
+          },
+          {
+           "kind": "far",
+           "balls": 2,
+           "line": "\"From the boundary rope.\""
+          }
+         ],
+         "lines": {
+          "hit": "\"Pound in the bucket.\"",
+          "missed-it": "\"The bucket's still standing.\"",
+          "wrong": "\"Other side. Like I said.\"",
+          "streak3": "\"Your mum should see this.\""
+         }
+        },
+        "score": "balls that count (0-9)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -3
+        },
+        "caller": {
+         "slot": "dad",
+         "lines": [
+          "\"One pound.\"",
+          "\"Two.\"",
+          "\"Three.\"",
+          "\"Four.\"",
+          "\"Five.\"",
+          "\"Six.\"",
+          "\"Seven.\"",
+          "\"Eight.\"",
+          "\"Nine. That's the Rec.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "stop"
+        ],
+        [
+         "activity.score>=5",
+         "good"
+        ],
+        [
+         "",
+         "poor"
+        ]
+       ]
+      },
+      "good": {
+       "who": "dad",
+       "say": [
+        "\"{activity.score}.\" The queue's gone round the car park. People pay a fiver to watch. By ten the bucket's too heavy for your dad to lift."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Carry it for him.",
+         "tone": "kind",
+         "end": "good"
+        }
+       ]
+      },
+      "poor": {
+       "who": "dad",
+       "say": [
+        "\"{activity.score}.\" Nobody cares. They pay to have a go themselves, after, against you in goal. The bucket's full anyway."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Again next year?\"",
+         "tone": "kind",
+         "end": "poor"
+        }
+       ]
+      },
+      "stop": {
+       "who": "dad",
+       "say": [
+        "It rains. You stop. Everybody goes inside for the raffle, and you sign every prize."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Sign the raffle.",
+         "tone": "kind",
+         "end": "stop"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "Two thousand one hundred pounds. Your dad counts it twice on the bar of the cricket club and has to go outside for a bit.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "raised": 2
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "Nine hundred pounds, and a man of seventy who scored past you and won't stop telling people.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "raised": 1
+         }
+        }
+       }
+      ],
+      "stop": [
+       {
+        "text": "Six hundred pounds and a meat raffle. Your dad wins the meat.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "raised": 1
+         }
+        }
+       }
+      ],
+      "missed": [
+       {
+        "text": "He sends a photo of the bucket at the end. It's half full. \"Did all right,\" he writes.",
+        "arc": {
+         "set": {
+          "raised": 0
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "The Rec fundraiser"
+  },
+  {
+   "id": "rec-3-council",
+   "title": "The council",
+   "after": {
+    "beat": "rec-2-fundraiser",
+    "weeks": [
+     2,
+     5
+    ]
+   },
+   "event": {
+    "id": "arc-rec-3-council",
+    "title": "The council",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The council meeting, a room above the library. Dad's in his good jacket. They're letting people speak for three minutes each, and he's put your name down."
+    ],
+    "choices": [
+     {
+      "id": "speak",
+      "label": "Speak for three minutes.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "You tell them about the slope, and the under-sevens, and your dad on the touchline in the rain with a flask. Two of the councillors look at their shoes.",
+        "effects": {
+         "fans": 2,
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "council": "spoke"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "dad",
+      "label": "\"You do it, Dad. You know it better.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "He does. He goes over his three minutes and nobody stops him.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "council": "dad"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Leave it to the council.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "You sit at the back. Dad doesn't speak either, in the end.",
+        "arc": {
+         "set": {
+          "council": "none"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "The council meets about the Rec"
+  },
+  {
+   "id": "rec-4-gate",
+   "title": "The gate",
+   "after": {
+    "beat": "rec-2-fundraiser",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-rec-4-gate",
+    "title": "The gate",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. A photo from your dad, at the Rec, first thing in the morning."
+    ],
+    "choices": [
+     {
+      "id": "open",
+      "label": "Open it.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.council=='spoke' && arc.raised>=1",
+        "text": "It's a new gate, green, and the pitch behind it with the slope still there. On the gate there's a little sign with two names on. One of them is his.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-gate"
+        }
+       },
+       {
+        "if": "arc.raised>=1 || arc.council=='dad'",
+        "text": "The pitch, in the frost, with the under-nines' cones out already. \"Still ours,\" he's written.",
+        "arc": {
+         "end": "the-rec-saved"
+        }
+       },
+       {
+        "text": "A fence, and a sign for flats, and the slope already gone. He hasn't written anything.",
+        "arc": {
+         "end": "flats-on-the-rec"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ring",
+      "label": "Ring him instead.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.raised>=1",
+        "text": "\"Go and look at the photo,\" he says. You do. It's the Rec, in the frost. Still a pitch.",
+        "arc": {
+         "end": "the-rec-saved"
+        }
+       },
+       {
+        "text": "He says it's fine. He's driving the long way round these days.",
+        "arc": {
+         "end": "flats-on-the-rec"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A season on, the Rec"
+  }
+ ]
+}

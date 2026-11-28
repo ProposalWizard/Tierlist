@@ -1,0 +1,651 @@
+{
+ "id": "arc-the-pile-on",
+ "title": "Four thousand messages",
+ "owner": "sister",
+ "summary": "You miss a penalty and your phone has four thousand messages on it by the time you're on the coach. Your sister tells you not to read them. The post you write. Penalties with the coach in the dark. A season on, another penalty.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "sister",
+   "coach"
+  ],
+  "tone": [
+   "dark",
+   "warm",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "peak",
+  "when": [
+   "age>=24",
+   "age<=31",
+   "divisionLevel<=2 || fame>=45"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "sister",
+   "pick": "sister"
+  },
+  {
+   "slot": "coach",
+   "pick": "coach"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "post": "none",
+  "pens": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-next-one",
+   "title": "The next one",
+   "text": "You missed a penalty and four thousand people told you so. You took the next one, a season on, and scored it, and turned your phone off before you looked."
+  },
+  {
+   "id": "off-the-post",
+   "title": "Off the post",
+   "text": "You missed a penalty, then another one, a season later, off the post. Your sister turned up at the training ground with a cake that said \"STILL MY BROTHER\"."
+  },
+  {
+   "id": "phone-off",
+   "title": "Phone off",
+   "text": "After the pile-on you turned the app off and never turned it back on. You find out what people think from your sister, who edits it."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "pon-1-miss",
+   "title": "Four thousand",
+   "n": 1,
+   "event": {
+    "id": "arc-pon-1-miss",
+    "title": "Four thousand",
+    "category": "media",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "sister",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastLost"
+     ]
+    },
+    "setup": [
+     "You missed a penalty in the eighty-ninth minute and you lost. By the time you're on the coach your phone has four thousand messages on it. Some of them have your mum's address in."
+    ],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "sister",
+       "say": [
+        "{sister.short}: \"Don't read them. I mean it. Give me your password, I'll go through them and tell you about the nice ones.\""
+       ],
+       "replies": [
+        {
+         "id": "read",
+         "label": "\"I'm reading them.\"",
+         "tone": "reckless",
+         "end": "read"
+        },
+        {
+         "id": "off",
+         "label": "\"Thanks. Phone's off.\"",
+         "tone": "calm",
+         "end": "off"
+        },
+        {
+         "id": "give",
+         "label": "Give her the password.",
+         "tone": "kind",
+         "end": "gave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "read": [
+       {
+        "text": "You read them till two in the morning. Some of them were written by children. You remember the kids' ones best.",
+        "effects": {
+         "energy": -8
+        },
+        "npc": [
+         {
+          "slot": "sister",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "read"
+         }
+        }
+       }
+      ],
+      "off": [
+       {
+        "text": "You turn it off. It sits on the coach seat next to you like it's breathing.",
+        "arc": {
+         "set": {
+          "path": "off"
+         }
+        }
+       }
+      ],
+      "gave": [
+       {
+        "text": "She goes through all four thousand. She sends you nine. Then she reports two hundred and blocks the rest. She doesn't tell you what the others said.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sister",
+          "tag": "read-the-pile-on-for-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "gave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sister",
+      "pick": "sister"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "Your phone after the game"
+  },
+  {
+   "id": "pon-2-post",
+   "title": "The post",
+   "after": {
+    "beat": "pon-1-miss",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-pon-2-post",
+    "title": "The post",
+    "category": "media",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "sister",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The club's media lad has a draft for you to post. Your sister has a different draft. You have a third, which is mostly swearing."
+    ],
+    "choices": [
+     {
+      "id": "own",
+      "label": "Post: \"My fault. I'll take the next one.\"",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "A lot of the messages stop. A few get worse. A boy of nine sends a drawing of you scoring.",
+        "effects": {
+         "fans": 3
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "said-ill-take-the-next-one",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "post": "own"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "club",
+      "label": "Post the club's one.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "\"Gutted. We go again.\" Nobody's sure you wrote it. You didn't.",
+        "arc": {
+         "set": {
+          "post": "club"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "none",
+      "label": "Post nothing.",
+      "silent": true,
+      "outcomes": [
+       {
+        "text": "You post nothing. The messages slow down on their own by Thursday.",
+        "arc": {
+         "set": {
+          "post": "none"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sister",
+      "pick": "sister"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "Do you say anything?"
+  },
+  {
+   "id": "pon-3-pens",
+   "title": "Penalties in the dark",
+   "after": {
+    "beat": "pon-1-miss",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-pon-3-pens",
+    "title": "Penalties in the dark",
+    "category": "media",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "coach",
+       "say": [
+        "{coach.name} keeps you back. The floodlights on pitch two, a bag of balls. \"You'll get another one. Might be next week. So we take ten now, and we take them till you're bored.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Feed me.\"",
+         "tone": "brave",
+         "goto": "play"
+        },
+        {
+         "id": "no",
+         "label": "\"I don't want to think about penalties.\"",
+         "tone": "honest",
+         "end": "no"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "Ten in the dark",
+        "intro": "Ten penalties under the lights, the coach in goal, till you're bored.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "keeper",
+           "balls": 3,
+           "line": "\"Penalty spot. Pick it before you run up.\""
+          },
+          {
+           "kind": "corners",
+           "balls": 2,
+           "line": "\"Corners. No keeper. Just the corner.\""
+          },
+          {
+           "kind": "lights-out",
+           "balls": 2,
+           "line": "\"Lights off. You don't need to see the keeper.\""
+          },
+          {
+           "kind": "call-it",
+           "balls": 2,
+           "line": "\"I'll shout a side as you run. Ignore me.\""
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. Eighty-ninth minute.\""
+          }
+         ],
+         "keeperSlot": "coach",
+         "lines": {
+          "keeper:saved": "\"I saved it. So what. Next one.\"",
+          "hit": "\"Next one.\"",
+          "wrong": "\"Good. You ignored me.\"",
+          "double:hit": "\"Eighty-ninth minute. Done.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "coach",
+         "lines": [
+          "\"One.\"",
+          "\"Two.\"",
+          "\"Three.\"",
+          "\"Four.\"",
+          "\"Five.\"",
+          "\"Six.\"",
+          "\"Seven.\"",
+          "\"Eight.\"",
+          "\"Nine.\"",
+          "\"Ten.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "c-stop"
+        ],
+        [
+         "activity.score>=6",
+         "c-good"
+        ],
+        [
+         "",
+         "c-poor"
+        ]
+       ]
+      },
+      "c-good": {
+       "who": "coach",
+       "say": [
+        "\"{activity.score}. You're bored, aren't you?\" You are. \"Good. Bored is what we wanted.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Same again Thursday?\"",
+         "tone": "calm",
+         "end": "good"
+        }
+       ]
+      },
+      "c-poor": {
+       "who": "coach",
+       "say": [
+        "\"{activity.score}. Again Thursday. And the Thursday after.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Thursday.\"",
+         "tone": "humble",
+         "end": "poor"
+        }
+       ]
+      },
+      "c-stop": {
+       "who": "coach",
+       "say": [
+        "You stop. He doesn't push it. \"Thursday, then.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Thursday.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "You do Thursdays for a month. By the end you take them without thinking.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "took-me-for-penalties-in-the-dark",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "pens": 2
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "Thursdays for a month. You get better. You don't get bored.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "pens": 1
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fair.\" He leaves the bag of balls by the goal anyway.",
+        "arc": {
+         "set": {
+          "pens": 0
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sister",
+      "pick": "sister"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The coach keeps you back"
+  },
+  {
+   "id": "pon-4-next",
+   "title": "The next one",
+   "after": {
+    "beat": "pon-1-miss",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-pon-4-next",
+    "title": "The next one",
+    "category": "media",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "sister",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. Ninetieth minute, level, penalty. Nobody else moves towards the ball. Your phone is in your bag in the dressing room, and you know exactly where."
+    ],
+    "choices": [
+     {
+      "id": "take",
+      "label": "Pick the ball up.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.pens>=2",
+        "chance": 0.8,
+        "text": "Bored. You've done this a hundred times on Thursdays. Bottom corner. You turn your phone off before you look at it.",
+        "effects": {
+         "fans": 6
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-next-one"
+        }
+       },
+       {
+        "if": "arc.pens<2",
+        "chance": 0.5,
+        "text": "Bottom corner. The keeper goes the right way and it doesn't matter. Your sister rings before you're off the pitch.",
+        "effects": {
+         "fans": 6
+        },
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-next-one"
+        }
+       },
+       {
+        "text": "Off the post. You stand there. On Monday your sister turns up at the training ground with a cake that says \"STILL MY BROTHER\".",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "off-the-post"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Let someone else take it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='gave' || arc.post=='none'",
+        "text": "Someone else scores it. You never did turn the app back on. Your sister tells you what people think, edited.",
+        "arc": {
+         "end": "phone-off"
+        }
+       },
+       {
+        "text": "Someone else misses it. You know exactly what his phone looks like right now. You text him first.",
+        "arc": {
+         "end": "phone-off"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sister",
+      "pick": "sister"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "A season on, a penalty"
+  }
+ ]
+}

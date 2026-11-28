@@ -1,0 +1,359 @@
+{
+ "id": "arc-the-gym-board",
+ "title": "The board",
+ "owner": "hard",
+ "summary": "There's a whiteboard in the gym with the club records on it, and one man's name is on four of them. He says nobody has touched his bench in three seasons. A season on, he's leaving, and the board stays.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate",
+   "the gym"
+  ],
+  "tone": [
+   "funny",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.064,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "breaking-through",
+  "when": [
+   "age>=19",
+   "age<=23"
+  ]
+ },
+ "needsActivity": "gym",
+ "cast": [
+  {
+   "slot": "hard",
+   "pick": "squad",
+   "order": "best"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "on-the-board",
+   "title": "On the board",
+   "text": "Your name is on the gym board, above his."
+  },
+  {
+   "id": "his-board",
+   "title": "His board",
+   "text": "His name is still on the gym board, and he still points at it."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "gym-1",
+   "title": "The board",
+   "n": 1,
+   "event": {
+    "id": "arc-gym-1",
+    "title": "The board",
+    "category": "squad",
+    "place": "compound:gym",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "hard",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "!injured"
+     ]
+    },
+    "setup": [
+     "The gym whiteboard: BENCH, SQUAT, ROW, PLANK. {hard.short}'s name is next to all four in blue marker. He's sitting under it, eating a banana, watching you read it."
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "hard",
+       "say": [
+        "\"Three seasons. Nobody's touched the plank. You want a go? I'll spot you. I'll spot you properly, and all.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"The plank. Now.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "bench",
+         "label": "\"The bench.\"",
+         "tone": "reckless",
+         "goto": "play"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm here for the bike.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "no"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "gym",
+        "name": "The gym board",
+        "intro": "A record on the gym board, with him watching.",
+        "dials": {},
+        "score": "what the game reports",
+        "canAbandon": true,
+        "fallback": null,
+        "caller": {
+         "slot": "hard"
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "c-stop"
+        ],
+        [
+         "activity.score>=1",
+         "c-good"
+        ],
+        [
+         "",
+         "c-poor"
+        ]
+       ]
+      },
+      "c-good": {
+       "who": "hard",
+       "say": [
+        "He looks at the clock, then at the board. He wipes his own name off with his thumb. \"Go on, then. Write it.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Write your name.",
+         "tone": "confident",
+         "end": "won"
+        }
+       ]
+      },
+      "c-poor": {
+       "who": "hard",
+       "say": [
+        "\"Not even close.\" He finishes his banana."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Next season.\"",
+         "tone": "humble",
+         "end": "lost"
+        }
+       ]
+      },
+      "c-stop": {
+       "who": "hard",
+       "say": [
+        "\"Pulled up. Happens.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Next season.\"",
+         "tone": "humble",
+         "end": "lost"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "won": [
+       {
+        "text": "Your name in blue marker next to one of the four. He takes a photo of it for his records.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "hard",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "hard",
+          "tag": "took-a-record-off-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "won"
+         }
+        }
+       }
+      ],
+      "lost": [
+       {
+        "text": "He makes you write your number under his, smaller.",
+        "npc": [
+         {
+          "slot": "hard",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lost"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Bike's good,\" he says. It isn't a compliment.",
+        "npc": [
+         {
+          "slot": "hard",
+          "respect": -1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "hard",
+      "pick": "squad",
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The gym record board"
+  },
+  {
+   "id": "gym-2",
+   "title": "His last day",
+   "after": {
+    "beat": "gym-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-gym-2",
+    "title": "His last day",
+    "category": "squad",
+    "place": "compound:gym",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "hard",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. {hard.short} is leaving in the summer. He's in the gym with the marker in his hand, looking at the board.",
+     "{if arc.path=='won'}Your name is still on it.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "leave",
+      "label": "\"Leave it how it is.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='won'",
+        "text": "He leaves it. He writes \"BEAT THIS\" under your name and goes.",
+        "npc": [
+         {
+          "slot": "hard",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "on-the-board"
+        }
+       },
+       {
+        "text": "He leaves it. His name stays on all four, and the new lads read it every morning.",
+        "npc": [
+         {
+          "slot": "hard",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "his-board"
+        }
+       }
+      ]
+     },
+     {
+      "id": "wipe",
+      "label": "\"Wipe it clean for the new lot.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='won'",
+        "text": "He wipes everything except your line.",
+        "npc": [
+         {
+          "slot": "hard",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "on-the-board"
+        }
+       },
+       {
+        "text": "He wipes everything off except his plank.",
+        "arc": {
+         "end": "his-board"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "hard",
+      "pick": "squad",
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "A season on, the gym board"
+  }
+ ]
+}

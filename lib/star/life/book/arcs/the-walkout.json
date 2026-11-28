@@ -1,0 +1,586 @@
+{
+ "id": "arc-the-walkout",
+ "title": "The seventy-fourth minute",
+ "owner": "neighbour",
+ "summary": "The fans are walking out in the seventy-fourth minute against the ticket prices, and they want the players to clap them out. The chairman wants you not to. Saturday, the seventy-fourth minute. A season on, the prices.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "neighbour",
+   "chairman"
+  ],
+  "tone": [
+   "tense",
+   "proud"
+  ]
+ },
+ "start": {
+  "chance": 0.0093,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "neighbour",
+   "pick": "neighbour"
+  },
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "chair": "none",
+  "min": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "prices-frozen",
+   "title": "Frozen",
+   "text": "The fans walked out and you clapped them. The ticket prices were frozen the next summer. They still stand up in the seventy-fourth minute, to clap you."
+  },
+  {
+   "id": "the-empty-stand",
+   "title": "The empty stand",
+   "text": "You kept playing while twenty thousand people walked out. You think about the sound of that, the seats going up."
+  },
+  {
+   "id": "seventy-four",
+   "title": "Seventy-four",
+   "text": "Twenty thousand people walked out in the seventy-fourth minute and you stood and watched them go. They had 74 printed on homemade shirts, and a few put your name over it."
+  }
+ ],
+ "promises": {
+  "p-clap": {
+   "id": "p-clap",
+   "to": "neighbour",
+   "text": "Clap the fans out in the seventy-fourth minute",
+   "due": {
+    "beat": "wko-3-minute"
+   },
+   "keptBy": {
+    "beat": "wko-3-minute",
+    "ends": [
+     "clap"
+    ]
+   },
+   "dueText": "Saturday, the seventy-fourth minute",
+   "kept": {
+    "text": "You said you'd clap them out, and you did.",
+    "npc": [
+     {
+      "slot": "neighbour",
+      "bond": 6,
+      "respect": 6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "neighbour",
+      "tag": "clapped-us-out",
+      "strength": 3
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd clap them out in the seventy-fourth minute.",
+    "npc": [
+     {
+      "slot": "neighbour",
+      "bond": -6,
+      "respect": -6,
+      "grudge": 6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "neighbour",
+      "tag": "didnt-clap-us-out",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "wko-1-plan",
+   "title": "The plan",
+   "n": 1,
+   "event": {
+    "id": "arc-wko-1-plan",
+    "title": "The plan",
+    "category": "club",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "f1",
+     "nodes": {
+      "f1": {
+       "who": "neighbour",
+       "say": [
+        "{neighbour.name}, from next door, chairs the supporters' trust. \"Saturday. Seventy-fourth minute, for 1874. Twenty thousand of us walking out over the prices. Forty-two quid for the kids' end. Will you lot clap us out?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll clap you out. Count on it.\"",
+         "tone": "brave",
+         "end": "yes",
+         "promise": "p-clap"
+        },
+        {
+         "id": "lads",
+         "label": "\"I'll ask the lads. I can't speak for them.\"",
+         "tone": "calm",
+         "end": "lads"
+        },
+        {
+         "id": "no",
+         "label": "\"We're playing a game, mate.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "She sends back a photo of a banner being painted in her garage: \"74\".",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "lads": [
+       {
+        "text": "\"Fair.\" The group chat's split down the middle by tea time.",
+        "arc": {
+         "set": {
+          "path": "lads"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"So are we,\" she writes. \"Ours costs forty-two quid.\"",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": -4,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The fans have a plan for Saturday"
+  },
+  {
+   "id": "wko-2-chairman",
+   "title": "The chairman",
+   "after": {
+    "beat": "wko-1-plan",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-wko-2-chairman",
+    "title": "The chairman",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{chairman.name} catches you on the stairs. \"I hear they want you clapping them out. Don't. It's a protest against the club, and you're the club. Just play.\""
+    ],
+    "choices": [
+     {
+      "id": "ok",
+      "label": "\"I hear you, chairman.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "\"Good lad.\" He thinks that means yes.",
+        "effects": {
+         "boss": 1
+        },
+        "arc": {
+         "set": {
+          "chair": "heard"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "prices",
+      "label": "\"Then drop the prices.\"",
+      "tone": "fiery",
+      "outcomes": [
+       {
+        "text": "He laughs like you've made a joke, and then stops when you don't.",
+        "effects": {
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -4,
+          "respect": 2,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "told-me-to-drop-the-prices",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "chair": "prices"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "silent",
+      "label": "Say nothing.",
+      "silent": true,
+      "outcomes": [
+       {
+        "text": "He pats your arm and goes up the stairs.",
+        "arc": {
+         "set": {
+          "chair": "heard"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The chairman's heard about Saturday"
+  },
+  {
+   "id": "wko-3-minute",
+   "title": "Seventy-four",
+   "after": {
+    "beat": "wko-1-plan",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-wko-3-minute",
+    "title": "Seventy-four",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Seventy-four minutes. The ball's dead for a throw. All round the ground, twenty thousand people stand up at once, and the sound of the seats going up is like nothing you've heard."
+    ],
+    "choices": [
+     {
+      "id": "clap",
+      "label": "Stop and clap them out.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "text": "You clap. Two of the lads join you, then nine. The ref waits. The fans going out clap you back, all the way up the stairs.",
+        "effects": {
+         "fans": 6,
+         "boss": -4
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 8,
+          "respect": 6
+         },
+         {
+          "slot": "chairman",
+          "bond": -4,
+          "respect": -2,
+          "grudge": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "min": "clap"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "play",
+      "label": "Take the throw. Keep playing.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "You take the throw. You can feel {neighbour.short}'s end looking at you as they go. They don't clap.",
+        "effects": {
+         "boss": 2,
+         "fans": -3
+        },
+        "arc": {
+         "set": {
+          "min": "play"
+         }
+        },
+        "promiseBroken": [
+         "p-clap"
+        ]
+       },
+       {
+        "text": "You take the throw. The last twenty minutes are played in front of empty seats and stewards.",
+        "effects": {
+         "boss": 2,
+         "fans": -2
+        },
+        "arc": {
+         "set": {
+          "min": "play"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "watch",
+      "label": "Stand and watch them go.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "You stand there. You don't clap. You don't play either. You're not sure what it was.",
+        "effects": {
+         "fans": 1
+        },
+        "arc": {
+         "set": {
+          "min": "watch"
+         }
+        },
+        "promiseBroken": [
+         "p-clap"
+        ]
+       },
+       {
+        "text": "You stand there till the last one's up the stairs. Somebody on the far side claps you for it.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "set": {
+          "min": "watch"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "Saturday, the seventy-fourth minute"
+  },
+  {
+   "id": "wko-4-prices",
+   "title": "The prices",
+   "after": {
+    "beat": "wko-3-minute",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-wko-4-prices",
+    "title": "The prices",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on. The new prices are out. Seventy-four minutes into the first home game, the whole ground stands up again."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Look up at the stand.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.min=='clap'",
+        "text": "They're not walking out. Prices are frozen. They're standing to clap, and they're clapping you. {neighbour.short} is holding the 74 banner.",
+        "effects": {
+         "fans": 4
+        },
+        "arc": {
+         "end": "prices-frozen"
+        }
+       },
+       {
+        "if": "arc.min=='play'",
+        "text": "They're not walking out. They just stand there, all looking at the pitch. At you, it feels like. Then they sit down.",
+        "arc": {
+         "end": "the-empty-stand"
+        }
+       },
+       {
+        "text": "They stand and hold up a banner: \"74\". Your number's on the back of a hundred homemade shirts in the front row. It isn't your number.",
+        "effects": {
+         "fans": 3
+        },
+        "arc": {
+         "end": "seventy-four"
+        }
+       }
+      ]
+     },
+     {
+      "id": "play",
+      "label": "Keep your eyes on the ball.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.min=='play'",
+        "text": "You keep playing. You always will. They remember that you did.",
+        "arc": {
+         "end": "the-empty-stand"
+        }
+       },
+       {
+        "if": "arc.min=='clap'",
+        "text": "You keep your eyes on the ball. You can hear them clapping anyway. Prices frozen.",
+        "arc": {
+         "end": "prices-frozen"
+        }
+       },
+       {
+        "text": "You keep playing. In the front row they've had 74 printed on homemade shirts, and some of them have your name over it.",
+        "arc": {
+         "end": "seventy-four"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "A season on, the ticket prices"
+  }
+ ]
+}

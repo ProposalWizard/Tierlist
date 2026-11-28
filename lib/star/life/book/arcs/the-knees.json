@@ -1,0 +1,412 @@
+{
+ "id": "arc-the-knees",
+ "title": "Stairs in the morning",
+ "owner": "physio",
+ "summary": "You're past thirty and the physio wants to talk about your knees, and about the stairs in the morning. A season on, she has a sheet of exercises with your name at the top.",
+ "size": "small",
+ "about": {
+  "who": [
+   "physio",
+   "the end of a career"
+  ],
+  "tone": [
+   "dark",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0093,
+  "tier": "common",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "physio",
+   "pick": "physio"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-sheet",
+   "title": "The sheet",
+   "text": "Past thirty, you did the physio's sheet every morning. You came down the stairs normally."
+  },
+  {
+   "id": "sideways",
+   "title": "Sideways",
+   "text": "Past thirty, you came down the stairs sideways and told nobody."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "kne-1",
+   "title": "The stairs",
+   "n": 1,
+   "event": {
+    "id": "arc-kne-1",
+    "title": "The stairs",
+    "category": "injury",
+    "place": "compound:stairs",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "age>=29"
+     ]
+    },
+    "setup": [
+     "{physio.name} catches you on the stairs at the training ground. You're coming down them one at a time, sideways."
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "physio",
+       "say": [
+        "\"How long have you been doing that? Don't lie, I've watched you for a week.\""
+       ],
+       "replies": [
+        {
+         "id": "month",
+         "label": "\"About a month.\"",
+         "tone": "honest",
+         "goto": "k2"
+        },
+        {
+         "id": "fine",
+         "label": "\"I'm fine. Long day.\"",
+         "tone": "lie",
+         "end": "fine"
+        },
+        {
+         "id": "old",
+         "label": "\"Since I turned thirty.\"",
+         "tone": "honest",
+         "goto": "k2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "k2"
+        }
+       ]
+      },
+      "k2": {
+       "who": "physio",
+       "say": [
+        "\"It's not the end of anything. It's twenty minutes every morning for the rest of your career. Will you do it?\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Give me the sheet.\"",
+         "tone": "humble",
+         "end": "sheet"
+        },
+        {
+         "id": "later",
+         "label": "\"Next season.\"",
+         "tone": "calm",
+         "end": "fine"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "sheet": [
+       {
+        "text": "She prints you a sheet with nine exercises and draws a stick man doing each one. It goes on your fridge.",
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": 6,
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "took-the-knee-sheet",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "sheet"
+         }
+        }
+       }
+      ],
+      "fine": [
+       {
+        "text": "\"Course.\" She watches you go down the rest of the stairs. Sideways.",
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "fine"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     }
+    ]
+   },
+   "hint": "The physio wants to talk about your knees"
+  },
+  {
+   "id": "kne-1d-deep",
+   "title": "The stairs",
+   "after": {
+    "beat": "kne-1",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-kne-1d-deep",
+    "title": "The stairs",
+    "category": "injury",
+    "place": "club:stairs",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{physio.short} has timed you going down the training ground stairs with a stopwatch, without telling you. She shows you the number."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "physio",
+       "say": [
+        "\"That's a man of fifty. I'm not being funny.\""
+       ],
+       "replies": [
+        {
+         "id": "work",
+         "label": "\"What do I do?\"",
+         "tone": "humble",
+         "end": "work"
+        },
+        {
+         "id": "laugh",
+         "label": "\"Fifty's young.\"",
+         "tone": "confident",
+         "end": "laugh"
+        },
+        {
+         "id": "deny",
+         "label": "\"My knees are fine.\"",
+         "tone": "lie",
+         "end": "deny"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "work": [
+       {
+        "text": "She gives you three exercises and a rubber band. You do them in the kitchen while the kettle boils.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "asked-about-my-knees",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "work"
+         }
+        }
+       }
+      ],
+      "laugh": [
+       {
+        "text": "She writes FIFTY on the board in the physio room.",
+        "arc": {
+         "set": {
+          "deep": "laugh"
+         }
+        }
+       }
+      ],
+      "deny": [
+       {
+        "text": "She times you again on Friday. Fifty-one.",
+        "npc": [
+         {
+          "slot": "physio",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "deny"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     }
+    ]
+   },
+   "hint": "The physio has timed you on the stairs"
+  },
+  {
+   "id": "kne-2",
+   "title": "Every morning",
+   "after": {
+    "beat": "kne-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-kne-2",
+    "title": "Every morning",
+    "category": "injury",
+    "place": "compound:stairs",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The training ground stairs at half eight.",
+     "{if arc.path=='sheet'}The sheet on your fridge has gone soft at the corners from being touched.{/if}",
+     "{if arc.path=='fine'}You've worked out you can use the lift if you get in before the lads.{/if}",
+     "{if arc.deep=='work'}She can tell from the stairs that you've been doing the exercises.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "down",
+      "label": "Walk down the stairs.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='sheet'",
+        "text": "Normally, front on, one foot after the other. {physio.short} sees and doesn't say anything, and goes back into her room smiling.",
+        "effects": {
+         "matchFitness": 4
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-sheet"
+        }
+       },
+       {
+        "text": "Sideways. {physio.short} hands you a sheet without a word. You put it in your bag.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "sideways"
+        }
+       }
+      ]
+     },
+     {
+      "id": "lift",
+      "label": "Take the lift.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='sheet'",
+        "text": "The lift. You've done the sheet all year and you don't need it, but it's there.",
+        "arc": {
+         "end": "the-sheet"
+        }
+       },
+       {
+        "text": "The lift. The doors close on {physio.short} watching from the corridor.",
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "end": "sideways"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     }
+    ]
+   },
+   "hint": "A season on, the stairs"
+  }
+ ]
+}

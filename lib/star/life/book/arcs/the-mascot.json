@@ -1,0 +1,301 @@
+{
+ "id": "arc-the-mascot",
+ "title": "Inside the suit",
+ "owner": "groundsman",
+ "summary": "The club mascot is a seven-foot badger, and the lad inside it this season is the groundsman's grandson. He's sixteen, he's boiling, and he's been told he's getting sacked. A season on, the badger is still there.",
+ "size": "small",
+ "about": {
+  "who": [
+   "groundsman",
+   "club"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "divisionLevel>=3"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "groundsman",
+   "pick": "groundsman"
+  },
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-badger",
+   "title": "The badger",
+   "text": "You saved the groundsman's grandson's job as the badger. He does a backflip in it now."
+  },
+  {
+   "id": "a-new-badger",
+   "title": "A new badger",
+   "text": "The groundsman's grandson lost his job as the badger. The new one stands where he's told."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "msc-1",
+   "title": "The badger",
+   "n": 1,
+   "event": {
+    "id": "arc-msc-1",
+    "title": "The badger",
+    "category": "club",
+    "place": "stadium:tunnel",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "Before kick-off, behind the dugout. The club badger has its head off and the lad inside is crying. {groundsman.short} has his arm round him. Last week the badger fell into the away fans' end."
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "groundsman",
+       "say": [
+        "\"The chairman says he's finished after today. Sixteen. He loves it, the daft lad. If a player said something, though.\""
+       ],
+       "replies": [
+        {
+         "id": "say",
+         "label": "\"I'll have a word with the chairman.\"",
+         "tone": "kind",
+         "end": "word"
+        },
+        {
+         "id": "photo",
+         "label": "Get a photo with the badger in front of everyone.",
+         "tone": "confident",
+         "end": "photo"
+        },
+        {
+         "id": "nothing",
+         "label": "\"Not my business, sorry.\"",
+         "tone": "calm",
+         "end": "nothing"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "nothing"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "word": [
+       {
+        "text": "You find {chairman.short} in the lounge at half time. He says he'll think about it, which from him means yes.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "respect": 4,
+          "bond": 8
+         },
+         {
+          "slot": "chairman",
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "saved-the-badger",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "saved"
+         }
+        }
+       }
+      ],
+      "photo": [
+       {
+        "text": "You do a photo with the badger in the centre circle. The club's post gets ten times the usual likes. The chairman keeps the badger.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 8
+         },
+         {
+          "slot": "chairman",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "saved-the-badger",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "saved"
+         }
+        }
+       }
+      ],
+      "nothing": [
+       {
+        "text": "He puts the head back on and walks out for one last game. He waves at everyone.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "sacked"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The mascot's in trouble"
+  },
+  {
+   "id": "msc-2",
+   "title": "Still the badger",
+   "after": {
+    "beat": "msc-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-msc-2",
+    "title": "Still the badger",
+    "category": "club",
+    "place": "stadium:tunnel",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on. The badger is in the tunnel before kick-off.",
+     "{if arc.path=='saved'}It does a backflip when it sees you. It's taken him all summer.{/if}",
+     "{if arc.path=='sacked'}It's a different lad in it. He walks like he's been told to.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "five",
+      "label": "High five the badger.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='saved'",
+        "text": "He high fives you so hard the head comes off. {groundsman.short} puts it back on him.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-badger"
+        }
+       },
+       {
+        "text": "The new badger high fives you without much in it.",
+        "arc": {
+         "end": "a-new-badger"
+        }
+       }
+      ]
+     },
+     {
+      "id": "walk",
+      "label": "Walk past.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='saved'",
+        "text": "He does another backflip at your back.",
+        "arc": {
+         "end": "the-badger"
+        }
+       },
+       {
+        "text": "The new badger stands where he's been told to.",
+        "arc": {
+         "end": "a-new-badger"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "A season on, the club mascot"
+  }
+ ]
+}

@@ -1,0 +1,380 @@
+{
+ "id": "arc-head-tennis",
+ "title": "Over the physio bed",
+ "owner": "mate",
+ "summary": "The dressing room plays head tennis over the physio bed before every home game, and the champion has held it for two seasons. He wants you. A season on, he wants it back.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate",
+   "dressing room"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.008,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "breaking-through",
+  "when": [
+   "age>=19",
+   "age<=23"
+  ]
+ },
+ "needsActivity": "head-tennis",
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "order": "best"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "champion",
+   "title": "Champion",
+   "text": "You beat the head tennis champion over the physio bed. Your name is on the bed in marker."
+  },
+  {
+   "id": "the-bed",
+   "title": "The bed",
+   "text": "You lost at head tennis over the physio bed, and the champion still has the bed."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "htn-1",
+   "title": "Over the physio bed",
+   "n": 1,
+   "event": {
+    "id": "arc-htn-1",
+    "title": "Over the physio bed",
+    "category": "squad",
+    "place": "compound:dressing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The physio bed is in the middle of the dressing room as a net. {mate.short} has won head tennis on it every home game for two seasons. He's pointing at you."
+    ],
+    "talk": {
+     "start": "h1",
+     "nodes": {
+      "h1": {
+       "who": "mate",
+       "say": [
+        "\"First to eleven. Heads only, one bounce, the bed's the net. Loser does the kit bags.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Serve it.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "rules",
+         "label": "\"Is the ceiling in?\"",
+         "tone": "honest",
+         "goto": "h2"
+        },
+        {
+         "id": "no",
+         "label": "\"I've got a sore neck.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "no"
+        }
+       ]
+      },
+      "h2": {
+       "who": "mate",
+       "say": [
+        "\"The ceiling's in. The physio's in if she's stood there. Serve.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Serve it.",
+         "tone": "confident",
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "head-tennis",
+        "name": "Head tennis",
+        "intro": "First to eleven over the physio bed. Heads only.",
+        "dials": {},
+        "score": "what the game reports",
+        "canAbandon": true,
+        "fallback": null,
+        "caller": {
+         "slot": "mate"
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "c-stop"
+        ],
+        [
+         "activity.score>=11",
+         "c-good"
+        ],
+        [
+         "",
+         "c-poor"
+        ]
+       ]
+      },
+      "c-good": {
+       "who": "mate",
+       "say": [
+        "\"{activity.score}.\" He lies down on the bed. \"Fine. Fine. Do my kit bags anyway.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"No.\"",
+         "tone": "confident",
+         "end": "won"
+        }
+       ]
+      },
+      "c-poor": {
+       "who": "mate",
+       "say": [
+        "\"{activity.score}. Kit bags. Off you go.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Do the kit bags.",
+         "tone": "humble",
+         "end": "lost"
+        }
+       ]
+      },
+      "c-stop": {
+       "who": "mate",
+       "say": [
+        "\"Walking off? Kit bags.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Do the kit bags.",
+         "tone": "humble",
+         "end": "lost"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "won": [
+       {
+        "text": "Somebody writes your name on the bed in marker. The physio rubs it off and it comes back by Friday.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": 4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "beat-me-at-head-tennis",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "won"
+         }
+        }
+       }
+      ],
+      "lost": [
+       {
+        "text": "You carry nine kit bags to the coach. He holds the door for you, which is worse.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lost"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Sore neck.\" He tells the room. The room says sore neck every time you walk in, for a week.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The head tennis champion wants a game"
+  },
+  {
+   "id": "htn-2",
+   "title": "The rematch",
+   "after": {
+    "beat": "htn-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-htn-2",
+    "title": "The rematch",
+    "category": "squad",
+    "place": "compound:dressing-room",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The physio bed is out in the middle again.",
+     "{if arc.path=='won'}Your name is still on it, under three coats of the physio's spray.{/if}",
+     "{if !arc.path=='won'}{mate.short}'s name is on it. It's been on it for three seasons.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "serve",
+      "label": "\"Serve it, then.\"",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='won'",
+        "text": "You go to eleven again, and it's close. The kit man watches from the door and keeps score on a towel.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "champion"
+        }
+       },
+       {
+        "text": "He beats you again, eleven-nine. The bed stays his.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-bed"
+        }
+       }
+      ]
+     },
+     {
+      "id": "retire",
+      "label": "\"I've retired.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='won'",
+        "text": "\"Retired as champion,\" he says. \"I'll allow it.\" He hates it.",
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "champion"
+        }
+       },
+       {
+        "text": "He's not having it, but he lets you go.",
+        "arc": {
+         "end": "the-bed"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "A season on, head tennis again"
+  }
+ ]
+}

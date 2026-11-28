@@ -1,0 +1,309 @@
+{
+ "id": "arc-after-the-casino",
+ "title": "Outside the casino",
+ "owner": "mate",
+ "summary": "Outside the casino at two in the morning a team-mate asks you for money. He's lost his wages for the month and his rent's due. A season on, you find out where it went.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate",
+   "money"
+  ],
+  "tone": [
+   "dark",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.0134,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "order": "random"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "paid-back",
+   "title": "Paid back",
+   "text": "You lent a team-mate his rent outside a casino. He paid you back in tens, every Friday."
+  },
+  {
+   "id": "the-meeting",
+   "title": "The meeting",
+   "text": "You told a team-mate you wouldn't lend him money. A season on, he told you where he goes on Tuesdays now."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "cas-1",
+   "title": "Two in the morning",
+   "n": 1,
+   "event": {
+    "id": "arc-cas-1",
+    "title": "Two in the morning",
+    "category": "squad",
+    "place": "town:casino",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "leave:casino"
+     ]
+    },
+    "setup": [
+     "Two in the morning outside the casino. {mate.short} is sitting on the kerb with his tie in his pocket. He's lost the month's wages and his rent is due on Monday."
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "mate",
+       "say": [
+        "\"Two weeks of yours. That's all. I'll pay it back. Don't tell anyone. Please.\""
+       ],
+       "replies": [
+        {
+         "id": "lend",
+         "label": "\"Okay. Just this once.\"",
+         "tone": "kind",
+         "end": "lend"
+        },
+        {
+         "id": "why",
+         "label": "\"How much have you lost, really?\"",
+         "tone": "honest",
+         "goto": "c2"
+        },
+        {
+         "id": "no",
+         "label": "\"No. Get a taxi home.\"",
+         "tone": "cold",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "c2"
+        }
+       ]
+      },
+      "c2": {
+       "who": "mate",
+       "say": [
+        "He looks at the road for a long time. \"This month? All of it. Last month, all of it.\""
+       ],
+       "replies": [
+        {
+         "id": "lend",
+         "label": "\"I'll do the rent. Not the rest.\"",
+         "tone": "kind",
+         "end": "lend"
+        },
+        {
+         "id": "help",
+         "label": "\"I'm not lending. I'll help you, though.\"",
+         "tone": "brave",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "lend": [
+       {
+        "text": "You transfer it standing on the kerb. He hugs you too hard and gets in a taxi.",
+        "effects": {
+         "moneyWeeks": -2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "lent-me-my-rent",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lent"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "You put him in a taxi and pay for it. He doesn't speak to you for a week.",
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": 4,
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "wouldnt-lend-me-the-rent",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "random"
+     }
+    ]
+   },
+   "hint": "A team-mate is waiting outside the casino"
+  },
+  {
+   "id": "cas-2",
+   "title": "Fridays",
+   "after": {
+    "beat": "cas-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-cas-2",
+    "title": "Fridays",
+    "category": "squad",
+    "place": "compound:car-park",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on.",
+     "{if arc.path=='lent'}There's an envelope on your peg every Friday with a ten-pound note in it. This is the last one. It says \"square\" on the front.{/if}",
+     "{if arc.path=='no'}{mate.short} catches you in the car park. He's been going to a meeting in a church hall on Tuesdays, every week since that night.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "talk",
+      "label": "Ask how he is.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='lent'",
+        "text": "\"Skint. Fine. Not been in since.\" He buys you a coffee with the eleventh ten.",
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": 4,
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "paid-back"
+        }
+       },
+       {
+        "text": "\"Eleven months.\" He shows you the key ring they gave him. \"You were the only one who said no.\"",
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": 6,
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "told-me-about-tuesdays",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "the-meeting"
+        }
+       }
+      ]
+     },
+     {
+      "id": "fine",
+      "label": "Nod and say it's fine.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='lent'",
+        "text": "You put the envelope in your bag. It's still in there.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "paid-back"
+        }
+       },
+       {
+        "text": "He nods. He goes back in to train, early, the way he does now.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "the-meeting"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "random"
+     }
+    ]
+   },
+   "hint": "A season on, the team-mate"
+  }
+ ]
+}

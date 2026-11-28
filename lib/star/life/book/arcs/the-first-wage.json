@@ -1,0 +1,313 @@
+{
+ "id": "arc-the-first-wage",
+ "title": "The first wage",
+ "owner": "mum",
+ "summary": "Your first proper wage has gone in. Your mum has an idea what you should do with it, and so do you. A season on, you see where it went.",
+ "size": "small",
+ "about": {
+  "who": [
+   "mum",
+   "money",
+   "academy years"
+  ],
+  "tone": [
+   "warm",
+   "awkward"
+  ]
+ },
+ "start": {
+  "chance": 0.0107,
+  "tier": "common",
+  "stage": "first-seasons",
+  "when": [
+   "age<=20",
+   "season<=3"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-boiler",
+   "title": "The boiler",
+   "text": "With your first wage you paid for your mum's new boiler. She thinks of you every time it clicks on."
+  },
+  {
+   "id": "the-watch",
+   "title": "The watch",
+   "text": "With your first wage you bought a watch. You still have it. It's in a drawer."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "fwg-1",
+   "title": "Payday",
+   "n": 1,
+   "event": {
+    "id": "arc-fwg-1",
+    "title": "Payday",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "age<=19"
+     ]
+    },
+    "setup": [
+     "Your first proper wage is in your account. You've looked at it eleven times. Your mum is on the phone and the boiler at her house is making the noise again."
+    ],
+    "talk": {
+     "start": "w1",
+     "nodes": {
+      "w1": {
+       "who": "mum",
+       "say": [
+        "\"Don't spend it all at once. Put some away. And don't buy a stupid watch, your cousin bought a stupid watch.\""
+       ],
+       "replies": [
+        {
+         "id": "boiler",
+         "label": "\"I'm getting your boiler fixed.\"",
+         "tone": "kind",
+         "goto": "w2"
+        },
+        {
+         "id": "save",
+         "label": "\"I'll put half away.\"",
+         "tone": "calm",
+         "end": "save"
+        },
+        {
+         "id": "watch",
+         "label": "\"I've already bought a watch.\"",
+         "tone": "honest",
+         "end": "watch"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "save"
+        }
+       ]
+      },
+      "w2": {
+       "who": "mum",
+       "say": [
+        "\"You are not. Don't you dare. It's fine. It only does that in the morning.\""
+       ],
+       "replies": [
+        {
+         "id": "do",
+         "label": "\"It's booked. Thursday.\"",
+         "tone": "kind",
+         "end": "boiler"
+        },
+        {
+         "id": "ok",
+         "label": "\"Okay. If you're sure.\"",
+         "tone": "calm",
+         "end": "save"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "boiler": [
+       {
+        "text": "Thursday. The boiler man says it's a wonder it hadn't blown up. Your mum doesn't speak for a full minute and then tells everyone at her work.",
+        "effects": {
+         "moneyWeeks": -2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 12
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "paid-for-my-boiler",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "boiler"
+         }
+        }
+       }
+      ],
+      "save": [
+       {
+        "text": "You put half away. The other half goes on trainers and a meal for your mates, and it's a good meal.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "save"
+         }
+        }
+       }
+      ],
+      "watch": [
+       {
+        "text": "\"Oh, love.\" It's a very nice watch. You show her on video and she says it's very nice.",
+        "effects": {
+         "moneyWeeks": -1
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "watch"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Your first proper wage has gone in"
+  },
+  {
+   "id": "fwg-2",
+   "title": "A season on",
+   "after": {
+    "beat": "fwg-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-fwg-2",
+    "title": "A season on",
+    "category": "family",
+    "place": "home:mums-kitchen",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on, a cold week. You're at your mum's for tea.",
+     "{if arc.path=='boiler'}The boiler clicks on while you're eating and she looks at it, then at you.{/if}",
+     "{if !arc.path=='boiler'}The boiler makes the noise. She bangs it with a shoe and it stops.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "ok",
+      "label": "Ask if the house is warm enough.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='boiler'",
+        "text": "\"Warm as toast. You did that.\" She puts an extra potato on your plate.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-boiler"
+        }
+       },
+       {
+        "text": "\"It's fine. It's always been fine.\" You book the boiler man on the way home. She tells you off for a week.",
+        "effects": {
+         "moneyWeeks": -1
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "paid-for-my-boiler",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-boiler"
+        }
+       }
+      ]
+     },
+     {
+      "id": "watch",
+      "label": "Look at your watch.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='watch'",
+        "text": "It's ten past seven. You've had the watch a year and it's still the best thing you own.",
+        "arc": {
+         "end": "the-watch"
+        }
+       },
+       {
+        "text": "You check the time on your phone. The watch is in a drawer at home.",
+        "arc": {
+         "end": "the-watch"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, your mum's house"
+  }
+ ]
+}

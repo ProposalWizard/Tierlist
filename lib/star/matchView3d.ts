@@ -45,3 +45,14 @@ if (typeof window !== "undefined") {
 
 const subscribe = (f: () => void) => { listeners.add(f); return () => { listeners.delete(f); }; };
 export const useMatchView3d = () => useSyncExternalStore(subscribe, matchView3d, () => FALLBACK);
+
+export type Match3dStatus = "idle" | "loading" | "ready" | "off" | "lost";
+/**
+ * Which button the match's stats bar shows (Harry, 27 Nov 2026: "sometimes the 3D just toggles off …
+ * and then I can't get back into it"). Never neither: a failed build ("off") or a lost picture ("lost")
+ * shows the amber "3D ↻" (tap to build again); every other state shows the 2D | 3D switch.
+ */
+export function match3dButtons(on: boolean, status: Match3dStatus): { retry: boolean; toggle: boolean } {
+  const broken = on && (status === "lost" || status === "off");
+  return { retry: broken, toggle: !broken };
+}

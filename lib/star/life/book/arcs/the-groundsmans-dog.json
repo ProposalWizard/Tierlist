@@ -1,0 +1,269 @@
+{
+ "id": "arc-the-groundsmans-dog",
+ "title": "Biscuit",
+ "owner": "groundsman",
+ "summary": "The groundsman's old dog has run off with Saturday's match ball and won't give it back to anyone. A season on she's slower, and she still brings the ball to you.",
+ "size": "small",
+ "about": {
+  "who": [
+   "groundsman"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "groundsman",
+   "pick": "groundsman"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "her-ball",
+   "title": "Her ball",
+   "text": "The groundsman's dog brought you the ball every morning until she couldn't."
+  },
+  {
+   "id": "just-a-dog",
+   "title": "Just a dog",
+   "text": "It was only a dog, and you had training."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "gdg-1",
+   "title": "Biscuit",
+   "n": 1,
+   "event": {
+    "id": "arc-gdg-1",
+    "title": "Biscuit",
+    "category": "staff",
+    "place": "compound:pitch-1",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{groundsman.name}'s dog Biscuit is lying in the centre circle of pitch one with Saturday's match ball between her paws. She's thirteen and she's growling at the assistant manager."
+    ],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "groundsman",
+       "say": [
+        "{groundsman.short} doesn't help. \"She'll give it to someone she likes. She doesn't like many. Go on.\""
+       ],
+       "replies": [
+        {
+         "id": "crouch",
+         "label": "Sit down on the grass and wait.",
+         "tone": "kind",
+         "end": "sat"
+        },
+        {
+         "id": "chase",
+         "label": "Run at her.",
+         "tone": "reckless",
+         "end": "chased"
+        },
+        {
+         "id": "biscuit",
+         "label": "\"Has she got a price?\"",
+         "tone": "confident",
+         "goto": "d2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "sat"
+        }
+       ]
+      },
+      "d2": {
+       "who": "groundsman",
+       "say": [
+        "\"Sausage. The canteen does them on a Tuesday. It's Thursday.\""
+       ],
+       "replies": [
+        {
+         "id": "crouch",
+         "label": "Sit down on the grass and wait.",
+         "tone": "kind",
+         "end": "sat"
+        },
+        {
+         "id": "chase",
+         "label": "Run at her anyway.",
+         "tone": "reckless",
+         "end": "chased"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "sat": [
+       {
+        "text": "You sit on the wet grass for six minutes. She gets up, drops the ball in your lap and lies down against your leg. {groundsman.short} says that's the first time in four years.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "respect": 4,
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "biscuit-gave-me-the-ball",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "sat"
+         }
+        }
+       }
+      ],
+      "chased": [
+       {
+        "text": "She runs straight through the bit he reseeded on Monday, and so do you. You get the ball. You also get a lecture about the root depth of rye grass.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": -2,
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "chased"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     }
+    ]
+   },
+   "hint": "The groundsman's dog has the match ball"
+  },
+  {
+   "id": "gdg-2",
+   "title": "Slower",
+   "after": {
+    "beat": "gdg-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-gdg-2",
+    "title": "Slower",
+    "category": "staff",
+    "place": "compound:pitch-2",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. Biscuit walks now instead of running, and she's grey round the nose. She's got a training ball in her mouth and she's walking over to you.",
+     "{if arc.path=='sat'}She's done this every morning since the centre circle.{/if}",
+     "{if arc.path=='chased'}She hasn't been near you since the reseeding.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "fetch",
+      "label": "Throw it for her before training.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "She goes after it slowly, comes back slowly and drops it on your boot. You do it eleven times and you're late out. {groundsman.short} watches from the mower and doesn't say anything.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "respect": 2,
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "played-with-my-dog",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "her-ball"
+        }
+       }
+      ]
+     },
+     {
+      "id": "in",
+      "label": "Pat her and go in.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "She lies down by the fence with the ball and waits for someone else.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "just-a-dog"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     }
+    ]
+   },
+   "hint": "A season on, the groundsman's dog is slower"
+  }
+ ]
+}

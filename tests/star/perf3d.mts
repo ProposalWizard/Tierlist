@@ -70,7 +70,7 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 check(tierFromBenchMs(3) === "high" && tierFromBenchMs(10) === "medium" && tierFromBenchMs(40) === "low", "bench ms → tier");
 check(tierHintFromGpu("ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)))") === "low", "SwiftShader is low");
 check(tierHintFromGpu("Mali-T880") === "low", "old Mali is low");
-check(tierHintFromGpu("Adreno (TM) 740") === "high", "Adreno 740 is high");
+check(tierHintFromGpu("Adreno (TM) 740") === "medium", "Adreno 740 is medium: phone GPUs are never high (27 Nov 2026, the S20 lag; tests/star/recover3d.mts)");
 check(tierHintFromGpu("Apple GPU") === null, "iPhones are left to the benchmark");
 check(TIER_PROFILES.low.fpsCap === 30 && !TIER_PROFILES.low.shadows, "low tier: 30 fps, no shadows");
 

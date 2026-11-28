@@ -1,0 +1,260 @@
+{
+ "id": "arc-the-letter-from-inside",
+ "title": "A letter",
+ "owner": "mum",
+ "summary": "A lad you played with in the under-twelves writes to you from prison. He doesn't ask for anything. He just says he watches you on a telly on the landing. Your mum knew his mum. A season on, he's out.",
+ "size": "small",
+ "about": {
+  "who": [
+   "mum"
+  ],
+  "tone": [
+   "serious",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0061,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-car-wash",
+   "title": "The car wash",
+   "text": "A lad from your under-twelves wrote to you from prison and you wrote back. He's out, and he washes your car on Saturdays, and won't take money for it."
+  },
+  {
+   "id": "no-reply",
+   "title": "No reply",
+   "text": "A lad from your under-twelves wrote to you from prison. You didn't write back. Your mum says he's out now and doing all right."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "lfi-1-letter",
+   "title": "A letter",
+   "n": 1,
+   "event": {
+    "id": "arc-lfi-1-letter",
+    "title": "A letter",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A letter, forwarded by the club, from a prison you know the name of. It's from a lad you played with in the under-twelves. Left back. Good left foot.",
+     "\"I'm not asking for anything. We watch you on the telly on the landing. The lads don't believe I know you. That's all.\""
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "mum",
+       "say": [
+        "You ring your mum. {mum.short}: \"His mum used to give you lifts. She's had a terrible time with him. He was a lovely lad, at twelve.\""
+       ],
+       "replies": [
+        {
+         "id": "write",
+         "label": "\"I'm going to write back.\"",
+         "tone": "kind",
+         "end": "write"
+        },
+        {
+         "id": "shirt",
+         "label": "\"I'll send a signed photo. That's all.\"",
+         "tone": "calm",
+         "end": "photo"
+        },
+        {
+         "id": "no",
+         "label": "\"I don't think I should, Mum.\"",
+         "tone": "honest",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "write": [
+       {
+        "text": "One page. You tell him about the under-twelves cup run, and that his left foot was better than yours. He writes back eleven pages.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "saw-me-write-to-the-lad-inside",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "wrote"
+         }
+        }
+       }
+      ],
+      "photo": [
+       {
+        "text": "A signed photo: \"To the best left foot I played with.\" His mum rings yours to say it's on his wall.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "photo"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"That's all right, love. You don't have to.\" She tells his mum you said hello.",
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A letter in the post"
+  },
+  {
+   "id": "lfi-2-out",
+   "title": "Out",
+   "after": {
+    "beat": "lfi-1-letter",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-lfi-2-out",
+    "title": "Out",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. Saturday morning, the car wash by the ring road. The lad holding the hose is twenty-something with a good left foot. He sees your car and stops."
+    ],
+    "choices": [
+     {
+      "id": "out",
+      "label": "Get out and shake his hand.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='wrote' || arc.path=='photo'",
+        "text": "He wipes his hand on his trousers before he shakes yours. He won't take money. \"Every Saturday,\" he says. \"I'll do it every Saturday.\" He does.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-car-wash"
+        }
+       },
+       {
+        "text": "He shakes it. He doesn't mention the letter. He does the car very carefully and takes the money.",
+        "arc": {
+         "end": "no-reply"
+        }
+       }
+      ]
+     },
+     {
+      "id": "window",
+      "label": "Wind the window down and say hello.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='wrote'",
+        "text": "\"Eleven pages,\" he says. \"Sorry about that.\" He won't take your money.",
+        "arc": {
+         "end": "the-car-wash"
+        }
+       },
+       {
+        "text": "\"All right?\" \"All right.\" He does the car. You tip him well.",
+        "arc": {
+         "end": "no-reply"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, an old team-mate"
+  }
+ ]
+}

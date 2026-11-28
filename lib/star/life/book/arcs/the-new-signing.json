@@ -1,0 +1,618 @@
+{
+ "id": "arc-the-new-signing",
+ "title": "He signs for us",
+ "owner": "rival",
+ "summary": "The centre half from the other club, the one who has kicked you for years, signs for your club on loan until January. Pre-season you're put in a room together, and you promise the gaffer there'll be no trouble. A season on, he's gone back, and you play him again.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "rival player",
+   "gaffer",
+   "the rival who became a team-mate"
+  ],
+  "tone": [
+   "tense",
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0061,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "rival",
+   "pick": "rival"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "room": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "room-mates",
+   "title": "Room-mates",
+   "text": "The centre half who kicked you for years was your room-mate for half a season. You still talk."
+  },
+  {
+   "id": "same-as-ever",
+   "title": "Same as ever",
+   "text": "He was your team-mate for half a season. He still kicks you."
+  }
+ ],
+ "promises": {
+  "p-no-trouble": {
+   "id": "p-no-trouble",
+   "to": "manager",
+   "text": "No trouble with {rival.short} while he's here",
+   "due": {
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "keptBy": {
+    "beat": "nsg-2",
+    "ends": [
+     "laugh",
+     "share"
+    ]
+   },
+   "dueText": "Until the end of the pre-season trip",
+   "kept": {
+    "text": "You said there'd be no trouble, and there wasn't.",
+    "npc": [
+     {
+      "slot": "manager",
+      "respect": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said there'd be no trouble.",
+    "npc": [
+     {
+      "slot": "manager",
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "manager",
+      "tag": "fought-the-new-signing",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "nsg-1",
+   "title": "He signs",
+   "n": 1,
+   "event": {
+    "id": "arc-nsg-1",
+    "title": "He signs",
+    "category": "squad",
+    "place": "compound:office",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{rival.name} is in the canteen in your club's tracksuit. He's on loan until January. Last time you saw him he was standing on your foot at a corner.",
+     "{if mem(rival,'came-to-see-me-in-hospital')}You sat by his hospital bed once with a bag of grapes.{/if}",
+     "{if mem(rival,'squared-up-in-the-tunnel')}You squared up to him in a tunnel once.{/if}"
+    ],
+    "talk": {
+     "start": "n1",
+     "nodes": {
+      "n1": {
+       "who": "manager",
+       "say": [
+        "The gaffer calls you in. \"I know. I know what he's like. I need a centre half till January. I'm putting him in with you on the trip. Any trouble?\""
+       ],
+       "replies": [
+        {
+         "id": "no",
+         "label": "\"No trouble. I promise.\"",
+         "tone": "calm",
+         "end": "promised",
+         "promise": "p-no-trouble"
+        },
+        {
+         "id": "why",
+         "label": "\"Why me?\"",
+         "tone": "honest",
+         "goto": "n2"
+        },
+        {
+         "id": "move",
+         "label": "\"Put him with someone else.\"",
+         "tone": "fiery",
+         "end": "refused"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "n2"
+        }
+       ]
+      },
+      "n2": {
+       "who": "manager",
+       "say": [
+        "\"Because if you two get on, the rest will.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Fine. No trouble.\"",
+         "tone": "calm",
+         "end": "promised",
+         "promise": "p-no-trouble"
+        },
+        {
+         "id": "move",
+         "label": "\"Put him with someone else.\"",
+         "tone": "fiery",
+         "end": "refused"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "promised": [
+       {
+        "text": "He writes your names on the rooming list in pencil and goes over it in pen.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "promised"
+         }
+        }
+       }
+      ],
+      "refused": [
+       {
+        "text": "\"Tough.\" He writes your names on the list in pen.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "refused"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A rival has signed for your club"
+  },
+  {
+   "id": "nsg-2",
+   "title": "The room",
+   "after": {
+    "beat": "nsg-1",
+    "weeks": [
+     1,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-nsg-2",
+    "title": "The room",
+    "category": "squad",
+    "place": "away:hotel-room",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Pre-season, a hotel by a lake. Two single beds a yard apart. {rival.short} has unpacked first and taken the bed by the window, and he's ironing his socks."
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "rival",
+       "say": [
+        "\"Before you say anything. I always take the window. And I always iron my socks. Fourteen years.\""
+       ],
+       "replies": [
+        {
+         "id": "laugh",
+         "label": "Laugh.",
+         "tone": "kind",
+         "end": "laugh"
+        },
+        {
+         "id": "share",
+         "label": "\"Do mine and we're fine.\"",
+         "tone": "confident",
+         "end": "share"
+        },
+        {
+         "id": "window",
+         "label": "\"I'm having the window.\"",
+         "tone": "fiery",
+         "end": "fight"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "laugh"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "laugh": [
+       {
+        "text": "He laughs too, after a second. You stay up till one talking about every time he's kicked you. He remembers every one.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 12,
+          "grudge": -8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "roomed-with-me-on-the-trip",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "room": 1
+         }
+        }
+       }
+      ],
+      "share": [
+       {
+        "text": "He irons your socks. Then he irons your pants without asking. You decide not to ask.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 8,
+          "grudge": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "roomed-with-me-on-the-trip",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "room": 1
+         }
+        }
+       }
+      ],
+      "fight": [
+       {
+        "text": "It ends with both of you in the corridor at midnight and the gaffer in his dressing gown.",
+        "effects": {
+         "boss": -3,
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 12
+         }
+        ],
+        "arc": {
+         "set": {
+          "room": 0
+         }
+        },
+        "promiseBroken": [
+         "p-no-trouble"
+        ]
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The pre-season trip"
+  },
+  {
+   "id": "nsg-3",
+   "title": "January",
+   "after": {
+    "beat": "nsg-1",
+    "weeks": [
+     14,
+     18
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-nsg-3",
+    "title": "January",
+    "category": "squad",
+    "place": "compound:dressing-room",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "January. {rival.short}'s loan is up. He's clearing his peg into a holdall."
+    ],
+    "choices": [
+     {
+      "id": "see",
+      "label": "Help him carry it to the car.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.room==1",
+        "text": "He gives you the iron. \"You'll need it.\" You don't, but you keep it.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "mates"
+         }
+        }
+       },
+       {
+        "text": "He lets you carry the holdall and says nothing the whole way.",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cold"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "nod",
+      "label": "Nod from across the room.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.room==1",
+        "text": "He nods back. He's left a pair of ironed socks on your peg.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "mates"
+         }
+        }
+       },
+       {
+        "text": "He nods and zips the holdall.",
+        "arc": {
+         "set": {
+          "path": "cold"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "January: the loan ends"
+  },
+  {
+   "id": "nsg-4",
+   "title": "The first corner",
+   "after": {
+    "beat": "nsg-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-nsg-4",
+    "title": "The first corner",
+    "category": "squad",
+    "place": "stadium:tunnel",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on. You're playing his club. {rival.short} is in the tunnel in their kit.",
+     "{if arc.path=='mates'}His socks are ironed. You can tell from here.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "hug",
+      "label": "Go over.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='mates'",
+        "text": "He hugs you in the tunnel. At the first corner he stands on your foot, same as ever, and whispers \"window\".",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "room-mates"
+        }
+       },
+       {
+        "text": "He looks at you like a centre half. At the first corner he stands on your foot.",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "end": "same-as-ever"
+        }
+       }
+      ]
+     },
+     {
+      "id": "stay",
+      "label": "Stay in the line.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='mates'",
+        "text": "He winks. He still stands on your foot at the first corner.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "room-mates"
+        }
+       },
+       {
+        "text": "At the first corner he stands on your foot, and the referee doesn't see it.",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "same-as-ever"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, you play his team"
+  }
+ ]
+}

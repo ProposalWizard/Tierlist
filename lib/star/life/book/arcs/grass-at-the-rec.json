@@ -1,0 +1,224 @@
+{
+ "id": "arc-grass-at-the-rec",
+ "title": "Grass at the Rec",
+ "owner": "groundsman",
+ "summary": "The groundsman who lost his job when the pitch went plastic works for the council now, and he's laid a real grass pitch at the Rec, the best in the county. He wants you to play the first ball on it.",
+ "size": "small",
+ "about": {
+  "who": [
+   "the groundsman"
+  ],
+  "tone": [
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-grass:plastic)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "groundsman",
+   "pick": "groundsman"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "his-pitch",
+   "title": "His pitch",
+   "text": "You played the first ball on the groundsman's new grass at the Rec. He mows it in stripes you can see from the bypass."
+  },
+  {
+   "id": "the-plastic-still",
+   "title": "The plastic",
+   "text": "You didn't go to the Rec. The groundsman still asks after the plastic pitch, like it's an old dog."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "gar-1-ask",
+   "title": "The Rec",
+   "n": 1,
+   "event": {
+    "id": "arc-gar-1-ask",
+    "title": "The Rec",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A text with a photo: grass so flat it looks painted. {groundsman.short}, who went with the old pitch when it went plastic, works for the council now. \"Best in the county. First ball's yours, Sunday, if you want it.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "groundsman",
+       "say": [
+        "\"Bring your old boots. Studs. Proper ones.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"I'll bring studs.\"",
+         "tone": "kind",
+         "end": "go"
+        },
+        {
+         "id": "busy",
+         "label": "\"Sunday's tough. Send me a photo.\"",
+         "tone": "calm",
+         "end": "busy"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "Sunday, the Rec, forty kids and their dads. You put the first ball through the middle of his stripes and he looks like he might cry.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "go"
+         }
+        }
+       }
+      ],
+      "busy": [
+       {
+        "text": "He sends a photo of a kid taking the first ball. It's a good photo.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "busy"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     }
+    ]
+   },
+   "hint": "The groundsman has laid a new grass pitch at the Rec"
+  },
+  {
+   "id": "gar-2-later",
+   "title": "The stripes",
+   "after": {
+    "beat": "gar-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-gar-2-later",
+    "title": "The stripes",
+    "category": "life",
+    "place": "town:rec",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "driving"
+     ]
+    },
+    "setup": [
+     "A season on. You drive past the Rec on the bypass."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Look over.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='go'",
+        "text": "Stripes you can see from the road. A man on a mower in a council jacket waves without looking up.",
+        "arc": {
+         "end": "his-pitch"
+        }
+       },
+       {
+        "text": "Stripes you can see from the road. You still haven't been.",
+        "arc": {
+         "end": "the-plastic-still"
+        }
+       }
+      ]
+     },
+     {
+      "id": "stop",
+      "label": "Pull in.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='go'",
+        "text": "He's mowing. He turns the mower off to shake your hand and asks how the plastic's playing.",
+        "arc": {
+         "end": "his-pitch"
+        }
+       },
+       {
+        "text": "He's mowing. He asks how the plastic's playing, like it's an old dog.",
+        "arc": {
+         "end": "the-plastic-still"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     }
+    ]
+   },
+   "hint": "A season on, the Rec"
+  }
+ ]
+}

@@ -2,7 +2,7 @@
  "id": "arc-the-crumble",
  "title": "The last bowl of crumble",
  "owner": "canteen",
- "summary": "The woman who runs the canteen keeps the last bowl of Friday's crumble for whoever scored on Saturday. A season later the new nutritionist takes it off the menu, and she wants to know whose side you're on.",
+ "summary": "The woman who runs the canteen keeps the last bowl of Friday's crumble for whoever scored on Saturday. Weeks later it's your turn at the hatch, one way or the other. A season on the new nutritionist takes it off the menu, and after that it's her last Friday.",
  "size": "small",
  "about": {
   "who": [
@@ -14,7 +14,14 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0107,
+  "tier": "common",
+  "stage": "first-seasons",
+  "when": [
+   "age<=20",
+   "season<=3",
+   "age<=22"
+  ]
  },
  "cast": [
   {
@@ -27,7 +34,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -40,6 +49,11 @@
    "id": "crumble-gone",
    "title": "No more crumble",
    "text": "The crumble went. She still saves you a biscuit, but it isn't the same."
+  },
+  {
+   "id": "her-recipe",
+   "title": "For scorers only",
+   "text": "When she retired, the woman from the canteen gave you her crumble recipe on a card in biro. At the bottom it says \"for scorers only\"."
   }
  ],
  "promises": {},
@@ -248,6 +262,130 @@
    "hint": "The canteen saves the crumble for a scorer"
   },
   {
+   "id": "cru-1b-hatch",
+   "title": "The hatch",
+   "after": {
+    "beat": "cru-1-bowl",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-cru-1b-hatch",
+    "title": "The hatch",
+    "category": "staff",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Saturday night, the players' lounge. {canteen.short} is still there with the bowl under the tea towel, and she's looking at you."
+    ],
+    "choices": [
+     {
+      "id": "hatch",
+      "label": "Go to the hatch.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "lastGoals>=1",
+        "text": "You scored. She takes the tea towel off like a magician. Your name goes on the board above the hatch in marker, spelt wrong.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "ate-the-scorers-crumble",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "ate"
+         }
+        }
+       },
+       {
+        "text": "You didn't score. \"Washing up,\" she says, and hands you the gloves. It takes an hour. She talks to you the whole time, about her late husband, and the crumble.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "did-my-washing-up",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "washed"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "give",
+      "label": "\"Give it to whoever scored.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "She takes it to the young lad who scored. He eats it in about four seconds. She nods at you like you've passed something.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "gave"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The crumble is waiting"
+  },
+  {
    "id": "cru-2-menu",
    "title": "Off the menu",
    "after": {
@@ -316,7 +454,15 @@
          }
         ],
         "arc": {
-         "end": "crumble-saved"
+         "end": "crumble-saved",
+         "set": {
+          "ended": "crumble-saved"
+         },
+         "next": "cru-3-lastfriday",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -336,7 +482,15 @@
          }
         ],
         "arc": {
-         "end": "crumble-saved"
+         "end": "crumble-saved",
+         "set": {
+          "ended": "crumble-saved"
+         },
+         "next": "cru-3-lastfriday",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -363,7 +517,15 @@
          }
         ],
         "arc": {
-         "end": "crumble-gone"
+         "end": "crumble-gone",
+         "set": {
+          "ended": "crumble-gone"
+         },
+         "next": "cru-3-lastfriday",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -382,6 +544,116 @@
     ]
    },
    "hint": "Something's happened to the crumble"
+  },
+  {
+   "id": "cru-3-lastfriday",
+   "title": "Her last Friday",
+   "after": {
+    "beat": "cru-2-menu",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-cru-3-lastfriday",
+    "title": "Her last Friday",
+    "category": "staff",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "It's {canteen.name}'s last Friday. Thirty-one years at the hatch. There's a cake from the club, and a crumble she's made herself, in the big tin.",
+     "{if arc.ended=='crumble-gone'}The nutritionist has let it through, just for today.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "speech",
+      "label": "Say a few words at the hatch.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.mid=='washed' || arc.mid=='gave'",
+        "text": "You say she knew everyone's name, and who scored. She gives you a card from her apron pocket: the crumble recipe, in biro. At the bottom it says \"for scorers only\".",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "gave-me-the-recipe",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "her-recipe"
+        }
+       },
+       {
+        "if": "arc.ended=='crumble-saved'",
+        "text": "The whole squad bangs the tables. She cries into a tea towel and tells you all to get out of her kitchen.",
+        "arc": {
+         "end": "crumble-saved"
+        }
+       },
+       {
+        "text": "You say she was the best thing about the place. She says, \"Then where were you when they took my crumble?\" Everybody laughs. She half means it.",
+        "arc": {
+         "end": "crumble-gone"
+        }
+       }
+      ]
+     },
+     {
+      "id": "quiet",
+      "label": "Eat it in silence, like always.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.ended=='crumble-saved'",
+        "text": "It's the best one she's ever made. The new woman at the hatch has been told it stays on Fridays.",
+        "arc": {
+         "end": "crumble-saved"
+        }
+       },
+       {
+        "text": "It's the last crumble anyone makes at the club.",
+        "arc": {
+         "end": "crumble-gone"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Someone at the canteen is retiring"
   }
  ]
 }

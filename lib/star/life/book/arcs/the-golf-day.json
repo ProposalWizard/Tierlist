@@ -1,0 +1,283 @@
+{
+ "id": "arc-the-golf-day",
+ "title": "The golf day",
+ "owner": "sponsor",
+ "summary": "The chairman's sponsors' golf day. You've never played. Your partner for the day is the boss of the boot company, and he's worse than you. A season on, the golf day again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "chairman",
+   "sponsor"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0046,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  },
+  {
+   "slot": "sponsor",
+   "pick": "sponsor"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-worst-pair",
+   "title": "The worst pair",
+   "text": "At the sponsors' golf day you and the boot company boss came last by forty shots. You've been his favourite player ever since."
+  },
+  {
+   "id": "a-good-day-out",
+   "title": "A good day out",
+   "text": "You let the boot company's boss win at the golf day. He knew. It was a good day out anyway."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "glf-1-tee",
+   "title": "The first tee",
+   "n": 1,
+   "event": {
+    "id": "arc-glf-1-tee",
+    "title": "The first tee",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "sponsor",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{chairman.name}'s sponsors' golf day. You've never held a club. You're paired with the boss of your boot company. {sponsor.name} warned you he's \"competitive\". His first shot goes into the car park."
+    ],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "sponsor",
+       "say": [
+        "{sponsor.short} whispers: \"He's never won it. Nine years he's been coming. Just so you know.\""
+       ],
+       "replies": [
+        {
+         "id": "play",
+         "label": "Play it straight. You're both terrible.",
+         "tone": "honest",
+         "end": "straight"
+        },
+        {
+         "id": "lose",
+         "label": "Lose on purpose.",
+         "tone": "kind",
+         "end": "lose"
+        },
+        {
+         "id": "win",
+         "label": "Try to win.",
+         "tone": "confident",
+         "end": "win"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "straight": [
+       {
+        "text": "You're both dreadful. You lose two balls in the same pond. He laughs so much he has to sit in the buggy. You come last by forty shots.",
+        "effects": {
+         "moneyWeeks": 0.5
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sponsor",
+          "tag": "came-last-at-golf-with-the-boss",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "straight"
+         }
+        }
+       }
+      ],
+      "lose": [
+       {
+        "text": "You miss a putt from a foot. He sees you do it. He doesn't say anything, and he wins his first prize in nine years, a fruit bowl.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lost"
+         }
+        }
+       }
+      ],
+      "win": [
+       {
+        "text": "You win by one shot on the last hole. The boss shakes your hand very firmly and doesn't speak in the buggy back.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": -2,
+          "respect": 2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "won"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     }
+    ]
+   },
+   "hint": "The chairman's golf day"
+  },
+  {
+   "id": "glf-2-again",
+   "title": "Again",
+   "after": {
+    "beat": "glf-1-tee",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-glf-2-again",
+    "title": "Again",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "sponsor",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on, the golf day again. The boss has asked for you as his partner. {sponsor.short} says that's never happened."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='straight'",
+        "text": "Same pond, same two balls. You come last again, by fifty. He tells the whole dinner it's the best day of his year.",
+        "effects": {
+         "moneyWeeks": 0.5
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-worst-pair"
+        }
+       },
+       {
+        "text": "It's a nice day. He wins the fruit bowl again. He knows, and he doesn't mind.",
+        "arc": {
+         "end": "a-good-day-out"
+        }
+       }
+      ]
+     },
+     {
+      "id": "no",
+      "label": "\"I've got a knock, sorry.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='straight'",
+        "text": "He sends you a photo from the pond: \"Missed you.\" Two balls, floating.",
+        "arc": {
+         "end": "the-worst-pair"
+        }
+       },
+       {
+        "text": "He plays with the chairman instead and comes second.",
+        "arc": {
+         "end": "a-good-day-out"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     }
+    ]
+   },
+   "hint": "A season on, the golf day again"
+  }
+ ]
+}

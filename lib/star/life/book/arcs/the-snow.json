@@ -1,0 +1,277 @@
+{
+ "id": "arc-the-snow",
+ "title": "The snow",
+ "owner": "groundsman",
+ "summary": "Six inches of snow overnight and a home game at three. The groundsman needs volunteers with shovels at six in the morning. A season on, it snows again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "groundsman"
+  ],
+  "tone": [
+   "warm",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "divisionLevel>=3"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "groundsman",
+   "pick": "groundsman"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-shovel",
+   "title": "The shovel",
+   "text": "You shovelled snow off the pitch at six in the morning before a game. The groundsman painted your name on the handle of a shovel, and it's still in the shed."
+  },
+  {
+   "id": "called-off",
+   "title": "Called off",
+   "text": "It snowed and you stayed in bed. The game went ahead anyway, and the groundsman told you about every shovel."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "snw-1-shovels",
+   "title": "Six inches",
+   "n": 1,
+   "event": {
+    "id": "arc-snw-1-shovels",
+    "title": "Six inches",
+    "category": "club",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "It's snowed six inches overnight. Home game at three. A text from {groundsman.name} at half five in the morning: \"Need bodies with shovels. Six o'clock. Bring gloves. Bring two pairs.\""
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "groundsman",
+       "say": [
+        "Then: \"The fans are coming in at seven to help. Would be good if one of you lot was here.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"On my way.\"",
+         "tone": "kind",
+         "end": "go"
+        },
+        {
+         "id": "lads",
+         "label": "Wake up the group chat and bring the lads.",
+         "tone": "brave",
+         "end": "lads"
+        },
+        {
+         "id": "bed",
+         "label": "Go back to sleep. You're playing at three.",
+         "tone": "calm",
+         "end": "bed"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "Three hours, two hundred fans and you, in the dark, shovelling. At nine the lines are clear. {groundsman.short} gives you a bacon roll and the best handshake of your life.",
+        "effects": {
+         "fans": 3,
+         "energy": -8
+        },
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 8,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "shovelled-snow-with-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "shovelled"
+         }
+        }
+       }
+      ],
+      "lads": [
+       {
+        "text": "Six of you turn up. The goalkeeper brings a leaf blower that doesn't work on snow. The fans love it. The game goes ahead.",
+        "effects": {
+         "fans": 3,
+         "team": 2,
+         "energy": -6
+        },
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "shovelled-snow-with-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "shovelled"
+         }
+        }
+       }
+      ],
+      "bed": [
+       {
+        "text": "You sleep till ten. When you get to the ground, the lines are clear and two hundred people are leaving, wet and happy.",
+        "effects": {
+         "energy": 4
+        },
+        "arc": {
+         "set": {
+          "path": "bed"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     }
+    ]
+   },
+   "hint": "It's snowed overnight"
+  },
+  {
+   "id": "snw-2-again",
+   "title": "Snow again",
+   "after": {
+    "beat": "snw-1-shovels",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-snw-2-again",
+    "title": "Snow again",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. Snow again. In the shed, {groundsman.short} hands out shovels. One of them has a name painted on the handle."
+    ],
+    "choices": [
+     {
+      "id": "take",
+      "label": "Take a shovel.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='shovelled'",
+        "text": "It's your name on the handle. \"That one's yours,\" he says. \"Nobody else touches it.\"",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-shovel"
+        }
+       },
+       {
+        "text": "The name on the handle is the goalkeeper's. He's already out there with it.",
+        "arc": {
+         "end": "called-off"
+        }
+       }
+      ]
+     },
+     {
+      "id": "stay",
+      "label": "\"I'll save my legs for three o'clock.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='shovelled'",
+        "text": "\"Fair,\" he says. He leans your shovel by the door, in case.",
+        "arc": {
+         "end": "the-shovel"
+        }
+       },
+       {
+        "text": "\"Course you will.\" He tells you about every shovel, at length, after the game.",
+        "arc": {
+         "end": "called-off"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     }
+    ]
+   },
+   "hint": "A season on, it snows again"
+  }
+ ]
+}

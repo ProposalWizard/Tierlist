@@ -2,7 +2,7 @@
  "id": "arc-the-long-read",
  "title": "Six thousand words",
  "owner": "broadsheet",
- "summary": "The broadsheet writer wants a long interview: your childhood, your family, the bad bits. How much you give him decides what the country reads. A season on, the piece wins a prize, or it doesn't exist.",
+ "summary": "The broadsheet writer wants a long interview about where you came from. Weeks later he sends you the draft, and there's a line in it about your dad. A season on the piece wins a prize, or it doesn't exist, and after that the writer wants your dad.",
  "size": "small",
  "about": {
   "who": [
@@ -15,7 +15,15 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.004,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "peak",
+  "when": [
+   "age>=24",
+   "age<=31",
+   "divisionLevel<=2 || fame>=45"
+  ]
  },
  "cast": [
   {
@@ -28,7 +36,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -41,6 +51,11 @@
    "id": "the-stock-answers",
    "title": "Stock answers",
    "text": "You gave him the usual. He wrote six hundred words instead of six thousand."
+  },
+  {
+   "id": "dads-own-words",
+   "title": "His own piece",
+   "text": "You told a writer where you came from, and later he wrote about your dad's last night shift. Your dad has both pieces framed, his on top."
   }
  ],
  "promises": {},
@@ -229,6 +244,207 @@
    "hint": "A writer wants a proper interview"
   },
   {
+   "id": "lrd-1b-draft",
+   "title": "The draft",
+   "after": {
+    "beat": "lrd-1-ask",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-lrd-1b-draft",
+    "title": "The draft",
+    "category": "press",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "broadsheet",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='open'",
+      "then": "o1",
+      "else": "u1"
+     },
+     "nodes": {
+      "o1": {
+       "who": "broadsheet",
+       "say": [
+        "{broadsheet.short} sends the draft. It's good. Halfway down there's a line about your dad being laid off at the depot the year you signed. You told him that. Your dad doesn't know you did."
+       ],
+       "replies": [
+        {
+         "id": "read",
+         "label": "Ring Dad and read it to him.",
+         "tone": "honest",
+         "end": "read"
+        },
+        {
+         "id": "cut",
+         "label": "Ask him to take the line out.",
+         "tone": "kind",
+         "end": "cut"
+        },
+        {
+         "id": "leave",
+         "label": "Leave it in. It's true.",
+         "tone": "cold",
+         "end": "kept"
+        }
+       ]
+      },
+      "u1": {
+       "who": "broadsheet",
+       "say": [
+        "\"Last chance before I file. One true thing. Anything. I've got six hundred words and they're all 'the gaffer believed in me'.\""
+       ],
+       "replies": [
+        {
+         "id": "boots",
+         "label": "\"My dad bought my first boots with his overtime.\"",
+         "tone": "honest",
+         "end": "one"
+        },
+        {
+         "id": "no",
+         "label": "\"That's all there is.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "read": [
+       {
+        "text": "He's quiet for so long you think he's gone. \"Leave it in,\" he says. \"It's what happened.\" Then he asks you to read the whole thing again.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "heard-the-draft-first",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "read"
+         }
+        }
+       }
+      ],
+      "cut": [
+       {
+        "text": "{broadsheet.short} takes it out without a word. Your dad never knows it was there.",
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "respect": 2
+         },
+         {
+          "slot": "dad",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "had-the-redundancy-line-cut",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "cut"
+         }
+        }
+       }
+      ],
+      "kept": [
+       {
+        "text": "Your dad reads it on the Saturday. He rings on the Sunday and talks about the weather for ten minutes, then about the depot for one.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -4,
+          "respect": 2,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "read-about-the-depot-in-the-paper",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "kept"
+         }
+        }
+       }
+      ],
+      "one": [
+       {
+        "text": "\"Thank you.\" He moves it to the top. It's still six hundred words, but they're better ones.",
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "one"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fair enough.\" He files at midnight.",
+        "arc": {
+         "set": {
+          "mid": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "broadsheet",
+      "pick": "broadsheet"
+     },
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "The writer has sent you something"
+  },
+  {
    "id": "lrd-2-prize",
    "title": "The prize",
    "after": {
@@ -280,13 +496,29 @@
          }
         ],
         "arc": {
-         "end": "the-piece"
+         "end": "the-piece",
+         "set": {
+          "ended": "the-piece"
+         },
+         "next": "lrd-3-nightshift",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
         "text": "It's very good. You read it twice.",
         "arc": {
-         "end": "the-stock-answers"
+         "end": "the-stock-answers",
+         "set": {
+          "ended": "the-stock-answers"
+         },
+         "next": "lrd-3-nightshift",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -306,11 +538,136 @@
          }
         ],
         "arc": {
-         "end": "the-piece"
+         "end": "the-piece",
+         "set": {
+          "ended": "the-piece"
+         },
+         "next": "lrd-3-nightshift",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
         "text": "You leave it.",
+        "arc": {
+         "end": "the-stock-answers",
+         "set": {
+          "ended": "the-stock-answers"
+         },
+         "next": "lrd-3-nightshift",
+         "afterWeeks": [
+          40,
+          60
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "broadsheet",
+      "pick": "broadsheet"
+     },
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A season on, the writer gets in touch"
+  },
+  {
+   "id": "lrd-3-nightshift",
+   "title": "The last night shift",
+   "after": {
+    "beat": "lrd-2-prize",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-lrd-3-nightshift",
+    "title": "The last night shift",
+    "category": "press",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "broadsheet",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{dad.short} is doing his last night shift before he retires. {broadsheet.short} rings: \"I'd like to write about him. Just him. Would he mind?\""
+    ],
+    "choices": [
+     {
+      "id": "ask",
+      "label": "Ask Dad.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.mid=='read' || arc.mid=='cut'",
+        "text": "Dad says yes before you've finished asking. The piece runs on a Saturday with a photo of him at the depot gate at six in the morning. He has both pieces framed, his on top.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "had-his-own-piece-written",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "dads-own-words"
+        }
+       },
+       {
+        "if": "arc.path=='open'",
+        "text": "\"Once was enough,\" Dad says, kindly. {broadsheet.short} understands.",
+        "arc": {
+         "end": "the-piece"
+        }
+       },
+       {
+        "text": "Dad says no. {broadsheet.short} says he thought he might. \"Your piece was short,\" he says. \"I think that's where you get it.\"",
+        "arc": {
+         "end": "the-stock-answers"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "\"Leave him be. It's his night.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='open'",
+        "text": "You pick him up at six from the gate. He's got a cake from the lads in a carrier bag.",
+        "arc": {
+         "end": "the-piece"
+        }
+       },
+       {
+        "text": "You pick him up at six. He doesn't say much. Neither do you.",
         "arc": {
          "end": "the-stock-answers"
         }
@@ -330,7 +687,7 @@
      }
     ]
    },
-   "hint": "A season on, the writer gets in touch"
+   "hint": "Your dad has a big night"
   }
  ]
 }

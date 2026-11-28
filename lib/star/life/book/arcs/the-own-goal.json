@@ -1,0 +1,384 @@
+{
+ "id": "arc-the-own-goal",
+ "title": "Own goal",
+ "owner": "kidfan",
+ "summary": "You score an own goal in the last minute. In the front row a girl in your shirt is crying, and it's on the big screen. A season on, she's back, and you're at the same end.",
+ "size": "small",
+ "about": {
+  "who": [
+   "kidfan"
+  ],
+  "tone": [
+   "sad",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0064,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-letter",
+   "title": "The letter",
+   "text": "You scored an own goal and a girl in your shirt cried on the big screen. You wrote to her. She has the letter in her schoolbag."
+  },
+  {
+   "id": "the-end",
+   "title": "That end",
+   "text": "You scored an own goal in the last minute. You never went back to that end of the ground without thinking about it."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "own-1-og",
+   "title": "Last minute",
+   "n": 1,
+   "event": {
+    "id": "arc-own-1-og",
+    "title": "Last minute",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastLost"
+     ]
+    },
+    "setup": [
+     "Ninety-fourth minute. A cross, a deflection, your knee, your own net. In the front row a girl in your shirt bursts into tears, and the camera finds her, and it goes on the big screen."
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "kidfan",
+       "say": [
+        "At the final whistle you can see her, still in the front row. Her dad has an arm round her. She's holding her scarf over her face."
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Walk over to her before you go in.",
+         "tone": "kind",
+         "end": "went"
+        },
+        {
+         "id": "write",
+         "label": "Get her name from the club and write to her.",
+         "tone": "kind",
+         "end": "letter"
+        },
+        {
+         "id": "in",
+         "label": "Go straight in.",
+         "tone": "calm",
+         "end": "in"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "went": [
+       {
+        "text": "You give her your shirt over the barrier and say sorry. She stops crying to tell you it was a deflection. It was. She's right.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "said-sorry-for-the-own-goal",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "letter": [
+       {
+        "text": "\"Sorry for making you cry. It was my knee's fault. Next time I'll score at the right end.\" Her dad writes back to say she sleeps with it under her pillow.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "said-sorry-for-the-own-goal",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "in": [
+       {
+        "text": "You go in. The clip of her crying is on every highlights show. You watch it once and turn it off.",
+        "arc": {
+         "set": {
+          "path": "in"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "The last minute goes wrong"
+  },
+  {
+   "id": "own-1d-deep",
+   "title": "The mum's message",
+   "after": {
+    "beat": "own-1-og",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-own-1d-deep",
+    "title": "The mum's message",
+    "category": "fans",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A message from the crying girl's mum. She's started sleeping in the shirt. She says the own goal was the worst and best thing: worst for the goal, best because you came over."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kidfan",
+       "say": [
+        "\"Could you sign it? She won't take it off for long enough to post it.\""
+       ],
+       "replies": [
+        {
+         "id": "visit",
+         "label": "Drop a signed ball round on your way home.",
+         "tone": "kind",
+         "end": "visit"
+        },
+        {
+         "id": "post",
+         "label": "Post a signed photo.",
+         "tone": "calm",
+         "end": "post"
+        },
+        {
+         "id": "nope",
+         "label": "Don't answer.",
+         "tone": "cold",
+         "end": "nope"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "visit": [
+       {
+        "text": "The girl opens the door in the shirt and shuts it again in shock. Her mum opens it again.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 7
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "brought-me-a-ball",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "visit"
+         }
+        }
+       }
+      ],
+      "post": [
+       {
+        "text": "It goes up on her bedroom wall next to the shirt.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "post"
+         }
+        }
+       }
+      ],
+      "nope": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "nope"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "The crying girl's mum has messaged"
+  },
+  {
+   "id": "own-2-again",
+   "title": "That end",
+   "after": {
+    "beat": "own-1-og",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-own-2-again",
+    "title": "That end",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "after-match",
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on, you're attacking that end again. Same front row. {kidfan.short} is there with a sign: \"RIGHT END THIS TIME.\"",
+     "{if arc.deep=='visit'}She still has the ball you dropped round.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "point",
+      "label": "Point at the sign.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='kind'",
+        "text": "She points back. You don't score, but at the end she shouts \"BETTER\" and that'll do.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "the-letter"
+        }
+       },
+       {
+        "text": "She looks surprised you've seen it. You feel worse than you expected.",
+        "arc": {
+         "end": "the-end"
+        }
+       }
+      ]
+     },
+     {
+      "id": "head",
+      "label": "Keep your head down.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='kind'",
+        "text": "She holds the sign up the whole game. When you go off she's waving your old shirt.",
+        "arc": {
+         "end": "the-letter"
+        }
+       },
+       {
+        "text": "You don't look at that front row. You can't, still.",
+        "arc": {
+         "end": "the-end"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "A season on, the same end"
+  }
+ ]
+}

@@ -117,7 +117,8 @@ function HomeScreenTip() {
 /** The first screen's switches: full screen, sound, 3D quality, skip the line-up, Full highlights rebuild. */
 export function QuickSwitches({ glow, fullscreen }: {
   glow: string;
-  fullscreen: { support: FullscreenSupport; on: boolean; onToggle: () => void };
+  /** Absent (the 3D phone's Settings app): no full-screen row. */
+  fullscreen?: { support: FullscreenSupport; on: boolean; onToggle: () => void };
 }) {
   const sfxNow = useSfxOn();
   const musicNow = useGameMusicOn();
@@ -126,7 +127,7 @@ export function QuickSwitches({ glow, fullscreen }: {
   const flipSkipLineup = () => { const next = !skipLineup; setSkipLineupState(next); setSkipLineup(next); };
   return (
     <SetCard tone={glow} className="px-3 py-1">
-      <FullScreenRow support={fullscreen.support} on={fullscreen.on} onToggle={fullscreen.onToggle} />
+      {fullscreen && <FullScreenRow support={fullscreen.support} on={fullscreen.on} onToggle={fullscreen.onToggle} />}
       <SetToggle label="Sound effects" on={sfxNow} onClick={() => { const on = !sfxNow; setSfxOn(on); if (on) sfx("ui-confirm"); }} />
       {/* Mikey, 21 Oct 2026: off by default; music for the home screens, matches and results (lib/star/gameMusic.ts). */}
       <SetToggle label="Game music" on={musicNow} onClick={() => setGameMusicOn(!musicNow)} />

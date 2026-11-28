@@ -2,7 +2,7 @@
  "id": "arc-the-night-out",
  "title": "Thursday night",
  "owner": "manager",
- "summary": "A photo of you out on a Thursday night, two days before a game, reaches the gaffer's desk. How you answer for it decides how much rope he gives you next season.",
+ "summary": "A photo of you out two days before a game reaches the gaffer's desk. Weeks later the paper has another one, and it isn't you. Next season there's a leaving do, and after that the gaffer sends you to talk to the next lad who gets caught.",
  "size": "small",
  "about": {
   "who": [
@@ -15,7 +15,13 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0096,
+  "tier": "common",
+  "stage": "breaking-through",
+  "when": [
+   "age>=19",
+   "age<=23"
+  ]
  },
  "cast": [
   {
@@ -28,7 +34,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -41,6 +49,11 @@
    "id": "on-a-short-lead",
    "title": "On a short lead",
    "text": "You lied about the photo, and he hasn't let you out of his sight since."
+  },
+  {
+   "id": "the-talk",
+   "title": "The talk",
+   "text": "You owned up to a night out once. Now when a young lad gets caught on a Thursday, the gaffer sends him to you first."
   }
  ],
  "promises": {},
@@ -225,6 +238,167 @@
    "hint": "There's a photo going round"
   },
   {
+   "id": "nit-1b-lookalike",
+   "title": "Another photo",
+   "after": {
+    "beat": "nit-1-photo",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-nit-1b-lookalike",
+    "title": "Another photo",
+    "category": "manager",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "tabloid",
+       "say": [
+        "{tabloid.name} from the {tabloid.outlet}. \"We've got you again. Tuesday, a casino, half one.\" You were in bed by ten on Tuesday. The photo is a man with your haircut and nothing else."
+       ],
+       "replies": [
+        {
+         "id": "gaffer",
+         "label": "\"That's not me. I'm ringing the gaffer now.\"",
+         "tone": "calm",
+         "end": "gaffer"
+        },
+        {
+         "id": "sue",
+         "label": "\"Print it and I'll sue.\"",
+         "tone": "fiery",
+         "end": "sue"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "silent"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "gaffer": [
+       {
+        "if": "arc.path=='honest'",
+        "text": "{manager.short} believes you before you've finished. \"Not you. I know.\" He rings the paper himself. They don't run it.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "rang-me-about-the-lookalike",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "rang"
+         }
+        }
+       },
+       {
+        "text": "\"Like the last one wasn't you?\" He rings the casino. It wasn't you. He says sorry, which he's never said.",
+        "effects": {
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "rang-me-about-the-lookalike",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "rang"
+         }
+        }
+       }
+      ],
+      "sue": [
+       {
+        "text": "They run it with a question mark. The lookalike gives an interview. He's a plasterer from out of town and he loves it.",
+        "effects": {
+         "fans": -1,
+         "boss": -1
+        },
+        "arc": {
+         "set": {
+          "mid": "sue"
+         }
+        }
+       }
+      ],
+      "silent": [
+       {
+        "text": "They run it. The gaffer reads it before you can tell him it wasn't you.",
+        "effects": {
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "silent"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "The paper has another photo"
+  },
+  {
    "id": "nit-2-again",
    "title": "Another Thursday",
    "after": {
@@ -277,7 +451,15 @@
          }
         ],
         "arc": {
-         "end": "trusted"
+         "end": "trusted",
+         "set": {
+          "ended": "trusted"
+         },
+         "next": "nit-3-nextlad",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -289,7 +471,15 @@
          }
         ],
         "arc": {
-         "end": "on-a-short-lead"
+         "end": "on-a-short-lead",
+         "set": {
+          "ended": "on-a-short-lead"
+         },
+         "next": "nit-3-nextlad",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -309,7 +499,15 @@
          }
         ],
         "arc": {
-         "end": "trusted"
+         "end": "trusted",
+         "set": {
+          "ended": "trusted"
+         },
+         "next": "nit-3-nextlad",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -320,7 +518,15 @@
          }
         ],
         "arc": {
-         "end": "on-a-short-lead"
+         "end": "on-a-short-lead",
+         "set": {
+          "ended": "on-a-short-lead"
+         },
+         "next": "nit-3-nextlad",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -335,6 +541,118 @@
     ]
    },
    "hint": "Next season, another night out"
+  },
+  {
+   "id": "nit-3-nextlad",
+   "title": "The next lad",
+   "after": {
+    "beat": "nit-2-again",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-nit-3-nextlad",
+    "title": "The next lad",
+    "category": "manager",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Another season. A young lad's been photographed in a club at one in the morning, two days before a game. He's waiting outside {manager.short}'s office. {manager.short} catches you in the corridor first. \"You talk to him. You've been there.\""
+    ],
+    "choices": [
+     {
+      "id": "own",
+      "label": "Tell him to own up, first thing.",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.path=='honest' && !arc.mid=='rang'",
+        "text": "He owns up. The gaffer fines him and lets him play. He sends the next one to you, though, in March.",
+        "arc": {
+         "end": "trusted"
+        }
+       },
+       {
+        "if": "arc.path=='honest'",
+        "text": "He goes in and says it before the gaffer can. He's fined a week and plays on Saturday. {manager.short} gives you a nod in the canteen.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "sent-me-to-talk-to-the-lad",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-talk"
+        }
+       },
+       {
+        "text": "\"Like you did?\" the lad says. You haven't got an answer. He owns up anyway.",
+        "arc": {
+         "end": "on-a-short-lead"
+        }
+       }
+      ]
+     },
+     {
+      "id": "scared",
+      "label": "Tell him to keep his head down and say nothing.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='honest'",
+        "text": "He keeps his head down. The gaffer fines him and never trusts him again, and you know whose advice that was.",
+        "effects": {
+         "boss": -1
+        },
+        "arc": {
+         "end": "trusted"
+        }
+       },
+       {
+        "text": "He says nothing. The gaffer looks at you over his head the whole time.",
+        "arc": {
+         "end": "on-a-short-lead"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "The gaffer has a job for you"
   }
  ]
 }

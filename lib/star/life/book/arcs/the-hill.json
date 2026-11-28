@@ -1,0 +1,413 @@
+{
+ "id": "arc-the-hill",
+ "title": "The hill",
+ "owner": "coach",
+ "summary": "Pre-season, the hill behind the training ground, six times up. You come in last and the coach writes your time on a board. A season on, it's the hill again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "coach",
+   "pre-season"
+  ],
+  "tone": [
+   "tense",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.015,
+  "tier": "common",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "coach",
+   "pick": "coach"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "off-the-bottom",
+   "title": "Off the bottom",
+   "text": "You were last up the hill one summer. The next summer you weren't."
+  },
+  {
+   "id": "the-bottom",
+   "title": "The bottom",
+   "text": "You were last up the hill two summers running. The coach has stopped writing your time down."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "hll-1",
+   "title": "Six times",
+   "n": 1,
+   "event": {
+    "id": "arc-hll-1",
+    "title": "Six times",
+    "category": "career",
+    "place": "compound:hill",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "week<=6"
+     ]
+    },
+    "setup": [
+     "First day of pre-season. The hill behind the training ground, six times up. You're last on the fourth and last on the sixth. {coach.name} writes your time at the bottom of the whiteboard."
+    ],
+    "talk": {
+     "start": "h1",
+     "nodes": {
+      "h1": {
+       "who": "coach",
+       "say": [
+        "\"Bottom. In a summer you had off, I'd guess. What were you doing in June?\""
+       ],
+       "replies": [
+        {
+         "id": "honest",
+         "label": "\"Not running.\"",
+         "tone": "honest",
+         "goto": "h2"
+        },
+        {
+         "id": "ill",
+         "label": "\"I had a bug.\"",
+         "tone": "lie",
+         "end": "lie"
+        },
+        {
+         "id": "again",
+         "label": "\"Let me do it again.\"",
+         "tone": "brave",
+         "end": "again"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "h2"
+        }
+       ]
+      },
+      "h2": {
+       "who": "coach",
+       "say": [
+        "\"Honest, at least. Hill at seven every morning this week, with me. Or don't, and stay on the bottom.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Seven. I'll be there.\"",
+         "tone": "humble",
+         "end": "again"
+        },
+        {
+         "id": "no",
+         "label": "\"I'll get fit in the games.\"",
+         "tone": "calm",
+         "end": "lie"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "again": [
+       {
+        "text": "Seven every morning, with the coach, who goes up it with you and is fifty-two and beats you on Monday. By Friday you're not last.",
+        "effects": {
+         "matchFitness": 6,
+         "energy": -8
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 6,
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "did-the-hill-at-seven",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "hill"
+         }
+        }
+       }
+      ],
+      "lie": [
+       {
+        "text": "\"A bug.\" He writes BUG next to your time.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": -4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "bottom"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "Pre-season: the hill"
+  },
+  {
+   "id": "hll-1d-deep",
+   "title": "The board",
+   "after": {
+    "beat": "hll-1",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-hll-1d-deep",
+    "title": "The board",
+    "category": "career",
+    "place": "club:coaches-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The hill times are still on the coaches' board in marker. Yours is at the bottom, circled. {coach.short} catches you looking."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "coach",
+       "say": [
+        "\"Leave it there. It's good for you.\""
+       ],
+       "replies": [
+        {
+         "id": "run",
+         "label": "\"I'll run it on Sundays.\"",
+         "tone": "brave",
+         "end": "run"
+        },
+        {
+         "id": "rub",
+         "label": "Rub it out when he's gone.",
+         "tone": "reckless",
+         "end": "rub"
+        },
+        {
+         "id": "laugh",
+         "label": "\"It's a hill, coach.\"",
+         "tone": "confident",
+         "end": "laugh"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "run": [
+       {
+        "text": "You run it on Sundays on your own. He finds out from the farmer.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "ran-the-hill-on-sundays",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "run"
+         }
+        }
+       }
+      ],
+      "rub": [
+       {
+        "text": "He writes it back in, bigger.",
+        "npc": [
+         {
+          "slot": "coach",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "rub"
+         }
+        }
+       }
+      ],
+      "laugh": [
+       {
+        "text": "\"It's THE hill,\" he says.",
+        "arc": {
+         "set": {
+          "deep": "laugh"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The coach has kept your time on the board"
+  },
+  {
+   "id": "hll-2",
+   "title": "The hill again",
+   "after": {
+    "beat": "hll-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-hll-2",
+    "title": "The hill again",
+    "category": "career",
+    "place": "compound:hill",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on, the first day of pre-season. The hill.",
+     "{if arc.path=='hill'}You did June on the hill near your mum's, at seven.{/if}",
+     "{if arc.path=='bottom'}The board still says BUG.{/if}",
+     "{if arc.deep=='run'}The farmer told him you ran the hill on Sundays.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go hard from the first one.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.path=='hill'",
+        "text": "Third. The coach writes your time in the middle of the board, then rubs out BUG with his sleeve.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 6
+         }
+        ],
+        "arc": {
+         "end": "off-the-bottom"
+        }
+       },
+       {
+        "text": "You go hard and die on the fourth. Last again.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "end": "the-bottom"
+        }
+       }
+      ]
+     },
+     {
+      "id": "steady",
+      "label": "Pace yourself.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='hill'",
+        "text": "Sixth out of twenty-two. Not bad, not last.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "off-the-bottom"
+        }
+       },
+       {
+        "text": "Steady, and last. He doesn't write it down.",
+        "arc": {
+         "end": "the-bottom"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "A season on, the hill"
+  }
+ ]
+}

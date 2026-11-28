@@ -35,6 +35,18 @@ import { loadGltfCached } from "../three3d/perf";
 import { loadModel3d } from "../three3d/ktx2";
 import type { Worn, Kit2 } from "./outfits";
 import { dressCloth, homeSetCloth, HOME_WB } from "../style3d/toon/clothes";
+import { wearAccessories } from "../style3d/toon/accessories";
+import { bootWorn } from "../wearables";
+
+/** The boots a kit-wearing you has on: the shop pair's colourway (wearables.ts), else the plain colour. */
+function bootsOf(worn: Worn): { slot: string; color: string; color2?: string; stripes?: string[] } {
+  return worn.kind === "kit" && worn.bootLook ? bootWorn(worn.bootLook) : { slot: "boots", color: worn.kind === "kit" ? worn.boots : "#141416" };
+}
+/** Your watch, chain and the rest (wearables.ts), on a Style A body (after its cloth). */
+function wearExtras(T: any, p: Person3D, worn: Worn) {
+  if (!p.toon || !worn.extras?.length) return;
+  try { wearAccessories(T, p, worn.extras); } catch (e) { console.error("accessories failed", e); }
+}
 
 export interface WearInput {
   worn: Worn;
@@ -80,9 +92,10 @@ export async function buildWearer(T: any, SkeletonUtils: any, loader: any, w: We
       const cw = homeSetCloth(w.worn.set.id, c);
       // the smart coat over an open shirt (no tie): the tie colour matches the shirt, so the suit reads as "open"
       const u = p.u as Record<string, { value: any }>;
-      if (cw.kind === "suit" && u.uSuitTie && u.uSuitShirt) u.uSuitTie.value = u.uSuitShirt.value.clone();
+      if (cw.kind === "suit" && w.worn.set.id !== "designer" && u.uSuitTie && u.uSuitShirt) u.uSuitTie.value = u.uSuitShirt.value.clone();
       dressCloth(T, p, cw.kind, "you", { colours: cw.colours, whiteBalance: HOME_WB });
     }
+    wearExtras(T, p, w.worn);
     relaxHands(T, p);
     return p;
   }
@@ -105,10 +118,11 @@ export async function buildWearer(T: any, SkeletonUtils: any, loader: any, w: We
   const p = makePerson3d(T, SK, g, anims, { outline: w.outline, castShadow: w.castShadow, you: true });
   dressPerson3d(T, p, {
     skin: toon ? toonYou().skin : w.skin, hair: toon ? toonYou().hair : w.hair, kit: w.kits[w.worn.kit], number: w.number,
-    accessories: [{ slot: "boots", color: w.worn.boots }],
+    accessories: [bootsOf(w.worn)],
   });
   // the approved cloth kit (the painted one stays for a body the builder cannot dress)
   if (toon && w.cloth !== false) dressCloth(T, p, "kit", "you", { whiteBalance: HOME_WB });
+  wearExtras(T, p, w.worn);
   relaxHands(T, p);
   return p;
 }
@@ -141,10 +155,12 @@ export function wearsCloth(p: Person3D): boolean { return !!(p.body as any)?.use
 export function repaintKit(T: any, p: Person3D, w: WearInput): boolean {
   if (w.worn.kind !== "kit") return false;
   if (wearsCloth(p)) return false;
+  // a change of watch or chain is a new person (the accessories are fitted when he is built)
+  if (w.worn.extras?.length || p.body.parent?.children.some((o: any) => o.name === "Accessories")) return false;
   const toon = !!p.toon;
   dressPerson3d(T, p, {
     skin: toon ? toonYou().skin : w.skin, hair: toon ? toonYou().hair : w.hair, kit: w.kits[w.worn.kit], number: w.number,
-    accessories: [{ slot: "boots", color: w.worn.boots }],
+    accessories: [bootsOf(w.worn)],
   });
   return true;
 }

@@ -27,6 +27,7 @@
  * Pure three.js; no 2D canvas drawing here (signing3dTextures.ts does that).
  */
 import { fitHipJoints } from "./three3d/hipFit";
+import { fitStride, strideKey } from "./three3d/stride";
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { loadGltfCached } from "./three3d/perf";
@@ -49,6 +50,7 @@ import { SMALL_INK } from "./style3d/smallMen";
 import { PHOTO_FACES } from "./faceStyle";
 import { kitPatternFor, KIT_PATTERN_CODE, type KitPattern } from "./style3d/toon/kitPattern";
 import { relaxIdleArms, IDLE_POSTURE_CLIPS, RELAXED_FINGERS_DEG } from "./three3d/runPosture";
+import { bootWorn, bootLookFromWorn } from "./wearables";
 
 type Three = typeof import("three");
 
@@ -794,6 +796,8 @@ export function makePerson3d(
     for (const tr of c.tracks) {
       if (tr.name.endsWith(".position")) { const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= kc; tr.values = v; }
     }
+    // the walks and runs fitted to this body: feet planted apart, its own ground speed (three3d/stride.ts)
+    fitStride(T, inner, bones, c, strideKey(meta, toonHead, prop?.id));
     const a = mixer.clipAction(c);
     a.play();
     a.setEffectiveWeight(0);
@@ -1046,8 +1050,17 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
   }
   const acc = (slot: string) => look.accessories?.find((a) => a.slot === slot);
   const on4 = (hex: string | undefined) => (hex ? new T.Vector4(...lin(T, hex).toArray(), 1) : new T.Vector4(0, 0, 0, 0));
-  const boots = acc("boots");
+  // your own boots: the pair you bought (toonYou().boots, the page sets it from career.currentBoot) wherever a
+  // scene dresses you in a kit without naming boots (training, drills); a scene that names boots keeps its own
+  const yb = p.you && !acc("boots") ? toonYou().boots : undefined;
+  const boots = acc("boots") ?? (yb ? bootWorn(yb) : undefined);
   u.uBoots.value = lin(T, boots?.color ?? "#141416");
+  if (u.uBootK) {
+    // the colourway (wearables.ts BootLook): sole, studs, heel and flash; a plain colour = one colour, as before
+    const bl = bootLookFromWorn(boots);
+    u.uBootK.value.set(bl?.heel ? 1 : 0, bl?.flash ? 1 : 0, m.joints.LeftFoot?.[2] ?? 0, bl ? 1 : 0);
+    if (bl) { u.uBoot2.value = lin(T, bl.sole); u.uBoot3.value = lin(T, bl.accent); u.uBoot4.value = lin(T, bl.studs); }
+  }
   u.uSleeve.value = on4(acc("arms")?.color);
   u.uTape.value = on4(acc("wrists")?.color);
   const gl = acc("hands");

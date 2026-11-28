@@ -1,0 +1,278 @@
+{
+ "id": "arc-the-fans-forum",
+ "title": "The forum",
+ "owner": "neighbour",
+ "summary": "The fans' forum at the social club. The chairman, the gaffer's assistant, and you. Your neighbour stands up at the back and asks if the players actually care. Everyone looks at you. A season on, she puts her hand up again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "neighbour",
+   "chairman"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0093,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "veteran",
+  "when": [
+   "age>=29",
+   "divisionLevel>=2"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "neighbour",
+   "pick": "neighbour"
+  },
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-answer",
+   "title": "The answer",
+   "text": "At the fans' forum you answered the question nobody wanted to answer, and your neighbour shook your hand at the bar."
+  },
+  {
+   "id": "the-line",
+   "title": "The line",
+   "text": "At the fans' forum you gave the club's answer. Your neighbour still asks the same question every year."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "frm-1-question",
+   "title": "The question",
+   "n": 1,
+   "event": {
+    "id": "arc-frm-1-question",
+    "title": "The question",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The fans' forum, the social club, two hundred people and a microphone on a lead. {chairman.name} has done twenty minutes on car parking. Somebody at the back puts her hand up. It's {neighbour.name}, from next door."
+    ],
+    "talk": {
+     "start": "f1",
+     "nodes": {
+      "f1": {
+       "who": "neighbour",
+       "say": [
+        "\"Thirty years I've had a season ticket. I live next door to him. I just want to know. Do you lot actually care? When we lose. Do you care?\" Everyone looks at you."
+       ],
+       "replies": [
+        {
+         "id": "truth",
+         "label": "\"I don't sleep after a defeat. Some of us cry in the car. Yes.\"",
+         "tone": "honest",
+         "end": "truth"
+        },
+        {
+         "id": "line",
+         "label": "\"Everyone at this club is fully committed.\"",
+         "tone": "calm",
+         "end": "line"
+        },
+        {
+         "id": "back",
+         "label": "\"Do you think we enjoy losing?\"",
+         "tone": "fiery",
+         "end": "back"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "truth": [
+       {
+        "text": "Nobody says anything. Then the room claps, slowly at first. At the bar after, {neighbour.short} shakes your hand and doesn't let go.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 8,
+          "respect": 6
+         },
+         {
+          "slot": "chairman",
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "told-me-the-truth-at-the-forum",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "truth"
+         }
+        }
+       }
+      ],
+      "line": [
+       {
+        "text": "The chairman nods. {neighbour.short} sits down. She doesn't put her hand up again.",
+        "effects": {
+         "boss": 1
+        },
+        "arc": {
+         "set": {
+          "path": "line"
+         }
+        }
+       }
+      ],
+      "back": [
+       {
+        "text": "\"Sometimes I wonder,\" she says. The room laughs, at you.",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": -2,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "line"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The fans' forum"
+  },
+  {
+   "id": "frm-2-again",
+   "title": "Hands up",
+   "after": {
+    "beat": "frm-1-question",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-frm-2-again",
+    "title": "Hands up",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on, the forum again. Same room, same microphone. {neighbour.short} puts her hand up at the back."
+    ],
+    "choices": [
+     {
+      "id": "take",
+      "label": "\"I'll take this one.\"",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.path=='truth'",
+        "text": "\"I haven't got a question,\" she says. \"I just wanted to say thank you for last year.\" She sits down. That's it.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "the-answer"
+        }
+       },
+       {
+        "text": "\"Do you lot care?\" Same question. You give him a better answer this time. She nods, like she's marking it.",
+        "arc": {
+         "end": "the-line"
+        }
+       }
+      ]
+     },
+     {
+      "id": "chair",
+      "label": "Let the chairman take it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='truth'",
+        "text": "The chairman takes it. {neighbour.short} looks at you the whole time, and winks.",
+        "arc": {
+         "end": "the-answer"
+        }
+       },
+       {
+        "text": "The chairman talks about car parking again.",
+        "arc": {
+         "end": "the-line"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     },
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "A season on, the forum again"
+  }
+ ]
+}

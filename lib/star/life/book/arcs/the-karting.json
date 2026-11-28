@@ -1,0 +1,376 @@
+{
+ "id": "arc-the-karting",
+ "title": "Team day",
+ "owner": "mate",
+ "summary": "Team-building day at a go-kart track. The fastest lad in the squad has never lost a race and says so. A season on, the team day is back.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate",
+   "dressing room"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
+ },
+ "needsActivity": "karting",
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "order": "best"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-trophy",
+   "title": "The trophy",
+   "text": "You beat the fastest man in the squad at go-karts. The plastic trophy is on your peg."
+  },
+  {
+   "id": "the-barrier",
+   "title": "The barrier",
+   "text": "You went into the tyre barrier at the go-karts, and there's a photo."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "kar-1",
+   "title": "Team day",
+   "n": 1,
+   "event": {
+    "id": "arc-kar-1",
+    "title": "Team day",
+    "category": "squad",
+    "place": "town:kart-track",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Team-building day. A go-kart track in an industrial estate, twelve karts, the gaffer in a helmet that's too small. {mate.short} has his own gloves."
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "mate",
+       "say": [
+        "\"Ten laps. Winner gets the plastic trophy, loser washes my car. I've never lost. I don't know how.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Wash your own car.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "slow",
+         "label": "\"I'll take it steady.\"",
+         "tone": "humble",
+         "goto": "play"
+        },
+        {
+         "id": "no",
+         "label": "\"I'll watch.\"",
+         "tone": "calm",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "karting",
+        "name": "Ten laps",
+        "intro": "Ten laps of a go-kart track. He has his own gloves.",
+        "dials": {},
+        "score": "what the game reports",
+        "canAbandon": true,
+        "fallback": null,
+        "caller": {
+         "slot": "mate"
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "c-stop"
+        ],
+        [
+         "activity.score>=1",
+         "c-good"
+        ],
+        [
+         "",
+         "c-poor"
+        ]
+       ]
+      },
+      "c-good": {
+       "who": "mate",
+       "say": [
+        "He takes his helmet off and looks at the board for a long time. \"The kart pulled left.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"They all pull left.\"",
+         "tone": "confident",
+         "end": "won"
+        }
+       ]
+      },
+      "c-poor": {
+       "who": "mate",
+       "say": [
+        "\"Car wash is Thursday. Bring a sponge.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Fine.\"",
+         "tone": "humble",
+         "end": "lost"
+        }
+       ]
+      },
+      "c-stop": {
+       "who": "mate",
+       "say": [
+        "You're in the tyre barrier on lap three. He waves as he goes past."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Wave back.",
+         "tone": "humble",
+         "end": "barrier"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "won": [
+       {
+        "text": "The plastic trophy goes on your peg. He asks for a rematch every day for a month.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": 4,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "beat-me-at-karting",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "won"
+         }
+        }
+       }
+      ],
+      "lost": [
+       {
+        "text": "You wash his car on Thursday. He stands over you pointing at the bits you missed.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lost"
+         }
+        }
+       }
+      ],
+      "barrier": [
+       {
+        "text": "The photo of you in the tyre barrier is the club's most liked post of the month.",
+        "effects": {
+         "team": 1,
+         "fame": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "barrier"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "You watch from the café with the gaffer, who's taken his helmet off and can't get it back on.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "barrier"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "Team day at the go-kart track"
+  },
+  {
+   "id": "kar-2",
+   "title": "Team day again",
+   "after": {
+    "beat": "kar-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-kar-2",
+    "title": "Team day again",
+    "category": "squad",
+    "place": "town:kart-track",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. Team day, the same go-kart track.",
+     "{if arc.path=='won'}{mate.short} has been practising. He's got a season ticket for the track.{/if}",
+     "{if arc.path=='barrier'}The photo of you in the barrier is framed in the track's café.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "race",
+      "label": "Race him.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='won'",
+        "text": "He beats you by a tenth and does a lap of honour on foot. You keep the trophy anyway, because nobody asks for it back.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-trophy"
+        }
+       },
+       {
+        "text": "You go into the same barrier. They take another photo for the café.",
+        "effects": {
+         "team": 1
+        },
+        "arc": {
+         "end": "the-barrier"
+        }
+       }
+      ]
+     },
+     {
+      "id": "cafe",
+      "label": "Sit in the café.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "!arc.path=='won'",
+        "text": "You sit under your own photo with the gaffer.",
+        "arc": {
+         "end": "the-barrier"
+        }
+       },
+       {
+        "text": "You sit in the café with the trophy on the table. He can see it from the track.",
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "the-trophy"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "A season on, the go-kart track"
+  }
+ ]
+}

@@ -2,7 +2,7 @@
  "id": "arc-the-petrol-station",
  "title": "Two in the morning",
  "owner": "tabloid",
- "summary": "The tabloid has a photo of you at a petrol station at two in the morning, buying sweets, and they ring for a comment. What you say becomes the story. A season on, the same reporter wants another one.",
+ "summary": "The tabloid has a photo of you at a petrol station at two in the morning. Weeks later the same reporter is writing about players who can't sleep. A season on he wants another story, and after that he's leaving the paper.",
  "size": "small",
  "about": {
   "who": [
@@ -14,7 +14,15 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.008,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "peak",
+  "when": [
+   "age>=24",
+   "age<=31",
+   "divisionLevel<=2 || fame>=45"
+  ]
  },
  "cast": [
   {
@@ -23,7 +31,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -36,6 +46,11 @@
    "id": "no-comment-man",
    "title": "No comment",
    "text": "You said no comment, and the story wrote itself the worst way."
+  },
+  {
+   "id": "his-last-piece",
+   "title": "His last piece",
+   "text": "The tabloid man's last piece before he left the paper was about you, at your kitchen table. It was the nicest thing he ever wrote."
   }
  ],
  "promises": {},
@@ -226,6 +241,145 @@
    "hint": "The tabloid wants a comment"
   },
   {
+   "id": "pet2-1b-sleep",
+   "title": "Off the record",
+   "after": {
+    "beat": "pet2-1-call",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-pet2-1b-sleep",
+    "title": "Off the record",
+    "category": "press",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "t1",
+     "nodes": {
+      "t1": {
+       "who": "tabloid",
+       "say": [
+        "{tabloid.short} again, quieter than usual. \"I'm doing a piece on players and sleep. Proper one. No names unless you want. Off the record: do you sleep?\""
+       ],
+       "replies": [
+        {
+         "id": "open",
+         "label": "\"Off the record, no. Two hours, some nights.\"",
+         "tone": "honest",
+         "end": "open"
+        },
+        {
+         "id": "press",
+         "label": "\"Ring the club's press office.\"",
+         "tone": "calm",
+         "end": "press"
+        },
+        {
+         "id": "cold",
+         "label": "\"Print what you like.\"",
+         "tone": "cold",
+         "end": "cold"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "open": [
+       {
+        "if": "arc.path=='laughed'",
+        "text": "He keeps it off the record. The piece has no names and a sleep doctor in it, and three lads in your dressing room read it on the coach.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 4,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "tabloid",
+          "tag": "told-me-about-the-sleep",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "open"
+         }
+        }
+       },
+       {
+        "text": "Page nine on Sunday: \"STAR'S SLEEPLESS NIGHTS.\" Your name is in the first line.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "printed"
+         }
+        }
+       }
+      ],
+      "press": [
+       {
+        "text": "The press office says you sleep \"very well\". He prints that, word for word, in a box.",
+        "arc": {
+         "set": {
+          "mid": "press"
+         }
+        }
+       }
+      ],
+      "cold": [
+       {
+        "text": "\"I will.\" He doesn't, this time. He just stops ringing first.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": -2,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "cold2"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "The same reporter, a different question"
+  },
+  {
    "id": "pet2-2-again",
    "title": "Another call",
    "after": {
@@ -274,7 +428,15 @@
          }
         ],
         "arc": {
-         "end": "the-sweets-story"
+         "end": "the-sweets-story",
+         "set": {
+          "ended": "the-sweets-story"
+         },
+         "next": "pet2-3-last",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -289,7 +451,15 @@
          }
         ],
         "arc": {
-         "end": "no-comment-man"
+         "end": "no-comment-man",
+         "set": {
+          "ended": "no-comment-man"
+         },
+         "next": "pet2-3-last",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -309,7 +479,15 @@
          }
         ],
         "arc": {
-         "end": "the-sweets-story"
+         "end": "the-sweets-story",
+         "set": {
+          "ended": "the-sweets-story"
+         },
+         "next": "pet2-3-last",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -317,6 +495,121 @@
         "effects": {
          "fans": -2
         },
+        "arc": {
+         "end": "no-comment-man",
+         "set": {
+          "ended": "no-comment-man"
+         },
+         "next": "pet2-3-last",
+         "afterWeeks": [
+          40,
+          60
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "A season on, the same reporter"
+  },
+  {
+   "id": "pet2-3-last",
+   "title": "His last piece",
+   "after": {
+    "beat": "pet2-2-again",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-pet2-3-last",
+    "title": "His last piece",
+    "category": "press",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{tabloid.short} rings, two seasons on. \"They're letting me go. Cuts. I've got one last piece and I get to pick it.\" A pause. \"I was thinking cola bottles.\""
+    ],
+    "choices": [
+     {
+      "id": "interview",
+      "label": "\"Come round. I'll put the kettle on.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='laughed' && !arc.mid=='cold2'",
+        "text": "He sits in your kitchen for two hours. The piece is about you, sweets and not sleeping, and it's the kindest thing he ever wrote.",
+        "effects": {
+         "fans": 2,
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 6,
+          "respect": 4,
+          "grudge": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "tabloid",
+          "tag": "wrote-his-last-piece-about-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "his-last-piece"
+        }
+       },
+       {
+        "if": "arc.path=='laughed'",
+        "text": "He comes. It's a nice piece. It's still a tabloid piece.",
+        "arc": {
+         "end": "the-sweets-story"
+        }
+       },
+       {
+        "text": "He comes, and asks the same question about the petrol station. You give him nothing, again, out of habit. He writes that.",
+        "arc": {
+         "end": "no-comment-man"
+        }
+       }
+      ]
+     },
+     {
+      "id": "luck",
+      "label": "\"Good luck, mate.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='laughed'",
+        "text": "\"Cheers.\" He sends you forty bags of cola bottles in the post, from his own money.",
+        "arc": {
+         "end": "the-sweets-story"
+        }
+       },
+       {
+        "text": "\"Right.\" His last piece is about someone else.",
         "arc": {
          "end": "no-comment-man"
         }
@@ -332,7 +625,7 @@
      }
     ]
    },
-   "hint": "A season on, the same reporter"
+   "hint": "The reporter has news"
   }
  ]
 }

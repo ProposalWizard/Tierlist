@@ -1,0 +1,369 @@
+{
+ "id": "arc-the-fake-you",
+ "title": "The other you",
+ "owner": "kidfan",
+ "summary": "Someone has made an account pretending to be you, and he's been asking fans for money for a sick nan. A young fan's grandad has already sent him two hundred quid. A season on, he's in the stand.",
+ "size": "small",
+ "about": {
+  "who": [
+   "kidfan"
+  ],
+  "tone": [
+   "angry",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.008,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "peak",
+  "when": [
+   "age>=24",
+   "age<=31",
+   "divisionLevel<=2 || fame>=45"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "paid-him-back",
+   "title": "Paid him back",
+   "text": "Somebody pretended to be you and took a fan's grandad's money. You paid it back yourself. He spent it on two season tickets, one for her."
+  },
+  {
+   "id": "the-account",
+   "title": "Reported",
+   "text": "A fake you took a fan's grandad's money. You reported the account and it went. You never knew if he got his money back."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "fak-1-account",
+   "title": "The other you",
+   "n": 1,
+   "event": {
+    "id": "arc-fak-1-account",
+    "title": "The other you",
+    "category": "media",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A message to your real account from {kidfan.name}, the girl from the barrier. \"My grandad sent you £200 for your nan's operation. Is she ok?\" There's a screenshot. It's your photo, and not your account."
+    ],
+    "talk": {
+     "start": "f1",
+     "nodes": {
+      "f1": {
+       "who": "kidfan",
+       "say": [
+        "\"He's not got much. He said you'd always been nice to me so he wanted to help. It was you, wasn't it? It had your photo.\""
+       ],
+       "replies": [
+        {
+         "id": "pay",
+         "label": "\"It wasn't me. I'm so sorry. I'll pay him back myself.\"",
+         "tone": "kind",
+         "end": "paid"
+        },
+        {
+         "id": "report",
+         "label": "\"It wasn't me. Tell him to ring his bank and the police.\"",
+         "tone": "calm",
+         "end": "reported"
+        },
+        {
+         "id": "post",
+         "label": "Post a warning to everyone.",
+         "tone": "brave",
+         "end": "posted"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "paid": [
+       {
+        "text": "You send her grandad two hundred quid and a signed shirt. He writes back a long letter with a lot of commas and no full stops, and it makes your day.",
+        "effects": {
+         "moneyWeeks": -0.5,
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "paid"
+         }
+        }
+       }
+      ],
+      "reported": [
+       {
+        "text": "She says he will. The account's gone by Friday. Two more fans message you to say they nearly sent money.",
+        "arc": {
+         "set": {
+          "path": "reported"
+         }
+        }
+       }
+      ],
+      "posted": [
+       {
+        "text": "\"I will never ask you for money.\" Two million people see it. The account's gone by lunch.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "set": {
+          "path": "reported"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "Someone's pretending to be you"
+  },
+  {
+   "id": "fak-1d-deep",
+   "title": "The police",
+   "after": {
+    "beat": "fak-1-account",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-fak-1d-deep",
+    "title": "The police",
+    "category": "media",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A policewoman rings. They've found the man behind the fake account. He's nineteen and in the next town. The girl's grandad wants his two hundred back, and to meet him."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kidfan",
+       "say": [
+        "\"Would you be there? The grandad asked for you.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Go to the meeting.",
+         "tone": "brave",
+         "end": "go"
+        },
+        {
+         "id": "pay",
+         "label": "\"I'll pay the grandad back myself.\"",
+         "tone": "kind",
+         "end": "pay"
+        },
+        {
+         "id": "no",
+         "label": "\"That's one for the police.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "A room at the police station. The lad can't look at any of you. The grandad shakes his hand anyway.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "came-to-the-police-station",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "go"
+         }
+        }
+       }
+      ],
+      "pay": [
+       {
+        "text": "He takes it and sends it straight back with a note: \"Not yours to pay.\"",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "pay"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "The police have found the fake account"
+  },
+  {
+   "id": "fak-2-stand",
+   "title": "The stand",
+   "after": {
+    "beat": "fak-1-account",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-fak-2-stand",
+    "title": "The stand",
+    "category": "media",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on. {kidfan.short} is at the rail by the tunnel with an old man in a flat cap. He's holding up a card: \"I'M THE £200 GRANDAD.\"",
+     "{if arc.deep=='go'}Her grandad still tells the police station story.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "wave",
+      "label": "Go and say hello.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='paid'",
+        "text": "\"Spent it on two season tickets,\" he says. \"Me and her. Seemed right.\" She shows you hers, laminated.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "paid-him-back"
+        }
+       },
+       {
+        "text": "\"The bank never gave it back,\" he says, cheerfully. \"Worth it for the story.\" You give him your shirt.",
+        "arc": {
+         "end": "the-account"
+        }
+       }
+      ]
+     },
+     {
+      "id": "thumb",
+      "label": "Give them a thumbs up.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='paid'",
+        "text": "They give one back, both of them, with both hands.",
+        "arc": {
+         "end": "paid-him-back"
+        }
+       },
+       {
+        "text": "He waves the card. You never find out about the money.",
+        "arc": {
+         "end": "the-account"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "A season on, someone in the stand"
+  }
+ ]
+}

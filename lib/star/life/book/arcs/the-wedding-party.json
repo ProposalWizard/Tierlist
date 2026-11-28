@@ -1,0 +1,372 @@
+{
+ "id": "arc-the-wedding-party",
+ "title": "The hotel wedding",
+ "owner": "manager",
+ "summary": "The team hotel has a wedding in the function room the night before a game. The bride wants a photo with you. The groom supports the other lot. The gaffer has a curfew. A season on, a christening photo arrives.",
+ "size": "small",
+ "about": {
+  "who": [
+   "manager"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0093,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "in-the-album",
+   "title": "In the album",
+   "text": "You're in a stranger's wedding album, in your club tracksuit, between the bride and a groom who supports the other lot. They sent you a copy."
+  },
+  {
+   "id": "curfew",
+   "title": "Curfew",
+   "text": "You kept the curfew and missed the wedding. You heard the conga line through the floor till two."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "wdp-1-bride",
+   "title": "The bride",
+   "n": 1,
+   "event": {
+    "id": "arc-wdp-1-bride",
+    "title": "The bride",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The team hotel, the night before an away game. There's a wedding in the function room. At half nine the bride, in the full dress, finds you by the lift. \"Please. One photo. My dad's your biggest fan. My husband hates you.\""
+    ],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "manager",
+       "say": [
+        "{manager.name} is coming down the corridor in his slippers. \"Curfew's ten. That includes weddings.\""
+       ],
+       "replies": [
+        {
+         "id": "photo",
+         "label": "\"Two minutes, gaffer.\"",
+         "tone": "kind",
+         "end": "photo"
+        },
+        {
+         "id": "dance",
+         "label": "Go in for one dance.",
+         "tone": "reckless",
+         "end": "dance"
+        },
+        {
+         "id": "bed",
+         "label": "\"Congratulations. Goodnight.\"",
+         "tone": "calm",
+         "end": "bed"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "photo": [
+       {
+        "text": "Her dad cries. The groom shakes your hand very hard. You're in the lift at two minutes to ten. {manager.short} checks his watch and nods.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "set": {
+          "path": "photo"
+         }
+        }
+       }
+      ],
+      "dance": [
+       {
+        "text": "One dance turns into a conga line. You're upstairs at quarter to eleven. {manager.short} is sitting on a chair outside your room.",
+        "effects": {
+         "fans": 3,
+         "boss": -3,
+         "energy": -6
+        },
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "caught-me-at-the-hotel-wedding",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "dance"
+         }
+        }
+       }
+      ],
+      "bed": [
+       {
+        "text": "You go up. You can hear the conga line through the floor till two.",
+        "effects": {
+         "energy": -4
+        },
+        "arc": {
+         "set": {
+          "path": "bed"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Something's happening downstairs"
+  },
+  {
+   "id": "wdp-1d-deep",
+   "title": "The breakfast",
+   "after": {
+    "beat": "wdp-1-bride",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-wdp-1d-deep",
+    "title": "The breakfast",
+    "category": "fans",
+    "place": "away:hotel",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Breakfast at the team hotel. The bride's father is at the next table in last night's suit. He's telling the gaffer about you."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "manager",
+       "say": [
+        "{manager.short} looks over his coffee at you. You can't tell what face that is."
+       ],
+       "replies": [
+        {
+         "id": "own",
+         "label": "Go over and say it was your idea.",
+         "tone": "brave",
+         "end": "own"
+        },
+        {
+         "id": "eat",
+         "label": "Eat your eggs.",
+         "tone": "calm",
+         "end": "eat"
+        },
+        {
+         "id": "blame",
+         "label": "\"The lads made me.\"",
+         "tone": "lie",
+         "end": "blame"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "own": [
+       {
+        "text": "The father shakes your hand. The gaffer fines you fifty quid and smiles while he does it.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "owned-up-at-breakfast",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "own"
+         }
+        }
+       }
+      ],
+      "eat": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "eat"
+         }
+        }
+       }
+      ],
+      "blame": [
+       {
+        "text": "The lads hear about it. You buy the coffees for a fortnight.",
+        "npc": [
+         {
+          "slot": "manager",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "blame"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The gaffer saw you at breakfast"
+  },
+  {
+   "id": "wdp-2-post",
+   "title": "A parcel",
+   "after": {
+    "beat": "wdp-1-bride",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-wdp-2-post",
+    "title": "A parcel",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on, a parcel at the training ground: a christening photo. A baby in your shirt. A card: \"From the wedding at the hotel. He wanted the other shirt. I won.\"",
+     "{if arc.deep=='own'}The gaffer still mentions the fifty quid at weddings.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "frame",
+      "label": "Put it on your peg.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='photo' || arc.path=='dance'",
+        "text": "The lads ask. You tell them about the conga line. {manager.short}, passing, says, \"Quarter to eleven,\" without stopping.",
+        "effects": {
+         "team": 2
+        },
+        "arc": {
+         "end": "in-the-album"
+        }
+       },
+       {
+        "text": "You put it up. You never met them. You were in bed by ten.",
+        "arc": {
+         "end": "curfew"
+        }
+       }
+      ]
+     },
+     {
+      "id": "reply",
+      "label": "Send a signed card back.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='photo' || arc.path=='dance'",
+        "text": "She sends back a photo of the wedding album, open at the page with you in it.",
+        "arc": {
+         "end": "in-the-album"
+        }
+       },
+       {
+        "text": "They send a thank-you. You never did go downstairs.",
+        "arc": {
+         "end": "curfew"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, a parcel"
+  }
+ ]
+}

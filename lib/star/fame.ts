@@ -59,7 +59,7 @@ export function nextFameLevel(fame: number): FameLevel | null {
  */
 const ITEM_LIFE_BY_ID: Record<string, number | null> = {
   phone: 2, console: 3, headphones: 2, music: 2, tablet: 3,
-  smartwatch: 3, tv: 4, "gaming-pc": 3, suit: 2,
+  smartwatch: 3, tv: 4, "gaming-pc": 3, suit: 2, cap: 2, shades: 3,
   // Jewellery, art and fine watches keep their value.
   silver: null, art: null, gold: null, diamond: null, rolex: null,
   // Vehicles: about five seasons; a classic car is the exception.

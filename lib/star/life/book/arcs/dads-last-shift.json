@@ -1,0 +1,283 @@
+{
+ "id": "arc-dads-last-shift",
+ "title": "Dad's last shift",
+ "owner": "dad",
+ "summary": "Your dad is finishing at the works after thirty-one years, and his last shift ends at two on a Saturday. They're doing a presentation in the canteen. A season on, he's retired and comes to everything.",
+ "size": "small",
+ "about": {
+  "who": [
+   "dad"
+  ],
+  "tone": [
+   "warm",
+   "dark"
+  ]
+ },
+ "start": {
+  "chance": 0.008,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "breaking-through",
+  "when": [
+   "age>=19",
+   "age<=23"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "dad",
+   "pick": "dad"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-gate",
+   "title": "The gate",
+   "text": "You were at the works gate when your dad came out after thirty-one years."
+  },
+  {
+   "id": "the-video",
+   "title": "The video",
+   "text": "You sent a video to your dad's leaving do. They played it twice."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "dls-1",
+   "title": "The last shift",
+   "n": 1,
+   "event": {
+    "id": "arc-dls-1",
+    "title": "The last shift",
+    "category": "family",
+    "place": "home:kitchen",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{dad.name} is finishing at the works after thirty-one years. His last shift ends at two on Saturday, with a presentation in the canteen. Your kick-off is at three, forty minutes away."
+    ],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "dad",
+       "say": [
+        "\"Don't you dare come. You've got a game. They're giving me a clock. Who wants a clock? I'll tell you about it after.\""
+       ],
+       "replies": [
+        {
+         "id": "video",
+         "label": "\"I'll send them a video for the canteen.\"",
+         "tone": "kind",
+         "end": "video"
+        },
+        {
+         "id": "gate",
+         "label": "\"I'll be at the gate at two.\"",
+         "tone": "brave",
+         "end": "gate"
+        },
+        {
+         "id": "ok",
+         "label": "\"Okay. Tell me about the clock.\"",
+         "tone": "calm",
+         "end": "ok"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "ok"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "gate": [
+       {
+        "text": "Two o'clock. You're at the works gate in your club suit. He comes out with a clock under his arm and stops dead. Then he shows you the clock. You're ten minutes late for the warm-up and the gaffer lets it go when he hears why.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "respect": 4,
+          "bond": 14
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "was-at-the-works-gate",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "gate"
+         }
+        }
+       }
+      ],
+      "video": [
+       {
+        "text": "You record it in the kitchen: thirty-one years, a thank you, a joke about the clock. They play it twice in the canteen. He rings you at half past two and can't really talk.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "sent-the-video-to-the-works",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "video"
+         }
+        }
+       }
+      ],
+      "ok": [
+       {
+        "text": "He rings at six. The clock is very nice. He's put it on the mantelpiece and he doesn't know what to do with Monday.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "video"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Dad's finishing at the works"
+  },
+  {
+   "id": "dls-2",
+   "title": "Monday",
+   "after": {
+    "beat": "dls-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-dls-2",
+    "title": "Monday",
+    "category": "family",
+    "place": "compound:pitch-2",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. Your dad's retired, and he comes to everything now, training included. He's on the bench by pitch two with a flask, watching.",
+     "{if arc.path=='gate'}The clock's at your house now. He says it's too loud for his.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "wave",
+      "label": "Wave him over.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='gate'",
+        "text": "He comes and stands on the touchline. The coach asks him to hold the cones. He holds them like it's a job, because it is now.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "the-gate"
+        }
+       },
+       {
+        "text": "He comes over and holds the cones. The lads call him Clock.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-video"
+        }
+       }
+      ]
+     },
+     {
+      "id": "train",
+      "label": "Get on with training.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='gate'",
+        "text": "He watches the whole session and leaves before the end, so you won't feel watched.",
+        "arc": {
+         "end": "the-gate"
+        }
+       },
+       {
+        "text": "He watches the whole session and says nothing about it after, except the cones were wrong.",
+        "arc": {
+         "end": "the-video"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A season on, your dad"
+  }
+ ]
+}

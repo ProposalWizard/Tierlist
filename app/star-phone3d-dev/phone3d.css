@@ -72,8 +72,8 @@
 .p3-blink-A.p3-opening .p3-glare { animation: p3-glare-A 1700ms ease-out both; }
 @keyframes p3-glare-A { 0% { opacity: .85; } 30% { opacity: .6; } 100% { opacity: 0; } }
 
-/* B: Resident Evil 7 — one slow open with a small flutter; blur clears (1.2 s) */
-.p3-blink-B.p3-opening .p3-eyes { animation: p3-eye-B 1200ms linear both; }
+/* B: Resident Evil 7 — one slow open with a small flutter; blur clears (0.9 s, the game's; was 1.2 s) */
+.p3-blink-B.p3-opening .p3-eyes { animation: p3-eye-B 900ms linear both; }
 @keyframes p3-eye-B {
   0% { --eye: 0px; animation-timing-function: cubic-bezier(.3, 0, .5, 1); }
   30% { --eye: 120px; animation-timing-function: ease-in-out; }
@@ -81,13 +81,13 @@
   88% { --eye: 700px; opacity: 1; }
   100% { --eye: 760px; opacity: 0; }
 }
-.p3-blink-B.p3-opening .p3-house3d canvas { animation: p3-focus-B 1200ms ease-out both; }
+.p3-blink-B.p3-opening .p3-house3d canvas { animation: p3-focus-B 900ms ease-out both; }
 @keyframes p3-focus-B { 0% { filter: blur(16px) brightness(1.5); } 100% { filter: blur(7px) brightness(.9); } }
-.p3-blink-B.p3-opening .p3-house3d { animation: p3-head-B 1200ms cubic-bezier(.3, .6, .3, 1) both; transform-origin: 50% 60%; }
+.p3-blink-B.p3-opening .p3-house3d { animation: p3-head-B 900ms cubic-bezier(.3, .6, .3, 1) both; transform-origin: 50% 60%; }
 @keyframes p3-head-B { 0% { transform: rotate(2.5deg) scale(1.05); } 100% { transform: none; } }
-.p3-blink-B.p3-opening .p3-held { animation: p3-raise-B 1200ms cubic-bezier(.2, .8, .2, 1) both; }
+.p3-blink-B.p3-opening .p3-held { animation: p3-raise-B 900ms cubic-bezier(.2, .8, .2, 1) both; }
 @keyframes p3-raise-B { 0% { transform: translateY(28%) rotate(-4deg); filter: blur(8px); } 70% { filter: blur(0); } 100% { transform: none; filter: none; } }
-.p3-blink-B.p3-opening .p3-glare { animation: p3-glare-B 1200ms ease-out both; }
+.p3-blink-B.p3-opening .p3-glare { animation: p3-glare-B 900ms ease-out both; }
 @keyframes p3-glare-B { 0% { opacity: .45; } 100% { opacity: 0; } }
 
 /* back from the house: the phone comes up (no blink, your eyes are open) */

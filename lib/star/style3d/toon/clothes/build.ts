@@ -40,6 +40,12 @@ export interface GarmentSpec {
   tube?: boolean;
   /** a tie down the front of this garment (drawn in the material's second trim colour) */
   tie?: { top: number; bottom: number; w: number };
+  /**
+   * INNER THIGHS (Harry: "legs like squeezing past each other"): below `belowY`, the side of each leg that faces the
+   * other sits only (1 - k) of `offset` off the skin. Two shorts legs 1.4 cm off the skin each went up to 1.6 cm into
+   * each other at the hem as the thighs passed in a walk (scripts/walk3d/measure.mts); real cloth presses flat there.
+   */
+  innerLegs?: { k: number; belowY: number };
   /** shell relax: point passes, normal passes */
   relax?: [number, number];
   /** extra smoothing passes on the sleeves only (a jacket or shirt sleeve: no biceps showing through) */
@@ -57,8 +63,9 @@ export interface GarmentSpec {
     legs?: { top: number; hem: number; straight?: boolean; cuff?: number };
     /** sleeves: width as a multiple of the arm's own size at the shoulder end and at the cuff */
     arms?: { top: number; cuff: number };
-    /** shoes: a flat sole (the football boot's studs flattened to the ground) */
-    shoe?: boolean;
+    /** shoes: a flat sole (the football boot's studs flattened to the ground); "flat": a trainer's sole, the studs
+     *  pressed right down into one flat sole (the gym) */
+    shoe?: boolean | "flat";
     /** torso: the body's smoothed size times k at each height t (0 = hem line, 1 = armpits): [t, across, front-back];
      *  boxy 0..1 = held at the chest's size below it; pad = a structured shoulder (metres out and up) */
     torso?: { knots: [number, number, number][]; boxy?: number; pad?: number; hem?: number; hold?: boolean };
@@ -256,7 +263,7 @@ export function buildClothes(T: Three, body: THREE.SkinnedMesh, rig: Rig, garmen
         for (const q of rec) { const r2 = Math.max(q.r, Math.min(sm[q.b], q.r + 0.018)); o.pos[q.i * 3] += q.d[0] * (r2 - q.r); o.pos[q.i * 3 + 2] += q.d[2] * (r2 - q.r); }
       }
     }
-    o.shell(gm.offset, gm.lip, gm.collar ? { ...gm.collar, neck: rig.j("neck") } : undefined);
+    o.shell(gm.offset, gm.lip, gm.collar ? { ...gm.collar, neck: rig.j("neck") } : undefined, gm.innerLegs);
     if (gm.tie) o.addTie(gm.tie);
     const geo = o.geometry(T, false);
     stats[`${gm.name}Tris`] = geo.index!.count / 3;
@@ -373,7 +380,22 @@ function shapeGarment(o: Out, sh: NonNullable<GarmentSpec["shape"]>, k: { rig: R
     // a structured shoulder (a suit): the top of the shoulder lifted and squared out
     if (sh.torso?.pad && p.y > S.armpit && Math.abs(p.x) > 0.08) { const k2 = ss(S.armpit, S.armpit + 0.08, p.y) * ss(0.08, 0.2, Math.abs(p.x)); o.pos[i * 3] += Math.sign(p.x) * sh.torso.pad * k2; o.pos[i * 3 + 1] += sh.torso.pad * 0.5 * k2; }
   }
-  if (sh.shoe) for (let i = 0; i < o.n; i++) { const y = o.pos[i * 3 + 1]; if (y < 0.035) { o.pos[i * 3 + 1] = Math.max(0.002, (y - 0.0) * 0.4); const sx = Math.sign(o.pos[i * 3]); o.pos[i * 3] += sx * 0.004; } }
+  if (sh.shoe === "flat") {
+    // each shoe's footprint (its own points, per side): the sole is pressed flat and stands 4 mm proud of the upper
+    // all round, a trainer's cupsole (a lip, never taller: his height stays the same)
+    const box = [[1e9, -1e9, 1e9, -1e9], [1e9, -1e9, 1e9, -1e9]];
+    for (let i = 0; i < o.n; i++) { const b = box[o.pos[i * 3] < 0 ? 0 : 1], x = o.pos[i * 3], z = o.pos[i * 3 + 2]; b[0] = Math.min(b[0], x); b[1] = Math.max(b[1], x); b[2] = Math.min(b[2], z); b[3] = Math.max(b[3], z); }
+    for (let i = 0; i < o.n; i++) {
+      const y = o.pos[i * 3 + 1];
+      if (y >= 0.03) continue;
+      o.pos[i * 3 + 1] = 0.002 + y * 0.1;
+      const b = box[o.pos[i * 3] < 0 ? 0 : 1], cx = (b[0] + b[1]) / 2, cz = (b[2] + b[3]) / 2;
+      const dx = (o.pos[i * 3] - cx) / ((b[1] - b[0]) / 2 || 1), dz = (o.pos[i * 3 + 2] - cz) / ((b[3] - b[2]) / 2 || 1), l = Math.hypot(dx, dz) || 1;
+      const k = 0.004 * Math.min(1, l);
+      o.pos[i * 3] += (dx / l) * k; o.pos[i * 3 + 2] += (dz / l) * k;
+    }
+  }
+  else if (sh.shoe) for (let i = 0; i < o.n; i++) { const y = o.pos[i * 3 + 1]; if (y < 0.035) { o.pos[i * 3 + 1] = Math.max(0.002, (y - 0.0) * 0.4); const sx = Math.sign(o.pos[i * 3]); o.pos[i * 3] += sx * 0.004; } }
   o.faceNormals();
   o.relax(0, 0.5, 12);
 }
@@ -484,10 +506,17 @@ class Out {
     for (let i = 0; i < this.n; i++) { const a = acc.get(this.wid[i])!; const l = Math.hypot(a[0], a[1], a[2]) || 1; this.nor[i * 3] = a[0] / l; this.nor[i * 3 + 1] = a[1] / l; this.nor[i * 3 + 2] = a[2] / l; }
   }
   /** Push off the skin; a thickness lip down to the skin at every open edge; a collar piece on the neck edge loop. */
-  shell(off: number, lip: number, collar?: { kind?: CollarKind; h: number; out: number; fold?: number; neck: V3 }) {
+  shell(off: number, lip: number, collar?: { kind?: CollarKind; h: number; out: number; fold?: number; neck: V3 }, innerLegs?: { k: number; belowY: number }) {
     const n0 = this.n;
     this.n0 = n0;
-    for (let i = 0; i < n0; i++) for (let k = 0; k < 3; k++) this.pos[i * 3 + k] += this.nor[i * 3 + k] * off;
+    // (a leg's inner side, facing the other leg, closer to the skin: GarmentSpec.innerLegs)
+    const offAt = (i: number) => {
+      if (!innerLegs || this.pos[i * 3 + 1] > innerLegs.belowY) return off;
+      const inward = Math.max(0, -Math.sign(this.pos[i * 3]) * this.nor[i * 3]);
+      return off * (1 - innerLegs.k * Math.min(1, inward * 1.4));
+    };
+    const offs = Array.from({ length: n0 }, (_, i) => offAt(i));
+    for (let i = 0; i < n0; i++) for (let k = 0; k < 3; k++) this.pos[i * 3 + k] += this.nor[i * 3 + k] * offs[i];
     // open edges: an edge used once (on welded ids)
     const count = new Map<string, number>(), dir = new Map<string, [number, number]>();
     for (let t = 0; t < this.ind.length; t += 3) for (let e = 0; e < 3; e++) {
@@ -502,7 +531,7 @@ class Out {
     for (const [a, b] of ring) {
       for (const v of [a, b]) if (!inner.has(v)) {
         const d = this.dup(v);
-        for (let k = 0; k < 3; k++) this.pos[d * 3 + k] -= this.nor[v * 3 + k] * (off + lip);
+        for (let k = 0; k < 3; k++) this.pos[d * 3 + k] -= this.nor[v * 3 + k] * ((v < n0 ? offs[v] : off) + lip);
         this.lip[d] = 1; this.lip[v] = Math.max(this.lip[v], 0.5);
         inner.set(v, d);
       }

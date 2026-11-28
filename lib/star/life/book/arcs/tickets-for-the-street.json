@@ -2,7 +2,7 @@
  "id": "arc-tickets-for-the-street",
  "title": "Fourteen tickets",
  "owner": "mum",
- "summary": "Your mum wants fourteen tickets for the street for Saturday. That's a lot of tickets. What you do decides who's in the stand, and a season later the street makes a banner.",
+ "summary": "Your mum wants fourteen tickets for the street. Weeks later the street wants to come every week, or the corner shop man is in hospital. A season on there's something in the stand, and a season after that the corner shop man is back.",
  "size": "small",
  "about": {
   "who": [
@@ -14,7 +14,13 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.008,
+  "tier": "common",
+  "stage": "breaking-through",
+  "when": [
+   "age>=19",
+   "age<=23"
+  ]
  },
  "cast": [
   {
@@ -23,7 +29,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -36,6 +44,11 @@
    "id": "just-mum",
    "title": "Just Mum",
    "text": "You got two tickets, not fourteen. Mum still comes. The street watches on the telly."
+  },
+  {
+   "id": "the-corner-shop-man",
+   "title": "Bed six",
+   "text": "You visited the man from the corner shop in hospital. He got better, and he shouts your first name from the corner of the stand every home game."
   }
  ],
  "promises": {},
@@ -189,6 +202,230 @@
    "hint": "Mum needs tickets"
   },
   {
+   "id": "tix-1b-street",
+   "title": "The street",
+   "after": {
+    "beat": "tix-1-call",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-tix-1b-street",
+    "title": "The street",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='street'",
+      "then": "s1",
+      "else": "t1"
+     },
+     "nodes": {
+      "s1": {
+       "who": "mum",
+       "say": [
+        "\"They want to come every home game now. They'll pay, mind. Number four's started a kitty. The corner shop man has bought a drum.\""
+       ],
+       "replies": [
+        {
+         "id": "block",
+         "label": "\"I'll get them a block of season tickets.\"",
+         "tone": "kind",
+         "end": "block"
+        },
+        {
+         "id": "month",
+         "label": "\"Once a month. I'll sort that.\"",
+         "tone": "calm",
+         "end": "month"
+        },
+        {
+         "id": "one",
+         "label": "\"Mum, that was a one-off.\"",
+         "tone": "cold",
+         "end": "one"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "month"
+        }
+       ]
+      },
+      "t1": {
+       "who": "mum",
+       "say": [
+        "\"The corner shop man's poorly. His heart. He's on the ward at the infirmary and he keeps asking how you got on Saturday.\""
+       ],
+       "replies": [
+        {
+         "id": "visit",
+         "label": "\"I'll go and see him.\"",
+         "tone": "kind",
+         "end": "visit"
+        },
+        {
+         "id": "shirt",
+         "label": "\"I'll send him a signed shirt.\"",
+         "tone": "calm",
+         "end": "shirt"
+        },
+        {
+         "id": "no",
+         "label": "\"Mum, I don't really know him.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "block": [
+       {
+        "text": "Fourteen season tickets in a row. Mum laminates the list of who sits where.",
+        "effects": {
+         "moneyWeeks": -1,
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "got-the-street-season-tickets",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "block"
+         }
+        }
+       }
+      ],
+      "month": [
+       {
+        "text": "Once a month. Number four makes a rota and sticks it in the corner shop window.",
+        "effects": {
+         "fans": 1
+        },
+        "arc": {
+         "set": {
+          "mid": "month"
+         }
+        }
+       }
+      ],
+      "one": [
+       {
+        "text": "\"I'll tell them.\" She doesn't tell them. She buys two tickets a month out of her own money and takes turns.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -3,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "said-the-street-was-a-one-off",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "one"
+         }
+        }
+       }
+      ],
+      "visit": [
+       {
+        "text": "He's in bed six with a tube in his arm and the match on a radio. He calls you \"the boy\" to every nurse who comes past.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "went-to-see-the-corner-shop-man",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "visit"
+         }
+        }
+       }
+      ],
+      "shirt": [
+       {
+        "text": "Mum takes it in. He hangs it on the drip stand. A nurse sends you a photo.",
+        "arc": {
+         "set": {
+          "mid": "shirt"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"No, I suppose you don't.\" She goes in on her own with grapes.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -4,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Mum's on the phone about the street"
+  },
+  {
    "id": "tix-2-banner",
    "title": "A bedsheet",
    "after": {
@@ -239,7 +476,15 @@
          }
         ],
         "arc": {
-         "end": "the-banner"
+         "end": "the-banner",
+         "set": {
+          "ended": "the-banner"
+         },
+         "next": "tix-3-shop",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -251,7 +496,15 @@
          }
         ],
         "arc": {
-         "end": "just-mum"
+         "end": "just-mum",
+         "set": {
+          "ended": "just-mum"
+         },
+         "next": "tix-3-shop",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -268,11 +521,137 @@
          "fans": 2
         },
         "arc": {
-         "end": "the-banner"
+         "end": "the-banner",
+         "set": {
+          "ended": "the-banner"
+         },
+         "next": "tix-3-shop",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
         "text": "You eat the cake on the bus home.",
+        "arc": {
+         "end": "just-mum",
+         "set": {
+          "ended": "just-mum"
+         },
+         "next": "tix-3-shop",
+         "afterWeeks": [
+          40,
+          60
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, something in the stand"
+  },
+  {
+   "id": "tix-3-shop",
+   "title": "The corner shop",
+   "after": {
+    "beat": "tix-2-banner",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-tix-3-shop",
+    "title": "The corner shop",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "walkout",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Another season. You're warming up when somebody shouts your first name from the corner of the stand, the way only people from home do.",
+     "{if arc.mid=='visit'}It's the man from the corner shop. He's thinner, and he's holding a sign: \"BED SIX SAYS HELLO.\"{/if}",
+     "{if arc.mid=='block'}It's the whole block of fourteen, with a new banner, a proper printed one. The bedsheet's in the corner shop window.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go over at the end.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.mid=='visit'",
+        "text": "He grips your hand over the barrier and won't let go. \"Bed six,\" he says. \"Bed six.\" Mum, next to him, has to sit down.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "the-corner-shop-man-came-back",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-corner-shop-man"
+        }
+       },
+       {
+        "if": "arc.path=='street'",
+        "text": "The corner of the stand sings your name to the tune they made up on the coach. It's not a good tune. It's yours.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "the-banner"
+        }
+       },
+       {
+        "text": "Mum's there, with a new carrier bag and a new cake.",
+        "arc": {
+         "end": "just-mum"
+        }
+       }
+      ]
+     },
+     {
+      "id": "play",
+      "label": "Wave, and get on with the warm-up.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='street'",
+        "text": "They don't mind. The banner goes up when you score, and down when you don't.",
+        "arc": {
+         "end": "the-banner"
+        }
+       },
+       {
+        "text": "You wave. Mum waves back. It's enough.",
         "arc": {
          "end": "just-mum"
         }
@@ -288,7 +667,7 @@
      }
     ]
    },
-   "hint": "A season on, something in the stand"
+   "hint": "Somebody from the street is back"
   }
  ]
 }

@@ -1,0 +1,371 @@
+{
+ "id": "arc-the-charity-ref",
+ "title": "Referee",
+ "owner": "pal",
+ "summary": "You agree to referee a Sunday league charity match. Your old school mate is playing, and in the seventieth minute he does something you have to send him off for. A season on, the charity match again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "pal"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0046,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "veteran",
+  "when": [
+   "age>=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "pal",
+   "pick": "pal"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-red",
+   "title": "The red",
+   "text": "You refereed a charity match and sent off your oldest mate. He framed the red card. It hangs in his downstairs toilet."
+  },
+  {
+   "id": "the-whistle",
+   "title": "The whistle",
+   "text": "You refereed a charity match and let your mate off. Both teams still call you the worst ref they've ever had, fondly."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "crf2-1-red",
+   "title": "Seventy minutes",
+   "n": 1,
+   "event": {
+    "id": "arc-crf2-1-red",
+    "title": "Seventy minutes",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Sunday league, a charity match for the air ambulance, and you're the ref. {pal.name} is centre half for the Red Lion. Seventy minutes in he goes through their striker like a lorry, and then looks at you and grins."
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "pal",
+       "say": [
+        "\"Go on, then. You haven't got the guts.\""
+       ],
+       "replies": [
+        {
+         "id": "red",
+         "label": "Show him the red.",
+         "tone": "brave",
+         "end": "red"
+        },
+        {
+         "id": "yellow",
+         "label": "Yellow. Just.",
+         "tone": "calm",
+         "end": "yellow"
+        },
+        {
+         "id": "nothing",
+         "label": "Play on.",
+         "tone": "reckless",
+         "end": "nothing"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "red": [
+       {
+        "text": "The whole pitch goes up. He walks off slowly, applauding you, and asks for the card. You give it to him. He's going to frame it.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "got-sent-off-by-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "red"
+         }
+        }
+       }
+      ],
+      "yellow": [
+       {
+        "text": "The other team surrounds you. You book three of them for that. It's the longest charity match in history.",
+        "arc": {
+         "set": {
+          "path": "soft"
+         }
+        }
+       }
+      ],
+      "nothing": [
+       {
+        "text": "Their striker's mum comes on to the pitch to tell you what she thinks. She's right.",
+        "effects": {
+         "fans": -1
+        },
+        "arc": {
+         "set": {
+          "path": "soft"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "A Sunday morning with a whistle"
+  },
+  {
+   "id": "crf2-1d-deep",
+   "title": "The pub after",
+   "after": {
+    "beat": "crf2-1-red",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "event": {
+    "id": "arc-crf2-1d-deep",
+    "title": "The pub after",
+    "category": "family",
+    "place": "town:pub",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The pub after the charity match. {pal.short} is at the bar with the other lot, and he isn't looking at you."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "pal",
+       "say": [
+        "His mate leans over. \"He's been told he's banned for six weeks by the Sunday league. For a charity match. Because of you.\""
+       ],
+       "replies": [
+        {
+         "id": "drink",
+         "label": "Buy him a pint and stand next to him.",
+         "tone": "kind",
+         "end": "drink"
+        },
+        {
+         "id": "league",
+         "label": "Ring the Sunday league for him.",
+         "tone": "brave",
+         "end": "league"
+        },
+        {
+         "id": "leave",
+         "label": "Go home.",
+         "tone": "calm",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "drink": [
+       {
+        "text": "He drinks half before he says anything. \"Fair red,\" he says. \"Don't tell anyone I said.\"",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "bought-me-a-pint-after-the-red",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "drink"
+         }
+        }
+       }
+      ],
+      "league": [
+       {
+        "text": "They cut it to two weeks. He finds out and doesn't know what to do with his face.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4,
+          "respect": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "league"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "Your mate is in the pub after the charity match"
+  },
+  {
+   "id": "crf2-2-again",
+   "title": "The rematch",
+   "after": {
+    "beat": "crf2-1-red",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-crf2-2-again",
+    "title": "The rematch",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {pal.short}: \"Charity match again. They've asked for you to ref. I've asked for a different ref. They said no.\"",
+     "{if arc.deep=='drink'}He still says it was a fair red, when nobody's listening.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "ref",
+      "label": "\"I'll be there. Behave.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='red'",
+        "text": "He behaves for sixty-nine minutes. In the seventieth he looks at you, very deliberately, and doesn't tackle anyone. The whole pitch claps.",
+        "arc": {
+         "end": "the-red"
+        }
+       },
+       {
+        "text": "They give you a new whistle with \"PLEASE\" engraved on it.",
+        "arc": {
+         "end": "the-whistle"
+        }
+       }
+      ]
+     },
+     {
+      "id": "no",
+      "label": "\"Get someone else.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='red'",
+        "text": "He sends a photo from the match: the framed red card, held up at the side of the pitch.",
+        "arc": {
+         "end": "the-red"
+        }
+       },
+       {
+        "text": "\"They said you were the worst ref they'd ever had,\" he says. \"They meant it nicely.\"",
+        "arc": {
+         "end": "the-whistle"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "A season on, the charity match again"
+  }
+ ]
+}

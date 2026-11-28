@@ -11,7 +11,9 @@ import { PACKED_APP } from "@/lib/app/packed";
  *
  * A grid of apps inside the same drawn phone (PhoneFrame). Social, Kickabout,
  * League, Fixtures and Messages open INSIDE the phone; Shop, Store, Casino, Owner,
- * Garden, Sponsors and Settings open their real screens. The bar at the
+ * Garden, Sponsors and Settings open their real screens — except on the 3D
+ * phone (`apps`, Harry 27 Nov 2026), where they open inside too
+ * (PhoneApps.tsx), each with "Open full screen" where the real screen is too big. The bar at the
  * bottom of the phone takes you back to the grid.
  *
  * Reskinned in the home screen's look (28 Sep 2026, Harry: "all the pages
@@ -44,6 +46,7 @@ import MediaFeed from "./MediaFeed";
 import LeagueScreen from "./LeagueScreen";
 import { ScoutPane } from "./MatchWeekPanes";
 import EnginePlay from "./EnginePlay";
+import PhoneAppView, { NATIVE_APPS, type NativeApp, type PhoneAppActions } from "./PhoneApps";
 import ClubBadge from "./ClubBadge";
 import type { ChanceResolved } from "./CanvasMatch";
 import type { HubPhase } from "./HomeHub";
@@ -82,10 +85,15 @@ const SCOUT_APP: App = { id: "scout", label: "Scout report", icon: "🔍", bg: [
  *  career's phone, where the apps it does not start with are added. */
 const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️", bg: ["#60a5fa", "#1d4ed8"] };
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
-const appOf = (id: AppId | "relations") => (id === "appstore" ? APP_STORE_ICON : id === "scout" ? SCOUT_APP : APPS.find((a) => a.id === (id === "relationships" ? "relations" : id))!);
+const appOf = (id: AppId | NativeApp | "relations") => (id === "appstore" ? APP_STORE_ICON : id === "scout" ? SCOUT_APP : APPS.find((a) => a.id === (id === "relationships" ? "relations" : id))!);
 
-export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase, relations, relationsIntro, fill = false, onPhoneHome, onApp }: {
+export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase, relations, relationsIntro, fill = false, onPhoneHome, onApp, apps }: {
   career: CareerState;
+  /** Every app works INSIDE the phone (the 3D phone, Harry 27 Nov 2026: "each app has to work natively
+   *  inside the phone"): Sponsors, Shop, Store, Casino, Owner, Garden, Your house and Settings open on
+   *  the glass (PhoneApps.tsx), with the page's own handlers; a screen too big for the phone has an
+   *  "Open full screen" button. Absent (the flat phone): they leave the phone, as before. */
+  apps?: PhoneAppActions;
   /** The 3D phone test page: the phone fills its box exactly (it sits on the
    *  3D phone's glass, where a measured size would be the bent one). Absent: measured, as before. */
   fill?: boolean;
@@ -118,7 +126,7 @@ export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClo
   onOpened?: (id: string) => void;
 }) {
   const theme = useClubTheme(career);
-  const [app, setApp] = useState<AppId | null>(null);
+  const [app, setApp] = useState<AppId | NativeApp | null>(null);
   const screenRef = useRef<HTMLDivElement>(null);
   const dateLabel = phoneClockLabel(career);
 
@@ -173,6 +181,7 @@ export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClo
   const open = (id: AppId | Leave, from?: HTMLElement | null) => {
     if (isNew?.(id)) onOpened?.(id);
     if (id === "relations" && relations) { setApp("relationships"); return; }
+    if (apps && NATIVE_APPS.has(id)) { setApp(id as NativeApp); return; }
     if (!INSIDE.has(id)) return onLeave(id as Leave);
     markSeen(id as AppId);
     // An app opens on the tap's own frame: no zoom out of the icon (Harry,
@@ -218,7 +227,12 @@ export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClo
                     </AppShell>
                   )}
                   {app === "fixtures" && <Fixtures career={career} glow={theme.glow} />}
-                  {app === "messages" && <Messages msgs={msgs} onOpen={(to) => (to === "scout" ? setApp("scout") : onLeave("sponsors"))} />}
+                  {app === "messages" && <Messages msgs={msgs} onOpen={(to) => (to === "scout" ? setApp("scout") : apps ? setApp("sponsors") : onLeave("sponsors"))} />}
+                  {apps && NATIVE_APPS.has(app) && (
+                    <AppShell app={appOf(app as NativeApp)}>
+                      <PhoneAppView id={app as NativeApp} career={career} act={apps} glow={theme.glow} onFull={(to) => onLeave(to)} onPutDown={onClose} />
+                    </AppShell>
+                  )}
                   {app === "appstore" && <AppStore career={career} onInstall={(id) => onInstall?.(id)} />}
                 </div>
               )}

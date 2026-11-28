@@ -1,0 +1,377 @@
+{
+ "id": "arc-the-scarf-man",
+ "title": "The scarf man",
+ "owner": "chairman",
+ "summary": "An old man has sold scarves from a pram outside the ground for thirty years. They're not official, and the chairman wants him moved on. He asks you to have a word. A season on, the pram.",
+ "size": "small",
+ "about": {
+  "who": [
+   "chairman"
+  ],
+  "tone": [
+   "warm",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0011,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-pram",
+   "title": "The pram",
+   "text": "The old man who sells scarves from a pram outside the ground is still there. The club sells his scarves in the shop now, and he's very rude about the price."
+  },
+  {
+   "id": "moved-on",
+   "title": "Moved on",
+   "text": "The old scarf man was moved on from outside the ground. There's an official stall there now. It sells the same scarves for twice as much."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "scm-1-pram",
+   "title": "The pram",
+   "n": 1,
+   "event": {
+    "id": "arc-scm-1-pram",
+    "title": "The pram",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "walkout"
+     ]
+    },
+    "setup": [
+     "Outside the ground, an old man has sold scarves out of a pram for thirty years. Five pound each. Not official. {chairman.name} catches you in the car park. \"He's costing the club shop money. Have a word. He'll listen to a player.\""
+    ],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "chairman",
+       "say": [
+        "\"Nicely, mind. I'm not a monster. Just tell him the club's brought in its own stall.\""
+       ],
+       "replies": [
+        {
+         "id": "no",
+         "label": "\"He's been there thirty years. I'm not moving him.\"",
+         "tone": "brave",
+         "end": "no"
+        },
+        {
+         "id": "buy",
+         "label": "Buy a scarf off him instead, in front of everyone.",
+         "tone": "kind",
+         "end": "buy"
+        },
+        {
+         "id": "word",
+         "label": "Go and have the word.",
+         "tone": "cold",
+         "end": "word"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "no": [
+       {
+        "text": "\"Thirty years of not paying for a licence,\" says the chairman. But he doesn't send anyone else.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -2,
+          "respect": 2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stayed"
+         }
+        }
+       }
+      ],
+      "buy": [
+       {
+        "text": "You buy one and wear it on the coach. The photo goes round. The queue at the pram is longer than at the club shop for a month.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stayed"
+         }
+        }
+       }
+      ],
+      "word": [
+       {
+        "text": "He listens. He says, \"Right you are, son.\" He's gone the next week. The pram is in a skip by the car park.",
+        "effects": {
+         "fans": -2
+        },
+        "arc": {
+         "set": {
+          "path": "gone"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The chairman wants something done"
+  },
+  {
+   "id": "scm-1d-deep",
+   "title": "The scarf",
+   "after": {
+    "beat": "scm-1-pram",
+    "weeks": [
+     1,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-scm-1d-deep",
+    "title": "The scarf",
+    "category": "club",
+    "place": "ground:turnstiles",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "walkout"
+     ]
+    },
+    "setup": [
+     "The old scarf man stops you on the way in. From the pram he takes a scarf with your name knitted in, very wonky. \"My wife did it. She's eighty-one. Her eyes aren't what they were.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "chairman",
+       "say": [
+        "The chairman is watching from the main door."
+       ],
+       "replies": [
+        {
+         "id": "wear",
+         "label": "Wear it in for the warm-up.",
+         "tone": "kind",
+         "end": "wear"
+        },
+        {
+         "id": "thanks",
+         "label": "Thank him and put it in your bag.",
+         "tone": "calm",
+         "end": "thanks"
+        },
+        {
+         "id": "pay",
+         "label": "Buy ten for the lads.",
+         "tone": "kind",
+         "end": "pay"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "wear": [
+       {
+        "text": "The crowd go mad for it. The chairman's face is something to see.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "wore-the-wonky-scarf",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "wear"
+         }
+        }
+       }
+      ],
+      "thanks": [
+       {
+        "text": "He's pleased. You see him tell the next customer.",
+        "arc": {
+         "set": {
+          "deep": "thanks"
+         }
+        }
+       }
+      ],
+      "pay": [
+       {
+        "text": "Fifty pounds. He's sold out by half two.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "pay"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The scarf man has made you a scarf"
+  },
+  {
+   "id": "scm-2-later",
+   "title": "The pram again",
+   "after": {
+    "beat": "scm-1-pram",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-scm-2-later",
+    "title": "The pram again",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "walkout",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on, outside the ground on match day.",
+     "{if arc.deep=='wear'}The wonky scarf is still talked about outside the ground.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Look for the pram.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='stayed'",
+        "text": "Still there. And in the club shop window there's a sign: \"THE PRAM SCARF, AS SOLD OUTSIDE SINCE 1990.\" The chairman did a deal. The old man says it's daylight robbery.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "the-pram"
+        }
+       },
+       {
+        "text": "An official stall, a lad in a club fleece. The same scarves, ten pound.",
+        "arc": {
+         "end": "moved-on"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ask",
+      "label": "Ask the chairman how the stall's doing.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='stayed'",
+        "text": "\"His sell better than ours,\" he says, grimly. \"So we sell his.\"",
+        "arc": {
+         "end": "the-pram"
+        }
+       },
+       {
+        "text": "\"Very well,\" he says. You notice he doesn't wear one.",
+        "arc": {
+         "end": "moved-on"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "A season on, outside the ground"
+  }
+ ]
+}

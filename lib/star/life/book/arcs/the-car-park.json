@@ -2,7 +2,7 @@
  "id": "arc-the-car-park",
  "title": "Forty quid a week",
  "owner": "tabloid",
- "summary": "After a bad defeat a fan screams at you in the car park and somebody films it. What you do in the next ten seconds is the clip. A season on, the clip comes back.",
+ "summary": "After a bad defeat a fan screams at you in the car park and somebody films it. Weeks later he's at the barrier again, with his lad. A season on the clip comes back, and after that the man from the car park has a season ticket you pay for.",
  "size": "small",
  "about": {
   "who": [
@@ -15,7 +15,9 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0064,
+  "tier": "common",
+  "stage": "any"
  },
  "cast": [
   {
@@ -28,7 +30,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -41,6 +45,11 @@
    "id": "the-bad-clip",
    "title": "The bad clip",
    "text": "You lost your head in a car park, and the clip follows you around."
+  },
+  {
+   "id": "the-season-ticket",
+   "title": "Two season tickets",
+   "text": "The man who screamed at you in the car park still has his season ticket. So does his lad. You pay for both every August, and neither of you mentions it."
   }
  ],
  "promises": {},
@@ -234,6 +243,119 @@
    "hint": "Someone's waiting by the players' cars"
   },
   {
+   "id": "cpk-1b-lad",
+   "title": "His lad",
+   "after": {
+    "beat": "cpk-1-man",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-cpk-1b-lad",
+    "title": "His lad",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Weeks later. The man from the car park is at the barrier again, quieter this time, with a boy of about eight in a shirt with your number on it.",
+     "{if arc.path=='bad'}The club's press officer is standing next to him with a photographer. It's been arranged.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go over.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='good'",
+        "text": "His lad asks why you were rubbish that day. His dad goes red. You tell the truth: you were. You sign the boy's shirt, and his dad's.",
+        "effects": {
+         "fans": 2
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "met-the-car-park-mans-lad",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "met"
+         }
+        }
+       },
+       {
+        "if": "arc.path=='bad'",
+        "text": "He shakes your hand for the photographer and doesn't look at you. The boy does, the whole time.",
+        "arc": {
+         "set": {
+          "mid": "photo"
+         }
+        }
+       },
+       {
+        "text": "He doesn't recognise you without a phone pointed at him. The boy does. You sign his shirt.",
+        "effects": {
+         "fans": 1
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "met-the-car-park-mans-lad",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "met"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "bus",
+      "label": "Wave and get on the bus.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "The boy waves back. His dad doesn't, then does.",
+        "arc": {
+         "set": {
+          "mid": "waved"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "man",
+      "pick": "stranger"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Someone's at the barrier again"
+  },
+  {
    "id": "cpk-2-clip",
    "title": "The clip",
    "after": {
@@ -282,7 +404,15 @@
          }
         ],
         "arc": {
-         "end": "the-good-clip"
+         "end": "the-good-clip",
+         "set": {
+          "ended": "the-good-clip"
+         },
+         "next": "cpk-3-ticket",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -297,7 +427,15 @@
          }
         ],
         "arc": {
-         "end": "the-bad-clip"
+         "end": "the-bad-clip",
+         "set": {
+          "ended": "the-bad-clip"
+         },
+         "next": "cpk-3-ticket",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -311,7 +449,15 @@
         "if": "arc.path=='good'",
         "text": "He runs the handshake clip again anyway, with a headline about how it used to be.",
         "arc": {
-         "end": "the-good-clip"
+         "end": "the-good-clip",
+         "set": {
+          "ended": "the-good-clip"
+         },
+         "next": "cpk-3-ticket",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -320,7 +466,15 @@
          "fans": -1
         },
         "arc": {
-         "end": "the-bad-clip"
+         "end": "the-bad-clip",
+         "set": {
+          "ended": "the-bad-clip"
+         },
+         "next": "cpk-3-ticket",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -335,6 +489,116 @@
     ]
    },
    "hint": "A season on, the clip comes back"
+  },
+  {
+   "id": "cpk-3-ticket",
+   "title": "The season ticket",
+   "after": {
+    "beat": "cpk-2-clip",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-cpk-3-ticket",
+    "title": "The season ticket",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "after-match",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Two seasons on. A player at another club has been filmed shouting at a fan in a car park. {tabloid.name} rings for a quote. \"You've been there. What would you tell him?\""
+    ],
+    "choices": [
+     {
+      "id": "tell",
+      "label": "\"Walk over. Say sorry. Mean it.\"",
+      "tone": "honest",
+      "outcomes": [
+       {
+        "if": "arc.mid=='met'",
+        "text": "He prints it, and then a line you didn't know he knew: you've paid for the man's and his lad's season tickets every August since. You never told anyone. Somebody did.",
+        "effects": {
+         "fans": 3,
+         "reputation": 2
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "pay-for-the-car-park-season-tickets",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-season-ticket"
+        }
+       },
+       {
+        "if": "arc.path=='good'",
+        "text": "He prints it next to your old handshake. It reads well.",
+        "effects": {
+         "fans": 1
+        },
+        "arc": {
+         "end": "the-good-clip"
+        }
+       },
+       {
+        "text": "\"Like you did?\" He prints your old clip next to the new one.",
+        "effects": {
+         "fans": -1
+        },
+        "arc": {
+         "end": "the-bad-clip"
+        }
+       }
+      ]
+     },
+     {
+      "id": "none",
+      "label": "\"No comment.\"",
+      "silent": true,
+      "outcomes": [
+       {
+        "if": "arc.path=='good'",
+        "text": "He runs your handshake clip anyway, under \"HOW IT'S DONE\".",
+        "arc": {
+         "end": "the-good-clip"
+        }
+       },
+       {
+        "text": "He runs your clip anyway, under \"NOT THE FIRST\".",
+        "arc": {
+         "end": "the-bad-clip"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "man",
+      "pick": "stranger"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Someone else's car park"
   }
  ]
 }

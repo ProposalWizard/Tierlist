@@ -1,0 +1,1024 @@
+{
+ "id": "arc-the-long-way-back",
+ "title": "The long way back",
+ "owner": "physio",
+ "summary": "Your knee goes in a tackle you didn't see coming. Months of rehab with the physio: the pool at six, a promise about the stairs, the first ten balls back on grass, a week you nearly give up. A season on, the same pitch, and the man who did it.",
+ "size": "big",
+ "about": {
+  "who": [
+   "physio",
+   "rival player",
+   "injury",
+   "rehab"
+  ],
+  "tone": [
+   "dark",
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0171,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any",
+  "when": [
+   "injured",
+   "age<=31"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "physio",
+   "pick": "physio"
+  },
+  {
+   "slot": "rival",
+   "pick": "rival"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "best": 0,
+  "quit": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "back",
+   "title": "Back",
+   "text": "You did your knee and did the rehab, every rep of it. The physio keeps your first ten balls back on her wall."
+  },
+  {
+   "id": "back-angry",
+   "title": "Back, and angry",
+   "text": "You came back from the knee and went through the man who did it in the first minute."
+  },
+  {
+   "id": "never-quite",
+   "title": "Never quite",
+   "text": "You came back from the knee, but you never quite trusted it again."
+  }
+ ],
+ "promises": {
+  "p-the-stairs": {
+   "id": "p-the-stairs",
+   "to": "physio",
+   "text": "No stairs, no stupid stuff, the pool at six every day",
+   "due": {
+    "weeks": [
+     1,
+     5
+    ]
+   },
+   "keptBy": {
+    "beat": "lwb-3",
+    "ends": [
+     "stuck"
+    ]
+   },
+   "dueText": "Until the first day back on grass",
+   "remind": "\"Six o'clock. Pool. You know where it is.\"",
+   "kept": {
+    "text": "You said you'd do it her way, and you did.",
+    "npc": [
+     {
+      "slot": "physio",
+      "respect": 6,
+      "bond": 6
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd do it her way.",
+    "npc": [
+     {
+      "slot": "physio",
+      "respect": -6,
+      "bond": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "physio",
+      "tag": "cut-corners-on-the-rehab",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "lwb-1",
+   "title": "The knee",
+   "n": 1,
+   "event": {
+    "id": "arc-lwb-1",
+    "title": "The knee",
+    "category": "injury",
+    "place": "stadium:physio-room",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Sixty-eighth minute. {rival.name} comes through the back of you on the halfway line. You hear your knee more than you feel it, and then you feel it.",
+     "{if mem(rival,'never-said-sorry-for-the-tackle')}It's him. The one you never said sorry to.{/if}",
+     "{if mem(rival,'came-to-see-me-in-hospital')}It's him. You sat by his bed once.{/if}"
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "physio",
+       "say": [
+        "In the treatment room {physio.name} has her hand flat on your knee. \"I'm not guessing tonight. Scan in the morning. But you need to hear me: if it's what I think, it's months.\""
+       ],
+       "replies": [
+        {
+         "id": "months",
+         "label": "\"How many months?\"",
+         "tone": "honest",
+         "goto": "k2"
+        },
+        {
+         "id": "him",
+         "label": "\"Did he mean it?\"",
+         "tone": "fiery",
+         "goto": "k3"
+        },
+        {
+         "id": "fine",
+         "label": "\"It'll be fine.\"",
+         "tone": "lie",
+         "goto": "k2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "k2"
+        }
+       ]
+      },
+      "k3": {
+       "who": "physio",
+       "say": [
+        "\"I don't know and I don't care. I care about your knee.\""
+       ],
+       "replies": [
+        {
+         "id": "months",
+         "label": "\"How many months?\"",
+         "tone": "honest",
+         "goto": "k2"
+        }
+       ]
+      },
+      "k2": {
+       "who": "physio",
+       "say": [
+        "\"Depends on the scan. Depends on you. I'll want you in the pool at six every morning and you'll hate me. No stairs. No stupid stuff. Can you do that?\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"Six every morning. I promise.\"",
+         "tone": "humble",
+         "end": "promised",
+         "promise": "p-the-stairs"
+        },
+        {
+         "id": "try",
+         "label": "\"I'll try.\"",
+         "tone": "calm",
+         "end": "try"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "promised": [
+       {
+        "text": "The scan says what she thought. She writes six o'clock on the whiteboard in the physio room and underlines it twice.",
+        "effects": {
+         "matchFitness": -20,
+         "energy": -10
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": 4,
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "promised-the-pool-at-six",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "promised"
+         }
+        }
+       }
+      ],
+      "try": [
+       {
+        "text": "\"Trying's for the pub quiz.\" The scan says what she thought.",
+        "effects": {
+         "matchFitness": -20,
+         "energy": -10
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "try"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "You went down and stayed down"
+  },
+  {
+   "id": "lwb-2",
+   "title": "The text",
+   "after": {
+    "beat": "lwb-1",
+    "weeks": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-lwb-2",
+    "title": "The text",
+    "category": "injury",
+    "place": "home:sofa",
+    "size": "big",
+    "rarity": "follow-up",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A week on the sofa with your leg on two cushions. Your phone lights up: {rival.name}. You've never had his number."
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "rival",
+       "say": [
+        "\"Got your number off a lad who was at your club. I didn't see you. I know how that sounds. I'm sorry. How long?\""
+       ],
+       "replies": [
+        {
+         "id": "long",
+         "label": "\"Months. She says months.\"",
+         "tone": "honest",
+         "end": "honest"
+        },
+        {
+         "id": "see",
+         "label": "\"You didn't see me? I was the only one there.\"",
+         "tone": "fiery",
+         "end": "angry"
+        },
+        {
+         "id": "block",
+         "label": "Block him.",
+         "tone": "cold",
+         "end": "blocked"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "blocked"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "honest": [
+       {
+        "text": "\"I did mine at twenty-two. Do the pool. The pool's the bit everyone skips.\" He sends a thumbs up every Sunday for the rest of the season.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 8,
+          "grudge": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "texted-me-after-my-knee",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "forgave"
+         }
+        }
+       }
+      ],
+      "angry": [
+       {
+        "text": "He doesn't reply. A week later a reporter asks him about it and he says he's texted you. You see it on your phone in bed.",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "knows-i-blame-him",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "angry"
+         }
+        }
+       }
+      ],
+      "blocked": [
+       {
+        "text": "You block him. You look at his name for a while first.",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "knows-i-blame-him",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "angry"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A message from the man who did it"
+  },
+  {
+   "id": "lwb-3",
+   "title": "Week six",
+   "after": {
+    "beat": "lwb-1",
+    "weeks": [
+     3,
+     4
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-lwb-3",
+    "title": "Week six",
+    "category": "injury",
+    "place": "compound:gym",
+    "size": "big",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Week six. The pool at six, the bike at seven, the same three exercises on the mat until nine. Your knee is no better than week five. There's a lift at the end of the corridor and the stairs are right there."
+    ],
+    "talk": {
+     "start": "w1",
+     "nodes": {
+      "w1": {
+       "who": "physio",
+       "say": [
+        "{physio.short} finds you sitting on the bottom stair. \"Don't. I know what week six feels like. Everyone wants to pack it in at week six.\""
+       ],
+       "replies": [
+        {
+         "id": "stairs",
+         "label": "Go up the stairs anyway.",
+         "tone": "reckless",
+         "end": "stairs"
+        },
+        {
+         "id": "stuck",
+         "label": "\"I'm not packing it in. Mat. Again.\"",
+         "tone": "brave",
+         "end": "stuck"
+        },
+        {
+         "id": "cant",
+         "label": "\"I can't do another week of this.\"",
+         "tone": "honest",
+         "goto": "w2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "w2"
+        }
+       ]
+      },
+      "w2": {
+       "who": "physio",
+       "say": [
+        "She sits down next to you. \"Then do tomorrow. Just tomorrow. I'll do the pool with you. I've got a costume in my car.\""
+       ],
+       "replies": [
+        {
+         "id": "quit",
+         "label": "\"Leave me alone.\"",
+         "tone": "cold",
+         "end": "stairs"
+        },
+        {
+         "id": "stuck",
+         "label": "\"Tomorrow, then.\"",
+         "tone": "humble",
+         "end": "stuck"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "stuck": [
+       {
+        "text": "She does the pool with you at six in a costume from about 1998. Week seven is better. Week eight is a lot better.",
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": 4,
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "stuck-at-it-in-week-six",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "quit": 0
+         }
+        }
+       }
+      ],
+      "stairs": [
+       {
+        "text": "You take the stairs two at a time to prove something. On the top step it goes again, not badly, but enough to put you back a fortnight.",
+        "effects": {
+         "matchFitness": -10
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": -6
+         }
+        ],
+        "arc": {
+         "set": {
+          "quit": 1
+         }
+        },
+        "promiseBroken": [
+         "p-the-stairs"
+        ]
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The rehab: the hard week"
+  },
+  {
+   "id": "lwb-4",
+   "title": "Ten balls on grass",
+   "after": {
+    "beat": "lwb-1",
+    "weeks": [
+     8,
+     10
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-lwb-4",
+    "title": "Ten balls on grass",
+    "category": "injury",
+    "place": "compound:pitch-2",
+    "size": "big",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Your first day back on grass. Pitch two, a bag of balls, {physio.short} in her coat. No tackling, no turning, just ten balls.",
+     "{if arc.quit==1}It's two weeks later than it should have been.{/if}"
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "physio",
+       "say": [
+        "\"Ten. Nothing clever. If it twinges, you stop, and you tell me, and you don't lie.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Ten. Nothing clever.\"",
+         "tone": "calm",
+         "goto": "play"
+        },
+        {
+         "id": "scared",
+         "label": "\"What if it goes?\"",
+         "tone": "honest",
+         "goto": "g2"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "play"
+        }
+       ]
+      },
+      "g2": {
+       "who": "physio",
+       "say": [
+        "\"Then I'm standing here. Go on.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Pick up the first ball.",
+         "tone": "brave",
+         "goto": "play"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "Ten balls back",
+        "intro": "Pitch two. No tackling, no turning. Ten balls.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "corners",
+           "balls": 3,
+           "line": "\"Side foot. Just side foot.\""
+          },
+          {
+           "kind": "crossbar",
+           "balls": 1,
+           "line": "\"The bar. Show me you can lift it.\""
+          },
+          {
+           "kind": "call-it",
+           "balls": 2
+          },
+          {
+           "kind": "props",
+           "balls": 2
+          },
+          {
+           "kind": "far",
+           "balls": 1,
+           "line": "\"One from twenty. Only one.\""
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. Then ice.\""
+          }
+         ],
+         "lines": {
+          "hit": "\"Good. How's the knee?\"",
+          "wide": "\"Doesn't matter. How's the knee?\"",
+          "streak3": "\"Don't get excited.\"",
+          "double:hit": "\"Right. Ice. Now.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "physio",
+         "lines": [
+          "\"Ten.\"",
+          "\"Twenty.\"",
+          "\"Thirty.\"",
+          "\"Forty.\"",
+          "\"Fifty.\"",
+          "\"Sixty.\"",
+          "\"Seventy.\"",
+          "\"Eighty.\"",
+          "\"Ninety.\"",
+          "\"And a hundred. Ice.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "c-stop"
+        ],
+        [
+         "activity.score>=5",
+         "c-good"
+        ],
+        [
+         "",
+         "c-poor"
+        ]
+       ]
+      },
+      "c-good": {
+       "who": "physio",
+       "say": [
+        "\"{activity.tens}.\" She writes it on the back of her hand. \"That's going on my wall.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Put it next to the skeleton.\"",
+         "tone": "confident",
+         "end": "good"
+        }
+       ]
+      },
+      "c-poor": {
+       "who": "physio",
+       "say": [
+        "\"{activity.tens}. I don't care about the number. Did it twinge?\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"No. It didn't.\"",
+         "tone": "honest",
+         "end": "poor"
+        }
+       ]
+      },
+      "c-stop": {
+       "who": "physio",
+       "say": [
+        "\"Stop. Good. Stopping is the right answer today.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"It twinged.\"",
+         "tone": "honest",
+         "end": "poor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "There's a sheet of paper on the physio room wall by the end of the day: your name, the date, {activity.tens}. It's next to the plastic skeleton.",
+        "effects": {
+         "matchFitness": 10,
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": 6,
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "my-first-ten-balls-back",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": "activity.tens"
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "It didn't twinge. She writes the date on the whiteboard and nothing else, and you're back in full training on Monday.",
+        "effects": {
+         "matchFitness": 10,
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "respect": 4,
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "best": "activity.tens"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your first day back on grass"
+  },
+  {
+   "id": "lwb-5",
+   "title": "Him again",
+   "after": {
+    "beat": "lwb-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 5,
+   "event": {
+    "id": "arc-lwb-5",
+    "title": "Him again",
+    "category": "injury",
+    "place": "stadium:tunnel",
+    "size": "big",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on. You're in the tunnel and so is {rival.name}. Same ground, same halfway line.",
+     "{if arc.path=='forgave'}He's sent a thumbs up every Sunday since.{/if}",
+     "{if arc.path=='angry'}He hasn't looked at you once.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "hand",
+      "label": "Hold out your hand.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.quit==0",
+        "text": "He takes it and holds on. \"Knee?\" \"Knee's fine.\" You both know the cameras got it, and neither of you minds.",
+        "effects": {
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 10,
+          "grudge": -10
+         },
+         {
+          "slot": "physio",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "shook-hands-after-the-knee",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "back"
+        }
+       },
+       {
+        "text": "He takes it. Your knee aches in the cold all through the first half, the way it has since the stairs.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 6,
+          "grudge": -6
+         }
+        ],
+        "arc": {
+         "end": "never-quite"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ignore",
+      "label": "Look straight ahead.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.quit==0",
+        "text": "You play ninety minutes and nobody comes near your knee. At full time you walk off without looking back.",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "back"
+        }
+       },
+       {
+        "text": "You play sixty minutes and come off with it strapped. You're not sure it's ever going to feel like yours again.",
+        "effects": {
+         "matchFitness": -4
+        },
+        "arc": {
+         "end": "never-quite"
+        }
+       }
+      ]
+     },
+     {
+      "id": "first",
+      "label": "Go through him at the first chance.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "Forty seconds in you go through the back of him on the halfway line. Yellow card. The physio watches it on the bench with her head in her hands.",
+        "effects": {
+         "reputation": -3,
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 14
+         },
+         {
+          "slot": "physio",
+          "respect": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "went-through-me-after-the-knee",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "back-angry"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, you play his team"
+  }
+ ]
+}

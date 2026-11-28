@@ -1,0 +1,408 @@
+{
+ "id": "arc-the-parking-space",
+ "title": "The space",
+ "owner": "vet",
+ "summary": "You park in the space by the door. It's been the club's oldest player's space for eleven years. There's no sign, everyone just knows. A season on, he's gone, and the space is empty.",
+ "size": "small",
+ "about": {
+  "who": [
+   "vet"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0064,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "season>=2",
+   "clubApps<=10"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "vet",
+   "pick": "squad",
+   "where": [
+    "veteran"
+   ]
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "his-space",
+   "title": "His space",
+   "text": "You parked in the old pro's space once. When he left he gave it to you, with a sign he'd had made: RESERVED. ASK FIRST."
+  },
+  {
+   "id": "the-far-end",
+   "title": "The far end",
+   "text": "You parked in the old pro's space and he never said a word about it. You park at the far end now, by the bins, every day."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "pkg-1-space",
+   "title": "The space",
+   "n": 1,
+   "event": {
+    "id": "arc-pkg-1-space",
+    "title": "The space",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "squad.any(veteran)"
+     ]
+    },
+    "setup": [
+     "You park in the space by the door because it's raining. It's {vet.name}'s space. It's been his for eleven years. There's no sign. Everyone knows. He's standing behind your car with his kit bag."
+    ],
+    "talk": {
+     "start": "v1",
+     "nodes": {
+      "v1": {
+       "who": "vet",
+       "say": [
+        "He doesn't say anything. He just looks at the car, then at you, then at the rain."
+       ],
+       "replies": [
+        {
+         "id": "move",
+         "label": "\"Sorry. I'll move it now.\"",
+         "tone": "humble",
+         "end": "move"
+        },
+        {
+         "id": "joke",
+         "label": "\"First come, first served.\"",
+         "tone": "reckless",
+         "end": "joke"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "quiet"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "move": [
+       {
+        "text": "You move it in the rain. He nods at you on the way in. \"Manners,\" he says to nobody.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 4,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "moved-out-of-my-space",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "moved"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "He laughs. The next morning your car has been moved, somehow, with the handbrake on, to the far end by the bins.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 2,
+          "respect": 2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "joke"
+         }
+        }
+       }
+      ],
+      "quiet": [
+       {
+        "text": "He parks at the far end. He never says a word about it, ever. That's worse.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": -2,
+          "respect": -2,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "quiet"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ]
+     }
+    ]
+   },
+   "hint": "You've parked somewhere"
+  },
+  {
+   "id": "pkg-1d-deep",
+   "title": "His last day",
+   "after": {
+    "beat": "pkg-1-space",
+    "weeks": [
+     10,
+     30
+    ]
+   },
+   "event": {
+    "id": "arc-pkg-1d-deep",
+    "title": "His last day",
+    "category": "teammates",
+    "place": "club:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{vet.name}'s last day at the club. He's driven in at six to get the space by the door one last time. He's sitting in his car with the engine off."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "vet",
+       "say": [
+        "He winds the window down. \"Want it? After me?\""
+       ],
+       "replies": [
+        {
+         "id": "no",
+         "label": "\"It stays empty. It's yours.\"",
+         "tone": "kind",
+         "end": "no"
+        },
+        {
+         "id": "yes",
+         "label": "\"I'll look after it.\"",
+         "tone": "confident",
+         "end": "yes"
+        },
+        {
+         "id": "joke",
+         "label": "\"I've had it since August, mate.\"",
+         "tone": "reckless",
+         "end": "joke"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "no": [
+       {
+        "text": "He looks at the door for a long time. \"Daft,\" he says, and he's pleased.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "kept-my-space-empty",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "no"
+         }
+        }
+       }
+      ],
+      "yes": [
+       {
+        "text": "He gives you the parking permit off his windscreen, which nobody knew existed.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "yes"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "He laughs, then he doesn't.",
+        "npc": [
+         {
+          "slot": "vet",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "joke"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ]
+     }
+    ]
+   },
+   "hint": "It's the veteran's last day"
+  },
+  {
+   "id": "pkg-2-gone",
+   "title": "The empty space",
+   "after": {
+    "beat": "pkg-1-space",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-pkg-2-gone",
+    "title": "The empty space",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. {vet.short} has moved on. The space by the door is empty, and nobody's parked in it all summer.",
+     "{if arc.deep=='no'}He still asks if the space by the door is empty.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "park",
+      "label": "Park in it.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.path=='moved' || arc.path=='joke'",
+        "text": "There's a sign on the wall you've never seen before, his handwriting, laminated: RESERVED. ASK FIRST. And under it: \"Asked. It's his. The old man.\"",
+        "effects": {
+         "team": 2
+        },
+        "arc": {
+         "end": "his-space"
+        }
+       },
+       {
+        "text": "You park in it. Somebody's left a note on your windscreen: \"He'd have something to say.\" You move it.",
+        "arc": {
+         "end": "the-far-end"
+        }
+       }
+      ]
+     },
+     {
+      "id": "bins",
+      "label": "Park at the far end.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='moved'",
+        "text": "The kit man comes out in the rain and taps on your window. \"He said it's yours. He's had the sign made since August.\" He never mentioned it to you.",
+        "arc": {
+         "end": "his-space"
+        }
+       },
+       {
+        "text": "By the bins. Same as always. The space stays empty.",
+        "arc": {
+         "end": "the-far-end"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ]
+     }
+    ]
+   },
+   "hint": "A season on, the space by the door"
+  }
+ ]
+}

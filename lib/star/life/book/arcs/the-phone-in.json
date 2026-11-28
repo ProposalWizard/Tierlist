@@ -1,0 +1,423 @@
+{
+ "id": "arc-the-phone-in",
+ "title": "Caller from the east stand",
+ "owner": "dad",
+ "summary": "You're a guest on the local radio phone-in, and the third caller is your dad, using a fake name. A season on, he rings again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "dad",
+   "local reporter"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "dad",
+   "pick": "dad"
+  },
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "dave-from-the-east-stand",
+   "title": "Dave from the east stand",
+   "text": "Your dad rings the radio phone-in as Dave from the east stand. Everyone knows."
+  },
+  {
+   "id": "hung-up",
+   "title": "Hung up",
+   "text": "Your dad rang the radio phone-in once, and you hung up on him live."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "phn-1",
+   "title": "Line three",
+   "n": 1,
+   "event": {
+    "id": "arc-phn-1",
+    "title": "Line three",
+    "category": "family",
+    "place": "town:radio-studio",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The local radio phone-in, Monday night. {reporter.name} is presenting. \"Line three. Dave from the east stand.\" It's your dad. He doesn't sit in the east stand and he isn't called Dave."
+    ],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "dad",
+       "say": [
+        "\"Hello. Long-time listener. I just think the young lad, your guest, should be shooting more with his left. And he should ring his mother.\""
+       ],
+       "replies": [
+        {
+         "id": "play",
+         "label": "\"Thanks, Dave. I'll ring her.\"",
+         "tone": "kind",
+         "end": "play"
+        },
+        {
+         "id": "out",
+         "label": "\"Dad, what are you doing?\"",
+         "tone": "honest",
+         "end": "out"
+        },
+        {
+         "id": "cut",
+         "label": "Make a cut-off sign at the producer.",
+         "tone": "cold",
+         "end": "cut"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "play"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "play": [
+       {
+        "text": "{reporter.short} looks at you and gets it in a second. She asks Dave three more questions. The station puts the clip up with the title \"Dave\".",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8
+         },
+         {
+          "slot": "reporter",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "played-along-with-dave",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "dave"
+         }
+        }
+       }
+      ],
+      "out": [
+       {
+        "text": "\"Who's Dad?\" he says, and hangs up. Your mum rings the station two minutes later to apologise.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         },
+         {
+          "slot": "reporter",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "dave"
+         }
+        }
+       }
+      ],
+      "cut": [
+       {
+        "text": "The producer cuts him off. Dave goes quiet for a week, and you find out from your mum how much he'd practised.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "cut-me-off-on-the-radio",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cut"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "You are on the local radio phone-in"
+  },
+  {
+   "id": "phn-1d-deep",
+   "title": "Dave again",
+   "after": {
+    "beat": "phn-1",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-phn-1d-deep",
+    "title": "Dave again",
+    "category": "family",
+    "place": "town:car",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Monday night, in the car. On the local radio: \"Line two, Dave from the east stand.\" Your dad's voice, putting on a voice."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "dad",
+       "say": [
+        "He's defending you about Saturday, at length."
+       ],
+       "replies": [
+        {
+         "id": "ring",
+         "label": "Ring in yourself as Steve from the west stand.",
+         "tone": "reckless",
+         "end": "ring"
+        },
+        {
+         "id": "text",
+         "label": "Text him: \"Hi Dave.\"",
+         "tone": "kind",
+         "end": "text"
+        },
+        {
+         "id": "leave",
+         "label": "Turn it off.",
+         "tone": "calm",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ring": [
+       {
+        "text": "You agree with Dave. The presenter knows. The whole town knows by Tuesday.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         },
+         {
+          "slot": "reporter",
+          "bond": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "rang-in-as-steve",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "ring"
+         }
+        }
+       }
+      ],
+      "text": [
+       {
+        "text": "He goes silent mid-sentence on the radio.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "text"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "Your dad has rung the phone-in again"
+  },
+  {
+   "id": "phn-2",
+   "title": "Line three again",
+   "after": {
+    "beat": "phn-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-phn-2",
+    "title": "Line three again",
+    "category": "family",
+    "place": "town:radio-studio",
+    "size": "small",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. The same phone-in, the same studio.",
+     "{if arc.path=='dave'}\"Line three,\" {reporter.short} says, trying not to laugh. \"It's Dave.\"{/if}",
+     "{if arc.path=='cut'}\"Line three. Dave from the east stand. He says he'll be quick.\"{/if}",
+     "{if arc.deep=='ring'}Dave and Steve are on the phone-in most Mondays now.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "hello",
+      "label": "\"Evening, Dave.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "\"Left foot,\" Dave says. \"Better. Your mother says hello.\" The switchboard lights up with people asking for Dave.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "dave-from-the-east-stand"
+        }
+       }
+      ]
+     },
+     {
+      "id": "next",
+      "label": "\"Next caller, please.\"",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "{reporter.short} goes to line four. Dave doesn't ring again.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -4
+         }
+        ],
+        "arc": {
+         "end": "hung-up"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "A season on, the phone-in"
+  }
+ ]
+}

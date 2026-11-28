@@ -2,7 +2,7 @@
  "id": "arc-the-head-shave",
  "title": "Clippers in the dressing room",
  "owner": "mate",
- "summary": "A team-mate is shaving his head for the hospice that looked after his nan, and he asks you to do it with him. A season later there's a reason to remember it.",
+ "summary": "A team-mate is shaving his head for the hospice that looked after his nan. Weeks later the hospice has a fun day and he's in goal for a quid a ball. A season on there's a reason to remember it, and after that a bench in the hospice garden.",
  "size": "small",
  "about": {
   "who": [
@@ -14,7 +14,9 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0021,
+  "tier": "common",
+  "stage": "any"
  },
  "cast": [
   {
@@ -24,7 +26,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -37,6 +41,11 @@
    "id": "kept-your-hair",
    "title": "You kept your hair",
    "text": "You said no to the clippers, and he did it on his own."
+  },
+  {
+   "id": "the-bench",
+   "title": "Her bench",
+   "text": "Every year on his nan's birthday you sit on her bench in the hospice garden with him and two teas. You talk about the league table, mostly."
   }
  ],
  "promises": {},
@@ -206,6 +215,295 @@
    "hint": "A team-mate has a pair of clippers"
   },
   {
+   "id": "hsv-1b-funday",
+   "title": "The fun day",
+   "after": {
+    "beat": "hsv-1-clippers",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-hsv-1b-funday",
+    "title": "The fun day",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "h1",
+     "nodes": {
+      "h1": {
+       "who": "mate",
+       "say": [
+        "{mate.short}, bald or not, has a leaflet. \"Hospice fun day, Sunday. Me in goal, a quid from the crowd for every one that goes past me. Kids in the wall. Will you take them?\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Get in goal.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "pay",
+         "label": "\"I'll pay for all ten. You can stay dry.\"",
+         "tone": "kind",
+         "end": "paid"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "skip"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "Hospice penalties",
+        "intro": "Ten balls on the hospice's back field. A quid a ball from the crowd for every one past him.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "corners",
+           "balls": 2,
+           "line": "\"Warm-up. Corners. The kids are counting.\""
+          },
+          {
+           "kind": "keeper",
+           "balls": 3,
+           "line": "\"Me in goal now. My nan's watching from the window.\""
+          },
+          {
+           "kind": "far",
+           "balls": 2,
+           "line": "\"From the tea tent. Low.\""
+          },
+          {
+           "kind": "keeper",
+           "balls": 2,
+           "line": "\"Two more. I'm getting my eye in.\""
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. Double the money if it goes in.\""
+          }
+         ],
+         "keeperSlot": "mate",
+         "lines": {
+          "keeper:saved": "\"Not past {name}! Not today!\"",
+          "hit": "\"Quid in the bucket.\"",
+          "over": "\"That's in the car park.\"",
+          "streak3": "\"Right, someone get him a drink.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "mate",
+         "lines": [
+          "\"One quid.\"",
+          "\"Two.\"",
+          "\"Three.\"",
+          "\"Four.\"",
+          "\"Five. Half a bucket.\"",
+          "\"Six.\"",
+          "\"Seven.\"",
+          "\"Eight.\"",
+          "\"Nine.\"",
+          "\"Ten. You're paying for the teas.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "stop"
+        ],
+        [
+         "activity.score>=6",
+         "good"
+        ],
+        [
+         "",
+         "poor"
+        ]
+       ]
+      },
+      "good": {
+       "who": "mate",
+       "say": [
+        "\"{activity.score} past me. That's the bucket full.\" The kids want your boots signed. One of them wants his boots."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Sign the boots.",
+         "tone": "kind",
+         "end": "good"
+        }
+       ]
+      },
+      "poor": {
+       "who": "mate",
+       "say": [
+        "\"{activity.score}. I saved more than you scored.\" He does a lap of the field with his arms out. The hospice nurses cheer him all the way round."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "Clap him round.",
+         "tone": "kind",
+         "end": "poor"
+        }
+       ]
+      },
+      "stop": {
+       "who": "mate",
+       "say": [
+        "You feel your calf go and stop. \"Coward,\" he says, smiling, and puts a tenner in the bucket for you."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Next year.\"",
+         "tone": "calm",
+         "end": "stop"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "Four hundred and twelve pounds in the bucket. His nan watches it from the window of her room with a blanket on her knees.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "scored-at-the-hospice-day",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "shot"
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "Two hundred and nine pounds, and the best afternoon the nurses have had in months.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "scored-at-the-hospice-day",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "shot"
+         }
+        }
+       }
+      ],
+      "stop": [
+       {
+        "text": "You sit in the tea tent with ice on your calf. His nan sends a nurse out with a biscuit for you.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "shot"
+         }
+        }
+       }
+      ],
+      "paid": [
+       {
+        "text": "He takes the money and looks at you like you've missed the point. You have, a bit.",
+        "effects": {
+         "moneyWeeks": -0.2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "paid"
+         }
+        }
+       }
+      ],
+      "skip": [
+       {
+        "text": "He does it with the youth team. They score eight past him and he loves it.",
+        "arc": {
+         "set": {
+          "mid": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "The hospice has a fun day"
+  },
+  {
    "id": "hsv-2-hospice",
    "title": "The hospice",
    "after": {
@@ -272,7 +570,15 @@
          }
         ],
         "arc": {
-         "end": "for-his-nan"
+         "end": "for-his-nan",
+         "set": {
+          "ended": "for-his-nan"
+         },
+         "next": "hsv-3-bench",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -293,7 +599,15 @@
          }
         ],
         "arc": {
-         "end": "for-his-nan"
+         "end": "for-his-nan",
+         "set": {
+          "ended": "for-his-nan"
+         },
+         "next": "hsv-3-bench",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -302,6 +616,117 @@
          {
           "slot": "mate",
           "bond": 1
+         }
+        ],
+        "arc": {
+         "end": "kept-your-hair",
+         "set": {
+          "ended": "kept-your-hair"
+         },
+         "next": "hsv-3-bench",
+         "afterWeeks": [
+          40,
+          60
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "A season on, a reason to remember"
+  },
+  {
+   "id": "hsv-3-bench",
+   "title": "The bench",
+   "after": {
+    "beat": "hsv-2-hospice",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-hsv-3-bench",
+    "title": "The bench",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on from the garden. There's a bench in it now with his nan's name on a little brass plate. It's her birthday on Sunday, and {mate.short} asks if you'll come and sit on it with him."
+    ],
+    "choices": [
+     {
+      "id": "text",
+      "label": "Send him a text on the day instead.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='shaved'",
+        "text": "He sends back a photo of the bench with the photo of the two of you bald propped up on it.",
+        "arc": {
+         "end": "for-his-nan"
+        }
+       },
+       {
+        "text": "\"Cheers mate.\" He goes on his own.",
+        "arc": {
+         "end": "kept-your-hair"
+        }
+       }
+      ]
+     },
+     {
+      "id": "teas",
+      "label": "Bring two teas.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='shaved' || arc.mid=='shot'",
+        "text": "You sit for an hour. He talks about her for ten minutes and then about the league table for fifty. Next year he texts you the day before.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "sat-on-nans-bench",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-bench"
+        }
+       },
+       {
+        "text": "You sit with him. It's a bit awkward, and then it isn't.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
          }
         ],
         "arc": {
@@ -320,7 +745,7 @@
      }
     ]
    },
-   "hint": "A season on, a reason to remember"
+   "hint": "Something in the hospice garden"
   }
  ]
 }

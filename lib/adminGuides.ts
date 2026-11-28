@@ -1178,7 +1178,7 @@ export const ADMIN_GUIDES = {
         ["Save again", "Shown only if saving to team storage failed (for example the connection dropped). Tries again."],
         ["Save to Drive", "Shown instead of Also save to Drive when the recording is not in team storage."],
         ["Open in Drive ↗", "The copy in your Drive, once it is there."],
-        ["Send to Marketing", "Admins only. Puts the recording into the Marketing tab's private video storage (the Uploads page), not linked to a card, ready to open in the editing suite. Same limits as the Uploads page (500 MB a file, 30 files and 5 GB a day)."],
+        ["Send to Marketing", "Admins only. Puts the recording into the Marketing tab's private video storage (the Uploads page), not linked to a card, ready to open in the editing suite. Limits: 500 MB a recording (the Uploads page itself takes up to 4.9 GB a file)."],
         ["Open in Studio", "Shown once Send to Marketing has finished: opens the recording in Marketing → Studio."],
         ["Download", "Saves the video to this device instead."],
         ["Open the Breakdowns folder ↗", "Harry's Drive folder where every breakdown is saved."],
@@ -1899,15 +1899,15 @@ export const ADMIN_GUIDES = {
     what: "The 3D phone flow (Harry, 19-20 Nov 2026, RUL-UI-008): tap Phone and an eye-blink opens on your hand holding the real phone, with your real 3D house behind it seen from your own eyes (blurred, one still frame). Put the phone away and the camera pulls back from your eyes into the normal 3D house, where you can walk round.",
     buttons: [
       { group: "The steps", items: [
-        ["Phone (bottom bar, on the Home picture)", "Your eyes open (1.2 s, see ?blink below) on your hand holding the phone. Waits until the house has loaded."],
-        ["The apps on the phone", "The real phone on a sample career. Messages, Squad, Social, Fixtures, Relationships, Kickabout and the others that live in the phone open and work on the glass (a relationship game only shows a note). Apps that leave the phone in the game (Shop, Store, Garden, Your house, Casino, Sponsors, Owner, Settings) only show a one-line note here."],
+        ["Phone (bottom bar, on the Home picture)", "Your eyes open (0.9 s, the game's; see ?blink below) on your hand holding the phone. Waits until the house has loaded."],
+        ["The apps on the phone", "The real phone on a sample career. Messages, Squad, Social, Fixtures, Relationships, Kickabout and the others that live in the phone open and work on the glass (a relationship game only shows a note). Sponsors, Shop, Store, Casino, Owner, Garden, Your house and Settings also open inside the phone, as in the game (27 Nov 2026): Sign / Decline and Store buys work on the sample career; buying or drinking a can and every “Open full screen ↗” button only show a one-line note here."],
         ["HOME (the phone's own bar)", "In an app: back to the phone's home screen. On the phone's home screen: the phone drops away and you are back on the Home screen."],
         ["BACK (the phone's own bar)", "In an app: back to the phone's home screen. On the phone's home screen: put the phone away. It lowers out of view while the room sharpens (still your eyes), then the camera pulls back to the house's normal camera."],
         ["The house (after BACK)", "The real 3D house: the stick or tap to walk, drag to look, doorways to other rooms, the wardrobe and cabinet cards. Its ‹ Home pill goes to the Home screen."],
         ["📱 Phone (in the house)", "The camera goes back into your eyes and the phone comes up again."],
       ] },
       { group: "Options in the address (to compare)", items: [
-        ["(no ?blink: B, Harry's pick)", "The Resident Evil 7 style eye-opening (1.2 s): soft almond-shaped lids open slowly with a small flutter, the blur clears, the head rights itself."],
+        ["(no ?blink: B, Harry's pick)", "The Resident Evil 7 style eye-opening (0.9 s, the game's since 27 Nov 2026; was 1.2 s): soft almond-shaped lids open slowly with a small flutter, the blur clears, the head rights itself."],
         ["?blink=A", "The Far Cry style, kept to compare (1.7 s): the eyes crack open, droop, open wider, half-blink, then open; a bright blurred double view that focuses."],
         ["?blink=old", "The straight-bars blink from before (0.8 s)."],
         ["(no ?cam: D, Harry's pick)", "The walking camera in the house: close like C, centred straight behind him, a little higher and looking a little down like A, a smooth follow. The game's camera too since 20 Nov 2026 (and the garden, 3D shop and casino), with pinch / wheel zoom."],
@@ -1918,7 +1918,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing is saved. The career is a made-up sample; the wardrobe's choice is forgotten on reload."],
     inGame: ["Not in the game. Harry judges it here first (Stage 3 of the tap-speed and 3D plan)."],
-    dev: "app/star-phone3d-dev/page.tsx + phone3d.css · the house is components/star/Home3D.tsx with pov (lib/star/home3d/scene.ts setPov / hold / renderOnce; absent = the house as before) and houseCam (scene.ts HOUSE_CAMS; absent or D = the game's camera since 20 Nov 2026, lib/star/three3d/followCam.ts) · the bars' drifting light and glow are off on the glass only (they repaint the bent layer every frame) · the phone is components/star/PhoneHome.tsx with fill + onPhoneHome, bent onto the glass with a CSS matrix3d from the render's printed corners · hand.webp from tools/phone3d/hand_phone_gta.py · ?film=1 = the stage alone on a film clock: window.__phone3dStep(ms) moves the CSS and the 3D one frame (videos are made frame by frame)",
+    dev: "app/star-phone3d-dev/page.tsx + phone3d.css · the house is components/star/Home3D.tsx with pov (lib/star/home3d/scene.ts setPov / hold / renderOnce; absent = the house as before) and houseCam (scene.ts HOUSE_CAMS; absent or D = the game's camera since 20 Nov 2026, lib/star/three3d/followCam.ts) · the bars' drifting light and glow are off on the glass only (they repaint the bent layer every frame) · the phone is components/star/PhoneHome.tsx with fill + onPhoneHome + apps (the in-phone apps, components/star/PhoneApps.tsx), bent onto the glass with a CSS matrix3d from the render's printed corners · hand.webp from tools/phone3d/hand_phone_gta.py · ?film=1 = the stage alone on a film clock: window.__phone3dStep(ms) moves the CSS and the 3D one frame (videos are made frame by frame)",
   },
   "/star-shop-dev": {
     title: "Menu shop (test)",
@@ -2147,7 +2147,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing here is saved. The page only shows other test pages at fixed moments."],
     inGame: ["Nothing changes in the game from this page. It is a measuring tool for the 3D changes."],
-    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/scene/page.tsx (the cut-scene and Free Roam shots: a bare StyleTest3D, ?scene=director&fixture=…&clean=1; it took over from the deleted Art styles page /star-style-dev, 21 Oct 2026; also the Lag test's cut-scene step), app/star-3d-bench-dev/home/page.tsx (the Home shot; window.__homeT holds a moment), app/star-3d-bench-dev/face/page.tsx (one head close up, its moving face on an 8 s loop), app/star-3d-bench-dev/faces/page.tsx (measures the eight Style A faces: scripts/bench3d/faces.mjs --write), app/star-3d-bench-dev/headshots/page.tsx (twelve made-up players and you as card headshots shot from the 3D model, beside the drawn heads they replace, with the time each picture took; Make again forgets this device's kept pictures; ?only=3d|drawn; components/star/Headshot3D.tsx, lib/star/headshot3d/; stills and timings: node scripts/bench3d/headshots.mjs DIR), app/star-3d-bench-dev/skin/page.tsx (the skin sheet: every skin tone on the card's 3D man from the real headshot maker, each beside the probe picture that marks his face, neck, upper arm, forearm and hand; ?head=h1..h6; numbers and the contact sheet: node scripts/bench3d/skin.mjs --heads=… --out=DIR, node scripts/bench3d/skin-garden.mjs (the same in the real 3D garden), python3 scripts/bench3d/skin_sheet.py DIR OUT.png; ?skinpaint=0 on any 3D page shows the old skin paint), app/star-3d-bench-dev/people/page.tsx (the people presets' contact sheet: every preset in lib/star/people/presets.ts drawn by the game's toon renderer and labelled; ?set=staff|players|closeup|scene, and ?set=today-staff|today-players for the same slots as the game draws them today; not in the game yet; stills: node scripts/bench3d/people-sheet.mjs OUTDIR), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old for the before). Home stills: node scripts/bench3d/home.mjs PREFIX 3 8.6 20. Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; on any 3D test page ?skinfix=0 shows the old skin, ?framing=old the old cut-scene cameras, ?face=old still faces.",
+    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/scene/page.tsx (the cut-scene and Free Roam shots: a bare StyleTest3D, ?scene=director&fixture=…&clean=1; it took over from the deleted Art styles page /star-style-dev, 21 Oct 2026; also the Lag test's cut-scene step), app/star-3d-bench-dev/home/page.tsx (the Home shot; window.__homeT holds a moment), app/star-3d-bench-dev/face/page.tsx (one head close up, its moving face on an 8 s loop), app/star-3d-bench-dev/faces/page.tsx (measures the eight Style A faces: scripts/bench3d/faces.mjs --write), app/star-3d-bench-dev/headshots/page.tsx (twelve made-up players and you as card headshots shot from the 3D model, beside the drawn heads they replace, with the time each picture took; Make again forgets this device's kept pictures; ?only=3d|drawn; components/star/Headshot3D.tsx, lib/star/headshot3d/; stills and timings: node scripts/bench3d/headshots.mjs DIR), app/star-3d-bench-dev/skin/page.tsx (the skin sheet: every skin tone on the card's 3D man from the real headshot maker, each beside the probe picture that marks his face, neck, upper arm, forearm and hand; ?head=h1..h6; numbers and the contact sheet: node scripts/bench3d/skin.mjs --heads=… --out=DIR, node scripts/bench3d/skin-garden.mjs (the same in the real 3D garden), python3 scripts/bench3d/skin_sheet.py DIR OUT.png; ?skinpaint=0 on any 3D page shows the old skin paint), app/star-3d-bench-dev/people/page.tsx (the people presets' contact sheet: every preset in lib/star/people/presets.ts drawn by the game's toon renderer and labelled; ?set=staff|players|closeup|scene, and ?set=today-staff|today-players for the same slots as the game draws them today; not in the game yet; stills: node scripts/bench3d/people-sheet.mjs OUTDIR), app/star-3d-bench-dev/wearables/page.tsx (your player as the house dresses him, with the shop's watch, chain, headphones and the unsold sunglasses and cap designs, one card per outfit × build × view, to check nothing passes through; ?outfits= ?builds= ?views=full,neck,neckback,wrist,head,face ?wear=gold-l4,silver-l5,shades-l3,cap-l3 ?pose=idle; nothing saved; lib/star/style3d/toon/accessories.ts), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old for the before). Home stills: node scripts/bench3d/home.mjs PREFIX 3 8.6 20. Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; on any 3D test page ?skinfix=0 shows the old skin, ?framing=old the old cut-scene cameras, ?face=old still faces.",
   },
   "/star-3d-area-dev": {
     title: "3D Area",
@@ -2427,6 +2427,7 @@ export const ADMIN_GUIDES = {
     what: "The walk-around 3D garden, on a made-up career, so every part can be seen without playing to it. It is the same screen a career opens from Home's Garden.",
     buttons: [
       { items: [
+          ["Eye button (top right; bottom right on the world kit)", "First person | third person: tap to see through his eyes (gold = on), tap again to go back behind him. Drag to look round. Using something (a seat, a card, a machine) shows him in third person and goes back into his eyes after. Remembered on this device only (lib/star/three3d/viewCam.ts), never in the save."],
         ["‹ Home", "Back to the 3D places group page."],
         ["Day / Sunset / Night (above the scene)", "Changes the time of day. In a career it follows the time of your next kick-off."],
         ["Full career / New career (above the scene)", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
@@ -2492,6 +2493,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
+          ["Eye button (top right; bottom right on the world kit)", "First person | third person: tap to see through his eyes (gold = on), tap again to go back behind him. Drag to look round. Using something (a seat, a card, a machine) shows him in third person and goes back into his eyes after. Remembered on this device only (lib/star/three3d/viewCam.ts), never in the save."],
           ["‹ 3D places", "Back to the 3D places group page."],
           ["Start at the doors / Start in the middle (above the scene)", "Open the shop just inside its front doors (as when you walk in from the garden), or in the middle."],
           ["Edit in the scene editor › (above the scene)", "Opens the 3D Scene Editor on the shop: walking and card views (turn, rise, distance, lens), the light, Approve, Commit to game."],
@@ -2530,12 +2532,41 @@ export const ADMIN_GUIDES = {
     dev: "components/star/Shop3D.tsx (the screen, shared with the game's phase \"shop-3d\") · app/star-shop3d-dev/page.tsx · lib/star/shop3d/{scene,catalogue,kit,textures}.ts · public/star/shop3d/items/*.glb (boots + cars, Draco) made by tools/shop3d/export_items.py from tools/blender-shop/scripts/{boot,car,cars}.py · public/star/shop3d/draco/ (three's decoder) · the footballer: the new player (lib/star/people3d.ts, public/star/people3d/) by default, or the old character.glb + anims.glb (tools/shop3d/build_assets.py) when Settings → Look → \"3D shop player\" is Old (?player=old here) · three.js is the site's own package, loaded only when the shop opens",
   },
 
+  "/star-loading-dev": {
+    title: "Loading screens",
+    what: "Every loading screen the game shows, grouped by the section you are going into: the match, the garden, the house, the shop, the casino, training, the Golden Ball night, the season awards and the first load of the game. Tap one to see it full screen as a real wait.",
+    buttons: [
+      {
+        items: [
+          ["‹ 3D places", "Back to the 3D places group page."],
+          ["Wait: 1.5 s / 4 s / 10 s", "How long the next screen you tap stays up before it lifts by itself, as it does when a place is ready. 1.5 s shows what a short wait looks like."],
+          ["Drill", "Which drill the training boards draw (the board changes with the drill, as in the game)."],
+          ["A screen's name (under each section)", "Shows that screen full screen as a wait of the chosen length. The match ones show a real fixture of a made-up Arsenal career."],
+          ["A first-load name", "Opens the game's first-load opening full screen and holds it (it is drawn by the server in the game, so it opens as its own page here). Use the browser's back to return."],
+          ["Tap as it lands (keepie-uppies, after 4 s)", "Optional: tap when the ball lands on your boot. Perfect / Good / Early / Late, and a run of good taps is counted. Nothing is needed to enjoy it."],
+          ["?bare=1&section=garden&v=keepie-garden-rain (in the address)", "That one screen full screen and held, for stills and filming. section is one of first-load, match, garden, house, shop, casino, training, ballon-dor, awards; v is a screen's id."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. In the game, this phone remembers the last screen shown for each section (so the same one never shows twice in a row) and how many 3D files each place took (for the small progress ring).",
+    ],
+    inGame: [
+      "Yes. Each 3D place (garden, house, shop, casino) shows its keepie-uppies while it is built; the 3D drills and the Crossbar Challenge show the drill board in the pitch box; the Golden Ball night and the season awards show the gala; a match with Match view 3D on shows the matchday programme or the tunnel while its 3D is built; and the first load of the game shows the opening while the game downloads. Each also covers the moment a screen's own file is still downloading the first time.",
+      "The screen goes the moment the place is ready (a 0.2 s fade). A place that is ready at once never shows one.",
+    ],
+    needs: [
+      "The backdrops are real stills of the game's 3D places (public/star/loading/*.webp). After a place's look changes, take them again: node scripts/loading-stills/shoot.mjs (dev server running), then commit them.",
+    ],
+    dev: "components/star/loading/ (LoadingCurtain the one screen, Keepie, Programme, Tunnel, DrillBoard, Gala, BootScreen, curtain.css) · lib/star/loading/ (pick.ts the lists and the never-twice rule, programme.ts the programme from the fixture, progress.ts the real file count, context.ts) · app/star-loading-dev/page.tsx · scripts/loading-stills/shoot.mjs · tests/star/loadingScreens.mts",
+  },
   "/star-home3d-dev": {
     title: "3D Home",
     what: "Your house in 3D, where you change clothes. A bigger home has more rooms (House look New): a house has a hallway, a lounge, a dressing room and a trophy room; walk through a doorway to go to the next room. The starter flat and the flat are one room. Here it runs on a made-up career, so every home and an empty or full trophy cabinet can be seen.",
     buttons: [
       {
         items: [
+          ["Eye button (top right; bottom right on the world kit)", "First person | third person: tap to see through his eyes (gold = on), tap again to go back behind him. Drag to look round. Using something (a seat, a card, a machine) shows him in third person and goes back into his eyes after. Remembered on this device only (lib/star/three3d/viewCam.ts), never in the save."],
           ["‹ 3D places", "Back to the 3D places group page."],
           ["Scene editor › (above the scene)", "Opens the 3D Scene Editor on the house: walking and card views (turn, rise, distance, lens), the sun, Approve, Commit to game."],
           ["?bare=1 (in the address)", "The house full screen, as before the admin frame. ?film=1 does the same for the film tools."],
@@ -2589,8 +2620,15 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
+          ["Eye button (top right; bottom right on the world kit)", "First person | third person: tap to see through his eyes (gold = on), tap again to go back behind him. Drag to look round. Using something (a seat, a card, a machine) shows him in third person and goes back into his eyes after. Remembered on this device only (lib/star/three3d/viewCam.ts), never in the save."],
           ["House / Garden (above the scene)", "Which place opens: the house's lounge (sofa, TV, fridge) or the garden (bench, gate, team-mates)."],
           ["starter / flat / penthouse / house / villa / estate", "Opens the LIVING HOUSE of that home (the real house screen with every room of that home): things to use in every room (sofa and TV, fridge, bed, shower, mirror, coffee machine, treadmill, pool table, loungers, cinema seats) and team-mates round (1 in the starter flat up to 4 at the estate). Walk through a doorway to the next room. Same as ?place=house&tier=villa. Nothing is saved; a home reaches the real game only once it is switched on in the code (LIVING_TIERS)."],
+          ["Gym (above the scene)", "THE GYM, GTA 6 style (same as ?place=gym): a bench press, two treadmills, a heavy bag, and (phase 2) a pull-up bar, the power rack for back squats, two mats (push-ups, plank, Nordic curls with an ankle roller, a mobility flow), a plyo box (box jumps, the Copenhagen plank), an agility ladder and a landing pad; one team-mate runs, drinks and goes round the new kit on his own. Tap a machine, then Start: a mini-game of its own (not football). One thumb: hold, tap, a beat or a zone, each game says which. Every game can be failed (a bounce, a fall, a dropped grip, stuck in the hole). Not in the career yet. Demos: ?demo=pullup, squat, pushup, plank, nordic, copenhagen, boxjump, ladder, landing, mobility, tour (four in a row), body1 to body4."],
+          ["Body A 1 2 3 4 (gym strip)", "The body follows the gym's own levels a window late (Strength broadens him up to about 4.5%, Cardio leans him out; his height never changes). A = from your gym points; 1 to 4 previews a level. Only on this page, never saved."],
+          ["Strength / Cardio / Focus / Resilience strip (gym)", "Your four gym levels (1 to 4), today's ring (three dots: any three exercises; they close it when they train at least two different stats; more does nothing that week) and the workout window. Resilience comes from Nordic curls, the Copenhagen plank, landing balance and the mobility flow. Only on this page, never saved."],
+          ["Play a match ▸ (gym)", "Moves the gym on one gap between matches: the window counts down. Train inside it for full points; miss it and Strength and Cardio slip back."],
+          ["✕ (during a gym game)", "Stops the game; what you did still counts."],
+          ["Water cooler: Protein shake (gym)", "A shake this week: the week's gym points ×1.2."],
           ["↻ Restart", "Opens the place again from the start (the same people, the same day)."],
           ["Tap the floor", "You walk there, round furniture and round people."],
           ["Tap the sofa, the TV, the fridge, the bench or the gate", "You walk up to it and its card opens. Sit down / Watch TV / Take a can: you do it. Stand up ends it."],
@@ -3216,7 +3254,7 @@ export const ADMIN_GUIDES = {
     saving: [
       "Shared with Harry, Mikey and Leo: files go into our private video storage (Cloudflare R2, bucket kib-marketing). Nobody outside the admin can open them; a play link lasts one hour.",
       "The list is read from the storage itself, so there is nothing else to keep in step.",
-      "Limits (to keep the bill at zero): one file up to 500 MB; videos (mp4, mov, webm) and pictures (jpg, png, webp, gif) only; 30 files and 5 GB per person per day, reset at midnight UK time. A link handed out counts even if the upload then fails.",
+      "Limits: one file up to 4.9 GB (the most one plain upload to Cloudflare takes); videos (mp4, mov, webm) and pictures (jpg, png, webp, gif) only; 30 files and 50 GB per person per day, reset at midnight UK time. Storage past 10 GB costs about 1p per GB a month. A link handed out counts even if the upload then fails.",
       "A dropped connection means starting that file again (no resume yet). Use Wi-Fi for big files.",
     ],
     inGame: ["Nowhere. This is for making our own videos."],

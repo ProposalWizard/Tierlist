@@ -1,0 +1,326 @@
+{
+ "id": "arc-the-fire-alarm",
+ "title": "Three in the morning",
+ "owner": "roomie",
+ "summary": "Three in the morning before an away game and the hotel fire alarm goes off. Twenty-two footballers in a car park in towels. It was your room-mate and his toastie maker. A season on, the same hotel.",
+ "size": "small",
+ "about": {
+  "who": [
+   "team-mate: the room-mate",
+   "away trips"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "roomie",
+   "pick": "squad",
+   "order": "bond-desc"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "took-the-blame",
+   "title": "Took the blame",
+   "text": "You took the blame for the toastie maker. The hotel has a sign about it now."
+  },
+  {
+   "id": "he-owned-up",
+   "title": "He owned up",
+   "text": "Your room-mate set off a hotel fire alarm with a toastie maker, and he owned up to it."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "fal-1",
+   "title": "The car park",
+   "n": 1,
+   "event": {
+    "id": "arc-fal-1",
+    "title": "The car park",
+    "category": "squad",
+    "place": "away:hotel",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Three in the morning, the night before an away game. The hotel fire alarm. Twenty-two of you in the car park in towels and one dressing gown. {roomie.short} is next to you, and you both know the toastie maker is in your room."
+    ],
+    "talk": {
+     "start": "f1",
+     "nodes": {
+      "f1": {
+       "who": "manager",
+       "say": [
+        "The gaffer is walking along the line with his coat over his pyjamas. \"Somebody had something in their room. I'll find out. Tell me now and it's cheaper.\""
+       ],
+       "replies": [
+        {
+         "id": "me",
+         "label": "\"It was me, gaffer.\"",
+         "tone": "brave",
+         "end": "me"
+        },
+        {
+         "id": "look",
+         "label": "Look at {roomie.short}.",
+         "tone": "honest",
+         "end": "look"
+        },
+        {
+         "id": "nothing",
+         "label": "\"No idea.\"",
+         "tone": "lie",
+         "end": "nothing"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "nothing"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "me": [
+       {
+        "text": "\"Fined. Bed.\" {roomie.short} doesn't say anything on the way up. In the morning there's a toastie on your bed with a note: \"Owe you.\"",
+        "effects": {
+         "boss": -1,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 12
+         },
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "took-the-blame-for-the-toastie",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "me"
+         }
+        }
+       }
+      ],
+      "look": [
+       {
+        "text": "{roomie.short} puts his hand up. \"Mine.\" The gaffer fines him, and everybody calls him Toastie for a year.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": -2
+         },
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "him"
+         }
+        }
+       }
+      ],
+      "nothing": [
+       {
+        "text": "The fire brigade finds it in four minutes. The gaffer fines the whole room, both of you, double.",
+        "effects": {
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 4
+         },
+         {
+          "slot": "manager",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "both"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "roomie",
+      "pick": "squad",
+      "order": "bond-desc"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The hotel fire alarm"
+  },
+  {
+   "id": "fal-2",
+   "title": "The same hotel",
+   "after": {
+    "beat": "fal-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-fal-2",
+    "title": "The same hotel",
+    "category": "squad",
+    "place": "away:hotel",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "roomie",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. The same hotel, the same away trip. There's a laminated sign in reception now: NO TOASTIE MAKERS. Somebody has drawn a face on it that looks a lot like {roomie.short}.",
+     "{if arc.path=='me'}The receptionist recognises you.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "laugh",
+      "label": "Take a photo of the sign.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='me'",
+        "text": "You post it. {roomie.short} comments \"no comment\". The gaffer likes it, which nobody can explain.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "took-the-blame"
+        }
+       },
+       {
+        "text": "You post it. {roomie.short} comments \"it was a panini\".",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "he-owned-up"
+        }
+       }
+      ]
+     },
+     {
+      "id": "bag",
+      "label": "Check {roomie.short}'s bag.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='me'",
+        "text": "There's a toastie maker in it. Of course there is. You put it in the hotel safe.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "took-the-blame"
+        }
+       },
+       {
+        "text": "There's a panini press in it. He says it's different. You make him leave it in the coach.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "he-owned-up"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "roomie",
+      "pick": "squad",
+      "order": "bond-desc"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, the same hotel"
+  }
+ ]
+}

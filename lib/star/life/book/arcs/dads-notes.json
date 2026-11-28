@@ -2,7 +2,7 @@
  "id": "arc-dads-notes",
  "title": "Dad's notes",
  "owner": "dad",
- "summary": "Your dad rings after every game with notes. Tonight he's got eleven. How you take it decides whether the phone calls stop, and a season later he says something he's never said.",
+ "summary": "Your dad rings after every game with notes. Weeks later he turns up at the park with the balls from the loft, or he stops ringing and Mum tells you he still writes them down. A season later he says something he's never said, and after that he gives you the notebooks.",
  "size": "small",
  "about": {
   "who": [
@@ -14,7 +14,13 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0213,
+  "tier": "common",
+  "stage": "first-seasons",
+  "when": [
+   "age<=20",
+   "season<=3"
+  ]
  },
  "cast": [
   {
@@ -23,7 +29,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -36,6 +44,11 @@
    "id": "the-calls-stopped",
    "title": "The calls stopped",
    "text": "You told him to stop ringing with notes, and he did. You still check your phone on the coach."
+  },
+  {
+   "id": "the-notebooks",
+   "title": "First touch",
+   "text": "Your dad gave you his notebooks, every game since you were nine. The first note in the first one says \"first touch\". So does the last."
   }
  ],
  "promises": {},
@@ -223,6 +236,283 @@
    "hint": "Dad's on the phone after the game"
   },
   {
+   "id": "dad-1b-park",
+   "title": "The park",
+   "after": {
+    "beat": "dad-1-notes",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-dad-1b-park",
+    "title": "The park",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='stopped'",
+      "then": "s1",
+      "else": "p1"
+     },
+     "nodes": {
+      "p1": {
+       "who": "dad",
+       "say": [
+        "Sunday morning, the park by the old house. {dad.short} has a net bag of balls from the loft, the same ones from when you were nine, and his notebook. \"Ten balls. My notes. Humour me.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Go on, then.\"",
+         "tone": "kind",
+         "goto": "play"
+        },
+        {
+         "id": "no",
+         "label": "\"Dad, I train every day.\"",
+         "tone": "cold",
+         "end": "nopark"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "{dad.short}'s notes",
+        "intro": "Ten balls in the park, the way he fed them when you were nine.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "call-it",
+           "balls": 2,
+           "line": "\"Sixty-third minute. Your first touch. I'll call it. You hit it.\""
+          },
+          {
+           "kind": "corners",
+           "balls": 3,
+           "line": "\"Low. Always low. I've said that since you were six.\""
+          },
+          {
+           "kind": "far",
+           "balls": 2,
+           "line": "\"From the bench by the bins. Low.\""
+          },
+          {
+           "kind": "crossbar",
+           "balls": 1,
+           "line": "\"The bar. You never could.\""
+          }
+         ],
+         "lines": {
+          "hit": "\"There. That's the one.\"",
+          "wrong": "\"Other one. Your left.\"",
+          "over": "\"High. Head over it.\"",
+          "streak3": "\"Your mum should see this.\""
+         }
+        },
+        "score": "balls that count (0-8)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -3
+        },
+        "caller": {
+         "slot": "dad",
+         "lines": [
+          "\"One.\"",
+          "\"Two.\"",
+          "\"Three.\"",
+          "\"Four.\"",
+          "\"Five.\"",
+          "\"Six. Good.\"",
+          "\"Seven.\"",
+          "\"Eight. That's all of them, son.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "stop"
+        ],
+        [
+         "activity.score>=5",
+         "good"
+        ],
+        [
+         "",
+         "poor"
+        ]
+       ]
+      },
+      "good": {
+       "who": "dad",
+       "say": [
+        "He writes {activity.tens} in the notebook and underlines it twice. \"Your first touch was better.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Thanks, Dad.\"",
+         "tone": "kind",
+         "end": "park"
+        }
+       ]
+      },
+      "poor": {
+       "who": "dad",
+       "say": [
+        "\"{activity.tens}.\" He's smiling, which he doesn't do on a phone. \"Same as when you were nine. First touch.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Again next Sunday?\"",
+         "tone": "kind",
+         "end": "park"
+        }
+       ]
+      },
+      "stop": {
+       "who": "dad",
+       "say": [
+        "It starts raining and you pick the bag up. He keeps feeding balls to nobody for a minute, then stops."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Pub?\"",
+         "tone": "calm",
+         "end": "park"
+        }
+       ]
+      },
+      "s1": {
+       "who": "dad",
+       "say": [
+        "Mum texts. \"He still watches every game. He still writes it all down in the notebook. Then he goes to bed without ringing you. Just so you know.\""
+       ],
+       "replies": [
+        {
+         "id": "ring",
+         "label": "Ring him.",
+         "tone": "kind",
+         "end": "rang"
+        },
+        {
+         "id": "leave",
+         "label": "Leave it.",
+         "tone": "cold",
+         "end": "left"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "park": [
+       {
+        "text": "On the way back to the car he carries the bag and doesn't let you. You don't argue.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "came-to-the-park",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "park"
+         }
+        }
+       }
+      ],
+      "nopark": [
+       {
+        "text": "\"Course you do.\" He puts the bag back in the boot. He's still holding the notebook.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -4,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "no-park"
+         }
+        }
+       }
+      ],
+      "rang": [
+       {
+        "text": "\"Thought you didn't want notes.\" \"Just one.\" He gives you one. It's right. He says goodnight like he's going to cry, and doesn't.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6,
+          "respect": 2,
+          "grudge": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "rang-me-back-about-the-notes",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "rang"
+         }
+        }
+       }
+      ],
+      "left": [
+       {
+        "text": "You leave it. The notebook fills up somewhere you can't see.",
+        "arc": {
+         "set": {
+          "mid": "left"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Dad wants you on Sunday"
+  },
+  {
    "id": "dad-2-later",
    "title": "A different call",
    "after": {
@@ -278,7 +568,15 @@
          }
         ],
         "arc": {
-         "end": "he-said-it"
+         "end": "he-said-it",
+         "set": {
+          "ended": "he-said-it"
+         },
+         "next": "dad-3-notebooks",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -299,7 +597,15 @@
          }
         ],
         "arc": {
-         "end": "he-said-it"
+         "end": "he-said-it",
+         "set": {
+          "ended": "he-said-it"
+         },
+         "next": "dad-3-notebooks",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -319,7 +625,15 @@
          }
         ],
         "arc": {
-         "end": "he-said-it"
+         "end": "he-said-it",
+         "set": {
+          "ended": "he-said-it"
+         },
+         "next": "dad-3-notebooks",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -330,6 +644,116 @@
           "bond": -2
          }
         ],
+        "arc": {
+         "end": "the-calls-stopped",
+         "set": {
+          "ended": "the-calls-stopped"
+         },
+         "next": "dad-3-notebooks",
+         "afterWeeks": [
+          40,
+          60
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A season on, Dad rings"
+  },
+  {
+   "id": "dad-3-notebooks",
+   "title": "The notebooks",
+   "after": {
+    "beat": "dad-2-later",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-dad-3-notebooks",
+    "title": "The notebooks",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{dad.short} turns up at yours with a box from the loft. Inside are notebooks, thirty or forty of them, the cheap kind from the newsagent. Every game you've ever played, since you were nine."
+    ],
+    "choices": [
+     {
+      "id": "read",
+      "label": "Open the first one.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.mid=='park' || arc.mid=='rang'",
+        "text": "Page one, your first game for the under-tens, in his capitals: \"FIRST TOUCH.\" Page two: \"FIRST TOUCH.\" He laughs before you do.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "gave-me-the-notebooks",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-notebooks"
+        }
+       },
+       {
+        "if": "arc.path=='listened'",
+        "text": "The first one says \"first touch\" eleven times. He watches you read it and doesn't say anything.",
+        "arc": {
+         "end": "he-said-it"
+        }
+       },
+       {
+        "text": "You open it, and close it again. \"Thanks, Dad.\" He nods and goes.",
+        "arc": {
+         "end": "the-calls-stopped"
+        }
+       }
+      ]
+     },
+     {
+      "id": "loft",
+      "label": "Put the box in your own loft.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='listened'",
+        "text": "You put it next to your boots from when you were nine. He watches you do it and seems happy enough.",
+        "arc": {
+         "end": "he-said-it"
+        }
+       },
+       {
+        "text": "It goes in the loft. You go up there once, in the summer, and sit for an hour.",
         "arc": {
          "end": "the-calls-stopped"
         }
@@ -345,7 +769,7 @@
      }
     ]
    },
-   "hint": "A season on, Dad rings"
+   "hint": "Dad has something for you"
   }
  ]
 }

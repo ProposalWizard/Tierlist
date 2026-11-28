@@ -15,6 +15,7 @@
  *
  * The 3D is lib/star/shop3d/scene.ts; three.js only loads when this opens.
  */
+import Reload3dPill from "./Reload3d";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { shopDisplays, type DisplayId, type ShopPrices } from "@/lib/star/shop3d/catalogue";
@@ -33,6 +34,8 @@ import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
 import { wornAt } from "@/lib/star/home3d/outfits";
 import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
+import LoadingCurtain from "./loading/LoadingCurtain";
+import ViewToggle3D from "./ViewToggle3D";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -116,6 +119,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
 
   // Start the 3D once (again if the phone takes the 3D away: once, at "low").
   const [restarts, setRestarts] = useState(0);
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
@@ -176,6 +180,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
         (window as unknown as { __shop3d?: ShopController }).__shop3d = c;
         setStatus("ready");
       } catch (e) {
+        if (dead) return; // closed mid-load: nothing to show
         console.error("3D shop failed to load", e);
         if (!dead) {
           setErrText(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
@@ -190,7 +195,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
       delete (window as unknown as { __shop3d?: ShopController }).__shop3d;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restarts]);
+  }, [restarts, retry]);
 
   useEffect(() => { ctrlRef.current?.setKit(kit); }, [kit.shirt, kit.trim, status]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { ctrlRef.current?.setOwned(owned); }, [owned, status]);
@@ -302,10 +307,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
       {status !== "ready" && (
         <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: 24, textAlign: "center", background: "#120e0b" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }}>
           {status === "loading" ? (
-            <div>
-              <div style={{ fontWeight: 900, fontSize: 17 }}>Opening the shop…</div>
-              <div style={{ fontWeight: 700, color: MUTED, fontSize: 13, marginTop: 6 }}>Loading the 3D models</div>
-            </div>
+            null
           ) : (
             <div style={{ maxWidth: 300 }}>
               <div style={{ fontWeight: 900, fontSize: 17, marginBottom: 6 }}>The 3D shop didn&apos;t load</div>
@@ -317,12 +319,17 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
                   {errText.slice(0, 200)}
                 </div>
               )}
-              <button onClick={onBack} style={{ ...cta, marginTop: 14 }}>Back to the {backLabel}</button>
+              <Reload3dPill floating={false} onReload={() => { setErrText(""); setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} />
+              <div><button onClick={onBack} style={{ ...cta, marginTop: 10 }}>Back to the {backLabel}</button></div>
             </div>
           )}
         </div>
       )}
 
+      {/* the loading screen: keepie-uppies in the shop (components/star/loading) */}
+      <LoadingCurtain section="shop" loading={status === "loading"} box={embedded} />
+
+      {status === "ready" && !open && ctrlRef.current?.setView && <ViewToggle3D onChange={(m) => ctrlRef.current?.setView?.(m)} style={dev ? { top: "calc(max(12px, env(safe-area-inset-top)) + 70px)" } : undefined} />}
       {status === "ready" && !open && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
       {status === "ready" && !open && !near && (
         <div style={{ position: "absolute", bottom: 40, right: 16, maxWidth: 176, textAlign: "right", fontSize: 12.5, fontWeight: 800, color: INK, lineHeight: 1.4, pointerEvents: "none", textShadow: "0 1px 6px rgba(0,0,0,.8)" }}>

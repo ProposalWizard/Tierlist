@@ -5,7 +5,7 @@
  * on Home's stadium picture, at Home's box size on a 390 × 844 phone. No
  * career is needed: a made-up one with a fixed look.
  *
- *   ?head=h1..h6  ?body=c1..c3  ?skin=porcelain|fair|light|tan|olive|brown|deep|dark  ?sky=day|sunset|night
+ *   ?boot=<shop boot id, e.g. speed-l5>  ?head=h1..h6  ?body=c1..c3  ?skin=porcelain|fair|light|tan|olive|brown|deep|dark  ?sky=day|sunset|night
  */
 import { useEffect, useState } from "react";
 import HomePlayer from "@/components/star/HomePlayer";
@@ -30,7 +30,9 @@ export default function BenchHomeShot() {
     w.__frameStep = { duration: 33, seek: (t: number) => { w.__homeT = t; w.__homePlayer?.draw(t); } };
     return () => { delete w.__frameStep; delete w.__homeT; };
   }, []);
-  const career = { squadNumber: 10, season: 1, player: { firstName: "Bench", lastName: "Player" } } as unknown as CareerState;
+  // ?boot=speed-l5 (a shop boot id: its family and level, lib/star/wearables.ts); absent = no boots (the plain pair)
+  const boot = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("boot") : null;
+  const career = { squadNumber: 10, season: 1, player: { firstName: "Bench", lastName: "Player" }, ...(boot ? { currentBoot: { id: boot, name: boot, matches: 10 } } : {}) } as unknown as CareerState;
   return (
     <div style={{ position: "fixed", inset: 0, overflow: "hidden", background: "#0b1220" }} data-bench-home>
       <div style={{ position: "absolute", inset: 0, backgroundImage: `url(/home/tall-${sky}.webp)`, backgroundSize: "cover", backgroundPosition: "center 58%" }} />

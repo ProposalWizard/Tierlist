@@ -34,7 +34,11 @@ import { wornAt } from "@/lib/star/home3d/outfits";
 import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import GardenScreen from "./GardenScreen";
+import Reload3dPill from "./Reload3d";
+import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
 import { Stick, pill } from "./Shop3D";
+import LoadingCurtain from "./loading/LoadingCurtain";
+import ViewToggle3D from "./ViewToggle3D";
 
 const INK = "#f7f1e8";
 /** A query parameter, on the client only. */
@@ -110,10 +114,11 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
   // The phone took the 3D away (iPhone Safari, short of memory): start the
   // garden again once; a second time, the drawn garden instead.
   const [restarts, setRestarts] = useState(0);
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
-    if (!el || restarts > 1) return;
+    if (!el || restarts > AUTO_REBUILDS) return;
     (async () => {
       try {
         const q = new URLSearchParams(window.location.search);
@@ -181,8 +186,11 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
         (window as unknown as { __garden3d?: GardenController }).__garden3d = c;
         setStatus("ready");
       } catch (e) {
+        if (dead) return; // closed mid-load: nothing to show
         console.error("3D garden failed to load", e);
-        if (!dead) setStatus("error");
+        // tried again by itself on a fresh renderer (three3d/autoHeal.ts) before the drawn garden and its tap
+        if (restarts < AUTO_REBUILDS) { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
+        setStatus("error");
       }
     })();
     return () => {
@@ -192,8 +200,9 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
       delete (window as unknown as { __garden3d?: GardenController }).__garden3d;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, restarts]);
-  useEffect(() => { if (restarts > 1) setStatus("error"); }, [restarts]);
+  }, [data, restarts, retry]);
+  // the phone took the 3D away: rebuilt silently AUTO_REBUILDS times (Low after the first), then the drawn garden
+  useEffect(() => { if (restarts > AUTO_REBUILDS) setStatus("error"); }, [restarts]);
 
   const drag = useRef<{ id: number; x: number; y: number; moved: number } | null>(null);
   const spot = tapped ?? near;
@@ -205,7 +214,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
     setTapped(c.pick(x, y)); // the old garden: tap opens the card
   };
 
-  if (status === "error") return <GardenScreen career={career} onBack={onBack} />;
+  if (status === "error") return (<><GardenScreen career={career} onBack={onBack} /><Reload3dPill onReload={() => { setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} /></>);
 
   return (
     <div style={{ position: embedded ? "absolute" : "fixed", inset: 0, zIndex: embedded ? 1 : 80, background: "#0d1420", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-garden3d>
@@ -252,14 +261,12 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
       </div>
 
       {status === "loading" && (
-        <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: "#0d1420" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }}>
-          <div style={{ display: "grid", placeItems: "center", gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 999, border: "4px solid rgba(255,255,255,0.15)", borderTopColor: GOLD, animation: "g3dspin 0.9s linear infinite" }} />
-            <style>{"@keyframes g3dspin{to{transform:rotate(360deg)}}"}</style>
-          </div>
-        </div>
+        <div style={{ position: "absolute", inset: 0, background: "#0d1420" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }} />
       )}
+      {/* the loading screen: keepie-uppies in the garden (components/star/loading) */}
+      <LoadingCurtain section="garden" loading={status === "loading"} box={embedded} />
 
+      {status === "ready" && ctrlRef.current?.setView && <ViewToggle3D onChange={(m) => ctrlRef.current?.setView?.(m)} />}
       {status === "ready" && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
 
       {status === "ready" && spot && spot !== "fountain" && (

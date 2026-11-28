@@ -1,0 +1,438 @@
+{
+ "id": "arc-the-young-lad",
+ "title": "He wants your number",
+ "owner": "kid",
+ "summary": "You're the old pro now. A seventeen-year-old in your position asks if he can watch how you do things. A season on, he's taking your place.",
+ "size": "small",
+ "about": {
+  "who": [
+   "academy kid",
+   "the end of a career"
+  ],
+  "tone": [
+   "warm",
+   "tense"
+  ]
+ },
+ "start": {
+  "chance": 0.0187,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "last-seasons",
+  "when": [
+   "age>=32"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "kid",
+   "pick": "squad",
+   "where": [
+    "age<=19"
+   ],
+   "order": "best"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "deep": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "passed-it-on",
+   "title": "Passed it on",
+   "text": "You were the old pro, and you showed the kid who took your place how you did it."
+  },
+  {
+   "id": "kept-it",
+   "title": "Kept it",
+   "text": "You kept what you knew to yourself. He took your place anyway."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "ylb-1",
+   "title": "Can I watch?",
+   "n": 1,
+   "event": {
+    "id": "arc-ylb-1",
+    "title": "Can I watch?",
+    "category": "squad",
+    "place": "compound:dressing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "age>=29",
+      "squad.any(age<=19)"
+     ]
+    },
+    "setup": [
+     "{kid.name} is seventeen and plays your position. He's been at the club two months. He waits until the dressing room has emptied."
+    ],
+    "talk": {
+     "start": "y1",
+     "nodes": {
+      "y1": {
+       "who": "kid",
+       "say": [
+        "\"Can I watch how you do stuff? Like what you eat, what you do after. I'm not after your shirt. Well, I am. But not yet.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Get in early tomorrow. Seven.\"",
+         "tone": "kind",
+         "end": "yes"
+        },
+        {
+         "id": "honest",
+         "label": "\"You're after my shirt.\"",
+         "tone": "honest",
+         "goto": "y2"
+        },
+        {
+         "id": "no",
+         "label": "\"Watch the gaffer, not me.\"",
+         "tone": "cold",
+         "end": "no"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "y2"
+        }
+       ]
+      },
+      "y2": {
+       "who": "kid",
+       "say": [
+        "\"Everyone's after your shirt. I'm just the one asking.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Seven tomorrow. Don't be late.\"",
+         "tone": "kind",
+         "end": "yes"
+        },
+        {
+         "id": "no",
+         "label": "\"Then earn it.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "He's there at quarter to seven. He copies your breakfast for a month and hates it.",
+        "npc": [
+         {
+          "slot": "kid",
+          "respect": 8,
+          "bond": 10
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "showed-me-how-he-did-it",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He nods and goes. He's in early the next day anyway, on his own.",
+        "npc": [
+         {
+          "slot": "kid",
+          "respect": 2,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "A young lad wants to learn"
+  },
+  {
+   "id": "ylb-1d-deep",
+   "title": "His mum",
+   "after": {
+    "beat": "ylb-1",
+    "weeks": [
+     3,
+     12
+    ]
+   },
+   "event": {
+    "id": "arc-ylb-1d-deep",
+    "title": "His mum",
+    "category": "squad",
+    "place": "club:academy",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "After a youth game, a woman in a club coat stops you. {kid.short}'s mum. \"He talks about you all the time. How you tie your boots. What you eat. He's started ironing his shorts.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kid",
+       "say": [
+        "\"Is he any good? You can tell me.\""
+       ],
+       "replies": [
+        {
+         "id": "good",
+         "label": "\"He's good. He'll take my place.\"",
+         "tone": "honest",
+         "end": "good"
+        },
+        {
+         "id": "time",
+         "label": "\"Give him time.\"",
+         "tone": "calm",
+         "end": "time"
+        },
+        {
+         "id": "shorts",
+         "label": "\"Tell him to stop ironing his shorts.\"",
+         "tone": "confident",
+         "end": "shorts"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "She cries a bit, in a happy way. He finds out what you said and works twice as hard.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "told-my-mum-i-was-good",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "good"
+         }
+        }
+       }
+      ],
+      "time": [
+       {
+        "text": "She nods. She was hoping for more.",
+        "arc": {
+         "set": {
+          "deep": "time"
+         }
+        }
+       }
+      ],
+      "shorts": [
+       {
+        "text": "She laughs. He doesn't stop.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "shorts"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The young lad's mum wants a word"
+  },
+  {
+   "id": "ylb-2",
+   "title": "The team sheet",
+   "after": {
+    "beat": "ylb-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-ylb-2",
+    "title": "The team sheet",
+    "category": "squad",
+    "place": "compound:dressing-room",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The team sheet is up. {kid.short} is in your position. You're on the bench.",
+     "{if arc.path=='yes'}He comes and finds you before anyone else.{/if}",
+     "{if arc.deep=='good'}His mum told him what you said. He's never forgotten it.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "shake",
+      "label": "Shake his hand.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "He says thank you, out loud, in front of everyone. You come on for the last ten and set him up for his second.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "respect": 4,
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "end": "passed-it-on"
+        }
+       },
+       {
+        "text": "He shakes it like he's not sure what it means. You come on for the last ten.",
+        "npc": [
+         {
+          "slot": "kid",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "kept-it"
+        }
+       }
+      ]
+     },
+     {
+      "id": "bench",
+      "label": "Sit on the bench and say nothing.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "He looks over at you before kick-off. You give him a thumbs up and he scores.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "passed-it-on"
+        }
+       },
+       {
+        "text": "He doesn't look over. He scores in the second half and runs to the other corner.",
+        "npc": [
+         {
+          "slot": "kid",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "kept-it"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "A season on, the young lad"
+  }
+ ]
+}

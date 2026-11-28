@@ -1,0 +1,266 @@
+{
+ "id": "arc-the-reunion",
+ "title": "The reunion",
+ "owner": "pal",
+ "summary": "Your old school mate has organised a ten-year reunion of your under-sixteens team in the back room of a pub. Half of them work at the club now, in the car park or the shop. A season on, they've got a team again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "pal"
+  ],
+  "tone": [
+   "warm",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0061,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29",
+   "age>=25"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "pal",
+   "pick": "pal"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-old-team",
+   "title": "The old team",
+   "text": "Your under-sixteens team plays again, on Sundays, in a veterans' league. You turn out when you can. You're still not the best player."
+  },
+  {
+   "id": "the-photo",
+   "title": "The photo",
+   "text": "You went to your under-sixteens reunion and stood in the photo. You didn't go to the next one."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "ru-1-pub",
+   "title": "The back room",
+   "n": 1,
+   "event": {
+    "id": "arc-ru-1-pub",
+    "title": "The back room",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The back room of the Swan. {pal.name} has organised your under-sixteens team's ten-year reunion. Fourteen of the sixteen are here. One stewards in your car park. One works in the club shop. Your old keeper is a dentist."
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "pal",
+       "say": [
+        "Everybody's looking at you, the one who made it. Somebody says, \"Go on, then. What's it like?\""
+       ],
+       "replies": [
+        {
+         "id": "tell",
+         "label": "Tell them the boring bits too.",
+         "tone": "honest",
+         "end": "told"
+        },
+        {
+         "id": "ask",
+         "label": "\"Never mind me. What happened to you lot?\"",
+         "tone": "kind",
+         "end": "asked"
+        },
+        {
+         "id": "leave",
+         "label": "Have one drink and go.",
+         "tone": "cold",
+         "end": "left"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "told": [
+       {
+        "text": "You tell them about ice baths and hotel rooms. The dentist says it sounds worse than dentistry. By eleven nobody's asking about football.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "saw-me-at-the-reunion",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stayed"
+         }
+        }
+       }
+      ],
+      "asked": [
+       {
+        "text": "You hear about kids, mortgages, a divorce, a lottery win of four hundred quid. At midnight the steward from your car park cries about the under-sixteens final and so do two others.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "saw-me-at-the-reunion",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stayed"
+         }
+        }
+       }
+      ],
+      "left": [
+       {
+        "text": "One drink, the photo, gone by nine. {pal.short} walks you to the car and says it was good of you to come.",
+        "arc": {
+         "set": {
+          "path": "left"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "Your old mate has organised something"
+  },
+  {
+   "id": "ru-2-team",
+   "title": "Sunday",
+   "after": {
+    "beat": "ru-1-pub",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-ru-2-team",
+    "title": "Sunday",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {pal.short}: \"We've got a team again. Veterans' league, Sundays. The dentist's in goal. Fancy it? Not every week, we know.\""
+    ],
+    "choices": [
+     {
+      "id": "in",
+      "label": "\"Put me down for the first one.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='stayed'",
+        "text": "You play the first one. You lose six-one. The steward from your car park scores the one, and you've never seen anyone happier.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-old-team"
+        }
+       },
+       {
+        "text": "You go. It's a bit awkward. Nobody passes to you. Fair enough.",
+        "arc": {
+         "end": "the-photo"
+        }
+       }
+      ]
+     },
+     {
+      "id": "no",
+      "label": "\"Can't, mate. The club won't let me.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='stayed'",
+        "text": "\"We know. We just wanted to ask.\" They send you the team photo every week, and you're in every one, photoshopped in, badly.",
+        "arc": {
+         "end": "the-old-team"
+        }
+       },
+       {
+        "text": "\"No worries.\" The reunion photo is the last one you're in.",
+        "arc": {
+         "end": "the-photo"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "A season on, your old team"
+  }
+ ]
+}

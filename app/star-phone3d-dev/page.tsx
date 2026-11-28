@@ -37,6 +37,8 @@ import RelationsPage from "@/components/star/RelationsPage";
 import type { HomeController } from "@/lib/star/home3d/scene";
 import { STAGE, QUAD, SCREEN, quadMatrix } from "@/lib/star/phone3dGlass";
 import { makeInitialCareer } from "@/lib/star/careerFlow";
+import { signOffer, declineOffer } from "@/lib/star/sponsorDeals";
+import type { PhoneAppActions } from "@/components/star/PhoneApps";
 import { generateSquad } from "@/lib/star/squadData";
 import { PREMIER_LEAGUE_CLUBS } from "@/lib/star/clubs";
 import { LIFESTYLE_LEVELS, BOOT_LEVELS, baseIdOf } from "@/lib/star/shopDefaults";
@@ -63,7 +65,8 @@ const T = { home: 320, lower: 650, pull: 1400, pullIn: 900, raise: 600 };
  * ?blink=old: the 820 ms straight-bars blink before this.
  */
 type Blink = "A" | "B" | "old";
-const BLINK_MS: Record<Blink, number> = { A: 1700, B: 1200, old: 900 };
+/** B is 0.9 s, the game's (Harry, 27 Nov 2026: "an in-between. The slower blink was good"; it was 1.2 s here, 0.6 s in the game). */
+const BLINK_MS: Record<Blink, number> = { A: 1700, B: 900, old: 900 };
 
 type Scene = "home" | "opening" | "phone" | "closing-home" | "putting-away" | "pulling-back" | "house" | "taking-out" | "raising";
 
@@ -82,6 +85,16 @@ function sampleCareer(): CareerState {
   const boot = BOOT_LEVELS.find((b) => baseIdOf(b) === "elite" && (b.level ?? 1) === 3);
   if (boot) c.currentBoot = { ...boot };
   c.trophies = [{ season: 1, competition: "FA Cup", club: "Arsenal" }];
+  // The in-phone apps (PhoneApps.tsx) have something to show: money, fame for two deal slots, a deal and an offer.
+  c.money = 250000;
+  c.fame = 30;
+  c.brands = {
+    deals: [{ id: "d1", brand: "Strider", category: "Boots", color: "#22d3ee", weekly: 1800, seasonsLeft: 2, seasonsTotal: 3, guaranteed: 144000, happiness: 70,
+      targets: [{ kind: "goals", target: 15, progress: 6, period: "season", bonus: 20000, done: false }] }],
+    offers: [{ id: "o1", kind: "new", brand: "Volt Fuel", category: "Sports Drink", color: "#a3e635", weekly: 950, seasons: 2, signingOn: 1900,
+      targets: [{ kind: "appearances", target: 20, progress: 0, period: "season", bonus: 8000, done: false }], expires: { season: c.season, week: c.week + 2 }, note: "They like how hard you run." }],
+    news: ["Strider are happy with your goals."], paid: [], seq: 2,
+  };
   return c;
 }
 
@@ -133,7 +146,7 @@ function Phone3dTest() {
   const [scene, setScene] = useState<Scene>("home");
   const [note, setNote] = useState<string | null>(null);
   const [houseReady, setHouseReady] = useState(false);
-  const career = useMemo(sampleCareer, []);
+  const [career, setCareer] = useState(sampleCareer);
   const matrix = useMemo(() => quadMatrix(SCREEN.w, SCREEN.h, QUAD), []);
   const ctrl = useRef<HomeController | null>(null);
   const clock = useClock(film);
@@ -219,6 +232,19 @@ function Phone3dTest() {
 
   const showPhone = scene === "opening" || scene === "phone" || scene === "closing-home" || scene === "putting-away" || scene === "raising";
   const leaveNote = (to: string) => setNote(`"${to}" leaves the phone in the game. Not on this test page.`);
+  /** The in-phone apps (PhoneApps.tsx): sponsors and the Store run the game's own rules on the sample career;
+   *  the shop's cans and the rest only say so here (the game's handlers live in app/star-dev/page.tsx). */
+  const apps: PhoneAppActions = {
+    sponsors: {
+      onSign: (id) => { const r = signOffer(career, id); if (r.ok) setCareer(r.career); setNote(r.ok ? r.message : r.reason); after(4000, () => setNote(null)); },
+      onDecline: (id) => setCareer(declineOffer(career, id)),
+      onNegotiate: () => leaveNote("More money"), onAskLonger: () => leaveNote("Longer deal"), onAskEasier: () => leaveNote("Easier target"),
+      onCounter: () => leaveNote("Ask them to match it"), onWalkAway: () => leaveNote("Walk away"),
+    },
+    onBuyKib: () => leaveNote("Buy a can"),
+    onUseCan: () => leaveNote("Drink a can"),
+    onCareer: setCareer,
+  };
 
   const stage = (
     <div className={`p3-stage p3-${scene} p3-blink-${blink}`} data-phone3d={scene} style={{ width: STAGE.w, height: STAGE.h }}>
@@ -249,6 +275,7 @@ function Phone3dTest() {
               onClose={putAway}
               onPhoneHome={toHome}
               onLeave={(ph) => leaveNote(String(ph))}
+              apps={apps}
               relations={<RelationsPage career={career} onPlayRelationshipGame={(k) => leaveNote(`Play with ${k}`)} onOpen={(ph) => leaveNote(String(ph))} />}
             />
           </div>

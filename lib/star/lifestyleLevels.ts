@@ -25,6 +25,8 @@ export const LEVEL_NAMES: Record<string, [string, string, string, string, string
   silver: ["Thin Chain", "Silver Chain", "Thick Silver Chain", "Heavy Link Chain", "Iced-Out Chain"],
   gold: ["Steel Watch", "Gold-Plated Watch", "Solid Gold Watch", "Gold Chronograph", "Diamond-Bezel Watch"],
   rolex: ["Crystal Dial Watch", "Diamond Dial Watch", "Iced Bezel Watch", "Fully Iced Watch", "One-of-One Watch"],
+  cap: ["Plain Cap", "Club Cap", "Snapback", "Fitted Cap", "Gold-Badge Cap"],
+  shades: ["Market Shades", "Aviators", "Wraparounds", "Polarised Shades", "Gold-Frame Shades"],
   diamond: ["Crystal Pendant", "Diamond Pendant", "Diamond Necklace", "Diamond Collar", "Rare Pink Diamond"],
   art: ["Poster Print", "Framed Print", "Original Painting", "Gallery Piece", "Old Master"],
   // ── Gadgets (for you) ──
@@ -75,7 +77,7 @@ export const STYLE_GROUPS: { id: StyleGroup; label: string; note: string }[] = [
 ];
 
 const GROUP_OF: Record<string, StyleGroup> = {
-  suit: "drip", silver: "drip", gold: "drip", rolex: "drip", diamond: "drip", art: "drip",
+  suit: "drip", silver: "drip", gold: "drip", rolex: "drip", diamond: "drip", art: "drip", cap: "drip", shades: "drip",
   phone: "gadgets", console: "gadgets", headphones: "gadgets", music: "gadgets", tablet: "gadgets",
   smartwatch: "gadgets", tv: "gadgets", "gaming-pc": "gadgets",
   jet: "holiday", villa: "holiday", island: "holiday",

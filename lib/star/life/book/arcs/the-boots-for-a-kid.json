@@ -1,0 +1,284 @@
+{
+ "id": "arc-the-boots-for-a-kid",
+ "title": "A pair to give away",
+ "owner": "kidfan",
+ "summary": "The boot rep gives you a brand-new pair to give to a young fan, on camera, for the advert. You know which fan. The rep has a different one in mind. A season on, whose feet are they on?",
+ "size": "small",
+ "about": {
+  "who": [
+   "sponsor",
+   "kidfan"
+  ],
+  "tone": [
+   "warm",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.008,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "peak",
+  "when": [
+   "age>=24",
+   "age<=31",
+   "divisionLevel<=2 || fame>=45"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "sponsor",
+   "pick": "sponsor"
+  },
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "her-boots",
+   "title": "Her boots",
+   "text": "The boot company wanted a kid for their advert and you picked the one who'd always been at the barrier. She plays in them till the studs are gone."
+  },
+  {
+   "id": "the-advert-kid",
+   "title": "The advert kid",
+   "text": "The boot company picked the kid for the advert. He was very good on camera. You never saw him again."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "bfk-1-box",
+   "title": "A box of boots",
+   "n": 1,
+   "event": {
+    "id": "arc-bfk-1-box",
+    "title": "A box of boots",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "sponsor",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{sponsor.name} has a box of brand-new boots and a camera crew. \"You give these to a young fan, on camera, at the barrier on Saturday. We've picked a lad. He's an actor. Very good face.\""
+    ],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "sponsor",
+       "say": [
+        "\"It's an advert. It has to look right.\" You can think of exactly who should have them. {kidfan.name}, every week, at the barrier, in boots with tape round them."
+       ],
+       "replies": [
+        {
+         "id": "her",
+         "label": "\"I'm giving them to the girl at the barrier. Film that.\"",
+         "tone": "brave",
+         "end": "her"
+        },
+        {
+         "id": "both",
+         "label": "\"Bring two boxes. One for the advert, one for her.\"",
+         "tone": "kind",
+         "end": "both"
+        },
+        {
+         "id": "fine",
+         "label": "\"Fine. The actor.\"",
+         "tone": "calm",
+         "end": "actor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "her": [
+       {
+        "text": "{kidfan.short} opens the box at the barrier and doesn't say anything for ages. The crew films it. It's the best thing in the advert, and nobody acted.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 10
+         },
+         {
+          "slot": "sponsor",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "got-the-advert-boots",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "her"
+         }
+        }
+       }
+      ],
+      "both": [
+       {
+        "text": "The actor gets a box on camera. Afterwards, off camera, {kidfan.short} gets one too. She takes the tape off her old ones there and then.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "got-the-advert-boots",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "her"
+         }
+        }
+       }
+      ],
+      "actor": [
+       {
+        "text": "The actor is very good. He does the face. {kidfan.short} watches from three places down the barrier, in her taped boots.",
+        "arc": {
+         "set": {
+          "path": "actor"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "The boot rep has a box"
+  },
+  {
+   "id": "bfk-2-studs",
+   "title": "The studs",
+   "after": {
+    "beat": "bfk-1-box",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-bfk-2-studs",
+    "title": "The studs",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "walkout",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. {kidfan.short} is at the barrier with a pair of boots held up over her head.",
+     "{if arc.path=='her'}They're the advert boots. The studs are worn flat.{/if}{if arc.path=='actor'}They're new ones, from the shop. Her mum saved up.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "sign",
+      "label": "Sign them.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='her'",
+        "text": "You sign them. She says she scored eleven goals in them. You believe her. You get {sponsor.short} to send another pair.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "her-boots"
+        }
+       },
+       {
+        "text": "You sign them. Her mum says thank you, quietly, for something you didn't do.",
+        "arc": {
+         "end": "the-advert-kid"
+        }
+       }
+      ]
+     },
+     {
+      "id": "wave",
+      "label": "Wave.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='her'",
+        "text": "She waves the flat studs at you. She's grown out of them, she shouts. She's still wearing them.",
+        "arc": {
+         "end": "her-boots"
+        }
+       },
+       {
+        "text": "She waves back. The advert's on the telly that night, with the actor.",
+        "arc": {
+         "end": "the-advert-kid"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "A season on, a pair of boots"
+  }
+ ]
+}

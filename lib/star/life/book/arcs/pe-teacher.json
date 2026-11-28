@@ -2,7 +2,7 @@
  "id": "arc-pe-teacher",
  "title": "Sir wants a shirt",
  "owner": "pal",
- "summary": "Your old school mate texts: the PE teacher who said you'd never make it wants a signed shirt for the school raffle. What you write on it gets back to him. A season later the school asks for something bigger.",
+ "summary": "Your old school mate texts: the PE teacher who said you'd never make it wants a signed shirt. Weeks later you find out Sir has kept a scrapbook. A season later the school asks for something bigger, and after that it's Sir's leaving do.",
  "size": "small",
  "about": {
   "who": [
@@ -14,7 +14,14 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0107,
+  "tier": "common",
+  "stage": "first-seasons",
+  "when": [
+   "age<=20",
+   "season<=3",
+   "age<=22"
+  ]
  },
  "cast": [
   {
@@ -23,7 +30,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -36,6 +45,11 @@
    "id": "still-sore",
    "title": "Still sore",
    "text": "You never let it go, and the school stopped asking."
+  },
+  {
+   "id": "sirs-scrapbook",
+   "title": "Stacking shelves?",
+   "text": "At Sir's leaving do you read out the first page of his scrapbook of you. In the margin he'd written \"stacking shelves?\" and crossed it out."
   }
  ],
  "promises": {},
@@ -268,6 +282,125 @@
    "hint": "An old school mate has a favour to ask"
   },
   {
+   "id": "pet-1b-scrapbook",
+   "title": "The scrapbook",
+   "after": {
+    "beat": "pet-1-text",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-pet-1b-scrapbook",
+    "title": "The scrapbook",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "pal",
+       "say": [
+        "{pal.short}: \"Sir's retiring at Christmas. His wife told my mum he's got a scrapbook. Every match report you've ever had. Since the county trials. I'm not making this up.\""
+       ],
+       "replies": [
+        {
+         "id": "see",
+         "label": "\"I want to see that scrapbook.\"",
+         "tone": "kind",
+         "end": "scrap"
+        },
+        {
+         "id": "thanks",
+         "label": "\"Tell him I said thanks.\"",
+         "tone": "calm",
+         "end": "thanks"
+        },
+        {
+         "id": "weird",
+         "label": "\"That's a bit weird, mate.\"",
+         "tone": "cold",
+         "end": "weird"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "scrap": [
+       {
+        "text": "\"I'll see what I can do. His wife's on our side.\"",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "asked-about-sirs-scrapbook",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "scrap"
+         }
+        }
+       }
+      ],
+      "thanks": [
+       {
+        "text": "\"Will do.\" Two days later: \"He went red and walked off. That's a yes from Sir.\"",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "thanks"
+         }
+        }
+       }
+      ],
+      "weird": [
+       {
+        "text": "\"It's a bit nice, actually.\" He doesn't push it.",
+        "arc": {
+         "set": {
+          "mid": "weird"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "Your old school mate has news about Sir"
+  },
+  {
    "id": "pet-2-assembly",
    "title": "Prize-giving",
    "after": {
@@ -327,7 +460,15 @@
          }
         ],
         "arc": {
-         "end": "old-school-pride"
+         "end": "old-school-pride",
+         "set": {
+          "ended": "old-school-pride"
+         },
+         "next": "pet-3-leaving",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -346,7 +487,15 @@
          }
         ],
         "arc": {
-         "end": "old-school-pride"
+         "end": "old-school-pride",
+         "set": {
+          "ended": "old-school-pride"
+         },
+         "next": "pet-3-leaving",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        },
        {
@@ -358,7 +507,15 @@
          }
         ],
         "arc": {
-         "end": "still-sore"
+         "end": "still-sore",
+         "set": {
+          "ended": "still-sore"
+         },
+         "next": "pet-3-leaving",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -385,7 +542,15 @@
          }
         ],
         "arc": {
-         "end": "still-sore"
+         "end": "still-sore",
+         "set": {
+          "ended": "still-sore"
+         },
+         "next": "pet-3-leaving",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -400,6 +565,113 @@
     ]
    },
    "hint": "The school wants something bigger"
+  },
+  {
+   "id": "pet-3-leaving",
+   "title": "Sir's leaving do",
+   "after": {
+    "beat": "pet-2-assembly",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-pet-3-leaving",
+    "title": "Sir's leaving do",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Sir's leaving do is in the old sports hall, the one with the ropes you never climbed. {pal.short} has come with you. There are sausage rolls on a trestle table. Somebody's asked if you'll say a few words."
+    ],
+    "choices": [
+     {
+      "id": "words",
+      "label": "Say a few words.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.mid=='scrap'",
+        "text": "His wife hands you the scrapbook before you start. You read out the first page: the county trial, and in the margin in his writing, \"stacking shelves?\", crossed out. The sports hall goes up. Sir laughs till he has to sit down.",
+        "effects": {
+         "fans": 2,
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "saw-me-read-sirs-scrapbook",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "sirs-scrapbook"
+        }
+       },
+       {
+        "if": "arc.ended=='old-school-pride'",
+        "text": "You say he gave you a lift to the county trials and never let you forget it. He shakes your hand for too long again.",
+        "arc": {
+         "end": "old-school-pride"
+        }
+       },
+       {
+        "text": "You say something polite. He says something polite back. It's the first time you've both meant it, a bit.",
+        "arc": {
+         "end": "still-sore"
+        }
+       }
+      ]
+     },
+     {
+      "id": "back",
+      "label": "Stay at the back with {pal.short}.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.ended=='old-school-pride'",
+        "text": "Sir finds you at the back anyway and tells everyone near the sausage rolls that you were \"one of his\".",
+        "arc": {
+         "end": "old-school-pride"
+        }
+       },
+       {
+        "text": "You eat a sausage roll and leave before the speeches. {pal.short} stays.",
+        "arc": {
+         "end": "still-sore"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "Sir is leaving"
   }
  ]
 }

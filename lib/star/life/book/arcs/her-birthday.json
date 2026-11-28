@@ -2,7 +2,7 @@
  "id": "arc-her-birthday",
  "title": "Table for two at eight",
  "owner": "partner",
- "summary": "You stayed out on the training pitch and forgot your partner's birthday dinner. She's been at the restaurant since eight. What you say when you get in matters, and a year on, it's her birthday again.",
+ "summary": "You stayed out on the training pitch and forgot your partner's birthday dinner. Weeks later she wants you at her work do, the night before a game. A year on it's her birthday again, and the year after that it's yours.",
  "size": "small",
  "about": {
   "who": [
@@ -14,7 +14,13 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0121,
+  "tier": "common",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
  },
  "cast": [
   {
@@ -23,7 +29,9 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "mid": "none",
+  "ended": "none"
  },
  "clocks": [],
  "ends": [
@@ -36,6 +44,11 @@
    "id": "the-same-again",
    "title": "The same again",
    "text": "You forgot it again. She stopped booking tables."
+  },
+  {
+   "id": "the-wall",
+   "title": "The wall",
+   "text": "You forgot her birthday once and ate chips on a wall to make up for it. It's your table now, both birthdays, with a candle the chip shop keeps behind the counter."
   }
  ],
  "promises": {},
@@ -228,6 +241,154 @@
    "hint": "Something's wrong at home"
   },
   {
+   "id": "bday-1b-workdo",
+   "title": "Her work do",
+   "after": {
+    "beat": "bday-1-late",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-bday-1b-workdo",
+    "title": "Her work do",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "hasPartner"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "partner",
+       "say": [
+        "{partner.short} is doing her eyeliner in the hall mirror. \"My work do's Friday. Everyone's bringing someone. They all think I made you up.\" Friday is the night before a game."
+       ],
+       "replies": [
+        {
+         "id": "eleven",
+         "label": "\"I'll come. Home by eleven.\"",
+         "tone": "calm",
+         "end": "came"
+        },
+        {
+         "id": "stay",
+         "label": "\"I'll come, and I'll stay till the end.\"",
+         "tone": "kind",
+         "end": "stayed"
+        },
+        {
+         "id": "no",
+         "label": "\"Not the night before a game.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "came": [
+       {
+        "text": "You meet eleven people whose names you forget at once. At ten to eleven she walks you to the taxi herself. \"They believe me now.\"",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "came-to-my-work-do",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "came"
+         }
+        }
+       }
+      ],
+      "stayed": [
+       {
+        "text": "You stay till the end and dance with her boss. You're flat on Saturday and you don't care much.",
+        "effects": {
+         "energy": -8
+        },
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 10,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "stayed-till-the-end-at-my-do",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "stayed"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Course not.\" She goes on her own and comes back at one and doesn't tell you anything about it, which is how you know.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -5,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "missed-my-work-do",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "Your partner has a night out planned"
+  },
+  {
    "id": "bday-2-again",
    "title": "Her birthday",
    "after": {
@@ -286,7 +447,15 @@
          }
         ],
         "arc": {
-         "end": "never-again"
+         "end": "never-again",
+         "set": {
+          "ended": "never-again"
+         },
+         "next": "bday-3-yours",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -314,7 +483,15 @@
          }
         ],
         "arc": {
-         "end": "the-same-again"
+         "end": "the-same-again",
+         "set": {
+          "ended": "the-same-again"
+         },
+         "next": "bday-3-yours",
+         "afterWeeks": [
+          40,
+          60
+         ]
         }
        }
       ]
@@ -329,6 +506,110 @@
     ]
    },
    "hint": "A year on, her birthday again"
+  },
+  {
+   "id": "bday-3-yours",
+   "title": "Your birthday",
+   "after": {
+    "beat": "bday-2-again",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-bday-3-yours",
+    "title": "Your birthday",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ],
+     "requires": [
+      "hasPartner"
+     ]
+    },
+    "setup": [
+     "A year on again, and this time it's your birthday. {partner.short} has said to keep the evening free and not to ask. She drives. She parks outside the chip shop."
+    ],
+    "choices": [
+     {
+      "id": "wall",
+      "label": "Sit on the wall.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='saved' || arc.mid=='stayed'",
+        "text": "There's a candle in your chips. The man behind the counter has kept one for you since her birthday. \"Your table,\" she says, patting the wall.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "made-the-wall-our-table",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-wall"
+        }
+       },
+       {
+        "text": "It's nice. It's chips on a wall. She watches you eat them like she's waiting for something.",
+        "arc": {
+         "end": "never-again"
+        }
+       }
+      ]
+     },
+     {
+      "id": "nice",
+      "label": "\"Can we go somewhere nice instead?\"",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "if": "arc.mid=='no'",
+        "text": "She drives you to a restaurant without a word. You're home by nine. She sleeps facing the wall.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -6,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "end": "the-same-again"
+        }
+       },
+       {
+        "text": "She laughs. \"This is nice.\" You eat the chips. She's right.",
+        "arc": {
+         "end": "never-again"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "Another birthday, and it's yours"
   }
  ]
 }

@@ -1,0 +1,265 @@
+{
+ "id": "arc-the-signing-session",
+ "title": "The signing session",
+ "owner": "kidfan",
+ "summary": "A signing session at the club shop. The man at the front has forty photos and he's selling them online. Behind him, a girl with one programme. You've got fifteen minutes. A season on, the programme comes back.",
+ "size": "small",
+ "about": {
+  "who": [
+   "kidfan"
+  ],
+  "tone": [
+   "warm",
+   "angry"
+  ]
+ },
+ "start": {
+  "chance": 0.003,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "her-programme",
+   "title": "Her programme",
+   "text": "At a signing session you stopped signing a dealer's forty photos so a girl at the back could get her one. She still has the programme. He still sells photos."
+  },
+  {
+   "id": "forty-photos",
+   "title": "Forty photos",
+   "text": "You signed forty photos for a man who sold them by teatime. The girl behind him got your name on her programme as you were leaving."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "sgn-1-shop",
+   "title": "Fifteen minutes",
+   "n": 1,
+   "event": {
+    "id": "arc-sgn-1-shop",
+    "title": "Fifteen minutes",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The club shop, fifteen minutes, a queue out of the door. The man at the front has forty photos of you in a folder, all the same. Three places back, {kidfan.name} is holding one programme with both hands."
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "kidfan",
+       "say": [
+        "The man slides the photos across one at a time. You've done eleven. The shop manager taps his watch. The girl is watching the clock on the wall."
+       ],
+       "replies": [
+        {
+         "id": "stop",
+         "label": "\"That's enough for you, mate.\" Wave the girl forward.",
+         "tone": "brave",
+         "end": "stop"
+        },
+        {
+         "id": "sign",
+         "label": "Sign all forty. He's queued.",
+         "tone": "calm",
+         "end": "forty"
+        },
+        {
+         "id": "after",
+         "label": "Keep signing, and catch the girl at the door after.",
+         "tone": "kind",
+         "end": "after"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "stop": [
+       {
+        "text": "He argues. The queue doesn't take his side. The girl gets her programme signed and asks you to write \"to my nan\" as well. You do.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "skipped-the-dealer-for-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stopped"
+         }
+        }
+       }
+      ],
+      "forty": [
+       {
+        "text": "Forty photos. They're online for twenty quid each by teatime. The queue gets cut off two people before the girl.",
+        "effects": {
+         "fans": -2
+        },
+        "arc": {
+         "set": {
+          "path": "forty"
+         }
+        }
+       }
+      ],
+      "after": [
+       {
+        "text": "You find her at the door. She's been crying a bit. You sign the programme on the shop window, and the cover's a bit bent now.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "after"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "A signing session at the club shop"
+  },
+  {
+   "id": "sgn-2-back",
+   "title": "The programme",
+   "after": {
+    "beat": "sgn-1-shop",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-sgn-2-back",
+    "title": "The programme",
+    "category": "fans",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "after-match",
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on, at the barrier. {kidfan.short} has the same programme in a plastic sleeve. \"My nan died,\" she says. \"She had this by her bed. I wanted you to know.\""
+    ],
+    "choices": [
+     {
+      "id": "sign",
+      "label": "Sign it again, under the first one.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='stopped' || arc.path=='after'",
+        "text": "You write \"for your nan\" under the first signature. She holds it to her chest and goes.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "her-programme"
+        }
+       },
+       {
+        "text": "She's got your name on the back, from the door, as you left. You sign the front. \"She'd have liked that,\" she says.",
+        "arc": {
+         "end": "forty-photos"
+        }
+       }
+      ]
+     },
+     {
+      "id": "listen",
+      "label": "Listen.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='stopped'",
+        "text": "She tells you about her nan for five minutes. The man with the folder is at the other end of the barrier. You don't go over.",
+        "arc": {
+         "end": "her-programme"
+        }
+       },
+       {
+        "text": "She tells you about her nan. You think about the forty photos.",
+        "arc": {
+         "end": "forty-photos"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "A season on, the programme"
+  }
+ ]
+}

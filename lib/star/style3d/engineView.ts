@@ -22,13 +22,14 @@
  *
  * Pitch metres → three: X = x − CX, Y = z (up), Z = y (out from the goal line).
  */
+import { bootWorn } from "../wearables";
 import { humanBodyLook } from "../human3d/look";
 import { CX } from "../pitch";
 /** Your celebration on the spot turns back towards the middle of your half (y metres out from the goal line). */
 const HALF_W_CELEB = 30;
 import type { EngineFrame, EngineFrameFigure } from "../engineFrame";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
-import { acquireRenderer, disposeObject3D, flushReleased, warmUp } from "../three3d/perf";
+import { acquireRenderer, disposeObject3D, flushReleased, holdsRenderer, warmUp } from "../three3d/perf";
 import { Governor, governedPixelRatio } from "../three3d/governor";
 import { installShadowCache } from "../three3d/shadowCache";
 import { cullSkinned } from "../three3d/cullPeople";
@@ -74,6 +75,8 @@ export interface EngineView {
   /** The TV camera's angle, degrees from straight down. */
   setTilt(deg: number): void;
   setVisible(on: boolean): void;
+  /** Still holds the one shared renderer, its canvas in this view (false: another 3D place took it; rebuild). */
+  holdsRenderer(): boolean;
   dispose(): void;
 }
 
@@ -222,7 +225,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   ]);
 
   // ── renderer: at the phone's own pixel density (2 on High), so nothing is "pixelly" ──
-  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   // the stadium's shadows drawn once and kept; the men from a lighter shadow body (three3d/shadowCache.ts)
   installShadowCache(THREE, renderer);
   const dprCap = tier === "high" || tier === "medium" ? SMALL_MEN.mediumDpr : 1.25; // Medium and High: 2.5 (Harry approved, 12 Oct 2026); // never under 1.25 on a phone: smooth edges (9 Oct 2026)
@@ -708,7 +711,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       skin: toonOn ? (sid === "you" ? toonYou().skin : ml ? ml.skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],
       hair: toonOn ? (sid === "you" ? toonYou().hair : ml ? ml.hair : toonHairFor(sid)) : "#1b120c",
       kit: { shirt, trim: shorts }, number: numberTex(numberFor(sid)),
-      accessories: [...(sid === "keeper" ? [{ slot: "hands" as const, color: "#f5f5f5", color2: "#16a34a" }] : []), ...(ml ? [{ slot: "boots" as const, color: ml.boots }] : [])],
+      accessories: [...(sid === "keeper" ? [{ slot: "hands" as const, color: "#f5f5f5", color2: "#16a34a" }] : []), ...(ml ? [{ slot: "boots" as const, color: ml.boots }] : []), ...(sid === "you" && toonOn && toonYou().boots ? [bootWorn(toonYou().boots!)] : [])],
     };
     dressPerson3d(THREE, p, look);
     plainHead(p, look.skin, look.hair ?? "#1b120c");
@@ -2179,6 +2182,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     },
     setTod(t) { hTod = t; h?.setTod(t); },
     setTilt() { /* one camera: it takes its tilt from the 2D frame (f.cam.tilt) */ },
+    holdsRenderer: () => holdsRenderer(renderer, container, isOwner),
     setVisible(on) {
       // the 2D | 3D switch mid-gesture: a pinch or a camera swipe ends here (a drag already handed to
       // the 2D game is left to finish, so a pull-back in progress still kicks)

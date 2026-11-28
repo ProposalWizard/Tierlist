@@ -100,7 +100,8 @@ import type * as THREE from "three";
 import { installFrameMeter } from "./frameMeter";
 import { installAssetVersions, versionedUrl } from "./assetUrl";
 import { safeCompileAsync } from "./safeCompile";
-import { quality3dTier, noteGpu3d, QUALITY3D_AUTO_KEY, type Quality3d, type TierProfile } from "./quality";
+import { quality3dTier, noteGpu3d, currentDeviceCaps, QUALITY3D_AUTO_KEY, type DeviceCaps, type Quality3d, type TierProfile } from "./quality";
+import { resScale, resScaleState, cappedPixelRatio } from "./resScale";
 
 export type { Quality3d, TierProfile } from "./quality";
 export { TIER_PROFILES, tierHintFromGpu, stepDownTier, shadowSizeFor, autoTierFromDevice } from "./quality";
@@ -265,11 +266,18 @@ let ownerSeq = 0;
  * compiled when the next scene asks for them.
  */
 export function acquireRenderer(T: Three, container: HTMLElement, prof: Pick<TierProfile, "antialias" | "maxPixelRatio">): { renderer: THREE.WebGLRenderer; release: (root?: THREE.Object3D | null, keep?: Set<unknown>) => void; isOwner: () => boolean } {
+  // A place that was left while it was still loading (its screen is gone, so its box is no longer
+  // on the page) must not take the one renderer: it would pull the canvas out of the place on
+  // screen and stop its drawing (Harry, 27 Nov 2026: the 3D match went blank after the phone's
+  // house finished loading behind it). It fails here instead; its screen is gone, so nobody sees it.
+  if (abandonedContainer(container)) throw abandonedSceneError();
   installFrameMeter();
   if (shared && (shared.antialias !== prof.antialias || shared.renderer.getContext().isContextLost())) dropSharedRenderer();
   if (!shared) {
     const renderer = new T.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
     skipSameSize(renderer);
+    rememberGpu(renderer);
+    applyPixelCap(renderer);
     shared = { renderer, antialias: prof.antialias, owner: 0, pending: [], flushTimer: null };
   }
   const s = shared;
@@ -313,6 +321,49 @@ export function acquireRenderer(T: Three, container: HTMLElement, prof: Pick<Tie
       }
     },
   };
+}
+
+/** The error a place gets when it asks for the renderer after its screen was closed (see acquireRenderer). */
+export const ABANDONED_SCENE = "AbandonedScene3d";
+export function abandonedSceneError(): Error {
+  const e = new Error("This 3D place was closed before it finished loading");
+  e.name = ABANDONED_SCENE;
+  return e;
+}
+/** True for the error above: a screen that was closed mid-load, nothing to show or log. */
+export function isAbandonedScene(e: unknown): boolean {
+  return !!e && typeof e === "object" && (e as { name?: string }).name === ABANDONED_SCENE;
+}
+/** A container that is not on the page any more (its React screen unmounted). Server / tests without a DOM: never. */
+export function abandonedContainer(container: { isConnected?: boolean } | null | undefined): boolean {
+  return !!container && container.isConnected === false;
+}
+
+/** Does this place still hold the one renderer, with its canvas in `container`? (a place checks it to heal itself) */
+export function holdsRenderer(renderer: THREE.WebGLRenderer, container: HTMLElement, isOwner: () => boolean): boolean {
+  return isOwner() && renderer.domElement.parentElement === container && !renderer.getContext().isContextLost();
+}
+
+/**
+ * The device's pixel cap and the automatic resolution, on the one renderer (27 Nov 2026, Mikey's
+ * Galaxy S20). Every place sets its own pixel ratio (still, moving, the governor's rung); on an
+ * Android phone this caps it (three3d/quality.ts deviceCaps: 1.5 pixels per point on a mid GPU, not
+ * the 2 to 2.5 a place asks for on its own) and scales it by the page's resolution scaler
+ * (three3d/resScale.ts). Apple and desktop: untouched, the number goes straight through.
+ */
+function applyPixelCap(renderer: THREE.WebGLRenderer) {
+  const caps = currentDeviceCaps();
+  if (!caps.scaled) { resScaleState.active = false; return; }
+  const own = renderer.setPixelRatio.bind(renderer);
+  let want = renderer.getPixelRatio();
+  const cap = () => caps.maxPixelRatio;
+  const top = Math.min(cap(), typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1);
+  resScale.floor = Math.min(1, Math.max(0.4, caps.minPixelRatio / Math.max(1, top)));
+  const apply = () => own(cappedPixelRatio(want, cap(), caps.minPixelRatio, resScale.scale));
+  renderer.setPixelRatio = (v: number) => { want = v; apply(); };
+  resScale.onChange(() => { if (shared?.renderer === renderer) apply(); });
+  resScaleState.active = true;
+  (renderer as unknown as { __pixelCap?: DeviceCaps }).__pixelCap = caps;
 }
 
 /**

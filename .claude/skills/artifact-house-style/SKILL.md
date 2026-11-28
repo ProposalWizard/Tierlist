@@ -35,6 +35,25 @@ remember how you made this one and build from there."*
 that reaction. Read it before writing anything — copy its structure, its CSS and
 its density, then change the content.
 
+## THE LIVE BOARD: `references/live-board-standard.html` (Harry, 28 Nov 2026)
+*"wait this new page is so good, this is how the story page should be too, this
+could be used for patch notes at times."* For "what's been done / what's live",
+round-ups of many changes, catalogues (the Story Book) and, at times, patch
+notes: counters at the top (LIVE · READY, NOT LIVE · BEING BUILT, or the
+catalogue's own groups), then a 2-column grid of tiles, each ONE real picture
+or a short muted looping clip + a bold 3–6 word title + one line; tap a tile
+for a sheet with 2–3 more pictures, "How we checked it", "Still weak". One
+"Waiting on you" box. About 4 phone screens collapsed. Never fake "live":
+check origin/main. Media is real game captures only (no AI pictures).
+Replaced the long one-card-per-change page Harry called "too long to look
+through" (28 Nov 2026).
+
+**Named option: "Segmented patch notes" (Harry, 28 Nov 2026, RUL-TEAM-035).**
+The live board is an OPTION for patch notes, not a replacement. Use it when
+asked ("segmented patch notes"), for a round-up of many changes, or when the
+reader needs live / ready, not live / being built at a glance. Normal patch
+notes stay the default. Full rules: `creating-patch-notes` -> SEGMENTED PATCH NOTES.
+
 ## THE STANDARD: `references/tuning-plan-standard.html` (Harry, 14 Oct 2026)
 *"I love the diagrams, this is a much better patch notes and unless stated
 that more is needed this should be standard."* Every page — patch notes,

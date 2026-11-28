@@ -1,0 +1,495 @@
+{
+ "id": "arc-the-last-contract",
+ "title": "One more year",
+ "owner": "manager",
+ "summary": "You're past thirty and the gaffer offers one more year, less money, fewer games, and a job with the young lads on Tuesdays. You promise to give the Tuesdays a go. A season on, it's the last day of the deal.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "gaffer",
+   "coach",
+   "the end of a career"
+  ],
+  "tone": [
+   "dark",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0093,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "veteran",
+  "when": [
+   "age>=29",
+   "age>=30"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "coach",
+   "pick": "coach"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "tues": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-tuesdays",
+   "title": "The Tuesdays",
+   "text": "You signed one more year and spent the Tuesdays with the young lads. You haven't stopped since."
+  },
+  {
+   "id": "one-more",
+   "title": "One more",
+   "text": "You signed one more year and played every minute they'd give you."
+  }
+ ],
+ "promises": {
+  "p-tuesdays": {
+   "id": "p-tuesdays",
+   "to": "coach",
+   "text": "Give the Tuesday sessions with the young lads a go",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "lct-2",
+    "ends": [
+     "go"
+    ]
+   },
+   "dueText": "Next Tuesday at four",
+   "remind": "\"Tuesday at four. Pitch three. Bring your boots, not your phone.\"",
+   "kept": {
+    "text": "You said you'd do the Tuesdays, and you turned up.",
+    "npc": [
+     {
+      "slot": "coach",
+      "respect": 4,
+      "bond": 4
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd give the Tuesdays a go.",
+    "npc": [
+     {
+      "slot": "coach",
+      "respect": -4,
+      "bond": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "coach",
+      "tag": "never-came-on-a-tuesday",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "lct-1",
+   "title": "One more year",
+   "n": 1,
+   "event": {
+    "id": "arc-lct-1",
+    "title": "One more year",
+    "category": "career",
+    "place": "compound:office",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "age>=29"
+     ]
+    },
+    "setup": [
+     "The gaffer has your contract on his desk with a figure crossed out and a smaller one written above it. Next to it is a sheet that says \"Tuesdays: U18s, 4pm\"."
+    ],
+    "talk": {
+     "start": "l1",
+     "nodes": {
+      "l1": {
+       "who": "manager",
+       "say": [
+        "\"One year. Less money. You won't start every week. And Tuesdays with the young lads, with {coach.short}. I think you'd be good at it. I think you'd hate it for a month.\""
+       ],
+       "replies": [
+        {
+         "id": "sign",
+         "label": "\"Where do I sign?\"",
+         "tone": "humble",
+         "goto": "l2"
+        },
+        {
+         "id": "money",
+         "label": "\"That's a lot less.\"",
+         "tone": "honest",
+         "goto": "l3"
+        },
+        {
+         "id": "walk",
+         "label": "\"I've got two more years in me somewhere.\"",
+         "tone": "fiery",
+         "end": "walk"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "l3"
+        }
+       ]
+      },
+      "l3": {
+       "who": "manager",
+       "say": [
+        "\"It is. It's what I can do. Somewhere else will give you two years and a bus to Grimsby every other week.\""
+       ],
+       "replies": [
+        {
+         "id": "sign",
+         "label": "\"I'll sign.\"",
+         "tone": "humble",
+         "goto": "l2"
+        },
+        {
+         "id": "walk",
+         "label": "\"Then I'll find two years somewhere else.\"",
+         "tone": "fiery",
+         "end": "walk"
+        }
+       ]
+      },
+      "l2": {
+       "who": "coach",
+       "say": [
+        "{coach.short} is in the doorway. \"Tuesday at four? Give it a go. Three weeks. If you hate it, you hate it.\""
+       ],
+       "replies": [
+        {
+         "id": "promise",
+         "label": "\"Three weeks. I'll give it a go.\"",
+         "tone": "kind",
+         "end": "signed",
+         "promise": "p-tuesdays"
+        },
+        {
+         "id": "play",
+         "label": "\"I'm signing to play, not to coach.\"",
+         "tone": "calm",
+         "end": "signed-play"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "signed": [
+       {
+        "text": "You sign. The gaffer shakes your hand and holds on to it for a second longer than he needs to.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 6,
+          "bond": 4
+         },
+         {
+          "slot": "coach",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "signed"
+         }
+        }
+       }
+      ],
+      "signed-play": [
+       {
+        "text": "You sign. {coach.short} shrugs and says the offer stands.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "play"
+         }
+        }
+       }
+      ],
+      "walk": [
+       {
+        "text": "\"Then go and find them.\" Nobody gives you two years. A week later you sign his one, and he tears up the sheet about the Tuesdays.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "play"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The gaffer has an offer"
+  },
+  {
+   "id": "lct-2",
+   "title": "Tuesday at four",
+   "after": {
+    "beat": "lct-1",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-lct-2",
+    "title": "Tuesday at four",
+    "category": "career",
+    "place": "compound:pitch-3",
+    "size": "medium",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "promise(p-tuesdays)"
+     ]
+    },
+    "setup": [
+     "Tuesday, ten to four. Pitch three. Fourteen sixteen-year-olds in bibs, and one of them is already doing keepy-ups to show off. {coach.short} hands you a whistle."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Blow the whistle.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You take the session. You shout too much and laugh too much and the keepy-up lad does exactly what you say for an hour. You drive home and can't stop thinking about it.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 6,
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "took-the-tuesday-session",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "tues": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Tell him you've got a scan.",
+      "tone": "lie",
+      "outcomes": [
+       {
+        "text": "You don't have a scan. You sit in your car in the car park and watch {coach.short} do it on his own.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": -6
+         }
+        ],
+        "arc": {
+         "set": {
+          "tues": 0
+         }
+        },
+        "promiseBroken": [
+         "p-tuesdays"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "Tuesday with the young lads"
+  },
+  {
+   "id": "lct-3",
+   "title": "The last day",
+   "after": {
+    "beat": "lct-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-lct-3",
+    "title": "The last day",
+    "category": "career",
+    "place": "compound:office",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on, the last day of the deal.",
+     "{if arc.tues==1}The sixteen-year-olds are seventeen now. Three of them have asked if you're doing Tuesdays next season.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "next",
+      "label": "Say yes to next season.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.tues==1",
+        "text": "You sign up for Tuesdays, and Thursdays too. {coach.short} buys you a whistle on a cord with your initials on it.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 8
+         },
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "kept-coming-on-tuesdays",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "end": "the-tuesdays"
+        }
+       },
+       {
+        "text": "You sign another year, as a player. Your knees have a word about it.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "one-more"
+        }
+       }
+      ]
+     },
+     {
+      "id": "think",
+      "label": "\"Let me think about it.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.tues==1",
+        "text": "You think about it for a week, in the car park on a Tuesday, watching pitch three.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-tuesdays"
+        }
+       },
+       {
+        "text": "You think about it for a fortnight and sign.",
+        "arc": {
+         "end": "one-more"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "A season on, the last day of the deal"
+  }
+ ]
+}

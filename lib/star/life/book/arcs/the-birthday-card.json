@@ -1,0 +1,306 @@
+{
+ "id": "arc-the-birthday-card",
+ "title": "A card on your peg",
+ "owner": "kitman",
+ "summary": "It's your birthday and nobody has said, except the kit man, who has everyone's birthday in a diary. A season on, it's his, and the diary page is empty.",
+ "size": "small",
+ "about": {
+  "who": [
+   "kit man"
+  ],
+  "tone": [
+   "warm",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
+ },
+ "cast": [
+  {
+   "slot": "kitman",
+   "pick": "kitman"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "his-birthday",
+   "title": "His too",
+   "text": "He had everyone's birthday in his diary. Now somebody has his."
+  },
+  {
+   "id": "nobody-knew",
+   "title": "Nobody knew",
+   "text": "He had your birthday in his diary. His own went by with nobody saying a word."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "bcd-1",
+   "title": "A card on your peg",
+   "n": 1,
+   "event": {
+    "id": "arc-bcd-1",
+    "title": "A card on your peg",
+    "category": "staff",
+    "place": "compound:dressing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kitman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "There's an envelope on your peg with your name on it in capitals. Inside is a card with a cake on it. It's your birthday, and nobody else has said a word."
+    ],
+    "talk": {
+     "start": "k1",
+     "nodes": {
+      "k1": {
+       "who": "kitman",
+       "say": [
+        "{kitman.short} doesn't look up from the towels. \"Don't make a thing of it. I've got everyone's in my diary. What are you doing tonight?\""
+       ],
+       "replies": [
+        {
+         "id": "pint",
+         "label": "\"Nothing. Fancy a pint?\"",
+         "tone": "kind",
+         "end": "pint"
+        },
+        {
+         "id": "how",
+         "label": "\"How have you even got my birthday?\"",
+         "tone": "honest",
+         "goto": "k2"
+        },
+        {
+         "id": "lie",
+         "label": "\"The lads are taking me out.\"",
+         "tone": "lie",
+         "end": "lie"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "goto": "k2"
+        }
+       ]
+      },
+      "k2": {
+       "who": "kitman",
+       "say": [
+        "\"You wrote it on a form the day you signed. I copied it in. I've got the cleaners' and all, and the chairman's dog.\""
+       ],
+       "replies": [
+        {
+         "id": "pint",
+         "label": "\"Pint, then. You're buying.\"",
+         "tone": "confident",
+         "end": "pint"
+        },
+        {
+         "id": "thanks",
+         "label": "\"Thanks. Honestly.\"",
+         "tone": "kind",
+         "end": "thanks"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "pint": [
+       {
+        "text": "He has one half of bitter and tells you about every kit man who came before him. You're home by nine and it's the best birthday you've had in a while.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "respect": 2,
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "had-a-birthday-pint",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "pint"
+         }
+        }
+       }
+      ],
+      "thanks": [
+       {
+        "text": "He nods and goes back to the towels. The card stays on your peg until March.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "thanks"
+         }
+        }
+       }
+      ],
+      "lie": [
+       {
+        "text": "\"Good.\" Nobody takes you anywhere. You eat a pizza on the sofa and look at the card with the cake on it.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lie"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     }
+    ]
+   },
+   "hint": "The kit man has left you something"
+  },
+  {
+   "id": "bcd-2",
+   "title": "His diary",
+   "after": {
+    "beat": "bcd-1",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-bcd-2",
+    "title": "His diary",
+    "category": "staff",
+    "place": "compound:boot-room",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kitman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. {kitman.short}'s diary is open on the boot room table. Every day has a name in it except today, and the staff list on the wall says today is his birthday.",
+     "{if arc.path=='pint'}You still owe him a half.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "card",
+      "label": "Get the lads to sign a card.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "Nineteen names and a drawing of him the young lads won't explain. He puts it in the diary, on today's page, and doesn't say anything about it until Friday.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "kitman",
+          "respect": 4,
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "got-me-a-birthday-card",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "his-birthday"
+        }
+       }
+      ]
+     },
+     {
+      "id": "write",
+      "label": "Write it in his diary for him.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You write HAPPY BIRTHDAY on today's page in capitals. He finds it at lunch. That afternoon your towel is folded into a swan.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "respect": 2,
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "his-birthday"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Leave it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "Nobody says anything all day. He locks up at six like always and goes home.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "end": "nobody-knew"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     }
+    ]
+   },
+   "hint": "A season on, it's the kit man's birthday"
+  }
+ ]
+}
