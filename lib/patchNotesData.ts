@@ -31,7 +31,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "title": "Harry's patch notes: 3D that stays on, phone apps, loading screens, the walk",
       "author": "Harry",
       "publishedAt": "2026-11-28T03:54:05Z",
-      "updatedAt": null,
+      "updatedAt": "2026-11-28T05:25:00Z",
+      "updateNote": "The new golden trophy app icon is live: delete the home-screen app and add it again to see it.",
       "artifactUrl": "https://claude.ai/artifact/RhFAsHCMQJGKo7T5xV5TSk",
       "summary": "Harry's push of 27-28 Nov, shown as Segmented patch notes (the live board). Now live: your 3D no longer gets stolen or frozen and mends itself, the phone can be picked up again, Android draws fewer pixels, every app works inside the 3D phone, each section has its own loading screen, the camera stands further back with a first-person button, shop boots, caps and sunglasses show on your player, the textured trees are back and cheaper, the new walk, and 22 more voice lines. On test pages or switched off: the gym, the 216 stories and club people.",
       "stats": [
@@ -57,6 +58,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "kind": "added",
           "title": "Check these",
           "items": [
+            {
+              "title": "The new golden trophy app icon",
+              "detail": "Delete the home-screen app, open the site in Safari, Share → Add to Home Screen."
+            },
             {
               "title": "Use the phone, then play a match: the 3D stays on",
               "detail": "Home → Phone → back → Play match."
@@ -222,7 +227,13 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           ]
         }
       ],
-      "updates": []
+      "updates": [
+        {
+          "at": "2026-11-28T05:25:00Z",
+          "note": "The new golden trophy app icon is live: delete the home-screen app and add it again to see it.",
+          "where": "App icon (Add to Home Screen)"
+        }
+      ]
     },
   {
     "version": "0.149",
