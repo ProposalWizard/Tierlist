@@ -122,3 +122,12 @@ E. THE STORY BOOK: regenerate and republish it after each job (same URL), so
 2. The kit man start chance: 0.05 (88% of careers starting at 17 meet him) or
    0.08?
 3. The 5 people-plan questions in docs/plans/PEOPLE_AND_MEMORY_PLAN.md.
+
+## How the jobs really use the API credit (28 Nov 2026, night)
+
+The key is `KIB_API_KEY` (not ANTHROPIC_API_KEY). A plain `claude -p` in a cloud
+chat IGNORES any API key and bills the chat account (a fake key still works). To
+bill the credit, run each job with a clean environment and its own config folder:
+`env -i HOME PATH proxy vars NODE_EXTRA_CA_CERTS CLAUDE_CONFIG_DIR=<own dir>
+ANTHROPIC_API_KEY="$KIB_API_KEY" claude -p ...`. Proof check: the same command
+with a fake key must fail with "Invalid API key".
