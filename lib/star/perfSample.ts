@@ -46,7 +46,7 @@ export function perfRecordingWanted(g: RecordGate): RecordReason {
 // ── where the player is ────────────────────────────────────────────────────────
 
 /** The 3D places Harry named, plus "match" (the 2D match) and "match3d" (the match drawn in 3D). */
-export type PerfPlace = "garden" | "house" | "shop" | "casino" | "phone" | "match" | "match3d" | "training" | "gym" | "world" | "cutscene" | "other3d";
+export type PerfPlace = "garden" | "house" | "shop" | "casino" | "phone" | "match" | "match3d" | "training" | "gym" | "world" | "drive" | "cutscene" | "other3d";
 
 /** The career's screen (the star-dev phase) as a 3D place, or null for a flat screen. */
 export function placeOfPhase(phase: string | null | undefined): PerfPlace | null {
@@ -64,6 +64,7 @@ export function placeOfPhase(phase: string | null | undefined): PerfPlace | null
 export function placeOfPath(path: string, search = ""): PerfPlace | null {
   const q = new URLSearchParams(search).get("place");
   if (path.startsWith("/star-world3d-dev")) return q === "gym" ? "gym" : q === "garden" ? "garden" : q === "house" ? "house" : "world";
+  if (path.startsWith("/star-drive3d-dev")) return "drive";
   if (path.startsWith("/star-garden3d-dev")) return "garden";
   if (path.startsWith("/star-home3d-dev")) return "house";
   if (path.startsWith("/star-shop3d-dev")) return "shop";

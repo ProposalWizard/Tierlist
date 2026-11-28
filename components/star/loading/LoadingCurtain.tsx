@@ -39,7 +39,7 @@ import Gala from "./Gala";
 import "./curtain.css";
 
 /** Sections whose place loads three.js itself: the ring may count its files. */
-const THREE_PLACES: LoadSection[] = ["garden", "house", "shop", "casino", "training", "ballon-dor", "awards"];
+const THREE_PLACES: LoadSection[] = ["garden", "house", "shop", "casino", "training", "ballon-dor", "awards", "drive"];
 
 export const WHERE: Record<LoadSection, string> = {
   "first-load": "Getting the game ready",
@@ -51,6 +51,7 @@ export const WHERE: Record<LoadSection, string> = {
   training: "Setting up the drill",
   "ballon-dor": "Taking your seats",
   awards: "Taking your seats",
+  drive: "Out to the car",
 };
 
 interface Session {

@@ -25,7 +25,9 @@
 export type LoadSection =
   | "first-load" | "match"
   | "garden" | "house" | "shop" | "casino"
-  | "training" | "ballon-dor" | "awards";
+  | "training" | "ballon-dor" | "awards"
+  // the drive to training (driving phase 1, 28 Nov 2026: /star-drive3d-dev)
+  | "drive";
 
 /** What a variant is drawn as. */
 export type LoadKind = "keepie" | "programme" | "tunnel" | "board" | "gala" | "boot";
@@ -80,6 +82,11 @@ export const LOAD_VARIANTS: Record<LoadSection, LoadVariant[]> = {
   "ballon-dor": [
     { id: "gala-ball", kind: "gala", look: "ball" },
     { id: "gala-invite", kind: "gala", look: "invite" },
+  ],
+  // the drive starts at your garden gate: the garden's stills, until the drive has its own
+  drive: [
+    K("keepie-drive-day", "garden-day"),
+    K("keepie-drive-sunset", "garden-sunset"),
   ],
   // the red carpet (Gala.tsx look "carpet") is out of the rotation: too flat next to the others (27 Nov stills)
   awards: [
