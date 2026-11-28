@@ -118,7 +118,7 @@ function Garden3DTest() {
     return (
       <>
         {garden}
-        <div style={{ position: "fixed", top: 58, left: 12, zIndex: 90, display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <div style={{ position: "fixed", top: 58, left: 12, right: 62 /* clear of the first-person eye (ViewToggle3D) */, zIndex: 90, display: "flex", gap: 6, flexWrap: "wrap" }}>
           {(["day", "sunset", "night"] as Sky[]).map((s) => (
             <button key={s} onClick={() => setSky(s)} style={{ ...btn, background: sky === s ? "#facc15" : btn.background, color: sky === s ? "#111" : "#fff" }}>{s}</button>
           ))}
