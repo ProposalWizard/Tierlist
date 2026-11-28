@@ -127,10 +127,12 @@ const t0 = Date.now();
 let beatTotal = 0, kitTotal = 0;
 const stageKit = new Array(6).fill(0);
 const weekBigBeats = new Set<string>();
+// The kit man starts by chance until 21 (Harry, 28 Nov): careers that meet him, by the age they start at.
+const kitByAge = [0, 0, 0, 0];
 function fired(arc: string, beat: string) {
   beatFires.set(beat, (beatFires.get(beat) ?? 0) + 1);
   beatTotal++;
-  if (!arcById(arc)?.start) kitTotal++;
+  if (arc === "arc-hundred-balls") kitTotal++;
   if (arcById(arc)?.size === "big") weekBigBeats.add(arc);
 }
 
@@ -249,6 +251,7 @@ function runCareer(n: number, lastName = `Life${n}`): { events: number; lifeByte
           for (const k of Object.keys(situStarts) as (keyof typeof situStarts)[]) if (f[k]) situStarts[k]++;
           const row = arcStat.get(id) ?? { careers: 0, ages: [], seasons: [], levels: [] };
           row.careers++; row.ages.push(f.age); row.seasons.push(s); row.levels.push(f.lv);
+          if (id === "arc-hundred-balls") kitByAge[startAge - 17]++;
           arcStat.set(id, row);
           if (a.start.tier) tiersSeen.add(a.start.tier);
         }
@@ -379,7 +382,7 @@ if (process.env.REACH !== "0") {
   const MAX = Number(process.env.REACH_MAX ?? 260);
   let k = 0;
   while (reachCareers < MAX) {
-    const need = ARCS.filter((a) => a.start && (reachTries.get(a.id) ?? 0) < 40 && a.ends.some((e) => !reached(`${a.id}:${e.id}`)));
+    const need = ARCS.filter((a) => a.start && (reachTries.get(a.id) ?? 0) < 60 && a.ends.some((e) => !reached(`${a.id}:${e.id}`)));
     if (!need.length) break;
     need.sort((a, b) => (reachTries.get(a.id) ?? 0) - (reachTries.get(b.id) ?? 0));
     const target = need[0];
@@ -486,9 +489,10 @@ const arcRows = ARCS.filter((a) => a.start).map((a) => {
   return { id: a.id, tier: a.start?.tier ?? "", stage: a.start?.stage ?? "", size: a.size ?? "", careers: s?.careers ?? 0, age: s ? med(s.ages) : null, ageMin: s ? Math.min(...s.ages) : null, ageMax: s ? Math.max(...s.ages) : null, season: s ? med(s.seasons) : null, levels: s ? [...new Set(s.levels)].sort().join("") : "", ends: a.ends.map((e) => [e.id, arcEnds.get(`${a.id}:${e.id}`) ?? 0, reachEnds.get(`${a.id}:${e.id}`) ?? 0]) };
 });
 const notMet = arcRows.filter((r) => !r.careers).map((r) => r.id.replace(/^arc-/, ""));
+console.log(`the kit man (a chance until 21): met in ${kitByAge.map((k, i) => `${pct(k, Math.ceil((CAREERS - i) / 4))} of careers starting at ${17 + i}`).join(", ")}`);
 console.log(`never started in the main careers: ${notMet.length} (${notMet.join(", ") || "none"})`);
 console.log(`reach pass: ${reachCareers} extra careers; endings first seen there: ${[...reachFor.entries()].map(([k, v]) => `${k.replace(/^arc-/, "")} ${v}`).join(", ") || "none"}`);
-if (process.env.SOAK_JSON) writeFileSync(process.env.SOAK_JSON, JSON.stringify({ careers: CAREERS, seasons: SEASONS, stageRows, levelRows, situWeeks, situStarts, bigOverlapWeeks, twoBigBeatWeeks, tierRows, chainRows, arcRows, reachCareers, maxLife, meanLife: sumLife / CAREERS }, null, 1));
+if (process.env.SOAK_JSON) writeFileSync(process.env.SOAK_JSON, JSON.stringify({ careers: CAREERS, seasons: SEASONS, stageRows, levelRows, situWeeks, situStarts, bigOverlapWeeks, twoBigBeatWeeks, tierRows, chainRows, arcRows, reachCareers, maxLife, meanLife: sumLife / CAREERS, kitByAge }, null, 1));
 for (const [k, n] of problems) console.log(`  ✗ ${k} ×${n}`);
 if (!problems.size) console.log("all held");
 process.exit(problems.size ? 1 : 0);

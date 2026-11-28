@@ -29,7 +29,8 @@
   }
  ],
  "vars": {
-  "said": "none"
+  "said": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -246,6 +247,138 @@
    "hint": "The referee heard what you said"
   },
   {
+   "id": "ref-1d-deep",
+   "title": "The letter",
+   "after": {
+    "beat": "ref-2-next",
+    "weeks": [
+     2,
+     8
+    ]
+   },
+   "event": {
+    "id": "arc-ref-1d-deep",
+    "title": "The letter",
+    "category": "match",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A letter on headed paper from the referees' society. The referee you called a cheat has asked for a meeting: you, him and a man from the league, a cup of tea, a room at the league office."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "referee",
+       "say": [
+        "\"It's not a hearing,\" the letter says, underlined. \"It's a conversation.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Go to the meeting.",
+         "tone": "humble",
+         "end": "go"
+        },
+        {
+         "id": "letter",
+         "label": "Write him a letter back instead.",
+         "tone": "honest",
+         "end": "letter"
+        },
+        {
+         "id": "bin",
+         "label": "Bin it.",
+         "tone": "cold",
+         "end": "bin"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "An hour and two teas. He tells you about the abuse his daughter reads online. You don't call him anything again.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 6,
+          "respect": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "came-to-the-tea",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "go"
+         }
+        }
+       }
+      ],
+      "letter": [
+       {
+        "text": "You write a page. He writes a line back: \"Received. Thank you.\"",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "letter"
+         }
+        }
+       }
+      ],
+      "bin": [
+       {
+        "text": "The league writes again, less nicely.",
+        "npc": [
+         {
+          "slot": "referee",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "bin"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A letter has come from the referees' society"
+  },
+  {
    "id": "ref-2-next",
    "title": "Him again",
    "after": {
@@ -346,7 +479,9 @@
      ]
     },
     "setup": [
-     "A season on. Ninetieth minute, a big game, and you go down in the box. It was a foul. {referee.name} is running over."
+     "A season on. Ninetieth minute, a big game, and you go down in the box. It was a foul. {referee.name} is running over.",
+     "{if arc.deep=='go'}He looks at you differently since the cup of tea.{/if}",
+     "{if arc.deep=='bin'}He knows you binned the letter.{/if}"
     ],
     "choices": [
      {

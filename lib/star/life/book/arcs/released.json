@@ -33,7 +33,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -251,6 +252,137 @@
    "hint": "Someone's in the boot room"
   },
   {
+   "id": "rel-1d-deep",
+   "title": "The clearout",
+   "after": {
+    "beat": "rel-1-bootroom",
+    "weeks": [
+     1,
+     2
+    ]
+   },
+   "event": {
+    "id": "arc-rel-1d-deep",
+    "title": "The clearout",
+    "category": "teammates",
+    "place": "club:boot-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "lad",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A week later. {lad.name} is back for his boots and the rest of his things, with his mum waiting in the car. He's very calm and it doesn't look right on him."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "lad",
+       "say": [
+        "\"Coach says there's a trial at a club in the sixth tier. Don't know if I can be bothered.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Go. I'll ring their manager for you.\"",
+         "tone": "brave",
+         "end": "go"
+        },
+        {
+         "id": "think",
+         "label": "\"Have a month off. Then decide.\"",
+         "tone": "kind",
+         "end": "think"
+        },
+        {
+         "id": "hard",
+         "label": "\"If you can't be bothered, don't.\"",
+         "tone": "cold",
+         "end": "hard"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "You ring a man you played against once. The lad gets his trial.",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "lad",
+          "tag": "rang-a-club-for-me",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "go"
+         }
+        }
+       }
+      ],
+      "think": [
+       {
+        "text": "He nods. His mum waves from the car.",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "think"
+         }
+        }
+       }
+      ],
+      "hard": [
+       {
+        "text": "He takes the bag and doesn't look back.",
+        "npc": [
+         {
+          "slot": "lad",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "hard"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "lad",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "The released lad has come back for his things"
+  },
+  {
    "id": "rel-2-years",
    "title": "A message",
    "after": {
@@ -279,7 +411,9 @@
     "setup": [
      "A long message from a name you half remember.",
      "{if !arc.path=='walked'}\"It's me from the boot room. I'm a physio now, at a club two leagues down. I tell every lad who gets released what you told me. Thought you should know.\"{/if}",
-     "{if arc.path=='walked'}\"You won't remember me. Boot room, the day I got released. I'm a coach now. I make a point of sitting down with the ones who get let go.\"{/if}"
+     "{if arc.path=='walked'}\"You won't remember me. Boot room, the day I got released. I'm a coach now. I make a point of sitting down with the ones who get let go.\"{/if}",
+     "{if arc.deep=='go'}The call you made for him is the first thing he says.{/if}",
+     "{if arc.deep=='hard'}He brings up the day he collected his boots.{/if}"
     ],
     "choices": [
      {

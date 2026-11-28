@@ -30,7 +30,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -154,6 +155,133 @@
    "hint": "You've lost something"
   },
   {
+   "id": "mdl-1d-deep",
+   "title": "The mower bag",
+   "after": {
+    "beat": "mdl-1-lost",
+    "weeks": [
+     2,
+     5
+    ]
+   },
+   "event": {
+    "id": "arc-mdl-1d-deep",
+    "title": "The mower bag",
+    "category": "club",
+    "place": "club:pitch-two",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{groundsman.short} has done the length of pitch two on his knees with a torch. He tells you this while looking at something else."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "groundsman",
+       "say": [
+        "\"Not found it. Yet. What was it, gold?\""
+       ],
+       "replies": [
+        {
+         "id": "thank",
+         "label": "\"Silver. Thank you for looking.\"",
+         "tone": "kind",
+         "end": "thank"
+        },
+        {
+         "id": "joke",
+         "label": "\"Chocolate. I ate it.\"",
+         "tone": "confident",
+         "end": "joke"
+        },
+        {
+         "id": "stop",
+         "label": "\"Don't bother. It's gone.\"",
+         "tone": "cold",
+         "end": "stop"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "thank": [
+       {
+        "text": "He nods. He goes back out with the torch that night, you see it from the car park.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "looked-for-my-medal",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "thank"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "He laughs. He goes out with the torch anyway.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "joke"
+         }
+        }
+       }
+      ],
+      "stop": [
+       {
+        "text": "\"Your call,\" he says.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "stop"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     }
+    ]
+   },
+   "hint": "The groundsman has been looking"
+  },
+  {
    "id": "mdl-2-mower",
    "title": "The mower bag",
    "after": {
@@ -180,7 +308,8 @@
      ]
     },
     "setup": [
-     "A season on. {groundsman.short} is waiting by your car with his hand closed. \"Emptying the old mower bag. Thought I'd have a look first. Thought I might.\""
+     "A season on. {groundsman.short} is waiting by your car with his hand closed. \"Emptying the old mower bag. Thought I'd have a look first. Thought I might.\"",
+     "{if arc.deep=='thank'}He hasn't stopped looking for your medal. You can tell.{/if}"
     ],
     "choices": [
      {

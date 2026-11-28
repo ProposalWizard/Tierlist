@@ -31,7 +31,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -185,6 +186,127 @@
    "hint": "The club offers you the big screen"
   },
   {
+   "id": "bsc-1d-deep",
+   "title": "The lads",
+   "after": {
+    "beat": "bsc-1",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-bsc-1d-deep",
+    "title": "The lads",
+    "category": "family",
+    "place": "club:dressing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The lads have printed the big screen message and stuck it on your peg. Someone has drawn a ring on it."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "partner",
+       "say": [
+        "{partner.short} comes to pick you up and sees it through the door."
+       ],
+       "replies": [
+        {
+         "id": "laugh",
+         "label": "Laugh and leave it there.",
+         "tone": "confident",
+         "end": "laugh"
+        },
+        {
+         "id": "take",
+         "label": "Take it down before she sees it properly.",
+         "tone": "calm",
+         "end": "take"
+        },
+        {
+         "id": "bin",
+         "label": "Tear it up in front of the lads.",
+         "tone": "fiery",
+         "end": "bin"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "laugh": [
+       {
+        "text": "She laughs too. On the way home she asks, very lightly, if you've ever thought about it.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "asked-about-the-ring",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "laugh"
+         }
+        }
+       }
+      ],
+      "take": [
+       {
+        "text": "She saw. She doesn't say.",
+        "arc": {
+         "set": {
+          "deep": "take"
+         }
+        }
+       }
+      ],
+      "bin": [
+       {
+        "text": "The lads go quiet. She sees that too.",
+        "npc": [
+         {
+          "slot": "partner",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "bin"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "The lads won't stop about the big screen"
+  },
+  {
    "id": "bsc-2",
    "title": "Again",
    "after": {
@@ -213,7 +335,8 @@
     "setup": [
      "A season on. The media lad is back with his form.",
      "{if arc.path=='screen'}\"Same again? It was the most watched clip of the season. Or are you finally going to do it properly?\"{/if}",
-     "{if arc.path=='text'}\"Last chance. She'd love it. Everyone says she'd love it.\"{/if}"
+     "{if arc.path=='text'}\"Last chance. She'd love it. Everyone says she'd love it.\"{/if}",
+     "{if arc.deep=='laugh'}She hasn't forgotten the drawing of the ring on your peg.{/if}"
     ],
     "choices": [
      {

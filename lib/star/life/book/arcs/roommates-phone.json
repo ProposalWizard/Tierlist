@@ -37,7 +37,8 @@
  ],
  "vars": {
   "quiet": 0,
-  "stopped": 0
+  "stopped": 0,
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -321,6 +322,133 @@
    "hint": "Your room-mate can't sleep"
   },
   {
+   "id": "rmp-1d-deep",
+   "title": "The bus",
+   "after": {
+    "beat": "rmp-2-rules",
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "event": {
+    "id": "arc-rmp-1d-deep",
+    "title": "The bus",
+    "category": "teammates",
+    "place": "away:coach",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "roomie",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The away coach. {roomie.name} sits down next to you, which he never does, and puts his phone face down on his knee."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "roomie",
+       "say": [
+        "\"I've deleted the app. Twice. I keep putting it back.\""
+       ],
+       "replies": [
+        {
+         "id": "help",
+         "label": "\"Give me your phone. I'll do it.\"",
+         "tone": "kind",
+         "end": "help"
+        },
+        {
+         "id": "gaffer",
+         "label": "\"You need to tell the gaffer.\"",
+         "tone": "honest",
+         "end": "gaffer"
+        },
+        {
+         "id": "sleep",
+         "label": "Put your headphones in.",
+         "tone": "cold",
+         "end": "sleep"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "help": [
+       {
+        "text": "You delete it and change his password to something he'll never guess. He laughs, and then he doesn't.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "deleted-the-app-for-me",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "help"
+         }
+        }
+       }
+      ],
+      "gaffer": [
+       {
+        "text": "He goes white. He moves seats at the services.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "grudge": 3,
+          "respect": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "gaffer"
+         }
+        }
+       }
+      ],
+      "sleep": [
+       {
+        "text": "He sits there till the services with the phone face down.",
+        "arc": {
+         "set": {
+          "deep": "sleep"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "roomie",
+      "pick": "squad",
+      "order": "bond-desc"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your room-mate wants to sit next to you on the bus"
+  },
+  {
    "id": "rmp-2-rules",
    "title": "The rules",
    "after": {
@@ -534,7 +662,9 @@
      ]
     },
     "setup": [
-     "{roomie.name} is sitting in his car in the car park with the engine off and an envelope on the passenger seat."
+     "{roomie.name} is sitting in his car in the car park with the engine off and an envelope on the passenger seat.",
+     "{if arc.deep=='help'}He still asks you to hold his phone on away trips.{/if}",
+     "{if arc.deep=='gaffer'}He still remembers you said to tell the gaffer.{/if}"
     ],
     "talk": {
      "start": "l1",

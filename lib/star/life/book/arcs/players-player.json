@@ -32,7 +32,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -188,6 +189,128 @@
    "hint": "You've won players' player"
   },
   {
+   "id": "ppy-1d-deep",
+   "title": "The trophy",
+   "after": {
+    "beat": "ppy-1",
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "event": {
+    "id": "arc-ppy-1d-deep",
+    "title": "The trophy",
+    "category": "squad",
+    "place": "club:dressing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The players' player trophy is on the shelf in the dressing room, waiting for the engraver. {mate.name} is looking at it with his coat on."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mate",
+       "say": [
+        "\"Nice, that. You deserved it.\" He doesn't mean it and he's trying to."
+       ],
+       "replies": [
+        {
+         "id": "give",
+         "label": "\"Put your name on it. You know it's yours.\"",
+         "tone": "kind",
+         "end": "give"
+        },
+        {
+         "id": "thanks",
+         "label": "\"Cheers, mate.\"",
+         "tone": "calm",
+         "end": "thanks"
+        },
+        {
+         "id": "rub",
+         "label": "\"Next year, eh?\"",
+         "tone": "reckless",
+         "end": "rub"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "give": [
+       {
+        "text": "He goes very red. \"No.\" But he's different with you all pre-season.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "offered-me-the-trophy",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "give"
+         }
+        }
+       }
+      ],
+      "thanks": [
+       {
+        "text": "He nods and goes.",
+        "arc": {
+         "set": {
+          "deep": "thanks"
+         }
+        }
+       }
+      ],
+      "rub": [
+       {
+        "text": "He laughs, short.",
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "rub"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "Your team-mate has seen the trophy"
+  },
+  {
    "id": "ppy-2",
    "title": "The vote again",
    "after": {
@@ -215,7 +338,9 @@
     },
     "setup": [
      "A season on. The voting slips go round the dressing room in a cup.",
-     "{if arc.path=='him'}{mate.short} has his slip filled in before you've found a pen. He shows you. It's your name. You haven't written yet.{/if}"
+     "{if arc.path=='him'}{mate.short} has his slip filled in before you've found a pen. He shows you. It's your name. You haven't written yet.{/if}",
+     "{if arc.deep=='give'}He still remembers you offered him the trophy.{/if}",
+     "{if arc.deep=='rub'}\"Next year,\" he says, when he sees you.{/if}"
     ],
     "choices": [
      {

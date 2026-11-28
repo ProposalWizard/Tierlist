@@ -26,7 +26,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -165,6 +166,128 @@
    "hint": "The chairman wants something done"
   },
   {
+   "id": "scm-1d-deep",
+   "title": "The scarf",
+   "after": {
+    "beat": "scm-1-pram",
+    "weeks": [
+     1,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-scm-1d-deep",
+    "title": "The scarf",
+    "category": "club",
+    "place": "ground:turnstiles",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "walkout"
+     ]
+    },
+    "setup": [
+     "The old scarf man stops you on the way in. From the pram he takes a scarf with your name knitted in, very wonky. \"My wife did it. She's eighty-one. Her eyes aren't what they were.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "chairman",
+       "say": [
+        "The chairman is watching from the main door."
+       ],
+       "replies": [
+        {
+         "id": "wear",
+         "label": "Wear it in for the warm-up.",
+         "tone": "kind",
+         "end": "wear"
+        },
+        {
+         "id": "thanks",
+         "label": "Thank him and put it in your bag.",
+         "tone": "calm",
+         "end": "thanks"
+        },
+        {
+         "id": "pay",
+         "label": "Buy ten for the lads.",
+         "tone": "kind",
+         "end": "pay"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "wear": [
+       {
+        "text": "The crowd go mad for it. The chairman's face is something to see.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "wore-the-wonky-scarf",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "wear"
+         }
+        }
+       }
+      ],
+      "thanks": [
+       {
+        "text": "He's pleased. You see him tell the next customer.",
+        "arc": {
+         "set": {
+          "deep": "thanks"
+         }
+        }
+       }
+      ],
+      "pay": [
+       {
+        "text": "Fifty pounds. He's sold out by half two.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "pay"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The scarf man has made you a scarf"
+  },
+  {
    "id": "scm-2-later",
    "title": "The pram again",
    "after": {
@@ -192,7 +315,8 @@
      ]
     },
     "setup": [
-     "A season on, outside the ground on match day."
+     "A season on, outside the ground on match day.",
+     "{if arc.deep=='wear'}The wonky scarf is still talked about outside the ground.{/if}"
     ],
     "choices": [
      {

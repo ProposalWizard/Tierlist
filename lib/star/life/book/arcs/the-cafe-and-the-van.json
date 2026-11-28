@@ -2,7 +2,7 @@
  "id": "arc-the-cafe-and-the-van",
  "title": "The café and the van",
  "owner": "pal",
- "summary": "Your mate has the café by the ground and the van firm, and he's running out of hours and money at the same time. He can keep one. He wants you to tell him which.",
+ "summary": "Your mate's van firm has grown, and on a whim he's bought the café by the ground as well. Now he's running out of hours and money at the same time. He can keep one. He wants you to tell him which.",
  "size": "small",
  "about": {
   "who": [
@@ -10,18 +10,17 @@
    "your mum"
   ],
   "tone": [
-   "collision",
-   "money"
+   "money",
+   "after football"
   ]
  },
  "start": {
   "chance": 0.02,
-  "careers": 0.22,
-  "tier": "rare",
-  "stage": "any",
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "veteran",
   "when": [
-   "ended(arc-the-van:his-name-on-the-van)",
-   "ended(arc-the-cafe:the-sandwich|just-a-customer)"
+   "ended(arc-the-vans-business)"
   ]
  },
  "cast": [
@@ -78,7 +77,7 @@
      ]
     },
     "setup": [
-     "Closing time in the café. {pal.short} has two piles of paper on the table, one for the café and one for the vans, and the vans' pile is taller. He looks about fifty."
+     "Closing time in the café he bought last spring. {pal.short} has two piles of paper on the table, one for the café and one for the vans, and the vans' pile is taller. He looks about fifty."
     ],
     "talk": {
      "start": "a",

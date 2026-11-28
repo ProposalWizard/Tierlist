@@ -30,7 +30,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -188,6 +189,128 @@
    "hint": "A team-mate asks you something"
   },
   {
+   "id": "xtn-1d-deep",
+   "title": "The present",
+   "after": {
+    "beat": "xtn-1",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-xtn-1d-deep",
+    "title": "The present",
+    "category": "squad",
+    "place": "club:dressing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The christening is in a fortnight. You've no idea what you give a baby."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mate",
+       "say": [
+        "{mate.short}, when you ask: \"Something she can keep. Not a ball. She's eight weeks old.\""
+       ],
+       "replies": [
+        {
+         "id": "book",
+         "label": "A book, with your note in the front.",
+         "tone": "kind",
+         "end": "book"
+        },
+        {
+         "id": "shirt",
+         "label": "A tiny club shirt with her name on it.",
+         "tone": "confident",
+         "end": "shirt"
+        },
+        {
+         "id": "cash",
+         "label": "An envelope.",
+         "tone": "calm",
+         "end": "cash"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "book": [
+       {
+        "text": "He reads your note and goes out to the car park for a bit.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "wrote-in-her-book",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "book"
+         }
+        }
+       }
+      ],
+      "shirt": [
+       {
+        "text": "She sicks up on it in the first photo. It's the best photo.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "shirt"
+         }
+        }
+       }
+      ],
+      "cash": [
+       {
+        "text": "He says thanks.",
+        "arc": {
+         "set": {
+          "deep": "cash"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "order": "bond-desc"
+     }
+    ]
+   },
+   "hint": "You need a christening present"
+  },
+  {
    "id": "xtn-2",
    "title": "Walking",
    "after": {
@@ -215,7 +338,8 @@
     },
     "setup": [
      "A season on. Family day at the training ground. {mate.short}'s daughter is walking, mostly, and she's coming straight across pitch two towards you.",
-     "{if arc.path=='no'}The left back is following her with his arms out.{/if}"
+     "{if arc.path=='no'}The left back is following her with his arms out.{/if}",
+     "{if arc.deep=='book'}The book you gave his daughter has your note in the front.{/if}"
     ],
     "choices": [
      {

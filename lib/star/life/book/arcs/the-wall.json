@@ -29,7 +29,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -172,6 +173,127 @@
    "hint": "Your old school has an idea"
   },
   {
+   "id": "wal-1d-deep",
+   "title": "The painter",
+   "after": {
+    "beat": "wal-1-ask",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-wal-1d-deep",
+    "title": "The painter",
+    "category": "family",
+    "place": "town:school",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The man painting the playground wall rings your mum, and your mum rings you. He's got your shoulders and he's stuck on your face. He wants you to come and stand still for an hour."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mum",
+       "say": [
+        "\"I've told him you'll come Wednesday,\" says your mum."
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Go and stand still for an hour.",
+         "tone": "kind",
+         "end": "go"
+        },
+        {
+         "id": "photo",
+         "label": "Send him a photo.",
+         "tone": "calm",
+         "end": "photo"
+        },
+        {
+         "id": "no",
+         "label": "\"Mum, no.\"",
+         "tone": "honest",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "The kids come out at break and watch you stand still. He gets your nose right at the third go.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "stood-for-the-painter",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "go"
+         }
+        }
+       }
+      ],
+      "photo": [
+       {
+        "text": "He paints from the photo. The nose is a bit wrong.",
+        "arc": {
+         "set": {
+          "deep": "photo"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "Your mum goes very quiet.",
+        "npc": [
+         {
+          "slot": "mum",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "The painter wants a photo of you"
+  },
+  {
    "id": "wal-2-kids",
    "title": "The playground",
    "after": {
@@ -199,7 +321,9 @@
     },
     "setup": [
      "A season on, your mum sends a photo from the school gates.",
-     "{if arc.path=='yes'}The bowl cut, eight feet high. Someone has drawn a moustache on it in chalk.{/if}{if arc.path=='no'}The rainbow. Underneath it, in chalk, someone has written your name anyway.{/if}"
+     "{if arc.path=='yes'}The bowl cut, eight feet high. Someone has drawn a moustache on it in chalk.{/if}{if arc.path=='no'}The rainbow. Underneath it, in chalk, someone has written your name anyway.{/if}",
+     "{if arc.deep=='go'}The nose on the wall is right because you stood still.{/if}",
+     "{if arc.deep=='photo'}The nose on the wall is a bit wrong.{/if}"
     ],
     "choices": [
      {

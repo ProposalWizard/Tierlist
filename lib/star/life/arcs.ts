@@ -37,7 +37,7 @@ export const LIFE_SEASON = 50;
 export const MAX_OPEN_ARCS = 12;
 export const MAX_OBJECTIVES = 2;
 /** Story pacing (batch 1, 60 stories): a story with a `start` chance begins at most one per moment,
- *  and never within this many weeks of the last story that began. The kit man (no `start`) is not paced. */
+ *  and never within this many weeks of the last story that began. A story with no `start` (none in the book since 28 Nov) is not paced. */
 export const START_GAP_WEEKS = 3;
 
 /** A seeded 0-1 number for a story's start roll (does not use the caller's rng, so the dice stay as they were). */
@@ -323,7 +323,7 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
   // replay, tests/star/lifeSaveFixture.mts) plays exactly as before: first come, in file order.
   const fair = ARCS.some((a) => a.start?.tier);
   const me = `${c.player.firstName}|${c.player.lastName}|${c.player.startYear}`;
-  // The kit man (no `start`, never paced) stays first, as in file order.
+  // A story with no `start` (never paced; none in the book since 28 Nov, the kit man rolls too) stays first.
   const order = fair ? [...ARCS.filter((a) => !a.start), ...shuffled(ARCS.filter((a) => !!a.start), `${now}|${moment}|${me}`)] : ARCS;
   const bigOpen = fair && Object.entries(lifeOf(c).arcs ?? {}).some(([id, r]) => !r.done && arcById(id)?.size === "big");
   for (const arc of order) {

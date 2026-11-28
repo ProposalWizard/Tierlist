@@ -26,7 +26,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -168,6 +169,133 @@
    "hint": "Team photo day"
   },
   {
+   "id": "tph-1d-deep",
+   "title": "His last day",
+   "after": {
+    "beat": "tph-1-photo",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-tph-1d-deep",
+    "title": "His last day",
+    "category": "teammates",
+    "place": "club:dressing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.name}'s transfer went through this morning. He's clearing his peg in a bin bag. The team photo is pinned up by the door, and he's in the middle, next to you."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mate",
+       "say": [
+        "\"Can you get me a copy? A big one. Not the website one.\""
+       ],
+       "replies": [
+        {
+         "id": "frame",
+         "label": "Get one framed and drive it round.",
+         "tone": "kind",
+         "end": "frame"
+        },
+        {
+         "id": "ask",
+         "label": "Ask the media lad for a copy.",
+         "tone": "calm",
+         "end": "ask"
+        },
+        {
+         "id": "forget",
+         "label": "\"Sure.\" Then forget.",
+         "tone": "cold",
+         "end": "forget"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "frame": [
+       {
+        "text": "His wife opens the door and cries a bit. He hangs it while you're there.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "framed-my-last-team-photo",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "frame"
+         }
+        }
+       }
+      ],
+      "ask": [
+       {
+        "text": "It comes in a cardboard tube a week later.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "ask"
+         }
+        }
+       }
+      ],
+      "forget": [
+       {
+        "text": "He asks once more by text, and then doesn't.",
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "forget"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     }
+    ]
+   },
+   "hint": "Your team-mate's transfer has gone through"
+  },
+  {
    "id": "tph-2-wall",
    "title": "The photo",
    "after": {
@@ -194,7 +322,8 @@
      ]
     },
     "setup": [
-     "A season on. {mate.short} sends a photo from his new house: his hall, a frame on the wall. It's last season's team photo."
+     "A season on. {mate.short} sends a photo from his new house: his hall, a frame on the wall. It's last season's team photo.",
+     "{if arc.deep=='frame'}He still says you drove the frame round yourself.{/if}"
     ],
     "choices": [
      {

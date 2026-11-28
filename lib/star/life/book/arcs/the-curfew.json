@@ -31,7 +31,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -176,6 +177,132 @@
    "hint": "Your room-mate has plans tonight"
   },
   {
+   "id": "crf-1d-deep",
+   "title": "The someone",
+   "after": {
+    "beat": "crf-1-window",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-crf-1d-deep",
+    "title": "The someone",
+    "category": "teammates",
+    "place": "club:lounge",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "roomie",
+    "trigger": {
+     "when": [
+      "after-match",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{roomie.name} brings someone to the players' lounge after a home game: the someone from the window. She's lovely and she knows exactly who covered for him."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "roomie",
+       "say": [
+        "\"So you're the one,\" she says."
+       ],
+       "replies": [
+        {
+         "id": "charm",
+         "label": "\"I'm the one. He owes me.\"",
+         "tone": "confident",
+         "end": "charm"
+        },
+        {
+         "id": "warn",
+         "label": "\"Don't let him climb out of windows.\"",
+         "tone": "honest",
+         "end": "warn"
+        },
+        {
+         "id": "polite",
+         "label": "Say hello and go.",
+         "tone": "calm",
+         "end": "polite"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "charm": [
+       {
+        "text": "She laughs. He goes red. They buy you dinner on Sunday.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "met-her-at-the-lounge",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "charm"
+         }
+        }
+       }
+      ],
+      "warn": [
+       {
+        "text": "She says she's already told him. She looks at him the way your mum looks at your dad.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "warn"
+         }
+        }
+       }
+      ],
+      "polite": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "polite"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "roomie",
+      "pick": "squad"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "Your room-mate wants you to meet someone"
+  },
+  {
    "id": "crf-2-hotel",
    "title": "The same hotel",
    "after": {
@@ -202,7 +329,8 @@
      ]
     },
     "setup": [
-     "A season on, the same hotel. The rooming list is on the board in reception. {manager.short} is standing next to it with his arms folded."
+     "A season on, the same hotel. The rooming list is on the board in reception. {manager.short} is standing next to it with his arms folded.",
+     "{if arc.deep=='charm'}His girlfriend still calls you \"the one\".{/if}"
     ],
     "choices": [
      {

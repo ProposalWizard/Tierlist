@@ -417,7 +417,7 @@ export interface LifeArc {
   size?: LifeSize;
   /** Who it is about and how it feels (the writers' spread; the quest log does not read it). */
   about?: { who: string[]; tone: string[] };
-  /** How often it starts when its first beat could (0-1, a seeded roll). No `start` = always (the kit man). */
+  /** How often it starts when its first beat could (0-1, a seeded roll). No `start` = always (none in the book since 28 Nov; the kit man rolls too). */
   start?: {
     chance: number;
     /** Share of careers that ever meet this story (0-1), rolled once per career from the player's

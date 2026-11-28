@@ -35,7 +35,8 @@
  ],
  "vars": {
   "signed": 0,
-  "told": 0
+  "told": 0,
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -319,6 +320,138 @@
    "hint": "The physio doesn't like your hamstring"
   },
   {
+   "id": "ptt-1d-deep",
+   "title": "Her notes",
+   "after": {
+    "beat": "ptt-2-twinge",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-ptt-1d-deep",
+    "title": "Her notes",
+    "category": "staff",
+    "place": "club:physio-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{physio.short} has your file open on her desk. \"The gaffer's asked for my notes on you from the cup game. All of them. I wrote what I saw.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "physio",
+       "say": [
+        "\"I'm telling you so you hear it from me.\""
+       ],
+       "replies": [
+        {
+         "id": "fine",
+         "label": "\"Write the truth. I'll back it.\"",
+         "tone": "honest",
+         "end": "fine"
+        },
+        {
+         "id": "soft",
+         "label": "\"Could you soften it a bit?\"",
+         "tone": "lie",
+         "end": "soft"
+        },
+        {
+         "id": "thanks",
+         "label": "\"Thanks for telling me.\"",
+         "tone": "calm",
+         "end": "thanks"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "fine": [
+       {
+        "text": "She closes the file and breathes out. \"Thank you.\"",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 5,
+          "respect": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "backed-my-notes",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "fine"
+         }
+        }
+       }
+      ],
+      "soft": [
+       {
+        "text": "She looks at you for a long time. \"No.\"",
+        "npc": [
+         {
+          "slot": "physio",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "soft"
+         }
+        }
+       }
+      ],
+      "thanks": [
+       {
+        "text": "She nods and calls the next one in.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "thanks"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The physio wants a word about her notes"
+  },
+  {
    "id": "ptt-2-twinge",
    "title": "Sixty-one minutes",
    "after": {
@@ -465,7 +598,9 @@
      ]
     },
     "setup": [
-     "The club's best player tore his hamstring on Saturday. {manager.name} is shouting at {physio.short} in the corridor about who signed him fit, and half the squad can hear it."
+     "The club's best player tore his hamstring on Saturday. {manager.name} is shouting at {physio.short} in the corridor about who signed him fit, and half the squad can hear it.",
+     "{if arc.deep=='fine'}She hasn't forgotten you backed her notes.{/if}",
+     "{if arc.deep=='soft'}She still won't look at you when the gaffer's in the room.{/if}"
     ],
     "talk": {
      "start": "b1",

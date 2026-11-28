@@ -35,7 +35,8 @@
   }
  ],
  "vars": {
-  "said": "none"
+  "said": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -278,6 +279,137 @@
    "hint": "The chairman has a favour to ask"
   },
   {
+   "id": "chd-1d-deep",
+   "title": "The gaffer's office",
+   "after": {
+    "beat": "chd-2-dinner",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-chd-1d-deep",
+    "title": "The gaffer's office",
+    "category": "club",
+    "place": "club:office",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{manager.name} closes his office door behind you. He's got the seating plan from the dinner on his desk, and somebody has drawn a circle round your name."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "manager",
+       "say": [
+        "\"The chairman's telling people you sold the club for him. Did you?\""
+       ],
+       "replies": [
+        {
+         "id": "truth",
+         "label": "Tell him exactly what you said.",
+         "tone": "honest",
+         "end": "truth"
+        },
+        {
+         "id": "chair",
+         "label": "\"Ask the chairman.\"",
+         "tone": "cold",
+         "end": "chair"
+        },
+        {
+         "id": "joke",
+         "label": "\"I had the fish. That's all I remember.\"",
+         "tone": "confident",
+         "end": "joke"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "truth": [
+       {
+        "text": "He listens to the whole thing and then says, \"Right,\" and opens his door. He's warmer at training all week.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "told-me-about-the-dinner",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "truth"
+         }
+        }
+       }
+      ],
+      "chair": [
+       {
+        "text": "\"I did,\" he says. \"I'm asking you.\" He picks a different penalty taker on Saturday.",
+        "npc": [
+         {
+          "slot": "manager",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "chair"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "He nearly laughs. \"Get out.\"",
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "joke"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The gaffer heard about the dinner"
+  },
+  {
    "id": "chd-2-dinner",
    "title": "Friday night",
    "after": {
@@ -452,7 +584,9 @@
     },
     "setup": [
      "{if arc.said=='sold'}The sale went through in the summer. This morning six people from the office, the canteen and the academy have been let go.{/if}",
-     "{if !arc.said=='sold'}The sale fell through in the summer. {chairman.short} is still in charge, and the wages have been on time all year.{/if}"
+     "{if !arc.said=='sold'}The sale fell through in the summer. {chairman.short} is still in charge, and the wages have been on time all year.{/if}",
+     "{if arc.deep=='truth'}The gaffer still mentions the seating plan.{/if}",
+     "{if arc.deep=='chair'}The gaffer never asked you about the dinner again.{/if}"
     ],
     "choices": [
      {

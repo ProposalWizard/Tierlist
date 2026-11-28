@@ -25,7 +25,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -278,6 +279,127 @@
    "hint": "Their centre half has something to say"
   },
   {
+   "id": "tun-1d-deep",
+   "title": "The car park",
+   "after": {
+    "beat": "tun-1-tunnel",
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "event": {
+    "id": "arc-tun-1d-deep",
+    "title": "The car park",
+    "category": "rivals",
+    "place": "ground:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "After the game. {rival.name} is in the away car park with his kid on his shoulders, waiting for their coach. He sees you."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "rival",
+       "say": [
+        "The kid is in your club's shirt. {rival.short} looks like he'd like the ground to swallow him."
+       ],
+       "replies": [
+        {
+         "id": "sign",
+         "label": "Go over and sign the kid's shirt.",
+         "tone": "kind",
+         "end": "sign"
+        },
+        {
+         "id": "wind",
+         "label": "\"Nice shirt, son. Tell your dad.\"",
+         "tone": "reckless",
+         "end": "wind"
+        },
+        {
+         "id": "ignore",
+         "label": "Get in your car.",
+         "tone": "calm",
+         "end": "ignore"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "sign": [
+       {
+        "text": "The kid can't speak. {rival.short} says thanks through his teeth, and means it.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "signed-my-lads-shirt",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "sign"
+         }
+        }
+       }
+      ],
+      "wind": [
+       {
+        "text": "The kid beams. {rival.short} does not.",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "wind"
+         }
+        }
+       }
+      ],
+      "ignore": [
+       {
+        "text": "You get in your car. In the mirror the kid is still waving at you.",
+        "arc": {
+         "set": {
+          "deep": "ignore"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     }
+    ]
+   },
+   "hint": "Their centre half is in the car park"
+  },
+  {
    "id": "tun-2-again",
    "title": "Him again",
    "after": {
@@ -304,7 +426,9 @@
      ]
     },
     "setup": [
-     "Same tunnel, a season on. {rival.name} is in the line again, two places down."
+     "Same tunnel, a season on. {rival.name} is in the line again, two places down.",
+     "{if arc.deep=='sign'}His lad's shirt with your name on it is the first thing he mentions.{/if}",
+     "{if arc.deep=='wind'}He still brings up what you said to his lad.{/if}"
     ],
     "talk": {
      "start": "a1",

@@ -28,7 +28,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -166,6 +167,121 @@
    "hint": "The local paper wants a taste test"
   },
   {
+   "id": "chp-1d-deep",
+   "title": "The queue",
+   "after": {
+    "beat": "chp-1-special",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-chp-1d-deep",
+    "title": "The queue",
+    "category": "fans",
+    "place": "town:chip-shop",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Since the paper's review there's a queue out of the chip shop door on Friday nights, all of them asking for THE {you.short} SPECIAL. The owner rings you. He's run out of pickled eggs."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "reporter",
+       "say": [
+        "\"Would you come and serve one? Just one. For the paper. {reporter.short} says she'll come.\""
+       ],
+       "replies": [
+        {
+         "id": "serve",
+         "label": "Serve one in an apron.",
+         "tone": "kind",
+         "end": "serve"
+        },
+        {
+         "id": "sign",
+         "label": "Sign the board instead.",
+         "tone": "calm",
+         "end": "sign"
+        },
+        {
+         "id": "no",
+         "label": "\"Not before a game.\"",
+         "tone": "honest",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "serve": [
+       {
+        "text": "You serve forty-one. {reporter.short}'s photo of you with a scoop goes on the front.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "served-chips-for-the-paper",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "serve"
+         }
+        }
+       }
+      ],
+      "sign": [
+       {
+        "text": "He has your signature varnished.",
+        "arc": {
+         "set": {
+          "deep": "sign"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He sends round a bag of chips anyway.",
+        "arc": {
+         "set": {
+          "deep": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "There's a queue at the chip shop"
+  },
+  {
    "id": "chp-2-board",
    "title": "The board",
    "after": {
@@ -193,7 +309,8 @@
      ]
     },
     "setup": [
-     "A season on. Walking past the chip shop to the ground, you look at the board."
+     "A season on. Walking past the chip shop to the ground, you look at the board.",
+     "{if arc.deep=='serve'}The photo of you with the scoop is still on the chip shop wall.{/if}"
     ],
     "choices": [
      {

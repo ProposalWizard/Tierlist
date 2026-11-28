@@ -33,7 +33,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -184,6 +185,130 @@
    "hint": "A team-mate wants a word"
   },
   {
+   "id": "exx-1d-deep",
+   "title": "The Christmas do",
+   "after": {
+    "beat": "exx-1-ask",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-exx-1d-deep",
+    "title": "The Christmas do",
+    "category": "teammates",
+    "place": "town:function-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The Christmas do. {mate.name} and your ex come in together and the room goes a bit quiet. Somebody turns the music up."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mate",
+       "say": [
+        "They're coming your way."
+       ],
+       "replies": [
+        {
+         "id": "drink",
+         "label": "Get them both a drink.",
+         "tone": "kind",
+         "end": "drink"
+        },
+        {
+         "id": "nod",
+         "label": "Nod and go to the bar.",
+         "tone": "calm",
+         "end": "nod"
+        },
+        {
+         "id": "leave",
+         "label": "Leave early.",
+         "tone": "cold",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "drink": [
+       {
+        "text": "The room breathes out. Your ex says thank you with her eyes. {mate.short} says it with his mouth, twice.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "bought-us-a-drink-at-christmas",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "drink"
+         }
+        }
+       }
+      ],
+      "nod": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "nod"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "The lads notice. So does he.",
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age>=21"
+      ]
+     }
+    ]
+   },
+   "hint": "The Christmas do"
+  },
+  {
    "id": "exx-2-card",
    "title": "A card",
    "after": {
@@ -210,7 +335,9 @@
      ]
     },
     "setup": [
-     "A season on. There's a cream envelope in your pigeon hole with your name on it in her handwriting."
+     "A season on. There's a cream envelope in your pigeon hole with your name on it in her handwriting.",
+     "{if arc.deep=='drink'}He still mentions the drink at Christmas.{/if}",
+     "{if arc.deep=='leave'}He noticed you left the Christmas do.{/if}"
     ],
     "choices": [
      {

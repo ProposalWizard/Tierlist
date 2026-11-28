@@ -30,7 +30,10 @@ npx tsx tests/star/lifeSaveFixture.mts  # old saves still load and play the same
   per career from the player's name. 0.18 = about 1 career in 5. Leave it out and every career
   can meet it (batch 1's 60 stories). Use it for stories that should feel rare, and to spread a
   big book across careers: no single career should meet all of them.
-- No `start` at all = the story always starts when its first beat can (only the kit man).
+- No `start` at all = the story always starts when its first beat can. No story in the book does that
+  now: the kit man has a start roll too (Harry, 28 Nov: "a chance up until 21 with a hard stop at
+  21"): chance 0.05 at each bad game (rating under 6.6) at training while you are 20 or under, and
+  never from 21. A career already in his story plays on unchanged.
 - Pacing on top (`arcs.ts`): at most one new story per moment, three weeks apart
   (`START_GAP_WEEKS`), at most 12 open at once (`MAX_OPEN_ARCS`).
 

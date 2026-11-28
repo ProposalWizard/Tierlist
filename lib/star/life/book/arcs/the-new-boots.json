@@ -31,7 +31,8 @@
   }
  ],
  "vars": {
-  "boots": "none"
+  "boots": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -256,6 +257,133 @@
    "hint": "The sponsor's rep has a box for you"
   },
   {
+   "id": "bts-1d-deep",
+   "title": "The photoshoot",
+   "after": {
+    "beat": "bts-2-photo",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-bts-1d-deep",
+    "title": "The photoshoot",
+    "category": "sponsor",
+    "place": "club:gym",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "sponsor",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{sponsor.name} has a photographer in the gym, a smoke machine and a box of the new boots. \"Ten minutes. Hold one up, look moody.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "sponsor",
+       "say": [
+        "Your heel is still bleeding from Tuesday."
+       ],
+       "replies": [
+        {
+         "id": "pro",
+         "label": "Do it. Moody, ten minutes.",
+         "tone": "calm",
+         "end": "pro"
+        },
+        {
+         "id": "tell",
+         "label": "\"They're ripping my heels to bits.\"",
+         "tone": "honest",
+         "end": "tell"
+        },
+        {
+         "id": "old",
+         "label": "Wear your old boots for the photo.",
+         "tone": "reckless",
+         "end": "old"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "pro": [
+       {
+        "text": "The photographer says you're a natural. The rep gives you a second pair, half a size up, without being asked.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sponsor",
+          "tag": "did-the-photoshoot",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "pro"
+         }
+        }
+       }
+      ],
+      "tell": [
+       {
+        "text": "He goes pale and rings someone in the car park. A man from the factory comes on Thursday with a tape measure.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "tell"
+         }
+        }
+       }
+      ],
+      "old": [
+       {
+        "text": "Nobody notices until the advert goes out.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "old"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     }
+    ]
+   },
+   "hint": "The boot rep wants a photoshoot"
+  },
+  {
    "id": "bts-2-photo",
    "title": "The photo",
    "after": {
@@ -418,7 +546,10 @@
      ]
     },
     "setup": [
-     "{sponsor.short} meets you in a café with a folder. The boot deal is up for renewal."
+     "{sponsor.short} meets you in a café with a folder. The boot deal is up for renewal.",
+     "{if arc.deep=='pro'}The rep has had a pair made half a size up, just for you.{/if}",
+     "{if arc.deep=='tell'}The man from the factory still sends a Christmas card.{/if}",
+     "{if arc.deep=='old'}Somebody at the boot company noticed the old boots in the advert.{/if}"
     ],
     "choices": [
      {

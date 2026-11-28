@@ -26,7 +26,8 @@
  ],
  "vars": {
   "lent": 0,
-  "paid": 0
+  "paid": 0,
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -236,6 +237,127 @@
    "hint": "Your old school friend wants a word"
   },
   {
+   "id": "van-1d-deep",
+   "title": "The paint job",
+   "after": {
+    "beat": "van-1-ask",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-van-1d-deep",
+    "title": "The paint job",
+    "category": "family",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{pal.short} sends three photos of the same white van with three different paint jobs mocked up on a laptop. One of them has your squad number on the side, very big."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "pal",
+       "say": [
+        "\"Be honest. Too much?\""
+       ],
+       "replies": [
+        {
+         "id": "number",
+         "label": "\"The one with the number. Obviously.\"",
+         "tone": "confident",
+         "end": "number"
+        },
+        {
+         "id": "plain",
+         "label": "\"The plain one. It's your van.\"",
+         "tone": "kind",
+         "end": "plain"
+        },
+        {
+         "id": "busy",
+         "label": "Send a thumbs up.",
+         "tone": "calm",
+         "end": "busy"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "number": [
+       {
+        "text": "He has it done on the Friday. It's even bigger in real life.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "picked-the-van-paint",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "number"
+         }
+        }
+       }
+      ],
+      "plain": [
+       {
+        "text": "He goes for the plain one and puts your number on the back door, small, where only you'd look.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "plain"
+         }
+        }
+       }
+      ],
+      "busy": [
+       {
+        "text": "He picks the green one, which you hate.",
+        "arc": {
+         "set": {
+          "deep": "busy"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "Your mate wants your say on the van"
+  },
+  {
    "id": "van-2-first",
    "title": "The first of the month",
    "after": {
@@ -374,7 +496,9 @@
     },
     "setup": [
      "{if arc.paid==1}You're stopped at the lights and there's a van in front of you with {pal.short}'s name on the side, and your squad number painted small on the back doors.{/if}",
-     "{if !arc.paid==1}You haven't heard from {pal.short} in months. His mum tells your mum he's gone to work abroad.{/if}"
+     "{if !arc.paid==1}You haven't heard from {pal.short} in months. His mum tells your mum he's gone to work abroad.{/if}",
+     "{if arc.deep=='number'}You still have his three paint jobs on your phone. You picked the one with your number on it.{/if}",
+     "{if arc.deep=='plain'}You still have his three paint jobs on your phone. You told him to pick the plain one.{/if}"
     ],
     "choices": [
      {

@@ -33,7 +33,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -334,6 +335,132 @@
    "hint": "The captain wants to settle something"
   },
   {
+   "id": "fkb-1d-deep",
+   "title": "The wall",
+   "after": {
+    "beat": "fkb-1-contest",
+    "weeks": [
+     3,
+     8
+    ]
+   },
+   "event": {
+    "id": "arc-fkb-1d-deep",
+    "title": "The wall",
+    "category": "training",
+    "place": "club:pitch-two",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "capt",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "After training {capt.name} is dragging the mannequins back out. \"I'm not taking them any more,\" he says, or \"I'm still taking them,\" depending on the week, \"but I want to learn the wall. Stand in it.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "capt",
+       "say": [
+        "He gives you a mannequin's spot. \"Tell me where you'd put it, if you were the keeper.\""
+       ],
+       "replies": [
+        {
+         "id": "teach",
+         "label": "Show him where you'd put it.",
+         "tone": "kind",
+         "end": "teach"
+        },
+        {
+         "id": "tease",
+         "label": "\"Over the top. Like always.\"",
+         "tone": "reckless",
+         "end": "tease"
+        },
+        {
+         "id": "leave",
+         "label": "\"I've a physio slot. Another day.\"",
+         "tone": "calm",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "teach": [
+       {
+        "text": "Half an hour. He scores four into the corner you showed him and goes very quiet, then shakes your hand.",
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": 5,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "capt",
+          "tag": "showed-me-the-wall",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "teach"
+         }
+        }
+       }
+      ],
+      "tease": [
+       {
+        "text": "He skies the next three and throws the ball at you.",
+        "npc": [
+         {
+          "slot": "capt",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "tease"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "He nods and takes them on his own till it's dark.",
+        "arc": {
+         "set": {
+          "deep": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The captain wants your help with the wall"
+  },
+  {
    "id": "fkb-2-last",
    "title": "The last minute",
    "after": {
@@ -360,7 +487,9 @@
      ]
     },
     "setup": [
-     "A season on. Ninety-third minute, a free kick on the edge of the box, one-one."
+     "A season on. Ninety-third minute, a free kick on the edge of the box, one-one.",
+     "{if arc.deep=='teach'}He's been practising your corner. You can tell by the way he looks at it.{/if}",
+     "{if arc.deep=='tease'}He hasn't forgiven you for \"over the top\".{/if}"
     ],
     "choices": [
      {

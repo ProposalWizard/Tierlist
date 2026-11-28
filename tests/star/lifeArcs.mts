@@ -100,7 +100,7 @@ check(probs.length === 0, `the arc book passes the v2 checker: ${probs.slice(0, 
 // 2: the offer, then ignored.
 {
   let c = career();
-  const m = A.arcMoment(c, "arrive:training", { rng, facts: bad });
+  const m = A.arcMoment(c, "arrive:training", { rng, facts: bad, force: ARC });
   c = m.career;
   check(m.offers.length === 1 && m.offers[0].person === "staff:kitman", `beat 1 is an offer on Den (${JSON.stringify(m.offers)})`);
   const bub = A.bubblesFor(c, "staff:kitman");
@@ -114,7 +114,7 @@ check(probs.length === 0, `the arc book passes the v2 checker: ${probs.slice(0, 
 
 // 3: say yes, the whole first talk.
 let c = career();
-c = A.arcMoment(c, "arrive:training", { rng, facts: bad }).career;
+c = A.arcMoment(c, "arrive:training", { rng, facts: bad, force: ARC }).career;
 let o = A.openBeat(c, ARC, "b1-the-offer")!;
 c = o.career; let b = o.live;
 check(b.stage === "talk" && b.node === "n1", "the offer opens a talk at round 1");
@@ -148,7 +148,7 @@ check(A.questLog(c)[0]?.next.includes("gaffer"), `quest log: next is the gaffer 
 
 // 4: next morning, the gaffer.
 let m = A.arcMoment(c, "arrive:training", { rng, facts: bad });
-check(m.screens[0]?.beat === "b2-the-gaffer", `next morning: the gaffer (${JSON.stringify(m.screens)})`);
+check(m.screens.some((x) => x.beat === "b2-the-gaffer"), `next morning: the gaffer (${JSON.stringify(m.screens)})`);
 o = A.openBeat(m.career, ARC, "b2-the-gaffer")!; c = o.career; b = o.live;
 nl = T.nodeLive(c, b);
 check(nl.event.screen === "dial" && /hit 80 out of a hundred/.test(nl.lines.join(" ")), "the gaffer quotes your score, on the dial");
@@ -159,7 +159,7 @@ s = T.reply(c, b, "yes"); c = s.career;
 end = A.playEnding(c, (s.step as { live: typeof b }).live, "objective", { rng, facts: bad }); c = end.career;
 check(!!end.extras.objective && c.life!.objs?.length === 1, "a match objective is set");
 m = A.arcMoment(c, "after-match", { rng, facts: { lastGoals: 1, lastRating: 7.4 } }); c = m.career;
-check(m.screens[0]?.beat === "b2b-ten-fingers", `Saturday, you scored: the note (${JSON.stringify(m.screens)})`);
+check(m.screens.some((x) => x.beat === "b2b-ten-fingers"), `Saturday, you scored: the note (${JSON.stringify(m.screens)})`);
 o = A.openBeat(c, ARC, "b2b-ten-fingers")!; c = o.career;
 const card = T.cardLive(c, o.live);
 check(card.choices.length >= 2 && /Corners\. Thursday\?/.test(card.lines.join(" ")), "the note in your left boot");
@@ -176,7 +176,7 @@ for (let i = 0; i < 4; i++) {
 check(Number(run(c).v.best) >= 90 && Number(run(c).v.nights) >= 4, `a best over 90 (${run(c).v.best}, nights ${run(c).v.nights})`);
 check(PR.openPromises(c).length === 1, "Thursdays kept nothing they should not");
 m = A.arcMoment({ ...c, week: c.week + 1 }, "arrive:training", { rng });
-check(m.screens[0]?.beat === "b4-the-door", `the kit room door (${JSON.stringify(m.screens)})`);
+check(m.screens.some((x) => x.beat === "b4-the-door"), `the kit room door (${JSON.stringify(m.screens)})`);
 c = T.autoBeat(m.career, ARC, "b4-the-door", { rng: () => 0.01, pick: () => 0 })!.career;
 check(run(c).v.best === 100 && (c.life!.got ?? []).includes("trophy:the-kit-room-door"), "a hundred on the door");
 
@@ -186,7 +186,7 @@ m = seasonEnd(c); c = { ...m.career, season: m.career.season + 1, week: 2, playe
 check(run(c).k["den-retires"] === 1, "season end: the clock ticks");
 m = seasonEnd(c); c = { ...m.career, season: m.career.season + 1, week: 2, player: { ...m.career.player, age: m.career.player.age + 1 } };
 m = A.arcMoment(c, "arrive:training", { rng });
-check(m.screens[0]?.beat === "b5-last-season", `two seasons on: "I'm finishing in May" (${JSON.stringify(m.screens)})`);
+check(m.screens.some((x) => x.beat === "b5-last-season"), `two seasons on: "I'm finishing in May" (${JSON.stringify(m.screens)})`);
 const before = m.career;
 // Switch club: he rings from the old club's landline.
 const moved = { ...before, player: { ...before.player, club: NATIONAL_LEAGUE_CLUBS[5] } };
@@ -195,7 +195,7 @@ check(o.live.event.template === "phone-call" && /landline/.test(o.live.event.set
 c = T.autoBeat(before, ARC, "b5-last-season", { rng, pick: () => 0 })!.career;
 check(PR.openPromises(c).some((p) => p.id === "p-dens-speech"), "you said you'd say a few words");
 m = seasonEnd(c);
-check(m.screens[0]?.beat === "b6-the-night", `third season end: his night (${JSON.stringify(m.screens)})`);
+check(m.screens.some((x) => x.beat === "b6-the-night"), `third season end: his night (${JSON.stringify(m.screens)})`);
 const atNight = m.career;
 
 // 7a: kept.
@@ -225,7 +225,7 @@ const atNight = m.career;
   check((k.life!.squad ?? []).some(([t]) => t === "empty-chair-at-dens-night"), "the squad saw it");
   const later = { ...k, week: k.week + 3 };
   const mm = A.arcMoment(later, "home:evening", { rng });
-  check(mm.screens[0]?.beat === "b6b-letter", `the letter, two or three weeks on (${JSON.stringify(mm.screens)})`);
+  check(mm.screens.some((x) => x.beat === "b6b-letter"), `the letter, two or three weeks on (${JSON.stringify(mm.screens)})`);
 }
 
 // 8: an old save.

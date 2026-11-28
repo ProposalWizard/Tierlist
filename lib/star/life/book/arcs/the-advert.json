@@ -32,7 +32,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -185,6 +186,133 @@
    "hint": "The boot sponsor wants you in an advert"
   },
   {
+   "id": "adv-1d-deep",
+   "title": "The advert's out",
+   "after": {
+    "beat": "adv-1",
+    "weeks": [
+     4,
+     12
+    ]
+   },
+   "event": {
+    "id": "arc-adv-1d-deep",
+    "title": "The advert's out",
+    "category": "fame",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "sponsor",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The advert is out. Your mum has watched it forty times. The lads have watched it once and learnt the line."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "sponsor",
+       "say": [
+        "{sponsor.short} rings. \"Numbers are huge. They want a second one. Two lines this time.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Two lines. I'll practise.\"",
+         "tone": "confident",
+         "end": "yes"
+        },
+        {
+         "id": "hands",
+         "label": "\"Can it be no lines? Just me doing something?\"",
+         "tone": "honest",
+         "end": "hands"
+        },
+        {
+         "id": "no",
+         "label": "\"Once was enough.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "You practise in the car. The second one takes twenty-two takes, which is progress.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sponsor",
+          "tag": "said-yes-to-the-second-advert",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "yes"
+         }
+        }
+       }
+      ],
+      "hands": [
+       {
+        "text": "He loves it. It's just you doing keepy-ups. Nobody can do impressions of it.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "hands"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He sounds disappointed. The money was good.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "sponsor",
+      "pick": "sponsor"
+     }
+    ]
+   },
+   "hint": "The advert is on the telly"
+  },
+  {
    "id": "adv-2",
    "title": "In the street",
    "after": {
@@ -213,7 +341,8 @@
     "setup": [
      "A season on. After a home game there are kids by the car park gate.",
      "{if arc.path=='line'}One of them shouts \"Built for the ninetieth minute!\" in a voice that's a lot like yours. The rest do it too.{/if}",
-     "{if arc.path=='feet'}One of them asks if you're the feet off the telly.{/if}"
+     "{if arc.path=='feet'}One of them asks if you're the feet off the telly.{/if}",
+     "{if arc.deep=='yes'}The second advert's line is worse than the first.{/if}"
     ],
     "choices": [
      {

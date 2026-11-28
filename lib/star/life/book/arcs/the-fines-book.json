@@ -36,7 +36,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -201,6 +202,137 @@
    "hint": "You're in the fines book"
   },
   {
+   "id": "fnb-1d-deep",
+   "title": "The real culprit",
+   "after": {
+    "beat": "fnb-1",
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "event": {
+    "id": "arc-fnb-1d-deep",
+    "title": "The real culprit",
+    "category": "squad",
+    "place": "club:gym",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "capt",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "You find out who did it: the wrong socks were the new lad's, nineteen, terrified of {capt.short}."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "capt",
+       "say": [
+        "The lad catches your eye in the gym and looks away very fast."
+       ],
+       "replies": [
+        {
+         "id": "cover",
+         "label": "Say nothing. Pay it.",
+         "tone": "kind",
+         "end": "cover"
+        },
+        {
+         "id": "tell",
+         "label": "Tell the captain the truth.",
+         "tone": "honest",
+         "end": "tell"
+        },
+        {
+         "id": "make",
+         "label": "Make the lad tell him himself.",
+         "tone": "brave",
+         "end": "make"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "cover": [
+       {
+        "text": "The lad brings you a coffee every morning for a month.",
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "squad",
+          "tag": "paid-the-new-lads-fine",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "cover"
+         }
+        }
+       }
+      ],
+      "tell": [
+       {
+        "text": "{capt.short} fines the lad double and refunds you in front of everyone.",
+        "npc": [
+         {
+          "slot": "capt",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "tell"
+         }
+        }
+       }
+      ],
+      "make": [
+       {
+        "text": "He does, shaking. {capt.short} halves his fine for owning up.",
+        "npc": [
+         {
+          "slot": "capt",
+          "respect": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "make"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "capt",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "You know who did the thing you were fined for"
+  },
+  {
    "id": "fnb-2",
    "title": "The red notebook",
    "after": {
@@ -228,7 +360,9 @@
     },
     "setup": [
      "A season on. {capt.short} is leaving in the summer. On Friday he hands you the red notebook in front of everyone.",
-     "{if arc.path=='grassed'}Somebody coughs the word \"forty\".{/if}"
+     "{if arc.path=='grassed'}Somebody coughs the word \"forty\".{/if}",
+     "{if arc.deep=='cover'}The new lad still brings you coffee sometimes.{/if}",
+     "{if arc.deep=='make'}The new lad owned up because of you.{/if}"
     ],
     "choices": [
      {

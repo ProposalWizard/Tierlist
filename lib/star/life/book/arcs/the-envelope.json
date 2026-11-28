@@ -30,7 +30,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -180,6 +181,134 @@
    "hint": "Your agent has something in his car"
   },
   {
+   "id": "env-1d-deep",
+   "title": "The second envelope",
+   "after": {
+    "beat": "env-1-cash",
+    "weeks": [
+     4,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-env-1d-deep",
+    "title": "The second envelope",
+    "category": "money",
+    "place": "club:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "driving",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your agent's car again, the engine running. Another envelope, thinner. \"Same club. A thank you for the last thank you.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "agent",
+       "say": [
+        "{if arc.path=='back'}\"I know you gave the last one back. They're persistent.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "back",
+         "label": "Give it back again.",
+         "tone": "honest",
+         "end": "back"
+        },
+        {
+         "id": "take",
+         "label": "Take it.",
+         "tone": "reckless",
+         "end": "take"
+        },
+        {
+         "id": "drive",
+         "label": "Walk away from the car.",
+         "tone": "cold",
+         "end": "drive"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "back": [
+       {
+        "text": "He puts it on the dashboard and sighs. \"You're bad for business.\"",
+        "npc": [
+         {
+          "slot": "agent",
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "gave-two-envelopes-back",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "back"
+         }
+        }
+       }
+      ],
+      "take": [
+       {
+        "text": "It goes in the drawer with the first.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "take"
+         }
+        }
+       }
+      ],
+      "drive": [
+       {
+        "text": "He drives off with the window down, calling your name.",
+        "npc": [
+         {
+          "slot": "agent",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "drive"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     }
+    ]
+   },
+   "hint": "Your agent has another envelope"
+  },
+  {
    "id": "env-2-news",
    "title": "The news",
    "after": {
@@ -206,7 +335,9 @@
      ]
     },
     "setup": [
-     "A season on. On the news: that club's director of football has been charged over cash payments to players and agents. They're asking players to come forward."
+     "A season on. On the news: that club's director of football has been charged over cash payments to players and agents. They're asking players to come forward.",
+     "{if arc.deep=='back'}Your agent still says you're bad for business.{/if}",
+     "{if arc.deep=='take'}There are two envelopes in your drawer now.{/if}"
     ],
     "choices": [
      {

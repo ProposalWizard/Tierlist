@@ -7,6 +7,18 @@ The stories are still OFF in the real career (`lib/star/life/flag.ts`). Everythi
 by the life soak (`scripts/soak/lifeSoak.mts`), which plays careers by the dice. Nothing here has
 been seen on a phone screen.
 
+**In short (measured, 200 careers × 15 seasons):**
+
+1. Stories now come all career long. A beat every 2.9 / 2.6 / 2.8 / 3.8 / 5.3 / 8.1 weeks at ages
+   17-19 / 20-22 / 23-26 / 27-30 / 31-33 / 34+. Before: 1.6 / 1.7 / 1.7 / 5.9 / 493 / 383.
+2. Two big stories open at once: never (before: 41% of the time).
+3. Five rarity tiers. An average career meets about 63 stories of 216: 28 common, 28 uncommon, 7
+   rare; 15% of careers meet a very rare one and 6% a legendary one.
+4. 8 new legendary and very rare stories, 27 follow-on stories that only start after another story
+   ended a certain way (four chains of three or more), 63 stories given a middle beat.
+5. Every ending of every story is seen in real play (the soak). The biggest life block: 15 KB of
+   the 50 KB limit.
+
 ## 1. The audit: the book as it was (180 stories + the kit man)
 
 Measured: `REACH=0 npx tsx scripts/soak/lifeSoak.mts 200 15`, before any change to the book, with
@@ -240,3 +252,281 @@ plays.
 | 178 | wednesday-fives | 1 | small | home:evening: any time (waits for the five-a-side game: never plays) | 0.3 | all | waits | - | - |
 | 179 | your-first-coach | 3 | medium | home:evening: any time | 0.22 | 0.2 | 50 | 27 / 9 | his-whistle 16 · the-awards 13 · a-wave 21 |
 | 180 | your-grandad | 2 | medium | home:evening: any time | 0.22 | 0.2 | 39 | 26 / 9 | he-knew 18 · wednesday 21 |
+
+## 2. The map: stages across, rarity down
+
+Every story in the book (216, the kit man included; 7 of them wait for a game that is not built yet), by where its window sits in a career and how rare it is. In brackets: a level or situation it needs (chain = it waits on how another story ended). The numbers are how many stories are in that box.
+
+| | First seasons (17-20) | Breaking through (19-23) | Established (22-29) | Peak, top two levels (24-31) | Veteran (29+) | Last seasons (32+) | Any time |
+|---|---|---|---|---|---|---|---|
+| **Common (every career can)** | **7**: dads-notes, his-boots, hundred-balls, pe-teacher, the-crumble, the-first-wage, the-highlighter | **6**: bar-for-breakfast, free-kick-duty, the-alibi, the-night-out, the-tablets, tickets-for-the-street | **7**: her-birthday, next-door, play-through-it, the-christmas-lights, the-quiet-lad, the-watch, unsettled | **0** | **4**: the-haircut, the-knees, the-loan-lad, the-red-card | **0** | **16**: dont-post-me, his-old-club, the-ankle, the-car-park, the-head-shave, the-heckler, the-hill, the-lantern, the-lucky-scarf, the-referee, the-referees-son, the-sign, the-tackle, the-tunnel, the-van, unknown-number |
+| **Uncommon (45%)** | **3**: the-bad-car, the-fines-book, the-scout | **12**: brothers-trial, dads-last-shift, head-tennis, legends-boots, the-driving-lessons, the-gym-board, the-lost-medal, the-race, the-standby-list, the-tattoo, the-wind-up-call (caps), wednesday-fives | **29**: chairmans-dinner (below the Premier League), deadline-day, derby-week, her-job, her-sisters-wedding, his-last-season, kid-in-digs, number-nine, roommates-phone, ten-minutes, the-best-man, the-christening, the-coach-leaves, the-gaffers-word, the-investment, the-last-year, the-lift, the-nemesis, the-new-signing, the-other-agent, the-penalty-taker, the-photo, the-signing-session, the-stag-do, the-superfan, the-tackled-mans-lad (chain), the-team-sheet, your-first-coach, your-grandad | **9**: the-advert, the-armband (not yet captain), the-call-up, the-long-read, the-new-boots, the-petrol-station, the-pile-on, the-reality-show, the-shoot-at-mums | **13**: released, the-cafe-and-the-van (chain), the-caretaker, the-fans-forum (below the Premier League), the-food-bank, the-hairdryer, the-last-contract, the-last-highlighter (chain), the-move (chain), the-neighbours-lad, the-under-nines, the-vans-business (chain), two-old-enemies (chain) | **3**: dads-last-note (chain), the-wall, the-young-lad | **44**: after-the-casino, grass-at-the-rec (chain), her-coaching-badge (chain), her-shop, his-mates-tickets, keep-ups, left-back, on-commentary, row-f-again (chain), the-assembly, the-balls-in-the-car, the-birthday-card, the-charity-match, the-checkout (League One and below), the-curfew, the-envelope-inquiry (chain), the-fire-alarm, the-godfather (chain), the-grandsons-trial (chain), the-grass (League One and below), the-groundsmans-dog, the-groundsmans-goal, the-group-chat, the-hard-shoulder (League One and below), the-hearing (chain), the-ice-bath, the-karting, the-mascot (League One and below), the-new-menu, the-other-knee (chain), the-parking-space (new club), the-phone-in, the-pie, the-ref-remembers, the-referees-lad (chain), the-reporters-patch (chain), the-shirt-swap, the-snorer, the-snow (League One and below), the-team-photo, the-wages (League One and below), the-whip-round, the-wrong-like, the-young-reporter |
+| **Rare (22%)** | **0** | **3**: the-chairmans-car, the-loan-abroad, the-podcast | **12**: players-player, she-grows-up, the-agents-party, the-big-screen, the-boots-auction, the-cafe, the-dark-week, the-envelope, the-ex, the-letter-from-inside, the-reunion, the-scout-who-said-no | **6**: the-bins, the-boots-for-a-kid, the-column, the-documentary, the-fake-you, the-national-armband (caps, chain) | **10**: the-chairmans-son, the-charity-ref, the-golf-day, the-kit-row, the-man-from-the-number (chain), the-signs, the-sons-team (chain), the-walkout, the-wedding-party, the-woods | **3**: the-coach-retires, the-rec, the-statue | **21**: bins-and-bottles (chain), her-charity-game (chain), her-song, season-two (chain), the-ball-girl, the-chip-shop-special (League One and below), the-coin, the-cup-final-boot, the-delay (top two levels, Europe), the-long-way-back (injured), the-match-ball, the-number (new club), the-own-goal, the-passport (top two levels, Europe), the-pram-in-the-museum (chain), the-quiz-night, the-reporter-and-the-agent (chain), the-reporters-book (chain), the-scarf-man, the-wellbeing-day (chain), the-wrong-coach |
+| **Very rare (8%)** | **0** | **0** | **2**: the-chairmans-secret (below the Premier League), the-collapse | **0** | **0** | **1**: the-last-number | **1**: the-flood (League One and below) |
+| **Legendary (2.5%)** | **0** | **0** | **0** | **0** | **0** | **0** | **4**: grandads-teammate, the-lights, the-other-you, the-stowaway (top two levels, Europe) |
+
+Tier counts: common 40, uncommon 113, rare 55, very-rare 4, legendary 4 (216 stories).
+
+## 3. What changed
+
+### 3a. Stages (every story has a window)
+
+Each story now says where in a career it belongs (`start.stage`) and has a window that is checked
+only when it would start (`start.when`): first seasons (17 to 20, seasons 1 to 3), breaking through
+(19 to 23), established (22 to 29), peak (24 to 31, at the top two levels or famous), veteran (29
+and over), last seasons (32 and over), or any time. Some add a level (League One and below for the
+flood, the snow, the wages) or a situation (an injury spell for the long way back, Europe or the
+top two levels for the stowaway and the passport, a new club for the parking space, caps for the
+national armband). Once a story starts it plays on wherever the career goes.
+
+The chance a story starts is set from its window: about two and a half tries' worth spread over the
+window's weeks, so a story with a three-season window and one with a whole-career window both
+usually come, but at different times.
+
+Engine changes (all small, all additive, all switched on only by a book with tiers, so an old
+save's exact replay is unchanged):
+
+1. New conditions: `ended(arc-x)` and `ended(arc-x:ending-a|ending-b)`; `caps>=n`; `europe`.
+2. New story fields: `start.tier`, `start.stage`, `start.when`.
+3. A fair draw: the next story is picked from a seeded shuffle each moment, not first in the file.
+   The kit man stays first.
+4. One big story at a time: a big story never starts while another big one is open.
+5. In a tiered book every story's weekly roll is the career's own. (Batch 1's stories had no share
+   of careers, so they rolled the same weeks in every career; at the new lower chances that meant
+   whole careers in step, and some stories never starting anywhere.)
+6. The checker: tier bands, stage names, window conditions, and the chain rules (below).
+
+### 3b. Rarity tiers
+
+| Tier | Share of careers that can meet it | Stories |
+|---|---|---|
+| Common | all (the kit man is common now too) | 40 |
+| Uncommon | 45% | 113 |
+| Rare | 22% | 55 |
+| Very rare | 8% | 4 |
+| Legendary | 2.5% (about 1 career in 40) | 4 |
+
+### 3c. The new legendary and very rare stories (8)
+
+1. **The other you** (legendary, any time 20-31): a man who washes cars by the ring road has your
+   face; his Sunday side's penalty night by phone light; your mum sees his photo and remembers the
+   girl in the next bed at the General. 5 beats, 3 endings.
+2. **Grandad's team-mate** (legendary, any time 19+): a letter from a man of 88 who played with your
+   grandad at the wire works in 1961; the missed penalty nobody knew about; penalties for Stan in
+   the one goal left on a lorry park; the funeral; the medal. 5 beats, 3 endings.
+3. **The night the lights went out** (legendary): every floodlight goes in the seventieth minute of
+   a cup tie; ten balls by phone light with the front row; the cable was cut for a betting
+   syndicate; the groundsman wants to finish; who pulls the lever on the new lights. 4 beats.
+4. **The stowaway** (legendary, Europe or the top two levels): a fifteen-year-old climbs out of the
+   team bus's luggage hold at the hotel abroad; her ban; her letter; years on she checks the hold
+   twice as the kit room's apprentice. 4 beats, 3 endings.
+5. **The chairman's secret** (very rare, below the Premier League): the chairman asleep in his car
+   at six in the morning, paying the wages from his own pocket; the canteen asks; the car-wash
+   buyer against the fans' trust; row K. 4 beats, 3 endings.
+6. **The flood** (very rare, League One and below): the river over the wall, the groundsman in
+   waders carrying photos; home games at the rival's ground; the crossbar night in a sports hall
+   for a new pitch; the first game back. 4 beats, 3 endings.
+7. **The last number** (very rare, last seasons): the chairman wants to retire your number; the
+   youngest lad has had it on his bedroom wall since he was six; ten seconds with the microphone at
+   your last home game. 4 beats, 3 endings.
+8. **The collapse** (very rare, established): a team-mate goes down in a passing drill with nobody
+   near him; your next minute; the hospital; a defibrillator at every pitch in town; the penalty
+   night with him in goal, standing very still. 4 beats, 3 endings.
+
+Every football moment in them is a challenge on the real engine (corners, keeper, lights-out,
+crossbar, props, double or nothing). Nothing fakes a game.
+
+### 3d. Chains: 27 stories that only start after another story ended a certain way
+
+Each waits with `ended(...)` on the save's finished stories, which keep their ending for good. The
+same role is the same person, so the reporter in the sequel is the reporter from the first story.
+
+Long chains (3 or more):
+
+1. **The reporter:** the young reporter (her first interview, recorder on) → **Her patch** (chief
+   football writer now; the academy is closing and she needs one name) → **Her book** (a hundred
+   years of the club; your chapter). A fourth, **The reporter and the agent**, needs both her patch
+   and your agent's fiftieth: she has the invoice for the fountain.
+2. **The girl from the sign:** she grows up (her own shirt) → **Her coaching badge** (run her
+   practical, her drill or yours) → **Her charity game** (ten balls, her in goal, for a minibus).
+3. **The fixer:** the unknown number (reported, or a witness) → **The hearing** (a long table in
+   London, his lawyer) → **The man from the number** (years on, at the gate, to say sorry).
+4. **Your mate's van:** the van (his name on it) → **His business** (six vans, a polo shirt with your
+   name for when you finish) → **The café and the van** (he has bought the café by the ground too,
+   and can keep one; you choose).
+
+Sequels and consequences:
+
+5. The tackle (the visit or the leeks) → **His lad** (the man you hurt has a son on trial at yours).
+6. The referee's son (his son's shirt) → **The referee's lad** (the boy is the referee now).
+7. The heckler (row F turned) → **Row F, again** (he's at the new lad, and asks you how to stop).
+8. The lucky scarf (the boy has it) → **The grandson's trial** (in the 1971 scarf, in May).
+9. The scarf man (the pram) → **The pram** (he has died; the museum or his grandson).
+10. The chairman's son (either ending) → **The son's team** (his Sunday side; a sorry, if you owe one).
+11. Her job (four hours away) → **The move** (abroad, years on; this time she asks if you'll come).
+12. The best man (the speech) → **The godfather**.
+13. The envelope (you kept it) → **The inquiry** (your name is fourth on a list of nine).
+14. The documentary (it came out) → **Season two** (they want your mum).
+15. The call-up (more caps) → **The armband** (lead your country out, or give it to the young lad).
+16. The long way back (back from the knee) → **The other knee** (an academy lad, the pool at six).
+17. The dark week (you stayed) → **The wellbeing day** (talk to forty academy lads).
+18. The grass (it went plastic) → **Grass at the Rec** (the groundsman's council pitch).
+19. Dad's notes (the notebooks) → **Dad's last note** (last seasons: one more notebook).
+20. The highlighter (his copy) → **The last highlighter** (veteran: your last contract, clause nine).
+
+Two stories colliding:
+
+21. The nemesis + the new signing (the same centre half) → **Two old enemies** (his testimonial).
+22. The bins + the petrol station (the same tabloid man) → **Bins and bottles** (his book).
+23. Her patch + the agent's party → The reporter and the agent (above).
+
+The checker fails a chain whose parent is not in the book, has no such ending, never ends that way,
+waits for an unbuilt game, or waits on the child; and one that reads a flag nothing sets or a memory
+nothing writes (tests/star/lifeArcs.mts breaks each on purpose).
+
+### 3e. Depth: 63 stories, one middle beat each
+
+The 23 batch-1 stories not deepened last round (the 7 waiting for a game left out), and the 40
+thinnest of batches 2 and 3 (by size). Each gets a middle beat a few weeks after the first, with a
+real choice of three, that moves a person (bond, grudge or respect) and leaves a memory a later
+story can read; and a callback line in the story's later beat that says what you chose. Ids,
+endings and beat numbers are unchanged; the new beats are side beats (no number).
+
+
+### 3f. The kit man starts by chance now (Harry, 28 Nov)
+
+*"it should be a chance up until 21 with a hard stop at 21."* The kit man's story ("A hundred balls
+in the dark") used to start for certain the first time its first beat could (a bad game, at
+training, aged 21 or under). Now it has a start roll like every other story: **chance 0.05** at
+each of those moments while you are **20 or under**, and it can never start from 21. It is common
+(every career can meet it). A career already in his story plays on unchanged (the old-save
+fixture holds).
+
+Measured (200 × 15): met in **88%** of careers that start at 17, 86% at 18, 66% at 19, 46% at 20
+(they have one season before 21). Suggestion: keep 0.05. If Harry wants nearly every young career
+to meet him, 0.08 gives about 97% at 17 and 60% at 20 (worked out from the same tries, not
+measured).
+
+No other story starts for certain: every one of the 216 has a start roll now.
+
+## 4. Balance and proof
+
+Measured: `npx tsx scripts/soak/lifeSoak.mts` (200 careers × 15 seasons, with the reach pass). The same career model as the audit. "Without the kit man" leaves out his Thursday drills, which repeat every week he offers them.
+
+### 4a. Per stage: how often a story beat comes
+
+| Age | A beat every (before → after) | Without the kit man (after) | New stories a season (before → after) | Big-story beats a season | Longest quiet spell, median / worst (before → after) |
+|---|---|---|---|---|---|
+| 17-19 first seasons | 1.6 → **2.9 wk** | 3.9 wk | 9.6 → 5.9 | 0.19 | 11/20 → 11/28 |
+| 20-22 breaking through | 1.7 → **2.6 wk** | 2.9 wk | 8.3 → 5.1 | 0.68 | 12/26 → 11/23 |
+| 23-26 established | 1.7 → **2.8 wk** | 2.8 wk | 7.6 → 4.6 | 1.31 | 12/28 → 12/31 |
+| 27-30 peak | 5.9 → **3.8 wk** | 3.8 wk | 1.4 → 3.6 | 0.92 | 45/184 → 16/42 |
+| 31-33 veteran | 492.9 → **5.3 wk** | 5.3 wk | 0 → 2.5 | 0.27 | 92/138 → 16/43 |
+| 34+ last seasons | 383.3 → **8.1 wk** | 8.1 wk | 0 → 1.7 | 0.1 | 46/46 → 18/46 |
+
+### 4b. Per level
+
+| Level | A beat every (before → after) | New stories a season (before → after) |
+|---|---|---|
+| Premier League | 2.9 → 3.4 wk | 4.5 → 4 |
+| Championship | 2.6 → 3.3 wk | 5 → 4.1 |
+| League One/Two | 2.4 → 3.1 wk | 5.5 → 4.4 |
+| National League and below | 2.7 → 3.2 wk | 5 → 4.3 |
+
+Situations (share of career-weeks → share of new stories that start then): injured 9% → 8%, newClub 6% → 7%, captain 19% → 15%, europe 10% → 10%, caps 23% → 20%.
+
+Two big stories open at once: before 57192 career-weeks, after **0**. Weeks with beats from two big stories (one of them already over, with a last scene scheduled): 2.
+
+### 4c. Rarity: share of careers that meet each tier
+
+| Tier | Stories | Careers that meet at least one | Stories of the tier an average career meets |
+|---|---|---|---|
+| common | 40 | 100% | 28.2 |
+| uncommon | 103 | 100% | 27.7 |
+| rare | 55 | 100% | 6.8 |
+| very-rare | 4 | 15% | 0.1 |
+| legendary | 4 | 6% | 0.1 |
+
+An average career meets about **63 stories** (before: 75).
+
+### 4d. Chains: how often each one is reached
+
+Careers (of 200) where the follow-on story started in the main run, and its endings seen in real play (main run plus the reach pass).
+
+| Follow-on | Waits on | Started in | Endings seen |
+|---|---|---|---|
+| row-f-again | the-heckler:row-f | 31 | 2/2 |
+| dads-last-note | dads-notes:the-notebooks|he-said-it | 29 | 2/2 |
+| the-hearing | unknown-number:reported-it|the-witness | 28 | 2/2 |
+| the-godfather | the-best-man:the-speech|the-under-twelves | 22 | 2/2 |
+| the-grandsons-trial | the-lucky-scarf:the-boy-has-it | 21 | 2/2 |
+| the-referees-lad | the-referees-son:his-sons-shirt | 21 | 2/2 |
+| the-vans-business | the-van:his-name-on-the-van | 21 | 2/2 |
+| the-last-highlighter | the-highlighter:his-copy | 19 | 2/2 |
+| the-reporters-patch | the-young-reporter:her-first | 19 | 3/3 |
+| the-tackled-mans-lad | the-tackle:the-visit|his-leeks | 19 | 2/2 |
+| the-cafe-and-the-van | the-vans-business | 9 | 3/3 |
+| the-envelope-inquiry | the-envelope:the-envelope | 8 | 2/2 |
+| the-move | her-job:four-hours|the-motorway | 7 | 3/3 |
+| bins-and-bottles | the-bins + the-petrol-station | 6 | 2/2 |
+| grass-at-the-rec | the-grass:plastic | 6 | 2/2 |
+| the-other-knee | the-long-way-back:back|never-quite | 6 | 2/2 |
+| two-old-enemies | the-nemesis + the-new-signing | 6 | 3/3 |
+| season-two | the-documentary:the-good-one|the-row | 5 | 2/2 |
+| her-coaching-badge | she-grows-up:her-shirt|the-ticket | 4 | 2/2 |
+| the-reporters-book | the-reporters-patch | 4 | 2/2 |
+| the-man-from-the-number | the-hearing | 3 | 2/2 |
+| the-pram-in-the-museum | the-scarf-man:the-pram | 3 | 2/2 |
+| the-sons-team | the-chairmans-son | 2 | 2/2 |
+| the-wellbeing-day | the-dark-week:sunday-walks|he-spoke-up | 2 | 2/2 |
+| the-national-armband | the-call-up:back-in|his-shirt | 1 | 2/2 |
+| the-reporter-and-the-agent | the-reporters-patch + the-agents-party | 1 | 3/3 |
+| her-charity-game | her-coaching-badge | 0 | 2/2 |
+
+The reach pass played 64 extra careers to see the rarest endings.
+
+### 4e. The save
+
+The biggest life block in any career: **14.8 KB** (limit 50 KB, `LIFE_BLOCK_LIMIT`); mean 12.5 KB.
+
+## 5. What the checks caught this round
+
+1. **The soak:** batch 1's 60 stories (no share of careers) rolled their start on the same weeks in
+   every career. At the new, lower chances that meant whole careers in step: some stories never
+   started in any of 100 careers, and one (his old club) started on the same late week in 94 of
+   them. Fixed: in a tiered book every story's roll is the career's own.
+2. **The kit man's test:** with the fair draw, another story's beat could come before his. Fixed:
+   the kit man (no `start`) stays first.
+3. **The soak's endings:** the flood's "the new ground", two old enemies' "he won" and the café and
+   the van's endings almost never came. Fixed in the stories (a poor crossbar night now leaves the
+   club short; he wins below eight of ten; the café and the van also follows "just a customer",
+   and is uncommon), not by loosening the check.
+4. **The story checker:** seven challenges whose results pointed at endings, not lines; a small
+   beat moving the fans by 4 (the limit is 3); "the times" read as a real paper's name in a hint;
+   an empty outcome line; and, new this round, a chain waiting on an ending its parent never
+   produces.
+5. **The type check:** a loop over a Set the build target cannot iterate.
+6. **The de-ai detector** (`scripts/de_ai/measure.py`): 3 strict shapes in the new lines ("Not
+   once.", "Not now.", "Never past him. Never."). Rewritten; 0 strict in 2,133 new lines.
+7. **The flaky endings from last round** (free kick duty "your penalties", the penalty taker
+   "shared"): the soak's reach pass and the checker's extra seeds see them every run now. The check
+   is the same; only more real careers are played when an ending has not come yet.
+
+## 6. Not seen, and limits
+
+1. **Nothing here has been seen on a screen.** The stories are still off in the real career
+   (`lib/star/life/flag.ts`). Every number is the soak playing by the dice, and every game in it
+   is rolled from the player's skill (the soak cannot play the real match engine).
+2. **The callback lines** (a later beat remembering the middle choice) have been read here in the
+   files, not on the phone in context.
+3. **The soak's career is simpler than the game's:** a move about one season in four, injuries at
+   random, the armband and caps by a dice roll on talent, Europe for some Premier League seasons.
+   Real careers will spread differently.
+4. **Last seasons are thin in a 15-season run** (only careers that start at 19 or 20 reach 34):
+   the 500 × 20 run shows them better.
+5. **Two big stories' beats in one week** still happens a few times (an over big story's last
+   scene, scheduled a season on, landing in the same week as another big story's beat). No two big
+   stories are ever open together.
+6. **Early seasons are busier than later ones** (a beat every 2.9 weeks at 17 to 19, 3.9 weeks
+   without the kit man's Thursdays), because more stories belong to the first seasons. Later
+   stages sit inside the 3 to 6 week target, the last seasons a little above it.

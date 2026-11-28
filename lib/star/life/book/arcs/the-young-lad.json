@@ -34,7 +34,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -193,6 +194,132 @@
    "hint": "A young lad wants to learn"
   },
   {
+   "id": "ylb-1d-deep",
+   "title": "His mum",
+   "after": {
+    "beat": "ylb-1",
+    "weeks": [
+     3,
+     12
+    ]
+   },
+   "event": {
+    "id": "arc-ylb-1d-deep",
+    "title": "His mum",
+    "category": "squad",
+    "place": "club:academy",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "After a youth game, a woman in a club coat stops you. {kid.short}'s mum. \"He talks about you all the time. How you tie your boots. What you eat. He's started ironing his shorts.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kid",
+       "say": [
+        "\"Is he any good? You can tell me.\""
+       ],
+       "replies": [
+        {
+         "id": "good",
+         "label": "\"He's good. He'll take my place.\"",
+         "tone": "honest",
+         "end": "good"
+        },
+        {
+         "id": "time",
+         "label": "\"Give him time.\"",
+         "tone": "calm",
+         "end": "time"
+        },
+        {
+         "id": "shorts",
+         "label": "\"Tell him to stop ironing his shorts.\"",
+         "tone": "confident",
+         "end": "shorts"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "She cries a bit, in a happy way. He finds out what you said and works twice as hard.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "told-my-mum-i-was-good",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "good"
+         }
+        }
+       }
+      ],
+      "time": [
+       {
+        "text": "She nods. She was hoping for more.",
+        "arc": {
+         "set": {
+          "deep": "time"
+         }
+        }
+       }
+      ],
+      "shorts": [
+       {
+        "text": "She laughs. He doesn't stop.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "shorts"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "best"
+     }
+    ]
+   },
+   "hint": "The young lad's mum wants a word"
+  },
+  {
    "id": "ylb-2",
    "title": "The team sheet",
    "after": {
@@ -220,7 +347,8 @@
     },
     "setup": [
      "A season on. The team sheet is up. {kid.short} is in your position. You're on the bench.",
-     "{if arc.path=='yes'}He comes and finds you before anyone else.{/if}"
+     "{if arc.path=='yes'}He comes and finds you before anyone else.{/if}",
+     "{if arc.deep=='good'}His mum told him what you said. He's never forgotten it.{/if}"
     ],
     "choices": [
      {

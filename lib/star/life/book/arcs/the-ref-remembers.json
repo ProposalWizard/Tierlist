@@ -25,7 +25,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -175,6 +176,127 @@
    "hint": "The referee is doing your game again"
   },
   {
+   "id": "rrm-1d-deep",
+   "title": "The car park",
+   "after": {
+    "beat": "rrm-1",
+    "weeks": [
+     1,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-rrm-1d-deep",
+    "title": "The car park",
+    "category": "rivals",
+    "place": "ground:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "After the game. {referee.name} is in the officials' car park, struggling with a flat tyre in the rain, in his good suit."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "referee",
+       "say": [
+        "He sees you. He goes back to the tyre."
+       ],
+       "replies": [
+        {
+         "id": "help",
+         "label": "Change it for him.",
+         "tone": "kind",
+         "end": "help"
+        },
+        {
+         "id": "ring",
+         "label": "Ring the club for someone to help.",
+         "tone": "calm",
+         "end": "ring"
+        },
+        {
+         "id": "drive",
+         "label": "Drive past.",
+         "tone": "cold",
+         "end": "drive"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "help": [
+       {
+        "text": "Twenty minutes in the rain. He says thank you twice and means the second one.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "changed-my-tyre",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "help"
+         }
+        }
+       }
+      ],
+      "ring": [
+       {
+        "text": "A steward comes. He nods at you through the window.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "ring"
+         }
+        }
+       }
+      ],
+      "drive": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "drive"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "The referee is in the car park after"
+  },
+  {
    "id": "rrm-2",
    "title": "His last game",
    "after": {
@@ -202,7 +324,8 @@
     },
     "setup": [
      "A season on. It's {referee.short}'s last game before he retires. Both teams are meant to clap him out.",
-     "{if arc.path=='cheek'}He sees you in the line and his face doesn't move.{/if}"
+     "{if arc.path=='cheek'}He sees you in the line and his face doesn't move.{/if}",
+     "{if arc.deep=='help'}He hasn't forgotten the tyre in the rain.{/if}"
     ],
     "choices": [
      {

@@ -47,7 +47,8 @@
  "vars": {
   "trial": 0,
   "result": "none",
-  "owed": 0
+  "owed": 0,
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -301,6 +302,147 @@
     ]
    },
    "hint": "Your brother has a favour to ask"
+  },
+  {
+   "id": "bro-1d-deep",
+   "title": "Mum's kitchen",
+   "after": {
+    "beat": "bro-3-trial",
+    "weeks": [
+     4,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-bro-1d-deep",
+    "title": "Mum's kitchen",
+    "category": "family",
+    "place": "home:mums",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Sunday dinner at your mum's. Your brother's gone out to the car to take a call, and your mum is drying the same plate for the third time."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mum",
+       "say": [
+        "\"He's been different since the trial. Up at six, running. He won't say it, but it's you he's doing it for. Or against. I can't tell.\""
+       ],
+       "replies": [
+        {
+         "id": "for",
+         "label": "\"For, Mum. I'll make sure of it.\"",
+         "tone": "kind",
+         "end": "for"
+        },
+        {
+         "id": "against",
+         "label": "\"Against's fine. It'll keep him going.\"",
+         "tone": "honest",
+         "end": "against"
+        },
+        {
+         "id": "leave",
+         "label": "\"Leave him be, Mum.\"",
+         "tone": "calm",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "for": [
+       {
+        "text": "She puts the plate down and squeezes your arm. When he comes back in you ask about his Sunday side, and he talks for twenty minutes.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         },
+         {
+          "slot": "brother",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "asked-about-my-sunday-side",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "for"
+         }
+        }
+       }
+      ],
+      "against": [
+       {
+        "text": "She looks at you like you're your dad. \"You two.\"",
+        "npc": [
+         {
+          "slot": "mum",
+          "grudge": 2
+         },
+         {
+          "slot": "brother",
+          "respect": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "against"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "She dries the plate a fourth time.",
+        "arc": {
+         "set": {
+          "deep": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Your mum wants to talk about your brother"
   },
   {
    "id": "bro-2-gaffer",
@@ -788,7 +930,9 @@
     },
     "setup": [
      "{if arc.result=='signed'}{brother.short} has been playing for the club down the road all season. He comes round and sits in your kitchen looking at your car through the window.{/if}",
-     "{if !arc.result=='signed'}{brother.short} comes round for the first time in months. He looks at your car through the kitchen window for a long time.{/if}"
+     "{if !arc.result=='signed'}{brother.short} comes round for the first time in months. He looks at your car through the kitchen window for a long time.{/if}",
+     "{if arc.deep=='for'}He still talks about the Sunday you asked about his side.{/if}",
+     "{if arc.deep=='against'}Your mum still says \"you two\" whenever it comes up.{/if}"
     ],
     "talk": {
      "start": "m1",
