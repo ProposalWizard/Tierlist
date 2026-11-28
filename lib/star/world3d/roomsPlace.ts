@@ -21,6 +21,8 @@ export interface RoomEnv {
   kit: { shirt: string; trim: string };
   club?: string;
   mergeGeometries: (g: any[]) => any;
+  /** three's RoundedBoxGeometry (the soft furniture's bevels); absent: plain boxes. */
+  RoundedBox?: any;
   info: RoomInfo;
 }
 export interface RoomOut {
@@ -58,12 +60,64 @@ function crestWallCanvas(club: string, shirt: string, trim: string): HTMLCanvasE
   // a soft light down the wall from the ceiling, darker at the floor
   const gr = g.createLinearGradient(0, 0, 0, 768); gr.addColorStop(0, "rgba(255,235,200,0.18)"); gr.addColorStop(0.6, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,0.28)");
   g.fillStyle = gr; g.fillRect(0, 0, 1536, 768);
-  // the crest's own lit panel: a slim backlit frame
-  g.fillStyle = "rgba(255,244,220,0.22)"; g.fillRect(588, 70, 360, 380);
-  drawCrest(g, 768, 250, 2.6, shirt, trim, club);
+  // the club's name across the top (over everyone's head: it reads from anywhere in the room), then the crest on its
+  // own lit panel, left of the receptionist (RECEPTION.clerk), its foot just above the desk's ledge
   g.fillStyle = "#f6efe3"; g.textAlign = "center"; g.textBaseline = "middle";
-  fit(g, club.toUpperCase(), 768, 520, 1200, 84);
-  g.fillStyle = "rgba(246,239,227,0.78)"; fit(g, "TRAINING CENTRE", 768, 600, 900, 40, 800);
+  fit(g, club.toUpperCase(), 768, 92, 1300, 78);
+  g.fillStyle = "rgba(246,239,227,0.8)"; fit(g, "TRAINING CENTRE", 768, 150, 900, 34, 800);
+  g.fillStyle = "rgba(255,244,220,0.22)"; g.fillRect(628, 196, 280, 320);
+  drawCrest(g, 768, 352, 2.1, shirt, trim, club);
+  return c;
+}
+
+/** A ceiling: "tiles" a suspended grid (two 0.6 m tiles a side, 1.2 m a repeat), "plaster" smooth and warm (2 m a repeat). */
+function ceilingCanvas(kind: "tiles" | "plaster"): HTMLCanvasElement {
+  const [c, g] = cv(256, 256);
+  let q = kind.length * 7 + 3; const r = () => { q = (q * 16807) % 2147483647; return q / 2147483647; };
+  g.fillStyle = kind === "tiles" ? "#ecebe6" : "#f1ede5"; g.fillRect(0, 0, 256, 256);
+  // a fine texture: the tiles' flecks; plaster only the faintest mottling (darker specks read as dirt from below)
+  for (let k = 0; k < (kind === "tiles" ? 1800 : 500); k++) { g.fillStyle = kind === "tiles" ? (r() < 0.5 ? "rgba(150,148,140,0.22)" : "rgba(255,255,255,0.4)") : (r() < 0.5 ? "rgba(225,219,208,0.25)" : "rgba(255,255,255,0.35)"); g.fillRect(r() * 256, r() * 256, kind === "tiles" ? 2 : 4, kind === "tiles" ? 2 : 4); }
+  if (kind === "tiles") {
+    // the grid's T-bars: light grey with a shadow line
+    for (const p of [0, 128]) { g.fillStyle = "#c9c7c0"; g.fillRect(p, 0, 5, 256); g.fillRect(0, p, 256, 5); g.fillStyle = "rgba(0,0,0,0.12)"; g.fillRect(p + 5, 0, 2, 256); g.fillRect(0, p + 5, 256, 2); }
+  }
+  return c;
+}
+
+/** The canteen's club photos: three framed pictures drawn in the club's colours (a squad photo, a trophy lift, the
+ *  ground). Invented scenes, nobody real. */
+function photosCanvas(shirt: string, trim: string): HTMLCanvasElement {
+  const [c, g] = cv(1024, 320);
+  const frame = (x: number, w: number, draw: () => void) => {
+    g.fillStyle = "#1f1c19"; g.fillRect(x, 20, w, 280);
+    g.fillStyle = "#f4f1ea"; g.fillRect(x + 12, 32, w - 24, 256);
+    g.save(); g.beginPath(); g.rect(x + 28, 48, w - 56, 224); g.clip(); g.translate(x + 28, 48); draw(); g.restore();
+  };
+  const man = (x: number, y: number, s: number, kit: string) => {
+    g.fillStyle = "#c68f6a"; g.beginPath(); g.arc(x, y - 22 * s, 6 * s, 0, Math.PI * 2); g.fill();
+    g.fillStyle = kit; g.fillRect(x - 8 * s, y - 16 * s, 16 * s, 18 * s);
+    g.fillStyle = "#f2f2f2"; g.fillRect(x - 7 * s, y + 2 * s, 14 * s, 8 * s);
+    g.fillStyle = "#2a2b30"; g.fillRect(x - 6 * s, y + 10 * s, 4 * s, 10 * s); g.fillRect(x + 2 * s, y + 10 * s, 4 * s, 10 * s);
+  };
+  // the squad photo: two rows on the grass, the sky and a stand behind
+  frame(20, 330, () => {
+    g.fillStyle = "#8fb6d9"; g.fillRect(0, 0, 280, 80); g.fillStyle = "#5d6470"; g.fillRect(0, 60, 280, 50); g.fillStyle = "#3f8a45"; g.fillRect(0, 110, 280, 120);
+    for (let i = 0; i < 8; i++) man(26 + i * 33, 120, 1.25, shirt);
+    for (let i = 0; i < 7; i++) man(42 + i * 33, 176, 1.35, i === 3 ? "#e6c33a" : shirt);
+  });
+  // the trophy lift: confetti, the cup held high
+  frame(370, 300, () => {
+    g.fillStyle = "#1b2740"; g.fillRect(0, 0, 250, 230);
+    for (let i = 0; i < 80; i++) { g.fillStyle = [shirt, trim, "#e6c33a"][i % 3]; g.fillRect((i * 53) % 250, (i * 37) % 200, 5, 3); }
+    for (let i = 0; i < 5; i++) man(40 + i * 42, 185, 1.6, shirt);
+    g.fillStyle = "#e0b64a"; g.beginPath(); g.moveTo(108, 70); g.lineTo(142, 70); g.lineTo(134, 104); g.lineTo(116, 104); g.closePath(); g.fill(); g.fillRect(121, 104, 8, 18); g.fillRect(112, 120, 26, 6);
+  });
+  // the ground from the stand
+  frame(690, 314, () => {
+    g.fillStyle = "#a8c8e6"; g.fillRect(0, 0, 260, 70);
+    g.fillStyle = shirt; g.fillRect(0, 60, 260, 50); for (let x = 0; x < 260; x += 10) { g.fillStyle = "rgba(255,255,255,0.2)"; g.fillRect(x, 60, 4, 50); }
+    g.fillStyle = "#3f8a45"; g.fillRect(0, 110, 260, 120); g.strokeStyle = "rgba(255,255,255,0.8)"; g.lineWidth = 2; g.strokeRect(10, 120, 240, 100); g.beginPath(); g.moveTo(130, 120); g.lineTo(130, 220); g.stroke();
+  });
   return c;
 }
 
@@ -167,13 +221,21 @@ export function buildRoom(id: RoomId, env: RoomEnv): RoomOut {
   wall(d * 2, H - dh, 0, dh + (H - dh) / 2, D2, Math.PI);
   mesh(env.mergeGeometries(wallParts), new THREE.MeshStandardMaterial({ map: tex(wallCanvas(wallPaint)), roughness: 0.9 }));
   for (const g of wallParts) g.dispose();
-  const ceil = mesh(new THREE.PlaneGeometry(W2 * 2, D2 * 2), new THREE.MeshStandardMaterial({ color: "#efebe3", roughness: 0.95 }));
+  // the ceiling: the canteen a suspended tile grid, reception smooth plaster (its cove and timber raft come below)
+  // (it glows a little with its own picture: lit only from below by the room's light it read as a flat grey slab)
+  const ceilMap = tex(ceilingCanvas(id === "canteen" ? "tiles" : "plaster"), id === "canteen" ? [W2 * 2 / 1.2, D2 * 2 / 1.2] : [W2 / 2, D2 / 2]);
+  const ceil = mesh(new THREE.PlaneGeometry(W2 * 2, D2 * 2), new THREE.MeshStandardMaterial({ map: ceilMap, emissiveMap: ceilMap, emissive: new THREE.Color("#fff6e8"), emissiveIntensity: 0.62, roughness: 0.95 }));
   ceil.rotation.x = Math.PI / 2; ceil.position.y = H;
 
   const P = painter(THREE, env.mergeGeometries); // matte
   const S = painter(THREE, env.mergeGeometries); // metal
   const L = painter(THREE, env.mergeGeometries); // lit
   const Gl = painter(THREE, env.mergeGeometries); // glass
+  /** A soft box (bevelled edges: cushions, arms) in the matte painter; a plain box when RoundedBoxGeometry is not given. */
+  const soft = (w: number, h: number, d: number, c: string, x: number, y: number, z: number, r = 0.04, rx = 0, ry = 0, rz = 0) => {
+    if (!env.RoundedBox) { P.box(w, h, d, c, x, y, z, rx, ry, rz); return; }
+    P.geo(new env.RoundedBox(w, h, d, 2, Math.min(r, w / 2 - 1e-3, h / 2 - 1e-3, d / 2 - 1e-3)), c, x, y, z, rx, ry, rz);
+  };
   const glows: any[] = [];
   const glow = (x: number, z: number, w: number, dd: number) => { const g = new THREE.PlaneGeometry(w, dd); g.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI / 2)); g.applyMatrix4(new THREE.Matrix4().makeTranslation(x, 0.006, z)); glows.push(g); };
   const shirt = kit.shirt, trim = kit.trim;
@@ -193,11 +255,36 @@ export function buildRoom(id: RoomId, env: RoomEnv): RoomOut {
   // ceiling downlights in rows, each with a soft glow on the floor (no light of their own: the governor's rule)
   const lightRows = id === "reception" ? [-2.6, 0, 2.6] : [-1.5, 1.1, 3.4];
   const lightCols = id === "reception" ? [-3.8, -1.3, 1.3, 3.8] : [-4.2, -1.4, 1.4, 4.2];
-  if (id === "canteen" && !premier) {
-    // a club canteen: long strip lights
-    for (const z of lightRows) for (const x of [-3.3, 3.0]) { L.box(1.6, 0.03, 0.14, "#f6f8fb", x, H - 0.02, z); P.box(1.7, 0.05, 0.2, "#c8c4bc", x, H - 0.005, z); glow(x, z, 3, 1.6); }
+  if (id === "canteen") {
+    // the canteen's grid: recessed light panels in rows (a tile each), a bulkhead over the counter with a lit line under it
+    for (const z of lightRows) for (const x of [-4.2, -1.8, 1.8, 4.2]) {
+      P.box(0.66, 0.02, 0.66, "#d6d4cd", x, H - 0.008, z);
+      L.box(0.58, 0.02, 0.58, premier ? "#fff3dc" : "#f5f8fc", x, H - 0.012, z);
+      glow(x, z, 2.2, 2.0);
+    }
+    const bz0 = -D2, bz1 = CANTEEN.counter.z1 - 0.05;
+    P.box(W2 * 2, 0.38, bz1 - bz0, premier ? "#3a2c22" : "#d9d6cf", 0, H - 0.19, (bz0 + bz1) / 2);
+    L.box(W2 * 2 - 0.4, 0.015, 0.06, "#fff1d6", 0, H - 0.385, bz1 - 0.12);
+    for (let x = CANTEEN.counter.x0 + 0.4; x < CANTEEN.counter.x1; x += 0.9) { L.cyl(0.06, 0.06, 0.012, "#fff3dc", x, H - 0.386, (bz0 + bz1) / 2 + 0.2, 0, 0, 0, 10); glow(x, CANTEEN.counter.z1 - 0.2, 1.2, 1.0); }
   } else {
-    for (const z of lightRows) for (const x of lightCols) { L.cyl(0.09, 0.09, 0.02, "#fff6dc", x, H - 0.01, z, 0, 0, 0, 12); glow(x, z, 1.6, 1.6); }
+    // reception: a lit cove round the edge (a dropped band, its inner lip glowing), a timber-slat raft over the desk,
+    // recessed downlights in rows between
+    const cw = 0.6, cd = 0.28, cy = H - cd / 2;
+    const band = "#e2dccf"; // (lit painter: the cove's plaster in its own glow)
+    L.box(W2 * 2, cd, cw, band, 0, cy, -D2 + cw / 2); L.box(W2 * 2, cd, cw, band, 0, cy, D2 - cw / 2);
+    L.box(cw, cd, D2 * 2 - cw * 2, band, -W2 + cw / 2, cy, 0); L.box(cw, cd, D2 * 2 - cw * 2, band, W2 - cw / 2, cy, 0);
+    for (const s of [-1, 1]) { L.box(W2 * 2 - cw * 2, 0.02, 0.05, "#ffe2b2", 0, H - cd - 0.005, s * (D2 - cw - 0.02)); L.box(0.05, 0.02, D2 * 2 - cw * 2, "#ffe2b2", s * (W2 - cw - 0.02), H - cd - 0.005, 0); }
+    for (const s of [-1, 1]) { L.box(W2 * 2 - cw * 2, 0.12, 0.012, "#fff0d4", 0, H - 0.07, s * (D2 - cw - 0.01)); L.box(0.012, 0.12, D2 * 2 - cw * 2, "#fff0d4", s * (W2 - cw - 0.01), H - 0.07, 0); }
+    // the raft: slats along x over the desk, two dark rails holding them, two lights under it
+    const rx0 = -3.2, rx1 = 3.2, rz0 = -3.6, rz1 = -1.1;
+    for (let z = rz0, k = 0; z <= rz1; z += 0.11, k++) L.box(rx1 - rx0, 0.06, 0.05, k % 3 ? "#a87b52" : "#94683f", 0, H - 0.42, z); // (in the lit painter: seen from below it read as a black slab)
+    for (const x of [rx0 + 0.3, rx1 - 0.3]) { L.box(0.05, 0.05, rz1 - rz0, "#7d5636", x, H - 0.37, (rz0 + rz1) / 2); for (const z of [rz0 + 0.2, rz1 - 0.2]) S.cyl(0.006, 0.006, 0.36, "#9aa0a8", x, H - 0.18, z, 0, 0, 0, 4); }
+    for (const x of [-1.2, 1.2]) { L.cyl(0.1, 0.1, 0.02, "#fff3dc", x, H - 0.46, -2.3, 0, 0, 0, 12); glow(x, -2.0, 1.8, 1.6); }
+    for (const z of lightRows) for (const x of lightCols) {
+      if (z < -1 && Math.abs(x) < 3.2) continue; // under the raft
+      L.cyl(0.08, 0.08, 0.02, "#fff6dc", x, H - 0.01, z, 0, 0, 0, 12); S.ring(0.09, 0.012, "#c9cdd3", x, H - 0.012, z, Math.PI / 2);
+      glow(x, z, 1.6, 1.6);
+    }
   }
 
   const objects: SmartObject[] = [];
@@ -249,23 +336,36 @@ export function buildRoom(id: RoomId, env: RoomEnv): RoomOut {
       if (i % 3 === 1) { P.box(0.04, 0.34, 0.3, "#f4f1ea", cx - 0.12, y + 0.18, z, 0, 0, 0.12); P.box(0.03, 0.26, 0.22, shirt, cx - 0.1, y + 0.18, z, 0, 0, 0.12); P.box(0.032, 0.05, 0.22, trim, cx - 0.1, y + 0.3, z, 0, 0, 0.12); }
       else { P.ball(0.11, "#f6f6f2", cx, y + 0.13, z, 12); P.cyl(0.07, 0.08, 0.03, "#2a241e", cx, y + 0.015, z, 0, 0, 0, 10); }
     }
-    plane(0.62, 0.31, new THREE.MeshBasicMaterial({ map: tex(plaqueCanvas(env.info.trophies)), toneMapped: false }), Cb.x1 + 0.005, 0.32, cz, Math.PI / 2);
+    // the plaque at eye height on the wall beside the cabinet (it sat at knee height on its base, hidden behind you)
+    plane(0.72, 0.36, new THREE.MeshBasicMaterial({ map: tex(plaqueCanvas(env.info.trophies)), toneMapped: false }), -W2 + 0.03, 1.55, Cb.z0 - 0.5, Math.PI / 2);
+    P.box(0.03, 0.42, 0.78, "#1c1a17", -W2 + 0.008, 1.55, Cb.z0 - 0.5);
     // ── the fixture screen (east wall): a dark bezel, the picture ──
     const Sc = Rc.screen;
     S.box(0.06, Sc.h + 0.1, Sc.w + 0.1, "#111216", W2 - 0.04, Sc.y, Sc.z);
     plane(Sc.w, Sc.h, new THREE.MeshBasicMaterial({ map: tex(screenCanvas(env.info.screen, shirt)), toneMapped: false }), W2 - 0.075, Sc.y, Sc.z, -Math.PI / 2);
     // ── the sofa (dark, facing the screen), two armchairs in the club's colour, a coffee table, a rug ──
-    const Sf = Rc.sofa, sb = Sf.box, sl = sb[3] - sb[2];
-    P.box(0.6, 0.26, sl, "#2a2d33", (sb[0] + sb[1]) / 2 + 0.05, 0.22, (sb[2] + sb[3]) / 2);
-    P.box(0.2, 0.72, sl, "#2a2d33", sb[0] + 0.1, 0.42, (sb[2] + sb[3]) / 2);
-    for (const s of [-1, 1]) P.box(0.66, 0.56, 0.16, "#24272c", (sb[0] + sb[1]) / 2, 0.28, (sb[2] + sb[3]) / 2 + s * (sl / 2 - 0.08));
-    for (let k = 0; k < 3; k++) P.box(0.42, 0.08, 0.58, "#33373e", Sf.at[0] - 0.05, Sf.y - 0.04, Sf.at[1] + (k - 1) * Sf.spacing);
-    P.box(0.14, 0.34, 0.34, trim, sb[0] + 0.28, 0.62, Sf.at[1] - 0.6, 0, 0, -0.25); P.box(0.14, 0.34, 0.34, shirt, sb[0] + 0.28, 0.62, Sf.at[1] + 0.6, 0, 0, -0.25);
+    const Sf = Rc.sofa, sb = Sf.box, sl = sb[3] - sb[2], smz = (sb[2] + sb[3]) / 2;
+    // soft furniture: bevelled cushions, rounded arms, short wooden legs (the seat's top and front edge as before,
+    // so the seat check stays clean: the cushions end 0.16 m in front of the hips)
+    const sofaC = "#2a2d33", cushC = "#363a42", legC = "#3b2a1e";
+    for (const x of [sb[0] + 0.08, sb[1] - 0.06]) for (const z of [sb[2] + 0.1, sb[3] - 0.1]) P.cyl(0.025, 0.02, 0.09, legC, x, 0.045, z, 0, 0, 0, 8);
+    soft(0.6, 0.22, sl, sofaC, (sb[0] + sb[1]) / 2 + 0.02, 0.2, smz, 0.05);
+    soft(0.2, 0.44, sl - 0.02, sofaC, sb[0] + 0.1, 0.53, smz, 0.07);
+    for (const s2 of [-1, 1]) soft(0.62, 0.36, 0.16, sofaC, (sb[0] + sb[1]) / 2 + 0.01, 0.43, smz + s2 * (sl / 2 - 0.08), 0.07);
+    for (let k = 0; k < 3; k++) {
+      const z = Sf.at[1] + (k - 1) * Sf.spacing;
+      soft(0.46, 0.12, 0.56, cushC, Sf.at[0] - 0.07, Sf.y - 0.06, z, 0.045);
+      soft(0.15, 0.36, 0.56, cushC, sb[0] + 0.27, 0.64, z, 0.06, 0, 0, -0.14);
+    }
+    soft(0.12, 0.3, 0.3, trim, sb[0] + 0.4, 0.6, Sf.at[1] - 0.62, 0.06, 0.2, 0, -0.3); soft(0.12, 0.3, 0.3, shirt, sb[0] + 0.4, 0.6, Sf.at[1] + 0.62, 0.06, -0.2, 0, -0.3);
     for (const ch of Rc.chairs) {
-      const [x0, x1, z0, z1] = ch.box, mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, back = ch.facing === 0 ? z0 + 0.08 : z1 - 0.08;
-      P.box(x1 - x0, 0.3, z1 - z0, shadeOf(shirt, 0.8), mx, 0.25, mz);
-      P.box(x1 - x0, 0.48, 0.16, shadeOf(shirt, 0.7), mx, 0.58, back);
-      for (const s of [-1, 1]) P.box(0.12, 0.26, z1 - z0, shadeOf(shirt, 0.65), mx + s * ((x1 - x0) / 2 - 0.06), 0.53, mz);
+      const [x0, x1, z0, z1] = ch.box, mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, f = ch.facing === 0 ? 1 : -1, back = f > 0 ? z0 + 0.08 : z1 - 0.08;
+      const c0 = shadeOf(shirt, 0.8), c1 = shadeOf(shirt, 0.7);
+      for (const x of [x0 + 0.07, x1 - 0.07]) for (const z of [z0 + 0.07, z1 - 0.07]) P.cyl(0.022, 0.018, 0.09, legC, x, 0.045, z, 0, 0, 0, 8);
+      soft(x1 - x0, 0.2, z1 - z0, c1, mx, 0.19, mz, 0.05);
+      soft(x1 - x0 - 0.26, 0.12, z1 - z0 - 0.16, c0, mx, 0.36, mz + f * 0.06, 0.045);
+      soft(x1 - x0, 0.5, 0.16, c1, mx, 0.55, back, 0.07, -f * 0.1);
+      for (const s2 of [-1, 1]) soft(0.13, 0.3, z1 - z0, c1, mx + s2 * ((x1 - x0) / 2 - 0.065), 0.43, mz, 0.06);
     }
     const Tb = Rc.table, tx = (Tb[0] + Tb[1]) / 2, tz = (Tb[2] + Tb[3]) / 2;
     P.box(Tb[1] - Tb[0], 0.05, Tb[3] - Tb[2], "#6b4f36", tx, 0.4, tz);
@@ -273,6 +373,8 @@ export function buildRoom(id: RoomId, env: RoomEnv): RoomOut {
     P.box(0.3, 0.02, 0.22, "#f2f2ee", tx - 0.1, 0.435, tz - 0.25, 0, 0.3); P.box(0.28, 0.02, 0.2, shirt, tx + 0.15, 0.435, tz + 0.2, 0, -0.2);
     P.box(2.6, 0.01, 3.6, "#5d5a55", 2.95, 0.004, 0.2);
     P.box(2.4, 0.012, 3.4, "#77736b", 2.95, 0.005, 0.2);
+    // the welcome rug between the door and the desk: dark, a border in the club's colour
+    P.box(3.0, 0.008, 2.2, shirt, -0.2, 0.004, 1.2); P.box(2.84, 0.01, 2.04, "#8a8378", -0.2, 0.005, 1.2); P.box(2.5, 0.011, 1.7, "#9b9488", -0.2, 0.006, 1.2);
     plants.push(...Rc.plants.map(([x, z], i): [number, number, PlantKind, number] => [x, z, (["fiddle", "monstera", "snake", "palm"] as PlantKind[])[i], [1.7, 1.2, 1.0, 1.6][i]]));
     // ── what you can use ──
     objects.push(standObject({ id: "desk", kind: "counter", label: "Reception desk", front: Rc.talk, face: Rc.clerk.at, verb: "Talk", lines: env.info.desk, pickR: 1.6, pickH: 1.3, who: "you" }));
@@ -373,7 +475,56 @@ export function buildRoom(id: RoomId, env: RoomEnv): RoomOut {
       L.cyl(0.13, 0.13, 0.01, "#ffe9c4", tx, ly - 0.08, tz, 0, 0, 0, 14);
       glow(tx, tz, 2.0, 1.4);
     }
-    plants.push([-W2 + 0.45, D2 - 0.45, "fiddle", 1.6], [W2 - 0.45, D2 - 0.45, "monstera", 1.2]);
+    plants.push(...C.plants.map(([x, z], i): [number, number, PlantKind, number] => [x, z, (["fiddle", "monstera", "snake"] as PlantKind[])[i], [1.6, 1.25, 1.0][i]]));
+    // ── a lunchtime room: trays, plates and cups left on the other tables (the diners' tables keep their own) ──
+    C.tables.forEach(([tx, tz], t) => {
+      if (t < 2) return;
+      const k = t * 37;
+      for (const side of [-1, 1]) {
+        if ((k + side) % 3 === 0) continue;
+        const x = tx + side * 0.42, z = tz + ((t + (side > 0 ? 1 : 0)) % 2 ? 0.17 : -0.17);
+        P.box(0.42, 0.015, 0.3, t % 2 ? shirt : "#2a2d33", x, C.tableH + 0.008, z, 0, (side * 0.15));
+        P.cyl(0.11, 0.09, 0.015, "#f6f6f2", x - 0.06, C.tableH + 0.022, z, 0, 0, 0, 14);
+        P.cyl(0.035, 0.03, 0.09, "#f2efe8", x + 0.13, C.tableH + 0.06, z - 0.06, 0, 0, 0, 8);
+      }
+      // salt, pepper and a napkin holder in the middle of every table
+      P.cyl(0.016, 0.016, 0.07, "#f2f2ee", tx - 0.04, C.tableH + 0.035, tz, 0, 0, 0, 6); P.cyl(0.016, 0.016, 0.07, "#2a2b30", tx + 0.04, C.tableH + 0.035, tz, 0, 0, 0, 6);
+      P.box(0.12, 0.08, 0.05, "#c9cdd3", tx, C.tableH + 0.04, tz + 0.08);
+    });
+    for (const t of [0, 1]) { const [tx, tz] = C.tables[t]; P.cyl(0.016, 0.016, 0.07, "#f2f2ee", tx - 0.04, C.tableH + 0.035, tz, 0, 0, 0, 6); P.cyl(0.016, 0.016, 0.07, "#2a2b30", tx + 0.04, C.tableH + 0.035, tz, 0, 0, 0, 6); }
+    // ── the drinks fridge (west wall, by the counter): steel, a glass door, lit shelves of bottles and cans ──
+    {
+      const [fx0, fx1, fz0, fz1] = C.fridge, fx = (fx0 + fx1) / 2, fz = (fz0 + fz1) / 2, fl = fz1 - fz0;
+      S.box(fx1 - fx0, 2.0, fl, "#b9bec4", fx, 1.0, fz);
+      L.box(0.02, 1.62, fl - 0.14, "#e8f3fb", fx1 + 0.002, 1.05, fz);
+      const cols = [shirt, "#2f7dd1", "#f2c14e", "#e8e8e8", "#3fa34d", trim];
+      for (let r = 0; r < 4; r++) for (let i = 0; i < 7; i++) P.cyl(0.035, 0.035, r % 2 ? 0.12 : 0.22, cols[(i + r * 2) % cols.length], fx1 + 0.03, 0.4 + r * 0.4 + (r % 2 ? 0.06 : 0.11), fz0 + 0.17 + i * (fl - 0.34) / 6, 0, 0, 0, 8);
+      for (let r = 0; r < 4; r++) S.box(0.06, 0.012, fl - 0.14, "#dfe5ea", fx1 + 0.02, 0.4 + r * 0.4, fz);
+      Gl.box(0.012, 1.66, fl - 0.1, "#cfe2ec", fx1 + 0.07, 1.05, fz);
+      S.box(0.03, 0.5, 0.03, "#8d949b", fx1 + 0.09, 1.1, fz1 - 0.1);
+      L.box(0.012, 0.16, fl - 0.1, shirt, fx1 + 0.005, 1.9, fz);
+    }
+    // ── the water station and the fruit (north wall, east of the counter): a low unit, a water dispenser, cups, a bowl ──
+    {
+      const [wx0, wx1, wz0, wz1] = C.water, wx = (wx0 + wx1) / 2, wz = (wz0 + wz1) / 2;
+      P.box(wx1 - wx0, 0.9, wz1 - wz0, premier ? "#7a5a3e" : "#a9b0b4", wx, 0.45, wz);
+      S.box(wx1 - wx0 + 0.04, 0.03, wz1 - wz0 + 0.04, "#c9cdd3", wx, 0.915, wz);
+      S.box(0.34, 0.42, 0.34, "#e8eaec", wx - 0.45, 1.14, wz - 0.05); Gl.cyl(0.14, 0.14, 0.4, "#9fd0ef", wx - 0.45, 1.56, wz - 0.05, 0, 0, 0, 14);
+      S.box(0.06, 0.05, 0.04, "#2f7dd1", wx - 0.45, 1.08, wz + 0.13);
+      for (let k = 0; k < 8; k++) P.cyl(0.038, 0.032, 0.1, "#f2efe8", wx - 0.1 + (k % 4) * 0.09, 0.98 + Math.floor(k / 4) * 0.1, wz + 0.08, 0, 0, 0, 8);
+      P.cyl(0.24, 0.14, 0.1, "#e9e4da", wx + 0.45, 0.98, wz, 0, 0, 0, 16);
+      const fruit = ["#e23b2e", "#f2c14e", "#3fa34d", "#f08b2a", "#e23b2e", "#f2c14e", "#7cbf3f"];
+      fruit.forEach((f, k) => P.ball(0.055, f, wx + 0.45 + Math.cos(k * 0.9) * (k < 5 ? 0.12 : 0.03), 1.07 + (k < 5 ? 0 : 0.07), wz + Math.sin(k * 0.9) * (k < 5 ? 0.12 : 0.03), 8));
+      P.box(0.26, 0.05, 0.1, shirt, wx + 0.05, 1.42, wz1 - 0.03);
+    }
+    // ── the club photos (west wall over the tables, and by the door on the south wall): one picture, one draw ──
+    {
+      const ph = tex(photosCanvas(shirt, trim));
+      const g1 = new THREE.PlaneGeometry(3.4, 1.06); g1.applyMatrix4(new THREE.Matrix4().makeRotationY(Math.PI / 2)); g1.applyMatrix4(new THREE.Matrix4().makeTranslation(-W2 + 0.015, 1.75, 1.2));
+      const g2 = new THREE.PlaneGeometry(2.6, 0.81); g2.applyMatrix4(new THREE.Matrix4().makeRotationY(Math.PI)); g2.applyMatrix4(new THREE.Matrix4().makeTranslation(-3.3, 1.75, D2 - 0.015));
+      mesh(env.mergeGeometries([g1, g2]), new THREE.MeshStandardMaterial({ map: ph, roughness: 0.6 }), { receive: false });
+      g1.dispose(); g2.dispose();
+    }
     objects.push(standObject({ id: "counter", kind: "counter", label: hall.title, front: C.serve, face: [C.serve[0], C.counter.z0], verb: "Pick a plate", lines: ["One plate a day, from half twelve."], pickR: 1.8, pickH: 1.6, who: "you" }));
   }
 

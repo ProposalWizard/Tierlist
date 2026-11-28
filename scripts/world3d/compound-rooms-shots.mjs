@@ -57,9 +57,9 @@ try {
     for (const hall of ["urn", "canteen"]) {
       await page.goto(`${base}/star-world3d-dev?place=canteen&hall=${hall}&bare=1&clean=1&q=${q}`, { waitUntil: "domcontentloaded", timeout: 240000 });
       await ready(); await idle(4000);
-      await page.evaluate(() => window.__world3dCam([5.6, 2.8, 4.2], [-1.5, 0.6, -2.0])); await idle(1500);
+      await page.evaluate(() => window.__world3dCam([5.4, 2.9, 4.2], [-2.0, 0.4, -1.6])); await idle(1500);
       await shot(`canteen-hall-${hall}-wide`, "canteen");
-      await page.evaluate(() => window.__world3dCam([0.4, 1.7, -0.6], [0.4, 1.0, -3.4])); await idle(1500);
+      await page.evaluate(() => window.__world3dCam([0.6, 1.75, -1.0], [1.1, 1.0, -3.4])); await idle(1500);
       await shot(`canteen-hall-${hall}-counter`, "canteen");
     }
   }
@@ -87,6 +87,10 @@ try {
       await shot("reception-4-wide", room);
       await page.evaluate(() => window.__world3dCam([-4.6, 2.4, 3.9], [3.5, 1.1, -0.6])); await idle(1500);
       await shot("reception-5-wide-east", room);
+      await page.evaluate(() => window.__world3dCam([0.2, 1.5, 3.9], [-0.2, 2.9, -2.2])); await idle(1500);
+      await shot("reception-5b-ceiling", room);
+      await page.evaluate(() => window.__world3dCam([-2.2, 1.7, 0.2], [-5.5, 1.5, -2.2])); await idle(1500);
+      await shot("reception-5c-cabinet-plaque", room);
       await page.evaluate(() => window.__world3dCam(null));
       // 6. the trophy cabinet
       await tapId("cabinet"); await untilStill(); await idle(1500);
@@ -100,10 +104,12 @@ try {
     } else {
       // 3. wide: the counter, the chef, the team-mates eating
       await page.evaluate(() => window.__world3d.teleport(-0.6, -1.5, Math.PI)); await idle(800);
-      await page.evaluate(() => window.__world3dCam([1.2, 2.7, 4.2], [-3.0, 0.6, -1.4])); await idle(1500);
+      await page.evaluate(() => window.__world3dCam([5.4, 2.9, 4.2], [-2.0, 0.4, -1.6])); await idle(1500);
       await shot("canteen-3-wide", room);
-      await page.evaluate(() => window.__world3dCam([-1.0, 2.7, 4.2], [3.6, 0.6, -1.4])); await idle(1500);
+      await page.evaluate(() => window.__world3dCam([-5.4, 2.9, 4.2], [2.0, 0.4, -1.6])); await idle(1500);
       await shot("canteen-4-wide-west", room);
+      await page.evaluate(() => window.__world3dCam([0.2, 1.5, 3.8], [-0.4, 2.7, -2.2])); await idle(1500);
+      await shot("canteen-4b-ceiling", room);
       await page.evaluate(() => window.__world3dCam(null));
       // 5. at the counter: the lunch card's plates (wait till lunch first: the card's own button)
       await tapId("counter"); await untilStill(); await idle(1500);

@@ -34,9 +34,10 @@ export const RECEPTION = {
   /** The desk: its body, the raised ledge's top, the worktop behind it. */
   desk: { x0: -1.9, x1: 1.9, z0: -2.0, z1: -1.2, ledge: 1.08, top: 0.76 },
   /** The receptionist stands behind the desk, facing the door. */
-  clerk: { at: [0.35, -2.5] as XZ, yaw: 0 },
+  // (off to the east of the crest: the crest and the club's name over it both read past him, Harry's review 28 Nov)
+  clerk: { at: [1.45, -2.5] as XZ, yaw: 0 },
   /** Where you stand to talk to him: in front of the desk. */
-  talk: [0.35, -0.6] as XZ,
+  talk: [1.45, -0.6] as XZ,
   /** The trophy cabinet on the west wall: its box, its glass front faces east. */
   cabinet: { x0: -5.5, x1: -4.95, z0: -1.7, z1: 1.7, h: 2.1 },
   /** The next-fixture screen on the east wall (its middle z, its height and width). */
@@ -77,11 +78,17 @@ export const CANTEEN = {
   /** The tea urn on the counter (the lower leagues: no chef, an urn and the sandwiches). */
   urn: [1.25, -3.05] as XZ,
   /** Tables (1.6 × 0.8 m, 0.75 high), two rows either side of the aisle from the door to the counter. */
-  tables: [[-3.6, -0.3], [3.0, -0.3], [-3.6, 2.7], [3.0, 2.7]] as XZ[],
+  // (eight, in rows either side of the aisle: "the canteen feels empty", 28 Nov; the first two are the diners')
+  tables: [[-2.6, -0.3], [2.6, -0.3], [-2.6, 2.7], [2.6, 2.7], [-4.6, -0.3], [4.6, -0.3], [-4.6, 2.7], [4.6, 2.7]] as XZ[],
   tableW2: 0.8, tableD2: 0.4, tableH: 0.75,
   /** A chair: its middle this far from the table's middle (pulled out: the knees clear the top), 0.45 either side. */
   chairOff: 0.95, chairSide: 0.45, seatY: 0.46,
   you: { x: 0, z: 2.4, yaw: Math.PI },
+  /** The drinks fridge (west wall, by the counter, glass front facing east), the water station with the fruit bowl
+   *  (north wall, east of the counter), the plants. */
+  fridge: [-6, -5.4, -3.5, -2.3] as Solid,
+  water: [2.9, 4.6, -4.5, -3.75] as Solid,
+  plants: [[-5.55, 4.05], [5.55, 4.05], [5.5, -4.05]] as XZ[],
 } as const;
 /** A chair's sitter: his hips this far back from the chair's middle (towards its back), and from his hips to the
  *  seat's front edge (the thighs clear it: the seat check, RUL-3D-005). */
@@ -117,6 +124,8 @@ export function canteenSolids(): Solid[] {
   // behind the counter is the kitchen's: you never walk round it
   s.push([C.counter.x1, C.counter.x1 + 0.2, -C.D2, C.counter.z1], [C.counter.x0 - 0.2, C.counter.x0, -C.D2, C.counter.z1]);
   for (const [tx, tz] of C.tables) s.push([tx - C.tableW2, tx + C.tableW2, tz - C.tableD2, tz + C.tableD2]);
+  s.push(C.fridge, C.water);
+  for (const [x, z] of C.plants) s.push([x - 0.35, x + 0.35, z - 0.35, z + 0.35]);
   return s;
 }
 
@@ -198,21 +207,28 @@ export function roomInfo(c: CareerState): RoomInfo {
 export const GYM_FRAME = { draws: 38, triangles: 98_200 };
 export interface RoomMeasure { room: RoomId | "gym"; view: string; draws: number; triangles: number }
 export const ROOMS_MEASURED: RoomMeasure[] = [
-  // measured 28 Nov 2026, Medium, 390×844 at 1× (scripts/world3d/compound-rooms-shots.mjs)
+  // measured 28 Nov 2026 (second pass: the fuller canteen, the ceilings, the soft sofa), Medium, 390×844 at 1×
   { room: "gym", view: "gym-0-walk-in", draws: 33, triangles: 98156 },
   { room: "gym", view: "gym-0-middle", draws: 38, triangles: 98018 },
-  { room: "reception", view: "reception-2-inside", draws: 14, triangles: 34060 },
-  { room: "reception", view: "reception-3-desk-line", draws: 14, triangles: 34060 },
-  { room: "reception", view: "reception-4-wide", draws: 14, triangles: 34060 },
-  { room: "reception", view: "reception-5-wide-east", draws: 14, triangles: 34060 },
-  { room: "reception", view: "reception-6-cabinet", draws: 14, triangles: 34060 },
-  { room: "reception", view: "reception-7-sofa", draws: 14, triangles: 34060 },
-  { room: "canteen", view: "canteen-2-inside", draws: 21, triangles: 86764 },
-  { room: "canteen", view: "canteen-3-wide", draws: 22, triangles: 86758 },
-  { room: "canteen", view: "canteen-4-wide-west", draws: 21, triangles: 86710 },
-  { room: "canteen", view: "canteen-6-counter-lunch-open", draws: 21, triangles: 86764 },
-  { room: "canteen", view: "canteen-8-sat-with-mate", draws: 23, triangles: 86760 },
-  { room: "canteen", view: "canteen-9-chat", draws: 24, triangles: 86816 },
-  { room: "canteen", view: "canteen-hall-canteen-wide", draws: 22, triangles: 85858 },
-  { room: "canteen", view: "canteen-hall-urn-wide", draws: 19, triangles: 68176 },
+  { room: "canteen", view: "canteen-hall-urn-wide", draws: 22, triangles: 74342 },
+  { room: "canteen", view: "canteen-hall-urn-counter", draws: 16, triangles: 74282 },
+  { room: "canteen", view: "canteen-hall-canteen-wide", draws: 25, triangles: 92544 },
+  { room: "canteen", view: "canteen-hall-canteen-counter", draws: 18, triangles: 92482 },
+  { room: "canteen", view: "canteen-2-inside", draws: 24, triangles: 93006 },
+  { room: "canteen", view: "canteen-3-wide", draws: 26, triangles: 93056 },
+  { room: "canteen", view: "canteen-4-wide-west", draws: 24, triangles: 92952 },
+  { room: "canteen", view: "canteen-4b-ceiling", draws: 22, triangles: 93000 },
+  { room: "canteen", view: "canteen-5-counter-card", draws: 22, triangles: 93000 },
+  { room: "canteen", view: "canteen-6-counter-lunch-open", draws: 23, triangles: 93004 },
+  { room: "canteen", view: "canteen-7-ate", draws: 23, triangles: 93004 },
+  { room: "canteen", view: "canteen-8-sat-with-mate", draws: 25, triangles: 93054 },
+  { room: "canteen", view: "canteen-9-chat", draws: 25, triangles: 93054 },
+  { room: "reception", view: "reception-2-inside", draws: 14, triangles: 43316 },
+  { room: "reception", view: "reception-3-desk-line", draws: 14, triangles: 43316 },
+  { room: "reception", view: "reception-4-wide", draws: 13, triangles: 43314 },
+  { room: "reception", view: "reception-5-wide-east", draws: 14, triangles: 43316 },
+  { room: "reception", view: "reception-5b-ceiling", draws: 13, triangles: 43314 },
+  { room: "reception", view: "reception-5c-cabinet-plaque", draws: 13, triangles: 43314 },
+  { room: "reception", view: "reception-6-cabinet", draws: 13, triangles: 43314 },
+  { room: "reception", view: "reception-7-sofa", draws: 14, triangles: 43316 },
 ];

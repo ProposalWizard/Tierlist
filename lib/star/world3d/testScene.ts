@@ -292,7 +292,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
     renderer.toneMappingExposure = 1.05;
     scene.environmentIntensity = 0.45;
-    const r = buildRoom(id, { THREE, scene, prof, kit: opts.kit, club: opts.club, mergeGeometries, info: roomInfo });
+    const { RoundedBoxGeometry }: any = await import("three/examples/jsm/geometries/RoundedBoxGeometry.js");
+    const r = buildRoom(id, { THREE, scene, prof, kit: opts.kit, club: opts.club, mergeGeometries, RoundedBox: RoundedBoxGeometry, info: roomInfo });
     room = r;
     sun = r.sun;
     const n = shadowSizeFor(prof, 1024) || 1024;
