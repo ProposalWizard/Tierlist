@@ -17,12 +17,15 @@
  * are pressed by their words; nothing in the save is changed by the script.
  * Writes <out>/log.txt, <out>/screens/NNN-*.jpg and <out>/career.json at the end.
  *
+ * --webkit: run in WebKit (the iPhone app's own engine) instead of Chrome.
+ *   Needs `npx playwright install-deps webkit` once. Software graphics: shows
+ *   what draws and breaks in WebKit, not how fast a real iPhone runs it.
  * --offline: the packed phone app test (mobile/README.md). --url is mobile/www
  *   served on a port; every request to anywhere else is blocked (as with no
  *   signal) and written to <out>/blocked.txt, every failed one to
  *   <out>/failed.txt. The game starts at "/" (the app has only that page).
  */
-import { chromium, devices } from "playwright";
+import { chromium, webkit, devices } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -47,7 +50,7 @@ const sizes = () => page.evaluate(() => { const c = document.querySelector("canv
   for (const el of document.querySelectorAll("*")) { const cs = getComputedStyle(el); if (!/(auto|scroll)/.test(cs.overflowY)) continue; const r = el.getBoundingClientRect(); if (r.width < 40 || r.right <= 2 || r.left >= innerWidth - 2 || r.bottom <= 0 || r.top >= innerHeight || cs.visibility === "hidden") continue; const over = el.scrollHeight - el.clientHeight; if (el.clientHeight > 40 && over > worst) { worst = over; who = (el.getAttribute("data-screen") || el.className || el.tagName).toString().slice(0, 40); } }
   return `screen ${innerWidth}x${innerHeight} · page ${d}${d > innerHeight + 1 ? " TALL by " + (d - innerHeight) : ""}${worst > 4 ? ` · SCROLLS by ${worst} (${who})` : ""}${c ? ` · pitch ${Math.round(c.width)}x${Math.round(c.height)}` : ""}`; });
 
-const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || "/opt/pw-browsers/chromium" });
+const browser = argv.includes("--webkit") ? await webkit.launch() : await chromium.launch({ executablePath: process.env.PW_CHROMIUM || "/opt/pw-browsers/chromium" });
 const VP = (val("--viewport", "") || "").match(/^(\d+)x(\d+)$/); // e.g. --viewport 360x752: a real Android phone's room for the app
 const VIDEO = val("--video", null); // also film the whole run (a .webm in this folder), for preview films
 // (filming uses a full-height phone, 390x844: the film's phone screen is that shape)
