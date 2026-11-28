@@ -122,3 +122,14 @@ E. THE STORY BOOK: regenerate and republish it after each job (same URL), so
 2. The kit man start chance: 0.05 (88% of careers starting at 17 meet him) or
    0.08?
 3. The 5 people-plan questions in docs/plans/PEOPLE_AND_MEMORY_PLAN.md.
+
+## Status after the first try (28 Nov 2026, night)
+
+Step 1 stopped the run. Error type: **ANTHROPIC_API_KEY not set** in "The space".
+`claude -p` still answered (is_error false, cost shown about $0.003), but with no
+key it is billed to the chat account, not the API credit. So no jobs were started.
+A network secret can't hold this key (Anthropic hosts are refused). Fix: Harry
+adds `ANTHROPIC_API_KEY` as an environment variable in "The space" settings
+(cloud environment menu → Edit → environment variables), then starts a NEW chat
+with the starter above. Before job A, check `[ -n "$ANTHROPIC_API_KEY" ]` as well
+as the test call.
