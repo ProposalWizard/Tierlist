@@ -322,9 +322,12 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     });
     // a hay net hanging in the second stall, its rope to the beam
     {
+      const hayM = mat("#a8874e", { map: M.straw.map, roughness: 1 }), netM = new THREE.MeshBasicMaterial({ color: "#2b2117", wireframe: true });
       const net = new THREE.IcosahedronGeometry(0.26, 1);
       net.scale(1, 1.25, 0.8);
-      A.put(net, M.straw, doors[1] - 0.35, 2.0, fz - 0.55);
+      A.put(net, hayM, doors[1] - 0.35, 2.0, fz - 0.55);
+      const cord = new THREE.IcosahedronGeometry(0.275, 1); cord.scale(1, 1.25, 0.8);
+      A.put(cord, netM, doors[1] - 0.35, 2.0, fz - 0.55); // the net itself, a dark cord over the hay
       A.box(0.02, 0.32, 0.02, M.darkTimber, doors[1] - 0.35, 2.46, fz - 0.55);
     }
     // the roof: two slopes of slate, gable ends of timber, a ridge
@@ -714,7 +717,7 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
   const gOn = (e: Event) => { e.stopPropagation(); gallopHeld = true; gallop.style.transform = "scale(0.94)"; };
   const gOff = (e: Event) => { e.stopPropagation(); gallopHeld = false; gallop.style.transform = ""; };
   gallop.addEventListener("pointerdown", gOn); gallop.addEventListener("pointerup", gOff); gallop.addEventListener("pointerleave", gOff); gallop.addEventListener("pointercancel", gOff);
-  const clock = el("div", `position:absolute;left:12px;top:calc(max(12px, env(safe-area-inset-top)) + 96px);${glass}padding:8px 14px;display:none;text-align:center;min-width:150px`);
+  const clock = el("div", `position:absolute;left:12px;top:calc(max(12px, env(safe-area-inset-top)) + 96px);${glass}padding:8px 14px;display:none;text-align:center;min-width:150px;max-width:calc(50vw - 20px)`);
   clock.setAttribute("data-lap-clock", "");
   // what just happened (a lap start, a clear jump, a rail down): the garden's own prompt chip, low on the screen, never text in the world
   const flashEl = el("div", `position:absolute;left:50%;transform:translateX(-50%);bottom:calc(max(24px, calc(env(safe-area-inset-bottom) + 16px)) + 150px);${glass}border-radius:999px;padding:9px 16px;font-size:14px;font-weight:900;opacity:0;transition:opacity .2s;white-space:nowrap;display:flex;align-items:center;gap:8px`);
@@ -782,7 +785,7 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     if (showClock) {
       const b = mode ? best[mode] : best.course;
       const t = lap?.on ? lapClock(lap.t + lap.pen) : "0:00.0";
-      const nextName = mode === "course" && lap?.on ? (course.next < COURSE.length ? `next ${COURSE[course.next].kind === "poles" ? "poles" : `jump ${COURSE[course.next].name}`}` : "to the finish") : mode === "track" && lap?.on ? (track.next < TRACK_GATES.length ? "round the track" : "to the finish") : level >= 4 ? "through START or FINISH" : "ride through START";
+      const nextName = mode === "course" && lap?.on ? (course.next < COURSE.length ? `next ${COURSE[course.next].kind === "poles" ? "poles" : `jump ${COURSE[course.next].name}`}` : "to the finish") : mode === "track" && lap?.on ? (track.next < TRACK_GATES.length ? "round the track" : "to the finish") : level >= 4 ? "START or FINISH line" : "ride through START";
       const key = `${t}|${b}|${nextName}|${lap?.pen ?? 0}`;
       if (key !== lastClock) {
         lastClock = key;

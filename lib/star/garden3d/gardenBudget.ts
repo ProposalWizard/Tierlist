@@ -71,20 +71,20 @@ export interface LevelMeasure {
 }
 const BACK = "looking back at the garden through the west gate: the whole garden is in the picture (the wall and small-piece culling, levelZones.ts behindWall, took it from 158 to 120)";
 export const GARDEN_LEVELS_MEASURED: LevelMeasure[] = [
+  // 28 Nov 2026, second pass (the stable's stall interiors, hay net, lamps and name plate in)
   { level: 1, view: "gate", walking: false, draws: 95, triangles: 53_346, baselineOver: 95 },
-  { level: 5, view: "gate", walking: false, draws: 95, triangles: 53_680, baselineOver: 95 },
-  { level: 5, view: "gate", walking: true, draws: 97, triangles: 58_617 },
+  { level: 5, view: "gate", walking: false, draws: 95, triangles: 53_254, baselineOver: 95 },
+  { level: 5, view: "gate", walking: true, draws: 97, triangles: 58_191 },
   { level: 2, view: "west wall", walking: false, draws: 49, triangles: 43_676 },
-  { level: 5, view: "west wall", walking: false, draws: 71, triangles: 66_129 },
+  { level: 5, view: "west wall", walking: false, draws: 60, triangles: 58_904 },
   { level: 2, view: "paddock", walking: false, draws: 34, triangles: 40_940 },
-  { level: 5, view: "paddock", walking: false, draws: 49, triangles: 57_680 },
-  { level: 5, view: "stable", walking: false, draws: 32, triangles: 52_288 },
-  { level: 3, view: "field", walking: false, draws: 24, triangles: 46_784 },
+  { level: 5, view: "paddock", walking: false, draws: 38, triangles: 49_660 },
+  { level: 5, view: "stable", walking: false, draws: 39, triangles: 55_038 },
   { level: 5, view: "field", walking: false, draws: 26, triangles: 49_188 },
-  { level: 3, view: "riding the course", walking: true, draws: 40, triangles: 49_811 },
-  { level: 5, view: "riding the course", walking: true, draws: 42, triangles: 52_215 },
-  { level: 5, view: "paddock, facing the garden", walking: false, draws: 120, triangles: 74_000, over: { ceiling: 125, why: BACK } },
-  { level: 5, view: "field, facing the garden", walking: false, draws: 108, triangles: 75_860, over: { ceiling: 112, why: BACK } },
+  { level: 5, view: "riding the course", walking: true, draws: 53, triangles: 61_801 },
+  { level: 5, view: "riding the course (later)", walking: true, draws: 35, triangles: 51_305 },
+  { level: 5, view: "paddock, facing the garden", walking: false, draws: 120, triangles: 73_586, over: { ceiling: 125, why: BACK } },
+  { level: 5, view: "field, facing the garden", walking: false, draws: 101, triangles: 74_384, over: { ceiling: 112, why: BACK } },
 ];
 
 /** The rider on the saddle, measured on the one body (scripts/perf3d H.rider → rideHorse.ts riderCheck), metres. */
