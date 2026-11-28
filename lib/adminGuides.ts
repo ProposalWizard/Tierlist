@@ -1052,22 +1052,31 @@ export const ADMIN_GUIDES = {
   },
   "/star-aerials-dev": {
     title: "Headers and volleys",
-    what: "Play a header or volley chance in the real match with one aerial move forced, to see each move's animation and the ball screen on its contact frame.",
+    what: "A test page: five ways to decide WHEN and HOW you hit a header or volley (Harry, 28 Nov 2026: \"the headers and volleys system just has never worked with WHEN you hit the ball\"), side by side with today's ball screen, on the real match. Also one aerial move forced at a time.",
     buttons: [
-      { group: "1 · The move", items: [
-        ["Standing header / Jumping header / Diving header", "Forces that header on every header chance, and plays a header chance now."],
-        ["Chest volley / Front volley / Side volley / Bicycle kick / Scorpion kick", "Forces that volley move on every volley chance, and plays a volley chance now."],
-        ["🎲 Random (game picks)", "No force: the game picks the move from the ball's height and angle, your Aerial and your Technique, as in a career."],
+      { group: "1 · How you hit it", items: [
+        ["Today: ball screen", "The game as it is: the cross comes in, then the Head it? / Volley it? screen opens with its ring and you tap the ball."],
+        ["1 · Landing ring", "A ring on the pitch closes onto where you meet the ball. Drag back (anywhere) to aim and set power, let go as the ring goes green. Early: under it. Late: off its edge."],
+        ["2 · Aim first", "Tap where in the goal (the dashed box) while the cross is in the air. Your man meets it himself; his Aerial sets how good his timing is."],
+        ["3 · Swipe through", "Swipe through the ball as it reaches the white ring: the swipe's direction aims it, its speed is the power, off the middle glances it."],
+        ["4 · Tap, hold, release", "Press in the blue UP zone of the bar to take off, hold to wind up (orange), let go on the green HIT line. Where your thumb is across the screen aims it."],
+        ["5 · Pro camera", "Not built yet: three drawn frames of a first-person view, and what it would take."],
+        ["Bot numbers", "Goals per 100 at Aerial 30 / 60 / 90 and clean hits, from scripts/aerial/control-measure.mts with an assumed average thumb (not people), next to the game's ground shots."],
       ] },
       { group: "2 · The chance", items: [
         ["Header chance / Volley chance", "Which chance plays. Picking the other kind while a move is forced goes back to Random."],
-        ["New chance", "A fresh chance of the same kind, same move."],
-        ["Tap the ball", "When the head or foot meets the ball, the ball screen opens: tap it to strike, as in the real match."],
+        ["Replay", "The same chance again, from the cross."],
+        ["New chance", "A fresh chance of the same kind."],
+      ] },
+      { group: "3 · The move", items: [
+        ["Standing header / Jumping header / Diving header", "Forces that header on every header chance (today's ball screen), and plays a header chance now."],
+        ["Chest volley / Front volley / Side volley / Bicycle kick / Scorpion kick", "Forces that volley move on every volley chance (today's ball screen), and plays a volley chance now."],
+        ["🎲 Random (game picks)", "No force: the game picks the move from the ball's height and angle, your Aerial and your Technique, as in a career."],
       ] },
     ],
-    saving: ["Nothing. The forced move lives on this page only and is cleared when you leave."],
-    inGame: ["The moves are the game's own (career, highlights, the Head & Volley drill). Only the force is test-page only: the game always picks its own move."],
-    dev: "app/star-aerials-dev/page.tsx · lib/star/aerialMoves.ts (setTestAerialMove, forcedAerialMove, pickAerialMove) · components/star/CanvasMatch.tsx (reads forcedAerialMove) · tests/star/aerialMoves.mts",
+    saving: ["Nothing. The way you hit it and the forced move live on this page only and are cleared when you leave. Nothing commits to the repo."],
+    inGame: ["Nowhere yet: the game keeps today's ball screen until Harry picks one of the five. The moves are the game's own (career, highlights, the Head & Volley drill)."],
+    dev: "app/star-aerials-dev/page.tsx · lib/star/airControl.ts (setTestAirControl, the timing rule, each idea's strike, AIR_CONTROL_NUMBERS) · components/star/AirControlLab.tsx (the marks and the input) · components/star/CanvasMatch.tsx (airLabNow, airLabFrame, airLabStrike; only with the switch set) · lib/star/aerialMoves.ts (setTestAerialMove) · scripts/aerial/control-measure.mts · tests/star/airControl.mts · docs/plans/AERIALS_OPTIONS_2026-11-28.md",
   },
   "/star-live-chances-dev": {
     title: "Live chances",

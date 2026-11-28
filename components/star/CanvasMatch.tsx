@@ -48,7 +48,7 @@ import { setBallPhysics, realBallOn } from "@/lib/star/ballPhysics";
 import { getTuning } from "@/lib/star/tuningStore";
 import type { FpIdentity } from "@/lib/star/firstPersonDribble";
 import {
-  PITCH_W, HALF_LEN, CX,
+  PITCH_W, HALF_LEN, CX, GOAL_W,
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH,
   PEN_SPOT_Y, ARC_R, CENTRE_R, CORNER_R,
 } from "@/lib/star/pitch";
@@ -164,6 +164,8 @@ import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@
 import { isAirKind, airWaitZ, airZOf, HEADER_Z } from "@/lib/star/airDrawings";
 import { crossDrawT, syntheticCross, headerBeat, headerLiftPx, headerBallLiftK, CROSS_TAIL_S, HEADER_RISE_S, HEAD_AT, BALL_SETTLE_S, type CrossPath } from "@/lib/star/headerBeat";
 import { airTapOn, airTapAim, airTapStrike, AIR_TAP_OPEN_S, AIR_TAP_OPEN_NO_LEAD_S, type AirKind } from "@/lib/star/airTap";
+import { airControlMode, type AirStrikeOut } from "@/lib/star/airControl";
+import AirControlLab, { type AirLabFrame } from "@/components/star/AirControlLab";
 import { aerialMovesOn, forcedAerialMove, pickAerialMove, aerialFacing, aerialRise, aerialFollow, aerialStrikeTint, liftToMeet, AERIAL_SPECS, CONTACT_SHOW_S, type AerialMove } from "@/lib/star/aerialMoves";
 import { spritePoints, type SpritePoint } from "@/lib/star/sprites";
 import { type BannerSide } from "./ArcadeBanner";
@@ -1565,6 +1567,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** A header/volley (airTap.ts): how long the cross has crept in on this chance, and the chance whose ball screen opened. */
   const airTapWaitRef = useRef<{ sc: Scenario; t: number } | null>(null);
   const airTapOpenedRef = useRef<Scenario | null>(null);
+  /**
+   * The aerials test page's other ways to hit a header or volley
+   * (lib/star/airControl.ts; only while /star-aerials-dev sets one): the whole
+   * cross on the pitch, from the crosser to where you meet it, on one clock.
+   * t = 0 when the cross is struck; it arrives at D. Null in the game.
+   */
+  const airLabRef = useRef<{ sc: Scenario; path: CrossPath; t0: number; done: boolean } | null>(null);
   /** The chance whose build-up has just handed over (a header/volley opens its ball screen sooner after one). */
   const airTapLeadRef = useRef<Scenario | null>(null);
   /**
@@ -6540,8 +6549,61 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // A replay: the people and the ball are put where it says, and the frame is
   // carried with the ball. Nothing is stepped. At the end everyone is put back
   // exactly where the chance has them, and the chance starts.
+  /** The aerials test page's cross (airLabRef): where it is now and its clock. Null in the game. */
+  const AIR_LAB_PRE_S = 0.5;
+  const airLabNow = (sc: Scenario): { at: { x: number; y: number; z: number }; t: number; D: number } | null => {
+    if (airControlMode() === "screen" || !isAirKind(sc.kind) || leadRef.current) return null;
+    let L = airLabRef.current;
+    if (!L || L.sc !== sc) {
+      const path = syntheticCross(sc);
+      if (!path) { airLabRef.current = null; return null; }
+      L = airLabRef.current = { sc, path, t0: performance.now() / 1000 + AIR_LAB_PRE_S, done: false };
+    }
+    if (L.done) return null;
+    const t = performance.now() / 1000 - L.t0, D = L.path.durS;
+    if (t <= D) return { at: L.path.at(Math.max(0, t)), t, D };
+    // Past you: it carries on along its line and drops.
+    const a = L.path.at(D), b = L.path.at(D - 0.05), k = (t - D) / 0.05;
+    return { at: { x: a.x + (a.x - b.x) * k, y: a.y + (a.y - b.y) * k, z: Math.max(0.11, a.z - 4.9 * (t - D) * (t - D) - 2 * (t - D)) }, t, D };
+  };
+  /** What the test page's overlay needs this frame: the ball and its meeting spot on the glass, the goal, the clock. */
+  const airLabFrame = (): AirLabFrame | null => {
+    const sc = scenarioRef.current;
+    if (phaseRef.current !== "aim" || ballRef.current) return null;
+    const lab = airLabNow(sc);
+    if (!lab) return null;
+    const g = pitchToClient(lab.at), g1 = pitchToClient({ x: lab.at.x + 1, y: lab.at.y });
+    const pxPerM = Math.hypot(g1.x - g.x, g1.y - g.y);
+    const meetZ = airLabRef.current!.path.at(lab.D).z;
+    const m = pitchToClient(sc.ball);
+    const box = canvasBox();
+    return {
+      t: lab.t, D: lab.D, kind: sc.kind as AirKind, aerial: airAerialNow() ?? 60, seed: seedRef.current,
+      ball: { x: g.x, y: g.y - lab.at.z * pxPerM }, ballGround: g,
+      meet: { x: m.x, y: m.y - meetZ * pxPerM }, meetPitch: { x: sc.ball.x, y: sc.ball.y },
+      postL: pitchToClient({ x: CX - GOAL_W / 2, y: 0 }), postR: pitchToClient({ x: CX + GOAL_W / 2, y: 0 }),
+      pxPerM, box: { x: box.left, y: box.top, w: box.width, h: box.height },
+    };
+  };
+  /** The overlay's hit: met where the ball is now (within 2.5 m of the spot), struck through the match's own handleContact. */
+  const airLabStrike = (out: AirStrikeOut) => {
+    const sc = scenarioRef.current, L = airLabRef.current;
+    if (!L || L.sc !== sc || L.done || phaseRef.current !== "aim") return;
+    const lab = airLabNow(sc);
+    L.done = true;
+    if (lab && out.word !== "MISSED IT") {
+      const dx = lab.at.x - sc.ball.x, dy = lab.at.y - sc.ball.y, d = Math.hypot(dx, dy), k = d > 2.5 ? 2.5 / d : 1;
+      sc.ball.x += dx * k; sc.ball.y += dy * k;
+    }
+    const ax = out.aimX - sc.ball.x, ay = -sc.ball.y, al = Math.hypot(ax, ay) || 1;
+    showAction(out.word === "PERFECT" ? "PERFECT TIMING!" : out.word === "MISSED IT" ? "MISSED THE TIMING" : out.word === "EARLY" ? "A TOUCH EARLY" : "A TOUCH LATE");
+    try { window.dispatchEvent(new CustomEvent("kib-air-lab-hit", { detail: { word: out.word, t: lab?.t, D: lab?.D, contact: out.contact, power: out.aim.power, aimX: out.aimX } })); } catch { /* fine */ }
+    handleContact({ ...out.contact, aim: { dir: { x: ax / al, y: ay / al }, power: out.aim.power } });
+  };
   /** Where a header's cross is drawn right now while you aim (headerBeat.ts): null for any other chance. */
   const crossBallNow = (sc: Scenario): { x: number; y: number; z: number } | null => {
+    const lab = airLabNow(sc);
+    if (lab) return lab.at;
     if (sc.kind !== "header") return null;
     let ct = crossTailRef.current;
     if (!ct || ct.sc !== sc) {
@@ -7276,7 +7338,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const sc = scenarioRef.current;
         if (phaseRef.current === "aim" && !leadRef.current && !playOnRef.current && !ballRef.current && !heldRef.current
           && isAirKind(sc.kind) && airTapOn() && !autoKickOf(sc) && windUpRef.current === null && !draggingRef.current
-          && aerialMovesOn() && sceneRef.current?.you !== false) {
+          && aerialMovesOn() && sceneRef.current?.you !== false && airControlMode() === "screen") {
           // ── Your aerial move (lib/star/aerialMoves.ts, Harry 25 Oct 2026) ──
           // The cross comes in (preS with no build-up, as before), you take
           // off and rise (the move's riseS), and the ball screen opens on the
@@ -7312,7 +7374,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             tryHold("contact");
           }
         } else if (phaseRef.current === "aim" && !leadRef.current && !playOnRef.current && !ballRef.current && !heldRef.current
-          && isAirKind(sc.kind) && airTapOn() && !autoKickOf(sc) && windUpRef.current === null && !draggingRef.current) {
+          && isAirKind(sc.kind) && airTapOn() && !autoKickOf(sc) && windUpRef.current === null && !draggingRef.current
+          && airControlMode() === "screen") {
           const w = airTapWaitRef.current;
           const t = w && w.sc === sc ? w.t + dt : 0;
           airTapWaitRef.current = { sc, t };
@@ -11430,7 +11493,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             {phase === "aim" ? "A header! Watch him go up for the cross" : "A header! Tap the ball before the ring runs out. Its left side sends it right"}
           </div>
         )}
-        {coachFirstChance && (phase === "aim" || phase === "contact") && (
+        {coachFirstChance && (phase === "aim" || phase === "contact") && !(isAirKind(scenarioRef.current.kind) && airControlMode() !== "screen") && (
           <div data-first-chance-coach className={`pointer-events-none absolute z-40 ${phase === "aim" ? "inset-x-3 bottom-[64px]" : "left-3 right-14 top-[40%]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
             style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
             {/* A header or volley has no arrow to drag (airTap.ts): say what happens instead. */}
@@ -11452,6 +11515,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
             {firstUse.text}
           </div>
+        )}
+        {/* The aerials test page's other ways to hit it (lib/star/airControl.ts). Never in the game. */}
+        {phase === "aim" && airControlMode() !== "screen" && isAirKind(scenarioRef.current.kind) && !autoKickOf(scenarioRef.current) && !leadInOn && (
+          <AirControlLab key={`${seedRef.current}-${scenarioRef.current.ball.x.toFixed(2)}`} mode={airControlMode()} getFrame={airLabFrame} onStrike={airLabStrike} />
         )}
         {phase === "contact" && aim && powerStrike && (
           <PowerShotContact power={aim.power} onStrike={(q) => {
