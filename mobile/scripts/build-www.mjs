@@ -24,6 +24,7 @@ const PACKED = path.join(MOBILE, "packed");
 
 // Website-only files in public/: never read by the game (checked 5 Nov 2026).
 const LEAVE_OUT = [
+  "brand", // logo options and the full-size icon master: the icon is made from them, the game never loads them
   "admin/motion-refs", "admin/previews", "admin/app-icon-180.png", "admin/app-icon-192.png",
   "admin/app-icon-512.png", "admin/app-icon-maskable-512.png", "admin/team-sw.js", "admin-app.webmanifest",
   "Bruno Fernandes.png", "Petr Cech.png", "Jose Mourinho.png", "Erling Haaland.png", "Klopp and Pep.png",
