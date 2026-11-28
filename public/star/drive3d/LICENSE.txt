@@ -1,0 +1,10 @@
+The drive (lib/star/drive3d, components/star/Drive3D.tsx) — files in this folder
+
+car-<name>.glb, car-<name>-lod.glb  (hatch, family, suv, sports, classic, super)
+  The shop's own Higgsfield-generated cars (public/star/shop3d/items/car-*-hf.glb; see
+  public/star/shop3d/LICENSE.txt for how those were made) and the home's light copies
+  (public/star/home3d/car-*-lod.glb), with the four wheels cut out so they spin and steer,
+  and dark wheel-arch liners added: tools/cars/run_all.sh (unpack.mjs, then Blender
+  cut_wheels.py), packed by scripts/perf3d/shrink-models.mjs. The Family Car was simplified
+  from 36k to about 23k triangles on the way. No new models were generated and no
+  Higgsfield credits were spent on the drive. Invented, unbranded designs.

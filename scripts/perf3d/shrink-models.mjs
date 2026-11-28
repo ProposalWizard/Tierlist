@@ -173,6 +173,9 @@ for (const f of ["bike-hf", "jet-hf", ...["flat1", "flat2", "penthouse", "stable
 // The 3D home (9 Oct 2026): light copies of the shop's cars (drive window, ~3.9k) and boots (shelf, ~2.4k),
 // made by tools/home3d/make_lods.mjs; fitted at load, nothing reads their vertices.
 for (const f of [...["family", "hatch", "suv", "sports", "classic", "super"].map((c) => `car-${c}-lod`), ...["starter", "speed", "control", "elite", "classic", "maestro", "power"].map((b) => `boot-${b}-lod`), "bike-lod", "jet-lod"]) POLICY[`star/home3d/${f}.glb`] = { q: /.*/, webp: true };
+// The drive (28 Nov 2026): the six cars with their wheels cut out (tools/cars/cut_wheels.py), full and light
+// copies. Each wheel's mesh sits under its own pivot node, so quantizing the mesh never moves the pivot.
+for (const c of ["family", "hatch", "suv", "sports", "classic", "super"]) for (const f of [`car-${c}`, `car-${c}-lod`]) POLICY[`star/drive3d/${f}.glb`] = { q: /.*/, webp: true };
 // the garden's props the estate's terrace uses (tools/home3d/make_terrace_props.mjs): the
 // terrace joins its pieces into one draw per material, reading their vertices, so floats stay.
 POLICY["star/home3d/terrace-props.glb"] = { q: null, webp: true };
