@@ -93,6 +93,8 @@ interface Props {
   /** "Move my saves" (MoveSavesPanel): whose saves, and what to do once a
    *  pasted code has been written. Absent: the panel is not shown. */
   moveSaves?: { scope: string; onImported: (openSlot: number) => void };
+  /** Saves → Backups restored a backup (SaveSlotsPanel's onRestored). */
+  onRestoredSave?: (slot: number, career: CareerState, closed: boolean) => void;
   /** The full-screen toggle used to be a fixed floating button — reported
    *  directly as blocking the real Settings button on most phones. Moved
    *  here as a plain on/off switch instead; the actual mechanism
@@ -119,7 +121,7 @@ export default function SettingsScreen({
   career, onBack, onExitToTitle, onSkip, onAddMoney, onAddCoins,
   onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub, devTeam,
   onSetPortrait, onSetLook3d, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
-  onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave, moveSaves,
+  onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave, moveSaves, onRestoredSave,
   immersiveActive, onToggleImmersive, fullscreenSupport = "native", onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer, hud,
 }: Props) {
   const { glow } = useClubTheme(career);
@@ -213,6 +215,8 @@ export default function SettingsScreen({
         onDelete={onDeleteSave}
         glow={glow}
         accountScope={moveSaves?.scope}
+        currentCareer={career}
+        onRestored={onRestoredSave}
       />
       {moveSaves && <MoveSavesPanel scope={moveSaves.scope} onImported={moveSaves.onImported} glow={glow} />}
 
