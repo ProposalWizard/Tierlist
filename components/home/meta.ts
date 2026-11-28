@@ -11,7 +11,9 @@ export const HOME_METADATA: Metadata = {
   description: DESCRIPTION,
   alternates: { canonical: "/" },
   // Lets a phone or computer offer "Install" for the game from the home page.
-  manifest: "/star-app.webmanifest",
+  manifest: "/star-app.webmanifest?v=2",
+  // iPhone "Add to Home Screen" picture: the golden trophy icon (Harry, 28 Nov 2026).
+  icons: { apple: "/star/app-icon-180.png?v=2" },
   openGraph: {
     type: "website",
     url: "/",
