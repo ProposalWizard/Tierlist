@@ -27,6 +27,68 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.151",
+      "title": "Harry's patch notes: the gym in your career, one set of saves, a lighter walk",
+      "author": "Harry",
+      "publishedAt": "2026-11-28T05:45:00Z",
+      "artifactUrl": "https://claude.ai/artifact/RhFAsHCMQJGKo7T5xV5TSk",
+      "summary": "Three pieces go live. The 3D gym opens from the Training page in a real career (its effects are still switched off while we test). Your saves are now one set per account, the same on your phone and your computer. The 3D people walk lighter and no longer walk through each other.",
+      "stats": [
+        {
+          "value": "13",
+          "label": "gym exercises you can play from Training"
+        },
+        {
+          "value": "1",
+          "label": "set of saves per account, on every device"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The gym from Training",
+              "detail": "Training tab → the pink Gym card → GO IN. Play one exercise, then ‹ Training to go back. Gym effects are off for now."
+            },
+            {
+              "title": "Your saves on phone and computer",
+              "detail": "Open Saves on both. You should see the same list. If a save differs, you are asked which one to keep."
+            },
+            {
+              "title": "The walk",
+              "detail": "Watch players walking in the garden and the cut scenes: upright, head up, arms swing, nobody walks through anybody."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "The 3D gym in the real career",
+              "detail": "13 exercises in your club's kit with a team-mate, its own loading screen, and the gym's numbers saved in your career. If the 3D is lost it rebuilds itself."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Saves differ between phone and computer",
+              "detail": "The Saves list only read the device's own storage. It now reads your account, so every device shows the same saves."
+            },
+            {
+              "title": "Heavy walks and people walking through each other",
+              "detail": "Lighter, quicker steps and room between people in group walks and cut scenes."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.150",
       "title": "Harry's patch notes: 3D that stays on, phone apps, loading screens, the walk",
       "author": "Harry",
