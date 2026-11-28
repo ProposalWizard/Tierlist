@@ -13,7 +13,10 @@
   ]
  },
  "start": {
-  "chance": 0.25
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
  },
  "cast": [
   {
@@ -22,7 +25,8 @@
   }
  ],
  "vars": {
-  "went": 0
+  "went": 0,
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -245,6 +249,127 @@
    "hint": "The canteen has a favour"
   },
   {
+   "id": "sch-1d-deep",
+   "title": "The drawing",
+   "after": {
+    "beat": "sch-2-thursday",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-sch-1d-deep",
+    "title": "The drawing",
+    "category": "staff",
+    "place": "club:canteen",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{canteen.short} hands you a drawing over the hatch. It's you, in felt tip, with very long legs, scoring past a goalkeeper with a dog's face. \"From him. He's been doing one a week.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "canteen",
+       "say": [
+        "\"He says the keeper's the other lot.\""
+       ],
+       "replies": [
+        {
+         "id": "sign",
+         "label": "Sign it and send it back with a note.",
+         "tone": "kind",
+         "end": "sign"
+        },
+        {
+         "id": "wall",
+         "label": "Pin it up in the dressing room.",
+         "tone": "confident",
+         "end": "wall"
+        },
+        {
+         "id": "keep",
+         "label": "\"Lovely. Thanks.\"",
+         "tone": "calm",
+         "end": "keep"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "sign": [
+       {
+        "text": "The next one comes back with a drawing of you and him on the same team.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "signed-his-drawing",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "sign"
+         }
+        }
+       }
+      ],
+      "wall": [
+       {
+        "text": "The lads love it. The keeper with the dog's face becomes a joke for the whole season.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "wall"
+         }
+        }
+       }
+      ],
+      "keep": [
+       {
+        "text": "She puts the next one in a drawer, in case.",
+        "arc": {
+         "set": {
+          "deep": "keep"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     }
+    ]
+   },
+   "hint": "The canteen woman has something for you"
+  },
+  {
    "id": "sch-2-thursday",
    "title": "Thursday after next",
    "after": {
@@ -389,7 +514,9 @@
      ]
     },
     "setup": [
-     "A season on. There's a trial for the under-10s on pitch two, and one of the boys keeps looking at the first-team building. It's her grandson, in his big brother's boots."
+     "A season on. There's a trial for the under-10s on pitch two, and one of the boys keeps looking at the first-team building. It's her grandson, in his big brother's boots.",
+     "{if arc.deep=='sign'}Her grandson's drawings are on the wall of the canteen now.{/if}",
+     "{if arc.deep=='wall'}The dog-faced keeper drawing is still in the dressing room.{/if}"
     ],
     "choices": [
      {

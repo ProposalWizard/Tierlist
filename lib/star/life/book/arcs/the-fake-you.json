@@ -14,8 +14,15 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.008,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "peak",
+  "when": [
+   "age>=24",
+   "age<=31",
+   "divisionLevel<=2 || fame>=45"
+  ]
  },
  "cast": [
   {
@@ -24,7 +31,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -152,6 +160,127 @@
    "hint": "Someone's pretending to be you"
   },
   {
+   "id": "fak-1d-deep",
+   "title": "The police",
+   "after": {
+    "beat": "fak-1-account",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-fak-1d-deep",
+    "title": "The police",
+    "category": "media",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A policewoman rings. They've found the man behind the fake account. He's nineteen and in the next town. The girl's grandad wants his two hundred back, and to meet him."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kidfan",
+       "say": [
+        "\"Would you be there? The grandad asked for you.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Go to the meeting.",
+         "tone": "brave",
+         "end": "go"
+        },
+        {
+         "id": "pay",
+         "label": "\"I'll pay the grandad back myself.\"",
+         "tone": "kind",
+         "end": "pay"
+        },
+        {
+         "id": "no",
+         "label": "\"That's one for the police.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "A room at the police station. The lad can't look at any of you. The grandad shakes his hand anyway.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "came-to-the-police-station",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "go"
+         }
+        }
+       }
+      ],
+      "pay": [
+       {
+        "text": "He takes it and sends it straight back with a note: \"Not yours to pay.\"",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "pay"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "The police have found the fake account"
+  },
+  {
    "id": "fak-2-stand",
    "title": "The stand",
    "after": {
@@ -178,7 +307,8 @@
      ]
     },
     "setup": [
-     "A season on. {kidfan.short} is at the rail by the tunnel with an old man in a flat cap. He's holding up a card: \"I'M THE £200 GRANDAD.\""
+     "A season on. {kidfan.short} is at the rail by the tunnel with an old man in a flat cap. He's holding up a card: \"I'M THE £200 GRANDAD.\"",
+     "{if arc.deep=='go'}Her grandad still tells the police station story.{/if}"
     ],
     "choices": [
      {

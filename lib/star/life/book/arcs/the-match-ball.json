@@ -14,8 +14,10 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0064,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any"
  },
  "cast": [
   {
@@ -24,7 +26,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -176,6 +179,127 @@
    "hint": "The referee has something you want"
   },
   {
+   "id": "mbl-1d-deep",
+   "title": "The shed",
+   "after": {
+    "beat": "mbl-1-ball",
+    "weeks": [
+     4,
+     12
+    ]
+   },
+   "event": {
+    "id": "arc-mbl-1d-deep",
+    "title": "The shed",
+    "category": "rivals",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A photo from the referee, through the club: his shed, floor to ceiling with match balls, each with a date on in marker. {if arc.path=='given'}There's a gap on the second shelf with your name on a label.{/if}"
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "referee",
+       "say": [
+        "\"Thought you'd like to see where they live.\""
+       ],
+       "replies": [
+        {
+         "id": "visit",
+         "label": "Ask if you can see it.",
+         "tone": "kind",
+         "end": "visit"
+        },
+        {
+         "id": "ball",
+         "label": "Send him a signed ball for the gap.",
+         "tone": "calm",
+         "end": "ball"
+        },
+        {
+         "id": "ignore",
+         "label": "Like the photo.",
+         "tone": "calm",
+         "end": "ignore"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "visit": [
+       {
+        "text": "His wife makes a cake. He talks for two hours about every ball. Yours is the only one with a hat-trick.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "came-to-see-my-shed",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "visit"
+         }
+        }
+       }
+      ],
+      "ball": [
+       {
+        "text": "It goes on the shelf with a label: FROM THE LAD.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "ball"
+         }
+        }
+       }
+      ],
+      "ignore": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "ignore"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "The referee has a photo of his shed"
+  },
+  {
    "id": "mbl-2-again",
    "title": "The same ref",
    "after": {
@@ -203,7 +327,8 @@
      ]
     },
     "setup": [
-     "A season on. {referee.short} is doing your game. In the tunnel he says, very quietly, \"Shed's full. I'm on to the garage now.\""
+     "A season on. {referee.short} is doing your game. In the tunnel he says, very quietly, \"Shed's full. I'm on to the garage now.\"",
+     "{if arc.deep=='visit'}He still mentions the afternoon in his shed.{/if}"
     ],
     "choices": [
      {

@@ -1,0 +1,761 @@
+{
+ "id": "arc-the-lights",
+ "title": "The night the lights went out",
+ "owner": "groundsman",
+ "summary": "A cup tie under the lights, one-nil up in the seventieth minute, and every floodlight goes at once. Twenty minutes in the dark with eight thousand phones lit. A week later the local reporter says it wasn't the fuse box. A season on, the new lights need switching on.",
+ "size": "big",
+ "about": {
+  "who": [
+   "the groundsman",
+   "local reporter",
+   "a young fan"
+  ],
+  "tone": [
+   "strange",
+   "dramatic",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.0064,
+  "careers": 0.025,
+  "tier": "legendary",
+  "stage": "any",
+  "when": [
+   "age>=19",
+   "divisionLevel>=1"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "groundsman",
+   "pick": "groundsman"
+  },
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  },
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none",
+  "ground": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-kickabout",
+   "title": "The kickabout",
+   "text": "The night the lights went, you played ten balls by phone light with the kids from the front row. They still talk about it more than the replay."
+  },
+  {
+   "id": "the-switch",
+   "title": "The switch",
+   "text": "You and the groundsman switched the new lights on together. He kept his hand on the lever a second longer than he needed to."
+  },
+  {
+   "id": "the-dark",
+   "title": "In the dark",
+   "text": "The groundsman retired that summer. Nobody at the club talks about the night the lights went out, and the replay was a draw."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "lgt-1-dark",
+   "title": "Seventy minutes",
+   "requires": [
+    "lastWon || lastGoals>=1"
+   ],
+   "n": 1,
+   "event": {
+    "id": "arc-lgt-1-dark",
+    "title": "Seventy minutes",
+    "category": "life",
+    "place": "ground:pitch",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Seventieth minute, one-nil up in the cup, and there's a bang somewhere behind the main stand. Every floodlight goes at once. The ball lands near you in the dark and nobody can see it.",
+     "Eight thousand phones come on, one stand at a time, like the ground is waking up."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "groundsman",
+       "say": [
+        "{groundsman.short} comes past at a jog with a torch in his teeth, heading for the box under the stand. \"Twenty minutes,\" he says round the torch. \"Maybe forty.\"",
+        "The ref takes the teams off. The front row of the family stand is full of kids holding their phones up at you."
+       ],
+       "replies": [
+        {
+         "id": "kids",
+         "label": "Take a bag of balls to the front row.",
+         "tone": "kind",
+         "goto": "g"
+        },
+        {
+         "id": "help",
+         "label": "Go with the groundsman.",
+         "tone": "brave",
+         "end": "help"
+        },
+        {
+         "id": "in",
+         "label": "Go in with the others.",
+         "tone": "calm",
+         "silent": true,
+         "end": "in"
+        }
+       ]
+      },
+      "g": {
+       "who": "groundsman",
+       "say": [
+        "A steward lets six kids over the hoardings. They stand in a line by the post with their torches on the goal and shout which corner."
+       ],
+       "activity": {
+        "mode": "challenge",
+        "name": "Ten balls by phone light",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "lights-out",
+           "balls": 2,
+           "line": "The phones are the only light. The kids shout the corner."
+          },
+          {
+           "kind": "call-it",
+           "balls": 2
+          },
+          {
+           "kind": "lights-out",
+           "balls": 2
+          },
+          {
+           "kind": "corners",
+           "balls": 2
+          },
+          {
+           "kind": "far",
+           "balls": 1
+          },
+          {
+           "kind": "double",
+           "line": "The whole stand counts you in."
+          }
+         ],
+         "lines": {
+          "hit": "The front row screams.",
+          "wide": "\"Unlucky!\" from about forty kids at once."
+         }
+        },
+        "caller": {
+         "slot": "groundsman",
+         "lines": [
+          "\"Ten.\"",
+          "\"Twenty.\"",
+          "\"Thirty.\"",
+          "\"Forty.\"",
+          "\"Fifty.\"",
+          "\"Sixty.\"",
+          "\"Seventy.\"",
+          "\"Eighty.\"",
+          "\"Ninety.\"",
+          "\"And a hundred.\""
+         ]
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "technique",
+         "target": 60
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "r-stop"
+        ],
+        [
+         "activity.score>=6",
+         "r-good"
+        ],
+        [
+         "",
+         "r-poor"
+        ]
+       ]
+      },
+      "r-stop": {
+       "who": "groundsman",
+       "say": [
+        "You stop there and hand the ball back."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Walk off.",
+         "tone": "calm",
+         "end": "stop"
+        }
+       ]
+      },
+      "r-good": {
+       "who": "groundsman",
+       "say": [
+        "{activity.score} out of ten. Not bad at all."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "good"
+        }
+       ]
+      },
+      "r-poor": {
+       "who": "groundsman",
+       "say": [
+        "{activity.score} out of ten."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "poor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "The stand counts every one. When the ref says the game's off, the kids are still chanting your name in the dark.",
+        "effects": {
+         "fans": 6
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "the-night-the-lights-went",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kickabout"
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "You miss more than you hit, and the kids cheer every miss louder than the goals. The game is called off at twenty to ten.",
+        "effects": {
+         "fans": 4
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "the-night-the-lights-went",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kickabout"
+         }
+        }
+       }
+      ],
+      "stop": [
+       {
+        "text": "A steward says the insurance won't stand it, and the kids go back over the hoardings. The game's called off.",
+        "effects": {
+         "fans": 1
+        },
+        "arc": {
+         "set": {
+          "path": "in"
+         }
+        }
+       }
+      ],
+      "help": [
+       {
+        "text": "You hold the torch while {groundsman.short} swears at a box of burnt wires. He gets one tower back on, and it's not enough. The game is called off.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 8,
+          "respect": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "held-the-torch",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "help"
+         }
+        }
+       }
+      ],
+      "in": [
+       {
+        "text": "Forty minutes in the dressing room with the heating off. The game's called off and the replay is a fortnight Tuesday.",
+        "arc": {
+         "set": {
+          "path": "in"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "The floodlights have gone in the middle of a cup tie"
+  },
+  {
+   "id": "lgt-1b-reporter",
+   "title": "Not the fuse box",
+   "after": {
+    "beat": "lgt-1-dark",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-lgt-1b-reporter",
+    "title": "Not the fuse box",
+    "category": "media",
+    "place": "club:car-park",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{reporter.name} rings. \"The cable was cut, not burnt. Two other grounds lost their lights this season in the seventieth minute. Somebody abroad had money on all three being called off.\"",
+     "\"I need somebody at the club to say it out loud. Nobody else will.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "reporter",
+       "say": [
+        "\"You were on the pitch. Did you see anybody by the box under the stand?\""
+       ],
+       "replies": [
+        {
+         "id": "say",
+         "label": "\"I'll say it. On the record.\"",
+         "tone": "brave",
+         "end": "say"
+        },
+        {
+         "id": "off",
+         "label": "\"Off the record, yes. Don't use my name.\"",
+         "tone": "calm",
+         "end": "off"
+        },
+        {
+         "id": "no",
+         "label": "\"Talk to the club.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "say": [
+       {
+        "text": "Her piece runs with your name in the second paragraph. The league opens an inquiry by Friday. The chairman doesn't speak to you for a week.",
+        "effects": {
+         "reputation": 3,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 8,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "went-on-record-about-the-lights",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "say"
+         }
+        }
+       }
+      ],
+      "off": [
+       {
+        "text": "\"A source in the dressing room.\" Everyone in the dressing room knows it was you, and most of them are glad.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "off"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "The club says it was a fault. The groundsman reads it and says nothing at all.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "The local reporter says the lights were cut on purpose"
+  },
+  {
+   "id": "lgt-2-ground",
+   "title": "The groundsman",
+   "after": {
+    "beat": "lgt-1-dark",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-lgt-2-ground",
+    "title": "The groundsman",
+    "category": "life",
+    "place": "club:shed",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. A man in Leeds has been charged. {groundsman.short} has his letter written: he's finishing in the summer. \"It was my box. My cable. Thirty years and somebody walked past me with a pair of cutters.\"",
+     "{if arc.mid=='say'}He knows you were the one who said it out loud.{/if}"
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "groundsman",
+       "say": [
+        "He's got the letter in an envelope on the bench, not sealed."
+       ],
+       "replies": [
+        {
+         "id": "stay",
+         "label": "\"Stay. Who else is going to switch the new ones on?\"",
+         "tone": "kind",
+         "end": "stay"
+        },
+        {
+         "id": "go",
+         "label": "\"Thirty years. You've earned it.\"",
+         "tone": "calm",
+         "end": "go"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "stay": [
+       {
+        "text": "He licks the envelope and seals it and puts it in the bin. \"One more season, then.\"",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "ground": "stay"
+         }
+        }
+       }
+      ],
+      "go": [
+       {
+        "text": "He posts it on the way home. The club gives him a clock.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "ground": "go"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "A season on, the groundsman wants to finish"
+  },
+  {
+   "id": "lgt-3-switch",
+   "title": "The new lights",
+   "after": {
+    "beat": "lgt-2-ground",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-lgt-3-switch",
+    "title": "The new lights",
+    "category": "life",
+    "place": "ground:pitch",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "walkout"
+     ]
+    },
+    "setup": [
+     "New floodlights, white and quiet, a big red lever in a box with a padlock. The club wants a photo of somebody pulling it before the first home game.",
+     "{if arc.path=='kickabout'}A girl from the front row that night is holding a sign: I WAS THERE WHEN THEY WENT OUT.{/if}"
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "groundsman",
+       "say": [
+        "\"They want you on the lever,\" says {groundsman.short}{if arc.ground=='go'}, who has come back for the day in his good coat{/if}."
+       ],
+       "replies": [
+        {
+         "id": "both",
+         "label": "\"Both of us. His hand and mine.\"",
+         "tone": "kind",
+         "end": "both"
+        },
+        {
+         "id": "kid",
+         "label": "Give the lever to the girl with the sign.",
+         "tone": "kind",
+         "requires": [
+          "arc.path=='kickabout'"
+         ],
+         "end": "kid"
+        },
+        {
+         "id": "me",
+         "label": "Pull it yourself for the photo.",
+         "tone": "confident",
+         "end": "me"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "both": [
+       {
+        "if": "arc.ground=='stay' || arc.path=='help'",
+        "text": "The lights come on over a full stand, one tower at a time. He keeps his hand on the lever after.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "end": "the-switch"
+        }
+       },
+       {
+        "text": "The lights come on. He shakes your hand and goes back to his car before the game.",
+        "arc": {
+         "end": "the-dark"
+        }
+       }
+      ],
+      "kid": [
+       {
+        "text": "She pulls it with both hands and the ground goes white. Her sign ends up in the club shop window.",
+        "effects": {
+         "fans": 4
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "the-kickabout"
+        }
+       }
+      ],
+      "me": [
+       {
+        "if": "arc.path=='kickabout'",
+        "text": "Good photo. The groundsman is just out of it, on the left, with his hands in his pockets.",
+        "arc": {
+         "end": "the-kickabout"
+        }
+       },
+       {
+        "text": "Good photo. The groundsman is just out of it, on the left, with his hands in his pockets.",
+        "arc": {
+         "end": "the-dark"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     }
+    ]
+   },
+   "hint": "Two seasons on, the new lights go on"
+  }
+ ]
+}

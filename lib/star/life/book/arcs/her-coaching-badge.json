@@ -1,0 +1,260 @@
+{
+ "id": "arc-her-coaching-badge",
+ "title": "Her coaching badge",
+ "owner": "kidfan",
+ "summary": "The girl who held up a sign for you is a pro now, and she's doing her coaching badge. For the practical she needs a senior player to run a session for her under-fourteens. She asks you.",
+ "size": "small",
+ "about": {
+  "who": [
+   "a young fan",
+   "the coach"
+  ],
+  "tone": [
+   "warm",
+   "pride"
+  ]
+ },
+ "start": {
+  "chance": 0.01,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "ended(arc-she-grows-up:her-shirt|the-ticket)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  },
+  {
+   "slot": "coach",
+   "pick": "coach"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "her-session",
+   "title": "Her session",
+   "text": "You ran a session for the girl from the sign while she did her coaching badge. She passed. She still uses your drill."
+  },
+  {
+   "id": "the-wrong-drill",
+   "title": "The wrong drill",
+   "text": "You ran your drill, not hers, and she failed the practical. She passed the next year without you."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "hcb-1-ask",
+   "title": "The practical",
+   "n": 1,
+   "event": {
+    "id": "arc-hcb-1-ask",
+    "title": "The practical",
+    "category": "life",
+    "place": "town:rec",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A text from {kidfan.name}. She's twenty-two, she plays on Sundays in the top division, and she's on her coaching badge. \"I need a senior pro for the practical. Under-fourteens, Thursday, an hour. You owe me ten balls from years ago.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kidfan",
+       "say": [
+        "\"You run it, I watch, the assessor watches me watching you. It's weird. Say yes.\""
+       ],
+       "replies": [
+        {
+         "id": "hers",
+         "label": "\"Yes. But we do your session, not mine.\"",
+         "tone": "humble",
+         "end": "hers"
+        },
+        {
+         "id": "mine",
+         "label": "\"Yes. I'll bring my best drill.\"",
+         "tone": "confident",
+         "end": "mine"
+        },
+        {
+         "id": "no",
+         "label": "\"I can't Thursdays.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "hers": [
+       {
+        "text": "She sends you her plan at midnight with a note: \"Don't improvise.\"",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "hers"
+         }
+        }
+       }
+      ],
+      "mine": [
+       {
+        "text": "\"Fine,\" she sends. \"Bring cones.\"",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "mine"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "She asks the coach instead. He does it in a tracksuit from 1998.",
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The girl from the sign needs you for her coaching badge"
+  },
+  {
+   "id": "hcb-2-result",
+   "title": "The result",
+   "after": {
+    "beat": "hcb-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-hcb-2-result",
+    "title": "The result",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. Her results came this morning. She's sent a photo of the letter."
+    ],
+    "choices": [
+     {
+      "id": "ring",
+      "label": "Ring her.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "!arc.path=='mine'",
+        "text": "She passed. She's running her own under-fourteens now, with your drill and her own name for it.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "end": "her-session"
+        }
+       },
+       {
+        "text": "She failed the practical. \"You improvised.\" She passed next year without you, and tells everyone why.",
+        "arc": {
+         "end": "the-wrong-drill"
+        }
+       }
+      ]
+     },
+     {
+      "id": "text",
+      "label": "\"Well? Don't make me ring.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='hers' || arc.path=='no'",
+        "text": "\"PASSED.\" All in capitals.",
+        "arc": {
+         "end": "her-session"
+        }
+       },
+       {
+        "text": "\"Failed. Your drill.\" Then a laughing face, a long time later.",
+        "arc": {
+         "end": "the-wrong-drill"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "Her coaching badge result"
+  }
+ ]
+}

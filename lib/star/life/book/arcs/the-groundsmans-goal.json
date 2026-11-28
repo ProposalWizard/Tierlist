@@ -14,7 +14,10 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0171,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
  },
  "cast": [
   {
@@ -24,7 +27,8 @@
  ],
  "vars": {
   "path": "none",
-  "best": 0
+  "best": 0,
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -311,6 +315,133 @@
    "hint": "The groundsman reckons he was a keeper"
   },
   {
+   "id": "gpk-1d-deep",
+   "title": "His old club",
+   "after": {
+    "beat": "gpk-1-dare",
+    "weeks": [
+     3,
+     8
+    ]
+   },
+   "event": {
+    "id": "arc-gpk-1d-deep",
+    "title": "His old club",
+    "category": "staff",
+    "place": "club:shed",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "groundsman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{groundsman.short} has brought in a programme from 1979: a team photo, a keeper in a roll-neck with a lot of hair. \"Told you.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "groundsman",
+       "say": [
+        "He taps the keeper. \"Clean sheet that day. Tell the lads.\""
+       ],
+       "replies": [
+        {
+         "id": "tell",
+         "label": "Pin it up in the dressing room.",
+         "tone": "kind",
+         "end": "tell"
+        },
+        {
+         "id": "hair",
+         "label": "\"What happened to the hair?\"",
+         "tone": "confident",
+         "end": "hair"
+        },
+        {
+         "id": "doubt",
+         "label": "\"That's not you.\"",
+         "tone": "reckless",
+         "end": "doubt"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "tell": [
+       {
+        "text": "The lads give him a round of applause when he walks past with the mower. He pretends not to hear.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "pinned-up-my-programme",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "tell"
+         }
+        }
+       }
+      ],
+      "hair": [
+       {
+        "text": "\"Thirty years of this pitch,\" he says.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "hair"
+         }
+        }
+       }
+      ],
+      "doubt": [
+       {
+        "text": "He takes the programme back and puts it in his coat.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "doubt"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "groundsman",
+      "pick": "groundsman"
+     }
+    ]
+   },
+   "hint": "The groundsman has brought something in"
+  },
+  {
    "id": "gpk-2-again",
    "title": "His knees",
    "after": {
@@ -338,7 +469,9 @@
     },
     "setup": [
      "{if arc.path=='played'}A season on. The chalk on the shed door still says {arc.best}. {groundsman.short} is in goal on pitch two in his wellies, with knee supports on over his trousers.{/if}",
-     "{if arc.path=='no'}A season on. {groundsman.short} is in goal on pitch two, on his own, catching balls the kids kicked over the fence.{/if}"
+     "{if arc.path=='no'}A season on. {groundsman.short} is in goal on pitch two, on his own, catching balls the kids kicked over the fence.{/if}",
+     "{if arc.deep=='tell'}His 1979 programme is still up by the door.{/if}",
+     "{if arc.deep=='doubt'}He still hasn't shown anyone else the programme.{/if}"
     ],
     "choices": [
      {

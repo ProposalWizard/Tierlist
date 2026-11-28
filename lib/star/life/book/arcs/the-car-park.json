@@ -15,7 +15,9 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0064,
+  "tier": "common",
+  "stage": "any"
  },
  "cast": [
   {

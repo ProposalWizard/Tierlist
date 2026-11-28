@@ -14,6 +14,7 @@
  * a bench press, two treadmills, a heavy bag, each a mini-game of its own (lib/star/gym/games.ts), your
  * Strength / Cardio / Focus with the ring and the workout window (lib/star/gym/progress.ts), a team-mate
  * on his own session. Demos: ?demo=gym (the film: walk in, a set, off the treadmill) | walk (bench, then the walk to the treadmill and up onto it) | bench | treadmill | fall | bag.
+ * Phase 2 (lib/star/world3d/gymPoses2.ts): ?demo=pullup | squat | pushup | plank | nordic | copenhagen | boxjump | ladder | landing | mobility | tour (four in a row) | body1..body4 (the body at gym levels 1-4).
  *
  * ?place=compound: THE TRAINING COMPOUND (Harry, 27-28 Nov 2026, phase 1 of docs/research/gym-compound-driving-2026-11-27.md:
  * the grounds; lib/star/world3d/compoundPlace.ts): you have just parked; the gate with the crest board and the security
@@ -57,7 +58,7 @@ export default function World3DTestPage() {
 function World3DTest() {
   const params = useSearchParams();
   const demo = params.get("demo");
-  const GYM_DEMOS = ["gym", "walk", "bench", "treadmill", "fall", "bag"];
+  const GYM_DEMOS = ["gym", "walk", "bench", "treadmill", "fall", "bag", "tour", "pullup", "squat", "pushup", "plank", "nordic", "copenhagen", "boxjump", "ladder", "landing", "mobility", "body1", "body2", "body3", "body4"];
   const COMPOUND_DEMOS = ["arrive", "compound"];
   const [place, setPlace] = useState<WorldPlace>(params.get("place") === "house" || demo === "sofa" || demo === "fridge" ? "house" : params.get("place") === "gym" || GYM_DEMOS.includes(demo ?? "") ? "gym" : params.get("place") === "compound" || COMPOUND_DEMOS.includes(demo ?? "") ? "compound" : "garden");
   const sky = params.get("sky");

@@ -14,8 +14,10 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.18
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
  },
  "cast": [
   {
@@ -24,7 +26,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -170,6 +173,133 @@
    "hint": "The canteen has a new menu"
   },
   {
+   "id": "mnu-1d-deep",
+   "title": "The nutritionist",
+   "after": {
+    "beat": "mnu-1",
+    "weeks": [
+     3,
+     8
+    ]
+   },
+   "event": {
+    "id": "arc-mnu-1d-deep",
+    "title": "The nutritionist",
+    "category": "staff",
+    "place": "club:canteen",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The nutritionist has a clipboard and very white trainers. \"The canteen's been doing chips for the reserves. Off menu. Do you know anything about that?\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "canteen",
+       "say": [
+        "Behind her, through the hatch, {canteen.short} is very busy with a tray."
+       ],
+       "replies": [
+        {
+         "id": "cover",
+         "label": "\"Never seen a chip.\"",
+         "tone": "lie",
+         "end": "cover"
+        },
+        {
+         "id": "truth",
+         "label": "\"Once a week. They earn them.\"",
+         "tone": "honest",
+         "end": "truth"
+        },
+        {
+         "id": "joke",
+         "label": "\"Chips are a vegetable.\"",
+         "tone": "confident",
+         "end": "joke"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "cover": [
+       {
+        "text": "{canteen.short} gives you double crumble on Friday and never says why.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "covered-for-the-chips",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "cover"
+         }
+        }
+       }
+      ],
+      "truth": [
+       {
+        "text": "The nutritionist writes it down. The chips stop. {canteen.short} isn't cross. She's tired.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "truth"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "She doesn't laugh. The canteen does.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "joke"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     }
+    ]
+   },
+   "hint": "The nutritionist wants a word"
+  },
+  {
    "id": "mnu-2",
    "title": "Friday",
    "after": {
@@ -198,7 +328,8 @@
     "setup": [
      "A season on. The laminated menu on the hatch has a new line at the bottom in her handwriting.",
      "{if arc.path=='honest'}\"FRIDAY: SHEPHERD'S PIE (OFF THE RECORD).\" She winks at you.{/if}",
-     "{if arc.path=='nice'}\"QUINOA: EVERY DAY (BY POPULAR DEMAND).\" She points at you with the ladle.{/if}"
+     "{if arc.path=='nice'}\"QUINOA: EVERY DAY (BY POPULAR DEMAND).\" She points at you with the ladle.{/if}",
+     "{if arc.deep=='cover'}She still does you double crumble because of the chips.{/if}"
     ],
     "choices": [
      {

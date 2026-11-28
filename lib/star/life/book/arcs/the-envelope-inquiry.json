@@ -1,0 +1,268 @@
+{
+ "id": "arc-the-envelope-inquiry",
+ "title": "The inquiry",
+ "owner": "agent",
+ "summary": "The club that gave your agent the thick envelope is under investigation for paying players to talk them up. A man from the serious paper has a list of names, and yours is on it. The envelope is still in your drawer.",
+ "size": "small",
+ "about": {
+  "who": [
+   "your agent",
+   "broadsheet writer"
+  ],
+  "tone": [
+   "money",
+   "conscience"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-envelope:the-envelope)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "agent",
+   "pick": "agent"
+  },
+  {
+   "slot": "broadsheet",
+   "pick": "broadsheet"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "handed-it-in",
+   "title": "Handed in",
+   "text": "You handed the old envelope to the inquiry, every note still in it. The man from the serious paper called you the only honest name on the list."
+  },
+  {
+   "id": "the-drawer",
+   "title": "The drawer",
+   "text": "The envelope stayed in the drawer. Your name stayed on the list. Nobody ever proved anything."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "eni-1-list",
+   "title": "The list",
+   "n": 1,
+   "event": {
+    "id": "arc-eni-1-list",
+    "title": "The list",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{broadsheet.name} from the serious paper rings. \"That club's under investigation. Payments to players for saying nice things. I've a list of nine names. You're the fourth. Anything to say?\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "broadsheet",
+       "say": [
+        "Your agent texts while you're still on the phone: SAY NOTHING."
+       ],
+       "replies": [
+        {
+         "id": "hand",
+         "label": "\"I've still got it. I'll hand it in.\"",
+         "tone": "honest",
+         "end": "hand"
+        },
+        {
+         "id": "nothing",
+         "label": "\"No comment.\"",
+         "tone": "cold",
+         "silent": true,
+         "end": "nothing"
+        },
+        {
+         "id": "agent",
+         "label": "\"Ask my agent.\"",
+         "tone": "calm",
+         "end": "agent"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "hand": [
+       {
+        "text": "You drive the envelope to the inquiry's office in a carrier bag. A woman counts it twice. Your agent doesn't ring for a month.",
+        "effects": {
+         "reputation": 3,
+         "moneyWeeks": -2
+        },
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "respect": 8
+         },
+         {
+          "slot": "agent",
+          "grudge": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "hand"
+         }
+        }
+       }
+      ],
+      "nothing": [
+       {
+        "text": "He writes \"declined to comment\". It looks worse in print than it sounded.",
+        "effects": {
+         "reputation": -2
+        },
+        "arc": {
+         "set": {
+          "path": "nothing"
+         }
+        }
+       }
+      ],
+      "agent": [
+       {
+        "text": "Your agent tells him it was a loyalty bonus, which is what he told you.",
+        "effects": {
+         "reputation": -1
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "agent"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "broadsheet",
+      "pick": "broadsheet"
+     }
+    ]
+   },
+   "hint": "Your name is on a list about the envelope club"
+  },
+  {
+   "id": "eni-2-later",
+   "title": "The report",
+   "after": {
+    "beat": "eni-1-list",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-eni-2-later",
+    "title": "The report",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. The inquiry's report is out. Sixty pages."
+    ],
+    "choices": [
+     {
+      "id": "read",
+      "label": "Find your name.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='hand'",
+        "text": "Page forty-one: one player handed back the full amount. The serious paper puts that line in bold.",
+        "arc": {
+         "end": "handed-it-in"
+        }
+       },
+       {
+        "text": "Page forty-one: \"insufficient evidence\". Your name, and eight others.",
+        "arc": {
+         "end": "the-drawer"
+        }
+       }
+      ]
+     },
+     {
+      "id": "bin",
+      "label": "Don't read it.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "if": "arc.path=='hand'",
+        "text": "{broadsheet.short} sends you the page anyway, with the line underlined.",
+        "arc": {
+         "end": "handed-it-in"
+        }
+       },
+       {
+        "text": "The envelope is still in the drawer.",
+        "arc": {
+         "end": "the-drawer"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "broadsheet",
+      "pick": "broadsheet"
+     }
+    ]
+   },
+   "hint": "A season on, the inquiry's report"
+  }
+ ]
+}

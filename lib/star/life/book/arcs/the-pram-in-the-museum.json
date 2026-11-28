@@ -1,0 +1,243 @@
+{
+ "id": "arc-the-pram-in-the-museum",
+ "title": "The pram",
+ "owner": "chairman",
+ "summary": "The old scarf man has died, and his family want to know what to do with the pram he sold from for thirty years. The chairman, who once wanted him moved on, rings you.",
+ "size": "small",
+ "about": {
+  "who": [
+   "the chairman"
+  ],
+  "tone": [
+   "moving"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-scarf-man:the-pram)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "in-the-museum",
+   "title": "In the museum",
+   "text": "The scarf man's pram is in the club museum, with one of his scarves in it."
+  },
+  {
+   "id": "outside-the-ground",
+   "title": "Outside the ground",
+   "text": "The scarf man's pram is still outside the ground on match days. His grandson sells from it now."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "prm-1-call",
+   "title": "The pram",
+   "n": 1,
+   "event": {
+    "id": "arc-prm-1-call",
+    "title": "The pram",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The chairman rings. \"The scarf man died on Tuesday. His daughter wants to give us the pram. I wanted him moved on, you remember. I don't know what to say to her.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "chairman",
+       "say": [
+        "He sounds older than he did."
+       ],
+       "replies": [
+        {
+         "id": "museum",
+         "label": "\"Put it in the museum.\"",
+         "tone": "kind",
+         "end": "museum"
+        },
+        {
+         "id": "grandson",
+         "label": "\"Ask if the family want to keep selling.\"",
+         "tone": "brave",
+         "end": "grandson"
+        },
+        {
+         "id": "you",
+         "label": "\"You'll know what to say.\"",
+         "tone": "calm",
+         "end": "you"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "museum": [
+       {
+        "text": "\"Yes,\" he says, like he'd been waiting for somebody to say it.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "museum"
+         }
+        }
+       }
+      ],
+      "grandson": [
+       {
+        "text": "The daughter says the grandson's been asking. The chairman says he'll give him a pitch by the turnstiles, and means a proper one.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "grandson"
+         }
+        }
+       }
+      ],
+      "you": [
+       {
+        "text": "He rings her. He tells you later he said sorry, which he'd never said to her dad.",
+        "arc": {
+         "set": {
+          "path": "museum"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The chairman rings about the scarf man's pram"
+  },
+  {
+   "id": "prm-2-later",
+   "title": "A season on",
+   "after": {
+    "beat": "prm-1-call",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-prm-2-later",
+    "title": "A season on",
+    "category": "life",
+    "place": "ground:turnstiles",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on, match day."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Look outside the turnstiles.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='grandson'",
+        "text": "A lad of nineteen with the same pram and the same scarves, and a card reader.",
+        "arc": {
+         "end": "outside-the-ground"
+        }
+       },
+       {
+        "text": "An official stall. The pram is inside, in a glass case by the trophies.",
+        "arc": {
+         "end": "in-the-museum"
+        }
+       }
+      ]
+     },
+     {
+      "id": "museum",
+      "label": "Look in the museum.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='museum'",
+        "text": "It's in a glass case, with one scarf hung over the handle and his photo.",
+        "arc": {
+         "end": "in-the-museum"
+        }
+       },
+       {
+        "text": "It isn't there. It's outside, with his grandson.",
+        "arc": {
+         "end": "outside-the-ground"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "A season on, the pram"
+  }
+ ]
+}

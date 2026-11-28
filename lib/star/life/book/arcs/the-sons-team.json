@@ -1,0 +1,244 @@
+{
+ "id": "arc-the-sons-team",
+ "title": "The son's team",
+ "owner": "chairman",
+ "summary": "The chairman's son, the one you told the truth to or didn't, manages a Sunday side now. He asks you to come and talk to his players about what it takes. His dad wants to come too.",
+ "size": "small",
+ "about": {
+  "who": [
+   "the chairman"
+  ],
+  "tone": [
+   "warm",
+   "years on"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "veteran",
+  "when": [
+   "ended(arc-the-chairmans-son)",
+   "age>=27"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "chairman",
+   "pick": "chairman"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "what-it-takes",
+   "title": "What it takes",
+   "text": "You talked to the chairman's son's Sunday side. His dad stood at the back and clapped longest."
+  },
+  {
+   "id": "the-old-favour",
+   "title": "The old favour",
+   "text": "You went to the chairman's son's Sunday side. He told his players you once lied to him, and that you were right to be sorry."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "sst-1-ask",
+   "title": "His Sunday side",
+   "n": 1,
+   "event": {
+    "id": "arc-sst-1-ask",
+    "title": "His Sunday side",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A text from the chairman's son. He's twenty-six, a physio in the week, and he runs a Sunday side called the Fox. \"Would you talk to my lads before the cup? Ten minutes. Dad wants to come. Sorry.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "chairman",
+       "say": [
+        "{if ended(arc-the-chairmans-son:the-truth)}You told him at nineteen he wasn't good enough. He's thanked you every year since.{/if}{if ended(arc-the-chairmans-son:the-favour)}You told his dad he was nearly there. He wasn't.{/if}"
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Ten minutes. I'll bring a ball.\"",
+         "tone": "kind",
+         "end": "go"
+        },
+        {
+         "id": "sorry",
+         "label": "\"I'll come. And I owe you a sorry.\"",
+         "tone": "honest",
+         "requires": [
+          "ended(arc-the-chairmans-son:the-favour)"
+         ],
+         "end": "sorry"
+        },
+        {
+         "id": "no",
+         "label": "\"I can't, mate. Good luck in the cup.\"",
+         "tone": "calm",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "A pub function room, sixteen lads in tracksuits, the chairman at the back with a half. You talk for twenty minutes.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "go"
+         }
+        }
+       }
+      ],
+      "sorry": [
+       {
+        "text": "You say sorry in front of his lads. He laughs and says he'd have done the same. His dad has to go outside.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "sorry"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He says no problem. They lose in the cup, four-three.",
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "The chairman's son wants you at his Sunday side"
+  },
+  {
+   "id": "sst-2-later",
+   "title": "The cup",
+   "after": {
+    "beat": "sst-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-sst-2-later",
+    "title": "The cup",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "chairman",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. The Fox are in the county Sunday cup final, and there's a photo of you on the wall of their function room."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go to the final.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='go'",
+        "text": "They win on penalties. The son lifts the cup and points at his dad in the crowd.",
+        "arc": {
+         "end": "what-it-takes"
+        }
+       },
+       {
+        "text": "They win on penalties. In the bar he tells his lads the story of the lie, and you buy a round for it.",
+        "arc": {
+         "end": "the-old-favour"
+        }
+       }
+      ]
+     },
+     {
+      "id": "text",
+      "label": "Text good luck.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "!arc.path=='sorry'",
+        "text": "\"Cheers. Dad says you're a gentleman.\"",
+        "arc": {
+         "end": "what-it-takes"
+        }
+       },
+       {
+        "text": "\"Cheers. Still owe you that round.\"",
+        "arc": {
+         "end": "the-old-favour"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "chairman",
+      "pick": "chairman"
+     }
+    ]
+   },
+   "hint": "A season on, the Fox"
+  }
+ ]
+}

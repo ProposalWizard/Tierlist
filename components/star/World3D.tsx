@@ -75,7 +75,7 @@ export default function World3D({ options, clean, onGo }: { options: WorldOption
         </div>
       )}
       {state === "ready" && options.place === "gym" && (
-        <GymHud ref={hud} fitness={clean ? undefined : status?.fitness} film={!!options.demo} onHold={(on) => ctrl.current?.gymHold(on)} onAct={(id) => ctrl.current?.act(id)} />
+        <GymHud ref={hud} fitness={clean ? undefined : status?.fitness} body={status?.fitness?.body ?? null} film={!!options.demo} onHold={(on) => ctrl.current?.gymHold(on)} onAct={(id) => ctrl.current?.act(id)} />
       )}
       {state === "ready" && !(options.place === "gym" && gymOn) && <ViewToggle3D onChange={(m) => ctrl.current?.setView(m)} style={{ top: "auto", bottom: card ? 200 : 16 }} />}
       {card && (

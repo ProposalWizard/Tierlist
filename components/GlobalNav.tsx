@@ -19,8 +19,10 @@ export default function GlobalNav() {
       <div className="relative mx-auto flex items-center max-w-7xl px-4 py-3 gap-3">
         <div className="flex items-center gap-2 shrink-0">
           <GameSidebar />
-          <Link href="/" className="text-lg font-bold tracking-tight text-white">
-            KNOWITBALL
+          <Link href="/" className="flex items-center" aria-label="Knowitball home">
+            {/* The Knowitball banner logo (Harry, 28 Nov 2026: round 8, option 5). 358x120 source, shown 40 px tall. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/knowitball-logo.png" alt="KNOWITBALL" width={119} height={40} className="h-10 w-auto rounded" />
           </Link>
         </div>
         <div className="flex-1 min-w-0">

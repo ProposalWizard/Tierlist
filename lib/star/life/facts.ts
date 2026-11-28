@@ -49,10 +49,13 @@ export function factsOf(c: CareerState, o: FactOverride = {}): LifeFacts {
       lastRating: o.lastRating ?? lm?.userRating ?? 6.5, lastGoals: o.lastGoals ?? lm?.userGoals ?? 0,
       seasonGoals: c.seasonStats?.goals ?? 0, matchFitness: c.matchFitness ?? 100,
       overall: Math.round(((c.skills?.pace ?? 50) + (c.skills?.power ?? 50) + (c.skills?.technique ?? 50) + (c.skills?.vision ?? 50)) / 4),
+      caps: c.caps ?? 0,
     },
     flag: {
       lastLost: o.lastLost ?? (!!lm && us < them), lastWon: o.lastWon ?? (!!lm && us > them),
       injured: !!c.injury, hasPartner: !!c.girlfriend, captain: !!c.captain,
+      // In Europe this season (the place last season's finish earned).
+      europe: !!c.europeanQualification,
     },
     owns: {
       car: carTier(c) > 0, horse: !!c.horse,

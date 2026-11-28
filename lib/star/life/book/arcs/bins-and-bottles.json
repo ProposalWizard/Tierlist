@@ -1,0 +1,247 @@
+{
+ "id": "arc-bins-and-bottles",
+ "title": "Bins and bottles",
+ "owner": "tabloid",
+ "summary": "The tabloid man who went through your bins and photographed you at a petrol station at two in the morning is writing a book about his career. You're chapter three. He wants to read it to you first.",
+ "size": "small",
+ "about": {
+  "who": [
+   "tabloid reporter"
+  ],
+  "tone": [
+   "funny",
+   "collision"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-bins)",
+   "ended(arc-the-petrol-station)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "chapter-three",
+   "title": "Chapter three",
+   "text": "You're chapter three of the tabloid man's book, \"Bins and Bottles\". He changed one line because you asked."
+  },
+  {
+   "id": "the-solicitor",
+   "title": "The solicitor",
+   "text": "You sent the tabloid man's chapter to a solicitor. Chapter three is now about somebody else."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "bnb-1-read",
+   "title": "Chapter three",
+   "n": 1,
+   "event": {
+    "id": "arc-bnb-1-read",
+    "title": "Chapter three",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{tabloid.name} in a café in a jumper, a printout with coffee rings on it. \"Bins and Bottles. Chapter three's you. The bins, the cola bottles. Let me read it you, and you tell me what's wrong.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "tabloid",
+       "say": [
+        "He reads it all. It's funnier than you expected and one line about your brother is not true."
+       ],
+       "replies": [
+        {
+         "id": "fix",
+         "label": "\"Change the line about my brother and it's fine.\"",
+         "tone": "honest",
+         "end": "fix"
+        },
+        {
+         "id": "fine",
+         "label": "\"It's fine. Print it.\"",
+         "tone": "kind",
+         "end": "fine"
+        },
+        {
+         "id": "lawyer",
+         "label": "\"My solicitor will read it.\"",
+         "tone": "cold",
+         "end": "lawyer"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "fix": [
+       {
+        "text": "He crosses it out in front of you. \"Fair. He wasn't even there.\"",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "fix"
+         }
+        }
+       }
+      ],
+      "fine": [
+       {
+        "text": "He seems almost disappointed. \"You're meant to argue.\"",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "fine"
+         }
+        }
+       }
+      ],
+      "lawyer": [
+       {
+        "text": "He sighs, folds it up and pays for both coffees.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "lawyer"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "The tabloid man wants to read you his chapter"
+  },
+  {
+   "id": "bnb-2-later",
+   "title": "The book",
+   "after": {
+    "beat": "bnb-1-read",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-bnb-2-later",
+    "title": "The book",
+    "category": "life",
+    "place": "town:station",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. \"Bins and Bottles\" is in the shop at the station."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Look at chapter three.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "!arc.path=='lawyer'",
+        "text": "It's you, the bins and the cola bottles. The line about your brother is gone.",
+        "arc": {
+         "end": "chapter-three"
+        }
+       },
+       {
+        "text": "Chapter three is about a cricketer.",
+        "arc": {
+         "end": "the-solicitor"
+        }
+       }
+      ]
+     },
+     {
+      "id": "buy",
+      "label": "Buy one for your brother.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "!arc.path=='lawyer'",
+        "text": "He reads it on the train and says it's lies, apart from chapter three.",
+        "arc": {
+         "end": "chapter-three"
+        }
+       },
+       {
+        "text": "He reads it and asks why you aren't in it.",
+        "arc": {
+         "end": "the-solicitor"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "A season on, the tabloid man's book"
+  }
+ ]
+}

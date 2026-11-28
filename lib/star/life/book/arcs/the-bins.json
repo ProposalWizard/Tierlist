@@ -14,8 +14,15 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.18
+  "chance": 0.008,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "peak",
+  "when": [
+   "age>=24",
+   "age<=31",
+   "divisionLevel<=2 || fame>=45"
+  ]
  },
  "cast": [
   {
@@ -24,7 +31,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -176,6 +184,127 @@
    "hint": "There's a story about your bins"
   },
   {
+   "id": "bin-1d-deep",
+   "title": "The bin men",
+   "after": {
+    "beat": "bin-1",
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "event": {
+    "id": "arc-bin-1d-deep",
+    "title": "The bin men",
+    "category": "media",
+    "place": "home:driveway",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "tabloid",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Bin day. The bin men are standing by your drive with your bins. One of them is holding up the padlock{if arc.path=='quote'}, or a newspaper with your cheat day on it{/if}."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "tabloid",
+       "say": [
+        "\"Mate. Are we in the paper now? My missus wants to know.\""
+       ],
+       "replies": [
+        {
+         "id": "sign",
+         "label": "Sign the paper for them.",
+         "tone": "kind",
+         "end": "sign"
+        },
+        {
+         "id": "tea",
+         "label": "\"Tea?\"",
+         "tone": "kind",
+         "end": "tea"
+        },
+        {
+         "id": "laugh",
+         "label": "\"Only on Sundays.\"",
+         "tone": "confident",
+         "end": "laugh"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "sign": [
+       {
+        "text": "They take a photo with you and the bins. It does better online than anything the tabloid wrote.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "posed-with-the-bin-men",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "sign"
+         }
+        }
+       }
+      ],
+      "tea": [
+       {
+        "text": "Three teas on the wall. They tell you who was in your bins: a man in a white car, two Tuesdays running.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "tea"
+         }
+        }
+       }
+      ],
+      "laugh": [
+       {
+        "text": "They laugh and go.",
+        "arc": {
+         "set": {
+          "deep": "laugh"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "The bin men have a question"
+  },
+  {
    "id": "bin-2",
    "title": "The favour",
    "after": {
@@ -203,7 +332,8 @@
     },
     "setup": [
      "A season on. {tabloid.short} rings. His editor wants a picture of you at home, a real one, for a feature, and he's got a week.",
-     "{if arc.path=='locked'}\"I won't touch the bins. Promise.\"{/if}"
+     "{if arc.path=='locked'}\"I won't touch the bins. Promise.\"{/if}",
+     "{if arc.deep=='sign'}The bin men photo is still about. The reporter hates it.{/if}"
     ],
     "choices": [
      {

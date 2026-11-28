@@ -14,8 +14,10 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.18
+  "chance": 0.0021,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any"
  },
  "cast": [
   {
@@ -24,7 +26,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -174,6 +177,127 @@
    "hint": "The kit man is humming again"
   },
   {
+   "id": "hsg-1d-deep",
+   "title": "The record",
+   "after": {
+    "beat": "hsg-1",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-hsg-1d-deep",
+    "title": "The record",
+    "category": "staff",
+    "place": "club:kit-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kitman",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{kitman.short} has brought in an old record in a paper sleeve and propped it on the shelf by the kettle. Her song. The sleeve has a coffee ring on it and a date in pencil."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kitman",
+       "say": [
+        "\"Found it in the loft. Don't know what to do with it. Haven't got anything to play it on.\""
+       ],
+       "replies": [
+        {
+         "id": "play",
+         "label": "Find a record player and bring it in.",
+         "tone": "kind",
+         "end": "play"
+        },
+        {
+         "id": "frame",
+         "label": "\"Frame it.\"",
+         "tone": "calm",
+         "end": "frame"
+        },
+        {
+         "id": "leave",
+         "label": "\"Leave it in the loft, mate.\"",
+         "tone": "cold",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "play": [
+       {
+        "text": "You find one at a car boot for six pounds. He plays it once, on his own, with the kit room door shut.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kitman",
+          "tag": "found-me-a-record-player",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "play"
+         }
+        }
+       }
+      ],
+      "frame": [
+       {
+        "text": "He frames the sleeve and hangs it by the kettle.",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "frame"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "He takes it home.",
+        "arc": {
+         "set": {
+          "deep": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kitman",
+      "pick": "kitman"
+     }
+    ]
+   },
+   "hint": "The kit man has brought something in"
+  },
+  {
    "id": "hsg-2",
    "title": "Before kick-off",
    "after": {
@@ -201,7 +325,8 @@
     },
     "setup": [
      "A season on, a cup night at home. The stadium announcer is in the tunnel with a clipboard, asking if anyone has a song for the warm-up.",
-     "{if arc.path=='folded'}You know the name of the song. You know hers too.{/if}"
+     "{if arc.path=='folded'}You know the name of the song. You know hers too.{/if}",
+     "{if arc.deep=='play'}The record player from the car boot is still in the kit room.{/if}"
     ],
     "choices": [
      {

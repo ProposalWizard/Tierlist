@@ -15,8 +15,10 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.18
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
  },
  "cast": [
   {
@@ -29,7 +31,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -199,6 +202,135 @@
    "hint": "You are on the local radio phone-in"
   },
   {
+   "id": "phn-1d-deep",
+   "title": "Dave again",
+   "after": {
+    "beat": "phn-1",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-phn-1d-deep",
+    "title": "Dave again",
+    "category": "family",
+    "place": "town:car",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Monday night, in the car. On the local radio: \"Line two, Dave from the east stand.\" Your dad's voice, putting on a voice."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "dad",
+       "say": [
+        "He's defending you about Saturday, at length."
+       ],
+       "replies": [
+        {
+         "id": "ring",
+         "label": "Ring in yourself as Steve from the west stand.",
+         "tone": "reckless",
+         "end": "ring"
+        },
+        {
+         "id": "text",
+         "label": "Text him: \"Hi Dave.\"",
+         "tone": "kind",
+         "end": "text"
+        },
+        {
+         "id": "leave",
+         "label": "Turn it off.",
+         "tone": "calm",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ring": [
+       {
+        "text": "You agree with Dave. The presenter knows. The whole town knows by Tuesday.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         },
+         {
+          "slot": "reporter",
+          "bond": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "rang-in-as-steve",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "ring"
+         }
+        }
+       }
+      ],
+      "text": [
+       {
+        "text": "He goes silent mid-sentence on the radio.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "text"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "Your dad has rung the phone-in again"
+  },
+  {
    "id": "phn-2",
    "title": "Line three again",
    "after": {
@@ -227,7 +359,8 @@
     "setup": [
      "A season on. The same phone-in, the same studio.",
      "{if arc.path=='dave'}\"Line three,\" {reporter.short} says, trying not to laugh. \"It's Dave.\"{/if}",
-     "{if arc.path=='cut'}\"Line three. Dave from the east stand. He says he'll be quick.\"{/if}"
+     "{if arc.path=='cut'}\"Line three. Dave from the east stand. He says he'll be quick.\"{/if}",
+     "{if arc.deep=='ring'}Dave and Steve are on the phone-in most Mondays now.{/if}"
     ],
     "choices": [
      {

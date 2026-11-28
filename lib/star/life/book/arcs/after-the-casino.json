@@ -15,8 +15,10 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.18
+  "chance": 0.0134,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
  },
  "cast": [
   {

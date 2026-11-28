@@ -14,8 +14,13 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.18
+  "chance": 0.0107,
+  "tier": "common",
+  "stage": "first-seasons",
+  "when": [
+   "age<=20",
+   "season<=3"
+  ]
  },
  "cast": [
   {

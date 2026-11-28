@@ -14,8 +14,9 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.18
+  "chance": 0.0064,
+  "tier": "common",
+  "stage": "any"
  },
  "cast": [
   {
@@ -24,7 +25,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -189,6 +191,127 @@
    "hint": "The man in row F"
   },
   {
+   "id": "hck-1d-deep",
+   "title": "Row F's lad",
+   "after": {
+    "beat": "hck-1",
+    "weeks": [
+     3,
+     12
+    ]
+   },
+   "event": {
+    "id": "arc-hck-1d-deep",
+    "title": "Row F's lad",
+    "category": "fans",
+    "place": "ground:corner",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "fan",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Row F. The man who shouts at you has a lad with him today, about ten, in your shirt. The lad shouts your name every time you get the ball. His dad shouts the other thing."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "fan",
+       "say": [
+        "At a corner the lad waves at you."
+       ],
+       "replies": [
+        {
+         "id": "wave",
+         "label": "Wave back at the lad.",
+         "tone": "kind",
+         "end": "wave"
+        },
+        {
+         "id": "score",
+         "label": "Score from the corner and point at the lad.",
+         "tone": "confident",
+         "end": "score"
+        },
+        {
+         "id": "ignore",
+         "label": "Take the corner.",
+         "tone": "calm",
+         "end": "ignore"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "wave": [
+       {
+        "text": "His dad stops mid-shout and looks at his son. He doesn't shout again till the eighty-third minute.",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "waved-at-my-lad",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "wave"
+         }
+        }
+       }
+      ],
+      "score": [
+       {
+        "text": "You don't score. The lad cheers anyway, and his dad laughs.",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "score"
+         }
+        }
+       }
+      ],
+      "ignore": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "ignore"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "fan",
+      "pick": "fan"
+     }
+    ]
+   },
+   "hint": "The man in row F has brought his lad"
+  },
+  {
    "id": "hck-2",
    "title": "Next season",
    "after": {
@@ -217,7 +340,8 @@
     "setup": [
      "A season on. A home game, your first corner.",
      "{if arc.path=='out'}Row F by the corner flag has an empty seat in it.{/if}",
-     "{if !arc.path=='out'}{fan.short} is in row F with a flask, waiting.{/if}"
+     "{if !arc.path=='out'}{fan.short} is in row F with a flask, waiting.{/if}",
+     "{if arc.deep=='wave'}His lad still sits next to him in row F, waving.{/if}"
     ],
     "choices": [
      {

@@ -407,6 +407,72 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     M.ctrl = { dispose() { r.dispose(); r.domElement.remove(); } };
     return { sizes, tris };
   },
+  /**
+   * Textured trees, old vs cheap (lib/star/garden3d/cardTrees.ts): `row` is a list of
+   * "old" (realNature makeTree, 340 sprays) or a number of sprays (or "L0"/"L1"/"L2" for a detail level),
+   * side by side, the same tree (opts.kind: tree_oak … tree_pine2), the garden's sun.
+   */
+  async cardtrees(opts: any = {}) {
+    const RN = await import("@/lib/star/garden3d/realNature");
+    const CT = await import("@/lib/star/garden3d/cardTrees");
+    const r = new THREE.WebGLRenderer({ antialias: true });
+    r.setPixelRatio(Math.min(2, devicePixelRatio));
+    r.setSize(innerWidth, innerHeight);
+    r.toneMapping = THREE.ACESFilmicToneMapping;
+    r.shadowMap.enabled = true;
+    r.shadowMap.type = THREE.PCFSoftShadowMap;
+    stage().appendChild(r.domElement);
+    const sc = new THREE.Scene();
+    sc.background = new THREE.Color("#bcd8ee");
+    sc.add(new THREE.HemisphereLight("#dfefff", "#6b7a4a", 1.1));
+    const sun = new THREE.DirectionalLight("#fff1d6", 2.6);
+    sun.position.set(-14, 22, 12); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+    Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20, far: 80 });
+    sc.add(sun);
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: "#7fa050", roughness: 1 }));
+    ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; sc.add(ground);
+    const nature = await RN.loadRealNature(THREE, r);
+    const atlas = await CT.loadCardAtlas(THREE, r);
+    const mat = CT.cardMaterial(THREE, atlas.map, atlas.nrm);
+    const sizes: Record<string, [number, number]> = { tree_oak: [1.226, 0.74], tree_default: [1.708, 0.755], tree_detailed: [1.332, 0.847], tree_fat: [1.15, 0.755], tree_tall: [1.688, 0.461], tree_pine: [1.366, 0.712], tree_pine2: [1.53, 0.392] };
+    const tints: Record<string, string | undefined> = { tree_fat: "#b8d894", tree_tall: "#c8e2a0", tree_oak: "#afcf88" };
+    const kind = opts.kind ?? "tree_oak";
+    const [h, w] = sizes[kind];
+    const pine = kind.includes("pine");
+    const row: any[] = opts.row ?? ["old", 150];
+    const s = opts.scale ?? 5;
+    const out: any = { tris: [] };
+    row.forEach((it, i) => {
+      const x = (i - (row.length - 1) / 2) * (opts.dx ?? 6);
+      let g: any;
+      if (it === "old") {
+        g = new THREE.Group();
+        for (const p of RN.makeTree(THREE, nature, { h, w, pine, seed: opts.seed ?? 101, tint: tints[kind] })) {
+          const m = new THREE.Mesh(p.geometry, p.material);
+          if (p.material.userData?.depth) { m.customDepthMaterial = p.material.userData.depth; }
+          m.castShadow = m.receiveShadow = true; g.add(m);
+        }
+        let t = 0; g.traverse((m: any) => { if (m.isMesh) t += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; });
+        out.tris.push(Math.round(t));
+      } else {
+        const b = CT.newCardBin();
+        const lod = typeof it === "string" ? +it.slice(1) : 0;
+        out.tris.push(CT.addCardTree(THREE, b, { h, w, pine, seed: opts.seed ?? 101, tint: tints[kind], lod: lod as any, cards: typeof it === "number" ? it : undefined }));
+        g = new THREE.Mesh(CT.cardGeometry(THREE, b), mat);
+        g.customDepthMaterial = mat.userData.depth;
+        g.castShadow = g.receiveShadow = true;
+      }
+      g.scale.setScalar(s); g.position.set(x, 0, 0); g.rotation.y = opts.ry ?? 0;
+      sc.add(g);
+    });
+    const cam = new THREE.PerspectiveCamera(opts.fov ?? 45, innerWidth / innerHeight, 0.1, 300);
+    cam.position.set(...((opts.cam ?? [0, 4, 14]) as [number, number, number]));
+    cam.lookAt(...((opts.look ?? [0, 4, 0]) as [number, number, number]));
+    r.render(sc, cam);
+    M.ready = performance.now();
+    M.ctrl = { dispose() { r.dispose(); r.domElement.remove(); } };
+    return out;
+  },
   /** Home's idle early download for a place (perf.ts preloadScene), then window.__preloadDone. */
   async preload(scene: string) {
     const name = ({ toon: "home", drill: "home", career: "home", cut: "home" } as any)[scene] ?? scene;

@@ -31,7 +31,43 @@ export const ROLE_ID: Record<Exclude<LifeRole, "teammate">, string> = {
 const ID_ROLE = new Map(Object.entries(ROLE_ID).map(([r, id]) => [id, r as LifeRole]));
 
 export function roleOf(id: string): LifeRole {
-  return ID_ROLE.get(id) ?? "teammate";
+  return ID_ROLE.get(id) ?? (id.includes("@") ? ID_ROLE.get(id.slice(0, id.indexOf("@"))) : undefined) ?? "teammate";
+}
+
+// ── Club people (Harry, 28 Nov 2026: "yes make legends and kit men per club") ──
+//
+// The club's own people belong to a CLUB, not to the career. Your career's first club (`life.home`,
+// set at the first story moment of a book with tiers) keeps the plain ids ("staff:kitman"), so an old
+// save and its open stories read exactly as before. Any other club's person is "staff:kitman@ab12"
+// (the club's code), picked from the pool by the career and the club (pool.ts) and pinned in
+// `life.cpool` the first time a story casts him. A story already open keeps the person it cast, so
+// your old club's kit man can still ring you. Rejoin a club and its people are the ones you left.
+export const CLUB_ROLES: LifeRole[] = ["kitman", "groundsman", "physio", "canteen", "coach", "chairman", "legend"];
+
+/** A club's 4-letter code in a person's id. */
+export function clubCode(club: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < club.length; i++) h = Math.imul(h ^ club.charCodeAt(i), 16777619) >>> 0;
+  return (h % 36 ** 4).toString(36).padStart(4, "0");
+}
+
+/** The club code in an id ("" for a plain id: the career's first club, or a role that is not a club's). */
+export const clubOfId = (id: string): string => (id.includes("@") ? id.slice(id.indexOf("@") + 1) : "");
+
+/** Who holds a club role at the club you are at now (a plain id for any other role). */
+export function clubRoleId(c: Pick<CareerState, "player">, life: Pick<LifeState, "home"> | undefined, role: Exclude<LifeRole, "teammate">): string {
+  const base = ROLE_ID[role];
+  if (!CLUB_ROLES.includes(role) || !life?.home || life.home === c.player.club) return base;
+  return `${base}@${clubCode(c.player.club)}`;
+}
+
+/** Is this one of a club's people from a club you are not at now ("your old club's kit man")? */
+export function fromOldClub(c: CareerState, id: string): boolean {
+  if (!CLUB_ROLES.includes(roleOf(id))) return false;
+  const life = c.life;
+  if (!life?.home) return false;
+  const now = life.home === c.player.club ? "" : clubCode(c.player.club);
+  return clubOfId(id) !== now;
 }
 
 /** Where each person stands on the day you meet them. */
@@ -97,12 +133,15 @@ export interface PersonInfo {
 export function personInfo(c: CareerState, id: string): PersonInfo | null {
   const role = roleOf(id);
   const sur = c.player.lastName || "Smith";
-  const seed = hash(`${c.player.firstName}|${c.player.lastName}|${c.player.startYear}`);
+  // Another club's person (club people): the same names, shuffled by the club too.
+  const code = clubOfId(id);
+  const seed = (hash(`${c.player.firstName}|${c.player.lastName}|${c.player.startYear}`) + (code ? hash(code) : 0)) >>> 0;
   const pick = <T,>(a: T[], k: string) => a[(seed + hash(k)) % a.length];
   // The story people take consecutive names from one shuffle, so two of them never share one.
   const nth = <T,>(a: T[], n: number) => a[(seed + n) % a.length];
-  // A role with a pool: the one person this career keeps for it (Den is one kit man of four).
-  const pp = role === "teammate" || role === "manager" ? null : poolPerson(c, role);
+  // A role with a pool: the one person this career keeps for it (Den is one kit man of four), or,
+  // for a club's people, the one this club has (pool.ts).
+  const pp = role === "teammate" || role === "manager" ? null : poolPerson(c, role, code);
   if (pp) return { id, role, name: `${pp.first} ${pp.last}`, short: pp.short ?? pp.first, pool: pp, outlet: role === "reporter" ? OUTLETS.reporter : undefined };
   switch (role) {
     case "teammate": {
@@ -237,7 +276,9 @@ export function tidy(life: LifeState, c: CareerState, now: number): void {
   for (const pr of life.promises ?? []) if (pr.st === "open") live.add(pr.to);
   for (const [id, p] of Object.entries(life.people)) {
     p.m = fade(p.m, now);
-    if (roleOf(id) !== "teammate" || inSquad.has(id) || live.has(id)) continue;
+    if (inSquad.has(id) || live.has(id)) continue;
+    // A team-mate who has left, or one of an old club's people (club people), is forgotten unless the feeling was strong.
+    if (roleOf(id) !== "teammate" && !fromOldClub(c, id)) continue;
     const strong = (p.b >= 50 || p.g >= 40) && p.m.some(([, , s]) => s >= 2);
     if (!strong) delete life.people[id];
   }
