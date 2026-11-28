@@ -1,0 +1,256 @@
+{
+ "id": "arc-the-team-photo",
+ "title": "The team photo",
+ "owner": "mate",
+ "summary": "Official team photo day. A team-mate who's about to be sold asks to stand next to you, because it's his last one. A season on, the photo is on a wall somewhere you don't expect.",
+ "size": "small",
+ "about": {
+  "who": [
+   "mate"
+  ],
+  "tone": [
+   "warm",
+   "sad"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "next-to-him",
+   "title": "Next to him",
+   "text": "On team photo day you stood next to a team-mate who knew he was leaving. He has that photo in his hall, wherever he plays."
+  },
+  {
+   "id": "the-back-row",
+   "title": "The back row",
+   "text": "You stood where you were put on team photo day. He's at the end of the row, looking at the camera like he already knows."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "tph-1-photo",
+   "title": "Photo day",
+   "n": 1,
+   "event": {
+    "id": "arc-tph-1-photo",
+    "title": "Photo day",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Team photo day. Benches on the pitch, the photographer on a ladder. {mate.name} catches your arm before you get on the bench. He's being sold on Thursday. Nobody knows yet."
+    ],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "mate",
+       "say": [
+        "\"Can I stand next to you? It's my last one. I'd like to be next to someone who'll look like they mean it.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Course. Middle of the back row.\"",
+         "tone": "kind",
+         "end": "next"
+        },
+        {
+         "id": "swap",
+         "label": "Swap places so he's in the middle.",
+         "tone": "kind",
+         "end": "middle"
+        },
+        {
+         "id": "where",
+         "label": "\"Stand where the photographer says.\"",
+         "tone": "cold",
+         "end": "where"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "next": [
+       {
+        "text": "You stand together. In the one they use, he's laughing at something you said, and so are you.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "stood-next-to-me-in-my-last-photo",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "next"
+         }
+        }
+       }
+      ],
+      "middle": [
+       {
+        "text": "He ends up dead centre. The photographer says he's never seen a man look so pleased about a bench.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "stood-next-to-me-in-my-last-photo",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "next"
+         }
+        }
+       }
+      ],
+      "where": [
+       {
+        "text": "He goes to the end of the row. He's not smiling in any of them.",
+        "arc": {
+         "set": {
+          "path": "end"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     }
+    ]
+   },
+   "hint": "Team photo day"
+  },
+  {
+   "id": "tph-2-wall",
+   "title": "The photo",
+   "after": {
+    "beat": "tph-1-photo",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-tph-2-wall",
+    "title": "The photo",
+    "category": "teammates",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {mate.short} sends a photo from his new house: his hall, a frame on the wall. It's last season's team photo."
+    ],
+    "choices": [
+     {
+      "id": "zoom",
+      "label": "Zoom in.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='next'",
+        "text": "The two of you in the back row, laughing at something. He's written under it: \"Best day there.\"",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "next-to-him"
+        }
+       },
+       {
+        "text": "He's at the end of the row, not smiling. You wonder why he framed that one.",
+        "arc": {
+         "end": "the-back-row"
+        }
+       }
+      ]
+     },
+     {
+      "id": "reply",
+      "label": "\"Looks good, mate.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='next'",
+        "text": "\"It's the only one I framed.\"",
+        "arc": {
+         "end": "next-to-him"
+        }
+       },
+       {
+        "text": "\"Cheers.\" That's all.",
+        "arc": {
+         "end": "the-back-row"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     }
+    ]
+   },
+   "hint": "A season on, a photo on a wall"
+  }
+ ]
+}
