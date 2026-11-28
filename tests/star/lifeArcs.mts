@@ -260,7 +260,12 @@ const atNight = m.career;
   for (const arc of stories) {
     const ends = new Set<string>(), beats = new Set<string>();
     const dead: string[] = [];
-    for (let seed = 0; seed < SEEDS; seed++) {
+    // SEEDS careers, and up to five times more for a story whose rarest ending or beat has not come yet
+    // (the deeper stories have more paths; the check is the same: every ending and beat in real play).
+    const allSeen = () => arc.ends.every((e) => ends.has(e.id)) && arc.beats.every((b) => beats.has(b.id));
+    let seedsUsed = 0;
+    for (let seed = 0; seed < SEEDS || (seed < SEEDS * 6 && !allSeen()); seed++) {
+      seedsUsed = seed + 1;
       const r = mulberry32(5000 + seed * 131 + arc.id.length * 7);
       // Pick: always the first reply, always the last, or the dice (all three get every ending in time).
       const pick = (n: number) => (seed % 3 === 0 ? 0 : seed % 3 === 1 ? n - 1 : Math.floor(r() * n));
@@ -307,11 +312,99 @@ const atNight = m.career;
       for (const [b, f] of Object.entries(run?.f ?? {})) if (f.length) beats.add(b);
       played++;
     }
-    for (const e of arc.ends) check(ends.has(e.id), `${arc.id}: the ending "${e.id}" is reached in ${SEEDS} careers (got ${[...ends].join(", ") || "none"})`);
-    for (const b of arc.beats) check(beats.has(b.id), `${arc.id}: the beat "${b.id}" plays in ${SEEDS} careers`);
+    for (const e of arc.ends) check(ends.has(e.id), `${arc.id}: the ending "${e.id}" is reached in ${seedsUsed} careers (got ${[...ends].join(", ") || "none"})`);
+    for (const b of arc.beats) check(beats.has(b.id), `${arc.id}: the beat "${b.id}" plays in ${seedsUsed} careers`);
     check(!dead.length, `${arc.id}: every due beat opens (${dead.slice(0, 3).join(", ")})`);
   }
   if (process.env.V) console.log(`stories played by the dice: ${played} careers over ${stories.length} stories`);
+}
+
+// Story stages, rarity tiers and chains (28 Nov 2026). The checker fails on a chain that can never
+// start; ended(...), caps and europe read the career; a stage window holds a story back; a tiered
+// book never opens a second big story while one is open.
+{
+  const { validateArcBook } = await import("../../lib/star/life/validateArcs.ts");
+  const { holds } = await import("../../lib/star/life/cond.ts");
+  const { ctxFor, factsOf } = await import("../../lib/star/life/facts.ts");
+  const { packRun } = await import("../../lib/star/life/arcPack.ts");
+  const BOOK = await import("../../lib/star/life/arcBook.ts");
+  const { EVENTS } = await import("../../lib/star/life/book.ts");
+  type Arc = (typeof BOOK.ALL_ARCS)[number];
+  const copy = () => JSON.parse(JSON.stringify(BOOK.ALL_ARCS)) as Arc[];
+  const by = (b: Arc[], id: string) => b.find((a) => a.id === id)!;
+  const base = validateArcBook(copy(), EVENTS);
+  check(base.length === 0, `the whole book passes the checker with tiers, stages and chains (${base.slice(0, 3).map((p) => `${p.id}: ${p.problem}`).join(" | ")})`);
+  const broken = (why: string, edit: (b: Arc[]) => void, expect: RegExp) => {
+    const b = copy();
+    edit(b);
+    const got = validateArcBook(b, EVENTS).map((p) => p.problem);
+    check(got.some((p) => expect.test(p)), `the checker rejects ${why} (got: ${got.slice(0, 2).join(" | ") || "nothing"})`);
+  };
+  const CHILD = "arc-the-reporters-patch", PARENT = "arc-the-young-reporter";
+  // The chain rules, on a real chain (the young reporter and her patch).
+  if (BOOK.arcById(CHILD)) {
+  broken("a chain waiting on an ending its parent does not have", (b) => { by(b, CHILD).start!.when = ["ended(arc-the-young-reporter:no-such-ending)"]; }, /does not have/);
+  broken("a chain waiting on a story not in the book", (b) => { by(b, CHILD).start!.when = ["ended(arc-no-such-story)"]; }, /not in the book/);
+  broken("a chain waiting on a flag nothing sets", (b) => { by(b, CHILD).start!.when = ["flag:set-by-nobody"]; }, /nothing sets/);
+  broken("a chain waiting on a memory nothing writes", (b) => { by(b, CHILD).start!.when = ["mem(you,'written-by-nobody')"]; }, /nothing writes/);
+  broken("a chain whose parent can never end the way it waits for", (b) => {
+    for (const bt of by(b, PARENT).beats) for (const ch of bt.event.choices) for (const o of ch.outcomes) if (o.arc?.end === "her-first") o.arc.end = "the-press-line";
+  }, /ever ends it that way/);
+  broken("a chain waiting on a story whose game is not built", (b) => { by(b, CHILD).start!.when = ["ended(arc-head-tennis)"]; }, /not built yet/);
+  broken("two stories waiting on each other", (b) => { by(b, PARENT).start!.when = ["ended(arc-the-reporters-patch)"]; }, /comes back to itself/);
+  }
+  broken("a rare story in every career", (b) => { const a = by(b, "arc-the-bins"); delete a.start!.careers; }, /must be in/);
+  broken("a story with no tier in a tiered book", (b) => { delete by(b, "arc-the-bins").start!.tier; }, /has none/);
+  broken("a stage window that names a person", (b) => { by(b, "arc-the-bins").start!.when = ["tabloid.bond>=5"]; }, /nobody is cast/);
+
+  // ended(...): an open record that is over, and the same story packed small.
+  const c0 = career();
+  const life0 = c0.life ?? (await import("../../lib/star/life/director.ts")).lifeOf(c0);
+  const done = { at: 3, club: "", cast: {}, v: {}, k: {}, f: {}, s: {}, done: "her-first" };
+  const lifeA = { ...life0, arcs: { [PARENT]: done } };
+  const ctxA = ctxFor(c0, lifeA, {}, factsOf(c0));
+  check(holds(`ended(${PARENT})`, ctxA) && holds(`ended(${PARENT}:her-first)`, ctxA) && !holds(`ended(${PARENT}:the-press-line)`, ctxA) && !holds("ended(arc-the-bins)", ctxA), "ended(): any ending, one ending, the wrong ending, a story never met");
+  const word = packRun(BOOK.arcById(PARENT)!, done);
+  check(!!word, "a finished story packs into one word");
+  const lifeB = { ...life0, arcs: {}, fin: word! };
+  check(holds(`ended(${PARENT}:her-first)`, ctxFor(c0, lifeB, {}, factsOf(c0))), "ended() reads a story packed small in the save (it keeps its ending for good)");
+  const cI = { ...c0, caps: 4, europeanQualification: "Champions League" } as CareerState;
+  const ctxI = ctxFor(cI, life0, {}, factsOf(cI));
+  check(holds("caps>=3", ctxI) && holds("europe", ctxI) && !holds("europe", ctxFor(c0, life0, {}, factsOf(c0))) && holds("caps<1", ctxFor(c0, life0, {}, factsOf(c0))), "caps and europe read the career");
+
+  // A stage window holds a story back: the statue (a last-seasons story, 32 and over) never starts at 19, even at chance 1.
+  const knees = BOOK.arcById("arc-the-statue")!;
+  const keep = JSON.stringify(knees.start);
+  knees.start = { ...knees.start!, chance: 1 };
+  delete knees.start.careers;
+  const startsBy = (age: number) => {
+    let c = { ...career(), clubAppearances: 20, player: { ...career().player, age } } as CareerState;
+    for (let w = 13; w < 13 + 40; w++) {
+      c = { ...c, week: w % 46 || 1, weekActions: 3 };
+      c = A.arcMoment(c, "arrive:training", { rng, facts: bad }).career;
+      if (A.arcsOf(c)["arc-the-statue"]) return w - 13;
+    }
+    return -1;
+  };
+  check(startsBy(19) === -1, "a last-seasons story never starts at 19 (its stage window)");
+  check(startsBy(33) >= 0, `the same story starts at 33 (week ${startsBy(33)})`);
+  // One big story at a time in a tiered book: with the derby open, the call-up (big) never starts.
+  const callUp = BOOK.arcById("arc-the-call-up")!;
+  const keepCall = JSON.stringify(callUp.start);
+  callUp.start = { ...callUp.start!, chance: 1, when: [] };
+  delete callUp.start.careers;
+  let cb = { ...career(), fame: 60, clubAppearances: 40 } as CareerState;
+  cb = A.arcMoment(cb, "arrive:training", { rng, facts: bad, force: "arc-derby-week" }).career;
+  let bigTwice = false;
+  for (let w = 14; w < 40; w++) {
+    cb = { ...cb, week: w, weekActions: 3 };
+    cb = A.arcMoment(cb, "home:evening", { rng, facts: bad }).career;
+    const open = Object.entries(A.arcsOf(cb)).filter(([id, r]) => !r.done && BOOK.arcById(id)?.size === "big");
+    if (open.length > 1) bigTwice = true;
+  }
+  check(!!A.arcsOf(cb)["arc-derby-week"] && !bigTwice, "a tiered book never has two big stories open at once");
+  knees.start = JSON.parse(keep);
+  callUp.start = JSON.parse(keepCall);
 }
 
 // The people pool (pool.ts; Harry: "surely varying his name/voice across different careers makes

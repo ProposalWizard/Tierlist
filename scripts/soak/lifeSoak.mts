@@ -124,11 +124,13 @@ const doorSnaps: { c: CareerState; facts: Record<string, unknown>; arc: string; 
 let arcsStarted = 0, arcsUnfinished = 0, promisesOpenAtEnd = 0, promisesKept = 0, promisesBroken = 0, maxOpenArcs = 0, arcBytesMax = 0;
 const unfinishedAt = new Map<string, number>();
 const t0 = Date.now();
-let beatTotal = 0;
+let beatTotal = 0, kitTotal = 0;
+const stageKit = new Array(6).fill(0);
 const weekBigBeats = new Set<string>();
 function fired(arc: string, beat: string) {
   beatFires.set(beat, (beatFires.get(beat) ?? 0) + 1);
   beatTotal++;
+  if (!arcById(arc)?.start) kitTotal++;
   if (arcById(arc)?.size === "big") weekBigBeats.add(arc);
 }
 
@@ -171,7 +173,7 @@ function runCareer(n: number, lastName = `Life${n}`): { events: number; lifeByte
         injury: c.injury ? (c.injury.weeksRemaining > 1 ? { ...c.injury, weeksRemaining: c.injury.weeksRemaining - 1 } : null)
           : life2() < 0.022 ? { weeksRemaining: 2 + Math.floor(life2() * 6), note: "soak" } : null,
       };
-      const beatsBefore = beatTotal;
+      const beatsBefore = beatTotal, kitBefore = kitTotal;
       const ds = dropStale(c); c = ds.career; dropped += ds.dropped;
       const now = lifeWeek(c);
       let thisWeek = 0, heavy = 0;
@@ -230,7 +232,7 @@ function runCareer(n: number, lastName = `Life${n}`): { events: number; lifeByte
         const f = { age: c.player.age, lv: level, injured: !!c.injury, newClub: s > 1 && (c.clubAppearances ?? 0) <= 12, captain: !!c.captain, europe: !!c.europeanQualification, caps: (c.caps ?? 0) > 0 };
         const st = stageOf(f.age), lv = levelOf(f.lv);
         const beats = beatTotal - beatsBefore;
-        stageWeeks[st]++; levelWeeks[lv]++; stageBeats[st] += beats; levelBeats[lv] += beats; seenStage[st] = true;
+        stageWeeks[st]++; levelWeeks[lv]++; stageBeats[st] += beats; levelBeats[lv] += beats; seenStage[st] = true; stageKit[st] += kitTotal - kitBefore;
         quiet[st] = beats ? 0 : quiet[st] + 1; longest[st] = Math.max(longest[st], quiet[st]);
         for (const k of Object.keys(situWeeks) as (keyof typeof situWeeks)[]) if (f[k]) situWeeks[k]++;
         const runs = arcsOf(c);
@@ -374,10 +376,10 @@ let reachCareers = 0;
 const reachTries = new Map<string, number>(), reachFor = new Map<string, number>();
 if (process.env.REACH !== "0") {
   mode = "reach";
-  const MAX = Number(process.env.REACH_MAX ?? 160);
+  const MAX = Number(process.env.REACH_MAX ?? 260);
   let k = 0;
   while (reachCareers < MAX) {
-    const need = ARCS.filter((a) => a.start && (reachTries.get(a.id) ?? 0) < 14 && a.ends.some((e) => !reached(`${a.id}:${e.id}`)));
+    const need = ARCS.filter((a) => a.start && (reachTries.get(a.id) ?? 0) < 40 && a.ends.some((e) => !reached(`${a.id}:${e.id}`)));
     if (!need.length) break;
     need.sort((a, b) => (reachTries.get(a.id) ?? 0) - (reachTries.get(b.id) ?? 0));
     const target = need[0];
@@ -393,7 +395,10 @@ if (process.env.REACH !== "0") {
     for (const x of need) if (chainOf(x).every((y) => inCareer(y, { firstName: "Soak", lastName: best, startYear: 2027 }))) reachTries.set(x.id, (reachTries.get(x.id) ?? 0) + 1);
     if (!best) { reachTries.set(target.id, 99); continue; }
     const before = new Set([...reachEnds.keys()]);
-    const r = runCareer(10_000 + reachCareers, best);
+    // A late-career story gets a player who starts at 20 (career numbers 3, 7, 11 ... start at 20),
+    // so its last seasons fit inside the soak's seasons.
+    const late = chainOf(target).some((x) => x.start?.stage === "veteran" || x.start?.stage === "last-seasons");
+    const r = runCareer(late ? 10_003 + reachCareers * 4 : 10_000 + reachCareers, best);
     check(r.lifeBytes < LIFE_BLOCK_LIMIT, `the life block passed ${LIFE_BLOCK_LIMIT / 1000} KB (reach pass)`);
     maxLife = Math.max(maxLife, r.lifeBytes);
     for (const key of reachEnds.keys()) if (!before.has(key) && !arcEnds.has(key)) reachFor.set(key.split(":")[0], (reachFor.get(key.split(":")[0]) ?? 0) + 1);
@@ -449,6 +454,7 @@ const med = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b); return 
 const stageRows = STAGE_NAMES.map((name, i) => ({
   stage: name, careerSeasons: +(stageWeeks[i] / WEEKS).toFixed(1),
   weeksPerBeat: stageBeats[i] ? +(stageWeeks[i] / stageBeats[i]).toFixed(1) : null,
+  weeksPerBeatNoKitMan: stageBeats[i] - stageKit[i] ? +(stageWeeks[i] / (stageBeats[i] - stageKit[i])).toFixed(1) : null,
   startsPerSeason: stageWeeks[i] ? +((stageStarts[i] / stageWeeks[i]) * WEEKS).toFixed(1) : null,
   bigBeatsPerSeason: stageWeeks[i] ? +((stageBigBeats[i] / stageWeeks[i]) * WEEKS).toFixed(2) : null,
   longestQuietMedian: med(stageQuiet[i]), longestQuietMax: Math.max(0, ...stageQuiet[i]),
@@ -459,7 +465,7 @@ const levelRows = LEVEL_NAMES.map((name, i) => ({
   startsPerSeason: levelWeeks[i] ? +((levelStarts[i] / levelWeeks[i]) * WEEKS).toFixed(1) : null,
 }));
 console.log(`\nSTAGES (main ${CAREERS} careers, ${tMain.toFixed(0)} s; by age): weeks between story beats · new stories a season · big-story beats a season · longest quiet spell (median / worst, weeks)`);
-for (const r of stageRows) console.log(`  ${r.stage.padEnd(24)} ${String(r.careerSeasons).padStart(6)} career-seasons · a beat every ${r.weeksPerBeat ?? "-"} wk · ${r.startsPerSeason ?? "-"} new · ${r.bigBeatsPerSeason ?? "-"} big · quiet ${r.longestQuietMedian}/${r.longestQuietMax}`);
+for (const r of stageRows) console.log(`  ${r.stage.padEnd(24)} ${String(r.careerSeasons).padStart(6)} career-seasons · a beat every ${r.weeksPerBeat ?? "-"} wk (${r.weeksPerBeatNoKitMan ?? "-"} without the kit man) · ${r.startsPerSeason ?? "-"} new · ${r.bigBeatsPerSeason ?? "-"} big · quiet ${r.longestQuietMedian}/${r.longestQuietMax}`);
 console.log("LEVELS:");
 for (const r of levelRows) console.log(`  ${r.level.padEnd(26)} ${String(r.careerSeasons).padStart(6)} career-seasons · a beat every ${r.weeksPerBeat ?? "-"} wk · ${r.startsPerSeason ?? "-"} new a season`);
 console.log(`SITUATIONS (share of weeks → share of story starts): ${Object.keys(situWeeks).map((k) => `${k} ${pct(situWeeks[k as keyof typeof situWeeks], weeksTotal)} → ${pct(situStarts[k as keyof typeof situStarts], stageStarts.reduce((a, b) => a + b, 0))}`).join(" · ")}`);

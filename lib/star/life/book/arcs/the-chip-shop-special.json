@@ -13,8 +13,13 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0011,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any",
+  "when": [
+   "divisionLevel>=3"
+  ]
  },
  "cast": [
   {

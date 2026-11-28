@@ -18,8 +18,14 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.3
+  "chance": 0.0171,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any",
+  "when": [
+   "injured",
+   "age<=31"
+  ]
  },
  "cast": [
   {

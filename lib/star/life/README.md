@@ -34,6 +34,37 @@ npx tsx tests/star/lifeSaveFixture.mts  # old saves still load and play the same
 - Pacing on top (`arcs.ts`): at most one new story per moment, three weeks apart
   (`START_GAP_WEEKS`), at most 12 open at once (`MAX_OPEN_ARCS`).
 
+### 0a. Stage, rarity and chains (28 Nov 2026; the map: `docs/plans/STORY_BOOK_MAP.md`)
+
+```json
+"start": { "chance": 0.0076, "careers": 0.22, "tier": "rare", "stage": "veteran", "when": ["age>=29"] }
+```
+
+- `tier` (every story has one): `common` (every career can meet it), `uncommon` (0.45 of careers),
+  `rare` (0.22), `very-rare` (0.08), `legendary` (0.025, about 1 career in 40). The checker holds
+  `careers` inside the tier's band (`STORY_TIERS`, `validateArcs.ts`).
+- `stage` (words for the map) and `when` (the window, checked only when the story would start):
+  first seasons `age<=20, season<=3` · breaking through `age 19-23` · established `age 22-29` ·
+  peak `age 24-31` at the top two levels or famous · veteran `age>=29` · last seasons `age>=32` ·
+  any. Add a level (`divisionLevel>=3`), a situation (`injured`, `europe`, `caps>=1`, `captain`, a
+  new club `clubApps<=10`) when the story needs it. Once started, a story plays on wherever the
+  career goes.
+- `chance` is set from the window: about 2.5 tries' worth over the window's weeks (1.5 for `any`),
+  more when the first beat needs something that only holds some weeks (a defeat, a partner, an
+  injury). The soak shows whether it worked.
+- A tiered book starts its stories in a fair draw each moment (a seeded shuffle, not file order)
+  and never opens a second big story while one is open. A book with no tiers (an old save's
+  replay) plays exactly as before.
+- **Chains.** A story that follows another waits on how it ended: `"when": ["ended(arc-the-van:his-name-on-the-van)"]`
+  (any ending: `ended(arc-the-van)`; two stories colliding: two `ended(...)`). The ending is kept in
+  the save for good (`life.fin`), unlike the story's own values, flags (only the last 12) or
+  memories (6 a person). The same role is the same person, so the reporter in the sequel is the one
+  from the first story. The checker fails if the parent is not in the book, has no such ending,
+  never ends that way, waits for an unbuilt game, or waits on the child; and if a chain reads a
+  flag nothing sets or a memory nothing writes.
+- The soak's reach pass (`scripts/soak/lifeSoak.mts`) plays extra careers whose names put a rare
+  story and its whole chain in, so every ending is still seen in real play.
+
 ### 0b. How a story is kept in the save (`arcPack.ts`)
 
 - While it is open: a full record in `life.arcs[id]` (people, values, clocks, the weeks each

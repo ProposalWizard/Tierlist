@@ -16,7 +16,13 @@
   ]
  },
  "start": {
-  "chance": 0.25
+  "chance": 0.0061,
+  "tier": "common",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
  },
  "cast": [
   {

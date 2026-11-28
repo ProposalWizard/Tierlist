@@ -233,7 +233,10 @@ export function validateArcBook(arcs: LifeArc[], events: LifeEvent[] = []): ArcP
         const p = byId.get(pid);
         if (!p) { out.push({ id: arc.id, problem: `${where}: the condition "${c}" waits on the story "${pid}", which is not in the book` }); continue; }
         if (p.needsActivity) out.push({ id: arc.id, problem: `${where}: waits on "${pid}", which waits for a game not built yet, so it can never end` });
-        for (const e of ends) if (!p.ends.some((x) => x.id === e)) out.push({ id: arc.id, problem: `${where}: waits on "${pid}" ending "${e}", which that story does not have` });
+        for (const e of ends) {
+          if (!p.ends.some((x) => x.id === e)) out.push({ id: arc.id, problem: `${where}: waits on "${pid}" ending "${e}", which that story does not have` });
+          else if (!allOutcomes(p).some(({ o }) => o.arc?.end === e)) out.push({ id: arc.id, problem: `${where}: waits on "${pid}" ending "${e}", but nothing in that story ever ends it that way` });
+        }
         if (where.endsWith("start")) (waitsOn.get(arc.id) ?? waitsOn.set(arc.id, new Set()).get(arc.id)!).add(pid);
       }
     };

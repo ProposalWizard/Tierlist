@@ -1,0 +1,804 @@
+{
+ "id": "arc-grandads-teammate",
+ "title": "Grandad's team-mate",
+ "owner": "dad",
+ "summary": "A letter in old handwriting from a man of eighty-eight who played with your grandad at the wire works in 1961. They got to the county cup final and your grandad missed the penalty. Nobody in the family ever knew. He has a photo, and he has something that was meant for your grandad.",
+ "size": "big",
+ "about": {
+  "who": [
+   "your dad",
+   "your mum",
+   "your grandad's team-mate"
+  ],
+  "tone": [
+   "moving",
+   "family"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.025,
+  "tier": "legendary",
+  "stage": "any",
+  "when": [
+   "age>=19"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "dad",
+   "pick": "dad"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none",
+  "pen": 0
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-medal-home",
+   "title": "The medal home",
+   "text": "Your grandad's runners-up medal from 1961 is on your dad's mantelpiece, next to the photo of the wire works team."
+  },
+  {
+   "id": "the-penalty-for-stan",
+   "title": "One for Stan",
+   "text": "You scored a penalty for your grandad in the old works goal, with his team-mate watching from a camping chair."
+  },
+  {
+   "id": "the-letter-unanswered",
+   "title": "The letter",
+   "text": "You never wrote back. A year later his daughter sent the photo anyway, with a note: he talked about your grandad to the end."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "gtm-1-letter",
+   "title": "A letter in old handwriting",
+   "n": 1,
+   "event": {
+    "id": "arc-gtm-1-letter",
+    "title": "A letter in old handwriting",
+    "category": "life",
+    "place": "club:reception",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A letter at reception, in blue ink, the writing leaning to the right. \"Dear Sir. I played left half with your grandfather Stan at Hallam Wire Works, 1958 to 1963. I am 88 now and I have something of his.\"",
+     "There's a phone number at the bottom, a landline, and a photo of eleven men in heavy shirts, one of them with your dad's eyes."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "dad",
+       "say": [
+        "You ring your dad from the car park. He's quiet for a while. \"Dad played? He sat in that chair for forty years and talked about the darts.\""
+       ],
+       "replies": [
+        {
+         "id": "ring",
+         "label": "\"I'm ringing the number. Come with me.\"",
+         "tone": "brave",
+         "end": "ring"
+        },
+        {
+         "id": "write",
+         "label": "\"I'll write back. Properly.\"",
+         "tone": "calm",
+         "end": "write"
+        },
+        {
+         "id": "later",
+         "label": "\"I'll do it after the season.\"",
+         "tone": "humble",
+         "silent": true,
+         "end": "later"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ring": [
+       {
+        "text": "A man answers on the ninth ring, out of breath from getting to the phone. His name is Wilf. He says Tuesday's good, they're all good now.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "ring"
+         }
+        }
+       }
+      ],
+      "write": [
+       {
+        "text": "You write two sides and post it on the way home. Four days later the phone goes: Wilf, asking if Tuesday's good.",
+        "arc": {
+         "set": {
+          "path": "ring"
+         }
+        }
+       }
+      ],
+      "later": [
+       {
+        "text": "The letter goes in the glovebox with the parking tickets.",
+        "arc": {
+         "set": {
+          "path": "later"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A letter has come for you at the club, in old handwriting"
+  },
+  {
+   "id": "gtm-1b-bungalow",
+   "title": "Wilf's bungalow",
+   "after": {
+    "beat": "gtm-1-letter",
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "requires": [
+    "arc.path=='ring'"
+   ],
+   "event": {
+    "id": "arc-gtm-1b-bungalow",
+    "title": "Wilf's bungalow",
+    "category": "life",
+    "place": "town:bungalow",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A bungalow with a ramp and a gnome in a scarf. Wilf has his best cardigan on and the kettle boiled twice before you got there.",
+     "On the table: the photo, a cup final programme with a coffee ring on it, and a small box."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "dad",
+       "say": [
+        "Wilf taps the programme. \"County Senior Cup, 1961. Two each. Your grandad took the last one and the keeper went the right way. He never kicked a ball after. Walked off and went back to his shift.\"",
+        "Your dad is holding the photo with both hands."
+       ],
+       "replies": [
+        {
+         "id": "box",
+         "label": "\"What's in the box?\"",
+         "tone": "calm",
+         "goto": "b"
+        },
+        {
+         "id": "why",
+         "label": "\"Why did he never say?\"",
+         "tone": "honest",
+         "goto": "c"
+        }
+       ]
+      },
+      "b": {
+       "who": "dad",
+       "say": [
+        "It's a medal, runners-up, on a ribbon gone brown. \"They never gave his out. He'd gone home. I've had it in a drawer sixty years.\""
+       ],
+       "replies": [
+        {
+         "id": "dad",
+         "label": "\"Give it to my dad.\"",
+         "tone": "kind",
+         "end": "dad"
+        },
+        {
+         "id": "keep",
+         "label": "\"Keep it till we come back.\"",
+         "tone": "humble",
+         "end": "keep"
+        }
+       ]
+      },
+      "c": {
+       "who": "dad",
+       "say": [
+        "\"Because he thought he'd let us down, son. And he hadn't. We'd have gone the wrong way too.\""
+       ],
+       "replies": [
+        {
+         "id": "box2",
+         "label": "\"What's in the box, Wilf?\"",
+         "tone": "calm",
+         "goto": "b"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "dad": [
+       {
+        "text": "Wilf puts the medal in your dad's hand and closes his fingers round it. Your dad goes out to the car for a minute.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "got-grandads-medal",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "dad"
+         }
+        }
+       }
+      ],
+      "keep": [
+       {
+        "text": "Wilf nods. \"Then you'll have to come back.\" He's pleased about that.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "keep"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Wilf has asked you and your dad round on a Tuesday"
+  },
+  {
+   "id": "gtm-2-goal",
+   "title": "The works goal",
+   "after": {
+    "beat": "gtm-1-letter",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-gtm-2-goal",
+    "title": "The works goal",
+    "category": "life",
+    "place": "town:works-ground",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The wire works ground is a lorry park now, except for one goal at the far end that nobody ever took down. The net is somebody's old fishing net.",
+     "{if arc.path=='later'}His daughter rang the club in the end. Wilf has been asking if you got the letter.{/if}Wilf is in a camping chair by the post, in a blanket, with a flask."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "dad",
+       "say": [
+        "Your dad puts the ball on a spot he's paced out from the photo. \"Twelve yards. Wilf wants to see one go in. For Stan.\""
+       ],
+       "replies": [
+        {
+         "id": "take",
+         "label": "Take them. All of them.",
+         "tone": "brave",
+         "goto": "g"
+        },
+        {
+         "id": "one",
+         "label": "\"Just the one, Wilf.\"",
+         "tone": "calm",
+         "end": "one"
+        }
+       ]
+      },
+      "g": {
+       "who": "dad",
+       "say": [
+        "Your dad goes in goal in his work boots. Wilf calls the corners like it's 1961."
+       ],
+       "activity": {
+        "mode": "challenge",
+        "name": "Penalties for Stan",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "corners",
+           "balls": 2,
+           "line": "Wilf: \"Low, son. Stan always went high.\""
+          },
+          {
+           "kind": "call-it",
+           "balls": 2
+          },
+          {
+           "kind": "keeper",
+           "balls": 3,
+           "line": "Your dad in goal, arms out like a scarecrow."
+          },
+          {
+           "kind": "double",
+           "line": "The last one. The 1961 one."
+          }
+         ],
+         "keeperSlot": "dad",
+         "lines": {
+          "keeper:saved": "\"{name} went the right way. Like their keeper did.\"",
+          "double:hit": "Wilf is out of the camping chair."
+         }
+        },
+        "caller": {
+         "slot": "dad"
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "technique",
+         "target": 60
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "r-stop"
+        ],
+        [
+         "activity.score>=6",
+         "r-good"
+        ],
+        [
+         "",
+         "r-poor"
+        ]
+       ]
+      },
+      "r-stop": {
+       "who": "dad",
+       "say": [
+        "You stop there and hand the ball back."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Walk off.",
+         "tone": "calm",
+         "end": "stop"
+        }
+       ]
+      },
+      "r-good": {
+       "who": "dad",
+       "say": [
+        "{activity.score} out of ten. Not bad at all."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "good"
+        }
+       ]
+      },
+      "r-poor": {
+       "who": "dad",
+       "say": [
+        "{activity.score} out of ten."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "poor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "The last one goes in low to the keeper's left. Wilf claps with his blanket still on and says, \"That's it. That's the one.\"",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "scored-for-stan",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "pen": 1
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "Your dad saves the last one and looks horrified. Wilf laughs till he coughs. \"Runs in the family, then.\"",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "pen": 0
+         }
+        }
+       }
+      ],
+      "stop": [
+       {
+        "text": "It starts to rain and Wilf's daughter says that's enough. He shakes your hand for a long time in the car.",
+        "arc": {
+         "set": {
+          "pen": 0
+         }
+        }
+       }
+      ],
+      "one": [
+       {
+        "text": "One, low, in off the post. Wilf says it's better than any he saw in sixty years, and he's lying, and it's lovely.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "pen": 1
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on: one goal is left at the old works ground"
+  },
+  {
+   "id": "gtm-3-funeral",
+   "title": "Wilf",
+   "after": {
+    "beat": "gtm-2-goal",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-gtm-3-funeral",
+    "title": "Wilf",
+    "category": "life",
+    "place": "town:church",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Wilf's daughter rings on a Monday. He went in his sleep, in his chair, with the cricket on. The funeral is Thursday at ten, the morning after an away game."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mum",
+       "say": [
+        "Your mum's already found her black coat. \"Your dad wants to go. He wants to know if you can.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "Drive back through the night and go.",
+         "tone": "brave",
+         "end": "go"
+        },
+        {
+         "id": "flowers",
+         "label": "\"I can't. Send flowers from all of us.\"",
+         "tone": "humble",
+         "end": "flowers"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "Eleven people and a photo of a works team on the coffin. His daughter gives you an envelope: the cup final programme, with a coffee ring on it.",
+        "effects": {
+         "energy": -10
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 5
+         },
+         {
+          "slot": "mum",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "funeral"
+         }
+        }
+       },
+       {
+        "if": "arc.pen==1",
+        "text": "You sleep two hours. His daughter says he told the whole home about the lorry park.",
+        "effects": {
+         "energy": -10
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "funeral"
+         }
+        }
+       }
+      ],
+      "flowers": [
+       {
+        "text": "The flowers have a card: FROM STAN'S FAMILY. His daughter writes to say he'd have liked that best.",
+        "arc": {
+         "set": {
+          "mid": "flowers"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Wilf's daughter rings"
+  },
+  {
+   "id": "gtm-4-mantel",
+   "title": "The mantelpiece",
+   "after": {
+    "beat": "gtm-3-funeral",
+    "weeks": [
+     4,
+     10
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-gtm-4-mantel",
+    "title": "The mantelpiece",
+    "category": "life",
+    "place": "home:dads",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your dad has had a frame made: the works team photo, and under it the medal on its brown ribbon.",
+     "{if arc.mid=='keep'}Wilf's daughter brought the box round. He'd written your name on the lid.{/if}"
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "dad",
+       "say": [
+        "\"Where do you want it? It's yours really.\""
+       ],
+       "replies": [
+        {
+         "id": "dads",
+         "label": "\"It goes on your mantelpiece.\"",
+         "tone": "kind",
+         "end": "mantel"
+        },
+        {
+         "id": "club",
+         "label": "\"The club museum. People should see it.\"",
+         "tone": "confident",
+         "end": "museum"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "mantel": [
+       {
+        "if": "!arc.path=='later'",
+        "text": "It goes next to the clock. Your dad straightens it every time he walks past.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-medal-home"
+        }
+       },
+       {
+        "text": "It goes next to the clock. Your dad never says anything about the letter in the glovebox, and he never has to.",
+        "arc": {
+         "end": "the-letter-unanswered"
+        }
+       }
+      ],
+      "museum": [
+       {
+        "if": "arc.pen==1",
+        "text": "The club museum puts it in a case by the door: HALLAM WIRE WORKS, 1961. Under it, in your dad's writing, STAN.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "the-penalty-for-stan"
+        }
+       },
+       {
+        "if": "!arc.path=='later'",
+        "text": "The museum puts it in a case by the door. Your dad goes to see it on match days.",
+        "arc": {
+         "end": "the-medal-home"
+        }
+       },
+       {
+        "text": "The museum puts it in a case by the door, with the letter you never answered beside it.",
+        "arc": {
+         "end": "the-letter-unanswered"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Your dad has something to show you"
+  }
+ ]
+}

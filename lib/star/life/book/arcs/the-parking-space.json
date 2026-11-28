@@ -14,8 +14,14 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0064,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "season>=2",
+   "clubApps<=10"
+  ]
  },
  "cast": [
   {

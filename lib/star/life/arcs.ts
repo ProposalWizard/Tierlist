@@ -323,7 +323,8 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
   // replay, tests/star/lifeSaveFixture.mts) plays exactly as before: first come, in file order.
   const fair = ARCS.some((a) => a.start?.tier);
   const me = `${c.player.firstName}|${c.player.lastName}|${c.player.startYear}`;
-  const order = fair ? shuffled(ARCS, `${now}|${moment}|${me}`) : ARCS;
+  // The kit man (no `start`, never paced) stays first, as in file order.
+  const order = fair ? [...ARCS.filter((a) => !a.start), ...shuffled(ARCS.filter((a) => !!a.start), `${now}|${moment}|${me}`)] : ARCS;
   const bigOpen = fair && Object.entries(lifeOf(c).arcs ?? {}).some(([id, r]) => !r.done && arcById(id)?.size === "big");
   for (const arc of order) {
     life = lifeOf(c);
@@ -348,7 +349,10 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
       const who = arc.start?.careers !== undefined ? `|${c.player.firstName}|${c.player.lastName}|${c.player.startYear}` : "";
       if (opts.force !== arc.id && who && roll01(`${arc.id}${who}`) >= arc.start!.careers!) continue;
       // Pacing: one new story a moment, a few weeks apart, and each has its own odds.
-      if (opts.force !== arc.id && arc.start && (started > 0 || now - lastStart < START_GAP_WEEKS || roll01(`${arc.id}|${now}|${moment}${who}`) >= arc.start.chance)) continue;
+      // In a tiered book every story's weekly roll is the career's own (an old book's stories with no
+      // `careers` rolled the same weeks in every career).
+      const mine = fair && !who ? `|${me}` : who;
+      if (opts.force !== arc.id && arc.start && (started > 0 || now - lastStart < START_GAP_WEEKS || roll01(`${arc.id}|${now}|${moment}${mine}`) >= arc.start.chance)) continue;
       // Its stage window (start.when) and, in a tiered book, one big story at a time.
       if (opts.force !== arc.id && arc.start?.when?.length && !allHold(arc.start.when, arcCtx(c, arc.id, null, opts.facts))) continue;
       if (opts.force !== arc.id && bigOpen && arc.size === "big") continue;

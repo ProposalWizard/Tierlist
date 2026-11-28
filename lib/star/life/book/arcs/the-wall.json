@@ -14,8 +14,13 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0133,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "last-seasons",
+  "when": [
+   "age>=32"
+  ]
  },
  "cast": [
   {
