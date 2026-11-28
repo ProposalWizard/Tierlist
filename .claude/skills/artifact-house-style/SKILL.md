@@ -48,6 +48,12 @@ check origin/main. Media is real game captures only (no AI pictures).
 Replaced the long one-card-per-change page Harry called "too long to look
 through" (28 Nov 2026).
 
+**Named option: "Segmented patch notes" (Harry, 28 Nov 2026, RUL-TEAM-035).**
+The live board is an OPTION for patch notes, not a replacement. Use it when
+asked ("segmented patch notes"), for a round-up of many changes, or when the
+reader needs live / ready, not live / being built at a glance. Normal patch
+notes stay the default. Full rules: `creating-patch-notes` -> SEGMENTED PATCH NOTES.
+
 ## THE STANDARD: `references/tuning-plan-standard.html` (Harry, 14 Oct 2026)
 *"I love the diagrams, this is a much better patch notes and unless stated
 that more is needed this should be standard."* Every page — patch notes,

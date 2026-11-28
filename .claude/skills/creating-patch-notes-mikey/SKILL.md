@@ -48,6 +48,27 @@ Patch notes are how Mikey tells **Harry and Leo** what changed in Knowitball, an
 > in. The site entry (`lib/patchNotesData.ts`) gets it too, as its first
 > section's items. (No Brain note yet.)
 
+## SEGMENTED PATCH NOTES: an option, not the default (Harry, 28 Nov 2026, RUL-TEAM-035)
+
+*"I think this should be the new patch notes for everyone ... actually - not to
+replace patch notes - but as a new option - let's call it Segmented patch notes."*
+Ask for it with the words "segmented patch notes". Normal patch notes stay the
+default unless the person asks for segmented. In Mikey's chats it is still only written when Mikey says "create patch notes" (RUL-TEAM-021); "segmented" changes the shape, never the permission.
+- **When:** a round-up of many changes, or when the reader needs "what is live,
+  what is ready but not live, what is being built" at a glance.
+- **Shape:** the LIVE BOARD (`artifact-house-style/references/live-board-standard.html`,
+  live example https://claude.ai/artifact/RhFAsHCMQJGKo7T5xV5TSk). Counters at
+  the top: LIVE, READY (NOT LIVE), BEING BUILT. A 2-column grid of picture or
+  clip tiles, each with a 3 to 6 word title and one line. Every tile opens a
+  sheet with 2 to 3 pictures, what it does, how we checked it (with a number),
+  and what is still weak. One "Waiting on you" box. About 4 phone screens
+  collapsed.
+- **Rules:** never mark a tile LIVE without checking origin/main. Real game
+  captures only, no AI images.
+- **Shipping:** `scripts/patch-notes/ship.mjs` has no template switch; a
+  segmented page ships like any kept page (`patch-notes/pages/<version>/index.html`
+  plus an entry in `lib/patchNotesData.ts`). No script change was needed.
+
 ## Naming and versions
 
 - Title, exactly: **`Knowitball Patch Notes Mikey vX.Y`** — used for the page `<title>`, the `<h1>`, and the artifact name.
