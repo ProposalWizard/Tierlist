@@ -9,7 +9,9 @@
  *
  * Put it in the place that is loading. It covers the screen (or, with
  * `box`, just its parent) while `loading` is true, and goes the moment it is
- * false: a 200 ms fade that never takes a tap. Which screen shows is picked
+ * false, in the same frame (no fade: a fading screen let the place's tips show
+ * through). While it is up, tutorial tips wait and the match is held
+ * (lib/star/loading/state.ts). Which screen shows is picked
  * per section (lib/star/loading/pick.ts), never the same one twice in a row.
  *
  * Handing on: the place's own file arriving (lazyScreen's waiting cover)
@@ -28,6 +30,7 @@ import { pitchFont } from "@/components/star/ui/pitchFont";
 import { LOAD_MEMORY_KEY, LOAD_VARIANTS, pickVariant, readLast, writeLast, type LoadSection, type LoadVariant } from "@/lib/star/loading/pick";
 import { loadContext, type LoadContext } from "@/lib/star/loading/context";
 import { startLoadWatch, type LoadWatch } from "@/lib/star/loading/progress";
+import { curtainUp } from "@/lib/star/loading/state";
 import Keepie from "./Keepie";
 import Programme from "./Programme";
 import Tunnel from "./Tunnel";
@@ -118,8 +121,9 @@ export default function LoadingCurtain({ section, loading, box, ctx, only, varia
     setMounted(true);
     if (!loading) {
       finishSession(section);
-      const t = window.setTimeout(() => setShown(false), 220);
-      return () => clearTimeout(t);
+      // gone at once, no fade: a fading screen let the place's first tip and HUD show through it
+      setShown(false);
+      return;
     }
     sess.current = openSession(section, three, only, force);
     setShown(true);
@@ -129,6 +133,12 @@ export default function LoadingCurtain({ section, loading, box, ctx, only, varia
     // only/three are fixed per mount on purpose
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, section, force]);
+
+  // while it is up, tips and pop-ups wait and the match is held (lib/star/loading/state.ts)
+  useEffect(() => {
+    if (!loading || !shown) return;
+    return curtainUp();
+  }, [loading, shown]);
 
   // the quiet ring: real files done, four reads a second, only once the wait is long enough to need it
   const [prog, setProg] = useState<number | null>(null);
@@ -148,15 +158,14 @@ export default function LoadingCurtain({ section, loading, box, ctx, only, varia
   // fixed at the render that opened it, so a re-render never restarts an animation
   const style = useMemo(() => ({ "--lc-t": `${-elapsed.toFixed(3)}s` }) as CSSProperties, [s]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!mounted || !shown || !s) return null;
+  if (!mounted || !shown || !loading || !s) return null;
   // Off on this device (localStorage kib-loading-off = 1): for measuring a place's load with and
   // without its screen. A hidden marker stays while it loads, so a timer can still see "ready".
   if (curtainOff()) return loading ? <i hidden data-kib-curtain-off={section} /> : null;
   const v = s.variant;
-  const fresh = sess.current?.fresh ?? false;
   const body = (
     <div
-      className={`lc-root ${pitchFont.variable} ${box ? "lc-box" : ""} ${fresh ? "lc-new" : ""} ${loading ? "" : "lc-out"}`}
+      className={`lc-root ${pitchFont.variable} ${box ? "lc-box" : ""}`}
       style={style}
       data-kib-curtain={v.id}
       data-loading-section={section}

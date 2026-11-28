@@ -92,6 +92,29 @@ for (const f of ["ball", "boot", "tunnel-1", "tunnel-2"]) check(fs.existsSync(pa
   check(Math.abs((progressOf(5, 5, 20, null) ?? 0) - 0.25) < 1e-9, "against last time's count: 5 of 20");
 }
 
+// ── nothing over or under a loading screen (coordinator, 28 Nov 2026: the first-match energy tip
+//    showed over the programme as it faded out) ──
+{
+  const { curtainUp, curtainShowing } = await import("../../lib/star/loading/state");
+  check(!curtainShowing(), "no screen up at the start");
+  const a = curtainUp(), b = curtainUp();
+  check(curtainShowing(), "a screen is up");
+  a(); a();
+  check(curtainShowing(), "one of two lifted (twice): the other still up");
+  b();
+  check(!curtainShowing(), "both lifted: nothing up");
+  const src = (f: string) => fs.readFileSync(path.join(root, f), "utf8");
+  const tour = src("components/star/PointerTour.tsx");
+  check(/useCurtainUp\(\)/.test(tour) && /\|\| loadingUp\) return null/.test(tour), "a tutorial tip waits while a loading screen is up");
+  const m3 = src("components/star/Match3DLayer.tsx");
+  check(/hold: settingsOpen \|\| hold \|\| curtainOn/.test(m3), "the match is held (clock, first tip) while its programme is up");
+  const cur = src("components/star/loading/LoadingCurtain.tsx"), css = src("components/star/loading/curtain.css");
+  check(/return curtainUp\(\)/.test(cur), "the loading screen says it is up");
+  check(!/lc-out|lc-new/.test(cur + css), "no fade in or out (a fading screen shows what is under it)");
+  check(/curtainUp\(\)/.test(src("app/star-dev/page.tsx")), "the first load's opening says it is up");
+  check(/\.lc-root \{[^}]*background: #[0-9a-f]{6}/.test(css), "the screen has an opaque background");
+}
+
 if (problems.length) {
   console.error(`loadingScreens: ${problems.length} problem(s)\n  ` + problems.join("\n  "));
   process.exit(1);

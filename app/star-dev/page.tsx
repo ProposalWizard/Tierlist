@@ -160,6 +160,7 @@ import LoadingCurtain from "@/components/star/loading/LoadingCurtain";
 import BootScreen from "@/components/star/loading/BootScreen";
 import type { LoadSection } from "@/lib/star/loading/pick";
 import { setLoadContext } from "@/lib/star/loading/context";
+import { curtainUp } from "@/lib/star/loading/state";
 import { programmeFor } from "@/lib/star/loading/programme";
 /** A lazy screen's waiting cover: its section's loading screen, from the tap (the place carries the same one on). */
 const loadingCover = (section: LoadSection) => () => <LoadingCurtain section={section} loading />;
@@ -5822,20 +5823,17 @@ function bootDone() {
   requestAnimationFrame(() => window.dispatchEvent(new Event(BOOT_DONE)));
 }
 function Boot({ ui }: { ui: string | null }) {
-  const [phase, setPhase] = useState<"up" | "leaving" | "gone">(booted ? "gone" : "up");
+  const [up, setUp] = useState(!booted);
   useEffect(() => {
     if (ui === "old") bootDone(); // the Old UI has its own loading
-    const lift = () => setPhase((p) => (p === "up" ? "leaving" : p));
+    const lift = () => setUp(false);
     if (booted) lift();
     window.addEventListener(BOOT_DONE, lift);
     return () => window.removeEventListener(BOOT_DONE, lift);
   }, [ui]);
-  useEffect(() => {
-    if (phase !== "leaving") return;
-    const t = window.setTimeout(() => setPhase("gone"), 220);
-    return () => clearTimeout(t);
-  }, [phase]);
-  return phase === "gone" ? null : <BootScreen leaving={phase === "leaving"} />;
+  // while it is up, tips wait (lib/star/loading/state.ts); it goes in one frame, no fade to show through
+  useEffect(() => (up ? curtainUp() : undefined), [up]);
+  return up ? <BootScreen /> : null;
 }
 
 export default function StarDevPage() {

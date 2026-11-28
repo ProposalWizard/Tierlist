@@ -16,8 +16,7 @@
   transition: opacity 200ms ease-out; user-select: none; -webkit-user-select: none; touch-action: manipulation;
 }
 .lc-root.lc-box { position: absolute; z-index: 45; border-radius: inherit; }
-.lc-root.lc-new { animation: lc-in 160ms ease-out 90ms both; }
-.lc-root.lc-out { opacity: 0 !important; pointer-events: none; animation: none; }
+/* no fade in or out: opaque from its first frame to its last, so nothing under it ever shows through */
 @keyframes lc-in { from { opacity: 0; } to { opacity: 1; } }
 .lc-root * { box-sizing: border-box; }
 .lc-root img { max-width: none; }

@@ -35,11 +35,11 @@ function Word() {
   );
 }
 
-export default function BootScreen({ leaving, show }: { leaving?: boolean; /** The test page: only this opening, no pick. */ show?: string }) {
+export default function BootScreen({ show }: { /** The test page: only this opening, no pick. */ show?: string }) {
   const keep = (id: string) => !show || show === id;
   const on = (id: string): CSSProperties | undefined => (show === id ? { display: "block" } : undefined);
   return (
-    <div className={`lc-root ${pitchFont.variable} ${leaving ? "lc-out" : ""}`} data-kib-curtain="first-load" data-loading-section="first-load" role="status" aria-busy={!leaving} suppressHydrationWarning>
+    <div className={`lc-root ${pitchFont.variable}`} data-kib-curtain="first-load" data-loading-section="first-load" role="status" aria-busy suppressHydrationWarning>
       {!show && <script dangerouslySetInnerHTML={{ __html: PICK }} />}
       {keep("boot-floodlights") && <div className="lc-boot-v" data-v="boot-floodlights" style={on("boot-floodlights")}>
         <div className="lc-bt-bg" style={{ backgroundImage: "url(/home/tall-night.webp)" }} />
