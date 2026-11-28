@@ -48,6 +48,8 @@ export interface CompoundEnv {
   kit: { shirt: string; trim: string };
   club?: string;
   sky: CompoundSky;
+  /** The garden's textured trees (garden3d/cardTrees.ts cardMaterial on its atlas): Harry's pick, 28 Nov. Null: the low-poly ones. */
+  cardMaterial?: any;
 }
 
 export interface CompoundOut {
@@ -254,7 +256,56 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
   };
 
   // ── light and sky (the garden's day / sunset / night) ──
-  scene.background = tex(skyCanvas(sky.top, sky.mid, sky.low));
+  scene.background = new THREE.Color(sky.low);
+  // ── the garden's sky (garden3d/scene.ts "The sky"): a dome, the sun (or moon), clouds, stars at night ──
+  // they stay round the camera (skyG follows it in update), so the far sky is never cut off
+  const skyG = new THREE.Group(); skyG.name = "sky";
+  scene.add(skyG);
+  // Low (held to 60 draws): the sky's picture as the background, no dome, sun or clouds (three draws saved)
+  if (tier === "low") scene.background = tex(skyCanvas(sky.top, sky.mid, sky.low));
+  else {
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(240, 24, 16), basic({ map: tex(skyCanvas(sky.top, sky.mid, sky.low)), side: THREE.BackSide, fog: false, depthWrite: false }));
+    dome.renderOrder = -1; dome.frustumCulled = false;
+    skyG.add(dome);
+    disposables.push(dome.geometry);
+    const sd = new THREE.Vector3(sky.dir[0], sky.dir[1], sky.dir[2]).normalize();
+    const spM = new THREE.SpriteMaterial({ map: tex(glowCanvas(night ? "210,225,255" : env.sky === "sunset" ? "255,170,100" : "255,245,215")), fog: false, depthWrite: false, transparent: true });
+    disposables.push(spM);
+    const sprite = new THREE.Sprite(spM);
+    sprite.scale.setScalar(night ? 18 : 44);
+    sprite.position.copy(sd).multiplyScalar(210);
+    sprite.frustumCulled = false;
+    skyG.add(sprite);
+    if (night) {
+      const n = 450, pos = new Float32Array(n * 3);
+      let q = 9; const rr = () => { q = (q * 16807) % 2147483647; return q / 2147483647; };
+      for (let i = 0; i < n; i++) { const a = rr() * Math.PI * 2, e = 0.12 + rr() * 1.3; pos[i * 3] = Math.cos(a) * Math.cos(e) * 220; pos[i * 3 + 1] = Math.sin(e) * 220; pos[i * 3 + 2] = Math.sin(a) * Math.cos(e) * 220; }
+      const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      const pm = new THREE.PointsMaterial({ color: "#ffffff", size: 1.1, fog: false, sizeAttenuation: true }); disposables.push(g, pm);
+      const st = new THREE.Points(g, pm); st.frustumCulled = false; skyG.add(st);
+    }
+    // clouds: puffs as the garden's, all joined into one draw
+    const puffs: any[] = [];
+    let q = 31; const rr = () => { q = (q * 16807) % 2147483647; return q / 2147483647; };
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2 + 0.3, R = 150, y = 55 + (i % 3) * 9;
+      const cx = Math.cos(a) * R, cz = Math.sin(a) * R;
+      for (let k = 0; k < 4; k++) {
+        const g = new THREE.IcosahedronGeometry(1, 1); // 80 triangles a puff (the garden's 320 was 11k for the sky)
+        g.scale((2.4 + rr() * 1.6) * 3.2, (1.3 + rr() * 0.6) * 3.2, 1.8 * 3.2);
+        g.translate((k * 2.1 - 3) * 3.2, rr() * 0.7 * 3.2, rr() * 1.2 * 3.2);
+        g.rotateY(-a + Math.PI / 2);
+        g.translate(cx, y, cz);
+        puffs.push(g);
+      }
+    }
+    const cloudM = mat(env.sky === "sunset" ? "#ffe0c4" : "#ffffff", { transparent: true, opacity: night ? 0.18 : 0.9, emissive: env.sky === "sunset" ? "#ffb98a" : "#ffffff", emissiveIntensity: night ? 0 : 0.35, fog: false });
+    const clouds = new THREE.Mesh(joinGeos(THREE, puffs), cloudM);
+    clouds.frustumCulled = false; clouds.castShadow = false;
+    skyG.add(clouds);
+    puffs.forEach((g) => g.dispose());
+    disposables.push(clouds.geometry);
+  }
   scene.fog = new THREE.Fog(sky.fog, 70, 300);
   // far rolling hills all round (the garden's skyline, at the compound's size): hazy, one draw
   {
@@ -654,9 +705,14 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
     // bushes along the building's front and the hut
     for (let x = -18; x <= 18; x += 1.6) if (Math.abs(x) > 6.2 && DOORS.every((d) => Math.abs(x - d.x) > 2.2)) bushes.push({ x, z: bd.z1 + 0.5, s: 0.55 + r() * 0.2, seed: Math.floor(r() * 9999) });
     for (const x of [-15, -18.5, 15, 18.5]) bushes.push({ x, z: 22.3, s: 0.8, seed: Math.floor(r() * 9999) });
+    // textured bushes along the hedges behind the pitches (the hedge line reads as planting, not a green wall)
+    if (env.cardMaterial) {
+      for (let x = 26; x <= 92; x += 3.2 + r() * 1.4) bushes.push({ x, z: bz0 + 1.0, s: 0.9 + r() * 0.35, seed: Math.floor(r() * 9999), tint: "#b2d68c" });
+      if (tier !== "low") for (let z = -62; z <= 20; z += 3.4 + r() * 1.4) bushes.push({ x: bx1 - 1.0, z, s: 0.9 + r() * 0.35, seed: Math.floor(r() * 9999), tint: "#b2d68c" });
+    }
   }
   const occluders: Occluder[] = [{ x0: bd.x0, x1: bd.x1, y0: 0, y1: bd.h, z0: bd.z0, z1: bd.z1 }];
-  const plants = buildPlantZones(THREE, trees, bushes, { style: TREE_STYLE, occluders });
+  const plants = buildPlantZones(THREE, trees, bushes, env.cardMaterial ? { style: "cards", cardMaterial: env.cardMaterial, occluders } : { style: TREE_STYLE, occluders });
   scene.add(plants.group);
 
   // ── the smart objects: the doors, the people's spots, the forecourt bench ──
@@ -676,7 +732,8 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
 
   // ── PAINT: the zones' plain colours joined into one vertex-coloured draw per zone (and per shadow / no shadow) ──
   {
-    const PAINT = new Set<any>([M.white, M.clad, M.dark, M.metal, M.stone, M.shirt, M.trim, M.kerb, M.seat, M.soil, M.line]);
+    // Low also paints the window glass and the lit insides (their shine and glow give way to a flat colour: two draws a zone)
+    const PAINT = new Set<any>([M.white, M.clad, M.dark, M.metal, M.stone, M.shirt, M.trim, M.kerb, M.seat, M.soil, M.line, ...(tier === "low" ? [M.glass, M.inside] : [])]);
     const paintM = mat("#ffffff", { vertexColors: true, roughness: 0.7, metalness: 0.08 });
     scene.updateMatrixWorld(true);
     for (const grp of [...Object.values(zone), open]) {
@@ -685,7 +742,7 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
       grp.traverse((m: any) => {
         if (!m.isMesh || m.isInstancedMesh || !PAINT.has(m.material)) return;
         const g = (m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone()).applyMatrix4(m.matrixWorld);
-        const key = m.castShadow ? "cast" : "flat";
+        const key = "all"; // one draw a zone: the thin flat pieces casting a shadow too costs nothing worth a second draw
         const b = bins[key] ?? (bins[key] = { pos: [], nor: [], col: [] });
         const c = m.material.color;
         const P = g.attributes.position.array, N = g.attributes.normal.array;
@@ -716,6 +773,7 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
   const behind = new Set<string>();
   let tickN = 0;
   const update = (camera: any) => {
+    skyG.position.set(camera.position.x, 0, camera.position.z);
     plants.update(camera, tier);
     if (tickN++ % 4 !== 0) return;
     const e = camera.position, eye = [e.x, e.y, e.z];
@@ -750,7 +808,7 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
     camBox: [bx0 - 2, bx1 + 2, bz0 - 2, bz1 + 4],
     sun,
     update, hidden, follow, tick,
-    moving: [flag],
+    moving: [flag, skyG],
     carPark: zone.carpark,
     stats: () => ({ zones: ZONES.length, plantZones: plants.zones, behind: Array.from(behind), trees: trees.length, bushes: bushes.length, pitchBoxes: C.pitches.map(pitchBox) }),
     dispose: () => { plants.dispose(); for (const d of disposables) d.dispose?.(); zoneMeshes.clear(); },
@@ -763,11 +821,16 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
  * plain numbers, turned to lie along z, sized to its real length (CAR_LENGTH), standing on the ground.
  * A tint multiplies the model's own paint (white = as it is). Front row nose in, back row nose out.
  */
-export async function addParkedCars(THREE: any, parent: any, glb: (url: string) => Promise<any>): Promise<{ draws: number; triangles: number }> {
+/** A parked car nearer the camera than this (m) draws all its triangles; farther, the coarse set. */
+export const CAR_NEAR: Record<Quality3d, number> = { low: 9, medium: 10, high: 18 };
+export async function addParkedCars(THREE: any, parent: any, glb: (url: string) => Promise<any>, tier: Quality3d = "medium"): Promise<{ draws: number; triangles: number; update: (camera: any) => void }> {
   const { CAR_LOD, CAR_LENGTH } = await import("../home3d/outfits");
   const { carPaint } = await import("../home3d/roomBuild");
   const used = Array.from(new Set(PARKED.map((p) => p.model))) as CarModel[];
   let draws = 0, triangles = 0;
+  /** Each model's near and far sets: a car within CAR_NEAR m of the camera draws all its triangles, a farther one
+   *  the coarse set (two instanced draws a model sharing one buffer; who is in which is sorted every few frames). */
+  const sets: { list: typeof PARKED; near: any; far: any; mats: any[] }[] = [];
   await Promise.all(used.map(async (model) => {
     const g = await glb(CAR_LOD[model]);
     let mesh: any = null;
@@ -800,25 +863,45 @@ export async function addParkedCars(THREE: any, parent: any, glb: (url: string) 
     geo.setIndex([...full, ...far]);
     geo.setDrawRange(0, full.length);
     const list = PARKED.filter((p) => p.model === model);
-    const im = new THREE.InstancedMesh(geo, matl, list.length);
-    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), p3 = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1), col = new THREE.Color();
-    list.forEach((p, i) => {
-      const [x, z] = bayAt(p.bay, p.row);
-      q.setFromAxisAngle(up, p.row === "N" ? Math.PI : 0);
-      m4.compose(p3.set(x, 0, z), q, one);
-      im.setMatrixAt(i, m4);
-      im.setColorAt(i, col.set(p.tint));
-    });
-    if (im.instanceColor) im.instanceColor.needsUpdate = true;
-    im.castShadow = true; im.receiveShadow = true;
-    im.computeBoundingSphere();
-    im.name = `car-${model}`;
-    const cpx = (COMPOUND.carPark.x0 + COMPOUND.carPark.x1) / 2, cpz = (COMPOUND.carPark.z0 + COMPOUND.carPark.z1) / 2;
-    const pick = (camera: any) => { const d = camera?.position ? Math.hypot(camera.position.x - cpx, camera.position.z - cpz) : 0; if (d > 26) geo.setDrawRange(full.length, far.length); else geo.setDrawRange(0, full.length); };
-    im.onBeforeRender = (_r: any, _s: any, camera: any) => pick(camera);
-    im.onBeforeShadow = () => geo.setDrawRange(0, full.length);
-    parent.add(im);
-    draws++; triangles += full.length / 3 * list.length;
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), p3 = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1);
+    const mats = list.map((p) => { const [x, z] = bayAt(p.bay, p.row); q.setFromAxisAngle(up, p.row === "N" ? Math.PI : 0); return m4.compose(p3.set(x, 0, z), q, one).clone(); });
+    const mk = (range: [number, number], shadow: boolean, tag: string) => {
+      const im = new THREE.InstancedMesh(geo, matl, list.length);
+      im.count = 0;
+      im.castShadow = shadow; im.receiveShadow = true;
+      im.name = `car-${model}-${tag}`;
+      // the shared buffer: this set's range just before it is drawn (and the full car in the shadow)
+      im.onBeforeRender = () => geo.setDrawRange(range[0], range[1]);
+      im.onBeforeShadow = () => geo.setDrawRange(0, full.length);
+      parent.add(im);
+      return im;
+    };
+    const near = mk([0, full.length], true, "near"), farM = mk([full.length, far.length], true, "far");
+    sets.push({ list, near, far: farM, mats });
+    draws += 2; triangles += full.length / 3 * list.length;
   }).map((pr) => pr.catch((e: unknown) => console.error("compound: car", e))));
-  return { draws, triangles: Math.round(triangles) };
+  const col = new THREE.Color();
+  let tick = 0, lastKey = "";
+  const update = (camera: any) => {
+    if (tick++ % 6 !== 0 || !camera) return;
+    const cx = camera.position.x, cz = camera.position.z;
+    let key = "";
+    const split = sets.map((s) => s.list.map((p) => { const [x, z] = bayAt(p.bay, p.row); const n = Math.hypot(x - cx, z - cz) < CAR_NEAR[tier]; key += n ? 1 : 0; return n; }));
+    if (key === lastKey) return;
+    lastKey = key;
+    sets.forEach((s, k) => {
+      let a = 0, b = 0;
+      s.list.forEach((p, i) => {
+        const im = split[k][i] ? s.near : s.far;
+        const j = split[k][i] ? a++ : b++;
+        im.setMatrixAt(j, s.mats[i]); im.setColorAt(j, col.set(p.tint));
+      });
+      for (const [im, n] of [[s.near, a], [s.far, b]] as [any, number][]) {
+        im.count = n; im.visible = n > 0;
+        im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true;
+        im.computeBoundingSphere();
+      }
+    });
+  };
+  return { draws, triangles: Math.round(triangles), update };
 }

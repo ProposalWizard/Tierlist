@@ -314,4 +314,29 @@ export interface CompoundMeasure { view: string; tier: "high" | "medium" | "low"
  * name, the page's thread slowed 4×; each viewpoint the worst of 8 ways round, standing, and the worst frame while
  * walking (the sun's shadow redrawn). Re-measure after any change to the compound and paste the script's line here.
  */
-export const COMPOUND_MEASURED: CompoundMeasure[] = [];
+export const COMPOUND_MEASURED: CompoundMeasure[] = [
+  {"view":  "car park", "tier":  "medium", "draws":  57, "triangles":  71894, "walkDraws":  37, "walkTriangles":  44825},
+  {"view":  "gate", "tier":  "medium", "draws":  50, "triangles":  58712, "walkDraws":  48, "walkTriangles":  53071},
+  {"view":  "forecourt", "tier":  "medium", "draws":  38, "triangles":  55176, "walkDraws":  39, "walkTriangles":  62228},
+  {"view":  "gym door", "tier":  "medium", "draws":  40, "triangles":  48983, "walkDraws":  25, "walkTriangles":  28176},
+  {"view":  "stand", "tier":  "medium", "draws":  49, "triangles":  60978, "walkDraws":  25, "walkTriangles":  34144},
+  {"view":  "pitch A", "tier":  "medium", "draws":  42, "triangles":  73006, "walkDraws":  24, "walkTriangles":  47852},
+  {"view":  "pitch B", "tier":  "medium", "draws":  63, "triangles":  61064, "walkDraws":  24, "walkTriangles":  33117},
+  {"view":  "pitch C", "tier":  "medium", "draws":  53, "triangles":  56198, "walkDraws":  31, "walkTriangles":  36696},
+  {"view":  "car park", "tier":  "low", "draws":  51, "triangles":  48642, "walkDraws":  33, "walkTriangles":  37355},
+  {"view":  "gate", "tier":  "low", "draws":  44, "triangles":  48554, "walkDraws":  44, "walkTriangles":  36249},
+  {"view":  "forecourt", "tier":  "low", "draws":  34, "triangles":  30236, "walkDraws":  34, "walkTriangles":  35648},
+  {"view":  "gym door", "tier":  "low", "draws":  36, "triangles":  32892, "walkDraws":  21, "walkTriangles":  21775},
+  {"view":  "stand", "tier":  "low", "draws":  42, "triangles":  41370, "walkDraws":  22, "walkTriangles":  20948},
+  {"view":  "pitch A", "tier":  "low", "draws":  39, "triangles":  55260, "walkDraws":  18, "walkTriangles":  19930},
+  {"view":  "pitch B", "tier":  "low", "draws":  55, "triangles":  45203, "walkDraws":  25, "walkTriangles":  29834},
+  {"view":  "pitch C", "tier":  "low", "draws":  28, "triangles":  28105, "walkDraws":  24, "walkTriangles":  24185},
+  {"view":  "car park", "tier":  "high", "draws":  66, "triangles":  140259, "walkDraws":  38, "walkTriangles":  73058},
+  {"view":  "gate", "tier":  "high", "draws":  55, "triangles":  94322, "walkDraws":  61, "walkTriangles":  109270},
+  {"view":  "forecourt", "tier":  "high", "draws":  41, "triangles":  86106, "walkDraws":  41, "walkTriangles":  92140},
+  {"view":  "gym door", "tier":  "high", "draws":  45, "triangles":  103726, "walkDraws":  27, "walkTriangles":  71960},
+  {"view":  "stand", "tier":  "high", "draws":  51, "triangles":  106876, "walkDraws":  25, "walkTriangles":  50660},
+  {"view":  "pitch A", "tier":  "high", "draws":  40, "triangles":  107858, "walkDraws":  25, "walkTriangles":  79800},
+  {"view":  "pitch B", "tier":  "high", "draws":  72, "triangles":  108526, "walkDraws":  32, "walkTriangles":  76558},
+  {"view":  "pitch C", "tier":  "high", "draws":  41, "triangles":  81410, "walkDraws":  35, "walkTriangles":  73540},
+];

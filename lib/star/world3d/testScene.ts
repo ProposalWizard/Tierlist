@@ -221,6 +221,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
 
   let gymRoom: import("./gymPlace").GymRoomOut | null = null;
   let compound: import("./compoundPlace").CompoundOut | null = null;
+  let carsLod: { update: (camera: any) => void } | null = null;
   const CP = place === "compound" ? await import("./compoundPlan") : null;
   if (place === "house") built = await buildHouse();
   else if (place === "gym") built = await buildGym();
@@ -243,7 +244,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const { addParkedCars } = await import("./compoundPlace");
     const carLoader = new GLTFLoader();
     await withMeshopt(carLoader);
-    await addParkedCars(THREE, c.carPark, (u) => carLoader.loadAsync(u));
+    carsLod = await addParkedCars(THREE, c.carPark, (u) => carLoader.loadAsync(u), tier);
     sun = c.sun;
     const n = shadowSizeFor(prof, 2048) || 1024;
     sun.shadow.mapSize.set(n, n);
@@ -584,13 +585,14 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   }
   const people = [you, ...npcs];
   // the compound: a far man draws coarse triangles (./farBodies.ts), an off-screen one none (three3d/cullPeople.ts)
-  const FAR_M: Record<Quality3d, number> = { low: 9, medium: 13, high: 22 };
+  const FAR_M: Record<Quality3d, number> = { low: 9, medium: 11, high: 22 };
   let farB: import("./farBodies").FarBodies | null = null;
   if (CP) {
     const { farBodies } = await import("./farBodies");
     const { cullSkinned } = await import("../three3d/cullPeople");
     for (const n of people) cullSkinned(THREE, n.root);
-    farB = farBodies(THREE, npcs.map((n) => ({ root: n.root, where: () => n.bodyXZ() })), { far: FAR_M[tier] });
+    // the coarse set's cube: 1/22 of a man's height on Low, 1/32 Medium, 1/46 High
+    farB = farBodies(THREE, npcs.map((n) => ({ root: n.root, where: () => n.bodyXZ() })), { far: FAR_M[tier], cellOfHeight: tier === "low" ? 22 : tier === "medium" ? 32 : 46 });
   }
   const blobs = new Map<Npc, any>(people.map((n) => [n, blob(0.9, n === you ? 0.8 : 0.7)]));
   const holdCan = (n: Npc, on: boolean) => {
@@ -1127,7 +1129,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     });
     for (const n of npcs) if (!n.root.visible) n.update(dt, world, false);
     if (place === "gym") for (const n of npcs) if (n.root.visible) mateGymFrame(n, dt);
-    blobs.forEach((b, n) => { b.visible = n.root.visible; const [x, z] = n.bodyXZ(); b.position.set(x, 0.012, z); });
+    // the soft shadow under each person (the compound: not past 22 m from the camera, where it is a few pixels and still a draw)
+    blobs.forEach((b, n) => { const [x, z] = n.bodyXZ(); b.visible = n.root.visible && (!CP || Math.hypot(x - camera.position.x, z - camera.position.z) < 22); b.position.set(x, 0.012, z); });
     faces.forEach((f, n) => { if (n.root.visible) f.rig.set({ blink: FACE.blinkAt(simT, f.seed) }); });
     for (const h of hairs) h.update?.(dt);
     tvScreen?.tick(dt);
@@ -1137,6 +1140,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     if (compound) {
       compound.update(camera);
       farB?.update(camera.position);
+      carsLod?.update(camera);
       compound.tick(dt);
       if (compound.follow(you.x, you.z)) renderer.shadowMap.needsUpdate = true;
       stepFade(dt);
