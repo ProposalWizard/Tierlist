@@ -25,7 +25,7 @@ if (shots) fs.mkdirSync(shots, { recursive: true });
 // the same list as compoundPlan.ts COMPOUND_VIEWS (kept in step by hand: the test compares the names)
 // [name, x, z, what the still looks at (x, z)]
 const VIEWS = [
-  ["car park", -2.5, 31.2, 0, 10], ["gate", 0, 22, 0, 5], ["forecourt", -6, 13, -6, 5], ["gym door", -11, 10.9, -11, 5],
+  ["car park", -3.4, 34.6, 0, 10], ["gate", 0, 22, 0, 5], ["forecourt", -6, 13, -6, 5], ["gym door", -11, 10.9, -11, 5],
   ["stand", 22.4, 4, 62, 1], ["pitch A", 44, 2, 62, -6], ["pitch B", 50, -40, 70, -42], ["pitch C", 0, -30, 0, -42],
 ].filter(([n]) => !only || only.split(",").includes(n));
 const YAWS = [0, 1, 2, 3, 4, 5, 6, 7].map((k) => (k * Math.PI) / 4);

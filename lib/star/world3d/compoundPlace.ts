@@ -21,6 +21,7 @@ import { buildPlantZones, hiddenBehind, type TreeAt, type BushAt, type Occluder 
 import { TREE_STYLE } from "../garden3d/lowPolyTrees";
 import type { Quality3d } from "../three3d/quality";
 import type { XZ } from "../tapWalk";
+import { blobCanvas } from "../shop3d/textures";
 
 export type CompoundSky = "day" | "sunset" | "night";
 /** The garden's three sky looks (garden3d/scene.ts SKY, the same colours), for the compound's open ground. */
@@ -162,6 +163,68 @@ function roadCanvas(): HTMLCanvasElement {
   return c;
 }
 /** Paving slabs, light concrete, 512² tiling (one slab = 1/4 of the tile). */
+/**
+ * What you see through the ground floor's glass, all in one picture (one draw): reception (0 to 0.5 across),
+ * the gym (0.5 to 0.75), the canteen (0.75 to 1). Drawn, lit from inside, a little dim so the glass reads.
+ */
+export const INTERIOR = { reception: [0, 0.5], gym: [0.5, 0.75], canteen: [0.75, 1] } as const;
+function interiorCanvas(shirt: string, trim: string, club: string): HTMLCanvasElement {
+  const [c, g] = cv(2048, 512);
+  const room = (x0: number, w: number, wall: string, floor: string, ceil: string) => {
+    let gr = g.createLinearGradient(0, 0, 0, 512);
+    gr.addColorStop(0, ceil); gr.addColorStop(0.16, ceil); gr.addColorStop(0.17, wall); gr.addColorStop(0.7, wall); gr.addColorStop(0.71, floor); gr.addColorStop(1, floor);
+    g.fillStyle = gr; g.fillRect(x0, 0, w, 512);
+    // ceiling downlights and a soft pool of light under each
+    for (let x = x0 + 60; x < x0 + w - 30; x += 150) {
+      gr = g.createRadialGradient(x, 70, 2, x, 70, 120); gr.addColorStop(0, "rgba(255,236,200,0.55)"); gr.addColorStop(1, "rgba(255,236,200,0)");
+      g.fillStyle = gr; g.fillRect(x - 120, 0, 240, 360);
+      g.fillStyle = "#fff6dc"; g.beginPath(); g.ellipse(x, 74, 16, 5, 0, 0, Math.PI * 2); g.fill();
+    }
+  };
+  // reception: a timber feature wall with the crest, the desk in the club's colour, a plant, a sofa
+  room(0, 1024, "#8a6a4a", "#3a3c40", "#d9d4c8");
+  for (let x = 0; x < 1024; x += 18) { g.fillStyle = x % 36 ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.05)"; g.fillRect(x, 88, 9, 272); }
+  drawCrest(g, 512, 190, 0.95, shirt, trim, club);
+  g.fillStyle = "#f1efe9"; g.fillRect(330, 300, 364, 92); g.fillStyle = shirt; g.fillRect(330, 300, 364, 16);
+  g.fillStyle = "rgba(0,0,0,0.25)"; g.fillRect(330, 392, 364, 10);
+  g.fillStyle = "#2a2d33"; g.fillRect(90, 330, 170, 50); g.fillRect(90, 300, 26, 80); g.fillRect(234, 300, 26, 80);
+  g.fillStyle = "#3f6e3a"; for (let k = 0; k < 9; k++) { g.beginPath(); g.ellipse(860 + Math.sin(k) * 30, 250 + k * 8, 40, 16, k, 0, Math.PI * 2); g.fill(); }
+  g.fillStyle = "#5a3d2a"; g.fillRect(840, 330, 44, 60);
+  // the gym: dark walls, rubber floor, a mirror wall, racks and plates in the club's colour
+  room(1024, 512, "#2c2f35", "#1c1d20", "#c9ccd0");
+  g.fillStyle = "#9fb3c2"; g.fillRect(1040, 120, 480, 150); g.fillStyle = "rgba(255,255,255,0.18)"; g.fillRect(1040, 120, 480, 30);
+  g.fillStyle = shirt; g.fillRect(1024, 268, 512, 10);
+  for (let k = 0; k < 4; k++) { const x = 1080 + k * 120; g.fillStyle = "#111215"; g.fillRect(x, 170, 10, 190); g.fillRect(x + 60, 170, 10, 190); g.fillRect(x, 230, 70, 8); g.fillStyle = shirt; g.beginPath(); g.arc(x - 4, 234, 22, 0, Math.PI * 2); g.arc(x + 74, 234, 22, 0, Math.PI * 2); g.fill(); }
+  g.fillStyle = "#33363c"; g.fillRect(1100, 390, 160, 30); g.fillRect(1320, 380, 150, 40);
+  // the canteen: warm light, long tables, chairs, pendant lamps, the counter
+  room(1536, 512, "#d8c7a8", "#8d6f52", "#efe7d8");
+  g.fillStyle = "#6b5440"; g.fillRect(1550, 250, 480, 30);
+  g.fillStyle = "#c9a77d"; for (let k = 0; k < 3; k++) g.fillRect(1570 + k * 160, 360, 130, 16);
+  g.fillStyle = "#2b2b2e"; for (let k = 0; k < 6; k++) g.fillRect(1580 + k * 78, 376, 10, 50);
+  g.strokeStyle = "#2b2b2e"; g.lineWidth = 3; for (let k = 0; k < 3; k++) { const x = 1635 + k * 160; g.beginPath(); g.moveTo(x, 80); g.lineTo(x, 200); g.stroke(); g.fillStyle = shirt; g.beginPath(); g.arc(x, 210, 24, Math.PI, 0); g.fill(); g.fillStyle = "rgba(255,230,180,0.6)"; g.fillRect(x - 22, 210, 44, 6); }
+  return c;
+}
+/** Vertical timber boards (the ground floor's cladding), 512² tiling: about 1.2 m of boards a tile. */
+function timberCanvas(): HTMLCanvasElement {
+  const [c, g] = cv(512, 512);
+  let q = 5; const r = () => { q = (q * 16807) % 2147483647; return q / 2147483647; };
+  for (let x = 0; x < 512; x += 32) {
+    const v = 0.85 + r() * 0.25;
+    g.fillStyle = `rgb(${Math.round(150 * v)},${Math.round(108 * v)},${Math.round(72 * v)})`; g.fillRect(x, 0, 32, 512);
+    for (let k = 0; k < 14; k++) { g.fillStyle = `rgba(70,45,25,${0.08 + r() * 0.1})`; g.fillRect(x + r() * 30, 0, 1 + r() * 2, 512); }
+    g.fillStyle = "rgba(30,20,12,0.55)"; g.fillRect(x + 30, 0, 2, 512);
+  }
+  return c;
+}
+/** White render in large panels with fine joints (the first floor), 512² tiling: one tile = 3 m × 1.5 m. */
+function renderCanvas(): HTMLCanvasElement {
+  const [c, g] = cv(512, 256);
+  g.fillStyle = "#ecebe6"; g.fillRect(0, 0, 512, 256);
+  let q = 9; const r = () => { q = (q * 16807) % 2147483647; return q / 2147483647; };
+  for (let k = 0; k < 2500; k++) { const v = 225 + Math.floor(r() * 20); g.fillStyle = `rgba(${v},${v},${v - 4},0.35)`; g.fillRect(r() * 512, r() * 256, 2, 2); }
+  g.fillStyle = "rgba(120,120,118,0.55)"; g.fillRect(0, 0, 512, 2); g.fillRect(0, 0, 2, 256); g.fillRect(256, 0, 2, 256);
+  return c;
+}
 function slabCanvas(): HTMLCanvasElement {
   const [c, g] = cv(256, 256);
   g.fillStyle = "#cfcbc2"; g.fillRect(0, 0, 256, 256);
@@ -361,7 +424,17 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
     dark: mat("#2c3038", { roughness: 0.55, metalness: 0.3 }),
     // upper windows: a sky-blue reflective glass; the ground floor's doors and fronts: see-through, lit inside
     glass: mat("#7f9db5", { roughness: 0.1, metalness: 0.5, envMapIntensity: 1.4, emissive: "#ffd9a0", emissiveIntensity: night ? 0.45 : 0.0 }),
-    see: mat("#9fc0d6", { roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.28, depthWrite: false }),
+    // the ground floor's glass: tinted, a soft reflection of the sky over what is inside
+    see: mat("#1f2c38", { roughness: 0.04, metalness: 0.85, envMapIntensity: 1.6, transparent: true, opacity: 0.38, depthWrite: false }),
+    glassDark: mat("#4a6074", { roughness: 0.06, metalness: 0.75, envMapIntensity: 1.7 }),
+    timber: mat("#ffffff", { map: tex(timberCanvas(), [1, 1]), roughness: 0.8 }),
+    render: mat("#ffffff", { map: tex(renderCanvas(), [1, 1]), roughness: 0.9 }),
+    steel: mat("#c9cdd2", { roughness: 0.3, metalness: 0.8 }),
+    // Low (held to 60 draws): the timber, the render and the plinth as plain colours, joined into the zone's one paint draw
+    woodFlat: mat("#8e6646", { roughness: 0.8 }),
+    renderFlat: mat("#e9e8e3", { roughness: 0.9 }),
+    brickFlat: mat("#8e4a35", { roughness: 0.9 }),
+    interior: (() => { const m = basic({ map: tex(interiorCanvas(kit.shirt, kit.trim, club)) }); m.color.setScalar(night ? 1 : 0.82); return m; })(),
     metal: mat("#1d2026", { roughness: 0.45, metalness: 0.6 }),
     stone: mat("#d9d3c6", { roughness: 0.85 }),
     shirt: mat(kit.shirt, { roughness: 0.6 }),
@@ -510,60 +583,97 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
   disposables.push(flagGeo);
   let flagT = 0;
 
-  // ── THE MAIN BUILDING (its front is the show; the back is plain) ──
+  // ── THE MAIN BUILDING (its front is the show; the back is plain): a modern club training centre ──
+  // timber-clad ground floor on a brick plinth, tinted glass with the rooms lit behind it (one atlas picture),
+  // white rendered first floor in panels with a ribbon of dark glass, a club-colour band, a deep canopy
   const bd = C.building;
   {
     const Bz = zone.building;
     const w = bd.x1 - bd.x0, d = bd.z1 - bd.z0, cx = (bd.x0 + bd.x1) / 2, cz = (bd.z0 + bd.z1) / 2;
     const F = bd.z1; // the front face
-    // ground floor: dark cladding; first floor: white render; a club-colour band between; a parapet
-    box(Bz, M.clad, w, 3.6, d, cx, 1.8, cz);
-    box(Bz, M.white, w, bd.h - 3.6, d, cx, 3.6 + (bd.h - 3.6) / 2, cz);
+    // a box whose front face shows `m` with the picture repeated (rw, rh) times: the cladding tiles at its real size
+    const clad = (m: any, ww: number, hh: number, dd: number, x: number, y: number, z: number, rw: number, rh: number) => {
+      const g = new THREE.BoxGeometry(ww, hh, dd);
+      const uv = g.attributes.uv; for (let k = 0; k < uv.count; k++) uv.setXY(k, uv.getX(k) * rw, uv.getY(k) * rh);
+      const me = new THREE.Mesh(g, m); me.position.set(x, y, z); me.castShadow = true; me.receiveShadow = true; Bz.add(me); return me;
+    };
+    const pic = (part: keyof typeof INTERIOR, ww: number, hh: number, x: number, y: number, z: number, u0 = 0, u1 = 1) => {
+      // a lit room behind the glass: a slice [u0, u1] of the part's picture
+      const [a0, a1] = INTERIOR[part];
+      const g = new THREE.PlaneGeometry(ww, hh);
+      const uv = g.attributes.uv; for (let k = 0; k < uv.count; k++) uv.setX(k, a0 + (a1 - a0) * (u0 + (u1 - u0) * uv.getX(k)));
+      const me = new THREE.Mesh(g, M.interior); me.position.set(x, y, z); me.castShadow = false; me.receiveShadow = false; Bz.add(me); return me;
+    };
+    // the body: timber ground floor, rendered first floor, the club band, a parapet
+    const low = tier === "low";
+    clad(low ? M.woodFlat : M.timber, w, 3.6, d, cx, 1.8, cz, w / 1.2, 3);
+    clad(low ? M.renderFlat : M.render, w, bd.h - 3.6, d, cx, 3.6 + (bd.h - 3.6) / 2, cz, w / 3, (bd.h - 3.6) / 1.5);
     box(Bz, M.shirt, w + 0.08, 0.36, d + 0.08, cx, 3.62, cz, { cast: false });
-    box(Bz, M.clad, w + 0.3, 0.4, d + 0.3, cx, bd.h + 0.2, cz);
-    // the first floor's long ribbon windows (front and sides)
-    box(Bz, M.glass, w - 3, 1.5, 0.06, cx, 5.4, F + 0.02, { cast: false });
-    for (let k = 1; k < 12; k++) box(Bz, M.white, 0.12, 1.5, 0.1, bd.x0 + 1.5 + (k * (w - 3)) / 12, 5.4, F + 0.04, { cast: false });
-    // the ground floor's cladding fins (a modern front, not a flat slab)
-    for (let k = 0; k <= 16; k++) { const x = bd.x0 + 0.4 + (k * (w - 0.8)) / 16; if (Math.abs(x) > 5.4 && DOORS.every((d) => Math.abs(x - d.x) > 1.3) && Math.abs(Math.abs(x) - 11) > 1.85) box(Bz, M.white, 0.14, 3.4, 0.16, x, 1.7, F + 0.06, { cast: false }); }
-    for (const sx of [bd.x0 - 0.02, bd.x1 + 0.02]) box(Bz, M.glass, 0.06, 1.5, d - 4, sx, 5.4, cz, { cast: false });
-    // reception: a glass front in the middle, lit inside, under a canopy on two posts
-    box(Bz, M.inside, 9.6, 3.1, 0.04, 0, 1.6, F + 0.01, { cast: false });
-    box(Bz, M.see, 10, 3.2, 0.06, 0, 1.6, F + 0.05, { cast: false });
-    // inside reception: the desk and a wall in the club's colour, seen through the glass
-    box(Bz, M.shirt, 9.4, 0.5, 0.05, 0, 2.6, F - 0.02, { cast: false });
-    box(Bz, M.white, 3.6, 1.1, 0.7, 0, 0.55, F - 0.6, { cast: false });
-    for (let k = 0; k <= 5; k++) box(Bz, M.metal, 0.08, 3.2, 0.1, -5 + k * 2, 1.6, F + 0.08, { cast: false });
+    box(Bz, M.dark, w + 0.3, 0.4, d + 0.3, cx, bd.h + 0.2, cz);
+    // the first floor's ribbon of dark glass with white mullions (front and sides)
+    box(Bz, M.glassDark, w - 3, 1.5, 0.06, cx, 5.4, F + 0.02, { cast: false });
+    for (let k = 0; k <= 12; k++) box(Bz, M.white, 0.12, 1.6, 0.12, bd.x0 + 1.5 + (k * (w - 3)) / 12, 5.4, F + 0.05, { cast: false });
+    box(Bz, M.white, w - 2.8, 0.1, 0.18, cx, 4.6, F + 0.06, { cast: false });
+    for (const sx of [bd.x0 - 0.02, bd.x1 + 0.02]) box(Bz, M.glassDark, 0.06, 1.5, d - 4, sx, 5.4, cz, { cast: false });
+    // the openings on the ground floor: reception's glass wall, the three doors, the gym and canteen windows
+    const openings: [number, number][] = [[-5.1, 5.1], ...DOORS.filter((dr) => dr.id !== "door-reception").map((dr): [number, number] => [dr.x - 1.25, dr.x + 1.25])];
+    const wins: { x: number; part: keyof typeof INTERIOR; u: [number, number] }[] = [
+      { x: -14.6, part: "gym", u: [0, 0.5] }, { x: -7.4, part: "gym", u: [0.5, 1] },
+      { x: 7.4, part: "canteen", u: [0, 0.5] }, { x: 14.6, part: "canteen", u: [0.5, 1] },
+    ];
+    // a brick plinth under the timber wherever there is no door or glass wall (0.7 m, standing 8 cm proud)
+    {
+      const cuts = [...openings].sort((p, q) => p[0] - q[0]);
+      let x: number = bd.x0;
+      for (const [o0, o1] of [...cuts, [bd.x1, bd.x1] as [number, number]]) {
+        if (o0 - x > 0.2) clad(low ? M.brickFlat : M.brick, o0 - x, 0.7, 0.16, (x + o0) / 2, 0.35, F + 0.08, (o0 - x) / 1.6, 0.6);
+        x = Math.max(x, o1);
+      }
+    }
+    // windows: a steel frame, the lit room, tinted glass, a sill
+    for (const wn of wins) {
+      pic(wn.part, 3.2, 1.8, wn.x, 1.75, F + 0.03, wn.u[0], wn.u[1]);
+      box(Bz, M.see, 3.3, 1.9, 0.04, wn.x, 1.75, F + 0.09, { cast: false });
+      for (const sx of [-1, 1]) box(Bz, M.dark, 0.08, 2.0, 0.14, wn.x + sx * 1.66, 1.75, F + 0.08, { cast: false });
+      for (const y of [0.76, 2.74]) box(Bz, M.dark, 3.4, 0.08, 0.14, wn.x, y, F + 0.08, { cast: false });
+      box(Bz, M.dark, 0.05, 1.9, 0.08, wn.x, 1.75, F + 0.1, { cast: false });
+      box(Bz, M.stone, 3.5, 0.06, 0.26, wn.x, 0.72, F + 0.14, { cast: false });
+    }
+    // reception: a full-height glass wall onto the lobby, dark steel mullions and transom, a pair of glass doors
+    pic("reception", 10, 3.2, 0, 1.6, F + 0.03);
+    box(Bz, M.see, 10.2, 3.3, 0.05, 0, 1.65, F + 0.1, { cast: false });
+    for (let k = 0; k <= 5; k++) box(Bz, M.dark, 0.09, 3.3, 0.16, -5 + k * 2, 1.65, F + 0.1, { cast: false });
+    for (const y of [0.04, 2.5, 3.28]) box(Bz, M.dark, 10.2, 0.08, 0.16, 0, y, F + 0.1, { cast: false });
+    for (const sx of [-1, 1]) box(Bz, M.steel, 0.04, 1.0, 0.05, sx * 0.18, 1.1, F + 0.2, { cast: false }); // the door pulls
+    // the deep canopy on two posts, its soffit lit, a soft shade on the paving under it
     box(Bz, M.white, 13, 0.3, 4.2, 0, 3.35, F + 2.1);
-    for (const sx of [-6, 6]) box(Bz, M.white, 0.26, 3.2, 0.26, sx, 1.6, F + 3.8);
+    box(Bz, M.lit, 11.5, 0.02, 0.12, 0, 3.19, F + 2.6, { cast: false });
+    for (const sx of [-6, 6]) box(Bz, M.dark, 0.22, 3.2, 0.22, sx, 1.6, F + 3.8);
+    const shadeM = basic({ map: tex(blobCanvas()), transparent: true, depthWrite: false, opacity: night ? 0.25 : 0.42, color: "#000000" });
+    if (!low) flat(Bz, shadeM, 14, 6, 0, 0.011, F + 2.2);
     // the sign over the canopy (lit): the crest and the club's name
     const signM = basic({ map: tex(buildingSign(club, kit.shirt, kit.trim)), toneMapped: false });
     panel(Bz, signM, 10.4, 1.62, 0, 4.42 + 0.02, F + 0.07);
-    // the three doors: a frame, glass, the light inside, a plate over each
+    // the side doors (gym, canteen): a recessed steel frame, two glass leaves onto the lit room, push bars, a canopy
     for (const dr of DOORS) {
       const wide = dr.id === "door-reception";
       if (!wide) {
-        box(Bz, M.inside, bd.doorW, bd.doorH, 0.04, dr.x, bd.doorH / 2, F + 0.02, { cast: false });
-        for (const sx of [-1, 1]) box(Bz, M.metal, 0.12, bd.doorH + 0.1, 0.14, dr.x + sx * (bd.doorW / 2 + 0.06), (bd.doorH + 0.1) / 2, F + 0.07, { cast: false });
-        box(Bz, M.metal, bd.doorW + 0.24, 0.12, 0.14, dr.x, bd.doorH + 0.06, F + 0.07, { cast: false });
-        box(Bz, M.see, bd.doorW - 0.2, bd.doorH - 0.2, 0.04, dr.x, bd.doorH / 2, F + 0.12, { cast: false });
-        box(Bz, M.metal, 0.05, bd.doorH - 0.2, 0.05, dr.x, bd.doorH / 2, F + 0.14, { cast: false });
-        // a small canopy over each side door
+        pic(dr.id === "door-gym" ? "gym" : "canteen", bd.doorW, bd.doorH, dr.x, bd.doorH / 2, F + 0.03, 0.3, 0.7);
+        box(Bz, M.see, bd.doorW, bd.doorH, 0.04, dr.x, bd.doorH / 2, F + 0.1, { cast: false });
+        for (const sx of [-1, 1]) box(Bz, M.dark, 0.14, bd.doorH + 0.14, 0.2, dr.x + sx * (bd.doorW / 2 + 0.07), (bd.doorH + 0.14) / 2, F + 0.09, { cast: false });
+        box(Bz, M.dark, bd.doorW + 0.28, 0.14, 0.2, dr.x, bd.doorH + 0.07, F + 0.09, { cast: false });
+        box(Bz, M.dark, 0.06, bd.doorH, 0.12, dr.x, bd.doorH / 2, F + 0.11, { cast: false });
+        for (const sx of [-1, 1]) {
+          box(Bz, M.steel, 0.035, 0.9, 0.035, dr.x + sx * 0.16, 1.05, F + 0.2, { cast: false });
+          for (const y of [0.62, 1.48]) box(Bz, M.steel, 0.03, 0.03, 0.08, dr.x + sx * 0.16, y, F + 0.16, { cast: false });
+        }
+        // a canopy over each side door, and its shade
         box(Bz, M.white, bd.doorW + 1, 0.16, 1.2, dr.x, bd.doorH + 0.45, F + 0.6);
+        if (!low) flat(Bz, shadeM, bd.doorW + 1.6, 2.2, dr.x, 0.011, F + 0.9);
       }
       platePanel(Bz, dr.sign, wide ? 2.6 : 2.0, wide ? 0.56 : 0.44, dr.x, wide ? 2.95 : bd.doorH + 0.22, F + (wide ? 4.22 : 0.15));
       // the doormat
-      flat(Bz, M.clad, bd.doorW + 0.4, 1.2, dr.x, 0.012, F + 0.75);
-    }
-    // a gym window either side of the gym door: you can see it's lit inside
-    for (const sx of [-1, 1]) {
-      box(Bz, M.inside, 3.2, 1.7, 0.04, -11 + sx * 3.6, 1.75, F + 0.01, { cast: false });
-      box(Bz, M.see, 3.4, 1.9, 0.06, -11 + sx * 3.6, 1.75, F + 0.05, { cast: false });
-      // the gym through its windows: a mirror wall stripe and the racks' dark shapes
-      box(Bz, M.shirt, 3.2, 0.18, 0.05, -11 + sx * 3.6, 2.3, F - 0.01, { cast: false });
-      for (let k = 0; k < 3; k++) box(Bz, M.dark, 0.18, 1.2, 0.05, -11 + sx * 3.6 - 1 + k, 1.2, F - 0.02, { cast: false });
-      box(Bz, M.inside, 3.2, 1.7, 0.04, 11 + sx * 3.6, 1.75, F + 0.01, { cast: false });
-      box(Bz, M.see, 3.4, 1.9, 0.06, 11 + sx * 3.6, 1.75, F + 0.05, { cast: false });
+      flat(Bz, M.dark, bd.doorW + 0.4, 1.2, dr.x, 0.012, F + 0.75);
     }
     // the kit room door on the east end
     box(Bz, M.metal, 0.1, 2.3, 1.6, bd.x1 + 0.05, 1.15, 3.5, { cast: false });
@@ -733,7 +843,7 @@ export function buildCompound(env: CompoundEnv): CompoundOut {
   // ── PAINT: the zones' plain colours joined into one vertex-coloured draw per zone (and per shadow / no shadow) ──
   {
     // Low also paints the window glass and the lit insides (their shine and glow give way to a flat colour: two draws a zone)
-    const PAINT = new Set<any>([M.white, M.clad, M.dark, M.metal, M.stone, M.shirt, M.trim, M.kerb, M.seat, M.soil, M.line, ...(tier === "low" ? [M.glass, M.inside] : [])]);
+    const PAINT = new Set<any>([M.white, M.clad, M.dark, M.metal, M.stone, M.shirt, M.trim, M.kerb, M.seat, M.soil, M.line, M.steel, M.woodFlat, M.renderFlat, M.brickFlat, ...(tier === "low" ? [M.glass, M.inside, M.glassDark] : [])]);
     const paintM = mat("#ffffff", { vertexColors: true, roughness: 0.7, metalness: 0.08 });
     scene.updateMatrixWorld(true);
     for (const grp of [...Object.values(zone), open]) {
@@ -839,7 +949,7 @@ export async function addParkedCars(THREE: any, parent: any, glb: (url: string) 
     if (!mesh) return;
     // baked to plain floats in world space (the file's positions are packed small: KHR_mesh_quantization)
     const src = mesh.geometry;
-    const geo = new THREE.BufferGeometry();
+    let geo = new THREE.BufferGeometry();
     const n = src.attributes.position.count;
     const pos = new Float32Array(n * 3), v = new THREE.Vector3();
     for (let i = 0; i < n; i++) { v.fromBufferAttribute(src.attributes.position, i).applyMatrix4(mesh.matrixWorld); pos.set([v.x, v.y, v.z], i * 3); }
@@ -853,12 +963,14 @@ export async function addParkedCars(THREE: any, parent: any, glb: (url: string) 
     const s = (CAR_LENGTH[model] ?? 4.4) / Math.max(1e-3, bb.max.z - bb.min.z);
     geo.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
     geo.scale(s, s, s);
-    geo.computeVertexNormals();
+    // smooth shading with hard edges only at real creases (as the house's drive cars: the generated models' own
+    // normals read dented and crumpled close up, 28 Nov)
+    { const { toCreasedNormals }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js"); const was = geo; geo = toCreasedNormals(was, 0.75); if (geo !== was) was.dispose(); }
     geo.computeBoundingBox(); geo.computeBoundingSphere();
     const matl = carPaint(mesh.material, null);
     // far: the same car from fewer triangles (farBodies.ts clustering), drawn when the camera is 26 m+ from the car park
     const { clusterTriangles } = await import("./farBodies");
-    const full = geo.index ? (Array.from(geo.index.array) as number[]) : Array.from({ length: n }, (_, i) => i);
+    const full = geo.index ? (Array.from(geo.index.array) as number[]) : Array.from({ length: geo.attributes.position.count }, (_, i) => i);
     const far = clusterTriangles(geo.attributes.position, full, (CAR_LENGTH[model] ?? 4.4) / 22, undefined, geo.attributes.uv);
     geo.setIndex([...full, ...far]);
     geo.setDrawRange(0, full.length);

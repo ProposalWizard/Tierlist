@@ -22,11 +22,15 @@ export function clusterTriangles(
   /** The texture's island a vertex is on (its uv, coarsely): vertices on two sides of a seam never merge,
    *  or the shirt's picture smears across the cut (seen 28 Nov: dark streaks on far shirts). */
   uv?: { getX(i: number): number; getY(i: number): number },
+  /** How finely the texture is split (cells per 1 of uv): finer keeps the kit's colours clean, coarser cuts more. */
+  uvCells = 20,
+  /** Filled with each kept corner's own (original) vertex, alongside the returned stand-in vertices. */
+  origOut?: number[],
 ): number[] {
   const rep = new Int32Array(pos.count);
   const seen = new Map<string, number>();
   for (let i = 0; i < pos.count; i++) {
-    const k = `${Math.floor(pos.getX(i) / cell)},${Math.floor(pos.getY(i) / cell)},${Math.floor(pos.getZ(i) / cell)},${bone ? bone(i) : 0}${uv ? `,${Math.round(uv.getX(i) * 20)},${Math.round(uv.getY(i) * 20)}` : ""}`;
+    const k = `${Math.floor(pos.getX(i) / cell)},${Math.floor(pos.getY(i) / cell)},${Math.floor(pos.getZ(i) / cell)},${bone ? bone(i) : 0}${uv ? `,${Math.floor(uv.getX(i) * uvCells)},${Math.floor(uv.getY(i) * uvCells)}` : ""}`;
     const r = seen.get(k);
     if (r === undefined) { seen.set(k, i); rep[i] = i; } else rep[i] = r;
   }
@@ -35,13 +39,15 @@ export function clusterTriangles(
   const out: number[] = [];
   const tris = new Set<string>();
   for (let t = 0; t + 2 < n; t += 3) {
-    const a = rep[at(t)], b = rep[at(t + 1)], c = rep[at(t + 2)];
+    const oa = at(t), ob = at(t + 1), oc = at(t + 2);
+    const a = rep[oa], b = rep[ob], c = rep[oc];
     if (a === b || b === c || a === c) continue;
     // the same triangle once (whichever way round it was listed, keeping the first winding)
     const s = [a, b, c].sort((x, y) => x - y).join(",");
     if (tris.has(s)) continue;
     tris.add(s);
     out.push(a, b, c);
+    origOut?.push(oa, ob, oc);
   }
   return out;
 }
@@ -74,11 +80,46 @@ function prepare(T: any, g: any, cellOfHeight: number): { full: number; far: num
   const h = Math.max(bb.max.y - bb.min.y, bb.max.x - bb.min.x, bb.max.z - bb.min.z) || 1;
   const idx = g.index ? (g.index.array as ArrayLike<number>) : null;
   const fullCount = idx ? idx.length : pos.count;
-  const far = clusterTriangles(pos, idx, h / cellOfHeight, mainBone(g), g.attributes.uv);
+  // Each coarse corner is a NEW vertex: the stand-in's place, normal and skin, but its OWN texture point. With
+  // index-only clustering a corner took the stand-in's texture point too, and the kit (painted into the body's
+  // picture) smeared: green and dark blotches on far shirts (28 Nov). Island seams still never merge (uv key).
+  const orig: number[] = [];
+  const cell = h / cellOfHeight;
+  // no texture key any more (each corner keeps its own texture point); the bone key keeps limbs apart
+  const far = clusterTriangles(pos, idx, cell, mainBone(g), undefined, 20, orig);
   if (far.length > fullCount * 0.7) { prepared.set(g, null); return null; } // not worth a second range
-  const all = new Uint32Array(fullCount + far.length);
+  const names = Object.keys(g.attributes);
+  const morph = g.morphAttributes ?? {};
+  const all0 = [...names.map((k) => g.attributes[k]), ...(Object.values(morph).flat() as any[])];
+  if (all0.some((x: any) => x.isInterleavedBufferAttribute)) { console.warn("farBodies: interleaved, skipped"); prepared.set(g, null); return null; }
+  const n0 = pos.count, m = far.length;
+  /** A copy of `a` with the m new corners on the end (texture points from each corner's own vertex). */
+  const grow = (a: any, own: boolean) => {
+    const sz = a.itemSize;
+    const Arr = a.array.constructor as any;
+    const arr = new Arr((n0 + m) * sz);
+    arr.set(a.array, 0);
+    for (let j = 0; j < m; j++) { const src = own ? orig[j] : far[j]; for (let c = 0; c < sz; c++) arr[(n0 + j) * sz + c] = a.array[src * sz + c]; }
+    const out = new T.BufferAttribute(arr, sz, a.normalized);
+    out.name = a.name;
+    return out;
+  };
+  for (const k of names) g.setAttribute(k, grow(g.attributes[k], k.startsWith("uv")));
+  // every corner in one little cube stands at the cube's MEAN point, whichever bone it hangs off: two stand-ins in
+  // one cube (a shoulder's arm side and its chest side) meet exactly, so the coarse body has no cracks (the cracks
+  // showed the grass and the inside of the body through the shirt: "green and dark blotches", 28 Nov)
+  {
+    const sum = new Map<string, [number, number, number, number]>();
+    const key = (i: number) => `${Math.floor(pos.getX(i) / cell)},${Math.floor(pos.getY(i) / cell)},${Math.floor(pos.getZ(i) / cell)}`;
+    for (let i = 0; i < n0; i++) { const k = key(i); const e = sum.get(k) ?? [0, 0, 0, 0]; e[0] += pos.getX(i); e[1] += pos.getY(i); e[2] += pos.getZ(i); e[3]++; sum.set(k, e); }
+    const P = g.attributes.position;
+    for (let j = 0; j < m; j++) { const e = sum.get(key(far[j]))!; P.setXYZ(n0 + j, e[0] / e[3], e[1] / e[3], e[2] / e[3]); }
+    P.needsUpdate = true;
+  }
+  for (const k of Object.keys(morph)) morph[k] = morph[k].map((x: any) => grow(x, false));
+  const all = new Uint32Array(fullCount + m);
   if (idx) all.set(idx as any, 0); else for (let i = 0; i < fullCount; i++) all[i] = i;
-  all.set(far, fullCount);
+  for (let j = 0; j < m; j++) all[fullCount + j] = n0 + j;
   g.setIndex(new T.BufferAttribute(all, 1));
   g.setDrawRange(0, fullCount);
   const r = { full: fullCount, far: far.length };

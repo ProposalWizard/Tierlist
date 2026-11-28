@@ -12,9 +12,10 @@
 import { buildGrid, findPath, freeAt, type XZ } from "../../lib/star/tapWalk";
 import {
   COMPOUND, DOORS, DOOR_SOON, SPOTS, PEOPLE, ROUTINES, FORECOURT_BENCH, COMPOUND_RATE, STUCK_MAX_S, COMPOUND_BUDGET, COMPOUND_VIEWS,
-  COMPOUND_MEASURED, compoundSolids, doorFront, goalsOf, zoneAt, ZONES, CONES, POLES, MANNEQUINS,
+  COMPOUND_MEASURED, compoundSolids, doorFront, goalsOf, zoneAt, ZONES, CONES, POLES, MANNEQUINS, WALK_GAP_SIDE, WALK_GAP_FRONT,
 } from "../../lib/star/world3d/compoundPlan";
 import { clusterTriangles } from "../../lib/star/world3d/farBodies";
+import { planRoutine } from "../../lib/star/world3d/routine";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -111,6 +112,67 @@ for (const p of PEOPLE) {
     check(len !== null, `${p.slot}: ${name} can be walked`);
     if (len !== null) check(len / NPC_WALK <= STUCK_MAX_S, `${p.slot}: ${name} takes at most ${STUCK_MAX_S} s (${(len / NPC_WALK).toFixed(0)} s)`);
   }
+}
+
+// ── the walk-spacing rule: walk every routine for 5 minutes (each person at his walking speed along the
+//    path the place's walk grid gives, standing at each spot until the step ends) and sample every 0.2 s:
+//    no two people ever closer than WALK_GAP_SIDE (55 cm) ──
+{
+  const SEC = (min: number) => (min * 60) / COMPOUND_RATE;
+  const START = 9 * 60 + 40;
+  type Leg = { t0: number; t1: number; path: XZ[]; len: number };
+  const tracks = PEOPLE.map((pp, i) => {
+    const r = ROUTINES[pp.routine];
+    const plan = planRoutine(pp.slot, r as any, START, START + 600, 20261128 + i);
+    const legs: Leg[] = [];
+    const seat: XZ = [FORECOURT_BENCH.at[0] + 0.3, FORECOURT_BENCH.at[1] + 0.66];
+    let at: XZ = pp.routine === "compound-bench" ? seat : pp.start, t = 0;
+    for (const s of plan.steps) {
+      const to = s.do.target === FORECOURT_BENCH.id ? seat : where(s.do.target)!;
+      const begin = Math.max(t, SEC(s.at - START));
+      const p = [at, ...(findPath(grid, at, to) ?? [to])];
+      p[p.length - 1] = to;
+      let len = 0; for (let k = 1; k < p.length; k++) len += Math.hypot(p[k][0] - p[k - 1][0], p[k][1] - p[k - 1][1]);
+      const arrive = begin + len / NPC_WALK;
+      legs.push({ t0: begin, t1: arrive, path: p, len });
+      t = Math.max(arrive + 1, SEC(s.until - START));
+      at = to;
+      if (t > 320) break;
+    }
+    return { slot: pp.slot, legs, rest: at };
+  });
+  const posAt = (tr: (typeof tracks)[number], t: number): XZ => {
+    let last: XZ = tr.legs[0]?.path[0] ?? tr.rest;
+    for (const l of tr.legs) {
+      if (t < l.t0) return last;
+      if (t <= l.t1) {
+        let d = l.len * (l.t1 > l.t0 ? (t - l.t0) / (l.t1 - l.t0) : 1);
+        for (let k = 1; k < l.path.length; k++) {
+          const a = l.path[k - 1], b = l.path[k], s = Math.hypot(b[0] - a[0], b[1] - a[1]);
+          if (d <= s) return [a[0] + ((b[0] - a[0]) * d) / (s || 1), a[1] + ((b[1] - a[1]) * d) / (s || 1)];
+          d -= s;
+        }
+      }
+      last = l.path[l.path.length - 1];
+    }
+    return last;
+  };
+  let worst = { d: Infinity, t: 0, a: "", b: "" };
+  for (let t = 0; t <= 300; t += 0.2) {
+    const ps = tracks.map((tr) => posAt(tr, t));
+    for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) {
+      const d = Math.hypot(ps[i][0] - ps[j][0], ps[i][1] - ps[j][1]);
+      if (d < worst.d) worst = { d, t, a: tracks[i].slot, b: tracks[j].slot };
+    }
+  }
+  check(worst.d >= WALK_GAP_SIDE, `walk spacing: no two people closer than ${WALK_GAP_SIDE * 100} cm (closest ${(worst.d * 100).toFixed(0)} cm: ${worst.a} and ${worst.b} at ${worst.t.toFixed(1)} s)`);
+  // and every pair of standing spots is at least the front-to-back gap apart (people face each other to chat)
+  const stands: [string, XZ][] = [...SPOTS.map((s): [string, XZ] => [s.id, s.at]), ["bench", [FORECOURT_BENCH.at[0] + 0.3, FORECOURT_BENCH.at[1] + 0.66]]];
+  for (let i = 0; i < stands.length; i++) for (let j = i + 1; j < stands.length; j++) {
+    const d = Math.hypot(stands[i][1][0] - stands[j][1][0], stands[i][1][1] - stands[j][1][1]);
+    check(d >= WALK_GAP_FRONT, `spots ${stands[i][0]} and ${stands[j][0]} are ${(d * 100).toFixed(0)} cm apart (≥ ${WALK_GAP_FRONT * 100})`);
+  }
+  console.log(`  walk spacing: closest pair ${(worst.d * 100).toFixed(0)} cm (${worst.a} and ${worst.b} at ${worst.t.toFixed(1)} s)`);
 }
 
 // ── speed: the measured frames inside the budget, the budget the standing rule's ──

@@ -56,7 +56,7 @@ export const COMPOUND = {
   /** The small stand on pitch A's west touchline, facing east. */
   stand: { x0: 25.2, x1: 29.6, z0: -8, z1: 10, rows: 4 },
   /** Where you start: just parked, beside your car in the front row, facing the gate. */
-  you: { x: -2.5, z: 31.2, yaw: 3.3 },
+  you: { x: -3.4, z: 34.6, yaw: 3.3 },
   /** Your car's bay (front row, nearest the gate). */
   yourBay: 8,
 } as const;
@@ -76,7 +76,7 @@ export const PARKED: { bay: number; row: "N" | "S"; model: CarModel; tint: strin
   { bay: 2, row: "N", model: "suv", tint: "#ffffff", kind: "suv" },
   { bay: 4, row: "N", model: "car-1", tint: "#ffffff", kind: "saloon" },
   { bay: 5, row: "N", model: "car-4", tint: "#ffffff", kind: "coupe" },
-  { bay: 6, row: "N", model: "suv", tint: "#5a5f68", kind: "suv" },
+  { bay: 0, row: "N", model: "suv", tint: "#5a5f68", kind: "suv" },
   { bay: 8, row: "N", model: "car-3", tint: "#ffffff", kind: "coupe" }, // yours: the sports car from the house's drive
   { bay: 10, row: "N", model: "classic", tint: "#ffffff", kind: "saloon" },
   { bay: 11, row: "N", model: "car-2", tint: "#ffffff", kind: "saloon" },
@@ -113,21 +113,24 @@ const P = COMPOUND.pitches[0];
 const PA0 = P.x - P.len / 2; // pitch A's west touchline x
 export const SPOTS: CompoundSpot[] = [
   // the coach on pitch A's touchline, then out by the poles
-  { id: "coach-line", at: [PA0 + 2.2, -1.5], face: [PA0 + 12, -1], label: "Touchline" },
-  { id: "coach-poles", at: [PA0 + 14, 9.5], face: [PA0 + 18, 6], label: "By the poles" },
+  { id: "coach-line", at: [PA0 + 2.2, -1], face: [PA0 + 7, 4], label: "Touchline" },
+  { id: "coach-poles", at: [PA0 + 8, 12.5], face: [PA0 + 16, 8], label: "By the poles" },
   // the kit man: the kit room door on the building's east end, the cones, the goal
   { id: "kit-door", at: [COMPOUND.building.x1 + 0.9, 3.5], face: [COMPOUND.building.x1, 3.5], label: "Kit room" },
   { id: "kit-cones", at: [PA0 + 9, -8], face: [PA0 + 9, -10], label: "The cones" },
   { id: "kit-goal", at: [PA0 + 3.5, -11], face: [PA0, -11], label: "The goal" },
   // two team-mates warming up on pitch A
-  { id: "warm-1", at: [PA0 + 7, 3], face: [PA0 + 9, 3], label: "Warm-up" },
-  { id: "warm-2", at: [PA0 + 9, 4.6], face: [PA0 + 7, 4.6], label: "Warm-up" },
-  { id: "warm-3", at: [PA0 + 16, -4], face: [PA0 + 18, -4], label: "Warm-up" },
-  { id: "warm-4", at: [PA0 + 18, -2.4], face: [PA0 + 16, -2.4], label: "Warm-up" },
+  // two by two, face to face 2.2 m apart (the walk-spacing rule: never inside each other, never lined up close)
+  { id: "warm-1", at: [PA0 + 7, 3], face: [PA0 + 7, 5.2], label: "Warm-up" },
+  { id: "warm-2", at: [PA0 + 7, 5.2], face: [PA0 + 7, 3], label: "Warm-up" },
+  { id: "warm-3", at: [PA0 + 16, -4], face: [PA0 + 16, -1.8], label: "Warm-up" },
+  { id: "warm-4", at: [PA0 + 16, -1.8], face: [PA0 + 16, -4], label: "Warm-up" },
   // the team-mate just arriving: his car, the reception door, the forecourt
   { id: "arr-car", at: [bayAt(4, "N")[0] + 1.5, 33.4], face: [bayAt(4, "N")[0], 30], label: "His car" },
   { id: "arr-door", at: [1.4, COMPOUND.building.z1 + 0.9], face: [1.4, COMPOUND.building.z1], label: "Reception" },
   { id: "arr-chat", at: [-6.4, 15.6], face: [-8.2, 14.6], label: "Forecourt" },
+  // the bench team-mate's own spot to stretch, chatting to the one who has just arrived (1.3 m apart, face to face)
+  { id: "fc-stretch", at: [-7.6, 16.3], face: [-6.4, 15.6], label: "Forecourt" },
 ];
 
 /** The forecourt bench (a seat for two team-mates; ./compoundPlace.ts builds it). */
@@ -182,9 +185,14 @@ export const ROUTINES: Record<string, { id: string; repeat: true; steps: Step[] 
   ] },
   "compound-bench": { id: "compound-bench", repeat: true, steps: [
     { do: { kind: "use", target: "fc-bench" }, mins: [1.8, 2.6] },
-    { do: { kind: "use", target: "arr-chat", loop: [{ ...CLIP.stretch, secs: 5 }, { ...CLIP.talk, secs: 3 }] }, mins: [0.6, 0.9] },
+    { do: { kind: "use", target: "fc-stretch", loop: [{ ...CLIP.stretch, secs: 5 }, { ...CLIP.talk, secs: 3 }] }, mins: [0.6, 0.9] },
   ] },
 };
+
+/** The walk-spacing rule (as the cut scenes' crowds): two people never closer than this side by side (m); one
+ *  behind the other keeps WALK_GAP_FRONT. tests/star/compound.mts walks every routine and checks it. */
+export const WALK_GAP_SIDE = 0.55;
+export const WALK_GAP_FRONT = 0.7;
 
 /** How fast the compound's clock runs (times real time): a game minute is 15 real seconds. */
 export const COMPOUND_RATE = 4;
@@ -193,6 +201,34 @@ export const STUCK_MAX_S = 45;
 
 /** Every solid on the plan: the building, the hut, the fence, the pillars, the board's posts, the
  *  parked cars, the stand, the goals, the benches, lamp posts, planters. ./compoundPlace.ts draws them. */
+/** The tall things the following camera must not pass through: the fence and gate pillars, the hut, the
+ *  building, the stand (cars, benches and posts are below the camera). */
+export function tallSolids(): Solid[] {
+  const C = COMPOUND;
+  const fz = C.fenceZ, h = C.hut, b = C.building, st = C.stand;
+  return [
+    [C.bounds[0], C.gate.x0, fz - 0.5, fz + 0.6], [C.gate.x1, C.bounds[1], fz - 0.5, fz + 0.6],
+    [h.x0, h.x1, h.z0, h.z1], [b.x0, b.x1, b.z0, b.z1], [st.x0, st.x1, st.z0, st.z1],
+  ];
+}
+
+/** How far a ray from (x, z) along (dx, dz) (a unit step) runs before it enters one of `boxes` (Infinity: none). */
+export function rayToBoxes(x: number, z: number, dx: number, dz: number, boxes: Solid[]): number {
+  let best = Infinity;
+  for (const [x0, x1, z0, z1] of boxes) {
+    if (x > x0 && x < x1 && z > z0 && z < z1) continue; // standing inside it (the gate's gap is not in it)
+    let t0 = 0, t1 = Infinity;
+    for (const [o, d, lo, hi] of [[x, dx, x0, x1], [z, dz, z0, z1]] as [number, number, number, number][]) {
+      if (Math.abs(d) < 1e-9) { if (o < lo || o > hi) { t0 = Infinity; break; } continue; }
+      let a = (lo - o) / d, c = (hi - o) / d;
+      if (a > c) [a, c] = [c, a];
+      t0 = Math.max(t0, a); t1 = Math.min(t1, c);
+    }
+    if (t0 <= t1 && t0 < best) best = t0;
+  }
+  return best;
+}
+
 export function compoundSolids(): Solid[] {
   const C = COMPOUND;
   const s: Solid[] = [];
@@ -315,28 +351,28 @@ export interface CompoundMeasure { view: string; tier: "high" | "medium" | "low"
  * walking (the sun's shadow redrawn). Re-measure after any change to the compound and paste the script's line here.
  */
 export const COMPOUND_MEASURED: CompoundMeasure[] = [
-  {"view":  "car park", "tier":  "medium", "draws":  57, "triangles":  71894, "walkDraws":  37, "walkTriangles":  44825},
-  {"view":  "gate", "tier":  "medium", "draws":  50, "triangles":  58712, "walkDraws":  48, "walkTriangles":  53071},
-  {"view":  "forecourt", "tier":  "medium", "draws":  38, "triangles":  55176, "walkDraws":  39, "walkTriangles":  62228},
-  {"view":  "gym door", "tier":  "medium", "draws":  40, "triangles":  48983, "walkDraws":  25, "walkTriangles":  28176},
-  {"view":  "stand", "tier":  "medium", "draws":  49, "triangles":  60978, "walkDraws":  25, "walkTriangles":  34144},
-  {"view":  "pitch A", "tier":  "medium", "draws":  42, "triangles":  73006, "walkDraws":  24, "walkTriangles":  47852},
-  {"view":  "pitch B", "tier":  "medium", "draws":  63, "triangles":  61064, "walkDraws":  24, "walkTriangles":  33117},
-  {"view":  "pitch C", "tier":  "medium", "draws":  53, "triangles":  56198, "walkDraws":  31, "walkTriangles":  36696},
-  {"view":  "car park", "tier":  "low", "draws":  51, "triangles":  48642, "walkDraws":  33, "walkTriangles":  37355},
-  {"view":  "gate", "tier":  "low", "draws":  44, "triangles":  48554, "walkDraws":  44, "walkTriangles":  36249},
-  {"view":  "forecourt", "tier":  "low", "draws":  34, "triangles":  30236, "walkDraws":  34, "walkTriangles":  35648},
-  {"view":  "gym door", "tier":  "low", "draws":  36, "triangles":  32892, "walkDraws":  21, "walkTriangles":  21775},
-  {"view":  "stand", "tier":  "low", "draws":  42, "triangles":  41370, "walkDraws":  22, "walkTriangles":  20948},
-  {"view":  "pitch A", "tier":  "low", "draws":  39, "triangles":  55260, "walkDraws":  18, "walkTriangles":  19930},
-  {"view":  "pitch B", "tier":  "low", "draws":  55, "triangles":  45203, "walkDraws":  25, "walkTriangles":  29834},
-  {"view":  "pitch C", "tier":  "low", "draws":  28, "triangles":  28105, "walkDraws":  24, "walkTriangles":  24185},
-  {"view":  "car park", "tier":  "high", "draws":  66, "triangles":  140259, "walkDraws":  38, "walkTriangles":  73058},
-  {"view":  "gate", "tier":  "high", "draws":  55, "triangles":  94322, "walkDraws":  61, "walkTriangles":  109270},
-  {"view":  "forecourt", "tier":  "high", "draws":  41, "triangles":  86106, "walkDraws":  41, "walkTriangles":  92140},
-  {"view":  "gym door", "tier":  "high", "draws":  45, "triangles":  103726, "walkDraws":  27, "walkTriangles":  71960},
-  {"view":  "stand", "tier":  "high", "draws":  51, "triangles":  106876, "walkDraws":  25, "walkTriangles":  50660},
-  {"view":  "pitch A", "tier":  "high", "draws":  40, "triangles":  107858, "walkDraws":  25, "walkTriangles":  79800},
-  {"view":  "pitch B", "tier":  "high", "draws":  72, "triangles":  108526, "walkDraws":  32, "walkTriangles":  76558},
-  {"view":  "pitch C", "tier":  "high", "draws":  41, "triangles":  81410, "walkDraws":  35, "walkTriangles":  73540},
+  {"view":  "car park", "tier":  "medium", "draws":  64, "triangles":  74978, "walkDraws":  48, "walkTriangles":  46933},
+  {"view":  "gate", "tier":  "medium", "draws":  55, "triangles":  58754, "walkDraws":  54, "walkTriangles":  51583},
+  {"view":  "forecourt", "tier":  "medium", "draws":  43, "triangles":  60578, "walkDraws":  36, "walkTriangles":  44099},
+  {"view":  "gym door", "tier":  "medium", "draws":  45, "triangles":  44385, "walkDraws":  29, "walkTriangles":  28730},
+  {"view":  "stand", "tier":  "medium", "draws":  52, "triangles":  56758, "walkDraws":  26, "walkTriangles":  34432},
+  {"view":  "pitch A", "tier":  "medium", "draws":  45, "triangles":  65332, "walkDraws":  21, "walkTriangles":  33246},
+  {"view":  "pitch B", "tier":  "medium", "draws":  68, "triangles":  57505, "walkDraws":  24, "walkTriangles":  29845},
+  {"view":  "pitch C", "tier":  "medium", "draws":  38, "triangles":  37811, "walkDraws":  36, "walkTriangles":  33743},
+  {"view":  "car park", "tier":  "low", "draws":  55, "triangles":  55904, "walkDraws":  38, "walkTriangles":  30524},
+  {"view":  "gate", "tier":  "low", "draws":  46, "triangles":  48506, "walkDraws":  47, "walkTriangles":  32545},
+  {"view":  "forecourt", "tier":  "low", "draws":  36, "triangles":  33329, "walkDraws":  34, "walkTriangles":  32193},
+  {"view":  "gym door", "tier":  "low", "draws":  38, "triangles":  28512, "walkDraws":  30, "walkTriangles":  33458},
+  {"view":  "stand", "tier":  "low", "draws":  43, "triangles":  41054, "walkDraws":  22, "walkTriangles":  21224},
+  {"view":  "pitch A", "tier":  "low", "draws":  38, "triangles":  38125, "walkDraws":  18, "walkTriangles":  19930},
+  {"view":  "pitch B", "tier":  "low", "draws":  60, "triangles":  45671, "walkDraws":  25, "walkTriangles":  25152},
+  {"view":  "pitch C", "tier":  "low", "draws":  31, "triangles":  27747, "walkDraws":  26, "walkTriangles":  22924},
+  {"view":  "car park", "tier":  "high", "draws":  71, "triangles":  124339, "walkDraws":  51, "walkTriangles":  82546},
+  {"view":  "gate", "tier":  "high", "draws":  60, "triangles":  94192, "walkDraws":  55, "walkTriangles":  70518},
+  {"view":  "forecourt", "tier":  "high", "draws":  46, "triangles":  96282, "walkDraws":  40, "walkTriangles":  88617},
+  {"view":  "gym door", "tier":  "high", "draws":  50, "triangles":  91051, "walkDraws":  30, "walkTriangles":  42804},
+  {"view":  "stand", "tier":  "high", "draws":  55, "triangles":  137630, "walkDraws":  27, "walkTriangles":  50948},
+  {"view":  "pitch A", "tier":  "high", "draws":  39, "triangles":  107858, "walkDraws":  21, "walkTriangles":  49776},
+  {"view":  "pitch B", "tier":  "high", "draws":  72, "triangles":  88704, "walkDraws":  27, "walkTriangles":  58360},
+  {"view":  "pitch C", "tier":  "high", "draws":  43, "triangles":  72454, "walkDraws":  40, "walkTriangles":  67676},
 ];

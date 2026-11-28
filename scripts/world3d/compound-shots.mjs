@@ -20,12 +20,13 @@ fs.mkdirSync(outDir, { recursive: true });
 
 // [name, you x, z, yaw, view, wait ms, pinned camera [x,y,z] look [x,y,z] | null]
 const SHOTS = [
-  ["01-arrival", -2.5, 31.2, 2.86, "third", 1500, null],
-  ["02-arrival-wide", -2.5, 31.2, 3.3, "third", 800, [-1, 3.6, 39], [-4, 1.8, 24]],
+  ["01-arrival", -3.4, 34.6, 3.3, "third", 1500, null],
+  ["02-arrival-wide", -3.4, 34.6, 3.3, "third", 800, [-1, 3.6, 39], [-4, 1.8, 24]],
   ["03-pitches", 24, 6, Math.PI / 2 + 0.25, "third", 4000, [27.5, 6.5, 9], [60, 0, -4]],
   ["04-building-front", -6, 19, Math.PI, "third", 1500, [3.2, 2.3, 17.5], [-5, 3.0, 8]],
   ["05-gym-door", -11, 14.5, Math.PI, "third", 1200, null],
-  ["06-people-at-work", 27, -8, Math.PI / 2, "third", 4000, [30.2, 2.1, -6.6], [38, 1.0, 2]],
+  ["06-people-at-work", 27, -8, Math.PI / 2, "third", 4000, [31.4, 2.2, -5.4], [39, 0.9, 4.4]],
+  ["10-kit-close", 27, -8, Math.PI / 2, "third", 4000, [36.6, 1.6, 0.6], [40, 1.1, 3.8]],
   ["07-first-person-gate", 2.0, 31.0, 3.28, "first", 2500, null],
   // the loading screen backdrop (public/star/loading/compound-*.webp): nobody in it (you are moved behind the camera)
   ["L-loading", -6, 44, 0, "third", 1200, [-1, 3.6, 39], [-4, 1.8, 24]],

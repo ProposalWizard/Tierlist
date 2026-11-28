@@ -127,7 +127,7 @@ const DEMOS: Record<string, Demo> = {
   fall: { place: "gym", duration: 14, steps: [[0.2, "tap:treadmill"], [3.6, "bot:0"], [3.6, "act:use"]], you: [1.4, 1.2, Math.PI] },
   bag: { place: "gym", duration: 31, steps: [[0.2, "tap:bag"], [3.0, "bot:1"], [3.0, "act:use"]], you: [-1.2, 2.6, Math.PI] },
   // the compound: just parked, through the gate, across the forecourt, in at the gym door (go: = tap it, go in when there)
-  arrive: { place: "compound", duration: 23, steps: [[0.8, "go:door-gym"]] },
+  arrive: { place: "compound", duration: 26, steps: [[0.8, "go:door-gym"]] },
   // the compound: the people at work (a check that nobody sticks)
   compound: { place: "compound", duration: 60, steps: [] },
   // phase 2 (gymPoses2.ts): one demo per new exercise (walk up, the fade, a good thumb), ?demo=pullup etc.
@@ -990,7 +990,13 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     showBody(you.root, view.place(camera, camPos, camLook, headWorld(headBone, you.root, viewHead), -Math.sin(camYaw), -Math.cos(camYaw), built.ceil, dt)); // in his eyes: not drawn (root.visible is "here or away" to the world kit)
   };
   const [cx0, cx1, cz0, cz1] = built.camBox;
-  const freeBehind = (dx: number, dz: number) => boxRoom(you.x, you.z, dx, dz, cx0, cx1, cz0, cz1);
+  // the compound: the boom also stops short of the fence, the gate's railings, the hut and the building (it went
+  // through the railing as you turned in at the gate, 28 Nov)
+  const tall = CP ? CP.tallSolids() : null;
+  const freeBehind = (dx: number, dz: number) => {
+    const f = boxRoom(you.x, you.z, dx, dz, cx0, cx1, cz0, cz1);
+    return tall ? Math.min(f, Math.max(0.6, CP!.rayToBoxes(you.x, you.z, dx, dz, tall) - 0.35)) : f;
+  };
   const resize = () => {
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
