@@ -171,8 +171,9 @@ export function skipDrive(S: DriveSession) { S.skipped = true; }
 
 /** Where the barrier is (route point) and how far its arm is up (0 down, 1 up). */
 export function barrierLift(S: DriveSession): number {
-  const d = S.car.s - (S.route.gateS - 15);
-  const x = Math.max(0, Math.min(1, d / 7));
+  // it lifts as you roll up to it (the low camera sees the arm go up in front of the car)
+  const d = S.car.s - (S.route.gateS - 11);
+  const x = Math.max(0, Math.min(1, d / 6));
   return x * x * (3 - 2 * x);
 }
 

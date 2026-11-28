@@ -299,9 +299,21 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
     // the roundabout island: a tree and bushes
     { const I = R.island; const from = bin.p.length / 9; addCardTree(THREE, bin, { h: 1.3, w: 0.8, pine: false, seed: 77, lod: lod as 0 | 1 | 2 }); placeCardsSince(bin, from, I.x, 0, I.z, 8 / 1.3, 0); for (let i = 0; i < 6; i++) addCardBush(THREE, bin, { x: I.x + Math.cos(i) * 5, z: I.z + Math.sin(i) * 5, s: 1.4, seed: 90 + i, lod: lod as 0 | 1 | 2 }); }
     if (opts.leg === "in") { const end = at(R, R.gateS); for (let i = 0; i < 9; i++) treeAt(R.gateS + 8 + i * 4, (i % 2 ? 1 : -1) * (COMPOUND_HALF + 4 + rnd() * 5), 9 + rnd() * 3); void end; }
-    const tm = new THREE.Mesh(cardGeometry(THREE, bin), cardMaterial(THREE, atlas.map, tier === "low" ? null : atlas.nrm));
-    tm.castShadow = realShadow;
-    scene.add(tm);
+    // cut into 70 m squares, one draw each, so only the squares in view are drawn (the whole route is
+    // one long strip: one joined mesh would send every tree every frame)
+    const tmat = cardMaterial(THREE, atlas.map, tier === "low" ? null : atlas.nrm);
+    const cells = new Map<string, ReturnType<typeof newCardBin>>();
+    for (let i = 0; i < bin.p.length; i += 9) {
+      const tri = i / 9;
+      const key = `${Math.floor(bin.p[i] / 70)},${Math.floor(bin.p[i + 2] / 70)}`;
+      let c = cells.get(key); if (!c) { c = newCardBin(); cells.set(key, c); }
+      c.p.push(...bin.p.slice(i, i + 9)); c.n.push(...bin.n.slice(i, i + 9)); c.c.push(...bin.c.slice(i, i + 9)); c.uv.push(...bin.uv.slice(tri * 6, tri * 6 + 6));
+    }
+    for (const c of Array.from(cells.values())) {
+      const tm = new THREE.Mesh(cardGeometry(THREE, c), tmat);
+      tm.castShadow = realShadow;
+      scene.add(tm);
+    }
   }
 
   // ── the compound (stand-in) or the fork ──
@@ -376,6 +388,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
   let lastUi = "";
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
   let camInit = false;
+  let bayT0 = -1;
   let fps = 0, frames = 0, fpsT = performance.now();
   const memSent = new Set<number>();
   let doneSent = false;
@@ -438,9 +451,13 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
       // behind the two team-mates by the door, the car swinging into its bay towards them
       // from the side of the bay: the training block's glass front behind, the two by its door, your car swinging in
       const d = doorSpot;
-      pos = [d.cam[0], 1.15, d.cam[1]];
-      look = [d.look[0], 1.75, d.look[1]];
-      fov = 46; snap = true;
+      // a slow push in while it rolls into the bay (0.35 m/s, up to 2.5 m)
+      if (bayT0 < 0) bayT0 = S.ta;
+      const push = Math.min(2.5, (S.ta - bayT0) * 0.35);
+      const dx = d.look[0] - d.cam[0], dz = d.look[1] - d.cam[1], dl = Math.hypot(dx, dz) || 1;
+      pos = [d.cam[0] + (dx / dl) * push, 1.15, d.cam[1] + (dz / dl) * push];
+      look = [d.look[0], 1.6, d.look[1]];
+      fov = 37; snap = true;
     } else if (cam === "cabin" && S.callState === "ringing" && S.t - S.callSince < 2.6) {
       // the call: over the driver's shoulder onto the phone in its mount, the road through the glass above it
       pos = local(c.yaw, carP, -0.14, 1.27, 0.18);
@@ -837,7 +854,8 @@ function buildCompound(T: any, low: boolean, roadM: any, R: Route, propBox: (...
   // team-mates' cars in the bays either side of yours (the light copies, repainted)
   // all on the left of your bay, behind the two team-mates: the bay shot looks across from the right, nothing in its way
   const mates: [number, string, string][] = [[2.8, "sports", "#1d2733"], [5.6, "suv", "#e9e6df"], [8.4, "family", "#6b1f24"]];
-  for (const [off, id, col] of mates.slice(0, low ? 2 : 3)) {
+  // Low: one team-mate's car (the two people are most of the arrival's triangles)
+  for (const [off, id, col] of mates.slice(0, low ? 1 : 3)) {
     const [x, z] = E(0, off);
     parked.push({ file: `/star/home3d/car-${id}-lod.glb`, x, z, ry: end.h, paint: col, from: DRIVE_CARS[id as DriveCarId].paint });
   }
@@ -857,7 +875,7 @@ function buildCompound(T: any, low: boolean, roadM: any, R: Route, propBox: (...
   // the bay shot: low, from behind the bay on the aisle side; your car sweeps in past the lens and rolls
   // away into the bay, towards the two by the door (they turn: their faces to camera), the block behind
   const [cx, cz] = E(-11.5, -1.5);
-  const [kx, kz] = E(3, 1.3);
+  const [kx, kz] = E(2, 1.0);
   // the car park's tarmac: from the gate road to the block, either side of the bays
   {
     const a = E(-16, 0), w = 30, d = 25;
