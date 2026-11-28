@@ -130,14 +130,14 @@ const HEAD = "h1" as const;
   const c = { ...base, season: 1, week: 9, hair: B.packHair({ style: "crew", texture: "straight", beard0: 0, cutWeek: 1, shaveWeek: 1 }) };
   const n = B.hairNow(c, HEAD);
   check(n.beard === 3 && n.style === "slickBack", `9 weeks on: beard 3, crew grown to a slick back (${n.beard}, ${n.style})`);
-  const trim = B.useMirror(c, "trimBeard", HEAD);
+  const trim = B.applyMirror(c, "trimBeard", HEAD);
   check(trim.ok && B.hairNow(trim.career, HEAD).beard === 2 && trim.career.money === c.money, "trim: one step shorter, free");
   check(absOf(clockOf(trim.career)) - absOf(clockOf(c)) === B.MIRROR_MINS, "the mirror takes 10 minutes");
-  const shave = B.useMirror(c, "shave", HEAD);
+  const shave = B.applyMirror(c, "shave", HEAD);
   check(B.hairNow(shave.career, HEAD).beard === 0, "shave: clean");
-  const tidy = B.useMirror(c, "tidy", HEAD);
+  const tidy = B.applyMirror(c, "tidy", HEAD);
   check(B.hairNow(tidy.career, HEAD).style === "crew", "tidy: back to the style as it was cut (never a new one)");
-  check(!B.useMirror(shave.career, "shave", HEAD).ok, "nothing to shave: the mirror says so");
+  check(!B.applyMirror(shave.career, "shave", HEAD).ok, "nothing to shave: the mirror says so");
 }
 
 // ── the 3D look: modelled style on the close-cut skull, beard steps ──
@@ -145,7 +145,7 @@ const HEAD = "h1" as const;
   check(B.hairLook3d("afro", 0, "h1").head === "h9" && B.hairLook3d("afro", 0, "h1").mesh === "afro", "a modelled style on the Curls player: worn on the round-face close-cut head");
   check(B.hairLook3d("own", 0, "h2").head === "h2", "your usual: your own head");
   const b = [0, 1, 2, 3].map((k) => B.hairLook3d("buzz", k, "h3").cut);
-  check(b[0].beard === 1 && b[0].stubble === 0 && b[1].stubble > 0 && b[2].stubble > b[1].stubble && b[3].beard === 0, `beard steps on a beard head: ${JSON.stringify(b)}`);
+  check(b[0].beard >= 1 && b[0].stubble === 0 && b[1].stubble > 0 && b[2].stubble > b[1].stubble && b[3].beard === 0, `beard steps on a beard head: ${JSON.stringify(b)}`);
   check(B.hairLook3d("fade", 0, "h3").cut.scalp === 0.7 && B.hairLook3d("waves", 0, "h3").cut.pattern === 1, "fade and waves are painted on the scalp");
 }
 

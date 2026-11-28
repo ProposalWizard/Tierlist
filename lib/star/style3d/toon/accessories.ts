@@ -799,7 +799,9 @@ function cap(T: Three, c: Cloud, W: (n: string) => V, look: AccessoryLook, lift 
   const hs = W("headfront").distanceTo(head) / 0.093;
   // (the long-face head's skull and brow sit higher than its head bone says: hairStyles.ts TOON_HAIR_LIFT; the cap
   // came down over his eyes)
-  const browY = head.y + 0.052 * hs + lift;
+  // (and the whole cap sits 3 cm higher than it first did, 28 Nov 2026: in the three-quarter and side views its peak
+  // hid the eyes and brows; the brim now sits on the forehead above the brows)
+  const browY = head.y + 0.052 * hs + lift + 0.032 * hs;
   const NA = 40, NE = 10;
   /** The head's outermost point at a height, along an azimuth (horizontal distance from C). */
   const horiz = (dx: number, dz: number, y: number) => {
@@ -872,7 +874,7 @@ function cap(T: Three, c: Cloud, W: (n: string) => V, look: AccessoryLook, lift 
     const fwd = new T.Vector3(Math.sin(th) * 0.35, 0, Math.cos(th)).normalize();
     const t = (rI / rows) * PEAK * Math.pow(Math.max(0, 1 - Math.pow(k, 2.2)), 0.5);
     const base = new T.Vector3(C.x + Math.sin(th) * (rb[a] + TH * 0.5), ybA[a] + 0.002, C.z + Math.cos(th) * (rb[a] + TH * 0.5));
-    const v = base.addScaledVector(fwd, t).add(new T.Vector3(0, -t * 0.16 - k * k * (0.003 + t * 0.5), 0));
+    const v = base.addScaledVector(fwd, t).add(new T.Vector3(0, -t * 0.08 - k * k * (0.003 + t * 0.4), 0));
     peak.push(v.x, v.y, v.z);
   }
   const PW = span * 2 + 1, pg = (rI: number, s: number) => rI * PW + s;

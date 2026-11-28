@@ -117,10 +117,10 @@ export default function HairBench() {
       const yaw = 0.45;
       cards.forEach((c, i) => {
         const { p, at } = people.get(`${c.row}|${c.cap}`)!;
-        const AROUND: Record<string, [number, number, number]> = { hfront: [0, 0.02, 0.7], h34: [0.8, 0.04, 0.7], hside: [Math.PI / 2, 0.03, 0.7], hback: [Math.PI * 0.85, 0.05, 0.7], full: [0, 0.1, 3.6] };
+        const AROUND: Record<string, [number, number, number]> = { hfront: [0, 0.03, 0.86], h34: [0.8, 0.06, 0.86], hside: [Math.PI / 2, 0.05, 0.86], hback: [Math.PI * 0.85, 0.08, 0.86], full: [0, 0.1, 3.6] };
         const [da, up, dist] = AROUND[c.view] ?? AROUND.hfront;
         p.bones.Head.getWorldPosition(v);
-        const t = c.view === "full" ? new T.Vector3(at, 0.95, 0) : v.clone().add(new T.Vector3(0, 0.05, 0));
+        const t = c.view === "full" ? new T.Vector3(at, 0.95, 0) : v.clone().add(new T.Vector3(0, 0.07, 0));
         cam.position.set(t.x + Math.sin(yaw + da) * dist, t.y + up, t.z + Math.cos(yaw + da) * dist);
         cam.lookAt(t);
         const x = (i % cols) * W, y = (rows - 1 - Math.floor(i / cols)) * H;

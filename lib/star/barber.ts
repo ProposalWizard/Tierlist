@@ -92,7 +92,7 @@ export const STYLES: Record<HairStyleId, StyleInfo> = {
   bald: { label: "Shaved head", textures: ALL, scalp: 1, line: "All of it off" },
   waves: { label: "Waves", textures: ["coily"], pattern: 1, line: "360 waves, brushed in" },
   cornrows: { label: "Cornrows", textures: ["coily"], pattern: 2, big: true, line: "Braided back, tight" },
-  crew: { label: "Crew cut", textures: ["straight", "wavy", "curly"], mesh: "crew", line: "Short on top, neat" },
+  crew: { label: "Crew cut", textures: ["straight", "wavy", "curly"], mesh: "crew", scalp: 0.3, line: "Short on top, neat" },
   slickBack: { label: "Slick back", textures: ["straight", "wavy"], mesh: "slickBack", line: "Combed back, a bit of shine" },
   ponytail: { label: "Tied back", textures: ["straight", "wavy"], mesh: "ponytail", line: "Long, tied at the back" },
   manBun: { label: "Man bun", textures: ["straight", "wavy"], mesh: "manBun", line: "Up in a knot" },
@@ -280,7 +280,9 @@ export function hairLook3d(style: HairStyleId, beard: number, yourHead: ToonHead
   const modelled = BEARD_HEADS.includes(head);
   // the beard steps: the modelled beard is the top step; under it the beard is painted out and stubble painted on
   const b = Math.max(0, Math.min(3, Math.round(beard)));
-  let beardOff = 1, stubble = 0;
+  // (beard off is 2, not 1: the shader also fades the sideburns softly to the temple, so no hard block is left by
+  // the ear: style3d/toon/shader.ts; the people presets keep 1)
+  let beardOff = 2, stubble = 0;
   if (modelled) { if (b >= 3) beardOff = 0; else stubble = [0, 0.55, 0.95][b]; }
   else { beardOff = 0; stubble = [0, 0.5, 0.85, 1][b]; }
   return { head, mesh: info.mesh, cut: { scalp: info.scalp ?? 0, beard: beardOff, stubble, pattern: info.pattern ?? 0 } };
@@ -376,7 +378,7 @@ export function mirrorOptions(c: CareerState, yourHead: ToonHead): MirrorOption[
 }
 
 /** Use the mirror: free, 10 clock minutes. Tidy takes the hair back to the style as it was cut. */
-export function useMirror(c: CareerState, act: MirrorAct, yourHead: ToonHead): CutResult {
+export function applyMirror(c: CareerState, act: MirrorAct, yourHead: ToonHead): CutResult {
   const opt = mirrorOptions(c, yourHead).find((o) => o.act === act)!;
   if (!opt.ok) return { ok: false, career: c, text: opt.why ?? "Nothing to do.", price: 0, mood: 0, fans: 0 };
   const h = hairState(c, yourHead);
