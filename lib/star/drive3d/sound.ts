@@ -55,12 +55,12 @@ export interface EngineSpec {
 
 /** A different engine per car: a buzzy little four in the hatch, a deep six in the SUV, a V8 in the supercar. */
 export const CAR_ENGINES: Record<DriveCarId, EngineSpec> = {
-  hatch: { cyl: 4, idle: 900, red: 6200, gears: [8, 14, 21, 29, 40], bright: 1.15, rasp: 0.35, level: 0.85 },
-  family: { cyl: 4, idle: 820, red: 5600, gears: [8, 15, 22, 30, 42], bright: 0.9, rasp: 0.2, level: 0.8 },
-  classic: { cyl: 4, idle: 850, red: 5200, gears: [9, 16, 24, 34], bright: 1.0, rasp: 0.6, level: 0.9 },
-  suv: { cyl: 6, idle: 700, red: 5400, gears: [7, 13, 20, 28, 36, 46], bright: 0.75, rasp: 0.15, level: 0.85 },
-  sports: { cyl: 6, idle: 950, red: 7400, gears: [11, 19, 27, 36, 46, 56], bright: 1.35, rasp: 0.3, level: 1 },
-  super: { cyl: 8, idle: 1000, red: 8000, gears: [13, 22, 31, 41, 52, 64, 75], bright: 1.5, rasp: 0.4, level: 1 },
+  hatch: { cyl: 4, idle: 900, red: 6200, gears: [12, 21, 31, 41, 52], bright: 1.15, rasp: 0.35, level: 0.85 },
+  family: { cyl: 4, idle: 820, red: 5600, gears: [12, 22, 32, 43, 55], bright: 0.9, rasp: 0.2, level: 0.8 },
+  classic: { cyl: 4, idle: 850, red: 5200, gears: [13, 24, 36, 48], bright: 1.0, rasp: 0.6, level: 0.9 },
+  suv: { cyl: 6, idle: 700, red: 5400, gears: [11, 19, 28, 38, 48, 58], bright: 0.75, rasp: 0.15, level: 0.85 },
+  sports: { cyl: 6, idle: 950, red: 7400, gears: [15, 25, 36, 47, 58, 70], bright: 1.35, rasp: 0.3, level: 1 },
+  super: { cyl: 8, idle: 1000, red: 8000, gears: [17, 28, 40, 52, 64, 76, 88], bright: 1.5, rasp: 0.4, level: 1 },
 };
 
 export interface EngineNote { gear: number; rpm: number; freq: number; gain: number; cutoff: number }
@@ -71,7 +71,8 @@ export interface EngineNote { gear: number; rpm: number; freq: number; gain: num
  */
 export function engineAt(v: number, hold: boolean, car: DriveCarId, accel = 0, rev = 0): EngineNote {
   const E = CAR_ENGINES[car] ?? CAR_ENGINES.hatch;
-  const shift = hold ? 0.97 : 0.86;
+  // cruising changes up early (a calm 2,500-3,500 rpm); held, it hangs on to each gear (the pull you hear)
+  const shift = hold ? 0.88 : 0.5;
   let g = 0;
   while (g < E.gears.length - 1 && v > E.gears[g] * shift) g++;
   const frac = Math.max(0, Math.min(1, v / E.gears[g]));
@@ -317,7 +318,7 @@ export function createDriveSound(deps: DriveSoundDeps): DriveSoundPlayer {
   let prev: DriveSoundFrame | null = null;
   let dead = false;
   let rev = 0;
-  let nextTick = 0, tickN = 0, nextBird = 0, nextDrop = 0, ringT0 = -1, ringNext = 0;
+  let nextTick = 0, tickN = 0, nextBird = 0, nextDrop = 0, ringT0 = -1, ringNext = 0, lastLog = -1;
 
   const player: DriveSoundPlayer = {
     get built() { return !!g; },
@@ -348,6 +349,9 @@ export function createDriveSound(deps: DriveSoundDeps): DriveSoundPlayer {
         }
         // ── the engine ──
         const e = engineAt(f.v, f.hold, deps.car, f.accel, rev);
+        // a listening log for the proof recorder (scripts/drive3d/sound-proof.mjs sets window.__driveSoundLog = [])
+        const lg = (globalThis as { __driveSoundLog?: unknown[] }).__driveSoundLog;
+        if (Array.isArray(lg)) { cues.forEach((c) => lg.push([+now.toFixed(2), c])); if (now - lastLog >= 0.5) { lastLog = now; lg.push([+now.toFixed(2), "engine", +f.v.toFixed(1), Math.round(e.rpm), e.gear, f.road, f.engineOn ? "on" : "off", f.hold ? "hold" : "", f.indicator ? "indicator" : "", f.ringing ? "ringing" : "", f.hazards ? "hazards" : ""]); } }
         const engGain = f.engineOn ? e.gain * 0.2 * (f.cabin ? 0.85 : 1) : 0;
         g.eng.f.frequency.setTargetAtTime(e.freq, now, f.engineOn ? 0.06 : 0.35);
         g.eng.sub.frequency.setTargetAtTime(e.freq * 0.5, now, f.engineOn ? 0.06 : 0.35);
@@ -453,7 +457,9 @@ function build(ctx: AudioContext, car: DriveCarId): Graph {
   ef.connect(g1); sub.connect(g2); hi.connect(g3); g1.connect(lp); g2.connect(lp); g3.connect(lp);
   const rn = noiseSrc(ctx), rasp = filt(ctx, "bandpass", 300, 1.4), rg = gain(ctx, 0.9 * E.rasp);
   rn.connect(rasp); rasp.connect(rg); rg.connect(lp);
-  lp.connect(eg); eg.connect(master);
+  // a phone speaker plays nothing under ~70 Hz: cut it, so the limiter is not spent on rumble nobody hears
+  const hp = filt(ctx, "highpass", 70, 0.7);
+  lp.connect(hp); hp.connect(eg); eg.connect(master);
   loops.push(ef, sub, hi, rn);
 
   // the road: low noise by speed; the scrub: a band of noise on the bends
