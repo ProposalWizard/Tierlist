@@ -279,7 +279,14 @@
          "set": {
           "deep": "forget"
          }
-        }
+        },
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "said-sure-about-the-photo-and-forgot",
+          "strength": 2
+         }
+        ]
        }
       ]
      }
@@ -323,7 +330,8 @@
     },
     "setup": [
      "A season on. {mate.short} sends a photo from his new house: his hall, a frame on the wall. It's last season's team photo.",
-     "{if arc.deep=='frame'}He still says you drove the frame round yourself.{/if}"
+     "{if arc.deep=='frame'}He still says you drove the frame round yourself.{/if}",
+     "{if mem(mate,'said-sure-about-the-photo-and-forgot')}He got it from the club shop in the end. He paid for it.{/if}"
     ],
     "choices": [
      {

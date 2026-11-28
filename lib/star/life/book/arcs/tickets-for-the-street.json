@@ -409,7 +409,15 @@
          "set": {
           "mid": "no"
          }
-        }
+        },
+        "snub": "mum",
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "wouldnt-see-the-corner-shop-man",
+          "strength": 2
+         }
+        ]
        }
       ]
      }
@@ -589,7 +597,8 @@
     "setup": [
      "Another season. You're warming up when somebody shouts your first name from the corner of the stand, the way only people from home do.",
      "{if arc.mid=='visit'}It's the man from the corner shop. He's thinner, and he's holding a sign: \"BED SIX SAYS HELLO.\"{/if}",
-     "{if arc.mid=='block'}It's the whole block of fourteen, with a new banner, a proper printed one. The bedsheet's in the corner shop window.{/if}"
+     "{if arc.mid=='block'}It's the whole block of fourteen, with a new banner, a proper printed one. The bedsheet's in the corner shop window.{/if}",
+     "{if mem(mum,'wouldnt-see-the-corner-shop-man')}It's the man from the corner shop, thinner. He waves at you anyway. Mum doesn't.{/if}"
     ],
     "choices": [
      {

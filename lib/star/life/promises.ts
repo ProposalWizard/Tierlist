@@ -17,6 +17,7 @@ import { chooseOption, type LifeChange } from "./resolve";
 import { ctxFor, factsOf } from "./facts";
 import { lifeWeek } from "./people";
 import { fillLine } from "./text";
+import { withSnub } from "./snubs";
 
 export const MAX_OPEN_PROMISES = 6;
 const KEEP_CLOSED = 20;
@@ -45,7 +46,8 @@ export function makePromise(c: CareerState, arcId: string, id: string, cast: Rec
 }
 
 /** Play a kept or broken outcome on the promise's people. */
-function play(c: CareerState, arcId: string, o: ArcOutcome | undefined, rng: () => number): { career: CareerState; text: string; changes: LifeChange[] } {
+function play(c: CareerState, arcId: string, o0: ArcOutcome | undefined, rng: () => number): { career: CareerState; text: string; changes: LifeChange[] } {
+  const o = o0 && withSnub(o0, lifeOf(c), runIn(lifeOf(c), arcId)?.cast ?? {});
   if (!o || (!o.npc?.length && !o.remember?.length && !o.effects)) return { career: c, text: o?.text ?? "", changes: [] };
   const cast = runIn(lifeOf(c), arcId)?.cast ?? {};
   const live: LiveEvent = {

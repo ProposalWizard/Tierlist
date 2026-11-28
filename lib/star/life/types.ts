@@ -338,6 +338,11 @@ export interface ArcOutcome extends LifeOutcome {
   noteSquad?: string;
   train?: Partial<Record<"pace" | "power" | "technique" | "vision", number>>;
   startArc?: { id: string; with: Record<string, string> };
+  /** This ending turns that cast slot down (an invite, an offer, a visit): a memory the first
+   *  time, a bigger cost the second time across any story (snubs.ts). */
+  snub?: string;
+  /** Their line when it is the second time (default in snubs.ts). */
+  snubTwice?: string;
 }
 
 export interface LifeTalk {

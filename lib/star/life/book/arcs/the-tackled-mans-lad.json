@@ -149,7 +149,8 @@
          "set": {
           "path": "no"
          }
-        }
+        },
+        "snub": "rival"
        }
       ]
      }

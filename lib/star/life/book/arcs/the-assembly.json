@@ -213,7 +213,8 @@
           "slot": "canteen",
           "bond": -2
          }
-        ]
+        ],
+        "snub": "canteen"
        }
       ],
       "no": [
@@ -232,7 +233,8 @@
           "tag": "wouldnt-do-the-school",
           "strength": 2
          }
-        ]
+        ],
+        "snub": "canteen"
        }
       ]
      }

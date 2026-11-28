@@ -204,7 +204,8 @@
          "set": {
           "path": "cones"
          }
-        }
+        },
+        "snub": "neighbour"
        }
       ]
      }

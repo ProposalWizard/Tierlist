@@ -496,7 +496,8 @@
           40,
           60
          ]
-        }
+        },
+        "snub": "pal"
        },
        {
         "text": "{pal.short} doesn't reply. The school asks a weather man off local telly instead.",
@@ -516,7 +517,8 @@
           40,
           60
          ]
-        }
+        },
+        "snub": "pal"
        }
       ]
      },

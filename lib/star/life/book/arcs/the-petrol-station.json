@@ -606,13 +606,15 @@
         "text": "\"Cheers.\" He sends you forty bags of cola bottles in the post, from his own money.",
         "arc": {
          "end": "the-sweets-story"
-        }
+        },
+        "snub": "tabloid"
        },
        {
         "text": "\"Right.\" His last piece is about someone else.",
         "arc": {
          "end": "no-comment-man"
-        }
+        },
+        "snub": "tabloid"
        }
       ]
      }

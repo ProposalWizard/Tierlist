@@ -122,7 +122,8 @@
          "set": {
           "path": "busy"
          }
-        }
+        },
+        "snub": "groundsman"
        }
       ]
      }

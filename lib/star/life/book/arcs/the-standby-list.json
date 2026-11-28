@@ -79,6 +79,13 @@
       "slot": "mum",
       "bond": 4
      }
+    ],
+    "remember": [
+     {
+      "slot": "mum",
+      "tag": "kept-the-camp-shirt-promise",
+      "strength": 2
+     }
     ]
    },
    "broken": {
@@ -93,7 +100,7 @@
      {
       "slot": "mum",
       "tag": "no-shirt-from-the-camp",
-      "strength": 1
+      "strength": 2
      }
     ]
    }
@@ -358,6 +365,10 @@
          {
           "slot": "mum",
           "bond": -1
+         },
+         {
+          "slot": "manager",
+          "respect": -2
          }
         ],
         "arc": {
@@ -367,6 +378,13 @@
         },
         "promiseBroken": [
          "p-mums-shirt"
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "went-to-bed-on-the-standby-call",
+          "strength": 2
+         }
         ]
        }
       ]

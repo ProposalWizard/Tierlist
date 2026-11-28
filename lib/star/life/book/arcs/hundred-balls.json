@@ -143,7 +143,14 @@
     ]
    },
    "kept": {
-    "text": "You said you'd come, and you came."
+    "text": "You said you'd come, and you came.",
+    "npc": [
+     {
+      "slot": "kitman",
+      "bond": 6,
+      "respect": 4
+     }
+    ]
    },
    "broken": {
     "text": "The chair with your name on it stayed empty."
@@ -220,7 +227,20 @@
    },
    "dueText": "At his night",
    "kept": {
-    "text": "You stood up and said a few words."
+    "text": "You stood up and said a few words.",
+    "npc": [
+     {
+      "slot": "kitman",
+      "respect": 6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "kitman",
+      "tag": "said-a-few-words-at-his-night",
+      "strength": 3
+     }
+    ]
    },
    "broken": {
     "text": "Somebody else had to do the speech."
@@ -717,7 +737,8 @@
           "path": "left"
          },
          "next": "b3-thursdays"
-        }
+        },
+        "snub": "kitman"
        }
       ],
       "snubbed": [
@@ -2209,7 +2230,8 @@
          "requires": [
           "promise(p-dens-night)"
          ],
-         "goto": "s2"
+         "goto": "s2",
+         "promise": "p-dens-night"
         },
         {
          "id": "yes2",
@@ -2319,7 +2341,8 @@
           "tag": "wouldnt-say-yes-to-his-night",
           "strength": 2
          }
-        ]
+        ],
+        "snub": "kitman"
        }
       ],
       "coming": [
@@ -2335,7 +2358,8 @@
          "set": {
           "speech": 0
          }
-        }
+        },
+        "promise": "p-dens-night"
        }
       ],
       "speech": [
@@ -2784,7 +2808,8 @@
           2,
           3
          ]
-        }
+        },
+        "snub": "kitman"
        }
       ],
       "@ignore": [
@@ -2821,7 +2846,8 @@
           2,
           3
          ]
-        }
+        },
+        "snub": "kitman"
        }
       ]
      }
@@ -2937,6 +2963,13 @@
           "slot": "you",
           "tag": "never-answered-dens-letter",
           "strength": 3
+         }
+        ],
+        "snub": "kitman",
+        "npc": [
+         {
+          "slot": "kitman",
+          "bond": -5
          }
         ]
        }
@@ -3180,7 +3213,8 @@
         ],
         "arc": {
          "end": "went-in"
-        }
+        },
+        "snub": "kid"
        }
       ],
       "once": [

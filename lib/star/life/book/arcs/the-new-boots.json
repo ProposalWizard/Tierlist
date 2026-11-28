@@ -84,6 +84,13 @@
       "bond": -6,
       "respect": -6
      }
+    ],
+    "remember": [
+     {
+      "slot": "sponsor",
+      "tag": "said-every-match-and-didnt",
+      "strength": 2
+     }
     ]
    }
   }

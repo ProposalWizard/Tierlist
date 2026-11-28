@@ -90,7 +90,53 @@
       "tag": "didnt-come-to-my-sixtieth",
       "strength": 2
      }
+    ],
+    "snub": "fan"
+   }
+  },
+  "p-sixtieth-try": {
+   "id": "p-sixtieth-try",
+   "to": "fan",
+   "text": "Try to get to {fan.short}'s sixtieth",
+   "due": {
+    "weeks": [
+     1,
+     4
     ]
+   },
+   "keptBy": {
+    "beat": "fan-2",
+    "ends": [
+     "go"
+    ]
+   },
+   "dueText": "The Saturday night after next",
+   "kept": {
+    "text": "You said you'd try, and you walked in. He'd told nobody, in case.",
+    "npc": [
+     {
+      "slot": "fan",
+      "bond": 6,
+      "respect": 2
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"Said you'd try. I kept a chair.\"",
+    "npc": [
+     {
+      "slot": "fan",
+      "bond": -5
+     }
+    ],
+    "remember": [
+     {
+      "slot": "fan",
+      "tag": "tried-for-my-sixtieth-and-didnt",
+      "strength": 2
+     }
+    ],
+    "snub": "fan"
    }
   }
  },
@@ -172,7 +218,8 @@
          "id": "maybe",
          "label": "\"I'll try.\"",
          "tone": "calm",
-         "end": "maybe"
+         "end": "maybe",
+         "promise": "p-sixtieth-try"
         }
        ]
       }
@@ -344,8 +391,17 @@
          }
         },
         "promiseBroken": [
-         "p-sixtieth"
-        ]
+         "p-sixtieth",
+         "p-sixtieth-try"
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "left-cake-on-my-windscreen",
+          "strength": 2
+         }
+        ],
+        "snub": "fan"
        }
       ]
      }

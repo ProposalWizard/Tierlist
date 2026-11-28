@@ -45,7 +45,63 @@
    "text": "You missed the christening and sent a card. You've been to every birthday since."
   }
  ],
- "promises": {},
+ "promises": {
+  "p-christening": {
+   "id": "p-christening",
+   "to": "pal",
+   "text": "Be at the christening of {pal.short}'s baby",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "gdf-1b-sunday",
+    "ends": [
+     "drive"
+    ]
+   },
+   "dueText": "Sunday the fourteenth, half ten",
+   "kept": {
+    "text": "You stand at the font in yesterday's suit. {pal.short} keeps mouthing \"you came\" over the vicar.",
+    "npc": [
+     {
+      "slot": "pal",
+      "bond": 8,
+      "respect": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "pal",
+      "tag": "drove-through-the-night-for-the-christening",
+      "strength": 3
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"We held it ten minutes for you. Vicar had a wedding after.\"",
+    "npc": [
+     {
+      "slot": "pal",
+      "bond": -10,
+      "respect": -4,
+      "grudge": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "pal",
+      "tag": "missed-the-christening",
+      "strength": 3
+     }
+    ],
+    "snub": "pal"
+   },
+   "remind": "\"Half ten Sunday. She's got a dress and everything. {pal.short}\""
+  }
+ },
  "beats": [
   {
    "id": "gdf-1-ask",
@@ -112,8 +168,14 @@
         "arc": {
          "set": {
           "path": "yes"
-         }
-        }
+         },
+         "next": "gdf-1b-sunday",
+         "afterWeeks": [
+          1,
+          2
+         ]
+        },
+        "promise": "p-christening"
        }
       ],
       "try": [
@@ -128,8 +190,14 @@
         "arc": {
          "set": {
           "path": "try"
-         }
-        }
+         },
+         "next": "gdf-1b-sunday",
+         "afterWeeks": [
+          1,
+          2
+         ]
+        },
+        "promise": "p-christening"
        }
       ],
       "speech": [
@@ -162,6 +230,96 @@
    "hint": "Your oldest mate wants you as godfather"
   },
   {
+   "id": "gdf-1b-sunday",
+   "title": "Five hours up the motorway",
+   "event": {
+    "id": "arc-gdf-1b-sunday",
+    "title": "Five hours up the motorway",
+    "category": "life",
+    "place": "road",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Saturday night, after the game, a hotel car park five hours from home. The christening is at half ten in the morning."
+    ],
+    "choices": [
+     {
+      "id": "drive",
+      "label": "Drive back through the night.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You get in at four, sleep three hours in the car outside the church and go in with your tie in your pocket.",
+        "effects": {
+         "energy": -10
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "sleep",
+      "label": "Sleep at the hotel. Text him in the morning.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "You wake at ten past ten with the phone on the floor. Four missed calls from {pal.short}.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -6,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "slept-through-the-christening",
+          "strength": 2
+         }
+        ],
+        "promiseBroken": [
+         "p-christening"
+        ],
+        "arc": {
+         "set": {
+          "path": "missed"
+         }
+        },
+        "snub": "pal"
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "The christening, Sunday half ten"
+  },
+  {
    "id": "gdf-2-later",
    "title": "Her first birthday",
    "after": {
@@ -188,7 +346,8 @@
      ]
     },
     "setup": [
-     "A season on. A birthday party in a church hall, a cake shaped like a one, and a little girl in a football shirt."
+     "A season on. A birthday party in a church hall, a cake shaped like a one, and a little girl in a football shirt.",
+     "{if mem(pal,'missed-the-christening'|'slept-through-the-christening')}There's a photo of the christening on the wall. You're not in it.{/if}"
     ],
     "choices": [
      {

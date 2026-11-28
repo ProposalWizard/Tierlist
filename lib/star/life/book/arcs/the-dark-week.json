@@ -525,7 +525,20 @@
          "set": {
           "walk": "none"
          }
-        }
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "never-answered-my-text",
+          "strength": 2
+         }
+        ]
        }
       ]
      }

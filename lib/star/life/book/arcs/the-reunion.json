@@ -241,13 +241,15 @@
         "text": "\"We know. We just wanted to ask.\" They send you the team photo every week, and you're in every one, photoshopped in, badly.",
         "arc": {
          "end": "the-old-team"
-        }
+        },
+        "snub": "pal"
        },
        {
         "text": "\"No worries.\" The reunion photo is the last one you're in.",
         "arc": {
          "end": "the-photo"
-        }
+        },
+        "snub": "pal"
        }
       ]
      }

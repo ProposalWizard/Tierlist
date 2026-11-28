@@ -143,7 +143,14 @@
          "set": {
           "path": "no"
          }
-        }
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -3
+         }
+        ],
+        "snub": "chairman"
        }
       ]
      }
@@ -186,7 +193,8 @@
      ]
     },
     "setup": [
-     "A season on. The Fox are in the county Sunday cup final, and there's a photo of you on the wall of their function room."
+     "A season on. The Fox are in the county Sunday cup final, and there's a photo of you on the wall of their function room.",
+     "{if arc.path=='no'}They lost the cup the year you said you couldn't come. Nobody mentions it.{/if}"
     ],
     "choices": [
      {

@@ -48,7 +48,62 @@
    "text": "The legend's last game on the radio was yours. He said you turned twice, on air, and gave you his last notes in the box."
   }
  ],
- "promises": {},
+ "promises": {
+  "p-pitch-two": {
+   "id": "p-pitch-two",
+   "to": "legend",
+   "text": "Back on pitch two with {legend.short}, same time next week",
+   "due": {
+    "weeks": [
+     0,
+     3
+    ]
+   },
+   "keptBy": {
+    "beat": "com-1c-again",
+    "ends": [
+     "go"
+    ]
+   },
+   "dueText": "Next week, before his radio slot",
+   "kept": {
+    "text": "He's there in his good shoes again. Twenty more turns and a nod.",
+    "npc": [
+     {
+      "slot": "legend",
+      "bond": 5,
+      "respect": 5
+     }
+    ],
+    "remember": [
+     {
+      "slot": "legend",
+      "tag": "came-back-to-pitch-two",
+      "strength": 2
+     }
+    ]
+   },
+   "broken": {
+    "text": "He stood on pitch two with a bag of balls until twenty to three, then went up to the box.",
+    "npc": [
+     {
+      "slot": "legend",
+      "bond": -5,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "legend",
+      "tag": "left-me-on-pitch-two",
+      "strength": 2
+     }
+    ],
+    "snub": "legend"
+   },
+   "remind": "\"Pitch two. Same time. Bring your turning boots.\""
+  }
+ },
  "beats": [
   {
    "id": "com-1-lounge",
@@ -282,7 +337,7 @@
          "id": "no",
          "label": "\"Not today.\"",
          "tone": "calm",
-         "end": "notoday"
+         "end": "notoday-no"
         }
        ]
       },
@@ -387,7 +442,7 @@
          "id": "ok",
          "label": "\"Same time next week?\"",
          "tone": "humble",
-         "end": "turned"
+         "end": "turned-again"
         }
        ]
       },
@@ -502,6 +557,60 @@
           "mid": "left"
          }
         }
+       }
+      ],
+      "notoday-no": [
+       {
+        "text": "\"Your loss.\" He goes up to the box. You can see him through the glass, eating a pie.",
+        "npc": [
+         {
+          "slot": "legend",
+          "respect": -3
+         }
+        ],
+        "snub": "legend",
+        "snubTwice": "\"I've asked you twice, son. I'm not a taxi.\"",
+        "arc": {
+         "set": {
+          "mid": "left"
+         }
+        }
+       }
+      ],
+      "turned-again": [
+       {
+        "text": "On the way off he says, \"You turned left twice. Your dad's side, was it?\" It was.",
+        "effects": {
+         "boss": 1
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "turned-on-pitch-two",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "turned"
+         },
+         "next": "com-1c-again",
+         "afterWeeks": [
+          1,
+          2
+         ]
+        },
+        "train": {
+         "technique": 1
+        },
+        "promise": "p-pitch-two"
        }
       ]
      }
@@ -759,6 +868,89 @@
     ]
    },
    "hint": "The legend has one more game in the box"
+  },
+  {
+   "id": "com-1c-again",
+   "title": "Pitch two again",
+   "event": {
+    "id": "arc-com-1c-again",
+    "title": "Pitch two again",
+    "category": "legend",
+    "place": "training:pitch",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{legend.name} is on pitch two again, coat on the grass, a bag of balls at his feet. He looks at his watch when he sees you."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go over. Back to goal.",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "text": "He feeds it in and you turn, left, right, left. \"Better. Your feet are quicker than your head.\"",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 3
+         }
+        ],
+        "train": {
+         "technique": 1
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Wave and go in. Not today.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "He waves back, slowly. At three he's on the radio saying young players don't stay behind any more.",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": -4,
+          "respect": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "left-me-on-pitch-two",
+          "strength": 2
+         }
+        ],
+        "promiseBroken": [
+         "p-pitch-two"
+        ],
+        "snub": "legend"
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     }
+    ]
+   },
+   "hint": "The legend said same time next week",
+   "after": {
+    "objective": "scheduled"
+   }
   }
  ]
 }

@@ -98,7 +98,7 @@
      {
       "slot": "capt",
       "tag": "didnt-call-tails",
-      "strength": 1
+      "strength": 2
      }
     ]
    }
@@ -334,6 +334,35 @@
       "tone": "confident",
       "outcomes": [
        {
+        "text": "Heads. You lose the toss and the game. Nobody blames the coin except one man in the stand. After, {capt.short} texts you one word: \"Heads?\"",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "grudge": 4,
+          "bond": -4
+         }
+        ],
+        "arc": {
+         "set": {
+          "kept": 0
+         }
+        },
+        "promiseBroken": [
+         "p-the-toss"
+        ],
+        "if": "promise(p-the-toss)",
+        "remember": [
+         {
+          "slot": "capt",
+          "tag": "didnt-call-tails",
+          "strength": 2
+         }
+        ]
+       },
+       {
         "text": "Heads. You lose the toss and the game. Nobody blames the coin except one man in the stand.",
         "effects": {
          "boss": -1
@@ -402,7 +431,8 @@
     },
     "setup": [
      "A season on. {capt.short} has gone to another club. The gaffer throws the armband at you across the dressing room without a word.",
-     "{if arc.kept==1}There's a text from {capt.short} the same afternoon: \"Tails.\"{/if}"
+     "{if arc.kept==1}There's a text from {capt.short} the same afternoon: \"Tails.\"{/if}",
+     "{if mem(capt,'didnt-call-tails')}{capt.short} hasn't texted you since the cup night.{/if}"
     ],
     "choices": [
      {

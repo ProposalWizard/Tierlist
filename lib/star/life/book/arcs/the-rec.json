@@ -206,7 +206,8 @@
          "set": {
           "path": "no"
          }
-        }
+        },
+        "snub": "dad"
        }
       ]
      }
@@ -473,7 +474,9 @@
          "set": {
           "raised": 0
          }
-        }
+        },
+        "snub": "dad",
+        "snubTwice": "\"Twice I've asked you to the Rec. I'll stop asking.\""
        }
       ]
      }

@@ -166,7 +166,8 @@
          "set": {
           "path": "bed"
          }
-        }
+        },
+        "snub": "groundsman"
        }
       ]
      }
@@ -252,13 +253,17 @@
         "text": "\"Fair,\" he says. He leans your shovel by the door, in case.",
         "arc": {
          "end": "the-shovel"
-        }
+        },
+        "snub": "groundsman",
+        "snubTwice": "Second winter you've stayed in bed. {groundsman.short} paints over the name on the handle."
        },
        {
         "text": "\"Course you will.\" He tells you about every shovel, at length, after the game.",
         "arc": {
          "end": "called-off"
-        }
+        },
+        "snub": "groundsman",
+        "snubTwice": "Second winter you've stayed in bed. {groundsman.short} paints over the name on the handle."
        }
       ]
      }

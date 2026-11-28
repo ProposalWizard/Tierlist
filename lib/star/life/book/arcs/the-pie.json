@@ -130,7 +130,14 @@
          "set": {
           "path": "salad"
          }
-        }
+        },
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": -2
+         }
+        ],
+        "snub": "canteen"
        }
       ],
       "two": [

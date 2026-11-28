@@ -440,7 +440,14 @@
          "set": {
           "deep": "leave"
          }
-        }
+        },
+        "snub": "capt",
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": -2
+         }
+        ]
        }
       ]
      }

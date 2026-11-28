@@ -89,14 +89,15 @@
     "npc": [
      {
       "slot": "dad",
-      "bond": -4
+      "bond": -4,
+      "respect": -3
      }
     ],
     "remember": [
      {
       "slot": "dad",
       "tag": "didnt-show-me-the-flats-paperwork",
-      "strength": 1
+      "strength": 2
      }
     ]
    }
@@ -353,6 +354,38 @@
          {
           "slot": "agent",
           "bond": -2
+         },
+         {
+          "slot": "dad",
+          "bond": -3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "out"
+         }
+        },
+        "promiseBroken": [
+         "p-ask-dad"
+        ],
+        "if": "promise(p-ask-dad)",
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "didnt-show-me-the-flats-paperwork",
+          "strength": 2
+         }
+        ]
+       },
+       {
+        "text": "Clive says he'll look into it. He looks into it for eleven weeks. You get half back.",
+        "effects": {
+         "moneyWeeks": 2
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -2
          }
         ],
         "arc": {
@@ -371,6 +404,38 @@
       "label": "Pay it.",
       "tone": "reckless",
       "outcomes": [
+       {
+        "text": "You pay it. Clive sends a picture of the same spade.",
+        "effects": {
+         "moneyWeeks": -4
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 2
+         },
+         {
+          "slot": "dad",
+          "bond": -3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "deeper"
+         }
+        },
+        "promiseBroken": [
+         "p-ask-dad"
+        ],
+        "if": "promise(p-ask-dad)",
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "didnt-show-me-the-flats-paperwork",
+          "strength": 2
+         }
+        ]
+       },
        {
         "text": "You pay it. Clive sends a picture of the same spade.",
         "effects": {

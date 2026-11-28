@@ -218,13 +218,15 @@
         "text": "She puts the flowers by the till and tells the queue you're shy.",
         "arc": {
          "end": "the-chapter"
-        }
+        },
+        "snub": "reporter"
        },
        {
         "text": "She puts the flowers by the till.",
         "arc": {
          "end": "the-footnote"
-        }
+        },
+        "snub": "reporter"
        }
       ]
      }

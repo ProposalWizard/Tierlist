@@ -106,6 +106,59 @@
     ]
    },
    "remind": "\"Tuesday? I've borrowed the good balls off the kit man.\""
+  },
+  "p-thursday-too": {
+   "id": "p-thursday-too",
+   "to": "kid",
+   "text": "Feed {kid.short} again on Thursday",
+   "due": {
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "keptBy": {
+    "beat": "dig-2b-thursday",
+    "ends": [
+     "feed"
+    ]
+   },
+   "dueText": "Thursday, after training",
+   "kept": {
+    "text": "He's started writing the days on his hand. Tuesday and Thursday.",
+    "npc": [
+     {
+      "slot": "kid",
+      "bond": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "kid",
+      "tag": "two-days-a-week",
+      "strength": 2
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"Thought you said Thursday.\"",
+    "npc": [
+     {
+      "slot": "kid",
+      "bond": -6,
+      "respect": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "kid",
+      "tag": "thursday-never-came",
+      "strength": 2
+     }
+    ],
+    "snub": "kid"
+   },
+   "remind": "\"Thursday still on? I've got the bag. {kid.short}\""
   }
  },
  "beats": [
@@ -386,7 +439,8 @@
           "tag": "said-another-day",
           "strength": 1
          }
-        ]
+        ],
+        "snub": "kid"
        }
       ],
       "refused": [
@@ -405,7 +459,8 @@
           "tag": "wouldnt-feed-him",
           "strength": 2
          }
-        ]
+        ],
+        "snub": "kid"
        }
       ]
      }
@@ -688,7 +743,7 @@
          "id": "work",
          "label": "\"Then we'll do it Thursday as well.\"",
          "tone": "brave",
-         "end": "good"
+         "end": "good-thursday"
         }
        ]
       },
@@ -780,6 +835,39 @@
         "promiseBroken": [
          "p-tuesday"
         ]
+       }
+      ],
+      "good-thursday": [
+       {
+        "text": "He scores in the under-23s on Saturday, low into the corner, and looks up at the stand to see if you saw.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 8,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "came-back-on-tuesday",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "trained": 2
+         },
+         "next": "dig-2b-thursday",
+         "afterWeeks": [
+          0,
+          1
+         ]
+        },
+        "promise": "p-thursday-too"
        }
       ]
      }
@@ -1450,6 +1538,98 @@
    "look": {
     "chip": "Years later"
    }
+  },
+  {
+   "id": "dig-2b-thursday",
+   "title": "Thursday as well",
+   "event": {
+    "id": "arc-dig-2b-thursday",
+    "title": "Thursday as well",
+    "category": "life",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Thursday. It's sleeting sideways. {kid.short} is on pitch two with the ball bag and his hood up, looking at the dressing-room door."
+    ],
+    "choices": [
+     {
+      "id": "feed",
+      "label": "Get your boots back on and feed him.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "Forty minutes in the sleet. He hits the last six clean and doesn't say a word about it, which is how you know.",
+        "effects": {
+         "energy": -6
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "came-on-the-thursday-too",
+          "strength": 2
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "car",
+      "label": "Wave from the car. He'll understand.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "He waves back. He's still out there when you get to the gate.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -6,
+          "respect": -3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "waved-from-the-car",
+          "strength": 2
+         }
+        ],
+        "promiseBroken": [
+         "p-thursday-too"
+        ],
+        "snub": "kid"
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     }
+    ]
+   },
+   "hint": "You said Thursday as well"
   }
  ]
 }

@@ -44,7 +44,8 @@
   "path": "none",
   "score": 0,
   "best": 0,
-  "press": "none"
+  "press": "none",
+  "bring": 0
  },
  "clocks": [],
  "ends": [
@@ -705,7 +706,12 @@
           "respect": 4,
           "grudge": 2
          }
-        ]
+        ],
+        "arc": {
+         "set": {
+          "bring": 1
+         }
+        }
        }
       ],
       "nice": [
@@ -796,7 +802,8 @@
     },
     "setup": [
      "Derby day, the late kick-off. Eighty-ninth minute, a cross from the right, you and {rival.short} going up for it together like you have for five seasons.",
-     "{if arc.path=='war'}Both sets of fans have been singing about the two of you since the warm-up.{/if}"
+     "{if arc.path=='war'}Both sets of fans have been singing about the two of you since the warm-up.{/if}",
+     "{if arc.bring==1}You told him you'd bring your head. He taps his own on the way out of the tunnel.{/if}"
     ],
     "choices": [
      {

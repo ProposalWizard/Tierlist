@@ -904,20 +904,23 @@
         "text": "\"Another time.\" He doesn't ask again.",
         "arc": {
          "end": "the-leak"
-        }
+        },
+        "snub": "vet"
        },
        {
         "if": "arc.last=='gave'",
         "text": "He sends you a photo of the under-eighteens' dressing room. Above the door: a photo of him scoring that penalty, and your back, in the corner of it.",
         "arc": {
          "end": "his-last-penalty"
-        }
+        },
+        "snub": "vet"
        },
        {
         "text": "He understands. He sends you a thumbs up and a photo of his kids in your shirt.",
         "arc": {
          "end": "kept-his-secret"
-        }
+        },
+        "snub": "vet"
        }
       ]
      }

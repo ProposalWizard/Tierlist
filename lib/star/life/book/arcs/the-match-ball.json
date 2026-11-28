@@ -283,7 +283,8 @@
          "set": {
           "deep": "ignore"
          }
-        }
+        },
+        "snub": "referee"
        }
       ]
      }

@@ -85,9 +85,65 @@
      {
       "slot": "chairman",
       "bond": -6,
-      "respect": -4
+      "respect": -4,
+      "grudge": 3
+     }
+    ],
+    "remember": [
+     {
+      "slot": "chairman",
+      "tag": "said-hed-say-the-right-things",
+      "strength": 2
      }
     ]
+   }
+  },
+  "p-top-table": {
+   "id": "p-top-table",
+   "to": "chairman",
+   "text": "Sit at {chairman.short}'s top table on Friday",
+   "due": {
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "keptBy": {
+    "beat": "chd-2-dinner",
+    "ends": [
+     "sell",
+     "truth",
+     "dodge"
+    ]
+   },
+   "dueText": "Friday night",
+   "kept": {
+    "text": "You turned up in a suit, like you said you would.",
+    "npc": [
+     {
+      "slot": "chairman",
+      "respect": 3
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"There was a card with your name on it, son. Next to his.\"",
+    "npc": [
+     {
+      "slot": "chairman",
+      "bond": -8,
+      "respect": -4,
+      "grudge": 6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "chairman",
+      "tag": "left-an-empty-seat-at-the-top-table",
+      "strength": 3
+     }
+    ],
+    "snub": "chairman"
    }
   }
  },
@@ -217,7 +273,8 @@
          "set": {
           "said": "yes"
          }
-        }
+        },
+        "promise": "p-top-table"
        }
       ],
       "honest-warning": [
@@ -234,7 +291,8 @@
          "set": {
           "said": "honest"
          }
-        }
+        },
+        "promise": "p-top-table"
        }
       ],
       "refused": [
@@ -262,7 +320,8 @@
          "set": {
           "said": "no"
          }
-        }
+        },
+        "snub": "chairman"
        }
       ]
      }
@@ -533,6 +592,44 @@
         ]
        }
       ]
+     },
+     {
+      "id": "skip",
+      "label": "Text him you're not well and stay in.",
+      "tone": "lie",
+      "outcomes": [
+       {
+        "text": "You watch the dinner on the club's page from your sofa. There's a card with your name on it in the photos, next to an empty chair.",
+        "effects": {
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -8,
+          "respect": -4,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "left-an-empty-seat-at-the-top-table",
+          "strength": 3
+         }
+        ],
+        "snub": "chairman",
+        "arc": {
+         "set": {
+          "said": "no"
+         }
+        },
+        "promiseBroken": [
+         "p-top-table",
+         "p-right-things"
+        ]
+       }
+      ]
      }
     ],
     "callbacks": [],
@@ -586,7 +683,8 @@
      "{if arc.said=='sold'}The sale went through in the summer. This morning six people from the office, the canteen and the academy have been let go.{/if}",
      "{if !arc.said=='sold'}The sale fell through in the summer. {chairman.short} is still in charge, and the wages have been on time all year.{/if}",
      "{if arc.deep=='truth'}The gaffer still mentions the seating plan.{/if}",
-     "{if arc.deep=='chair'}The gaffer never asked you about the dinner again.{/if}"
+     "{if arc.deep=='chair'}The gaffer never asked you about the dinner again.{/if}",
+     "{if mem(chairman,'left-an-empty-seat-at-the-top-table')}{chairman.short} still nods at you in the corridor. He doesn't stop.{/if}"
     ],
     "choices": [
      {

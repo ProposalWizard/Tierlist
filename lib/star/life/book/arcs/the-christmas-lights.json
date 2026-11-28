@@ -182,7 +182,8 @@
          "set": {
           "path": "no"
          }
-        }
+        },
+        "snub": "chairman"
        }
       ]
      }
@@ -350,7 +351,9 @@
          "set": {
           "mid": "no"
          }
-        }
+        },
+        "snub": "chairman",
+        "snubTwice": "\"I'll stop asking, then,\" {chairman.short} says, and takes the letter back."
        }
       ],
       "calendar": [

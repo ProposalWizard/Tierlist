@@ -1427,7 +1427,8 @@
           "tag": "wouldnt-feed-him",
           "strength": 2
          }
-        ]
+        ],
+        "snub": "mate"
        }
       ],
       "refused-hard": [
@@ -1450,7 +1451,8 @@
           "strength": 3
          }
         ],
-        "noteSquad": "refused-to-help-the-injured-lad"
+        "noteSquad": "refused-to-help-the-injured-lad",
+        "snub": "mate"
        }
       ]
      }
@@ -1940,7 +1942,8 @@
         ],
         "arc": {
          "end": "brothers-in-arms"
-        }
+        },
+        "snub": "mate"
        },
        {
         "text": "You read it twice and put it in the recycling.",
@@ -1955,7 +1958,8 @@
         ],
         "arc": {
          "end": "the-feud"
-        }
+        },
+        "snub": "mate"
        }
       ]
      },

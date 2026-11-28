@@ -133,7 +133,8 @@
          "set": {
           "path": "taxi"
          }
-        }
+        },
+        "snub": "kidfan"
        }
       ]
      }
@@ -221,13 +222,17 @@
         "text": "You're not. You get the team bus. But on seat fourteen of the supporters' coach there's a bit of tape with your name on it, and there always will be.",
         "arc": {
          "end": "seat-fourteen"
-        }
+        },
+        "snub": "kidfan",
+        "snubTwice": "Her dad takes the tape off seat fourteen. \"Twice is plenty.\""
        },
        {
         "text": "\"Taxi man.\" They've been calling you that all season.",
         "arc": {
          "end": "a-taxi"
-        }
+        },
+        "snub": "kidfan",
+        "snubTwice": "Her dad takes the tape off seat fourteen. \"Twice is plenty.\""
        }
       ]
      }

@@ -358,7 +358,8 @@
          "set": {
           "deep": "bin"
          }
-        }
+        },
+        "snub": "referee"
        }
       ]
      }

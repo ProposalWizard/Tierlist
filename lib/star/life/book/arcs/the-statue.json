@@ -163,7 +163,8 @@
          "set": {
           "path": "no"
          }
-        }
+        },
+        "snub": "legend"
        }
       ]
      }

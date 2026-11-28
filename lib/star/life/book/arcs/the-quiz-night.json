@@ -365,13 +365,15 @@
         "text": "He goes on his own and stands at the bar shouting answers. Somebody has to.",
         "arc": {
          "end": "the-cheats"
-        }
+        },
+        "snub": "pal"
        },
        {
         "text": "He sends a photo: the toilet seat, on a table, with a new team round it.",
         "arc": {
          "end": "the-trophy"
-        }
+        },
+        "snub": "pal"
        }
       ]
      }

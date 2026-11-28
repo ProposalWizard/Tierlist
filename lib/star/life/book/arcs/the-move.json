@@ -52,7 +52,61 @@
    "text": "Your partner said no to the job abroad. This time it was her choice, she says, and you believe her."
   }
  ],
- "promises": {},
+ "promises": {
+  "p-sundays": {
+   "id": "p-sundays",
+   "to": "partner",
+   "text": "Fly out and see {partner.short} on Sundays",
+   "due": {
+    "weeks": [
+     0,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "mov-1b-sunday",
+    "ends": [
+     "fly"
+    ]
+   },
+   "dueText": "The first Sunday after a home game",
+   "kept": {
+    "text": "She meets you at arrivals with a sign that says your name spelt wrong, on purpose.",
+    "npc": [
+     {
+      "slot": "partner",
+      "bond": 6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "partner",
+      "tag": "kept-the-sundays",
+      "strength": 2
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"You said Sundays.\"",
+    "npc": [
+     {
+      "slot": "partner",
+      "bond": -10,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "partner",
+      "tag": "sundays-stopped",
+      "strength": 3
+     }
+    ],
+    "snub": "partner"
+   },
+   "remind": "\"Flight's at nine. I've got the good coffee in. {partner.short}\""
+  }
+ },
  "beats": [
   {
    "id": "mov-1-offer",
@@ -95,7 +149,8 @@
          "id": "weekends",
          "label": "\"Go. I'll do the Sundays.\"",
          "tone": "kind",
-         "end": "weekends"
+         "end": "weekends",
+         "promise": "p-sundays"
         },
         {
          "id": "stay",
@@ -135,7 +190,12 @@
         "arc": {
          "set": {
           "path": "weekends"
-         }
+         },
+         "next": "mov-1b-sunday",
+         "afterWeeks": [
+          1,
+          2
+         ]
         }
        }
       ],
@@ -152,7 +212,9 @@
          "set": {
           "path": "stay"
          }
-        }
+        },
+        "snub": "partner",
+        "snubTwice": "\"That's twice I've asked you to come with me. I won't ask again.\""
        }
       ]
      }
@@ -195,7 +257,8 @@
      ]
     },
     "setup": [
-     "A season on."
+     "A season on.",
+     "{if mem(partner,'sundays-stopped')}The Sundays stopped in October. Neither of you says so.{/if}"
     ],
     "choices": [
      {
@@ -255,6 +318,94 @@
     ]
    },
    "hint": "A season on, abroad or not"
+  },
+  {
+   "id": "mov-1b-sunday",
+   "title": "The first Sunday",
+   "event": {
+    "id": "arc-mov-1b-sunday",
+    "title": "The first Sunday",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Saturday's game finishes at five. The last flight out to her is at nine, and you've got recovery at ten on Monday."
+    ],
+    "choices": [
+     {
+      "id": "fly",
+      "label": "Get the nine o'clock flight.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You're at her door at midnight with your wash bag. She's left the hall light on for you.",
+        "effects": {
+         "energy": -10
+        },
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "came-on-the-first-sunday",
+          "strength": 3
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Stay home and ring her instead.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "\"It's fine. It's one Sunday.\" She hangs up first.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -8,
+          "respect": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "first-sunday-on-the-phone",
+          "strength": 2
+         }
+        ],
+        "promiseBroken": [
+         "p-sundays"
+        ],
+        "snub": "partner"
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "She is abroad; you said Sundays"
   }
  ]
 }

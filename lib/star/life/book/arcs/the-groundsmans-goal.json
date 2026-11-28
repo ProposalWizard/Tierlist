@@ -298,7 +298,8 @@
          "set": {
           "path": "no"
          }
-        }
+        },
+        "snub": "groundsman"
        }
       ]
      }

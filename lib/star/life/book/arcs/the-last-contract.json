@@ -356,7 +356,15 @@
         },
         "promiseBroken": [
          "p-tuesdays"
-        ]
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "said-he-had-a-scan",
+          "strength": 2
+         }
+        ],
+        "snub": "coach"
        }
       ]
      }

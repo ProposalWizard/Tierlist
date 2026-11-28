@@ -341,7 +341,15 @@
         ],
         "promiseBroken": [
          "p-opening"
-        ]
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "slept-through-the-opening",
+          "strength": 2
+         }
+        ],
+        "snub": "pal"
        }
       ]
      }

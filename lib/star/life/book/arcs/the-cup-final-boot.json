@@ -306,7 +306,8 @@
          "set": {
           "path": "no"
          }
-        }
+        },
+        "snub": "kitman"
        }
       ]
      }

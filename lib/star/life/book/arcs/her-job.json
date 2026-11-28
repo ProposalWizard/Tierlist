@@ -328,7 +328,15 @@
         },
         "promiseBroken": [
          "p-weekends"
-        ]
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "next-week-never-came",
+          "strength": 2
+         }
+        ],
+        "snub": "partner"
        }
       ]
      }
