@@ -10,12 +10,16 @@
 import { useEffect, useRef, useState } from "react";
 import type { InteractCard } from "@/lib/star/world3d/interact";
 import { GymHud, type GymHudHandle } from "@/components/star/GymHud";
-import type { WorldArrival, WorldController, WorldOptions, WorldStatus } from "@/lib/star/world3d/testScene";
+import type { WorldArrival, WorldController, WorldLunch, WorldOptions, WorldStatus } from "@/lib/star/world3d/testScene";
+import type { CareerState } from "@/lib/star/types";
+import LunchCard from "./LunchCard";
 import ViewToggle3D from "./ViewToggle3D";
 import LoadingCurtain from "./loading/LoadingCurtain";
 import { afterLoss, newHealState, HEAL_DELAY_MS } from "@/lib/star/three3d/autoHeal";
 
-export default function World3D({ options, clean, onGo, onBack, backLabel = "Back", noStatus, onArrival }: { options: WorldOptions; clean?: boolean; onGo?: (place: WorldOptions["place"]) => void; /** A "‹ back" pill (the gym reached through the compound's door: back out of it). */ onBack?: () => void; backLabel?: string; /** the career: no clock-and-people strip at the top */ noStatus?: boolean; /** the drive's arrival, as it goes */ onArrival?: (a: WorldArrival) => void }) {
+export default function World3D({ options, clean, onGo, onBack, backLabel = "Back", noStatus, onArrival, career, onCareer }: { options: WorldOptions; clean?: boolean; onGo?: (place: WorldOptions["place"]) => void; /** A "‹ back" pill (the gym reached through the compound's door: back out of it). */ onBack?: () => void; backLabel?: string; /** the career: no clock-and-people strip at the top */ noStatus?: boolean; /** the drive's arrival, as it goes */ onArrival?: (a: WorldArrival) => void;
+  /** The canteen: the career the lunch card reads and changes (components/star/LunchCard.tsx, its rules in life/lunch.ts). Absent: no lunch card. */
+  career?: CareerState; onCareer?: (c: CareerState) => void }) {
   const host = useRef<HTMLDivElement>(null);
   const ctrl = useRef<WorldController | null>(null);
   const [card, setCard] = useState<InteractCard | null>(null);
@@ -23,6 +27,10 @@ export default function World3D({ options, clean, onGo, onBack, backLabel = "Bac
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
   const hud = useRef<GymHudHandle>(null);
   const [gymOn, setGymOn] = useState(false);
+  // the canteen: at the counter, or sat with a team-mate (the SAME lunch card, focused on that)
+  const [lunch, setLunch] = useState<WorldLunch | null>(null);
+  const lunchOk = useRef(false);
+  lunchOk.current = !!career && !!onCareer;
   // the drive's arrival (options.arrive): Skip while the car comes in, then the team-mate's line
   const [arrival, setArrival] = useState<WorldArrival | null>(null);
   const arrivalRef = useRef(onArrival);
@@ -32,6 +40,7 @@ export default function World3D({ options, clean, onGo, onBack, backLabel = "Bac
   optsRef.current = options;
   const goRef = useRef(onGo);
   goRef.current = onGo;
+  const room = options.place === "reception" || options.place === "canteen";
   const key = `${options.place}|${options.demo ?? ""}|${options.quality ?? ""}|${options.homeGym ?? ""}|${options.startAt ?? ""}|${options.arrive?.car ?? ""}`;
 
   // the phone took the 3D away: rebuilt quietly (at Low) up to autoHeal's limit, then the message (3D places audit P2/P3)
@@ -44,6 +53,7 @@ export default function World3D({ options, clean, onGo, onBack, backLabel = "Bac
     let gone = false, wait = 0;
     setState("loading");
     setCard(null);
+    setLunch(null);
     const lost = () => {
       if (gone) return;
       ctrl.current?.dispose(); ctrl.current = null;
@@ -66,6 +76,7 @@ export default function World3D({ options, clean, onGo, onBack, backLabel = "Bac
         onContextLost: lost,
         onGo: (p) => { if (!gone) goRef.current?.(p); },
         onArrive: (a) => { if (gone) return; setArrival(a); arrivalRef.current?.(a); },
+        ...(lunchOk.current ? { onLunch: (l: WorldLunch | null) => { if (!gone) setLunch(l); } } : {}),
         onGym: (f) => { if (gone) return; hud.current?.frame(f); const on = !!f.kind; setGymOn((was) => (was === on ? was : on)); },
       // a rebuild after a loss: at Low, and the arrival not played again (you are at your car)
       }, { ...optsRef.current, quality: build > 0 ? "low" : optsRef.current.quality, arrive: build > 0 && optsRef.current.arrive ? { ...optsRef.current.arrive, skip: true } : optsRef.current.arrive, chat: (id) => optsRef.current.chat?.(id) ?? null }))
@@ -87,8 +98,8 @@ export default function World3D({ options, clean, onGo, onBack, backLabel = "Bac
     <div style={{ position: "absolute", inset: 0, background: "#0b0d12", overflow: "hidden", fontFamily: "system-ui, sans-serif" }} data-world3d={state}>
       <div ref={host} style={{ position: "absolute", inset: 0 }} />
       {/* the compound opens behind its own loading screen (keepie-uppies over a still of the compound) */}
-      {options.place === "compound" && !options.demo && <LoadingCurtain section="compound" loading={state === "loading"} box />}
-      {state !== "ready" && (options.place !== "compound" || options.demo || state === "failed") && (
+      {(options.place === "compound" || room) && !options.demo && <LoadingCurtain section="compound" loading={state === "loading"} box />}
+      {state !== "ready" && ((options.place !== "compound" && !room) || options.demo || state === "failed") && (
         <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", color: "#cbd5e1", fontWeight: 800, fontSize: 14, background: "#0b0d12" }}>
           {state === "loading" ? "Opening…" : "3D could not open on this device."}
         </div>
@@ -117,7 +128,16 @@ export default function World3D({ options, clean, onGo, onBack, backLabel = "Bac
       {state === "ready" && options.place === "gym" && (
         <GymHud ref={hud} fitness={clean ? undefined : status?.fitness} body={status?.fitness?.body ?? null} film={!!options.demo} onHold={(on) => ctrl.current?.gymHold(on)} onAct={(id) => ctrl.current?.act(id)} />
       )}
-      {state === "ready" && !(options.place === "gym" && gymOn) && !arriving && <ViewToggle3D onChange={(m) => ctrl.current?.setView(m)} style={{ top: "auto", bottom: card ? 200 : 16 }} />}
+      {state === "ready" && !(options.place === "gym" && gymOn) && !arriving && !lunch && <ViewToggle3D onChange={(m) => ctrl.current?.setView(m)} style={{ top: "auto", bottom: card ? 200 : 16 }} />}
+      {state === "ready" && lunch && career && onCareer && (
+        <div data-world3d-lunch={lunch.at} style={{ position: "absolute", left: 10, right: 10, bottom: 12, maxWidth: 460, margin: "0 auto", maxHeight: "64%", overflowY: "auto", zIndex: 3 }}>
+          <LunchCard career={career} onCareer={onCareer} focus={lunch.at === "counter" ? "plates" : "table"} mate={lunch.at === "table" ? lunch.mate : undefined} />
+          <button data-lunch-close onClick={() => { setLunch(null); ctrl.current?.act("lunch:close"); }}
+            style={{ display: "block", width: "100%", marginTop: 8, height: 42, borderRadius: 12, background: "rgba(8,10,16,.86)", color: "#f8fafc", fontWeight: 900, fontSize: 14, border: "1px solid rgba(255,255,255,.18)", cursor: "pointer" }}>
+            {lunch.at === "table" ? "Stand up" : "Done"}
+          </button>
+        </div>
+      )}
       {card && (
         <div data-world3d-card style={{ position: "absolute", left: 12, right: 12, bottom: 16, maxWidth: 460, margin: "0 auto", padding: "12px 14px", borderRadius: 14, background: "rgba(8,10,16,.9)", color: "#f8fafc", borderTop: "3px solid #facc15", boxShadow: "0 10px 30px rgba(0,0,0,.4)" }}>
           {card.sub && <div style={{ fontSize: 11, fontWeight: 900, color: "#facc15", textTransform: "uppercase", letterSpacing: 0.5 }}>{card.sub}</div>}

@@ -11,7 +11,7 @@
  */
 import { buildGrid, findPath, freeAt, type XZ } from "../../lib/star/tapWalk";
 import {
-  COMPOUND, DOORS, DOOR_SOON, SPOTS, PEOPLE, ROUTINES, FORECOURT_BENCH, COMPOUND_RATE, STUCK_MAX_S, COMPOUND_BUDGET, COMPOUND_VIEWS,
+  COMPOUND, DOORS, SPOTS, PEOPLE, ROUTINES, FORECOURT_BENCH, COMPOUND_RATE, STUCK_MAX_S, COMPOUND_BUDGET, COMPOUND_VIEWS,
   COMPOUND_MEASURED, compoundSolids, doorFront, goalsOf, zoneAt, ZONES, CONES, POLES, MANNEQUINS, WALK_GAP_SIDE, WALK_GAP_FRONT,
 } from "../../lib/star/world3d/compoundPlan";
 import { clusterTriangles } from "../../lib/star/world3d/farBodies";
@@ -80,7 +80,8 @@ check(ZONES.every((z) => z.box[0] < z.box[1] && z.box[2] < z.box[3]), "every zon
 // ── the doors lead where they say ──
 const gymDoor = DOORS.find((d) => d.id === "door-gym");
 check(!!gymDoor && gymDoor.leads === "gym", "the gym door leads to the gym place");
-for (const d of DOORS) if (d.leads !== "gym") check((DOOR_SOON[d.id]?.length ?? 0) > 0, `${d.label}: a "coming soon" card says what will be there`);
+// reception and the canteen open their own rooms (28 Nov 2026; tests/star/compoundRooms.mts walks them)
+check(DOORS.find((d) => d.id === "door-reception")?.leads === "reception" && DOORS.find((d) => d.id === "door-canteen")?.leads === "canteen", "the reception and canteen doors lead into their rooms");
 check(new Set(DOORS.map((d) => d.id)).size === DOORS.length && DOORS.length === 3, "three doors, each its own id (gym, reception, canteen)");
 check(DOORS.every((d) => d.x > COMPOUND.building.x0 + 1 && d.x < COMPOUND.building.x1 - 1), "every door is on the building's front");
 

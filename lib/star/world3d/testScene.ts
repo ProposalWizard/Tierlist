@@ -45,7 +45,9 @@ import { objectCard, personCard, smallTalk, talkSpot, type InteractCard } from "
 
 type CarRig = ReturnType<typeof import("../drive3d/rig").rigCar>;
 
-export type WorldPlace = "house" | "garden" | "gym" | "compound";
+export type WorldPlace = "house" | "garden" | "gym" | "compound" | "reception" | "canteen";
+/** The compound's two rooms (./roomsPlan.ts): walked into through their doors. */
+export const isRoomPlace = (p: WorldPlace): p is "reception" | "canteen" => p === "reception" || p === "canteen";
 
 export interface WorldPerson { id: string; name: string; number: number }
 
@@ -83,7 +85,9 @@ export interface WorldOptions {
   fadeIn?: boolean;
   /** place "compound" only: where you start. "gym-door": just out of the gym's door, facing the forecourt
    *  (back from the gym). Absent: by your car. */
-  startAt?: "gym-door" | null;
+  startAt?: "gym-door" | "reception-door" | "canteen-door" | null;
+  /** place "reception" | "canteen": what the room says, read from the career (./roomsPlan.ts roomInfo). Absent: a made-up one. */
+  room?: import("./roomsPlan").RoomInfo | null;
   /** place "gym" only: you keep the compound's painted training kit (no gym cloth), so walking in through its
    *  door you look the same on both sides. Absent: the gym's cloth kit (trainers, ankle socks). */
   compoundKit?: boolean;
@@ -107,7 +111,12 @@ export interface WorldCallbacks {
   onGo?: (place: WorldPlace) => void;
   /** The drive's arrival (opts.arrive): each change of phase or caption. */
   onArrive?: (a: WorldArrival) => void;
+  /** The canteen: you are at the counter (the lunch card's plates), or sat with a team-mate (his table options);
+   *  null: you have stood up / walked away. The page shows the SAME lunch card (components/star/LunchCard.tsx). */
+  onLunch?: (l: WorldLunch | null) => void;
 }
+/** Where you are in the canteen, for the lunch card. */
+export type WorldLunch = { at: "counter" } | { at: "table"; mate: string };
 
 export interface WorldController {
   tap: (clientX: number, clientY: number) => void;
@@ -132,7 +141,7 @@ export interface WorldController {
   dispose: () => void;
 }
 
-type Demo = { place: WorldPlace; duration: number; rate?: number; steps: [number, string][]; you?: [number, number, number]; watch?: string; zoom?: number; /** the gym: the body slider's level (1-4) */ body?: number };
+type Demo = { place: WorldPlace; duration: number; rate?: number; steps: [number, string][]; you?: [number, number, number]; watch?: string; zoom?: number; /** the gym: the body slider's level (1-4) */ body?: number; /** opens on black and fades in (walked in through a door) */ fadeIn?: boolean };
 /** The ten new exercises' demos: start a step away from the spot, walk up, play it with a good thumb. */
 const GYM2_DEMO_FROM: Record<string, [number, number]> = { pullup: [4.2, 3.2], squat: [0.3, -1.1], pushup: [1.5, 2.8], plank: [1.5, 2.8], nordic: [0.4, 2.3], mobility: [0.4, 2.3], boxjump: [2.2, 2.1], copenhagen: [3.55, 2.0], ladder: [1.6, 3.5], landing: [3.1, 2.8] };
 const GYM2_DEMOS: Record<string, Demo> = {
@@ -161,6 +170,11 @@ const DEMOS: Record<string, Demo> = {
   drive: { place: "compound", duration: 34, steps: [[15.5, "go:door-gym"]] },
   // the compound: the people at work (a check that nobody sticks)
   compound: { place: "compound", duration: 60, steps: [] },
+  // the rooms (28 Nov 2026): up to the canteen's door and in (the black holds); then inside, faded in from the door,
+  // up to the counter (the lunch card); reception: in, up to the desk, the receptionist's line
+  canteendoor: { place: "compound", duration: 6, steps: [[0.3, "go:door-canteen"]], you: [8.6, 14.6, Math.PI * 0.85] },
+  canteen: { place: "canteen", duration: 10, steps: [[1.2, "tap:counter"]], fadeIn: true },
+  reception: { place: "reception", duration: 9, steps: [[1.2, "tap:staff-reception"]], fadeIn: true },
   // phase 2 (gymPoses2.ts): one demo per new exercise (walk up, the fade, a good thumb), ?demo=pullup etc.
   ...GYM2_DEMOS,
   // the tour: box jumps, landing balance, pull-ups, the ladder (a few seconds of each)
@@ -259,10 +273,32 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   /** Medium and High: the same car's light copy (~4k triangles), drawn instead when the camera is past CAR_FAR_M. */
   let myCarFar: CarRig | null = null;
   const CP = place === "compound" ? await import("./compoundPlan") : null;
+  // the compound's rooms (./roomsPlan.ts): what they say (a career page reads it from the career: roomInfo)
+  const RP = isRoomPlace(place) ? await import("./roomsPlan") : null;
+  const roomInfo: import("./roomsPlan").RoomInfo = opts.room ?? {
+    desk: ["Morning. Next match is on the screen.", "You leave two and a half hours before kick-off."], screen: { title: "NEXT MATCH", lines: ["Your club v Rivals", "Sat 15:00", "League"] }, trophies: [],
+    hall: { kind: "chef", title: "The club restaurant", menu: [["protein", "Grilled salmon, greens"], ["pasta", "Fresh pasta, chef's sauce"], ["balanced", "Chicken, rice and greens"], ["treat", "Chef's chocolate fondant"]] },
+    mates: opts.mates.slice(0, 3).map((m) => ({ id: m.id, name: m.name })),
+  };
+  let room: import("./roomsPlace").RoomOut | null = null;
   if (place === "house") built = await buildHouse();
   else if (place === "gym") built = await buildGym();
   else if (place === "compound") built = await buildCompoundPlace();
+  else if (isRoomPlace(place)) built = await buildRoomPlace(place);
   else built = buildGarden();
+
+  async function buildRoomPlace(id: "reception" | "canteen"): Promise<Built> {
+    const { buildRoom } = await import("./roomsPlace");
+    const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
+    renderer.toneMappingExposure = 1.05;
+    scene.environmentIntensity = 0.45;
+    const r = buildRoom(id, { THREE, scene, prof, kit: opts.kit, club: opts.club, mergeGeometries, info: roomInfo });
+    room = r;
+    sun = r.sun;
+    const n = shadowSizeFor(prof, 1024) || 1024;
+    sun.shadow.mapSize.set(n, n);
+    return { objects: r.objects, solids: r.solids, bounds: r.bounds, you: r.you, ceil: r.ceil, camBox: r.camBox };
+  }
 
   async function buildCompoundPlace(): Promise<Built> {
     const { buildCompound, parseCompoundSky } = await import("./compoundPlace");
@@ -569,7 +605,15 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const pl = opts.mates[pi++];
     return pl ? [{ ...pl, slot: pp.slot, role: "player", title: pp.title }] : [];
   }) : null;
-  const mates: Cast[] = place === "garden" ? opts.mates.slice(0, 3) : place === "gym" ? (opts.homeGym ? [] : opts.mates.slice(0, 1)) : (cast ?? []).slice(0, budget.present - 1); // the tier's cap on people in a place (budget.ts: Low 6 with you)
+  // the rooms: reception's receptionist; the canteen's three team-mates at the tables (the lunch card's three) and the
+  // chef behind the counter at the top two levels (./roomsPlan.ts hasChef)
+  const roomCast: Cast[] | null = !RP ? null : place === "reception"
+    ? [{ id: RP.RECEPTIONIST.id, slot: RP.RECEPTIONIST.id, name: RP.RECEPTIONIST.name, number: 0, role: "staff", title: RP.RECEPTIONIST.title }]
+    : [
+      ...roomInfo.mates.slice(0, RP.MATE_SEATS.length).map((m, i): Cast => ({ id: m.id, slot: `mate-${i}`, name: m.name, number: [8, 14, 21][i], role: "player", title: "Team-mate" })),
+      ...(RP.hasChef(roomInfo.hall.kind) ? [{ id: RP.CHEF.id, slot: RP.CHEF.id, name: RP.CHEF.name, number: 0, role: "player" as const, title: roomInfo.hall.kind === "chef" ? RP.CHEF.title : "Cook" }] : []),
+    ];
+  const mates: Cast[] = place === "garden" ? opts.mates.slice(0, 3) : place === "gym" ? (opts.homeGym ? [] : opts.mates.slice(0, 1)) : roomCast ? roomCast.slice(0, budget.present - 1) : (cast ?? []).slice(0, budget.present - 1); // the tier's cap on people in a place (budget.ts: Low 6 with you)
   // the team-mates are cast from the people presets (lib/star/people/presets.ts): their own
   // head, build, hair and drawn face (the face system), no two alike
   const PR = await import("../people/presets");
@@ -591,12 +635,15 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   const HAIR = await import("../style3d/toon/hair");
   const faces = new Map<Npc, { rig: any; seed: number }>();
   const hairs: any[] = [];
-  const makeOne = async (id: string, o: { you?: boolean; staff?: boolean; number: number; kit: { shirt: string; trim: string }; look?: (typeof looks)[number] }) => {
+  const makeOne = async (id: string, o: { you?: boolean; staff?: boolean; chef?: boolean; number: number; kit: { shirt: string; trim: string }; look?: (typeof looks)[number] }) => {
     const L = o.look;
     const p: Person3D = makePerson3d(THREE, SK, charG, animG, { outline, castShadow: true, ...(o.you ? { you: true } : L ? { who: L.id, toonHead: L.head, toonBody: L.build } : { who: id }) });
     if (L) dressPerson3d(THREE, p, { ...L.dress, ...(o.staff && L.dress.suit ? {} : { kit: { ...(L.kit ?? {}), ...o.kit } }), number: o.staff ? null : tex(numberCanvas(o.number, "#ffffff")) } as any);
     else dressPerson3d(THREE, p, { skin: o.you ? "#c68642" : toonSkinFor(id), hair: o.you ? "#2b1b12" : toonHairFor(id), kit: o.kit, number: tex(numberCanvas(o.number, "#ffffff")) });
-    if (place === "gym" || (place === "compound" && !o.staff)) {
+    if (o.chef) {
+      // the chef: whites, no number, dark trousers (behind the counter only the top half shows)
+      dressPerson3d(THREE, p, { ...(L ? L.dress : { skin: toonSkinFor(id), hair: toonHairFor(id) }), kit: { shirt: "#f4f3ef", trim: "#e2e0da", shorts: "#2a2b30", socks: "#2a2b30" }, number: null } as any);
+    } else if (place === "gym" || ((place === "compound" || RP) && !o.staff)) {
       // the gym kit (Harry: "gym kit = club training top/shorts"): real cloth, no number; the shirt a shade under the club's
       const CL = await import("../style3d/toon/clothes");
       const { shadeHex } = await import("../style3d/toon/clothes/casual");
@@ -636,13 +683,14 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     return n;
   };
   const you = await makeOne("you", { you: true, number: opts.number, kit: opts.kit });
+  // back out of one of the compound's doors (./compoundPlan.ts outOfDoor): where you stand
+  const outSpot = CP && opts.startAt ? CP.outOfDoor(opts.startAt.replace("-door", "") as import("./compoundPlan").DoorLeads) : null;
   you.name = "You";
   if (demo?.you) you.place(demo.you[0], demo.you[1], demo.you[2]);
-  else if (CP && opts.startAt === "gym-door" && !opts.arrive) {
-    // back out of the gym's door: a few steps out onto the forecourt, facing away from the building (camera D
-    // then has room between him and the front; one step out, it sat in the wall)
-    const [dx, dz] = CP.doorFront(CP.DOORS[0]);
-    you.place(dx, dz + 2.4, 0);
+  else if (CP && outSpot && !opts.arrive) {
+    // back out of a door (the gym, reception, the canteen): a few steps out onto the forecourt, facing away from the
+    // building (camera D then has room between him and the front; one step out, it sat in the wall)
+    you.place(outSpot[0], outSpot[1], outSpot[2]);
   } else if (gymRoom && opts.fadeIn && !opts.homeGym) {
     // the club gym, in through a door: a step in from it (at the door camera D sat on the wall, looking down)
     you.place(-0.9, 2.5, Math.PI);
@@ -653,7 +701,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   const titles = new Map<Npc, string>();
   for (let i = 0; i < mates.length; i++) {
     const m = mates[i];
-    const n = await makeOne(m.slot ?? `mate-${i}`, { number: m.number, staff: m.role === "staff", kit: i === 2 && !cast ? away : opts.kit, look: looks[i] });
+    const n = await makeOne(m.slot ?? `mate-${i}`, { number: m.number, staff: m.role === "staff", chef: m.id === RP?.CHEF.id, kit: i === 2 && !cast && !RP ? away : opts.kit, look: looks[i] });
     npcs.push(n);
     n.name = m.name;
     if (m.title) titles.set(n, m.title);
@@ -704,7 +752,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
 
   // ── The clock and the routines (garden) ──
   const rate = demo?.rate ?? opts.rate ?? (CP ? CP.COMPOUND_RATE : 4);
-  const clock = new DayClock(CP ? 9 * 60 + 40 : 15 * 60, rate);
+  const clock = new DayClock(CP ? 9 * 60 + 40 : RP ? roomInfo.clock ?? 9 * 60 + 40 : 15 * 60, rate);
   const runners = new Map<Npc, RoutineRunner>();
   const paused = new Set<Npc>();
   const bench = objects.get("bench");
@@ -742,6 +790,31 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       runners.set(n, new RoutineRunner(planRoutine(n.id, CP.ROUTINES[pp.routine] as any, clock.minute, clock.minute + 600, 20261128 + i)));
       if (pp.prop) holdProp(n, pp.prop);
     });
+  }
+  // the rooms: the receptionist behind his desk, the chef behind the counter, the team-mates sat at their tables eating
+  // (each on the lunch card's own seat: ./roomsPlan.ts MATE_SEATS), one with a drink in his hand
+  const roomR = room as import("./roomsPlace").RoomOut | null; // (set inside buildRoomPlace: TS can't see it)
+  if (RP && roomR) {
+    for (const n of npcs) {
+      if (n.id === RP.RECEPTIONIST.id) n.place(RP.RECEPTION.clerk.at[0], RP.RECEPTION.clerk.at[1], RP.RECEPTION.clerk.yaw);
+      else if (n.id === RP.CHEF.id) {
+        n.place(RP.CANTEEN.chef.at[0], RP.CANTEEN.chef.at[1], RP.CANTEEN.chef.yaw);
+        // the Premier League's chef wears the tall white hat (a cook lower down does not)
+        const head = n.person.bones.Head;
+        if (head && roomInfo.hall.kind === "chef") {
+          const u = 1 / n.person.unit;
+          const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.09, 0.2, 14), mat("#fbfbf8", { roughness: 0.7 }));
+          hat.scale.setScalar(u); hat.position.set(0, 0.2 * u, -0.005 * u); hat.castShadow = false;
+          head.add(hat);
+        }
+      }
+      else {
+        const i = Number(n.id.replace("mate-", ""));
+        const seat = roomR.mateSeats[i]?.mate;
+        if (seat) n.sitNow(world, seat, { slot: "s0" });
+        if (i === 1) holdCan(n, true);
+      }
+    }
   }
   // ── The drive's arrival (opts.arrive; lib/star/drive3d/arrival.ts): your car in off the road, into your bay ──
   const mc = myCar as CarRig | null; // (set inside buildCompoundPlace: TS can't see it)
@@ -798,7 +871,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       you.place(p.x, p.z, p.yaw);
       if (arr.phase === "out" || arr.phase === "done") {
         arrOut = true;
-        const o = AR.youOut();
+        const o = outSpot ? { x: outSpot[0], z: outSpot[1], yaw: outSpot[2] } : AR.youOut();
         you.place(o.x, o.z, o.yaw); you.show(true);
         arrUnseen.forEach((n) => { if (n.state !== "hidden") n.root.visible = true; });
         camYaw = o.yaw + Math.PI; first = true;
@@ -925,6 +998,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   let card: InteractCard | null = null;
   let pending: { obj: SmartObject; slot: string | null } | null = null;
   let talking: Npc | null = null;
+  /** The canteen: the lunch card is open (the counter, or sat with a team-mate). */
+  let lunchOpen = false;
   const visits = new Map<string, number>();
   let autoGo: string | null = null, autoAt = -1;
   const show = (c: InteractCard | null) => {
@@ -948,14 +1023,23 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const l = LINES[who] ?? LINES.mate;
     return [l[visit % l.length], l[(visit + 1) % l.length]];
   };
+  // the rooms: the receptionist's line is the career's (the next match, the time to leave: ./roomsPlan.ts roomInfo)
+  const roomTalk = (n: Npc, visit: number): string[] => {
+    if (RP && n.id === RP.RECEPTIONIST.id) return roomInfo.desk;
+    if (RP && n.id === RP.CHEF.id) return visit % 2 ? ["Plates are hot. Pick one at the counter.", "Protein if you're in the gym later."] : ["Morning. Lunch from half twelve.", "Pick what you fancy at the counter."];
+    return ["Grab a plate and sit down.", "Food's decent today."];
+  };
   const doingOf = (n: Npc): "sat" | "drink" | "stand" | "arrive" => n.seated ? (n.prop ? "drink" : "sat") : n.state === "walk" ? "arrive" : "stand";
   const tapPerson = (n: Npc) => {
+    // the canteen: a team-mate at a table means the seat beside him (the lunch card's table for him)
+    if (RP && room && /^mate-/.test(n.id)) { const s = room.mateSeats[Number(n.id.slice(5))]?.you; if (s) return tapObject(s); }
     endTalk();
     pending = null;
     show(null);
     const go = () => {
       const him = n.bodyXZ();
-      const spot = talkSpot(him, n.yaw, [you.x, you.z]);
+      // the receptionist: across his desk, not round it
+      const spot: XZ = RP && n.id === RP.RECEPTIONIST.id ? RP.RECEPTION.talk : talkSpot(him, n.yaw, [you.x, you.z]);
       // a walker stops for you
       if (!n.seated && n.state === "walk") { paused.add(n); n.stop(); }
       talking = n;
@@ -965,7 +1049,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
         if (!n.seated && n.state === "stand") n.face(yawTo([n.x, n.z], [you.x, you.z]));
         const k = (visits.get(n.id) ?? 0) + 1; visits.set(n.id, k);
         const staff = titles.get(n) && titles.get(n) !== "Team-mate";
-        show(personCard({ id: n.id, name: n.name, role: titles.get(n), lines: CP ? compoundTalk(n, staff ? n.id : "mate", k) : smallTalk(n.id, doingOf(n), clock.phase(), k), chat: !!opts.chat && !staff }));
+        const lines = RP ? roomTalk(n, k) : CP ? compoundTalk(n, staff ? n.id : "mate", k) : smallTalk(n.id, doingOf(n), clock.phase(), k);
+        show(personCard({ id: n.id, name: n.name, role: titles.get(n), lines, chat: !!opts.chat && !staff && !RP }));
       };
       if (Math.hypot(spot[0] - you.x, spot[1] - you.z) < 0.3) { you.face(yawTo([you.x, you.z], him), arrive); return; }
       marker.show(spot[0], spot[1]);
@@ -973,7 +1058,22 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     };
     if (you.seated) you.leave(go); else go();
   };
+  /** Arrived at a room's thing: the canteen's counter opens the lunch card (the page shows it); the trophy cabinet and
+   *  the fixture screen show what they hold. True when it was one of those. */
+  const atCounter = (o: SmartObject): boolean => {
+    if (!RP) return false;
+    if (o.id === "counter" && cb.onLunch) { pending = null; show(null); lunchOpen = true; cb.onLunch({ at: "counter" }); return true; }
+    if (o.id === "cabinet" || o.id === "screen" || (o.id === "counter" && !cb.onLunch)) {
+      pending = null;
+      show({ key: `obj:${o.id}`, sub: o.id === "screen" ? roomInfo.screen.title : undefined, title: o.label, lines: o.prompt.lines ?? [], actions: [{ id: "close", label: "OK", primary: true }] });
+      return true;
+    }
+    return false;
+  };
   const tapObject = (o: SmartObject) => {
+    // reception: the desk is the receptionist
+    if (RP && o.id === "desk") { const r = npcs.find((x) => x.id === RP.RECEPTIONIST.id); if (r) return tapPerson(r); }
+    if (lunchOpen) { lunchOpen = false; cb.onLunch?.(null); }
     endTalk();
     show(null);
     const host = objects.host(o);
@@ -986,13 +1086,14 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       if (!slot) { show(objectCard(o)); return; }
       const spot = sitRootFor(slot, you.sit).at;
       marker.show(spot[0], spot[1]);
-      const ok = you.walkTo(world, spot, { face: slot.facing, onArrive: () => { marker.fade(); if (pending?.obj === o) show(objectCard(o)); } });
-      if (!ok) show(objectCard(o));
+      const ok = you.walkTo(world, spot, { face: slot.facing, onArrive: () => { marker.fade(); if (pending?.obj === o && !atCounter(o)) show(objectCard(o)); } });
+      if (!ok && !atCounter(o)) show(objectCard(o));
     };
     if (you.seated) you.leave(go); else go();
   };
   const tapFloor = (p: XZ) => {
     endTalk(); pending = null; show(null);
+    if (lunchOpen) { lunchOpen = false; cb.onLunch?.(null); }
     const go = () => { marker.show(p[0], p[1]); you.walkTo(world, p, { onArrive: () => marker.fade() }); };
     if (you.seated) you.leave(go); else go();
   };
@@ -1028,6 +1129,11 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   };
   const act = (a: string) => {
     if (a === "close") { endTalk(); pending = null; show(null); return; }
+    if (a === "lunch:close") {
+      lunchOpen = false;
+      if (you.seated) you.leave(() => show(null));
+      return;
+    }
     if (a === "gym:quit") { gym?.quit(); return; }
     if (a.startsWith("gym:body:")) { const v = a.slice(9); bodyLevel = v === "auto" ? null : Number(v); applyBody(); statusT = 0; return; }
     if (a === "gym:nextWeek" && GP && gymState) {
@@ -1065,9 +1171,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       const d = CP.DOORS.find((x) => x.id === o.id);
       if (d) {
         pending = null; marker.fade();
-        if (d.leads === "gym") { show(null); fadeWant = 1; goingTo = "gym"; return; }
-        show({ key: `obj:${o.id}`, sub: "Coming soon", title: o.label, lines: CP.DOOR_SOON[o.id] ?? ["Coming soon."], actions: [{ id: "close", label: "OK", primary: true }] });
-        return;
+        show(null); fadeWant = 1; goingTo = d.leads; return;
       }
       if (o.id === "gate") { pending = null; show(null); marker.show(0, 20.4); you.walkTo(world, [0, 20.4], { face: Math.PI, onArrive: () => marker.fade() }); return; }
       if (o.id === "board") { pending = null; show({ key: "obj:board", title: "Photo taken", lines: ["You and the crest. One for the socials."], actions: [{ id: "close", label: "OK", primary: true }] }); return; }
@@ -1093,6 +1197,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
         secs: o.kind === "fridge" ? o.stay[0] : Infinity,
         onStart: () => { if (o.kind === "fridge") fridgeDoor?.open(true); },
         onIn: () => {
+          const ms = RP ? room?.mateSeats.findIndex((m) => m.you.id === o.id) ?? -1 : -1;
+          if (ms >= 0 && cb.onLunch && roomInfo.mates[ms]) { show(null); lunchOpen = true; cb.onLunch({ at: "table", mate: roomInfo.mates[ms].id }); return; }
           if (o.kind === "tv") tvScreen?.on(true);
           if (o.kind === "fridge") holdCan(you, true);
           show(objectCard(o, { using: true }));
@@ -1228,7 +1334,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
 
   // ── The fade to black through a door (the compound's gym door) ──
   // in through a door (the compound's gym door, the house's gym): the place opens on black and fades in
-  let fade = opts.fadeIn && !demo ? 1 : 0, fadeWant = 0, goingTo: WorldPlace | null = null, went = false;
+  let fade = (opts.fadeIn && !demo) || demo?.fadeIn ? 1 : 0, fadeWant = 0, goingTo: WorldPlace | null = null, went = false;
   const fadeM = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, depthTest: false, depthWrite: false, toneMapped: false, fog: false });
   const fadeQ = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), fadeM);
   fadeQ.position.z = -0.3; fadeQ.renderOrder = 999; fadeQ.frustumCulled = false; fadeQ.visible = fade > 0; fadeM.opacity = fade;
@@ -1343,7 +1449,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     statusT -= dt;
     if (statusT <= 0 && cb.onStatus) {
       statusT = 0.5;
-      cb.onStatus({ fitness: fitness(), clock: clock.hhmm, people: npcs.map((n) => ({ id: n.id, name: n.name, doing: !n.root.visible ? "away" : CP ? (n.state === "walk" ? "walking" : n.using?.kind === "seat" ? "on the bench" : n.using?.label?.toLowerCase() ?? "standing") : place === "gym" && n.using ? (n.using.id === "treadmill2-belt" ? "running" : n.using.id === "mat" ? "stretching" : n.using.id === "cooler" ? "a drink" : n.using.label) : n.seated ? (n.prop ? "on the bench, a drink" : "on the bench") : n.state === "walk" ? "walking" : n.state === "act" ? "stretching" : "standing" })) });
+      cb.onStatus({ fitness: fitness(), clock: clock.hhmm, people: npcs.map((n) => ({ id: n.id, name: n.name, doing: !n.root.visible ? "away" : RP ? (n.seated ? "eating" : "at work") : CP ? (n.state === "walk" ? "walking" : n.using?.kind === "seat" ? "on the bench" : n.using?.label?.toLowerCase() ?? "standing") : place === "gym" && n.using ? (n.using.id === "treadmill2-belt" ? "running" : n.using.id === "mat" ? "stretching" : n.using.id === "cooler" ? "a drink" : n.using.label) : n.seated ? (n.prop ? "on the bench, a drink" : "on the bench") : n.state === "walk" ? "walking" : n.state === "act" ? "stretching" : "standing" })) });
     }
     frameN++;
   };
