@@ -31,6 +31,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "title": "Harry's patch notes: the gym in your career, one set of saves, a lighter walk",
       "author": "Harry",
       "publishedAt": "2026-11-28T05:45:00Z",
+      "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/RhFAsHCMQJGKo7T5xV5TSk",
       "summary": "Three pieces go live. The 3D gym opens from the Training page in a real career (its effects are still switched off while we test). Your saves are now one set per account, the same on your phone and your computer. The 3D people walk lighter and no longer walk through each other.",
       "stats": [
