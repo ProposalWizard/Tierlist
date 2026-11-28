@@ -289,13 +289,14 @@ export class Npc {
    * play its loop for `secs` (Infinity: until leave()), come out. False if
    * every slot is taken or there is no way there.
    */
-  use(world: NpcWorld, obj: SmartObject, o: { slot?: string; secs?: number; loop?: ClipStep[]; onStart?: () => void; onIn?: () => void; onOut?: () => void } = {}): boolean {
+  use(world: NpcWorld, obj: SmartObject, o: { slot?: string; secs?: number; loop?: ClipStep[]; onStart?: () => void; onIn?: () => void; onOut?: () => void; near?: number } = {}): boolean {
     if (this.seated) return false;
     const slot = world.book.book(obj, this.id, { slot: o.slot, near: [this.x, this.z] });
     if (!slot) return false;
     const root = sitRootFor(slot, this.sit);
     this.job = { obj, slot, root, loop: o.loop?.length ? o.loop : obj.loop, secs: o.secs ?? Infinity, t: 0, k: 0, stepT: 0, onStart: o.onStart, onIn: o.onIn, onOut: o.onOut };
-    const near = Math.hypot(root.at[0] - this.x, root.at[1] - this.z) < 0.2;
+    // `near`: how close counts as there (he eases the last bit in while he turns; a seat's own spot is inside the seat, past the floor a walk can reach)
+    const near = Math.hypot(root.at[0] - this.x, root.at[1] - this.z) < (o.near ?? 0.2);
     if (near) { this.faceTarget = slot.facing; this.state = "turn"; this.afterTurn = () => this.enter(); return true; }
     this.goal = { to: root.at, face: slot.facing, tries: 0, run: false, onArrive: () => this.enter() };
     if (!this.plan(world)) { world.book.release(this.id); this.job = null; return false; }

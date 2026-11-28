@@ -447,8 +447,15 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       if (!ob || !book.free(ob).length) { standAt(spotFor(`${g.v.id}|${i}`), LOOPS.stand); return; }
       if (snap && ob.slots[0]?.seat) { if (n.sitNow(world, ob, { loop })) return; }
       if (snap) { const sl = book.free(ob)[0]; const at = sitRootFor(sl, n.sit).at; n.place(at[0], at[1], sl.facing); }
-      const ok = n.use(world, ob, { secs: Infinity, loop, onIn: () => { if (alive()) hold(n, prop ?? (ob.kind === "fridge" ? "can" : ob.id === "coffee" && g.v.who === "mate" ? "cup" : null)); } });
-      if (!ok) standAt(spotFor(`${g.v.id}|${i}`), LOOPS.stand);
+      const opts = { secs: Infinity, loop, onIn: () => { if (alive()) hold(n, prop ?? (ob.kind === "fridge" ? "can" : ob.id === "coffee" && g.v.who === "mate" ? "cup" : null)); } };
+      if (snap) { if (!n.use(world, ob, opts)) standAt(spotFor(`${g.v.id}|${i}`), LOOPS.stand); return; }
+      // as you do (houseLife tapObject): walk to a step in front of it (a seat's own spot is inside the seat,
+      // past the floor a walk reaches), then turn and ease the last bit in as he sits or reaches
+      const sl = book.free(ob).slice().sort((a, b) => Math.hypot(a.stand[0] - n.x, a.stand[1] - n.z) - Math.hypot(b.stand[0] - n.x, b.stand[1] - n.z))[0];
+      const at = sitRootFor(sl, n.sit).at, back = sl.seat ? 0.34 : 0.05;
+      const front: XZ = [at[0] + Math.sin(sl.facing) * back, at[1] + Math.cos(sl.facing) * back];
+      const go = () => { if (!alive()) return; if (!n.use(world, ob, { ...opts, slot: sl.id, near: 0.6 })) standAt(spotFor(`${g.v.id}|${i}`), LOOPS.stand); };
+      if (Math.hypot(front[0] - n.x, front[1] - n.z) < 0.3 || !n.walkTo(world, front, { onArrive: go })) go();
     };
     switch (s.kind) {
       case "use": useThing(thingFor(s.target)); break;
@@ -625,6 +632,9 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     const spot: XZ = [at[0] + Math.sin(slot.facing) * back, at[1] + Math.cos(slot.facing) * back];
     const f: XZ = [spot[0] + Math.sin(slot.facing), spot[1] + Math.cos(slot.facing)];
     const ok = o.walkTo(spot, f, () => { if (pending?.obj === ob) show(objectCard(ob)); });
+    // a walk that stalls short of the thing (the house's walker gives up quietly): the card comes anyway after
+    // a few seconds, and "use" walks the last bit (the world kit's own walk, which finds its way round)
+    if (ok) setTimeout(() => { if (!disposed && pending?.obj === ob && !card && !meNpc) show(objectCard(ob)); }, 6000);
     if (!ok) show(objectCard(ob));
   };
   const ray = (origin: any, d: any) => {

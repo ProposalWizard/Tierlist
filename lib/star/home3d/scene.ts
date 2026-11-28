@@ -679,6 +679,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     if (!path) return false;
     faceTo = null;
     spotWalk = null;
+    // already there (the start and the goal in one cell): no walk, straight on (an empty path used to throw here)
+    if (!path.length) { faceTo = face; then?.(); return true; }
     // the last point exactly (a seat's stand point sits at the edge of the free floor)
     if (then && Math.hypot(path[path.length - 1][0] - to[0], path[path.length - 1][1] - to[1]) < 0.8) path[path.length - 1] = to;
     walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; arrivedAt = spotWalk; spotWalk = null; then?.(); } });
