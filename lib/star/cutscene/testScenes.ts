@@ -48,7 +48,9 @@ function walkout22(): CutsceneScript {
     const own = ownMotion(id);
     // (each man sets off a moment of his own after the man ahead: nobody waits for a count)
     const at = 0.2 + row * 0.32 + (side > 0 ? 0.12 : 0) + 0.3 * own.habitAt;
-    const dist = 1.05 * own.pace * (D - at);
+    // (1.2 m/s, a fit man walking out, 9% either way by his own pace; was 1.05 m/s and 12% either way, so the slowest
+    // stepped at 1.3 to 1.6 a second: heavy. A brisker man closes on the man ahead: the spacing pass keeps him off him)
+    const dist = 1.2 * (1 + 0.75 * (own.pace - 1)) * (D - at);
     tracks.push({ type: "move", actor: id, at, dur: D - at, path: [[x * 1.1, 0, z + dist]], gait: "walk", ease: 0.15 });
   }
   const cam: CameraTrack = { type: "camera", at: 0, dur: D, name: "Out of the tunnel", cut: "cut",
@@ -60,21 +62,27 @@ function walkout22(): CutsceneScript {
   } as CutsceneScript;
 }
 
-/** One man walking towards the camera and away again (10 s): the walk from the front and the back. */
-function toAndFro(): CutsceneScript {
-  const D = 10;
-  const tracks: Track[] = [
-    { type: "place", actor: "you", at: 0, to: [0, 0, 36] as Vec3, yaw: 0 },
-    { type: "move", actor: "you", at: 0.3, dur: 4.4, path: [[0, 0, 41.2]], gait: "walk", ease: 0.2 },
-    { type: "turn", actor: "you", at: 4.75, dur: 0.6, to: 180 },
-    { type: "move", actor: "you", at: 5.3, dur: 4.5, path: [[0, 0, 36]], gait: "walk", ease: 0.2 },
-  ];
-  const cam: CameraTrack = { type: "camera", at: 0, dur: D, name: "Him", cut: "cut", shot: { preset: "full", subject: { point: [0, 0.9, 38.5] }, fixed: { pos: [0.3, 0.95, 43.6], look: [0, 0.8, 38.7], lens: 46 } } };
-  return {
-    id: "test-toandfro", title: "Walk to and from the camera (test)", duration: D, set: { location: "pitch", mood: "golden-hour" },
-    cast: [{ id: "you", role: "you", mark: [0, 0, 36] as Vec3, face: 0 }], props: [], beats: [], tracks: [...tracks, cam], seed: 24,
-    source: { kind: "fixture", event: { kind: "walkout", stakes: 0.3, emotion: "calm", intensity: 0.3 } },
-  } as CutsceneScript;
+/**
+ * One man walking towards the camera and away again (10 s): the walk from the front and the back. `toandfro` is
+ * you (the capture walk); `toandfro-away5` the walk-out's heaviest-looking walker on 28 Nov 2026 (walk_formal,
+ * the c2 build, the slowest pace), for the before/after of the lighter carriage.
+ */
+function toAndFro(id = "you", role: "you" | "rival" = "you"): () => CutsceneScript {
+  return () => {
+    const D = 10;
+    const tracks: Track[] = [
+      { type: "place", actor: id, at: 0, to: [0, 0, 36] as Vec3, yaw: 0 },
+      { type: "move", actor: id, at: 0.3, dur: 4.4, path: [[0, 0, 41.2]], gait: "walk", ease: 0.2 },
+      { type: "turn", actor: id, at: 4.75, dur: 0.6, to: 180 },
+      { type: "move", actor: id, at: 5.3, dur: 4.5, path: [[0, 0, 36]], gait: "walk", ease: 0.2 },
+    ];
+    const cam: CameraTrack = { type: "camera", at: 0, dur: D, name: "Him", cut: "cut", shot: { preset: "full", subject: { point: [0, 0.9, 38.5] }, fixed: { pos: [0.3, 0.95, 43.6], look: [0, 0.8, 38.7], lens: 46 } } };
+    return {
+      id: id === "you" ? "test-toandfro" : `test-toandfro-${id}`, title: "Walk to and from the camera (test)", duration: D, set: { location: "pitch", mood: "golden-hour" },
+      cast: [{ id, role, mark: [0, 0, 36] as Vec3, face: 0 }], props: [], beats: [], tracks: [...tracks, cam], seed: 24,
+      source: { kind: "fixture", event: { kind: "walkout", stakes: 0.3, emotion: "calm", intensity: 0.3 } },
+    } as CutsceneScript;
+  };
 }
 
 /** One player on a clip, alone on the pitch: a walk travels at the clip's own speed (feet planted), an idle stands. */
@@ -95,5 +103,5 @@ function solo(clip: string, walk: boolean): () => CutsceneScript {
 }
 
 export const TEST_SCENES: Record<string, () => CutsceneScript> = {
-  walkers, walkout22, toandfro: toAndFro, "solo-walk_relaxed": solo("walk_relaxed", true), "solo-walk_formal": solo("walk_formal", true), "solo-idle_relaxed": solo("idle_relaxed", false),
+  walkers, walkout22, toandfro: toAndFro(), "toandfro-away5": toAndFro("away5", "rival"), "solo-walk_relaxed": solo("walk_relaxed", true), "solo-walk_formal": solo("walk_formal", true), "solo-idle_relaxed": solo("idle_relaxed", false),
 };

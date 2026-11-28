@@ -13,11 +13,21 @@
  *            ended(arc-the-snorer) · ended(arc-the-snorer:good-sleep|the-machine)  (a story is over,
  *            any way or one of these ways. Read from the save's finished stories, which keep their
  *            ending for good, so a follow-on story can wait for it; 28 Nov 2026)
+ *   world:   club:chelsea · everClub:leeds-united · opponent:real-madrid · derby · clubTop26 ·
+ *            seasonsAtClub>=3 · callUps>=1 · intlGoals>=1 · inTournament · ballonDor>=1 ·
+ *            won(fa-cup) · won(league)>=2 · wonAt(league,sunderland) · has(heritage-room) ·
+ *            book('watch-minute') · since('watch-minute')>=3 · just(birthday) · just(trophy:fa-cup)
+ *            (the story world, job B, 28 Nov 2026: docs/plans/STORY_WORLD_PLAN.md part 2. A club
+ *            word takes a slug from lib/star/clubs.ts, unlocks.ts clubSlug; the parser fails an
+ *            unknown club, unlock, competition, milestone or scrapbook tag.)
  *   person:  bond>=35 · grudge>=20 · age<=19 · overall>=70 · !mem('borrowed-car')
  *            samePosition · new · veteran
  */
 import type { LifeState, LifePerson } from "./types";
 import { runIn } from "./arcPack";
+import { ALL_CLUB_SLUGS, UNLOCK_BY_ID, unlocksOf } from "./unlocks";
+import { COMP_SLUGS, isMilestone, justHolds } from "./milestones";
+import { SCRAPBOOK, bookHas, bookSince } from "./scrapbook";
 
 export type Op = ">=" | "<=" | ">" | "<" | "==";
 
@@ -28,9 +38,14 @@ export const FACT_NUMBERS = [
   "matchFitness", "overall",
   // Story stages (28 Nov 2026): international caps.
   "caps",
+  // The story world (job B, 28 Nov 2026): seasons in a row at this club (1 in your first), call-ups,
+  // international goals, Ballon d'Or wins.
+  "seasonsAtClub", "callUps", "intlGoals", "ballonDor",
 ] as const;
 export type FactNumber = (typeof FACT_NUMBERS)[number];
-export const FACT_FLAGS = ["lastLost", "lastWon", "injured", "hasPartner", "captain", "europe"] as const;
+export const FACT_FLAGS = ["lastLost", "lastWon", "injured", "hasPartner", "captain", "europe",
+  // The story world (job B): the last or next match is a derby; in this summer's tournament squad; at one of the 26 hook clubs.
+  "derby", "inTournament", "clubTop26"] as const;
 export type FactFlag = (typeof FACT_FLAGS)[number];
 export const OWNABLE = ["car", "horse", "house"] as const;
 export const PERSON_NUMBERS = ["bond", "respect", "grudge", "age", "overall", "goals"] as const;
@@ -42,6 +57,12 @@ export interface LifeFacts {
   owns: Record<(typeof OWNABLE)[number], boolean>;
   /** Your position (samePosition). */
   position: string;
+  /** The story world (job B): your club's slug, every club you have played for, the last and next
+   *  match's opponents (slugs), and your trophies as [competition words, club slug]. */
+  club: string;
+  clubsEver: string[];
+  opponents: string[];
+  trophies: [string[], string][];
 }
 
 /** A team-mate (or any person) as the conditions see him. */
@@ -105,6 +126,13 @@ type Atom =
   | { t: "act"; what: "won" | "lost" | "abandoned" }
   | { t: "v2cmp"; l: V2Val; op: Op; r: V2Val }
   | { t: "ended"; arc: string; ends: string[] }
+  | { t: "club"; which: "club" | "everClub" | "opponent"; slug: string }
+  | { t: "won"; comp: string; op: Op; v: number }
+  | { t: "wonAt"; comp: string; slug: string }
+  | { t: "has"; id: string }
+  | { t: "book"; tags: string[] }
+  | { t: "since"; tag: string; op: Op; v: number }
+  | { t: "just"; m: string }
   | { t: "and"; parts: AtomN[] };
 type AtomN = { neg: boolean; a: Atom };
 type PAtom =
@@ -194,6 +222,34 @@ function parseV2(s: string, neg: boolean): AtomN | string | null {
   return { neg, a: { t: "v2cmp", l, op: o[1] as Op, r } };
 }
 
+/** The story world's words (job B, 28 Nov 2026). null = not one of them. */
+function parseWorld(s: string, neg: boolean): AtomN | string | null {
+  let m = /^(club|everClub|opponent):([a-z0-9-]+)$/.exec(s);
+  if (m) return ALL_CLUB_SLUGS.has(m[2]) ? { neg, a: { t: "club", which: m[1] as "club" | "everClub" | "opponent", slug: m[2] } } : `unknown club "${m[2]}" in "${s}" (a slug of a club in lib/star/clubs.ts, e.g. manchester-united)`;
+  m = /^won\(([a-z0-9-]+)\)\s*(?:(>=|<=|==|>|<)\s*(\d+))?$/.exec(s);
+  if (m) return COMP_SLUGS.includes(m[1]) ? { neg, a: { t: "won", comp: m[1], op: (m[2] as Op) ?? ">=", v: m[3] !== undefined ? Number(m[3]) : 1 } } : `unknown competition "${m[1]}" in "${s}" (one of: ${COMP_SLUGS.join(", ")})`;
+  m = /^wonAt\(([a-z0-9-]+),\s*([a-z0-9-]+)\)$/.exec(s);
+  if (m) {
+    if (!COMP_SLUGS.includes(m[1])) return `unknown competition "${m[1]}" in "${s}"`;
+    return ALL_CLUB_SLUGS.has(m[2]) ? { neg, a: { t: "wonAt", comp: m[1], slug: m[2] } } : `unknown club "${m[2]}" in "${s}"`;
+  }
+  m = /^has\(([a-z0-9-]+)\)$/.exec(s);
+  if (m) return UNLOCK_BY_ID.has(m[1]) ? { neg, a: { t: "has", id: m[1] } } : `unknown unlock "${m[1]}" in "${s}" (the ids are in lib/star/life/unlocks.ts)`;
+  m = /^book\((.+)\)$/.exec(s);
+  if (m) {
+    const tags = tagList(m[1]);
+    if (!tags) return `bad tag list in "${s}"`;
+    const unknown = tags.find((t) => !SCRAPBOOK[t]);
+    return unknown ? `unknown scrapbook tag "${unknown}" in "${s}" (add it to lib/star/life/book/scrapbook.json)` : { neg, a: { t: "book", tags } };
+  }
+  m = /^since\('([a-z0-9-]+)'\)\s*(>=|<=|==|>|<)\s*(\d+)$/.exec(s);
+  if (m) return SCRAPBOOK[m[1]] ? { neg, a: { t: "since", tag: m[1], op: m[2] as Op, v: Number(m[3]) } } : `unknown scrapbook tag "${m[1]}" in "${s}" (add it to lib/star/life/book/scrapbook.json)`;
+  m = /^just\(([a-z0-9:-]+)\)$/.exec(s);
+  if (m) return isMilestone(m[1]) ? { neg, a: { t: "just", m: m[1] } } : `unknown milestone "${m[1]}" in "${s}" (birthday, star-level, new-club, first-call-up, call-up, trophy, trophy:<competition>, promoted, relegated)`;
+  if (/^(club|everClub|opponent|won|wonAt|has|book|since|just)\b/.test(s) && !/^[a-zA-Z]+(>=|<=|==|>|<)/.test(s)) return `badly written story-world condition "${s}"`;
+  return null;
+}
+
 function parseAtom(raw: string): AtomN | string {
   // "a && b": every part must hold (outside brackets).
   const ands = splitTop(raw, "&&");
@@ -207,6 +263,8 @@ function parseAtom(raw: string): AtomN | string {
   if (neg) s = s.slice(1).trim();
   const v2 = parseV2(s, neg);
   if (v2) return v2;
+  const w = parseWorld(s, neg);
+  if (w) return w;
   if (s === "minigame.won" || s === "minigame.lost") return { neg, a: { t: "mini", won: s === "minigame.won" } };
   if ((FACT_FLAGS as readonly string[]).includes(s)) return { neg, a: { t: "flag", key: s as FactFlag } };
   let m = /^owns:([a-z]+)$/.exec(s);
@@ -364,6 +422,17 @@ function atomHolds(x: AtomN, ctx: CondCtx): boolean {
     case "promise": v = !!ctx.v2?.promise?.(a.id); break;
     case "ended": { const d = runIn(ctx.life, a.arc)?.done; v = !!d && (!a.ends.length || a.ends.includes(d)); break; }
     case "sameClub": v = !ctx.v2?.arc || ctx.v2.arc.club === ctx.v2.club; break;
+    case "club": {
+      const f = ctx.facts;
+      v = a.which === "club" ? f.club === a.slug : a.which === "everClub" ? f.clubsEver.includes(a.slug) : f.opponents.includes(a.slug);
+      break;
+    }
+    case "won": v = cmp(ctx.facts.trophies.filter(([cs]) => cs.includes(a.comp)).length, a.op, a.v); break;
+    case "wonAt": v = ctx.facts.trophies.some(([cs, club]) => cs.includes(a.comp) && club === a.slug); break;
+    case "has": v = unlocksOf(ctx.life).has(a.id); break;
+    case "book": v = bookHas(ctx.life, a.tags, nowOf(ctx)); break;
+    case "since": { const n = bookSince(ctx.life, a.tag, nowOf(ctx)); v = n !== undefined && cmp(n, a.op, a.v); break; }
+    case "just": v = justHolds(ctx.life, a.m, nowOf(ctx), ctx.facts.trophies); break;
     case "act": { const x = ctx.v2?.activity; v = !!x && (a.what === "abandoned" ? x.abandoned : a.what === "won" ? x.won && !x.abandoned : !x.won && !x.abandoned); break; }
     case "v2cmp": {
       const l = v2Read(a.l, ctx), r = v2Read(a.r, ctx);
@@ -374,6 +443,19 @@ function atomHolds(x: AtomN, ctx: CondCtx): boolean {
     }
   }
   return x.neg ? !v : v;
+}
+
+/** The life week the conditions are read in (people.ts lifeWeek: 50 to a season). */
+const nowOf = (ctx: CondCtx) => (ctx.facts.num.season - 1) * 50 + ctx.facts.num.week;
+
+/** The scrapbook tags a condition reads (book('x'), since('x')): the checker makes sure a story writes them. */
+export function bookTagsIn(src: string): string[] {
+  const p = parseCond(src);
+  if (typeof p === "string") return [];
+  const out: string[] = [];
+  const walk = (list: AtomN[]) => { for (const { a } of list) { if (a.t === "and") walk(a.parts); if (a.t === "book") out.push(...a.tags); if (a.t === "since") out.push(a.tag); } };
+  walk(p);
+  return out;
 }
 
 /** A story value (undefined when there is no story to read). */

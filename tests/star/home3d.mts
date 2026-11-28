@@ -379,6 +379,30 @@ check(homeStuffOf({ ownedItems: [] } as unknown as CareerState).cans === 0, "not
   if (process.env.HOME3D_TABLE || problems.length) console.log(table.join("\n"));
 }
 
+// ── The house's Back after the phone (3D places audit P4, 28 Nov 2026) ──
+{
+  const { keepsHouseFromGarden, houseBack } = await import("../../lib/star/home3d/houseBack");
+  // garden → house → phone up → put away: still "Garden"
+  let fromGarden = true;
+  for (const ph of ["home-3d", "media", "home-3d"]) if (!keepsHouseFromGarden(ph)) fromGarden = false;
+  check(houseBack(fromGarden).label === "Garden" && houseBack(fromGarden).to === "garden", "garden → house → phone → put away: Back says Garden and goes there");
+  // garden → house → phone → the phone's HOME (the dashboard) → later Home → House: "Home"
+  fromGarden = true;
+  for (const ph of ["home-3d", "media", "dashboard", "home-3d"]) if (!keepsHouseFromGarden(ph)) fromGarden = false;
+  check(houseBack(fromGarden).label === "Home" && houseBack(fromGarden).to === "home", "after the phone's HOME, the house's Back says Home again");
+  for (const ph of ["dashboard", "skills", "match", "shop-3d", "casino-3d", "training-3d"]) check(!keepsHouseFromGarden(ph), `${ph}: forgets the garden`);
+  const page = (await import("node:fs")).readFileSync(new URL("../../app/star-dev/page.tsx", import.meta.url), "utf8");
+  check(page.includes("onPutAway={() => setPhase(\"home-3d\")}"), "putting the phone away no longer forgets the garden");
+  check(page.includes("if (!keepsHouseFromGarden(phase)) setHomeFromGarden(false)"), "every other exit forgets it");
+  check(page.includes('setHomeFromGarden(true); phoneFrom3d();'), "the phone picked up in the garden: the house behind it leads back to the garden");
+  // P7: "See it in the shop" from the 3D shop: the 2D shop's Back walks back into the 3D shop
+  const { openFrom, backFrom } = await import("../../lib/star/navReturn");
+  const st = openFrom([], { phase: "shop-3d", nav: "home" }, "shop-boots");
+  check(backFrom(st, "shop-boots").spot?.phase === "shop-3d", "3D shop → See it in the shop → Back: the 3D shop");
+  check(page.includes('pushFrom({ phase: "shop-3d", nav: activeNav }, to);'), "the 3D shop remembers itself before opening the 2D shop");
+  check(wornAt({ outfit: { ...DEFAULT_OUTFIT, wear: "casual", casual: "hoodie" }, currentBoot: null } as never, "casino").kind === "casual", "the casino wears the wardrobe's casual set (P5)");
+}
+
 if (problems.length) {
   console.error(`home3d: ${problems.length} problem(s)\n - ${problems.join("\n - ")}`);
   process.exit(1);

@@ -23,7 +23,7 @@ import { people3dLook } from "../look3d";
 import { matchPlayerStyle } from "../style3d/toon/matchLook";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
 import { governScene } from "../three3d/governThree";
-import { acquireRenderer } from "../three3d/perf";
+import { acquireRenderer, abandonedSceneError } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { addClips, clipInfo, ClipPlayer, KICK_FALLBACK, loadAnims3d } from "../three3d/footballAnims";
 import type { KitColours } from "../shop3d/scene";
@@ -73,12 +73,21 @@ export interface TrainingController {
   after(seconds: number, fn: () => void): void;
   /** Stop drawing while hidden (the engine's own pitch is on screen). */
   setActive(on: boolean): void;
+  /** The phone took the 3D away: what was still waiting on the scene's clock (after(), his shot's
+   *  onDone), handed over so the challenge carries on by the wall's clock while the picture is rebuilt. */
+  takePending(): (() => void)[];
   dispose(): void;
 }
 
 const P = (x: number, y: number, z: number): [number, number, number] => [x - CX, z, y];
 
-export async function createTrainingScene(container: HTMLElement, data: TrainingData, opts: { quality?: Quality3d } = {}): Promise<TrainingController> {
+export async function createTrainingScene(container: HTMLElement, data: TrainingData, opts: {
+  quality?: Quality3d;
+  /** The phone took the 3D away (a lost WebGL context): the caller rebuilds (three3d/autoHeal.ts). */
+  onContextLost?: () => void;
+  /** The screen was closed while this was still loading: stop before taking the one renderer. */
+  isDead?: () => boolean;
+} = {}): Promise<TrainingController> {
   const tier = opts.quality ?? quality3dTier();
   const prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
@@ -101,7 +110,13 @@ export async function createTrainingScene(container: HTMLElement, data: Training
   // the kick, reactions and keepy-uppies (a failed load just leaves them standing)
   const fb: any = await loadAnims3d(loader, "football").catch((e) => { console.error("football clips failed to load", e); return null; });
 
+  // closed while its files loaded (3D places audit P1, 28 Nov 2026): never take the canvas from the place on screen
+  if (opts.isDead?.()) throw abandonedSceneError();
   const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
+  // the phone took the 3D away (audit P2): say so, so the screen rebuilds the picture
+  let lostOnce = false;
+  const onLost = (e: Event) => { e.preventDefault(); if (lostOnce) return; lostOnce = true; opts.onContextLost?.(); };
+  renderer.domElement.addEventListener("webglcontextlost", onLost);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = prof.shadows;
@@ -596,8 +611,15 @@ export async function createTrainingScene(container: HTMLElement, data: Training
       last = performance.now();
       if (isOwner()) renderer.setAnimationLoop(on ? frame : null); // another 3D place on screen keeps its own loop
     },
+    takePending() {
+      const out = timers.map((x) => x.fn);
+      timers = [];
+      if (mate) { out.push(mate.onDone); mate = null; }
+      return out;
+    },
     dispose() {
       ro?.disconnect();
+      renderer.domElement.removeEventListener("webglcontextlost", onLost);
       if (isOwner()) renderer.setAnimationLoop(null);
       governed.dispose();
       timers = [];

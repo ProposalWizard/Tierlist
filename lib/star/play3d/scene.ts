@@ -21,7 +21,7 @@ import { people3dLook } from "../look3d";
 import { matchPlayerStyle } from "../style3d/toon/matchLook";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
 import { governScene } from "../three3d/governThree";
-import { acquireRenderer } from "../three3d/perf";
+import { acquireRenderer, abandonedSceneError } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import { smoothYaw, type YawState } from "../three3d/animBlend";
@@ -110,6 +110,10 @@ export async function createPlay3DScene(
     draw?: (renderer: any, scene: any, camera: any) => void;
     /** Optional: called once everything is made, before the first frame. */
     onBuilt?: (ctx: Play3DBuilt) => void;
+    /** Optional: the phone took the 3D away (a lost WebGL context). The caller rebuilds (three3d/autoHeal.ts). */
+    onContextLost?: () => void;
+    /** Optional: the screen was closed while this was still loading: stop before taking the one renderer. */
+    isDead?: () => boolean;
   },
 ): Promise<Play3DController> {
   const tier = opts.quality ?? quality3dTier();
@@ -133,7 +137,13 @@ export async function createPlay3DScene(
   const fb: any = await loadAnims3d(loader, "football").catch((e) => { console.error("football clips failed to load", e); return null; });
 
   // sharp (look H): the full screen's pixels, capped per tier (a 3x phone at Medium draws 2x, not 1.25x)
+  // closed while its files loaded (3D places audit P1, 28 Nov 2026): never take the canvas from the place on screen
+  if (opts.isDead?.()) throw abandonedSceneError();
   const { renderer, release, isOwner } = acquireRenderer(THREE, container, opts.sharp ? { ...prof, maxPixelRatio: SHARP_PIXEL_RATIO[tier] } : prof);
+  // the phone took the 3D away (audit P2): say so, so the drill rebuilds its picture (the drill itself lives on in the World)
+  let lostOnce = false;
+  const onLost = (e: Event) => { e.preventDefault(); if (lostOnce) return; lostOnce = true; opts.onContextLost?.(); };
+  renderer.domElement.addEventListener("webglcontextlost", onLost);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = prof.shadows;
@@ -836,6 +846,7 @@ export async function createPlay3DScene(
     },
     dispose() {
       ro?.disconnect();
+      renderer.domElement.removeEventListener("webglcontextlost", onLost);
       if (isOwner()) renderer.setAnimationLoop(null);
       governed.dispose();
       release(root);

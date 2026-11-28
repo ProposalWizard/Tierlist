@@ -48,6 +48,7 @@ import BackPill3D from "./BackPill3D";
 import Play3D from "./Play3D";
 import { DRILLS, drillById, pickRandomDrill, type DrillDef, type DrillId, type DrillTrain } from "@/lib/star/play3d/drills";
 import { makeRng } from "@/lib/star/play3d/rng";
+import { afterLoss, healReset, newHealState } from "@/lib/star/three3d/autoHeal";
 
 export interface Training3DResult extends GameResult {
   you: number;
@@ -238,10 +239,24 @@ export function CrossbarChallenge({ career, onExit, onFinish }: {
   const sceneLater = (f: () => void, ms: number) => { const c = ctrl.current; if (c) c.after(ms / 1000, f); else later(f, ms); };
 
   // ── The 3D pitch ──
+  // The phone can take the 3D away (3D places audit P2, 28 Nov 2026): rebuilt silently (Low after
+  // the first), up to autoHeal.ts AUTO_REBUILDS times a minute; only then "Tap to reload 3D".
+  // What waited on the old scene's clock carries on by the wall's, so the challenge never sticks.
+  const heal = useRef(newHealState());
+  const [restarts3d, setRestarts3d] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
     if (!el) return;
+    const lost = () => {
+      const pend = ctrl.current?.takePending() ?? [];
+      ctrl.current?.dispose(); ctrl.current = null;
+      pend.forEach((f) => later(f, 600));
+      if (afterLoss(heal.current, Date.now()) === "rebuild") {
+        setThree("loading");
+        void import("@/lib/star/three3d/perf").then((m) => { if (!dead) { m.dropSharedRenderer(); el.replaceChildren(); setRestarts3d((n) => n + 1); } });
+      } else setThree("off");
+    };
     (async () => {
       try {
         const fitted = await faceFrom(mate.face);
@@ -258,22 +273,26 @@ export function CrossbarChallenge({ career, onExit, onFinish }: {
             hairStyle: resolveHairStyle(career.player.hairStyle),
           },
           mate: { skin: fitted?.skin ?? mate.skin, hair: mate.hair, hairStyle: "short", face: fitted?.face ?? null },
+        }, {
+          ...(restarts3d > 0 ? { quality: "low" as const } : {}),
+          isDead: () => dead,
+          onContextLost: () => { if (dead) return; console.error("3D training pitch: the phone took the 3D away"); lost(); },
         });
         if (dead) { c.dispose(); return; }
         ctrl.current = c;
         c.setShooter("you");
-        c.setActive(stepRef.current !== "you-aim");
+        c.setActive(stepRef.current !== "you-aim" && stepRef.current !== "done");
         setThree("ready");
       } catch (e) {
         if (dead) return; // closed mid-load (three3d/perf.ts isAbandonedScene)
         console.error("3D training pitch failed to load", e);
-        setThree("off");
+        lost();
       }
     })();
     return () => { dead = true; ctrl.current?.dispose(); ctrl.current = null; };
-    // built once per visit (again on "Tap to reload 3D")
+    // built once per visit (again after a lost 3D, and on "Tap to reload 3D")
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [retry3d]);
+  }, [retry3d, restarts3d]);
   // still loading after 20 s (a slow phone, a stuck download): offer the reload rather than "Loading…" for ever
   const [slow3d, setSlow3d] = useState(false);
   useEffect(() => {
@@ -418,7 +437,7 @@ export function CrossbarChallenge({ career, onExit, onFinish }: {
       </div>
       {three === "off" && <div className="mt-1 text-center text-[12px] font-bold text-amber-200">This phone can&apos;t show the 3D pitch — the game still plays.</div>}
       {(three === "off" || (three === "loading" && slow3d)) && (
-        <div className="mt-1 text-center"><Reload3dPill floating={false} onReload={() => { setThree("loading"); setSlow3d(false); setRetry3d((n) => n + 1); }} /></div>
+        <div className="mt-1 text-center"><Reload3dPill floating={false} onReload={() => { healReset(heal.current); setThree("loading"); setSlow3d(false); setRetry3d((n) => n + 1); }} /></div>
       )}
       {result && <ResultPanel result={result} who="Team" current={team} onContinue={() => onFinish(result)} />}
     </GameShell>

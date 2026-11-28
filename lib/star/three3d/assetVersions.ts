@@ -169,7 +169,7 @@ export const ASSET_VERSIONS: Record<string, string> = {
   "/star/life/kitman/van-den.webp": "e50d3098",
   "/star/life/still-bench-group.webp": "189128e9",
   "/star/life/still-bench-talk.webp": "07c7ada3",
-  "/star/life/voice/hundred-balls/manifest.json": "9f1f54b0",
+  "/star/life/voice/hundred-balls/manifest.json": "9cab6800",
   "/star/look/lut-day.png": "18d8aacc",
   "/star/look/lut-golden.png": "0823b0df",
   "/star/look/lut-night.png": "cb07ea4d",

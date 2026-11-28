@@ -11,8 +11,8 @@
  *               cut scene's look (no input)
  *   garden / house / shop / casino
  *               keepie-uppies over a real still of the place (several lights).
- *               The gym (test page only, its own builder's files) has no
- *               section yet: its room has no good portrait still.
+ *   gym         keepie-uppies over a still of the 3D gym (opened from the
+ *               Training page while it is tested, 28 Nov 2026)
  *   training    the coach's drill board (three boards)
  *   ballon-dor / awards
  *               the gala: the golden ball, the invitation
@@ -24,7 +24,7 @@
 
 export type LoadSection =
   | "first-load" | "match"
-  | "garden" | "house" | "shop" | "casino"
+  | "garden" | "house" | "shop" | "casino" | "gym"
   | "training" | "ballon-dor" | "awards";
 
 /** What a variant is drawn as. */
@@ -71,6 +71,10 @@ export const LOAD_VARIANTS: Record<LoadSection, LoadVariant[]> = {
   casino: [
     K("keepie-casino", "casino"),
     K("keepie-casino-neon", "casino", "neon"),
+  ],
+  gym: [
+    K("keepie-gym", "gym"),
+    K("keepie-gym-lamp", "gym", "lamp"),
   ],
   training: [
     { id: "board-white", kind: "board", look: "white" },

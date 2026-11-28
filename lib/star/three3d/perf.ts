@@ -457,7 +457,10 @@ export function disposeObject3D(root: THREE.Object3D, keep?: Set<unknown>) {
  * Set the scene's lights and shadow settings BEFORE calling (the shaders
  * depend on them).
  */
-export async function warmUp(T: Three, renderer: THREE.WebGLRenderer, scene: THREE.Object3D, camera: THREE.Camera, opts: { includeHidden?: boolean; timeoutMs?: number; prime?: boolean } = {}) {
+export async function warmUp(T: Three, renderer: THREE.WebGLRenderer, scene: THREE.Object3D, camera: THREE.Camera, opts: { includeHidden?: boolean; timeoutMs?: number; prime?: boolean; isOwner?: () => boolean } = {}) {
+  // a place that no longer holds the one renderer (left mid-load; 3D places audit P1) must not
+  // compile or draw on it: the place on screen owns it now
+  if (opts.isOwner && !opts.isOwner()) return;
   const hidden: THREE.Object3D[] = [];
   if (opts.includeHidden) scene.traverse((o) => { if (!o.visible) { hidden.push(o); o.visible = true; } });
   try {
@@ -478,7 +481,8 @@ export async function warmUp(T: Three, renderer: THREE.WebGLRenderer, scene: THR
     // One real draw of a single pixel: links the programs, builds the
     // shadow-map shaders (compile() skips those), uploads the skinning
     // data — the rest of the first frame's cost — while the cover is up.
-    if (opts.prime !== false) {
+    // (Not when another place took the renderer during the compile.)
+    if (opts.prime !== false && (!opts.isOwner || opts.isOwner())) {
       const sc = renderer.getScissor(new T.Vector4());
       const test = renderer.getScissorTest();
       renderer.setScissorTest(true);
@@ -501,7 +505,7 @@ export async function warmUp(T: Three, renderer: THREE.WebGLRenderer, scene: THR
  * last page tick took under `gapMs` (about 30 a second), or after
  * `timeoutMs` whatever happens (a slow phone still gets in).
  */
-export function awaitSmoothFrame(renderer: Pick<THREE.WebGLRenderer, "info">, opts: { minDraws?: number; gapMs?: number; timeoutMs?: number; isDead?: () => boolean } = {}): Promise<{ draws: number; ms: number; smooth: boolean }> {
+export function awaitSmoothFrame(renderer: Pick<THREE.WebGLRenderer, "info">, opts: { minDraws?: number; gapMs?: number; timeoutMs?: number; isDead?: () => boolean; isOwner?: () => boolean } = {}): Promise<{ draws: number; ms: number; smooth: boolean }> {
   const minDraws = opts.minDraws ?? 2, gapMs = opts.gapMs ?? 40, timeoutMs = opts.timeoutMs ?? 2500;
   if (typeof requestAnimationFrame === "undefined") return Promise.resolve({ draws: 0, ms: 0, smooth: false });
   const t0 = performance.now();
@@ -512,7 +516,8 @@ export function awaitSmoothFrame(renderer: Pick<THREE.WebGLRenderer, "info">, op
       const gap = now - last; last = now;
       const draws = renderer.info.render.frame - f0;
       const ms = now - t0;
-      if (opts.isDead?.()) { finish({ draws, ms, smooth: false }); return; }
+      // closed, or another place took the one renderer (its frames are not ours to count; audit P1)
+      if (opts.isDead?.() || (opts.isOwner && !opts.isOwner())) { finish({ draws, ms, smooth: false }); return; }
       if (draws >= minDraws && gap <= gapMs) { finish({ draws, ms, smooth: true }); return; }
       if (ms >= timeoutMs) { finish({ draws, ms, smooth: false }); return; }
       requestAnimationFrame(tick);

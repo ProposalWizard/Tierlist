@@ -35,7 +35,7 @@ import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import GardenScreen from "./GardenScreen";
 import Reload3dPill from "./Reload3d";
-import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
+import { afterLoss, healReset, newHealState } from "@/lib/star/three3d/autoHeal";
 import { Stick, pill } from "./Shop3D";
 import LoadingCurtain from "./loading/LoadingCurtain";
 import ViewToggle3D from "./ViewToggle3D";
@@ -113,12 +113,14 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
 
   // The phone took the 3D away (iPhone Safari, short of memory): start the
   // garden again once; a second time, the drawn garden instead.
+  // (counted by three3d/autoHeal.ts afterLoss: two a minute, so one loss an hour ago is forgotten)
+  const heal = useRef(newHealState());
   const [restarts, setRestarts] = useState(0);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
-    if (!el || restarts > AUTO_REBUILDS) return;
+    if (!el) return;
     (async () => {
       try {
         const q = new URLSearchParams(window.location.search);
@@ -159,6 +161,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
             console.error("3D garden: the phone took the 3D away");
             ctrlRef.current?.dispose();
             ctrlRef.current = null;
+            if (afterLoss(heal.current, Date.now()) === "give-up") { setStatus("error"); return; }
             setStatus("loading");
             setRestarts((n) => n + 1);
           },
@@ -166,7 +169,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
         const fixedStep = q.get("film") === "1" ? 1 / 30 : undefined;
         // the Old garden knows only "high" | "low" (sceneOld.ts is frozen)
         const start = (): Promise<GardenController> => newMod
-          ? newMod.startGarden(el, cbs, data, { quality: tier, fixedStep, edit: approvedRef.current })
+          ? newMod.startGarden(el, cbs, data, { quality: tier, fixedStep, edit: approvedRef.current, isDead: () => dead })
           // (the Old garden has no casino or pitch: it starts at the gate)
           : oldMod!.startGarden(el, cbs, { ...data, arrive: data.arrive === "shop" ? "shop" : "gate" }, { quality: tier === "low" ? "low" : "high", fixedStep });
         let c: GardenController;
@@ -189,7 +192,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
         if (dead) return; // closed mid-load: nothing to show
         console.error("3D garden failed to load", e);
         // tried again by itself on a fresh renderer (three3d/autoHeal.ts) before the drawn garden and its tap
-        if (restarts < AUTO_REBUILDS) { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
+        if (afterLoss(heal.current, Date.now()) === "rebuild") { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
         setStatus("error");
       }
     })();
@@ -201,8 +204,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, restarts, retry]);
-  // the phone took the 3D away: rebuilt silently AUTO_REBUILDS times (Low after the first), then the drawn garden
-  useEffect(() => { if (restarts > AUTO_REBUILDS) setStatus("error"); }, [restarts]);
+  // the phone took the 3D away: rebuilt silently AUTO_REBUILDS times a minute (Low after the first), then the drawn garden
 
   const drag = useRef<{ id: number; x: number; y: number; moved: number } | null>(null);
   const spot = tapped ?? near;
@@ -214,7 +216,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
     setTapped(c.pick(x, y)); // the old garden: tap opens the card
   };
 
-  if (status === "error") return (<><GardenScreen career={career} onBack={onBack} /><Reload3dPill onReload={() => { setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} /></>);
+  if (status === "error") return (<><GardenScreen career={career} onBack={onBack} /><Reload3dPill onReload={() => { healReset(heal.current); setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} /></>);
 
   return (
     <div style={{ position: embedded ? "absolute" : "fixed", inset: 0, zIndex: embedded ? 1 : 80, background: "#0d1420", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-garden3d>

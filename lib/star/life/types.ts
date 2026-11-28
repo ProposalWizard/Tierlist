@@ -240,6 +240,21 @@ export interface LifeState {
    *  first met him: "kitman@ab12" → pool id. */
   home?: string;
   cpool?: Record<string, string>;
+  // ── The story world (job B, 28 Nov 2026; docs/plans/STORY_WORLD_PLAN.md parts 1, 2c, 4). All optional:
+  //    an old save has none of them and loads byte for byte. ──
+  /** Unlocks (unlocks.ts): 3-letter codes joined by spaces, never trimmed. Read with unlocksOf / has(). */
+  ul?: string;
+  /** The scrapbook (scrapbook.ts): what the world remembers about you, "code.week.strength" joined by
+   *  spaces, 48 lines at most. Read with book('tag') / since('tag'). */
+  sb?: string;
+  /** The milestone snapshot (milestones.ts): [age, star level, call-ups, trophies, seasons in the
+   *  history, club code]. Written at each story moment of a tiered book. */
+  ms?: [number, number, number, number, number, string];
+  /** Milestone → the life week it happened (only the last JUST_WEEKS are kept). Read with just(...). */
+  msw?: Record<string, number>;
+  /** Echoes: a line due seasons later from someone in a story: [due week, person id, scrapbook tag's
+   *  4-letter code, story code]. 6 at most. */
+  ech?: [number, string, string, string][];
 }
 
 export const PERSON_MEMORY_CAP = 6;
@@ -335,6 +350,10 @@ export interface ArcOutcome extends LifeOutcome {
   /** What a `give` is called and does, for the card ([name, line]); the kit man's bag has its own. */
   giveWords?: [string, string];
   unlock?: string;
+  /** The scrapbook (job B): a line about you the whole world remembers, read later by book('tag') and
+   *  since('tag'). A tag (strength 3, kept for good), or with a strength and an echo: a text from
+   *  someone in the story, due a few seasons on. The tag must be in book/scrapbook.json. */
+  book?: string | BookWrite;
   noteSquad?: string;
   train?: Partial<Record<"pace" | "power" | "technique" | "vision", number>>;
   startArc?: { id: string; with: Record<string, string> };
@@ -487,6 +506,15 @@ export interface PromiseRun {
   r?: 1;
 }
 
+/** A scrapbook write (ArcOutcome.book). */
+export interface BookWrite {
+  tag: string;
+  /** 1 ≈ a season, 2 ≈ three seasons, 3 for good (default 3). */
+  strength?: 1 | 2 | 3;
+  /** A text from `who` (a cast slot), due `seasons` [from, to] seasons later; dropped if he is forgotten. */
+  echo?: { seasons: [number, number]; who: string; line: string };
+}
+
 export interface ObjectiveRun { id: string; arc: string; text: string; left: number; met: string; onMet: string; onMiss: string; made: number }
 
-export interface ArcNotice { kind: "kept" | "broken" | "remind" | "ignored" | "objective"; arc: string; title: string; text: string; who?: string; w: number; changes?: { kind: "bar" | "money" | "energy" | "person" | "memory" | "item" | "team-rule" | "later"; label: string; delta?: number }[] }
+export interface ArcNotice { kind: "kept" | "broken" | "remind" | "ignored" | "objective" | "echo"; arc: string; title: string; text: string; who?: string; w: number; changes?: { kind: "bar" | "money" | "energy" | "person" | "memory" | "item" | "team-rule" | "later"; label: string; delta?: number }[] }

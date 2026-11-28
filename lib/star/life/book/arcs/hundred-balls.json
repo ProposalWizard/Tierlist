@@ -2072,7 +2072,7 @@
           "best": 100
          }
         },
-        "unlock": "trophy:the-kit-room-door"
+        "unlock": "kit-room-door"
        }
       ],
       "on-the-door-top": [
@@ -2111,7 +2111,7 @@
           "best": 100
          }
         },
-        "unlock": "trophy:the-kit-room-door"
+        "unlock": "kit-room-door"
        }
       ],
       "short": [
@@ -2679,8 +2679,8 @@
           "strength": 3
          }
         ],
-        "give": "item:dens-ball-bag",
-        "unlock": "garden:hundred-balls-corner",
+        "give": "item-dens-ball-bag",
+        "unlock": "hundred-balls-corner",
         "arc": {
          "set": {
           "bag": 1
@@ -2712,8 +2712,8 @@
           "strength": 3
          }
         ],
-        "give": "item:dens-ball-bag",
-        "unlock": "garden:hundred-balls-corner+den-visits",
+        "give": "item-dens-ball-bag",
+        "unlock": "hundred-balls-corner+den-visits",
         "arc": {
          "set": {
           "bag": 1
@@ -2905,7 +2905,7 @@
          },
          "reopen": "b7-your-turn"
         },
-        "give": "item:dens-ball-bag"
+        "give": "item-dens-ball-bag"
        }
       ]
      },

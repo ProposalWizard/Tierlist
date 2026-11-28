@@ -9,6 +9,7 @@ import {
 import { NextResponse } from "next/server";
 import { casinoNetBetween } from "@/lib/star/casinoDb";
 import { CASINO_ON_SERVER } from "@/lib/star/casinoRules";
+import { checkSlotUpload, readSlotCheck, SLOT_CHECK_HEADER } from "@/lib/star/onlineSlots";
 
 const MIN_SLOT = 1;
 const MAX_SLOT = 3; // MAX_SAVE_SLOTS, lib/star/storage.ts
@@ -150,6 +151,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not a save" }, { status: 400 });
   }
 
+  // ── Never replace another device's career (lib/star/onlineSlots.ts) ──
+  // Only when the upload carries the x-star-slot-check header: an old page
+  // that does not send it saves exactly as before. "replace" is the
+  // player's own choice (Saves → "Replace online copy") and is never refused.
+  const slotCheck = readSlotCheck(req.headers.get(SLOT_CHECK_HEADER));
+  const { refusal, prev: checkedPrev } = await checkSlotUpload(() => readRow(db, user.id, slot), career, slotCheck);
+  if (refusal) {
+    console.warn(`[star/career] upload refused: slot-taken user=${user.id} slot=${slot}`);
+    return NextResponse.json({ ok: false, ...refusal }, { status: 409 });
+  }
+
   // ── The save guard (lib/star/saveGuard.ts) ──
   // Compared with the last trusted save in this slot (or, after a delete,
   // the tombstone that kept it). Admins and testers are never checked: they
@@ -160,7 +172,7 @@ export async function POST(req: Request) {
   let corrected: string[] = [];
   if (mode !== "off") {
     try {
-      const prev = await readRow(db, user.id, slot);
+      const prev = checkedPrev !== undefined ? checkedPrev : await readRow(db, user.id, slot);
       const exempt = await isTester(user.id);
       const prevSavedAt = prev ? new Date(prev.updated_at).getTime() : null;
       // The server casino's own record since the last trusted save

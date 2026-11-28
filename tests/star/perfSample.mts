@@ -77,7 +77,7 @@ for (const tickMs of [16, 33, 100, 1000]) { // "frame rates": how often the call
 }
 
 // ── 5. the place ──
-check(placeOfPhase("home-3d") === "house" && placeOfPhase("shop-3d") === "shop" && placeOfPhase("casino-roulette") === "casino" && placeOfPhase("training-3d") === "training", "phases → places");
+check(placeOfPhase("home-3d") === "house" && placeOfPhase("shop-3d") === "shop" && placeOfPhase("casino-roulette") === "casino" && placeOfPhase("training-3d") === "training" && placeOfPhase("gym-3d") === "gym", "phases → places");
 check(placeOfPath("/star-world3d-dev", "?place=gym") === "gym" && placeOfPath("/star-garden3d-dev") === "garden" && placeOfPath("/star-phone3d-dev") === "phone", "test pages → places");
 check(placeOf({ path: "/star-dev", phase: "media", phoneUp: true }) === "phone", "the 3D phone over the house is 'phone'");
 check(placeOf({ path: "/star-dev", phase: "match", drawing3d: true }) === "match3d" && placeOf({ path: "/star-dev", phase: "match" }) === "match", "match vs match3d");

@@ -47,6 +47,8 @@ import type { Play3DController, Play3DPerson } from "@/lib/star/play3d/scene";
 import { GameShell, ResultPanel, type GameResult } from "./relgames/Shell";
 import BackPill3D from "./BackPill3D";
 import LoadingCurtain from "./loading/LoadingCurtain";
+import Reload3dPill from "./Reload3d";
+import { afterLoss, healReset, newHealState } from "@/lib/star/three3d/autoHeal";
 
 const SKINS = ["#8d5524", "#c68642", "#e0ac69", "#5c3a1e", "#f1c27d"];
 const HAIRS = ["#1b120c", "#2b1b10", "#4a2e1c", "#0f0b08"];
@@ -195,10 +197,25 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
   applyRef.current = applyInput;
 
   // ── the 3D picture (and the World's clock) ──
+  // The phone can take the 3D away (a lost WebGL context, 3D places audit P2, 28 Nov 2026): the
+  // picture is rebuilt silently (Low after the first), up to autoHeal.ts AUTO_REBUILDS times a
+  // minute; only then "Tap to reload 3D". The drill itself (the World) carries on untouched.
+  const heal = useRef(newHealState());
+  const [restarts, setRestarts] = useState(0);
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
     if (!el) return;
+    /** Lost or failed: rebuild silently, or give up (the tap). */
+    const lost = () => {
+      ctrl.current?.dispose(); ctrl.current = null;
+      hRef.current?.dispose(); hRef.current = null;
+      if (afterLoss(heal.current, Date.now()) === "rebuild") {
+        setThree("loading");
+        void import("@/lib/star/three3d/perf").then((m) => { if (!dead) { m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); } });
+      } else setThree("off");
+    };
     (async () => {
       try {
         const people: Record<string, Play3DPerson> = {};
@@ -222,6 +239,10 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         hRef.current = hLook;
         const c = await createPlay3DScene(el, session.world, { kit: { shirt: kit.shirt, trim: kit.trim }, people, teamKits: session.bibs ? bibsFor(kit.shirt) : undefined }, {
           camera: session.camera,
+          // after the phone took the 3D away: Low (as the garden and the house)
+          ...(restarts > 0 ? { quality: "low" as const } : {}),
+          isDead: () => dead,
+          onContextLost: () => { if (dead) return; console.error("3D drill: the phone took the 3D away"); lost(); },
           practice: session.frame,
           ...(hLook ? hLook.opts : {}),
           onFrame: (dt) => {
@@ -241,15 +262,16 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         ctrl.current = c;
         setThree("ready");
       } catch (e) {
+        if (dead) return; // closed mid-load (three3d/perf.ts isAbandonedScene): nothing to show
         console.error("3D drill failed to load", e);
-        if (!dead) setThree("off");
+        lost();
       }
     })();
     return () => { dead = true; hRef.current?.dispose(); hRef.current = null; ctrl.current?.dispose(); ctrl.current = null; };
-    // built once per visit
+    // built once per visit (again after a lost 3D, and on "Tap to reload 3D")
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  useEffect(() => { if (result) ctrl.current?.setActive(false); }, [result]);
+  }, [restarts, retry]);
+  useEffect(() => { if (result) ctrl.current?.setActive(false); }, [result, three]);
 
   // ── thumbs and the mouse ──
   const stick = useRef<{ id: number; x0: number; y0: number; t0: number; r: number; corner?: boolean } | null>(null);
@@ -511,7 +533,14 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
         )}
         {/* the loading screen: the coach's drill board (components/star/loading) */}
         <LoadingCurtain section="training" box loading={three === "loading"} ctx={{ drill: { name: drill.name }, shirt: kitsOf(career.player.club, career.clubKits?.[career.player.club]).home.shirt }} />
-        {three === "off" && <div className="absolute inset-0 z-30 grid place-items-center px-6 text-center text-[14px] font-bold text-amber-200">This phone can&apos;t show the 3D pitch, and this drill is 3D only. Pick the Crossbar Challenge instead.</div>}
+        {three === "off" && (
+          <div className="absolute inset-0 z-30 grid place-items-center px-6 text-center text-[14px] font-bold text-amber-200" data-play3d-off>
+            <div>
+              This phone stopped the 3D pitch, and this drill is 3D only.
+              <div><Reload3dPill floating={false} onReload={() => { healReset(heal.current); setThree("loading"); setRestarts(0); setRetry((n) => n + 1); }} /></div>
+            </div>
+          </div>
+        )}
         {cornerStick && !knob && !drag && three === "ready" && !result && (
           <>
             <div className="pointer-events-none absolute left-3 z-30 rounded-full bg-black/35 px-2 py-0.5 text-[10px] font-bold uppercase text-white/70" style={{ top: h - CORNER_STICK.bottom - cornerR - 22 }} data-play3d-zone="nudge">Nudge</div>

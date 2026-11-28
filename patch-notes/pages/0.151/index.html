@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Patch notes 0.151</title>
+<style>
+:root{--bg:#f3f6f4;--card:#fff;--line:#d9e3dd;--ink:#0e1613;--ink2:#46594f;--green:#0c8a4d;--blue:#1565c0;--amber:#a8730a;--gbg:#e3f5ea}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b100e;--card:#141d18;--line:#24332b;--ink:#f2f7f4;--ink2:#9fb6aa;--green:#3ddc84;--blue:#6fb8ff;--amber:#f5b942;--gbg:#10301f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b100e;--card:#141d18;--line:#24332b;--ink:#f2f7f4;--ink2:#9fb6aa;--green:#3ddc84;--blue:#6fb8ff;--amber:#f5b942;--gbg:#10301f;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:0 16px 40px;overflow-x:hidden}
+.wrap{max-width:720px;margin:0 auto}h1{font-size:24px;margin:22px 0 4px}.sub{color:var(--ink2);margin:0 0 14px}
+.cnt{background:var(--gbg);color:var(--green);border-radius:14px;padding:12px;text-align:center;font-weight:800}.cnt b{font-size:40px;display:block;line-height:1}
+section{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--green);border-radius:14px;padding:12px 14px;margin-top:14px}
+h2{font-size:18px;margin:0 0 4px}p{margin:6px 0}.l{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin-top:12px}
+.ck{border-left:3px solid var(--blue);padding-left:9px}.wk{border-left:3px solid var(--amber);padding-left:9px}
+.pics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}figure{margin:0}img{width:100%;height:auto;display:block;border-radius:10px;border:1px solid var(--line)}figcaption{font-size:12.5px;color:var(--ink2);margin-top:3px}.wide{grid-column:1/-1}
+</style></head><body><div class="wrap">
+<h1>Patch notes 0.151</h1><p class="sub">Harry, 28 Nov 2026. Segmented patch notes.</p>
+<div class="cnt"><b>3</b>pieces now live</div>
+<section><h2>The gym from Training</h2><p>Training tab → the pink Gym card → GO IN. The 3D gym opens in your real career: 13 exercises, your club's kit, a team-mate. ‹ Training takes you back.</p>
+<div class="pics"><figure><img src="img/gym-card.jpg" alt="Gym card on the Training tab"><figcaption>The Gym card under the sessions.</figcaption></figure><figure><img src="img/gym-load.jpg" alt="Gym loading screen"><figcaption>Its own loading screen.</figcaption></figure><figure class="wide"><img src="img/gym-bench.jpg" alt="Bench press in the gym"><figcaption>Bench press in a real career.</figcaption></figure></div>
+<div class="l">How we checked it</div><p class="ck">Seen in a real career: one bench press saved Strength 20 and one visit. Energy and session bolts did not change.</p>
+<div class="l">Still weak</div><p class="wk">Gym effects are switched off while we test. The camera looks at the floor until you move. Not tried on a real phone.</p></section>
+<section><h2>One set of saves per account</h2><p>The Saves list now reads your account, not just the device. Phone and computer show the same saves. If two careers clash, you choose which to keep.</p>
+<div class="pics"><figure><img src="img/saves.jpg" alt="Saves list with a save from another device"><figcaption>A save made on your computer shows on the phone.</figcaption></figure><figure><img src="img/saves-choice.jpg" alt="Choice between two careers"><figcaption>Two careers clash: you choose.</figcaption></figure></div>
+<div class="l">How we checked it</div><p class="ck">10 save tests pass. Seen on screen in a test career, signed out with test data.</p>
+<div class="l">Still weak</div><p class="wk">Not yet seen with your real account on your phone and PC.</p></section>
+<section><h2>A lighter walk, nobody through anybody</h2><p>Walkers stand upright with the head up and take quicker steps. In group walks and cut scenes, every man keeps at least 70 cm from the man ahead.</p>
+<div class="pics"><figure class="wide"><img src="img/walk.jpg" alt="Walk before and after"><figcaption>Top: before, back 11° forward, head down. Bottom: now, back 4°, face level.</figcaption></figure></div>
+<div class="l">How we checked it</div><p class="ck">Measured: 291 of 361 walk-out frames had two men inside each other; now 0. Steps a second: middle 1.91 → 2.17.</p>
+<div class="l">Still weak</div><p class="wk">The full 12 s walk-out film is not finished (the machine ran out of memory).</p></section>
+</div></body></html>

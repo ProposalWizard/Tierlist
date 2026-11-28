@@ -21,7 +21,11 @@ export interface GymHudHandle { frame: (f: GymHudFrame) => void }
 
 const PANEL: React.CSSProperties = { background: "rgba(8,10,16,.82)", color: "#f8fafc", borderRadius: 14, boxShadow: "0 8px 24px rgba(0,0,0,.35)" };
 
-export const GymHud = forwardRef<GymHudHandle, { onHold: (on: boolean) => void; onAct: (id: string) => void; fitness?: GymFitness; film?: boolean; body?: number | null }>(function GymHud({ onHold, onAct, fitness, film, body }, ref) {
+export const GymHud = forwardRef<GymHudHandle, { onHold: (on: boolean) => void; onAct: (id: string) => void; fitness?: GymFitness; film?: boolean; body?: number | null;
+  /** In the real career (components/star/Gym3D.tsx): no test buttons (body slider, "Play a match"), the strip under the top bar. */
+  inGame?: boolean;
+  /** A small line under the strip ("Gym effects are switched off while we test"). */
+  note?: string }>(function GymHud({ onHold, onAct, fitness, film, body, inGame, note }, ref) {
   const [kind, setKind] = useState<GymHudFrame["kind"]>(null);
   const root = useRef<HTMLDivElement>(null);
   const fade = useRef<HTMLDivElement>(null);
@@ -128,7 +132,7 @@ export const GymHud = forwardRef<GymHudHandle, { onHold: (on: boolean) => void; 
     <div ref={root} style={{ position: "absolute", inset: 0, pointerEvents: "none", fontFamily: "system-ui, sans-serif" }} data-gym-hud={kind ?? "none"}>
       {/* the fitness strip (no game on) */}
       {!playing && fitness && (
-        <div style={{ ...PANEL, position: "absolute", left: 10, right: 10, top: 40, maxWidth: 420, margin: "0 auto", padding: "8px 10px", pointerEvents: "auto" }} data-gym-fitness>
+        <div style={{ ...PANEL, position: "absolute", left: 10, right: 10, top: inGame ? "calc(max(12px, env(safe-area-inset-top)) + 46px)" : 40, maxWidth: 420, margin: "0 auto", padding: "8px 10px", pointerEvents: "auto" }} data-gym-fitness>
           <div style={{ display: "flex", gap: 8 }}>
             {fitness.stats.map((s) => (
               <div key={s.stat} style={{ flex: 1 }}>
@@ -140,9 +144,10 @@ export const GymHud = forwardRef<GymHudHandle, { onHold: (on: boolean) => void; 
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, rowGap: 4, marginTop: 6, fontSize: 11.5, fontWeight: 800, color: "#e2e8f0" }}>
             <span>Ring {Array.from({ length: fitness.ring.size }, (_, i) => (i < fitness.ring.done.length ? "●" : "○")).join("")}{fitness.ring.closed ? " closed" : fitness.ring.done.length >= fitness.ring.size ? " (one kind)" : ""}</span>
             <span style={{ color: fitness.window >= 0 ? "#86efac" : "#fca5a5" }}>{fitness.window >= 0 ? `Window: ${fitness.window + 1} wk` : "No window"}</span>
-            {!film && <span style={{ display: "flex", gap: 3, alignItems: "center" }} data-gym-body>Body {(["auto", 1, 2, 3, 4] as const).map((lv) => <button key={lv} onClick={() => onAct(`gym:body:${lv}`)} style={{ height: 20, minWidth: 20, padding: "0 4px", borderRadius: 6, border: "1px solid rgba(255,255,255,.3)", background: (lv === "auto" ? body == null : body === lv) ? "#facc15" : "transparent", color: (lv === "auto" ? body == null : body === lv) ? "#111" : "#f8fafc", fontWeight: 900, fontSize: 10, cursor: "pointer" }}>{lv === "auto" ? "A" : lv}</button>)}</span>}
-            {!film && <button onClick={() => onAct("gym:nextWeek")} style={{ marginLeft: "auto", height: 24, borderRadius: 8, border: "1px solid rgba(255,255,255,.3)", background: "transparent", color: "#f8fafc", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Play a match ▸</button>}
+            {!film && !inGame && <span style={{ display: "flex", gap: 3, alignItems: "center" }} data-gym-body>Body {(["auto", 1, 2, 3, 4] as const).map((lv) => <button key={lv} onClick={() => onAct(`gym:body:${lv}`)} style={{ height: 20, minWidth: 20, padding: "0 4px", borderRadius: 6, border: "1px solid rgba(255,255,255,.3)", background: (lv === "auto" ? body == null : body === lv) ? "#facc15" : "transparent", color: (lv === "auto" ? body == null : body === lv) ? "#111" : "#f8fafc", fontWeight: 900, fontSize: 10, cursor: "pointer" }}>{lv === "auto" ? "A" : lv}</button>)}</span>}
+            {!film && !inGame && <button onClick={() => onAct("gym:nextWeek")} style={{ marginLeft: "auto", height: 24, borderRadius: 8, border: "1px solid rgba(255,255,255,.3)", background: "transparent", color: "#f8fafc", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Play a match ▸</button>}
           </div>
+          {note && <div style={{ marginTop: 5, fontSize: 10, fontWeight: 700, color: "#94a3b8" }} data-gym-note>{note}</div>}
         </div>
       )}
       {playing && (
