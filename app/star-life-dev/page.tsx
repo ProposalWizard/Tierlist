@@ -44,12 +44,15 @@ import { lifeOf, pickEvent, startEvent, MAX_PER_WEEK, type LiveEvent } from "@/l
 import { chooseOption, type ChoiceResult } from "@/lib/star/life/resolve";
 import { chat, startOuting, type ChatResult, type SocialKind } from "@/lib/star/life/social";
 import { autoPlay, rollMatch, turnWeek, weekMoments } from "@/lib/star/life/sim";
-import { freshLife, lifeWeek, meet, personInfo, teamForMatch } from "@/lib/star/life/people";
+import { freshLife, lifeWeek, meet, personInfo, teamForMatch, ROLE_ID, ROLE_TITLE } from "@/lib/star/life/people";
 import type { FactOverride } from "@/lib/star/life/facts";
 import { actionsLeft } from "@/lib/star/week";
 import { LIFE_IN_CAREER } from "@/lib/star/life/flag";
 import { StoryScreen, useStory } from "@/components/star/life/StoryPlayer";
-import { questLog, arcsOf } from "@/lib/star/life/arcs";
+import { StoryFace } from "@/components/star/life/StoryCards";
+import { questLog, arcsOf, arcMoment, openBeat } from "@/lib/star/life/arcs";
+import { arcById } from "@/lib/star/life/arcBook";
+import { cardLive, diceActivity, nodeLive } from "@/lib/star/life/talk";
 import { promiseList } from "@/lib/star/life/promises";
 
 type View =
@@ -82,6 +85,26 @@ function RoundStage({ career, id, reply, onPick, onClose }: { career: CareerStat
       <span className="absolute left-3 top-3 z-[30] rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/80">A still: the 3D world goes here</span>
       <RoundMenu menu={menu} anchor={{ x: head.x, y: head.y + placed.height * 0.03 }} size={size} onPick={onPick} onClose={onClose} reply={reply}
         others={[{ x: other.x + placed.width * 0.04, y: other.y - placed.height * 0.17, icon: "🏇" }]} />
+    </div>
+  );
+}
+
+/** Every role's face as the game draws it today (StoryFace: a still where there is one, else the
+ *  drawn tile or the team-mate's face), with the name this career gives it. Story Book stills only. */
+function CastSheet({ career }: { career: CareerState }) {
+  const ids = Object.entries(ROLE_ID) as [keyof typeof ROLE_ID, string][];
+  return (
+    <div className="dd" style={{ padding: "18px 14px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }} data-cast-sheet>
+      {ids.map(([role, id]) => {
+        const info = personInfo(career, id);
+        return (
+          <div key={id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, textAlign: "center" }}>
+            <StoryFace career={career} id={id} size={72} />
+            <div style={{ fontSize: 13, fontWeight: 800 }}>{info?.short ?? "?"}</div>
+            <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.65)", lineHeight: 1.2 }}>{ROLE_TITLE[role]}</div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -147,6 +170,7 @@ export default function LifeTestPage() {
   const [horse, setHorse] = useState(false);
   const [clock, setClock] = useState<ClockSetting>("normal");
   const [plainCards, setPlainCards] = useState(false);
+  const [castSheet, setCastSheet] = useState(false);
   const plainRef = useRef(false);
   plainRef.current = plainCards;
   const rng = useRef(mulberry32(20261120));
@@ -157,6 +181,72 @@ export default function LifeTestPage() {
   useEffect(() => { const el = document.querySelector("[data-life-scroll]"); if (el) el.scrollTop = 0; }, [storyKey]);
   // Test hook for the stills driver (a dev page only): the story's controls without the panel.
   useEffect(() => { (window as unknown as { __kitStory?: unknown }).__kitStory = { ...story.act, start: () => story.act.arriveWith(kitman()), club: () => setCareer((c) => (c ? { ...c, player: { ...c.player, club: NATIONAL_LEAGUE_CLUBS[(NATIONAL_LEAGUE_CLUBS.indexOf(c.player.club as (typeof NATIONAL_LEAGUE_CLUBS)[number]) + 5) % NATIONAL_LEAGUE_CLUBS.length] } } : c)) }; });
+  // Test hook for the Story Book screenshots (scripts/life/story-book-shots.mjs; a dev page only,
+  // never the real career): start any story, open any beat, answer, roll a game, keep and restore.
+  const latest = useRef({ career, story, facts });
+  latest.current = { career, story, facts };
+  useEffect(() => {
+    type V = NonNullable<typeof story.view>;
+    const saved: { career: CareerState | null; view: V | null }[] = [];
+    let arcId = "";
+    (window as unknown as { __shot?: unknown }).__shot = {
+      begin: (id: string) => {
+        const arc = arcById(id);
+        if (!arc) return { ok: false, why: "no such story" };
+        arcId = id;
+        const bases: [string, () => CareerState][] = id === "arc-hundred-balls" ? [["kitman", kitmanSample]] : [
+          ["fresh", () => ({ ...sampleCareer(3), life: freshLife() })],
+          ["lived", () => autoPlay(sampleCareer(3), 30, mulberry32(20261120))],
+          ["kitman", kitmanSample],
+        ];
+        const m = (arc.beats[0].event.trigger.when.find((w) => w !== "followUp") ?? "arrive:training") as LifeMoment;
+        for (const [name, make] of bases) {
+          rng.current = mulberry32(20261120);
+          const r = arcMoment(make(), m, { rng: () => rng.current(), facts: latest.current.facts, force: id });
+          if (arcsOf(r.career)[id]) { setCareer(r.career); setView({ kind: "people" }); latest.current.story.act.close(); return { ok: true, base: name }; }
+        }
+        return { ok: false, why: "its people cannot be cast in any sample career" };
+      },
+      open: (beatId: string) => {
+        const { career: c, story: st, facts: f } = latest.current;
+        if (!c) return false;
+        const o = openBeat(c, arcId, beatId);
+        if (!o) return false;
+        const b = o.live;
+        setCareer(o.career);
+        st.setView(b.stage === "invite" ? { k: "invite", b } : b.stage === "card" ? { k: "card", b, live: cardLive(o.career, b, f) } : { k: "talk", b, live: nodeLive(o.career, b, f), before: o.career });
+        return true;
+      },
+      state: () => {
+        const v = latest.current.story.view;
+        if (!v) return { k: null };
+        const base = { k: v.k, beat: "b" in v ? v.b.beat : undefined, node: "b" in v ? v.b.node : undefined, round: "b" in v ? v.b.round : undefined };
+        if (v.k === "talk" || v.k === "card") return { ...base, picked: !!v.picked, choices: v.picked ? [] : v.live.choices.map((x) => ({ id: x.id, label: x.label, locked: !!x.locked })), screen: v.live.event.screen, template: v.live.event.template };
+        if (v.k === "activity") return { ...base, mode: v.activity.mode };
+        if (v.k === "invite") return { ...base, choices: ["attend", "send-apologies", "ignore"].map((id) => ({ id, label: id })) };
+        return base;
+      },
+      choose: (id: string) => {
+        const st = latest.current.story, v = st.view;
+        if (v?.k === "talk") st.talkChoose(id); else if (v?.k === "card") st.cardChoose(id); else if (v?.k === "invite") st.inviteChoose(id); else return false;
+        return true;
+      },
+      dice: () => {
+        const { career: c, story: st } = latest.current, v = st.view;
+        if (!c || v?.k !== "activity") return false;
+        st.activityResult(diceActivity(c, v.b, v.activity, mulberry32(7)));
+        return true;
+      },
+      next: () => { latest.current.story.next(); return true; },
+      phone: () => { latest.current.story.act.phone("stories"); return true; },
+      close: () => { setCastSheet(false); latest.current.story.act.close(); return true; },
+      cast: () => { setCastSheet(true); return true; },
+      people: () => { setCastSheet(false); latest.current.story.act.close(); setView({ kind: "people" }); return true; },
+      snap: () => { saved.push({ career: latest.current.career, view: latest.current.story.view }); return saved.length - 1; },
+      restore: (i: number) => { const s = saved[i]; if (!s) return false; setCareer(s.career); latest.current.story.setView(s.view); return true; },
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const kitman = () => {
     rng.current = mulberry32(20261120);
     const c = kitmanSample();
@@ -299,6 +389,7 @@ export default function LifeTestPage() {
 
   const storyScreen = career && story.view ? <StoryScreen story={story} career={career} facts={facts} setCareer={setCareer} allowDice={diceOk} /> : null;
   const screen = !career ? null
+    : castSheet ? <CastSheet career={career} />
     : storyScreen ? storyScreen
     : view.kind === "event" ? <EventCard career={career} live={view.live} onChoose={choose} />
     : view.kind === "outcome" ? <OutcomeCard career={career} live={view.live} choiceId={view.choiceId} result={view.result} onContinue={next} />
