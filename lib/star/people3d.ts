@@ -839,6 +839,10 @@ export function makePerson3d(
     poseFingers(T, person, "R", relaxed);
     for (const side of ["L", "R"] as const) for (const f of FINGER_NAMES) for (const b of fingers[side][f].bones) base.get(b)?.[1].copy(b.quaternion);
   }
+  // YOUR barber's cut (lib/star/barber.ts → toonYou().hairLook): the modelled hairstyle, put on when its file is in
+  // (every place that builds you comes through here: the house, the garden, the shop, the street, the gym, the compound)
+  const yourCut = opts.you && toonHead ? toonYou().hairLook?.mesh : undefined;
+  if (yourCut) void import("./style3d/toon/yourHair").then((m) => m.wearYourHair(T, person, yourCut)).catch((e) => console.error("your hair", e));
   return person;
 }
 
@@ -1031,7 +1035,9 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
     u.uShoes.value = lin(T, look.suit.shoes ?? "#141416");
   }
   if (u.uShade) u.uShade.value.w = look.browDark ?? 0;
-  if (u.uHairCut) u.uHairCut.value.set(look.hairCut?.scalp ?? 0, look.hairCut?.beard ?? 0, look.hairCut?.stubble ?? 0, look.hairCut?.pattern ?? 0);
+  // your barber's cut and beard step (toonYou().hairLook) wherever a scene dresses you without naming a haircut
+  const hc = look.hairCut ?? (p.you && p.toonHead && toonYou().hairLook?.head === p.toonHead ? toonYou().hairLook!.cut : undefined);
+  if (u.uHairCut) u.uHairCut.value.set(hc?.scalp ?? 0, hc?.beard ?? 0, hc?.stubble ?? 0, hc?.pattern ?? 0);
   if (u.uBadgeOn) {
     u.uBadgeOn.value = look.badge ? 2 : 1;
     if (look.badge) u.uBadge.value = look.badge;

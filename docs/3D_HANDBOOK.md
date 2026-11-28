@@ -140,6 +140,14 @@ exactly today's bodies. You never pick a file yourself:
   `lib/star/style3d/toon/faceShape.ts` + `faceShapeApply.ts` (`applyToonFaceShape` before `addToonFace`).
   Light skin on a toon preset is painted a touch darker and warmer (`toonSkinHex`, presets.ts), fair or grey brows darker (`browDark`).
   Sheets: `/star-3d-bench-dev/people?set=hair`, `?set=heads`, `?set=faces`, `?set=swing`.
+- YOUR hair (the barber, 28 Nov 2026): `lib/star/barber.ts` (pure: growth, prices, the save) gives `hairLook3d` (the head,
+  the modelled style, the scalp/beard cut); the page puts it on `setToonYou({ hairLook })` (`lib/star/style3d/toon/bodies.ts`),
+  so `toonYou().head` is the close-cut head a modelled style is worn on (h3, or h7/h8/h9 nearest your own face). Every
+  place that builds you (`makePerson3d` with `you: true`) puts the modelled style on by itself (`style3d/toon/yourHair.ts`),
+  and `dressPerson3d` paints the scalp and beard step on you when the scene names no haircut. A cap (accessories.ts) presses
+  modelled hair in under its crown now and when the hair loads later (`capPress`); long hair comes out from under its edge.
+  Mark a pressed geometry on the object, never in `userData` (three's `clone()` shares userData with the file's geometry).
+  Sheet: `/star-3d-bench-dev/hair` (`node scripts/bench3d/hair-sheet.mjs OUTDIR "name::cuts=afro:0,crew:2&head=h1"`).
 - **The face system (20 Nov 2026, Harry: "straight-to-the-face build"; bench only, not in the game yet).** Each person's own face is a
   FaceId (`lib/star/style3d/toon/faceId.ts`: about fifty numbers and three colours from his id, `personLook(...).faceId`; the same id, the
   same face): eye shape (round, almond, hooded, narrow, deep-set, downturned, upturned, single lid), size, spacing and a real eye colour,

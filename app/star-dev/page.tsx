@@ -15,6 +15,7 @@ import "@/components/star/ui/glassLook.css";
 import { freshItem, isWornOut } from "@/lib/star/fame";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { setToonYou, yourToonBody, yourToonHead } from "@/lib/star/style3d/toon/bodies";
+import { yourHairLook3d, hairLookKey, withHairStarted } from "@/lib/star/barber";
 import { skinToneHex, hairColourHex } from "@/lib/star/playerIdentity";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay, FarewellRecord } from "@/lib/star/types";
 import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type FreeKickRunupId } from "@/lib/star/runupStyles";
@@ -1380,6 +1381,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   useEffect(() => {
     setToonYou({ body: yourBody3d, head: yourHead3d, skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d), name: yourShirtName, boots: bootLookOf(yourBootId ? { id: yourBootId, level: yourBootLevel } : null) });
   }, [yourBody3d, yourHead3d, yourSkin3d, yourHair3d, yourShirtName, yourBootId, yourBootLevel]);
+  // your barber's cut and the beard grown this week (lib/star/barber.ts), on your 3D player everywhere
+  const yourHairLook = career && yourHead3d ? yourHairLook3d(career, yourHead3d) : undefined;
+  const yourHairKey = yourHairLook ? hairLookKey(yourHairLook) : "";
+  useEffect(() => { setToonYou({ hairLook: yourHairLook }); }, [yourHairKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // an old save (or a new career): its hair and beard start growing from now, looking exactly as before
+  const hairUnstarted = !!career && !career.hair;
+  useEffect(() => { if (hairUnstarted) setCareer(c => (c && !c.hair ? withHairStarted(c, yourToonHead(c.player)) : c)); }, [hairUnstarted]);
 
   const handleSetPortrait = useCallback((portrait: string | undefined) => {
     setCareer(c => (c

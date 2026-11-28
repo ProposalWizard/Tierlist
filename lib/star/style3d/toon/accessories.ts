@@ -25,6 +25,7 @@ import type * as THREE from "three";
 import type { Person3D } from "../../people3d";
 import type { AccessoryLook } from "../../wearables";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { TOON_HAIR_LIFT } from "./hairStyles";
 
 type Three = typeof import("three");
 type V = THREE.Vector3;
@@ -42,6 +43,7 @@ export function wearAccessories(T: Three, p: Person3D, looks: AccessoryLook[], o
   if (!parent) return null;
   // a second call (a change of watch) replaces what he wore
   for (const o of [...parent.children]) if (o.name === NAME) { parent.remove(o); disposeMesh(o as THREE.Mesh); }
+  (p as Person3D & { capPress?: HairPress | null }).capPress = null;
   if (!looks.length) return null;
   const B = p.bones;
   if (!B.LeftHand || !B.LeftForeArm || !B.neck || !B.Head) return null;
@@ -61,10 +63,10 @@ export function wearAccessories(T: Three, p: Person3D, looks: AccessoryLook[], o
     HEAD_BONE = p.bones.Head ? p.body.skeleton.bones.indexOf(p.bones.Head) : -1;
     const parts: THREE.BufferGeometry[] = [];
     const kinds: string[] = [];
-    let squash: ((x: V) => V | null) | null = null;
+    let squash: ((x: V, hair?: boolean) => V | null) | null = null;
     for (const look of looks) {
       if (look.slot === "head") {
-        const cp = cap(T, cloud, W, look);
+        const cp = cap(T, cloud, W, look, p.toonHead ? TOON_HAIR_LIFT[p.toonHead] ?? 0 : 0);
         if (cp) { parts.push(cp.geo); kinds.push(look.kind); squash = cp.squash; }
         continue;
       }
@@ -92,6 +94,11 @@ export function wearAccessories(T: Three, p: Person3D, looks: AccessoryLook[], o
     }
     // a cap presses the hair in: his own copy of the body's mesh, every point outside the crown moved inside it
     if (squash && !(globalThis as { __noSquash?: boolean }).__noSquash) squashBody(T, p, squash, inv);
+    // modelled hair (style3d/toon/hair.ts: your barber's cut, a preset's locs) is pressed in under the crown the same
+    // way, now and when it arrives later (it loads after the body: hair.ts addToonHair reads p.capPress)
+    const press = squash && !(globalThis as { __noSquash?: boolean }).__noSquash ? hairPress(T, squash, inv, W("Head")) : null;
+    (p as Person3D & { capPress?: HairPress | null }).capPress = press;
+    if (press) for (const o of [...parent.children]) if (o.name === "ToonHair") press(o as THREE.SkinnedMesh);
     geo.computeBoundingSphere();
     const mesh = new T.SkinnedMesh(geo, accessoryMaterial(T));
     mesh.name = NAME; mesh.frustumCulled = false; mesh.castShadow = p.body.castShadow; mesh.userData.kinds = kinds;
@@ -130,6 +137,59 @@ function skinInverse(T: Three, p: Person3D) {
     m = pre.clone().multiply(new T.Matrix4().fromArray(e)).multiply(post).invert();
     cache.set(key, m);
     return m;
+  };
+}
+
+/** Presses a modelled hair mesh (and its ink line, deeper) in under the cap's crown. */
+export type HairPress = (hair: THREE.SkinnedMesh) => number;
+/**
+ * The crown's press for modelled hair, in his bind-pose frame (captured now, so hair that loads later is pressed
+ * exactly as hair already on): each vertex to his frame through its own skin weights, inside the crown, and back.
+ * The hair's geometry is his own copy (hair.ts clones it per person); its ink line gets a copy pressed deeper still,
+ * towards the head bone (as the body's: the ink is drawn 1.5 cm nearer the camera and would show through the crown).
+ */
+function hairPress(T: Three, squash: (x: V, hair?: boolean) => V | null, inv: ReturnType<typeof skinInverse>, head: V): HairPress {
+  return (hair: THREE.SkinnedMesh) => {
+    const geo = hair.geometry;
+    // (a mark on the geometry object itself: three's clone() shares userData with the file's own geometry)
+    if ((geo as { capPressed?: boolean }).capPressed) return 0;
+    const ink = hair.parent?.children.find((o) => o.name === "ToonHairOutline" && (o as THREE.SkinnedMesh).geometry === geo) as THREE.SkinnedMesh | undefined;
+    // a packed file's points are small whole numbers (meshopt quantised): written to as metres they would clamp, so
+    // this person's copy is made plain floats first
+    const p0 = geo.getAttribute("position") as THREE.BufferAttribute;
+    if (!(p0.array instanceof Float32Array) || p0.normalized) {
+      const f = new Float32Array(p0.count * 3);
+      for (let i = 0; i < p0.count; i++) { f[i * 3] = p0.getX(i); f[i * 3 + 1] = p0.getY(i); f[i * 3 + 2] = p0.getZ(i); }
+      geo.setAttribute("position", new T.BufferAttribute(f, 3));
+    }
+    const inkGeo = ink ? geo.clone() : null;
+    const pos = geo.getAttribute("position") as THREE.BufferAttribute, ipos = inkGeo?.getAttribute("position") as THREE.BufferAttribute | undefined;
+    const si = geo.getAttribute("skinIndex") as THREE.BufferAttribute, sw = geo.getAttribute("skinWeight") as THREE.BufferAttribute;
+    if (!si || !sw) return 0;
+    const v = new T.Vector3();
+    let moved = 0;
+    const M0: THREE.Matrix4[] = [];
+    for (let i = 0; i < pos.count; i++) M0.push(inv(si, sw, i));
+    for (let i = 0; i < pos.count; i++) {
+      const M = M0[i], F = M.clone().invert();
+      v.fromBufferAttribute(pos, i).applyMatrix4(F);
+      const to = squash(v, true);
+      if (!to) continue;
+      // (the ink goes deep only where the hair went under the crown: under the brim, a strand drawn in a little keeps
+      // its ink round it, or the ink's own strands crossed as dark Vs under the cap's back)
+      const deep = to.clone().lerp(head, 0.4 * Math.min(1, v.distanceTo(to) / 0.03) * (to.y < v.y - 1e-4 || squash(to) ? 1 : 0.25)).applyMatrix4(M);
+      to.applyMatrix4(M);
+      pos.setXYZ(i, to.x, to.y, to.z);
+      ipos?.setXYZ(i, deep.x, deep.y, deep.z);
+      moved++;
+    }
+    (geo as { capMoved?: number }).capMoved = moved;
+    if (!moved) { inkGeo?.dispose(); (geo as { capPressed?: boolean }).capPressed = true; return 0; }
+    pos.needsUpdate = true;
+    geo.computeBoundingSphere();
+    (geo as { capPressed?: boolean }).capPressed = true;
+    if (ink && inkGeo) { (inkGeo as { capPressed?: boolean }).capPressed = true; ink.geometry = inkGeo; }
+    return moved;
   };
 }
 
@@ -175,7 +235,7 @@ function disposeMesh(m: THREE.Mesh) { m.geometry?.dispose(); (m.material as THRE
 /** The body and every cloth piece over it (not the ink lines), skinned into his frame. */
 function cloudOf(T: Three, p: Person3D): Cloud {
   const meshes = (p.body.parent?.children ?? []).filter((o): o is THREE.SkinnedMesh =>
-    (o as THREE.SkinnedMesh).isSkinnedMesh && o !== p.outline && o.name !== "ClothInk" && o.name !== NAME && (o.visible || o === p.body));
+    (o as THREE.SkinnedMesh).isSkinnedMesh && o !== p.outline && o.name !== "ClothInk" && o.name !== NAME && o.name !== "ToonHair" && o.name !== "ToonHairOutline" && (o.visible || o === p.body));
   let n = 0;
   for (const m of meshes) n += m.geometry.getAttribute("position").count;
   const P = new Float32Array(n * 3), SI = new Uint16Array(n * 4), SWt = new Float32Array(n * 4);
@@ -729,7 +789,7 @@ function roundedRing(T: Three, w: number, h: number, r: number, f: number, d: nu
  * width at the brow, the peak at the front. Hair that would stand out of it (a quiff, a top knot) is pressed in
  * under the crown (`squash`: the body's own copy of its mesh, moved inside the crown, so nothing pokes through).
  */
-function cap(T: Three, c: Cloud, W: (n: string) => V, look: AccessoryLook): { geo: THREE.BufferGeometry; squash: (x: V) => V | null } | null {
+function cap(T: Three, c: Cloud, W: (n: string) => V, look: AccessoryLook, lift = 0): { geo: THREE.BufferGeometry; squash: (x: V, hair?: boolean) => V | null } | null {
   const head = W("Head"), end = W("head_end");
   const C = head.clone().lerp(end, 0.45);
   const pts = headPoints(c, W, head.y + 0.015);
@@ -737,7 +797,9 @@ function cap(T: Three, c: Cloud, W: (n: string) => V, look: AccessoryLook): { ge
   const w = rigidWeights(c, pts); // the head is rigid: all on its main bone (an average with the neck slid the cap over the brow as he moved)
   // the head's own scale (a cartoon head is drawn bigger than the file's; head → headfront is 9.3 cm on the files)
   const hs = W("headfront").distanceTo(head) / 0.093;
-  const browY = head.y + 0.052 * hs;
+  // (the long-face head's skull and brow sit higher than its head bone says: hairStyles.ts TOON_HAIR_LIFT; the cap
+  // came down over his eyes)
+  const browY = head.y + 0.052 * hs + lift;
   const NA = 40, NE = 10;
   /** The head's outermost point at a height, along an azimuth (horizontal distance from C). */
   const horiz = (dx: number, dz: number, y: number) => {
@@ -839,10 +901,25 @@ function cap(T: Three, c: Cloud, W: (n: string) => V, look: AccessoryLook): { ge
   const badge = new T.CylinderGeometry(0.0085 * hs, 0.0085 * hs, 0.0012, 18);
   out.push(finish(T, place(T, badge, pB.addScaledVector(nB, 0.0009), new T.Vector3(1, 0, 0), nB, new T.Vector3().crossVectors(new T.Vector3(1, 0, 0), nB)), look.detail, look.shine * 0.5, w));
   const geo = mergeGeometries(out, false);
-  /** A body point outside the crown (above the brim) → pressed just inside it; else null. */
-  const squash = (x: V): V | null => {
+  /**
+   * A body point outside the crown (above the brim) → pressed just inside it; else null. `hair`: a modelled
+   * hairstyle's point (locs, braids, an afro): under the brim it is drawn in to come out from under the cap's edge
+   * (a cone that flares a little as it goes down), fading back to where it hangs by 6 cm under the brow, so long
+   * hair falls from under the cap instead of being cut off at its edge in a fan of stretched strands.
+   */
+  const squash = (x: V, hair = false): V | null => {
     const dx = x.x - C.x, dz = x.z - C.z;
     const th = Math.atan2(dx, dz), a = ((Math.round((th / (Math.PI * 2)) * NA) % NA) + NA) % NA;
+    if (hair && x.y <= ybA[a] + 0.004) {
+      const rr = Math.hypot(dx, dz);
+      const below = ybA[a] - x.y, low = browY - 0.06 * hs;
+      if (x.y < low || rr < 1e-4) return null;
+      const allow = rb[a] - 0.004 + Math.max(0, below) * 0.45;
+      if (rr <= allow) return null;
+      const k = Math.min(1, (x.y - low) / (0.035 * hs));
+      const r = rr + (allow - rr) * k * k * (3 - 2 * k);
+      return new T.Vector3(C.x + (dx / rr) * r, x.y, C.z + (dz / rr) * r);
+    }
     // under the brim line: a fringe standing out in front of the brow goes back under the peak (never the brows,
     // which are inside the brim's own width, measured at that height)
     if (x.y <= ybA[a] + 0.004) {
