@@ -1960,4 +1960,7 @@ export type StarPhase =
   | "gym-3d"
   /** The shopping street (28 Nov 2026), out of the garden's gate: the 3D shop, the car showroom, the boutique
    *  and the barber (shut) on a short high street. See components/star/Street3D.tsx, lib/star/street3d/. */
-  | "street-3d";
+  | "street-3d"
+  /** The drive to training and the real compound (28 Nov 2026), from the garden's training gate while its setting
+   *  is on (lib/star/drive3d/careerFlag.ts, off by default). See components/star/DriveToTraining.tsx. */
+  | "drive-3d";

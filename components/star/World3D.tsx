@@ -15,7 +15,7 @@ import ViewToggle3D from "./ViewToggle3D";
 import LoadingCurtain from "./loading/LoadingCurtain";
 import { afterLoss, newHealState, HEAL_DELAY_MS } from "@/lib/star/three3d/autoHeal";
 
-export default function World3D({ options, clean, onGo }: { options: WorldOptions; clean?: boolean; onGo?: (place: WorldOptions["place"]) => void }) {
+export default function World3D({ options, clean, onGo, noStatus, onArrival }: { options: WorldOptions; clean?: boolean; onGo?: (place: WorldOptions["place"]) => void; /** the career: no clock-and-people strip at the top */ noStatus?: boolean; /** the drive's arrival, as it goes */ onArrival?: (a: WorldArrival) => void }) {
   const host = useRef<HTMLDivElement>(null);
   const ctrl = useRef<WorldController | null>(null);
   const [card, setCard] = useState<InteractCard | null>(null);
@@ -25,6 +25,8 @@ export default function World3D({ options, clean, onGo }: { options: WorldOption
   const [gymOn, setGymOn] = useState(false);
   // the drive's arrival (options.arrive): Skip while the car comes in, then the team-mate's line
   const [arrival, setArrival] = useState<WorldArrival | null>(null);
+  const arrivalRef = useRef(onArrival);
+  arrivalRef.current = onArrival;
   const arriving = !!options.arrive && (!arrival || arrival.phase === "roll" || arrival.phase === "door");
   const optsRef = useRef(options);
   optsRef.current = options;
@@ -63,7 +65,7 @@ export default function World3D({ options, clean, onGo }: { options: WorldOption
         onStatus: (s) => { if (!gone) setStatus(s); },
         onContextLost: lost,
         onGo: (p) => { if (!gone) goRef.current?.(p); },
-        onArrive: (a) => { if (!gone) setArrival(a); },
+        onArrive: (a) => { if (gone) return; setArrival(a); arrivalRef.current?.(a); },
         onGym: (f) => { if (gone) return; hud.current?.frame(f); const on = !!f.kind; setGymOn((was) => (was === on ? was : on)); },
       // a rebuild after a loss: at Low, and the arrival not played again (you are at your car)
       }, { ...optsRef.current, quality: build > 0 ? "low" : optsRef.current.quality, arrive: build > 0 && optsRef.current.arrive ? { ...optsRef.current.arrive, skip: true } : optsRef.current.arrive, chat: (id) => optsRef.current.chat?.(id) ?? null }))
@@ -100,7 +102,7 @@ export default function World3D({ options, clean, onGo }: { options: WorldOption
           <div style={{ fontSize: 12, fontWeight: 800, color: "#facc15", marginTop: 10, letterSpacing: 1.5, textTransform: "uppercase" }}>Training ground</div>
         </div>
       )}
-      {state === "ready" && status && !clean && !gymOn && !arriving && (
+      {state === "ready" && status && !clean && !noStatus && !gymOn && !arriving && (
         <div style={{ position: "absolute", top: 10, left: 10, right: 10, display: "flex", gap: 6, flexWrap: "wrap", pointerEvents: "none" }} data-world3d-status>
           <span style={chip("#facc15", "#111")}>{status.clock}</span>
           {status.people.map((p) => <span key={p.id} style={chip("rgba(8,10,16,.78)", "#f8fafc")}>{p.name}: {p.doing}</span>)}

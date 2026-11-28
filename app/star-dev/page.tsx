@@ -62,6 +62,7 @@ import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult
 import { brandsOf, signOffer, declineOffer, askLonger, askEasier, counterPoach, walkAway, settleNegotiation, } from "@/lib/star/sponsorDeals";
 import { renameHorse } from "@/lib/star/horse";
 import { addGardenXp, applyRide } from "@/lib/star/gardenLevels";
+import { driveToTrainingOn } from "@/lib/star/drive3d/careerFlag";
 import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
@@ -306,6 +307,8 @@ const Casino3D = lazyScreen(() => import("@/components/star/Casino3D"), { fallba
 const TrainingPitchScreen = lazyScreen(() => import("@/components/star/TrainingPitchScreen"));
 const Training3D = lazyScreen(() => import("@/components/star/Training3D"), { fallback: loadingCover("training") });
 const Gym3D = lazyScreen(() => import("@/components/star/Gym3D"), { fallback: loadingCover("gym") });
+// The drive to training and the compound (driving phase 2, 28 Nov 2026): only while its setting is on (drive3d/careerFlag.ts).
+const DriveToTraining = lazyScreen(() => import("@/components/star/DriveToTraining"), { fallback: loadingCover("drive") });
 const Street3D = lazyScreen(() => import("@/components/star/Street3D"), { fallback: loadingCover("street") });
 const AdvertShoot = lazyScreen(() => import("@/components/star/relgames/AdvertShoot"));
 const KnockoutRoundup = lazyScreen(() => import("@/components/star/KnockoutRoundup"));
@@ -544,6 +547,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // The 3D garden and 3D shop are joined by doors (Mikey, 3 Oct 2026): which
   // door you came through decides where you appear.
   const [gardenArrive, setGardenArrive] = useState<"shop" | "gate" | "casino" | "training" | "house" | "street">("gate");
+  // the drive to training (only while its setting is on): where "drive-3d" opens, and whether the gym came from it
+  const [driveStart, setDriveStart] = useState<"in" | "compound" | "back">("in");
+  const [gymFromDrive, setGymFromDrive] = useState(false);
   /** Your 3D house was opened from the garden's door (its Back and front door lead back there). */
   const [homeFromGarden, setHomeFromGarden] = useState(false);
   // forgotten the moment you go anywhere else (the phone's HOME, the bar, a match; 3D places audit P4)
@@ -5054,7 +5060,29 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   if (phase === "gym-3d") {
     // The 3D gym from the Training page (testing, 28 Nov 2026): its own numbers saved, no career effect.
     const backToTraining = () => { setTrainingTab("training"); setActiveNav("skills"); setPhase("skills"); };
+    // through the compound's gym door (the drive's setting): Back goes out to the compound, to your car
+    if (career && gymFromDrive) return <Gym3D career={career} backLabel="Outside" onBack={() => { setGymFromDrive(false); setDriveStart("compound"); setPhase("drive-3d"); }} onCareer={(c) => setCareer(c)} />;
     if (career) return <Gym3D career={career} onBack={backToTraining} onCareer={(c) => setCareer(c)} />;
+  }
+
+  if (phase === "drive-3d" && career) {
+    // The drive to training and the real compound (driving phase 2; lib/star/drive3d/careerFlag.ts, off by default).
+    return (
+      <DriveToTraining
+        key={driveStart}
+        career={career}
+        start={driveStart}
+        onCareer={(c) => setCareer(c)}
+        onGym={() => { setGymFromDrive(true); setPhase("gym-3d"); }}
+        onBack={() => { setTrainingTab("training"); setActiveNav("skills"); setPhase("skills"); }}
+        onFork={(f) => {
+          setGardenArrive("gate");
+          if (f === "casino" && !PACKED_APP) { setPhase("casino-3d"); return; }
+          if (f === "shop") { setShopFromStreet(false); setShopAtDoor(true); setPhase("shop-3d"); return; }
+          setPhase("garden");
+        }}
+      />
+    );
   }
 
   if (phase === "training-3d") {
@@ -5250,7 +5278,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onStreet={() => { setGardenArrive("gate"); setStreetArrive("gate"); setPhase("street-3d"); }}
         // The packed phone app has no casino: its doors stay shut (Mikey, 5 Nov 2026).
         onCasino={PACKED_APP ? undefined : () => { setGardenArrive("gate"); setPhase("casino-3d"); }}
-        onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
+        // the training gate: the drive to training while its setting is on (lib/star/drive3d/careerFlag.ts), else the pitch
+        onTraining={() => { setGardenArrive("gate"); if (driveToTrainingOn()) { setDriveStart("in"); setPhase("drive-3d"); } else setPhase("training-3d"); }}
         onHouse={HOME3D_IN_CAREER ? () => { setGardenArrive("gate"); setHomeFromGarden(true); setPhase("home-3d"); } : undefined}
         onPhone={phoneFrom3d && (() => { setGardenArrive("gate"); setHomeFromGarden(true); phoneFrom3d(); })}
         {...clockLink}

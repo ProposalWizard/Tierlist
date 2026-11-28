@@ -14,6 +14,7 @@ import { applyEffects } from "../../lib/star/dilemmas";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import type { StarPlayer } from "../../lib/star/types";
+import { DRIVE_IN_GAME, driveToTrainingOn, driveSeed } from "../../lib/star/drive3d/careerFlag";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -130,6 +131,12 @@ function run(o: Partial<DriveOptions> & { seed: number }, yes = false) {
     check((f.yes ?? "").length <= 22 && (f.no ?? "").length <= 22, `${ev.id}: answers fit a button`);
     check(ev.kind !== "choice" || (!!ev.yes && !!ev.no), `${ev.id}: a choice has two answers`);
   }
+}
+
+// 6. the career's setting: off by default; the same day, the same drive
+{
+  check(!DRIVE_IN_GAME && !driveToTrainingOn(), "the drive is OFF in the career by default (careerFlag.ts)");
+  check(driveSeed(2, 5, 1, "in") === driveSeed(2, 5, 1, "in") && driveSeed(2, 5, 1, "in") !== driveSeed(2, 5, 1, "back") && driveSeed(2, 5, 1, "in") !== driveSeed(2, 6, 1, "in"), "the day's seed: same day same, the way back and the next week differ");
 }
 
 if (problems.length) { console.error(`driveEvents: ${problems.length} problem(s)\n - ${problems.join("\n - ")}`); process.exit(1); }

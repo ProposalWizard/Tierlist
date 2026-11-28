@@ -22,6 +22,7 @@ import { kitsOf } from "@/lib/star/kits";
 import { DRIVE_CARS, DRIVE_CAR_IDS, type DriveCarId } from "@/lib/star/drive3d/cars";
 import { DRIVE_CALLS } from "@/lib/star/drive3d/calls";
 import { DRIVE_EVENT_IDS, type DriveEffect } from "@/lib/star/drive3d/events";
+import { driveToTrainingOn, setDriveToTrainingOn } from "@/lib/star/drive3d/careerFlag";
 import type { DriveSceneOptions } from "@/lib/star/drive3d/scene";
 import type { SteerMode } from "@/lib/star/drive3d/car";
 import type { CallMemory } from "@/lib/star/drive3d/calls";
@@ -45,6 +46,8 @@ function Drive3DTest() {
   const [call, setCall] = useState<string | undefined>(params.get("call") ?? undefined);
   const [event, setEvent] = useState<string | undefined>(params.get("event") ?? undefined);
   const [effects, setEffects] = useState<DriveEffect[] | null>(null);
+  // the career's setting (lib/star/drive3d/careerFlag.ts): the garden's training gate opens the drive, this device only
+  const [inCareer, setInCareer] = useState(() => driveToTrainingOn());
   const [run, setRun] = useState(0);
   const [memories, setMemories] = useState<CallMemory[]>([]);
   // the drive in hands over to the real compound (its own arrival: lib/star/drive3d/arrival.ts); null = still driving
@@ -110,6 +113,8 @@ function Drive3DTest() {
           <Pill on={!event} onClick={() => setEvent(undefined)}>Event: by chance</Pill>
           <Pill on={event === "none"} onClick={() => setEvent("none")}>No event</Pill>
           {DRIVE_EVENT_IDS.map((e) => <Pill key={e} on={event === e} onClick={() => setEvent(e)}>{e}</Pill>)}
+          <span style={{ width: 12 }} />
+          <Btn onClick={() => { setDriveToTrainingOn(!inCareer); setInCareer(!inCareer); }} title="The garden's training gate opens the drive (this device only)">In my career: {inCareer ? "On" : "Off"}</Btn>
         </div>
         <div className="s3-stage">{stage}</div>
         {effects && (
