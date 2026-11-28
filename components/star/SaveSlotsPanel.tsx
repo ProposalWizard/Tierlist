@@ -1,7 +1,8 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { CareerState } from "@/lib/star/types";
 import {
-  allowReplaceOnline, backupCareer, fetchOnlineSlots, loadCareerFromCloud, slotScope, wantsReplaceOnline,
+  allowReplaceOnline, backupCareer, fetchOnlineSlots, listCareerBackups, loadCareerFromCloud, peekSlotCareer, slotScope, wantsReplaceOnline,
   type OnlineSlotsAnswer, type SaveSlotSummary,
 } from "@/lib/star/storage";
 import { mergeSaveCards, startCareerAllowed, type OnlineCheck, type OnlineSlot, type SaveCard } from "@/lib/star/onlineSlots";
@@ -9,6 +10,8 @@ import { timeAgo } from "@/lib/star/saveClash";
 import { PACKED_APP } from "@/lib/app/packed";
 import { PressButton, rgba } from "./ui";
 import { SetCard, SetHead, SetNote } from "./settingsKit";
+import { backupCount } from "@/lib/star/saveBackups";
+import SaveBackupsView from "./SaveBackupsView";
 
 /**
  * SAVES — switch between careers, or start a fresh one, without losing any
@@ -49,6 +52,14 @@ interface Props {
   fetchOnline?: () => Promise<OnlineSlotsAnswer>;
   /** For a test page: show the iPhone note whatever the device. */
   forceIosNote?: boolean;
+  /** The career on screen (the active slot's), so a restore backs up what
+   *  you are really playing, not an older stored copy. */
+  currentCareer?: CareerState | null;
+  /** A backup was restored into `slot` (SaveBackupsView). `closed`: the
+   *  Backups page has just been shut, so the page may reload the save. */
+  onRestored?: (slot: number, career: CareerState, closed: boolean) => void;
+  /** For a test page: a fixed clock for the Backups page. */
+  backupsNow?: number;
 }
 
 function isAppleTouch(): boolean {
@@ -67,7 +78,7 @@ function headline(o: OnlineSlot): string {
   return `Season ${o.season ?? 1}, ${o.club}`;
 }
 
-export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew, onDelete, glow = "#10b981", accountScope, fetchOnline, forceIosNote }: Props) {
+export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew, onDelete, glow = "#10b981", accountScope, fetchOnline, forceIosNote, currentCareer, onRestored, backupsNow }: Props) {
   // Two taps to delete, on the screen — no browser box, which exits full screen.
   const [armed, setArmed] = useState<number | null>(null);
   const [armedReplace, setArmedReplace] = useState<number | null>(null);
@@ -77,6 +88,9 @@ export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew
   const [replacing, setReplacing] = useState<Set<number>>(() => new Set());
   const [iosNote, setIosNote] = useState(!!forceIosNote);
   const [now, setNow] = useState(0);
+  const [backupsFor, setBackupsFor] = useState<number | null>(null);
+  // Read once per change of the list, not on every redraw: backups are big.
+  const backupList = useMemo(() => (accountScope ? listCareerBackups(accountScope) : []), [accountScope, saves, backupsFor]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refresh = useCallback(() => {
     if (PACKED_APP) return;
@@ -247,6 +261,18 @@ export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew
                 </div>
               </div>
 
+              {accountScope && backupCount(backupList, card.slot) > 0 && (
+                <button
+                  data-save-backups={card.slot}
+                  onClick={() => setBackupsFor(card.slot)}
+                  className="kib-press mt-1.5 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left"
+                  style={{ background: "rgba(3,7,18,.35)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.1)" }}
+                >
+                  <span className="text-[11px] font-black text-white">Backups · {backupCount(backupList, card.slot)}</span>
+                  <span aria-hidden className="text-[12px] font-black text-white/80">›</span>
+                </button>
+              )}
+
               {warned === card.slot && (
                 <p data-save-warning role="alert" className="mt-1.5 rounded-lg bg-amber-500/20 px-2 py-1.5 text-[11px] font-black leading-snug text-amber-100" style={{ boxShadow: "inset 0 0 0 1px rgba(251,191,36,.5)" }}>
                   {startCareerAllowed(card).why}
@@ -286,6 +312,22 @@ export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew
           );
         })}
       </div>
+      {accountScope && backupsFor !== null && (
+        <SaveBackupsView
+          accountScope={accountScope}
+          slot={backupsFor}
+          current={backupsFor === activeSlot ? currentCareer ?? null : null}
+          readSlot={(s) => peekSlotCareer(accountScope, s)}
+          glow={glow}
+          now={backupsNow}
+          onRestored={(s, c) => onRestored?.(s, c, false)}
+          onClose={(restored) => {
+            const s = backupsFor;
+            setBackupsFor(null);
+            if (restored) onRestored?.(s, restored, true);
+          }}
+        />
+      )}
     </SetCard>
   );
 }

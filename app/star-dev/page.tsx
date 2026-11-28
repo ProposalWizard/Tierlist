@@ -29,7 +29,7 @@ import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
   clearCareerFromCloud, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
   reconcileCareerLoad, resolveSaveClash, deferSaveClash, hasUnsyncedProgress, type SaveClash,
-  peekSlotCareer, collectRetiredIntoHall, onSaveCorrected,
+  peekSlotCareer, collectRetiredIntoHall, onSaveCorrected, backupCareer, WHY_DELETED,
 } from "@/lib/star/storage";
 import { addToHall, loadHall, syncHall, hallEntryFor, type HallEntry } from "@/lib/star/hallOfFame";
 import { hallRecordBook, freshHallRecords, hallChaseLine, amount as hallAmount } from "@/lib/star/hallRecords";
@@ -2990,6 +2990,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleDeleteSave = useCallback((slot: number) => {
     // A retired career is kept in the Hall of Fame before its slot goes.
     keepRetiredThen(slot, () => {
+      // Kept as a backup first (Settings → Saves → Backups), never just lost.
+      const gone = slot === activeSlotRef.current && career ? career : peekSlotCareer(scopeRef.current, slot);
+      if (gone) backupCareer(scopeRef.current, slot, gone, WHY_DELETED);
       clearCareer(slotScope(scopeRef.current, slot));
       clearCareerFromCloud(slot);
       if (slot === activeSlotRef.current) {
@@ -3004,7 +3007,23 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         bumpSaves(v => v + 1);
       }
     });
-  }, [resetTransientState, keepRetiredThen]);
+  }, [career, resetTransientState, keepRetiredThen]);
+
+  /**
+   * Settings → Saves → Backups restored a backup into `slot` (storage.ts
+   * restoreCareerBackup has already written it, and sent it online). The
+   * old career's waiting upload is dropped: it is a backup now. The save
+   * being played is swapped at once; once the Backups page shuts it is
+   * loaded properly, which decides its screen.
+   */
+  const handleRestoredSave = useCallback((slot: number, restored: CareerState, closed: boolean) => {
+    if (slot !== activeSlotRef.current) { bumpSaves(v => v + 1); return; }
+    pendingCloudSave.current = null;
+    if (cloudSaveTimer.current) { clearTimeout(cloudSaveTimer.current); cloudSaveTimer.current = null; }
+    latestCareerRef.current = null;
+    if (closed) void loadCareerIntoState(slot, restored);
+    else setCareer(restored);
+  }, [loadCareerIntoState]);
 
   /**
    * "Move my saves" just wrote saves from a pasted code (MoveSavesPanel —
@@ -3065,6 +3084,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   const handleFullReset = useCallback(() => {
     const reset = () => {
+      // Kept as a backup first (Settings → Saves → Backups), never just lost.
+      if (career) backupCareer(scopeRef.current, activeSlotRef.current, career, WHY_DELETED);
       clearCareer(slotScope(scopeRef.current, activeSlotRef.current));
       clearCareerFromCloud(activeSlotRef.current);
       resetTransientState();
@@ -5379,6 +5400,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onStartNewInSlot={handleStartNewInSlot}
         onDeleteSave={handleDeleteSave}
         moveSaves={{ scope: scopeRef.current, onImported: handleImportedSaves }}
+        onRestoredSave={handleRestoredSave}
         immersiveActive={immersive.active}
         onToggleImmersive={immersive.toggle}
         fullscreenSupport={immersive.support}

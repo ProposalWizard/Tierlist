@@ -1020,6 +1020,10 @@ const BACKUP_KEY = "star-career-backups-v1";
 export const BACKUP_KEEP_MS = 30 * 24 * 3600_000;
 
 export interface CareerBackup {
+  /** Set on every backup since 28 Nov 2026; older ones get one when read. */
+  id: string;
+  /** Its progress fingerprint, so the same copy is never kept twice. */
+  progress?: string;
   at: number;
   slot: number;
   why: string;
@@ -1033,7 +1037,10 @@ export function listCareerBackups(accountScope: string): CareerBackup[] {
   try {
     const raw = localStorage.getItem(scoped(BACKUP_KEY, accountScope));
     const list = raw ? JSON.parse(raw) : [];
-    return Array.isArray(list) ? list.filter((b) => b && typeof b.at === "number") : [];
+    return Array.isArray(list)
+      ? list.filter((b) => b && typeof b.at === "number")
+        .map((b) => (typeof b.id === "string" && b.id ? b : { ...b, id: `old-${b.at}-${b.slot}` }) as CareerBackup)
+      : [];
   } catch { return []; }
 }
 
@@ -1042,26 +1049,102 @@ export function careerFromBackup(b: CareerBackup): CareerState | null {
   return loadCareerFromStoredForm(b.career);
 }
 
+/** A copy's progress, read the way the game reads it back (load, then save
+ *  form again), so a backup that was opened and kept again compares equal. */
+function backupProgress(savedForm: unknown): string | null {
+  try {
+    const c = loadCareerFromStoredForm(savedForm);
+    return c ? progressFingerprint(toSavedForm(withStars(c))) : null;
+  } catch { return null; }
+}
+
+/**
+ * Keep a copy of `career` and return the backup that holds it, or null if
+ * this device would not store it. A copy already kept for the same slot
+ * (same progress) is not stored twice: that backup is returned instead, so
+ * restoring and undoing back and forth never fills the device.
+ * Only backups older than 30 days are ever dropped, and only to make room.
+ */
+export function keepCareerBackup(accountScope: string, slot: number, career: CareerState, why: string, now = Date.now()): CareerBackup | null {
+  const form = toSavedForm(withStars(career));
+  const have = listCareerBackups(accountScope);
+  const fp = backupProgress(form);
+  const same = fp ? have.find((b) => b.slot === slot && (b.progress ?? backupProgress(b.career)) === fp) : undefined;
+  if (same) return same;
+  const entry: CareerBackup = {
+    id: `b-${now.toString(36)}-${randomId()}`,
+    ...(fp ? { progress: fp } : {}),
+    at: now, slot, why,
+    playerName: `${career.player?.firstName ?? ""} ${career.player?.lastName ?? ""}`.trim(),
+    season: career.season,
+    career: form,
+  };
+  const all = [...have, entry];
+  const young = all.filter((b) => now - b.at < BACKUP_KEEP_MS);
+  for (const list of [all, young]) {
+    try {
+      localStorage.setItem(scoped(BACKUP_KEY, accountScope), JSON.stringify(list));
+      return entry;
+    } catch { /* full: try again without the old ones */ }
+  }
+  return null;
+}
+
 /**
  * Keep a copy of `career`. Returns false if this device would not store it.
  * Only backups older than 30 days are ever dropped, and only to make room.
  */
 export function backupCareer(accountScope: string, slot: number, career: CareerState, why: string, now = Date.now()): boolean {
-  const entry: CareerBackup = {
-    at: now, slot, why,
-    playerName: `${career.player?.firstName ?? ""} ${career.player?.lastName ?? ""}`.trim(),
-    season: career.season,
-    career: toSavedForm(withStars(career)),
-  };
-  const all = [...listCareerBackups(accountScope), entry];
-  const young = all.filter((b) => now - b.at < BACKUP_KEEP_MS);
-  for (const list of [all, young]) {
-    try {
-      localStorage.setItem(scoped(BACKUP_KEY, accountScope), JSON.stringify(list));
-      return true;
-    } catch { /* full: try again without the old ones */ }
+  return !!keepCareerBackup(accountScope, slot, career, why, now);
+}
+
+/** The `why` written on the copy kept when a backup is restored. */
+export const WHY_BEFORE_RESTORE = "before restoring a backup";
+/** The `why` written on the copy kept when a save is deleted. */
+export const WHY_DELETED = "deleted";
+
+export type RestoreResult =
+  | { ok: true; slot: number; career: CareerState; restored: CareerBackup;
+      /** The backup now holding the save that was replaced (Undo restores
+       *  it). Null when the slot was empty. */
+      kept: CareerBackup | null }
+  | { ok: false; why: string };
+
+/**
+ * SAVES → BACKUPS → "Restore this" (components/star/SaveBackupsView.tsx).
+ *   1. The save in that slot now (`current`: the career on screen, for the
+ *      slot being played; else what this device has stored) is kept as a
+ *      backup first. If it cannot be kept, nothing changes.
+ *   2. The chosen backup becomes the slot's save on this device.
+ *   3. Signed in: it is sent online as "replace", so it replaces the online
+ *      copy and every device signed in gets it. Nothing is deleted: the
+ *      chosen backup stays in the list too.
+ * Undo is the same call on `kept`.
+ */
+export function restoreCareerBackup(
+  accountScope: string, backupId: string, current?: CareerState | null, now = Date.now(),
+): RestoreResult {
+  const b = listCareerBackups(accountScope).find((x) => x.id === backupId);
+  if (!b) return { ok: false, why: "That backup is not on this device any more. Nothing was changed." };
+  const career = careerFromBackup(b);
+  if (!career) return { ok: false, why: "That backup could not be read. Nothing was changed." };
+  const scope = slotScope(accountScope, b.slot);
+  const was = current ?? loadCareerRaw(scope);
+  let kept: CareerBackup | null = null;
+  if (was) {
+    kept = keepCareerBackup(accountScope, b.slot, was, WHY_BEFORE_RESTORE, now);
+    if (!kept) return { ok: false, why: "This device is full, so your save could not be kept as a backup first. Nothing was changed." };
   }
-  return false;
+  if (!saveCareer(career, scope)) return { ok: false, why: "This device would not save it. Nothing was changed." };
+  // The screen the old save was on is not this save's: it opens on Home.
+  try { localStorage.removeItem(scoped(PHASE_KEY, scope)); } catch { /* ignore */ }
+  // The player's own choice settles a clash that was put off for this slot.
+  heldScopes.delete(scope);
+  if (isSignedInScope(scope)) {
+    allowReplaceOnline(scope);
+    void saveCareerToCloud(career, b.slot, { scope });
+  }
+  return { ok: true, slot: b.slot, career, restored: b, kept };
 }
 
 /** Fired when the server corrected a save (see saveCareerToCloud). */
