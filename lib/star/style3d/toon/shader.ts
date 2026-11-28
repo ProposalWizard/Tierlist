@@ -57,6 +57,8 @@ const TOON_HEAD = `
 uniform sampler2D uMask;
 uniform float uSuit;
 uniform vec3 uSuitCoat, uSuitTrousers, uSuitShirt, uSuitTie, uShoes;
+uniform vec3 uBoot2, uBoot3, uBoot4; // the boot's sole, accent (heel + flash), studs (lib/star/wearables.ts BootLook)
+uniform vec4 uBootK;      // heel on, flash on, the ankle joint's rest z, on (0: one colour, as every boot before 28 Nov 2026)
 uniform vec4 uKit2;       // collar y, shorts low y, sleeve t, -
 uniform vec4 uHairCut;    // people presets (lib/star/people/presets.ts): scalp hair → skin, beard → skin, stubble, scalp pattern (1 waves, 2 cornrows); 0 = as modelled
 uniform sampler2D uBadge;
@@ -447,6 +449,18 @@ ${TOON_FACE}
       shirtC = mix(uShirt, uPat2, pat * (1.0 - panel));
     }
     part = shirtC * shirtW + uShorts * shortsW + uSocks * socksW + uBoots * bootW;
+    // the boot's colourway (your shop boots, wearables.ts): sole and studs, a heel counter, a flash down the outside
+    if (uBootK.w > 0.5 && bootW > 0.5) {
+      float bh = r.y, fz = r.z - uBootK.z;
+      float outB = abs(vRestN.x); // both sides of the boot
+      vec3 bc = uBoots;
+      bc = mix(bc, uBoot3, uBootK.x * step(fz, -0.028) * step(0.016, bh) * step(bh, 0.082));
+      float fl = bh - 0.024 - (0.11 - fz) * 0.36;
+      bc = mix(bc, uBoot3, uBootK.y * smoothstep(0.3, 0.55, outB) * step(abs(fl), 0.0095) * step(-0.03, fz) * step(fz, 0.12) * step(0.016, bh));
+      bc = mix(bc, uBoot2, step(bh, 0.017));
+      bc = mix(bc, uBoot4, step(bh, 0.0065));
+      part = mix(part, bc, bootW);
+    }
     // trims: a ring collar round the neck, cuffs (a band and a thin line above it), shorts hem, sock tops
     float nr = length(r.xz - uNeck.xz);
     float trim = shirtW * (1.0 - onArm) * step(uKit2.x - 0.02, r.y) * step(nr, 0.12);
@@ -649,6 +663,8 @@ export function toonUniforms(T: Three, mask: THREE.Texture, kit: { collarY?: num
     uSuit: { value: 0 },
     uSuitCoat: { value: new T.Color("#1f2533") }, uSuitTrousers: { value: new T.Color("#232733") },
     uSuitShirt: { value: new T.Color("#eef0f2") }, uSuitTie: { value: new T.Color("#7a1d2b") }, uShoes: { value: new T.Color("#141416") },
+    uBoot2: { value: new T.Color("#141416") }, uBoot3: { value: new T.Color("#141416") }, uBoot4: { value: new T.Color("#141416") },
+    uBootK: { value: new T.Vector4(0, 0, 0, 0) },
     uKit2: { value: new T.Vector4(kit.collarY ?? neckY - 0.03, kit.shortsLoY ?? 0.65, kit.sleeveT ?? 0.75, 0) },
     uHairCut: { value: new T.Vector4(0, 0, 0, 0) },
     uBadge: { value: blank as THREE.Texture }, uBadgeOn: { value: 1 },

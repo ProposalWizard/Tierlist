@@ -22,6 +22,7 @@
  *
  * Pitch metres → three: X = x − CX, Y = z (up), Z = y (out from the goal line).
  */
+import { bootWorn } from "../wearables";
 import { humanBodyLook } from "../human3d/look";
 import { CX } from "../pitch";
 /** Your celebration on the spot turns back towards the middle of your half (y metres out from the goal line). */
@@ -710,7 +711,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       skin: toonOn ? (sid === "you" ? toonYou().skin : ml ? ml.skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],
       hair: toonOn ? (sid === "you" ? toonYou().hair : ml ? ml.hair : toonHairFor(sid)) : "#1b120c",
       kit: { shirt, trim: shorts }, number: numberTex(numberFor(sid)),
-      accessories: [...(sid === "keeper" ? [{ slot: "hands" as const, color: "#f5f5f5", color2: "#16a34a" }] : []), ...(ml ? [{ slot: "boots" as const, color: ml.boots }] : [])],
+      accessories: [...(sid === "keeper" ? [{ slot: "hands" as const, color: "#f5f5f5", color2: "#16a34a" }] : []), ...(ml ? [{ slot: "boots" as const, color: ml.boots }] : []), ...(sid === "you" && toonOn && toonYou().boots ? [bootWorn(toonYou().boots!)] : [])],
     };
     dressPerson3d(THREE, p, look);
     plainHead(p, look.skin, look.hair ?? "#1b120c");

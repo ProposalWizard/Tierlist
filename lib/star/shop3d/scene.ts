@@ -1118,6 +1118,9 @@ async function buildShop(
     jogA = person.actions.jog;
     buyA = person.actions.celebrate;
     dressNew(kit0);
+    // your watch, chain and the rest from the wardrobe (lib/star/wearables.ts; the casual set wears them in buildWearer)
+    const ex = opts.player?.worn?.extras;
+    if (!casual && ex?.length && person.toon) (await import("../style3d/toon/accessories")).wearAccessories(THREE, person, ex);
     relaxHands(THREE, person);
   } else {
     const [charGltf, animGltf] = await Promise.all([

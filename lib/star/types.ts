@@ -1166,7 +1166,12 @@ export interface CareerState {
    * garden and the 3D shop show the casual set when `wear` is "casual"; the
    * training pitch and matches always show the kit. Absent: the kit, as before.
    */
-  outfit?: { wear: "casual" | "kit"; casual: string; kit: "home" | "away"; boots?: "plain" | "own" };
+  outfit?: {
+    wear: "casual" | "kit"; casual: string; kit: "home" | "away"; boots?: "plain" | "own";
+    /** The wardrobe's Extras (28 Nov 2026, lib/star/wearables.ts): per body slot an owned item id, or "none".
+     *  A slot left out wears the best you own there, so a new buy shows at once. Absent on older saves. */
+    extras?: { wrist?: string; neck?: string; eyes?: string; head?: string };
+  };
   /** Date key → daily-special ids already bought at the discount that day. */
   storeSpecialsBought?: Record<string, string[]>;
   /** The store's "first Coin pack: double" offer has been used. */
