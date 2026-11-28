@@ -42,6 +42,8 @@ import { Stick, pill, round } from "./Shop3D";
 import { sleepNight } from "@/lib/star/home3d/sleep";
 import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
 import LoadingCurtain from "./loading/LoadingCurtain";
+import ClockPill, { useLiveClock } from "./ClockPill";
+import { leaveAt } from "@/lib/star/life/clock";
 import ViewToggle3D from "./ViewToggle3D";
 
 const INK = "#f7f1e8";
@@ -78,6 +80,14 @@ export interface Home3DProps {
   living?: boolean;
   /** A night in your bed (lib/star/home3d/sleep.ts): the career does `sleepNight` (the week's Rest, once per gap between matches). Absent: the night passes in the house only. */
   onSleep?: () => void;
+  /** The career clock (lib/star/life/clock.ts): game minutes that passed here, to add to the career. Absent (a test page): the clock ticks on screen only. */
+  onTime?: (mins: number) => void;
+  /** "Go to the match" (the clock stopped at time to leave). */
+  onMatch?: () => void;
+  /** Test page: the clock runs this many times faster (?clock=). */
+  clockRate?: number;
+  /** Menus are up (the phone in your hand): the clock stops. */
+  clockPaused?: boolean;
 }
 
 type Tab = "casual" | "kit" | "boots" | "extras";
@@ -118,7 +128,11 @@ function livingFor(career: CareerState) {
   return { mates, club: career.player.club };
 }
 
-export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep }: Home3DProps) {
+export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep, onTime, onMatch, clockRate, clockPaused }: Home3DProps) {
+  // the career clock, ticking while you are in the house (stopped while the phone is up); the house's people read it
+  const live = useLiveClock(career, onTime, { paused: clockPaused || !chrome, rate: clockRate });
+  const liveRef = useRef(live.clock);
+  liveRef.current = live.clock;
   // the night's words come from the career as it is when you fall asleep (sleep.ts is pure: the page's setCareer gets the same result)
   const careerRef = useRef(career);
   careerRef.current = career;
@@ -205,7 +219,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           edit: approvedRef.current,
           ...(pov ? { pov: true } : {}),
           ...(houseCam && houseCam !== "D" ? { houseCam } : {}),
-          ...(alive ? { living: { ...livingFor(career), onSleep: () => { const r = sleepNight(careerRef.current); if (r.rested) sleepRef.current?.(); return sleepRef.current ? r.text : "A good night."; } } } : {}),
+          ...(alive ? { living: { ...livingFor(career), onSleep: () => { const r = sleepNight(careerRef.current); sleepRef.current?.(); return sleepRef.current ? r.text : "A good night."; }, clock: () => liveRef.current.now() } } : {}),
         });
         let c: HomeController;
         try {
@@ -306,9 +320,6 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         <button onClick={onBack} aria-label={`Back to ${backLabel}`} style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 4, paddingLeft: 10 }} data-home3d-back>
           <span style={{ fontSize: 20, lineHeight: 1, marginTop: -2 }}>&#8249;</span>{backLabel}
         </button>
-        <div style={{ ...pill, fontWeight: 900, gap: 6, maxWidth: "52vw", overflow: "hidden" }}>
-          <span aria-hidden>🏠</span><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{homeName}</span>
-        </div>
         <div style={{ flex: 1 }} />
         <div style={{ ...pill, gap: 6 }} aria-label="Trophies">
           <span aria-hidden style={{ fontSize: 15 }}>🏆</span><b style={{ color: GOLD }}>{slots.filter((s) => s.won).reduce((n, s) => n + s.count, 0)}</b>
@@ -342,8 +353,9 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           {ROOM_HINT[roomNow ?? "main"] ?? ""}
         </div>
       )}
+      {chrome && <ClockPill career={career} abs={live.abs} held={live.abs >= leaveAt(career)} onMatch={onMatch} title={homeName} />}
       {status === "ready" && chrome && rooms.length > 1 && roomNow && (
-        <div style={{ position: "absolute", top: "calc(max(12px, env(safe-area-inset-top)) + 48px)", left: 0, right: 0, display: "grid", justifyItems: "center", gap: 6, pointerEvents: "none" }} data-home3d-room={roomNow}>
+        <div style={{ position: "absolute", top: "calc(max(12px, env(safe-area-inset-top)) + 60px)", left: 0, right: 0, display: "grid", justifyItems: "center", gap: 6, pointerEvents: "none" }} data-home3d-room={roomNow}>
           <div style={{ ...pill, fontWeight: 900, fontSize: 13, height: 30 }}>{ROOM_LABEL[roomNow]}</div>
           <div style={{ display: "flex", gap: 2, pointerEvents: "auto" }} aria-label="Rooms">
             {rooms.map((id) => (

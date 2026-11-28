@@ -80,6 +80,7 @@ import { refreshXpConfig } from "@/lib/star/xpStore";
 import { DEFAULT_FORMATION, formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct, projectedEnergy, startNewWeek, trainingLeft, spendTrainingSession } from "@/lib/star/week";
 import { sleepNight } from "@/lib/star/home3d/sleep";
+import { passTime, sleepClock } from "@/lib/star/life/clock";
 import { acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { clearAfterWindow, requestOf } from "@/lib/star/transferRequest";
 import { windowInterest, withRecall, withAgreedWage, markWalkedAway } from "@/lib/star/transferInterest";
@@ -4898,6 +4899,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <Shop3D
         career={career}
+        onTime={(mins) => setCareer((c) => (c ? passTime(c, mins) : c))}
+        onMatch={() => handleNavigate("play")}
         atDoor={shopAtDoor}
         onDoor={() => { setShopAtDoor(false); setGardenArrive("shop"); setPhase("garden"); }}
         onBack={() => {
@@ -5181,7 +5184,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // The 3D phone (RUL-UI-008): the Phone tab opens it in your hand, your 3D house behind
   // (HousePhone.tsx), wherever 3D runs; the first visit keeps the flat phone for its tour.
   const phone3dUp = phase === "media" && activeNav === "media" && hasSeen(career, "help-phone") && phone3dCan();
-  const phoneFrom3d = isOpen(career, "phone") ? () => navTo("media") : undefined;
+  // The Phone pill in a 3D place ALWAYS shows and ALWAYS opens the phone, never the boss talk (Harry,
+  // 27 Nov 2026: "I should be able to pull up the phone again after putting it down"). Not unlocked
+  // yet, or broken: the one line why.
+  const phoneFrom3d = () => (!isOpen(career, "phone") ? showLock(lockHint(career, "phone")) : phoneBroken ? showLock("Your phone broke — repair it in Style") : handleNavigate("media"));
+  // The career clock (lib/star/life/clock.ts) in the 3D places: their minutes, and "Go to the match".
+  const clockLink = { onTime: (mins: number) => setCareer((c) => (c ? passTime(c, mins) : c)), onMatch: () => handleNavigate("play") };
   if (phase === "garden") {
     return (
       <Garden3D
@@ -5193,7 +5201,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onCasino={PACKED_APP ? undefined : () => { setGardenArrive("gate"); setPhase("casino-3d"); }}
         onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
         onHouse={HOME3D_IN_CAREER ? () => { setGardenArrive("gate"); setHomeFromGarden(true); setPhase("home-3d"); } : undefined}
-        onPhone={phoneFrom3d && (() => { setGardenArrive("gate"); phoneFrom3d(); })}
+        onPhone={() => { setGardenArrive("gate"); phoneFrom3d(); }}
+        {...clockLink}
       />
     );
   }
@@ -5211,7 +5220,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onBack: homeFromGarden ? toGarden : () => { setHomeFromGarden(false); handleBackToDashboard(); },
           onDoor: toGarden,
           onOutfit: (choice) => setCareer((c) => (c ? withOutfit(c, choice) : c)),
-          onSleep: () => setCareer((c) => (c ? sleepNight(c).career : c)),
+          // the night: the week's Rest (once a gap) and the clock to 07:00 next morning
+          onSleep: () => setCareer((c) => (c ? sleepClock(c, sleepNight(c).career) : c)),
+          ...clockLink,
         }}
         onHome={() => handleNavigate("home")}
         onPutAway={() => { setHomeFromGarden(false); setPhase("home-3d"); }}

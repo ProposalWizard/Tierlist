@@ -114,7 +114,7 @@ export default function HousePhone({ career, up, phone, house, onHome, onPutAway
   /** The real phone, with the glass's props spread on it. */
   phone: (glass: PhoneGlass) => ReactNode;
   /** The house's own props (back, the front door, the wardrobe, sleep). */
-  house: Pick<Home3DProps, "onBack" | "backLabel" | "onDoor" | "onOutfit" | "onSleep">;
+  house: Pick<Home3DProps, "onBack" | "backLabel" | "onDoor" | "onOutfit" | "onSleep" | "onTime" | "onMatch">;
   /** The phone's HOME: the Home screen. */
   onHome: () => void;
   /** The phone's BACK: put it away, into the house. */
@@ -267,9 +267,11 @@ export default function HousePhone({ career, up, phone, house, onHome, onPutAway
         </div>
       )}
       {moving && <div className="hp-skip" data-phone3d-skip onPointerDown={skip} />}
-      {scene === "away" && onPhone && houseReady && (
+      {/* the Phone pill: shown whenever you are in the house (loaded or not), every time you put the phone down */}
+      {scene === "away" && onPhone && (
         <button type="button" className="hp-pickup" data-pick-up onClick={onPhone}>📱 Phone</button>
       )}
+      {notice && scene === "away" && <div className="hp-note" data-phone-note style={{ position: "fixed", zIndex: 82, top: "calc(max(12px, env(safe-area-inset-top)) + 92px)" }}>{notice}</div>}
     </div>
   );
 }

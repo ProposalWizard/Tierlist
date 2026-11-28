@@ -36,6 +36,8 @@ import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import LoadingCurtain from "./loading/LoadingCurtain";
 import ViewToggle3D from "./ViewToggle3D";
+import ClockPill, { useLiveClock } from "./ClockPill";
+import { leaveAt } from "@/lib/star/life/clock";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -60,9 +62,15 @@ export interface Shop3DProps {
   where?: "career" | "test";
   /** Test page: fill its box on the admin frame instead of the whole screen. */
   embedded?: boolean;
+  /** The career clock (lib/star/life/clock.ts): game minutes that passed here. */
+  onTime?: (mins: number) => void;
+  /** "Go to the match" (the clock stopped at time to leave). */
+  onMatch?: () => void;
 }
 
-export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop", onGoToItem, onDoor, atDoor = false, where = "career", embedded = false }: Shop3DProps) {
+export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop", onGoToItem, onDoor, atDoor = false, where = "career", embedded = false, onTime, onMatch }: Shop3DProps) {
+  // the career clock, top middle (components/star/ClockPill.tsx)
+  const live = useLiveClock(career, onTime);
   // an approved 3D Scene Editor edit for the shop here, walking in from the garden or opened from the Shop page (none = as built)
   const approved = useApprovedEdit<WalkSceneEdit>("shop", where, [atDoor ? "door" : "page"]);
   const approvedRef = useRef(approved);
@@ -286,9 +294,9 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
         <button onClick={onBack} aria-label={`Back to the ${backLabel}`} style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 4, paddingLeft: 10 }}>
           <span style={{ fontSize: 20, lineHeight: 1, marginTop: -2 }}>&#8249;</span>{backLabel}
         </button>
-        <div style={{ ...pill, fontWeight: 900, fontSize: 14, gap: 6 }}>
+        {!career && <div style={{ ...pill, fontWeight: 900, fontSize: 14, gap: 6 }}>
           3D Shop <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", color: "#111", background: GOLD, borderRadius: 999, padding: "2px 6px" }}>BETA</span>
-        </div>
+        </div>}
         <div style={{ flex: 1 }} />
         {career && <div style={{ ...pill, color: "#fde047", fontWeight: 900 }}>{MONEY_SIGN}{formatWallet(career.money)}</div>}
         {dev && (
@@ -298,6 +306,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
           </button>
         )}
       </div>
+      {career && <ClockPill career={career} abs={live.abs} held={live.abs >= leaveAt(career)} onMatch={onMatch} title="The shop" />}
       {status === "ready" && dev && (
         <div style={{ position: "absolute", top: 56, right: 12, fontSize: 11, fontWeight: 800, color: MUTED, background: "rgba(0,0,0,0.35)", padding: "2px 7px", borderRadius: 999 }}>
           {fps} fps

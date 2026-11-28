@@ -71,6 +71,8 @@ export interface LifeOptions {
   chat?: (id: string) => { line: string; change?: string } | null;
   /** Something used did something (+1 mood…): for the career, later. */
   onEffect?: (thing: string, e: NonNullable<SmartObject["effect"]>) => void;
+  /** The career clock (life/liveClock.ts): minutes since day 0 of the gap. Absent: the house's own clock (15:00 on arrival). */
+  clockNow?: () => number;
   /** "Sleep till morning": you are down on the bed; the house plays the night (scene.ts) and then calls `wake`. */
   onSleep?: () => void;
   /** A short dip to dark with a caption ("Half an hour later"): `mid` runs in the dark. The bath's soak. */
@@ -145,6 +147,8 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
   let talking: Npc | null = null;
   /** The house clock (game minutes): mid-afternoon when you walk in; a night's sleep moves it to 07:00 next day. */
   let clockMin = 15 * 60;
+  /** The minute now: the career clock when the house has one, else its own. */
+  const now = () => (o.clockNow ? o.clockNow() : clockMin);
   let sleeping = false;
   /** Lying in bed: the world kit does not move you (your pose is held, under the duvet). */
   let lying: { duvet: any; bed: NonNullable<SmartObject["bed"]>; host: SmartObject } | null = null;
@@ -269,7 +273,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       if (talking !== n) return;
       n.lookAt = [o.you().x, o.you().z];
       if (!n.seated && n.state === "stand") n.face(yawTo([n.x, n.z], [o.you().x, o.you().z]));
-      show(personCard({ id: n.id, name: n.name, lines: smallTalk(n.id, n.seated ? "sat" : "stand", phaseOf(clockMin % DAY_MIN), Math.floor(clockMin / DAY_MIN) + 1), chat: !!o.chat }));
+      show(personCard({ id: n.id, name: n.name, lines: smallTalk(n.id, n.seated ? "sat" : "stand", phaseOf(now() % DAY_MIN), Math.floor(now() / DAY_MIN) + 1), chat: !!o.chat }));
     };
     if (Math.hypot(spot[0] - y.x, spot[1] - y.z) < 0.4 || !o.walkTo(spot, him, arrive)) arrive();
   };
@@ -416,7 +420,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       if (room?.fx) for (const f of Object.values(room.fx)) f.tick?.(dt);
     },
     rebody: () => { if (meNpc) handBack(); },
-    clock: () => clockMin,
+    clock: () => now(),
     newDay: () => {
       clockMin = (Math.floor(clockMin / DAY_MIN) + 1) * DAY_MIN + 7 * 60;
       t = 0;
@@ -499,7 +503,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     },
     talkTo: () => (talking && card ? talking.bodyXZ() : null),
     debug: () => ({
-      room: room?.id, clock: clockMin, sleeping, lying: !!lying, things: objects.list.map((x) => x.id), using: using?.id ?? null, card: card?.title ?? null,
+      room: room?.id, clock: now(), sleeping, lying: !!lying, things: objects.list.map((x) => x.id), using: using?.id ?? null, card: card?.title ?? null,
       you: meNpc?.info() ?? null, people: npcs.map((n) => ({ ...n.info(), visible: n.root.visible })), book: book.all(), where,
       // the seat check (RUL-3D-005): every skin point of each seated person inside his seat's top 8 cm (cm, 0 = clear)
       seats: [...npcs, ...(meNpc ? [meNpc] : [])].filter((p) => p.state === "use" && p.using?.slots[0]?.seat && !(lying && p === meNpc)).map((p) => seatCheck(THREE, p, book)),

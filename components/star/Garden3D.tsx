@@ -38,6 +38,8 @@ import Reload3dPill from "./Reload3d";
 import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
 import { Stick, pill } from "./Shop3D";
 import LoadingCurtain from "./loading/LoadingCurtain";
+import ClockPill, { useLiveClock } from "./ClockPill";
+import { leaveAt } from "@/lib/star/life/clock";
 import ViewToggle3D from "./ViewToggle3D";
 
 const INK = "#f7f1e8";
@@ -70,9 +72,15 @@ export interface Garden3DProps {
   where?: "career" | "test";
   /** Test page: fill its box on the admin frame instead of the whole screen. */
   embedded?: boolean;
+  /** The career clock (lib/star/life/clock.ts): game minutes that passed here. Absent: it ticks on screen only. */
+  onTime?: (mins: number) => void;
+  /** "Go to the match" (the clock stopped at time to leave). */
+  onMatch?: () => void;
 }
 
-export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, onHouse, onPhone, arrive = "gate", sky, where = "career", embedded = false }: Garden3DProps) {
+export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, onHouse, onPhone, arrive = "gate", sky, where = "career", embedded = false, onTime, onMatch }: Garden3DProps) {
+  // the career clock, top middle (components/star/ClockPill.tsx)
+  const live = useLiveClock(career, onTime);
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<GardenController | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -245,11 +253,6 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
           <span style={{ fontSize: 20, lineHeight: 1, marginTop: -2 }}>&#8249;</span>Home
         </button>
         <div style={{ flex: 1 }} />
-        {onPhone && (
-          <button onClick={onPhone} aria-label="Phone" data-pick-up style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 6, fontWeight: 900 }}>
-            <span aria-hidden style={{ fontSize: 15 }}>📱</span>Phone
-          </button>
-        )}
         <div style={{ ...pill, gap: 6 }} aria-label="Trophies">
           <span aria-hidden style={{ fontSize: 16 }}>🏆</span><b style={{ color: GOLD }}>{info.trophyCount + (career.ballonDorWins ?? 0)}</b>
         </div>
@@ -259,6 +262,13 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
           </div>
         )}
       </div>
+      {/* the Phone pill under the top bar, on the right (as in the house): the clock has the top middle */}
+      {onPhone && (
+        <button onClick={onPhone} aria-label="Phone" data-pick-up style={{ ...pill, position: "absolute", right: 12, top: "calc(max(12px, env(safe-area-inset-top)) + 48px)", zIndex: 5, cursor: "pointer", gap: 6, fontWeight: 900 }}>
+          <span aria-hidden style={{ fontSize: 15 }}>📱</span>Phone
+        </button>
+      )}
+      <ClockPill career={career} abs={live.abs} held={live.abs >= leaveAt(career)} onMatch={onMatch} title="Garden" />
 
       {status === "loading" && (
         <div style={{ position: "absolute", inset: 0, background: "#0d1420" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }} />
