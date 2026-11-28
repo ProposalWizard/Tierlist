@@ -55,3 +55,15 @@ export const GARDEN_MEASURED: { before: GardenMeasure[]; facet: GardenMeasure[];
     { view: "shop", tier: "low", walking: false, draws: 42, triangles: 39_802 },
   ],
 };
+
+/**
+ * GARDEN LEVELS (28 Nov 2026, lib/star/garden3d/levelZones.ts): the garden at each level, Medium, the same harness
+ * and phone screen as above. `baselineOver`: the garden itself (level 1, the same view) is already over the draw
+ * budget there, and the level may not add to it. Re-measure: .tmp-style driver in the build notes (H.garden with
+ * opts.levels) or tests/star/gardenLevels.mts's header.
+ */
+export interface LevelMeasure { level: number; view: string; walking: boolean; draws: number; triangles: number; baselineOver?: number }
+export const GARDEN_LEVELS_MEASURED: LevelMeasure[] = [];
+
+/** The rider on the saddle, measured on the one body (scripts/perf3d H.rider → rideHorse.ts riderCheck), metres. */
+export const RIDER_MEASURED = { kneeOut: [0.089, 0.087], footOut: [0.027, 0.04], ironGap: [0.076, 0.095], hipsOverSeat: 0 };

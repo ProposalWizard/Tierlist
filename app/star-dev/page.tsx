@@ -61,6 +61,7 @@ import { goalBonusFor, assistBonusFor } from "@/lib/star/economy";
 import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { brandsOf, signOffer, declineOffer, askLonger, askEasier, counterPoach, walkAway, settleNegotiation, } from "@/lib/star/sponsorDeals";
 import { renameHorse } from "@/lib/star/horse";
+import { addGardenXp, applyRide } from "@/lib/star/gardenLevels";
 import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
@@ -3196,7 +3197,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   const handleHorseRace = useCallback((finish: number, prize: number, energyCost: number) => {
     if (!career || !career.horse) return;
-    setCareer({
+    setCareer(addGardenXp({
       ...career,
       money: career.money + prize,
       horse: {
@@ -3206,7 +3207,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         racesWon: career.horse.racesWon + (finish === 1 ? 1 : 0),
         earnings: career.horse.earnings + prize,
       },
-    });
+    }, { kind: "horseRace" })); // garden XP: a horse race run (lib/star/gardenLevels.ts)
   }, [career]);
 
   const handleRenameHorse = useCallback((name: string) => {
@@ -3650,7 +3651,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const start = casinoVisitStart.current ?? c.money;
     casinoVisitStart.current = null;
     const bets = takeCasinoVisitBets();
-    const { career: after, story } = rollCasinoScandal(c, bets, c.money - start, Math.random());
+    const { career: rolled, story } = rollCasinoScandal(c, bets, c.money - start, Math.random());
+    // garden XP (lib/star/gardenLevels.ts): casino play, by the bets placed this visit
+    const after = addGardenXp(rolled, { kind: "casino", bets });
     if (!story) return after;
     try {
       return { ...after, media: generateForCareer(after, { kind: "casino-scandal", story: story.kind, step: story.step, bets: story.bets }, `casino-${after.casinoScandal?.count ?? 1}`) };
@@ -5027,7 +5030,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           }, "team");
           checkAndSetAchievements(updated);
           if (res.train) updated.starRating = computeStarRating(updated);
-          setCareer(spendAction(updated));
+          // garden XP (lib/star/gardenLevels.ts): a drill on the garden's own pitch
+          setCareer(spendAction(addGardenXp(updated, { kind: "drill", stars: res.train?.stars })));
           backToGate();
         }}
       />
@@ -5194,6 +5198,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
         onHouse={HOME3D_IN_CAREER ? () => { setGardenArrive("gate"); setHomeFromGarden(true); setPhase("home-3d"); } : undefined}
         onPhone={phoneFrom3d && (() => { setGardenArrive("gate"); phoneFrom3d(); })}
+        // garden levels (only while their setting is on): a ride's horse energy, laps and best times
+        onRide={(r) => setCareer((c) => (c ? applyRide(c, r) : c))}
       />
     );
   }

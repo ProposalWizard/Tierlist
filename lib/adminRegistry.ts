@@ -175,6 +175,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-3d-area-dev/office", "Manager's office", "Manager's office stage", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-shop3d-dev", "3D shop", "Walk-around 3D shop", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-garden3d-dev", "3D garden", "Walk round the 3D garden", "rbd", "places3d", "Mikey", "live", "none", "team"),
+  P("/star-garden-levels-dev", "Garden levels", "The garden at levels 1-5: stable, riding field, race track, ride your horse", "rbd", "places3d", "Harry", "live", "browser", "team"),
   P("/star-home3d-dev", "3D house", "Walk round the 3D house", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-loading-dev", "Loading screens", "Every loading screen, by the section you're going into", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-world3d-dev", "3D world kit", "People who use things: sofa, TV, fridge, a bench, a visitor at the gate, tap to talk", "rbd", "places3d", "Harry", "live", "none", "team"),
@@ -313,7 +314,7 @@ export function relatedFor(path: string): { label: string; pages: AdminPage[] } 
 export const TEST_PAGES = new Set<string>([
   "/star-aerials-dev", "/star-goal-clips-dev", "/star-goals-gallery-dev", "/star-update-dev", "/star-dribble-stick-dev", "/star-vfx-lab-dev", "/star-sound-lab-dev",
   "/star-real-moments-dev", "/star-real-shots-dev", "/star-real-goals-dev", "/star-intl-dev", "/star-tournament-dev",
-  "/star-3d-area-dev", "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev", "/star-garden3d-dev",
+  "/star-3d-area-dev", "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev", "/star-garden3d-dev", "/star-garden-levels-dev",
   "/star-home3d-dev", "/star-training3d-dev", "/star-anim3d-dev", "/star-people-dev", "/star-sprites-dev",
   "/star-shop-dev", "/star-phone3d-dev",
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev",

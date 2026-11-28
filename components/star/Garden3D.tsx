@@ -39,6 +39,9 @@ import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
 import { Stick, pill } from "./Shop3D";
 import LoadingCurtain from "./loading/LoadingCurtain";
 import ViewToggle3D from "./ViewToggle3D";
+import type { GardenLevelsOpt, RideReport } from "@/lib/star/garden3d/levelZones";
+import { gardenLevelsOn } from "@/lib/star/garden3d/levelsFlag";
+import { gardenLevelsOptFor } from "@/lib/star/gardenLevels";
 
 const INK = "#f7f1e8";
 /** A query parameter, on the client only. */
@@ -70,9 +73,14 @@ export interface Garden3DProps {
   where?: "career" | "test";
   /** Test page: fill its box on the admin frame instead of the whole screen. */
   embedded?: boolean;
+  /** Garden levels (lib/star/gardenLevels.ts): the test page passes its own; absent = the career's, only while the
+   *  setting is on (lib/star/garden3d/levelsFlag.ts); null = off. */
+  levels?: GardenLevelsOpt | null;
+  /** A ride ended: the horse's energy and the laps, to put on the career (gardenLevels.ts applyRide). */
+  onRide?: (r: RideReport) => void;
 }
 
-export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, onHouse, onPhone, arrive = "gate", sky, where = "career", embedded = false }: Garden3DProps) {
+export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, onHouse, onPhone, arrive = "gate", sky, where = "career", embedded = false, levels, onRide }: Garden3DProps) {
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<GardenController | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -87,6 +95,11 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
   trainingRef.current = onTraining;
   const houseRef = useRef(onHouse);
   houseRef.current = onHouse;
+  const rideRef = useRef(onRide);
+  rideRef.current = onRide;
+  // garden levels: read once per visit (the garden is built once per visit)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const levelsOpt = useMemo(() => (levels !== undefined ? levels ?? undefined : gardenLevelsOn() ? gardenLevelsOptFor(career) : undefined), [levels]);
 
   // Three real team-mates, picked at random each visit (as before).
   const [visitors] = useState(() => {
@@ -154,6 +167,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
             setLeaving(true);
             houseRef.current?.();
           } : undefined,
+          onRide: (r) => { if (!dead) rideRef.current?.(r); },
           onContextLost: () => {
             if (dead) return;
             console.error("3D garden: the phone took the 3D away");
@@ -166,7 +180,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
         const fixedStep = q.get("film") === "1" ? 1 / 30 : undefined;
         // the Old garden knows only "high" | "low" (sceneOld.ts is frozen)
         const start = (): Promise<GardenController> => newMod
-          ? newMod.startGarden(el, cbs, data, { quality: tier, fixedStep, edit: approvedRef.current })
+          ? newMod.startGarden(el, cbs, data, { quality: tier, fixedStep, edit: approvedRef.current, levels: levelsOpt })
           // (the Old garden has no casino or pitch: it starts at the gate)
           : oldMod!.startGarden(el, cbs, { ...data, arrive: data.arrive === "shop" ? "shop" : "gate" }, { quality: tier === "low" ? "low" : "high", fixedStep });
         let c: GardenController;

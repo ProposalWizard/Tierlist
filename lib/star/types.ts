@@ -1325,6 +1325,11 @@ export interface CareerState {
    */
   gym?: import("./gym/progress").GymState;
   /**
+   * Garden levels (lib/star/gardenLevels.ts): XP from the garden's drills and casino play, best lap
+   * times, the stable horse's energy. Absent on every older save: garden level 1, 0 XP.
+   */
+  gardenXp?: import("./gardenLevels").GardenProgress;
+  /**
    * Training sessions left this week (absent = the full 2). Refilled only
    * after a SATURDAY match, so a Saturday-Wednesday-Saturday week still has
    * just 2 between them (Mikey, 29 Sep 2026). See week.ts.
