@@ -1,0 +1,409 @@
+{
+ "id": "arc-two-old-enemies",
+ "title": "Two old enemies",
+ "owner": "rival",
+ "summary": "The centre half who followed you round the country for years, and was your room-mate for half a season, is retiring. He wants one last game for his testimonial: him against you, ten balls, him in goal, in front of both sets of fans.",
+ "size": "small",
+ "about": {
+  "who": [
+   "the rival",
+   "local reporter"
+  ],
+  "tone": [
+   "collision",
+   "rivalry",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.01,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "veteran",
+  "when": [
+   "ended(arc-the-nemesis)",
+   "ended(arc-the-new-signing)",
+   "age>=26"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "rival",
+   "pick": "rival"
+  },
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "he-won",
+   "title": "He won",
+   "text": "At his testimonial the centre half saved your last penalty and lifted his arms like it was a cup final. You let him have it."
+  },
+  {
+   "id": "you-won",
+   "title": "You won",
+   "text": "At his testimonial you scored all ten past the centre half. He said it was the first time you'd ever beaten him, and he was lying."
+  },
+  {
+   "id": "no-show",
+   "title": "No show",
+   "text": "You missed his testimonial. He sent you the programme with your face on the back, crossed out."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "toe-1-ask",
+   "title": "His testimonial",
+   "n": 1,
+   "event": {
+    "id": "arc-toe-1-ask",
+    "title": "His testimonial",
+    "category": "life",
+    "place": "ground:pitch",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "{rival.name} rings. He's finishing. \"Testimonial, last Sunday of May. Both lots of fans. Ten balls, me in goal, you against me one more time. Don't let me win.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "rival",
+       "say": [
+        "{reporter.short} has already got wind of it. \"OLD ENEMIES, ONE LAST TIME\" is the headline she wants."
+       ],
+       "replies": [
+        {
+         "id": "play",
+         "label": "\"Get your gloves.\"",
+         "tone": "confident",
+         "goto": "g"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm on holiday, mate.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      },
+      "g": {
+       "who": "rival",
+       "say": [
+        "Last Sunday of May. Both ends full. He's in goal in his own shirt with the number crossed out on the back and RETIRED written over it."
+       ],
+       "activity": {
+        "mode": "challenge",
+        "name": "One last time",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "corners",
+           "balls": 2
+          },
+          {
+           "kind": "keeper",
+           "balls": 4,
+           "line": "Him in goal. He's still big, and he still doesn't like you."
+          },
+          {
+           "kind": "far",
+           "balls": 1
+          },
+          {
+           "kind": "call-it",
+           "balls": 2
+          },
+          {
+           "kind": "double",
+           "line": "The last one. He points at you."
+          }
+         ],
+         "keeperSlot": "rival",
+         "lines": {
+          "keeper:saved": "\"Nobody gets past {name} today.\"",
+          "hit": "Both ends go up at once.",
+          "double:miss": "He runs a lap of the pitch with his arms out."
+         }
+        },
+        "caller": {
+         "slot": "rival"
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "technique",
+         "target": 60
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "r-stop"
+        ],
+        [
+         "activity.score>=8",
+         "r-good"
+        ],
+        [
+         "",
+         "r-poor"
+        ]
+       ]
+      },
+      "r-stop": {
+       "who": "rival",
+       "say": [
+        "You stop there and hand the ball back."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Walk off.",
+         "tone": "calm",
+         "end": "stop"
+        }
+       ]
+      },
+      "r-good": {
+       "who": "rival",
+       "say": [
+        "{activity.score} out of ten. Not bad at all."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "good"
+        }
+       ]
+      },
+      "r-poor": {
+       "who": "rival",
+       "say": [
+        "{activity.score} out of ten."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "poor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "Seven, eight, nine, and the last one in the top corner. He lies on the grass and laughs.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 6
+         },
+         {
+          "slot": "reporter",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "you"
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "He saves the last one and runs to both ends. You stand in the box and clap him.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "him"
+         }
+        }
+       }
+      ],
+      "stop": [
+       {
+        "text": "You stop after five and give him the ball. He takes the last five himself, past his own son in goal.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "him"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He says nothing for a bit, then: \"Right.\"",
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "Your old enemy wants you at his testimonial"
+  },
+  {
+   "id": "toe-2-later",
+   "title": "The programme",
+   "after": {
+    "beat": "toe-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-toe-2-later",
+    "title": "The programme",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. A parcel: his testimonial programme, signed."
+    ],
+    "choices": [
+     {
+      "id": "open",
+      "label": "Open it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='you'",
+        "text": "Inside: \"You never beat me in a game. Testimonials don't count.\"",
+        "arc": {
+         "end": "you-won"
+        }
+       },
+       {
+        "if": "arc.path=='him'",
+        "text": "Inside: \"Told you.\" And a photo of the save.",
+        "arc": {
+         "end": "he-won"
+        }
+       },
+       {
+        "text": "Your face on the back, crossed out in biro. Underneath: \"Holiday nice?\"",
+        "arc": {
+         "end": "no-show"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ring",
+      "label": "Ring him.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='you'",
+        "text": "He picks up laughing. \"Testimonials don't count.\"",
+        "arc": {
+         "end": "you-won"
+        }
+       },
+       {
+        "if": "arc.path=='him'",
+        "text": "He picks up and says, \"Who's this?\" and then laughs.",
+        "arc": {
+         "end": "he-won"
+        }
+       },
+       {
+        "text": "It rings out.",
+        "arc": {
+         "end": "no-show"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "A season on, a parcel from your old enemy"
+  }
+ ]
+}

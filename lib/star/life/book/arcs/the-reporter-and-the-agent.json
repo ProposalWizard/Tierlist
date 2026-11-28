@@ -1,0 +1,275 @@
+{
+ "id": "arc-the-reporter-and-the-agent",
+ "title": "The reporter and the agent",
+ "owner": "reporter",
+ "summary": "The reporter has found out where the money for your agent's fiftieth came from: a club that wanted you. She has the invoice for the fountain. Your agent rings you before she does.",
+ "size": "small",
+ "about": {
+  "who": [
+   "local reporter",
+   "your agent"
+  ],
+  "tone": [
+   "press",
+   "collision"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-reporters-patch)",
+   "ended(arc-the-agents-party)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  },
+  {
+   "slot": "agent",
+   "pick": "agent"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "both-friends",
+   "title": "Both friends",
+   "text": "The reporter and your agent sat down in the same café and sorted it out. They still don't like each other."
+  },
+  {
+   "id": "the-agent-goes",
+   "title": "The agent goes",
+   "text": "Your agent went quietly after the reporter's story. You found a new one who doesn't own a fountain."
+  },
+  {
+   "id": "story-spiked",
+   "title": "The story spiked",
+   "text": "The reporter's story never ran. You still don't know if your agent made a call."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "rag-1-invoice",
+   "title": "The fountain invoice",
+   "n": 1,
+   "event": {
+    "id": "arc-rag-1-invoice",
+    "title": "The fountain invoice",
+    "category": "media",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your agent rings at ten at night, which he never does. \"That reporter of yours. She's got the invoice for the fountain. It was paid by a club, and she thinks it's about you.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "agent",
+       "say": [
+        "\"It was a gift. Clubs give gifts. Just tell her to drop it.\""
+       ],
+       "replies": [
+        {
+         "id": "meet",
+         "label": "\"I'll get you both in a room.\"",
+         "tone": "brave",
+         "end": "meet"
+        },
+        {
+         "id": "agent",
+         "label": "\"I'll tell her it was nothing.\"",
+         "tone": "lie",
+         "end": "cover"
+        },
+        {
+         "id": "leave",
+         "label": "\"You sort it. It's your fountain.\"",
+         "tone": "cold",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "meet": [
+       {
+        "text": "A café, three teas, nobody drinking theirs. It takes an hour. Your agent goes very red twice.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "respect": 5
+         },
+         {
+          "slot": "agent",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "meet"
+         }
+        }
+       }
+      ],
+      "cover": [
+       {
+        "text": "You ring her. She listens to the whole thing and then says, \"Right,\" in a voice you haven't heard before.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": -6,
+          "grudge": 4
+         },
+         {
+          "slot": "agent",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cover"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "You put the phone down on him. Then you lie awake.",
+        "npc": [
+         {
+          "slot": "agent",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "agent",
+      "pick": "agent"
+     }
+    ]
+   },
+   "hint": "The reporter has an invoice from your agent's party"
+  },
+  {
+   "id": "rag-2-after",
+   "title": "A season on",
+   "after": {
+    "beat": "rag-1-invoice",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-rag-2-after",
+    "title": "A season on",
+    "category": "life",
+    "place": "club:car-park",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. You see them both in the car park at the same game, at the same time, and they both see you."
+    ],
+    "choices": [
+     {
+      "id": "both",
+      "label": "Walk over to both of them.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.path=='meet'",
+        "text": "She says something and he laughs, a real one. They've sorted it out.",
+        "arc": {
+         "end": "both-friends"
+        }
+       },
+       {
+        "text": "He goes back to his car. A week later he tells you he's retiring.",
+        "arc": {
+         "end": "the-agent-goes"
+        }
+       }
+      ]
+     },
+     {
+      "id": "him",
+      "label": "Go to your agent.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='cover' || arc.path=='leave'",
+        "text": "He's very pleased with himself. The story never ran.",
+        "arc": {
+         "end": "story-spiked"
+        }
+       },
+       {
+        "text": "He shakes your hand and says she's all right, for a reporter.",
+        "arc": {
+         "end": "both-friends"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     },
+     {
+      "slot": "agent",
+      "pick": "agent"
+     }
+    ]
+   },
+   "hint": "A season on, the reporter and your agent"
+  }
+ ]
+}

@@ -1,0 +1,245 @@
+{
+ "id": "arc-the-other-knee",
+ "title": "The other knee",
+ "owner": "physio",
+ "summary": "A lad in the academy has done the same knee you did, in the same way. He won't come out of his room. The physio asks if you'll come to the pool at six, like she used to make you.",
+ "size": "small",
+ "about": {
+  "who": [
+   "the physio"
+  ],
+  "tone": [
+   "moving"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-long-way-back:back|never-quite)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "physio",
+   "pick": "physio"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-pool-at-six",
+   "title": "The pool at six",
+   "text": "You went to the pool at six with the academy lad who did your knee. He's back playing, and he still texts you after every session."
+  },
+  {
+   "id": "the-letter",
+   "title": "The letter",
+   "text": "You wrote the academy lad a letter about your knee instead. The physio pinned it on the wall of the pool."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "okn-1-ask",
+   "title": "Six o'clock",
+   "n": 1,
+   "event": {
+    "id": "arc-okn-1-ask",
+    "title": "Six o'clock",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{physio.name} catches you in the corridor. \"Under-eighteens lad, cruciate, same as yours. He's not coming out of his room. I need him at the pool at six. He'll come if you're there.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "physio",
+       "say": [
+        "\"You hated me at six in the morning. You came anyway.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"I'll be there.\"",
+         "tone": "kind",
+         "end": "go"
+        },
+        {
+         "id": "write",
+         "label": "\"I'll write him something. I'm no good at the talking.\"",
+         "tone": "humble",
+         "end": "write"
+        },
+        {
+         "id": "busy",
+         "label": "\"I can't. Not at six.\"",
+         "tone": "cold",
+         "end": "busy"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "Six o'clock, the pool, the smell of it. He comes, in a hoodie, and doesn't speak for twenty minutes. Then he asks how long till you ran.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "go"
+         }
+        }
+       }
+      ],
+      "write": [
+       {
+        "text": "Two sides about the stairs and the week you nearly gave up. She reads it, says nothing, and pins it up.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "write"
+         }
+        }
+       }
+      ],
+      "busy": [
+       {
+        "text": "She nods and goes to find somebody else.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": -3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "busy"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     }
+    ]
+   },
+   "hint": "The physio wants you at the pool with an academy lad"
+  },
+  {
+   "id": "okn-2-later",
+   "title": "Grass",
+   "after": {
+    "beat": "okn-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-okn-2-later",
+    "title": "Grass",
+    "category": "life",
+    "place": "club:academy",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "physio",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The academy pitch, first thing. A lad is doing his first ten balls back on grass, with the physio counting."
+    ],
+    "choices": [
+     {
+      "id": "watch",
+      "label": "Stop and watch.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='go'",
+        "text": "It's him. He sees you, and does the next one off his bad leg on purpose.",
+        "arc": {
+         "end": "the-pool-at-six"
+        }
+       },
+       {
+        "text": "It's him. Your letter is in his kit bag. He showed the physio.",
+        "arc": {
+         "end": "the-letter"
+        }
+       }
+      ]
+     },
+     {
+      "id": "go",
+      "label": "Carry on to the gym.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='go'",
+        "text": "He texts you that night: a photo of the grass.",
+        "arc": {
+         "end": "the-pool-at-six"
+        }
+       },
+       {
+        "text": "The physio tells you later the letter did it.",
+        "arc": {
+         "end": "the-letter"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "physio",
+      "pick": "physio"
+     }
+    ]
+   },
+   "hint": "A season on, the academy lad"
+  }
+ ]
+}

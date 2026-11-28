@@ -1,0 +1,246 @@
+{
+ "id": "arc-the-referees-lad",
+ "title": "The referee's lad",
+ "owner": "referee",
+ "summary": "The referee's son, the one you signed a shirt for, is a referee himself now. Tonight he's in the middle of your game, his first in the league, and his dad is in the stand.",
+ "size": "small",
+ "about": {
+  "who": [
+   "the referee"
+  ],
+  "tone": [
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-referees-son:his-sons-shirt)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "referee",
+   "pick": "referee"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "good-game",
+   "title": "A good game",
+   "text": "The referee's son refereed your game and got every big call right. His dad framed the team sheet."
+  },
+  {
+   "id": "the-big-call",
+   "title": "The big call",
+   "text": "The referee's son gave a penalty against you in his first game. It was right. You told him so."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "rld-1-tunnel",
+   "title": "The tunnel",
+   "n": 1,
+   "event": {
+    "id": "arc-rld-1-tunnel",
+    "title": "The tunnel",
+    "category": "life",
+    "place": "ground:tunnel",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "In the tunnel the referee is twenty-three, very nervous and very tidy. You signed a shirt for him when he was a boy. He doesn't mention it, so you can tell he's thinking about it."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "referee",
+       "say": [
+        "His dad, {referee.short}, is in the main stand in a suit, holding his programme with both hands."
+       ],
+       "replies": [
+        {
+         "id": "wish",
+         "label": "\"Have a good one, ref.\"",
+         "tone": "kind",
+         "end": "wish"
+        },
+        {
+         "id": "shirt",
+         "label": "\"Still got the shirt?\"",
+         "tone": "confident",
+         "end": "shirt"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing. Let him do his job.",
+         "tone": "calm",
+         "silent": true,
+         "end": "quiet"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "wish": [
+       {
+        "text": "He nods. In the seventy-first minute he gives a penalty against you, and it's right.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "pen"
+         }
+        }
+       }
+      ],
+      "shirt": [
+       {
+        "text": "He goes red. \"In a frame.\" Then he books you for a late one in the first half and doesn't look sorry.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "book"
+         }
+        }
+       }
+      ],
+      "quiet": [
+       {
+        "text": "He has a good game. You don't notice him once, which is the best thing you can say about a referee.",
+        "npc": [
+         {
+          "slot": "referee",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "good"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "The referee's son is refereeing your game"
+  },
+  {
+   "id": "rld-2-later",
+   "title": "His letter",
+   "after": {
+    "beat": "rld-1-tunnel",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-rld-2-later",
+    "title": "His letter",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. A letter from {referee.short}, the dad, on headed paper from the referees' society."
+    ],
+    "choices": [
+     {
+      "id": "read",
+      "label": "Read it.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='pen'",
+        "text": "\"He said you shook his hand after he gave the penalty. He talks about it at every course.\"",
+        "arc": {
+         "end": "the-big-call"
+        }
+       },
+       {
+        "text": "\"He's on the list for the top league now. He says you were the first to wish him luck.\"",
+        "arc": {
+         "end": "good-game"
+        }
+       }
+      ]
+     },
+     {
+      "id": "keep",
+      "label": "Keep it for later.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "!arc.path=='pen'",
+        "text": "You read it a week later: his son is on the top list. The team sheet from that night is framed in their hall.",
+        "arc": {
+         "end": "good-game"
+        }
+       },
+       {
+        "text": "You read it a week later. The penalty was right, and the lad still thinks about your handshake.",
+        "arc": {
+         "end": "the-big-call"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "A season on, a letter from the referee"
+  }
+ ]
+}

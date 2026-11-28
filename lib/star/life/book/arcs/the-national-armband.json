@@ -1,0 +1,252 @@
+{
+ "id": "arc-the-national-armband",
+ "title": "The armband",
+ "owner": "mum",
+ "summary": "Years after your first cap, the national manager rings. The captain is out for the qualifier and he wants you to lead the side out. Your mum wants to know if she has to buy a new hat.",
+ "size": "small",
+ "about": {
+  "who": [
+   "your mum",
+   "the gaffer"
+  ],
+  "tone": [
+   "pride",
+   "international"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "peak",
+  "when": [
+   "ended(arc-the-call-up:back-in|his-shirt)",
+   "caps>=3",
+   "age>=25"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "mum",
+   "pick": "mum"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "captain-for-the-night",
+   "title": "Captain for the night",
+   "text": "You led your country out once, in a qualifier. Your mum has the armband in the frame now, next to the first shirt."
+  },
+  {
+   "id": "gave-it-back",
+   "title": "Gave it back",
+   "text": "You gave the national armband to the younger lad and stood next to him for the anthem. He's captain now."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "nab-1-call",
+   "title": "The call",
+   "n": 1,
+   "event": {
+    "id": "arc-nab-1-call",
+    "title": "The call",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The national manager rings on a Sunday night. \"Our captain's out. I want you to take them out on Thursday.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mum",
+       "say": [
+        "Your mum, when you tell her: \"I'll need a new hat.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'd be honoured.\"",
+         "tone": "humble",
+         "end": "yes"
+        },
+        {
+         "id": "young",
+         "label": "\"Give it to the young lad. I'll stand next to him.\"",
+         "tone": "kind",
+         "end": "young"
+        },
+        {
+         "id": "club",
+         "label": "\"My gaffer will want me back in one piece.\"",
+         "tone": "confident",
+         "end": "yes"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "Thursday, the anthem, the armband slightly too big. Your mum is in the new hat in row twelve, crying into a programme.",
+        "effects": {
+         "fame": 3,
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "young": [
+       {
+        "text": "The lad is twenty-one and goes white when he's told why. You stand next to him for the anthem, and he sings it too loud.",
+        "effects": {
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "young"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "The national manager wants you to captain the side"
+  },
+  {
+   "id": "nab-2-later",
+   "title": "The frame",
+   "after": {
+    "beat": "nab-1-call",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-nab-2-later",
+    "title": "The frame",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. Your mum's hall has a second frame in it."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Look at the frame.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "The armband, folded, next to the first shirt. She polishes the glass on Sundays.",
+        "arc": {
+         "end": "captain-for-the-night"
+        }
+       },
+       {
+        "text": "A photo of you and the young lad at the anthem. He's captain now, and he rings you before every game.",
+        "arc": {
+         "end": "gave-it-back"
+        }
+       }
+      ]
+     },
+     {
+      "id": "tease",
+      "label": "\"You need a bigger hall.\"",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "\"I need a bigger hall,\" she says, pleased.",
+        "arc": {
+         "end": "captain-for-the-night"
+        }
+       },
+       {
+        "text": "\"I've room for one more,\" she says, and looks at the photo of the young lad.",
+        "arc": {
+         "end": "gave-it-back"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A season on, the national armband"
+  }
+ ]
+}

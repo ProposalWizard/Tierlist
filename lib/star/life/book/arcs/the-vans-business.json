@@ -1,0 +1,248 @@
+{
+ "id": "arc-the-vans-business",
+ "title": "His business",
+ "owner": "pal",
+ "summary": "Your mate's van has become six vans, and the club uses them for every away kit run. He's had an idea: when you finish playing, you come and work for him. He's had a polo shirt made with your name on it.",
+ "size": "small",
+ "about": {
+  "who": [
+   "school mate"
+  ],
+  "tone": [
+   "warm",
+   "after football"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "veteran",
+  "when": [
+   "ended(arc-the-van:his-name-on-the-van)",
+   "age>=27"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "pal",
+   "pick": "pal"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-polo-shirt",
+   "title": "The polo shirt",
+   "text": "You've a job waiting at your mate's firm when you finish. The polo shirt is in a drawer, ironed."
+  },
+  {
+   "id": "the-office",
+   "title": "The office",
+   "text": "You told your mate no thanks, and he named the office after you anyway."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "vbz-1-polo",
+   "title": "The polo shirt",
+   "n": 1,
+   "event": {
+    "id": "arc-vbz-1-polo",
+    "title": "The polo shirt",
+    "category": "life",
+    "place": "town:yard",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{pal.short} shows you round the yard: six vans, a portakabin, a man called Gaz on the forklift. On the desk, a polo shirt in the firm's green with your name stitched on it."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "pal",
+       "say": [
+        "\"When you're done playing, I mean. Partner, your name on the door. You've the face, I've the vans.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Keep it ironed.\"",
+         "tone": "kind",
+         "end": "yes"
+        },
+        {
+         "id": "maybe",
+         "label": "\"Ask me when my knees go.\"",
+         "tone": "confident",
+         "end": "maybe"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm going to coach, mate.\"",
+         "tone": "honest",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "He hangs it in the portakabin on a hanger with a carrier bag over it.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "maybe": [
+       {
+        "text": "\"Your knees went in 2019,\" he says. He folds the shirt into a drawer.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "maybe"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He's quiet for a bit. \"Fair enough. Better at that than at vans.\"",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "Your mate wants you at his firm when you finish"
+  },
+  {
+   "id": "vbz-2-later",
+   "title": "The new office",
+   "after": {
+    "beat": "vbz-1-polo",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-vbz-2-later",
+    "title": "The new office",
+    "category": "life",
+    "place": "town:yard",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "driving"
+     ]
+    },
+    "setup": [
+     "A season on. A new office at the yard, brick this time, and a sign going up over the door."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Go and look at the sign.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "!arc.path=='no'",
+        "text": "THE STRIKER'S ROOM. The polo shirt is on a hook inside the door.",
+        "arc": {
+         "end": "the-polo-shirt"
+        }
+       },
+       {
+        "text": "THE STRIKER'S ROOM. \"Seeing as you won't come,\" he says.",
+        "arc": {
+         "end": "the-office"
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Text him well done.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "He sends a photo of the shirt on its hook.",
+        "arc": {
+         "end": "the-polo-shirt"
+        }
+       },
+       {
+        "text": "He sends a photo of the sign with your name on it.",
+        "arc": {
+         "end": "the-office"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "A season on, your mate's firm"
+  }
+ ]
+}

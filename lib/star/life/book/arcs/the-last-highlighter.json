@@ -1,0 +1,224 @@
+{
+ "id": "arc-the-last-highlighter",
+ "title": "The last highlighter",
+ "owner": "dad",
+ "summary": "Your last contract is on the kitchen table, and your dad has taken a day off to read it with a highlighter, the same as he did with your first. He's brought the first one too.",
+ "size": "small",
+ "about": {
+  "who": [
+   "your dad"
+  ],
+  "tone": [
+   "family"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "veteran",
+  "when": [
+   "ended(arc-the-highlighter:his-copy)",
+   "age>=29"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "dad",
+   "pick": "dad"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "both-copies",
+   "title": "Both copies",
+   "text": "Your dad keeps your first contract and your last one in the same folder, both highlighted, in the same yellow."
+  },
+  {
+   "id": "signed-quick",
+   "title": "Signed quick",
+   "text": "You signed your last contract before your dad could read it. He highlighted his copy anyway, after."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "lhl-1-table",
+   "title": "The kitchen table",
+   "n": 1,
+   "event": {
+    "id": "arc-lhl-1-table",
+    "title": "The kitchen table",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your last contract on the kitchen table. Your dad has a highlighter and his reading glasses, and a folder with your first contract in it, the pages gone soft. \"Same as last time. Line by line.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "dad",
+       "say": [
+        "\"Clause nine. They've done it again.\""
+       ],
+       "replies": [
+        {
+         "id": "read",
+         "label": "Sit down and read it with him.",
+         "tone": "kind",
+         "end": "read"
+        },
+        {
+         "id": "sign",
+         "label": "\"Dad, it's fine. I'll just sign.\"",
+         "tone": "calm",
+         "end": "sign"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "read": [
+       {
+        "text": "Three hours. Clause nine is fine this time. He highlights it anyway.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "read"
+         }
+        }
+       }
+      ],
+      "sign": [
+       {
+        "text": "You sign it on the worktop. He puts the highlighter back in his pocket with the lid on.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "sign"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Your dad wants to read your last contract"
+  },
+  {
+   "id": "lhl-2-later",
+   "title": "The folder",
+   "after": {
+    "beat": "lhl-1-table",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-lhl-2-later",
+    "title": "The folder",
+    "category": "life",
+    "place": "home:dads",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. Your dad's folder is out on the table at Christmas."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Look in the folder.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='read'",
+        "text": "First contract, last contract, both yellow. Clause nine on both.",
+        "arc": {
+         "end": "both-copies"
+        }
+       },
+       {
+        "text": "Your last contract, highlighted after you'd signed it. Clause nine twice.",
+        "arc": {
+         "end": "signed-quick"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Leave it for him.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='read'",
+        "text": "He shows the whole table anyway.",
+        "arc": {
+         "end": "both-copies"
+        }
+       },
+       {
+        "text": "He puts it away before you can see.",
+        "arc": {
+         "end": "signed-quick"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A season on, your dad's folder"
+  }
+ ]
+}

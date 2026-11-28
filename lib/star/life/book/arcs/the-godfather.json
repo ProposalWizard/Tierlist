@@ -1,0 +1,246 @@
+{
+ "id": "arc-the-godfather",
+ "title": "The godfather",
+ "owner": "pal",
+ "summary": "Your oldest mate, whose best man you were, has a baby girl. He wants you to be godfather. The christening is a Sunday morning after an away game at the other end of the country.",
+ "size": "small",
+ "about": {
+  "who": [
+   "school mate"
+  ],
+  "tone": [
+   "warm",
+   "family"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-best-man:the-speech|the-under-twelves)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "pal",
+   "pick": "pal"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "her-godfather",
+   "title": "Her godfather",
+   "text": "You're godfather to your oldest mate's daughter. She calls you by your squad number."
+  },
+  {
+   "id": "the-card",
+   "title": "The card",
+   "text": "You missed the christening and sent a card. You've been to every birthday since."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "gdf-1-ask",
+   "title": "The baby",
+   "n": 1,
+   "event": {
+    "id": "arc-gdf-1-ask",
+    "title": "The baby",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{pal.short} brings the baby round in a car seat and puts her on your kitchen table like a trophy. \"Godfather. Sunday the fourteenth, half ten.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "pal",
+       "say": [
+        "You check the fixtures in your head. Saturday the thirteenth, away, five hours up the motorway."
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'll be there if I have to drive all night.\"",
+         "tone": "brave",
+         "end": "yes"
+        },
+        {
+         "id": "try",
+         "label": "\"I'll try. You know what Saturdays are.\"",
+         "tone": "honest",
+         "end": "try"
+        },
+        {
+         "id": "speech",
+         "label": "\"Do I have to do a speech? Last time...\"",
+         "tone": "confident",
+         "end": "speech"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "He says the vicar is a fan of the other lot, so wear something plain.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "try": [
+       {
+        "text": "\"Try,\" he says, and picks up the car seat.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "try"
+         }
+        }
+       }
+      ],
+      "speech": [
+       {
+        "text": "\"No speeches,\" he says. \"She heard about the last one.\"",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "Your oldest mate wants you as godfather"
+  },
+  {
+   "id": "gdf-2-later",
+   "title": "Her first birthday",
+   "after": {
+    "beat": "gdf-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-gdf-2-later",
+    "title": "Her first birthday",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. A birthday party in a church hall, a cake shaped like a one, and a little girl in a football shirt."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go to the party.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "She's in your shirt, with your number. She points at you and says it, the number, not your name.",
+        "arc": {
+         "end": "her-godfather"
+        }
+       },
+       {
+        "text": "You weren't at the christening. You're at this. She sits on your knee for the photo.",
+        "arc": {
+         "end": "the-card"
+        }
+       }
+      ]
+     },
+     {
+      "id": "send",
+      "label": "Send a present.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "A ball as big as she is. {pal.short} sends a video of her sitting on it.",
+        "arc": {
+         "end": "her-godfather"
+        }
+       },
+       {
+        "text": "A ball and a card. Same as the christening.",
+        "arc": {
+         "end": "the-card"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "A season on, your goddaughter"
+  }
+ ]
+}

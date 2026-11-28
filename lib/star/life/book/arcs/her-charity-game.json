@@ -1,0 +1,388 @@
+{
+ "id": "arc-her-charity-game",
+ "title": "Her charity game",
+ "owner": "kidfan",
+ "summary": "Years on, the girl from the sign is running a charity game for the girls' team she started, and she wants you up front. Ten balls first, for the crowd, with her in goal.",
+ "size": "small",
+ "about": {
+  "who": [
+   "a young fan",
+   "the coach"
+  ],
+  "tone": [
+   "warm",
+   "pride"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any",
+  "when": [
+   "ended(arc-her-coaching-badge)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  },
+  {
+   "slot": "coach",
+   "pick": "coach"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "in-her-team",
+   "title": "In her team",
+   "text": "You played up front in the charity game for her girls' team. She saved your penalty and they put it on a mug."
+  },
+  {
+   "id": "in-the-stand",
+   "title": "In the stand",
+   "text": "You watched her charity game from the stand with the parents. Her girls won."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "hcg-1-ask",
+   "title": "The charity game",
+   "n": 1,
+   "event": {
+    "id": "arc-hcg-1-ask",
+    "title": "The charity game",
+    "category": "life",
+    "place": "town:rec",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{kidfan.short} has started a girls' team at the Rec, forty of them, and they need a minibus. Charity game on Sunday. \"You up front. Ten balls first, me in goal. The girls are selling tickets on the bus.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kidfan",
+       "say": [
+        "\"Say yes before I tell them you already did.\""
+       ],
+       "replies": [
+        {
+         "id": "play",
+         "label": "\"Get your gloves.\"",
+         "tone": "confident",
+         "goto": "g"
+        },
+        {
+         "id": "watch",
+         "label": "\"I'll come and watch, and buy the minibus.\"",
+         "tone": "kind",
+         "end": "watch"
+        }
+       ]
+      },
+      "g": {
+       "who": "kidfan",
+       "say": [
+        "The Rec, the old goals with the new nets the girls paid for, two hundred people on the bank."
+       ],
+       "activity": {
+        "mode": "challenge",
+        "name": "Ten balls for the minibus",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "corners",
+           "balls": 2
+          },
+          {
+           "kind": "keeper",
+           "balls": 3,
+           "line": "{kidfan.short} in goal. She was a striker. She's still good."
+          },
+          {
+           "kind": "call-it",
+           "balls": 2
+          },
+          {
+           "kind": "far",
+           "balls": 1
+          },
+          {
+           "kind": "crossbar",
+           "balls": 1
+          },
+          {
+           "kind": "double"
+          }
+         ],
+         "keeperSlot": "kidfan",
+         "lines": {
+          "keeper:saved": "Forty girls scream for {name}.",
+          "hit": "\"Lucky,\" she shouts."
+         }
+        },
+        "caller": {
+         "slot": "kidfan"
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "technique",
+         "target": 60
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "r-stop"
+        ],
+        [
+         "activity.score>=6",
+         "r-good"
+        ],
+        [
+         "",
+         "r-poor"
+        ]
+       ]
+      },
+      "r-stop": {
+       "who": "kidfan",
+       "say": [
+        "You stop there and hand the ball back."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Walk off.",
+         "tone": "calm",
+         "end": "stop"
+        }
+       ]
+      },
+      "r-good": {
+       "who": "kidfan",
+       "say": [
+        "{activity.score} out of ten. Not bad at all."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "good"
+        }
+       ]
+      },
+      "r-poor": {
+       "who": "kidfan",
+       "say": [
+        "{activity.score} out of ten."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "poor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "You score seven past her and she saves the last one, and the girls only remember the last one.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "play"
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "She saves more than you score and the girls chant her name for an hour. She has never been happier.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "play"
+         }
+        }
+       }
+      ],
+      "stop": [
+       {
+        "text": "You go over on your ankle on the bank and watch from the side. She still makes you take the last one, on one leg.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "play"
+         }
+        }
+       }
+      ],
+      "watch": [
+       {
+        "text": "You buy the minibus. The girls paint SIGN on the side, and nobody explains it to the driver.",
+        "effects": {
+         "moneyWeeks": -2,
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "watch"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The girl from the sign wants you in her charity game"
+  },
+  {
+   "id": "hcg-2-later",
+   "title": "The mug",
+   "after": {
+    "beat": "hcg-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-hcg-2-later",
+    "title": "The mug",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. A parcel: a mug from the girls' team, and a note from {kidfan.short}."
+    ],
+    "choices": [
+     {
+      "id": "open",
+      "label": "Open the note.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='play'",
+        "text": "The mug has a photo of her saving your penalty. The note says: STILL OWE YOU TEN.",
+        "arc": {
+         "end": "in-her-team"
+        }
+       },
+       {
+        "text": "The mug has the minibus on it. The note says the girls won the league.",
+        "arc": {
+         "end": "in-the-stand"
+        }
+       }
+      ]
+     },
+     {
+      "id": "shelf",
+      "label": "Put the mug on the shelf.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='play'",
+        "text": "It's her saving your penalty. Visitors always ask.",
+        "arc": {
+         "end": "in-her-team"
+        }
+       },
+       {
+        "text": "It's the minibus with SIGN on the side.",
+        "arc": {
+         "end": "in-the-stand"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "A season on, the girls' team"
+  }
+ ]
+}
