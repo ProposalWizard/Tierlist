@@ -26,6 +26,204 @@ import type { PatchNote } from "./patchNotes";
 
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
+    {
+      "version": "0.150",
+      "title": "Harry's patch notes: 3D that stays on, phone apps, loading screens, the walk",
+      "author": "Harry",
+      "publishedAt": "2026-11-28T03:54:05Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/RhFAsHCMQJGKo7T5xV5TSk",
+      "summary": "Harry's push of 27-28 Nov, shown as Segmented patch notes (the live board). Now live: your 3D no longer gets stolen or frozen and mends itself, the phone can be picked up again, Android draws fewer pixels, every app works inside the 3D phone, each section has its own loading screen, the camera stands further back with a first-person button, shop boots, caps and sunglasses show on your player, the textured trees are back and cheaper, the new walk, and 22 more voice lines. On test pages or switched off: the gym, the 216 stories and club people.",
+      "stats": [
+        {
+          "value": "3.4 s → 0.4 s",
+          "label": "first loading screen up (was blank)"
+        },
+        {
+          "value": "44%",
+          "label": "fewer pixels a frame on Android (S20)"
+        },
+        {
+          "value": "129 → 86",
+          "label": "garden draws at the gate (Medium)"
+        },
+        {
+          "value": "22",
+          "label": "players, 22 different walking paces"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Use the phone, then play a match: the 3D stays on",
+              "detail": "Home → Phone → back → Play match."
+            },
+            {
+              "title": "Put the phone down early, then pick it up again",
+              "detail": "House → Phone button."
+            },
+            {
+              "title": "Apps inside the phone: Sponsors, Shop, Settings and more",
+              "detail": "Phone tab."
+            },
+            {
+              "title": "Loading screens: tunnel or programme, keepie-uppies, drill board",
+              "detail": "Go to a match, the garden, training."
+            },
+            {
+              "title": "Camera further back, eye button for first person",
+              "detail": "Garden or house, top corner."
+            },
+            {
+              "title": "Boots, cap and sunglasses on your player",
+              "detail": "Shop → Style; wardrobe → Extras."
+            },
+            {
+              "title": "Leafy trees in the garden",
+              "detail": "Home → Garden."
+            },
+            {
+              "title": "The walk: feet apart, every man his own pace",
+              "detail": "Garden, house, cut scenes."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "3D is no longer stolen or frozen",
+              "detail": "A 3D place left while loading can't take the match's 3D. The game checks every second and rebuilds lost 3D; if that fails, a Tap to reload 3D button shows. 6 of 6 phone pick-ups worked."
+            },
+            {
+              "title": "The phone can be picked up again",
+              "detail": "The house no longer freezes after you put the phone down early."
+            },
+            {
+              "title": "Android lag: fewer pixels",
+              "detail": "Android capped at 1.5 pixels per point (iPhone stays at 2). Garden 1.16 M → 0.65 M dots a frame on a simulated Galaxy S20."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Phone apps work inside the 3D phone",
+              "detail": "9 apps on the glass with their own back button. Big screens offer Open full screen. The blink is 0.9 s."
+            },
+            {
+              "title": "Loading screens by section",
+              "detail": "Programme or tunnel for matches, keepie-uppies for 3D places, a drill board for training. Nothing shows over or under them."
+            },
+            {
+              "title": "First-person button",
+              "detail": "Tap the eye to see through his eyes in every walk-around place."
+            },
+            {
+              "title": "Boots, accessories, caps and sunglasses worn",
+              "detail": "Your shop boots show on your feet, each level its own colours. Watch, chain, cap and sunglasses picked in the wardrobe's Extras tab; caps and sunglasses are in the Style shop."
+            },
+            {
+              "title": "Den and gaffer voice lines",
+              "detail": "22 new lines (20 Den, 2 gaffer); the kit man story now has 67 voiced lines."
+            },
+            {
+              "title": "Speed recorder",
+              "detail": "Team accounts and phones opened with ?fps=1 send their frame rate every 5 s. Needs one Supabase script run before it can store.",
+              "pill": {
+                "text": "needs SQL",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Uploads up to 4.9 GB",
+              "detail": "Admin → Marketing → Uploads (was 500 MB)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Camera zoomed out",
+              "detail": "4.0 m behind him (was 2.5 m)."
+            },
+            {
+              "title": "Textured trees back, drawing much less",
+              "detail": "Gate view 129 → 86 draws, 110k → 50.5k triangles; walking 241 → 82 draws."
+            },
+            {
+              "title": "The walk",
+              "detail": "Feet 9-11 cm → 19-21 cm apart, no boot through boot, 22 men out of step with small habits."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "On test pages only, or switched off",
+          "items": [
+            {
+              "title": "The gym: 13 exercises",
+              "detail": "Room, 3 first games plus 10 new ones on /star-world3d-dev?place=gym. The effect on your career is OFF.",
+              "pill": {
+                "text": "test page only",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "216 stories",
+              "detail": "Stages, rarity and follow-ons. Stories stay OFF in the real career.",
+              "pill": {
+                "text": "test page only",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Club people per club",
+              "detail": "Each club its own kit man, legend and staff; used only by the stories, which are off.",
+              "pill": {
+                "text": "test page only",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Still weak",
+          "items": [
+            {
+              "title": "The cap looks flat",
+              "detail": "Sunglasses break into dashes from the side."
+            },
+            {
+              "title": "First person has no hands",
+              "detail": "A blank wall for about 2 s after switching."
+            },
+            {
+              "title": "Stories are not on in careers",
+              "detail": "Needs Harry's answer."
+            },
+            {
+              "title": "The speed recorder needs its Supabase script",
+              "detail": "Until it is run, nothing is stored there."
+            },
+            {
+              "title": "No real Android phone has run the fixes",
+              "detail": "Only Mikey's S20 can confirm the frame rate."
+            }
+          ]
+        }
+      ],
+      "updates": []
+    },
   {
       "version": "0.143",
       "title": "Leo's patch notes: One Knowitball, the whole website",
