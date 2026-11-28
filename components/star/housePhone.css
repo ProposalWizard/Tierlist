@@ -64,7 +64,7 @@
 
 /* in the house: take the phone out */
 .hp-pickup {
-  position: fixed; z-index: 81; right: 12px; top: calc(max(12px, env(safe-area-inset-top)) + 48px); height: 36px; padding: 0 14px;
+  position: fixed; z-index: 81; right: 12px; top: calc(max(12px, env(safe-area-inset-top)) + 96px); height: 36px; padding: 0 14px;
   border-radius: 999px; border: 1px solid rgba(255, 255, 255, .25); background: rgba(10, 8, 6, .72); color: #f7f1e8;
   font-weight: 900; font-size: 14px; cursor: pointer;
 }
@@ -73,3 +73,6 @@
   position: absolute; z-index: 6; left: 16px; right: 16px; top: max(16px, env(safe-area-inset-top)); padding: 10px 12px; border-radius: 14px;
   background: rgba(10, 8, 6, .9); color: #f7f1e8; font-weight: 800; font-size: 13px; text-align: center; pointer-events: none;
 }
+
+/* the clock's Today list is open (components/star/ClockPill.tsx): the pill steps aside */
+body[data-clock-open] .hp-pickup { display: none; }

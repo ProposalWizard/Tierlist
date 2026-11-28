@@ -250,6 +250,8 @@ export interface HomeOptions {
     onSleep?: () => string;
     /** The career clock (lib/star/life/liveClock.ts): minutes since day 0 of this gap, now. Absent: the house's own clock (15:00). */
     clock?: () => number;
+    /** Tick the career clock by the house's own frame time (s). */
+    tick?: (dt: number) => void;
     /** Who is in the house on a day of the gap (lib/star/life/dayPlan.ts). Absent: the old fixed team-mates. */
     visits?: (day: number) => HouseVisit[] };
 }
@@ -820,7 +822,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       you: () => ({ x: me.person.root.position.x, z: me.person.root.position.z, yaw }),
       setYaw: (y) => { yaw = y; yawTurn.vel = 0; me.person.root.rotation.y = y; },
       onCard: (c) => cb.onCard?.(c),
-      chat: opts.living.chat, onEffect: opts.living.onEffect, clockNow: opts.living.clock,
+      chat: opts.living.chat, onEffect: opts.living.onEffect, clockNow: opts.living.clock, tickClock: opts.living.tick,
       // visitors on the day plan; how many your room may draw: Android (the mid phone) and Low 2, Medium 3, High 5
       visits: opts.living.visits, roomCap: roomPeople(tier, typeof navigator !== "undefined" && /Android|Mobi/i.test(navigator.userAgent) && !/iPhone|iPad/i.test(navigator.userAgent)),
       onSleep: () => { sleepSeq = { t: 0, text: "", morning: false }; },

@@ -122,6 +122,23 @@ export function dayPlanFor(c: CareerState, d: number, rooms: RoomId[], tier: Hom
  */
 export function forcedDay(kind: string, from: number, rooms: RoomId[], tier: HomeTier, mates: { id: string; name: string }[]): HouseVisit[] | null {
   if (kind === "quiet") return [];
+  // measuring (?visit=crowd0..3): that many team-mates already in the lounge, sat or stood, for the draws/triangles count
+  const crowd = /^crowd(\d)$/.exec(kind);
+  if (crowd) {
+    const room = (rooms.includes("lounge") ? "lounge" : rooms[0]) as RoomId;
+    return mates.slice(0, Number(crowd[1])).map((m, i) => {
+      const steps: VStep[] = Array.from({ length: 6 }, (_, k) => ({ kind: i < 2 ? "use" : "call", room, target: i < 2 ? "sofa" : "window", at: from - 5 + k * 45, until: from - 5 + (k + 1) * 45, label: "Measuring" } as VStep));
+      return { id: `mate-${m.id}`, who: "mate" as const, name: m.name, mateId: m.id, from: from - 5, to: from - 5 + 270, why: "Measuring", steps };
+    });
+  }
+  // filming: one short visit, every kind of moment long enough to see at a sped-up clock
+  if (kind === "film" && mates.length) {
+    const m = mates[0], room = rooms.includes("lounge") ? "lounge" : rooms[0];
+    const seq: [VStep["kind"], string | undefined, number, string][] = [["arrive", undefined, 2, "Comes in"], ["use", "sofa", 8, "Sofa, the TV on"], ["use", "fridge", 5, "A can from the fridge"], ["call", "window", 7, "A call at the window"], ["leave", undefined, 3, "Leaves"]];
+    let t = from;
+    const steps: VStep[] = seq.map(([k, target, mins, label]) => { const s: VStep = { kind: k, room: room as RoomId, target, at: t, until: t + mins, label }; t += mins; return s; });
+    return [{ id: `mate-${m.id}`, who: "mate", name: m.name, mateId: m.id, from, to: t, why: "Dropped round", steps }];
+  }
   const seed = hashId(`forced|${kind}|${from}`);
   if (kind === "chef") return [{ id: "chef-test", who: "chef", name: CHEF_NAMES[0], from, to: from + 160, why: "Your chef", steps: planVisit("chef", "chef-test", from, from + 160, rooms, seed, { tier }) }];
   if (kind === "mate" && mates.length) {

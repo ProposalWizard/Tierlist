@@ -77,6 +77,8 @@ export interface LifeOptions {
   onEffect?: (thing: string, e: NonNullable<SmartObject["effect"]>) => { text: string; sub?: string } | void;
   /** The career clock (life/liveClock.ts): minutes since day 0 of the gap. Absent: the house's own clock (15:00 on arrival). */
   clockNow?: () => number;
+  /** Tick the career clock by this frame's time (s): people and the clock keep step. */
+  tickClock?: (dt: number) => void;
   /** "Sleep till morning": you are down on the bed; the house plays the night (scene.ts) and then calls `wake`. */
   onSleep?: () => void;
   /** A short dip to dark with a caption ("Half an hour later"): `mid` runs in the dark. The bath's soak. */
@@ -322,6 +324,8 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     walkT: number;
     /** Walking in through the doorway (off the floor grid): nothing else starts until he is in. */
     entering?: boolean;
+    /** Real seconds in a stand-up (the watchdog). */
+    exitT?: number;
   }
   let guests: Guest[] = [];
   let plannedDay = Number.NaN;
@@ -521,7 +525,9 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
         if (!here) continue;
         // a step that began a moment ago in a walk: he walks in through the door; else he is already there
         const fresh = (m - w!.step.at) < 1.5 && (w!.step.kind === "arrive" || w!.step.kind === "go" || (w!.i > 0 && g.v.steps[w!.i - 1].room !== room.id));
-        if (fresh) walkIn(g, w!.i, w!.step.kind === "arrive" ? "garden" : neighbour(g, w!.i, -1));
+        const backFromAway = w!.i > 0 && g.v.steps[w!.i - 1].room === "away";
+        const innerTo = ((room.plan.doors ?? []).find((x) => x.to === "bathroom") ?? (room.plan.doors ?? []).find((x) => x.to !== "garden"))?.to ?? null;
+        if (fresh) walkIn(g, w!.i, w!.step.kind === "arrive" ? "garden" : backFromAway ? innerTo : neighbour(g, w!.i, -1));
         else { g.mode = "in"; n.show(true); doStep(g, w!.i, true); }
         continue;
       }
@@ -537,10 +543,14 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
         if (g.walkT > 8) { g.entering = false; const d = doorTo(null); if (d) { const p = inside(d, 0.7); n.place(p[0], p[1], n.yaw); } doStep(g, g.stepI, true); }
         continue;
       }
+      // the watchdog: standing up from a seat takes about 1.5 s; one still going after 4 s is ended
+      if (n.state === "exit") { g.exitT = (g.exitT ?? 0) + dt; if (g.exitT > 4) { g.exitT = 0; n.forceOut(); } } else g.exitT = 0;
       if (!here) {
         const tok = ++g.token;
         const next = w ? (w.step.room === "away" ? null : w.step.room) : "garden";
-        const d = doorTo(next ?? neighbour(g, g.stepI, 1));
+        // off screen (the toilet, out the back): an inside door (the bathroom, else any but the front door); else towards his next room
+        const inner = (room?.plan.doors ?? []).find((x) => x.to === "bathroom") ?? (room?.plan.doors ?? []).find((x) => x.to !== "garden") ?? null;
+        const d = w && w.step.room === "away" && inner ? inner : doorTo(next ?? neighbour(g, g.stepI, 1));
         const off = () => { if (g.token !== tok) return; if (d) walkOut(g, d, tok); else { n.show(false); g.mode = "out"; } };
         if (n.seated) n.leave(off); else { n.stop(); off(); }
         continue;
@@ -723,6 +733,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       t += dt;
       if (meNpc && !lying) meNpc.update(dt, world, true);
       const t0 = typeof performance !== "undefined" ? performance.now() : 0;
+      o.tickClock?.(dt);
       stepGuests(dt);
       if (t0) routineMs = routineMs * 0.95 + (performance.now() - t0) * 0.05;
       // seated team-mates chat: each looks at a neighbour now and then (seeded by the clock)
@@ -826,7 +837,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       you: meNpc?.info() ?? null, people: npcs.map((n) => ({ ...n.info(), visible: n.root.visible })), book: book.all(), where,
       // visitors (life/dayPlan.ts): who, what step, drawn or not; the routines' cost per frame
       day: o.visits ? visitDay() : null, minute: o.visits ? Math.round(minuteOfDay()) : null, routineMs: +routineMs.toFixed(4),
-      guests: guests.map((g) => { const w = whereAt(g.v.steps, minuteOfDay()); return { id: g.v.id, name: g.v.name, mode: g.mode, step: w?.step.label ?? null, room: w?.step.room ?? null, state: g.n?.state ?? "loading", visible: !!g.n?.root.visible, from: g.v.from, to: g.v.to }; }),
+      guests: guests.map((g) => { const w = whereAt(g.v.steps, minuteOfDay()); return { id: g.v.id, name: g.v.name, mode: g.mode, step: w?.step.label ?? null, room: w?.step.room ?? null, state: g.n?.state ?? "loading", clip: g.n?.play.current ?? null, clipT: g.n ? +g.n.play.time().toFixed(2) : null, visible: !!g.n?.root.visible, from: g.v.from, to: g.v.to }; }),
       // the seat check (RUL-3D-005): every skin point of each seated person inside his seat's top 8 cm (cm, 0 = clear)
       seats: [...npcs, ...(meNpc ? [meNpc] : [])].filter((p) => p.state === "use" && p.using?.slots[0]?.seat && !(lying && p === meNpc)).map((p) => seatCheck(THREE, p, book)),
     }),

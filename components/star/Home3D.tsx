@@ -140,13 +140,14 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const onTimeRef = useRef(onTime);
   onTimeRef.current = onTime;
   // the career clock, ticking while you are in the house (stopped while the phone is up); the house's people read it
-  const live = useLiveClock(career, onTime, { paused: clockPaused || !chrome, rate: clockRate });
+  // (the living house ticks it from its own frames: world3d/houseLife.ts, so people and the clock keep step)
+  const live = useLiveClock(career, onTime, { paused: clockPaused || !chrome, rate: clockRate, external: livingOn(tierProp ?? homeTierOf(career.ownedItems), living) && (house ?? houseLook()) === "new" });
   const liveRef = useRef(live.clock);
   liveRef.current = live.clock;
   /** The house's day plan, by day of the gap (read off the career as it is then); `forced` a test page's day. */
   const visitsFn = (forced: string | null, openAbs: number, rms: RoomId[], t: HomeTier) => (d: number) => {
     const c = careerRef.current;
-    if (forced && d === Math.floor(openAbs / 1440)) { const f = forcedDay(forced, Math.floor(openAbs % 1440) + 1, rms, t, houseMates(c)); if (f) return f; }
+    if (forced && d === Math.floor(openAbs / 1440)) { const f = forcedDay(forced, Math.floor(openAbs % 1440) + 4, rms, t, houseMates(c)); if (f) return f; }
     return dayPlanFor(c, d, rms, t, houseMates(c));
   };
   // the night's words come from the career as it is when you fall asleep (sleep.ts is pure: the page's setCareer gets the same result)
@@ -259,7 +260,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           edit: approvedRef.current,
           ...(pov ? { pov: true } : {}),
           ...(houseCam && houseCam !== "D" ? { houseCam } : {}),
-          ...(alive ? { living: { ...livingFor(career), onSleep: () => { const r = sleepNight(careerRef.current); sleepRef.current?.(); return sleepRef.current ? r.text : "A good night."; }, clock: () => liveRef.current.now(),
+          ...(alive ? { living: { ...livingFor(career), onSleep: () => { const r = sleepNight(careerRef.current); sleepRef.current?.(); return sleepRef.current ? r.text : "A good night."; }, clock: () => liveRef.current.now(), tick: (dt: number) => liveRef.current.tick(dt),
             // who is in the house each day (lib/star/life/dayPlan.ts); a test page can force one (?visit=mate|chef|quiet)
             visits: visitsFn(q.get("visit"), liveRef.current.now(), rooms, tier),
             // a thing used: its minutes and its energy/mood within the day's caps (the career keeps it); the card says what it really did

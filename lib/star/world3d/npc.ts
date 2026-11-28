@@ -365,6 +365,9 @@ export class Npc {
     } else this.outOf();
   }
 
+  /** Out of a seat now, standing where the seat put him (a watchdog for a stand-up that never ended). */
+  forceOut() { if (this.state === "exit" || this.state === "enter" || this.state === "use") this.outOf(); }
+
   private bookRef: SlotBook | null = null;
   private exitBack = false;
   private holdOn: number | null = null;

@@ -22,7 +22,7 @@ const GOLD = "#facc15";
 const FLUSH_EVERY = 10;
 
 /** The ticking clock for a 3D place: the LiveClock (read it each frame) and the minute shown. */
-export function useLiveClock(career: CareerState | null | undefined, onTime?: (mins: number) => void, opts: { paused?: boolean; rate?: number } = {}) {
+export function useLiveClock(career: CareerState | null | undefined, onTime?: (mins: number) => void, opts: { paused?: boolean; rate?: number; external?: boolean } = {}) {
   const abs0 = career ? absOf(clockOf(career)) : 15 * 60;
   const stop0 = career ? leaveAt(career) : Infinity;
   // test pages and filming: ?clock=60 runs it 60 times faster
@@ -33,6 +33,8 @@ export function useLiveClock(career: CareerState | null | undefined, onTime?: (m
     []);
   const [shown, setShown] = useState(() => Math.floor(clock.now()));
   const onTimeRef = useRef(onTime);
+  const externalRef = useRef(!!opts.external);
+  externalRef.current = !!opts.external;
   onTimeRef.current = onTime;
   clock.paused = !!opts.paused;
   if (opts.rate) clock.rate = opts.rate;
@@ -45,7 +47,8 @@ export function useLiveClock(career: CareerState | null | undefined, onTime?: (m
       const dt = (t - last) / 1000;
       last = t;
       if (document.visibilityState === "hidden") return;
-      clock.tick(dt);
+      // a 3D place that ticks it from its own frames (the house: people and the clock keep step, even on a slow phone)
+      if (!externalRef.current) clock.tick(dt);
       const n = clock.flush(FLUSH_EVERY);
       if (n && onTimeRef.current) onTimeRef.current(n);
       setShown(Math.floor(clock.now()));
@@ -78,6 +81,8 @@ export default function ClockPill({ career, abs, held, visits, onMatch, title, i
 }) {
   const [open, setOpen] = useState(false);
   const [reply, setReply] = useState<string | null>(null);
+  // the Today list open: the 3D phone's pill (a fixed button above the house) steps aside so nothing sits over the list
+  useEffect(() => { if (!open) return; document.body.dataset.clockOpen = "1"; return () => { delete document.body.dataset.clockOpen; }; }, [open]);
   const m = abs - Math.floor(abs / DAY_MINS) * DAY_MINS;
   const sub = career ? clockSubline(career, abs) : "";
   const rows = open && career ? todayList(career, abs, visits) : [];

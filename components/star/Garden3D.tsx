@@ -264,7 +264,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
       </div>
       {/* the Phone pill under the top bar, on the right (as in the house): the clock has the top middle */}
       {onPhone && (
-        <button onClick={onPhone} aria-label="Phone" data-pick-up style={{ ...pill, position: "absolute", right: 12, top: "calc(max(12px, env(safe-area-inset-top)) + 48px)", zIndex: 5, cursor: "pointer", gap: 6, fontWeight: 900 }}>
+        <button onClick={onPhone} aria-label="Phone" data-pick-up style={{ ...pill, position: "absolute", right: 12, top: "calc(max(12px, env(safe-area-inset-top)) + 96px)", zIndex: 5, cursor: "pointer", gap: 6, fontWeight: 900 }}>
           <span aria-hidden style={{ fontSize: 15 }}>📱</span>Phone
         </button>
       )}
