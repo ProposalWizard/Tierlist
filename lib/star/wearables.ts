@@ -167,7 +167,7 @@ export interface AccessoryLook {
   thick: number;
 }
 
-const STEEL = "#8f959c", SILV = "#c9ced5", GOLDM = "#d4a93c", BRIGHT = "#ecc355", PLAT = "#e9edf2", ROSE = "#d99a7a";
+const STEEL = "#8f959c", SILV = "#c9ced5", GOLDM = "#d6b35a", BRIGHT = "#e9cc78", PLAT = "#e9edf2", ROSE = "#d99a7a";
 const L = (level: number, a: string[]) => a[Math.max(0, Math.min(a.length - 1, level - 1))];
 const SHINE = [0.25, 0.4, 0.6, 0.8, 1];
 
@@ -181,20 +181,20 @@ export function accessoryLook(baseId: string, level: number): AccessoryLook | nu
   switch (w.kind) {
     case "smartwatch": // a rubber strap, a dark screen with a lit dial
       return { ...base, main: L(lv, ["#1d1f24", "#2b3a55", "#f1f1ee", SILV, GOLDM]), second: L(lv, ["#3a3d44", STEEL, SILV, PLAT, BRIGHT]), detail: L(lv, ["#3fb6ff", "#3fb6ff", "#5cf0c8", "#ffffff", "#ffe28a"]) };
-    case "watch": // gold: a bracelet and a cream face (black at the top)
-      return { ...base, main: L(lv, ["#8a6a3a", GOLDM, GOLDM, BRIGHT, ROSE]), second: L(lv, ["#b08d4a", GOLDM, BRIGHT, BRIGHT, ROSE]), detail: L(lv, ["#efe6cf", "#efe6cf", "#f6f0dc", "#14161b", "#14161b"]), stones: lv >= 4 ? (lv - 3) * 4 : 0 };
+    case "watch": // gold: a leather strap (L1-2) then a gold bracelet, a light dial
+      return { ...base, main: L(lv, ["#5a3a22", "#2a1c14", GOLDM, BRIGHT, ROSE]), second: L(lv, [GOLDM, GOLDM, BRIGHT, BRIGHT, ROSE]), detail: L(lv, ["#f4efe2", "#f6f0dc", "#efe3c0", "#f2f2ee", "#f7f4ee"]), stones: lv >= 4 ? (lv - 3) * 4 : 0 };
     case "luxwatch": // diamond: steel to platinum, diamonds round the bezel from L1, more each level
-      return { ...base, main: L(lv, [STEEL, SILV, GOLDM, BRIGHT, PLAT]), second: L(lv, [SILV, GOLDM, BRIGHT, PLAT, PLAT]), detail: L(lv, ["#1f3a6b", "#14161b", "#1a4d3a", "#14161b", "#cfe7ff"]), stones: [4, 6, 8, 12, 16][lv - 1], shine: Math.min(1, shine + 0.1) };
+      return { ...base, main: L(lv, [STEEL, SILV, GOLDM, BRIGHT, PLAT]), second: L(lv, [SILV, GOLDM, BRIGHT, PLAT, PLAT]), detail: L(lv, ["#f2f2ee", "#e9edf2", "#efe3c0", "#dfe8f2", "#f7f9fc"]), stones: [4, 6, 8, 12, 16][lv - 1], shine: Math.min(1, shine + 0.1) };
     case "chain": // silver: thin steel to a thick platinum chain with a pendant
-      return { ...base, main: L(lv, [STEEL, SILV, SILV, PLAT, PLAT]), second: L(lv, [STEEL, SILV, SILV, PLAT, PLAT]), detail: L(lv, [STEEL, SILV, SILV, PLAT, "#ffffff"]), thick: [0.0026, 0.0032, 0.0038, 0.0046, 0.0054][lv - 1], stones: lv >= 5 ? 1 : 0 };
+      return { ...base, main: L(lv, [STEEL, SILV, SILV, PLAT, PLAT]), second: L(lv, [STEEL, SILV, SILV, PLAT, PLAT]), detail: L(lv, [STEEL, SILV, SILV, PLAT, "#ffffff"]), thick: [0.0009, 0.0011, 0.0013, 0.0015, 0.0018][lv - 1], stones: lv >= 5 ? 1 : 0 };
     case "necklace": // diamond: a fine chain, a pendant with stones, more each level
-      return { ...base, main: L(lv, [SILV, SILV, GOLDM, BRIGHT, PLAT]), second: L(lv, [SILV, GOLDM, GOLDM, BRIGHT, PLAT]), detail: "#ffffff", thick: 0.0026, stones: [1, 3, 5, 7, 9][lv - 1], shine: Math.min(1, shine + 0.15) };
+      return { ...base, main: L(lv, [SILV, SILV, GOLDM, BRIGHT, PLAT]), second: L(lv, [SILV, GOLDM, GOLDM, BRIGHT, PLAT]), detail: "#ffffff", thick: 0.0008, stones: [1, 3, 5, 7, 9][lv - 1], shine: Math.min(1, shine + 0.15) };
     case "headphones": // round the neck: a band, two cups
       return { ...base, main: L(lv, ["#1b1c20", "#f1f1ee", "#c43b3b", SILV, GOLDM]), second: L(lv, ["#2a2c31", "#d8d8d4", "#1b1c20", "#2a2c31", "#16161a"]), detail: L(lv, ["#3a3d44", "#bfbfbb", "#f1f1ee", STEEL, BRIGHT]) };
     case "shades":
       return { ...base, main: L(lv, ["#16161a", "#16161a", GOLDM, SILV, BRIGHT]), second: L(lv, ["#1c2430", "#2a1f17", "#3b2a14", "#1f3a5a", "#2a2a2e"]), detail: L(lv, ["#16161a", "#16161a", GOLDM, SILV, BRIGHT]) };
     case "cap":
-      return { ...base, main: L(lv, ["#22252b", "#2e3a55", "#f1efe9", "#16161a", "#16161a"]), second: L(lv, ["#22252b", "#2e3a55", "#16161a", "#16161a", "#16161a"]), detail: L(lv, ["#22252b", "#f1efe9", GOLDM, SILV, GOLDM]) };
+      return { ...base, main: L(lv, ["#6b7280", "#2e3a55", "#f1efe9", "#16161a", "#16161a"]), second: L(lv, ["#4b5160", "#2e3a55", "#16161a", "#16161a", "#16161a"]), detail: L(lv, ["#22252b", "#f1efe9", GOLDM, SILV, GOLDM]) };
   }
   return null;
 }

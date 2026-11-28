@@ -23,6 +23,7 @@ export default function WearablesBench() {
     (async () => {
       const q = new URLSearchParams(window.location.search);
       (globalThis as { __noSquash?: boolean }).__noSquash = q.get("squash") === "0";
+      (globalThis as { __accDebug?: boolean }).__accDebug = !!q.get("debug");
       const T = await import("three");
       const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
       const SkU = await import("three/examples/jsm/utils/SkeletonUtils.js");
@@ -107,8 +108,8 @@ export default function WearablesBench() {
             for (let i = 0; i < n; i++) {
               m.getVertexPosition(i, pv); pv.applyMatrix4(m.matrixWorld);
               const dy = pv.y - hb.y, dx = pv.clone().sub(hb).dot(side);
-              if (Math.abs(dx) > 0.02 || dy < 0.03 || dy >= 0.11) continue;
-              const k = Math.floor((dy - 0.03) / 0.01);
+              if (Math.abs(dx) < 0.012 || Math.abs(dx) > 0.07 || dy < -0.04 || dy >= 0.04) continue;
+              const k = Math.floor((dy + 0.04) / 0.01);
               out[k] = Math.max(out[k], pv.clone().sub(hb).dot(fwd));
             }
             return out.map((v) => +v.toFixed(4));
