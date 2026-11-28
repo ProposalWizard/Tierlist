@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // THE GYM'S PROOF STILLS (gym phase 2): one browser, each demo on /star-world3d-dev?demo=<kind>&film=1 seeked to the
-// given seconds (the frame-stepped clock, lib/star/frameStep.ts), a 390×844 phone at 2× (the game fills the frame),
+// given seconds (the frame-stepped clock, lib/star/frameStep.ts), a 390×844 phone at 2× (DPR=1 for 1×; the game fills the frame),
 // a still of each and the debug readout (contacts, pierce, draws and triangles) as JSON.
 //   node scripts/gym/stills.mjs <base url> <out dir> kind@secs[,secs][:cam=x,y,z:look=x,y,z] ...
 import { chromium } from "playwright";
@@ -11,7 +11,7 @@ const [base, outDir, ...jobs] = process.argv.slice(2);
 fs.mkdirSync(outDir, { recursive: true });
 const exe = fs.existsSync("/opt/pw-browsers/chromium") && fs.statSync("/opt/pw-browsers/chromium").isFile() ? "/opt/pw-browsers/chromium" : undefined;
 const browser = await chromium.launch({ ...(exe ? { executablePath: exe } : {}), args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--enable-webgl", "--disable-dev-shm-usage", "--hide-scrollbars"] });
-const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: +(process.env.DPR ?? 2), hasTouch: true, isMobile: true });
 await ctx.addInitScript(() => { try { localStorage.setItem("kib-cookie-consent", "no"); localStorage.setItem("star-3d-quality", "medium"); } catch {} });
 const report = {};
 for (const job of jobs) {
