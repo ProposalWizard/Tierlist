@@ -15,7 +15,7 @@
  *               section yet: its room has no good portrait still.
  *   training    the coach's drill board (three boards)
  *   ballon-dor / awards
- *               the gala: the golden ball, the invitation, the red carpet
+ *               the gala: the golden ball, the invitation
  *   first-load  the whole game's opening (built on the server, no JS needed:
  *               components/star/loading/BootScreen.tsx)
  *
@@ -80,11 +80,10 @@ export const LOAD_VARIANTS: Record<LoadSection, LoadVariant[]> = {
   "ballon-dor": [
     { id: "gala-ball", kind: "gala", look: "ball" },
     { id: "gala-invite", kind: "gala", look: "invite" },
-    { id: "gala-carpet", kind: "gala", look: "carpet" },
   ],
+  // the red carpet (Gala.tsx look "carpet") is out of the rotation: too flat next to the others (27 Nov stills)
   awards: [
     { id: "gala-invite", kind: "gala", look: "invite" },
-    { id: "gala-carpet", kind: "gala", look: "carpet" },
     { id: "gala-ball", kind: "gala", look: "ball" },
   ],
 };
