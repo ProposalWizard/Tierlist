@@ -31,6 +31,14 @@ export const ACT_MINS: Record<string, number> = {
   pool: 20, darts: 15, arcade: 15, lounger1: 30, lounger2: 30, seatsL: 120, seatsR: 120, cabinet: 5,
 };
 export const DEFAULT_MINS = 10;
+/**
+ * Game minutes one exercise in your HOME gym takes (gym/homeGym.ts homeGymExercise): a set and the rest
+ * round it. The club gym (Training → Gym) keeps its own time.
+ */
+export const GYM_MINS: Record<string, number> = {
+  bench: 20, treadmill: 30, bag: 20, pullup: 15, squat: 20, pushup: 10, plank: 10,
+  nordic: 15, copenhagen: 15, boxjump: 15, ladder: 10, landing: 10, mobility: 15,
+};
 
 export interface ActResult {
   career: CareerState;

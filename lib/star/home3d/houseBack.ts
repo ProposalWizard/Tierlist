@@ -9,8 +9,9 @@
  * garden. Pure, so tests/star/home3d.mts can check it.
  */
 
-/** The screens the house-from-the-garden memory survives: the garden, the house, the phone held up in it. */
-export const HOUSE_FROM_GARDEN_KEEPS = ["garden", "home-3d", "media"] as const;
+/** The screens the house-from-the-garden memory survives: the garden, the house, the phone held up in it, and
+ *  the house's own gym (gym/homeGym.ts: its "‹ House" goes back into the house, whose Back still says Garden). */
+export const HOUSE_FROM_GARDEN_KEEPS = ["garden", "home-3d", "media", "gym-3d"] as const;
 
 /** Does the house still remember that you came in from the garden, on this screen? */
 export function keepsHouseFromGarden(phase: string): boolean {
@@ -21,3 +22,11 @@ export function keepsHouseFromGarden(phase: string): boolean {
 export function houseBack(fromGarden: boolean): { label: "Garden" | "Home"; to: "garden" | "home" } {
   return fromGarden ? { label: "Garden", to: "garden" } : { label: "Home", to: "home" };
 }
+
+/**
+ * The room you left the house from for its gym (home gyms, 28 Nov 2026): the house opens again in that room when
+ * the gym's "‹ House" brings you back (else in its first room, the hallway). Set as the gym opens, taken once.
+ */
+let gymReturnRoom: string | null = null;
+export function setGymReturnRoom(room: string | null) { gymReturnRoom = room; }
+export function takeGymReturnRoom(): string | null { const r = gymReturnRoom; gymReturnRoom = null; return r; }
