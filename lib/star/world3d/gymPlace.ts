@@ -194,8 +194,10 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
 
   scene.background = new THREE.Color(home ? "#15130f" : "#101114");
   // ── light: the strip lights' cool white from above, warm daylight through the high window (west) ──
-  scene.add(new THREE.HemisphereLight("#f2f5ff", "#3b3a3f", 1.15));
-  const sun = new THREE.DirectionalLight("#fff1dc", 1.5);
+  // (the estate: a warmer light, its cove's colour)
+  const warm = !!home?.plan.sauna;
+  scene.add(new THREE.HemisphereLight(warm ? "#fff0dc" : "#f2f5ff", warm ? "#4a3a2c" : "#3b3a3f", 1.15));
+  const sun = new THREE.DirectionalLight(warm ? "#ffd9a8" : "#fff1dc", 1.5);
   sun.position.set(X0 - 3, 6.5, CZ + 1.5);
   sun.target.position.set(CX + 0.5, 0, CZ);
   scene.add(sun, sun.target);
@@ -254,7 +256,12 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   L.box(DOOR * 2 + 0.4, DOOR_H + 0.1, 0.02, home ? shadeOf(home.wall, 0.72) : "#6d6a63", doorX, DOOR_H / 2, Z1 + 1.4);
   P.box(DOOR * 2 + 0.4, 0.02, 1.4, home ? "#5b4a3a" : "#3a3b40", doorX, 0.001, Z1 + 0.72);
   // a home: the hall's own side walls (seen at an angle the doorway showed the black behind them)
-  if (home) for (const sx of [-1, 1]) L.box(0.04, DOOR_H + 0.1, 1.42, shadeOf(home.wall, 0.6), doorX + sx * (DOOR + 0.2), (DOOR_H + 0.1) / 2, Z1 + 0.72);
+  if (home) {
+    for (const sx of [-1, 1]) L.box(0.04, DOOR_H + 0.1, 1.42, shadeOf(home.wall, 0.6), doorX + sx * (DOOR + 0.2), (DOOR_H + 0.1) / 2, Z1 + 0.72);
+    // its ceiling and a warm lamp glow on the far wall: through the doorway is a lit hall, never black
+    L.box(DOOR * 2 + 0.44, 0.03, 1.44, shadeOf(home.wall, 0.8), doorX, DOOR_H + 0.12, Z1 + 0.72);
+    L.box(0.5, 0.5, 0.01, "#ffe2b0", doorX, 1.7, Z1 + 1.385);
+  }
 
   // ── the mirror wall (north): dark glass from knee to above head, a chrome edge ──
   const withMirror = !home || home.plan.mirror;
@@ -530,6 +537,15 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   P.ball(0.15, "#1d1e22", 1.8, 0.15, 2.0, 12);
   }
 
+  // a home: a folded towel and a water bottle by the mats' west end (a little solid: you walk round them)
+  if (home) {
+    P.box(0.36, 0.06, 0.26, "#f4f1ea", -0.66, 0.03, 2.3);
+    P.box(0.36, 0.012, 0.05, plate, -0.66, 0.062, 2.36);
+    P.cyl(0.038, 0.038, 0.22, "#2f7fd0", -0.62, 0.11, 2.72, 0, 0, 0, 12);
+    P.cyl(0.026, 0.03, 0.04, "#1d1e22", -0.62, 0.24, 2.72, 0, 0, 0, 10);
+    solids.push([-0.88, -0.44, 2.14, 2.84]);
+  }
+
   // ── the water cooler (by the door): a blue bottle on a white stand, a stack of cups ──
   const CO = home ? { x: X1 - 0.55, z: Z1 - 0.55 } : GYM.cooler;
   if (big) {
@@ -549,12 +565,42 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   }
   // speakers in the corners, a wall clock (a home: on the east wall; the window is on the west)
   if (home?.plan.kind !== "corner") for (const [x, z, ry] of [[X0 + 0.2, Z0 + 0.2, Math.PI / 4], [X1 - 0.2, Z0 + 0.2, -Math.PI / 4]] as [number, number, number][]) P.box(0.26, 0.4, 0.22, "#18191c", x, H - 0.45, z, 0, ry);
-  {
+  if (!home?.plan.sauna) {
     const cx = home ? X1 - 0.03 : -W2 + 0.03, sgn = home ? -1 : 1, cz = home ? CZ + 0.4 : 2.0;
     P.cyl(0.2, 0.2, 0.04, "#f2f2ef", cx, 2.0, cz, 0, 0, Math.PI / 2, 20);
     P.cyl(0.21, 0.21, 0.03, "#1d1e22", cx - sgn * 0.01, 2.0, cz, 0, 0, Math.PI / 2, 20);
     P.box(0.01, 0.12, 0.012, "#1d1e22", cx + sgn * 0.03, 2.04, cz);
     P.box(0.01, 0.012, 0.15, "#1d1e22", cx + sgn * 0.03, 2.0, cz + 0.06);
+  }
+  // the estate (Harry's "private gym with everything"): the east wall in warm wooden slats round the sauna door,
+  // a wall TV with the highlights, a towel rail by the sauna, and a warm cove light round the ceiling
+  if (home?.plan.sauna) {
+    const sz0 = Z0 + 0.25, sz1 = Z1 - 1.25; // stops short of the water cooler by the door
+    P.box(0.02, H - 0.45, sz1 - sz0, "#4a2f1c", X1 - 0.012, 0.15 + (H - 0.45) / 2, (sz0 + sz1) / 2);
+    for (let z = sz0 + 0.06; z < sz1 - 0.03; z += 0.12) {
+      if (Math.abs(z - 1.6) < 0.58) continue; // the sauna door's opening
+      P.box(0.04, H - 0.5, 0.07, (Math.round(z * 100) % 3) ? "#8a5a34" : "#7a4e2c", X1 - 0.04, 0.15 + (H - 0.5) / 2, z);
+    }
+    // the TV: a slim black frame, a lit picture (a pitch), on the slats
+    const tz = -1.9, ty = 1.75;
+    P.box(0.05, 0.72, 1.24, "#0d0e10", X1 - 0.09, ty, tz);
+    L.box(0.012, 0.62, 1.12, "#2f7d3a", X1 - 0.118, ty, tz);
+    L.box(0.012, 0.012, 1.0, "#d8f0d8", X1 - 0.126, ty, tz);
+    L.box(0.012, 0.18, 0.012, "#d8f0d8", X1 - 0.126, ty, tz);
+    L.box(0.012, 0.12, 0.36, "#0f1a2a", X1 - 0.124, ty + 0.22, tz - 0.32);
+    // the towel rail (between the sauna door and the cooler): a chrome bar, three rolled towels on a shelf
+    const rz = 2.55;
+    S.box(0.06, 0.03, 0.7, chrome, X1 - 0.08, 1.25, rz);
+    for (const dz of [-0.3, 0.3]) S.box(0.06, 0.06, 0.03, chrome, X1 - 0.06, 1.25, rz + dz);
+    for (let i = 0; i < 2; i++) P.box(0.04, 0.55, 0.28, i ? "#e9e4da" : "#f4f1ea", X1 - 0.11, 0.98, rz - 0.16 + i * 0.32);
+    P.box(0.3, 0.03, 0.7, "#8a5a34", X1 - 0.15, 0.62, rz);
+    for (let i = 0; i < 3; i++) P.cyl(0.07, 0.07, 0.26, ["#f4f1ea", "#d9cdb8", "#f4f1ea"][i], X1 - 0.15, 0.7, rz - 0.22 + i * 0.22, 0, 0, Math.PI / 2, 10);
+    solids.push([X1 - 0.32, X1, rz - 0.4, rz + 0.4]);
+    // the cove: a warm strip of light round the ceiling's edge (lit pieces, no real light)
+    for (const [w, x, z, ry] of [[RW - 0.2, CX, Z0 + 0.06, 0], [RW - 0.2, CX, Z1 - 0.06, 0], [RD - 0.2, X0 + 0.06, CZ, Math.PI / 2], [RD - 0.2, X1 - 0.06, CZ, Math.PI / 2]] as [number, number, number, number][]) {
+      L.box(w, 0.035, 0.04, "#ffcf8a", x, H - 0.1, z, 0, ry);
+      P.box(w, 0.09, 0.03, home.trim, x, H - 0.16, z + (ry ? 0 : (z < CZ ? 0.05 : -0.05)), 0, ry);
+    }
   }
   // the estate's sauna: a cedar door in the east wall with a little window and its sign (coming soon)
   const SAUNA = { x: X1, z: 1.6 };

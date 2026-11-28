@@ -24,7 +24,7 @@ const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
 // ── which exercises each level has ──
-const COUNTS = { starter: 2, flat: 2, penthouse: 4, house: 6, villa: 9, estate: 13 } as const;
+const COUNTS = { starter: 3, flat: 3, penthouse: 5, house: 7, villa: 9, estate: 13 } as const;
 let prev: string[] = [];
 for (const t of HOME_TIERS) {
   const k = homeGymKinds(t);
@@ -35,7 +35,16 @@ for (const t of HOME_TIERS) {
   prev = k;
 }
 check(homeGymKinds("estate").length === GYM_GAME_KINDS.length, "the estate has every exercise the club gym has");
-check(homeGymKinds("starter").join() === "pushup,plank", "the starter's corner: push-ups and the plank (a mat and dumbbells)");
+check(homeGymKinds("starter").join() === "pushup,plank,mobility", "the starter's corner: push-ups, the plank and the mobility flow");
+// every level can close the week's ring (three exercises, two kinds of training)
+{
+  const { STAT_OF, RING_SIZE, RING_STATS } = await import("../../lib/star/gym/progress");
+  for (const t of HOME_TIERS) {
+    const k = homeGymKinds(t);
+    const kinds = new Set(k.map((x) => STAT_OF[x])).size;
+    check(k.length >= RING_SIZE && kinds >= RING_STATS, `${t}: the ring can be closed at home (${kinds} kinds)`);
+  }
+}
 check(["bench", "treadmill"].every((k) => homeGymKinds("penthouse").includes(k as never)), "the penthouse: a bench and cardio");
 check(["squat", "pullup"].every((k) => homeGymKinds("house").includes(k as never)), "the house's garage: the rack and the pull-up bar");
 
@@ -124,4 +133,4 @@ if (problems.length) {
   console.error(`homeGym: ${problems.length} problem(s)\n - ${problems.join("\n - ")}`);
   process.exit(1);
 }
-console.log("homeGym: 2/2/4/6/9/13 exercises by house level, every machine inside its room, the club gym's own numbers and limits, the effect off, home minutes on the clock, back routes — all OK");
+console.log("homeGym: 3/3/5/7/9/13 exercises by house level, the ring closable at every level, every machine inside its room, the club gym's own numbers and limits, the effect off, home minutes on the clock, back routes — all OK");

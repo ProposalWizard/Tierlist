@@ -19,8 +19,8 @@ fs.mkdirSync(outDir, { recursive: true });
 
 // each level: [tier, the room's box (homeGym.ts HOME_GYMS), its ceiling (homes.ts roomPreset h)]
 const TIERS = [
-  ["starter", [-1.5, 2.5, 0.2, 4.8], 2.55], ["flat", [-1.5, 2.5, 0.2, 4.8], 2.65], ["penthouse", [-3.7, 3.9, -3.2, 3.0], 2.9],
-  ["house", [-3.7, 5.5, -4.4, 3.4], 3.0], ["villa", [-5, 5, -4, 4], 3.3], ["estate", [-5, 6.6, -4, 4], 3.7],
+  ["starter", [-1.5, 2.5, 0.2, 4.8], 2.55], ["flat", [-1.5, 2.5, 0.2, 4.8], 2.65], ["penthouse", [-3.7, 3.9, -3.2, 4.0], 2.9],
+  ["house", [-3.7, 5.5, -4.4, 4.0], 3.0], ["villa", [-5, 5, -4, 4], 3.3], ["estate", [-5, 6.6, -4, 4], 3.7],
 ];
 const HIDE = ".tr-float,[data-cookie-banner],[class*=\"fixed left-0 top-1/2\"],[data-page-guide],[data-pageguide],.page-guide{display:none!important}";
 
@@ -45,20 +45,25 @@ try {
     await page.goto(`${base}/star-world3d-dev?place=gym&homeGym=${tier}&bare=1&clean=1&q=${q}`, { waitUntil: "domcontentloaded", timeout: 240000 });
     await ready();
     await page.waitForTimeout(3500);
+    // 1: the game's own arrival shot (homeGym.ts homeGymIntro), you by the door, the kit in front
     await shot(`${tier}-1-walk-in`);
-    // the wide look: from the south-west corner by the door, over the room to the far (north-east) corner
-    await page.evaluate(([cam, look]) => window.__world3dCam(cam, look), [[x0 + 0.3, Math.min(h - 0.3, 2.5), z1 - 0.3], [x1 - (x1 - x0) * 0.3, 0.5, z0 + (z1 - z0) * 0.3]]);
-    await page.waitForTimeout(900);
+    const cy = Math.min(h - 0.3, 2.5), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    // 2: the wide look from the south-east corner over the whole room to the west wall's rack, you in its middle
+    await page.evaluate(([x, z]) => window.__world3d.teleport(x, z, -Math.PI * 0.25), [x0 + (x1 - x0) * 0.4, z0 + (z1 - z0) * 0.42]);
+    await page.evaluate(([cam, look]) => window.__world3dCam(cam, look), [[x1 - (x1 - x0) * 0.3, cy, z1 - 0.3], [x0 + (x1 - x0) * 0.35, 0.35, z0 + (z1 - z0) * 0.3]]);
+    await page.waitForTimeout(1500);
     await shot(`${tier}-2-wide`);
-    // the other way: from the north-east corner back over the room to the door
-    await page.evaluate(([cam, look]) => window.__world3dCam(cam, look), [[x1 - 0.3, Math.min(h - 0.3, 2.5), z0 + 0.3], [x0 + (x1 - x0) * 0.3, 0.5, z1 - (z1 - z0) * 0.3]]);
-    await page.waitForTimeout(900);
+    // 3: the other way, from the north-west corner back to the door (you stand by the door, facing in)
+    await page.evaluate(([x, z]) => window.__world3d.teleport(x, z, Math.PI), [cx + 0.6, z1 - 1.0]);
+    await page.evaluate(([cam, look]) => window.__world3dCam(cam, look), [[x0 + 0.3, cy, z0 + 0.3], [x0 + (x1 - x0) * 0.68, 0.35, z0 + (z1 - z0) * 0.7]]);
+    await page.waitForTimeout(1500);
     await shot(`${tier}-3-wide-back`);
     if (tier === "estate") {
-      // the sauna door on the east wall (coming soon)
-      await page.evaluate(() => window.__world3dCam([4.2, 1.7, 3.4], [6.6, 1.2, 1.6]));
-      await page.waitForTimeout(900);
-      await shot(`${tier}-4-sauna-door`);
+      // 4: the east wall from across the room: the slats, the TV, the sauna door, the towel rail
+      await page.evaluate(() => window.__world3d.teleport(3.2, 0.6, -Math.PI / 2));
+      await page.evaluate(() => window.__world3dCam([-1.6, 2.4, 0.4], [6.6, 1.2, 0.4]));
+      await page.waitForTimeout(1500);
+      await shot(`${tier}-4-sauna-wall`);
     }
     await page.evaluate(() => window.__world3dCam(null));
   }

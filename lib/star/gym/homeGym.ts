@@ -2,12 +2,15 @@
  * HOME GYMS BY HOUSE LEVEL (Harry, 28 Nov 2026). Your house gets a gym of its size, built from the club
  * gym's own machines and games (world3d/gymPlace.ts, games.ts, games2.ts): never a copy of a game.
  *
- *   starter, flat   a workout corner: a mat and dumbbells        push-ups, plank                       (2)
- *   penthouse       a small gym room: a bench and cardio          + bench press, treadmill              (4)
- *   house           a garage gym                                  + back squat (rack), pull-ups         (6)
- *   villa           a full gym room with a mirror wall            + heavy bag, box jumps, mobility      (9)
+ *   starter, flat   a workout corner: mats, a dumbbell rack       push-ups, plank, mobility flow        (3)
+ *   penthouse       a small gym room: a bench and cardio          + bench press, treadmill              (5)
+ *   house           a garage gym                                  + back squat (rack), pull-ups         (7)
+ *   villa           a full gym room with a mirror wall            + heavy bag, box jumps                (9)
  *   estate          a private gym with everything                 + Nordics, Copenhagen, ladder, landing (13)
- *                   and a sauna door ("coming soon")
+ *                   a wood-slat wall, a TV, a towel rail, warm cove light, a sauna door ("coming soon")
+ *
+ * The corner has the mobility flow (Resilience) beside two Strength exercises (coordinator, 28 Nov 2026): the
+ * week's ring needs three exercises of two kinds, so every level can close it.
  *
  * The brief said "a bench + bike" for the penthouse. There is no bike game and no bike pose (a new game
  * would break the "no copy, no new clip" rule), so the penthouse's cardio machine is the club's treadmill.
@@ -54,17 +57,17 @@ export interface HomeGymPlan {
   look?: { floor: import("../home3d/homes").FloorKind; wall: string };
 }
 
-const CORNER: GymGameKind[] = ["pushup", "plank"];
+const CORNER: GymGameKind[] = ["pushup", "plank", "mobility"];
 const ROOM: GymGameKind[] = [...CORNER, "bench", "treadmill"];
 const GARAGE: GymGameKind[] = [...ROOM, "squat", "pullup"];
-const FULL: GymGameKind[] = [...GARAGE, "bag", "boxjump", "mobility"];
+const FULL: GymGameKind[] = [...GARAGE, "bag", "boxjump"];
 const PRIVATE: GymGameKind[] = [...FULL, "nordic", "copenhagen", "ladder", "landing"];
 
 export const HOME_GYMS: Record<HomeTier, HomeGymPlan> = {
-  starter: { tier: "starter", kind: "corner", label: "Workout corner", kinds: CORNER, box: [-1.5, 2.5, 0.2, 4.8], doorX: 0.3, mirror: false, sauna: false, rack: null },
-  flat: { tier: "flat", kind: "corner", label: "Workout corner", kinds: CORNER, box: [-1.5, 2.5, 0.2, 4.8], doorX: 0.3, mirror: false, sauna: false, rack: [0.7, 2.1] },
-  penthouse: { tier: "penthouse", kind: "room", label: "Home gym", kinds: ROOM, box: [-3.7, 3.9, -3.2, 3.0], doorX: 0, mirror: false, sauna: false, rack: [0.2, 2.0] },
-  house: { tier: "house", kind: "garage", label: "Garage gym", kinds: GARAGE, box: [-3.7, 5.5, -4.4, 3.4], doorX: 0, mirror: false, sauna: false, rack: [0.3, 2.4] },
+  starter: { tier: "starter", kind: "corner", label: "Workout corner", kinds: CORNER, box: [-1.5, 2.5, 0.2, 4.8], doorX: 0.3, mirror: false, sauna: false, rack: [0.6, 1.9] },
+  flat: { tier: "flat", kind: "corner", label: "Workout corner", kinds: CORNER, box: [-1.5, 2.5, 0.2, 4.8], doorX: 0.3, mirror: false, sauna: false, rack: [0.6, 1.9] },
+  penthouse: { tier: "penthouse", kind: "room", label: "Home gym", kinds: ROOM, box: [-3.7, 3.9, -3.2, 4.0], doorX: 0, mirror: false, sauna: false, rack: [0.2, 2.0] },
+  house: { tier: "house", kind: "garage", label: "Garage gym", kinds: GARAGE, box: [-3.7, 5.5, -4.4, 4.0], doorX: 0, mirror: false, sauna: false, rack: [0.3, 2.4] },
   villa: { tier: "villa", kind: "full", label: "Home gym", kinds: FULL, box: [-5, 5, -4, 4], doorX: 0, mirror: true, sauna: false, rack: [-2.9, -0.6], look: { floor: "boards", wall: "#d9dcdf" } },
   estate: { tier: "estate", kind: "private", label: "Private gym", kinds: PRIVATE, box: [-5, 6.6, -4, 4], doorX: 0, mirror: true, sauna: true, rack: [-2.9, -0.6], look: { floor: "boards", wall: "#d9dcdf" } },
 };
@@ -96,6 +99,20 @@ export const MACHINE_FOOT: Record<GymGameKind, [number, number, number, number]>
   ladder: [1.7, 4.0, 2.7, 3.2],
   landing: [2.7, 3.5, 1.15, 2.45],
 };
+
+/**
+ * The arrival shot (held until you move, as the house's rooms do): from the far corner by the east wall, over
+ * the kit to you by the door, inside the walls. The small rooms' follow camera sat on his head.
+ */
+export function homeGymIntro(tier: HomeTier, h: number): { cam: [number, number, number]; look: [number, number, number] } {
+  const p = homeGymOf(tier);
+  const [x0, x1, z0, z1] = p.box;
+  const s = homeGymStart(tier);
+  const cy = Math.min(h - 0.35, 2.4);
+  // the camera: high on the south wall, east of the door (clear of the pull-up bar in the south-east); the look:
+  // mostly at you, a little over to the kit and the dumbbell rack on the west wall
+  return { cam: [x1 - (x1 - x0) * 0.3, cy, z1 - 0.35], look: [s.x * 0.8 + (x0 + (x1 - x0) * 0.3) * 0.2, 0.7, s.z * 0.8 + (z0 + (z1 - z0) * 0.35) * 0.2] };
+}
 
 /** Where you stand when you walk in: just inside the door, facing in (north). */
 export function homeGymStart(tier: HomeTier): { x: number; z: number; yaw: number } {

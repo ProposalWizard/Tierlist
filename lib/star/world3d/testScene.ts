@@ -237,6 +237,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   let built: Built;
 
   let gymRoom: import("./gymPlace").GymRoomOut | null = null;
+  /** A home gym's arrival shot (gym/homeGym.ts homeGymIntro): held until you move, tap or start a set. */
+  let introShot: { cam: [number, number, number]; look: [number, number, number] } | null = null;
   let compound: import("./compoundPlace").CompoundOut | null = null;
   let carsLod: { update: (camera: any) => void } | null = null;
   const CP = place === "compound" ? await import("./compoundPlan") : null;
@@ -289,6 +291,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       const R = roomPreset(opts.homeGym);
       const plan = homeGymOf(opts.homeGym);
       home = { plan, floor: plan.look?.floor ?? R.floor, wall: plan.look?.wall ?? R.wall, trim: R.trim, view: R.view, h: R.h };
+      if (!demo) introShot = (await import("../gym/homeGym")).homeGymIntro(opts.homeGym, R.h);
     }
     gymRoom = buildGymRoom({ THREE, scene, prof, kit: opts.kit, club: opts.club, mergeGeometries, Reflector, mirrorPx: MIRROR_PX[tier] * 4, mirrorScale: GYM_MIRROR_SCALE[tier], home });
     sun = gymRoom.sun;
@@ -876,6 +879,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const tap = (clientX: number, clientY: number) => {
+    introShot = null; // the arrival shot lets go: the follow camera eases from it
     if (gym?.active) return; // your thumb is on the mini-game
     const r = renderer.domElement.getBoundingClientRect();
     ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
@@ -1053,6 +1057,14 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   (window as any).__world3dCam = (cam: number[] | null, look?: number[]) => { camPin = cam && look ? { cam, look } : null; };
   const stepCam = (dt: number) => {
     if (camPin) { camera.position.set(camPin.cam[0], camPin.cam[1], camPin.cam[2]); camera.lookAt(camPin.look[0], camPin.look[1], camPin.look[2]); return; }
+    // a home gym's arrival shot: held until you move (then camera D eases from here, no cut)
+    if (introShot && (you.speed > 0.05 || gym?.shot())) introShot = null;
+    if (introShot) {
+      camPos.set(introShot.cam[0], introShot.cam[1], introShot.cam[2]); camLook.set(introShot.look[0], introShot.look[1], introShot.look[2]);
+      first = false; camYaw = you.yaw + Math.PI;
+      placeView(dt, true);
+      return;
+    }
     // a gym mini-game: its own shot (set while the screen is black, eased after)
     const sh = gym?.shot();
     if (sh) {

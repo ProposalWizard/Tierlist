@@ -785,7 +785,9 @@ export function livingFinish(c: Ctx, shell: { metalM: any; glassM: any }) {
       loop: [{ clip: "stretch", or: ["idle"], secs: 6 }], effect: { mood: 1, text: "Loose. Fitness +1" }, stay: [6, 6], pickR: 0.6, pickH: 0.5,
     }));
     gymWayIn(c, X.things[X.things.length - 1]);
-    kitPlant(c, W2 - 0.4, D2 - 0.4);
+    // the plant on the east wall between the treadmill and the drinks fridge (it stood inside the fridge,
+    // roomBuild buildGym's south-east corner: RUL-3D-005)
+    kitPlant(c, W2 - 0.4, 0.9);
     F.put("speaker", -W2 + 0.3, -D2 + 0.3, Math.PI / 4, {});
     X.guests.push({ obj: "mat" });
   } else if (id === "games") {
