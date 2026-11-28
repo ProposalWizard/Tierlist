@@ -27,6 +27,201 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
   {
+    "version": "0.149",
+    "title": "Harry's patch notes: the 60-day launch, studio and Discord plan",
+    "author": "Harry",
+    "publishedAt": "2026-11-28T02:56:31Z",
+    "updatedAt": null,
+    "artifactUrl": "https://claude.ai/artifact/2KVMB3eTXhRBkkKTJdrvWP",
+    "summary": "A plan page for Mikey and Leo to see and react to. 60 days: days 1-30 a closed beta you enter only through Discord with a code, days 31-60 an open beta on the website from a safe version with features switched on day by day, the phone app on day 60, then paid ads and Steam. Updates only ever add, so every save carries through (the app needs sign-in and cloud saves first). The marketing studio lives in Admin → Marketing; nothing built yet. The Discord: the research's lean day-1 server plus Leo's pieces Harry chose to keep. Also on branch Harry, not live: bigger uploads, and marketing storage connected again.",
+    "stats": [
+      {
+        "value": "60 days",
+        "label": "closed beta, open beta, then the app"
+      },
+      {
+        "value": "11 + 3",
+        "label": "Discord channels on day 1 (visible + private)"
+      },
+      {
+        "value": "~100",
+        "label": "Founding Players, in waves of 20-25"
+      },
+      {
+        "value": "4.9 GB",
+        "label": "one upload, was 500 MB (after push)"
+      }
+    ],
+    "sections": [
+      {
+        "kind": "added",
+        "title": "Check these",
+        "items": [
+          {
+            "title": "The 60 days: closed beta, open beta, app",
+            "detail": "Point 1 on the page."
+          },
+          {
+            "title": "Updates only add, so every save carries through",
+            "detail": "Point 2."
+          },
+          {
+            "title": "How a viewer becomes a Founding Player",
+            "detail": "Point 3."
+          },
+          {
+            "title": "Our day-1 Discord layout",
+            "detail": "Point 4."
+          },
+          {
+            "title": "Leo's Discord plan beside ours",
+            "detail": "Point 5."
+          },
+          {
+            "title": "Beta codes, waves and safety rules",
+            "detail": "Point 6."
+          },
+          {
+            "title": "The marketing studio in Admin → Marketing",
+            "detail": "Point 7."
+          },
+          {
+            "title": "Upload one big file (after Harry's push)",
+            "detail": "Admin → Marketing → Uploads. Up to 4.9 GB."
+          },
+          {
+            "title": "Storage works again",
+            "detail": "Admin → Marketing → Studio → open any cut."
+          }
+        ]
+      },
+      {
+        "kind": "added",
+        "title": "The plan (decided)",
+        "items": [
+          {
+            "title": "60 days: closed beta in Discord, open beta on the website, app on day 60",
+            "detail": "Days 1-30 closed, codes from Discord only. Days 31-60 open, from a safe version with features switched on day by day. Then paid ads, then Steam."
+          },
+          {
+            "title": "Game updates only add, never take a finished feature away",
+            "detail": "So every save carries through to the app. The app needs sign-in and cloud saves before day 60."
+          },
+          {
+            "title": "The marketing studio lives in Admin → Marketing",
+            "detail": "An ad studio with Knowitball as the client. Build order: cards in the database, calendar, footage hub, research + scripts, approve, numbers. Posting and TikTok are Mikey's lane. Nothing built yet."
+          },
+          {
+            "title": "The Discord: the research's lean day-1 server",
+            "detail": "About 9 visible + 3 private channels. Beta codes redeemed in the game (one use, one account), waves with public rules, a Founding Player role, email opt-in from day 1, a founder rota, a Google Play closed test by about day 40 with 20-25 Android testers, UK safety habits."
+          },
+          {
+            "title": "Kept from Leo's plan",
+            "detail": "A channel to share your career, goal of the week, daily/weekly challenges, the Creator role, the in-game Discord buttons and patch notes posting themselves to #updates."
+          },
+          {
+            "title": "A Discord bot is being set up",
+            "detail": "Read-only to start, so Claude can check the real server.",
+            "pill": {
+              "text": "in progress",
+              "tone": "amber"
+            }
+          }
+        ]
+      },
+      {
+        "kind": "changed",
+        "title": "Shipped on branch Harry, not live yet",
+        "items": [
+          {
+            "title": "Uploads take one file up to 4.9 GB (was 500 MB), 50 GB a day each (was 5 GB)",
+            "detail": "Recordings stay at 500 MB.",
+            "pill": {
+              "text": "waits for push",
+              "tone": "amber"
+            }
+          },
+          {
+            "title": "Marketing storage (Cloudflare) connected again",
+            "detail": "New keys. Uploads, the Studio editing suite, patch-note pictures and the nightly backup work again."
+          }
+        ]
+      },
+      {
+        "kind": "known",
+        "title": "Open points",
+        "items": [
+          {
+            "title": "Invite-a-friend rewards",
+            "detail": "Leo says they break Discord's rules; the research did not confirm it. Check before any \"invite 3 friends\" reward.",
+            "pill": {
+              "text": "to check",
+              "tone": "amber"
+            }
+          },
+          {
+            "title": "The app saves on the phone only",
+            "detail": "Sign-in + cloud saves needed before day 60."
+          },
+          {
+            "title": "The nightly backup is not seen working yet",
+            "detail": "Confirmed only after the next 03:00 run."
+          },
+          {
+            "title": "Nothing in this plan is built"
+          }
+        ]
+      },
+      {
+        "kind": "next",
+        "title": "Your calls",
+        "items": [
+          {
+            "title": "Mikey: rebuild the app in React Native/Expo, or wrap the website?",
+            "detail": "Suggested 3-day test: Home screen + a match in Expo, then time one ordinary change reaching web and app.",
+            "pill": {
+              "text": "your call",
+              "tone": "amber"
+            }
+          },
+          {
+            "title": "Mikey: OK to fold your Brain-page approve checklist into the studio later?",
+            "pill": {
+              "text": "yes / no",
+              "tone": "amber"
+            }
+          },
+          {
+            "title": "Leo: OK to slim the Discord to our day-1 layout, keeping your built pieces?",
+            "pill": {
+              "text": "yes / no",
+              "tone": "amber"
+            }
+          },
+          {
+            "title": "All: which date is day 1?",
+            "detail": "Suggested: when the first two weeks of the calendar are full.",
+            "pill": {
+              "text": "your call",
+              "tone": "amber"
+            }
+          }
+        ]
+      },
+      {
+        "kind": "history",
+        "title": "Previous versions",
+        "items": [
+          {
+            "title": "v0.142 · 21 Nov 2026 · 3D phone, real clothes at home",
+            "detail": "Still open: phone text size, house load stall, clothes leftovers, the shop in cloth."
+          }
+        ]
+      }
+    ],
+    "updates": []
+  },
+  {
       "version": "0.143",
       "title": "Leo's patch notes: One Knowitball, the whole website",
       "author": "Leo",
