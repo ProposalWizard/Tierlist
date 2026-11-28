@@ -110,6 +110,7 @@ import { earnedBetween, addSeasonRecords, type EarnPop } from "@/lib/star/earnPo
 // The unlock chain a new career walks (Harry, 1 Oct 2026, P13-P40).
 import { needsYou, barBadges, needsInput, transferWindowWeeks, transferWindowLine, type NeedId } from "@/lib/star/needsYou";
 import { openFrom as navOpenFrom, backFrom as navBackFrom, ROOT_PHASES, type NavEntry, type NavSpot } from "@/lib/star/navReturn";
+import { keepsHouseFromGarden, houseBack } from "@/lib/star/home3d/houseBack";
 import { isStory, storyBeat, ackBeat, beatText, trainingDayOn, trainingDayLeft, recordTrainingDayDrill, TRAINING_DAY, type Beat } from "@/lib/star/story";
 import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, lockHint, installApp, appInstalled, appIsNew, newAppCount, markAppOpened, LOCK_HINT, pendingAnnouncements, markAnnounced, nextStep, slotQuestionDue, setBottomLeft, bottomLeft, gameFirst, managerTalkDue, phoneShortfall, phoneStepLine, DRILLS_TO_OPEN_SHOP } from "@/lib/star/unlocks";
 import { applyGameGain } from "@/lib/star/relationshipGame";
@@ -539,6 +540,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [gardenArrive, setGardenArrive] = useState<"shop" | "gate" | "casino" | "training" | "house">("gate");
   /** Your 3D house was opened from the garden's door (its Back and front door lead back there). */
   const [homeFromGarden, setHomeFromGarden] = useState(false);
+  // forgotten the moment you go anywhere else (the phone's HOME, the bar, a match; 3D places audit P4)
+  useEffect(() => { if (!keepsHouseFromGarden(phase)) setHomeFromGarden(false); }, [phase]);
   // Settings → Look → "Casino: 3D | Classic" (8 Oct 2026)
   const casinoLook = useCasino3dLook();
   const [shopAtDoor, setShopAtDoor] = useState(false);
@@ -4909,6 +4912,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onGoToItem={(display, id, level) => {
           const to: StarPhase = display === "boots" ? "shop-boots" : display === "cans" ? "shop-kib" : "shop-lifestyle";
           setShopFocus({ phase: to, id, level });
+          // its Back returns to the 3D shop, not Home (3D places audit P7)
+          setShopAtDoor(false);
+          pushFrom({ phase: "shop-3d", nav: activeNav }, to);
           setPhase(to);
         }}
       />
@@ -5200,7 +5206,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onCasino={PACKED_APP ? undefined : () => { setGardenArrive("gate"); setPhase("casino-3d"); }}
         onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
         onHouse={HOME3D_IN_CAREER ? () => { setGardenArrive("gate"); setHomeFromGarden(true); setPhase("home-3d"); } : undefined}
-        onPhone={phoneFrom3d && (() => { setGardenArrive("gate"); phoneFrom3d(); })}
+        onPhone={phoneFrom3d && (() => { setGardenArrive("gate"); setHomeFromGarden(true); phoneFrom3d(); })}
       />
     );
   }
@@ -5214,14 +5220,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         up={phone3dUp}
         phone={phoneApp}
         house={{
-          backLabel: homeFromGarden ? "Garden" : "Home",
+          backLabel: houseBack(homeFromGarden).label,
           onBack: homeFromGarden ? toGarden : () => { setHomeFromGarden(false); handleBackToDashboard(); },
           onDoor: toGarden,
           onOutfit: (choice) => setCareer((c) => (c ? withOutfit(c, choice) : c)),
           onSleep: () => setCareer((c) => (c ? sleepNight(c).career : c)),
         }}
         onHome={() => handleNavigate("home")}
-        onPutAway={() => { setHomeFromGarden(false); setPhase("home-3d"); }}
+        onPutAway={() => setPhase("home-3d")}
         onPhone={phoneFrom3d}
         notice={lockNote ?? sponsorNote}
       />
