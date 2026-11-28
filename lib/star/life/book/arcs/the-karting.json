@@ -342,6 +342,15 @@
        {
         "if": "!arc.path=='won'",
         "text": "You sit under your own photo with the gaffer.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-barrier"
         }

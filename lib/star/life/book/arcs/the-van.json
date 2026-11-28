@@ -552,12 +552,36 @@
        {
         "if": "arc.paid==1",
         "text": "He doesn't see you. You smile at the number on the back doors all the way home.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "his-van-has-my-number",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "his-name-on-the-van"
         }
        },
        {
         "text": "You leave it. You've still got his folder in a drawer somewhere.",
+        "npc": [
+         {
+          "slot": "pal",
+          "grudge": 2,
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "the-money-went"
         }

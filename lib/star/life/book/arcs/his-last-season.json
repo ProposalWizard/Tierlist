@@ -875,6 +875,20 @@
        {
         "if": "arc.told=='told'",
         "text": "You talk to them for twenty minutes. On the way out he says, \"I know it wasn't you,\" and you're not sure he does.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": -3,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "let-my-last-season-out",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-leak"
         }
@@ -902,6 +916,20 @@
        {
         "if": "arc.told=='told'",
         "text": "\"Another time.\" He doesn't ask again.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": -4,
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "let-my-last-season-out",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-leak"
         }
@@ -909,12 +937,40 @@
        {
         "if": "arc.last=='gave'",
         "text": "He sends you a photo of the under-eighteens' dressing room. Above the door: a photo of him scoring that penalty, and your back, in the corner of it.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "gave-me-my-last-penalty",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "his-last-penalty"
         }
        },
        {
         "text": "He understands. He sends you a thumbs up and a photo of his kids in your shirt.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "kept-my-last-season-quiet",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "kept-his-secret"
         }

@@ -352,6 +352,15 @@
        },
        {
         "text": "There's no pie, only quinoa. She gives you triple.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-quinoa"
         }

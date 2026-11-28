@@ -286,12 +286,31 @@
        {
         "if": "arc.path=='watch'",
         "text": "It's ten past seven. You've had the watch a year and it's still the best thing you own.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "bought-the-watch-with-the-first-wage",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-watch"
         }
        },
        {
         "text": "You check the time on your phone. The watch is in a drawer at home.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "the-watch"
         }

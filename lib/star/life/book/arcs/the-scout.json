@@ -269,6 +269,12 @@
        },
        {
         "text": "He nods back. He's got a different notebook now.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 1
+         }
+        ],
         "arc": {
          "end": "showed-off"
         }

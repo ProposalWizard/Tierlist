@@ -630,12 +630,35 @@
        {
         "if": "arc.ended=='old-school-pride'",
         "text": "You say he gave you a lift to the county trials and never let you forget it. He shakes your hand for too long again.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "did-the-leavers-assembly",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "old-school-pride"
         }
        },
        {
         "text": "You say something polite. He says something polite back. It's the first time you've both meant it, a bit.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "still-sore"
         }
@@ -650,12 +673,42 @@
        {
         "if": "arc.ended=='old-school-pride'",
         "text": "Sir finds you at the back anyway and tells everyone near the sausage rolls that you were \"one of his\".",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "did-the-leavers-assembly",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "old-school-pride"
         }
        },
        {
         "text": "You eat a sausage roll and leave before the speeches. {pal.short} stays.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "never-forgave-sir",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "still-sore"
         }

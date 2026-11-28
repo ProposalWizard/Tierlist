@@ -334,12 +334,39 @@
        {
         "chance": 0.5,
         "text": "Your medal. \"Car keys, was it?\" he says. He's polished it anyway.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "found-my-medal-in-the-mower",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "in-the-mower"
         }
        },
        {
         "text": "It's a ring pull and a two pence piece. \"Worth a look,\" he says.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "looked-for-my-medal",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "still-out-there"
         }
@@ -354,12 +381,32 @@
        {
         "if": "arc.path=='told'",
         "text": "\"Very funny.\" He drops the medal in your hand, polished, and walks off.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "found-my-medal-in-the-mower",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "in-the-mower"
         }
        },
        {
         "text": "\"Might be.\" He puts his hand back in his pocket and goes. You never find out what it was.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 1
+         }
+        ],
         "arc": {
          "end": "still-out-there"
         }

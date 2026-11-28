@@ -683,12 +683,42 @@
        {
         "if": "arc.path=='shaved'",
         "text": "He sends back a photo of the bench with the photo of the two of you bald propped up on it.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "sat-on-nans-bench",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "for-his-nan"
         }
        },
        {
         "text": "\"Cheers mate.\" He goes on his own.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 1
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "paid-instead-of-shaving",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "kept-your-hair"
         }

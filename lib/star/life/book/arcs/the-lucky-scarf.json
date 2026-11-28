@@ -589,6 +589,19 @@
        },
        {
         "text": "The boy looks at it for ages. \"Which one's Grandad?\" Third from the left.",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "passed-away",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "just-a-scarf"
         }
@@ -603,12 +616,46 @@
        {
         "if": "arc.path=='took'",
         "text": "The scarf stays in your kit bag. Every game you touch it on the way out, and the boy watches you do it.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "took-my-scarf",
+          "strength": 3
+         },
+         {
+          "slot": "fan",
+          "tag": "passed-away",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-empty-seat-by-the-tunnel"
         }
        },
        {
         "text": "The boy nods back, very seriously, the way his grandad did.",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "passed-away",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "just-a-scarf"
         }

@@ -639,12 +639,38 @@
        {
         "if": "arc.back=='back'",
         "text": "You tell him two games, that's all it took you. He nods. He doesn't quite believe you.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "scored-my-way-back-in",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "back-in-the-side"
         }
        },
        {
         "text": "You tell him it's not the end. You'd know. He listens, politely.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "the-bench"
         }
@@ -659,12 +685,38 @@
        {
         "if": "arc.back=='back'",
         "text": "He does, in the end. So did you.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "scored-my-way-back-in",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "back-in-the-side"
         }
        },
        {
         "text": "He sits there twenty minutes. You remember that car park.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-bench"
         }

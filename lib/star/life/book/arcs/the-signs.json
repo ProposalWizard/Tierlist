@@ -462,6 +462,24 @@
        {
         "if": "arc.signs=='learned'",
         "text": "At full time he's at the tunnel, signing something very fast. You know enough to know it's rude, and about the referee.",
+        "effects": {
+         "fans": 3,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "signed-to-my-boy",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "your-words"
         }
@@ -469,12 +487,39 @@
        {
         "if": "arc.path=='goal'",
         "text": "He does it with you from the stand, exactly, the way he did on pitch two.",
+        "effects": {
+         "fans": 3,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "signed-to-my-boy",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "your-words"
         }
        },
        {
         "text": "He claps with everyone else. You wish you'd learned the sign.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-quiet-one"
         }

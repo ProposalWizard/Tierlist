@@ -567,6 +567,19 @@
        },
        {
         "text": "It's nice. It's chips on a wall. She watches you eat them like she's waiting for something.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "birthday-chips-on-a-wall",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "never-again"
         }
@@ -594,6 +607,20 @@
        },
        {
         "text": "She laughs. \"This is nice.\" You eat the chips. She's right.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "made-the-wall-our-table",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "never-again"
         }

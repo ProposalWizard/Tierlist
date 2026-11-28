@@ -331,6 +331,12 @@
        },
        {
         "text": "You put it up. You never met them. You were in bed by ten.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "curfew"
         }
@@ -345,12 +351,27 @@
        {
         "if": "arc.path=='photo' || arc.path=='dance'",
         "text": "She sends back a photo of the wedding album, open at the page with you in it.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 1
+         }
+        ],
         "arc": {
          "end": "in-the-album"
         }
        },
        {
         "text": "They send a thank-you. You never did go downstairs.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "curfew"
         }

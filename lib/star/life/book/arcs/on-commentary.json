@@ -616,6 +616,23 @@
        {
         "if": "arc.path=='asked'",
         "text": "Mum rings instead and reads it out to you, twice.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 4,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "said-i-was-good-enough",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "he-changed-his-tune",
          "set": {
@@ -630,6 +647,13 @@
        },
        {
         "text": "You don't need to.",
+        "npc": [
+         {
+          "slot": "legend",
+          "respect": -2,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "still-not-good-enough",
          "set": {
@@ -717,12 +741,36 @@
        {
         "if": "arc.path=='asked'",
         "text": "He shakes your hand at the door. \"Good enough,\" he says. \"Told them.\"",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "said-i-was-good-enough",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "he-changed-his-tune"
         }
        },
        {
         "text": "He's already gone. He left by the back stairs.",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "still-not-good-enough"
         }
@@ -737,12 +785,45 @@
        {
         "if": "arc.path=='asked'",
         "text": "\"…and he turns, and he's away, and I've said it before, he's good enough.\" Mum's typed a heart.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 4,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "said-i-was-good-enough",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "he-changed-his-tune"
         }
        },
        {
         "text": "\"…still goes backwards a bit.\" On his last day. Mum's typed something you won't repeat.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "never-took-it-back",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "still-not-good-enough"
         }

@@ -221,6 +221,20 @@
        {
         "if": "arc.path=='cafe'",
         "text": "Still his. Your sandwich is still on the board, and he looks his age again.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "told-me-to-keep-the-cafe",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "kept-the-cafe"
         }
@@ -228,12 +242,41 @@
        {
         "if": "arc.path=='money'",
         "text": "Still his, and he's on the phone to a van driver. He waves the sandwich at you.",
+        "effects": {
+         "moneyWeeks": -1
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "put-money-in-my-cafe",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "both-somehow"
         }
        },
        {
         "text": "New owners. They kept the sandwich and spelt your name wrong.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "told-me-to-keep-the-vans",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "kept-the-vans"
         }
@@ -248,6 +291,20 @@
        {
         "if": "arc.path=='cafe'",
         "text": "Through the window he's laughing with a customer.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "told-me-to-keep-the-cafe",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "kept-the-cafe"
         }
@@ -255,12 +312,42 @@
        {
         "if": "arc.path=='vans'",
         "text": "A green van is parked outside, his, with your number on it.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "told-me-to-keep-the-vans",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "kept-the-vans"
         }
        },
        {
         "text": "Through the window he's asleep in the back booth.",
+        "effects": {
+         "moneyWeeks": -1
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 3,
+          "respect": 1
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "put-money-in-my-cafe",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "both-somehow"
         }

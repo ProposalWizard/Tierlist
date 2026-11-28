@@ -462,6 +462,19 @@
        {
         "if": "arc.path=='out'",
         "text": "You look at the car park. You got most of yours out. Half the lads at your old club didn't.",
+        "effects": {
+         "moneyWeeks": -1
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "grudge": 4
+         },
+         {
+          "slot": "dad",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "got-out"
         }

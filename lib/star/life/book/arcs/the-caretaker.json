@@ -434,6 +434,13 @@
        },
        {
         "text": "You forget, and so does he.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 1,
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "two-games"
         }

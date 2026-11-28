@@ -636,12 +636,30 @@
        {
         "if": "arc.path=='reported'",
         "text": "The statement lists the clubs who reported it. Yours is first.",
+        "effects": {
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "reported-it"
         }
        },
        {
         "text": "The statement lists the clubs who reported it. Yours isn't on it.",
+        "effects": {
+         "reputation": -3
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "deleted-it"
         }

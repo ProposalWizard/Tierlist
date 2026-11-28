@@ -218,6 +218,13 @@
        },
        {
         "text": "She asks a sharp question. You give her a press office line. She writes it down without looking up.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": -2,
+          "respect": -1
+         }
+        ],
         "arc": {
          "end": "the-press-line"
         }
@@ -232,12 +239,32 @@
        {
         "if": "arc.path=='kind'",
         "text": "She doesn't get one in. She waits for you by the door instead and asks it there, recorder on.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "saved-my-first-interview",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "her-first"
         }
        },
        {
         "text": "She doesn't get one in. She covers a different club by the summer.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": -1
+         }
+        ],
         "arc": {
          "end": "the-press-line"
         }

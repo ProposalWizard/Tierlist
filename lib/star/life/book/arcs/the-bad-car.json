@@ -276,6 +276,19 @@
        },
        {
         "text": "He doesn't pick up. He's in the gym telling everyone it was a different car.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 1
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "wouldnt-buy-his-cousins-car",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "said-no"
         }

@@ -654,6 +654,20 @@
        },
        {
         "text": "You keep your head down, and the club stays as it is.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "told-the-buyer-about-the-wages",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "you-told-the-truth"
         }

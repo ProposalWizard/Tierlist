@@ -211,6 +211,22 @@
        {
         "if": "arc.path=='dad'",
         "text": "He was the other bidder. He's not bitter. He's bought the lad a ticket for Saturday with the money he didn't spend. You leave two more at the gate.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "won-my-boots-at-the-auction",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "dads-boots"
         }
@@ -238,12 +254,35 @@
        {
         "if": "arc.path=='dad'",
         "text": "Your dad rings him. They talk for an hour about the one second. Now they're mates.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "won-my-boots-at-the-auction",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "dads-boots"
         }
        },
        {
         "text": "Your dad reads it twice. \"Fair enough,\" he says. \"Good home.\"",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "the-other-bidder"
         }

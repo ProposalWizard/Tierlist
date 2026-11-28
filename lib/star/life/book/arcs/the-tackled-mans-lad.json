@@ -219,6 +219,13 @@
        },
        {
         "text": "He isn't on it. His dad rings to say thanks for watching, and means it.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4,
+          "grudge": -4
+         }
+        ],
         "arc": {
          "end": "the-lad-went-home"
         }
@@ -233,12 +240,37 @@
        {
         "if": "arc.path=='watch'",
         "text": "\"Signed him Friday. Don't tell him I said he's good.\"",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 6,
+          "grudge": -6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "watched-my-lad-at-the-trial",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-lad-signed"
         }
        },
        {
         "text": "\"Not this year. He'll be all right.\"",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 2,
+          "grudge": -2
+         },
+         {
+          "slot": "coach",
+          "respect": 1
+         }
+        ],
         "arc": {
          "end": "the-lad-went-home"
         }

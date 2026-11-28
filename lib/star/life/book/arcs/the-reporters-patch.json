@@ -225,12 +225,36 @@
        {
         "if": "arc.path=='record' || arc.path=='tip'",
         "text": "The academy stays. The board say it was always the plan. She laughs down the phone for a long time.",
+        "effects": {
+         "fans": 2,
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "went-on-record-for-the-academy",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "on-the-record"
         }
        },
        {
         "text": "It closes in June. She writes it with no names in it, and sends you the cutting.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "closed"
         }
@@ -245,6 +269,20 @@
        {
         "if": "arc.path=='tip'",
         "text": "She texts you the headline instead: ACADEMY SAVED. A source close to the club.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 5,
+          "respect": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "gave-me-the-academy-story",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-tip"
         }
@@ -252,12 +290,36 @@
        {
         "if": "arc.path=='record'",
         "text": "She texts you the headline: ACADEMY TO STAY.",
+        "effects": {
+         "fans": 2,
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 5,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "went-on-record-for-the-academy",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "on-the-record"
         }
        },
        {
         "text": "She texts you the headline: ACADEMY TO CLOSE.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "closed"
         }

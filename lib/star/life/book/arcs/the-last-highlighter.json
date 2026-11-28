@@ -177,12 +177,39 @@
        {
         "if": "arc.path=='read'",
         "text": "First contract, last contract, both yellow. Clause nine on both.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "read-both-my-contracts",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "both-copies"
         }
        },
        {
         "text": "Your last contract, highlighted after you'd signed it. Clause nine twice.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -2,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "signed-the-last-one-without-me",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "signed-quick"
         }
@@ -197,12 +224,38 @@
        {
         "if": "arc.path=='read'",
         "text": "He shows the whole table anyway.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "read-both-my-contracts",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "both-copies"
         }
        },
        {
         "text": "He puts it away before you can see.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "signed-the-last-one-without-me",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "signed-quick"
         }

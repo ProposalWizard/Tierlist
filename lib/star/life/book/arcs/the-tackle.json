@@ -665,12 +665,44 @@
        {
         "if": "arc.path=='visited'",
         "text": "He comes and finds you anyway, in your dressing room, still in his boots, and shakes your hand.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 6,
+          "respect": 4,
+          "grudge": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "came-to-see-me-in-hospital",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-visit"
         }
        },
        {
         "text": "He does his lap of honour. He doesn't look at you once.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": -2,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "never-said-sorry-for-the-tackle",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-grudge"
         }

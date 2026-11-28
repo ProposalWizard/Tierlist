@@ -394,6 +394,12 @@
        },
        {
         "text": "She waves and walks past you to the left back.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 1
+         }
+        ],
         "arc": {
          "end": "the-card"
         }

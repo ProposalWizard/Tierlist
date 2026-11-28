@@ -461,6 +461,15 @@
        {
         "if": "arc.path=='posted' || arc.quiet==1",
         "text": "You ignore it and win. The banner goes back in somebody's loft.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 1
+         }
+        ],
         "arc": {
          "end": "the-birthday"
         }

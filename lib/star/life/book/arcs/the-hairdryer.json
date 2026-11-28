@@ -274,12 +274,38 @@
        {
         "if": "arc.path=='spoke'",
         "text": "{kid.short} speaks first. He takes the blame for someone else's man. He looks at you while he does it.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "took-the-blame-for-me",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "spoke-up"
         }
        },
        {
         "text": "The tea hits the wall. Right next to the old stain.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "the-tea-stain"
         }

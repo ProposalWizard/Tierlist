@@ -224,12 +224,33 @@
        {
         "if": "arc.path=='meet'",
         "text": "She says something and he laughs, a real one. They've sorted it out.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 4
+         },
+         {
+          "slot": "agent",
+          "bond": 4
+         }
+        ],
         "arc": {
          "end": "both-friends"
         }
        },
        {
         "text": "He goes back to his car. A week later he tells you he's retiring.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -4,
+          "grudge": 4
+         },
+         {
+          "slot": "reporter",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "the-agent-goes"
         }
@@ -244,12 +265,39 @@
        {
         "if": "arc.path=='cover' || arc.path=='leave'",
         "text": "He's very pleased with himself. The story never ran.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 2
+         },
+         {
+          "slot": "reporter",
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "story-never-ran",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "story-spiked"
         }
        },
        {
         "text": "He shakes your hand and says she's all right, for a reporter.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 2
+         },
+         {
+          "slot": "agent",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "both-friends"
         }

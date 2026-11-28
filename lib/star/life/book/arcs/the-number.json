@@ -347,6 +347,20 @@
        },
        {
         "text": "\"Your number,\" {mate.short} says. \"Lucky number.\" He doesn't look at you.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -3,
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "kept-my-number",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "kept-it"
         }
@@ -361,12 +375,43 @@
        {
         "if": "arc.path=='gave'",
         "text": "The boy points at {mate.short}, not you. Fair enough.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "gave-me-his-number",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "gave-it-up"
         }
        },
        {
         "text": "He waves back, and turns round to show you your name.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "kept-my-number",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "kept-it"
         }

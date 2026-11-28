@@ -375,12 +375,25 @@
        {
         "if": "arc.path=='back'",
         "text": "You turn it off. You're not in it. You never were.",
+        "effects": {
+         "reputation": 3
+        },
         "arc": {
          "end": "handed-it-back"
         }
        },
        {
         "text": "You turn it off. The drawer stays shut.",
+        "effects": {
+         "reputation": -2
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "kept-the-envelope",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-envelope"
         }

@@ -354,6 +354,19 @@
       "outcomes": [
        {
         "text": "A rose, very good. Your mum looks at it and says, \"I know what's under there,\" every time.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "what-is-under-the-rose",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "covered-up"
         }

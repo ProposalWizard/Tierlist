@@ -543,12 +543,36 @@
        {
         "if": "arc.path=='posted'",
         "text": "Somebody else rooms with him. They play the old video on the coach to welcome him.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 2,
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "never-let-the-snoring-go",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-recording"
         }
        },
        {
         "text": "He rooms with the young lad, who says the hum is nice.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "good-sleep"
         }
@@ -588,12 +612,43 @@
        {
         "if": "arc.path=='posted'",
         "text": "The lads ask if you'll film the machine. You don't. They do it anyway, through the door.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 1,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "never-let-the-snoring-go",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-recording"
         }
        },
        {
         "text": "He shows you how the mask goes on like he's showing you a car. You sleep fine.",
+        "npc": [
+         {
+          "slot": "roomie",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "roomie",
+          "tag": "roomed-with-me-and-the-machine",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "good-sleep"
         }

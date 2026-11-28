@@ -200,12 +200,35 @@
        {
         "if": "!arc.path=='lawyer'",
         "text": "It's you, the bins and the cola bottles. The line about your brother is gone.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "tabloid",
+          "tag": "let-me-read-him-chapter-three",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "chapter-three"
         }
        },
        {
         "text": "Chapter three is about a cricketer.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "grudge": 3
+         }
+        ],
+        "effects": {
+         "reputation": 1
+        },
         "arc": {
          "end": "the-solicitor"
         }
@@ -220,12 +243,35 @@
        {
         "if": "!arc.path=='lawyer'",
         "text": "He reads it on the train and says it's lies, apart from chapter three.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "tabloid",
+          "tag": "let-me-read-him-chapter-three",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "chapter-three"
         }
        },
        {
         "text": "He reads it and asks why you aren't in it.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "grudge": 3
+         }
+        ],
+        "effects": {
+         "reputation": 1
+        },
         "arc": {
          "end": "the-solicitor"
         }

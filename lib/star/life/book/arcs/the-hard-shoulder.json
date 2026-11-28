@@ -258,12 +258,18 @@
        {
         "if": "arc.path=='minibus'",
         "text": "You sleep. The coach gets there with an hour to spare.",
+        "effects": {
+         "team": 2
+        },
         "arc": {
          "end": "the-minibus"
         }
        },
        {
         "text": "You sleep. You wake at junction twelve because everybody is cheering.",
+        "effects": {
+         "team": 1
+        },
         "arc": {
          "end": "the-hard-shoulder"
         }

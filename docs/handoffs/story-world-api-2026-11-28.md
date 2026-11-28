@@ -105,7 +105,8 @@ E. THE STORY BOOK: regenerate and republish it after each job (same URL), so
   `lifeEvents.mts`, `lifeSaveFixture.mts`, `lifeVoice.mts`; the soak
   (`scripts/soak/lifeSoak.mts`); `NODE_OPTIONS=--max-old-space-size=5000 npx
   tsc --noEmit -p tsconfig.json`; `node scripts/one-engine-guard.mjs`;
-  `node scripts/admin-look-guard.mjs`.
+  `node scripts/admin-look-guard.mjs`; `npx tsx scripts/life/ending-effects-check.mts`
+  (every story ending must change something: it must print 0).
 - Nobody has seen these stories on a phone yet: say so in every report.
 
 ## Other chats working at the same time (don't touch their files)

@@ -814,6 +814,22 @@
        },
        {
         "text": "He takes a selfie of the three of you. By teatime it's on the car wash's page with a price list.",
+        "effects": {
+         "fame": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "met-the-other-you",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-other-you"
         }
@@ -823,12 +839,45 @@
        {
         "if": "arc.mid=='use' || arc.path=='poor'",
         "text": "He waves back with both arms. Somebody near him says it's you, waving at yourself.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "met-the-other-you",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-other-you"
         }
        },
        {
         "text": "He waves back, then picks his lad up so he can see you.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 3
+         },
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "had-lee-for-sunday-dinner",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "sunday-dinner"
         }
@@ -837,6 +886,19 @@
       "tunnel": [
        {
         "text": "When you look back from the tunnel he's gone, or he's somebody else.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -1
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "never-met-the-other-you-again",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "never-met-again"
         }

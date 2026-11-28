@@ -392,6 +392,12 @@
        },
        {
         "text": "Steady, and last. He doesn't write it down.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "the-bottom"
         }

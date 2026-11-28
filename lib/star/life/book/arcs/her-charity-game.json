@@ -337,12 +337,42 @@
        {
         "if": "arc.path=='play'",
         "text": "The mug has a photo of her saving your penalty. The note says: STILL OWE YOU TEN.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "played-in-my-charity-game",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "in-her-team"
         }
        },
        {
         "text": "The mug has the minibus on it. The note says the girls won the league.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "watched-my-girls-from-the-stand",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "in-the-stand"
         }
@@ -357,12 +387,42 @@
        {
         "if": "arc.path=='play'",
         "text": "It's her saving your penalty. Visitors always ask.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "played-in-my-charity-game",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "in-her-team"
         }
        },
        {
         "text": "It's the minibus with SIGN on the side.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "watched-my-girls-from-the-stand",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "in-the-stand"
         }

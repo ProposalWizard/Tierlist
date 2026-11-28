@@ -669,6 +669,16 @@
        },
        {
         "text": "{kid.short} says he wouldn't know what to say. He's right, and that's on you as much as him.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -2,
+          "grudge": 4
+         }
+        ],
         "arc": {
          "end": "he-went-again"
         }
@@ -683,12 +693,40 @@
        {
         "if": "arc.path=='kind'",
         "text": "You both get on bikes. The boy looks from one to the other. {kid.short} tells him about his red, then yours. He kept his head, the next time. So will this one.",
+        "effects": {
+         "boss": 2,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "pulled-me-away-in-the-big-one",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "he-stayed-on"
         }
        },
        {
         "text": "You do the talking. {kid.short} stands by the door the whole time.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "he-went-again"
         }

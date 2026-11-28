@@ -592,12 +592,41 @@
        {
         "if": "arc.path=='leak'",
         "text": "Somebody in the stand shouts \"unsettled!\" and a few people laugh. You're still explaining that.",
+        "effects": {
+         "fans": -3
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 2
+         },
+         {
+          "slot": "manager",
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "read-i-was-unsettled",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-agents-game"
         }
        },
        {
         "text": "A few people clap. Most of them are waiting to see what you'll say. You still haven't.",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "kept-them-guessing"
         }
@@ -612,12 +641,38 @@
        {
         "if": "arc.path=='leak'",
         "text": "The gaffer catches your eye in the tunnel. He still hasn't forgotten the back page.",
+        "effects": {
+         "boss": -4
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "read-i-was-unsettled",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-agents-game"
         }
        },
        {
         "text": "Your agent texts: \"Silence is money.\" He's sent you that every month since.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 4
+         }
+        ],
+        "effects": {
+         "fans": -2
+        },
         "arc": {
          "end": "kept-them-guessing"
         }

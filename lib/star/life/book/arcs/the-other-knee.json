@@ -198,12 +198,40 @@
        {
         "if": "arc.path=='go'",
         "text": "It's him. He sees you, and does the next one off his bad leg on purpose.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "came-to-the-pool-at-six",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-pool-at-six"
         }
        },
        {
         "text": "It's him. Your letter is in his kit bag. He showed the physio.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 3,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "wrote-the-lad-a-letter",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-letter"
         }
@@ -218,12 +246,40 @@
        {
         "if": "arc.path=='go'",
         "text": "He texts you that night: a photo of the grass.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "came-to-the-pool-at-six",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-pool-at-six"
         }
        },
        {
         "text": "The physio tells you later the letter did it.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 3,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "wrote-the-lad-a-letter",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-letter"
         }

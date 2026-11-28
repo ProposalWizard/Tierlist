@@ -219,12 +219,38 @@
        {
         "if": "arc.path=='coach'",
         "text": "You're not. You get the team bus. But on seat fourteen of the supporters' coach there's a bit of tape with your name on it, and there always will be.",
+        "effects": {
+         "fans": 3,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "got-the-supporters-coach-with-us",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "seat-fourteen"
         }
        },
        {
         "text": "\"Taxi man.\" They've been calling you that all season.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "a-taxi"
         }

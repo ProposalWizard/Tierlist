@@ -199,12 +199,31 @@
        {
         "if": "arc.path=='yes'",
         "text": "She's in your shirt, with your number. She points at you and says it, the number, not your name.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "stood-as-godfather",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "her-godfather"
         }
        },
        {
         "text": "You weren't at the christening. You're at this. She sits on your knee for the photo.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-card"
         }
@@ -219,12 +238,31 @@
        {
         "if": "arc.path=='yes'",
         "text": "A ball as big as she is. {pal.short} sends a video of her sitting on it.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "stood-as-godfather",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "her-godfather"
         }
        },
        {
         "text": "A ball and a card. Same as the christening.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 1
+         }
+        ],
         "arc": {
          "end": "the-card"
         }

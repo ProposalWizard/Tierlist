@@ -638,12 +638,39 @@
        {
         "if": "arc.last=='speech'",
         "text": "His wife waves back. She's brought a copy of your speech in her handbag, and she shows the people next to her.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "gave-the-speech-at-my-do",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-speech"
         }
        },
        {
         "text": "He waves back. He's wet. He looks happy.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "came-to-my-last-session",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-last-session"
         }
@@ -658,6 +685,23 @@
        {
         "if": "arc.drill>=2",
         "text": "In the warm-up you run his drill with the young lads. You hear him in the stand, saying the words with you.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "gave-me-his-drill",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "his-drill"
         }
@@ -665,12 +709,35 @@
        {
         "if": "arc.last=='speech'",
         "text": "His wife sends you a photo after: your speech, on her fridge, under a magnet shaped like a football.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "gave-the-speech-at-my-do",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-speech"
         }
        },
        {
         "text": "You hear him behind the dugout all game. It's like he never left.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4
+         }
+        ],
+        "effects": {
+         "team": 2
+        },
         "arc": {
          "end": "the-last-session"
         }

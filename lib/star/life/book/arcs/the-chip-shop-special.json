@@ -321,12 +321,30 @@
        {
         "if": "arc.path=='ten'",
         "text": "Still there, top of the board, with a gold star stuck on it. The owner waves a spatula at you.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "on-the-board"
         }
        },
        {
         "text": "THE GOALKEEPER SPECIAL. With an egg.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 2
+         }
+        ],
+        "effects": {
+         "fans": 1
+        },
         "arc": {
          "end": "off-the-board"
         }
@@ -350,6 +368,15 @@
        },
        {
         "text": "You order the goalkeeper special. It's very good. Don't tell him.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 2
+         }
+        ],
+        "effects": {
+         "fans": 1
+        },
         "arc": {
          "end": "off-the-board"
         }

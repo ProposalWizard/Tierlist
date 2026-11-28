@@ -196,6 +196,19 @@
        },
        {
         "text": "No last page. He's already bought the next one.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "still-writing-my-games-down",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "still-writing"
         }
@@ -210,12 +223,38 @@
        {
         "if": "arc.path=='every'",
         "text": "The date in slow writing. Then every game, shorter and shorter, to the last: \"Never better.\"",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "finished-the-last-page",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-last-page"
         }
        },
        {
         "text": "The date, then forty games. He's started another already, he says, just in case.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "still-writing-my-games-down",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "still-writing"
         }

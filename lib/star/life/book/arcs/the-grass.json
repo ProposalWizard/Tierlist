@@ -585,6 +585,20 @@
        {
         "if": "arc.spoke==1",
         "text": "At the end you take your boots off and walk back to the dressing room on it in your socks.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "stood-up-for-the-grass",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "real-grass"
         }

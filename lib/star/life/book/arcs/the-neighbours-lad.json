@@ -248,6 +248,13 @@
        },
        {
         "text": "\"He's fine.\" The thumping starts again at ten past.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": -2,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "the-fence"
         }
@@ -262,12 +269,33 @@
        {
         "if": "arc.path=='told'",
         "text": "At ten the thumping starts. Two touches. Control, then hit. You smile at your own wall.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "got-my-lad-a-trial",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-trial"
         }
        },
        {
         "text": "At ten the thumping starts. You put the telly up.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": -1,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "the-fence"
         }

@@ -503,6 +503,15 @@
        },
        {
         "text": "He's got a clothing line now, and a podcast about the hammock.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "kept-it-football",
          "set": {
@@ -525,6 +534,10 @@
        {
         "if": "arc.path=='villa'",
         "text": "They do the catchphrase for you.",
+        "effects": {
+         "team": 2,
+         "fame": 1
+        },
         "arc": {
          "end": "the-villa",
          "set": {
@@ -539,6 +552,9 @@
        },
        {
         "text": "You turn it off and go to bed at ten.",
+        "effects": {
+         "boss": 2
+        },
         "arc": {
          "end": "kept-it-football",
          "set": {
@@ -649,6 +665,16 @@
        {
         "if": "arc.path=='villa'",
         "text": "\"For good,\" he says, like he's writing it down. They still repeat the first one every summer.",
+        "effects": {
+         "team": 1,
+         "fame": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "the-villa"
         }

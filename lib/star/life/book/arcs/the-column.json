@@ -275,6 +275,15 @@
       "outcomes": [
        {
         "text": "The column ends. A lad from another club gets it, with \"hitherto\".",
+        "npc": [
+         {
+          "slot": "broadsheet",
+          "bond": -2
+         }
+        ],
+        "effects": {
+         "reputation": -1
+        },
         "arc": {
          "end": "his-words"
         }

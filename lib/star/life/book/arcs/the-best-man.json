@@ -554,12 +554,33 @@
        {
         "if": "arc.speech=='story'",
         "text": "\"She says you're not allowed to hold the baby till you apologise for the shorts.\" You apologise for the shorts.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6,
+          "grudge": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "told-the-under-twelves-story-at-my-wedding",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-under-twelves"
         }
        },
        {
         "text": "\"Thanks, mate.\" It's a good call. It's a bit shorter than it would have been.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 3,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "not-the-best-man"
         }
@@ -574,6 +595,19 @@
        {
         "if": "arc.speech=='story'",
         "text": "\"Everyone knows about the under-twelves now. Thanks to you.\" He's laughing.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "told-the-under-twelves-story-at-my-wedding",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-under-twelves"
         }
@@ -581,12 +615,39 @@
        {
         "if": "arc.path=='brother'",
         "text": "\"My brother told it at the wedding. Badly.\" He doesn't sound as pleased as you'd hoped.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "missed-my-wedding",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "not-the-best-man"
         }
        },
        {
         "text": "\"Don't.\" But he laughs.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "was-my-best-man",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-speech"
         }

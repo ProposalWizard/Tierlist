@@ -470,6 +470,12 @@
        },
        {
         "text": "You think about it for a fortnight and sign.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "one-more"
         }

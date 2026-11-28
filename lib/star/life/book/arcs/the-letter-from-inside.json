@@ -219,6 +219,12 @@
        },
        {
         "text": "He shakes it. He doesn't mention the letter. He does the car very carefully and takes the money.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "no-reply"
         }
@@ -233,12 +239,37 @@
        {
         "if": "arc.path=='wrote'",
         "text": "\"Eleven pages,\" he says. \"Sorry about that.\" He won't take your money.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "saw-me-write-to-the-lad-inside",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-car-wash"
         }
        },
        {
         "text": "\"All right?\" \"All right.\" He does the car. You tip him well.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -1
+         }
+        ],
+        "effects": {
+         "moneyWeeks": -0.5
+        },
         "arc": {
          "end": "no-reply"
         }

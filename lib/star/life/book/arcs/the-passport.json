@@ -339,6 +339,12 @@
        },
        {
         "text": "He laughs. He sits with someone else.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "boarded"
         }
@@ -353,12 +359,35 @@
        {
         "if": "arc.path=='stayed'",
         "text": "\"Never again,\" he says. He's got two passports' worth of photocopies in his bag, just in case.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "stayed-at-the-airport-with-me",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "stayed-behind"
         }
        },
        {
         "text": "He doesn't find it funny. It was his other jacket.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -3,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "boarded"
         }

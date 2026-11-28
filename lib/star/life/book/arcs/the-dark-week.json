@@ -834,12 +834,42 @@
        {
         "if": "arc.path=='left'",
         "text": "\"Maybe.\" He's kind about it. Someone else walks with him on Sundays now.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "walked-past-the-car",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "someone-else-knocked"
         }
        },
        {
         "text": "You walk on Sunday. He does the talk on Tuesday anyway, and you go to that too.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "told-the-academy-about-the-car-park",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "he-spoke-up"
         }
@@ -854,6 +884,22 @@
        {
         "if": "arc.path=='left'",
         "text": "He tells them about the car park, and a knock on the window, and the man who knocked. It wasn't you. You sit at the back and clap with everyone else.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "walked-past-the-car",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "someone-else-knocked"
         }

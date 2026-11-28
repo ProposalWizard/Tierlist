@@ -279,6 +279,15 @@
        {
         "if": "arc.path=='named'",
         "text": "You leave it. He leaves the group chat the next morning.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": -4
+         }
+        ],
         "arc": {
          "end": "never-knew"
         }

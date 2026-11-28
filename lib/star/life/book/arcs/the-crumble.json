@@ -608,12 +608,47 @@
        {
         "if": "arc.ended=='crumble-saved'",
         "text": "The whole squad bangs the tables. She cries into a tea towel and tells you all to get out of her kitchen.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 10,
+          "respect": 6
+         },
+         {
+          "slot": "manager",
+          "respect": -1
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "saved-the-crumble",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "crumble-saved"
         }
        },
        {
         "text": "You say she was the best thing about the place. She says, \"Then where were you when they took my crumble?\" Everybody laughs. She half means it.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": -3,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "went-with-the-seeds",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "crumble-gone"
         }
@@ -628,12 +663,47 @@
        {
         "if": "arc.ended=='crumble-saved'",
         "text": "It's the best one she's ever made. The new woman at the hatch has been told it stays on Fridays.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 10,
+          "respect": 6
+         },
+         {
+          "slot": "manager",
+          "respect": -1
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "saved-the-crumble",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "crumble-saved"
         }
        },
        {
         "text": "It's the last crumble anyone makes at the club.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": -4,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "went-with-the-seeds",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "crumble-gone"
         }
