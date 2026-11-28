@@ -29,6 +29,7 @@ import { DRIVE_CARS, carFile, toLinear, type DriveCarId } from "./cars";
 import { rigCar } from "./rig";
 import type { SteerMode } from "./car";
 import type { CallMemory } from "./calls";
+import { createDriveSound, driveFrame } from "./sound";
 import { CAMERA_AHEAD, CROSS_AHEAD, BREAKDOWN_AHEAD, FAN_CLEAR_S, type DriveEffect } from "./events";
 
 export interface DriveSceneOptions {
@@ -51,6 +52,8 @@ export interface DriveSceneOptions {
   film?: boolean;
   /** Without people (faster load for the speed test). */
   noPeople?: boolean;
+  /** The drive's sound (./sound.ts; on unless a film page). Settings → Sound effects still rules. */
+  sound?: boolean;
   /** The screen was closed while this was still loading (3D places audit P1): checked after every wait, so a
    *  drive nobody will see stops building and gives the shared canvas back at once. */
   isDead?: () => boolean;
@@ -524,6 +527,8 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
   const ro = new ResizeObserver(resize); ro.observe(container);
 
   const draw = (dt: number) => { place(); aimCam(dt); renderer.render(scene, camera); ui(); };
+  // the sound (./sound.ts): made in code, silent until a tap, Settings → Sound effects rules it
+  const snd = opts.film || opts.sound === false ? null : createDriveSound({ car: opts.car });
   place(); aimCam(1);
   let filming = false;
   let last = performance.now();
@@ -535,6 +540,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
     sim(dt);
     draw(dt);
+    snd?.update(driveFrame(S, holding, liveCam(S)), dt);
     frames++;
     if (now - fpsT > 1000) { fps = frames * 1000 / (now - fpsT); frames = 0; fpsT = now; }
   });
@@ -568,6 +574,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, tier, fps }),
     dispose: () => {
       disposed = true;
+      snd?.dispose();
       unpublish();
       ro.disconnect();
       renderer.domElement.removeEventListener("webglcontextlost", onLost);

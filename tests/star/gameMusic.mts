@@ -55,6 +55,7 @@ check(M.sceneCue({ kind: "ballon-dor", won: null }) === "02-working-it-out", "Ba
 check(M.sceneCue({ kind: "ballon-dor", won: true }) === "03-winning", "Ballon d'Or won");
 check(M.sceneCue({ kind: "ballon-dor", won: false }) === "06-defeat", "Ballon d'Or lost");
 check(M.sceneCue({ kind: "none" }) === null, "none: silence");
+check(M.sceneCue({ kind: "drive" }) === "08-lobby" && M.sceneVolume({ kind: "drive" }) === M.DRIVE_VOLUME && M.DRIVE_VOLUME < M.MATCH_VOLUME, "the drive: the lobby track, ducked under the engine (below a match)");
 
 // 4
 check(M.isTurningPoint(0, 1, 1), "level from behind");

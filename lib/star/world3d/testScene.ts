@@ -749,7 +749,11 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   const CAR_FAR_M = 11;
   const AR = CP && opts.arrive && mc ? await import("../drive3d/arrival") : null;
   const DRV = AR ? await import("../drive3d/drive") : null;
+  const SND = AR ? await import("../drive3d/sound") : null;
   const arr = AR && mc ? AR.newArrival({ wheelR: mc.wheelR, wheelbase: mc.wheelbase }) : null;
+  // its sound (drive3d/sound.ts, made in code): the engine in, the barrier's motor, the engine off, the door, your steps
+  const arrSnd = arr && opts.arrive ? (await import("../drive3d/sound")).createDriveSound({ car: opts.arrive.car }) : null;
+  let arrSndAt = -1;
   // two team-mates wait by the gate, chatting (paused off their routines), and turn to look as you pull in
   const arrMates = arr ? npcs.filter((n) => /^mate-[01]$/.test(n.id)) : [];
   // the rest of the team-mates are not drawn while the car comes in (the arrival's budget: Low 35k, Medium 60k
@@ -772,6 +776,12 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     if (!arr || !AR || !mc) return;
     arrAcc += dt;
     while (arrAcc >= AR.ASTEP) { AR.stepArrival(arr); arrAcc -= AR.ASTEP; }
+    if (arrSnd && arrSndAt !== simT) {
+      arrSndAt = simT;
+      arrSnd.update(SND!.arrivalFrame(arr, AR.liftOf(arr), AR.DOOR_AFTER_STOP), dt);
+      // out of the car and the line said: the music back to its own level
+      if (arrOut && simT > arrCaptionUntil) arrSnd.releaseMusic();
+    }
     const c = arr.car, p = AR.carPose(arr);
     for (const rig of mcFar ? [mc, mcFar] : [mc]) {
       rig.root.position.set(p.x, 0, p.z); rig.root.rotation.y = p.yaw;
@@ -1431,6 +1441,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     }),
     dispose: () => {
       disposed = true;
+      arrSnd?.dispose();
       unpublish();
       if ((window as any).__world3d === ctrl) delete (window as any).__world3d;
       delete (window as any).__world3dCam;
