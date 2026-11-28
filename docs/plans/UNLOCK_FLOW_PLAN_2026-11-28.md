@@ -247,3 +247,26 @@ The place list in Plan 1 holds each unlock's rule in its `opens` field. The prel
 - I did not play the seasons. The 10-season table joins three measured things (Star Pass level by age from 40 careers, income per division, prices) with a guessed promotion pace and a guessed "saves everything" spender.
 - I did not open the admin page's live Star Pass layout. Mikey may have moved cards from the built-in `DEFAULT_PASS_LEVELS`.
 - Load numbers for the street, barber, gym, drive and compound are not measured.
+
+## Harry's answers and pacing decisions (28 Nov 2026, 12:10)
+
+His words: "unlocking things slower, progress being somewhat limited by current facilities, money matching
+better, instead of 5 tiers of every item — 1 for a lot of them, just DIFFERENT items that cost more or less.
+Training should be a lot larger, like it should take a LONG time to train — after finishing all the 3 star
+training I don't think you should just be max, being a 99 should take years and years. And yeah unlocking
+everything at once [is a problem]. I think we could slow the pace down a lot whilst still keeping a lot going
+in season 1. This kind of pacing can be really worked on when all features of base game are in."
+
+Decisions:
+1. Free unlocks come through the STORY or a RANDOM EVENT (e.g. the garden at the end of season 1), not only by buying.
+2. Casino: on PC yes (waits until age 18); on phone the casino isn't fully allowed (store rules) — keep it off on the phone app.
+3. Star Pass F2 retune: yes, with levels 1–2 kept cheap (Mikey's lane: needs his yes on the numbers).
+4. Switched-off systems come on over time (garden levels, stories, drive + compound, injuries last).
+5. Pop-ups after a money jump: queue them, one per match week.
+6. Slower unlocking overall; progress partly limited by your current facilities (club/training ground/house).
+7. Money must match prices better across divisions.
+8. Shop: instead of 5 tiers of every item, mostly ONE of each item, and DIFFERENT items at different prices.
+9. Training much larger: finishing all the 3-star training must NOT make you max; reaching 99 should take years and years.
+10. Keep plenty happening in season 1 while slowing the overall pace.
+WHEN: the full pacing pass is done once all base-game features are in. Until then, new features are built
+to these rules (one item, not five tiers; nothing opens everything at once; facilities can gate progress).
