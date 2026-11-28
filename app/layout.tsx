@@ -66,6 +66,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://knowitball.co.uk"),
+  // Home-screen / tab icon on every page (the game's own pages set theirs too).
+  icons: { icon: "/star/app-icon-192.png", apple: "/star/app-icon-180.png" },
   title: {
     default: "Knowitball",
     template: "%s | Knowitball",
