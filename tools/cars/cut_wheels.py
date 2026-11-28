@@ -48,6 +48,32 @@ for o in list(bpy.context.scene.objects):
 ob.parent = None
 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
+# ── a clean, glossy body (coordinator, 28 Nov: "dented door panels, wrinkled window"): the generated
+# mesh comes split at every UV seam with its own baked normals, so the paint's reflection breaks up
+# on every little bump. Weld the seams, drop the baked normals, let the surface relax a little
+# (--relax N passes, 0 = off; mirrors and grilles survive 2-3), then smooth shading with a 45° crease.
+RELAX = int(opt("--relax", "0"))  # 3 passes left creases on the hatch (28 Nov stills): off by default
+import bmesh as _bm
+_b = _bm.new(); _b.from_mesh(ob.data)
+_bm.ops.remove_doubles(_b, verts=_b.verts, dist=0.0004 * max(ob.dimensions))
+if RELAX > 0:
+    # Laplacian-style relax of the body only where it is nearly flat (no edge sharper than ~25°),
+    # so crease lines, the grille and the lamps keep their shape
+    _b.normal_update()
+    flat = [v for v in _b.verts if v.link_faces and all(f.normal.angle(v.normal, 0) < math.radians(25) for f in v.link_faces) and not v.is_boundary]
+    for _ in range(RELAX):
+        _bm.ops.smooth_vert(_b, verts=flat, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
+        _b.normal_update()
+_b.to_mesh(ob.data); _b.free()
+if ob.data.has_custom_normals:
+    bpy.context.view_layer.objects.active = ob
+    bpy.ops.mesh.customdata_custom_splitnormals_clear()
+for p in ob.data.polygons: p.use_smooth = True
+try:
+    ob.data.use_auto_smooth = True; ob.data.auto_smooth_angle = math.radians(45)
+except AttributeError:
+    bpy.ops.object.shade_smooth_by_angle(angle=math.radians(45))
+
 # ── face the car down Blender -Y (= glTF/three.js +Z), real length, on the ground ──
 turn = {"+x": -90, "-x": 90, "+y": 180, "-y": 0}[FRONT]
 ob.data.transform(Matrix.Rotation(math.radians(turn), 4, "Z"))
@@ -82,13 +108,63 @@ if img and ob.data.uv_layers:
     col = np.where(cnt[:, None] > 0, acc / np.maximum(cnt, 1)[:, None], 0.5)
 lum = col @ np.array([0.2126, 0.7152, 0.0722])
 # the paint: the doors' colour (mid height, outer sides, middle of the car)
-doors = (co[:, 2] > 0.35 * H) & (co[:, 2] < 0.55 * H) & (np.abs(co[:, 0]) > 0.38 * W) & (np.abs(co[:, 1]) < 0.25 * Lh)
-paint = np.median(col[doors], 0) if doors.sum() > 20 else np.array([0.5, 0.5, 0.5])
+doors = (co[:, 2] > 0.3 * H) & (co[:, 2] < 0.58 * H) & (np.abs(co[:, 0]) > 0.34 * W) & (np.abs(co[:, 1]) < 0.4 * Lh)
+paint = np.median(col[doors], 0) if doors.sum() > 8 else np.array([0.5, 0.5, 0.5])
 paint_l = float(paint @ np.array([0.2126, 0.7152, 0.0722]))
 paint_d = np.linalg.norm(col - paint, axis=1)
 distinct = paint_l > 0.12 or np.ptp(paint) > 0.1   # a black/dark-grey car: paint looks like tyre
 is_paint = (paint_d < 0.16) if distinct else np.zeros(len(co), bool)
 print("PAINT", [round(float(x), 3) for x in paint], "distinct", bool(distinct))
+
+# ── the number plates: where the generated plate was blanked dark grey (tools/models3d/deplate.mjs) ──
+# faces at either end, near the middle, bumper height, facing out, plain grey. A clean UK plate goes
+# over each (tools/cars/plate.png: white front, yellow rear), a few millimetres proud of the body.
+plates = []
+fc = np.array([p.center[:] for p in ob.data.polygons]); fn = np.array([p.normal[:] for p in ob.data.polygons])
+fcol = np.array([col[list(p.vertices)].mean(0) for p in ob.data.polygons])
+fsat = fcol.max(1) - fcol.min(1); flum = fcol @ np.array([0.2126, 0.7152, 0.0722])
+for front in (True, False):
+    endd = (fc[:, 1] - mn[1]) if front else (mx[1] - fc[:, 1])
+    sel = (endd < 0.09 * 2 * Lh) & (np.abs(fc[:, 0]) < 0.22 * W) & (fc[:, 2] > 0.26 * H) & (fc[:, 2] < 0.62 * H) \
+        & ((fn[:, 1] < -0.45) if front else (fn[:, 1] > 0.45))
+    # deplate.mjs's fill is exactly (28, 28, 30)/255: look for that first, then any plain grey
+    blank = sel & (np.abs(fcol - np.array([28, 28, 30]) / 255).max(1) < 0.035)
+    sel = blank if blank.sum() >= 6 else sel & (fsat < 0.12) & (flum > 0.02) & (flum < 0.55)
+    if sel.sum() < 6:
+        # no blank found (the generated car had no plate there): a plate at a usual height on the centre line
+        z0 = 0.4 * H
+        pts = np.array([[-0.25, 0, z0 - 0.05], [0.25, 0, z0 + 0.05]])
+        foot = (np.abs(fc[:, 0]) < 0.3) & (np.abs(fc[:, 2] - z0) < 0.08) & (endd < 0.12 * 2 * Lh)
+        if foot.sum() == 0:
+            print("PLATE none", "front" if front else "rear"); continue
+        y = float(fc[foot, 1].min() if front else fc[foot, 1].max())
+        nrm = fn[foot].mean(0); nrm /= np.linalg.norm(nrm)
+        plates.append(dict(front=front, c=(0.0, y, z0), n=tuple(nrm), w=0.52, bw=0.5, bh=0.1))
+        print("PLATE default", "front" if front else "rear", round(y, 3), round(z0, 3)); continue
+    pts = fc[sel]
+    # the biggest cluster round the middle (drop strays): within 0.35 m of the median
+    med = np.median(pts, 0); keep = np.linalg.norm((pts - med)[:, [0, 2]], axis=1) < 0.35
+    pts = pts[keep]; nrm = fn[sel][keep].mean(0); nrm /= np.linalg.norm(nrm)
+    # plates are on the car's centre line; only their height comes from the blank
+    cx, cz = 0.0, float((pts[:, 2].min() + pts[:, 2].max()) / 2)
+    w = float(np.clip(pts[:, 0].max() - pts[:, 0].min(), 0.42, 0.66))
+    # the plate sits on the most outward body surface across its whole footprint (a curved bumper)
+    foot = (np.abs(fc[:, 0] - cx) < w / 2) & (np.abs(fc[:, 2] - cz) < w / 4.7 / 2 + 0.02) & (endd < 0.12 * 2 * Lh)
+    ys = fc[foot, 1] if foot.sum() else pts[:, 1]
+    y = float(ys.min() if front else ys.max())
+    plates.append(dict(front=front, c=(cx, y, cz), n=tuple(nrm), w=w,
+                       bw=float(min(0.8, pts[:, 0].max() - pts[:, 0].min())), bh=float(min(0.3, pts[:, 2].max() - pts[:, 2].min()))))
+    print("PLATE", "front" if front else "rear", round(cx, 3), round(y, 3), round(cz, 3), "w", round(w, 3))
+
+# a light copy takes the full car's plates (its few big triangles hide the blank): --plates-in / --plates-out
+if opt("--plates-in"):
+    try:
+        plates = json.load(open(opt("--plates-in")))
+        print("PLATES from", opt("--plates-in"), len(plates))
+    except OSError:
+        print("PLATES none to read")
+if opt("--plates-out"):
+    json.dump(plates, open(opt("--plates-out"), "w"))
 
 # ── find the four wheels ──
 low = co[:, 2] < 0.03 * H
@@ -184,11 +260,11 @@ for w in wheels:
         # tucked-in fender on a sports car otherwise shows the liner through the paint)
         near = bside[np.hypot(bside[:, 1] - y, bside[:, 2] - z) < 0.09]
         xo = x_out
-        if len(near): xo = sgn * max(abs(x_in) + 0.04, min(abs(x_out), float(np.abs(near[:, 0]).max()) - 0.05))
+        if len(near): xo = sgn * max(abs(x_in) + 0.04, min(abs(x_out), float(np.abs(near[:, 0]).max()) - 0.07))
         # and never up through the bonnet or wing: under the lowest body surface above this point
         def under(x, z0):
             col = bco[(np.abs(bco[:, 0] - x) < 0.1) & (np.abs(bco[:, 1] - y) < 0.1) & (bco[:, 2] > w["r"] * 1.5)]
-            return min(z0, float(col[:, 2].min()) - 0.06) if len(col) else z0
+            return min(z0, float(col[:, 2].min()) - 0.09) if len(col) else z0
         ring_o.append(bm.verts.new((xo, y, under(xo, z)))); ring_i.append(bm.verts.new((x_in, y, under(x_in, z))))
     for s in range(SEG):
         bm.faces.new((ring_o[s], ring_o[s + 1], ring_i[s + 1], ring_i[s]))
@@ -200,6 +276,46 @@ for w in wheels:
 bm.to_mesh(lm); bm.free()
 lo = bpy.data.objects.new("liners", lm); bpy.context.scene.collection.objects.link(lo)
 lm.materials.append(liner_mat)
+# the plates (their own small material: one picture, both plates)
+if plates:
+    PLATE_PNG = opt("--plate", __file__.replace("cut_wheels.py", "plate.png"))
+    pm = bpy.data.materials.new("plate"); pm.use_nodes = True
+    pb = pm.node_tree.nodes.get("Principled BSDF"); pb.inputs["Roughness"].default_value = 0.45
+    tn = pm.node_tree.nodes.new("ShaderNodeTexImage"); tn.image = bpy.data.images.load(PLATE_PNG)
+    pm.node_tree.links.new(tn.outputs["Color"], pb.inputs["Base Color"])
+    plm = bpy.data.meshes.new("plates"); pbm = bmesh.new()
+    uvl = pbm.loops.layers.uv.new("UVMap")
+    for pl in plates:
+        # the plate's plane: facing out along the end's normal, upright, 4.7 : 1
+        n = Vector(pl["n"]); n.x = 0; n.normalize()
+        up = Vector((0, 0, 1)); up = (up - n * up.dot(n)).normalized()
+        side = up.cross(n).normalized()
+        c = Vector(pl["c"]) + n * 0.012
+        hw, hh = pl["w"] / 2, pl["w"] / 4.7 / 2
+        corners = [c - side * hw - up * hh, c + side * hw - up * hh, c + side * hw + up * hh, c - side * hw + up * hh]
+        vs = [pbm.verts.new(q) for q in corners]
+        f = pbm.faces.new(vs)
+        if f.normal.dot(n) < 0: f.normal_flip()
+        v0, v1 = (0.5, 1.0) if pl["front"] else (0.0, 0.5)   # white front: top half; yellow rear: bottom half
+        # read the plate left-to-right from outside: u along `side` as seen facing the plate
+        uvs = [(0, v0), (1, v0), (1, v1), (0, v1)]
+        for lp in f.loops:
+            k = vs.index(lp.vert); u, v = uvs[k]
+            lp[uvl].uv = (u, v)   # checked by eye on the hatch: both read left to right
+        # behind the plate, a black surround the size of the old smudge (the generated lettering never shows)
+        bw, bh = pl["bw"] / 2 + 0.025, pl["bh"] / 2 + 0.025
+        bw, bh = max(bw, hw + 0.02), max(bh, hh + 0.02)
+        cb = Vector(pl["c"]) + n * 0.006
+        bvs = [pbm.verts.new(q) for q in [cb - side * bw - up * bh, cb + side * bw - up * bh, cb + side * bw + up * bh, cb - side * bw + up * bh]]
+        bf = pbm.faces.new(bvs)
+        if bf.normal.dot(n) < 0: bf.normal_flip()
+        for lp in bf.loops: lp[uvl].uv = (0.0078, 0.75)   # the plate picture's black border
+    pbm.to_mesh(plm); pbm.free()
+    plo = bpy.data.objects.new("plates", plm); bpy.context.scene.collection.objects.link(plo)
+    plm.materials.append(pm)
+    bpy.ops.object.select_all(action="DESELECT"); plo.select_set(True); ob.select_set(True); bpy.context.view_layer.objects.active = ob
+    bpy.ops.object.join()
+
 # join the liners into the body (one node, its own material)
 bpy.ops.object.select_all(action="DESELECT"); lo.select_set(True); ob.select_set(True); bpy.context.view_layer.objects.active = ob
 bpy.ops.object.join()
@@ -238,3 +354,6 @@ if STILLS:
     shoot("_front", Vector((1.1, -1.25, 0.45)), LENGTH * 1.55)     # front 3/4 (front is -Y), left side
     shoot("_side", Vector((1, 0, 0.06)), LENGTH * 1.45)            # straight side, wheels in profile
     shoot("_rear", Vector((-1.1, 1.2, 0.4)), LENGTH * 1.55)        # rear 3/4, the other side
+    # the close pass (the camera the car rolls past at the gate): the door, a metre and a half off
+    tgt = Vector((0, 0.2, H * 0.5))
+    shoot("_close", Vector((1, 0.35, 0.1)), 2.2)

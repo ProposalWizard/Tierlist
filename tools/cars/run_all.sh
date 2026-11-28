@@ -17,7 +17,7 @@ CARS=${*:-family hatch suv sports classic super}
 for c in $CARS; do
   cap=""; [ "$c" = family ] && cap=24000
   GLTOOLS=$GLTOOLS node tools/cars/unpack.mjs "public/star/shop3d/items/car-$c-hf.glb" "$WORK/$c.glb" $cap
-  blender -b -P tools/cars/cut_wheels.py -- "$WORK/$c.glb" "public/star/drive3d/car-$c.glb" --length "${LEN[$c]}" --stills "$STILLS/$c" | grep -E "^(PAINT|INFO)"
+  blender -b -P tools/cars/cut_wheels.py -- "$WORK/$c.glb" "public/star/drive3d/car-$c.glb" --length "${LEN[$c]}" --stills "$STILLS/$c" --plates-out "$WORK/$c.plates.json" | grep -E "^(PAINT|PLATE|INFO)"
   GLTOOLS=$GLTOOLS node tools/cars/unpack.mjs "public/star/home3d/car-$c-lod.glb" "$WORK/$c-lod.glb"
-  blender -b -P tools/cars/cut_wheels.py -- "$WORK/$c-lod.glb" "public/star/drive3d/car-$c-lod.glb" --length "${LEN[$c]}" --stills "$STILLS/$c-lod" | grep -E "^(PAINT|INFO)"
+  blender -b -P tools/cars/cut_wheels.py -- "$WORK/$c-lod.glb" "public/star/drive3d/car-$c-lod.glb" --length "${LEN[$c]}" --stills "$STILLS/$c-lod" --plates-in "$WORK/$c.plates.json" | grep -E "^(PAINT|PLATE|INFO)"
 done
