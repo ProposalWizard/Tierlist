@@ -565,6 +565,13 @@ export interface Defender extends Vec2 {
   /** Vertical speed of that jump. */
   vz?: number;
   /**
+   * A training dummy (the kit man's drill, Harry 20 Nov 2026): a body that
+   * blocks like any defender but never moves, not even to fetch a dead ball.
+   * Only the drill's own picture (lib/star/life/drillScene.ts) sets it; the
+   * real match never does, so every man there moves exactly as before.
+   */
+  fixed?: boolean;
+  /**
    * The real man marking you, when there's a real lineup to draw him from —
    * see Identity and castDefence (lib/star/lineup.ts). Nothing in tackle or
    * block resolution reads this yet; a "press" defender and a "cover"
@@ -5897,7 +5904,7 @@ function stepShape(sc: Scenario, ball: Ball, dt: number, dead: boolean, fetch: (
   const runners = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners];
   const mates: ShapeMate[] = runners.filter(r => !(r.commandedTo && !dead));
   if (!sc.follower.shot || dead) mates.push("follower");
-  const defs = sc.defenders.filter(d => !(d.baseRole === "hold" && !dead));
+  const defs = sc.defenders.filter(d => !d.fixed && !(d.baseRole === "hold" && !dead));
 
   let st = SHAPE_STATE.get(sc);
   if (!st) {
@@ -6153,6 +6160,7 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
   for (const d of shape ? [] : scenario.defenders) {
     // A wall stays a wall while the free kick is live. Once the ball has stopped
     // there is no wall any more, only somebody who ought to go and get it.
+    if (d.fixed) continue; // a training dummy (drill only): never moves
     if (d.baseRole === "hold" && !dead) continue;
     const dist = Math.hypot(ball.pos.x - d.x, ball.pos.y - d.y);
     if (dead) { move(d, fetch(dist)); continue; }

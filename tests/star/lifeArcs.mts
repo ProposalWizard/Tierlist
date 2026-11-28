@@ -71,9 +71,9 @@ check(probs.length === 0, `the arc book passes the v2 checker: ${probs.slice(0, 
 // night (the dice stand-in) at a normal player's technique: median 6-7, real 3s and 10s.
 {
   check(DR.HUNDRED_FEEDS.length === 10 && new Set(DR.HUNDRED_FEEDS.map((f) => f.label)).size === 10, "ten balls, every one different");
-  check(DR.HUNDRED_FEEDS.every((f) => f.label.split(" ").length <= 3) && DR.HUNDRED_FEEDS.some((f) => f.keeper) && DR.HUNDRED_FEEDS.some((f) => f.dark) && DR.HUNDRED_FEEDS[9].double === true, "short labels, Den in goal, lights out, the last double or nothing");
-  // v3 (Harry: "a chance to be creative"): six rounds, each a different thing to do, in order.
-  check(DR.ROUNDS.length === 6 && DR.ROUNDS.every((r, k) => DR.HUNDRED_FEEDS.some((f) => f.roundNo === k && f.round === r.kind)) && DR.HUNDRED_FEEDS.every((f, i) => i === 0 || f.roundNo >= DR.HUNDRED_FEEDS[i - 1].roundNo), "six rounds, every one played, in order");
+  check(DR.HUNDRED_FEEDS.every((f) => f.label.split(" ").length <= 3) && DR.HUNDRED_FEEDS.some((f) => f.keeper) && DR.HUNDRED_FEEDS[9].double === true, "short labels, Den in goal, the last double or nothing");
+  // v4 (Harry: "a chance to be creative"): nine rounds, each a different thing to do, in order.
+  check(DR.ROUNDS.length === 9 && DR.ROUNDS.every((r, k) => DR.HUNDRED_FEEDS.some((f) => f.roundNo === k && f.round === r.kind)) && DR.HUNDRED_FEEDS.every((f, i) => i === 0 || f.roundNo >= DR.HUNDRED_FEEDS[i - 1].roundNo), "nine rounds, every one played, in order");
   // Any story's challenge (the round library): the balls come from its rounds, ten at most.
   const ch = DR.challenge([{ kind: "corners", balls: 2 }, { kind: "far" }, { kind: "keeper", balls: 4 }, { kind: "props" }, { kind: "double" }]);
   check(ch.feeds.length === 10 && ch.rounds.length === 5 && ch.feeds[9].double === true && ch.feeds.filter((f) => f.keeper).length === 5, `a story's own challenge: its rounds, ten balls (${ch.feeds.length})`);
@@ -84,10 +84,13 @@ check(probs.length === 0, `the arc book passes the v2 checker: ${probs.slice(0, 
   const T = DR.HUNDRED_FEEDS;
   const on = (x: number, z: number, o = "goal", bar = false) => ({ cross: { x, z }, bar, outcome: o });
   check(DR.judge({ ...T[0], target: { kind: "corner", side: "L" } }, on(30.9, 0.4)) === "hit" && DR.judge({ ...T[0], target: { kind: "corner", side: "L" } }, on(37.0, 0.4)) === "wrong", "call it: the called corner counts, the other one is wrong");
-  check(DR.judge(T[2], { cross: null, bar: true, outcome: "post" }) === "hit" && DR.judge(T[2], on(34, 1.2)) === "under-bar", "the bar: off the bar counts, a goal under it does not");
-  check(DR.judge(T[3], on(31.29, 1.6)) === "hit" && DR.judge(T[3], on(33.5, 0.4)) === "missed-it", "the tyre: through it counts, anywhere else misses it");
-  check(DR.judge(T[5], on(31, 0.4, "saved")) === "saved" && DR.judge(T[5], on(36, 1.9)) === "hit", "Den in goal: a save is a save, any goal beats him");
-  check(DR.shoutOf(DR.HUNDRED_FEEDS.find((f) => f.dark)!) !== null && DR.feedsFor(0, 3).length === 10, "lights out: he shouts the side; the sides change night to night");
+  const R = (k: string) => T.find((f) => f.round === k)!;
+  const tyre = DR.challenge([{ kind: "props" }]).feeds[0];
+  check(DR.judge(R("crossbar"), { cross: null, bar: true, outcome: "post" }) === "hit" && DR.judge(R("crossbar"), on(34, 1.2)) === "under-bar", "the bar: off the bar counts, a goal under it does not");
+  check(DR.judge(tyre, on(31.29, 1.6)) === "hit" && DR.judge(tyre, on(33.5, 0.4)) === "missed-it", "the tyre: through it counts, anywhere else misses it");
+  check(DR.judge(R("keeper"), on(31, 0.4, "saved")) === "saved" && DR.judge(R("keeper"), on(36, 1.9)) === "hit", "Den in goal: a save is a save, any goal beats him");
+  const dark = DR.challenge([{ kind: "lights-out" }]).feeds[0];
+  check(DR.shoutOf(dark) !== null && DR.feedsFor(0, 3).length === 10, "lights out (the library): he shouts the side; ten balls on any night");
   const r = mulberry32(99);
   const at = (t: number) => { const xs: number[] = []; for (let i = 0; i < 4000; i++) xs.push(DR.rollHundred(t, r).score); xs.sort((a, b) => a - b); return xs; };
   const mid = at(62);
