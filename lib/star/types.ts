@@ -1325,6 +1325,12 @@ export interface CareerState {
    */
   clock?: import("./life/clock").SavedClock;
   /**
+   * Your hair and beard (lib/star/barber.ts): the style, your hair type, the beard after the last shave,
+   * the weeks of the last cut and shave, and the cut's small effects (one short string, about 15 bytes:
+   * "afro.k.0.161.161"). Absent on every older save: your own haircut as before, not growing yet.
+   */
+  hair?: string;
+  /**
    * The gym's Strength, Cardio and Focus, its ring and workout window (lib/star/gym/progress.ts).
    * Absent on every older save: no gym visit yet. Changes nothing else on the career while
    * progress.ts GYM_CAREER_EFFECT is "off".

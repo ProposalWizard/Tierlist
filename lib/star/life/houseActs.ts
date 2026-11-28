@@ -29,6 +29,8 @@ export const MOOD_MAX = 10;
 export const ACT_MINS: Record<string, number> = {
   fridge: 5, coffee: 10, shower: 15, bath: 30, mirror: 5, treadmill: 30, mat: 15,
   pool: 20, darts: 15, arcade: 15, lounger1: 30, lounger2: 30, seatsL: 120, seatsR: 120, cabinet: 5,
+  // the barber on the shopping street and the mirror's shave / trim / tidy (lib/star/barber.ts)
+  barber: 45, barberBig: 90, mirrorHair: 10,
 };
 export const DEFAULT_MINS = 10;
 /**
