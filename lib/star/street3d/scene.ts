@@ -48,6 +48,7 @@ import { FOLLOW_CAM_D, FollowCarry, FollowZoom, attachFollowZoom, boxRoom, loadF
 import { ViewCam, findHeadBone, headWorld, loadViewMode, showBody, type ViewMode } from "../three3d/viewCam";
 import { pavingCanvas, skyCanvas, glowCanvas, brickCanvas, stripeCanvas, slateCanvas, hedgeCanvas } from "../garden3d/textures";
 import { safeCompileAsync } from "../three3d/safeCompile";
+import { cullSkinned } from "../three3d/cullPeople";
 import { carPaint } from "../home3d/roomBuild";
 import { CAR_LOD, CAR_LENGTH, type Worn, type Kit2 } from "../home3d/outfits";
 import { Npc, BODY_R, type Body, type NpcWorld } from "../world3d/npc";
@@ -60,7 +61,7 @@ import {
 } from "./plan";
 import {
   asphaltCanvas, renderCanvas, fasciaCanvas, boutiqueCanvas, barberCanvas, soonCanvas, clockCanvas, namePlateCanvas,
-  fingerCanvas, priceStandCanvas, tagCanvas, lettersCanvas,
+  fingerCanvas, priceStandCanvas, tagCanvas, lettersCanvas, paneCanvas, litPaneCanvas, doorwayCanvas,
 } from "./textures";
 
 export interface StreetData {
@@ -112,7 +113,7 @@ export interface StreetOptions {
   quality?: Quality3d;
   /** Filming: a fixed step per frame. */
   fixedStep?: number;
-  /** How many people walk the street (default by quality: Low 1, Medium 3, High 5). */
+  /** How many people walk the street (default by quality: Low 1, Medium 2, High 4: the garden's budget). */
   walkers?: number;
 }
 
@@ -397,10 +398,12 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
   const blackM = mat("#1c1f23", { roughness: 0.45 });
   const roofFlatM = mat("#4b4d50", { roughness: 0.95 });
   const slateM = tileMat(slateCanvas(), 2, 2, { roughness: 0.75 });
-  const winM = mat("#43535d", { roughness: 0.12, metalness: 0.45, envMapIntensity: 1.3 });
+  const paneT = canvasTex(paneCanvas());
+  const winM = mat("#ffffff", { map: paneT, roughness: 0.1, metalness: 0.3, envMapIntensity: 1.1 });
   const cladGlassM = mat("#6f8796", { roughness: 0.08, metalness: 0.6, envMapIntensity: 1.8 });
   const finM = mat("#9aa3ab", { roughness: 0.35, metalness: 0.7 });
-  const winLitM = mat("#5a5446", { roughness: 0.2, metalness: 0.2, emissive: "#ffc77a", emissiveIntensity: 0.45 });
+  const litT = canvasTex(litPaneCanvas());
+  const winLitM = mat("#ffffff", { map: litT, emissiveMap: litT, emissive: "#ffffff", emissiveIntensity: 0.55, roughness: 0.25, metalness: 0.1 });
   const glassM = new THREE.MeshStandardMaterial({ color: "#a9c4cf", transparent: true, opacity: 0.2, roughness: 0.04, metalness: 0.9, depthWrite: false, envMapIntensity: 1.6 });
   const insideM = new THREE.MeshBasicMaterial({ color: "#ffdcaa", fog: false, toneMapped: false });
   const darkInM = mat("#1d1b19", { roughness: 0.9 });
@@ -479,7 +482,7 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
         if (b.wall === "clad") {
           // a band of glass with an office lit behind it, slim fins between the panes
           const pw = L / n;
-          bodyB.box(0.05, 2.3, pw - 0.16, k % 2 ? winLitM : cladGlassM, X(b.side, W0 - FRONT - 0.02), y - 0.1, z);
+          bodyB.box(0.05, 2.3, pw - 0.16, cladGlassM, X(b.side, W0 - FRONT - 0.02), y - 0.1, z);
           bodyB.box(0.22, 2.5, 0.1, finM, X(b.side, W0 - FRONT - 0.1), y - 0.1, b.z0 + pw * k + 0.05);
           bodyB.box(0.18, 0.12, pw, finM, X(b.side, W0 - FRONT - 0.08), y - 1.3, z);
         } else sash(b.side, z, y, Math.min(1.15, L / n - 0.9), f === 1 ? 1.75 : 1.5);
@@ -505,7 +508,7 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
   const signJobs: { i: number; side: number; z: number; w: number }[] = [];
   const shopB = batch(scene);
   /** A shopfront between z0 and z1: pilasters, fascia, two windows and a door in the middle. */
-  const shopfront = (side: 1 | -1, zc: number, w: number, o: { paint: any; sign: number; doorHalf: number; door: "open" | "shut"; window: any; awning?: [string, string]; lamps?: boolean; pilaster?: any; inside?: any }) => {
+  const shopfront = (side: 1 | -1, zc: number, w: number, o: { paint: any; sign: number; doorHalf: number; door: "open" | "shut"; window: any; awning?: [string, string]; lamps?: boolean; pilaster?: any; inside?: any; through?: any }) => {
     const paint = o.paint, pil = o.pilaster ?? paint, gold = mat("#c9a14f", { roughness: 0.3, metalness: 0.85 });
     const fy0 = 3.05 + PH, fy1 = 3.85 + PH;
     // fascia board, the cornice above it, a thin gold line
@@ -548,7 +551,7 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
     shopB.box(0.02, fy0 - PH - dh - 0.2, o.doorHalf * 2, glassM, X(side, 0.32), PH + dh + 0.1 + (fy0 - PH - dh - 0.2) / 2, zc);
     shopB.box(0.55, 0.06, o.doorHalf * 2 + 0.5, stoneTrimM, X(side, 0.12), PH + 0.03, zc); // the step
     if (o.door === "open") {
-      const inside = new THREE.Mesh(new THREE.PlaneGeometry(o.doorHalf * 2, dh), insideM);
+      const inside = new THREE.Mesh(new THREE.PlaneGeometry(o.doorHalf * 2, dh), o.through ?? insideM);
       inside.position.set(X(side, 1.4), PH + dh / 2, zc);
       inside.rotation.y = facing(side);
       scene.add(inside);
@@ -622,10 +625,12 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
   // ── The four shops ──
   const ART = (c: HTMLCanvasElement) => { const t = canvasTex(c); return new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: "#ffffff", emissiveIntensity: 0.55, roughness: 0.85 }); };
   const greenM = mat("#1f4a35", { roughness: 0.45 });
+  /** What you see through an open door: the shop's inside, lit, not touched by the street's light or fog. */
+  const THROUGH = (c: HTMLCanvasElement) => new THREE.MeshBasicMaterial({ map: canvasTex(c), fog: false, toneMapped: false, color: "#f2e6d4" });
   // KNOWITBALL: the 3D shop's own front (the garden's shop: green, gold, the neon name, your kit in the window)
   {
     const s = shopOf("shop");
-    shopfront(s.side, s.z, s.width, { paint: greenM, sign: signAt({ text: "KNOWITBALL", board: "#1f4a35", sub: "BOOTS · KIT · CANS · THE LOT" }), doorHalf: s.doorHalf, door: "open", window: ART(shopWindowCanvas(data.kits.home.shirt, data.kits.home.trim)), awning: ["#f2ead8", "#1f4a35"], lamps: true, inside: mat("#f3e4c8", { roughness: 0.8 }) });
+    shopfront(s.side, s.z, s.width, { paint: greenM, sign: signAt({ text: "KNOWITBALL", board: "#1f4a35", sub: "BOOTS · KIT · CANS · THE LOT" }), doorHalf: s.doorHalf, door: "open", window: ART(shopWindowCanvas(data.kits.home.shirt, data.kits.home.trim)), awning: ["#f2ead8", "#1f4a35"], lamps: true, inside: mat("#f3e4c8", { roughness: 0.8 }), through: THROUGH(doorwayCanvas("shop", data.kits.home.shirt)) });
   }
   // KIB MOTORS: a glass showroom; the car you could buy next turns on a plinth inside
   const showroom = { group: new THREE.Group(), car: null as any };
@@ -660,7 +665,7 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
     B.put(new THREE.CylinderGeometry(2.62, 2.62, 0.02, 48), glow("#ffd77a", 0.9), X(side, 3.4), PH + 0.145, zc + 1.6);
     B.done();
     // the name on the fascia: white letters, lit
-    const name = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.5, w * 0.5 * 192 / 1024), new THREE.MeshBasicMaterial({ map: canvasTex(lettersCanvas("KIB MOTORS", "#f4f6f8")), transparent: true, depthWrite: false }));
+    const name = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.4, w * 0.4 * 192 / 1024), new THREE.MeshBasicMaterial({ map: canvasTex(lettersCanvas("KIB MOTORS", "#f4f6f8")), transparent: true, depthWrite: false }));
     name.position.set(X(side, -0.11), gy + 0.05, zc);
     name.rotation.y = facing(side);
     scene.add(name);
@@ -677,7 +682,7 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
   {
     const s = shopOf("drip");
     const ink = mat("#121212", { roughness: 0.35 });
-    shopfront(s.side, s.z, s.width, { paint: ink, sign: signAt({ text: "THE DRIP", board: "#121212", ink: "#e9cf86", serif: true, sub: "MENSWEAR · JEWELLERY · WATCHES" }), doorHalf: s.doorHalf, door: "open", window: ART(boutiqueCanvas()), lamps: true, inside: mat("#efe2cc", { roughness: 0.8 }) });
+    shopfront(s.side, s.z, s.width, { paint: ink, sign: signAt({ text: "THE DRIP", board: "#121212", ink: "#e9cf86", serif: true, sub: "MENSWEAR · JEWELLERY · WATCHES" }), doorHalf: s.doorHalf, door: "open", window: ART(boutiqueCanvas()), lamps: true, inside: mat("#efe2cc", { roughness: 0.8 }), through: THROUGH(doorwayCanvas("drip", "#121212")) });
     data.boutique.forEach((it, i) => {
       const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.27), new THREE.MeshBasicMaterial({ map: canvasTex(tagCanvas(it.name, it.priceText)), toneMapped: false }));
       const e = i === 0 ? -1 : 1;
@@ -907,8 +912,8 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
   let ts = 0;
   for (const [x, z] of TREES) trees.push({ x, z, s: 3.4, ry: ts * 1.3, h: 1.7, w: 1.25, shape: "round", seed: 211 + 31 * ts++, light: "#6e9a3e", dark: "#28501f", tint: "#afcf88" });
   // beyond the roofs: tall trees behind each terrace, and round the lane south
-  for (let k = 0; k < 10; k++) for (const side of [-1, 1]) trees.push({ x: side * (FRONT + DEPTH + 3 + (k % 3) * 2.5), z: NORTH + 2 + k * 5.2, s: 5.6 + (k % 4) * 0.6, ry: k, h: 1.7, w: 1.25, shape: k % 3 === 0 ? "tall" : "round", seed: 401 + k * 17 + (side > 0 ? 5 : 0), light: "#6e9a3e", dark: "#28501f", tint: "#b8d894" });
-  for (let k = 0; k < 6; k++) for (const side of [-1, 1]) trees.push({ x: side * (ROAD + 6 + (k % 2) * 3), z: SOUTH + 5 + k * 4, s: 4.6 + (k % 3) * 0.5, ry: k * 2, h: 1.7, w: 1.25, shape: "round", seed: 701 + k * 13 + (side > 0 ? 3 : 0), tint: "#afcf88" });
+  for (let k = 0; k < 7; k++) for (const side of [-1, 1]) trees.push({ x: side * (FRONT + DEPTH + 3 + (k % 3) * 2.5), z: NORTH + 3 + k * 7.4, s: 5.6 + (k % 4) * 0.6, ry: k, h: 1.7, w: 1.25, shape: k % 3 === 0 ? "tall" : "round", seed: 401 + k * 17 + (side > 0 ? 5 : 0), light: "#6e9a3e", dark: "#28501f", tint: "#b8d894" });
+  for (let k = 0; k < 4; k++) for (const side of [-1, 1]) trees.push({ x: side * (ROAD + 6 + (k % 2) * 3), z: SOUTH + 5 + k * 5, s: 4.6 + (k % 3) * 0.5, ry: k * 2, h: 1.7, w: 1.25, shape: "round", seed: 701 + k * 13 + (side > 0 ? 3 : 0), tint: "#afcf88" });
   for (const x of [-12, -6, 0, 6, 12]) trees.push({ x, z: NORTH - 12, s: 6.0, ry: x, h: 1.7, w: 1.25, shape: "tall", seed: 901 + x, tint: "#c8e2a0" });
   const bushes: BushAt[] = [];
   const plants = buildPlantZones(THREE, trees, bushes, cardAtlas ? { style: "cards", cardMaterial: cardMaterial(THREE, cardAtlas.map, cardAtlas.nrm) } : { style: "clump" });
@@ -921,7 +926,7 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
   const loader = new GLTFLoader();
   await withMeshopt(loader);
   const load = (url: string) => loadGltfCached(loader, url);
-  const walkers = Math.max(0, Math.min(6, opts.walkers ?? (Number(dbg.get("walkers")) || ({ low: 1, medium: 3, high: 5 } as Record<Quality3d, number>)[tier])));
+  const walkers = Math.max(0, Math.min(6, opts.walkers ?? (Number(dbg.get("walkers")) || ({ low: 1, medium: 2, high: 4 } as Record<Quality3d, number>)[tier])));
   const PR = await import("../people/presets");
   const looks = PR.castScene(Array.from({ length: walkers }, (_, i) => ({ id: `street-walker-${i}`, role: (i % 3 === 2 ? "fan" : "player") as any, club: "Arsenal" })));
   const heads = Array.from(new Set(looks.map((l: any) => l.head)));
@@ -986,6 +991,7 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
     const n = new Npc(THREE, p, { id: `walker-${i}`, loco: walkInfo?.speed ? [{ name: "walk", speed: walkInfo.speed * size }] : [{ name: "walk", speed: 1.25 }] });
     p.root.position.y = PH;
     scene.add(p.root);
+    cullSkinned(THREE, p.root); // not drawn while off screen (three3d/cullPeople.ts)
     npcs.push(n);
     const b = blob(0.85, 0.85, 0, 0, 0.6);
     b.position.y = PH + 0.011;
@@ -1433,7 +1439,9 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
       let minGap = Infinity;
       for (let i = 0; i < b.length; i++) for (let j = i + 1; j < b.length; j++) minGap = Math.min(minGap, Math.hypot(b[i].x - b[j].x, b[i].z - b[j].z));
       const onRoad = npcs.filter((n) => Math.abs(n.x) < ROAD - 0.1 && Math.abs(n.z - ZEBRA_Z) > 1.4).length;
-      return { tier, walkers: npcs.length, people: npcs.map((n) => n.info()), minGap: +minGap.toFixed(2), onRoadOffZebra: onRoad, cars: carRoots.length, showroomCar: !!showroom.car, near, cam: camera.position.toArray().map((n: number) => +n.toFixed(2)), you: [+player.position.x.toFixed(2), +player.position.z.toFixed(2)], gait: !!gaitBlend };
+      const triOf = (o: any) => { let t = 0; o.traverse((m: any) => { if (!m.isMesh || !m.visible) return; const g = m.geometry; const n = (g.index ? g.index.count : g.attributes.position.count) / 3; t += n * (m.isInstancedMesh ? m.count : 1); }); return Math.round(t / 1000) + "k"; };
+      const tris = { you: triOf(player), walkers: npcs.map((n) => triOf(n.root)), cars: carRoots.map(triOf), showroom: triOf(showroom.group), plants: triOf(plants.group), all: triOf(scene) };
+      return { tier, tris, walkers: npcs.length, people: npcs.map((n) => n.info()), minGap: +minGap.toFixed(2), onRoadOffZebra: onRoad, cars: carRoots.length, showroomCar: !!showroom.car, near, cam: camera.position.toArray().map((n: number) => +n.toFixed(2)), you: [+player.position.x.toFixed(2), +player.position.z.toFixed(2)], gait: !!gaitBlend };
     },
     debugCamera: (pos, look) => { testCam = pos ? [pos, look ?? [0, 1, 0]] : null; },
     dispose: () => {

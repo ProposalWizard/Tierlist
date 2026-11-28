@@ -37,8 +37,8 @@ const SHOTS = [
   { id: "casino", url: "/star-garden3d-dev?place=casino", settle: 12000, nobody: true },
   // the gym (world kit): a fixed camera from the far corner, eye height, across the kit to the mirror wall
   { id: "gym", url: "/star-world3d-dev?place=gym&bare=1&clean=1", settle: 9000, nobody: true, cam: [[4.3, 1.7, 3.7], [-1.2, 1.1, -2.6]] },
-  // the shopping street: a fixed camera on the east pavement, eye height, looking up the street to the shops
-  { id: "street", url: "/star-street-dev?bare=1", settle: 9000, nobody: true, streetCam: [[5.4, 1.75, 19.5], [-0.6, 2.6, -6]] },
+  // the shopping street: a fixed camera in the road at the bottom of the street, looking up it to the shops
+  { id: "street", url: "/star-street-dev?bare=1", settle: 9000, nobody: true, streetCam: [[-0.8, 2.0, 21.0], [2.0, 3.3, -6]] },
   // the walk-out cut scene (lib/star/cutscene/fixtures.ts walkout): its wide shots, where no face or kit is close
   { id: "tunnel-1", url: "/star-3d-bench-dev/scene?scene=director&fixture=walkout&clean=1", seek: 0.3 },
   { id: "tunnel-2", url: "/star-3d-bench-dev/scene?scene=director&fixture=walkout&clean=1", seek: 1.3 },

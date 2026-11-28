@@ -238,6 +238,71 @@ export function priceStandCanvas(name: string, price: string): HTMLCanvasElement
   return c;
 }
 
+/** A window pane by day: the sky's reflection, lighter at the top, a soft diagonal sheen. */
+export function paneCanvas(): HTMLCanvasElement {
+  const [c, g] = cv(128, 192);
+  const sky = g.createLinearGradient(0, 0, 0, 192);
+  sky.addColorStop(0, "#9fb6c6"); sky.addColorStop(0.45, "#5d7383"); sky.addColorStop(1, "#2c3a44");
+  g.fillStyle = sky; g.fillRect(0, 0, 128, 192);
+  g.fillStyle = "rgba(255,255,255,0.10)";
+  g.beginPath(); g.moveTo(0, 60); g.lineTo(128, 0); g.lineTo(128, 26); g.lineTo(0, 92); g.closePath(); g.fill();
+  // a net curtain's hem low down, faintly
+  g.fillStyle = "rgba(235,235,230,0.10)"; g.fillRect(0, 140, 128, 52);
+  return c;
+}
+
+/** A window with a lamp on inside: warm room, curtains drawn back at the sides, the lamp's glow. */
+export function litPaneCanvas(): HTMLCanvasElement {
+  const [c, g] = cv(128, 192);
+  const room = g.createLinearGradient(0, 0, 0, 192);
+  room.addColorStop(0, "#ffe1a8"); room.addColorStop(0.6, "#e3a961"); room.addColorStop(1, "#7a4f2a");
+  g.fillStyle = room; g.fillRect(0, 0, 128, 192);
+  const p = g.createRadialGradient(70, 40, 4, 70, 50, 90);
+  p.addColorStop(0, "rgba(255,248,225,0.9)"); p.addColorStop(1, "rgba(255,248,225,0)");
+  g.fillStyle = p; g.fillRect(0, 0, 128, 192);
+  // a picture on the back wall and the curtains
+  g.fillStyle = "rgba(60,40,25,0.55)"; g.fillRect(48, 70, 34, 26);
+  for (const [x, w] of [[0, 26], [102, 26]]) {
+    const cg = g.createLinearGradient(x, 0, x + w, 0);
+    cg.addColorStop(0, "#5b2a2a"); cg.addColorStop(0.5, "#8b3a3a"); cg.addColorStop(1, "#4a2020");
+    g.fillStyle = cg; g.fillRect(x, 0, w, 192);
+  }
+  return c;
+}
+
+/** Through an open shop door: the shop's own inside (shelves of stock, a counter, warm light). */
+export function doorwayCanvas(kind: "shop" | "drip", accent: string): HTMLCanvasElement {
+  const [c, g] = cv(256, 384);
+  const r = rnd(kind === "shop" ? 61 : 67);
+  const wall = g.createLinearGradient(0, 0, 0, 384);
+  wall.addColorStop(0, kind === "shop" ? "#f7e8cc" : "#f3e7d6"); wall.addColorStop(1, kind === "shop" ? "#e0c08e" : "#d8c3a2");
+  g.fillStyle = wall; g.fillRect(0, 0, 256, 384);
+  const p = g.createRadialGradient(128, 20, 4, 128, 80, 220);
+  p.addColorStop(0, "rgba(255,252,238,0.95)"); p.addColorStop(1, "rgba(255,252,238,0)");
+  g.fillStyle = p; g.fillRect(0, 0, 256, 384);
+  // the floor going back
+  g.fillStyle = kind === "shop" ? "#7a5232" : "#5c4330"; g.fillRect(0, 300, 256, 84);
+  g.fillStyle = "rgba(0,0,0,0.12)"; for (let k = 0; k < 6; k++) g.fillRect(0, 300 + k * 14, 256, 1);
+  if (kind === "shop") {
+    // shelves of boot boxes and cans down both sides, a counter at the back
+    for (const x of [8, 188]) for (let k = 0; k < 4; k++) {
+      g.fillStyle = "#6b4528"; g.fillRect(x, 80 + k * 52, 60, 6);
+      for (let i = 0; i < 4; i++) { g.fillStyle = ["#1f4a35", "#c9a14f", accent, "#f4f4f4", "#b91c1c"][Math.floor(r() * 5)]; g.fillRect(x + 2 + i * 15, 60 + k * 52, 12, 20); }
+    }
+    g.fillStyle = "#1f4a35"; g.fillRect(80, 232, 96, 70); g.fillStyle = "#c9a14f"; g.fillRect(80, 232, 96, 6);
+    // a shirt on the back wall in your colours
+    g.fillStyle = accent; g.beginPath(); g.moveTo(104, 110); g.lineTo(152, 110); g.lineTo(166, 126); g.lineTo(156, 136); g.lineTo(150, 130); g.lineTo(150, 176); g.lineTo(106, 176); g.lineTo(106, 130); g.lineTo(100, 136); g.lineTo(90, 126); g.closePath(); g.fill();
+  } else {
+    // a rail of jackets, a mirror, a glass counter with watches
+    g.fillStyle = "#c9ccd1"; g.fillRect(14, 90, 80, 4);
+    for (let i = 0; i < 6; i++) { g.fillStyle = ["#1f2937", "#7c2d12", "#e5e7eb", "#0f766e", "#312e81", "#a16207"][i]; g.fillRect(16 + i * 13, 94, 11, 90 + (i % 2) * 20); }
+    g.fillStyle = "#c9a14f"; g.fillRect(160, 60, 70, 150); g.fillStyle = "#dfe8ec"; g.fillRect(166, 66, 58, 138);
+    g.fillStyle = "rgba(200,220,230,0.7)"; g.fillRect(96, 240, 120, 56); g.fillStyle = "#121212"; g.fillRect(96, 290, 120, 10);
+    for (let i = 0; i < 5; i++) { g.fillStyle = "#e9cf86"; g.beginPath(); g.arc(110 + i * 22, 266, 5, 0, Math.PI * 2); g.fill(); }
+  }
+  return c;
+}
+
 /** Crisp letters on clear glass (a modern fascia): no glow, a soft shadow so they read on dark cladding. */
 export function lettersCanvas(text: string, ink: string, w = 1024, h = 192): HTMLCanvasElement {
   const [c, g] = cv(w, h);
