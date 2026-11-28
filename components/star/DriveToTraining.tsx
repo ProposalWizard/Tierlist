@@ -9,6 +9,9 @@
  *   start "compound": back at the compound from the gym (you at your car, no arrival)
  *   start "back":     the drive home, ending at the fork: Home / Casino / Shop
  *
+ * At the compound, reception's and the canteen's doors open their rooms here (28 Nov 2026, lib/star/world3d/roomsPlace.ts):
+ * the fade, the room, its "‹ Compound" back out of that same door. The canteen's lunch card changes the career (onCareer).
+ *
  * Dressed from the career: your best car (the shop's order; the Hatchback when you own none), your club's kit and
  * number, your team-mates' names, your wage (a speed camera's fine). Saved: only an event's small effect
  * (lib/star/drive3d/events.ts, through dilemmas.ts applyEffects). The calls change nothing yet.
@@ -27,6 +30,7 @@ import type { DriveSceneOptions } from "@/lib/star/drive3d/scene";
 import type { ForkChoice } from "@/lib/star/drive3d/drive";
 import type { SteerMode } from "@/lib/star/drive3d/car";
 import type { WorldOptions } from "@/lib/star/world3d/testScene";
+import { roomInfo, roomBack, type RoomId } from "@/lib/star/world3d/roomsPlan";
 
 const STEER_KEY = "star-drive-steer";
 const readSteer = (): SteerMode => { try { const v = localStorage.getItem(STEER_KEY); return v === "stick" || v === "tilt" ? v : "lanes"; } catch { return "lanes"; } };
@@ -49,6 +53,9 @@ export default function DriveToTraining({ career, start, onCareer, onGym, onFork
   const [arrival, setArrival] = useState<{ skipped: boolean } | null>(null);
   // the corner pills only once you are out of the car
   const [out, setOut] = useState(false);
+  // the compound's rooms: the one you are in (null: outside), and the door you last came out of
+  const [room, setRoom] = useState<RoomId | null>(null);
+  const [outOf, setOutOf] = useState<RoomId | null>(null);
   const careerRef = useRef(career);
   careerRef.current = career;
 
@@ -78,9 +85,15 @@ export default function DriveToTraining({ career, start, onCareer, onGym, onFork
   const backOpts = useMemo(() => driveOpts("back"), []); // eslint-disable-line react-hooks/exhaustive-deps
   const worldOpts = useMemo<WorldOptions>(() => ({
     place: "compound", number: career.squadNumber ?? 10, club: career.player.club, kit: dress.kit, mates: dress.mates,
-    arrive: { car: dress.car, mate: dress.mate, skip: arrival ? arrival.skipped : true },
+    arrive: { car: dress.car, mate: dress.mate, skip: outOf ? true : arrival ? arrival.skipped : true },
+    startAt: outOf ? roomBack(outOf).startAt : null, fadeIn: !!outOf,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [arrival]);
+  }), [arrival, outOf]);
+  const roomOpts = useMemo<WorldOptions | null>(() => room ? ({
+    place: room, number: career.squadNumber ?? 10, club: career.player.club, kit: dress.kit, mates: dress.mates, fadeIn: true,
+    room: roomInfo(careerRef.current),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }) : null, [room]);
 
   const takeEffects = (effects: Parameters<typeof applyEffects>[1][]) => {
     if (!effects.length) return;
@@ -104,9 +117,17 @@ export default function DriveToTraining({ career, start, onCareer, onGym, onFork
       </div>
     );
   }
+  if (room && roomOpts) {
+    return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 40, background: "#0b0d12" }} data-drive-career={room}>
+        <World3D options={roomOpts} noStatus onBack={() => { setOutOf(room); setRoom(null); }} backLabel={roomBack(room).label}
+          career={career} onCareer={(c) => { careerRef.current = c; onCareer(c); }} />
+      </div>
+    );
+  }
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 40, background: "#0b0d12" }} data-drive-career="compound">
-      <World3D options={worldOpts} noStatus onGo={(p) => { if (p === "gym") onGym(); }} onArrival={(a) => { if (a.phase === "done" || a.phase === "out") setOut(true); }} />
+      <World3D key={outOf ?? "car"} options={worldOpts} noStatus onGo={(p) => { if (p === "gym") onGym(); else if (p === "reception" || p === "canteen") { setOut(false); setRoom(p); } }} onArrival={(a) => { if (a.phase === "done" || a.phase === "out") setOut(true); }} />
       {out && <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 8, zIndex: 2 }}>
         <button data-drive-home onClick={() => setStage("back")} style={PILL}>‹ Drive home</button>
         <button data-drive-leave onClick={onBack} style={{ ...PILL, background: "rgba(8,10,16,.5)" }}>Training page</button>

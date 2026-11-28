@@ -91,19 +91,24 @@ export const CAR_SIZE: Record<"suv" | "saloon" | "coupe", [number, number, numbe
   suv: [1.95, 4.8, 1.7], saloon: [1.85, 4.7, 1.45], coupe: [1.9, 4.5, 1.3],
 };
 
-/** The doors you can tap, where you stand for each, and where each leads. */
-export type DoorLeads = "gym" | "soon" | "reception";
+/** The doors you can tap, where you stand for each, and where each leads: every one opens its own place (the gym,
+ *  ./gymPlace.ts; reception and the canteen, ./roomsPlace.ts, 28 Nov 2026). */
+export type DoorLeads = "gym" | "reception" | "canteen";
 export interface CompoundDoor { id: string; label: string; x: number; leads: DoorLeads; sign: string; lines: string[]; verb: string }
 export const DOORS: CompoundDoor[] = [
   { id: "door-gym", label: "The gym", x: -11, leads: "gym", sign: "GYM", verb: "Go in", lines: ["Weights, treadmills and the bag. Your Strength, Cardio and Focus."] },
-  { id: "door-reception", label: "Reception", x: 0, leads: "reception", sign: "RECEPTION", verb: "Sign in", lines: ["Sign in for the day."] },
-  { id: "door-canteen", label: "The canteen", x: 11, leads: "soon", sign: "CANTEEN", verb: "Look in", lines: ["Lunch is at half twelve."] },
+  { id: "door-reception", label: "Reception", x: 0, leads: "reception", sign: "RECEPTION", verb: "Go in", lines: ["The front desk. Your next match is on the screen."] },
+  { id: "door-canteen", label: "The canteen", x: 11, leads: "canteen", sign: "CANTEEN", verb: "Go in", lines: ["Lunch is from half twelve. The lads eat here."] },
 ];
-/** The card after you go through a door that leads nowhere yet. */
-export const DOOR_SOON: Record<string, string[]> = {
-  "door-canteen": ["The canteen is coming soon.", "You'll pick a plate here, and it will change your next session."],
-  "door-reception": ["Signed in. No messages today.", "The changing room and the physio are coming soon."],
-};
+/** A door's place by its id (null: not a door). */
+export const doorById = (id: string): CompoundDoor | null => DOORS.find((d) => d.id === id) ?? null;
+/** Back out of a door: you on the forecourt this far (m) out from its front, facing away from the building. */
+export const DOOR_OUT_M = 2.4;
+/** Where "back out of door X" stands you: [x, z, yaw]. */
+export function outOfDoor(leads: DoorLeads): [number, number, number] {
+  const d = DOORS.find((x) => x.leads === leads)!;
+  return [d.x, COMPOUND.building.z1 + 0.9 + DOOR_OUT_M, 0];
+}
 /** Where you stand to use a door: on the paving, a body's width clear of the wall. */
 export const doorFront = (d: CompoundDoor): XZ => [d.x, COMPOUND.building.z1 + 0.9];
 

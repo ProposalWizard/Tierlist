@@ -86,7 +86,7 @@ function cv(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContext2D]
   return [c, c.getContext("2d")!];
 }
 /** The club's crest: a shield in its colours, its initials, a ball. Drawn, not a real club badge. */
-function drawCrest(g: CanvasRenderingContext2D, cx: number, cy: number, s: number, shirt: string, trim: string, club: string) {
+export function drawCrest(g: CanvasRenderingContext2D, cx: number, cy: number, s: number, shirt: string, trim: string, club: string) {
   g.save(); g.translate(cx, cy); g.scale(s, s);
   const shield = () => { g.beginPath(); g.moveTo(-50, -58); g.lineTo(50, -58); g.lineTo(50, 4); g.quadraticCurveTo(48, 46, 0, 66); g.quadraticCurveTo(-48, 46, -50, 4); g.closePath(); };
   shield(); g.fillStyle = trim; g.fill();
@@ -209,7 +209,7 @@ function interiorCanvas(shirt: string, trim: string, club: string): HTMLCanvasEl
   return c;
 }
 /** Vertical timber boards (the ground floor's cladding), 512² tiling: about 1.2 m of boards a tile. */
-function timberCanvas(): HTMLCanvasElement {
+export function timberCanvas(): HTMLCanvasElement {
   const [c, g] = cv(512, 512);
   let q = 5; const r = () => { q = (q * 16807) % 2147483647; return q / 2147483647; };
   for (let x = 0; x < 512; x += 32) {

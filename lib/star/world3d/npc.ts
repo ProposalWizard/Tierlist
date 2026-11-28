@@ -164,14 +164,16 @@ export class Npc {
   note = "";
   private yawS = { yaw: 0, vel: 0 };
   private job: UseJob | null = null;
-  private goal: { to: XZ; face: number | null; onArrive?: () => void; tries: number; run: boolean } | null = null;
+  private goal: { to: XZ; face: number | null; onArrive?: () => void; tries: number; run: boolean; free?: boolean } | null = null;
   private blockedT = 0;
   private replanT = 0;
   private faceTarget: number | null = null;
   private actEnd: (() => void) | null = null;
   private actT = 0;
-  private gestureW = { drink: 0, look: 0 };
-  private gestureWant = { drink: 0 };
+  private gestureW = { drink: 0, look: 0, cook: 0 };
+  private gestureWant = { drink: 0, cook: 0 };
+  /** How far into the cooking move he is (0..1): the scene puts a spoon in his hand (houseLife.ts). */
+  get cooking() { return this.gestureW.cook; }
   private clock = 0;
   private lastClip = "";
   private q0 = new Map<any, any>();
@@ -196,7 +198,7 @@ export class Npc {
     this.play.setLoco(loco, acts[this.own.idle] ? this.own.idle : "idle");
     this.play.loco(0, { fade: 0 });
     this.sit = opts.sit ?? null;
-    this.tmp = { v: new T.Vector3(), w: new T.Vector3(), a: new T.Vector3(), b: new T.Vector3(), c: new T.Vector3(), q: new T.Quaternion(), p: new T.Quaternion(), d: new T.Quaternion() };
+    this.tmp = { v: new T.Vector3(), w: new T.Vector3(), a: new T.Vector3(), b: new T.Vector3(), c: new T.Vector3(), e: new T.Vector3(), q: new T.Quaternion(), p: new T.Quaternion(), d: new T.Quaternion() };
   }
 
   get root() { return this.person.root; }
@@ -226,10 +228,10 @@ export class Npc {
   }
 
   /** Walk a straight line through these points, no path finding (through a doorway, off the room's floor grid). */
-  walkLine(points: XZ[], onArrive?: () => void): boolean {
+  walkLine(points: XZ[], onArrive?: () => void, o: { free?: boolean } = {}): boolean {
     if (this.seated || !points.length) return false;
-    this.gestureWant.drink = 0;
-    this.goal = { to: points[points.length - 1], face: null, onArrive, tries: 6, run: false };
+    this.gestureWant.drink = 0; this.gestureWant.cook = 0;
+    this.goal = { to: points[points.length - 1], face: null, onArrive, tries: 6, run: false, free: o.free };
     this.walker.go(points, { onArrive: () => this.arrived() });
     this.state = "walk";
     this.blockedT = 0;
@@ -239,7 +241,7 @@ export class Npc {
   /** Walk to a point (round things); `face` = the facing to turn to there. */
   walkTo(world: NpcWorld, to: XZ, o: { face?: number | null; onArrive?: () => void; run?: boolean } = {}): boolean {
     if (this.seated) return false;
-    this.gestureWant.drink = 0;
+    this.gestureWant.drink = 0; this.gestureWant.cook = 0;
     this.goal = { to, face: o.face ?? null, onArrive: o.onArrive, tries: 0, run: !!o.run };
     return this.plan(world);
   }
@@ -354,7 +356,7 @@ export class Npc {
       return;
     }
     if (onOut) { const prev = j.onOut; j.onOut = () => { prev?.(); onOut(); }; }
-    this.gestureWant.drink = 0;
+    this.gestureWant.drink = 0; this.gestureWant.cook = 0;
     const e = j.obj.exit;
     const name = e ? this.pick(e) : null;
     if (name) {
@@ -423,6 +425,7 @@ export class Npc {
   private playStep(s: ClipStep) {
     const name = this.pick(s);
     this.gestureWant.drink = s.gesture === "drink" ? 1 : 0;
+    this.gestureWant.cook = s.gesture === "cook" && !!this.job?.obj.hands ? 1 : 0;
     if (!name) return;
     if (name === this.lastClip && this.state === "use" && this.holdOn === (s.hold ?? null)) return; // the same seated clip goes on: no restart
     this.holdOn = s.hold ?? null;
@@ -575,7 +578,7 @@ export class Npc {
       }
     }
     // ── never through a wall (the last step up to a seat's front may go into its margin) ──
-    const lastStep = !!this.goal && Math.hypot(this.goal.to[0] - nx, this.goal.to[1] - nz) < 0.7;
+    const lastStep = !!this.goal?.free || !!this.goal && Math.hypot(this.goal.to[0] - nx, this.goal.to[1] - nz) < 0.7;
     if (lastStep || freeAt(world.grid, nx, nz) || !freeAt(world.grid, this.x, this.z)) { this.x = nx; this.z = nz; }
     else if (freeAt(world.grid, nx, this.z)) this.x = nx;
     else if (freeAt(world.grid, this.x, nz)) this.z = nz;
@@ -591,6 +594,9 @@ export class Npc {
     const k = 1 - Math.exp(-dt * 3);
     this.gestureW.drink += (this.gestureWant.drink - this.gestureW.drink) * k;
     this.gestureW.look += ((this.lookAt ? 1 : 0) - this.gestureW.look) * k;
+    // cooking only while at the thing (out of it: the hands go back to the clip, never stirring the air)
+    if (!(this.state === "use" && this.job?.obj.hands)) this.gestureWant.cook = 0;
+    this.gestureW.cook += (this.gestureWant.cook - this.gestureW.cook) * (this.gestureWant.cook ? k : 1 - Math.exp(-dt * 10));
     const b = this.person.bones;
     if (this.gestureW.look > 0.01 && this.lookAt && b.Head) this.look(this.lookAt, this.gestureW.look);
     // hands come to the thighs as he settles, and go back to the clip as he gets up
@@ -602,7 +608,27 @@ export class Npc {
       const sip = ph < 0.25 ? smooth(0, 0.25, ph) : ph < 0.6 ? 1 : 1 - smooth(0.6, 0.85, ph);
       this.drink(this.gestureW.drink * (0.35 + 0.65 * sip));
     }
+    const hands = this.job?.obj.hands;
+    if (this.gestureW.cook > 0.01 && hands) this.cook(hands, this.gestureW.cook);
   }
+
+  /**
+   * At the hob (no stirring clip in our files): the right hand stirs the pan in small circles, a quick toss
+   * every 7 s; the left hand holds the pan's handle. Two-bone reaches over the standing idle, blended by w.
+   */
+  private cook(h: NonNullable<SmartObject["hands"]>, w: number) {
+    const tv = this.tmp.b;
+    const t = this.clock + this.own.phase * 10;
+    const ph = t % 7;
+    const toss = ph > 6.2 ? Math.sin(Math.PI * (ph - 6.2) / 0.8) : 0;
+    const a = t * 2 * Math.PI * 0.9;
+    // the wrist 16 cm over the pan (the spoon reaches down from it), a 4.5 cm circle; up 10 cm in a toss
+    tv.set(h.pan[0] + Math.cos(a) * 0.045, h.pan[1] + 0.16 + toss * 0.1, h.pan[2] + Math.sin(a) * 0.045);
+    this.reach("Right", tv, w);
+    this.tmp.e.set(h.handle[0], h.handle[1] + 0.035 + toss * 0.03, h.handle[2]);
+    this.reach("Left", this.tmp.e, w);
+  }
+
 
   /**
    * Turn his head towards a point, at most 55° off his facing. The turn goes

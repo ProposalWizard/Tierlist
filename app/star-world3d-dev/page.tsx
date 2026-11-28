@@ -23,6 +23,12 @@
  * Demos: ?demo=arrive (the film: car park, the gate, in at the gym door) | compound (the people at work) |
  * drive (the drive's arrival: your car in under the barrier, into your bay, then out and in at the gym door).
  * ?arrive=hatch|family|suv|sports|classic|super: the compound opens with that car's arrival (lib/star/drive3d/arrival.ts).
+ * ?place=reception|canteen (28 Nov 2026; lib/star/world3d/roomsPlace.ts): the compound's two rooms, also through their
+ * doors. Reception: the receptionist (the next match and the time to leave, from this page's made-up career), the
+ * crest wall, the trophy cabinet, the sofa, the fixture screen. The canteen: walk to the counter and the lunch card
+ * opens (components/star/LunchCard.tsx, on this page's made-up career: nothing saved); sit with a team-mate for his
+ * table options. ?hall=chef|canteen|counter|urn: the club's size (the lunch card's words; chef = Premier League).
+ * Demos: ?demo=canteendoor (to the canteen's door and in) | canteen (in, up to the counter) | reception.
  *
  * ?place=house|garden, ?demo=sofa|fridge|visitor|talk (a scripted run, for
  * filming with scripts/film/frames3d.mjs), ?bare=1 / ?film=1 full screen,
@@ -51,6 +57,8 @@ import { chat as lifeChat } from "@/lib/star/life/social";
 import { parseQuality3d } from "@/lib/star/three3d/quality";
 import type { CareerState, StarPlayer } from "@/lib/star/types";
 import type { WorldOptions, WorldPlace } from "@/lib/star/world3d/testScene";
+import { roomInfo, roomBack } from "@/lib/star/world3d/roomsPlan";
+import type { CareerDivision } from "@/lib/star/calendar";
 
 if (typeof window !== "undefined") setToonYou({ name: "Player" });
 
@@ -62,16 +70,19 @@ function World3DTest() {
   const params = useSearchParams();
   const demo = params.get("demo");
   const GYM_DEMOS = ["gym", "walk", "bench", "treadmill", "fall", "bag", "tour", "pullup", "squat", "pushup", "plank", "nordic", "copenhagen", "boxjump", "ladder", "landing", "mobility", "body1", "body2", "body3", "body4"];
-  const COMPOUND_DEMOS = ["arrive", "compound", "drive"];
+  const COMPOUND_DEMOS = ["arrive", "compound", "drive", "canteendoor"];
+  const ROOM_Q = params.get("place") === "reception" || demo === "reception" ? "reception" : params.get("place") === "canteen" || demo === "canteen" ? "canteen" : null;
   // the drive's arrival (lib/star/drive3d/arrival.ts): ?arrive=hatch|family|suv|sports|classic|super (?demo=drive films it)
   const ac = params.get("arrive") ?? (demo === "drive" ? "sports" : null);
   const arriveCar = ac && (DRIVE_CAR_IDS as string[]).includes(ac) ? (ac as DriveCarId) : null;
-  const [place, setPlace] = useState<WorldPlace>(params.get("place") === "house" || demo === "sofa" || demo === "fridge" ? "house" : params.get("place") === "gym" || GYM_DEMOS.includes(demo ?? "") ? "gym" : params.get("place") === "compound" || COMPOUND_DEMOS.includes(demo ?? "") ? "compound" : "garden");
+  const [place, setPlace] = useState<WorldPlace>(ROOM_Q ? ROOM_Q : params.get("place") === "house" || demo === "sofa" || demo === "fridge" ? "house" : params.get("place") === "gym" || GYM_DEMOS.includes(demo ?? "") ? "gym" : params.get("place") === "compound" || COMPOUND_DEMOS.includes(demo ?? "") ? "compound" : "garden");
   const sky = params.get("sky");
   // a door that leads on (the compound's gym door): the demo only belongs to the place it started in
   const [went, setWent] = useState(false);
   // the gym reached through the compound's door: its "‹ Compound" goes back out of that door (gym/homeGym.ts gymBack)
   const [from, setFrom] = useState<"compound" | "back" | "house" | null>(null);
+  // which of the compound's doors you came back out of (gym, reception, canteen): you stand outside it
+  const [outOf, setOutOf] = useState<"gym" | "reception" | "canteen">("gym");
   // ?homeGym=<tier>: that house level's home gym (gym/homeGym.ts), its machines only
   const [homeGym, setHomeGym] = useState<HomeTier | null>(() => parseHomeTier(params.get("homeGym")));
   const [run, setRun] = useState(0);
@@ -82,8 +93,15 @@ function World3DTest() {
     const player = { firstName: "Test", lastName: "Player", age: 24, skinTone: "medium", club: "Arsenal", clubBadge: null, position: "ST", nationality: "England", startYear: 2027 } as unknown as StarPlayer;
     const c = makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS], "premier");
     c.squad = generateSquad(7);
+    // ?hall=: the club's size, for the canteen's look (life/lunch.ts hallOf: words only)
+    const HALL: Record<string, CareerDivision> = { chef: "premier", canteen: "championship", counter: "league_one", urn: "national_league" };
+    const hq = params.get("hall");
+    if (hq && HALL[hq]) c.division = HALL[hq];
     career.current = c;
   }
+  // the canteen's lunch card changes this made-up career (never saved): kept in state so the card redraws
+  const [careerNow, setCareerNow] = useState<CareerState>(career.current);
+  const onCareer = (c: CareerState) => { career.current = c; setCareerNow(c); };
   const options = useMemo<WorldOptions>(() => {
     const c = career.current!;
     const kit = kitsOf("Arsenal").home;
@@ -93,7 +111,9 @@ function World3DTest() {
       homeGym: place === "gym" ? homeGym : null,
       fadeIn: !!from,
       compoundKit: place === "gym" && from === "compound",
-      startAt: place === "compound" && from === "back" ? "gym-door" : null,
+      startAt: place === "compound" && from === "back" ? `${outOf}-door` : null,
+      // the rooms: what they say, read from the career as you walk in (lib/star/world3d/roomsPlan.ts roomInfo)
+      room: place === "reception" || place === "canteen" ? roomInfo(c) : null,
       // the drive's arrival (lib/star/drive3d/arrival.ts): ?arrive=<car>, not after a door (you walked out of the gym)
       arrive: place === "compound" && arriveCar && !went && !from ? { car: arriveCar } : null,
       kit: { shirt: kit.shirt, trim: kit.trim },
@@ -112,7 +132,7 @@ function World3DTest() {
       },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [place, demo, quality, run, sky, went, from, homeGym]);
+  }, [place, demo, quality, run, sky, went, from, homeGym, outOf]);
 
   const bare = params.get("bare") === "1" || params.get("film") === "1";
   const houseTier: HomeTier | null = parseHomeTier(params.get("tier"));
@@ -121,8 +141,9 @@ function World3DTest() {
     ? <Home3D key={`${tier}-${run}`} career={career.current!} tier={tier} living house="new" where="test" embedded={!bare} backLabel="Back" onBack={() => setTier(null)}
       onGym={(t) => { setHomeGym(t); setFrom("house"); setPlace("gym"); }} />
     : <World3D key={`${place}-${run}`} options={options} clean={params.get("clean") === "1"} onGo={(p) => { setWent(true); setFrom("compound"); setPlace(p); }}
-      onBack={place === "gym" && from === "compound" ? () => { setFrom("back"); setPlace("compound"); } : place === "gym" && from === "house" ? () => { setFrom(null); setPlace("house"); } : undefined}
-      backLabel={from === "house" ? "House" : "Compound"} />;
+      onBack={(place === "gym" && from === "compound") || place === "reception" || place === "canteen" ? () => { setOutOf(place === "gym" ? "gym" : (place as "reception" | "canteen")); setWent(true); setFrom("back"); setPlace("compound"); } : place === "gym" && from === "house" ? () => { setFrom(null); setPlace("house"); } : undefined}
+      backLabel={from === "house" ? "House" : place === "reception" || place === "canteen" ? roomBack(place).label : "Compound"}
+      career={careerNow} onCareer={onCareer} />;
   if (bare) {
     return (
       <>
@@ -139,6 +160,8 @@ function World3DTest() {
           <Pill on={place === "garden"} onClick={() => setPlace("garden")}>Garden</Pill>
           <Pill on={place === "gym"} onClick={() => setPlace("gym")}>Gym</Pill>
           <Pill on={place === "compound"} onClick={() => setPlace("compound")}>Compound</Pill>
+          <Pill on={place === "reception"} onClick={() => setPlace("reception")}>Reception</Pill>
+          <Pill on={place === "canteen"} onClick={() => setPlace("canteen")}>Canteen</Pill>
           {HOME_TIERS.map((t) => <Pill key={t} on={place === "house" && tier === t} onClick={() => { setPlace("house"); setTier(t); }}>{t}</Pill>)}
           <Btn onClick={() => setRun((k) => k + 1)}>↻ Restart</Btn>
         </div>

@@ -16,7 +16,11 @@ import { Glow, rgba, tint } from "./ui";
 
 const C1 = "#f59e0b";
 
-export default function LunchCard({ career, onCareer }: { career: CareerState; onCareer: (c: CareerState) => void }) {
+/**
+ * `focus` (the 3D canteen, components/star/World3D.tsx): "plates" at the counter (the plates only, no table), "table"
+ * sat with one team-mate (`mate`: his row only). Absent: the whole card (the Training page). Same rules either way.
+ */
+export default function LunchCard({ career, onCareer, focus, mate }: { career: CareerState; onCareer: (c: CareerState) => void; focus?: "plates" | "table"; mate?: string }) {
   const hall = hallOf(career);
   const status = lunchStatus(career);
   const had = lunchToday(career);
@@ -40,7 +44,8 @@ export default function LunchCard({ career, onCareer }: { career: CareerState; o
     setTalk({ id: m.id, line: r.line, extra: bits });
     onCareer(r.career);
   };
-  const mates = had && had.plate !== "skip" ? lunchMates(career) : [];
+  const mates = focus === "plates" ? [] : (had && had.plate !== "skip" ? lunchMates(career) : []).filter((m) => !mate || m.id === mate);
+  const showPlates = focus !== "table";
 
   return (
     <div
@@ -70,7 +75,7 @@ export default function LunchCard({ career, onCareer }: { career: CareerState; o
         )}
       </div>
 
-      {!had && (status === "open" || status === "early") && (
+      {showPlates && !had && (status === "open" || status === "early") && (
         <>
           <div className="mt-2 text-[11px] font-bold text-white/55">{hall.line} One plate a day; a gym boost lasts your next session only.</div>
           <div className="mt-2 space-y-1.5">
@@ -96,6 +101,12 @@ export default function LunchCard({ career, onCareer }: { career: CareerState; o
       )}
 
       {msg && <div className="mt-2 rounded-lg bg-amber-400/15 px-2.5 py-2 text-[12.5px] font-bold leading-snug text-amber-100" data-lunch-result>{msg}</div>}
+
+      {focus === "table" && (!had || had.plate === "skip") && (
+        <div className="mt-2 rounded-lg bg-black/30 px-2.5 py-2 text-[12.5px] font-bold leading-snug text-white/80" data-lunch-table-wait>
+          {had ? "You skipped lunch today, so there's no plate to sit down with." : "Pick a plate at the counter first, then come and sit down."}
+        </div>
+      )}
 
       {mates.length > 0 && (
         <div className="mt-2.5" data-lunch-table>

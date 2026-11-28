@@ -16,7 +16,7 @@ import type { CareerState } from "../types";
 import type { HomeTier, RoomId } from "../home3d/homes";
 import { HOME_TIERS, homeTierOf, livingOn, roomsFor } from "../home3d/homes";
 import { seeded, hashId } from "../world3d/routine";
-import { planVisit, whereAt, type VStep } from "./houseRoutines";
+import { planVisit, whereAt, entryRoom, type VStep } from "./houseRoutines";
 import { clockOf, dateOf, dayNumber, nextMatchInfo } from "./clock";
 
 /** Chance a team-mate drops round on a free day, by home (1 - this = the empty days). */
@@ -137,6 +137,14 @@ export function forcedDay(kind: string, from: number, rooms: RoomId[], tier: Hom
     const seq: [VStep["kind"], string | undefined, number, string][] = [["arrive", undefined, 2, "Comes in"], ["use", "sofa", 8, "Sofa, the TV on"], ["use", "fridge", 5, "A can from the fridge"], ["call", "window", 7, "A call at the window"], ["leave", undefined, 3, "Leaves"]];
     let t = from;
     const steps: VStep[] = seq.map(([k, target, mins, label]) => { const s: VStep = { kind: k, room: room as RoomId, target, at: t, until: t + mins, label }; t += mins; return s; });
+    return [{ id: `mate-${m.id}`, who: "mate", name: m.name, mateId: m.id, from, to: t, why: "Dropped round", steps }];
+  }
+  // filming the front door (?visit=door): a team-mate in at the front door, a call in the hall, out again
+  if (kind === "door" && mates.length) {
+    const m = mates[0], room = entryRoom(rooms);
+    const seq: [VStep["kind"], string | undefined, number, string][] = [["arrive", undefined, 2, "Comes in"], ["call", "window", 4, "A call in the hall"], ["leave", undefined, 3, "Leaves"]];
+    let t = from;
+    const steps: VStep[] = seq.map(([k, target, mins, label]) => { const s: VStep = { kind: k, room, target, at: t, until: t + mins, label }; t += mins; return s; });
     return [{ id: `mate-${m.id}`, who: "mate", name: m.name, mateId: m.id, from, to: t, why: "Dropped round", steps }];
   }
   const seed = hashId(`forced|${kind}|${from}`);
