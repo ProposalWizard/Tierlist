@@ -22,7 +22,7 @@ import { freezeStatic } from "../freezeStatic";
 import { blobCanvas } from "../shop3d/textures";
 import type { Quality3d } from "../three3d/quality";
 import { roomPreset, type HomeTier, type RoomId, type RoomPreset, type WindowView } from "./homes";
-import { isLiving, roomPlan, carsIn, garageCars, NO_STUFF, ROOM_LABEL, TERRACE_PROPS, JET_LOD, HORSE_MODEL, type DoorPlan, type HomeSpot, type HomeStuff, type RoomPlan, type Wall } from "./rooms";
+import { lobbyOf, LOBBY_H, isLiving, roomPlan, carsIn, garageCars, NO_STUFF, ROOM_LABEL, TERRACE_PROPS, JET_LOD, HORSE_MODEL, type DoorPlan, type HomeSpot, type HomeStuff, type RoomPlan, type Wall } from "./rooms";
 import type { CabinetSlot, TrophyShape } from "./trophies";
 import type { BootChoice, CasualSet, Kit2 } from "./outfits";
 import type { XZ } from "../tapWalk";
@@ -1026,26 +1026,49 @@ export function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, win
   const sctx = signAtlas.getContext("2d");
   signTexts.forEach((t, i) => sctx?.drawImage(signCanvas(t), 0, i * 128));
   const signM = new THREE.MeshBasicMaterial({ map: k.tex(signAtlas), transparent: true });
+  // the lobby beyond every doorway (rooms.ts lobbyOf): a floor, two side walls, a lid and an end, so a person
+  // walks through the doorway into a lit space and on out of sight (28 Nov 2026: the floor used to stop at the
+  // wall and a visitor vanished in the doorway). One material per kind: freezeStatic joins them (no new draws).
+  let lidM: any = null, porchFloorM: any = null, porchWallM: any = null;
   plan.doors.forEach((d, di) => {
     const L = wallLine(d.wall, W2, D2);
     const c = L.along === "x" ? d.x : d.z;
     winFrame(L.along, L.at, L.sgn, { c, w: d.half * 2, y0: 0.0001, y1: DOOR_H }, false);
     const ry = d.wall === "n" ? 0 : d.wall === "s" ? Math.PI : d.wall === "w" ? Math.PI / 2 : -Math.PI / 2;
     const out = (dist: number): [number, number] => [d.x - d.nx * dist, d.z - d.nz * dist];
+    const lob = lobbyOf(plan, d), P = lob.depth, LW = lob.half;
+    const tx = -d.nz, tz = d.nx;
+    const [mx, mz] = out(P / 2);
+    const across = (a: number, b: number) => (L.along === "x" ? [a, b] : [b, a]) as [number, number];
+    /** The lobby's floor, side walls and lid in these materials (a side wall faces in). */
+    const lobby = (floor: any, side: any, lid: any) => {
+      const [fw, fd] = across(LW * 2, P);
+      k.plane(fw, fd, floor, mx, 0.0, mz, -Math.PI / 2, 0);
+      for (const s of [-1, 1]) k.plane(P, LOBBY_H, side, mx + tx * s * LW, LOBBY_H / 2, mz + tz * s * LW, 0, Math.atan2(-tx * s, -tz * s));
+      k.plane(fw, fd, lid, mx, LOBBY_H, mz, Math.PI / 2, 0);
+    };
     if (d.to === "garden") {
       gardenM ??= new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("garden")), fog: false, userData: { daylight: "view" } });
-      const [gx, gz] = out(2.2);
-      k.plane(5, 4, gardenM, gx, 1.6, gz, 0, ry);
+      // the porch: stone underfoot, the house's walls each side, a canopy; the garden past its open end
+      porchFloorM ??= k.mat("#b8b0a3", { roughness: 0.85 });
+      porchWallM ??= new THREE.MeshBasicMaterial({ map: k.tex(wallCanvas(R.wall)), color: new THREE.Color("#efe4d2"), fog: false });
+      lidM ??= k.mat(R.trim, { roughness: 0.9 });
+      lobby(porchFloorM, porchWallM, lidM);
+      const [gx, gz] = out(P + 0.45);
+      k.plane(Math.max(5, LW * 2 + 2), 4.4, gardenM, gx, 1.8, gz, 0, ry);
       k.glow(k.patchT, "#fff0d6", 0.16, L.along === "x" ? d.half * 2 : 1.4, L.along === "x" ? 1.4 : d.half * 2, d.x + d.nx * 0.75, 0.007, d.z + d.nz * 0.75, -Math.PI / 2, 0);
+      // daylight on the porch floor
+      const [px, pz] = out(P * 0.6);
+      const [gw, gd] = across(LW * 1.8, P * 0.9);
+      k.glow(k.patchT, "#fff2dc", 0.2, gw, gd, px, 0.008, pz, -Math.PI / 2, 0);
     } else {
-      // the next room, beyond: a lit wall and a strip of its floor
-      const [bx, bz] = out(1.6);
-      // the next room's wall, lit (a dark room is shown half lit, so the doorway never reads as a hole)
+      // the next room, beyond: a bit of its hallway, lit (a dark room is shown half lit, so the doorway never reads as a hole)
       const nextWall = "#" + new THREE.Color(ROOM_LOOK[d.to]?.wall ?? R.wall).lerp(new THREE.Color("#f0e2c8"), ROOM_LOOK[d.to]?.dark ? 0.55 : 0.1).getHexString();
       if (!beyondM.has(nextWall)) beyondM.set(nextWall, new THREE.MeshBasicMaterial({ map: k.tex(wallCanvas(nextWall)), color: new THREE.Color("#e6d8c2"), fog: false }));
-      k.plane(2.4, DOOR_H + 0.4, beyondM.get(nextWall), bx, (DOOR_H + 0.4) / 2, bz, 0, ry);
-      const [fx, fz] = out(0.8);
-      k.plane(L.along === "x" ? d.half * 2 : 1.6, L.along === "x" ? 1.6 : d.half * 2, floorM, fx, 0.0, fz, -Math.PI / 2, 0);
+      const [bx, bz] = out(P);
+      k.plane(LW * 2 + 0.02, LOBBY_H, beyondM.get(nextWall), bx, LOBBY_H / 2, bz, 0, ry);
+      lidM ??= k.mat(R.trim, { roughness: 0.9 });
+      lobby(floorM, beyondM.get(nextWall), lidM);
       // light from the next room spilling in across the floor
       k.glow(k.patchT, "#ffe2b8", 0.22, L.along === "x" ? d.half * 2.2 : 1.5, L.along === "x" ? 1.5 : d.half * 2.2, d.x + d.nx * 0.7, 0.008, d.z + d.nz * 0.7, -Math.PI / 2, 0);
     }

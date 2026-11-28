@@ -410,6 +410,99 @@ function coffeeThing(id: string, front: XZ, face: XZ): SmartObject {
   });
 }
 
+/**
+ * THE RANGE (villa and estate kitchens, 28 Nov 2026): a range cooker built in the house's own style,
+ * a pan of food on the front burner and a pot behind (the kit's wall cupboard over it, as before); where the chef cooks (houseRoutines.ts "cook" at the
+ * hob). Its fx "hob": the ring under the pan glows and steam rises while someone cooks. Against the north wall,
+ * front to +z, on the kit stove's footprint. One still draw (painter); the ring and the steam
+ * are drawn only while it is on.
+ */
+function rangeCooker(c: Ctx, x: number, nz: number, size: [number, number, number] | null, style: "villa" | "estate"): SmartObject {
+  const { k, env } = c;
+  const { THREE } = k;
+  const [w, , d] = size ?? [0.86, 0.9, 0.6];
+  const zf = nz + d / 2;
+  const top = 0.9;
+  const S = style === "estate"
+    ? { body: "#ebe2cc", trim: "#c9a45c", door: "#e2d7bd", top: "#18191c", ring: "#6b5a3c" }
+    : { body: "#b8bdc3", trim: "#e3e6ea", door: "#1c1f23", top: "#111214", ring: "#3c3f44" };
+  const P = painter(k, env);
+  P.box(w - 0.01, top - 0.04, d, S.body, x, (top - 0.04) / 2, nz);
+  P.box(w + 0.02, 0.04, d + 0.03, S.top, x, top - 0.02, nz + 0.01);
+  if (style === "estate") {
+    // two oven doors side by side, brass rails, a brass bar along the front
+    for (const sx of [-1, 1]) {
+      P.box(w * 0.42, 0.5, 0.02, S.door, x + sx * w * 0.235, 0.4, zf + 0.01);
+      P.box(w * 0.3, 0.022, 0.022, S.trim, x + sx * w * 0.235, 0.6, zf + 0.04);
+    }
+    P.box(w * 0.92, 0.02, 0.02, S.trim, x, top - 0.09, zf + 0.05);
+  } else {
+    P.box(w * 0.82, 0.5, 0.02, S.door, x, 0.41, zf + 0.01);
+    P.box(w * 0.66, 0.022, 0.022, S.trim, x, 0.71, zf + 0.05);
+  }
+  for (let i = 0; i < 5; i++) P.cyl(0.022, 0.022, 0.03, style === "estate" ? S.trim : "#2a2c30", x - w * 0.36 + i * w * 0.18, 0.8, zf + 0.02, Math.PI / 2, 0, 0, 10);
+  // four burners; the pan on the front left, a pot on the back right
+  const bx = w * 0.22, bzF = zf - d * 0.3, bzB = nz - d * 0.18;
+  for (const [rx, rz] of [[-bx, bzF], [bx, bzF], [-bx, bzB], [bx, bzB]] as [number, number][]) P.ring(0.075, 0.006, S.ring, x + rx, top + 0.006, rz, Math.PI / 2);
+  const pan: [number, number, number] = [x - bx, top + 0.035, bzF];
+  P.cyl(0.13, 0.11, 0.05, "#2a2a2d", pan[0], top + 0.03, pan[2], 0, 0, 0, 18);
+  P.cyl(0.112, 0.112, 0.012, "#e2b84e", pan[0], top + 0.05, pan[2], 0, 0, 0, 16);
+  for (const [fx, fz, col] of [[0.04, 0.02, "#d64933"], [-0.05, -0.03, "#7cb342"], [0.0, -0.06, "#d64933"], [-0.03, 0.05, "#7cb342"]] as [number, number, string][]) P.ball(0.018, col, pan[0] + fx, top + 0.06, pan[2] + fz, 6);
+  // the handle out to the left, a little up
+  const handle: [number, number, number] = [pan[0] - 0.13 - 0.15, top + 0.06, pan[2] + 0.02];
+  P.box(0.2, 0.02, 0.028, "#1d1d20", pan[0] - 0.13 - 0.09, top + 0.05, pan[2] + 0.01, 0, 0, 0.12);
+  P.cyl(0.1, 0.1, 0.14, style === "estate" ? "#c9a45c" : "#9aa0a6", x + bx, top + 0.075, bzB, 0, 0, 0, 16);
+  P.cyl(0.104, 0.104, 0.012, "#2a2a2d", x + bx, top + 0.15, bzB, 0, 0, 0, 16);
+  P.done({ roughness: style === "estate" ? 0.5 : 0.35, metalness: style === "estate" ? 0.15 : 0.5 });
+  c.solids.push([x - w / 2, x + w / 2, nz - d / 2, zf + 0.02]);
+  // on while someone cooks: the ring under the pan glows, steam rises off the pan
+  const glowRing = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.008, 6, 24), k.glowM("#ff5a1e", 2.2));
+  glowRing.rotation.x = Math.PI / 2;
+  glowRing.position.set(pan[0], top + 0.004, pan[2]);
+  glowRing.visible = false;
+  k.add(glowRing);
+  const N = 16;
+  const pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  const steam = new THREE.Points(geo, new THREE.PointsMaterial({ map: k.glowT, size: 0.16, sizeAttenuation: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true, toneMapped: false }));
+  steam.visible = false;
+  steam.frustumCulled = false;
+  k.add(steam);
+  c.keep.add(glowRing); c.keep.add(steam);
+  const life = Array.from({ length: N }, (_, i) => i / N);
+  let on = false, amt = 0;
+  c.X!.fx.hob = {
+    on: (v) => { on = v; },
+    tick: (dt) => {
+      amt += ((on ? 1 : 0) - amt) * Math.min(1, dt * 2);
+      glowRing.visible = steam.visible = amt > 0.02;
+      if (!steam.visible) return;
+      for (let i = 0; i < N; i++) {
+        life[i] = (life[i] + dt / 2.4) % 1;
+        const t = life[i], a = i * 2.4;
+        pos[i * 3] = pan[0] + Math.sin(a + t * 3) * 0.04 * (0.5 + t);
+        pos[i * 3 + 1] = pan[1] + 0.04 + t * 0.55;
+        pos[i * 3 + 2] = pan[2] + Math.cos(a * 1.3 + t * 2) * 0.04 * (0.5 + t);
+        const b = amt * 0.32 * Math.sin(Math.PI * Math.min(1, t * 1.15));
+        col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = b;
+      }
+      geo.attributes.position.needsUpdate = true;
+      geo.attributes.color.needsUpdate = true;
+    },
+  };
+  // he stands at the pan, close enough to stir it (the hands: npc.ts "cook")
+  const front: XZ = [pan[0] + 0.06, zf + 0.36];
+  const ob = standObject({
+    id: "hob", kind: "counter", label: "Hob", front, face: [pan[0] + 0.06, nz], verb: "Cook something", lines: ["A pan on the go."],
+    loop: [{ clip: "idle", secs: 4, gesture: "cook" }],
+    effect: { text: "Eggs and peppers. Simple, done right." }, stay: [6, 6], pickR: 0.5,
+  });
+  ob.hands = { pan, handle };
+  return ob;
+}
+
 /** The kitchen: a run of units on the north wall under a window, a tall fridge, the island with stools, a table. */
 export function buildKitchen(c: Ctx, _h: LivingHooks) {
   const { k, env, R, plan, W2, D2, H, X: X0 } = c;
@@ -425,7 +518,11 @@ export function buildKitchen(c: Ctx, _h: LivingHooks) {
   F.put("kitchenCabinetDrawer", xs[0], -D2 + 0.32, 0, { tint });
   F.put("kitchenCabinet", xs[1], nz, 0, { tint });
   F.put("kitchenSink", xs[2], nz, 0, { tint });
-  F.put("kitchenStove", xs[3], nz, 0, { tint });
+  // the villa and the estate: a proper range with a pan on it, where the chef cooks (28 Nov 2026: he used to
+  // "cook" at the coffee machine); the house keeps the kit's stove
+  const grand = R.tier === "estate" || R.tier === "villa";
+  if (grand) X.things.push(rangeCooker(c, xs[3], nz, F.size("kitchenStove"), R.tier === "estate" ? "estate" : "villa"));
+  else F.put("kitchenStove", xs[3], nz, 0, { tint });
   F.put("kitchenCabinet", xs[4], nz, 0, { tint });
   for (const ux of [xs[3], xs[4]]) F.put("kitchenCabinetUpper", ux, -D2 + 0.23, 0, { y: 1.5, solid: false, tint });
   F.put("kitchenCabinetUpper", xs[1], -D2 + 0.23, 0, { y: 1.5, solid: false, tint });
