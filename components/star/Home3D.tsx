@@ -40,6 +40,7 @@ import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import { Stick, pill, round } from "./Shop3D";
 import { sleepNight } from "@/lib/star/home3d/sleep";
+import { setGymReturnRoom, takeGymReturnRoom } from "@/lib/star/home3d/houseBack";
 import { afterLoss, healReset, newHealState } from "@/lib/star/three3d/autoHeal";
 import LoadingCurtain from "./loading/LoadingCurtain";
 import ClockPill, { useLiveClock } from "./ClockPill";
@@ -176,6 +177,8 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const [changing, setChanging] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [roomNow, setRoomNow] = useState<RoomId | null>(null);
+  const roomRef = useRef<RoomId | null>(null);
+  roomRef.current = roomNow;
 
   const tier: HomeTier = tierProp ?? homeTierOf(career.ownedItems);
   const room = roomPreset(tier);
@@ -271,7 +274,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
             // who is in the house each day (lib/star/life/dayPlan.ts); a test page can force one (?visit=mate|chef|quiet)
             visits: visitsFn(q.get("visit"), liveRef.current.now(), rooms, tier),
             // the home gym's kit: "Start a workout" leaves for the gym of this level (the live clock's minutes sent first)
-            onGym: () => { if (dead) return; const pend = liveRef.current.flush(1); if (pend) onTimeRef.current?.(pend); setLeaving(true); onGymRef.current?.(tier); },
+            onGym: () => { if (dead) return; const pend = liveRef.current.flush(1); if (pend) onTimeRef.current?.(pend); setLeaving(true); setGymReturnRoom(roomRef.current); onGymRef.current?.(tier); },
             // a thing used: its minutes and its energy/mood within the day's caps (the career keeps it); the card says what it really did
             onEffect: (thing: string, e: { energy?: number; mood?: number; text?: string }) => {
               // the live clock's unsent minutes first (sent before the use), so the card's time is the time now
@@ -297,6 +300,9 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         (window as unknown as { __home3d?: HomeController }).__home3d = c;
         setStatus("ready");
         readyRef.current?.(c);
+        // back from the house's gym: into the room you left it from (gym/homeGym.ts)
+        const back = takeGymReturnRoom();
+        if (back && back !== c.room() && rooms.includes(back as RoomId)) void c.goToRoom(back as RoomId);
       } catch (e) {
         if (dead) return; // closed mid-load (three3d/perf.ts isAbandonedScene): nothing to show
         console.error("3D home failed to load", e);

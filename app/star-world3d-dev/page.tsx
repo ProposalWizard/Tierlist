@@ -64,8 +64,8 @@ function World3DTest() {
   const sky = params.get("sky");
   // a door that leads on (the compound's gym door): the demo only belongs to the place it started in
   const [went, setWent] = useState(false);
-  // the home gym opened from a living house: its "‹ House" goes back to it
-  const [from, setFrom] = useState<"house" | null>(null);
+  // the gym reached through the compound's door: its "‹ Compound" goes back out of that door (gym/homeGym.ts gymBack)
+  const [from, setFrom] = useState<"compound" | "back" | "house" | null>(null);
   // ?homeGym=<tier>: that house level's home gym (gym/homeGym.ts), its machines only
   const [homeGym, setHomeGym] = useState<HomeTier | null>(() => parseHomeTier(params.get("homeGym")));
   const [run, setRun] = useState(0);
@@ -86,6 +86,8 @@ function World3DTest() {
       place, demo: went ? null : demo, quality, number: 9, mates, club: "Arsenal", sky,
       homeGym: place === "gym" ? homeGym : null,
       fadeIn: !!from,
+      compoundKit: place === "gym" && from === "compound",
+      arrive: place === "compound" && from === "back" ? "gym-door" : null,
       kit: { shirt: kit.shirt, trim: kit.trim },
       // the living world's chat (lib/star/life/social.ts): pure, on this page's made-up career only
       chat: (slot: string) => {
@@ -110,9 +112,9 @@ function World3DTest() {
   const stage = place === "house" && tier
     ? <Home3D key={`${tier}-${run}`} career={career.current!} tier={tier} living house="new" where="test" embedded={!bare} backLabel="Back" onBack={() => setTier(null)}
       onGym={(t) => { setHomeGym(t); setFrom("house"); setPlace("gym"); }} />
-    : <World3D key={`${place}-${run}`} options={options} clean={params.get("clean") === "1"} onGo={(p) => { setWent(true); setPlace(p); }}
-      onBack={place === "gym" && from === "house" ? () => { setFrom(null); setPlace("house"); } : undefined}
-      backLabel="House" />;
+    : <World3D key={`${place}-${run}`} options={options} clean={params.get("clean") === "1"} onGo={(p) => { setWent(true); setFrom("compound"); setPlace(p); }}
+      onBack={place === "gym" && from === "compound" ? () => { setFrom("back"); setPlace("compound"); } : place === "gym" && from === "house" ? () => { setFrom(null); setPlace("house"); } : undefined}
+      backLabel={from === "house" ? "House" : "Compound"} />;
   if (bare) {
     return (
       <>

@@ -227,7 +227,7 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   wall(dL, H, X0 + dL / 2, H / 2, Z1, Math.PI);
   wall(dR, H, X1 - dR / 2, H / 2, Z1, Math.PI);
   wall(DOOR * 2, H - DOOR_H, doorX, DOOR_H + (H - DOOR_H) / 2, Z1, Math.PI);
-  const wallPaint = home ? (garage ? "#d4d2cc" : home.wall) : "#d9dbd6";
+  const wallPaint = home ? (garage ? "#bfc3c6" : home.wall) : "#d9dbd6"; // the garage: the house's own garage paint (roomBuild ROOM_LOOK)
   mesh(env.mergeGeometries(wallParts), new THREE.MeshStandardMaterial({ map: tex(wallCanvas(wallPaint)), roughness: 0.9 }));
   for (const g of wallParts) g.dispose();
   const ceil = mesh(new THREE.PlaneGeometry(RW, RD), new THREE.MeshStandardMaterial({ color: home && !garage ? "#e9e5dc" : "#3a3c41", roughness: 0.95 }));

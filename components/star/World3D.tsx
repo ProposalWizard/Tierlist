@@ -14,7 +14,7 @@ import type { WorldController, WorldOptions, WorldStatus } from "@/lib/star/worl
 import ViewToggle3D from "./ViewToggle3D";
 import LoadingCurtain from "./loading/LoadingCurtain";
 
-export default function World3D({ options, clean, onGo, onBack, backLabel = "Back" }: { options: WorldOptions; clean?: boolean; onGo?: (place: WorldOptions["place"]) => void; /** A "‹ back" pill (the home gym on the test page: back to the house). */ onBack?: () => void; backLabel?: string }) {
+export default function World3D({ options, clean, onGo, onBack, backLabel = "Back" }: { options: WorldOptions; clean?: boolean; onGo?: (place: WorldOptions["place"]) => void; /** A "‹ back" pill (the gym reached through the compound's door: back out of it). */ onBack?: () => void; backLabel?: string }) {
   const host = useRef<HTMLDivElement>(null);
   const ctrl = useRef<WorldController | null>(null);
   const [card, setCard] = useState<InteractCard | null>(null);
@@ -26,7 +26,7 @@ export default function World3D({ options, clean, onGo, onBack, backLabel = "Bac
   optsRef.current = options;
   const goRef = useRef(onGo);
   goRef.current = onGo;
-  const key = `${options.place}|${options.demo ?? ""}|${options.quality ?? ""}|${options.homeGym ?? ""}`;
+  const key = `${options.place}|${options.demo ?? ""}|${options.quality ?? ""}|${options.homeGym ?? ""}|${options.arrive ?? ""}`;
 
   useEffect(() => {
     const el = host.current;
@@ -70,12 +70,12 @@ export default function World3D({ options, clean, onGo, onBack, backLabel = "Bac
       )}
       {state === "ready" && onBack && !gymOn && (
         <button onClick={onBack} aria-label={`Back to ${backLabel}`} data-world3d-back
-          style={{ position: "absolute", top: 10, left: 10, zIndex: 2, display: "inline-flex", alignItems: "center", gap: 4, height: 36, padding: "0 12px 0 10px", borderRadius: 999, background: "rgba(8,10,16,.78)", color: "#f8fafc", fontWeight: 800, fontSize: 14, border: "1px solid rgba(255,255,255,.14)", cursor: "pointer" }}>
+          style={{ position: "absolute", top: options.place === "gym" && !clean ? 146 : 10, left: 10, zIndex: 2, display: "inline-flex", alignItems: "center", gap: 4, height: 36, padding: "0 12px 0 10px", borderRadius: 999, background: "rgba(8,10,16,.78)", color: "#f8fafc", fontWeight: 800, fontSize: 14, border: "1px solid rgba(255,255,255,.14)", cursor: "pointer" }}>
           <span style={{ fontSize: 20, lineHeight: 1, marginTop: -2 }}>&#8249;</span>{backLabel}
         </button>
       )}
       {state === "ready" && status && !clean && !gymOn && (
-        <div style={{ position: "absolute", top: onBack ? 52 : 10, left: 10, right: 10, display: "flex", gap: 6, flexWrap: "wrap", pointerEvents: "none" }} data-world3d-status>
+        <div style={{ position: "absolute", top: onBack && options.place !== "gym" ? 52 : 10, left: 10, right: 10, display: "flex", gap: 6, flexWrap: "wrap", pointerEvents: "none" }} data-world3d-status>
           <span style={chip("#facc15", "#111")}>{status.clock}</span>
           {status.people.map((p) => <span key={p.id} style={chip("rgba(8,10,16,.78)", "#f8fafc")}>{p.name}: {p.doing}</span>)}
         </div>

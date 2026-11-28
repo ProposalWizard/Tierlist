@@ -49,6 +49,9 @@ export interface HomeGymPlan {
   sauna: boolean;
   /** A dumbbell rack along the west wall: from z0 to z1 (null: a pair on the floor by the mat). */
   rack: [number, number] | null;
+  /** The house's own room this gym is (its floor and paint, home3d/roomBuild.ts ROOM_LOOK): the villa's and the
+   *  estate's gym room, so walking in from it looks the same. Absent: the house's main finish (homes.ts). */
+  look?: { floor: import("../home3d/homes").FloorKind; wall: string };
 }
 
 const CORNER: GymGameKind[] = ["pushup", "plank"];
@@ -62,8 +65,8 @@ export const HOME_GYMS: Record<HomeTier, HomeGymPlan> = {
   flat: { tier: "flat", kind: "corner", label: "Workout corner", kinds: CORNER, box: [-1.5, 2.5, 0.2, 4.8], doorX: 0.3, mirror: false, sauna: false, rack: [0.7, 2.1] },
   penthouse: { tier: "penthouse", kind: "room", label: "Home gym", kinds: ROOM, box: [-3.7, 3.9, -3.2, 3.0], doorX: 0, mirror: false, sauna: false, rack: [0.2, 2.0] },
   house: { tier: "house", kind: "garage", label: "Garage gym", kinds: GARAGE, box: [-3.7, 5.5, -4.4, 3.4], doorX: 0, mirror: false, sauna: false, rack: [0.3, 2.4] },
-  villa: { tier: "villa", kind: "full", label: "Home gym", kinds: FULL, box: [-5, 5, -4, 4], doorX: 0, mirror: true, sauna: false, rack: [-2.9, -0.6] },
-  estate: { tier: "estate", kind: "private", label: "Private gym", kinds: PRIVATE, box: [-5, 6.6, -4, 4], doorX: 0, mirror: true, sauna: true, rack: [-2.9, -0.6] },
+  villa: { tier: "villa", kind: "full", label: "Home gym", kinds: FULL, box: [-5, 5, -4, 4], doorX: 0, mirror: true, sauna: false, rack: [-2.9, -0.6], look: { floor: "boards", wall: "#d9dcdf" } },
+  estate: { tier: "estate", kind: "private", label: "Private gym", kinds: PRIVATE, box: [-5, 6.6, -4, 4], doorX: 0, mirror: true, sauna: true, rack: [-2.9, -0.6], look: { floor: "boards", wall: "#d9dcdf" } },
 };
 
 /** The home gym of a tier. */
@@ -123,10 +126,11 @@ export function homeGymExercise(c: CareerState, result: Pick<GameResult, "kind" 
 }
 
 /** Where the gym came from, and so where its "‹ back" goes. */
-export type GymFrom = "training" | "home";
+export type GymFrom = "training" | "home" | "compound";
 
 /** The back pill's words and where it leads (pure, so the page and the test page read the same). */
-export function gymBack(from: GymFrom): { label: string; to: "skills" | "home-3d" } {
+export function gymBack(from: GymFrom): { label: string; to: "skills" | "home-3d" | "compound" } {
   if (from === "home") return { label: "House", to: "home-3d" };
+  if (from === "compound") return { label: "Compound", to: "compound" };
   return { label: "Training", to: "skills" };
 }

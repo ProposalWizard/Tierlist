@@ -74,8 +74,14 @@ export interface WorldOptions {
   /** place "gym" only: your HOME gym of this house level (gym/homeGym.ts): its machines only, its walls, the
    *  house's look; no team-mate. Absent: the club gym. */
   homeGym?: import("../home3d/homes").HomeTier | null;
-  /** Came in through a door: open on black and fade in (the house's gym). */
+  /** Came in through a door: open on black and fade in (the compound's gym door, the house's gym). */
   fadeIn?: boolean;
+  /** place "compound" only: where you start. "gym-door": just out of the gym's door, facing the forecourt
+   *  (back from the gym). Absent: by your car. */
+  arrive?: "gym-door" | null;
+  /** place "gym" only: you keep the compound's painted training kit (no gym cloth), so walking in through its
+   *  door you look the same on both sides. Absent: the gym's cloth kit (trainers, ankle socks). */
+  compoundKit?: boolean;
 }
 
 export interface WorldStatus { clock: string; people: { id: string; name: string; doing: string }[]; fitness?: GymFitness }
@@ -281,7 +287,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       const { homeGymOf } = await import("../gym/homeGym");
       const { roomPreset } = await import("../home3d/homes");
       const R = roomPreset(opts.homeGym);
-      home = { plan: homeGymOf(opts.homeGym), floor: R.floor, wall: R.wall, trim: R.trim, view: R.view, h: R.h };
+      const plan = homeGymOf(opts.homeGym);
+      home = { plan, floor: plan.look?.floor ?? R.floor, wall: plan.look?.wall ?? R.wall, trim: R.trim, view: R.view, h: R.h };
     }
     gymRoom = buildGymRoom({ THREE, scene, prof, kit: opts.kit, club: opts.club, mergeGeometries, Reflector, mirrorPx: MIRROR_PX[tier] * 4, mirrorScale: GYM_MIRROR_SCALE[tier], home });
     sun = gymRoom.sun;
@@ -560,7 +567,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       const accessories = [...((base.accessories ?? []) as any[]).filter((a) => a.slot !== "boots"), { slot: "boots", color: shoes }];
       dressPerson3d(THREE, p, { ...base, accessories, kit: { shirt: top, trim: opts.kit.trim, shorts: "#1d1f24", socks: "#f2f2ef" }, number: null } as any);
       // the compound: everyone (you too) in the painted training kit: real cloth is ~6-13k more triangles a man, and the phone budget is 90k
-      if (place === "gym") CL.dressCloth(THREE, p, "gym", L?.id ?? id, { whiteBalance: CL.HOME_WB, colours: { shoes } });
+      // (in through the compound's door: you keep the compound's painted kit, so you look the same either side of it)
+      if (place === "gym" && !(o.you && opts.compoundKit)) CL.dressCloth(THREE, p, "gym", L?.id ?? id, { whiteBalance: CL.HOME_WB, colours: { shoes } });
     }
     let rig: any = null;
     if (L) {
@@ -590,7 +598,15 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   const you = await makeOne("you", { you: true, number: opts.number, kit: opts.kit });
   you.name = "You";
   if (demo?.you) you.place(demo.you[0], demo.you[1], demo.you[2]);
-  else you.place(built.you.x, built.you.z, built.you.yaw);
+  else if (CP && opts.arrive === "gym-door") {
+    // back out of the gym's door: a few steps out onto the forecourt, facing away from the building (camera D
+    // then has room between him and the front; one step out, it sat in the wall)
+    const [dx, dz] = CP.doorFront(CP.DOORS[0]);
+    you.place(dx, dz + 2.4, 0);
+  } else if (gymRoom && opts.fadeIn && !opts.homeGym) {
+    // the club gym, in through a door: a step in from it (at the door camera D sat on the wall, looking down)
+    you.place(-0.9, 2.5, Math.PI);
+  } else you.place(built.you.x, built.you.z, built.you.yaw);
   const watch = demo?.watch ?? null;
   const away = { shirt: "#f2f2f2", trim: opts.kit.shirt };
   const npcs: Npc[] = [];
@@ -1078,7 +1094,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   };
 
   // ── The fade to black through a door (the compound's gym door) ──
-  // in through a door (the house's gym): the place opens on black and fades in
+  // in through a door (the compound's gym door, the house's gym): the place opens on black and fades in
   let fade = opts.fadeIn && !demo ? 1 : 0, fadeWant = 0, goingTo: WorldPlace | null = null, went = false;
   const fadeM = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, depthTest: false, depthWrite: false, toneMapped: false, fog: false });
   const fadeQ = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), fadeM);
@@ -1176,9 +1192,10 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       carsLod?.update(camera);
       compound.tick(dt);
       if (compound.follow(you.x, you.z)) renderer.shadowMap.needsUpdate = true;
-      stepFade(dt);
       stepSame(dt);
     }
+    // a door's fade: out through the compound's gym door, in on arrival through any door (every place)
+    stepFade(dt);
     if (gym && cb.onGym) cb.onGym(gym.hud());
     // the sun's shadow: drawn again only while someone moves
     if (sun?.castShadow) {

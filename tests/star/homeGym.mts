@@ -110,6 +110,15 @@ check(GYM_CAREER_EFFECT === "off", "the gym effect is off (as the club gym)");
 // ── back routes ──
 check(gymBack("training").to === "skills" && gymBack("training").label === "Training", "from Training: back to Training");
 check(gymBack("home").to === "home-3d" && gymBack("home").label === "House", "from the house: back to the house");
+check(gymBack("compound").to === "compound" && gymBack("compound").label === "Compound", "from the compound: back to the compound door");
+
+// the house's gym keeps the house's own memory: its Back still says Garden after the gym, and it opens in the room you left
+{
+  const { keepsHouseFromGarden, setGymReturnRoom, takeGymReturnRoom } = await import("../../lib/star/home3d/houseBack");
+  check(keepsHouseFromGarden("gym-3d"), "the house's gym keeps 'came in from the garden'");
+  setGymReturnRoom("gym");
+  check(takeGymReturnRoom() === "gym" && takeGymReturnRoom() === null, "the room you left for the gym: given back once");
+}
 
 if (problems.length) {
   console.error(`homeGym: ${problems.length} problem(s)\n - ${problems.join("\n - ")}`);
