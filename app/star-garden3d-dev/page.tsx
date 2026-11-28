@@ -111,7 +111,7 @@ function Garden3DTest() {
   const bare = params.get("bare") === "1" || params.get("film") === "1";
   const garden = (
     <Garden3D key={`${key}-${sky}-${full}-${arrive}`} career={career} sky={sky} arrive={arrive} where="test" embedded={!bare}
-      onBack={() => router.push("/admin/star/g/places3d")} onShop={() => router.push("/star-shop3d-dev?door=1")} onCasino={() => setPlace("casino")} onTraining={() => setPlace("training")} onHouse={() => router.push("/star-home3d-dev")} />
+      onBack={() => router.push("/admin/star/g/places3d")} onShop={() => router.push("/star-shop3d-dev?door=1")} onCasino={() => setPlace("casino")} onTraining={() => setPlace("training")} onHouse={() => router.push("/star-home3d-dev")} onStreet={() => router.push("/star-street-dev")} />
   );
   if (bare) {
     // full screen, as before (?bare=1, and the film tools' ?film=1)

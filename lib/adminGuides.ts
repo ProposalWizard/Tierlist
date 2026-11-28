@@ -2429,6 +2429,7 @@ export const ADMIN_GUIDES = {
       { items: [
           ["Eye button (top right; bottom right on the world kit)", "First person | third person: tap to see through his eyes (gold = on), tap again to go back behind him. Drag to look round. Using something (a seat, a card, a machine) shows him in third person and goes back into his eyes after. Remembered on this device only (lib/star/three3d/viewCam.ts), never in the save."],
         ["‹ Home", "Back to the 3D places group page."],
+        ["Walk out of the garden gate / High Street ›", "Opens the shopping street test page (in a career: the street itself, phase 1: the 3D shop, KIB MOTORS, THE DRIP, the barber)."],
         ["Day / Sunset / Night (above the scene)", "Changes the time of day. In a career it follows the time of your next kick-off."],
         ["Full career / New career (above the scene)", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
         ["↻ Restart (above the scene)", "Builds the garden again from the start."],
