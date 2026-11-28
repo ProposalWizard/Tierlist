@@ -196,7 +196,9 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/admin/marketing/client", "Knowitball client", "Our voice, audience, rules, brand, learnings and best scripts, from the client record and its Brain notes", "marketing", "marketing", "Harry", "live", "none", "admin"),
   P("/admin/marketing/studio", "Studio", "The editing suite: watch a cut on a timeline, leave review notes and edits for Claude (Statics coming later)", "marketing", "marketing", "Harry", "live", "shared", "admin"),
   P("/admin/marketing/uploads", "Uploads", "Upload videos and pictures straight into private storage (Cloudflare R2)", "marketing", "marketing", "Harry", "live", "shared", "admin"),
+  P("/admin/marketing/library", "Library", "Every video in Cloudflare with its saved captions and hashtags, ready to post", "marketing", "marketing", "Mikey", "live", "shared", "admin"),
   P("/admin/marketing/publish", "Publish", "Post videos to Instagram, Facebook and YouTube now or later, and see the numbers", "marketing", "marketing", "Mikey", "live", "shared", "admin"),
+  P("/admin/marketing/results", "Results", "Every post and app side by side, what worked, and live numbers", "marketing", "marketing", "Mikey", "live", "shared", "admin"),
   P("/admin/sound-board", "Sound board", "Swap any game sound", "rbd", "sound", "Harry", "live", "shared", "admin"),
 ];
 

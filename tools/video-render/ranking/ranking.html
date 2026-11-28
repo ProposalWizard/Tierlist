@@ -1,0 +1,192 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Mont;src:url(../../video-factory/assets/montserrat-latin-800-normal.woff2) format("woff2");font-weight:800}
+@font-face{font-family:Mont;src:url(../../video-factory/assets/montserrat-latin-ext-800-normal.woff2) format("woff2");font-weight:800;unicode-range:U+0100-02AF,U+1E00-1EFF}
+@font-face{font-family:Mont;src:url(../../video-factory/assets/montserrat-latin-900-normal.woff2) format("woff2");font-weight:900}
+body{margin:0;background:#000}</style></head><body><canvas id="c" width="1080" height="1920"></canvas><script>
+// Ballon d'Or style ranking countdown, v3 (Mikey, 26 Nov 2026).
+// window.setup(data) then window.draw(t). data: {title, sub, top, shown, step, endHold, podium, stadiums:[...], credit,
+//   rows:[{rank, name, cut, badge, flag}]}  (rows for every rank 1..top; 1-5 are the hidden silhouettes)
+const W = 1080, H = 1920, c = document.getElementById("c"), g = c.getContext("2d");
+const cl = x => Math.max(0, Math.min(1, x)), ez = x => { x = cl(x); return 1 - Math.pow(1 - x, 3); };
+const pop = x => { x = cl(x); return 1 + 2.7 * Math.pow(x - 1, 3) + 1.7 * Math.pow(x - 1, 2); };
+let D, IM = {}; const mkc = () => { const c2 = document.createElement("canvas"); c2.width = 1080; c2.height = 1920; return c2; }; const PC = mkc(), PC2 = mkc(), PX = PC.getContext("2d");
+const GOLD1 = "#fbe3a1", GOLD2 = "#e0ad4c", INK = "#16110a", DARK = "rgba(14,11,7,.95)";
+// where the ball sits inside the podium cut-out (measured): centre and radius as fractions of its width / height
+const BALL = { cx: 395 / 1153, cy: 300 / 2489, r: 282 / 1153 };
+function rr(x, y, w, h, r) { r = Math.min(r, h / 2, w / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+// Text placed by the exact ink box of THIS string: (x, cy) is the centre (a:"center") or left edge of the letters themselves.
+function txt(s, x, cy, size, col, o = {}) { g.save(); const wt = o.w || 800; const set = () => { g.font = `${wt} ${size}px Mont`; g.letterSpacing = (o.ls || 0) + "px"; };
+  set(); g.textAlign = "left"; g.textBaseline = "alphabetic";
+  if (o.maxW) { const w = g.measureText(s).width; if (w > o.maxW) { size = size * o.maxW / w; set(); } }
+  const m = g.measureText(s), L = m.actualBoundingBoxLeft, R = m.actualBoundingBoxRight;
+  // height: capitals are centred by their cap height (accents and the Q's tail hang outside), anything else by its own ink
+  const caps = s === s.toUpperCase(), hm = g.measureText("H"), A = caps ? hm.actualBoundingBoxAscent : m.actualBoundingBoxAscent, De = caps ? 0 : m.actualBoundingBoxDescent;
+  const inkW = R + L - (o.ls || 0); // letterSpacing adds space after the last letter: leave it out
+  const baseY = cy + (A - De) / 2, X = o.a === "center" ? x - inkW / 2 + L : o.a === "right" ? x - inkW + L : x + L;
+  if (o.shadow) { g.shadowColor = "rgba(0,0,0,.5)"; g.shadowBlur = 10; g.shadowOffsetY = 3; }
+  if (o.stroke) { g.lineJoin = "round"; g.lineWidth = o.stroke; g.strokeStyle = o.sc || INK; g.strokeText(s, X, baseY); }
+  g.fillStyle = col; g.fillText(s, X, baseY); g.restore(); return size; }
+const UP = s => s.replace(/ß/g, "ẞ").toUpperCase();   // German capital sharp s, not SS
+const hash = x => { const q = Math.sin(x * 127.1 + 311.7) * 43758.5453; return q - Math.floor(q); };
+const load = src => new Promise(res => { if (!src) return res(null); const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+window.setup = async (data) => { D = data; RH = D.rowH || 64; await document.fonts.load("800 40px Mont"); await document.fonts.load("900 40px Mont"); await document.fonts.load("800 40px Mont", "ÉÜÇĞ");
+  IM.podium = await load(D.podium); IM.panel = await load(D.panel); IM.st = []; for (const s of D.stadiums) IM.st.push(await load(s));
+  for (const r of D.rows) { IM["c" + r.rank] = await load(r.cut); IM["k" + r.rank] = await load(r.badge); IM["f" + r.rank] = await load(r.flag); if (r.endcut) IM["e" + r.rank] = await load(r.endcut); }
+  if (D.madueke) { IM.mad = await load(D.madueke.cut); IM.madBadge = await load(D.madueke.badge); IM.madFlag = await load(D.madueke.flag); }
+  IM.front = await load(D.front); for (const r of D.rows.filter(r => r.rank <= 5)) { const im = r.rank === 1 && IM.front ? IM.front : (IM["e" + r.rank] || IM["c" + r.rank]); if (!im) continue; const pad = 24, cw = im.width + pad * 2, ch = im.height + pad * 2;
+    const mk = (fill) => { const cv = document.createElement("canvas"); cv.width = cw; cv.height = ch; const x = cv.getContext("2d"); x.drawImage(im, pad, pad); x.globalCompositeOperation = "source-in"; x.fillStyle = fill(x); x.fillRect(0, 0, cw, ch); return cv; };
+    const rim = mk(() => "#f0bf5c"), body = mk(x => { const gr = x.createLinearGradient(0, 0, 0, ch); gr.addColorStop(0, "#7a5520"); gr.addColorStop(0.5, "#3d2a10"); gr.addColorStop(1, "#140d05"); return gr; });
+    const out = document.createElement("canvas"); out.width = cw; out.height = ch; const o = out.getContext("2d"); o.drawImage(rim, -9, -7); o.drawImage(rim, 9, -7); o.drawImage(body, 0, 0);
+    if (r.rank === 1 && D.chain) chain(o, cw, ch, D.chain); IM["s" + r.rank] = out; }
+  return true; };
+// a chain round the neck with a lettered pendant (Mikey, 26 Nov 2026: Madueke's "NONZINO"), in silver on the dark figure
+function chain(o, cw, ch, word) { const nx = cw * 0.465, ny = ch * 0.425, half = cw * 0.17, dip = ch * 0.085, link = 24;
+  const pt = u => { const x = nx - half + 2 * half * u, y = ny + dip * 4 * u * (1 - u); return [x, y]; };
+  o.save(); o.lineCap = "round"; o.lineJoin = "round";
+  // the chain goes up under the collar on both sides, then hangs in a U
+  o.beginPath(); o.moveTo(nx - half * 1.12, ny - ch * 0.03); o.lineTo(...pt(0)); for (let u = 0; u <= 1.001; u += 0.02) o.lineTo(...pt(u)); o.lineTo(nx + half * 1.12, ny - ch * 0.03);
+  o.strokeStyle = "#1a1206"; o.lineWidth = link + 12; o.stroke(); o.strokeStyle = "#cfd5dc"; o.lineWidth = link; o.stroke();
+  o.setLineDash([link * 0.9, link * 0.75]); o.strokeStyle = "#ffffff"; o.lineWidth = link * 0.45; o.stroke(); o.setLineDash([]);
+  // the pendant: the word in thick silver letters on a dark outline, hanging from the middle of the chain
+  const [bx, by] = pt(0.5), size = cw * 0.086; o.font = `900 ${size}px Mont`; o.letterSpacing = size * 0.04 + "px"; const m = o.measureText(word), w = m.width, cy = by + ch * 0.07;
+  o.beginPath(); o.moveTo(bx, by); o.lineTo(bx, cy - size * 0.62); o.strokeStyle = "#1a1206"; o.lineWidth = link * 0.7 + 10; o.stroke(); o.strokeStyle = "#cfd5dc"; o.lineWidth = link * 0.7; o.stroke();
+  o.textAlign = "center"; o.textBaseline = "middle"; o.lineWidth = size * 0.34; o.strokeStyle = "#1a1206"; o.strokeText(word, bx, cy);
+  const gr = o.createLinearGradient(0, cy - size * 0.5, 0, cy + size * 0.5); gr.addColorStop(0, "#ffffff"); gr.addColorStop(0.55, "#dfe4ea"); gr.addColorStop(1, "#aab2bc"); o.fillStyle = gr; o.fillText(word, bx, cy);
+  o.fillStyle = "rgba(255,255,255,.95)"; [[-0.46, -0.5], [0.3, 0.45], [0.48, -0.45]].forEach(([fx, fy]) => { const sx = bx + w * fx, sy = cy + size * fy; o.beginPath(); o.moveTo(sx - size * 0.28, sy); o.lineTo(sx, sy - size * 0.05); o.lineTo(sx + size * 0.28, sy); o.lineTo(sx, sy + size * 0.05); o.closePath(); o.fill(); o.beginPath(); o.moveTo(sx, sy - size * 0.28); o.lineTo(sx + size * 0.05, sy); o.lineTo(sx, sy + size * 0.28); o.lineTo(sx - size * 0.05, sy); o.closePath(); o.fill(); });
+  o.restore(); }
+const rowOf = rank => D.rows.find(r => r.rank === rank);
+function cover(im, cx, cy, z, blur, alpha) { if (!im) return; const k = Math.max(W / im.width, H / im.height) * z, w = im.width * k, h = im.height * k; g.save(); g.globalAlpha = alpha; if (blur) g.filter = `blur(${blur}px)`; g.drawImage(im, cx - w / 2, cy - h / 2, w, h); g.restore(); }
+// the gold panel (as in the TikTok): the golden ball's panels seen close up, filling the left of the screen; its right edge
+// is a "(" curve, the edge of a huge circle centred far off to the right. It sits in front of the player, behind the board.
+const EDGE = { cx: 3313, cy: 960, R: 2880 };   // the TikTok's edge, measured: x = 598 (55%) at the top and bottom, 433 (40%) in the middle
+const edgeX = y => EDGE.cx - Math.sqrt(EDGE.R * EDGE.R - (y - EDGE.cy) * (y - EDGE.cy));
+function goldPanel(t) { const im = IM.panel; if (!im) return; g.save(); g.beginPath(); g.moveTo(0, 0); for (let y = 0; y <= H; y += 20) g.lineTo(edgeX(y), y); g.lineTo(0, H); g.closePath(); g.clip();
+  g.drawImage(im, 0, 0, W, H);
+  let gr = g.createLinearGradient(380, 0, 610, 0); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(40,20,0,.32)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); g.restore();
+  g.save(); g.strokeStyle = "rgba(255,238,190,.95)"; g.lineWidth = 7; g.shadowColor = "rgba(255,210,120,1)"; g.shadowBlur = 26; g.beginPath(); for (let y = 0; y <= H; y += 20) (y ? g.lineTo : g.moveTo).call(g, edgeX(y), y); g.stroke(); g.restore(); }
+// gold sparkles drifting up behind the player, coming and going in waves
+function sparkles(t) { const wave = Math.pow(Math.max(0, Math.sin(t * 0.85)), 2); if (wave < 0.02) return; g.save(); g.globalCompositeOperation = "lighter";
+  for (let i = 0; i < 70; i++) { const r1 = Math.sin(i * 12.9898) * 43758.5453 % 1, r2 = Math.sin(i * 78.233) * 12345.678 % 1, r3 = Math.sin(i * 4.1) * 9999.1 % 1;
+    const sp = 60 + 90 * Math.abs(r2), x = 560 + 520 * Math.abs(r1) + 20 * Math.sin(t * 1.3 + i), y = 1900 - ((t * sp + 1900 * Math.abs(r3)) % 1900), sz = 3 + 7 * Math.abs(r2);
+    const tw = 0.5 + 0.5 * Math.sin(t * 5 + i * 2.1), a = wave * tw * 0.9; const gl = g.createRadialGradient(x, y, 0, x, y, sz * 5); gl.addColorStop(0, `rgba(255,225,150,${a})`); gl.addColorStop(1, "rgba(255,190,80,0)"); g.fillStyle = gl; g.fillRect(x - sz * 5, y - sz * 5, sz * 10, sz * 10);
+    if (i % 5 === 0) { g.strokeStyle = `rgba(255,240,200,${a})`; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - sz * 3, y); g.lineTo(x + sz * 3, y); g.moveTo(x, y - sz * 3); g.lineTo(x, y + sz * 3); g.stroke(); } }
+  g.restore(); }
+// the trophy on its podium (a real-looking cut-out), standing on the bottom edge of the screen
+function podium(x, h, glow) { const im = IM.podium; if (!im) return; const w = h * im.width / im.height, top = 1985 - h;
+  if (glow > 0) { const gr = g.createRadialGradient(x, top + h * 0.12, 10, x, top + h * 0.12, h * 0.6); gr.addColorStop(0, `rgba(255,210,120,${0.5 * glow})`); gr.addColorStop(1, "rgba(255,210,120,0)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+  g.save(); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 40; g.drawImage(im, x - w * BALL.cx, top, w, h); g.restore(); }
+function header(t) { const k = 1, cx = 300; g.save(); g.globalAlpha = k;
+  g.font = "900 30px Mont"; g.letterSpacing = "3px"; let w = g.measureText("KNOWITBALL").width + 60; g.letterSpacing = "0px"; rr(cx - w / 2, 118, w, 54, 27); g.fillStyle = "#fff"; g.fill(); txt("KNOWITBALL", cx, 145, 30, INK, { a: "center", w: 900, ls: 3 });
+  w = 530; rr(cx - w / 2, 184, w, 86, 18); g.fillStyle = DARK; g.fill(); g.strokeStyle = GOLD2; g.lineWidth = 3; g.stroke();
+  const gr = g.createLinearGradient(0, 200, 0, 256); gr.addColorStop(0, GOLD1); gr.addColorStop(1, GOLD2); txt("BALLON D'OR RANKING", cx, 227, 44, gr, { a: "center", w: 900, maxW: w - 56 });
+  w = 150; rr(cx - w / 2, 280, w, 42, 12); g.fillStyle = "rgba(14,11,7,.88)"; g.fill(); txt(D.sub, cx, 301, 22, "#fff", { a: "center", w: 800, ls: 3 }); g.restore(); }
+// one ranking row, one joined piece: dark number end, gold strip with badge (a quarter tucked under the number end), flag and name
+const BX = 34, BY = 352, BW = 532, NW = 64; let RH = 64;
+function row(rank, info) { const y = BY + (rank - 1) * RH, h = RH - 10, q = RH / 64;
+  g.save(); rr(BX, y, BW, h, 12); g.clip();
+  let gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, GOLD1); gr.addColorStop(0.55, GOLD2); gr.addColorStop(1, "#c58f35"); g.fillStyle = gr; g.fillRect(BX, y, BW, h);
+  g.fillStyle = "rgba(255,246,216,.45)"; g.fillRect(BX, y, BW, 2);
+  if (info) { const { r, slide, hl } = info, sx = BX + NW;
+    if (hl > 0) { g.fillStyle = `rgba(255,255,255,${0.96 * hl})`; g.fillRect(sx, y, (BW - NW) * ez(slide * 1.4), h); }
+    const off = -420 * (1 - ez(slide));
+    const bd = info.bd || IM["k" + rank]; if (bd) { const bh = h * 1.3, bw2 = bh * bd.width / bd.height; g.drawImage(bd, sx - bw2 * 0.25 + off, y + h / 2 - bh / 2, bw2, bh); }
+    const fl = info.fl || IM["f" + rank], fx = sx + 58 * q + off, fh = 28 * q; if (fl) { const fw = fh * fl.width / fl.height; g.save(); rr(fx, y + h / 2 - fh / 2, fw, fh, 4); g.clip(); g.drawImage(fl, fx, y + h / 2 - fh / 2, fw, fh); g.restore(); }
+    txt(UP(info.name || r.name), fx + 54 * q, y + h / 2, 29 * q, INK, { w: 800, maxW: BW - NW - 125 }); }
+  // the number end, drawn last so the badge tucks under it
+  g.fillStyle = DARK; g.fillRect(BX, y, NW, h); g.fillStyle = "rgba(255,255,255,.08)"; g.fillRect(BX + NW - 2, y, 2, h);
+  txt(String(rank), BX + NW / 2, y + h / 2, 30 * q, "#fff", { a: "center", w: 900 });
+  g.restore(); }
+function silhouettes(t, k) { // 1 at the front, 2 and 3 behind, 4 and 5 at the back; each sways a little
+  const spots = { 4: [655, 1060, 0.5], 5: [1025, 1060, 0.5], 2: [720, 1180, 0.58], 3: [960, 1180, 0.58], 1: [840, 1300, 0.68] };
+  { const gl = g.createRadialGradient(840, 760, 40, 840, 760, 650); gl.addColorStop(0, `rgba(255,205,110,${0.55 * cl(k)})`); gl.addColorStop(1, "rgba(255,205,110,0)"); g.fillStyle = gl; g.fillRect(0, 0, W, H); }
+  [4, 5, 2, 3, 1].forEach((rk, i) => { const s = IM["s" + rk]; if (!s) return; const [x0, by0, sc] = spots[rk], kk = ez((k - i * 0.08) * 2.2); if (kk <= 0) return;
+    const x = x0 + 7 * Math.sin(t * 1.1 + i * 1.7), by = by0 + 5 * Math.sin(t * 1.4 + i), h = 1350 * sc, w = h * s.width / s.height;
+    g.save(); g.globalAlpha = kk; g.translate(0, 80 * (1 - kk)); g.drawImage(s, x - w / 2, by - h, w, h);
+    txt("?", x, by - h * 0.76, 120 * sc, "#fff", { a: "center", w: 900, stroke: 9, shadow: true }); g.restore(); }); }
+function drawCount(t) {
+  const pre = D.rows.filter(r => r.rank > D.top - D.shown).sort((a, b) => b.rank - a.rank);
+  const order = D.rows.filter(r => r.rank <= D.top - D.shown && r.rank > 5).sort((a, b) => b.rank - a.rank);
+  const t0 = D.t0 ?? 0.35, step = D.step, n = order.length, endAt = t0 + n * step, ending = t >= endAt;
+  const cur = Math.max(0, Math.min(n - 1, Math.floor((t - t0) / step))), phase = t < t0 ? 0 : t - t0 - cur * step;
+  const showR = t < t0 ? pre[pre.length - 1] : order[cur], e = ending ? ez((t - endAt) * 1.6) : 0;
+  g.fillStyle = "#0a0805"; g.fillRect(0, 0, W, H);
+  const bgp = (t < t0 ? t : phase) / step; cover(IM.st[showR.rank % IM.st.length], 540 + 50 * bgp, 960, 1.12, 9, 1 - e);
+  if (e > 0) { const gr = g.createRadialGradient(840, 900, 50, 840, 900, 1000); gr.addColorStop(0, `rgba(110,72,22,${0.9 * e})`); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+  let gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(0,0,0,.25)"); gr.addColorStop(0.55, "rgba(0,0,0,.05)"); gr.addColorStop(1, "rgba(0,0,0,.7)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  if (!ending) sparkles(t);
+  if (!ending) { const im = IM["c" + showR.rank]; if (im) { const p = t < t0 ? 1 : phase, fade = t < t0 ? 1 : cl(p * 5) * (1 - cl((p - step + 0.12) * 9));
+      figure(im, p, step, PC, showR.zoom || 1, showR.dx || 0); g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); } }
+  else silhouettes(t, (t - endAt) * 1.2);
+  goldPanel(t);
+  header(t);
+  g.save(); rr(BX - 12, BY - 12, BW + 24, RH * D.top + 14, 22); g.fillStyle = "rgba(8,6,4,.45)"; g.fill(); g.restore();
+  for (let rk = 1; rk <= D.top; rk++) { const k = 1; g.save(); g.globalAlpha = k;
+    const r = rowOf(rk), pi = pre.indexOf(r), oi = order.indexOf(r);
+    let info = null; if (pi >= 0) info = { r, slide: 1, hl: 0 }; else if (oi >= 0 && t >= t0 + oi * step) { const s = t - t0 - oi * step; info = { r, slide: s * 2.4, hl: oi === cur && !ending ? 1 - cl((s - 0.7) * 2.2) : 0 }; }
+    row(rk, info);
+    if (info && oi === cur && !ending) { g.fillStyle = "#fff"; rr(BX - 24, BY + (rk - 1) * RH + 10, 9, RH - 30, 5); g.fill(); }
+    g.restore(); }
+  if (ending) { const k = pop(cl((t - endAt) * 2.6)); if (k > 0) { const y0 = BY - 4, h5 = RH * 5 - 6; g.save(); g.translate(BX + BW / 2, y0 + h5 / 2); g.scale(k, k);
+      rr(-BW / 2 - 4, -h5 / 2, BW + 8, h5, 18); g.fillStyle = "rgba(12,9,5,.97)"; g.fill(); g.strokeStyle = GOLD2; g.lineWidth = 4; g.stroke();
+      const gg = g.createLinearGradient(0, -90, 0, -10); gg.addColorStop(0, GOLD1); gg.addColorStop(1, GOLD2); txt("TOP 5", 0, -52, 118, gg, { a: "center", w: 900 });
+      txt("REVEALED", 0, 44, 50, "#fff", { a: "center", w: 900, ls: 3 }); txt("TOMORROW", 0, 104, 50, "#fff", { a: "center", w: 900, ls: 3 }); g.restore(); }
+    podium(840, 820 * (0.92 + 0.08 * ez((t - endAt) * 2)), cl((t - endAt - 0.3) * 2));
+    const k2 = pop(cl((t - endAt - 1.0) * 3)); if (k2 > 0) { g.save(); g.translate(540, 1832); g.scale(k2, k2); rr(-360, -50, 720, 100, 26); const b2 = g.createLinearGradient(0, -50, 0, 50); b2.addColorStop(0, GOLD1); b2.addColorStop(1, GOLD2); g.fillStyle = b2; g.fill(); g.strokeStyle = INK; g.lineWidth = 5; g.stroke(); txt("WHO'S YOUR TOP 5?", 0, 0, 48, INK, { a: "center", w: 900, ls: 1 }); g.restore(); } }
+  else podium(860, 820, 0.3 + 0.15 * Math.sin(t * 2.5));
+  if (D.credit) txt(D.credit, 1062, 1906, 14, "rgba(255,255,255,.55)", { w: 800, a: "right" });
+}
+// the player: the cut-out slides in, then drifts the other way; drawn on a spare canvas so its bottom fades softly into the dark
+function figure(im, p, step, cv, zoom = 1, dx = 0) { const cx = cv.getContext("2d"), k = ez(p * 3), asp = im.width / im.height, h = Math.min(D.playerH || 1456, (D.playerW || 1160) / asp) * zoom, w = h * asp,
+    x = (D.playerX || 825) + dx + 260 * (1 - k) - 40 * (p / step), top = D.playerTop || 300;
+  cx.clearRect(0, 0, W, H); cx.globalCompositeOperation = "source-over"; cx.drawImage(im, x - w / 2, top, w, h); cx.globalCompositeOperation = "destination-in";
+  const mk = cx.createLinearGradient(0, top + h - 300, 0, top + h - 20); mk.addColorStop(0, "rgba(0,0,0,1)"); mk.addColorStop(1, "rgba(0,0,0,0)"); cx.fillStyle = mk; cx.fillRect(0, 0, W, H); cx.globalCompositeOperation = "source-over"; }
+// ---- the TOP 5 video: rows 20 to 6 already on the board, then 5, 4, 3, 2, 1 each with its season stats ----
+// the glitch: bands of one figure swapped for the other, shifted sideways, with colour-split ghosts, scan lines and noise bars
+function glitchFigure(a, b, gp, t, zb = 1, dxa = 0, dxb = 0) { figure(a, 1, 1, PC, 1, dxa); figure(b, 1, 1, PC2, zb, dxb); const frame = Math.floor(t * 24), N = 20, bh = H / N, amp = Math.sin(gp * Math.PI);
+  g.save(); g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 40;
+  for (let i = 0; i < N; i++) { const useB = hash(i * 7.31 + frame * 1.71) < gp * 1.25 - 0.05, dx = (hash(i * 3.7 + frame * 5.3) - 0.5) * 150 * amp;
+    g.save(); g.beginPath(); g.rect(0, i * bh, W, bh + 1); g.clip(); g.drawImage(useB ? PC2 : PC, dx, 0); g.restore(); }
+  g.restore();
+  g.save(); g.globalCompositeOperation = "screen"; g.globalAlpha = 0.6 * amp; const src = gp > 0.5 ? PC2 : PC; g.filter = "hue-rotate(170deg) saturate(2.4)"; g.drawImage(src, 16, 0); g.filter = "hue-rotate(-70deg) saturate(2.6)"; g.drawImage(src, -16, 0); g.restore();
+  g.save(); g.fillStyle = "rgba(0,0,0,.16)"; for (let y = 0; y < H; y += 6) g.fillRect(560, y, W - 560, 2); g.restore();
+  g.save(); for (let i = 0; i < 7; i++) { const r = hash(i * 9.1 + frame * 2.3); if (r < 0.55 * amp + 0.1) { g.fillStyle = `rgba(255,255,255,${0.12 + 0.25 * hash(i + frame)})`; g.fillRect(560 + hash(i * 4.4 + frame) * 200, hash(i * 1.9 + frame * 3.1) * H, 140 + 280 * hash(i + 3 + frame), 3 + 12 * hash(i * 5.5 + frame)); } } g.restore();
+  if (gp < 0.1 || (gp > 0.45 && gp < 0.55)) { g.fillStyle = "rgba(255,255,255,.22)"; g.fillRect(0, 0, W, H); } }
+const scr = (word, gp, frame) => { const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ#%@&"; return word.split("").map((ch, i) => ch === " " ? " " : (hash(i * 3.3 + frame * 1.9) < gp ? chars[Math.floor(hash(i + frame * 7.7) * chars.length)] : ch)).join(""); };
+// the stats engraved into the plinth: goals, assists, games; each counts up from 0 when its rank is revealed
+const statItems = st => st && [[st.g, "GOALS"], [st.a, "ASSISTS"], [st.rows.reduce((q, r) => q + (r.n || 0), 0), "GAMES"]];
+function engrave(ph, items) { if (!items || ph < 0) return; const k = cl(ph * 4); if (k <= 0) return;
+  const cx = 857, y0 = 1494, gap = 130;
+  g.save(); g.globalAlpha = k;
+  items.forEach(([v, lab], i) => { const y = y0 + i * gap, val = Math.round(v * ez(cl((ph - 0.3 - i * 0.18) / 1.1))), n = String(val);
+    // engraved: a dark edge above, a light edge below, gold in the cut
+    [[0, -2.5, "rgba(0,0,0,.95)"], [0, 2.5, "rgba(255,226,160,.28)"], [0, 0, "#d9ae55"]].forEach(([dx, dy, c]) => { txt(n, cx + dx, y + 38 + dy, 88, c, { a: "center", w: 900 }); txt(lab, cx + dx, y + 100 + dy, 21, c, { a: "center", w: 900, ls: 4, maxW: 188 }); });
+    if (i < 2) { const ly = y + gap - 16; g.fillStyle = "rgba(0,0,0,.9)"; g.fillRect(cx - 78, ly - 1.5, 156, 2); g.fillStyle = "rgba(255,226,160,.3)"; g.fillRect(cx - 78, ly + 1, 156, 2); } });
+  g.restore(); }
+function drawTop5(t) { const T = D.timing, order = [5, 4, 3, 2, 1], len = { 5: T.step, 4: T.step, 3: T.step, 2: T.step, 1: T.mad + T.glitch + T.last }, start = {}; let acc = 0;
+  order.forEach(r => { start[r] = acc; acc += len[r]; }); const total = acc;
+  const cur = order.filter(r => start[r] <= t).pop() || 5, ph = t - start[cur], step = T.step, frame = Math.floor(t * 24);
+  const sub = cur !== 1 ? "n" : ph < T.mad ? "mad" : ph < T.mad + T.glitch ? "gl" : "yam", gp = sub === "gl" ? (ph - T.mad) / T.glitch : sub === "yam" ? 1 : 0, py = ph - T.mad - T.glitch;
+  g.fillStyle = "#0a0805"; g.fillRect(0, 0, W, H);
+  cover(IM.st[cur % IM.st.length], 540 + 50 * Math.min(1, ph / step), 960, 1.12, 9, 1);
+  let gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(0,0,0,.25)"); gr.addColorStop(0.55, "rgba(0,0,0,.05)"); gr.addColorStop(1, "rgba(0,0,0,.7)"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  sparkles(t);
+  // the player (rank 1: Madueke, then the glitch, then Yamal)
+  if (sub === "n") { const im = IM["c" + cur]; if (im) { const fade = cl(ph * 5) * (1 - cl((ph - step + 0.12) * 9)); figure(im, ph, step, PC, rowOf(cur).zoom || 1, rowOf(cur).dx || 0); g.save(); g.globalAlpha = fade; g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); } }
+  else if (sub === "mad") { if (IM.mad) { figure(IM.mad, ph, step, PC, 1, D.madueke.dx || 0); g.save(); g.globalAlpha = cl(ph * 5); g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); } }
+  else if (sub === "gl") glitchFigure(IM.mad, IM.c1, gp, t, rowOf(1).zoom || 1, D.madueke.dx || 0, rowOf(1).dx || 0);
+  else { figure(IM.c1, 0.5 + py, step, PC, rowOf(1).zoom || 1, rowOf(1).dx || 0); g.save(); g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 50; g.drawImage(PC, 0, 0); g.restore(); }
+  goldPanel(t); header(t);
+  g.save(); rr(BX - 12, BY - 12, BW + 24, RH * D.top + 14, 22); g.fillStyle = "rgba(8,6,4,.45)"; g.fill(); g.restore();
+  for (let rk = 1; rk <= D.top; rk++) { const r = rowOf(rk); let info = null;
+    if (rk > 5) info = { r, slide: 1, hl: 0 };
+    else if (start[rk] <= t) { const s = t - start[rk]; info = { r, slide: s * 2.4, hl: rk === cur ? 1 - cl((s - 0.7) * 2.2) : 0 };
+      if (rk === 1) { if (sub === "mad") { info.name = D.madueke.name; info.bd = IM.madBadge; info.fl = IM.madFlag; }
+        else if (sub === "gl") { const first = gp < 0.5; info.name = scr(first ? D.madueke.name : r.name, first ? gp * 2 : (1 - gp) * 2, frame); const flick = hash(frame * 1.3) < 0.5; info.bd = (first ? flick : !flick) ? IM.madBadge : IM["k1"]; info.fl = (first ? flick : !flick) ? IM.madFlag : IM["f1"]; info.hl = 1 - cl(hash(frame) * 0.6); info.slide = 1; } } }
+    row(rk, info); if (info && rk === cur && info.hl > 0.05) { g.fillStyle = "#fff"; rr(BX - 24, BY + (rk - 1) * RH + 10 * (RH / 64), 9, RH - 30 * (RH / 64), 5); g.fill(); } }
+  podium(860, 820, 0.3 + 0.15 * Math.sin(t * 2.5));
+  if (sub === "mad") engrave(ph, D.madueke.stats && D.madueke.stats.map(q => [q.v, q.label])); else if (sub !== "gl") engrave(sub === "yam" ? py + 0.2 : ph, statItems(D.stats[cur]));
+  const k2 = pop(cl((t - (total - T.cta)) * 3)); if (k2 > 0) { g.save(); g.translate(300, 1738); g.scale(k2, k2); rr(-250, -42, 500, 84, 24); const b2 = g.createLinearGradient(0, -42, 0, 42); b2.addColorStop(0, GOLD1); b2.addColorStop(1, GOLD2); g.fillStyle = b2; g.fill(); g.strokeStyle = INK; g.lineWidth = 5; g.stroke(); txt("DO YOU AGREE?", 0, 0, 38, INK, { a: "center", w: 900, ls: 1 }); g.restore(); }
+  if (D.credit) txt(D.credit, 1062, 1906, 14, "rgba(255,255,255,.55)", { w: 800, a: "right" }); }
+window.draw = t => D.mode === "top5" ? drawTop5(t) : drawCount(t);
+window.ready = true;
+</script></body></html>
