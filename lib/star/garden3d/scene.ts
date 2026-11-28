@@ -864,6 +864,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const ext: LevelZones | null = gLevel >= 2 && opts.levels
     ? await (await import("./levelZones")).buildLevelZones({
       THREE, scene, container, tier, load, SkeletonUtils, mergeGeometries, plantStyle: treeStyle, cardMaterial: cardMat, blobTex: blobT, night, dbg,
+      wallTop: data.tier >= 3 ? 1.85 : data.tier >= 1 ? 1.9 : 1.6,
     }, opts.levels, { onRide: (r) => cb.onRide?.(r), onHouse: cb.onHouseDoor ? () => { if (!doorFired) { doorFired = true; cb.onHouseDoor!(); } } : undefined })
     : null;
   if (disposed) { ext?.dispose(); throw new Error("disposed"); }
@@ -2541,7 +2542,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
   const savings = sceneSavings(THREE, renderer, scene);
   // don't draw what the camera can't see: each still piece by its real box, and the tree zones behind the shop (three3d/tightCull.ts)
-  const cull = tightCull(THREE, scene, renderer, { moving: new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, sunSprite, ...mates.map((m) => m.root), ...(ext ? [dome, ...ext.movers] : [])]), extraHide: () => plants.behind() });
+  const cull = tightCull(THREE, scene, renderer, { moving: new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, sunSprite, ...mates.map((m) => m.root), ...(ext ? [dome, ...ext.movers] : [])]), extraHide: (cam: any) => (ext ? [...plants.behind(), ...ext.behindWall(cam)] : plants.behind()) });
   // look H draws into its pass's picture: build the shaders for THAT (enhance.ts compile), not the screen
   try {
     await Promise.all([

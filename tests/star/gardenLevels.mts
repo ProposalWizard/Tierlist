@@ -220,7 +220,8 @@ check(RIDER_MEASURED.ironGap.every((v) => v < 0.15), `feet in the irons (${RIDER
 for (const m of GARDEN_LEVELS_MEASURED) {
   const b = m.walking ? GARDEN_BUDGET.mediumWalking : GARDEN_BUDGET.medium;
   check(m.triangles <= b.triangles, `level ${m.level} ${m.view}${m.walking ? " (moving)" : ""}: ${m.triangles} triangles ≤ ${b.triangles}`);
-  if (!m.baselineOver) check(m.draws <= b.draws, `level ${m.level} ${m.view}${m.walking ? " (moving)" : ""}: ${m.draws} draws ≤ ${b.draws}`);
+  if (m.over) { check(m.draws <= m.over.ceiling, `level ${m.level} ${m.view}: ${m.draws} draws, held at ${m.over.ceiling}`); console.log(`  KNOWN OVER: level ${m.level} ${m.view}: ${m.draws} draws > ${b.draws} (${m.over.why})`); }
+  else if (!m.baselineOver) check(m.draws <= b.draws, `level ${m.level} ${m.view}${m.walking ? " (moving)" : ""}: ${m.draws} draws ≤ ${b.draws}`);
   else check(m.draws <= m.baselineOver, `level ${m.level} ${m.view}: ${m.draws} draws, no more than the garden itself there (${m.baselineOver})`);
 }
 

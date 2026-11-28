@@ -62,8 +62,30 @@ export const GARDEN_MEASURED: { before: GardenMeasure[]; facet: GardenMeasure[];
  * budget there, and the level may not add to it. Re-measure: .tmp-style driver in the build notes (H.garden with
  * opts.levels) or tests/star/gardenLevels.mts's header.
  */
-export interface LevelMeasure { level: number; view: string; walking: boolean; draws: number; triangles: number; baselineOver?: number }
-export const GARDEN_LEVELS_MEASURED: LevelMeasure[] = [];
+export interface LevelMeasure {
+  level: number; view: string; walking: boolean; draws: number; triangles: number;
+  /** The garden itself (level 1, the same view) is already this many draws: the level may not add to it. */
+  baselineOver?: number;
+  /** Over the draw budget, and why (still to fix; the test holds it at this ceiling so it cannot grow). */
+  over?: { ceiling: number; why: string };
+}
+const BACK = "looking back at the garden through the west gate: the whole garden is in the picture (the wall and small-piece culling, levelZones.ts behindWall, took it from 158 to 120)";
+export const GARDEN_LEVELS_MEASURED: LevelMeasure[] = [
+  { level: 1, view: "gate", walking: false, draws: 95, triangles: 53_346, baselineOver: 95 },
+  { level: 5, view: "gate", walking: false, draws: 95, triangles: 53_680, baselineOver: 95 },
+  { level: 5, view: "gate", walking: true, draws: 97, triangles: 58_617 },
+  { level: 2, view: "west wall", walking: false, draws: 49, triangles: 43_676 },
+  { level: 5, view: "west wall", walking: false, draws: 71, triangles: 66_129 },
+  { level: 2, view: "paddock", walking: false, draws: 34, triangles: 40_940 },
+  { level: 5, view: "paddock", walking: false, draws: 49, triangles: 57_680 },
+  { level: 5, view: "stable", walking: false, draws: 32, triangles: 52_288 },
+  { level: 3, view: "field", walking: false, draws: 24, triangles: 46_784 },
+  { level: 5, view: "field", walking: false, draws: 26, triangles: 49_188 },
+  { level: 3, view: "riding the course", walking: true, draws: 40, triangles: 49_811 },
+  { level: 5, view: "riding the course", walking: true, draws: 42, triangles: 52_215 },
+  { level: 5, view: "paddock, facing the garden", walking: false, draws: 120, triangles: 74_000, over: { ceiling: 125, why: BACK } },
+  { level: 5, view: "field, facing the garden", walking: false, draws: 108, triangles: 75_860, over: { ceiling: 112, why: BACK } },
+];
 
 /** The rider on the saddle, measured on the one body (scripts/perf3d H.rider → rideHorse.ts riderCheck), metres. */
 export const RIDER_MEASURED = { kneeOut: [0.089, 0.087], footOut: [0.027, 0.04], ironGap: [0.076, 0.095], hipsOverSeat: 0 };

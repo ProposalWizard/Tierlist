@@ -41,7 +41,7 @@ import LoadingCurtain from "./loading/LoadingCurtain";
 import ViewToggle3D from "./ViewToggle3D";
 import type { GardenLevelsOpt, RideReport } from "@/lib/star/garden3d/levelZones";
 import { gardenLevelsOn } from "@/lib/star/garden3d/levelsFlag";
-import { gardenLevelsOptFor } from "@/lib/star/gardenLevels";
+import { gardenChip, gardenLevelOf, gardenLevelsOptFor } from "@/lib/star/gardenLevels";
 
 const INK = "#f7f1e8";
 /** A query parameter, on the client only. */
@@ -280,6 +280,13 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
       {/* the loading screen: keepie-uppies in the garden (components/star/loading) */}
       <LoadingCurtain section="garden" loading={status === "loading"} box={embedded} />
 
+      {/* garden level 1 builds nothing new, so its chip is drawn here (from level 2 the scene's own HUD draws it: levelZones.ts) */}
+      {status === "ready" && levelsOpt && gardenLevelOf(levelsOpt.xp).level === 1 && (
+        <div data-garden-level-chip style={{ position: "absolute", left: 12, top: "calc(max(12px, env(safe-area-inset-top)) + 44px)", background: "rgba(14,12,10,0.82)", border: "1px solid rgba(250,204,21,0.25)", borderRadius: 999, padding: "6px 12px 7px", fontSize: 12, fontWeight: 900, display: "flex", flexDirection: "column", gap: 4, minWidth: 150, pointerEvents: "none" }}>
+          <span>🌳 {gardenChip(levelsOpt.xp)}</span>
+          <span style={{ display: "block", height: 4, borderRadius: 2, background: "rgba(255,255,255,.14)", overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: `${Math.round(gardenLevelOf(levelsOpt.xp).progress * 100)}%`, background: GOLD }} /></span>
+        </div>
+      )}
       {status === "ready" && ctrlRef.current?.setView && <ViewToggle3D onChange={(m) => ctrlRef.current?.setView?.(m)} />}
       {status === "ready" && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
 

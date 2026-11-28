@@ -36,7 +36,7 @@ import {
 } from "./riding";
 import { gardenChip, gardenLevelOf, GARDEN_LEVELS } from "../gardenLevels";
 import { boardsCanvas, gravelCanvas, hedgeCanvas, slateCanvas, stripeCanvas, strawCanvas } from "./textures";
-import type { PlantStyle } from "./plantZones";
+import { hiddenBehind, type PlantStyle } from "./plantZones";
 import type { Person3D } from "../people3d";
 import { RIDE_POSE, carryTack, makeRideHorse, riderCheck, seatRider, type HorseRig } from "./rideHorse";
 import type { Quality3d } from "../three3d/quality";
@@ -67,6 +67,8 @@ export interface ZoneDeps {
   blobTex: any;
   night: boolean;
   dbg: URLSearchParams;
+  /** The garden wall's height (m): what it hides from out in the new areas. */
+  wallTop: number;
 }
 
 export interface ZoneCallbacks {
@@ -111,6 +113,9 @@ export interface LevelZones {
   camAdjust: (cs: { height: number; back: number; lookY: number; lookAhead: number }) => void;
   /** Every frame: the horse at rest, the marker, the plant zones' detail. */
   update: (dt: number, camera: any, px: number, pz: number) => void;
+  /** Out in the new areas: the garden's own meshes the west wall hides from this camera (left out of the picture;
+   *  three3d/tightCull.ts extraHide). Empty while the camera is in the garden. */
+  behindWall: (camera: any) => any[];
   /** Meshes that move (left out of the garden's still-piece joining and its tight culling). */
   movers: any[];
   /** For tests and filming. */
@@ -150,7 +155,7 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     paddock: mat("#7f9446", { roughness: 1 }),
     field: mat("#ffffff", { map: tex(stripeCanvas("#7ea24b", "#73963f")), roughness: 1 }),
     white: mat("#f4f1ea", { roughness: 0.6 }),
-    timber: mat("#ffffff", { map: tex(boardsCanvas("#9a6a42")), roughness: 0.8 }),
+    timber: mat("#d9cbbd", { map: tex(boardsCanvas("#8a6448")), roughness: 0.8 }), // weathered timber, not orange
     darkTimber: mat("#5c3d27", { roughness: 0.8 }),
     slate: mat("#ffffff", { map: tex(slateCanvas()), roughness: 0.75 }),
     hedge: mat("#ffffff", { map: tex(hedgeCanvas("#33612a")), roughness: 0.95 }),
@@ -237,12 +242,12 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     for (const [r0, r1] of runs) a.box(r1 - r0, 1.7, 0.9, M.hedge, x0 + ux * (r0 + r1) / 2, 0.85, z0 + uz * (r0 + r1) / 2, ry, 1.6);
   };
   /** A small sign board with words on it (canvas), on two legs. */
-  const signTex = (lines: string[], w = 512, h = 256, bg = "#2a1d12") => {
+  const signTex = (lines: string[], w = 512, h = 256, bg = "#2a1d12", ink = "#f7f1e8") => {
     const c = document.createElement("canvas"); c.width = w; c.height = h;
     const g = c.getContext("2d")!;
     g.fillStyle = bg; g.fillRect(0, 0, w, h);
     g.strokeStyle = "#facc15"; g.lineWidth = 10; g.strokeRect(10, 10, w - 20, h - 20);
-    g.fillStyle = "#f7f1e8"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillStyle = ink; g.textAlign = "center"; g.textBaseline = "middle";
     lines.forEach((l, i) => { g.font = `900 ${i === 0 ? 64 : 46}px system-ui, sans-serif`; g.fillText(l, w / 2, h / 2 + (i - (lines.length - 1) / 2) * 76); });
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
     return t;
@@ -274,7 +279,7 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     leaf.add(piece(new THREE.BoxGeometry(Math.hypot(gw, 0.9), 0.07, 0.05), M.white, gw / 2, 0.75, 0, 0, 0, Math.atan2(0.9, gw) * sgn));
     leaf.position.set(WEST_GATE.x - 0.1, 0, zEnd);
     // open: swung 100 degrees out of the garden, flat against the lane's fences
-    leaf.rotation.y = sgn * (Math.PI / 2 + 0.17) * -1;
+    leaf.rotation.y = Math.PI - sgn * 0.15; // pointing west down the lane, each leaf just off its fence
     leaf.updateMatrixWorld(true);
     leaf.traverse((o: any) => { if (o.isMesh) { const g = o.geometry.clone(); g.applyMatrix4(o.matrixWorld); A.put(g, o.material, 0, 0, 0); } });
   }
@@ -457,7 +462,7 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     for (const sp of SIGNPOSTS) {
       const arms: [string, number, number][] = [["🏠 House", 2.15, Math.PI / 2], ["🌳 Garden", 1.75, Math.PI / 2 - 0.5], ["🐎 Field", 1.35, -Math.PI / 2]];
       for (const [label, y, ry] of arms) {
-        const arm = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.3), new THREE.MeshStandardMaterial({ map: signTex([label], 512, 140, "#f4f1ea"), roughness: 0.7, side: THREE.DoubleSide }));
+        const arm = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.3), new THREE.MeshStandardMaterial({ map: signTex([label], 512, 140, "#f4f1ea", "#2a1d12"), roughness: 0.7, side: THREE.DoubleSide }));
         // the boards' words in dark ink on cream
         (arm.material.map.image as HTMLCanvasElement).getContext("2d");
         arm.position.set(sp.x + Math.sin(ry) * 0.5, y, sp.z + Math.cos(ry) * 0.5);
@@ -738,11 +743,11 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     if (showClock) {
       const b = mode ? best[mode] : best.course;
       const t = lap?.on ? lapClock(lap.t + lap.pen) : "0:00.0";
-      const nextName = mode === "course" && lap?.on ? (course.next < COURSE.length ? `next ${COURSE[course.next].kind === "poles" ? "poles" : `jump ${COURSE[course.next].name}`}` : "to the finish") : mode === "track" && lap?.on ? (track.next < TRACK_GATES.length ? "round the track" : "to the finish") : "ride through START";
+      const nextName = mode === "course" && lap?.on ? (course.next < COURSE.length ? `next ${COURSE[course.next].kind === "poles" ? "poles" : `jump ${COURSE[course.next].name}`}` : "to the finish") : mode === "track" && lap?.on ? (track.next < TRACK_GATES.length ? "round the track" : "to the finish") : level >= 4 ? "through START or FINISH" : "ride through START";
       const key = `${t}|${b}|${nextName}|${lap?.pen ?? 0}`;
       if (key !== lastClock) {
         lastClock = key;
-        clock.innerHTML = `<div style="font-size:11px;font-weight:900;opacity:.75;letter-spacing:.06em">${mode === "track" ? "RACE TRACK" : "JUMP COURSE"}</div><div style="font-size:26px;font-weight:950;font-variant-numeric:tabular-nums;line-height:1.1">⏱ ${t}${lap && lap.pen ? ` <span style="color:#f87171;font-size:15px">+${lap.pen}s</span>` : ""}</div><div style="font-size:11px;font-weight:800;opacity:.8">${b !== undefined ? `best ${lapClock(b / 1000)} · ` : ""}${nextName}</div>`;
+        clock.innerHTML = `<div style="font-size:11px;font-weight:900;opacity:.75;letter-spacing:.06em">${mode === "track" ? "RACE TRACK" : mode === "course" ? "JUMP COURSE" : "LAP CLOCK"}</div><div style="font-size:26px;font-weight:950;font-variant-numeric:tabular-nums;line-height:1.1">⏱ ${t}${lap && lap.pen ? ` <span style="color:#f87171;font-size:15px">+${lap.pen}s</span>` : ""}</div><div style="font-size:11px;font-weight:800;opacity:.8">${b !== undefined ? `best ${lapClock(b / 1000)} · ` : ""}${nextName}</div>`;
       }
     }
     if (flash) {
@@ -918,6 +923,7 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
       drawHud(dt);
     },
     movers,
+    behindWall: (camera) => behindWall(camera),
     test: {
       mount: () => {
         if (!horse || !rider) return false;
@@ -947,6 +953,50 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     },
   };
   let disposed = false;
+  // ── Out in the new areas, the garden behind its west wall is mostly out of sight (measured 28 Nov: 152-158 draws
+  // looking back from the paddock, against 95 from the garden's gate). Everything of the garden that sits wholly
+  // behind the wall from where the camera is (every corner's line of sight crosses the wall) is left out of the
+  // picture; the shop's and casino's roofs, the trees and anything seen through the gate stay. ──
+  const wallBoxes = [
+    { x0: WEST_GATE.x - 0.45, x1: WEST_GATE.x + 0.45, y0: -1, y1: d.wallTop, z0: -19.3, z1: WEST_GATE.z0 },
+    { x0: WEST_GATE.x - 0.45, x1: WEST_GATE.x + 0.45, y0: -1, y1: d.wallTop, z0: WEST_GATE.z1, z1: 19.3 },
+  ];
+  let wallItems: { m: any; c: number[]; r: number; corners: number[][] }[] | null = null;
+  const SMALL = Number(d.dbg.get("smallcull") ?? 0.03), SMALL_FAR = Number(d.dbg.get("smallcullfar") ?? 0.07);
+  let wallHidden: any[] = [], wallTick = 0;
+  const mine = new Set<any>();
+  const people: any[] = [];
+  const pw = new THREE.Vector3();
+  const behindWall = (camera: any): any[] => {
+    const e = camera.position;
+    if (e.x > WEST_GATE.x - 0.6) { wallHidden = []; return wallHidden; }
+    if (!wallItems) {
+      // once: the garden's own still meshes, each with its box (not the new areas, not anything that moves)
+      scene.traverse((o: any) => { if (o.name?.startsWith("garden-level-")) o.traverse((c: any) => mine.add(c)); });
+      for (const m of movers) m.traverse?.((c: any) => mine.add(c));
+      wallItems = [];
+      const b = new THREE.Box3();
+      scene.updateMatrixWorld(true);
+      scene.traverse((o: any) => {
+        if (o.isSkinnedMesh && !mine.has(o)) { people.push(o); return; }
+        if (!(o.isMesh || o.isPoints) || mine.has(o)) return;
+        b.setFromObject(o);
+        if (b.isEmpty() || b.min.x < WEST_GATE.x + 0.3 || b.max.y > 60) return; // the wall itself, the ground, the sky
+        const c = b.getCenter(new THREE.Vector3()), r = b.getSize(new THREE.Vector3()).length() / 2;
+        wallItems!.push({ m: o, c: [c.x, c.y, c.z], r, corners: [b.min.x, b.max.x].flatMap((x) => [b.min.y, b.max.y].flatMap((y) => [b.min.z, b.max.z].map((z) => [x, y, z]))) });
+      });
+    }
+    if (wallTick++ % 4 === 0) {
+      const eye = [e.x, e.y, e.z];
+      // hidden behind the wall, or too small to matter from out here (under ~1% of the view across: a pot, a lantern, a bed)
+      const small = e.x < -40 ? SMALL_FAR : SMALL; // out in the field the garden is 30-60 m off: its small pieces are a few pixels
+      wallHidden = wallItems.filter((it) => it.r / Math.hypot(it.c[0] - e.x, it.c[1] - e.y, it.c[2] - e.z) < small || wallBoxes.some((w) => hiddenBehind(eye, it.corners, w))).map((it) => it.m);
+      // the garden's people and the bird (each a few thousand cloth triangles, measured 90k for the bench from the
+      // field): out past the gate's lane they are left out of the picture altogether
+      if (e.x < WEST_GATE.x - 2) for (const o of people) { o.getWorldPosition(pw); if (pw.x > WEST_GATE.x + 0.3) wallHidden.push(o); }
+    }
+    return wallHidden;
+  };
   // a rough "is the horse in view" for skipping his clips off screen
   const fr = new THREE.Frustum(), pm = new THREE.Matrix4(), sph = new THREE.Sphere(new THREE.Vector3(), 2.2);
   const visibleish = (camera: any) => { pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); fr.setFromProjectionMatrix(pm); sph.center.set(hp.x, 1, hp.z); return fr.intersectsSphere(sph); };
