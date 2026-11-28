@@ -149,6 +149,12 @@ exactly today's bodies. You never pick a file yourself:
   modelled hair in under its crown now and when the hair loads later (`capPress`); long hair comes out from under its edge.
   Mark a pressed geometry on the object, never in `userData` (three's `clone()` shares userData with the file's geometry).
   Sheet: `/star-3d-bench-dev/hair` (`node scripts/bench3d/hair-sheet.mjs OUTDIR "name::cuts=afro:0,crew:2&head=h1"`).
+  Second pass (28 Nov 2026): the straight styles were rebuilt so each reads at phone size (`tools/hair3d/build_hair.py`
+  crew: sides clipped above the ears over a faded scalp, a textured top; slick back: a tall combed front, deep comb
+  lines, a side parting; tied back: a knot and a band you see from the side, the tail to the collar). Your beard off is
+  `hairCut.beard` 2: the shader fades the sideburns to the temple (no block by the ear). The cap sits 3 cm higher (eyes
+  and brows clear in every view). A change of look shows at once on a body already built (`yourHair.ts registerYou`):
+  the house's bathroom mirror has Shave / Trim beard / Tidy hair (`Home3D` `onHair`; stills `scripts/barber3d/mirror-shots.mjs`).
 - **The face system (20 Nov 2026, Harry: "straight-to-the-face build"; bench only, not in the game yet).** Each person's own face is a
   FaceId (`lib/star/style3d/toon/faceId.ts`: about fifty numbers and three colours from his id, `personLook(...).faceId`; the same id, the
   same face): eye shape (round, almond, hooded, narrow, deep-set, downturned, upturned, single lid), size, spacing and a real eye colour,

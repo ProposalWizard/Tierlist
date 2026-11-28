@@ -15,7 +15,7 @@ import "@/components/star/ui/glassLook.css";
 import { freshItem, isWornOut } from "@/lib/star/fame";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { setToonYou, yourToonBody, yourToonHead } from "@/lib/star/style3d/toon/bodies";
-import { yourHairLook3d, hairLookKey, withHairStarted } from "@/lib/star/barber";
+import { yourHairLook3d, hairLookKey, withHairStarted, applyMirror } from "@/lib/star/barber";
 import { skinToneHex, hairColourHex } from "@/lib/star/playerIdentity";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay, FarewellRecord } from "@/lib/star/types";
 import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type FreeKickRunupId } from "@/lib/star/runupStyles";
@@ -5301,6 +5301,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onSleep: () => setCareer((c) => (c ? sleepClock(c, sleepNight(c).career) : c)),
           // the home gym (gym/homeGym.ts): the gym of this house's level, back to the house after
           onGym: (tier) => { setGymHome(tier); setPhase("gym-3d"); },
+          // the bathroom mirror's Shave / Trim beard / Tidy hair (lib/star/barber.ts applyMirror): free, 10 minutes
+          onHair: (act) => setCareer((c) => (c ? applyMirror(c, act, yourToonHead(c.player)).career : c)),
           ...clockLink,
         }}
         onHome={() => handleNavigate("home")}

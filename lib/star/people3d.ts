@@ -843,6 +843,8 @@ export function makePerson3d(
   // (every place that builds you comes through here: the house, the garden, the shop, the street, the gym, the compound)
   const yourCut = opts.you && toonHead ? toonYou().hairLook?.mesh : undefined;
   if (yourCut) void import("./style3d/toon/yourHair").then((m) => m.wearYourHair(T, person, yourCut)).catch((e) => console.error("your hair", e));
+  // (and kept, so a change of look while the place is open shows on him at once: yourHair.ts registerYou)
+  if (opts.you && toonHead && typeof window !== "undefined") void import("./style3d/toon/yourHair").then((m) => m.registerYou(T, person)).catch(() => {});
   return person;
 }
 

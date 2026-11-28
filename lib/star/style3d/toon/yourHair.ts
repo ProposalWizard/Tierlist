@@ -9,7 +9,7 @@
  * Nothing per frame: the hair sits as modelled (a scene may call `yourHairOf(p)?.update(dt)` for the swing).
  */
 import type { Person3D } from "../../people3d";
-import { toonYou } from "./bodies";
+import { subscribeToonYou, toonYou } from "./bodies";
 import { toonHairFits, type ToonHair } from "./hairStyles";
 import { addToonHair, loadToonHair, type ToonHairOn } from "./hair";
 import { withMeshopt } from "../../three3d/meshopt";
@@ -50,4 +50,29 @@ export async function wearYourHair(T: any, p: Person3D, style: ToonHair | undefi
   const h = addToonHair(T, p, g, style);
   if (h) { ON.set(p, h); h.mesh.userData.yourHair = true; } else ON.delete(p);
   return h;
+}
+
+/**
+ * YOUR LOOK, LIVE (the house mirror's Shave / Trim / Tidy, a cut while a place is open): every body of yours a place
+ * built is kept here, and when your look changes (setToonYou({ hairLook })) each one on the same head is repainted
+ * (the scalp and beard) and its modelled hair swapped, without building him again. A body on another head keeps its
+ * look until the place builds him again. Bodies no longer in a scene are dropped.
+ */
+const LIVE = new Set<{ T: any; p: Person3D }>();
+let listening = false;
+export function registerYou(T: any, p: Person3D): void {
+  LIVE.add({ T, p });
+  if (listening) return;
+  listening = true;
+  subscribeToonYou(() => {
+    const look = toonYou().hairLook;
+    for (const e of Array.from(LIVE)) {
+      let top: any = e.p.root;
+      while (top?.parent) top = top.parent;
+      if (!top?.isScene) { LIVE.delete(e); continue; }
+      if (!look || look.head !== e.p.toonHead) continue;
+      (e.p.u as any).uHairCut?.value.set(look.cut.scalp, look.cut.beard, look.cut.stubble, look.cut.pattern);
+      void wearYourHair(e.T, e.p, look.mesh).catch(() => null);
+    }
+  });
 }
