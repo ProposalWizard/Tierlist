@@ -343,6 +343,70 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     M.ctrl = { dispose() { g.dispose(); c.remove(); } };
     return true;
   },
+  /**
+   * The low-poly tree candidates side by side (lib/star/garden3d/lowPolyTrees.ts): one column per
+   * style, the garden's seven tree kinds at their real sizes, near / middle / far detail rows.
+   * opts: styles ["clump","facet","leafy"], lod (one row), cam [x,y,z], look [x,y,z].
+   */
+  async trees(opts: any = {}) {
+    const LT = await import("@/lib/star/garden3d/lowPolyTrees");
+    const { DRACOLoader } = await import("three/examples/jsm/loaders/DRACOLoader.js");
+    const r = new THREE.WebGLRenderer({ antialias: true });
+    r.setPixelRatio(Math.min(2, devicePixelRatio));
+    r.setSize(innerWidth, innerHeight);
+    r.toneMapping = THREE.ACESFilmicToneMapping;
+    r.shadowMap.enabled = true;
+    r.shadowMap.type = THREE.PCFSoftShadowMap;
+    stage().appendChild(r.domElement);
+    const sc = new THREE.Scene();
+    sc.background = new THREE.Color("#bcd8ee");
+    sc.fog = new THREE.Fog("#bcd8ee", 40, 120);
+    sc.add(new THREE.HemisphereLight("#dfefff", "#6b7a4a", 1.1));
+    const sun = new THREE.DirectionalLight("#fff1d6", 2.6);
+    sun.position.set(-14, 22, 12); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+    Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, far: 80 });
+    sc.add(sun);
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: "#7fa050", roughness: 1 }));
+    ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; sc.add(ground);
+    const draco = new DRACOLoader(); draco.setDecoderPath("/star/shop3d/draco/");
+    const loader = new GLTFLoader(); loader.setDRACOLoader(draco); await withMeshopt(loader);
+    const g: any = await new Promise((res, rej) => loader.load("/star/garden3d/props.glb", res, undefined, rej));
+    g.scene.updateMatrixWorld(true);
+    const sizes: Record<string, { h: number; w: number }> = {};
+    for (const top of g.scene.children) {
+      if (!top.name.startsWith("tree_")) continue;
+      const inv = top.matrixWorld.clone().invert(); const bb = new THREE.Box3();
+      top.traverse((o: any) => { if (o.isMesh) { const gg = o.geometry.clone(); gg.applyMatrix4(inv.clone().multiply(o.matrixWorld)); gg.computeBoundingBox(); bb.union(gg.boundingBox!); } });
+      const s = bb.getSize(new THREE.Vector3()); sizes[top.name] = { h: s.y, w: Math.max(s.x, s.z) };
+    }
+    (window as any).__treeSizes = sizes;
+    const kinds: [string, any, string?, string?][] = [["tree_default", "round"], ["tree_oak", "round", "#6e9a3e", "#28501f"], ["tree_detailed", "round", "#8bb556", "#386a2c"], ["tree_fat", "wide"], ["tree_tall", "tall"], ["tree_pine", "pine"], ["tree_pine2", "pine", "#5a8848", "#21472a"]];
+    const styles: string[] = opts.styles ?? ["clump", "facet", "leafy"];
+    const lods: number[] = opts.lods ?? [opts.lod ?? 0];
+    const mat = LT.plantMaterial(THREE);
+    let tris = 0;
+    styles.forEach((style, si) => lods.forEach((lod, li) => kinds.filter((_, i) => !opts.only || opts.only.includes(i)).forEach(([k, shape, light, dark], ki) => {
+      const b = LT.newBin();
+      const sz = sizes[k] ?? { h: 1.6, w: 1.2 };
+      tris += LT.addTree(THREE, b, { h: sz.h, w: sz.w, shape, seed: 101 + ki * 37, style: style as any, lod: lod as any, light, dark });
+      const me = new THREE.Mesh(LT.binGeometry(THREE, b), mat);
+      const s = opts.scale ?? 5;
+      me.scale.setScalar(s);
+      const cols = opts.cols ?? 4;
+      me.position.set((ki % cols - (cols - 1) / 2) * (opts.dx ?? 7) + (si - (styles.length - 1) / 2) * (opts.sx ?? 30), 0, -Math.floor(ki / cols) * (opts.dz ?? 9) - li * (opts.lz ?? 20));
+      me.castShadow = me.receiveShadow = true;
+      sc.add(me);
+      if (opts.bushes) { const bb = LT.newBin(); LT.addBush(THREE, bb, { x: 0, z: 0, s: 0.7, seed: 5 + ki, style: style as any, lod: lod as any }); const bm = new THREE.Mesh(LT.binGeometry(THREE, bb), mat); bm.position.copy(me.position).add(new THREE.Vector3(2.4, 0, 2)); bm.castShadow = bm.receiveShadow = true; sc.add(bm); }
+    })));
+    (window as any).__treeTris = tris;
+    const cam = new THREE.PerspectiveCamera(opts.fov ?? 40, innerWidth / innerHeight, 0.1, 300);
+    cam.position.set(...((opts.cam ?? [0, 9, 34]) as [number, number, number]));
+    cam.lookAt(...((opts.look ?? [0, 4, 0]) as [number, number, number]));
+    r.render(sc, cam);
+    M.ready = performance.now();
+    M.ctrl = { dispose() { r.dispose(); r.domElement.remove(); } };
+    return { sizes, tris };
+  },
   /** Home's idle early download for a place (perf.ts preloadScene), then window.__preloadDone. */
   async preload(scene: string) {
     const name = ({ toon: "home", drill: "home", career: "home", cut: "home" } as any)[scene] ?? scene;
