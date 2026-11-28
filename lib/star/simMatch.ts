@@ -48,6 +48,7 @@ import { rollAddedTime, addedTimeSeed } from "./addedTime";
 import type { ChanceEntry, ChanceOutcome } from "./chanceLog";
 import { energyFactorFor, energyPerMinute, clampEnergy, tiredKickSkills } from "./energy";
 import { pickSquadScorer, pickSquadAssist } from "./squadData";
+import { gymSkillBonus } from "./gym/effect";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "./teamsheet";
 
 export type SimOutcome = ChanceOutcome;
@@ -106,11 +107,13 @@ export function simulateOwnMatch(career: CareerState, fixture: Fixture, o: SimOp
   // Added time, rolled off its own seed exactly as the real match does (item 30).
   const added = rollAddedTime(mulberry32(addedTimeSeed(seed)));
   const whistle = 90 + added;
+  // The gym's Power and Pace on top (gym/effect.ts: 0 while its flag is off).
+  const gymB = gymSkillBonus(career);
   const skills: SimSkills = {
-    power: o.skills?.power ?? career.skills.power,
+    power: Math.min(100, (o.skills?.power ?? career.skills.power) + gymB.power),
     technique: o.skills?.technique ?? career.skills.technique,
     vision: career.skills.vision,
-    pace: career.skills.pace,
+    pace: Math.min(100, career.skills.pace + gymB.pace),
   };
   const position = career.playAs ?? career.player.position;
   const baseStrength = fixture.opponentStrength ?? career.league.find((t) => t.name === fixture.opponent)?.strength ?? 65;
