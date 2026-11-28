@@ -300,7 +300,16 @@ export function placeSince(out: Bin, from: number, x: number, y: number, z: numb
 export function plantMaterial(T: any) {
   const m = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0, envMapIntensity: 0.45 });
   m.onBeforeCompile = (sh: any) => {
-    sh.fragmentShader = sh.fragmentShader.replace("#include <lights_fragment_end>", `#include <lights_fragment_end>
+    sh.fragmentShader = sh.fragmentShader.replace("#include <clipping_planes_fragment>", `#include <clipping_planes_fragment>
+  {
+    // a branch right against the camera (the walking camera backed into a crown at the edge of the
+    // garden) thins out in a fine dither instead of filling the screen with one dark face
+    float camD = length(vViewPosition);
+    if (camD < 2.2) {
+      float h = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453);
+      if (h > (camD - 0.7) / 1.5) discard;
+    }
+  }`).replace("#include <lights_fragment_end>", `#include <lights_fragment_end>
   {
     // leaves (green) let light through: the shaded side stays green, never black; bark (brown) does not
     float leafy = clamp((vColor.g - vColor.r) * 6.0, 0.0, 1.0);
@@ -308,7 +317,7 @@ export function plantMaterial(T: any) {
     reflectedLight.indirectDiffuse += diffuseColor.rgb * vec3(0.5, 0.72, 0.36) * (0.1 + 0.3 * (1.0 - lit)) * leafy;
   }`);
   };
-  m.customProgramCacheKey = () => "lowpoly-plants-v1";
+  m.customProgramCacheKey = () => "lowpoly-plants-v2";
   m.userData.keep = true; // its own shader: never folded into another material (freezeStatic)
   return m;
 }
