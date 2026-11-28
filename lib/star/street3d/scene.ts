@@ -12,7 +12,7 @@
  *     chimneys, a civic building with a clock closing the north end, the lane to your garden south
  *   - four shop fronts: KNOWITBALL (the 3D shop, its doors open), KIB MOTORS (a car you can buy on a
  *     turning plinth behind the glass, its real shop price), THE DRIP (the boutique, real tags), the
- *     barber (shut, "opening soon", its pole turning); other fronts are closed shops so the street
+ *     barber (its door open into the barber's shop, its pole turning); other fronts are closed shops so the street
  *     is never empty
  *   - the road, kerbs, a zebra with blinking beacons, parked cars (the shop's own car models, the
  *     house drive's light copies), lamps, textured trees in pits (garden3d/cardTrees.ts), benches,
@@ -60,7 +60,7 @@ import {
   type StreetArrive, type StreetDoor, type WindowItem,
 } from "./plan";
 import {
-  asphaltCanvas, renderCanvas, fasciaCanvas, boutiqueCanvas, barberCanvas, soonCanvas, clockCanvas, namePlateCanvas,
+  asphaltCanvas, renderCanvas, fasciaCanvas, boutiqueCanvas, barberCanvas, clockCanvas, namePlateCanvas,
   fingerCanvas, priceStandCanvas, tagCanvas, lettersCanvas, paneCanvas, litPaneCanvas, doorwayCanvas,
 } from "./textures";
 
@@ -80,7 +80,7 @@ export interface StreetData {
 export interface StreetCallbacks {
   /** The door you are standing at (its card), or null. "lane" = the south end, back to the garden. */
   onNear: (spot: StreetDoor | "lane" | null) => void;
-  /** Walked through a door (the shut barber: walked up to it). */
+  /** Walked through a door. */
   onDoor: (id: StreetDoor) => void;
   /** Walked off the south end, down the lane to your garden. Absent: the lane is a dead end. */
   onLeave?: () => void;
@@ -707,16 +707,12 @@ async function buildStreet(container: HTMLElement, cb: StreetCallbacks, data: St
       scene.add(tag);
     });
   }
-  // THE BARBER: shut for now (no barber game yet): "opening soon" on the door, the pole turning
+  // THE BARBER: open (lib/star/barber3d/: walk in, the chair, a cut), the pole turning
   const pole = { tex: null as any };
   {
     const s = shopOf("barber");
     const red = mat("#7a1c1c", { roughness: 0.45 });
-    shopfront(s.side, s.z, s.width, { paint: red, pilaster: mat("#efe6d4", { roughness: 0.6 }), sign: signAt({ text: "BARBER", board: "#7a1c1c", ink: "#f4e3b5", serif: true, sub: "EST. 2026" }), doorHalf: s.doorHalf, door: "shut", window: ART(barberCanvas()), inside: mat("#e9e2d2", { roughness: 0.8 }) });
-    const soon = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.62), new THREE.MeshBasicMaterial({ map: canvasTex(soonCanvas()), toneMapped: false }));
-    soon.position.set(X(s.side, 0.24), PH + 1.75, s.z);
-    soon.rotation.y = facing(s.side);
-    scene.add(soon);
+    shopfront(s.side, s.z, s.width, { paint: red, pilaster: mat("#efe6d4", { roughness: 0.6 }), sign: signAt({ text: "BARBER", board: "#7a1c1c", ink: "#f4e3b5", serif: true, sub: "EST. 2026" }), doorHalf: s.doorHalf, door: "open", window: ART(barberCanvas()), lamps: true, inside: mat("#e9e2d2", { roughness: 0.8 }), through: THROUGH(doorwayCanvas("barber", "#8b1a1a")) });
     // the pole: a striped glass cylinder with brass caps, on a bracket by the door
     const c = document.createElement("canvas"); c.width = 64; c.height = 256;
     const g = c.getContext("2d")!;

@@ -9,7 +9,7 @@
  *   KNOWITBALL   → the 3D shop (its own front doors bring you back out here)
  *   KIB MOTORS   → the shop's Cars aisle
  *   THE DRIP     → the shop's Drip aisle
- *   BARBER       → shut: "Opening soon" (there is no barber game yet)
+ *   BARBER       → the barber's shop (components/star/Barber3D.tsx): the chair, a style, a cut
  *
  * Walking through an open door goes in (as the garden's doors do); the card's button does the same.
  * A lost 3D rebuilds itself (three3d/autoHeal.ts): twice a minute, Low after the first, then a plain
@@ -48,8 +48,8 @@ export interface Street3DProps {
   arrive?: StreetArrive;
   onBack: () => void;
   backLabel?: string;
-  /** Went through a door (never called for the barber: it is shut, its card says so). */
-  onDoor: (id: Exclude<StreetDoor, "barber">) => void;
+  /** Went through a door. */
+  onDoor: (id: StreetDoor) => void;
   /** Walked off the south end, down the lane to the garden. Absent: Back only. */
   onLeave?: () => void;
   /** Test page: fill its box on the admin frame instead of the whole screen. */
@@ -76,7 +76,6 @@ export default function Street3D({ career, arrive = "gate", onBack, backLabel = 
   const ctrl = useRef<StreetController | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
   const [near, setNear] = useState<StreetDoor | "lane" | null>(null);
-  const [barber, setBarber] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [build, setBuild] = useState(0);
   const heal = useRef(newHealState());
@@ -124,7 +123,6 @@ export default function Street3D({ career, arrive = "gate", onBack, backLabel = 
         onNear: (s) => { if (!gone) setNear(s); },
         onDoor: (id) => {
           if (gone) return;
-          if (id === "barber") { setBarber(true); return; }
           setLeaving(true);
           doorRef.current(id);
         },
@@ -203,31 +201,16 @@ export default function Street3D({ career, arrive = "gate", onBack, backLabel = 
       {state === "ready" && <ViewToggle3D onChange={(m) => ctrl.current?.setView(m)} />}
       {state === "ready" && <Stick onMove={(x, y) => ctrl.current?.setStick(x, y)} />}
 
-      {state === "ready" && near && near !== "lane" && !barber && (
+      {state === "ready" && near && near !== "lane" && (
         <div style={card} data-street-card={near}>
           <span aria-hidden style={{ fontSize: 24 }}>{DOOR_CARD[near].icon}</span>
-          {near === "barber"
-            ? <button onClick={() => setBarber(true)} style={{ ...goBtn, background: "#f4e3b5" }}>Barber &#8250;</button>
-            : <button onClick={() => { setLeaving(true); onDoor(near as Exclude<StreetDoor, "barber">); }} style={goBtn}>{DOOR_CARD[near].label} &#8250;</button>}
+          <button onClick={() => { setLeaving(true); onDoor(near); }} style={near === "barber" ? { ...goBtn, background: "#f4e3b5" } : goBtn}>{DOOR_CARD[near].label} &#8250;</button>
         </div>
       )}
       {state === "ready" && near === "lane" && onLeave && (
         <div style={card} data-street-card="lane">
           <span aria-hidden style={{ fontSize: 24 }}>🌳</span>
           <button onClick={() => { setLeaving(true); onLeave(); }} style={goBtn}>{backLabel} &#8250;</button>
-        </div>
-      )}
-
-      {/* the barber: shut for now */}
-      {barber && (
-        <div data-street-barber style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: "rgba(5,8,15,0.55)", zIndex: 5 }} onClick={() => setBarber(false)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "min(86vw, 320px)", borderRadius: 20, background: "#fbf7ee", color: "#1c1c1c", padding: "22px 20px 18px", textAlign: "center", boxShadow: "0 24px 60px -20px rgba(0,0,0,.8)", borderTop: "6px solid #8b1a1a" }}>
-            <div aria-hidden style={{ fontSize: 40 }}>💈</div>
-            <div style={{ fontSize: 22, fontWeight: 900, marginTop: 4 }}>Barber</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#8b1a1a", marginTop: 2 }}>Opening soon</div>
-            <div style={{ fontSize: 14, lineHeight: 1.4, marginTop: 10, color: "#3f3f3f" }}>New cuts and fades are on the way. The chair is ready.</div>
-            <button onClick={() => setBarber(false)} style={{ ...goBtn, marginTop: 16, width: "100%", background: "#8b1a1a", color: "#fff" }}>OK</button>
-          </div>
         </div>
       )}
 

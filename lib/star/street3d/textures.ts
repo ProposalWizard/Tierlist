@@ -271,7 +271,7 @@ export function litPaneCanvas(): HTMLCanvasElement {
 }
 
 /** Through an open shop door: the shop's own inside (shelves of stock, a counter, warm light). */
-export function doorwayCanvas(kind: "shop" | "drip", accent: string): HTMLCanvasElement {
+export function doorwayCanvas(kind: "shop" | "drip" | "barber", accent: string): HTMLCanvasElement {
   const [c, g] = cv(256, 384);
   const r = rnd(kind === "shop" ? 61 : 67);
   const wall = g.createLinearGradient(0, 0, 0, 384);
@@ -292,6 +292,13 @@ export function doorwayCanvas(kind: "shop" | "drip", accent: string): HTMLCanvas
     g.fillStyle = "#1f4a35"; g.fillRect(80, 232, 96, 70); g.fillStyle = "#c9a14f"; g.fillRect(80, 232, 96, 6);
     // a shirt on the back wall in your colours
     g.fillStyle = accent; g.beginPath(); g.moveTo(104, 110); g.lineTo(152, 110); g.lineTo(166, 126); g.lineTo(156, 136); g.lineTo(150, 130); g.lineTo(150, 176); g.lineTo(106, 176); g.lineTo(106, 130); g.lineTo(100, 136); g.lineTo(90, 126); g.closePath(); g.fill();
+  } else if (kind === "barber") {
+    // the barber's: a chequered floor, the mirror along the wall, a red chair in front of it
+    for (let y = 300; y < 384; y += 14) for (let x = 0; x < 256; x += 14) { g.fillStyle = ((x + y) / 14) % 2 ? "#f1ede4" : "#1d1d1f"; g.fillRect(x, y, 14, 14); }
+    g.fillStyle = "#c9a14f"; g.fillRect(40, 70, 176, 120); g.fillStyle = "#cfe0e6"; g.fillRect(46, 76, 164, 108);
+    g.fillStyle = "rgba(255,255,255,0.5)"; g.fillRect(60, 80, 26, 100);
+    g.fillStyle = "#6b4528"; g.fillRect(30, 196, 196, 10);
+    g.fillStyle = "#8b1a1a"; g.fillRect(96, 214, 64, 54); g.fillRect(92, 196, 72, 22); g.fillStyle = "#2a2a2c"; g.fillRect(120, 268, 16, 34); g.fillRect(100, 298, 56, 6);
   } else {
     // a rail of jackets, a mirror, a glass counter with watches
     g.fillStyle = "#c9ccd1"; g.fillRect(14, 90, 80, 4);

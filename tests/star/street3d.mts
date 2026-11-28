@@ -1,9 +1,9 @@
 /**
  * THE SHOPPING STREET, phase 1 (28 Nov 2026): lib/star/street3d/plan.ts and how the career joins it.
  *
- *   1. every door leads to the right screen (3D shop, Cars aisle, Drip aisle, the barber's card)
+ *   1. every door leads to the right screen (3D shop, Cars aisle, Drip aisle, the barber's shop)
  *   2. you arrive somewhere you can stand, outside the right door, facing the street
- *   3. the doors: walking straight in goes through an open one; the shut barber is only knocked on
+ *   3. the doors: walking straight in goes through an open one (all four open since the barber did, 28 Nov)
  *   4. the street furniture never blocks a door; the people's walk points are all reachable, and
  *      the people keep to the pavements, crossing only on the zebra
  *   5. the windows show the shop's own items and prices (nothing invented)
@@ -33,8 +33,8 @@ const read = (f: string) => fs.readFileSync(new URL("../../" + f, import.meta.ur
 check(JSON.stringify(doorRoute("shop")) === JSON.stringify({ kind: "phase", phase: "shop-3d" }), "the 3D shop's door opens the 3D shop");
 check(JSON.stringify(doorRoute("cars")) === JSON.stringify({ kind: "menu", phase: "shop-lifestyle", cat: "cars" }), "the showroom opens the shop's Cars aisle");
 check(JSON.stringify(doorRoute("drip")) === JSON.stringify({ kind: "menu", phase: "shop-lifestyle", cat: "drip" }), "the boutique opens the shop's Drip aisle");
-check(JSON.stringify(doorRoute("barber")) === JSON.stringify({ kind: "card", card: "barber" }), "the barber shows its card");
-check(STREET_SHOPS.length === 4 && STREET_SHOPS.filter((s) => s.opens).length === 3 && !shopOf("barber").opens, "four shops, three open doors, the barber shut");
+check(JSON.stringify(doorRoute("barber")) === JSON.stringify({ kind: "phase", phase: "barber-3d" }), "the barber's door opens the barber's shop");
+check(STREET_SHOPS.length === 4 && STREET_SHOPS.every((s) => s.opens) && shopOf("barber").opens, "four shops, four open doors (the barber is open)");
 const menuCats = read("components/star/shop/MenuShop.tsx");
 check(/\{ id: "cars"/.test(menuCats) && /\{ id: "drip"/.test(menuCats), "the Cars and Drip aisles exist in the shop");
 // no real brands on the fascias (our own words only)

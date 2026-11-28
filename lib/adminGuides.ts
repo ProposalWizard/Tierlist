@@ -2711,7 +2711,7 @@ export const ADMIN_GUIDES = {
 
   "/star-street-dev": {
     title: "Shopping street",
-    what: "The shopping street (phase 1): a short high street at golden hour you walk down from your garden's gate. Four shop fronts with doors: KNOWITBALL (the 3D shop), KIB MOTORS (the car showroom: the next car you could buy turns behind the glass with its real shop price), THE DRIP (the boutique, real price tags) and the BARBER (shut: opening soon). People walk the pavements and cross at the zebra; cars are parked along the kerbs. In a career it opens out of the garden's gate.",
+    what: "The shopping street (phase 1): a short high street at golden hour you walk down from your garden's gate. Four shop fronts with doors: KNOWITBALL (the 3D shop), KIB MOTORS (the car showroom: the next car you could buy turns behind the glass with its real shop price), THE DRIP (the boutique, real price tags) and the BARBER (open: walk in, sit in the chair, try styles on your own head, pay, a cut, walk back out). People walk the pavements and cross at the zebra; cars are parked along the kerbs. In a career it opens out of the garden's gate.",
     buttons: [
       {
         items: [
@@ -2722,7 +2722,7 @@ export const ADMIN_GUIDES = {
           ["Stick (bottom left), W A S D / arrows (+ Shift)", "Walk, jog. Drag the street to look round."],
           ["Tap the ground / tap a shop front", "You walk there / to that shop's door."],
           ["Walk through an open door, or its card's button (Shop ›, Cars ›, Drip ›)", "Here: the 3D shop's door opens the 3D shop test page; the Cars and Drip doors only show a note (in a career they open the shop's Cars and Drip aisles, and Back comes out of that door again)."],
-          ["Barber › / walking up to the barber's door", "A card: Barber, opening soon. There is no barber game yet. OK closes it."],
+          ["Barber › / walking through the barber's door, or Into the barber's (top bar)", "Opens the barber's: you walk to the chair and sit. Your hair (Straight, Wavy, Curly, Coily) lists only the styles that suit it; tap a style and it is on your head at once while the chair turns side to side (⟳ stops it; drag to turn it yourself). Beard: as it is, clean shaven, stubble, heavy stubble, beard. Pay · Cut: the barber works behind you for a few seconds, then you in the mirror with what it did (mood, fans, money, minutes). Another style, or Leave › (you stand up and walk out, back on the street at the barber's door). The made-up career's money really goes down here, on this page only."],
           ["Walking off the bottom of the street", "Here: a note. In a career: down the lane, back to your garden's gate."],
           ["Eye button (top right)", "First person | third person, as in the garden and the 3D shop (remembered on this device)."],
           ["Pinch or scroll the wheel", "Zooms the camera out behind you and back in (camera D)."],
@@ -2731,10 +2731,11 @@ export const ADMIN_GUIDES = {
     ],
     saving: [
       "Nothing is saved. The made-up career lives on this page only.",
-      "The address can hold a set-up: ?bare=1 full screen, ?arrive=gate|shop|cars|drip|barber, ?outfit=hoodie|tee|shirt|tracksuit|coat, ?q=low|medium|high, ?walkers=0..6, ?film=1.",
+      "The address can hold a set-up: ?bare=1 full screen, ?arrive=gate|shop|cars|drip|barber, ?outfit=hoodie|tee|shirt|tracksuit|coat, ?q=low|medium|high, ?walkers=0..6, ?film=1; the barber's: ?barber=1 (straight in), ?seated=1 (already in the chair), ?skin=deep|fair…, ?head=h1..h6, ?hair=black|brown|fair|blond, ?cut=afro.k.0.1.1 (the hair you walk in with). Stills: node scripts/barber3d/shots.mjs OUTDIR deep h1 coily.",
+      "In a career a cut is saved on the career (career.hair: the style, your hair type, the beard and the weeks of the last cut and shave, about 15 bytes) with its price, its clock minutes, and its mood and fans points (lib/star/barber.ts).",
     ],
     inGame: [
-      "Your garden's gate: walk out of it (or tap High Street › at the gate) and you are at the bottom of the street. Its doors open the 3D shop, the shop's Cars aisle and its Drip aisle; their way back brings you out of the same door.",
+      "Your garden's gate: walk out of it (or tap High Street › at the gate) and you are at the bottom of the street. Its doors open the 3D shop, the shop's Cars aisle, its Drip aisle and the barber's; their way back brings you out of the same door. Your cut then shows on your player in every 3D place.",
     ],
     needs: [
       "A phone or browser that runs 3D (WebGL).",

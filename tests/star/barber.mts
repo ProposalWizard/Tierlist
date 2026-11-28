@@ -159,6 +159,24 @@ const HEAD = "h1" as const;
   check(JSON.stringify({ hair: s }).length <= 48, `the whole field with its effects: ${JSON.stringify({ hair: s }).length} bytes ("${s}")`);
 }
 
+// ── the barber's room (lib/star/barber3d/plan.ts): the walk in and out keeps off every solid, the shots stay inside ──
+{
+  const P = await import("../../lib/star/barber3d/plan");
+  const solids = P.barberSolids();
+  const clear = (x: number, z: number, r: number) => solids.every(([a, b, c, d]) => !(x > a - r && x < b + r && z > c - r && z < d + r));
+  for (const [name, path] of [["in", P.walkIn()], ["out", P.walkOut().slice(0, -1)]] as const) {
+    for (let k = 0; k + 1 < path.length; k++) for (let t = 0; t <= 1; t += 0.05) {
+      const x = path[k][0] + (path[k + 1][0] - path[k][0]) * t, z = path[k][1] + (path[k + 1][1] - path[k][1]) * t;
+      check(clear(x, z, 0.2) && Math.abs(x) < P.HALF_W - 0.2 && z < P.HALF_D + 0.01, `the walk ${name} meets a solid at (${x.toFixed(2)}, ${z.toFixed(2)})`);
+    }
+  }
+  check(Math.abs(P.walkOut().at(-1)![0] - P.DOOR_X) < P.DOOR_HALF && P.walkOut().at(-1)![1] > P.HALF_D, "the walk out leaves through the door");
+  for (const s of ["enter", "chair", "mirror", "cut", "leave"] as const) for (const tall of [true, false]) {
+    const [x, y, z] = P.shotOf(s, tall).pos;
+    check(Math.abs(x) < P.HALF_W - 0.05 && Math.abs(z) < P.HALF_D - 0.05 && y > 0.3 && y < P.ROOM_H - 0.1, `the ${s} camera is inside the room (${x}, ${y}, ${z})`);
+  }
+}
+
 // ── the printout ──
 if (process.env.PRINT) {
   let c: CareerState = { ...base, season: 1, week: 1, hair: B.packHair({ style: "buzz", texture: "coily", beard0: 0, cutWeek: 1, shaveWeek: 1 }) };

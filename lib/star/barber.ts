@@ -159,12 +159,11 @@ export function closeCutHeadFor(head: ToonHead): ToonHead {
   return near[head] ?? "h3";
 }
 
-/** Your hair type when nothing is saved: Curls is curly; else from your skin, and you can change it in the chair. */
+/** Your hair type when nothing is saved: from your skin (and the Curls head is curly); you can change it in the chair. */
 export function defaultTexture(p: { skinTone?: string; head3d?: string }, head: ToonHead): HairTexture {
-  if (head === "h1") return "curly";
   const dark = ["brown", "deep", "dark"].includes(String(p.skinTone));
   const mid = ["tan", "olive"].includes(String(p.skinTone));
-  return dark ? "coily" : mid ? "wavy" : "straight";
+  return dark ? "coily" : head === "h1" ? "curly" : mid ? "wavy" : "straight";
 }
 
 // ── The save ──────────────────────────────────────────────────────────────

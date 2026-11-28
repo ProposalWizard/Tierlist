@@ -57,7 +57,7 @@ export function placeOfPhase(phase: string | null | undefined): PerfPlace | null
   if (phase === "casino-3d" || phase.startsWith("casino-")) return "casino";
   if (phase === "training-3d") return "training";
   if (phase === "gym-3d") return "gym";
-  if (phase === "street-3d") return "other3d";
+  if (phase === "street-3d" || phase === "barber-3d") return "other3d";
   if (phase === "match" || phase === "farewell-match") return "match";
   return null;
 }

@@ -309,6 +309,7 @@ const TrainingPitchScreen = lazyScreen(() => import("@/components/star/TrainingP
 const Training3D = lazyScreen(() => import("@/components/star/Training3D"), { fallback: loadingCover("training") });
 const Gym3D = lazyScreen(() => import("@/components/star/Gym3D"), { fallback: loadingCover("gym") });
 const Street3D = lazyScreen(() => import("@/components/star/Street3D"), { fallback: loadingCover("street") });
+const Barber3D = lazyScreen(() => import("@/components/star/Barber3D"), { fallback: loadingCover("street") });
 const AdvertShoot = lazyScreen(() => import("@/components/star/relgames/AdvertShoot"));
 const KnockoutRoundup = lazyScreen(() => import("@/components/star/KnockoutRoundup"));
 const CupDrawReveal = lazyScreen(() => import("@/components/star/CupDrawReveal"));
@@ -5045,7 +5046,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "street-3d" && career) {
-    // The shopping street (phase 1): the 3D shop, the car showroom, the boutique, the barber (shut).
+    // The shopping street (phase 1): the 3D shop, the car showroom, the boutique, the barber.
     const toGardenGate = () => { setStreetArrive("gate"); setGardenArrive("street"); setPhase("garden"); };
     return (
       <Street3D
@@ -5055,11 +5056,17 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onLeave={toGardenGate}
         onDoor={(id) => {
           const r = streetDoorRoute(id);
+          if (r.kind === "phase" && r.phase === "barber-3d") { setStreetArrive(id); setPhase("barber-3d"); return; }
           if (r.kind === "phase") { setStreetArrive(id); setShopFromStreet(true); setShopAtDoor(true); setPhase(r.phase); return; }
           if (r.kind === "menu") { setStreetArrive(id); setMenuStart(r.cat); setActiveNav("home"); pushFrom({ phase: "street-3d", nav: activeNav }, r.phase); setPhase(r.phase); }
         }}
       />
     );
+  }
+
+  if (phase === "barber-3d" && career) {
+    // The barber's (lib/star/barber.ts): try styles on, pay, a cut; back out onto the street at its door.
+    return <Barber3D career={career} onCareer={(c) => setCareer(c)} onBack={() => { setStreetArrive("barber"); setPhase("street-3d"); }} />;
   }
 
   if (phase === "gym-3d") {

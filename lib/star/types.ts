@@ -1965,5 +1965,8 @@ export type StarPhase =
    *  the gym's own numbers saved (career.gym), no career effect. See components/star/Gym3D.tsx. */
   | "gym-3d"
   /** The shopping street (28 Nov 2026), out of the garden's gate: the 3D shop, the car showroom, the boutique
-   *  and the barber (shut) on a short high street. See components/star/Street3D.tsx, lib/star/street3d/. */
-  | "street-3d";
+   *  and the barber on a short high street. See components/star/Street3D.tsx, lib/star/street3d/. */
+  | "street-3d"
+  /** The barber's shop (28 Nov 2026), through the street's BARBER door: the chair, a style list on your own head,
+   *  pay, a cut, back out onto the street. See components/star/Barber3D.tsx, lib/star/barber3d/, lib/star/barber.ts. */
+  | "barber-3d";
