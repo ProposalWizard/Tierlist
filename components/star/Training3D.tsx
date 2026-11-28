@@ -30,6 +30,7 @@ import { PITCH_W } from "@/lib/star/pitch";
 import { FRAME_TOP_FOR_GOAL } from "@/lib/star/goalFrame";
 import { fakeFaceFor } from "@/lib/star/fakeFaces";
 import { kitsOf } from "@/lib/star/kits";
+import LoadingCurtain from "./loading/LoadingCurtain";
 import { realMatchHeight } from "@/lib/star/engineProfile";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { fitFace } from "@/lib/star/faceFit";
@@ -407,7 +408,8 @@ export function CrossbarChallenge({ career, onExit, onFinish }: {
           className="pointer-events-none absolute inset-0 z-40 overflow-hidden transition-opacity duration-300"
           style={{ opacity: show3d ? 1 : 0, borderRadius: 4 }}
         />
-        {three === "loading" && step !== "you-aim" && <div className="pointer-events-none absolute inset-0 z-40 grid place-items-center text-[13px] font-bold text-white/80">Loading the training pitch…</div>}
+        {/* the loading screen: the coach's drill board (components/star/loading); while you aim, the 2D pitch is the screen */}
+        <LoadingCurtain section="training" box loading={three === "loading" && step !== "you-aim"} ctx={{ drill: { name: "Crossbar Challenge" }, shirt: kitsOf(career.player.club, career.clubKits?.[career.player.club]).home.shirt }} />
         {flash && (
           <div className="pointer-events-none absolute inset-x-0 top-[22%] z-50 px-2 text-center text-[24px] font-black uppercase leading-tight" style={{ color: flash.good ? "#fde047" : "#fff", textShadow: "0 2px 8px #000" }}>
             {flash.text}

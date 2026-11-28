@@ -40,6 +40,7 @@ import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import { Stick, pill, round } from "./Shop3D";
 import { sleepNight } from "@/lib/star/home3d/sleep";
 import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
+import LoadingCurtain from "./loading/LoadingCurtain";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -310,10 +311,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
       {status !== "ready" && (
         <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: 24, textAlign: "center", background: "#1a1612" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }}>
           {status === "loading" ? (
-            <div>
-              <div style={{ fontWeight: 900, fontSize: 17 }}>Opening your house…</div>
-              <div style={{ fontWeight: 700, color: MUTED, fontSize: 13, marginTop: 6 }}>Loading the 3D</div>
-            </div>
+            null
           ) : (
             <div style={{ maxWidth: 300 }}>
               <div style={{ fontWeight: 900, fontSize: 17, marginBottom: 6 }}>Your house didn&apos;t load</div>
@@ -325,6 +323,10 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           )}
         </div>
       )}
+
+      {/* the loading screen: keepie-uppies at home (components/star/loading). Not while the
+          phone is up over the house (chrome off): the phone is what you are looking at. */}
+      <LoadingCurtain section="house" loading={status === "loading" && chrome} box={embedded} />
 
       {status === "ready" && chrome && !open && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
       {status === "ready" && chrome && !open && (

@@ -38,6 +38,7 @@ import TrophyImage from "./TrophyImage";
 import { signing3dBlocker } from "./SigningScene3D";
 import { useYouLook } from "./Farewell";
 import { Burst, KitStyles } from "./ui";
+import LoadingCurtain from "./loading/LoadingCurtain";
 
 const GOLD = "#fbbf24";
 /** The longest the 3D may take to load before the drawn stage takes over. */
@@ -121,6 +122,8 @@ export function BallonDorCeremony({ career, result, onDone, drawn = false }: {
         ? <Stage3D career={career} plan={plan} kit={ownKit} clock={clock} handleRef={handleRef} onReady={() => setReady(true)} onFail={() => setMode("drawn")} />
         : <StageDrawn career={career} plan={plan} t={t} />}
       <Captions career={career} plan={plan} t={t} loading={!ready} />
+      {/* the loading screen while the room is built: the gala (components/star/loading) */}
+      <LoadingCurtain section="ballon-dor" loading={!ready} ctx={{ gala: { title: "The Golden Ball", name: `${career.player.firstName} ${career.player.lastName}`.trim(), season: career.season } }} />
       {revealed && (
         <div className="pointer-events-none absolute inset-0 z-20">
           <Burst trigger={1} colors={["#fde047", "#fbbf24", "#ffffff", "#f59e0b", "#fef3c7"]} count={44} spread={2.3} className="left-1/2 top-[34%]" />

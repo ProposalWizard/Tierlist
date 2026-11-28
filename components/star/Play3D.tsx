@@ -46,6 +46,7 @@ import type { Person3 } from "@/lib/star/play3d/freeRoam";
 import type { Play3DController, Play3DPerson } from "@/lib/star/play3d/scene";
 import { GameShell, ResultPanel, type GameResult } from "./relgames/Shell";
 import BackPill3D from "./BackPill3D";
+import LoadingCurtain from "./loading/LoadingCurtain";
 
 const SKINS = ["#8d5524", "#c68642", "#e0ac69", "#5c3a1e", "#f1c27d"];
 const HAIRS = ["#1b120c", "#2b1b10", "#4a2e1c", "#0f0b08"];
@@ -508,7 +509,8 @@ export default function Play3D({ career, drill, seed, onExit, onFinish, mode, op
             {callUi.cd > 0 && <span className="absolute inset-0 rounded-full" style={{ background: `conic-gradient(rgba(0,0,0,0.45) ${Math.round(callUi.cd / 2.5 * 360)}deg, transparent 0)` }} />}
           </button>
         )}
-        {three === "loading" &&<div className="pointer-events-none absolute inset-0 z-30 grid place-items-center text-[13px] font-bold text-white/80">Loading the training pitch…</div>}
+        {/* the loading screen: the coach's drill board (components/star/loading) */}
+        <LoadingCurtain section="training" box loading={three === "loading"} ctx={{ drill: { name: drill.name }, shirt: kitsOf(career.player.club, career.clubKits?.[career.player.club]).home.shirt }} />
         {three === "off" && <div className="absolute inset-0 z-30 grid place-items-center px-6 text-center text-[14px] font-bold text-amber-200">This phone can&apos;t show the 3D pitch, and this drill is 3D only. Pick the Crossbar Challenge instead.</div>}
         {cornerStick && !knob && !drag && three === "ready" && !result && (
           <>
