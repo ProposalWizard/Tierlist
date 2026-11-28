@@ -288,26 +288,90 @@ function gymWayIn(c: Ctx, o: SmartObject) {
   return o;
 }
 
+/** A folded towel in your club's colours and a water bottle, the home gym room's own (world3d/gymPlace.ts), in a painter's frame. */
+function towelAndBottle(P: ReturnType<typeof painter>, club: string, tx: number, ty: number, tz: number, bx: number, by: number, bz: number) {
+  P.box(0.34, 0.03, 0.24, "#f4f1ea", tx, ty + 0.015, tz);
+  P.box(0.32, 0.03, 0.23, "#ebe6dc", tx + 0.01, ty + 0.045, tz);
+  P.box(0.32, 0.012, 0.05, club, tx + 0.01, ty + 0.066, tz + 0.06);
+  P.cyl(0.036, 0.036, 0.21, "#2f7fd0", bx, by + 0.105, bz, 0, 0, 0, 12);
+  P.cyl(0.024, 0.028, 0.04, "#1d1e22", bx, by + 0.23, bz, 0, 0, 0, 10);
+}
+
+/** A kettlebell standing on the floor (a ball with a handle), in a painter's frame. */
+function kettlebell(P: ReturnType<typeof painter>, r: number, colour: string, x: number, z: number, ry = 0) {
+  P.ball(r, colour, x, r * 0.92, z, 12);
+  P.box(r * 1.3, 0.03, r * 0.9, colour, x, 0.015, z);
+  P.ring(r * 0.62, 0.016, colour, x, r * 1.85 + 0.03, z, 0, ry, 0);
+}
+
 /**
- * The workout corner of the smaller homes (starter, flat, penthouse, the house's garage): a teal mat and a pair of
- * dumbbells, one draw. `alongX`: the mat's long side runs along x. `front`: where you stand for it.
+ * The workout corner of the smaller homes (starter, flat, penthouse, the house's garage), matched to the home gym it
+ * opens (Harry, 28 Nov 2026): a teal mat, and past its far end the kit, all one draw and one little solid you walk round.
+ *   starter, flat: a two-shelf dumbbell stand (two pairs), the folded towel in your club colours on top, a water
+ *     bottle beside it; the flat adds a kettlebell.
+ *   penthouse, house: a three-shelf rack (two pairs on each of two shelves), the towel and the bottle on its top
+ *     shelf, a kettlebell; the penthouse adds a foam roller.
+ * `alongX`: the mat's long side runs along x (else it runs along z and its far end is to the north). `front`: where
+ * you stand for it. Nothing stands on the mat (he stretches there), nothing passes into anything (RUL-3D-005).
  */
 function homeGymCorner(c: Ctx, x: number, z: number, alongX: boolean, front: XZ, face: XZ) {
   const { k, env, X: X0 } = c;
   const X = X0!;
   const P = painter(k, env);
-  const [w, d] = alongX ? [1.6, 0.7] : [0.7, 1.6];
-  P.box(w, 0.02, d, "#2d6b6b", x, 0.01, z);
-  P.box(w - 0.06, 0.004, 0.02, "#3c8383", x, 0.022, z + (alongX ? d / 2 - 0.06 : 0));
-  // the pair of dumbbells past the mat's far end, on the floor (a little solid: you walk round them)
-  const ex = alongX ? x + w / 2 + 0.22 : x, ez = alongX ? z : z - d / 2 - 0.22;
-  for (const o of [-0.13, 0.13]) {
-    const bx = alongX ? ex : ex + o, bz = alongX ? ez + o : ez;
-    P.cyl(0.014, 0.014, 0.3, "#c9cdd3", bx, 0.07, bz, alongX ? Math.PI / 2 : 0, 0, alongX ? 0 : Math.PI / 2, 8);
-    for (const e2 of [-0.13, 0.13]) P.cyl(0.07, 0.07, 0.07, "#151619", bx + (alongX ? 0 : e2), 0.07, bz + (alongX ? e2 : 0), alongX ? Math.PI / 2 : 0, 0, alongX ? 0 : Math.PI / 2, 8);
+  const club = c.inp.kits.home.shirt;
+  const steel = "#26282c", iron = "#151619", chrome = "#c9cdd3";
+  // the mat's own frame: local +x runs to its far end, local z across it
+  P.at(x, z, alongX ? 0 : Math.PI / 2);
+  P.box(1.6, 0.02, 0.7, "#2d6b6b", 0, 0.01, 0);
+  P.box(1.54, 0.004, 0.02, "#3c8383", 0, 0.022, 0.29);
+  /** A dumbbell lying with its handle along local x (the stand's depth), bells of radius r. */
+  const dumbbell = (cx: number, y: number, cz: number, r: number) => {
+    P.cyl(0.014, 0.014, 0.3, chrome, cx, y + r, cz, 0, 0, Math.PI / 2, 8);
+    for (const e2 of [-0.12, 0.12]) P.cyl(r, r, 0.06, iron, cx + e2, y + r, cz, 0, 0, Math.PI / 2, 8);
+  };
+  const big = c.R.tier === "penthouse" || c.R.tier === "house";
+  const kx = 1.03; // the kit's middle, 0.23 m past the mat's far end
+  let box: [number, number, number, number]; // its footprint in the mat's frame: x0, x1, z0, z1
+  if (!big) {
+    // the stand: two side frames (a post and a foot), two shelves, a pair on each, the towel on its top
+    const zs = [-0.26, 0.14], ys = [0.24, 0.5];
+    for (const sz of zs) {
+      P.box(0.04, 0.64, 0.04, steel, kx, 0.32, sz);
+      P.box(0.34, 0.03, 0.05, steel, kx, 0.015, sz);
+    }
+    for (const y of ys) P.box(0.34, 0.025, zs[1] - zs[0] + 0.04, steel, kx, y, (zs[0] + zs[1]) / 2);
+    P.box(0.34, 0.025, zs[1] - zs[0] + 0.04, steel, kx, 0.655, (zs[0] + zs[1]) / 2);
+    for (const [y, r] of [[ys[0] + 0.0125, 0.06], [ys[1] + 0.0125, 0.045]] as [number, number][]) for (const cz of [-0.14, 0.02]) dumbbell(kx, y, cz, r);
+    // the towel on the top shelf, the bottle on the floor beside the stand
+    towelAndBottle(P, club, kx, 0.668, -0.06, kx, 0, 0.3);
+    box = [kx - 0.2, kx + 0.2, -0.32, 0.36];
+    if (c.R.tier === "flat") { kettlebell(P, 0.085, iron, kx - 0.02, -0.44); box[2] = -0.55; }
+  } else {
+    // the rack: two end frames, three shelves; two pairs on each of the lower two, the towel and bottle on the top
+    const z0 = -0.4, z1 = 0.36, ys = [0.2, 0.46, 0.72];
+    for (const sz of [z0, z1]) {
+      P.box(0.05, 0.75, 0.05, steel, kx, 0.375, sz);
+      P.box(0.38, 0.03, 0.06, steel, kx, 0.015, sz);
+    }
+    for (const y of ys) P.box(0.36, 0.025, z1 - z0 + 0.05, steel, kx, y, (z0 + z1) / 2);
+    const cols = [-0.28, -0.1, 0.08, 0.25];
+    cols.forEach((cz, i) => dumbbell(kx, ys[0] + 0.0125, cz, 0.07 - i * 0.004));
+    cols.forEach((cz, i) => dumbbell(kx, ys[1] + 0.0125, cz, 0.05 - i * 0.003));
+    towelAndBottle(P, club, kx, ys[2] + 0.0125, -0.16, kx, ys[2] + 0.0125, 0.2);
+    // a kettlebell on the floor at the rack's end, in your colours
+    kettlebell(P, 0.1, club, kx - 0.02, -0.6);
+    box = [kx - 0.22, kx + 0.22, -0.74, 0.42];
+    if (c.R.tier === "penthouse") {
+      // a foam roller lying along the rack's open side, off the mat
+      P.cyl(0.07, 0.07, 0.42, "#2d6b6b", kx, 0.07, 0.62, Math.PI / 2, 0, 0, 12);
+      box[3] = 0.86;
+    }
   }
   P.done({ roughness: 0.6 });
-  c.solids.push([ex - 0.3, ex + 0.3, ez - 0.3, ez + 0.3]);
+  // the kit's footprint in the room (a little solid: you walk round it)
+  const cs = [[box[0], box[2]], [box[1], box[2]], [box[0], box[3]], [box[1], box[3]]].map(([u, v]) => (alongX ? [x + u, z + v] : [x + v, z - u]));
+  const xs = cs.map((p) => p[0]), zs = cs.map((p) => p[1]);
+  c.solids.push([Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)]);
   const o = standObject({
     id: "homegym", kind: "gym", label: homeGymOf(c.R.tier).label, front, face, verb: "Stretch", lines: [],
     loop: [{ clip: "stretch", or: ["idle"], secs: 6 }], effect: { mood: 1, text: "Loose." }, stay: [6, 6], pickR: 0.9, pickH: 0.6,
@@ -785,6 +849,16 @@ export function livingFinish(c: Ctx, shell: { metalM: any; glassM: any }) {
       loop: [{ clip: "stretch", or: ["idle"], secs: 6 }], effect: { mood: 1, text: "Loose. Fitness +1" }, stay: [6, 6], pickR: 0.6, pickH: 0.5,
     }));
     gymWayIn(c, X.things[X.things.length - 1]);
+    // behind the mat, against the south wall: the folded towel in your colours, a water bottle and a foam roller,
+    // as in the home gym it opens (the room's dumbbell rack and kettlebells are roomBuild buildGym's). One draw.
+    {
+      const G = painter(k, c.env);
+      const sz = D2 - 0.42;
+      towelAndBottle(G, inp.kits.home.shirt, 0.0, 0, sz, 0.32, 0, sz + 0.04);
+      G.cyl(0.075, 0.075, 0.45, "#2d6b6b", 0.78, 0.075, sz, 0, 0, Math.PI / 2, 12);
+      G.done({ roughness: 0.6 });
+      c.solids.push([-0.22, 1.06, sz - 0.2, D2]);
+    }
     // the plant on the east wall between the treadmill and the drinks fridge (it stood inside the fridge,
     // roomBuild buildGym's south-east corner: RUL-3D-005)
     kitPlant(c, W2 - 0.4, 0.9);
