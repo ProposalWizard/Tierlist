@@ -5673,7 +5673,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const trainingBody = (
         <div>
           {trainingTab === "training" ? (
-            <SkillsScreen career={career} onTrain={handleTrain} onGym={() => { setGymHome(null); setPhase("gym-3d"); }} />
+            <SkillsScreen career={career} onTrain={handleTrain} onGym={() => { setGymHome(null); setPhase("gym-3d"); }} onCareer={(c) => setCareer(c)} />
           ) : (
             <RelationsPage
               career={career}

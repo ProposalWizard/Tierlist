@@ -58,6 +58,9 @@ export interface SavedClock {
   mo?: number;
   /** Phase 2: a team-mate you texted "come round?": [absolute day, minute he comes, his id, said yes 1/0]. */
   inv?: [number, number, string, number];
+  /** Lunch (life/lunch.ts): today's plate, as one number: day of this gap × 100 + plate × 10 + what you did at the
+   *  table (1 a chat, 2 a long lunch). Not carried to the next gap (lunch is 12:30, a gap starts in the evening). */
+  lu?: number;
 }
 
 /** Which gap between matches the career is in: the season and how many fixtures are played. */

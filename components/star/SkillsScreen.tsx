@@ -7,6 +7,7 @@ import { getTuning } from "@/lib/star/tuningStore";
 import { ClubCard, Glow, Pop, Shine, Shake, Burst, FloatText, rgba, tint, useClubTheme } from "./ui";
 import { CardTitle, DeltaBar, useSeen, seenScope } from "./screenKit";
 import { mechanicOpen, mechanicDef } from "@/lib/star/mechanics";
+import LunchCard from "./LunchCard";
 
 /**
  * TRAINING — one card per skill.
@@ -26,6 +27,8 @@ interface Props {
   onTrain: (skill: keyof Skills) => void;
   /** The 3D gym (components/star/Gym3D.tsx), opened from here while it is tested (Harry, 28 Nov 2026). */
   onGym?: () => void;
+  /** Lunch (the food hall's phone card, lib/star/life/lunch.ts) changes the career: shown only when given. */
+  onCareer?: (c: CareerState) => void;
 }
 
 const SKILL_LABELS: [keyof Skills, string, string, string][] = [
@@ -50,7 +53,7 @@ const SKILL_COLOR: Record<keyof Skills, [string, string]> = {
 const ENERGY_COST = getTuning("energy.trainingCost");
 
 
-export default function SkillsScreen({ career, onTrain, onGym }: Props) {
+export default function SkillsScreen({ career, onTrain, onGym, onCareer }: Props) {
   const left = trainingLeft(career);
   const { glow } = useClubTheme(career);
   const scope = seenScope(career);
@@ -78,6 +81,7 @@ export default function SkillsScreen({ career, onTrain, onGym }: Props) {
       {noMore && <NoMoreSessions onClose={() => setNoMore(false)} />}
 
       {onGym && <GymCard onOpen={onGym} />}
+      {onCareer && <LunchCard career={career} onCareer={onCareer} />}
 
       {/* The "Set-piece duty" card (penalty and free-kick numbers) is gone
           (Harry, 1 Oct 2026, P4, P78): the manager tells you once, in a

@@ -68,6 +68,9 @@ function today(c: CareerState): SavedClock & { td: number } {
   return { ...s, td: day, te: 0, tm: 0, tu: {}, mo: drift || undefined };
 }
 
+/** The day's house counters as they stand now (reset on a new day): the lunch plates share them (life/lunch.ts). */
+export const houseDay = (c: CareerState) => today(c);
+
 /** Your mood now (-10..+10), after the drift. */
 export function moodOf(c: CareerState): number {
   return today(c).mo ?? 0;
