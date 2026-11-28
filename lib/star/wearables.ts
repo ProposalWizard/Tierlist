@@ -134,6 +134,9 @@ export const WEARABLE_ITEMS: Record<string, { slot: WearSlot; kind: AccessoryKin
   diamond: { slot: "neck", kind: "necklace", label: "Diamond Necklace" },
   headphones: { slot: "neck", kind: "headphones", label: "Headphones" },
   suit: { slot: "outfit", kind: "suit", label: "Designer Suit" },
+  // sold since 28 Nov 2026 (Harry: "yes add caps and sunglasses to the shop")
+  shades: { slot: "eyes", kind: "shades", label: "Sunglasses" },
+  cap: { slot: "head", kind: "cap", label: "Cap" },
 };
 /** Shop items that are NOT worn (checked by the test: every shop item is in one of the two lists). */
 export const NOT_WORN = ["phone", "console", "music", "tablet", "tv", "gaming-pc", "art"] as const;
@@ -143,10 +146,7 @@ export const NOT_WORN = ["phone", "console", "music", "tablet", "tv", "gaming-pc
  * (`?extras=shades,cap`); the game never does until they are shop items. One line each to sell them: add the
  * item to LIFESTYLE_SPECS with this id and move it into WEARABLE_ITEMS.
  */
-export const UNSOLD_WEARABLES: Record<string, { slot: WearSlot; kind: AccessoryKind; label: string }> = {
-  shades: { slot: "eyes", kind: "shades", label: "Sunglasses" },
-  cap: { slot: "head", kind: "cap", label: "Cap" },
-};
+export const UNSOLD_WEARABLES: Record<string, { slot: WearSlot; kind: AccessoryKind; label: string }> = {};
 
 /** One accessory's look (colours sRGB hex). The 3D side draws every kind from these numbers only. */
 export interface AccessoryLook {
@@ -254,7 +254,8 @@ export function wornExtras(career: Pick<CareerState, "ownedItems">, choice: Extr
   }
   for (const u of unsold) {
     const m = /^([a-z]+)(?:-l([1-5]))?$/.exec(u);
-    if (!m || !UNSOLD_WEARABLES[m[1]]) continue;
+    const wi = m ? WEARABLE_ITEMS[m[1]] ?? UNSOLD_WEARABLES[m[1]] : undefined;
+    if (!m || !wi || wi.slot === "outfit") continue;
     const look = accessoryLook(m[1], Number(m[2] ?? 3));
     if (look && !out.some((o) => o.slot === look.slot)) out.push(look);
   }

@@ -52,7 +52,8 @@ for (const b of shopBases) check(!!WEARABLE_ITEMS[b] !== (NOT_WORN as readonly s
 for (const b of Object.keys(WEARABLE_ITEMS)) check(shopBases.has(b), `wearable ${b} is a shop item`);
 for (const b of Object.keys(UNSOLD_WEARABLES)) check(!shopBases.has(b), `${b} is still marked unsold but the shop sells it: move it to WEARABLE_ITEMS`);
 const wearableLevels = LIFESTYLE_LEVELS.filter((i) => WEARABLE_ITEMS[i.baseId ?? i.id]);
-check(wearableLevels.length === 7 * 5, `7 wearables × 5 levels in the shop (got ${wearableLevels.length})`);
+check(wearableLevels.length === 9 * 5, `9 wearables × 5 levels in the shop, the cap and sunglasses included (got ${wearableLevels.length})`);
+for (const b of ["cap", "shades"]) check(shopBases.has(b) && !!WEARABLE_ITEMS[b], `${b} is sold and worn`);
 for (const it of wearableLevels) {
   const base = it.baseId ?? it.id, w = WEARABLE_ITEMS[base];
   if (w.kind === "suit") {
@@ -121,9 +122,17 @@ const booted = { ...bought, outfit: { wear: "kit", casual: "hoodie", kit: "home"
 w = wornAt(booted, "training");
 check(w.kind === "kit" && w.bootLook?.family === "maestro" && w.bootLook.level === 4, "training: your boots' look");
 check(wornAt({ ...booted, outfit: { ...booted.outfit!, boots: "plain" } }, "home").kind === "kit" && (wornAt({ ...booted, outfit: { ...booted.outfit!, boots: "plain" } }, "home") as { bootLook?: { family: string } }).bootLook?.family === "plain", "the plain pair picked: plain");
-// unsold designs only through a test page's list
-check(wornExtras(bought, undefined, ["shades-l4", "cap"]).some((x) => x.kind === "shades" && x.level === 4), "test page: sunglasses");
-check(wornExtras(bought, undefined).every((x) => x.kind !== "shades" && x.kind !== "cap"), "the game: no unsold designs");
+// the cap and sunglasses: bought = worn on the head and face (the best you own); none bought = none worn
+check(wornExtras(bought, undefined).every((x) => x.kind !== "shades" && x.kind !== "cap"), "not bought: no cap or sunglasses");
+const capL = LIFESTYLE_LEVELS.find((x) => (x.baseId ?? x.id) === "cap" && x.level === 3)!.id;
+const shadesL = LIFESTYLE_LEVELS.find((x) => (x.baseId ?? x.id) === "shades" && x.level === 5)!.id;
+const withHead = { ...bought, ownedItems: [...bought.ownedItems, item(capL), item(shadesL)] } as C;
+const ex = wornExtras(withHead, undefined);
+check(ex.some((x) => x.kind === "cap" && x.slot === "head" && x.level === 3) && ex.some((x) => x.kind === "shades" && x.slot === "eyes" && x.level === 5), "bought: the cap on the head, the sunglasses on the face");
+check(wornExtras(withHead, { head: "none" }).every((x) => x.kind !== "cap"), "the cap taken off in the wardrobe");
+check(ownedWearables(withHead).filter((o) => o.slot === "head" || o.slot === "eyes").length === 2, "the wardrobe lists them (Head and Face rows)");
+// an old save (no cap, no sunglasses, no Extras) loads and wears neither
+check(wornAt(oldSave, "home").extras!.every((x) => x.slot !== "head" && x.slot !== "eyes"), "an old save: no cap or sunglasses");
 check(baseIdOf({ id: "gold-l5" }) === "gold" && baseIdOf({ id: "car-1" }) === "car-1", "base ids from level ids");
 
 if (problems.length) {

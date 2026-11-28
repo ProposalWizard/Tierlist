@@ -81,7 +81,7 @@ export interface Home3DProps {
 
 type Tab = "casual" | "kit" | "boots" | "extras";
 /** The Extras rail's row names (lib/star/wearables.ts BODY_SLOTS). */
-const SLOT_LABEL: Record<BodySlot, string> = { wrist: "Wrist", neck: "Neck", eyes: "Eyes", head: "Head" };
+const SLOT_LABEL: Record<BodySlot, string> = { wrist: "Wrist", neck: "Neck", eyes: "Face", head: "Head" };
 
 /**
  * What the 3D house is built from, off a career (the screen below, and the
@@ -414,7 +414,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
               )}
               {tab === "extras" && (
                 <div style={{ display: "grid", gap: 8, maxHeight: "34vh", overflowY: "auto" }} data-wardrobe-extras>
-                  {wearables.length === 0 && <div style={{ fontSize: 14, fontWeight: 800, color: MUTED }}>No watches or chains yet. Buy one in the shop's Style section and it hangs here.</div>}
+                  {wearables.length === 0 && <div style={{ fontSize: 14, fontWeight: 800, color: MUTED }}>No watches, chains, caps or sunglasses yet. Buy one in the shop's Style section and it hangs here.</div>}
                   {BODY_SLOTS.filter((slot) => wearables.some((w) => w.slot === slot)).map((slot) => {
                     const mine = wearables.filter((w) => w.slot === slot);
                     const picked = choice.extras?.[slot];

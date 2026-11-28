@@ -72,7 +72,7 @@ function Garden3DTest() {
         return it ? [{ ...it }] : [];
       };
       // and a watch and a chain from the Style shop (worn in the garden, lib/star/wearables.ts; ?wear=0: none)
-      const wear = params.get("wear") === "0" ? [] : [...own("rolex", 4), ...own("silver", 3)];
+      const wear = params.get("wear") === "0" ? [] : [...own("rolex", 4), ...own("silver", 3), ...own("cap", 3), ...own("shades", 2)];
       c.ownedItems = [...own("house-2", 3), ...own("stable", 4), ...own("car-3", 5), ...own("suv", 3), ...own("classic", 3), ...wear];
     } else {
       c.trophies = [];
