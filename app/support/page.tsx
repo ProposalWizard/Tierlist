@@ -67,6 +67,10 @@ export default function SupportPage() {
 
           <section id="delete-account">
             <h2 className="mb-2 text-lg font-bold">Delete your account and data</h2>
+            <p className="mb-2">
+              Fastest: sign in, open <Link className="underline" href="/profile">Profile</Link>,
+              scroll to the bottom and press &quot;Delete my account&quot;. Or by email:
+            </p>
             <ol className="list-decimal space-y-1.5 pl-5">
               <li>
                 Email{" "}

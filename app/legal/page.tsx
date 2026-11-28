@@ -106,8 +106,10 @@ export default function LegalPage() {
 
             <h3 id="delete-account" className="mb-2 font-semibold text-white">Deleting Your Account and Data</h3>
             <p className="mb-4">
-              You can ask us to delete your account and everything linked to it (saved games,
-              tierlists, votes, uploaded images and your email address) at any time. Email{" "}
+              You can delete your account and everything linked to it (saved games,
+              tierlists, votes, uploaded images and your email address) at any time. The
+              quickest way is Profile, then &quot;Delete my account&quot; at the bottom of the page.
+              You can also email{" "}
               <a className="underline" href="mailto:knowitballcontact@gmail.com?subject=Delete%20my%20account">knowitballcontact@gmail.com</a>{" "}
               from the email address you signed in with, with the subject &quot;Delete my account&quot;.
               We will delete it within 30 days and confirm by email. Anonymous vote counts that

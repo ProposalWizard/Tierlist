@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { XP_AWARDS, levelFromXp } from "@/lib/xp";
 import ProfileClient from "./ProfileClient";
+import DeleteAccount from "./DeleteAccount";
 
 export const metadata: Metadata = {
   title: "Profile",
@@ -113,6 +114,7 @@ export default async function ProfilePage() {
         saved={saved}
         savedImages={savedImages}
       />
+      <DeleteAccount />
     </main>
   );
 }
