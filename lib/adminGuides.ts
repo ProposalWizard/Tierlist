@@ -2649,6 +2649,8 @@ export const ADMIN_GUIDES = {
           ["Drive in / Drive back", "To training (the drive, then the real compound's arrival: barrier, bay, you at your car; walk to the gym door) or home from training (ends at the fork: Home / Casino / Shop, then a fade)."],
           ["Steer: Lanes / Thumb stick / Tilt", "How you steer. Lanes: the car drives itself, tap the left or right half of the screen to change lane. Thumb stick: a stick bottom left slides you across the road. Tilt: tilt the phone. The car can never leave the road or crash. Remembered on this device only."],
           ["Call: by chance / No call / a call's name", "By chance: one drive in three rings. No call, or force one call to see it."],
+          ["Event: by chance / No event / fan-crossing / speed-camera / mate-race / breakdown / rain", "Something on the road, at most one a drive besides a call (by chance about three drives in five, the same day always the same). A fan waving at a crossing (honk back: fans +2), a speed camera (press Slow down in time or a small fine, 1.5% of a week's wage), a team-mate wanting a race (a short burst; a better car wins more often), a broken-down car (help: reputation +1), or rain (mood −1). Each one shows its card, then what it changed."],
+          ["The event's buttons", "Your answer (or the camera's Slow down). On this page nothing is saved: the line under the picture lists what it would change in the career."],
           ["Hold anywhere on the picture", "Faster (about a third). Let go to ease off. It still slows for the roundabout and the gate."],
           ["Tap the left or right half", "Lanes only: change lane, e.g. to overtake the slow car on the lane. If someone is coming the horn sounds and you stay put."],
           ["🎥 (top right)", "The camera: behind the car, the bumper, or in the car (the dash, the wheel, the phone)."],
@@ -2662,7 +2664,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing is saved. No career is touched. The steer choice is remembered on this device only."],
     inGame: ["Not in the game yet. The career will open it from the garden gate and after training."],
-    dev: "components/star/Drive3D.tsx · app/star-drive3d-dev/page.tsx · lib/star/drive3d/{route,car,drive,calls,cars,scene,rig,arrival}.ts · the arrival is drawn by lib/star/world3d/testScene.ts (opts.arrive) · stills: scripts/drive3d/arrival-shots.mjs · the cut cars: tools/cars/ (public/star/drive3d/) · tests: tests/star/drive.mts, tests/star/driveArrival.mts",
+    dev: "components/star/Drive3D.tsx · app/star-drive3d-dev/page.tsx · lib/star/drive3d/{route,car,drive,calls,events,cars,scene,rig,arrival}.ts · the arrival is drawn by lib/star/world3d/testScene.ts (opts.arrive) · stills: scripts/drive3d/arrival-shots.mjs · the cut cars: tools/cars/ (public/star/drive3d/) · stills: scripts/drive3d/event-shots.mjs · tests: tests/star/drive.mts, tests/star/driveArrival.mts, tests/star/driveEvents.mts",
   },
 
   "/star-world3d-dev": {

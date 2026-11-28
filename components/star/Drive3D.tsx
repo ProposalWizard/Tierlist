@@ -13,14 +13,17 @@
 import { useEffect, useRef, useState } from "react";
 import type { DriveController, DriveSceneOptions, DriveUi } from "@/lib/star/drive3d/scene";
 import type { CallMemory } from "@/lib/star/drive3d/calls";
+import type { DriveEffect } from "@/lib/star/drive3d/events";
 import type { ForkChoice } from "@/lib/star/drive3d/drive";
 import LoadingCurtain from "@/components/star/loading/LoadingCurtain";
+import { afterLoss, newHealState, HEAL_DELAY_MS } from "@/lib/star/three3d/autoHeal";
 
 export interface Drive3DProps {
   options: DriveSceneOptions;
   clean?: boolean;
   /** `handover`: the drive in ended on the compound road: open the compound with its arrival (World3D options.arrive). */
-  onDone?: (r: { skipped: boolean; fork: ForkChoice | null; memories: CallMemory[]; handover: boolean }) => void;
+  /** `effects`: what the drive's event changes in the career (dilemmas.ts applyEffects, one each). */
+  onDone?: (r: { skipped: boolean; fork: ForkChoice | null; memories: CallMemory[]; handover: boolean; effects: DriveEffect[] }) => void;
   onMemory?: (m: CallMemory) => void;
 }
 
@@ -36,29 +39,46 @@ export default function Drive3D({ options, clean, onDone, onMemory }: Drive3DPro
   optsRef.current = options;
   const cbRef = useRef({ onDone, onMemory });
   cbRef.current = { onDone, onMemory };
-  const key = `${options.car}|${options.leg}|${options.quality ?? ""}|${options.mode}|${options.call ?? ""}|${options.seed ?? ""}`;
+  const key = `${options.car}|${options.leg}|${options.quality ?? ""}|${options.mode}|${options.call ?? ""}|${options.seed ?? ""}|${options.event ?? ""}`;
+
+  // the phone took the 3D away: rebuilt quietly (at Low) up to autoHeal's limit, then the message (3D places audit)
+  const heal = useRef(newHealState());
+  const [build, setBuild] = useState(0);
 
   useEffect(() => {
     const el = host.current;
     if (!el) return;
-    let gone = false;
+    let gone = false, wait = 0;
     setState("loading"); setUi(null); setDone(null);
+    const lost = () => {
+      if (gone) return;
+      ctrl.current?.dispose(); ctrl.current = null;
+      if (afterLoss(heal.current, Date.now()) === "give-up") { setState("failed"); return; }
+      setState("loading");
+      wait = window.setTimeout(async () => {
+        const m = await import("@/lib/star/three3d/perf");
+        if (gone) return;
+        m.dropSharedRenderer();
+        el.replaceChildren();
+        setBuild((n) => n + 1);
+      }, HEAL_DELAY_MS);
+    };
     const go = window.setTimeout(() => import("@/lib/star/drive3d/scene")
       .then(({ startDrive }) => startDrive(el, {
         onUi: (u) => { if (!gone) setUi(u); },
         onDone: (r) => { if (gone) return; if (!r.handover) setDone(r.fork ? `→ ${r.fork[0].toUpperCase()}${r.fork.slice(1)}` : r.skipped ? "Skipped: at training" : "At training"); cbRef.current.onDone?.(r); },
         onMemory: (m) => cbRef.current.onMemory?.(m),
-        onContextLost: () => { if (!gone) setState("failed"); },
-      }, optsRef.current))
+        onContextLost: lost,
+      }, { ...optsRef.current, quality: build > 0 ? "low" : optsRef.current.quality, isDead: () => gone }))
       .then((c) => {
         if (gone) { c.dispose(); return; }
         ctrl.current = c; setState("ready");
         // the drive in hands over to the compound: fetch its code while you drive, so its loading screen is short
         if (optsRef.current.leg === "in") window.setTimeout(() => { void import("@/lib/star/world3d/testScene"); void import("@/lib/star/world3d/compoundPlace"); }, 4000);
       })
-      .catch((e) => { console.error("drive3d", e); if (!gone) setState("failed"); }), 0);
-    return () => { gone = true; window.clearTimeout(go); ctrl.current?.dispose(); ctrl.current = null; };
-  }, [key]);
+      .catch((e) => { if (gone) return; console.error("drive3d", e); lost(); }), 0);
+    return () => { gone = true; window.clearTimeout(go); window.clearTimeout(wait); ctrl.current?.dispose(); ctrl.current = null; };
+  }, [key, build]);
 
   // a computer: space = hold, ←/→ = lanes (or steer), C = camera, S = skip
   useEffect(() => {
@@ -177,6 +197,41 @@ export default function Drive3D({ options, clean, onDone, onMemory }: Drive3DPro
               )}
             </div>
           )}
+
+          {/* the event's card (lib/star/drive3d/events.ts): a choice, the camera's Slow down, or a notice */}
+          {ui.event && !(call && (call.state === "ringing" || call.state === "answered")) && (
+            <div data-drive-event={ui.event.id} data-bubble-clear style={{ position: "absolute", left: 12, right: 12, bottom: 18, maxWidth: 420, margin: "0 auto", padding: "12px 14px", borderRadius: 16, background: "rgba(8,10,16,.92)", color: "#f8fafc", borderTop: "3px solid #f59e0b", boxShadow: "0 10px 30px rgba(0,0,0,.45)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 19, background: "#b45309", display: "grid", placeItems: "center", fontSize: 20 }}>{ui.event.icon}</div>
+                <div style={{ fontSize: 16, fontWeight: 900 }}>{ui.event.title}</div>
+              </div>
+              {ui.event.state === "open" && (
+                <>
+                  {ui.event.lines.map((l, i) => <div key={i} style={{ fontSize: 14, lineHeight: 1.35, marginTop: i ? 3 : 9 }}>{l}</div>)}
+                  {ui.event.racing ? (
+                    <div style={{ fontSize: 14, fontWeight: 900, color: "#facc15", marginTop: 10 }}>Foot down! Racing to the car park…</div>
+                  ) : ui.event.kind === "brake" ? (
+                    <div style={{ display: "flex", gap: 8, marginTop: 11 }}>
+                      <button data-drive-event-answer="yes" disabled={ui.event.slowing} onPointerDown={(e) => e.stopPropagation()} onClick={() => ctrl.current?.event("yes")} style={{ ...btn(!ui.event.slowing), opacity: ui.event.slowing ? 0.7 : 1 }}>{ui.event.slowing ? "Slowing to 37…" : ui.event.yes}</button>
+                    </div>
+                  ) : ui.event.kind === "choice" ? (
+                    <div style={{ display: "flex", gap: 8, marginTop: 11 }}>
+                      <button data-drive-event-answer="no" onPointerDown={(e) => e.stopPropagation()} onClick={() => ctrl.current?.event("no")} style={btn(false)}>{ui.event.no}</button>
+                      <button data-drive-event-answer="yes" onPointerDown={(e) => e.stopPropagation()} onClick={() => ctrl.current?.event("yes")} style={btn(true)}>{ui.event.yes}</button>
+                    </div>
+                  ) : null}
+                </>
+              )}
+              {ui.event.state === "done" && (
+                <>
+                  {ui.event.kind === "notice" && ui.event.lines.map((l, i) => <div key={i} style={{ fontSize: 14, lineHeight: 1.35, marginTop: i ? 3 : 9 }}>{l}</div>)}
+                  <div style={{ fontSize: 14, marginTop: 9 }}>{ui.event.line}</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#facc15", marginTop: 6 }}>{ui.event.effect}</div>
+                </>
+              )}
+            </div>
+          )}
+          {ui.event?.flash && <div style={{ position: "absolute", inset: 0, background: "#fff", opacity: 0.75, pointerEvents: "none" }} />}
 
           {/* the fork (the way back) */}
           {ui.fork && !ui.forkChoice && (

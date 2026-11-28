@@ -13,6 +13,7 @@ import { GymHud, type GymHudHandle } from "@/components/star/GymHud";
 import type { WorldArrival, WorldController, WorldOptions, WorldStatus } from "@/lib/star/world3d/testScene";
 import ViewToggle3D from "./ViewToggle3D";
 import LoadingCurtain from "./loading/LoadingCurtain";
+import { afterLoss, newHealState, HEAL_DELAY_MS } from "@/lib/star/three3d/autoHeal";
 
 export default function World3D({ options, clean, onGo }: { options: WorldOptions; clean?: boolean; onGo?: (place: WorldOptions["place"]) => void }) {
   const host = useRef<HTMLDivElement>(null);
@@ -31,27 +32,45 @@ export default function World3D({ options, clean, onGo }: { options: WorldOption
   goRef.current = onGo;
   const key = `${options.place}|${options.demo ?? ""}|${options.quality ?? ""}|${options.arrive?.car ?? ""}`;
 
+  // the phone took the 3D away: rebuilt quietly (at Low) up to autoHeal's limit, then the message (3D places audit P2/P3)
+  const heal = useRef(newHealState());
+  const [build, setBuild] = useState(0);
+
   useEffect(() => {
     const el = host.current;
     if (!el) return;
-    let gone = false;
+    let gone = false, wait = 0;
     setState("loading");
     setCard(null);
+    const lost = () => {
+      if (gone) return;
+      ctrl.current?.dispose(); ctrl.current = null;
+      if (afterLoss(heal.current, Date.now()) === "give-up") { setState("failed"); return; }
+      setState("loading");
+      wait = window.setTimeout(async () => {
+        const m = await import("@/lib/star/three3d/perf");
+        if (gone) return;
+        m.dropSharedRenderer();
+        el.replaceChildren();
+        setBuild((n) => n + 1);
+      }, HEAL_DELAY_MS);
+    };
     // started a tick later, so React's dev double-mount never builds a second scene
     // (the first, thrown away, would still publish the film hook and the debug handle)
     const go = window.setTimeout(() => import("@/lib/star/world3d/testScene")
       .then(({ startWorld3d }) => startWorld3d(el, {
         onCard: (c) => { if (!gone) setCard(c); },
         onStatus: (s) => { if (!gone) setStatus(s); },
-        onContextLost: () => { if (!gone) setState("failed"); },
+        onContextLost: lost,
         onGo: (p) => { if (!gone) goRef.current?.(p); },
         onArrive: (a) => { if (!gone) setArrival(a); },
         onGym: (f) => { if (gone) return; hud.current?.frame(f); const on = !!f.kind; setGymOn((was) => (was === on ? was : on)); },
-      }, { ...optsRef.current, chat: (id) => optsRef.current.chat?.(id) ?? null }))
+      // a rebuild after a loss: at Low, and the arrival not played again (you are at your car)
+      }, { ...optsRef.current, quality: build > 0 ? "low" : optsRef.current.quality, arrive: build > 0 && optsRef.current.arrive ? { ...optsRef.current.arrive, skip: true } : optsRef.current.arrive, chat: (id) => optsRef.current.chat?.(id) ?? null }))
       .then((c) => { if (gone) { c.dispose(); return; } ctrl.current = c; setState("ready"); })
-      .catch((e) => { console.error("world3d", e); if (!gone) setState("failed"); }), 0);
-    return () => { gone = true; window.clearTimeout(go); ctrl.current?.dispose(); ctrl.current = null; };
-  }, [key]);
+      .catch((e) => { if (gone) return; console.error("world3d", e); lost(); }), 0);
+    return () => { gone = true; window.clearTimeout(go); window.clearTimeout(wait); ctrl.current?.dispose(); ctrl.current = null; };
+  }, [key, build]);
 
   // the gym on a computer: the space bar is your thumb
   useEffect(() => {

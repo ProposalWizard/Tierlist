@@ -21,6 +21,7 @@ import { parseQuality3d } from "@/lib/star/three3d/quality";
 import { kitsOf } from "@/lib/star/kits";
 import { DRIVE_CARS, DRIVE_CAR_IDS, type DriveCarId } from "@/lib/star/drive3d/cars";
 import { DRIVE_CALLS } from "@/lib/star/drive3d/calls";
+import { DRIVE_EVENT_IDS, type DriveEffect } from "@/lib/star/drive3d/events";
 import type { DriveSceneOptions } from "@/lib/star/drive3d/scene";
 import type { SteerMode } from "@/lib/star/drive3d/car";
 import type { CallMemory } from "@/lib/star/drive3d/calls";
@@ -42,6 +43,8 @@ function Drive3DTest() {
   const [mode, setModeState] = useState<SteerMode>(ps === "stick" || ps === "tilt" || ps === "lanes" ? ps : typeof window === "undefined" ? "lanes" : readSteer());
   const setMode = (m: SteerMode) => { setModeState(m); try { localStorage.setItem(STEER_KEY, m); } catch { /* fine */ } };
   const [call, setCall] = useState<string | undefined>(params.get("call") ?? undefined);
+  const [event, setEvent] = useState<string | undefined>(params.get("event") ?? undefined);
+  const [effects, setEffects] = useState<DriveEffect[] | null>(null);
   const [run, setRun] = useState(0);
   const [memories, setMemories] = useState<CallMemory[]>([]);
   // the drive in hands over to the real compound (its own arrival: lib/star/drive3d/arrival.ts); null = still driving
@@ -52,16 +55,16 @@ function Drive3DTest() {
   const options = useMemo<DriveSceneOptions>(() => {
     const kit = kitsOf("Arsenal").home;
     return {
-      car, leg, mode, quality, call, seed: 7 + run,
+      car, leg, mode, quality, call, event, seed: 7 + run, wage: 24000,
       names: { mate: "Kai", mate2: "Marcus", car: DRIVE_CARS[car].name.toLowerCase(), club: "Aston Villa" },
       kit: { shirt: kit.shirt, trim: kit.trim },
       noPeople: params.get("nopeople") === "1",
       film: params.get("film") === "1",
       // the film: hold down the street, overtake the learner, answer the call, the fork
-      script: demo ? { hold: [[3, 9], [17, 24]], answer: [13.2, "yes"], fork: [2, "casino"] } : undefined,
+      script: demo ? { hold: [[3, 9], [17, 24]], answer: [13.2, "yes"], fork: [2, "casino"], event: [1.6, "yes"] } : undefined,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [car, leg, mode, quality, call, run, demo]);
+  }, [car, leg, mode, quality, call, event, run, demo]);
   const bare = params.get("bare") === "1" || params.get("film") === "1";
   const kitH = kitsOf("Arsenal").home;
   const stage = atCompound
@@ -75,7 +78,7 @@ function Drive3DTest() {
       </div>
     )
     : <Drive3D key={run} options={options} clean={params.get("clean") === "1"} onMemory={(m) => setMemories((x) => [...x, m])}
-        onDone={(r) => { if (r.handover) setAtCompound({ skipped: r.skipped }); }} />;
+        onDone={(r) => { setEffects(r.effects); if (r.handover) setAtCompound({ skipped: r.skipped }); }} />;
   if (bare) {
     return (
       <>
@@ -101,9 +104,19 @@ function Drive3DTest() {
           <Pill on={!call} onClick={() => setCall(undefined)}>Call: by chance</Pill>
           <Pill on={call === "none"} onClick={() => setCall("none")}>No call</Pill>
           {DRIVE_CALLS.map((c) => <Pill key={c.id} on={call === c.id} onClick={() => setCall(c.id)}>{c.id}</Pill>)}
-          <Btn onClick={() => { setRun((k) => k + 1); setMemories([]); setAtCompound(null); setWalked(null); }}>↻ Restart</Btn>
+          <Btn onClick={() => { setRun((k) => k + 1); setMemories([]); setAtCompound(null); setWalked(null); setEffects(null); }}>↻ Restart</Btn>
+        </div>
+        <div className="s3-bar">
+          <Pill on={!event} onClick={() => setEvent(undefined)}>Event: by chance</Pill>
+          <Pill on={event === "none"} onClick={() => setEvent("none")}>No event</Pill>
+          {DRIVE_EVENT_IDS.map((e) => <Pill key={e} on={event === e} onClick={() => setEvent(e)}>{e}</Pill>)}
         </div>
         <div className="s3-stage">{stage}</div>
+        {effects && (
+          <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 8 }} data-drive-effects>
+            What the drive would change in the career (not saved here): {effects.length ? effects.map((e) => Object.entries(e).map(([k, v]) => `${k} ${Number(v) > 0 ? "+" : ""}${v}`).join(", ")).join("; ") : "nothing"}
+          </div>
+        )}
         {memories.length > 0 && (
           <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 8 }} data-drive-memories>
             Memories for the people plan (not saved): {memories.map((m) => `${m.who} · ${m.about} · ${m.answer}`).join("; ")}

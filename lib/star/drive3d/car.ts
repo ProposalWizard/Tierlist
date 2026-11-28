@@ -31,6 +31,10 @@ export interface CarInput {
   tap?: -1 | 1 | 0;
   /** Stick / tilt: −1 (all the way right… see note) to +1; in lanes mode ignored. + = towards the left kerb. */
   side?: number;
+  /** An event's hold on your speed (m/s): slowing for a speed camera (./events.ts). */
+  cap?: number;
+  /** An event's push: a race with a team-mate (× the road's speed, ./events.ts RACE_BOOST). */
+  boost?: number;
 }
 
 export interface CarState {
@@ -138,7 +142,8 @@ export function stepCar(route: Route, car: CarState, input: CarInput, dt: number
   }
 
   // ── speed: the road's limit, faster when held, never into the car ahead ──
-  let target = here.limit * (input.hold ? HOLD_BOOST : 1);
+  let target = here.limit * (input.hold ? HOLD_BOOST : 1) * (input.boost ?? 1);
+  if (input.cap !== undefined) target = Math.min(target, input.cap);
   // the road's own braking still rules near the end (the boost never runs you through the gate)
   target = Math.min(target, Math.sqrt(Math.max(0, 2 * BRAKE * 0.75 * (route.length - car.s))));
   if (input.hold && here.limit > 3) target = Math.min(target, Math.max(here.limit, at(route, car.s + car.v * 1.5).limit * HOLD_BOOST));

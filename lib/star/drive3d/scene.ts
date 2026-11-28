@@ -23,15 +23,20 @@ import { publishFrameStep } from "../frameStep";
 import { blobCanvas } from "../shop3d/textures";
 import { brickCanvas, hedgeCanvas, slateCanvas, meadowCanvas, skyCanvas } from "../garden3d/textures";
 import { addCardTree, addCardBush, cardGeometry, cardMaterial, loadCardAtlas, newCardBin, placeCardsSince } from "../garden3d/cardTrees";
-import { at, offsetAt, LANE, ROAD_HALF, type Route } from "./route";
-import { newDrive, stepDrive, answerCall, chooseFork, skipDrive, cycleCam, liveCam, INTRO_S, STEP, type DriveSession, type DriveScript, type ForkChoice, type DriveCam } from "./drive";
+import { at, offsetAt, buildRoute, LANE, ROAD_HALF, type Route } from "./route";
+import { newDrive, stepDrive, answerCall, answerEvent, chooseFork, skipDrive, cycleCam, liveCam, INTRO_S, STEP, type DriveSession, type DriveScript, type ForkChoice, type DriveCam } from "./drive";
 import { DRIVE_CARS, carFile, toLinear, type DriveCarId } from "./cars";
 import { rigCar } from "./rig";
 import type { SteerMode } from "./car";
 import type { CallMemory } from "./calls";
+import { CAMERA_AHEAD, type DriveEffect } from "./events";
 
 export interface DriveSceneOptions {
   car: DriveCarId;
+  /** Force an event ("none" = no event; absent = the seeded one, ./events.ts). */
+  event?: string;
+  /** Your weekly wage (a speed camera's fine is a share of it). */
+  wage?: number;
   leg: "in" | "back";
   quality?: Quality3d;
   mode: SteerMode;
@@ -46,6 +51,9 @@ export interface DriveSceneOptions {
   film?: boolean;
   /** Without people (faster load for the speed test). */
   noPeople?: boolean;
+  /** The screen was closed while this was still loading (3D places audit P1): checked after every wait, so a
+   *  drive nobody will see stops building and gives the shared canvas back at once. */
+  isDead?: () => boolean;
 }
 
 export interface DriveUi {
@@ -55,6 +63,8 @@ export interface DriveUi {
   call: { caller: string; lines: string[]; yes: string; no: string; state: DriveSession["callState"]; answer: DriveSession["callAnswer"]; reply?: string; effect?: string; since: number } | null;
   fade: number;
   caption: string | null;
+  /** The event's card (./events.ts), or null. */
+  event: { id: string; kind: "choice" | "brake" | "notice"; icon: string; title: string; lines: string[]; yes?: string; no?: string; state: "open" | "done"; slowing: boolean; racing: boolean; line?: string; effect?: string; flash: boolean } | null;
   fork: boolean;
   forkChoice: ForkChoice | null;
   blocked: boolean;
@@ -65,7 +75,7 @@ export interface DriveUi {
 export interface DriveCallbacks {
   onUi: (ui: DriveUi) => void;
   /** `handover`: the drive in ended on the compound road; the compound's own arrival (testScene opts.arrive) takes over. */
-  onDone: (r: { skipped: boolean; fork: ForkChoice | null; memories: CallMemory[]; handover: boolean }) => void;
+  onDone: (r: { skipped: boolean; fork: ForkChoice | null; memories: CallMemory[]; handover: boolean; effects: DriveEffect[] }) => void;
   onMemory?: (m: CallMemory) => void;
   onContextLost?: () => void;
 }
@@ -75,6 +85,8 @@ export interface DriveController {
   tap: (side: -1 | 1) => void;
   side: (v: number) => void;
   answer: (a: "yes" | "no") => void;
+  /** The event's card (./events.ts): yes / no, or the camera's Slow down (yes). */
+  event: (a: "yes" | "no") => void;
   fork: (c: ForkChoice) => void;
   skip: () => void;
   cam: () => void;
@@ -96,8 +108,10 @@ export async function startDrive(container: HTMLElement, cb: DriveCallbacks, opt
 async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveSceneOptions, own: { release?: (root?: any) => void; root?: any }): Promise<DriveController> {
   const tier: Quality3d = opts.quality ?? quality3dTier();
   const prof = TIER_PROFILES[tier];
+  const dead = () => { if (opts.isDead?.()) throw new Error("drive: closed while loading"); };
   const THREE: any = await import("three");
   await installAssetVersions();
+  dead();
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const BGU: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
   const merge = (gs: any[]) => BGU.mergeGeometries(gs, false);
@@ -148,7 +162,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
   const S = newDrive({
     leg: opts.leg, tier, seed: opts.seed ?? 7, mode: opts.mode, spec: { wheelR: 0.42, wheelbase: 2.6 },
     call: opts.call, names: { mate: opts.names.mate, car: opts.names.car, club: opts.names.club },
-    handover: opts.leg === "in",
+    handover: opts.leg === "in", event: opts.event, carId: opts.car, wage: opts.wage,
   });
   S.script = opts.script;
   const R: Route = S.route;
@@ -182,10 +196,10 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
   const roadEnd = opts.leg === "in" ? R.gateS : R.length;
   roadGs.push(ribbon(THREE, R, 0, roadEnd, -ROAD_HALF, ROAD_HALF, 0.0, (k) => (k === "roundabout" || k === "park" ? [0.02, 0.06] : [0, 1])));
   if (opts.leg === "in") {
+    // straight on past the compound's way in, with its lines (a short road of its own, from the gate)
     const e = at(R, R.gateS);
-    const g = new THREE.PlaneGeometry(ROAD_HALF * 2, 70); g.rotateX(-Math.PI / 2); g.translate(0, 0, 35); g.rotateY(e.h); g.translate(e.x, 0.0, e.z);
-    setUv(g, 0.5, 0.5, true);
-    roadGs.push(g);
+    const on = buildRoute([{ kind: "approach", len: 80, speed: 13 }], 1, { x: e.x, z: e.z, h: e.h });
+    roadGs.push(ribbon(THREE, on, 0, on.length, -ROAD_HALF, ROAD_HALF, 0.0, () => [0, 1]));
   }
   {
     const I = R.island;
@@ -287,6 +301,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
 
   // ── trees and bushes: the textured card trees (garden3d/cardTrees.ts), all in one draw ──
   const atlas = await loadCardAtlas(THREE, renderer).catch(() => null);
+  dead();
   if (atlas) {
     const bin = newCardBin();
     const lod = tier === "low" ? 2 : 1;
@@ -346,6 +361,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
   const lodMine = tier === "low";
   const myG: any = await loadGltfCached(loader, carFile(opts.car, lodMine));
   if (disposed) throw new Error("disposed");
+  dead();
   const mine = rigCar(THREE, myG.scene.clone(true));
   mine.root.traverse((o: any) => { if (o.isMesh) { o.castShadow = realShadow; } });
   scene.add(mine.root);
@@ -380,6 +396,11 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
   const cabin = buildCabin(THREE, mine, RoundedBoxGeometry, merge);
   mine.root.add(cabin.group);
   cabin.group.visible = false;
+
+  // ── the drive's event (./events.ts): its set piece by the road (only the one this drive has) ──
+  dead();
+  const evSet = await buildEventSet(THREE, S, R, loader, tex, opts, tier, scene, { fog: scene.fog, hemi, sun, sky: skyT });
+  dead();
 
 
   // ── run ──
@@ -454,6 +475,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
     camera.position.copy(camPos); camera.lookAt(camLook);
     if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = snap ? fov : camera.fov + (fov - camera.fov) * Math.min(1, dt * 3); camera.updateProjectionMatrix(); }
     if (realShadow) { sun.position.set(carP.x - 40, 55, carP.z + 30); sun.target.position.copy(carP); }
+    evSet.update(S, camera);
     cabin.phone(S.callState === "ringing" ? (Math.floor(S.t * 2.5) % 2 ? 1 : 0.55) : S.callState === "answered" ? 0.8 : 0.08, S.call?.caller ?? "");
   };
 
@@ -464,14 +486,19 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
       effect: S.callAnswer === "yes" ? S.call.yes.effect : S.callAnswer === "no" ? S.call.no.effect : undefined, since: S.callSince,
     } : null;
     const caption = null;
+    const ev = S.event && (S.eventState === "open" || S.eventState === "done") ? {
+      id: S.event.id, kind: S.event.kind, icon: S.event.icon, title: S.event.title, lines: S.event.lines, yes: S.event.yes, no: S.event.no,
+      state: S.eventState as "open" | "done", slowing: S.slowing, racing: S.raceT0 >= 0 && S.eventState === "open",
+      line: S.outcome?.line, effect: S.outcome?.effect, flash: S.event.id === "speed-camera" && S.eventState === "done" && !!S.outcome?.apply.money && S.t - S.eventSince < 0.25,
+    } : null;
     const u: DriveUi = {
-      phase: S.phase, mph: Math.round(S.car.v * 2.237), cam: liveCam(S), call, fade: S.fade, caption,
+      phase: S.phase, mph: Math.round(S.car.v * 2.237), cam: liveCam(S), call, fade: S.fade, caption, event: ev,
       fork: S.phase === "fork", forkChoice: S.fork, blocked: S.car.horn > 0, lane: S.car.off >= 0 ? "left" : "right", t: S.t,
     };
     const key = JSON.stringify({ ...u, t: Math.round(u.t * 4), fade: Math.round(u.fade * 10) });
     if (key !== lastUi) { lastUi = key; cb.onUi(u); }
     S.memories.forEach((m, i) => { if (!memSent.has(i)) { memSent.add(i); cb.onMemory?.(m); } });
-    if (S.phase === "done" && !doneSent) { doneSent = true; cb.onDone({ skipped: S.skipped, fork: S.fork, memories: S.memories, handover: opts.leg === "in" }); }
+    if (S.phase === "done" && !doneSent) { doneSent = true; cb.onDone({ skipped: S.skipped, fork: S.fork, memories: S.memories, handover: opts.leg === "in", effects: S.effects }); }
   };
 
   const sim = (dt: number) => {
@@ -530,6 +557,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
     tap: (sd) => { tapQ = sd; },
     side: (v) => { side = v; },
     answer: (a) => answerCall(S, a),
+    event: (a) => answerEvent(S, a),
     fork: (c) => chooseFork(S, c),
     skip: () => skipDrive(S),
     cam: () => cycleCam(S),
@@ -928,4 +956,124 @@ function buildCabin(T: any, mine: ReturnType<typeof rigCar>, RB: any, merge?: (g
     for (const [m, geos] of Array.from(byMat.entries())) g.add(new T.Mesh(merge(geos), m));
   }
   return { group: g, phone: draw };
+}
+
+
+/**
+ * The drive's event, built by the road (./events.ts): the zebra crossing with its beacons and the fan waving, the
+ * speed camera and its 40 signs, the team-mate's car (the light copy of the sports car in the club's colour), the
+ * broken-down car with its hazards, its bonnet up and a warning triangle, or the rain (falling streaks round the
+ * camera, a grey sky). Only the one this drive has is built: a few draws, no people models (a code-built fan).
+ */
+async function buildEventSet(T: any, S: DriveSession, R: Route, loader: any, tex: (cv: HTMLCanvasElement, rep?: [number, number]) => any, opts: DriveSceneOptions, tier: Quality3d, scene: any, look: { fog: any; hemi: any; sun: any; sky: any }) {
+  const ev = S.event;
+  const none = { update: (S2: DriveSession, camera: any) => { void S2; void camera; } };
+  if (!ev || S.eventS < 0) return none;
+  const g = new T.Group(); g.name = `event-${ev.id}`; scene.add(g);
+  const mat = (c: string, o: any = {}) => new T.MeshStandardMaterial({ color: c, roughness: 0.7, ...o });
+  const put = (geo: any, m: any, s: number, off: number, y: number, yaw = 0) => { const p = offsetAt(R, s, off); const me = new T.Mesh(geo, m); me.position.set(p.x, y, p.z); me.rotation.y = p.h + yaw; g.add(me); return me; };
+  const blink: any[] = [];
+  let arm: any = null, fan: any = null, mateRig: ReturnType<typeof rigCar> | null = null, rain: any = null;
+  const crossS = S.eventS + 34;
+  if (ev.id === "fan-crossing") {
+    const white = mat("#f4f2ec", { roughness: 0.9 });
+    for (let i = 0; i < 7; i++) put(new T.BoxGeometry(0.5, 0.012, 2.6), white, crossS, -ROAD_HALF + 0.5 + i * 1.0, 0.012);
+    const pole = new T.CylinderGeometry(0.05, 0.05, 2.6, 8), globe = new T.SphereGeometry(0.17, 14, 10);
+    const poleM = mat("#202226"), globeM = mat("#ff9a1f", { emissive: "#ff7a00", emissiveIntensity: 0.6 });
+    for (const side of [1, -1]) { put(pole, poleM, crossS - 1.6, side * (ROAD_HALF + 0.4), 1.3); blink.push(put(globe, globeM, crossS - 1.6, side * (ROAD_HALF + 0.4), 2.7)); }
+    // the fan: a lad on the left pavement by the crossing, in the club's colours with a scarf, waving
+    fan = new T.Group();
+    const shirt = mat(opts.kit.shirt), dark = mat("#22252b"), skin = mat("#c99a76"), scarf = mat(opts.kit.trim);
+    const add = (geo: any, m: any, x: number, y: number, z: number) => { const me = new T.Mesh(geo, m); me.position.set(x, y, z); fan.add(me); return me; };
+    add(new T.BoxGeometry(0.14, 0.82, 0.16), dark, -0.1, 0.41, 0); add(new T.BoxGeometry(0.14, 0.82, 0.16), dark, 0.1, 0.41, 0);
+    add(new T.BoxGeometry(0.42, 0.6, 0.24), shirt, 0, 1.12, 0);
+    add(new T.SphereGeometry(0.13, 14, 10), skin, 0, 1.58, 0);
+    add(new T.BoxGeometry(0.3, 0.1, 0.27), scarf, 0, 1.4, 0.01);
+    add(new T.BoxGeometry(0.1, 0.55, 0.12), shirt, -0.27, 1.12, 0);
+    arm = new T.Group(); arm.position.set(0.24, 1.38, 0); fan.add(arm);
+    const a1 = new T.Mesh(new T.BoxGeometry(0.1, 0.56, 0.12), shirt); a1.position.y = 0.26; arm.add(a1);
+    const p = offsetAt(R, crossS + 1.2, ROAD_HALF + 1.0);
+    fan.position.set(p.x, 0.12, p.z); fan.rotation.y = p.h + Math.PI / 2 + 0.5; // facing the road and your car coming
+    g.add(fan);
+  } else if (ev.id === "speed-camera") {
+    const cs = S.cameraS;
+    const grey = mat("#6b7078");
+    put(new T.CylinderGeometry(0.07, 0.07, 3.2, 8), grey, cs, ROAD_HALF + 1.1, 1.6);
+    put(new T.BoxGeometry(0.62, 0.62, 0.5), mat("#f2c200", { roughness: 0.5 }), cs, ROAD_HALF + 1.1, 3.35);
+    put(new T.BoxGeometry(0.3, 0.3, 0.05), mat("#15171b"), cs, ROAD_HALF + 1.1, 3.35).position.y = 3.35;
+    // the 40 signs on the way to it
+    const c = document.createElement("canvas"); c.width = c.height = 128; const x = c.getContext("2d")!;
+    x.fillStyle = "#ffffff"; x.beginPath(); x.arc(64, 64, 62, 0, 7); x.fill(); x.lineWidth = 14; x.strokeStyle = "#d32222"; x.beginPath(); x.arc(64, 64, 55, 0, 7); x.stroke();
+    x.fillStyle = "#111"; x.font = "bold 58px system-ui, sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("40", 64, 68);
+    const signM = new T.MeshStandardMaterial({ map: tex(c), roughness: 0.5, side: T.DoubleSide });
+    for (const sd of [S.eventS + 22, cs - 45]) {
+      put(new T.CylinderGeometry(0.05, 0.05, 2.4, 8), grey, sd, ROAD_HALF + 1.2, 1.2);
+      put(new T.CircleGeometry(0.42, 28), signM, sd, ROAD_HALF + 1.2, 2.5, Math.PI);
+    }
+  } else if (ev.id === "mate-race") {
+    const gl: any = await loadGltfCached(loader, carFile("sports", true));
+    mateRig = rigCar(T, gl.scene.clone(true));
+    repaint(T, mateRig.root, DRIVE_CARS.sports.paint, opts.kit.shirt);
+    mateRig.root.visible = false;
+    g.add(mateRig.root);
+  } else if (ev.id === "breakdown") {
+    const bs = S.eventS + 58;
+    const body = "#8b8f78";
+    const gl: any = await loadGltfCached(loader, "/star/home3d/car-family-lod.glb").catch(() => null);
+    if (gl) {
+      const inner = gl.scene.clone(true);
+      fitCar(T, inner, 4.3);
+      repaint(T, inner, DRIVE_CARS.family.paint, body);
+      const root = new T.Group(); root.add(inner);
+      const p = offsetAt(R, bs, ROAD_HALF + 1.5);
+      root.position.set(p.x, 0, p.z); root.rotation.y = p.h - Math.PI / 2 + 0.12;
+      g.add(root);
+    }
+    for (const [a, o] of [[2.15, 0.7], [2.15, -0.7], [-2.15, 0.7], [-2.15, -0.7]]) blink.push(put(new T.BoxGeometry(0.16, 0.1, 0.06), mat("#ff9a1f", { emissive: "#ff8a00", emissiveIntensity: 0 }), bs + a, ROAD_HALF + 1.5 + o, 0.78));
+    // the warning triangle on the road edge behind it, the bonnet up
+    const tri = new T.Shape(); tri.moveTo(-0.3, 0); tri.lineTo(0.3, 0); tri.lineTo(0, 0.52); tri.closePath();
+    put(new T.ShapeGeometry(tri), new T.MeshStandardMaterial({ color: "#e0251b", emissive: "#5a0a05", side: T.DoubleSide }), bs - 9, ROAD_HALF - 0.4, 0.02, Math.PI);
+    put(new T.BoxGeometry(1.5, 0.04, 1.0), mat(body), bs + 1.9, ROAD_HALF + 1.5, 1.4).rotation.x = -0.9;
+  } else if (ev.id === "rain") {
+    const N = tier === "low" ? 260 : 620;
+    const pos = new Float32Array(N * 6);
+    const rnd = (k: number) => { const v = Math.sin(k * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    for (let i = 0; i < N; i++) { const x = (rnd(i) - 0.5) * 30, y = rnd(i + 0.5) * 14, z = (rnd(i + 0.25) - 0.5) * 30; pos.set([x, y, z, x + 0.05, y - 0.55, z], i * 6); }
+    const geo = new T.BufferGeometry(); geo.setAttribute("position", new T.BufferAttribute(pos, 3));
+    rain = new T.LineSegments(geo, new T.LineBasicMaterial({ color: "#d4dde6", transparent: true, opacity: 0, depthWrite: false }));
+    rain.frustumCulled = false; rain.visible = false;
+    scene.add(rain);
+  }
+  const fog0 = look.fog.color.clone(), hemi0 = look.hemi.intensity, sun0 = look.sun.intensity;
+  const grey = new T.Color("#8d969e"), skyCol = new T.Color();
+  return {
+    update: (S2: DriveSession, camera: any) => {
+      const t = S2.t;
+      const on = Math.floor(t * 2.4) % 2 === 0;
+      for (const b of blink) b.material.emissiveIntensity = on ? 1.4 : 0.05;
+      if (arm) arm.rotation.z = 2.5 + Math.sin(t * 9) * 0.45;
+      if (fan) fan.visible = Math.abs(S2.car.s - crossS) < 90;
+      if (mateRig) {
+        const m = S2.mateCar;
+        mateRig.root.visible = !!m;
+        if (m) {
+          const q = offsetAt(R, Math.max(0, Math.min(R.length, m.s)), m.off);
+          mateRig.root.position.set(q.x, 0, q.z); mateRig.root.rotation.y = q.h;
+          for (const w of mateRig.wheels) w.node.rotation.x = m.s / mateRig.wheelR;
+        }
+      }
+      if (rain) {
+        const k = S2.rain;
+        rain.visible = k > 0.01;
+        if (rain.visible) {
+          rain.material.opacity = 0.5 * k;
+          // the streaks fall through a box that moves with the camera (wrapping every 14 m)
+          rain.position.set(camera.position.x, camera.position.y - 7 + (14 - ((t * 16) % 14)), camera.position.z);
+        }
+        look.fog.color.copy(fog0).lerp(grey, 0.75 * k);
+        look.hemi.intensity = hemi0 * (1 - 0.3 * k); look.sun.intensity = sun0 * (1 - 0.65 * k);
+        if (k > 0.02) { skyCol.copy(fog0).lerp(grey, 0.85 * k); scene.background = skyCol; } else scene.background = look.sky;
+      }
+    },
+  };
 }
