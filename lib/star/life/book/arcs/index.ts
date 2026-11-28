@@ -54,6 +54,7 @@ import a_the_big_screen from "./the-big-screen.json";
 import a_the_bins from "./the-bins.json";
 import a_the_birthday_card from "./the-birthday-card.json";
 import a_the_boots_auction from "./the-boots-auction.json";
+import a_the_boots_for_a_kid from "./the-boots-for-a-kid.json";
 import a_the_cafe from "./the-cafe.json";
 import a_the_call_up from "./the-call-up.json";
 import a_the_car_park from "./the-car-park.json";
@@ -61,6 +62,8 @@ import a_the_caretaker from "./the-caretaker.json";
 import a_the_chairmans_car from "./the-chairmans-car.json";
 import a_the_chairmans_son from "./the-chairmans-son.json";
 import a_the_charity_match from "./the-charity-match.json";
+import a_the_charity_ref from "./the-charity-ref.json";
+import a_the_checkout from "./the-checkout.json";
 import a_the_chip_shop_special from "./the-chip-shop-special.json";
 import a_the_christening from "./the-christening.json";
 import a_the_christmas_lights from "./the-christmas-lights.json";
@@ -78,6 +81,7 @@ import a_the_driving_lessons from "./the-driving-lessons.json";
 import a_the_envelope from "./the-envelope.json";
 import a_the_ex from "./the-ex.json";
 import a_the_fake_you from "./the-fake-you.json";
+import a_the_fans_forum from "./the-fans-forum.json";
 import a_the_fines_book from "./the-fines-book.json";
 import a_the_fire_alarm from "./the-fire-alarm.json";
 import a_the_food_bank from "./the-food-bank.json";
@@ -89,6 +93,7 @@ import a_the_groundsmans_goal from "./the-groundsmans-goal.json";
 import a_the_group_chat from "./the-group-chat.json";
 import a_the_gym_board from "./the-gym-board.json";
 import a_the_haircut from "./the-haircut.json";
+import a_the_hairdryer from "./the-hairdryer.json";
 import a_the_hard_shoulder from "./the-hard-shoulder.json";
 import a_the_head_shave from "./the-head-shave.json";
 import a_the_heckler from "./the-heckler.json";
@@ -110,6 +115,7 @@ import a_the_long_way_back from "./the-long-way-back.json";
 import a_the_lost_medal from "./the-lost-medal.json";
 import a_the_lucky_scarf from "./the-lucky-scarf.json";
 import a_the_mascot from "./the-mascot.json";
+import a_the_match_ball from "./the-match-ball.json";
 import a_the_neighbours_lad from "./the-neighbours-lad.json";
 import a_the_nemesis from "./the-nemesis.json";
 import a_the_new_boots from "./the-new-boots.json";
@@ -120,6 +126,7 @@ import a_the_number from "./the-number.json";
 import a_the_other_agent from "./the-other-agent.json";
 import a_the_own_goal from "./the-own-goal.json";
 import a_the_parking_space from "./the-parking-space.json";
+import a_the_passport from "./the-passport.json";
 import a_the_penalty_taker from "./the-penalty-taker.json";
 import a_the_petrol_station from "./the-petrol-station.json";
 import a_the_phone_in from "./the-phone-in.json";
@@ -136,6 +143,7 @@ import a_the_red_card from "./the-red-card.json";
 import a_the_ref_remembers from "./the-ref-remembers.json";
 import a_the_referee from "./the-referee.json";
 import a_the_referees_son from "./the-referees-son.json";
+import a_the_reunion from "./the-reunion.json";
 import a_the_scarf_man from "./the-scarf-man.json";
 import a_the_scout_who_said_no from "./the-scout-who-said-no.json";
 import a_the_shirt_swap from "./the-shirt-swap.json";
@@ -163,10 +171,12 @@ import a_the_wall from "./the-wall.json";
 import a_the_watch from "./the-watch.json";
 import a_the_wedding_party from "./the-wedding-party.json";
 import a_the_whip_round from "./the-whip-round.json";
+import a_the_wind_up_call from "./the-wind-up-call.json";
 import a_the_woods from "./the-woods.json";
 import a_the_wrong_coach from "./the-wrong-coach.json";
 import a_the_wrong_like from "./the-wrong-like.json";
 import a_the_young_lad from "./the-young-lad.json";
+import a_the_young_reporter from "./the-young-reporter.json";
 import a_tickets_for_the_street from "./tickets-for-the-street.json";
 import a_unknown_number from "./unknown-number.json";
 import a_unsettled from "./unsettled.json";
@@ -226,6 +236,7 @@ export const STORY_ARCS: LifeArc[] = [
   a_the_bins as unknown as LifeArc,
   a_the_birthday_card as unknown as LifeArc,
   a_the_boots_auction as unknown as LifeArc,
+  a_the_boots_for_a_kid as unknown as LifeArc,
   a_the_cafe as unknown as LifeArc,
   a_the_call_up as unknown as LifeArc,
   a_the_car_park as unknown as LifeArc,
@@ -233,6 +244,8 @@ export const STORY_ARCS: LifeArc[] = [
   a_the_chairmans_car as unknown as LifeArc,
   a_the_chairmans_son as unknown as LifeArc,
   a_the_charity_match as unknown as LifeArc,
+  a_the_charity_ref as unknown as LifeArc,
+  a_the_checkout as unknown as LifeArc,
   a_the_chip_shop_special as unknown as LifeArc,
   a_the_christening as unknown as LifeArc,
   a_the_christmas_lights as unknown as LifeArc,
@@ -250,6 +263,7 @@ export const STORY_ARCS: LifeArc[] = [
   a_the_envelope as unknown as LifeArc,
   a_the_ex as unknown as LifeArc,
   a_the_fake_you as unknown as LifeArc,
+  a_the_fans_forum as unknown as LifeArc,
   a_the_fines_book as unknown as LifeArc,
   a_the_fire_alarm as unknown as LifeArc,
   a_the_food_bank as unknown as LifeArc,
@@ -261,6 +275,7 @@ export const STORY_ARCS: LifeArc[] = [
   a_the_group_chat as unknown as LifeArc,
   a_the_gym_board as unknown as LifeArc,
   a_the_haircut as unknown as LifeArc,
+  a_the_hairdryer as unknown as LifeArc,
   a_the_hard_shoulder as unknown as LifeArc,
   a_the_head_shave as unknown as LifeArc,
   a_the_heckler as unknown as LifeArc,
@@ -282,6 +297,7 @@ export const STORY_ARCS: LifeArc[] = [
   a_the_lost_medal as unknown as LifeArc,
   a_the_lucky_scarf as unknown as LifeArc,
   a_the_mascot as unknown as LifeArc,
+  a_the_match_ball as unknown as LifeArc,
   a_the_neighbours_lad as unknown as LifeArc,
   a_the_nemesis as unknown as LifeArc,
   a_the_new_boots as unknown as LifeArc,
@@ -292,6 +308,7 @@ export const STORY_ARCS: LifeArc[] = [
   a_the_other_agent as unknown as LifeArc,
   a_the_own_goal as unknown as LifeArc,
   a_the_parking_space as unknown as LifeArc,
+  a_the_passport as unknown as LifeArc,
   a_the_penalty_taker as unknown as LifeArc,
   a_the_petrol_station as unknown as LifeArc,
   a_the_phone_in as unknown as LifeArc,
@@ -308,6 +325,7 @@ export const STORY_ARCS: LifeArc[] = [
   a_the_ref_remembers as unknown as LifeArc,
   a_the_referee as unknown as LifeArc,
   a_the_referees_son as unknown as LifeArc,
+  a_the_reunion as unknown as LifeArc,
   a_the_scarf_man as unknown as LifeArc,
   a_the_scout_who_said_no as unknown as LifeArc,
   a_the_shirt_swap as unknown as LifeArc,
@@ -335,10 +353,12 @@ export const STORY_ARCS: LifeArc[] = [
   a_the_watch as unknown as LifeArc,
   a_the_wedding_party as unknown as LifeArc,
   a_the_whip_round as unknown as LifeArc,
+  a_the_wind_up_call as unknown as LifeArc,
   a_the_woods as unknown as LifeArc,
   a_the_wrong_coach as unknown as LifeArc,
   a_the_wrong_like as unknown as LifeArc,
   a_the_young_lad as unknown as LifeArc,
+  a_the_young_reporter as unknown as LifeArc,
   a_tickets_for_the_street as unknown as LifeArc,
   a_unknown_number as unknown as LifeArc,
   a_unsettled as unknown as LifeArc,

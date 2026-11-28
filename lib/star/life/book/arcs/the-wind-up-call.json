@@ -1,0 +1,281 @@
+{
+ "id": "arc-the-wind-up-call",
+ "title": "The call",
+ "owner": "brother",
+ "summary": "The national team manager rings to say you're in the squad. It's your brother, doing a voice, and you've already rung your mum. A season on, he rings again in a voice.",
+ "size": "small",
+ "about": {
+  "who": [
+   "brother",
+   "mum"
+  ],
+  "tone": [
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "brother",
+   "pick": "brother"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "got-him-back",
+   "title": "Got him back",
+   "text": "Your brother rang you pretending to be the national manager. A season later you got him back, with a voice of your own, and your mum helped."
+  },
+  {
+   "id": "the-voice",
+   "title": "The voice",
+   "text": "Your brother rang you pretending to be the national manager and you fell for it, and you'll never live it down."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "wnd-1-call",
+   "title": "The call",
+   "n": 1,
+   "event": {
+    "id": "arc-wnd-1-call",
+    "title": "The call",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A number you don't know. A deep voice, very serious. \"This is the national team office. The manager would like to speak to you about the next squad.\" You've already got your mum on the other phone."
+    ],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "brother",
+       "say": [
+        "\"You're in, son. Report Monday. Bring your own towel.\" Then: \"Bring your own towel\" in a voice you know very well."
+       ],
+       "replies": [
+        {
+         "id": "laugh",
+         "label": "Laugh. You've been had.",
+         "tone": "calm",
+         "end": "laugh"
+        },
+        {
+         "id": "mum",
+         "label": "\"Mum. Hang up. It's him.\"",
+         "tone": "honest",
+         "end": "mum"
+        },
+        {
+         "id": "plan",
+         "label": "Play along. Plan your revenge.",
+         "tone": "reckless",
+         "end": "plan"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "laugh": [
+       {
+        "text": "{brother.short} laughs so hard he drops the phone. Your mum, on the other line, says, \"So you're not in?\"",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4
+         },
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "had"
+         }
+        }
+       }
+      ],
+      "mum": [
+       {
+        "text": "Your mum has already told your nan and the woman at number four. {brother.short} is grounded, at twenty-five.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         },
+         {
+          "slot": "brother",
+          "bond": 2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "had"
+         }
+        }
+       }
+      ],
+      "plan": [
+       {
+        "text": "\"Thank you, sir. I'll bring two towels.\" He thinks he's got you. You ring your mum after and tell her the plan.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "is-in-on-the-revenge",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "plan"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A call from a number you don't know"
+  },
+  {
+   "id": "wnd-2-back",
+   "title": "A voice",
+   "after": {
+    "beat": "wnd-1-call",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-wnd-2-back",
+    "title": "A voice",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {brother.short} has a job interview on Tuesday. He's told everyone. You've got his new boss's name off your mum."
+    ],
+    "choices": [
+     {
+      "id": "ring",
+      "label": "Ring him in a voice.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "if": "arc.path=='plan'",
+        "text": "\"This is the office. Bring your own towel.\" There's a long silence. Then he says a word your mum doesn't approve of. She's on the other line. She's crying laughing.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "end": "got-him-back"
+        }
+       },
+       {
+        "chance": 0.5,
+        "text": "He falls for it for eleven seconds. You'll take eleven seconds.",
+        "arc": {
+         "end": "got-him-back"
+        }
+       },
+       {
+        "text": "\"Nice try. You can't do voices.\" You can't.",
+        "arc": {
+         "end": "the-voice"
+        }
+       }
+      ]
+     },
+     {
+      "id": "luck",
+      "label": "Just wish him luck.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "\"Cheers.\" He gets the job. He rings you to tell you in the deep voice anyway.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-voice"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, your brother's phone"
+  }
+ ]
+}
