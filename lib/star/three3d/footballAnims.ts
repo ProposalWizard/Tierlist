@@ -415,10 +415,12 @@ export class ClipPlayer {
     if (this.current === name && (this.fw.current as unknown) === cur && !o.once && o.from === undefined && cur.loop === this.T.LoopRepeat) {
       cur.timeScale = o.speed ?? 1;
       this.onEnd = o.onEnd ?? null;
+      this.curAct = cur;
       return true;
     }
     const a = this.free(name);
     this.current = name;
+    this.curAct = a;
     this.once = !!o.once;
     this.onEnd = o.onEnd ?? null;
     a.enabled = true;
@@ -437,8 +439,11 @@ export class ClipPlayer {
   /** Seconds into the current clip. */
   time() {
     if (this.current === "loco") return this.members[0] ? this.members[0].a.time : 0;
-    return this.current ? this.actions[this.current].time : 0;
+    // the action actually playing: a copy when the same clip was still showing (a seat's held sit, then
+    // standing up = the same clip backwards); reading the original there froze the stand-up for good
+    return this.current ? (this.curAct ?? this.actions[this.current]).time : 0;
   }
+  private curAct: Act | null = null;
 
   /**
    * The loops loco() mixes (speeds at this body's size) and the standing clip
@@ -543,7 +548,7 @@ export class ClipPlayer {
     });
     weights.forEach((w, a) => { a.setEffectiveWeight(w); this.shown.add(a); });
     if (this.current && this.current !== "loco" && this.once && this.onEnd) {
-      const a = this.actions[this.current];
+      const a = this.curAct ?? this.actions[this.current];
       if (a.time + dt >= a.getClip().duration - 1e-3) { const f = this.onEnd; this.onEnd = null; f(); }
     }
   }

@@ -57,6 +57,8 @@ import { buildRoom, disposeGroup, roomFree, MIRROR_LAYER, MIRROR_PX, type BuiltR
 import { safeCompileAsync } from "../three3d/safeCompile";
 import type { InteractCard } from "../world3d/interact";
 import type { HouseLife, LifeMate } from "../world3d/houseLife";
+import type { HouseVisit } from "../life/dayPlan";
+import { roomPeople } from "../life/houseRoutines";
 import { FURNITURE, isLiving } from "./rooms";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
 import { ViewCam, headWorld, loadViewMode, showBody, type ViewMode } from "../three3d/viewCam";
@@ -243,9 +245,17 @@ export interface HomeOptions {
   /** The 3D phone test page only: try walking camera A, B or C (HOUSE_CAMS). Absent = D, the game's camera (with its zoom). */
   houseCam?: HouseCam;
   /** A living house (homes.ts LIVING_TIERS, the world-kit test page): things you use, team-mates round. Absent = as before. */
-  living?: { mates: LifeMate[]; club?: string; chat?: (id: string) => { line: string; change?: string } | null; onEffect?: (thing: string, e: { mood?: number; energy?: number; text?: string }) => void;
+  living?: { mates: LifeMate[]; club?: string; chat?: (id: string) => { line: string; change?: string } | null;
+    /** You used a thing: the career's answer (lib/star/life/houseActs.ts: time, energy, mood within the day's caps) for its card. */
+    onEffect?: (thing: string, e: { mood?: number; energy?: number; text?: string }) => { text: string; sub?: string } | void;
     /** "Sleep till morning" in your bed: called in the dark, once the night has passed; returns the card's words (home3d/sleep.ts). */
-    onSleep?: () => string };
+    onSleep?: () => string;
+    /** The career clock (lib/star/life/liveClock.ts): minutes since day 0 of this gap, now. Absent: the house's own clock (15:00). */
+    clock?: () => number;
+    /** Tick the career clock by the house's own frame time (s). */
+    tick?: (dt: number) => void;
+    /** Who is in the house on a day of the gap (lib/star/life/dayPlan.ts). Absent: the old fixed team-mates. */
+    visits?: (day: number) => HouseVisit[] };
 }
 
 export interface HomeController {
@@ -675,6 +685,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     if (!path) return false;
     faceTo = null;
     spotWalk = null;
+    // already there (the start and the goal in one cell): no walk, straight on (an empty path used to throw here)
+    if (!path.length) { faceTo = face; then?.(); return true; }
     // the last point exactly (a seat's stand point sits at the edge of the free floor)
     if (then && Math.hypot(path[path.length - 1][0] - to[0], path[path.length - 1][1] - to[1]) < 0.8) path[path.length - 1] = to;
     walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; arrivedAt = spotWalk; spotWalk = null; then?.(); } });
@@ -818,11 +830,16 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       you: () => ({ x: me.person.root.position.x, z: me.person.root.position.z, yaw }),
       setYaw: (y) => { yaw = y; yawTurn.vel = 0; me.person.root.rotation.y = y; },
       onCard: (c) => cb.onCard?.(c),
-      chat: opts.living.chat, onEffect: opts.living.onEffect,
+      chat: opts.living.chat, onEffect: opts.living.onEffect, clockNow: opts.living.clock, tickClock: opts.living.tick,
+      // visitors on the day plan; how many your room may draw: Android (the mid phone) and Low 2, Medium 3, High 5
+      visits: opts.living.visits, roomCap: roomPeople(tier, typeof navigator !== "undefined" && /Android|Mobi/i.test(navigator.userAgent) && !/iPhone|iPad/i.test(navigator.userAgent)),
       onSleep: () => { sleepSeq = { t: 0, text: "", morning: false }; },
       dip: (text, mid) => { dipSeq = { t: 0, text, mid }; },
     }).catch((e) => { console.error("home: living", e); return null; });
     life?.enterRoom(room);
+    // the career clock: walked in at night (20:00 to 06:00), the night's light
+    const m0 = opts.living.clock ? ((opts.living.clock() % 1440) + 1440) % 1440 : 15 * 60;
+    if (m0 >= 20 * 60 || m0 < 6 * 60) { lightFrom = LIGHTS.night; lightTo = LIGHTS.night; lightK = 1; applyDayLight(); }
   }
 
   // ── Sleeping (lib/star/home3d/sleep.ts): the light goes to night, the screen to black, the clock to

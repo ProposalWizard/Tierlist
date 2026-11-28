@@ -225,6 +225,17 @@ export class Npc {
     else if (this.state === "hidden") this.state = "stand";
   }
 
+  /** Walk a straight line through these points, no path finding (through a doorway, off the room's floor grid). */
+  walkLine(points: XZ[], onArrive?: () => void): boolean {
+    if (this.seated || !points.length) return false;
+    this.gestureWant.drink = 0;
+    this.goal = { to: points[points.length - 1], face: null, onArrive, tries: 6, run: false };
+    this.walker.go(points, { onArrive: () => this.arrived() });
+    this.state = "walk";
+    this.blockedT = 0;
+    return true;
+  }
+
   /** Walk to a point (round things); `face` = the facing to turn to there. */
   walkTo(world: NpcWorld, to: XZ, o: { face?: number | null; onArrive?: () => void; run?: boolean } = {}): boolean {
     if (this.seated) return false;
@@ -278,13 +289,14 @@ export class Npc {
    * play its loop for `secs` (Infinity: until leave()), come out. False if
    * every slot is taken or there is no way there.
    */
-  use(world: NpcWorld, obj: SmartObject, o: { slot?: string; secs?: number; loop?: ClipStep[]; onStart?: () => void; onIn?: () => void; onOut?: () => void } = {}): boolean {
+  use(world: NpcWorld, obj: SmartObject, o: { slot?: string; secs?: number; loop?: ClipStep[]; onStart?: () => void; onIn?: () => void; onOut?: () => void; near?: number } = {}): boolean {
     if (this.seated) return false;
     const slot = world.book.book(obj, this.id, { slot: o.slot, near: [this.x, this.z] });
     if (!slot) return false;
     const root = sitRootFor(slot, this.sit);
     this.job = { obj, slot, root, loop: o.loop?.length ? o.loop : obj.loop, secs: o.secs ?? Infinity, t: 0, k: 0, stepT: 0, onStart: o.onStart, onIn: o.onIn, onOut: o.onOut };
-    const near = Math.hypot(root.at[0] - this.x, root.at[1] - this.z) < 0.2;
+    // `near`: how close counts as there (he eases the last bit in while he turns; a seat's own spot is inside the seat, past the floor a walk can reach)
+    const near = Math.hypot(root.at[0] - this.x, root.at[1] - this.z) < (o.near ?? 0.2);
     if (near) { this.faceTarget = slot.facing; this.state = "turn"; this.afterTurn = () => this.enter(); return true; }
     this.goal = { to: root.at, face: slot.facing, tries: 0, run: false, onArrive: () => this.enter() };
     if (!this.plan(world)) { world.book.release(this.id); this.job = null; return false; }
@@ -353,6 +365,9 @@ export class Npc {
       this.lastClip = name;
     } else this.outOf();
   }
+
+  /** Out of a seat now, standing where the seat put him (a watchdog for a stand-up that never ended). */
+  forceOut() { if (this.state === "exit" || this.state === "enter" || this.state === "use") this.outOf(); }
 
   private bookRef: SlotBook | null = null;
   private exitBack = false;

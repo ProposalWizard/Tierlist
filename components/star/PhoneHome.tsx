@@ -26,7 +26,6 @@ import { PACKED_APP } from "@/lib/app/packed";
  * highlights one after another the way Infinite Highlights does, drawn
  * small enough to fit the phone's screen.
  */
-import { phoneClockLabel } from "@/lib/star/phoneClock";
 import { nextFixtureFor, byFixtureDate } from "@/lib/star/competitions";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
@@ -51,6 +50,8 @@ import ClubBadge from "./ClubBadge";
 import type { ChanceResolved } from "./CanvasMatch";
 import type { HubPhase } from "./HomeHub";
 import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
+import { clockOf, hhmm, longDate, dateOf, todayList } from "@/lib/star/life/clock";
+import { visitsToday } from "@/lib/star/life/dayPlan";
 import { ClubCard, CountUp, RiseIn, Glow, Badge, EmptySlots, glowOf, rgba, useClubTheme } from "./ui";
 
 type AppId = "social" | "kickabout" | "squad" | "fixtures" | "messages" | "appstore" | "scout" | "relationships";
@@ -128,7 +129,9 @@ export default function PhoneHome({ career, onToggleLike, onVote, onLeave, onClo
   const theme = useClubTheme(career);
   const [app, setApp] = useState<AppId | NativeApp | null>(null);
   const screenRef = useRef<HTMLDivElement>(null);
-  const dateLabel = phoneClockLabel(career);
+  // the status bar shows the game time (the career clock, lib/star/life/clock.ts; Harry, 27 Nov 2026).
+  // Menus stop the clock: the phone shows the time it was when you picked it up.
+  const dateLabel = hhmm(clockOf(career).m);
 
   // The phone's size: a real phone's shape, but a little wider than the feed's
   // old 390:844 so the apps have room on a small screen.
@@ -310,6 +313,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed, isNew }: {
   const dock = APPS.filter((a) => DOCK.has(a.id));
   return (
     <div className="flex min-h-0 flex-1 flex-col px-3 pt-2">
+      <TodayWidget career={career} />
       {/* A widget, the way a phone's home screen has one. */}
       {next ? <NextMatchWidget career={career} next={next} /> : (
         <ClubCard glow={glow} className="rounded-[20px] px-3 py-2">
@@ -333,6 +337,38 @@ function Grid({ career, glow, badges, onOpen, onClose, installed, isNew }: {
         ))}
       </div>
       {/* Back (PhoneFrame's nav bar) puts the phone down from here. */}
+    </div>
+  );
+}
+
+/**
+ * The time and the Today and next list (the career clock, lib/star/life/clock.ts; mockup
+ * people-plan/1-clock-and-phone.png): the big time, the date, now, who is coming, when to leave.
+ */
+function TodayWidget({ career }: { career: CareerState }) {
+  const s = clockOf(career);
+  // who is coming round today (lib/star/life/dayPlan.ts), then the match
+  const all = todayList(career, undefined, visitsToday(career, s.d));
+  const rows = all.filter((r) => !r.now).slice(0, 2);
+  const now = all[0];
+  return (
+    <div className="mb-2 px-1" data-phone-today>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[34px] font-black leading-none tracking-tight text-white" style={{ fontVariantNumeric: "tabular-nums" }}>{hhmm(s.m)}</span>
+        <span className="truncate text-[11px] font-bold text-white/70">{longDate(dateOf(career, s.d))}</span>
+      </div>
+      <div className="mt-1.5 rounded-[14px] px-2.5 py-1.5" style={{ background: "rgba(255,255,255,.08)" }}>
+        <div className="text-[8.5px] font-black uppercase tracking-[0.18em] text-amber-300">Today and next</div>
+        {[now, ...rows].map((r, i) => (
+          <div key={i} className="grid gap-2 py-[3px]" style={{ gridTemplateColumns: "50px 1fr", borderTop: i ? "1px solid rgba(255,255,255,.07)" : "none" }}>
+            <span className={`text-[10.5px] font-black ${r.now ? "text-emerald-300" : "text-white/70"}`}>{r.when}</span>
+            <span className="min-w-0">
+              <span className="block truncate text-[11px] font-black text-white">{r.what}</span>
+              {r.sub && <span className="block truncate text-[9.5px] font-semibold text-white/60">{r.sub}</span>}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

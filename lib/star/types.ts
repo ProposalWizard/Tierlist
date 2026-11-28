@@ -1319,6 +1319,12 @@ export interface CareerState {
    */
   lastSleep?: { season: number; week: number };
   /**
+   * The career clock between matches (lib/star/life/clock.ts): which gap, the day, the minute, and the
+   * house's small daily counters. About 20 bytes. Absent on every older save: it reads as the evening
+   * of the last match.
+   */
+  clock?: import("./life/clock").SavedClock;
+  /**
    * The gym's Strength, Cardio and Focus, its ring and workout window (lib/star/gym/progress.ts).
    * Absent on every older save: no gym visit yet. Changes nothing else on the career while
    * progress.ts GYM_CAREER_EFFECT is "off".
