@@ -70,6 +70,49 @@ export function fromOldClub(c: CareerState, id: string): boolean {
   return clubOfId(id) !== now;
 }
 
+/** The club a club person works at, by name: your first club for a plain id, else the club whose code
+ *  is in the id, found among the clubs of your career (seasons played, stories started). Null = not one
+ *  of a club's people, or a club this career no longer knows. */
+export function clubNameOf(c: CareerState, id: string): string | null {
+  if (!CLUB_ROLES.includes(roleOf(id))) return null;
+  const code = clubOfId(id);
+  if (!code) return c.life?.home ?? c.player.club;
+  const known = [c.player.club, ...(c.seasonHistory ?? []).map((r) => r.club), ...Object.values(c.life?.arcs ?? {}).map((a) => a.club)];
+  return known.find((club) => !!club && clubCode(club) === code) ?? null;
+}
+
+/** Can this person still reach you (ring, text): a story he is in that has not ended, a promise to him
+ *  still open, or a text he still owes you (a scrapbook echo). */
+export function canStillRing(c: CareerState, id: string): boolean {
+  const life = c.life;
+  if (!life) return false;
+  if (Object.values(life.arcs ?? {}).some((a) => !a.done && Object.values(a.cast).includes(id))) return true;
+  if ((life.promises ?? []).some((p) => p.st === "open" && p.to === id)) return true;
+  return (life.ech ?? []).some((e) => e[1] === id);
+}
+
+/** The club people for the People page (Harry, 28 Nov 2026: after a transfer it still listed the first
+ *  club's staff). `now`: the club you are at now's staff (the manager, its physio and kit man, the rest
+ *  once met). `old`: people from clubs you have left who can still ring you, by club. */
+export function clubPeopleLists(c: CareerState): { now: string[]; legend: string | null; old: { club: string; ids: string[] }[] } {
+  const life = c.life;
+  const met = (id: string) => !!life?.people[id];
+  const at = (role: Exclude<LifeRole, "teammate">) => clubRoleId(c, life, role);
+  const now = [c.manager ? ROLE_ID.manager : null, at("physio"), at("kitman"), ...(["coach", "groundsman", "canteen", "chairman"] as const).map(at).filter(met)]
+    .filter((x): x is string => !!x);
+  const legend = met(at("legend")) ? at("legend") : null;
+  const byClub = new Map<string, string[]>();
+  // everyone you have met, and anyone a story still has a part for (a story can cast a man before you meet him)
+  const all = [...Object.keys(life?.people ?? {}), ...Object.values(life?.arcs ?? {}).filter((a) => !a.done).flatMap((a) => Object.values(a.cast))];
+  const ids = all.filter((id, i) => all.indexOf(id) === i);
+  for (const id of ids) {
+    if (!id || !fromOldClub(c, id) || !canStillRing(c, id)) continue;
+    const club = clubNameOf(c, id) ?? "An old club";
+    byClub.set(club, [...(byClub.get(club) ?? []), id]);
+  }
+  return { now, legend, old: Array.from(byClub.entries(), ([club, ids]) => ({ club, ids })) };
+}
+
 /** Where each person stands on the day you meet them. */
 const START: Record<LifeRole, [number, number, number]> = {
   teammate: [40, 30, 0], manager: [45, 25, 0], agent: [50, 45, 0],
