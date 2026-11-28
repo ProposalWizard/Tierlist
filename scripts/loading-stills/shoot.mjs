@@ -35,6 +35,7 @@ const SHOTS = [
   { id: "house", url: "/star-home3d-dev?bare=1", settle: 9000, nobody: true },
   { id: "shop", url: "/star-shop3d-dev?bare=1", settle: 9000, nobody: true },
   { id: "casino", url: "/star-garden3d-dev?place=casino", settle: 12000, nobody: true },
+  { id: "gym", url: "/star-world3d-dev?place=gym&bare=1&clean=1", settle: 9000, nobody: true },
   // the walk-out cut scene (lib/star/cutscene/fixtures.ts walkout): its wide shots, where no face or kit is close
   { id: "tunnel-1", url: "/star-3d-bench-dev/scene?scene=director&fixture=walkout&clean=1", seek: 0.3 },
   { id: "tunnel-2", url: "/star-3d-bench-dev/scene?scene=director&fixture=walkout&clean=1", seek: 1.3 },

@@ -63,6 +63,12 @@ export interface WorldOptions {
   demo?: string | null;
   /** The living world's chat with a team-mate (lib/star/life/social.ts chat), or null when it says no. */
   chat?: (id: string) => { line: string; change?: string } | null;
+  /** The gym in the real career (components/star/Gym3D.tsx): the career's saved gym and this gap between matches. */
+  gym?: import("../gym/progress").GymState;
+  gap?: { season: number; week: number };
+  /** The gym in the real career: one exercise done; the career saves it (progress.ts gymExercise) and hands back
+   *  the gym's numbers. Absent (the test page): the gym counts on its own, nothing saved. */
+  onExercise?: (r: import("../gym/games").GameResult) => import("../gym/progress").ExerciseOut | null;
 }
 
 export interface WorldStatus { clock: string; people: { id: string; name: string; doing: string }[]; fitness?: GymFitness }
@@ -612,8 +618,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   // ── The gym: the mini-games (./gymPlace.ts GymSession) and your Strength / Cardio / Focus (lib/star/gym/progress.ts) ──
   const GP = place === "gym" ? await import("../gym/progress") : null;
   const GG = place === "gym" ? await import("../gym/games") : null;
-  let gymState = GP ? GP.newGym() : null;
-  const gymGap = { season: 1, week: 1 };
+  let gymState = GP ? (opts.gym ? GP.gymOf({ gym: opts.gym }) : GP.newGym()) : null;
+  const gymGap = opts.gap ? { ...opts.gap } : { season: 1, week: 1 };
   let gym: import("./gymPlace").GymSession | null = null;
   // the body follows the gym (lib/star/gym/body.ts): the gym's own points a window late, or the test page's slider
   let bodyLevel: number | null = demo?.body ?? null;
@@ -639,7 +645,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       seed: 7,
       onResult: (r, quit) => {
         book.release(you.id);
-        const out = GP.doExercise(gymState!, gymGap, r);
+        const out = opts.onExercise?.(r) ?? GP.doExercise(gymState!, gymGap, r);
         gymState = out.gym;
         applyBody();
         if (demo && quit) return; // the film moves straight on
