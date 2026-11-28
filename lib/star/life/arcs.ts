@@ -26,7 +26,7 @@ import { allHold, holds, type CondCtx, type V2Ctx } from "./cond";
 import { ctxFor, factsOf, type FactOverride } from "./facts";
 import { castEvent, cloneLife, lifeOf, type LiveEvent } from "./director";
 import { chooseOption, pickOutcome, type ChoiceResult, type LifeChange } from "./resolve";
-import { lifeWeek, personInfo, remember, roleOf, tidy } from "./people";
+import { clubOfId, lifeWeek, personInfo, remember, roleOf, tidy } from "./people";
 import { fillLine } from "./text";
 import { breakPromise, keepPromise, makePromise, openPromises, promiseDef } from "./promises";
 import { allRuns, isPacked, packDone, runIn, unpackRun } from "./arcPack";
@@ -45,6 +45,19 @@ function roll01(key: string): number {
   let h = 2166136261;
   for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619) >>> 0;
   return (h % 10007) / 10007;
+}
+
+/** Pin the pool people a story has just cast (pool.ts): the first club's in `life.pool` (by role),
+ *  another club's in `life.cpool` (by role and club), so they are this career's for good. Mutates `life`. */
+function pinPeople(c: CareerState, life: LifeState, ids: string[], clubOnly = false): void {
+  for (const id of ids) {
+    if (!id) continue;
+    const pp = personInfo({ ...c, life }, id)?.pool;
+    if (!pp) continue;
+    const club = clubOfId(id);
+    if (club) life.cpool = { ...(life.cpool ?? {}), [`${roleOf(id)}@${club}`]: pp.id };
+    else if (!clubOnly) life.pool = { ...(life.pool ?? {}), [roleOf(id)]: pp.id };
+  }
 }
 
 /** The book in a seeded order (Fisher-Yates on a small seeded generator), for the fair draw. */
@@ -223,6 +236,8 @@ export function openBeat(c: CareerState, arcId: string, beatId: string): { caree
   const first = beat.id === arc.beats[0].id;
   const when = whenWords(c, run, beat, first);
   run.cast = cast;
+  // Somebody a later beat brings in at another club is pinned too (club people).
+  pinPeople(c, life, Object.values(cast), true);
   run.f[beat.id] = [...(run.f[beat.id] ?? []), now].slice(-12);
   delete run.s[beat.id];
   run.last = beat.id;
@@ -271,6 +286,9 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
   // 2. Promises: a reminder a week out, broken once the date is gone.
   c = promiseClock(c, (n) => notices.push(n), opts.rng);
   let life = cloneLife(lifeOf(c));
+  // Club people (people.ts): in a tiered book the club you are at the first time is the one whose
+  // people keep the plain ids. (An old book's replay never writes it.)
+  if (!life.home && ARCS.some((a) => a.start?.tier)) life.home = c.player.club;
   // The stories meet people too: keep the remembered list inside its cap (people.ts tidy).
   if (Object.keys(life.people).length > PEOPLE_CAP) tidy(life, c, now);
   // A story finished and shrunk at an earlier moment is packed into one short word (arcPack.ts).
@@ -361,10 +379,7 @@ export function arcMoment(c0: CareerState, moment: LifeMoment, opts: MomentOpts)
       const nl = cloneLife(life);
       nl.arcs = { ...(nl.arcs ?? {}), [arc.id]: fresh };
       // The story's pool people are this career's for good (pool.ts): pinned the day it starts.
-      for (const id of Object.values(fresh.cast)) {
-        const pp = personInfo(c, id)?.pool;
-        if (pp) nl.pool = { ...(nl.pool ?? {}), [roleOf(id)]: pp.id };
-      }
+      pinPeople(c, nl, Object.values(fresh.cast));
       const trial: CareerState = { ...c, life: nl };
       if (opts.force !== arc.id && !beatOpen(trial, arc, fresh, first, moment, opts.facts)) continue;
       c = trial;

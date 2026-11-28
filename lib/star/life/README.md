@@ -100,6 +100,13 @@ npx tsx tests/star/lifeSaveFixture.mts  # old saves still load and play the same
 keeps them for good (`pool.ts`, `people.ts`). Never write a name ("Den") into a story: the test
 fails if a pool name appears.
 
+**Club people (28 Nov 2026).** The kit man, groundsman, physio, canteen, coach, chairman and legend
+belong to a CLUB (`CLUB_ROLES`). Your first club keeps the plain ids; another club's person is
+`staff:kitman@<club code>`, picked by the career and the club, pinned in `life.cpool` when a story
+first meets him, never one the career has at another club while the pool allows. A story keeps the
+person it cast, so after a move your old kit man still rings you (`fromOldClub`). Write a club
+story so it reads at any club; a line for "you've moved" goes behind `sameClub`.
+
 Roles (`pick`): `kitman`, `groundsman`, `physio`, `reporter`, `legend`, `manager`, `agent`,
 `dad`, `mum`, `brother`, `sister`, `partner`, `pal`, `canteen`, `chairman`, `coach`, `fan`,
 `kidfan`, `neighbour`, `rival`, `sponsor`, `referee`, `tabloid`, `broadsheet`, and `squad`

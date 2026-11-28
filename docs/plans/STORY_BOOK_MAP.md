@@ -9,11 +9,23 @@ been seen on a phone screen.
 
 **In short (measured, 200 careers × 15 seasons):**
 
-1. Stories now come all career long. A beat every 2.9 / 2.6 / 2.8 / 3.8 / 5.3 / 8.1 weeks at ages
+1. Stories now come all career long. A beat every 2.9 / 2.6 / 2.7 / 3.8 / 5.3 / 8.1 weeks at ages
    17-19 / 20-22 / 23-26 / 27-30 / 31-33 / 34+. Before: 1.6 / 1.7 / 1.7 / 5.9 / 493 / 383.
 2. Two big stories open at once: never (before: 41% of the time).
 3. Five rarity tiers. An average career meets about 63 stories of 216: 28 common, 28 uncommon, 7
-   rare; 15% of careers meet a very rare one and 6% a legendary one.
+   rare; 16% of careers meet a very rare one and 6% a legendary one.
+4. 8 new legendary and very rare stories, 27 follow-on stories that only start after another story
+   ended a certain way (four chains of three or more), 63 stories given a middle beat.
+5. Every ending of every story is seen in real play (the soak). The biggest life block: 15 KB of
+   the 50 KB limit.
+
+**In short (measured, 200 careers × 15 seasons):**
+
+1. Stories now come all career long. A beat every 2.9 / 2.6 / 2.7 / 3.8 / 5.3 / 8.1 weeks at ages
+   17-19 / 20-22 / 23-26 / 27-30 / 31-33 / 34+. Before: 1.6 / 1.7 / 1.7 / 5.9 / 493 / 383.
+2. Two big stories open at once: never (before: 41% of the time).
+3. Five rarity tiers. An average career meets about 63 stories of 216: 28 common, 28 uncommon, 7
+   rare; 16% of careers meet a very rare one and 6% a legendary one.
 4. 8 new legendary and very rare stories, 27 follow-on stories that only start after another story
    ended a certain way (four chains of three or more), 63 stories given a middle beat.
 5. Every ending of every story is seen in real play (the soak). The biggest life block: 15 KB of
@@ -411,7 +423,7 @@ No other story starts for certain: every one of the 216 has a start roll now.
 
 ## 4. Balance and proof
 
-Measured: `npx tsx scripts/soak/lifeSoak.mts` (200 careers × 15 seasons, with the reach pass). The same career model as the audit. "Without the kit man" leaves out his Thursday drills, which repeat every week he offers them.
+Measured: `npx tsx scripts/soak/lifeSoak.mts` (200 careers × 15 seasons, with the reach pass), and 500 × 20. (The 500 × 20 run is from the commit before club people; the stories are the same.) The same career model as the audit. "Without the kit man" leaves out his Thursday drills, which repeat every week he offers them.
 
 ### 4a. Per stage: how often a story beat comes
 
@@ -419,10 +431,21 @@ Measured: `npx tsx scripts/soak/lifeSoak.mts` (200 careers × 15 seasons, with t
 |---|---|---|---|---|---|
 | 17-19 first seasons | 1.6 → **2.9 wk** | 3.9 wk | 9.6 → 5.9 | 0.19 | 11/20 → 11/28 |
 | 20-22 breaking through | 1.7 → **2.6 wk** | 2.9 wk | 8.3 → 5.1 | 0.68 | 12/26 → 11/23 |
-| 23-26 established | 1.7 → **2.8 wk** | 2.8 wk | 7.6 → 4.6 | 1.31 | 12/28 → 12/31 |
-| 27-30 peak | 5.9 → **3.8 wk** | 3.8 wk | 1.4 → 3.6 | 0.92 | 45/184 → 16/42 |
+| 23-26 established | 1.7 → **2.7 wk** | 2.8 wk | 7.6 → 4.6 | 1.31 | 12/28 → 12/31 |
+| 27-30 peak | 5.9 → **3.8 wk** | 3.8 wk | 1.4 → 3.6 | 0.93 | 45/184 → 16/42 |
 | 31-33 veteran | 492.9 → **5.3 wk** | 5.3 wk | 0 → 2.5 | 0.27 | 92/138 → 16/43 |
 | 34+ last seasons | 383.3 → **8.1 wk** | 8.1 wk | 0 → 1.7 | 0.1 | 46/46 → 18/46 |
+
+500 careers × 20 seasons:
+
+| Age | Career-seasons | A beat every | Without the kit man | New stories a season | Longest quiet, median / worst |
+|---|---|---|---|---|---|
+| 17-19 first seasons | 750 | 2.9 wk | 3.8 wk | 5.9 | 10/31 |
+| 20-22 breaking through | 1500 | 2.6 wk | 2.9 wk | 5.1 | 11/30 |
+| 23-26 established | 2000 | 2.8 wk | 2.8 wk | 4.6 | 12/31 |
+| 27-30 peak | 2000 | 3.8 wk | 3.9 wk | 3.5 | 16/42 |
+| 31-33 veteran | 1500 | 5.4 wk | 5.4 wk | 2.5 | 19/53 |
+| 34+ last seasons | 2250 | 11.8 wk | 11.8 wk | 1.1 | 41/183 |
 
 ### 4b. Per level
 
@@ -444,8 +467,10 @@ Two big stories open at once: before 57192 career-weeks, after **0**. Weeks with
 | common | 40 | 100% | 28.2 |
 | uncommon | 103 | 100% | 27.7 |
 | rare | 55 | 100% | 6.8 |
-| very-rare | 4 | 15% | 0.1 |
+| very-rare | 4 | 16% | 0.2 |
 | legendary | 4 | 6% | 0.1 |
+
+500 × 20: common 100% of careers, uncommon 100% of careers, rare 100% of careers, very-rare 22% of careers, legendary 7% of careers.
 
 An average career meets about **63 stories** (before: 75).
 
@@ -458,36 +483,36 @@ Careers (of 200) where the follow-on story started in the main run, and its endi
 | row-f-again | the-heckler:row-f | 31 | 2/2 |
 | dads-last-note | dads-notes:the-notebooks|he-said-it | 29 | 2/2 |
 | the-hearing | unknown-number:reported-it|the-witness | 28 | 2/2 |
-| the-godfather | the-best-man:the-speech|the-under-twelves | 22 | 2/2 |
-| the-grandsons-trial | the-lucky-scarf:the-boy-has-it | 21 | 2/2 |
-| the-referees-lad | the-referees-son:his-sons-shirt | 21 | 2/2 |
+| the-godfather | the-best-man:the-speech|the-under-twelves | 21 | 2/2 |
 | the-vans-business | the-van:his-name-on-the-van | 21 | 2/2 |
+| the-grandsons-trial | the-lucky-scarf:the-boy-has-it | 20 | 2/2 |
+| the-referees-lad | the-referees-son:his-sons-shirt | 20 | 2/2 |
+| the-tackled-mans-lad | the-tackle:the-visit|his-leeks | 20 | 2/2 |
 | the-last-highlighter | the-highlighter:his-copy | 19 | 2/2 |
 | the-reporters-patch | the-young-reporter:her-first | 19 | 3/3 |
-| the-tackled-mans-lad | the-tackle:the-visit|his-leeks | 19 | 2/2 |
+| the-envelope-inquiry | the-envelope:the-envelope | 10 | 2/2 |
 | the-cafe-and-the-van | the-vans-business | 9 | 3/3 |
-| the-envelope-inquiry | the-envelope:the-envelope | 8 | 2/2 |
 | the-move | her-job:four-hours|the-motorway | 7 | 3/3 |
 | bins-and-bottles | the-bins + the-petrol-station | 6 | 2/2 |
 | grass-at-the-rec | the-grass:plastic | 6 | 2/2 |
 | the-other-knee | the-long-way-back:back|never-quite | 6 | 2/2 |
 | two-old-enemies | the-nemesis + the-new-signing | 6 | 3/3 |
+| her-coaching-badge | she-grows-up:her-shirt|the-ticket | 5 | 2/2 |
 | season-two | the-documentary:the-good-one|the-row | 5 | 2/2 |
-| her-coaching-badge | she-grows-up:her-shirt|the-ticket | 4 | 2/2 |
 | the-reporters-book | the-reporters-patch | 4 | 2/2 |
 | the-man-from-the-number | the-hearing | 3 | 2/2 |
-| the-pram-in-the-museum | the-scarf-man:the-pram | 3 | 2/2 |
+| the-pram-in-the-museum | the-scarf-man:the-pram | 2 | 2/2 |
 | the-sons-team | the-chairmans-son | 2 | 2/2 |
 | the-wellbeing-day | the-dark-week:sunday-walks|he-spoke-up | 2 | 2/2 |
+| her-charity-game | her-coaching-badge | 1 | 2/2 |
 | the-national-armband | the-call-up:back-in|his-shirt | 1 | 2/2 |
 | the-reporter-and-the-agent | the-reporters-patch + the-agents-party | 1 | 3/3 |
-| her-charity-game | her-coaching-badge | 0 | 2/2 |
 
-The reach pass played 64 extra careers to see the rarest endings.
+The reach pass played 62 extra careers to see the rarest endings.
 
 ### 4e. The save
 
-The biggest life block in any career: **14.8 KB** (limit 50 KB, `LIFE_BLOCK_LIMIT`); mean 12.5 KB.
+The biggest life block in any career: **15.0 KB** (limit 50 KB, `LIFE_BLOCK_LIMIT`); mean 12.5 KB. 500 × 20: biggest 15.4 KB.
 
 ## 5. What the checks caught this round
 
@@ -512,6 +537,10 @@ The biggest life block in any career: **14.8 KB** (limit 50 KB, `LIFE_BLOCK_LIMI
    "shared"): the soak's reach pass and the checker's extra seeds see them every run now. The check
    is the same; only more real careers are played when an ending has not come yet.
 
+8. **The 500 × 20 run:** one career with 61 people remembered (the limit is 60). An event or a chat
+   met somebody new after the week's tidy. Fixed: events and chats tidy as soon as they pass the
+   cap (`resolve.ts`, `social.ts`); a story ending already did.
+
 ## 6. Not seen, and limits
 
 1. **Nothing here has been seen on a screen.** The stories are still off in the real career
@@ -522,11 +551,51 @@ The biggest life block in any career: **14.8 KB** (limit 50 KB, `LIFE_BLOCK_LIMI
 3. **The soak's career is simpler than the game's:** a move about one season in four, injuries at
    random, the armband and caps by a dice roll on talent, Europe for some Premier League seasons.
    Real careers will spread differently.
-4. **Last seasons are thin in a 15-season run** (only careers that start at 19 or 20 reach 34):
-   the 500 × 20 run shows them better.
+4. **Long careers run dry at the end.** In the 500 × 20 run, at 34 and over a beat comes every 11.8
+   weeks and the worst career went 183 weeks with nothing: most stories are used up by then. The
+   next batch should be last-seasons stories (testimonials, the last contract, coaching badges,
+   the last away trip), about 15 of them, rather than more early ones.
 5. **Two big stories' beats in one week** still happens a few times (an over big story's last
    scene, scheduled a season on, landing in the same week as another big story's beat). No two big
    stories are ever open together.
 6. **Early seasons are busier than later ones** (a beat every 2.9 weeks at 17 to 19, 3.9 weeks
    without the kit man's Thursdays), because more stories belong to the first seasons. Later
    stages sit inside the 3 to 6 week target, the last seasons a little above it.
+
+## 7. Club people belong to a club (built 28 Nov 2026)
+
+Harry: *"what about the club you're currently at?"*, then *"yes make legends and kit men per club"*.
+
+1. **Which roles:** the kit man, the groundsman, the physio, the canteen, the coach, the chairman and
+   the club legend (`CLUB_ROLES`, `lib/star/life/people.ts`). Your own people stay with you: family,
+   your partner, your mate, the agent, the neighbour, the reporters, the rival, the referee, the fans.
+   The manager already changes with the club.
+2. **The pick:** the career's first club keeps the people it always had (plain ids like
+   `staff:kitman`). Any other club's person has the club in his id (`staff:kitman@ab12`) and is
+   picked from the pool by the career and the club, never one this career already has at another
+   club while the pool has someone left. The canteen, the coach and the chairman have no pool: their
+   names come from the career and the club.
+3. **Pinned when met:** the first time a story casts another club's pool person, he is pinned in
+   `life.cpool` ("kitman@ab12": "mick"). Rejoin that club and you get him back. The first club is
+   written once, `life.home`, at the first story moment.
+4. **Stories mid-flight:** an open story keeps the person it cast. Move club and your old kit man
+   still texts and rings you through the stories' own phone lines; `fromOldClub(c, id)` says he is
+   your old club's now. An old club's person you have no strong feeling for is forgotten once no
+   story needs him (the same rule as a team-mate who left).
+5. **Old saves:** nothing changes until a player moves. The club a save is at the first time it
+   loads becomes its first club, so its open stories keep exactly the people they have. The frozen
+   book's replay (`lifeSaveFixture.mts`) never writes the new fields and holds byte for byte.
+6. **The pools:** 8 kit men (4 new), 6 groundsmen (3 new), 6 physios (3 new), 8 legends (5 new), all
+   invented, each with a manner. A first club still picks from the people the pool had before, so
+   no save's person changes. Only Den has recorded clips; everyone else is silent text.
+7. **The save:** the pins for the clubs moved to; the biggest, with the first club's
+   name, 197 bytes (soak, 200 × 15: 3.3 pins a career). Most people remembered in one career: 54 of 60.
+8. **Tests** (`tests/star/lifeArcs.mts`): the first club keeps the plain ids; a story casts the club
+   you are at; four clubs, four different kit men; back at an old club, the same man; an open story
+   keeps the old kit man, now your old club's; each club its own legend and canteen; your mum and
+   the reporter do not change; the pins survive a save and load. The soak checks no two clubs share
+   a person.
+9. **Not done (outside this lane):** the People page (`components/star/life/PeoplePage.tsx`) still
+   lists the club staff by the plain ids, so after a move it shows your first club's staff. It needs
+   `clubRoleId` (one line each) and "your old club" for `fromOldClub`. The v1 events cast the club
+   you are at but do not pin a new club's person; a story pins him when it meets him.

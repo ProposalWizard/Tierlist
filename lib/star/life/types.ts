@@ -235,6 +235,11 @@ export interface LifeState {
   got?: string[];
   /** Notices waiting to be shown once (a promise kept or broken, a reminder text). */
   notes?: ArcNotice[];
+  /** Club people (people.ts, 28 Nov 2026): the club whose people have the plain ids (your first club,
+   *  set at the first story moment of a tiered book), and another club's person pinned when a story
+   *  first met him: "kitman@ab12" → pool id. */
+  home?: string;
+  cpool?: Record<string, string>;
 }
 
 export const PERSON_MEMORY_CAP = 6;

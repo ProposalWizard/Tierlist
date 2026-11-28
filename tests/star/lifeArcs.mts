@@ -459,5 +459,45 @@ const atNight = m.career;
   check(old?.pool?.kitman === "den", "an old save keeps Den");
 }
 
+// Club people (Harry, 28 Nov 2026: "yes make legends and kit men per club"). The kit man, the
+// groundsman, the physio, the canteen, the coach, the chairman and the legend belong to a club.
+{
+  const P = await import("../../lib/star/life/people.ts");
+  const clubs = [NATIONAL_LEAGUE_CLUBS[2], NATIONAL_LEAGUE_CLUBS[5], NATIONAL_LEAGUE_CLUBS[7], NATIONAL_LEAGUE_CLUBS[9]];
+  const at = (c: CareerState, club: string) => ({ ...c, player: { ...c.player, club } }) as CareerState;
+  const idAt = (c: CareerState, role: "kitman" | "legend" | "canteen") => P.clubRoleId(c, c.life, role);
+  const nameOf = (c: CareerState, id: string) => P.personInfo(c, id)?.name ?? "?";
+  let c = A.arcMoment(career(), "home:evening", { rng, facts: bad }).career;
+  check(c.life?.home === clubs[0] && idAt(c, "kitman") === "staff:kitman", "the first club keeps the plain ids (an old save reads as before)");
+  // A story at each club: the kit man it casts is that club's, pinned.
+  const kitStories = ["arc-her-song", "arc-the-birthday-card", "arc-the-cup-final-boot", "arc-hundred-balls"];
+  const kitIds: string[] = [];
+  clubs.forEach((club, i) => {
+    c = at(c, club);
+    c = A.arcMoment({ ...c, week: c.week + 3 }, "arrive:training", { rng, facts: bad, force: kitStories[i] }).career;
+    kitIds.push(A.arcsOf(c)[kitStories[i]]?.cast.kitman ?? "");
+  });
+  check(kitIds[0] === "staff:kitman" && kitIds.slice(1).every((id, i) => id === `staff:kitman@${P.clubCode(clubs[i + 1])}`), `a story casts the kit man of the club you are at (${kitIds.join(", ")})`);
+  const names = kitIds.map((id) => nameOf(c, id));
+  check(new Set(names).size === names.length, `a transfer gives you a different kit man, and no two clubs share one (${names.join(", ")})`);
+  check(Object.keys(c.life?.cpool ?? {}).filter((k) => k.startsWith("kitman@")).length === 3, `one kit man pin per other club that started a story (${JSON.stringify(c.life?.cpool)}, ${JSON.stringify(c.life?.cpool ?? {}).length} bytes)`);
+  // The same career at the same club: the same person, every time; rejoining an old club gets him back.
+  const back = at(c, clubs[1]);
+  check(idAt(back, "kitman") === kitIds[1] && nameOf(back, idAt(back, "kitman")) === names[1], "back at an old club: the same kit man as before");
+  check(idAt(at(c, clubs[0]), "kitman") === "staff:kitman" && nameOf(at(c, clubs[0]), "staff:kitman") === names[0], "back at the first club: the first kit man");
+  // A story still open from the old club keeps its man (he can ring you), and he is your old club's.
+  const songCast = A.arcsOf(c)["arc-her-song"]?.cast.kitman;
+  check(songCast === "staff:kitman" && nameOf(c, songCast) === names[0] && P.fromOldClub(c, songCast) && !P.fromOldClub(c, kitIds[3]), "a story from the old club keeps the old kit man, who is now your old club's");
+  // The legend and the canteen too (the canteen has no pool: names from the career and the club).
+  const l0 = nameOf(at(c, clubs[0]), idAt(at(c, clubs[0]), "legend")), l1 = nameOf(at(c, clubs[1]), idAt(at(c, clubs[1]), "legend"));
+  const k0 = nameOf(at(c, clubs[0]), idAt(at(c, clubs[0]), "canteen")), k1 = nameOf(at(c, clubs[2]), idAt(at(c, clubs[2]), "canteen"));
+  check(l0 !== l1 && k0 !== k1, `each club has its own legend and canteen (${l0} / ${l1}; ${k0} / ${k1})`);
+  // Your own people do not change with the club.
+  check(P.clubRoleId(at(c, clubs[3]), c.life, "mum") === "fam:mum" && P.clubRoleId(at(c, clubs[3]), c.life, "reporter") === "hack:local", "your mum and the local reporter are yours, not the club's");
+  // A save with the club people loads back the same.
+  const again = migrateLife(JSON.parse(JSON.stringify(c.life)));
+  check(again?.home === c.life?.home && JSON.stringify(again?.cpool) === JSON.stringify(c.life?.cpool), "the first club and the pins survive a save and load");
+}
+
 console.log(fails ? `${fails} FAILED` : "life arcs: all passed");
 process.exit(fails ? 1 : 0);

@@ -63,6 +63,7 @@ import { arcMoment, arcsOf, bubblesFor, inCareer, MAX_OPEN_ARCS } from "../../li
 import { autoBeat } from "../../lib/star/life/talk";
 import { openPromises, MAX_OPEN_PROMISES } from "../../lib/star/life/promises";
 import { ARCS, arcById } from "../../lib/star/life/arcBook";
+import { POOL } from "../../lib/star/life/pool";
 import { endedIn } from "../../lib/star/life/cond";
 import { writeFileSync } from "node:fs";
 
@@ -129,6 +130,7 @@ const stageKit = new Array(6).fill(0);
 const weekBigBeats = new Set<string>();
 // The kit man starts by chance until 21 (Harry, 28 Nov): careers that meet him, by the age they start at.
 const kitByAge = [0, 0, 0, 0];
+let clubPinBytesMax = 0, clubPins = 0, kitMenMet = 0;
 function fired(arc: string, beat: string) {
   beatFires.set(beat, (beatFires.get(beat) ?? 0) + 1);
   beatTotal++;
@@ -331,6 +333,16 @@ function runCareer(n: number, lastName = `Life${n}`): { events: number; lifeByte
   }
   for (const p of c.life?.promises ?? []) { if (p.st === "open") promisesOpenAtEnd++; else if (p.st === "kept") promisesKept++; else promisesBroken++; }
   const bytes = c.life ? JSON.stringify(c.life).length : 0;
+  // Club people: the pins for the clubs you moved to, and no two clubs sharing a person.
+  if (mode === "main") {
+    const cp = c.life?.cpool ?? {};
+    clubPinBytesMax = Math.max(clubPinBytesMax, JSON.stringify(cp).length + (c.life?.home?.length ?? 0));
+    clubPins += Object.keys(cp).length;
+    const byRole = new Map<string, string[]>();
+    for (const [k, v] of Object.entries(cp)) { const r = k.split("@")[0]; byRole.set(r, [...(byRole.get(r) ?? []), v]); }
+    for (const [r, vs] of byRole) { const home = c.life?.pool?.[r]; const all = home ? [home, ...vs] : vs; check(new Set(all).size === all.length || all.length > (POOL[r]?.length ?? 99), `two clubs share a ${r}`); }
+    kitMenMet += new Set(Object.values(arcsOf(c)).map((r) => r.cast.kitman).filter(Boolean)).size;
+  }
   storyBytesMax = Math.max(storyBytesMax, JSON.stringify(c.life?.arcs ?? {}).length + (c.life?.fin?.length ?? 0));
   const words = (c.life?.fin ?? "").split(" ").filter(Boolean).length;
   packedMax = Math.max(packedMax, words); finWords += words; finChars += (c.life?.fin ?? "").length;
@@ -489,10 +501,11 @@ const arcRows = ARCS.filter((a) => a.start).map((a) => {
   return { id: a.id, tier: a.start?.tier ?? "", stage: a.start?.stage ?? "", size: a.size ?? "", careers: s?.careers ?? 0, age: s ? med(s.ages) : null, ageMin: s ? Math.min(...s.ages) : null, ageMax: s ? Math.max(...s.ages) : null, season: s ? med(s.seasons) : null, levels: s ? [...new Set(s.levels)].sort().join("") : "", ends: a.ends.map((e) => [e.id, arcEnds.get(`${a.id}:${e.id}`) ?? 0, reachEnds.get(`${a.id}:${e.id}`) ?? 0]) };
 });
 const notMet = arcRows.filter((r) => !r.careers).map((r) => r.id.replace(/^arc-/, ""));
+console.log(`club people: ${(clubPins / CAREERS).toFixed(1)} pins a career for clubs moved to (biggest ${clubPinBytesMax} bytes with the first club); kit men met in stories ${(kitMenMet / CAREERS).toFixed(2)} a career`);
 console.log(`the kit man (a chance until 21): met in ${kitByAge.map((k, i) => `${pct(k, Math.ceil((CAREERS - i) / 4))} of careers starting at ${17 + i}`).join(", ")}`);
 console.log(`never started in the main careers: ${notMet.length} (${notMet.join(", ") || "none"})`);
 console.log(`reach pass: ${reachCareers} extra careers; endings first seen there: ${[...reachFor.entries()].map(([k, v]) => `${k.replace(/^arc-/, "")} ${v}`).join(", ") || "none"}`);
-if (process.env.SOAK_JSON) writeFileSync(process.env.SOAK_JSON, JSON.stringify({ careers: CAREERS, seasons: SEASONS, stageRows, levelRows, situWeeks, situStarts, bigOverlapWeeks, twoBigBeatWeeks, tierRows, chainRows, arcRows, reachCareers, maxLife, meanLife: sumLife / CAREERS, kitByAge }, null, 1));
+if (process.env.SOAK_JSON) writeFileSync(process.env.SOAK_JSON, JSON.stringify({ careers: CAREERS, seasons: SEASONS, stageRows, levelRows, situWeeks, situStarts, bigOverlapWeeks, twoBigBeatWeeks, tierRows, chainRows, arcRows, reachCareers, maxLife, meanLife: sumLife / CAREERS, kitByAge, clubPinBytesMax, clubPinsPerCareer: clubPins / CAREERS, kitMenPerCareer: kitMenMet / CAREERS }, null, 1));
 for (const [k, n] of problems) console.log(`  ✗ ${k} ×${n}`);
 if (!problems.size) console.log("all held");
 process.exit(problems.size ? 1 : 0);
