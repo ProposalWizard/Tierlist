@@ -4754,6 +4754,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // the same height the block test uses, so what you see is what resolves.
     sc.defenders.forEach((d, i) => {
       const lift = (d.z ?? 0) * 0.42;
+      // A training dummy (Defender.fixed, the kit man's drill only): a plain grey figure, faceless.
+      if (d.fixed) {
+        footballer(d.x, d.y, R, "#cbd5e1", "#64748b", { sid: `def${i}`, pose: "idle", label: "Dummy", labelColor: "#e2e8f0" });
+        return;
+      }
       footballer(d.x, d.y - lift, R, theirKit().shirt, theirKit().trim, {
         sid: `def${i}`,
         pose: (d.z ?? 0) > 0.15 ? "kick" : poseFor(`def${i}`, d.x, d.y),

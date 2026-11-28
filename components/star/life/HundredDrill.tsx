@@ -28,7 +28,7 @@ import type { ActivityResult } from "@/lib/star/life/arcs";
 import { mulberry32 } from "@/lib/star/season";
 import { CX, GOAL_H, POST_L, POST_R } from "@/lib/star/pitch";
 import { challenge, denAfter, HUNDRED_ROUNDS, judge, pointsOf, promptOf, shoutOf, SKIP_H, TARGET_LOW, TARGET_WIDTH, type BallEnd, type ReactionLines, type RoundSpec } from "@/lib/star/life/drill";
-import { closeFrame, feederSpot, hundredMarkers, hundredScenario, seedFor } from "@/lib/star/life/drillScene";
+import { closeFrame, hundredMarkers, hundredScenario, seedFor } from "@/lib/star/life/drillScene";
 import { EngineFeature } from "../EnginePlay";
 import type { ChanceResolved } from "../CanvasMatch";
 import { speak, stopVoice } from "@/lib/star/life/voice";
@@ -213,13 +213,21 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
   }, [ball]);
   // The same frame the scenario carries (hundredScenario): the ball, the goal, Den and the skip.
   const vp = useMemo(() => hundredScenario(feed, mulberry32(ballSeed)).viewport ?? closeFrame(CX + feed.x, feed.dist), [feed, ballSeed]);
-  const den = feederSpot(feed);
+  // A volley or a header is the match's own air ball: its strike screen opens by itself 0.8 s after
+  // the chance is served (lib/star/airTap.ts), so its engine is mounted only once you play — never
+  // under the round card, where its ring would run out unseen. Until then the box keeps its height.
+  const airBall = feed.engine === "volley" || feed.engine === "header";
+  const engineOn = !over && (!airBall || phase === "play" || phase === "react");
+  const lastH = useRef(0);
+  useEffect(() => {
+    const el = boxRef.current;
+    if (el && engineOn) { const h = el.getBoundingClientRect().height; if (h > 120) lastH.current = h; }
+  });
   const toPct = (x: number, y: number) => {
     const w = vp.x2 - vp.x1;
     return { left: ((x - vp.x1) / w) * 100, top: ((y - vp.y1) / w) * aspect * 100 };
   };
   const ballAt = toPct(CX + feed.x, feed.dist);
-  const goalAt = toPct(CX, -0.6);
   const dark = light === "out";
   // The pool: over the goal and the ball, soft at the edge. Fixed shares of the box (the goal sits at
   // the top, you in the lower fifth on every ball).
@@ -273,9 +281,9 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
       </div>
 
       {/* The real engine, under one shed light */}
-      <div ref={boxRef} style={{ position: "relative", overflow: "hidden" }}>
+      <div ref={boxRef} style={{ position: "relative", overflow: "hidden", minHeight: engineOn || over ? undefined : (lastH.current || "calc(100dvh - 92px)"), background: engineOn ? undefined : "radial-gradient(ellipse 80% 60% at 50% 40%, #12301f, #050b08)" }}>
         {!over && phase !== "play" && <div className="absolute inset-0 z-[29]" style={{ background: phase === "react" ? "transparent" : "rgba(2,6,10,.55)" }} aria-hidden data-between />}
-        {!over && (
+        {engineOn && (
           <EngineFeature
             key={ball}
             openOn={openOn}
@@ -304,7 +312,8 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
         <style>{`@keyframes hd-flicker{0%{opacity:0}20%{opacity:.9}35%{opacity:.1}55%{opacity:.95}70%{opacity:.3}100%{opacity:.85}}`}</style>
 
         {/* Den in goal: his name over the goal */}
-        {feed.keeper && !over && <div aria-hidden className="pointer-events-none absolute z-30 dd-kick" style={{ left: `${goalAt.left}%`, top: `calc(${goalAt.top}% - 46px)`, transform: "translateX(-50%)", color: "#f5b942", textShadow: "0 2px 6px #000" }}>{keeperName ?? callerName} in goal</div>}
+        {/* Who is in goal: a tag at the top of the pitch, over the net, never on the keeper himself. */}
+        {feed.keeper && !over && <div aria-hidden className="pointer-events-none absolute z-30 dd-kick" style={{ left: "50%", top: 6, transform: "translateX(-50%)", color: "#f5b942", background: "rgba(0,0,0,.55)", padding: "3px 9px", borderRadius: 999 }} data-in-goal>{inGoal} in goal</div>}
 
         {/* Score */}
         <div aria-hidden style={{ position: "absolute", left: 12, top: "24%", pointerEvents: "none", zIndex: 30, textShadow: "0 2px 10px rgba(0,0,0,.8)" }} data-score={big}>

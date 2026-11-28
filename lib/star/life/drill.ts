@@ -141,8 +141,9 @@ export interface RoundSpec {
 }
 
 const TYRE = { x: POST_L + 0.95, z: 1.6, r: 0.55 };
-/** The skip: in the six-yard box, off-centre, 3.4 m by 1.8 m (a real builder's skip). */
-const SKIP = { x: CX + 1.6, y: 4.2, w: 1.7, l: 0.9 };
+/** The skip: in the six-yard box, a touch left of centre (clear of the target card on a phone),
+ *  3 m by 1.8 m (a small builder's skip). */
+const SKIP = { x: CX - 0.8, y: 4.2, w: 1.5, l: 0.9 };
 const BUCKET = { x: POST_R - 0.65, w: 0.6 };
 type Ball = Omit<Feed, "round" | "roundNo">;
 

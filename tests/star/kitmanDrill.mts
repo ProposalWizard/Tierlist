@@ -51,7 +51,7 @@ const check = (ok: boolean, what: string) => { console.log(`${ok ? "ok  " : "FAI
   const s = seedFor(cut, 12345);
   check(((Math.imul(s, 2654435761) >>> 0) % 100) < 35 && seedFor(by("skip"), 12345) === 12345, "the cut-back's seed rolls the ball on the strike screen; other balls keep theirs");
   const dummy = sc(by("chip"));
-  check(dummy.defenders.length === 1 && dummy.defenders[0].baseRole === "hold" && dummy.defenders[0].y < by("chip").dist, "the dummy is one engine defender, a hold man, between you and goal");
+  check(dummy.defenders.length === 1 && dummy.defenders[0].baseRole === "hold" && dummy.defenders[0].fixed === true && dummy.defenders[0].y < by("chip").dist, "the dummy is one engine defender, a hold man, between you and goal");
   check(HUNDRED_FEEDS.filter((x) => !x.dummy).every((x) => sc(x).defenders.length === 0), "nobody else in the way");
 }
 

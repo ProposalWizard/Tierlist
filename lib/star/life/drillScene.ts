@@ -42,7 +42,8 @@ export function closeFrame(ballX: number, ballY: number, also: { x: number; y: n
   // Tight: the goal with half a metre either side, you and the ball, little else. The frame is
   // made as tall and narrow as the phone's canvas so the match does not pad it with empty grass.
   let x1 = Math.min(ballX - 2.2, POST_L - 0.5), x2 = Math.max(ballX + 2.2, POST_R + 0.5);
-  for (const p of also) { x1 = Math.min(x1, p.x - 1.2); x2 = Math.max(x2, p.x + 1.2); }
+  // 2 m either side of Den: the phone crops the canvas's edges a little, and he must be whole.
+  for (const p of also) { x1 = Math.min(x1, p.x - 2); x2 = Math.max(x2, p.x + 2); }
   const w = x2 - x1;
   const h = Math.max(w * 1.6, ballY - FRAME_TOP_FOR_GOAL + 2.6);
   const ww = Math.max(w, h / 1.85);
@@ -85,7 +86,7 @@ export function hundredScenario(f: Feed, rng: () => number): Scenario {
   initDefenders(sc, rng);
   // The dummy never moves: the engine's own "hold" man (a free-kick wall's role) stays put while
   // the ball is live and only blocks what reaches him under head height.
-  for (const d of sc.defenders) { d.role = "hold"; d.baseRole = "hold"; d.speed = 0; }
+  for (const d of sc.defenders) { d.role = "hold"; d.baseRole = "hold"; d.speed = 0; d.fixed = true; }
   // Den is short and slow: the engine's own reach multiplier (Scenario.keeperReach).
   if (f.keeper) sc.keeperReach = f.keeper.reach;
   const den = feederSpot(f);
