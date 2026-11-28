@@ -116,7 +116,7 @@ export function withOutfit<C extends Pick<CareerState, "outfit">>(career: C, cho
 }
 
 /** Where you are: what you wear there follows from the choice. */
-export type Place = "home" | "garden" | "shop" | "training";
+export type Place = "home" | "garden" | "shop" | "casino" | "training";
 
 /** What to dress the 3D player in. `extras`: the watches, chains and the rest on the body (wearables.ts). */
 export type Worn =
@@ -133,7 +133,7 @@ export function bootColourOf(career: Pick<CareerState, "currentBoot">, boots: "p
 
 /**
  * What you wear at a place. In the home you wear what you last picked. In the
- * garden and the shop: the casual set if you last picked one, else the kit.
+ * garden, the shop and the casino: the casual set if you last picked one, else the kit.
  * At training: always the kit.
  */
 export function wornAt(career: Pick<CareerState, "outfit" | "currentBoot"> & Partial<Pick<CareerState, "ownedItems">>, place: Place, unsold?: string[]): Worn {

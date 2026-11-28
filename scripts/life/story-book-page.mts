@@ -5,6 +5,9 @@
  * Run:  npx tsx scripts/life/story-book-page.mts [--out <folder>]
  * Writes <folder>/data.json (the book, turned into plain English: nothing left out) and
  * <folder>/index.html (the page; it reads data.json). Re-run whenever a story changes.
+ * Screenshots (optional; the page works without them): scripts/life/story-book-shots.mjs plays every
+ * story in the game's own screens and photographs it, story-book-gallery.mjs the people and places,
+ * and story-book-sheets.py packs them into <folder>/shots/ + <folder>/shots.json, which the page reads.
  * Read-only on the repo: it never touches a story file.
  *
  * What it reads: lib/star/life/book/arcs/*.json (every story), book/events.json (the older one-off
@@ -246,7 +249,7 @@ function fillText(src: string | undefined, cx: Ctx): string {
     if (slot === "activity") return ph(key === "tens" ? "score ×10" : key === "score" ? "balls that counted" : `game ${key}`);
     if (slot === "you") return ph(({ name: "your full name", short: "your surname", club: "your club", number: "your shirt number", horse: "your horse", age: "your age" } as A)[key] ?? `you.${key}`);
     const who = cx.tag(slot);
-    const k = ({ short: who, name: who, outlet: `${who}'s paper`, age: `${who}'s age`, initial: `${who}'s initial`, signoff: `${who}'s sign-off`, from: `where ${who} is from`, club: "your club", position: `${who}'s position` } as A)[key];
+    const k = ({ short: who, name: who, outlet: `${who}'s paper`, age: `${who}'s age`, initial: `${who}'s initial`, signoff: `${who}'s sign-off`, from: `${who}'s home town`, club: "your club", position: `${who}'s position` } as A)[key];
     return ph(k ?? all);
   });
   return s.replace(/\s{2,}/g, " ").trim();
@@ -268,753 +271,10 @@ function unlockWords(code: string): string {
 export { PH0, PH1, IF0, IF1, IFS };
 
 /** The page itself (index.html). It reads data.json next to it. */
-const PAGE_HTML: string = String.raw`<title>The Story Book</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<style>
-/* Layout: one long reading page. Sticky tab and search bar on top; each story a collapsible card; script-style speech (speaker bold, line after it), effects in a quieter mono. */
-:root {
-  --bg: #f3f5f1; --surface: #ffffff; --ink: #15211b; --muted: #596861; --line: #d8dfd9; --accent: #17754a; --accent-weak: #e2f1e8;
-  --gold: #8a5b00; --gold-weak: #fbefd0; --red: #a8321c; --red-weak: #fbe4de; --violet: #5b4aa8; --violet-weak: #ebe7f9; --blue: #1d5fa8; --blue-weak: #e1ecf8;
-  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --font-head: "Space Grotesk", "Inter", system-ui, sans-serif; --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0e1511; --surface: #16201b; --ink: #e6eee8; --muted: #95a79c; --line: #2a3830; --accent: #4cc58a; --accent-weak: #153326;
-    --gold: #e3b24d; --gold-weak: #33290f; --red: #f08a74; --red-weak: #38201b; --violet: #b3a6f2; --violet-weak: #262144; --blue: #82b7ee; --blue-weak: #172a40; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0e1511; --surface: #16201b; --ink: #e6eee8; --muted: #95a79c; --line: #2a3830; --accent: #4cc58a; --accent-weak: #153326;
-  --gold: #e3b24d; --gold-weak: #33290f; --red: #f08a74; --red-weak: #38201b; --violet: #b3a6f2; --violet-weak: #262144; --blue: #82b7ee; --blue-weak: #172a40; color-scheme: dark;
-}
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-html { scroll-behavior: auto; }
-body { background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.5; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 56px; overflow-wrap: anywhere; }
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
-.wrap { max-width: 1040px; margin: 0 auto; }
-h1, h2, h3, h4 { font-family: var(--font-head); margin: 0; text-wrap: balance; line-height: 1.2; }
-button, input, select { font: inherit; color: inherit; }
-button { cursor: pointer; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-a { color: var(--accent); }
-.mono { font-family: var(--font-mono); }
-.grey { color: var(--muted); }
-.tiny { font-size: 12px; }
-
-/* top */
-.top { padding-top: 28px; padding-bottom: 14px; }
-.top h1 { font-size: clamp(28px, 6vw, 44px); letter-spacing: -0.02em; }
-.top .sub { margin: 6px 0 0; color: var(--muted); font-size: 16px; max-width: 62ch; }
-.notice { margin: 16px 0 0; padding: 11px 14px; border: 1px solid var(--gold); background: var(--gold-weak); color: var(--ink); border-radius: 8px; font-weight: 500; }
-.stamp { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
-
-/* summary */
-.sum { margin-top: 18px; display: grid; gap: 18px; }
-.nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; }
-.num { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
-.num b { display: block; font-family: var(--font-head); font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.num span { font-size: 12.5px; color: var(--muted); }
-.breaks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
-.brk h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 8px; font-family: var(--font-ui); font-weight: 600; }
-.brow { display: grid; grid-template-columns: minmax(0, 11fr) 5fr; gap: 8px; align-items: center; margin: 3px 0; font-size: 13.5px; }
-.brow .lab { min-width: 0; display: grid; grid-template-columns: 1fr auto; gap: 8px; }
-.brow .lab i { font-style: normal; font-variant-numeric: tabular-nums; color: var(--muted); }
-.brow .track { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
-.brow .fill { height: 100%; background: var(--accent); border-radius: 4px; }
-.brk.scroll .rows { max-height: 260px; overflow: auto; padding-right: 6px; }
-
-/* sticky bar */
-.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); padding: 8px 0 8px; margin-top: 18px; }
-.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
-.tabs::-webkit-scrollbar { display: none; }
-.tab { border: 0; background: transparent; padding: 7px 11px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--muted); white-space: nowrap; }
-.tab[aria-selected="true"] { background: var(--ink); color: var(--bg); }
-.tab .n { font-weight: 500; opacity: .75; margin-left: 4px; font-variant-numeric: tabular-nums; }
-.tools { display: flex; gap: 10px; margin-top: 8px; align-items: center; }
-.actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-.search { flex: 1 1 120px; min-width: 0; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
-.btn { border: 1px solid var(--line); background: var(--surface); padding: 8px 11px; border-radius: 8px; font-size: 13.5px; font-weight: 500; }
-.btn:hover { border-color: var(--accent); }
-.btn[aria-pressed="true"] { background: var(--accent-weak); border-color: var(--accent); }
-.count { font-size: 13px; text-align: right; max-width: 38%; color: var(--muted); font-variant-numeric: tabular-nums; }
-
-/* filters */
-.filters { margin-top: 12px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-.fgrp label.t { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
-.chips { display: flex; flex-wrap: wrap; gap: 5px; }
-.chip { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 3px 10px; font-size: 13px; }
-.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
-.filters select { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
-.checks label { display: flex; gap: 8px; align-items: center; margin: 3px 0; font-size: 14px; }
-
-.toc { margin-top: 12px; }
-.toc > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
-.toc ol { columns: 3 260px; column-gap: 24px; margin: 8px 0 0; padding-left: 28px; font-size: 14px; }
-.toc li { break-inside: avoid; margin: 2px 0; }
-
-/* story cards */
-.list { margin-top: 12px; display: grid; gap: 8px; }
-.story { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; scroll-margin-top: 120px; }
-.story[data-open="1"] { border-color: var(--accent); }
-.shead { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: start; padding: 11px 12px 11px 14px; }
-.stoggle { all: unset; display: block; cursor: pointer; min-width: 0; }
-.stoggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
-.st-title { font-family: var(--font-head); font-weight: 700; font-size: 18px; line-height: 1.25; }
-.st-no { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-weight: 400; margin-right: 6px; }
-.st-prem { margin-top: 3px; color: var(--muted); font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.story[data-open="1"] .st-prem { display: block; -webkit-line-clamp: unset; }
-.tags { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 5px; }
-.tag { font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
-.tag.size { color: var(--ink); font-weight: 600; }
-.tag.t-game { background: var(--blue-weak); color: var(--blue); border-color: transparent; }
-.tag.t-item { background: var(--gold-weak); color: var(--gold); border-color: transparent; }
-.tag.t-link { background: var(--violet-weak); color: var(--violet); border-color: transparent; }
-.tag.t-wait { background: var(--red-weak); color: var(--red); border-color: transparent; }
-.copy { align-self: start; font-size: 12.5px; padding: 5px 9px; }
-.chev { display: none; }
-.sbody { padding: 4px 14px 18px; border-top: 1px solid var(--line); }
-.facts { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13.5px; color: var(--muted); margin: 10px 0 4px; }
-.facts b { color: var(--ink); font-weight: 600; }
-.ids { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); margin-top: 14px; }
-
-.sec { margin-top: 22px; }
-.sec > h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); font-family: var(--font-ui); font-weight: 700; padding-bottom: 5px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
-.sec > h3 .c { color: var(--muted); font-weight: 500; letter-spacing: 0; text-transform: none; }
-.kv { margin: 4px 0; }
-.kv > b { font-weight: 600; }
-ul.plain { margin: 4px 0 4px; padding-left: 20px; }
-ul.plain li { margin: 2px 0; }
-.person { margin: 6px 0; padding: 8px 10px; background: var(--bg); border-radius: 8px; font-size: 14px; }
-.person b { font-weight: 600; }
-.pool { font-size: 13px; color: var(--muted); margin-top: 3px; }
-.pool li { margin: 1px 0; }
-
-/* beats */
-.beat { margin-top: 18px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
-.bhead { padding: 10px 14px; background: var(--bg); border-bottom: 1px solid var(--line); }
-.bhead .no { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); font-weight: 700; }
-.bhead h4 { font-size: 17px; margin-top: 1px; }
-.bhead .hint { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
-.bmeta { padding: 10px 14px 4px; display: grid; gap: 6px; font-size: 13.5px; }
-.bmeta .row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px; }
-.bmeta .row > b { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; padding-top: 2px; }
-.bmeta ul { margin: 0; padding-left: 16px; }
-.bbody { padding: 6px 14px 14px; }
-.narr { font-style: italic; color: var(--ink); margin: 8px 0; padding-left: 12px; border-left: 3px solid var(--line); }
-.narr .lab { font-style: normal; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-right: 6px; font-weight: 600; }
-.node { margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--line); scroll-margin-top: 150px; }
-.node:first-of-type { border-top: 0; margin-top: 8px; padding-top: 0; }
-.nlab { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
-.say { margin: 5px 0; }
-.say b.spk { font-family: var(--font-head); font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; font-size: 13px; margin-right: 8px; color: var(--accent); }
-.replies { list-style: none; margin: 8px 0 0 0; padding: 0; counter-reset: rp; }
-.reply { counter-increment: rp; margin: 8px 0 0 18px; padding: 6px 0 6px 12px; border-left: 2px solid var(--line); position: relative; }
-.reply::before { content: counter(rp) "."; position: absolute; left: -20px; top: 6px; font-weight: 700; color: var(--accent); font-family: var(--font-head); }
-.rl { font-weight: 500; }
-.tone { font-size: 11.5px; padding: 0 7px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); color: var(--muted); margin-right: 6px; white-space: nowrap; font-weight: 500; vertical-align: 1px; }
-.silent { background: var(--violet-weak); color: var(--violet); border-color: transparent; }
-.req { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
-.req::before { content: "Only shown if "; font-weight: 600; }
-.does { list-style: none; margin: 4px 0 0; padding: 0; font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); line-height: 1.45; }
-.does li { margin: 2px 0; display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 8px; }
-.k { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 0; color: var(--muted); opacity: .9; }
-.k-end, .k-end + span { color: var(--accent); font-weight: 600; }
-.k-item, .k-item + span { color: var(--gold); font-weight: 600; }
-.k-promise, .k-promise + span { color: var(--violet); }
-.k-mem { color: var(--blue); }
-.k-next { color: var(--accent); }
-.goes { margin-top: 5px; font-size: 13px; }
-.goes a { text-decoration: none; border-bottom: 1px dotted var(--accent); }
-.oc { margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--bg); }
-.oc .when { font-size: 12px; font-weight: 700; color: var(--accent); }
-.oc .otext { margin: 3px 0 0; }
-.oc .does { margin-top: 5px; }
-.oc + .oc { margin-top: 6px; }
-.endtag { font-size: 11.5px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
-.game { margin: 12px 0 0; padding: 12px 12px; border: 2px solid var(--blue); border-radius: 10px; background: var(--blue-weak); color: var(--ink); }
-.game h5 { margin: 0; font-family: var(--font-head); font-size: 16px; }
-.game .gm { font-size: 13px; color: var(--muted); margin: 2px 0 6px; }
-.game .gt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: var(--blue); margin: 10px 0 3px; }
-.game ul { margin: 2px 0; padding-left: 18px; font-size: 13.5px; }
-.game table { border-collapse: collapse; width: 100%; font-size: 13px; }
-.game td, .game th { text-align: left; vertical-align: top; padding: 4px 6px 4px 0; border-top: 1px solid var(--line); }
-.game .scroll { overflow-x: auto; }
-.game details summary { cursor: pointer; font-size: 13px; color: var(--blue); font-weight: 600; margin-top: 4px; }
-.cond { background: var(--gold-weak); border-radius: 4px; padding: 0 3px; }
-.cond .cw { font-size: 11.5px; font-weight: 600; color: var(--gold); font-style: normal; margin-right: 4px; }
-.cond .cw::before { content: "if "; }
-.ph { background: var(--violet-weak); color: var(--violet); border-radius: 4px; padding: 0 4px; font-size: 0.92em; font-style: normal; }
-.var { margin-top: 10px; }
-.var summary { cursor: pointer; font-weight: 600; font-size: 13.5px; }
-
-/* endings, promises */
-.card2 { margin: 8px 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
-.card2 h4 { font-size: 15.5px; }
-.card2 .lab { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; margin-top: 8px; }
-.card2 p { margin: 3px 0; }
-
-/* visuals */
-.vgrp { margin: 8px 0; }
-.vgrp h4 { font-size: 13px; font-family: var(--font-ui); font-weight: 700; margin-bottom: 3px; }
-.vrow { display: grid; grid-template-columns: 108px minmax(0, 1fr); gap: 8px; padding: 5px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
-.vst { justify-self: start; font-size: 11.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; height: fit-content; text-align: center; white-space: nowrap; }
-.vst.exists { background: var(--accent-weak); color: var(--accent); }
-.vst.partly { background: var(--gold-weak); color: var(--gold); }
-.vst.needs { background: var(--red-weak); color: var(--red); }
-.vrow .vn { font-weight: 600; }
-.vrow .vt { color: var(--muted); font-size: 13px; }
-
-/* indexes */
-.view[hidden] { display: none; }
-.lead { margin: 14px 0 6px; color: var(--muted); max-width: 70ch; }
-.irow { margin: 8px 0; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; display: grid; gap: 4px; }
-.irow .nm { font-weight: 700; font-family: var(--font-head); font-size: 16px; }
-.irow .sm { font-size: 13.5px; color: var(--muted); }
-.irow .kind { font-size: 11.5px; padding: 1px 8px; border-radius: 999px; font-weight: 700; margin-right: 6px; background: var(--gold-weak); color: var(--gold); }
-.irow .kind.skill { background: var(--blue-weak); color: var(--blue); }
-.irow .kind.taken { background: var(--red-weak); color: var(--red); }
-.odd { margin: 8px 0; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--gold); border-radius: 8px; }
-.odd.k-dead { border-left-color: var(--red); }
-.odd.k-waiting { border-left-color: var(--blue); }
-.odd .who { font-weight: 700; font-family: var(--font-head); }
-.odd .wh { font-size: 12.5px; color: var(--muted); }
-.odd .kd { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--muted); }
-.who2 { margin: 6px 0; }
-.who2 summary { cursor: pointer; font-weight: 600; }
-.who2 ul { margin: 4px 0 8px; padding-left: 20px; font-size: 14px; }
-.empty { padding: 28px 0; text-align: center; color: var(--muted); }
-@media (max-width: 560px) {
-  .bmeta .row { grid-template-columns: 1fr; gap: 0; }
-  .vrow { grid-template-columns: 1fr; gap: 2px; }
-  .does li { grid-template-columns: 52px minmax(0, 1fr); }
-  .shead { grid-template-columns: 1fr; }
-  .copy { justify-self: start; }
-  .st-title { font-size: 17px; }
-  .tab { padding: 6px 8px; font-size: 13px; }
-  .tabs { gap: 0; }
-}
-@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
-</style>
-
-<div class="wrap">
-  <header class="top">
-    <h1>The Story Book</h1>
-    <p class="sub">Every story in full: who is in it, when it starts, every line, every choice and what it does, every ending, and what would have to be drawn.</p>
-    <p class="notice">These stories are not switched on in a real career yet.</p>
-    <p class="stamp" id="stamp">Loading the book…</p>
-  </header>
-
-  <section class="sum" id="summary" aria-label="Summary"></section>
-
-  <div class="bar" id="bar">
-    <div class="tabs" role="tablist" id="tabs"></div>
-    <div class="tools">
-      <input class="search" id="q" type="search" placeholder="Search title, person, any word of the text" aria-label="Search" autocomplete="off">
-      <span class="count" id="count" aria-live="polite"></span>
-    </div>
-  </div>
-
-  <div class="view" id="view-stories">
-    <div class="actions">
-      <button class="btn" id="fbtn" aria-pressed="false" aria-controls="filters">Filters</button>
-      <button class="btn" id="expand">Expand all</button>
-      <button class="btn" id="collapse">Collapse all</button>
-    </div>
-    <div class="filters" id="filters" hidden></div>
-    <details class="toc" id="toc"><summary>Contents</summary><ol id="toclist"></ol></details>
-    <div class="list" id="list"></div>
-  </div>
-  <div class="view" id="view-items" hidden></div>
-  <div class="view" id="view-links" hidden></div>
-  <div class="view" id="view-oddities" hidden></div>
-</div>
-
-<script>
-(function () {
-  var PH0 = "", PH1 = "", IF0 = "", IF1 = "", IFS = "";
-  var D = null, S = [], byId = {};
-  var state = { q: "", sizes: {}, tones: {}, role: "", batch: "", stage: "", game: false, item: false, from: false, link: false, wait: false, tab: "stories" };
-
-  function h(tag, attrs, kids) {
-    var e = document.createElement(tag);
-    if (attrs) for (var k in attrs) { if (k === "text") e.textContent = attrs[k]; else if (k === "class") e.className = attrs[k]; else if (attrs[k] !== null && attrs[k] !== undefined && attrs[k] !== false) e.setAttribute(k, attrs[k] === true ? "" : attrs[k]); }
-    if (kids) for (var i = 0; i < kids.length; i++) { var c = kids[i]; if (c === null || c === undefined || c === false) continue; e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); }
-    return e;
-  }
-  /* Turn a marked string into DOM: chips for the {placeholders}, a gold "if" span for {if …}. */
-  function fmt(s) {
-    var root = document.createDocumentFragment(), stack = [root], cur = root, buf = "";
-    function flush() { if (buf) { cur.appendChild(document.createTextNode(buf)); buf = ""; } }
-    var inCw = false, cw = null;
-    for (var i = 0; i < s.length; i++) {
-      var ch = s.charAt(i);
-      if (ch === PH0) { flush(); var p = h("span", { class: "ph" }); cur.appendChild(p); stack.push(p); cur = p; }
-      else if (ch === IF0) { flush(); var c = h("span", { class: "cond" }); cw = h("span", { class: "cw" }); c.appendChild(cw); cur.appendChild(c); stack.push(c); cur = cw; inCw = true; }
-      else if (ch === IFS) { flush(); cur = stack[stack.length - 1]; inCw = false; }
-      else if (ch === PH1 || ch === IF1) { flush(); stack.pop(); cur = stack[stack.length - 1]; }
-      else buf += ch;
-    }
-    flush();
-    return root;
-  }
-  function plain(s) { return String(s || "").replace(new RegExp(IF0 + "[^" + IFS + "]*" + IFS, "g"), "").replace(new RegExp("[" + PH0 + PH1 + IF0 + IF1 + IFS + "]", "g"), ""); }
-  function span(s, cls) { var e = h("span", cls ? { class: cls } : null); e.appendChild(fmt(s)); return e; }
-  function p(s, cls) { var e = h("p", cls ? { class: cls } : null); e.appendChild(fmt(s)); return e; }
-  function ul(items, cls) { if (!items || !items.length) return null; var u = h("ul", { class: cls || "plain" }); items.forEach(function (t) { var li = h("li"); li.appendChild(fmt(t)); u.appendChild(li); }); return u; }
-  function sec(title, count, kids) { var s = h("section", { class: "sec" }, [h("h3", null, [title, count !== undefined && count !== null ? h("span", { class: "c", text: "  " + count }) : null])]); (kids || []).forEach(function (k) { if (k) s.appendChild(k); }); return s; }
-  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-
-  /* ───────── effects lists ───────── */
-  var KLAB = { bar: "bar", money: "money", person: "person", mem: "memory", story: "story", next: "next", end: "ends", item: "item", promise: "promise", flag: "flag", game: "game", train: "skill", talk: "talk", cost: "cost" };
-  function replyKind(t) { if (t.indexOf("MAKES A PROMISE") === 0) return "promise"; if (t.indexOf("Story note") === 0) return "story"; if (t.indexOf("His mood") === 0 || t.indexOf("Remembered") === 0) return "talk"; if (t.indexOf("This answer") === 0) return "cost"; return "story"; }
-  function does(list, isReply) {
-    if (!list || !list.length) return null;
-    var u = h("ul", { class: "does" });
-    list.forEach(function (d) {
-      var k = isReply ? replyKind(String(d.t || d)) : d.k, t = isReply ? String(d) : d.t;
-      var li = h("li", null, [h("span", { class: "k k-" + k, text: KLAB[k] || k })]);
-      li.appendChild(span(t));
-      u.appendChild(li);
-    });
-    return u;
-  }
-
-  /* ───────── a story's body (built the first time it opens) ───────── */
-  function outcomeBox(o) {
-    var box = h("div", { class: "oc", "data-k": "outcome", "data-key": o.key });
-    if (o.when) box.appendChild(h("div", { class: "when", text: o.when }));
-    if (o.text) box.appendChild(p(o.text, "otext"));
-    else box.appendChild(h("p", { class: "otext grey", text: "(no text; only the effects below)" }));
-    var d = does(o.does); if (d) box.appendChild(d);
-    return box;
-  }
-  function activityBox(a, nodeId) {
-    var g = h("div", { class: "game", "data-k": "game" }, [h("h5", null, ["GAME: ", span(a.name)]), h("div", { class: "gm", text: a.modeWords })]);
-    if (a.notBuilt) g.appendChild(h("p", { class: "tiny", text: "This game mode is not built yet, so the story waits (it never plays)." }));
-    if (a.intro) g.appendChild(h("p", null, ["Intro shown: ", span(a.intro)]));
-    var facts = [];
-    if (a.setup && a.setup.length) facts = facts.concat(a.setup);
-    facts.push("score counted as: " + a.score);
-    if (a.winRule) facts.push(a.winRule);
-    facts.push("you can walk away from it: " + (a.canAbandon ? "yes (the result is “stopped”)" : "no"));
-    (a.cost || []).forEach(function (c) { facts.push("playing it " + c); });
-    if (a.stakes) facts.push(a.stakes);
-    g.appendChild(h("div", { class: "gt", text: "Set-up" })); g.appendChild(ul(facts));
-    if (a.rounds && a.rounds.length) {
-      g.appendChild(h("div", { class: "gt", text: "Rounds and balls (in order)" }));
-      var tb = h("table"); tb.appendChild(h("tr", null, [h("th", { text: "Ball" }), h("th", { text: "Round" }), h("th", { text: "What you have to do" }), h("th", { text: "He says" })]));
-      a.rounds.forEach(function (r) { r.balls.forEach(function (b, i) { var tr = h("tr"); tr.appendChild(h("td", { text: String(b.n) })); var td = h("td"); td.appendChild(span(r.name)); tr.appendChild(td); var t2 = h("td"); t2.appendChild(span(b.words)); tr.appendChild(t2); var t3 = h("td"); t3.appendChild(span(b.call)); tr.appendChild(t3); tb.appendChild(tr); }); });
-      g.appendChild(h("div", { class: "scroll" }, [tb]));
-      var cards = ul(a.rounds.map(function (r) { return "Round " + r.n + " card: " + r.name + (r.line ? " — “" + r.line + "”" : ""); })); if (cards) { g.appendChild(h("div", { class: "gt", text: "Round cards" })); g.appendChild(cards); }
-    }
-    if (a.callerLines && a.callerLines.length) { var d1 = h("details"); d1.appendChild(h("summary", { text: "His counting lines (" + a.callerLines.length + ")" })); d1.appendChild(ul(a.callerLines)); g.appendChild(d1); }
-    if (a.reactions && a.reactions.length) { var d2 = h("details"); d2.appendChild(h("summary", { text: "His reaction lines (" + a.reactions.length + ")" })); d2.appendChild(ul(a.reactions.map(function (r) { return r.k + ": " + r.v; }))); g.appendChild(d2); }
-    g.appendChild(h("div", { class: "gt", text: "If the phone cannot run it" })); g.appendChild(h("p", { class: "tiny", text: a.fallback }));
-    return g;
-  }
-  function nodeBlock(b, n) {
-    var el = h("div", { class: "node", id: "n-" + b._k + "-" + n.id });
-    var lab = "Moment " + n.idx + (n.screen ? " · " + n.screen : "");
-    el.appendChild(h("div", { class: "nlab", text: lab }));
-    n.say.forEach(function (l) { var d = h("p", { class: "say", "data-k": "say" }, [h("b", { class: "spk", text: n.who || "Narrator" })]); d.appendChild(fmt(l)); el.appendChild(d); });
-    if (n.activity) el.appendChild(activityBox(n.activity, n.id));
-    if (n.result && n.result.length) {
-      var rl = h("ul", { class: "plain" });
-      n.result.forEach(function (r) { var li = h("li"); li.appendChild(document.createTextNode("When the game ends: " + r.cond + " → ")); var a = h("a", { href: "#", "data-goto": "n-" + b._k + "-" + r.to }); a.appendChild(fmt(r.toTitle)); li.appendChild(a); rl.appendChild(li); });
-      el.appendChild(h("div", { class: "nlab", text: "What happens after the game" })); el.appendChild(rl);
-    }
-    if (n.replies.length) {
-      var ol = h("ol", { class: "replies" });
-      n.replies.forEach(function (r) {
-        var li = h("li", { class: "reply", "data-k": "choice" });
-        var rl = h("div", { class: "rl" });
-        if (r.tone) rl.appendChild(h("span", { class: "tone", text: r.tone }));
-        if (r.silent) rl.appendChild(h("span", { class: "tone silent", text: "says nothing" }));
-        rl.appendChild(fmt(r.label)); li.appendChild(rl);
-        if (r.note) li.appendChild(h("div", { class: "tiny grey", text: "Shown under the story strip: " + r.note }));
-        if (r.requires.length) { var rq = h("div", { class: "req" }); rq.appendChild(document.createTextNode(r.requires.join("; "))); li.appendChild(rq); }
-        var d = does(r.does, true); if (d) li.appendChild(d);
-        if (r.goto) { var g = h("div", { class: "goes" }); g.appendChild(document.createTextNode(r.gotoIsGame ? "Plays the game → " : "Goes on to → ")); var a = h("a", { href: "#", "data-goto": "n-" + b._k + "-" + r.goto }); a.appendChild(fmt(r.gotoTitle)); g.appendChild(a); li.appendChild(g); }
-        if (r.end) { li.appendChild(h("div", { class: "endtag", text: "Ends the talk (“" + r.end + "”). What happens:" })); r.outcomes.forEach(function (o) { li.appendChild(outcomeBox(o)); }); }
-        ol.appendChild(li);
-      });
-      el.appendChild(ol);
-    }
-    return el;
-  }
-  function beatBlock(s, b, bi) {
-    b._k = s.slug + "-" + bi;
-    var head = h("div", { class: "bhead" }, [h("div", { class: "no", text: (b.n ? "Beat " + b.n + " of " + b.mainOf : "Side beat (no number on the main line)") + (b.kind === "card" ? " · a card with choices" : " · a talk") }), h("h4"), b.hint ? h("div", { class: "hint" }) : null]);
-    head.querySelector("h4").appendChild(fmt(b.title)); if (b.hint) { head.querySelector(".hint").appendChild(document.createTextNode("Quest-log line: ")); head.querySelector(".hint").appendChild(fmt(b.hint)); }
-    var el = h("section", { class: "beat", id: "b-" + b._k, "data-k": "beat" }, [head]);
-    var meta = h("div", { class: "bmeta" });
-    function row(label, kids) { if (!kids) return; var r = h("div", { class: "row" }, [h("b", { text: label })]); var c = h("div"); if (Array.isArray(kids)) kids.forEach(function (x) { if (x) c.appendChild(x); }); else c.appendChild(kids); r.appendChild(c); meta.appendChild(r); }
-    row("When it comes", ul(b.timing.concat(b.extra)));
-    row("Needs", b.requires.length ? ul(b.requires) : h("span", { class: "grey", text: "nothing extra" }));
-    row("How it arrives", ul(b.entry));
-    var wh = ["Looks like: " + b.where.template + ".", "Place: " + b.where.place + ".", "Screen: " + b.where.screen + ".", "Plays " + b.where.moments.join(" or ") + "."];
-    row("Where it shows", ul(wh));
-    if (b.variants.length) row("Variants", ul(b.variants.map(function (v) { return "If " + v.cond + ": " + v.what; })));
-    if (b.look.length) row("Card look", ul(b.look));
-    if (b.newPeople.length) row("New people", ul(b.newPeople.map(function (x) { return x.label + " joins here. " + x.how; })));
-    el.appendChild(meta);
-    var body = h("div", { class: "bbody" });
-    b.setup.forEach(function (l) { var d = h("p", { class: "narr", "data-k": "narr" }, [h("span", { class: "lab", text: "Scene" })]); d.appendChild(fmt(l)); body.appendChild(d); });
-    if (b.talkStart) body.appendChild(h("p", { class: "tiny grey", text: b.talkStart }));
-    (b.nodes || []).forEach(function (n) { body.appendChild(nodeBlock(b, n)); });
-    if (b.choices) {
-      var ol = h("ol", { class: "replies" });
-      b.choices.forEach(function (c) {
-        var li = h("li", { class: "reply", "data-k": "choice" });
-        var rl = h("div", { class: "rl" });
-        if (c.tone) rl.appendChild(h("span", { class: "tone", text: c.tone }));
-        if (c.silent) rl.appendChild(h("span", { class: "tone silent", text: "says nothing" }));
-        rl.appendChild(fmt(c.label)); li.appendChild(rl);
-        if (c.requires.length) li.appendChild(h("div", { class: "req", text: c.requires.join("; ") }));
-        var d = does(c.does, true); if (d) li.appendChild(d);
-        c.outcomes.forEach(function (o) { li.appendChild(outcomeBox(o)); });
-        ol.appendChild(li);
-      });
-      body.appendChild(ol);
-    }
-    if (b.otherEnds && b.otherEnds.length) {
-      body.appendChild(h("div", { class: "nlab", text: "Other ways this talk ends" }));
-      b.otherEnds.forEach(function (x) { body.appendChild(h("div", { class: "endtag", text: "“" + x.key + "” — reached by: " + x.via })); x.outcomes.forEach(function (o) { body.appendChild(outcomeBox(o)); }); });
-    }
-    if (b.callbacks.length) {
-      body.appendChild(h("div", { class: "nlab", text: "Callback lines (spoken later, when the memory is held)" }));
-      b.callbacks.forEach(function (c) { var d = h("p", { class: "say" }, [h("span", { class: "tiny grey", text: "If " + c.memory + " (in " + c.where + "): " })]); d.appendChild(fmt(c.line)); body.appendChild(d); });
-    }
-    if (b.unreachedNodes && b.unreachedNodes.length) body.appendChild(h("p", { class: "tiny grey", text: "Moments that no reply leads to: " + b.unreachedNodes.join(", ") }));
-    el.appendChild(body);
-    return el;
-  }
-  function visuals(s) {
-    var v = s.visuals, labs = { exists: "exists today", partly: "partly exists", needs: "needs making" };
-    function grp(title, list) {
-      if (!list.length) return null;
-      var g = h("div", { class: "vgrp" }, [h("h4", { text: title + " (" + list.length + ")" })]);
-      list.forEach(function (x) { var r = h("div", { class: "vrow" }, [h("span", { class: "vst " + x.status, text: labs[x.status] })]); var c = h("div"); c.appendChild(h("div", { class: "vn" })); c.firstChild.appendChild(fmt(x.name)); c.appendChild(h("div", { class: "vt", text: x.note + (x.where ? " (" + x.where + ")" : "") })); r.appendChild(c); g.appendChild(r); });
-      return g;
-    }
-    var all = [].concat(v.people, v.places, v.props, v.cutscenes, v.phone, v.games);
-    var need = all.filter(function (x) { return x.status === "needs"; }).length, part = all.filter(function (x) { return x.status === "partly"; }).length;
-    return sec("Visuals needed", need + " need making, " + part + " partly exist, " + (all.length - need - part) + " exist", [
-      h("p", { class: "tiny grey", text: "Worked out from this story's own people, places, objects and moments. The prop list comes from words found in the text, so check it by eye." }),
-      grp("People", v.people), grp("Places", v.places), grp("Props, objects and special items", v.props), grp("Cut-scene moments", v.cutscenes), grp("Phone screens", v.phone), grp("Games", v.games)]);
-  }
-  function buildBody(s) {
-    var b = h("div", { class: "sbody" });
-    var c = s.counts;
-    b.appendChild(h("div", { class: "facts" }, [
-      h("span", null, ["Size ", h("b", { text: s.size })]), h("span", null, ["Owner ", h("b", { text: s.owner })]), h("span", null, [h("b", { text: s.batch })]), h("span", null, [h("b", { text: s.stage })]),
-      h("span", null, [h("b", { text: String(c.beats) }), " beats · ", h("b", { text: String(c.say) }), " speech lines · ", h("b", { text: String(c.choices) }), " choices · ", h("b", { text: String(c.endings) }), " endings" + (c.games ? " · " + c.games + " game" + (c.games > 1 ? "s" : "") : "")])]));
-    if (s.waiting) b.appendChild(h("p", { class: "notice", text: "This story waits for the game mode “" + s.waiting + "”, which is not built. It is checked but can never play yet." }));
-    b.appendChild(h("p", null, [h("b", { text: "In one go: " }), fmt(s.summary)]));
-    if (s.tones.length || s.who.length) b.appendChild(h("p", { class: "tiny grey", text: "Tone: " + s.tones.join(", ") + ". About: " + s.who.join(", ") + "." }));
-
-    var cast = s.cast.map(function (x) { var d = h("div", { class: "person" }, [h("b", { text: cap(x.label) }), x.optional ? " (optional) " : " "]); d.appendChild(document.createTextNode("— " + x.how)); if (x.pool) { var pl = h("ul", { class: "pool" }); x.pool.forEach(function (q) { pl.appendChild(h("li", { text: q.name + ", " + q.age + ", from " + q.from + ". " + q.manner + " Look preset: " + q.look + "." })); }); d.appendChild(h("div", { class: "pool" }, ["The career gets one of:", pl])); } return d; });
-    var np = s.newPeople.map(function (x) { return h("div", { class: "person" }, [h("b", { text: cap(x.label) }), " joins at the beat “" + plain(x.beat) + "”. " + x.how]); });
-    var sp = s.speakers.length ? h("p", { class: "tiny" }, ["Speaking parts (lines spoken): " + s.speakers.map(function (x) { return x.name + " " + x.n; }).join(" · ")]) : null;
-    b.appendChild(sec("Who is in it", s.cast.length + (s.cast.length === 1 ? " person" : " people"), cast.concat(np.length ? [h("p", { class: "tiny grey", text: "New people who come in later:" })] : [], np, [sp])));
-
-    var st = s.start, sl = [];
-    sl.push(h("div", { class: "kv" }, [h("b", { text: "Moment: " }), "it can only begin " + st.moments.join(" or ") + "."]));
-    var cl = h("div", { class: "kv" }, [h("b", { text: "Conditions on you: " })]); if (st.conditions.length) cl.appendChild(ul(st.conditions)); else cl.appendChild(document.createTextNode("none beyond the moment.")); sl.push(cl);
-    sl.push(h("div", { class: "kv" }, [h("b", { text: "Chance: " }), st.chanceText]));
-    sl.push(h("div", { class: "kv" }, [h("b", { text: "Share of careers: " }), st.careersText]));
-    sl.push(h("div", { class: "kv grey" }, ["Pacing for every story: at most one new story at a moment, at least three weeks after the last one began, and at most 12 stories open at once."]));
-    if (st.needs.length) sl.push(h("div", { class: "kv" }, [h("b", { text: "Needs another story: " }), st.needs.map(function (n) { return "“" + n.title + "” must have left the memory “" + n.tag + "”"; }).join("; ") + "."]));
-    else sl.push(h("div", { class: "kv" }, [h("b", { text: "Needs another story: " }), "no. It can begin in a career that has met no other story."]));
-    b.appendChild(sec("When it can start", null, sl));
-
-    if (s.vars.length || s.clocks.length) {
-      var d = h("details", { class: "var" }, [h("summary", { text: "Story notes and clocks the story keeps" })]);
-      if (s.vars.length) d.appendChild(h("p", { class: "tiny" }, ["Notes (name = starting value): " + s.vars.map(function (v) { return v.k + " = " + v.v; }).join(" · ")]));
-      s.clocks.forEach(function (k) { var q = h("p", { class: "tiny" }); q.appendChild(document.createTextNode("Clock “")); q.appendChild(fmt(k.label)); q.appendChild(document.createTextNode("”: " + k.segments + " segments, starts when beat “" + plain(k.startsAt) + "” plays, moves " + k.ticks + ". When full, beat “" + plain(k.onFull) + "” comes up.")); d.appendChild(q); });
-      b.appendChild(d);
-    }
-    var beatsSec = sec("The story, beat by beat", s.beats.length + " beats", []);
-    s.beats.forEach(function (bt, i) { beatsSec.appendChild(beatBlock(s, bt, i)); });
-    b.appendChild(beatsSec);
-    if (s.promises.length) {
-      var ps = s.promises.map(function (pr) {
-        var el = h("div", { class: "card2", "data-k": "promise" }, [h("h4")]); el.firstChild.appendChild(fmt(pr.text));
-        el.appendChild(h("p", { class: "tiny", text: "Promised to: " + pr.to + ". Due: " + pr.due + ". Phone list says: “" + pr.dueText + "”." }));
-        if (pr.remind) { var rr = h("p", { class: "tiny" }); rr.appendChild(fmt(pr.remind)); el.appendChild(rr); }
-        var kb = h("p", { class: "tiny" }); kb.appendChild(fmt(pr.keptBy)); el.appendChild(kb);
-        if (pr.madeBy.length) el.appendChild(h("p", { class: "tiny", text: "Made by: " + pr.madeBy.join("; ") }));
-        [["If kept", pr.kept], ["If broken", pr.broken]].forEach(function (x) { if (!x[1]) return; el.appendChild(h("div", { class: "lab", text: x[0] })); if (x[1].text) el.appendChild(p(x[1].text)); var d = does(x[1].does); if (d) el.appendChild(d); });
-        return el;
-      });
-      b.appendChild(sec("Promises", s.promises.length, ps));
-    }
-    var es = s.ends.map(function (e) {
-      var el = h("div", { class: "card2", "data-k": "ending" }, [h("h4")]); el.firstChild.appendChild(fmt(e.title));
-      el.appendChild(p(e.text));
-      el.appendChild(h("div", { class: "lab", text: "How you reach it" }));
-      if (e.reachedBy.length) { el.appendChild(ul(e.reachedBy.map(function (r) { return r.where + " " + r.how + (r.cond ? " (" + r.cond + ")" : ""); }))); } else el.appendChild(h("p", { class: "tiny", text: "Nothing reaches this ending." }));
-      el.appendChild(h("div", { class: "lab", text: "What it leaves behind" }));
-      var d = does(e.leaves); if (d) el.appendChild(d); else el.appendChild(h("p", { class: "tiny grey", text: "Nothing but the ending itself." }));
-      if ((e.unlocks && e.unlocks.length) || (e.blocks && e.blocks.length)) { el.appendChild(h("div", { class: "lab", text: "Later stories" })); el.appendChild(ul((e.unlocks || []).map(function (x) { return "Feeds " + x; }).concat((e.blocks || []).map(function (x) { return "Blocks " + x; })))); }
-      return el;
-    });
-    b.appendChild(sec("Endings", s.ends.length, es));
-    b.appendChild(visuals(s));
-    var items = D.items.filter(function (x) { return x.story === s.id; });
-    var ll = s.linksIn.map(function (l) { return "Needs/blocked by " + l.fromTitle + " (“" + l.tag + "”, " + l.kind + ")"; }).concat(s.linksOut.map(function (l) { return "Feeds " + l.toTitle + " (“" + l.tag + "”, " + l.kind + ")"; }));
-    if (items.length || ll.length) {
-      var k = [];
-      if (items.length) k.push(h("p", { class: "tiny" }, [h("b", { text: "Items and unlocks it gives: " }), items.map(function (x) { return x.name + " (at " + plain(x.beat) + ")"; }).join("; ")]));
-      if (ll.length) k.push(h("div", null, [h("p", { class: "tiny" }, [h("b", { text: "Links to other stories:" })]), ul(ll)]));
-      b.appendChild(sec("Items and links", null, k));
-    }
-    b.appendChild(h("div", { class: "ids", text: "id " + s.id + (s.code ? " · code " + s.code : "") + " · file book/arcs/" + s.file + " · order in the book " + s.order }));
-    return b;
-  }
-
-  /* ───────── the list of cards ───────── */
-  function toneChips(s) { return s.tones.map(function (t) { return h("span", { class: "tag", text: t }); }); }
-  function roleLabel(k) { for (var i = 0; i < D.roleFilter.length; i++) if (D.roleFilter[i].key === k) return D.roleFilter[i].label; return k; }
-  function copyLink(slug, btn) {
-    var url = location.href.split("#")[0] + "#story-" + slug;
-    function done(t) { var old = btn.textContent; btn.textContent = t; setTimeout(function () { btn.textContent = old; }, 1400); }
-    function fallback() { var i = h("input", { value: url, style: "position:fixed;opacity:0;left:0;top:0" }); document.body.appendChild(i); i.select(); try { document.execCommand("copy"); done("Copied"); } catch (e) { done("Select it in the address bar"); } document.body.removeChild(i); }
-    try { navigator.clipboard.writeText(url).then(function () { done("Copied"); }, fallback); } catch (e) { fallback(); }
-  }
-  function toggle(s, open) {
-    var el = s._el, want = open === undefined ? el.getAttribute("data-open") !== "1" : open;
-    if (want && !s._body) { s._body = buildBody(s); el.appendChild(s._body); }
-    if (s._body) s._body.hidden = !want;
-    el.setAttribute("data-open", want ? "1" : "0");
-    s._btn.setAttribute("aria-expanded", want ? "true" : "false");
-  }
-  function buildCard(s, i) {
-    var tags = [h("span", { class: "tag size", text: s.size }, null)].concat(toneChips(s));
-    s.roles.slice(0, 4).forEach(function (r) { tags.push(h("span", { class: "tag", text: roleLabel(r) })); });
-    tags.push(h("span", { class: "tag", text: s.batchKey === "b1" ? "batch 1" : s.batchKey === "b2" ? "batch 2" : "batch 3" }));
-    if (s.flags.hasGame) tags.push(h("span", { class: "tag t-game", text: "has a game" }));
-    if (s.flags.givesItem) tags.push(h("span", { class: "tag t-item", text: "gives an item" }));
-    if (s.flags.startsFromOther) tags.push(h("span", { class: "tag t-link", text: "starts from another story" }));
-    else if (s.flags.usesLink) tags.push(h("span", { class: "tag t-link", text: "linked to another story" }));
-    if (s.flags.waiting) tags.push(h("span", { class: "tag t-wait", text: "not playable yet" }));
-    var btn = h("button", { class: "stoggle", "aria-expanded": "false", type: "button" }, [
-      h("div", { class: "st-title" }, [h("span", { class: "st-no", text: "#" + (i + 1) })]),
-      h("div", { class: "st-prem" }), h("div", { class: "tags" }, tags)]);
-    btn.querySelector(".st-title").appendChild(document.createTextNode(plain(s.title)));
-    btn.querySelector(".st-prem").textContent = s.premise;
-    var cp = h("button", { class: "btn copy", type: "button", title: "Copy a link to this story", text: "Copy link" });
-    var el = h("article", { class: "story", id: "story-" + s.slug, "data-open": "0" }, [h("div", { class: "shead" }, [btn, cp])]);
-    btn.addEventListener("click", function () { toggle(s); });
-    cp.addEventListener("click", function () { copyLink(s.slug, cp); });
-    s._el = el; s._btn = btn;
-    return el;
-  }
-
-  /* ───────── search and filters ───────── */
-  function collect(o, out) { if (typeof o === "string") out.push(o); else if (Array.isArray(o)) for (var i = 0; i < o.length; i++) collect(o[i], out); else if (o && typeof o === "object") for (var k in o) { if (k.charAt(0) === "_") continue; collect(o[k], out); } }
-  function blobOf(s) { if (s._blob) return s._blob; var out = []; collect(s, out); s._blob = plain(out.join(" ")).toLowerCase(); return s._blob; }
-  function matches(s) {
-    var q = state.q.trim().toLowerCase();
-    if (q) { var parts = q.split(/\s+/), bl = blobOf(s); for (var i = 0; i < parts.length; i++) if (bl.indexOf(parts[i]) < 0) return false; }
-    var sz = Object.keys(state.sizes).filter(function (k) { return state.sizes[k]; }); if (sz.length && sz.indexOf(s.size) < 0) return false;
-    var tn = Object.keys(state.tones).filter(function (k) { return state.tones[k]; }); if (tn.length && !tn.some(function (t) { return s.tones.indexOf(t) >= 0; })) return false;
-    if (state.role && s.roles.indexOf(state.role) < 0) return false;
-    if (state.batch && s.batchKey !== state.batch) return false;
-    if (state.stage && s.stage !== state.stage) return false;
-    if (state.game && !s.flags.hasGame) return false;
-    if (state.item && !s.flags.givesItem) return false;
-    if (state.from && !s.flags.startsFromOther) return false;
-    if (state.link && !s.flags.usesLink) return false;
-    if (state.wait && !s.flags.waiting) return false;
-    return true;
-  }
-  var qTimer = null;
-  function applyFilters() {
-    var n = 0, toc = document.getElementById("toclist"); toc.innerHTML = "";
-    S.forEach(function (s, i) { var ok = matches(s); s._el.hidden = !ok; if (ok) { n++; var li = h("li"); var a = h("a", { href: "#story-" + s.slug, "data-open": s.slug, text: plain(s.title) }); li.appendChild(a); toc.appendChild(li); } });
-    state.n = n;
-    updateCount();
-    var es = document.getElementById("empty");
-    if (!n && !es) document.getElementById("list").appendChild(h("div", { class: "empty", id: "empty", text: "No story matches. Clear a filter or a word." })); else if (n && es) es.remove();
-    document.querySelector("#toc > summary").textContent = "Contents (" + n + ")";
-  }
-  function updateCount() {
-    var c = document.getElementById("count");
-    if (state.tab === "stories") c.textContent = state.n + " of " + S.length + " match";
-    else if (state.tab === "items") c.textContent = (state.cnt || 0) + " of " + D.items.length + " match";
-    else if (state.tab === "links") c.textContent = (state.cnt || 0) + " of " + D.links.length + " match";
-    else c.textContent = (state.cnt || 0) + " of " + D.oddities.length + " match";
-  }
-
-  function buildFilters() {
-    var f = document.getElementById("filters"), sizes = ["small", "medium", "big"];
-    function chips(title, items, key) { var g = h("div", { class: "fgrp" }, [h("label", { class: "t", text: title })]); var c = h("div", { class: "chips" }); items.forEach(function (x) { var b = h("button", { class: "chip", type: "button", "aria-pressed": "false", text: x.label + (x.n !== undefined ? " " + x.n : "") }); b.addEventListener("click", function () { state[key][x.k] = !state[key][x.k]; b.setAttribute("aria-pressed", state[key][x.k] ? "true" : "false"); applyFilters(); }); c.appendChild(b); }); g.appendChild(c); return g; }
-    function select(title, key, opts) { var g = h("div", { class: "fgrp" }, [h("label", { class: "t", for: "f-" + key, text: title })]); var sel = h("select", { id: "f-" + key }); sel.appendChild(h("option", { value: "", text: "Any" })); opts.forEach(function (o) { sel.appendChild(h("option", { value: o.k, text: o.label })); }); sel.addEventListener("change", function () { state[key] = sel.value; applyFilters(); }); g.appendChild(sel); return g; }
-    function count(fn) { return S.filter(fn).length; }
-    f.appendChild(chips("Size", sizes.map(function (x) { return { k: x, label: x, n: count(function (s) { return s.size === x; }) }; }), "sizes"));
-    f.appendChild(chips("Tone", D.summary.byTone.map(function (t) { return { k: t.k, label: t.k, n: t.n }; }), "tones"));
-    f.appendChild(select("Person (role in the cast)", "role", D.roleFilter.map(function (r) { return { k: r.key, label: r.label + " (" + count(function (s) { return s.roles.indexOf(r.key) >= 0; }) + ")" }; })));
-    f.appendChild(select("Batch", "batch", [{ k: "b1", label: "Batch 1 (20–21 Nov)" }, { k: "b2", label: "Batch 2 (27 Nov)" }, { k: "b3", label: "Batch 3 (28 Nov)" }]));
-    f.appendChild(select("Career stage", "stage", D.stages.map(function (x) { return { k: x.key, label: x.label + " (" + count(function (s) { return s.stage === x.key; }) + ")" }; })));
-    var g = h("div", { class: "fgrp checks" }, [h("label", { class: "t", text: "Only stories that…" })]);
-    [["game", "have a game", function (s) { return s.flags.hasGame; }], ["item", "give an item or unlock", function (s) { return s.flags.givesItem; }], ["from", "start from another story", function (s) { return s.flags.startsFromOther; }], ["link", "are linked to another story (give or take a memory)", function (s) { return s.flags.usesLink; }], ["wait", "are not playable yet", function (s) { return s.flags.waiting; }]].forEach(function (x) {
-      var id = "f-" + x[0], cb = h("input", { type: "checkbox", id: id }); cb.addEventListener("change", function () { state[x[0]] = cb.checked; applyFilters(); });
-      g.appendChild(h("label", { for: id }, [cb, " " + x[1] + " (" + count(x[2]) + ")"]));
-    });
-    f.appendChild(g);
-    var clr = h("button", { class: "btn", type: "button", text: "Clear all filters" }); clr.addEventListener("click", function () { state.q = ""; state.sizes = {}; state.tones = {}; state.role = ""; state.batch = ""; state.stage = ""; state.game = state.item = state.from = state.link = state.wait = false; document.getElementById("q").value = ""; f.innerHTML = ""; buildFilters(); applyFilters(); });
-    f.appendChild(h("div", { class: "fgrp" }, [clr]));
-  }
-
-  /* ───────── summary ───────── */
-  function buildSummary() {
-    var T = D.summary.totals, el = document.getElementById("summary"), nums = h("div", { class: "nums" });
-    [[T.stories, "stories"], [T.beats, "beats"], [T.speech, "lines of speech"], [T.choices, "choices"], [T.endings, "endings"], [T.outcomes, "outcomes written"], [T.games, "games"], [T.promises, "promises"], [T.items, "items and unlocks given"], [T.links, "links between stories"], [T.waiting, "not playable yet"], [T.oddities, "oddities found"]].forEach(function (x) { nums.appendChild(h("div", { class: "num" }, [h("b", { text: String(x[0]) }), h("span", { text: x[1] })])); });
-    el.appendChild(nums);
-    var br = h("div", { class: "breaks" });
-    function brk(title, list, scroll) { var max = Math.max.apply(null, list.map(function (x) { return x.n; })); var d = h("div", { class: "brk" + (scroll ? " scroll" : "") }, [h("h3", { text: title })]); var rows = h("div", { class: "rows" }); list.forEach(function (x) { rows.appendChild(h("div", { class: "brow" }, [h("div", { class: "lab" }, [h("span", { text: x.k }), h("i", { text: String(x.n) })]), h("div", { class: "track" }, [h("div", { class: "fill", style: "width:" + Math.round(x.n / max * 100) + "%" })])])); }); d.appendChild(rows); return d; }
-    br.appendChild(brk("By size", D.summary.bySize)); br.appendChild(brk("By tone", D.summary.byTone, true)); br.appendChild(brk("By person in the cast", D.summary.byRole, true)); br.appendChild(brk("By batch", D.summary.byBatch)); br.appendChild(brk("By career stage", D.summary.byStage)); br.appendChild(brk("Who speaks the most (lines)", D.summary.speakers, true));
-    el.appendChild(br);
-    var tot = h("p", { class: "tiny grey", text: "Also in the stories: " + T.otherLines + " more lines (the counting lines and reactions inside games, plus callback lines), " + T.variants + " place-or-opening variants, " + T.narration + " lines of scene narration. “Speech lines” counts every line a person says inside a talk." });
-    el.appendChild(tot);
-  }
-
-  /* ───────── index tabs ───────── */
-  function storyLink(id, title) { var a = h("a", { href: "#story-" + id.replace(/^arc-/, ""), "data-open": id.replace(/^arc-/, "") }); a.appendChild(fmt(title)); return a; }
-  function buildItems() {
-    var v = document.getElementById("view-items");
-    v.innerHTML = "";
-    v.appendChild(h("p", { class: "lead", text: "Everything a story gives you or takes away: items, garden unlocks, trophies, skills that go up for good. Each row says which story, which beat, what you chose, which ending, and any condition." }));
-    var q = state.q.trim().toLowerCase(), list = D.items.filter(function (x) { return !q || plain([x.name, x.desc, x.storyTitle, x.beat, x.via, x.kind].join(" ")).toLowerCase().indexOf(q) >= 0; });
-    state.cnt = list.length; updateCount();
-    var KN = { item: "item", unlock: "unlock", trophy: "trophy", skill: "skill", taken: "taken" };
-    list.forEach(function (x) {
-      var r = h("div", { class: "irow" }, [h("div", null, [h("span", { class: "kind " + x.kind, text: KN[x.kind] || x.kind })])]);
-      var nm = h("div", { class: "nm" }); nm.appendChild(fmt(x.name)); r.firstChild.appendChild(nm); r.firstChild.style.display = "block";
-      if (x.desc) { var d = h("div", { class: "sm" }); d.appendChild(fmt(x.desc)); r.appendChild(d); }
-      var w = h("div", { class: "sm" }); w.appendChild(document.createTextNode("From the story ")); w.appendChild(storyLink(x.story, x.storyTitle)); if (x.storyWaiting) w.appendChild(document.createTextNode(" (a story that cannot play yet)")); w.appendChild(document.createTextNode(", at the beat “")); w.appendChild(fmt(x.beat)); w.appendChild(document.createTextNode("”.")); r.appendChild(w);
-      var how = h("div", { class: "sm" }); how.appendChild(document.createTextNode("You get it by choosing ")); how.appendChild(fmt(x.via)); how.appendChild(document.createTextNode(x.end ? ", which ends the talk as “" + x.end + "”." : ".")); r.appendChild(how);
-      if (x.cond) { var c = h("div", { class: "sm" }); c.appendChild(document.createTextNode("Only if ")); c.appendChild(fmt(x.cond)); r.appendChild(c); }
-      v.appendChild(r);
-    });
-    if (!list.length) v.appendChild(h("div", { class: "empty", text: "Nothing matches." }));
-  }
-  function buildLinks() {
-    var v = document.getElementById("view-links"); v.innerHTML = "";
-    v.appendChild(h("p", { class: "lead", text: "Which stories unlock or block which. A story reaches another only through a memory (or a flag) it leaves behind. The rest of the book does not depend on each other: they only share people." }));
-    var q = state.q.trim().toLowerCase(), list = D.links.filter(function (l) { return !q || plain([l.fromTitle, l.toTitle, l.tag, l.detail].join(" ")).toLowerCase().indexOf(q) >= 0; });
-    state.cnt = list.length; updateCount();
-    list.forEach(function (l) {
-      var r = h("div", { class: "irow" });
-      var t = h("div", { class: "nm" }); if (l.from) t.appendChild(storyLink(l.from, l.fromTitle)); else t.appendChild(document.createTextNode(l.fromTitle)); t.appendChild(document.createTextNode(l.kind === "needs" ? "  →  feeds  →  " : "  →  blocks  →  ")); t.appendChild(storyLink(l.to, l.toTitle)); r.appendChild(t);
-      var d = h("div", { class: "sm" }); d.appendChild(fmt(l.detail)); r.appendChild(d);
-      r.appendChild(h("div", { class: "sm", text: "Written at: " + plain(l.writtenAt) + ". Read at: " + l.readAt + (l.startsStory ? " (it decides whether the second story can start at all)" : " (inside the second story)") + "." }));
-      v.appendChild(r);
-    });
-    if (!list.length) v.appendChild(h("div", { class: "empty", text: "Nothing matches." }));
-    var withLinks = {}; D.links.forEach(function (l) { withLinks[l.from] = 1; withLinks[l.to] = 1; });
-    v.appendChild(h("p", { class: "lead", text: (S.length - Object.keys(withLinks).filter(function (k) { return byId[k]; }).length) + " of " + S.length + " stories have no link to any other story." }));
-    v.appendChild(h("h3", { text: "Who turns up in which stories", style: "margin-top:22px" }));
-    v.appendChild(h("p", { class: "lead", text: "The same person is kept for good in a career (one kit man, one mum, one chairman…), so a role that appears in many stories is one person meeting you again and again. This is not an unlock chain, but the stories share that person's bond, respect, grudge and memories." }));
-    D.roleFilter.forEach(function (r) {
-      var ss = S.filter(function (s) { return s.roles.indexOf(r.key) >= 0; });
-      var d = h("details", { class: "who2" }, [h("summary", { text: cap(r.label) + " — " + ss.length + " stories" })]);
-      var u = h("ul"); ss.forEach(function (s) { var li = h("li"); li.appendChild(storyLink(s.id, s.title)); u.appendChild(li); }); d.appendChild(u); v.appendChild(d);
-    });
-  }
-  function buildOddities() {
-    var v = document.getElementById("view-oddities"); v.innerHTML = "";
-    v.appendChild(h("p", { class: "lead", text: "Things that look broken, contradictory or unfinished, found by reading every story against the engine. Nothing was changed or hidden. " + D.oddities.length + " found. The engine's own checker (validateArc) passes on every story; these are things it does not look for." }));
-    var q = state.q.trim().toLowerCase(), list = D.oddities.filter(function (o) { return !q || (o.story + " " + o.where + " " + o.what).toLowerCase().indexOf(q) >= 0; });
-    state.cnt = list.length; updateCount();
-    var KD = { waiting: "Waiting for a game that is not built", "dead-end": "Can never happen", "dead-read": "Waits for something nothing writes", "dead-branch": "Part of a list can never be chosen", size: "Size looks off", check: "Worth a look", dice: "Dice", checker: "Engine checker" };
-    var groups = {}; list.forEach(function (o) { (groups[o.kind] = groups[o.kind] || []).push(o); });
-    Object.keys(groups).forEach(function (k) {
-      v.appendChild(h("h3", { text: (KD[k] || k) + " (" + groups[k].length + ")", style: "margin:20px 0 6px" }));
-      groups[k].forEach(function (o) {
-        var s = byId[o.story], r = h("div", { class: "odd " + (k === "dead-end" || k === "dead-read" || k === "dead-branch" ? "k-dead" : k === "waiting" ? "k-waiting" : "") });
-        var w = h("div", { class: "who" }); if (s) w.appendChild(storyLink(s.id, s.title)); else w.textContent = "The whole book"; r.appendChild(w);
-        r.appendChild(h("div", { class: "wh", text: o.where })); var t = h("div"); t.appendChild(fmt(o.what)); r.appendChild(t);
-        v.appendChild(r);
-      });
-    });
-    if (!list.length) v.appendChild(h("div", { class: "empty", text: "Nothing matches." }));
-  }
-
-  /* ───────── tabs, routing ───────── */
-  var TABS = [["stories", "Stories"], ["items", "Items"], ["links", "Links"], ["oddities", "Oddities"]];
-  function buildTabs() {
-    var t = document.getElementById("tabs");
-    TABS.forEach(function (x) {
-      var n = x[0] === "stories" ? S.length : x[0] === "items" ? D.items.length : x[0] === "links" ? D.links.length : D.oddities.length;
-      var b = h("button", { class: "tab", role: "tab", type: "button", id: "tab-" + x[0], "aria-selected": "false" }, [x[1], h("span", { class: "n", text: String(n) })]);
-      b.addEventListener("click", function () { setTab(x[0]); history.replaceState(null, "", x[0] === "stories" ? location.pathname + location.search : "#" + x[0]); });
-      t.appendChild(b);
-    });
-  }
-  function setTab(name) {
-    state.tab = name;
-    TABS.forEach(function (x) { document.getElementById("tab-" + x[0]).setAttribute("aria-selected", x[0] === name ? "true" : "false"); document.getElementById("view-" + x[0]).hidden = x[0] !== name; });
-    if (name === "items") buildItems(); else if (name === "links") buildLinks(); else if (name === "oddities") buildOddities(); else applyFilters();
-    updateCount();
-  }
-  function openStory(slug, scroll) {
-    var s = null; for (var i = 0; i < S.length; i++) if (S[i].slug === slug) s = S[i];
-    if (!s) return;
-    setTab("stories");
-    if (s._el.hidden) { state.q = ""; document.getElementById("q").value = ""; state.sizes = {}; state.tones = {}; state.role = state.batch = state.stage = ""; state.game = state.item = state.from = state.link = state.wait = false; document.getElementById("filters").innerHTML = ""; buildFilters(); applyFilters(); }
-    toggle(s, true);
-    if (scroll !== false) setTimeout(function () { s._el.scrollIntoView(); }, 30);
-  }
-  function route() {
-    var hs = location.hash.replace(/^#/, "");
-    if (!hs) return;
-    if (hs.indexOf("story-") === 0) openStory(hs.slice(6));
-    else if (hs === "items" || hs === "links" || hs === "oddities" || hs === "stories") setTab(hs);
-  }
-  document.addEventListener("click", function (e) {
-    var a = e.target.closest ? e.target.closest("a") : null; if (!a) return;
-    var g = a.getAttribute("data-goto"); if (g) { e.preventDefault(); var t = document.getElementById(g); if (t) t.scrollIntoView(); return; }
-    var o = a.getAttribute("data-open"); if (o) { e.preventDefault(); history.replaceState(null, "", "#story-" + o); openStory(o); }
-  });
-  window.addEventListener("hashchange", route);
-
-  /* expand / collapse all (a few at a time so a phone does not freeze) */
-  function expandAll(done) {
-    var list = S.filter(function (s) { return !s._el.hidden; }), i = 0, btn = document.getElementById("expand");
-    btn.textContent = "Expanding…";
-    (function step() { var end = Math.min(list.length, i + 8); for (; i < end; i++) toggle(list[i], true); if (i < list.length) requestAnimationFrame(step); else { btn.textContent = "Expand all"; if (done) done(); } })();
-  }
-  function collapseAll() { S.forEach(function (s) { if (s._body) toggle(s, false); }); }
-  window.__bookExpandAll = function () { return new Promise(function (res) { var save = S.map(function (s) { return s._el.hidden; }); S.forEach(function (s) { s._el.hidden = false; }); expandAll(res); }); };
-  window.__bookCounts = function () {
-    var q = function (sel) { return document.querySelectorAll(sel).length; };
-    var uniq = {}; document.querySelectorAll('[data-k="outcome"]').forEach(function (e) { uniq[e.getAttribute("data-key")] = 1; });
-    return { beats: q('[data-k="beat"]'), say: q('[data-k="say"]'), narr: q('[data-k="narr"]'), choices: q('[data-k="choice"]'), endings: q('[data-k="ending"]'), outcomesUnique: Object.keys(uniq).length, games: q('[data-k="game"]'), promises: q('[data-k="promise"]'), storiesOpen: document.querySelectorAll('.story[data-open="1"]').length };
-  };
-
-  /* ───────── start ───────── */
-  fetch("data.json").then(function (r) { return r.json(); }).then(function (data) {
-    D = data; S = D.stories; S.forEach(function (s) { byId[s.id] = s; });
-    S.forEach(function (s) { blobOf(s); });
-    document.getElementById("stamp").textContent = S.length + " stories, as the book stood on " + D.built.date + " (commit " + D.built.commit + "). Rebuilt from the story files by scripts/life/story-book-page.mts.";
-    buildSummary(); buildTabs(); buildFilters();
-    var list = document.getElementById("list");
-    S.forEach(function (s, i) { list.appendChild(buildCard(s, i)); });
-    document.getElementById("q").addEventListener("input", function () { state.q = this.value; clearTimeout(qTimer); qTimer = setTimeout(function () { if (state.tab === "stories") applyFilters(); else if (state.tab === "items") buildItems(); else if (state.tab === "links") buildLinks(); else buildOddities(); }, 160); });
-    document.getElementById("fbtn").addEventListener("click", function () { var f = document.getElementById("filters"); f.hidden = !f.hidden; this.setAttribute("aria-pressed", f.hidden ? "false" : "true"); });
-    document.getElementById("expand").addEventListener("click", function () { expandAll(); });
-    document.getElementById("collapse").addEventListener("click", collapseAll);
-    setTab("stories"); route();
-    window.__bookReady = true;
-  }).catch(function (e) { document.getElementById("stamp").textContent = "The book could not be loaded: " + e; });
-})();
-</script>
-`;
+// The page itself is scripts/life/story-book-page.html (Harry, 28 Nov 2026: "lean out the story book a lot …
+// I click into a story and I get a full page on the story, step by step visuals"): a grid of story tiles,
+// and a story player per story. It reads data.json (below), shots.json and videos.json beside it.
+const PAGE_HTML: string = fs.readFileSync(path.join(ROOT, "scripts/life/story-book-page.html"), "utf8");
 
 // ═══════════════════════════ BUILDING ONE STORY ═══════════════════════════
 
@@ -1277,6 +537,8 @@ function timingWords(arc: A, beat: A, cx: Ctx, scheduledBy: string[], isFirst: b
 
 // ═══════════════════════════ ONE STORY ═══════════════════════════
 
+/** Roles that belong to a club (the people around the training ground and the boardroom). */
+const CLUB_ROLES = new Set(["legend", "kitman", "physio", "groundsman", "canteen", "chairman", "coach", "manager"]);
 function castHow(c: A): string {
   const parts: string[] = [];
   if (c.pick === "squad") {
@@ -1287,6 +549,10 @@ function castHow(c: A): string {
   } else if (POOL[c.pick]) parts.push(`The ${ROLE_PLAIN[c.pick] ?? c.pick}: the career is given one person for this role the first time it is needed and keeps that person for good`);
   else if (c.pick === "manager") parts.push("Your current manager (changes if you get a new one)");
   else parts.push(`The career's own ${ROLE_PLAIN[c.pick] ?? c.pick}: one person per career, named from the career's seed and kept for good`);
+  // Harry, 28 Nov 2026: a pool person's home town read as the clubs he played at. Say whose club he is at.
+  if (CLUB_ROLES.has(c.pick)) parts.push(c.pick === "manager"
+    ? "Written as someone at the club you are at when the story starts"
+    : "Written as someone at the club you are at when the story starts. One person per career today: he does not change if you transfer (known gap)");
   if (c.optional) parts.push("OPTIONAL: if nobody fits, the story still plays without him");
   if (c.bindAt) parts.push(`not met until beat “${c.bindAt}” (he is chosen then)`);
   if (c.tags?.length) parts.push(`whoever holds the memory ${c.tags.map((t: string) => `“${t}”`).join(" or ")}`);
@@ -1525,7 +791,7 @@ function buildStory(arc: A, file: string, order: number, batch: { label: string;
   const stage = stageOf(first, cx);
 
   // Starting
-  const startCond = [...allWords(first.requires, cx), ...allWords(first.event.trigger.requires, cx)];
+  const startCond = [...allWords(arc.start?.when, cx), ...allWords(first.requires, cx), ...allWords(first.event.trigger.requires, cx)];
   const moments = first.event.trigger.when.map((m: string) => MOMENT_WORDS[m] ?? m);
   const st = arc.start;
   const chanceText = st ? `Each time that moment comes up and the conditions fit, it starts ${Math.round(st.chance * 100)} times in 100 (${oneIn(st.chance)}). The roll is the career's own, so careers do not all meet it in the same week.` : "It has no start roll: it always starts when its first beat can.";
@@ -1544,7 +810,7 @@ function buildStory(arc: A, file: string, order: number, batch: { label: string;
     tones: arc.about?.tone ?? [], who: arc.about?.who ?? [], roles: Array.from(new Set((arc.cast ?? []).map((c: A) => c.pick))), owner: cx.tag(arc.owner),
     batch: batch.label, batchKey: batch.key, summary: fillText(arc.summary, cx), premise: premise.length > 220 ? premise.slice(0, 217).replace(/\s+\S*$/, "") + "…" : premise,
     stage: stage.stage, stageKey: stage.key, waiting: arc.needsActivity ?? "",
-    start: { moments, conditions: startCond, chanceText, careersText, chance: st?.chance ?? null, careers: st?.careers ?? null, needs: [] as any[] },
+    start: { moments, conditions: startCond, chanceText, careersText, chance: st?.chance ?? null, careers: st?.careers ?? null, needs: [] as any[], tier: st?.tier ?? "", stage: st?.stage ?? "" },
     cast, newPeople: beats.flatMap((b: any) => b.newPeople.map((p: any) => ({ ...p, beat: b.title }))), vars, clocks, beats, promises, ends, speakers: spk,
     counts: { beats: beats.length, say: sayCount, narration: narrCount, choices: choiceCount, outcomes: outcomeCount, endings: ends.length, promises: promises.length, games: gameCount, callbacks: callbackCount, variants: variantCount },
     _col: col, _raw: arc,
@@ -1762,6 +1028,24 @@ const stories: any[] = orderIds.filter((id) => byId.has(id)).map((id, i) => {
   return s;
 });
 const storyById = new Map(stories.map((s) => [s.id, s]));
+
+// ───────── chains: a follow-on starts only after another story ended (a certain way) ─────────
+// Read from the story's start window (start.when) and its first beat's conditions: ended(arc-x:end|end).
+for (const s of stories) { s.after = []; s.leadsTo = []; }
+for (const s of stories) {
+  const raw = byId.get(s.id)!.arc;
+  const srcs: string[] = [...(raw.start?.when ?? []), ...(raw.beats[0].requires ?? []), ...(raw.beats[0].event.trigger.requires ?? [])];
+  for (const src of srcs) {
+    const neg = /^\s*(!|NOT\b)/.test(src);
+    for (const m of src.matchAll(/ended\(([a-z0-9-]+)(?::([a-z0-9|-]+))?\)/g)) {
+      const from = storyById.get(m[1]);
+      if (!from) continue;
+      const ends = (m[2] ? m[2].split("|") : []).map((e: string) => ({ id: e, title: from.ends.find((x: any) => x.id === e)?.title ?? e }));
+      s.after.push({ id: from.id, slug: from.slug, title: from.title, ends, neg });
+      from.leadsTo.push({ id: s.id, slug: s.slug, title: s.title, ends, neg });
+    }
+  }
+}
 
 // ───────── memories, flags: who writes, who reads → the links between stories ─────────
 interface Writer { story: string; beat: string; via: string; role: string; end?: string }

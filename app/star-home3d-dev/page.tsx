@@ -15,7 +15,7 @@
  * screen as before. Approved 3D Scene Editor edits ticked for "the test
  * page" play here.
  */
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Btn, Pill } from "@/components/admin/broadcast/BroadcastPage";
@@ -37,6 +37,12 @@ import { LIFESTYLE_LEVELS, BOOT_LEVELS, baseIdOf } from "@/lib/star/shopDefaults
 import { HOME_TIERS, parseHomeTier, type HomeTier } from "@/lib/star/home3d/homes";
 import type { OutfitChoice } from "@/lib/star/home3d/outfits";
 import type { CareerState, StarPlayer } from "@/lib/star/types";
+import { passTime, sleepClock } from "@/lib/star/life/clock";
+import { applyThing } from "@/lib/star/life/houseActs";
+import { withInvite } from "@/lib/star/life/dayPlan";
+import { sleepNight } from "@/lib/star/home3d/sleep";
+import { applyMirror, yourHairLook3d } from "@/lib/star/barber";
+import { yourToonHead } from "@/lib/star/style3d/toon/bodies";
 
 const TROPHIES = [
   { competition: "Premier League", n: 2 }, { competition: "Champions League", n: 1 }, { competition: "FA Cup", n: 3 },
@@ -77,18 +83,34 @@ function Home3DTest() {
     c.awards = full ? AWARDS.flatMap((a) => Array.from({ length: a.n }, (_, i) => ({ season: i + 1, kind: a.kind, week: a.kind === "Player of the Month" ? 4 + i : undefined, detail: "" }))) : [];
     c.ballonDorWins = full ? 1 : 0;
     if (outfit) c.outfit = outfit;
-    return c;
+    c.energy = 60;
+    // ?cut=crew.s.3.1.1: your hair and beard (lib/star/barber.ts's save), for the bathroom mirror's Shave / Trim / Tidy
+    if (params.get("cut")) c.hair = params.get("cut")!;
+    if (params.get("head")) c.player.head3d = params.get("head") as never;
+    // ?at=1080: the clock starts at that minute of day 0 (18:00); else 09:00
+    const at = Number(params.get("at"));
+    return at > 9 * 60 ? passTime(c, at - 9 * 60) : c;
     // the wardrobe's choice is read once per home (the screen keeps it after that)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [full, tier]);
 
+  // the made-up career lives here while you play: the clock, things used, sleep and invites change it (as in a career)
+  const [play, setPlay] = useState<CareerState>(career);
+  useEffect(() => setPlay(career), [career]);
+  // your look on your 3D player, as the career page sets it (the mirror's changes show at once)
+  useEffect(() => { setToonYou({ head: yourToonHead(play.player), hairLook: yourHairLook3d(play, yourToonHead(play.player)) }); }, [play]);
   const btn: React.CSSProperties = { height: 28, padding: "0 9px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.6)", color: "#fff", fontWeight: 800, fontSize: 11.5, cursor: "pointer" };
   const bare = params.get("bare") === "1" || params.get("film") === "1";
   const home = (
     <Home3D
       key={`${tier}-${full}-${house}`}
-      career={career}
+      career={play}
       tier={tier}
+      onTime={(mins) => setPlay((c) => passTime(c, mins))}
+      onUse={(thing, e) => setPlay((c) => applyThing(c, thing, e).career)}
+      onSleep={() => setPlay((c) => sleepClock(c, sleepNight(c).career))}
+      onInvite={(mateId, day, minute) => setPlay((c) => withInvite(c, day, mateId, minute).career)}
+      onHair={(act) => setPlay((c) => applyMirror(c, act, yourToonHead(c.player)).career)}
       lookH={lookH}
       house={house}
       where="test"
@@ -118,12 +140,13 @@ function Home3DTest() {
   return (
     <>
       {home}
-      <div style={{ position: "fixed", top: 128, left: 12, right: 12, zIndex: 90, display: "flex", gap: 5, flexWrap: "wrap" }} data-home3d-dev>
+      <div style={{ position: "fixed", top: 128, left: 12, right: 12, zIndex: 90, display: "flex", gap: 5, flexWrap: "wrap", ...(params.get("nobar") === "1" ? { display: "none" } : null) }} data-home3d-dev>
         {HOME_TIERS.map((t) => (
           <button key={t} onClick={() => setTier(t)} style={{ ...btn, background: tier === t ? "#facc15" : btn.background, color: tier === t ? "#111" : "#fff" }}>{t}</button>
         ))}
         <button onClick={() => setFull((f) => !f)} style={btn}>{full ? "Full cabinet" : "Empty cabinet"}</button>
         <button onClick={() => setHouse((h) => (h === "new" ? "old" : "new"))} style={btn} data-house-look={house}>House: {house === "new" ? "New" : "Old"}</button>
+        <span style={{ ...btn, display: "inline-flex", alignItems: "center", cursor: "default" }} data-energy={play.energy}>Energy {play.energy}</span>
       </div>
       <PageGuide page="/star-home3d-dev" corner="bottom-left" />
     </>

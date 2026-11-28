@@ -11,8 +11,12 @@
  *               cut scene's look (no input)
  *   garden / house / shop / casino
  *               keepie-uppies over a real still of the place (several lights).
+ *   street      keepie-uppies over a still of the shopping street (28 Nov 2026)
  *   gym         keepie-uppies over a still of the 3D gym (opened from the
  *               Training page while it is tested, 28 Nov 2026)
+ *   compound    keepie-uppies over a still of the training compound (the
+ *               car park, the gate, the crest board, the building; day,
+ *               sunset, night): lib/star/world3d/compoundPlace.ts, 28 Nov
  *   training    the coach's drill board (three boards)
  *   ballon-dor / awards
  *               the gala: the golden ball, the invitation
@@ -24,8 +28,11 @@
 
 export type LoadSection =
   | "first-load" | "match"
-  | "garden" | "house" | "shop" | "casino" | "gym"
-  | "training" | "ballon-dor" | "awards";
+  | "garden" | "house" | "shop" | "casino" | "gym" | "street"
+  | "training" | "ballon-dor" | "awards"
+  // the drive to training (driving phase 1, 28 Nov 2026: /star-drive3d-dev)
+  | "drive"
+  | "compound";
 
 /** What a variant is drawn as. */
 export type LoadKind = "keepie" | "programme" | "tunnel" | "board" | "gala" | "boot";
@@ -76,6 +83,17 @@ export const LOAD_VARIANTS: Record<LoadSection, LoadVariant[]> = {
     K("keepie-gym", "gym"),
     K("keepie-gym-lamp", "gym", "lamp"),
   ],
+  // the shopping street (phase 1, 28 Nov 2026): a still of the high street at golden hour
+  street: [
+    K("keepie-street", "street"),
+    K("keepie-street-lamp", "street", "lamp"),
+  ],
+  compound: [
+    K("keepie-compound-day", "compound-day"),
+    K("keepie-compound-sunset", "compound-sunset"),
+    K("keepie-compound-night", "compound-night", "night"),
+    K("keepie-compound-rain", "compound-day", "rain"),
+  ],
   training: [
     { id: "board-white", kind: "board", look: "white" },
     { id: "board-chalk", kind: "board", look: "chalk" },
@@ -84,6 +102,11 @@ export const LOAD_VARIANTS: Record<LoadSection, LoadVariant[]> = {
   "ballon-dor": [
     { id: "gala-ball", kind: "gala", look: "ball" },
     { id: "gala-invite", kind: "gala", look: "invite" },
+  ],
+  // the drive starts at your garden gate: the garden's stills, until the drive has its own
+  drive: [
+    K("keepie-drive-day", "garden-day"),
+    K("keepie-drive-sunset", "garden-sunset"),
   ],
   // the red carpet (Gala.tsx look "carpet") is out of the rotation: too flat next to the others (27 Nov stills)
   awards: [

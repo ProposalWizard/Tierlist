@@ -35,10 +35,15 @@ import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import GardenScreen from "./GardenScreen";
 import Reload3dPill from "./Reload3d";
-import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
+import { afterLoss, healReset, newHealState } from "@/lib/star/three3d/autoHeal";
 import { Stick, pill } from "./Shop3D";
 import LoadingCurtain from "./loading/LoadingCurtain";
+import ClockPill, { useLiveClock } from "./ClockPill";
+import { leaveAt } from "@/lib/star/life/clock";
 import ViewToggle3D from "./ViewToggle3D";
+import type { GardenLevelsOpt, RideReport } from "@/lib/star/garden3d/levelZones";
+import { gardenLevelsOn } from "@/lib/star/garden3d/levelsFlag";
+import { gardenChip, gardenLevelOf, gardenLevelsOptFor } from "@/lib/star/gardenLevels";
 
 const INK = "#f7f1e8";
 /** A query parameter, on the client only. */
@@ -59,6 +64,8 @@ export interface Garden3DProps {
   onTraining?: () => void;
   /** Walked through your house's back door (9 Oct 2026): your 3D home. Absent: the door stays shut. */
   onHouse?: () => void;
+  /** Walked out of the garden gate: the shopping street (28 Nov 2026). Absent: the gate stays shut. */
+  onStreet?: () => void;
   /** "📱 Phone" in the top bar: the 3D phone in your hand (components/star/HousePhone.tsx). Absent: no button. */
   onPhone?: () => void;
   /** Where you appear: at the shop's doors (coming out of it), the casino's,
@@ -70,9 +77,20 @@ export interface Garden3DProps {
   where?: "career" | "test";
   /** Test page: fill its box on the admin frame instead of the whole screen. */
   embedded?: boolean;
+  /** The career clock (lib/star/life/clock.ts): game minutes that passed here. Absent: it ticks on screen only. */
+  onTime?: (mins: number) => void;
+  /** "Go to the match" (the clock stopped at time to leave). */
+  onMatch?: () => void;
+  /** Garden levels (lib/star/gardenLevels.ts): the test page passes its own; absent = the career's, only while the
+   *  setting is on (lib/star/garden3d/levelsFlag.ts); null = off. */
+  levels?: GardenLevelsOpt | null;
+  /** A ride ended: the horse's energy and the laps, to put on the career (gardenLevels.ts applyRide). */
+  onRide?: (r: RideReport) => void;
 }
 
-export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, onHouse, onPhone, arrive = "gate", sky, where = "career", embedded = false }: Garden3DProps) {
+export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, onHouse, onStreet, onPhone, arrive = "gate", sky, where = "career", embedded = false, onTime, onMatch, levels, onRide }: Garden3DProps) {
+  // the career clock, top middle (components/star/ClockPill.tsx)
+  const live = useLiveClock(career, onTime);
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<GardenController | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -87,6 +105,13 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
   trainingRef.current = onTraining;
   const houseRef = useRef(onHouse);
   houseRef.current = onHouse;
+  const streetRef = useRef(onStreet);
+  streetRef.current = onStreet;
+  const rideRef = useRef(onRide);
+  rideRef.current = onRide;
+  // garden levels: read once per visit (the garden is built once per visit)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const levelsOpt = useMemo(() => (levels !== undefined ? levels ?? undefined : gardenLevelsOn() ? gardenLevelsOptFor(career) : undefined), [levels]);
 
   // Three real team-mates, picked at random each visit (as before).
   const [visitors] = useState(() => {
@@ -113,12 +138,14 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
 
   // The phone took the 3D away (iPhone Safari, short of memory): start the
   // garden again once; a second time, the drawn garden instead.
+  // (counted by three3d/autoHeal.ts afterLoss: two a minute, so one loss an hour ago is forgotten)
+  const heal = useRef(newHealState());
   const [restarts, setRestarts] = useState(0);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
-    if (!el || restarts > AUTO_REBUILDS) return;
+    if (!el) return;
     (async () => {
       try {
         const q = new URLSearchParams(window.location.search);
@@ -154,11 +181,18 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
             setLeaving(true);
             houseRef.current?.();
           } : undefined,
+          onStreetGate: onStreet ? () => {
+            if (dead) return;
+            setLeaving(true);
+            streetRef.current?.();
+          } : undefined,
+          onRide: (r) => { if (!dead) rideRef.current?.(r); },
           onContextLost: () => {
             if (dead) return;
             console.error("3D garden: the phone took the 3D away");
             ctrlRef.current?.dispose();
             ctrlRef.current = null;
+            if (afterLoss(heal.current, Date.now()) === "give-up") { setStatus("error"); return; }
             setStatus("loading");
             setRestarts((n) => n + 1);
           },
@@ -166,7 +200,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
         const fixedStep = q.get("film") === "1" ? 1 / 30 : undefined;
         // the Old garden knows only "high" | "low" (sceneOld.ts is frozen)
         const start = (): Promise<GardenController> => newMod
-          ? newMod.startGarden(el, cbs, data, { quality: tier, fixedStep, edit: approvedRef.current })
+          ? newMod.startGarden(el, cbs, data, { quality: tier, fixedStep, edit: approvedRef.current, isDead: () => dead, levels: levelsOpt })
           // (the Old garden has no casino or pitch: it starts at the gate)
           : oldMod!.startGarden(el, cbs, { ...data, arrive: data.arrive === "shop" ? "shop" : "gate" }, { quality: tier === "low" ? "low" : "high", fixedStep });
         let c: GardenController;
@@ -189,7 +223,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
         if (dead) return; // closed mid-load: nothing to show
         console.error("3D garden failed to load", e);
         // tried again by itself on a fresh renderer (three3d/autoHeal.ts) before the drawn garden and its tap
-        if (restarts < AUTO_REBUILDS) { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
+        if (afterLoss(heal.current, Date.now()) === "rebuild") { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
         setStatus("error");
       }
     })();
@@ -201,8 +235,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, restarts, retry]);
-  // the phone took the 3D away: rebuilt silently AUTO_REBUILDS times (Low after the first), then the drawn garden
-  useEffect(() => { if (restarts > AUTO_REBUILDS) setStatus("error"); }, [restarts]);
+  // the phone took the 3D away: rebuilt silently AUTO_REBUILDS times a minute (Low after the first), then the drawn garden
 
   const drag = useRef<{ id: number; x: number; y: number; moved: number } | null>(null);
   const spot = tapped ?? near;
@@ -214,7 +247,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
     setTapped(c.pick(x, y)); // the old garden: tap opens the card
   };
 
-  if (status === "error") return (<><GardenScreen career={career} onBack={onBack} /><Reload3dPill onReload={() => { setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} /></>);
+  if (status === "error") return (<><GardenScreen career={career} onBack={onBack} /><Reload3dPill onReload={() => { healReset(heal.current); setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} /></>);
 
   return (
     <div style={{ position: embedded ? "absolute" : "fixed", inset: 0, zIndex: embedded ? 1 : 80, background: "#0d1420", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-garden3d>
@@ -245,11 +278,6 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
           <span style={{ fontSize: 20, lineHeight: 1, marginTop: -2 }}>&#8249;</span>Home
         </button>
         <div style={{ flex: 1 }} />
-        {onPhone && (
-          <button onClick={onPhone} aria-label="Phone" data-pick-up style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 6, fontWeight: 900 }}>
-            <span aria-hidden style={{ fontSize: 15 }}>📱</span>Phone
-          </button>
-        )}
         <div style={{ ...pill, gap: 6 }} aria-label="Trophies">
           <span aria-hidden style={{ fontSize: 16 }}>🏆</span><b style={{ color: GOLD }}>{info.trophyCount + (career.ballonDorWins ?? 0)}</b>
         </div>
@@ -259,6 +287,13 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
           </div>
         )}
       </div>
+      {/* the Phone pill under the top bar, on the right (as in the house): the clock has the top middle */}
+      {onPhone && (
+        <button onClick={onPhone} aria-label="Phone" data-pick-up style={{ ...pill, position: "absolute", right: 12, top: "calc(max(12px, env(safe-area-inset-top)) + 96px)", zIndex: 5, cursor: "pointer", gap: 6, fontWeight: 900 }}>
+          <span aria-hidden style={{ fontSize: 15 }}>📱</span>Phone
+        </button>
+      )}
+      <ClockPill career={career} abs={live.abs} held={live.abs >= leaveAt(career)} onMatch={onMatch} title="Garden" />
 
       {status === "loading" && (
         <div style={{ position: "absolute", inset: 0, background: "#0d1420" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }} />
@@ -266,11 +301,18 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
       {/* the loading screen: keepie-uppies in the garden (components/star/loading) */}
       <LoadingCurtain section="garden" loading={status === "loading"} box={embedded} />
 
+      {/* garden level 1 builds nothing new, so its chip is drawn here (from level 2 the scene's own HUD draws it: levelZones.ts) */}
+      {status === "ready" && levelsOpt && gardenLevelOf(levelsOpt.xp).level === 1 && (
+        <div data-garden-level-chip style={{ position: "absolute", left: 12, top: "calc(max(12px, env(safe-area-inset-top)) + 44px)", background: "rgba(14,12,10,0.82)", border: "1px solid rgba(250,204,21,0.25)", borderRadius: 999, padding: "6px 12px 7px", fontSize: 12, fontWeight: 900, display: "flex", flexDirection: "column", gap: 4, minWidth: 150, pointerEvents: "none" }}>
+          <span>🌳 {gardenChip(levelsOpt.xp)}</span>
+          <span style={{ display: "block", height: 4, borderRadius: 2, background: "rgba(255,255,255,.14)", overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: `${Math.round(gardenLevelOf(levelsOpt.xp).progress * 100)}%`, background: GOLD }} /></span>
+        </div>
+      )}
       {status === "ready" && ctrlRef.current?.setView && <ViewToggle3D onChange={(m) => ctrlRef.current?.setView?.(m)} />}
       {status === "ready" && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
 
       {status === "ready" && spot && spot !== "fountain" && (
-        <SpotCard spot={spot} career={career} info={info} visitors={visitors} onClose={tapped ? () => setTapped(null) : undefined} onShop={onShop} onCasino={onCasino} onTraining={onTraining} onHouse={onHouse} />
+        <SpotCard spot={spot} career={career} info={info} visitors={visitors} onClose={tapped ? () => setTapped(null) : undefined} onShop={onShop} onCasino={onCasino} onTraining={onTraining} onHouse={onHouse} onStreet={onStreet} />
       )}
 
       {/* a quick fade as you step into the shop */}
@@ -280,7 +322,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
 }
 
 /** The small card for wherever you are standing. */
-function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onTraining, onHouse }: {
+function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onTraining, onHouse, onStreet }: {
   spot: GardenSpot;
   career: CareerState;
   info: ReturnType<typeof gardenData>;
@@ -290,6 +332,7 @@ function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onT
   onCasino?: () => void;
   onTraining?: () => void;
   onHouse?: () => void;
+  onStreet?: () => void;
 }) {
   const card: React.CSSProperties = {
     position: "absolute", right: 12, bottom: "max(24px, calc(env(safe-area-inset-bottom) + 16px))", maxWidth: "min(62vw, 300px)",
@@ -304,6 +347,16 @@ function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onT
       <div style={{ ...card, display: "flex", alignItems: "center", gap: 10 }}>
         <span aria-hidden style={{ fontSize: 24 }}>🛍️</span>
         <button onClick={onShop} style={{ height: 38, padding: "0 16px", borderRadius: 12, border: "none", background: GOLD, color: "#111", fontWeight: 900, fontSize: 15, cursor: "pointer" }}>Shop &#8250;</button>
+        {close}
+      </div>
+    );
+  }
+  if (spot === "street") {
+    if (!onStreet) return null;
+    return (
+      <div style={{ ...card, display: "flex", alignItems: "center", gap: 10 }} data-garden-street>
+        <span aria-hidden style={{ fontSize: 24 }}>🛍️</span>
+        <button onClick={onStreet} style={{ height: 38, padding: "0 16px", borderRadius: 12, border: "none", background: GOLD, color: "#111", fontWeight: 900, fontSize: 15, cursor: "pointer" }}>High Street &#8250;</button>
         {close}
       </div>
     );

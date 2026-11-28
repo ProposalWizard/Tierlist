@@ -40,8 +40,15 @@ import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import { Stick, pill, round } from "./Shop3D";
 import { sleepNight } from "@/lib/star/home3d/sleep";
-import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
+import { setGymReturnRoom, takeGymReturnRoom } from "@/lib/star/home3d/houseBack";
+import { afterLoss, healReset, newHealState } from "@/lib/star/three3d/autoHeal";
 import LoadingCurtain from "./loading/LoadingCurtain";
+import ClockPill, { useLiveClock } from "./ClockPill";
+import { leaveAt, clockOf, dayNumber, nextMatchInfo, hhmm, passTime } from "@/lib/star/life/clock";
+import { applyThing } from "@/lib/star/life/houseActs";
+import { mirrorOptions, applyMirror as mirrorAct, type MirrorAct } from "@/lib/star/barber";
+import { yourToonHead } from "@/lib/star/style3d/toon/bodies";
+import { dayPlanFor, forcedDay, houseMates, visitsToday, inviteAnswer } from "@/lib/star/life/dayPlan";
 import ViewToggle3D from "./ViewToggle3D";
 
 const INK = "#f7f1e8";
@@ -78,6 +85,22 @@ export interface Home3DProps {
   living?: boolean;
   /** A night in your bed (lib/star/home3d/sleep.ts): the career does `sleepNight` (the week's Rest, once per gap between matches). Absent: the night passes in the house only. */
   onSleep?: () => void;
+  /** The career clock (lib/star/life/clock.ts): game minutes that passed here, to add to the career. Absent (a test page): the clock ticks on screen only. */
+  onTime?: (mins: number) => void;
+  /** "Go to the match" (the clock stopped at time to leave). */
+  onMatch?: () => void;
+  /** Test page: the clock runs this many times faster (?clock=). */
+  clockRate?: number;
+  /** Menus are up (the phone in your hand): the clock stops. */
+  clockPaused?: boolean;
+  /** "Come round?" texted to a team-mate (lib/star/life/dayPlan.ts withInvite): save it on the career. */
+  onInvite?: (mateId: string, day: number, minute: number) => void;
+  /** You used a thing in the house (lib/star/life/houseActs.ts useThing): its time and capped effect, to save on the career. */
+  onUse?: (thing: string, effect: { energy?: number; mood?: number; text?: string }) => void;
+  /** "Start a workout" at the home gym (lib/star/gym/homeGym.ts): open the gym of this house's level. Absent: the gym's kit is only used as before. */
+  onGym?: (tier: HomeTier) => void;
+  /** The bathroom mirror's Shave / Trim beard / Tidy hair (lib/star/barber.ts applyMirror): save it on the career. Absent: no such buttons. */
+  onHair?: (act: MirrorAct) => void;
 }
 
 type Tab = "casual" | "kit" | "boots" | "extras";
@@ -118,7 +141,25 @@ function livingFor(career: CareerState) {
   return { mates, club: career.player.club };
 }
 
-export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep }: Home3DProps) {
+export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep, onTime, onMatch, clockRate, clockPaused, onInvite, onUse, onGym, onHair }: Home3DProps) {
+  const [hairNote, setHairNote] = useState<string | null>(null);
+  const onUseRef = useRef(onUse);
+  const onGymRef = useRef(onGym);
+  onGymRef.current = onGym;
+  onUseRef.current = onUse;
+  const onTimeRef = useRef(onTime);
+  onTimeRef.current = onTime;
+  // the career clock, ticking while you are in the house (stopped while the phone is up); the house's people read it
+  // (the living house ticks it from its own frames: world3d/houseLife.ts, so people and the clock keep step)
+  const live = useLiveClock(career, onTime, { paused: clockPaused || !chrome, rate: clockRate, external: livingOn(tierProp ?? homeTierOf(career.ownedItems), living) && (house ?? houseLook()) === "new" });
+  const liveRef = useRef(live.clock);
+  liveRef.current = live.clock;
+  /** The house's day plan, by day of the gap (read off the career as it is then); `forced` a test page's day. */
+  const visitsFn = (forced: string | null, openAbs: number, rms: RoomId[], t: HomeTier) => (d: number) => {
+    const c = careerRef.current;
+    if (forced && d === Math.floor(openAbs / 1440)) { const f = forcedDay(forced, Math.floor(openAbs % 1440) + 4, rms, t, houseMates(c)); if (f) return f; }
+    return dayPlanFor(c, d, rms, t, houseMates(c));
+  };
   // the night's words come from the career as it is when you fall asleep (sleep.ts is pure: the page's setCareer gets the same result)
   const careerRef = useRef(career);
   careerRef.current = career;
@@ -131,6 +172,8 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const doorRef = useRef(onDoor);
   doorRef.current = onDoor;
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  // the clock waits while the house loads (a loading screen is a menu: no time passes)
+  live.clock.paused = !!clockPaused || !chrome || status !== "ready";
   const [errText, setErrText] = useState("");
   const [near, setNear] = useState<HomeSpot | null>(null);
   const [dismissed, setDismissed] = useState<HomeSpot | null>(null);
@@ -139,6 +182,8 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const [changing, setChanging] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [roomNow, setRoomNow] = useState<RoomId | null>(null);
+  const roomRef = useRef<RoomId | null>(null);
+  roomRef.current = roomNow;
 
   const tier: HomeTier = tierProp ?? homeTierOf(career.ownedItems);
   const room = roomPreset(tier);
@@ -146,6 +191,28 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const slots = useMemo(() => cabinetSlots(career, cabinetSize(tier)), [career, tier]);
   const alive = livingOn(tier, living) && (house ?? houseLook()) === "new";
   const rooms = useMemo(() => roomsFor(tier, house ?? houseLook(), alive), [tier, house, alive]);
+  // who is coming round today, for the clock's Today list
+  const liveDay = Math.floor(live.abs / 1440);
+  const todayVisits = useMemo(() => (alive ? visitsToday(career, liveDay) : []), [alive, career, liveDay]);
+  // "Text Kyle: come round?" (once a day, not on match day, someone not already coming)
+  const inviteOffer = useMemo(() => {
+    if (!alive || !onInvite) return null;
+    const s = clockOf(career);
+    if (s.inv && s.inv[0] === dayNumber(career, liveDay)) return null;
+    if (nextMatchInfo(career)?.day === liveDay) return null;
+    const coming = new Set(dayPlanFor(career, liveDay, rooms, tier, houseMates(career)).map((v) => v.mateId));
+    const m = houseMates(career).find((x) => !coming.has(x.id));
+    if (!m) return null;
+    return {
+      label: `Text ${m.name}: come round?`,
+      send: () => {
+        const minute = Math.floor(liveRef.current.now() % 1440);
+        const a = inviteAnswer(careerRef.current, liveDay, m.id, minute);
+        onInvite(m.id, liveDay, minute);
+        return a.yes ? `${m.name}: "Yeah, go on. See you at ${hhmm(a.at)}."` : `${m.name}: "Can't today, sorry. Another time."`;
+      },
+    };
+  }, [alive, onInvite, career, liveDay, rooms, tier]);
   const [lifeCard, setLifeCard] = useState<InteractCard | null>(null);
   const cars = useMemo(() => carsOnDrive(career, Math.max(room.cars, rooms.includes("garage") ? carsIn("garage", tier) : 0)), [career, room.cars, rooms, tier]);
   const boots = useMemo(() => bootChoices(career), [career]);
@@ -169,6 +236,8 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
     return () => document.body.classList.remove("knowitball-immersive");
   }, []);
 
+  // (counted by three3d/autoHeal.ts afterLoss: two a minute, so one loss an hour ago is forgotten)
+  const heal = useRef(newHealState());
   const [restarts, setRestarts] = useState(0);
   /** "Tap to reload 3D": a fresh start (restarts back to 0 may not change it, so this does). */
   const [retry, setRetry] = useState(0);
@@ -176,8 +245,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
     let dead = false;
     const el = holder.current;
     if (!el) return;
-    // the phone took the 3D away: rebuilt silently AUTO_REBUILDS times (Low after the first), then the card
-    if (restarts > AUTO_REBUILDS) { setErrText("The phone stopped the 3D (out of memory?)"); setStatus("error"); return; }
+    // the phone took the 3D away: rebuilt silently AUTO_REBUILDS times a minute (Low after the first), then the card
     (async () => {
       try {
         const { startHome } = await import("@/lib/star/home3d/scene");
@@ -195,6 +263,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
             console.error("3D home: the phone took the 3D away");
             ctrlRef.current?.dispose();
             ctrlRef.current = null;
+            if (afterLoss(heal.current, Date.now()) === "give-up") { setErrText("The phone stopped the 3D (out of memory?)"); setStatus("error"); return; }
             setStatus("loading");
             setRestarts((n) => n + 1);
           },
@@ -203,9 +272,23 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           lookH,
           fixedStep: q.get("film") === "1" ? 1 / 30 : undefined,
           edit: approvedRef.current,
+          isDead: () => dead,
           ...(pov ? { pov: true } : {}),
           ...(houseCam && houseCam !== "D" ? { houseCam } : {}),
-          ...(alive ? { living: { ...livingFor(career), onSleep: () => { const r = sleepNight(careerRef.current); if (r.rested) sleepRef.current?.(); return sleepRef.current ? r.text : "A good night."; } } } : {}),
+          ...(alive ? { living: { ...livingFor(career), onSleep: () => { const r = sleepNight(careerRef.current); sleepRef.current?.(); return sleepRef.current ? r.text : "A good night."; }, clock: () => liveRef.current.now(), tick: (dt: number) => liveRef.current.tick(dt),
+            // who is in the house each day (lib/star/life/dayPlan.ts); a test page can force one (?visit=mate|chef|quiet)
+            visits: visitsFn(q.get("visit"), liveRef.current.now(), rooms, tier),
+            // the home gym's kit: "Start a workout" leaves for the gym of this level (the live clock's minutes sent first)
+            onGym: () => { if (dead) return; const pend = liveRef.current.flush(1); if (pend) onTimeRef.current?.(pend); setLeaving(true); setGymReturnRoom(roomRef.current); onGymRef.current?.(tier); },
+            // a thing used: its minutes and its energy/mood within the day's caps (the career keeps it); the card says what it really did
+            onEffect: (thing: string, e: { energy?: number; mood?: number; text?: string }) => {
+              // the live clock's unsent minutes first (sent before the use), so the card's time is the time now
+              const pend = liveRef.current.flush(1);
+              if (pend) onTimeRef.current?.(pend);
+              const r = applyThing(passTime(careerRef.current, pend), thing, e);
+              onUseRef.current?.(thing, e);
+              return { text: r.text, sub: r.sub };
+            } } } : {}),
         });
         let c: HomeController;
         try {
@@ -222,11 +305,14 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         (window as unknown as { __home3d?: HomeController }).__home3d = c;
         setStatus("ready");
         readyRef.current?.(c);
+        // back from the house's gym: into the room you left it from (gym/homeGym.ts)
+        const back = takeGymReturnRoom();
+        if (back && back !== c.room() && rooms.includes(back as RoomId)) void c.goToRoom(back as RoomId);
       } catch (e) {
         if (dead) return; // closed mid-load (three3d/perf.ts isAbandonedScene): nothing to show
         console.error("3D home failed to load", e);
         // tried again by itself on a fresh renderer (three3d/autoHeal.ts) before the card and its tap
-        if (restarts < AUTO_REBUILDS) { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
+        if (afterLoss(heal.current, Date.now()) === "rebuild") { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
         if (!dead) { setErrText(e instanceof Error ? `${e.name}: ${e.message}` : String(e)); setStatus("error"); }
       }
     })();
@@ -290,6 +376,25 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           <div style={{ fontSize: 18, fontWeight: 900 }}>{lifeCard.title}</div>
           {lifeCard.lines.map((l, i) => <div key={i} style={{ fontSize: 14, lineHeight: 1.35, marginTop: 4, color: i ? "#cbd5e1" : "#f8fafc" }}>{l}</div>)}
           {lifeCard.change && <div style={{ fontSize: 12, fontWeight: 800, color: "#86efac", marginTop: 6 }}>{lifeCard.change}</div>}
+          {/* the bathroom mirror: shave, trim the beard, tidy the hair (free, 10 minutes, never a new style) */}
+          {lifeCard.key === "obj:mirror" && onHair && (
+            <div style={{ display: "flex", gap: 6, marginTop: 10 }} data-home3d-mirror>
+              {mirrorOptions(careerRef.current, yourToonHead(careerRef.current.player)).map((o) => (
+                <button key={o.act} data-mirror-act={o.act} disabled={!o.ok} title={o.why}
+                  onClick={() => {
+                    const pend = liveRef.current.flush(1);
+                    if (pend) onTimeRef.current?.(pend);
+                    const r = mirrorAct(passTime(careerRef.current, pend), o.act, yourToonHead(careerRef.current.player));
+                    setHairNote(r.ok ? `${r.text.trim()} · 10 minutes` : r.text);
+                    onHair(o.act);
+                  }}
+                  style={{ flex: 1, height: 36, borderRadius: 10, border: "1px solid rgba(255,255,255,.25)", background: o.ok ? "rgba(255,255,255,.08)" : "transparent", color: o.ok ? "#f8fafc" : "rgba(248,250,252,.4)", fontWeight: 800, fontSize: 13, cursor: o.ok ? "pointer" : "default" }}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {lifeCard.key === "obj:mirror" && hairNote && <div style={{ fontSize: 12, fontWeight: 800, color: "#86efac", marginTop: 6 }} data-mirror-note>{hairNote}</div>}
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
             {lifeCard.actions.map((a) => (
               <button key={a.id} onClick={() => ctrlRef.current?.act?.(a.id)} data-act={a.id}
@@ -306,9 +411,6 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         <button onClick={onBack} aria-label={`Back to ${backLabel}`} style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 4, paddingLeft: 10 }} data-home3d-back>
           <span style={{ fontSize: 20, lineHeight: 1, marginTop: -2 }}>&#8249;</span>{backLabel}
         </button>
-        <div style={{ ...pill, fontWeight: 900, gap: 6, maxWidth: "52vw", overflow: "hidden" }}>
-          <span aria-hidden>🏠</span><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{homeName}</span>
-        </div>
         <div style={{ flex: 1 }} />
         <div style={{ ...pill, gap: 6 }} aria-label="Trophies">
           <span aria-hidden style={{ fontSize: 15 }}>🏆</span><b style={{ color: GOLD }}>{slots.filter((s) => s.won).reduce((n, s) => n + s.count, 0)}</b>
@@ -324,7 +426,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
               <div style={{ fontWeight: 900, fontSize: 17, marginBottom: 6 }}>Your house didn&apos;t load</div>
               <div style={{ fontWeight: 600, color: MUTED, fontSize: 14, lineHeight: 1.5 }}>This phone or browser may not run 3D.</div>
               {errText && <div style={{ fontWeight: 600, color: MUTED, fontSize: 10.5, marginTop: 10, opacity: 0.7, wordBreak: "break-word" }}>{errText.slice(0, 200)}</div>}
-              <button onClick={() => { void import("@/lib/star/three3d/perf").then((m) => { m.dropSharedRenderer(); setErrText(""); setStatus("loading"); setRestarts(0); setRetry((n) => n + 1); }); }} style={{ ...ctaStyle, marginTop: 14 }} data-reload-3d>Tap to reload 3D</button>
+              <button onClick={() => { void import("@/lib/star/three3d/perf").then((m) => { m.dropSharedRenderer(); healReset(heal.current); setErrText(""); setStatus("loading"); setRestarts(0); setRetry((n) => n + 1); }); }} style={{ ...ctaStyle, marginTop: 14 }} data-reload-3d>Tap to reload 3D</button>
               <button onClick={onBack} style={{ ...ctaStyle, marginTop: 10, background: "transparent", color: INK, border: "1px solid rgba(255,255,255,.3)" }}>Back to {backLabel}</button>
             </div>
           )}
@@ -342,8 +444,9 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           {ROOM_HINT[roomNow ?? "main"] ?? ""}
         </div>
       )}
+      {chrome && <ClockPill career={career} abs={live.abs} held={live.abs >= leaveAt(career)} onMatch={onMatch} title={homeName} visits={todayVisits} invite={inviteOffer} />}
       {status === "ready" && chrome && rooms.length > 1 && roomNow && (
-        <div style={{ position: "absolute", top: "calc(max(12px, env(safe-area-inset-top)) + 48px)", left: 0, right: 0, display: "grid", justifyItems: "center", gap: 6, pointerEvents: "none" }} data-home3d-room={roomNow}>
+        <div style={{ position: "absolute", top: "calc(max(12px, env(safe-area-inset-top)) + 60px)", left: 0, right: 0, display: "grid", justifyItems: "center", gap: 6, pointerEvents: "none" }} data-home3d-room={roomNow}>
           <div style={{ ...pill, fontWeight: 900, fontSize: 13, height: 30 }}>{ROOM_LABEL[roomNow]}</div>
           <div style={{ display: "flex", gap: 2, pointerEvents: "auto" }} aria-label="Rooms">
             {rooms.map((id) => (

@@ -2,6 +2,8 @@
 // worktree) with a render() hook that measures every on-screen frame.
 import * as THREE from "three";
 import { startGarden } from "@/lib/star/garden3d/scene";
+import { COURSE_ROUTE, TRACK_ROUTE } from "@/lib/star/garden3d/levelLayout";
+(window as any).ROUTES = { course: COURSE_ROUTE, track: TRACK_ROUTE };
 import { startShop } from "@/lib/star/shop3d/scene";
 import { startCasino } from "@/lib/star/casino3d/scene";
 import { shopDisplays } from "@/lib/star/shop3d/catalogue";
@@ -80,13 +82,13 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
 (window as any).H = {
   async garden(opts: any = {}) {
     M.t0 = performance.now();
-    const c = await startGarden(stage(), { onNear() {}, onFps() {}, onShopDoor() {} }, {
-      kit: KIT, number: 10, tier: opts.tier ?? 3, stable: 3, horse: { name: "Shergar" },
+    const c = await startGarden(stage(), { onNear() {}, onFps() {}, onShopDoor() {}, onRide(r: any) { (window as any).__rides = [...((window as any).__rides ?? []), r]; } } as any, {
+      kit: KIT, number: 10, tier: opts.tier ?? 3, stable: 3, horse: { name: "Copper Kettle" },
       trophies: [{ name: "Premier League", count: 2, art: null }, { name: "FA Cup", count: 1, art: null }],
       cars: ["/star/shop3d/items/car-1.glb", "/star/shop3d/items/car-suv.glb"],
       sky: opts.sky ?? "day", mates: [4, 7, 9], arrive: "gate",
       player: { look: opts.look ?? "new", skin: "#e0b89a", hair: "#3d2616", hairStyle: "short" },
-    }, { quality: opts.quality ?? "high", fixedStep: 1 / 30 });
+    }, { quality: opts.quality ?? "high", fixedStep: 1 / 30, levels: opts.levels });
     M.ready = performance.now();
     M.ctrl = c;
     return c.stats();
@@ -270,6 +272,54 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
    * localStorage first: "star-look-player-style" old + "star-look-3d-body" human/before for
    * the human or the one body). Lag pass 4: a still of each packed model against the plain one.
    */
+  /**
+   * Garden levels: the ridable horse and the rider on it, alone (lib/star/garden3d/rideHorse.ts), for the
+   * pose and the horse's look. opts: { view: "side"|"back"|"front"|"top"|"three", pose: {...}, speed, clip: "idle"|"walk"|"run"|"jump", t, round }
+   */
+  async rider(opts: any = {}) {
+    M.t0 = performance.now();
+    const el = stage();
+    const { makeRideHorse, carryTack, seatRider, riderCheck, RIDE_POSE } = await import("@/lib/star/garden3d/rideHorse");
+    const { blobCanvas } = await import("@/lib/star/shop3d/textures");
+    const W = el.clientWidth || 390, Hh = el.clientHeight || 844;
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setSize(W, Hh); el.appendChild(renderer.domElement);
+    renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    const scene = new THREE.Scene(); scene.background = new THREE.Color("#cfe0ee");
+    scene.add(new THREE.HemisphereLight("#d6e2f0", "#5a4a2a", 1.1));
+    const sun = new THREE.DirectionalLight("#ffd9a8", 2.6); sun.position.set(4, 6, 5); scene.add(sun);
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: "#7ea24b", roughness: 1 })); ground.rotation.x = -Math.PI / 2; scene.add(ground);
+    const loader = await withMeshopt(new GLTFLoader());
+    const [hg, g, anims] = await Promise.all([loader.loadAsync("/star/garden3d/horse.glb"), loadPeople3d(loader as any, "player", "new"), loadPeople3d(loader as any, "anims", "new")]);
+    const blobT = new THREE.CanvasTexture(blobCanvas());
+    const rig = makeRideHorse(THREE, SkeletonUtils, hg, blobT, { round: opts.round !== false });
+    scene.add(rig.root, rig.saddle, rig.reinL, rig.reinR, rig.blob);
+    const clip = opts.clip ?? "idle";
+    for (const a of [rig.idle, rig.walk, rig.run, rig.jump]) a.setEffectiveWeight(0);
+    const act = ({ idle: rig.idle, walk: rig.walk, run: rig.run, jump: rig.jump } as any)[clip];
+    act.setEffectiveWeight(1); act.time = opts.t ?? 0; act.timeScale = 0;
+    rig.mixer.update(0);
+    carryTack(rig);
+    let p: any = null;
+    if (opts.rider !== false) {
+      p = makePerson3d(THREE as any, ((SkeletonUtils as any).default ?? SkeletonUtils) as any, g, anims, { outline: 0.006, you: true });
+      dressPerson3d(THREE as any, p, { skin: "#e0b89a", hair: "#3d2616", kit: KIT, number: null });
+      scene.add(p.root);
+      rig.reinL.visible = rig.reinR.visible = true;
+      seatRider(THREE, p, rig, 0, opts.lean ?? 0, { ...RIDE_POSE, ...(opts.pose ?? {}) });
+    }
+    const cams: Record<string, [number[], number[]]> = {
+      side: [[3.6, 1.5, 0.2], [0, 1.25, 0.15]], left: [[-3.6, 1.5, 0.2], [0, 1.25, 0.15]], back: [[0.3, 1.9, -4.2], [0, 1.3, 0.2]], front: [[0.4, 1.7, 4.2], [0, 1.3, 0]], top: [[0.01, 5.5, 0.3], [0, 1, 0.2]], three: [[3.2, 2.4, 3.2], [0, 1.2, 0.1]],
+      legs: [[1.9, 0.9, 0.5], [0, 1.0, 0.2]],
+    };
+    const [cp, cl] = cams[opts.view ?? "side"];
+    const cam = new THREE.PerspectiveCamera(opts.fov ?? 40, W / Hh, 0.05, 60); cam.position.set(cp[0], cp[1], cp[2]); cam.lookAt(cl[0], cl[1], cl[2]);
+    renderer.render(scene, cam);
+    M.ready = performance.now();
+    (window as any).__rideCheck = p ? riderCheck(THREE, p, rig) : null;
+    M.ctrl = { dispose() { renderer.dispose(); renderer.domElement.remove(); } };
+    return (window as any).__rideCheck;
+  },
   async person(opts: any = {}) {
     M.t0 = performance.now();
     const el = stage();

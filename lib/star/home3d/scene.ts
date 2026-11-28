@@ -39,7 +39,7 @@ import type { Person3D } from "../people3d";
 import { turnTo } from "../three3d/animBlend";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor, sessionStartTier } from "../three3d/governor";
-import { DynamicResolution, rememberGpu, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, noteSceneFiles, acquireRenderer, awaitSmoothFrame, abandonedSceneError, abandonedContainer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
@@ -57,6 +57,8 @@ import { buildRoom, disposeGroup, roomFree, MIRROR_LAYER, MIRROR_PX, type BuiltR
 import { safeCompileAsync } from "../three3d/safeCompile";
 import type { InteractCard } from "../world3d/interact";
 import type { HouseLife, LifeMate } from "../world3d/houseLife";
+import type { HouseVisit } from "../life/dayPlan";
+import { roomPeople } from "../life/houseRoutines";
 import { FURNITURE, isLiving } from "./rooms";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
 import { ViewCam, headWorld, loadViewMode, showBody, type ViewMode } from "../three3d/viewCam";
@@ -227,6 +229,8 @@ export interface HomeCallbacks {
 }
 
 export interface HomeOptions {
+  /** The screen was closed while this was still building (3D places audit P1): stop at the next step, never take the canvas. */
+  isDead?: () => boolean;
   quality?: Quality3d;
   /** Look H (the broadcast pass) or the plain look. Unset: Settings → Look → "3D look". */
   lookH?: boolean;
@@ -241,9 +245,19 @@ export interface HomeOptions {
   /** The 3D phone test page only: try walking camera A, B or C (HOUSE_CAMS). Absent = D, the game's camera (with its zoom). */
   houseCam?: HouseCam;
   /** A living house (homes.ts LIVING_TIERS, the world-kit test page): things you use, team-mates round. Absent = as before. */
-  living?: { mates: LifeMate[]; club?: string; chat?: (id: string) => { line: string; change?: string } | null; onEffect?: (thing: string, e: { mood?: number; energy?: number; text?: string }) => void;
+  living?: { mates: LifeMate[]; club?: string; chat?: (id: string) => { line: string; change?: string } | null;
+    /** You used a thing: the career's answer (lib/star/life/houseActs.ts: time, energy, mood within the day's caps) for its card. */
+    onEffect?: (thing: string, e: { mood?: number; energy?: number; text?: string }) => { text: string; sub?: string } | void;
     /** "Sleep till morning" in your bed: called in the dark, once the night has passed; returns the card's words (home3d/sleep.ts). */
-    onSleep?: () => string };
+    onSleep?: () => string;
+    /** The career clock (lib/star/life/liveClock.ts): minutes since day 0 of this gap, now. Absent: the house's own clock (15:00). */
+    clock?: () => number;
+    /** Tick the career clock by the house's own frame time (s). */
+    tick?: (dt: number) => void;
+    /** "Start a workout" at the home gym's kit (gym/homeGym.ts): the page opens the gym of this house's level. */
+    onGym?: () => void;
+    /** Who is in the house on a day of the gap (lib/star/life/dayPlan.ts). Absent: the old fixed team-mates. */
+    visits?: (day: number) => HouseVisit[] };
 }
 
 export interface HomeController {
@@ -319,6 +333,8 @@ export async function startHome(container: HTMLElement, cb: HomeCallbacks, data:
 }
 
 async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeData, opts: HomeOptions, own: { release?: (root?: any) => void; root?: any }): Promise<HomeController> {
+  /** The screen closed while this was still building (3D places audit P1): stop at the next step. */
+  const gone = () => !!opts.isDead?.() || abandonedContainer(container);
   // the scene's own tier (Settings, else Auto); built lower if this session's
   // governor already settled lower (three3d/governor.ts sessionStartTier), so a
   // door never opens a place too heavy for the phone and then steps it down
@@ -340,6 +356,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
 
   // ── Renderer (as the shop: one tier chosen first, the governor, still/moving pixels) ──
   // ONE renderer for every 3D place (three3d/perf.ts): no new WebGL context, shaders kept, at each door
+  // closed while its files loaded (3D places audit P1, 28 Nov 2026): never take the canvas from the place on screen
+  if (gone()) throw abandonedSceneError();
   const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   own.release = release;
   rememberGpu(renderer);
@@ -534,7 +552,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     return { person, worn, gait, idle, walk, jog };
   };
   let me = await dressUp(data.worn);
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
   // camera D opens settled: he starts far enough inside the front door for its whole boom (followCam.ts settledArrival)
   const START = (() => {
     const door = room.plan.doors[0];
@@ -550,7 +568,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
 
   // look H draws into its pass's picture: build the shaders for THAT (enhance.ts compile), not the screen
   try { await (hEnh ? hEnh.compile(scene, camera) : safeCompileAsync(renderer, scene, camera)); } catch { /* compiled on first use */ }
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
 
   // ── State ──
   let stick = { x: 0, y: 0 };
@@ -669,6 +687,8 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     if (!path) return false;
     faceTo = null;
     spotWalk = null;
+    // already there (the start and the goal in one cell): no walk, straight on (an empty path used to throw here)
+    if (!path.length) { faceTo = face; then?.(); return true; }
     // the last point exactly (a seat's stand point sits at the edge of the free floor)
     if (then && Math.hypot(path[path.length - 1][0] - to[0], path[path.length - 1][1] - to[1]) < 0.8) path[path.length - 1] = to;
     walker.go(path, { onArrive: () => { marker.fade(); faceTo = face; arrivedAt = spotWalk; spotWalk = null; then?.(); } });
@@ -812,11 +832,17 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       you: () => ({ x: me.person.root.position.x, z: me.person.root.position.z, yaw }),
       setYaw: (y) => { yaw = y; yawTurn.vel = 0; me.person.root.rotation.y = y; },
       onCard: (c) => cb.onCard?.(c),
-      chat: opts.living.chat, onEffect: opts.living.onEffect,
+      chat: opts.living.chat, onEffect: opts.living.onEffect, clockNow: opts.living.clock, tickClock: opts.living.tick,
+      // visitors on the day plan; how many your room may draw: Android (the mid phone) and Low 2, Medium 3, High 5
+      visits: opts.living.visits, roomCap: roomPeople(tier, typeof navigator !== "undefined" && /Android|Mobi/i.test(navigator.userAgent) && !/iPhone|iPad/i.test(navigator.userAgent)),
       onSleep: () => { sleepSeq = { t: 0, text: "", morning: false }; },
+      onGym: opts.living.onGym,
       dip: (text, mid) => { dipSeq = { t: 0, text, mid }; },
     }).catch((e) => { console.error("home: living", e); return null; });
     life?.enterRoom(room);
+    // the career clock: walked in at night (20:00 to 06:00), the night's light
+    const m0 = opts.living.clock ? ((opts.living.clock() % 1440) + 1440) % 1440 : 15 * 60;
+    if (m0 >= 20 * 60 || m0 < 6 * 60) { lightFrom = LIGHTS.night; lightTo = LIGHTS.night; lightK = 1; applyDayLight(); }
   }
 
   // ── Sleeping (lib/star/home3d/sleep.ts): the light goes to night, the screen to black, the clock to
@@ -1316,6 +1342,6 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   // the loading cover stays up until the real first frames are drawn and the
   // page runs at ~30 a second again (perf.ts awaitSmoothFrame): the first
   // draws' leftover building (shadow shaders, uploads) happens behind it
-  await awaitSmoothFrame(renderer, { isDead: () => disposed });
+  await awaitSmoothFrame(renderer, { isDead: () => disposed || gone(), isOwner });
   return ctrl;
 }

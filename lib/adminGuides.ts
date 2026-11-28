@@ -2147,7 +2147,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing here is saved. The page only shows other test pages at fixed moments."],
     inGame: ["Nothing changes in the game from this page. It is a measuring tool for the 3D changes."],
-    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/scene/page.tsx (the cut-scene and Free Roam shots: a bare StyleTest3D, ?scene=director&fixture=…&clean=1; it took over from the deleted Art styles page /star-style-dev, 21 Oct 2026; also the Lag test's cut-scene step), app/star-3d-bench-dev/home/page.tsx (the Home shot; window.__homeT holds a moment), app/star-3d-bench-dev/face/page.tsx (one head close up, its moving face on an 8 s loop), app/star-3d-bench-dev/faces/page.tsx (measures the eight Style A faces: scripts/bench3d/faces.mjs --write), app/star-3d-bench-dev/headshots/page.tsx (twelve made-up players and you as card headshots shot from the 3D model, beside the drawn heads they replace, with the time each picture took; Make again forgets this device's kept pictures; ?only=3d|drawn; components/star/Headshot3D.tsx, lib/star/headshot3d/; stills and timings: node scripts/bench3d/headshots.mjs DIR), app/star-3d-bench-dev/skin/page.tsx (the skin sheet: every skin tone on the card's 3D man from the real headshot maker, each beside the probe picture that marks his face, neck, upper arm, forearm and hand; ?head=h1..h6; numbers and the contact sheet: node scripts/bench3d/skin.mjs --heads=… --out=DIR, node scripts/bench3d/skin-garden.mjs (the same in the real 3D garden), python3 scripts/bench3d/skin_sheet.py DIR OUT.png; ?skinpaint=0 on any 3D page shows the old skin paint), app/star-3d-bench-dev/people/page.tsx (the people presets' contact sheet: every preset in lib/star/people/presets.ts drawn by the game's toon renderer and labelled; ?set=staff|players|closeup|scene, and ?set=today-staff|today-players for the same slots as the game draws them today; not in the game yet; stills: node scripts/bench3d/people-sheet.mjs OUTDIR), app/star-3d-bench-dev/wearables/page.tsx (your player as the house dresses him, with the shop's watch, chain, headphones and the unsold sunglasses and cap designs, one card per outfit × build × view, to check nothing passes through; ?outfits= ?builds= ?views=full,neck,neckback,wrist,head,face ?wear=gold-l4,silver-l5,shades-l3,cap-l3 ?pose=idle; nothing saved; lib/star/style3d/toon/accessories.ts), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old for the before). Home stills: node scripts/bench3d/home.mjs PREFIX 3 8.6 20. Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; on any 3D test page ?skinfix=0 shows the old skin, ?framing=old the old cut-scene cameras, ?face=old still faces.",
+    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/scene/page.tsx (the cut-scene and Free Roam shots: a bare StyleTest3D, ?scene=director&fixture=…&clean=1; it took over from the deleted Art styles page /star-style-dev, 21 Oct 2026; also the Lag test's cut-scene step), app/star-3d-bench-dev/home/page.tsx (the Home shot; window.__homeT holds a moment), app/star-3d-bench-dev/face/page.tsx (one head close up, its moving face on an 8 s loop), app/star-3d-bench-dev/faces/page.tsx (measures the eight Style A faces: scripts/bench3d/faces.mjs --write), app/star-3d-bench-dev/headshots/page.tsx (twelve made-up players and you as card headshots shot from the 3D model, beside the drawn heads they replace, with the time each picture took; Make again forgets this device's kept pictures; ?only=3d|drawn; components/star/Headshot3D.tsx, lib/star/headshot3d/; stills and timings: node scripts/bench3d/headshots.mjs DIR), app/star-3d-bench-dev/skin/page.tsx (the skin sheet: every skin tone on the card's 3D man from the real headshot maker, each beside the probe picture that marks his face, neck, upper arm, forearm and hand; ?head=h1..h6; numbers and the contact sheet: node scripts/bench3d/skin.mjs --heads=… --out=DIR, node scripts/bench3d/skin-garden.mjs (the same in the real 3D garden), python3 scripts/bench3d/skin_sheet.py DIR OUT.png; ?skinpaint=0 on any 3D page shows the old skin paint), app/star-3d-bench-dev/people/page.tsx (the people presets' contact sheet: every preset in lib/star/people/presets.ts drawn by the game's toon renderer and labelled; ?set=staff|players|closeup|scene, and ?set=today-staff|today-players for the same slots as the game draws them today; not in the game yet; stills: node scripts/bench3d/people-sheet.mjs OUTDIR), app/star-3d-bench-dev/wearables/page.tsx (your player as the house dresses him, with the shop's watch, chain, headphones and the unsold sunglasses and cap designs, one card per outfit × build × view, to check nothing passes through; ?outfits= ?builds= ?views=full,neck,neckback,wrist,head,face ?wear=gold-l4,silver-l5,shades-l3,cap-l3 ?pose=idle; nothing saved; lib/star/style3d/toon/accessories.ts), app/star-3d-bench-dev/hair/page.tsx (your player wearing the barber's cuts and beard steps, with and without the cap, front, three-quarter, side and back; ?cuts=afro:0,crew:2 (style : beard step) or ?grow=buzz:coily:0&weeks=0,6,12 (one cut seen as it grows); ?head= ?skin= ?hair= ?cap=0,1; nothing saved; lib/star/barber.ts, lib/star/style3d/toon/yourHair.ts; sheets: node scripts/bench3d/hair-sheet.mjs OUTDIR name::query), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old for the before). Home stills: node scripts/bench3d/home.mjs PREFIX 3 8.6 20. Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; on any 3D test page ?skinfix=0 shows the old skin, ?framing=old the old cut-scene cameras, ?face=old still faces.",
   },
   "/star-3d-area-dev": {
     title: "3D Area",
@@ -2429,6 +2429,7 @@ export const ADMIN_GUIDES = {
       { items: [
           ["Eye button (top right; bottom right on the world kit)", "First person | third person: tap to see through his eyes (gold = on), tap again to go back behind him. Drag to look round. Using something (a seat, a card, a machine) shows him in third person and goes back into his eyes after. Remembered on this device only (lib/star/three3d/viewCam.ts), never in the save."],
         ["‹ Home", "Back to the 3D places group page."],
+        ["Walk out of the garden gate / High Street ›", "Opens the shopping street test page (in a career: the street itself, phase 1: the 3D shop, KIB MOTORS, THE DRIP, the barber)."],
         ["Day / Sunset / Night (above the scene)", "Changes the time of day. In a career it follows the time of your next kick-off."],
         ["Full career / New career (above the scene)", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
         ["↻ Restart (above the scene)", "Builds the garden again from the start."],
@@ -2457,6 +2458,30 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing is saved. The career here is made up each time, and so is its money."],
     inGame: ["Home → Garden in a career opens this 3D garden. The shop where the house used to be is the 3D shop; the casino and the training pitch are at the back.", "Home → Casino opens the 3D casino when Settings → Look → Casino is 3D (the default), else the classic casino menu.", "A 3D Scene Editor edit APPROVED for the garden plays here when ticked for \"the test page\", and in a career when ticked for \"in a career\" (and its time of day matches). None: the garden as built."],
     dev: "components/star/Garden3D.tsx, lib/star/garden3d/scene.ts (Old look: sceneOld.ts); the casino components/star/Casino3D.tsx + lib/star/casino3d/scene.ts; the pitch's placeholder components/star/TrainingPitchScreen.tsx; tap to move lib/star/tapWalk.ts; the walk lib/star/walkClip.ts; draw-call merging lib/star/freezeStatic.ts; models packed by tools/garden3d/export_models.py and build_anims.py.",
+  },
+  "/star-garden-levels-dev": {
+    title: "Garden levels",
+    what: "The 3D garden at each garden level, on a made-up career: more room opens as the level goes up (a stable and paddock, a riding field with a jump course, a race track, fast-travel signposts), and you can ride your horse.",
+    buttons: [
+      { items: [
+        ["Level 1 … Level 5 (above the scene)", "Opens the garden at that level. 1: the garden as it is today. 2: a gate at the end of the side path (back left), a lane, a stable and a paddock with the horse. 3: the riding field with five jumps, four bending poles and a start / finish arch. 4: a dirt race track round the field. 5: signposts for fast travel."],
+        ["Your horse / Stable horse", "Ride your own casino horse (Thunder Bolt here), or the stable's horse a career rides when it owns none (Bramble)."],
+        ["↻ Restart", "Builds the garden again."],
+        ["In my garden: On / Off", "Switches garden levels on in Home → Garden in a career, on this device only. Off (the default): the career garden is exactly as before."],
+        ["The chip (top left in the scene)", "Garden level and the XP into it, e.g. \"Garden level 2 · 240/600 XP\". XP comes from drills on the garden's training pitch and from casino play."],
+        ["Walk up to the horse → Ride ›", "A short fade and you are in the saddle. His energy bar shows on the card; at 0 he rests."],
+        ["Riding: the stick", "A small push walks, more trots, all the way canters. On a computer, the arrow keys or WASD; Shift gallops."],
+        ["Riding: Gallop (hold, bottom right)", "Gallops while held, with the stick pushed. Uses energy fastest; under 15 energy he will not gallop."],
+        ["Riding: Get off (top right)", "A short fade and you stand beside him. The ride's energy and laps go to the career here (shown as Last ride)."],
+        ["Riding through START (level 3+)", "Starts the lap clock. Ride the jumps in order (the gold marker shows the next one), weave the poles, back through START. A rail down +2 s, a pole +1 s, a refusal (too slow at a jump) +4 s. The best time is kept."],
+        ["The race track (level 4+)", "Ride through the red FINISH post on the near straight, round, and back through it: a timed lap with its own best."],
+        ["Signpost (level 5)", "Walk up to it: Fast travel to your house, the garden or the field."],
+        ["?level=1..5, ?bare=1 (in the address)", "Open at that level; full screen."],
+      ] },
+    ],
+    saving: ["Nothing on the career here is saved. \"In my garden\" is kept on this device only.", "In a career (with the setting on): garden XP, best lap times, laps and the stable horse's energy are saved with the career; your own horse's energy is its normal energy."],
+    inGame: ["Home → Garden, only while \"In my garden\" is On on that device (off for everyone until Harry tries it).", "Riding training (match fitness, and the horse's speed and stamina) stays off behind its own switch, like the gym's."],
+    dev: "lib/star/gardenLevels.ts (XP, levels, applyRide), lib/star/garden3d/levelLayout.ts (the plan), levelZones.ts (the 3D, riding, HUD), rideHorse.ts (horse, tack, rider pose), riding.ts (gaits, energy, laps, RIDE_CAREER_EFFECT), levelsFlag.ts; scene.ts opts.levels; tests/star/gardenLevels.mts.",
   },
   "/star-training3d-dev": {
     title: "3D Training",
@@ -2614,6 +2639,35 @@ export const ADMIN_GUIDES = {
     dev: "components/star/Home3D.tsx (the screen, shared with the game's phase \"home-3d\") · app/star-home3d-dev/page.tsx · lib/star/home3d/{homes,rooms,roomBuild,look,trophies,outfits,wear,textures,scene}.ts · the cars and boots: public/star/home3d/*-lod.glb (light copies of the shop's generated models, tools/home3d/make_lods.mjs) · the body: lib/star/home3d/wear.ts (the Style A hook: setWearerBody)",
   },
 
+  "/star-drive3d-dev": {
+    title: "The drive",
+    what: "Driving, phases 1 and 2. You leave your garden gate, get in your car and drive to training: your street, a roundabout, a country lane, then the compound road. There it fades and the REAL training compound opens (the same as /star-world3d-dev?place=compound): the camera is low by the car park's barrier, the arm lifts, you swing into your bay in front of the crest board, the gate and the building, two team-mates by the gate turn to look, and on the door moment you are standing at your car's door. Walk to the gym door from there. A call may ring on the phone on the dash (a team-mate wants to borrow something, or your agent). The drive back ends at a fork: Home, Casino or Shop. Not in the career yet.",
+    buttons: [
+      {
+        items: [
+          ["Hatchback / Family Car / Luxury SUV / Sports Car / Classic Car / Supercar", "Which of your cars you drive (the shop's own cars, with their wheels cut so they turn). In the career it will be the car you own; the Hatchback when you own none."],
+          ["Drive in / Drive back", "To training (the drive, then the real compound's arrival: barrier, bay, you at your car; walk to the gym door) or home from training (ends at the fork: Home / Casino / Shop, then a fade)."],
+          ["Steer: Lanes / Thumb stick / Tilt", "How you steer. Lanes: the car drives itself, tap the left or right half of the screen to change lane. Thumb stick: a stick bottom left slides you across the road. Tilt: tilt the phone. The car can never leave the road or crash. Remembered on this device only."],
+          ["Call: by chance / No call / a call's name", "By chance: one drive in three rings. No call, or force one call to see it."],
+          ["Event: by chance / No event / fan-crossing / speed-camera / mate-race / breakdown / rain", "Something on the road, at most one a drive besides a call (by chance about three drives in five, the same day always the same). A fan waving at a crossing (honk back: fans +2), a speed camera (press Slow down in time or a small fine, 1.5% of a week's wage), a team-mate wanting a race (a short burst; a better car wins more often), a broken-down car (help: reputation +1), or rain (mood −1). Each one shows its card, then what it changed."],
+          ["The event's buttons", "Your answer (or the camera's Slow down). On this page nothing is saved: the line under the picture lists what it would change in the career."],
+          ["Hold anywhere on the picture", "Faster (about a third). Let go to ease off. It still slows for the roundabout and the gate."],
+          ["Tap the left or right half", "Lanes only: change lane, e.g. to overtake the slow car on the lane. If someone is coming the horn sounds and you stay put."],
+          ["🎥 (top right)", "The camera: behind the car, the bumper, or in the car (the dash, the wheel, the phone)."],
+          ["Skip › (top right)", "Ends the drive from any frame (a fade, then the compound). In the compound's arrival, Skip puts you straight at your car's door."],
+          ["The gym door (in the compound, after the arrival)", "Walk up and Go in: the page says where the career would take you (the gym)."],
+          ["The call's two buttons", "Your answer (e.g. Go on then / Not the car). It changes nothing yet: it shows what it would do, and leaves a memory for the people plan (listed under the picture)."],
+          ["← Home / ↑ Casino / Shop → (the fork)", "Where you go after training. Just the choice and a fade for now."],
+          ["↻ Restart", "Starts the drive again."],
+          ["In my career: On / Off", "Off by default. On (this device only): in the career, the garden's training gate opens the drive, then the compound; its gym door opens the 3D gym; '‹ Drive home' is the drive back to the fork (Home = the garden, Casino, Shop). An event's small effect is saved on the career. Same as ?drive=1 on any page."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved from this page. No career is touched. The steer choice and the 'In my career' switch are remembered on this device only (localStorage kib-drive-to-training)."],
+    inGame: ["Off by default. With 'In my career: On', the career's garden training gate opens it (components/star/DriveToTraining.tsx, phase drive-3d); the events' effects are saved on the career through dilemmas.ts applyEffects. DRIVE_IN_GAME in lib/star/drive3d/careerFlag.ts turns it on for everyone."],
+    dev: "components/star/Drive3D.tsx · app/star-drive3d-dev/page.tsx · lib/star/drive3d/{route,car,drive,calls,events,cars,scene,rig,arrival}.ts · the arrival is drawn by lib/star/world3d/testScene.ts (opts.arrive) · stills: scripts/drive3d/arrival-shots.mjs · the cut cars: tools/cars/ (public/star/drive3d/) · stills: scripts/drive3d/event-shots.mjs · tests: tests/star/drive.mts, tests/star/driveArrival.mts, tests/star/driveEvents.mts",
+  },
+
   "/star-world3d-dev": {
     title: "3D world kit",
     what: "The first test of people who live in the 3D places: the house lounge and a garden where people use things. In the house you sit on the sofa, watch the TV and take a can from the fridge. In the garden two team-mates sit on the bench and chat, now and then one stands up to stretch, and a third drops round at the gate, sits, has a drink and leaves. Tap anyone to talk. Not in the real game yet: the game's house and garden are unchanged.",
@@ -2626,6 +2680,11 @@ export const ADMIN_GUIDES = {
           ["Gym (above the scene)", "THE GYM, GTA 6 style (same as ?place=gym): a bench press, two treadmills, a heavy bag, and (phase 2) a pull-up bar, the power rack for back squats, two mats (push-ups, plank, Nordic curls with an ankle roller, a mobility flow), a plyo box (box jumps, the Copenhagen plank), an agility ladder and a landing pad; one team-mate runs, drinks and goes round the new kit on his own. Tap a machine, then Start: a mini-game of its own (not football). One thumb: hold, tap, a beat or a zone, each game says which. Every game can be failed (a bounce, a fall, a dropped grip, stuck in the hole). Not in the career yet. Demos: ?demo=pullup, squat, pushup, plank, nordic, copenhagen, boxjump, ladder, landing, mobility, tour (four in a row), body1 to body4."],
           ["Body A 1 2 3 4 (gym strip)", "The body follows the gym's own levels a window late (Strength broadens him up to about 4.5%, Cardio leans him out; his height never changes). A = from your gym points; 1 to 4 previews a level. Only on this page, never saved."],
           ["Strength / Cardio / Focus / Resilience strip (gym)", "Your four gym levels (1 to 4), today's ring (three dots: any three exercises; they close it when they train at least two different stats; more does nothing that week) and the workout window. Resilience comes from Nordic curls, the Copenhagen plank, landing balance and the mobility flow. Only on this page, never saved."],
+          ["Compound (above the scene)", "THE TRAINING COMPOUND (same as ?place=compound; Harry, 28 Nov 2026, phase 1: the grounds). You have just parked: your car in the front row, the gate with the club's crest board and the security hut, the forecourt, the main building (the gym door, reception, the canteen), three pitches with goals, mannequins, cones and poles, a small stand, lamps and floodlights. The coach (with his clipboard), Den the kit man and four team-mates go about their morning. Tap a door: the gym door takes you into the gym; reception and the canteen say what is coming. ?sky=day|sunset|night picks the light. Not in the career yet; no car driving yet (a later phase)."],
+          ["Gym door / Reception / Canteen (compound)", "Tap a door, walk up, then Go in / Sign in / Look in. Go in fades to black and opens the gym (the Gym button above shows it is on). Sign in and Look in show a 'coming soon' card: the changing room, the physio and the canteen come in a later phase."],
+          ["‹ Compound (top left, in the gym after its door)", "Back out of the gym's door: the compound opens again with you on the forecourt just outside the gym door, facing away from it (not by your car). Only there after you walked in through the compound's gym door."],
+          ["Home gyms (?place=gym&homeGym=starter|flat|penthouse|house|villa|estate)", "Your HOME gym of that house level (lib/star/gym/homeGym.ts): the club gym's own machines and games, only the ones that level has (3, 3, 5, 7, 9, 13; every level can close the week’s ring), inside walls of its size in that house's look (floor, paint, window view; the house's is a garage with a roller door; the villa and estate a mirror wall; the estate a wood-slat wall with a TV, a towel rail, a warm cove light and a sauna door that says coming soon). No team-mate. In a living house, the workout mat (starter studio; flat and penthouse bedroom; the house's garage) or the gym room's treadmill and mat (villa, estate) has Start a workout, which opens it; its ‹ House goes back."],
+          ["The gate and the crest board (compound)", "Tap the gate: Walk in takes you through. Tap the crest board: Take a photo (a line on the card; nothing is saved)."],
           ["Play a match ▸ (gym)", "Moves the gym on one gap between matches: the window counts down. Train inside it for full points; miss it and Strength and Cardio slip back."],
           ["✕ (during a gym game)", "Stops the game; what you did still counts."],
           ["Water cooler: Protein shake (gym)", "A shake this week: the week's gym points ×1.2."],
@@ -2642,7 +2701,8 @@ export const ADMIN_GUIDES = {
     ],
     saving: [
       "Nothing is saved. The made-up career lives on this page only and is gone when you leave or restart.",
-      "The address can hold a set-up: ?place=house|garden, ?q=low|medium|high (the quality tier), ?fps=1 for the frame meter, ?bare=1 full screen, ?demo=sofa|fridge|visitor|talk (a scripted run for filming).",
+      "The address can hold a set-up: ?place=house|garden|gym|compound, ?sky=day|sunset|night (the compound), ?q=low|medium|high (the quality tier), ?fps=1 for the frame meter, ?bare=1 full screen, ?demo=sofa|fridge|visitor|talk|arrive|compound|drive (a scripted run for filming; arrive = car park, through the gate, in at the gym door; drive = the drive's arrival, then in at the gym door), ?arrive=hatch|family|suv|sports|classic|super (the compound opens with that car's arrival: under the barrier into your bay, then you at its door; Skip › top right).",
+      "The compound's speed is measured from every viewpoint on a Galaxy S20 screen (scripts/world3d/compound-measure.mjs) and written into lib/star/world3d/compoundPlan.ts; the test tests/star/compound.mts holds it to the budget (Medium 90 draws and 90k triangles, Low 60 draws). Nothing is committed from this page.",
     ],
     inGame: [
       "Nowhere yet. This is phase 1 of the shared world kit (docs/research/world-3d-2026-11-20.md); the real house and garden get it once Harry approves.",
@@ -2650,7 +2710,41 @@ export const ADMIN_GUIDES = {
     needs: [
       "A phone or browser that runs 3D (WebGL).",
     ],
-    dev: "components/star/World3D.tsx · app/star-world3d-dev/page.tsx · lib/star/world3d/{smartObject,routine,npc,interact,budget,testScene}.ts · test: tests/star/routine.mts · the lounge itself is lib/star/home3d/roomBuild.ts (unchanged)",
+    dev: "components/star/World3D.tsx · app/star-world3d-dev/page.tsx · lib/star/world3d/{smartObject,routine,npc,interact,budget,testScene}.ts · home gyms: lib/star/gym/homeGym.ts, lib/star/world3d/gymPlace.ts (home), scripts/world3d/{home-gym-shots,home-gym-house-shots}.mjs, tests/star/homeGym.mts · the compound: lib/star/world3d/{compoundPlan,compoundPlace,farBodies}.ts, scripts/world3d/{compound-shots,compound-measure}.mjs · tests: tests/star/routine.mts, tests/star/compound.mts · the lounge itself is lib/star/home3d/roomBuild.ts (unchanged)",
+  },
+
+  "/star-street-dev": {
+    title: "Shopping street",
+    what: "The shopping street (phase 1): a short high street at golden hour you walk down from your garden's gate. Four shop fronts with doors: KNOWITBALL (the 3D shop), KIB MOTORS (the car showroom: the next car you could buy turns behind the glass with its real shop price), THE DRIP (the boutique, real price tags) and the BARBER (open: walk in, sit in the chair, try styles on your own head, pay, a cut, walk back out). People walk the pavements and cross at the zebra; cars are parked along the kerbs. In a career it opens out of the garden's gate.",
+    buttons: [
+      {
+        items: [
+          ["From the garden / At shop / At cars / At drip / At barber", "Where you appear: at the bottom of the street (as from your garden's gate), or just outside that door (as when you come back out of it)."],
+          ["New career / Rich career", "A brand-new career, or one that owns the first cars and the cap: the showroom and the boutique windows then show the next thing to buy."],
+          ["↻ Restart", "Opens the street again from the start."],
+          ["‹ Garden (top left)", "Leaves the page (in a career: back to your garden's gate)."],
+          ["Stick (bottom left), W A S D / arrows (+ Shift)", "Walk, jog. Drag the street to look round."],
+          ["Tap the ground / tap a shop front", "You walk there / to that shop's door."],
+          ["Walk through an open door, or its card's button (Shop ›, Cars ›, Drip ›)", "Here: the 3D shop's door opens the 3D shop test page; the Cars and Drip doors only show a note (in a career they open the shop's Cars and Drip aisles, and Back comes out of that door again)."],
+          ["Barber › / walking through the barber's door, or Into the barber's (top bar)", "Opens the barber's: you walk to the chair and sit. Your hair (Straight, Wavy, Curly, Coily) lists only the styles that suit it; tap a style and it is on your head at once while the chair turns side to side (⟳ stops it; drag to turn it yourself). Beard: as it is, clean shaven, stubble, heavy stubble, beard. Pay · Cut: the barber works behind you for a few seconds, then you in the mirror with what it did (mood, fans, money, minutes). Another style, or Leave › (you stand up and walk out, back on the street at the barber's door). The made-up career's money really goes down here, on this page only."],
+          ["Walking off the bottom of the street", "Here: a note. In a career: down the lane, back to your garden's gate."],
+          ["Eye button (top right)", "First person | third person, as in the garden and the 3D shop (remembered on this device)."],
+          ["Pinch or scroll the wheel", "Zooms the camera out behind you and back in (camera D)."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. The made-up career lives on this page only.",
+      "The address can hold a set-up: ?bare=1 full screen, ?arrive=gate|shop|cars|drip|barber, ?outfit=hoodie|tee|shirt|tracksuit|coat, ?q=low|medium|high, ?walkers=0..6, ?film=1; the barber's: ?barber=1 (straight in), ?seated=1 (already in the chair), ?skin=deep|fair…, ?head=h1..h6, ?hair=black|brown|fair|blond, ?cut=afro.k.0.1.1 (the hair you walk in with). Stills: node scripts/barber3d/shots.mjs OUTDIR deep h1 coily.",
+      "In a career a cut is saved on the career (career.hair: the style, your hair type, the beard and the weeks of the last cut and shave, about 15 bytes) with its price, its clock minutes, and its mood and fans points (lib/star/barber.ts).",
+    ],
+    inGame: [
+      "Your garden's gate: walk out of it (or tap High Street › at the gate) and you are at the bottom of the street. Its doors open the 3D shop, the shop's Cars aisle, its Drip aisle and the barber's; their way back brings you out of the same door. Your cut then shows on your player in every 3D place.",
+    ],
+    needs: [
+      "A phone or browser that runs 3D (WebGL).",
+    ],
+    dev: "components/star/Street3D.tsx · app/star-street-dev/page.tsx · lib/star/street3d/{plan,scene,textures}.ts · app/star-dev/page.tsx phase street-3d · test: tests/star/street3d.mts",
   },
 
   "/star-sprites-dev": {

@@ -17,7 +17,10 @@
  * result card. It runs inside the world kit's one frame (testScene.ts step): no loop of its own.
  */
 import { plantMesh } from "../home3d/plants";
-import { glowCanvas, wallCanvas, signCanvas } from "../home3d/textures";
+import { glowCanvas, wallCanvas, signCanvas, floorCanvas, viewCanvas } from "../home3d/textures";
+import type { FloorKind, WindowView } from "../home3d/homes";
+import type { HomeGymPlan } from "../gym/homeGym";
+import { homeGymStart } from "../gym/homeGym";
 import { startGame, stepGame, resultOf, botHold, GAME_NAMES, HOW_TO, TREADMILL, MAX_SECS, type GameState, type GymGameKind, type GameResult } from "../gym/games";
 import { GYM2_KINDS, COPEN, type Gym2Kind, type Gym2State } from "../gym/games2";
 import { STAT_OF, STAT_NAMES } from "../gym/progress";
@@ -45,6 +48,20 @@ export interface GymEnv {
    *  Reflector draws the room as the camera sees it (screen-shaped), so a mirror-shaped picture (wide and short)
    *  stretched each of its pixels 8 screen pixels tall: the blocks up close. Unset: the old mirror-shaped picture. */
   mirrorScale?: number;
+  /** A HOME gym (gym/homeGym.ts): the tier's machines only, inside its own walls, in the house's look. Absent: the club gym. */
+  home?: HomeGymLook;
+}
+
+/** A home gym's look: the plan (machines, walls, mirror, sauna) and the house's own finish (homes.ts RoomPreset). */
+export interface HomeGymLook {
+  plan: HomeGymPlan;
+  floor: FloorKind;
+  wall: string;
+  trim: string;
+  /** What the window looks out on. */
+  view: WindowView;
+  /** Ceiling height (the house's). */
+  h: number;
 }
 
 export const GYM = {
@@ -118,6 +135,13 @@ function beltCanvas(): HTMLCanvasElement {
   return c;
 }
 
+/** A colour a share darker (0.72 = 72% of it). */
+function shadeOf(hex: string, k: number): string {
+  const n = parseInt(hex.replace("#", ""), 16);
+  const c = (v: number) => Math.max(0, Math.min(255, Math.round(v * k))).toString(16).padStart(2, "0");
+  return `#${c((n >> 16) & 255)}${c((n >> 8) & 255)}${c(n & 255)}`;
+}
+
 /** A painter: boxes and cylinders in vertex colours, joined into one mesh (one draw). */
 function painter(THREE: any, merge: (g: any[]) => any) {
   const parts: any[] = [];
@@ -148,7 +172,16 @@ function painter(THREE: any, merge: (g: any[]) => any) {
 /** Build the gym into env.scene. */
 export function buildGymRoom(env: GymEnv): GymRoomOut {
   const { THREE, scene, prof, kit } = env;
-  const { W2, D2, H } = GYM;
+  const { W2, D2 } = GYM;
+  // a home gym (gym/homeGym.ts): its own walls round the tier's machines (each machine keeps the club gym's spot)
+  const home = env.home ?? null;
+  const has = (k: GymGameKind) => !home || home.plan.kinds.includes(k);
+  const [X0, X1, Z0, Z1] = home ? home.plan.box : [-W2, W2, -D2, D2];
+  const H = home ? Math.max(2.55, home.h) : GYM.H;
+  const RW = X1 - X0, RD = Z1 - Z0, CX = (X0 + X1) / 2, CZ = (Z0 + Z1) / 2;
+  const doorX = home ? home.plan.doorX : 0;
+  const garage = home?.plan.kind === "garage";
+  const big = !home || home.plan.kind === "full" || home.plan.kind === "private";
   const solids: [number, number, number, number][] = [];
   const add = (m: any) => { scene.add(m); return m; };
   const tex = (cv: HTMLCanvasElement, rep?: [number, number]) => {
@@ -159,21 +192,25 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   let meshes = 0;
   const mesh = (g: any, m: any, o: { cast?: boolean; receive?: boolean } = {}) => { const me = new THREE.Mesh(g, m); me.castShadow = !!o.cast; me.receiveShadow = o.receive ?? true; meshes++; return add(me); };
 
-  scene.background = new THREE.Color("#101114");
+  scene.background = new THREE.Color(home ? "#15130f" : "#101114");
   // ── light: the strip lights' cool white from above, warm daylight through the high window (west) ──
-  scene.add(new THREE.HemisphereLight("#f2f5ff", "#3b3a3f", 1.15));
-  const sun = new THREE.DirectionalLight("#fff1dc", 1.5);
-  sun.position.set(-W2 - 3, 6.5, 1.5);
-  sun.target.position.set(0.5, 0, 0);
+  // (the estate: a warmer light, its cove's colour)
+  const warm = !!home?.plan.sauna;
+  scene.add(new THREE.HemisphereLight(warm ? "#fff0dc" : "#f2f5ff", warm ? "#4a3a2c" : "#3b3a3f", 1.15));
+  const sun = new THREE.DirectionalLight(warm ? "#ffd9a8" : "#fff1dc", 1.5);
+  sun.position.set(X0 - 3, 6.5, CZ + 1.5);
+  sun.target.position.set(CX + 0.5, 0, CZ);
   scene.add(sun, sun.target);
   sun.castShadow = prof.shadows;
-  Object.assign(sun.shadow.camera, { left: -6.5, right: 6.5, top: 6.5, bottom: -6.5, near: 0.5, far: 22 });
+  { const r = home ? Math.max(RW, RD) / 2 + 1.5 : 6.5; Object.assign(sun.shadow.camera, { left: -r, right: r, top: r, bottom: -r, near: 0.5, far: 22 }); }
   sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03;
 
   // ── floor, walls, ceiling ──
-  const floorT = tex(rubberCanvas(), [W2 * 2, D2 * 2]);
-  const floor = mesh(new THREE.PlaneGeometry(W2 * 2, D2 * 2), new THREE.MeshStandardMaterial({ map: floorT, roughness: 0.92 }));
-  floor.rotation.x = -Math.PI / 2;
+  // the floor: rubber tiles (the club, the garage); a home's own floor (its boards, oak, stone, marble), rubber mats under the kit
+  const floorM = !home || garage ? new THREE.MeshStandardMaterial({ map: tex(rubberCanvas(), [RW, RD]), roughness: 0.92, ...(garage ? { color: "#b9bcc2" } : {}) })
+    : new THREE.MeshStandardMaterial({ map: tex(floorCanvas(home.floor), [RW / 2, RD / 2]), roughness: home.floor === "marble" || home.floor === "stone" ? 0.35 : home.floor === "carpet" ? 0.95 : 0.6 });
+  const floor = mesh(new THREE.PlaneGeometry(RW, RD), floorM);
+  floor.rotation.x = -Math.PI / 2; floor.position.set(CX, 0, CZ);
   const wallParts: any[] = [];
   const wall = (w: number, h: number, x: number, y: number, z: number, ry: number) => {
     const g = new THREE.PlaneGeometry(w, h);
@@ -184,18 +221,20 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
     wallParts.push(g);
   };
   const DOOR = 0.62, DOOR_H = 2.2;
-  wall(W2 * 2, H, 0, H / 2, -D2, 0); // north (the mirror covers most of it)
-  wall(D2 * 2, H, -W2, H / 2, 0, Math.PI / 2); // west
-  wall(D2 * 2, H, W2, H / 2, 0, -Math.PI / 2); // east
+  wall(RW, H, CX, H / 2, Z0, 0); // north (the mirror covers most of it)
+  wall(RD, H, X0, H / 2, CZ, Math.PI / 2); // west
+  wall(RD, H, X1, H / 2, CZ, -Math.PI / 2); // east
   // south, with the doorway
-  wall(W2 - DOOR, H, -(W2 + DOOR) / 2, H / 2, D2, Math.PI);
-  wall(W2 - DOOR, H, (W2 + DOOR) / 2, H / 2, D2, Math.PI);
-  wall(DOOR * 2, H - DOOR_H, 0, DOOR_H + (H - DOOR_H) / 2, D2, Math.PI);
-  mesh(env.mergeGeometries(wallParts), new THREE.MeshStandardMaterial({ map: tex(wallCanvas("#d9dbd6")), roughness: 0.9 }));
+  const dL = doorX - DOOR - X0, dR = X1 - (doorX + DOOR);
+  wall(dL, H, X0 + dL / 2, H / 2, Z1, Math.PI);
+  wall(dR, H, X1 - dR / 2, H / 2, Z1, Math.PI);
+  wall(DOOR * 2, H - DOOR_H, doorX, DOOR_H + (H - DOOR_H) / 2, Z1, Math.PI);
+  const wallPaint = home ? (garage ? "#bfc3c6" : home.wall) : "#d9dbd6"; // the garage: the house's own garage paint (roomBuild ROOM_LOOK)
+  mesh(env.mergeGeometries(wallParts), new THREE.MeshStandardMaterial({ map: tex(wallCanvas(wallPaint)), roughness: 0.9 }));
   for (const g of wallParts) g.dispose();
-  const ceil = mesh(new THREE.PlaneGeometry(W2 * 2, D2 * 2), new THREE.MeshStandardMaterial({ color: "#3a3c41", roughness: 0.95 }));
-  ceil.rotation.x = Math.PI / 2; ceil.position.y = H;
-  solids.push([-W2 - 1, -W2, -D2 - 1, D2 + 1], [W2, W2 + 1, -D2 - 1, D2 + 1], [-W2 - 1, W2 + 1, -D2 - 1, -D2], [-W2 - 1, -DOOR, D2, D2 + 1], [DOOR, W2 + 1, D2, D2 + 1]);
+  const ceil = mesh(new THREE.PlaneGeometry(RW, RD), new THREE.MeshStandardMaterial({ color: home && !garage ? "#e9e5dc" : "#3a3c41", roughness: 0.95 }));
+  ceil.rotation.x = Math.PI / 2; ceil.position.set(CX, H, CZ);
+  solids.push([X0 - 1, X0, Z0 - 1, Z1 + 1], [X1, X1 + 1, Z0 - 1, Z1 + 1], [X0 - 1, X1 + 1, Z0 - 1, Z0], [X0 - 1, doorX - DOOR, Z1, Z1 + 1], [doorX + DOOR, X1 + 1, Z1, Z1 + 1]);
 
   const P = painter(THREE, env.mergeGeometries); // matte: frames, pads, mats, rubber
   const S = painter(THREE, env.mergeGeometries); // metal: steel, chrome
@@ -204,31 +243,41 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   const steel = "#23252a", chrome = "#c9cdd3", pad = "#141518", plate = kit.shirt, plate2 = kit.trim;
 
   // the dark skirting, the club stripe at shoulder height round three walls, a door frame
-  for (const [w, x, z, ry] of [[W2 * 2, 0, -D2 + 0.006, 0], [D2 * 2, -W2 + 0.006, 0, Math.PI / 2], [D2 * 2, W2 - 0.006, 0, Math.PI / 2]] as [number, number, number, number][]) {
-    P.box(w, 0.12, 0.012, "#1c1d21", x, 0.06, z, 0, ry);
-    P.box(w, 0.16, 0.012, plate, x, 2.45, z, 0, ry);
-    P.box(w, 0.05, 0.012, plate2, x, 2.33, z, 0, ry);
+  const skirt = home && !garage ? home.trim : "#1c1d21", frame = home && !garage ? home.trim : "#2a2b30";
+  for (const [w, x, z, ry] of [[RW, CX, Z0 + 0.006, 0], [RD, X0 + 0.006, CZ, Math.PI / 2], [RD, X1 - 0.006, CZ, Math.PI / 2]] as [number, number, number, number][]) {
+    P.box(w, 0.12, 0.012, skirt, x, 0.06, z, 0, ry);
+    // the club's stripe in your colours (a home gym: the garage and the big rooms keep a thin one)
+    if (!home) { P.box(w, 0.16, 0.012, plate, x, 2.45, z, 0, ry); P.box(w, 0.05, 0.012, plate2, x, 2.33, z, 0, ry); }
+    else if (garage || big) P.box(w, 0.06, 0.012, plate, x, Math.min(2.3, H - 0.5), z, 0, ry);
   }
-  for (const sx of [-1, 1]) P.box(0.08, DOOR_H, 0.16, "#2a2b30", sx * (DOOR + 0.04), DOOR_H / 2, D2 - 0.02);
-  P.box(DOOR * 2 + 0.16, 0.08, 0.16, "#2a2b30", 0, DOOR_H + 0.04, D2 - 0.02);
-  // through the doorway: the corridor's lit wall
-  L.box(DOOR * 2 + 0.4, DOOR_H + 0.1, 0.02, "#6d6a63", 0, DOOR_H / 2, D2 + 1.4);
-  P.box(DOOR * 2 + 0.4, 0.02, 1.4, "#3a3b40", 0, 0.001, D2 + 0.72);
+  for (const sx of [-1, 1]) P.box(0.08, DOOR_H, 0.16, frame, doorX + sx * (DOOR + 0.04), DOOR_H / 2, Z1 - 0.02);
+  P.box(DOOR * 2 + 0.16, 0.08, 0.16, frame, doorX, DOOR_H + 0.04, Z1 - 0.02);
+  // through the doorway: the corridor's lit wall (a home: the house's own paint and floor)
+  L.box(DOOR * 2 + 0.4, DOOR_H + 0.1, 0.02, home ? shadeOf(home.wall, 0.72) : "#6d6a63", doorX, DOOR_H / 2, Z1 + 1.4);
+  P.box(DOOR * 2 + 0.4, 0.02, 1.4, home ? "#5b4a3a" : "#3a3b40", doorX, 0.001, Z1 + 0.72);
+  // a home: the hall's own side walls (seen at an angle the doorway showed the black behind them)
+  if (home) {
+    for (const sx of [-1, 1]) L.box(0.04, DOOR_H + 0.1, 1.42, shadeOf(home.wall, 0.6), doorX + sx * (DOOR + 0.2), (DOOR_H + 0.1) / 2, Z1 + 0.72);
+    // its ceiling and a warm lamp glow on the far wall: through the doorway is a lit hall, never black
+    L.box(DOOR * 2 + 0.44, 0.03, 1.44, shadeOf(home.wall, 0.8), doorX, DOOR_H + 0.12, Z1 + 0.72);
+    L.box(0.5, 0.5, 0.01, "#ffe2b0", doorX, 1.7, Z1 + 1.385);
+  }
 
   // ── the mirror wall (north): dark glass from knee to above head, a chrome edge ──
-  const MW = W2 * 2 - 0.6, MH = 1.95;
-  const glass = mesh(new THREE.PlaneGeometry(MW, MH), new THREE.MeshStandardMaterial({ color: "#59616b", roughness: 0.06, metalness: 0.95, envMapIntensity: 1.6 }), { receive: false });
-  glass.position.set(0, 1.28, -D2 + 0.012);
+  const withMirror = !home || home.plan.mirror;
+  const MW = RW - 0.6, MH = 1.95;
+  const glass = !withMirror ? null : mesh(new THREE.PlaneGeometry(MW, MH), new THREE.MeshStandardMaterial({ color: "#59616b", roughness: 0.06, metalness: 0.95, envMapIntensity: 1.6 }), { receive: false });
+  glass?.position.set(CX, 1.28, Z0 + 0.012);
   // the live mirror (Medium and High): the room again, from behind the glass, at a low resolution and every
   // second frame on Medium (a wide, soft reflection reads as a gym mirror; Low keeps the glass above)
   let mirror: any = null;
-  if (env.Reflector && env.mirrorPx) {
+  if (withMirror && env.Reflector && env.mirrorPx) {
     const scale = env.mirrorScale ?? 0;
     // screen-shaped from the first frame (resized to the real screen below); 4× smoothing only on the old mirror
     mirror = new env.Reflector(new THREE.PlaneGeometry(MW, MH), scale
       ? { textureWidth: 256, textureHeight: 512, color: 0xc4ccd4, clipBias: 0.003, multisample: 0 }
       : { textureWidth: env.mirrorPx, textureHeight: Math.round((env.mirrorPx * MH) / MW), color: 0xc4ccd4, clipBias: 0.003 });
-    mirror.position.set(0, 1.28, -D2 + 0.016);
+    mirror.position.set(CX, 1.28, Z0 + 0.016);
     const every = !scale && env.mirrorPx <= 512 ? 2 : 1;
     const draw = mirror.onBeforeRender.bind(mirror);
     const rt = mirror.getRenderTarget?.(), buf = new THREE.Vector2();
@@ -245,45 +294,71 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
     meshes++;
     scene.add(mirror);
   }
-  S.box(W2 * 2 - 0.5, 0.035, 0.03, chrome, 0, 2.27, -D2 + 0.02);
-  S.box(W2 * 2 - 0.5, 0.035, 0.03, chrome, 0, 0.29, -D2 + 0.02);
-  // the sign over it: your club's name
-  const sign = mesh(new THREE.PlaneGeometry(1.9, 0.475), new THREE.MeshBasicMaterial({ map: tex(signCanvas(`${(env.club ?? "Club").toUpperCase()} GYM`)), toneMapped: false, transparent: true }), { receive: false });
-  sign.position.set(-1.2, 2.82, -D2 + 0.02);
-  // the high window (west): daylight on a frosted strip
-  L.box(0.02, 0.55, 3.6, "#f6efe0", -W2 + 0.012, 2.72, -0.2);
-  P.box(0.05, 0.05, 3.7, "#2a2b30", -W2 + 0.03, 2.43, -0.2);
-  P.box(0.05, 0.05, 3.7, "#2a2b30", -W2 + 0.03, 3.0, -0.2);
-  // strip lights: three rows over the floor, each with a soft glow below
-  for (const x of [-2.6, 0.3, 3.2]) {
-    L.box(0.12, 0.03, 5.6, "#f4f8ff", x, H - 0.02, -0.3);
-    P.box(0.18, 0.04, 5.7, "#2a2b30", x, H - 0.005, -0.3);
-    const gq = new THREE.PlaneGeometry(2.6, 6.2);
+  if (withMirror) {
+    S.box(MW + 0.1, 0.035, 0.03, chrome, CX, 2.27, Z0 + 0.02);
+    S.box(MW + 0.1, 0.035, 0.03, chrome, CX, 0.29, Z0 + 0.02);
+    // the sign over it: your club's name (a home: its own name)
+    const sign = mesh(new THREE.PlaneGeometry(1.9, 0.475), new THREE.MeshBasicMaterial({ map: tex(signCanvas(home ? home.plan.label.toUpperCase() : `${(env.club ?? "Club").toUpperCase()} GYM`)), toneMapped: false, transparent: true }), { receive: false });
+    sign.position.set(CX - 1.2, Math.min(2.82, H - 0.3), Z0 + 0.02);
+  }
+  if (!home) {
+    // the high window (west): daylight on a frosted strip
+    L.box(0.02, 0.55, 3.6, "#f6efe0", -W2 + 0.012, 2.72, -0.2);
+    P.box(0.05, 0.05, 3.7, "#2a2b30", -W2 + 0.03, 2.43, -0.2);
+    P.box(0.05, 0.05, 3.7, "#2a2b30", -W2 + 0.03, 3.0, -0.2);
+  } else if (!garage) {
+    // the house's own window (west wall), the house's view through it, in a frame of its trim
+    const ww = Math.min(1.8, RD - 1.4), wh = Math.min(1.2, H - 1.35), wy = 1.05 + wh / 2, wz = Z0 + RD * 0.42;
+    const view = mesh(new THREE.PlaneGeometry(ww, wh), new THREE.MeshBasicMaterial({ map: tex(viewCanvas(home.view)), toneMapped: false }), { receive: false });
+    view.rotation.y = Math.PI / 2; view.position.set(X0 + 0.014, wy, wz);
+    for (const dy of [-1, 1]) P.box(0.05, 0.06, ww + 0.12, home.trim, X0 + 0.03, wy + dy * (wh / 2 + 0.03), wz);
+    for (const dz of [-1, 1]) P.box(0.05, wh + 0.12, 0.06, home.trim, X0 + 0.03, wy, wz + dz * (ww / 2 + 0.03));
+    P.box(0.04, 0.04, ww, home.trim, X0 + 0.03, wy, wz);
+    P.box(0.16, 0.04, ww + 0.2, home.trim, X0 + 0.08, wy - wh / 2 - 0.06, wz);
+  } else {
+    // the garage: the roller door (east wall, shut), its slats, the guide rails and the drum box
+    const rz0 = -3.4, rz1 = 0.6, rh = 2.45;
+    P.box(0.03, rh, rz1 - rz0, "#8c9096", X1 - 0.02, rh / 2, (rz0 + rz1) / 2);
+    for (let y = 0.15; y < rh; y += 0.15) P.box(0.04, 0.02, rz1 - rz0 - 0.02, "#6f7379", X1 - 0.03, y, (rz0 + rz1) / 2);
+    for (const z of [rz0, rz1]) S.box(0.06, rh + 0.1, 0.08, steel, X1 - 0.04, (rh + 0.1) / 2, z);
+    S.box(0.3, 0.32, rz1 - rz0 + 0.1, steel, X1 - 0.16, rh + 0.2, (rz0 + rz1) / 2);
+  }
+  // strip lights: rows over the floor, each with a soft glow below (a home: as many as its room is wide)
+  const rows = home ? Math.max(1, Math.round(RW / 3.2)) : 3;
+  const lx = (i: number) => (home ? X0 + (RW * (i + 0.5)) / rows : [-2.6, 0.3, 3.2][i]);
+  const llen = home ? Math.max(1.2, RD - 1.6) : 5.6, lz = home ? CZ : -0.3;
+  for (let i = 0; i < rows; i++) {
+    const x = lx(i);
+    L.box(0.12, 0.03, llen, "#f4f8ff", x, H - 0.02, lz);
+    P.box(0.18, 0.04, llen + 0.1, "#2a2b30", x, H - 0.005, lz);
+    const gq = new THREE.PlaneGeometry(home ? Math.min(2.6, RW / rows) : 2.6, llen + 0.6);
     gq.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
-    gq.applyMatrix4(new THREE.Matrix4().makeTranslation(x, 0.006, -0.3));
+    gq.applyMatrix4(new THREE.Matrix4().makeTranslation(x, 0.006, lz));
     G.push(gq);
   }
 
   // ── the bench press (west of centre): a flat bench on its own uprights, the bar racked ──
   const B = GYM.bench;
   const padLen = B.foot - B.head;
-  P.box(0.32, 0.09, padLen, pad, B.x, B.top - 0.045, (B.head + B.foot) / 2);
-  P.box(0.3, 0.02, padLen - 0.04, "#2a2b30", B.x, B.top - 0.1, (B.head + B.foot) / 2);
-  S.box(0.08, 0.06, padLen - 0.1, steel, B.x, B.top - 0.14, (B.head + B.foot) / 2);
+  // (a home without the bench: its pieces are still made, the bar hidden; nothing solid)
+  const BPm = has("bench") ? P : painter(THREE, env.mergeGeometries), BSm = has("bench") ? S : painter(THREE, env.mergeGeometries);
+  BPm.box(0.32, 0.09, padLen, pad, B.x, B.top - 0.045, (B.head + B.foot) / 2);
+  BPm.box(0.3, 0.02, padLen - 0.04, "#2a2b30", B.x, B.top - 0.1, (B.head + B.foot) / 2);
+  BSm.box(0.08, 0.06, padLen - 0.1, steel, B.x, B.top - 0.14, (B.head + B.foot) / 2);
   for (const z of [B.head + 0.1, B.foot - 0.1]) {
-    S.box(0.07, B.top - 0.17, 0.07, steel, B.x, (B.top - 0.17) / 2, z);
-    S.box(0.5, 0.05, 0.08, steel, B.x, 0.025, z);
+    BSm.box(0.07, B.top - 0.17, 0.07, steel, B.x, (B.top - 0.17) / 2, z);
+    BSm.box(0.5, 0.05, 0.08, steel, B.x, 0.025, z);
   }
   // the uprights (their hooks hold the bar over your shoulders); placed for the bar's line below
   const rackZ = B.head + 0.36, hookY = 1.07;
   for (const sx of [-1, 1]) {
     const ux = B.x + sx * 0.6;
-    S.box(0.07, 1.25, 0.07, steel, ux, 0.625, rackZ);
-    S.box(0.42, 0.05, 0.1, steel, ux, 0.025, rackZ);
-    S.box(0.07, 0.07, 0.1, steel, ux - sx * 0.02, hookY - 0.04, rackZ + 0.05);
-    P.box(0.04, 0.04, 0.04, plate, ux, 1.27, rackZ);
+    BSm.box(0.07, 1.25, 0.07, steel, ux, 0.625, rackZ);
+    BSm.box(0.42, 0.05, 0.1, steel, ux, 0.025, rackZ);
+    BSm.box(0.07, 0.07, 0.1, steel, ux - sx * 0.02, hookY - 0.04, rackZ + 0.05);
+    BPm.box(0.04, 0.04, 0.04, plate, ux, 1.27, rackZ);
   }
-  solids.push([B.x - 0.75, B.x + 0.75, B.head - 0.05, rackZ + 0.15], [B.x - 0.25, B.x + 0.25, B.head - 0.05, B.foot + 0.05]);
+  if (has("bench")) solids.push([B.x - 0.75, B.x + 0.75, B.head - 0.05, rackZ + 0.15], [B.x - 0.25, B.x + 0.25, B.head - 0.05, B.foot + 0.05]);
   // the barbell: its own mesh (it moves): the bar, collars, two plates each side in your colours
   const BP = painter(THREE, env.mergeGeometries);
   BP.cyl(0.015, 0.015, 2.0, chrome, 0, 0, 0, 0, 0, Math.PI / 2, 10);
@@ -296,12 +371,15 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   }
   const bar = mesh(BP.merged(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.4, metalness: 0.45, envMapIntensity: 1.1 }), { cast: true });
   bar.position.set(B.x, hookY + 0.02, rackZ);
+  bar.visible = has("bench");
+  if (!has("bench")) { BPm.merged()?.dispose(); BSm.merged()?.dispose(); }
 
   // ── the treadmills (east), facing the mirror; you fall off the back (south) ──
   const BL = GYM.belt;
   const beltT = tex(beltCanvas(), [1, 3]);
   const belts: GymProps["belts"] = [];
-  for (const tm of GYM.treadmills) {
+  const mills = !home ? GYM.treadmills : has("treadmill") ? GYM.treadmills.slice(0, 1) : [];
+  for (const tm of mills) {
     const x = tm.x, z0 = BL.consoleZ, z1 = BL.back + 0.12, zc = (z0 + z1) / 2, len = z1 - z0;
     P.box(0.84, 0.16, len, "#2b2d32", x, 0.08, zc);
     for (const sx of [-1, 1]) P.box(0.12, 0.03, len - 0.2, "#3a3c42", x + sx * 0.36, 0.175, zc + 0.08);
@@ -322,14 +400,26 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
 
   // ── the heavy bag (south-west), on a chain from a ceiling bracket, over mats ──
   const BG = GYM.bag;
-  for (const [x, z, w, d, c] of [[-3.05, 1.55, 2.4, 2.2, "#2b4f7a"], [0.6, 1.5, 1.8, 0.9, "#2d6b6b"], [0.6, 2.5, 1.8, 0.9, "#2d6b6b"]] as [number, number, number, number, string][]) P.box(w, 0.025, d, c, x, 0.0125, z);
-  S.box(0.5, 0.06, 0.12, steel, BG.x, H - 0.03, BG.z);
-  const pivot = new THREE.Group(); pivot.position.set(BG.x, H - 0.06, BG.z); scene.add(pivot);
+  const MATS: [number, number, number, number, string, boolean][] = [[-3.05, 1.55, 2.4, 2.2, "#2b4f7a", has("bag")], [0.6, 1.5, 1.8, 0.9, "#2d6b6b", has("pushup") || has("plank")], [0.6, 2.5, 1.8, 0.9, "#2d6b6b", has("nordic") || has("mobility")]];
+  for (const [x, z, w, d, c, on] of MATS) if (on) P.box(w, 0.025, d, c, x, 0.0125, z);
+  // a home: rubber mats under the bench and the treadmill (its own floor round them)
+  if (home && !garage) {
+    if (has("bench")) P.box(1.7, 0.012, 2.1, "#25272c", B.x, 0.006, (B.head + B.foot) / 2 - 0.15);
+    if (has("treadmill")) P.box(1.25, 0.012, 2.6, "#25272c", GYM.treadmills[0].x, 0.006, (BL.consoleZ + BL.back) / 2 + 0.1);
+    if (has("squat")) P.box(1.9, 0.012, 1.8, "#25272c", 0.3, 0.006, -3.1);
+  }
+  // the bag hangs at the club's height (its game reads it); a taller home ceiling has a drop rod to it
+  if (has("bag")) {
+    S.box(0.5, 0.06, 0.12, steel, BG.x, GYM.H - 0.03, BG.z);
+    if (H > GYM.H + 0.02) S.box(0.06, H - GYM.H, 0.06, steel, BG.x, (H + GYM.H) / 2, BG.z);
+  }
+  const pivot = new THREE.Group(); pivot.position.set(BG.x, GYM.H - 0.06, BG.z); scene.add(pivot);
+  pivot.visible = has("bag");
   const BB = painter(THREE, env.mergeGeometries);
-  const chainLen = H - 0.06 - BG.top - 0.12;
+  const chainLen = GYM.H - 0.06 - BG.top - 0.12;
   BB.cyl(0.008, 0.008, chainLen, chrome, 0, -chainLen / 2, 0, 0, 0, 0, 6);
   for (const a of [0, 2.1, 4.2]) BB.cyl(0.005, 0.005, 0.2, chrome, Math.sin(a) * 0.08, -chainLen - 0.06, Math.cos(a) * 0.08, Math.cos(a) * 0.4, 0, -Math.sin(a) * 0.4, 5);
-  const bagLen = BG.top - BG.bottom, bagMid = -(H - 0.06 - (BG.top + BG.bottom) / 2);
+  const bagLen = BG.top - BG.bottom, bagMid = -(GYM.H - 0.06 - (BG.top + BG.bottom) / 2);
   BB.cyl(BG.r, BG.r, bagLen, "#7a1e22", 0, bagMid, 0, 0, 0, 0, 20);
   BB.cyl(BG.r * 0.9, BG.r, 0.05, "#5b1418", 0, bagMid + bagLen / 2 + 0.02, 0, 0, 0, 0, 20);
   BB.cyl(BG.r, BG.r * 0.9, 0.05, "#5b1418", 0, bagMid - bagLen / 2 - 0.02, 0, 0, 0, 0, 20);
@@ -337,35 +427,38 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   const bagBody = new THREE.Mesh(BB.merged(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, metalness: 0.05 }));
   bagBody.castShadow = true; bagBody.receiveShadow = true; meshes++;
   pivot.add(bagBody);
-  solids.push([BG.x - 0.32, BG.x + 0.32, BG.z - 0.32, BG.z + 0.32]);
+  if (has("bag")) solids.push([BG.x - 0.32, BG.x + 0.32, BG.z - 0.32, BG.z + 0.32]);
   const swing = { ax: 0, az: 0, vx: 0, vz: 0 };
 
   // ── the power rack (north, the hero): steel frame, a bar loaded in your colours, a plate tree ──
   const rx = 0.3, rz = -D2 + 0.9, rw = 1.25, rd = 1.1, rh = 2.35;
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) S.box(0.07, rh, 0.07, steel, rx + sx * rw / 2, rh / 2, rz + sz * rd / 2);
-  for (const sz of [-1, 1]) S.box(rw + 0.07, 0.07, 0.07, steel, rx, rh, rz + sz * rd / 2);
-  for (const sx of [-1, 1]) S.box(0.07, 0.07, rd + 0.07, steel, rx + sx * rw / 2, rh, rz);
+  const RK = has("squat") ? S : painter(THREE, env.mergeGeometries), RP = has("squat") ? P : painter(THREE, env.mergeGeometries);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) RK.box(0.07, rh, 0.07, steel, rx + sx * rw / 2, rh / 2, rz + sz * rd / 2);
+  for (const sz of [-1, 1]) RK.box(rw + 0.07, 0.07, 0.07, steel, rx, rh, rz + sz * rd / 2);
+  for (const sx of [-1, 1]) RK.box(0.07, 0.07, rd + 0.07, steel, rx + sx * rw / 2, rh, rz);
   // the rack's bar is its own draw (phase 2: it goes onto your back for the squat), loaded in your colours
   const RB = painter(THREE, env.mergeGeometries);
   RB.cyl(GYM2.rack.r, GYM2.rack.r, 2.1, chrome, 0, 0, 0, 0, 0, Math.PI / 2, 10);
   for (const sx of [-1, 1]) {
     RB.cyl(0.225, 0.225, 0.05, plate, sx * 0.8, 0, 0, 0, 0, Math.PI / 2, 22);
     RB.cyl(0.2, 0.2, 0.04, plate2, sx * 0.86, 0, 0, 0, 0, Math.PI / 2, 20);
-    S.box(0.08, 0.06, 0.12, steel, rx + sx * rw / 2, 1.31, rz + rd / 2 - 0.02);
+    RK.box(0.08, 0.06, 0.12, steel, rx + sx * rw / 2, 1.31, rz + rd / 2 - 0.02);
   }
   const rackBar = mesh(RB.merged(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.4, metalness: 0.45, envMapIntensity: 1.1 }), { cast: true });
   rackBar.position.set(GYM2.rack.x, GYM2.rack.y, GYM2.rack.z);
-  P.box(rw - 0.1, 0.03, rd - 0.1, "#5a4630", rx, 0.015, rz);
-  solids.push([rx - 0.75, rx + 0.75, rz - rd / 2 - 0.1, rz + rd / 2 + 0.15]);
+  rackBar.visible = has("squat");
+  RP.box(rw - 0.1, 0.03, rd - 0.1, "#5a4630", rx, 0.015, rz);
   const ptx = rx + 1.15, ptz = -D2 + 0.45;
-  S.cyl(0.03, 0.03, 1.1, steel, ptx, 0.55, ptz, 0, 0, 0, 10);
-  S.box(0.5, 0.04, 0.5, steel, ptx, 0.02, ptz);
-  for (const [y, rr, cc] of [[0.35, 0.225, plate], [0.41, 0.225, plate], [0.66, 0.16, plate2], [0.72, 0.16, plate2], [0.9, 0.12, "#1a1b1f"]] as [number, number, string][]) P.cyl(rr, rr, 0.045, cc, ptx, y, ptz + 0.07, Math.PI / 2, 0, 0, 20);
-  solids.push([ptx - 0.3, ptx + 0.3, ptz - 0.3, ptz + 0.35]);
+  RK.cyl(0.03, 0.03, 1.1, steel, ptx, 0.55, ptz, 0, 0, 0, 10);
+  RK.box(0.5, 0.04, 0.5, steel, ptx, 0.02, ptz);
+  for (const [y, rr, cc] of [[0.35, 0.225, plate], [0.41, 0.225, plate], [0.66, 0.16, plate2], [0.72, 0.16, plate2], [0.9, 0.12, "#1a1b1f"]] as [number, number, string][]) RP.cyl(rr, rr, 0.045, cc, ptx, y, ptz + 0.07, Math.PI / 2, 0, 0, 20);
+  if (has("squat")) solids.push([rx - 0.75, rx + 0.75, rz - rd / 2 - 0.1, rz + rd / 2 + 0.15], [ptx - 0.3, ptx + 0.3, ptz - 0.3, ptz + 0.35]);
+  else { RK.merged()?.dispose(); RP.merged()?.dispose(); }
 
   // ── phase 2's kit (gymPoses2.ts GYM2): a pull-up bar, a plyo box, an agility ladder, a landing pad, a mat for
   //    the Copenhagen, the Nordic ankle roller on the second mat ──
   const PU = GYM2.pull;
+  if (has("pullup")) {
   for (const sx of [-1, 1]) {
     const px = PU.x + sx * (PU.half + 0.06);
     S.box(0.07, PU.y + 0.08, 0.07, steel, px, (PU.y + 0.08) / 2, PU.z);
@@ -375,6 +468,7 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   }
   S.cyl(PU.r, PU.r, 2 * PU.half + 0.12, chrome, PU.x, PU.y, PU.z, 0, 0, Math.PI / 2, 12);
   for (const sx of [-1, 1]) solids.push([PU.x + sx * (PU.half + 0.06) - 0.1, PU.x + sx * (PU.half + 0.06) + 0.1, PU.z - 0.48, PU.z + 0.48]);
+  }
   // the plyo box: its own draw, built from its base so it can grow taller (scale y) as the jumps go well
   const XB = GYM2.box;
   const BXP = painter(THREE, env.mergeGeometries);
@@ -383,28 +477,37 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   BXP.box(2 * XB.half - 0.04, 0.004, 2 * XB.half - 0.04, "#2a2b30", 0, XB.h[0] + 0.002, 0);
   const box = mesh(BXP.merged(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), { cast: true });
   box.position.set(XB.x, 0, XB.z);
-  solids.push([XB.x - XB.half - 0.05, XB.x + XB.half + 0.05, XB.z - XB.half - 0.05, XB.z + XB.half + 0.05]);
+  // the box is the box jumps' and the Copenhagen's (its top is the Copenhagen's bench)
+  box.visible = has("boxjump") || has("copenhagen");
+  if (box.visible) solids.push([XB.x - XB.half - 0.05, XB.x + XB.half + 0.05, XB.z - XB.half - 0.05, XB.z + XB.half + 0.05]);
   // the Copenhagen's mat, east of the box
-  P.box(1.0, 0.025, 0.6, "#2d6b6b", GYM2.copenMat.x, 0.0125, GYM2.copenMat.z);
+  if (has("copenhagen")) P.box(1.0, 0.025, 0.6, "#2d6b6b", GYM2.copenMat.x, 0.0125, GYM2.copenMat.z);
   // the agility ladder: two yellow rails and the rungs, flat on the floor
   const LD = GYM2.ladder, lsq = (LD.x1 - LD.x0) / LD.squares;
-  for (const sz of [-1, 1]) P.box(LD.x1 - LD.x0, 0.008, 0.03, "#e2b44a", (LD.x0 + LD.x1) / 2, 0.004, LD.z + sz * 0.22);
-  for (let i = 0; i <= LD.squares; i++) P.box(0.03, 0.008, 0.44, "#e2b44a", LD.x0 + i * lsq, 0.005, LD.z);
+  if (has("ladder")) {
+    for (const sz of [-1, 1]) P.box(LD.x1 - LD.x0, 0.008, 0.03, "#e2b44a", (LD.x0 + LD.x1) / 2, 0.004, LD.z + sz * 0.22);
+    for (let i = 0; i <= LD.squares; i++) P.box(0.03, 0.008, 0.44, "#e2b44a", LD.x0 + i * lsq, 0.005, LD.z);
+  }
   // the landing pad: a round rubber mat with a ring painted on
-  P.cyl(GYM2.pad.r, GYM2.pad.r, 0.012, "#1d1e22", GYM2.pad.x, 0.006, GYM2.pad.z, 0, 0, 0, 24);
-  P.ring(0.14, 0.008, plate, GYM2.pad.x, 0.013, GYM2.pad.z, Math.PI / 2, 0, 0);
+  if (has("landing")) {
+    P.cyl(GYM2.pad.r, GYM2.pad.r, 0.012, "#1d1e22", GYM2.pad.x, 0.006, GYM2.pad.z, 0, 0, 0, 24);
+    P.ring(0.14, 0.008, plate, GYM2.pad.x, 0.013, GYM2.pad.z, Math.PI / 2, 0, 0);
+  }
   // the Nordic ankle roller: two little posts at the second mat's west end and a padded roller (its own draw:
   // its height is set on your ankles when you kneel)
   const NR = GYM2.nordic;
-  for (const sz of [-1, 1]) S.box(0.05, 0.3, 0.05, steel, NR.rollerX, 0.15, GYM2.matB.z + sz * 0.33);
+  if (has("nordic")) for (const sz of [-1, 1]) S.box(0.05, 0.3, 0.05, steel, NR.rollerX, 0.15, GYM2.matB.z + sz * 0.33);
   const RL = painter(THREE, env.mergeGeometries);
   RL.cyl(0.045, 0.045, 0.62, pad, 0, 0, 0, Math.PI / 2, 0, 0, 14);
   RL.cyl(0.012, 0.012, 0.7, chrome, 0, 0, 0, Math.PI / 2, 0, 0, 8);
   const roller = mesh(RL.merged(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6 }), { cast: true });
   roller.position.set(NR.rollerX, 0.2, GYM2.matB.z);
+  roller.visible = has("nordic");
 
   // ── dumbbells (west wall), kettlebells, a medicine-ball crate, foam rollers ──
-  const dbx = -W2 + 0.32, dbz0 = -2.9, dbz1 = -0.6;
+  const rackZ0Z1 = home ? home.plan.rack : ([-2.9, -0.6] as [number, number]);
+  const dbx = X0 + 0.32, dbz0 = rackZ0Z1?.[0] ?? 0, dbz1 = rackZ0Z1?.[1] ?? 0;
+  if (rackZ0Z1) {
   for (const y of [0.32, 0.66]) S.box(0.48, 0.04, dbz1 - dbz0, steel, dbx, y, (dbz0 + dbz1) / 2, 0, 0, y > 0.5 ? -0.25 : -0.12);
   for (const z of [dbz0 + 0.04, dbz1 - 0.04]) S.box(0.5, 0.74, 0.05, steel, dbx, 0.37, z);
   for (let i = 0; i < 6; i++) for (const [y, side] of [[0.34, -0.08], [0.69, 0.1]] as [number, number][]) {
@@ -413,7 +516,16 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
     S.cyl(0.014, 0.014, 0.3, chrome, dbx + side, y + r, z, 0, 0, Math.PI / 2, 8);
     for (const e2 of [-0.13, 0.13]) P.cyl(r, r, 0.07, "#151619", dbx + side + e2, y + r, z, 0, 0, Math.PI / 2, 6);
   }
-  solids.push([-W2, dbx + 0.32, dbz0 - 0.05, dbz1 + 0.05]);
+  solids.push([X0, dbx + 0.32, dbz0 - 0.05, dbz1 + 0.05]);
+  } else {
+    // the starter's corner: a pair of dumbbells on the floor by the mat
+    for (const z of [1.25, 1.6]) {
+      S.cyl(0.014, 0.014, 0.3, chrome, -0.75, 0.07, z, 0, 0, Math.PI / 2, 8);
+      for (const e2 of [-0.13, 0.13]) P.cyl(0.07, 0.07, 0.07, "#151619", -0.75 + e2, 0.07, z, 0, 0, Math.PI / 2, 8);
+    }
+    solids.push([-0.95, -0.55, 1.1, 1.75]);
+  }
+  if (big) {
   for (let i = 0; i < 4; i++) {
     const kx = -W2 + 0.35, kz = -0.35 + i * 0.3, r = 0.095 + i * 0.012;
     P.ball(r, i % 2 ? "#151619" : plate, kx, r, kz, 10);
@@ -423,9 +535,20 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   // foam rollers and a med-ball by the mats
   for (let i = 0; i < 3; i++) P.cyl(0.075, 0.075, 0.45, ["#2d6b6b", "#e2b44a", "#1d1e22"][i], 1.75, 0.075, 1.15 + i * 0.2, 0, 0, Math.PI / 2, 10);
   P.ball(0.15, "#1d1e22", 1.8, 0.15, 2.0, 12);
+  }
+
+  // a home: a folded towel and a water bottle by the mats' west end (a little solid: you walk round them)
+  if (home) {
+    P.box(0.36, 0.06, 0.26, "#f4f1ea", -0.66, 0.03, 2.3);
+    P.box(0.36, 0.012, 0.05, plate, -0.66, 0.062, 2.36);
+    P.cyl(0.038, 0.038, 0.22, "#2f7fd0", -0.62, 0.11, 2.72, 0, 0, 0, 12);
+    P.cyl(0.026, 0.03, 0.04, "#1d1e22", -0.62, 0.24, 2.72, 0, 0, 0, 10);
+    solids.push([-0.88, -0.44, 2.14, 2.84]);
+  }
 
   // ── the water cooler (by the door): a blue bottle on a white stand, a stack of cups ──
-  const CO = GYM.cooler;
+  const CO = home ? { x: X1 - 0.55, z: Z1 - 0.55 } : GYM.cooler;
+  if (big) {
   P.box(0.36, 0.95, 0.36, "#e8e8e6", CO.x, 0.475, CO.z);
   P.cyl(0.15, 0.15, 0.42, "#5aa6e6", CO.x, 1.17, CO.z, 0, 0, 0, 16);
   P.cyl(0.06, 0.1, 0.08, "#5aa6e6", CO.x, 0.97, CO.z, 0, 0, 0, 12);
@@ -433,20 +556,71 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   P.box(0.1, 0.05, 0.05, "#c53030", CO.x - 0.19, 0.78, CO.z + 0.06);
   P.cyl(0.035, 0.03, 0.24, "#f6f6f4", CO.x, 0.35, CO.z - 0.28, 0, 0, 0, 10);
   L.box(0.02, 0.18, 0.18, "#bfe3ff", CO.x - 0.185, 0.62, CO.z);
-  solids.push([CO.x - 0.3, W2, CO.z - 0.4, D2]);
-  // a bench by the door to sit on (set dressing), speakers in the corners, a wall clock
-  P.box(1.2, 0.06, 0.36, "#8a6a48", 2.6, 0.44, D2 - 0.25);
-  for (const sx of [-0.5, 0.5]) S.box(0.05, 0.42, 0.3, steel, 2.6 + sx, 0.21, D2 - 0.25);
-  solids.push([1.95, 3.25, D2 - 0.45, D2]);
-  for (const [x, z, ry] of [[-W2 + 0.2, -D2 + 0.2, Math.PI / 4], [W2 - 0.2, -D2 + 0.2, -Math.PI / 4]] as [number, number, number][]) P.box(0.26, 0.4, 0.22, "#18191c", x, H - 0.45, z, 0, ry);
-  P.cyl(0.2, 0.2, 0.04, "#f2f2ef", -W2 + 0.03, 2.0, 2.0, 0, 0, Math.PI / 2, 20);
-  P.cyl(0.21, 0.21, 0.03, "#1d1e22", -W2 + 0.02, 2.0, 2.0, 0, 0, Math.PI / 2, 20);
-  P.box(0.01, 0.12, 0.012, "#1d1e22", -W2 + 0.06, 2.04, 2.0);
-  P.box(0.01, 0.012, 0.15, "#1d1e22", -W2 + 0.06, 2.0, 2.06);
+  solids.push([CO.x - 0.3, X1, CO.z - 0.4, Z1]);
+  // a bench by the door to sit on (set dressing)
+  const bnx = doorX + 2.6;
+  P.box(1.2, 0.06, 0.36, "#8a6a48", bnx, 0.44, Z1 - 0.25);
+  for (const sx of [-0.5, 0.5]) S.box(0.05, 0.42, 0.3, steel, bnx + sx, 0.21, Z1 - 0.25);
+  solids.push([bnx - 0.65, bnx + 0.65, Z1 - 0.45, Z1]);
+  }
+  // speakers in the corners, a wall clock (a home: on the east wall; the window is on the west)
+  if (home?.plan.kind !== "corner") for (const [x, z, ry] of [[X0 + 0.2, Z0 + 0.2, Math.PI / 4], [X1 - 0.2, Z0 + 0.2, -Math.PI / 4]] as [number, number, number][]) P.box(0.26, 0.4, 0.22, "#18191c", x, H - 0.45, z, 0, ry);
+  if (!home?.plan.sauna) {
+    const cx = home ? X1 - 0.03 : -W2 + 0.03, sgn = home ? -1 : 1, cz = home ? CZ + 0.4 : 2.0;
+    P.cyl(0.2, 0.2, 0.04, "#f2f2ef", cx, 2.0, cz, 0, 0, Math.PI / 2, 20);
+    P.cyl(0.21, 0.21, 0.03, "#1d1e22", cx - sgn * 0.01, 2.0, cz, 0, 0, Math.PI / 2, 20);
+    P.box(0.01, 0.12, 0.012, "#1d1e22", cx + sgn * 0.03, 2.04, cz);
+    P.box(0.01, 0.012, 0.15, "#1d1e22", cx + sgn * 0.03, 2.0, cz + 0.06);
+  }
+  // the estate (Harry's "private gym with everything"): the east wall in warm wooden slats round the sauna door,
+  // a wall TV with the highlights, a towel rail by the sauna, and a warm cove light round the ceiling
+  if (home?.plan.sauna) {
+    const sz0 = Z0 + 0.25, sz1 = Z1 - 1.25; // stops short of the water cooler by the door
+    P.box(0.02, H - 0.45, sz1 - sz0, "#4a2f1c", X1 - 0.012, 0.15 + (H - 0.45) / 2, (sz0 + sz1) / 2);
+    for (let z = sz0 + 0.06; z < sz1 - 0.03; z += 0.12) {
+      if (Math.abs(z - 1.6) < 0.58) continue; // the sauna door's opening
+      P.box(0.04, H - 0.5, 0.07, (Math.round(z * 100) % 3) ? "#8a5a34" : "#7a4e2c", X1 - 0.04, 0.15 + (H - 0.5) / 2, z);
+    }
+    // the TV: a slim black frame, a lit picture (a pitch), on the slats
+    const tz = -1.9, ty = 1.75;
+    P.box(0.05, 0.72, 1.24, "#0d0e10", X1 - 0.09, ty, tz);
+    L.box(0.012, 0.62, 1.12, "#2f7d3a", X1 - 0.118, ty, tz);
+    L.box(0.012, 0.012, 1.0, "#d8f0d8", X1 - 0.126, ty, tz);
+    L.box(0.012, 0.18, 0.012, "#d8f0d8", X1 - 0.126, ty, tz);
+    L.box(0.012, 0.12, 0.36, "#0f1a2a", X1 - 0.124, ty + 0.22, tz - 0.32);
+    // the towel rail (between the sauna door and the cooler): a chrome bar, three rolled towels on a shelf
+    const rz = 2.55;
+    S.box(0.06, 0.03, 0.7, chrome, X1 - 0.08, 1.25, rz);
+    for (const dz of [-0.3, 0.3]) S.box(0.06, 0.06, 0.03, chrome, X1 - 0.06, 1.25, rz + dz);
+    for (let i = 0; i < 2; i++) P.box(0.04, 0.55, 0.28, i ? "#e9e4da" : "#f4f1ea", X1 - 0.11, 0.98, rz - 0.16 + i * 0.32);
+    P.box(0.3, 0.03, 0.7, "#8a5a34", X1 - 0.15, 0.62, rz);
+    for (let i = 0; i < 3; i++) P.cyl(0.07, 0.07, 0.26, ["#f4f1ea", "#d9cdb8", "#f4f1ea"][i], X1 - 0.15, 0.7, rz - 0.22 + i * 0.22, 0, 0, Math.PI / 2, 10);
+    solids.push([X1 - 0.32, X1, rz - 0.4, rz + 0.4]);
+    // the cove: a warm strip of light round the ceiling's edge (lit pieces, no real light)
+    for (const [w, x, z, ry] of [[RW - 0.2, CX, Z0 + 0.06, 0], [RW - 0.2, CX, Z1 - 0.06, 0], [RD - 0.2, X0 + 0.06, CZ, Math.PI / 2], [RD - 0.2, X1 - 0.06, CZ, Math.PI / 2]] as [number, number, number, number][]) {
+      L.box(w, 0.035, 0.04, "#ffcf8a", x, H - 0.1, z, 0, ry);
+      P.box(w, 0.09, 0.03, home.trim, x, H - 0.16, z + (ry ? 0 : (z < CZ ? 0.05 : -0.05)), 0, ry);
+    }
+  }
+  // the estate's sauna: a cedar door in the east wall with a little window and its sign (coming soon)
+  const SAUNA = { x: X1, z: 1.6 };
+  if (home?.plan.sauna) {
+    P.box(0.06, 2.1, 0.9, "#a8723f", SAUNA.x - 0.03, 1.05, SAUNA.z);
+    for (let i = -3; i <= 3; i++) P.box(0.065, 2.06, 0.012, "#8e5d31", SAUNA.x - 0.035, 1.05, SAUNA.z + i * 0.12);
+    P.box(0.07, 0.36, 0.26, "#3b2a1c", SAUNA.x - 0.04, 1.55, SAUNA.z);
+    L.box(0.02, 0.3, 0.2, "#f3b56a", SAUNA.x - 0.075, 1.55, SAUNA.z);
+    S.box(0.05, 0.03, 0.18, chrome, SAUNA.x - 0.09, 1.0, SAUNA.z - 0.3);
+    for (const dz of [-1, 1]) P.box(0.08, 2.2, 0.08, home.trim, SAUNA.x - 0.04, 1.1, SAUNA.z + dz * 0.49);
+    P.box(0.08, 0.08, 1.06, home.trim, SAUNA.x - 0.04, 2.2, SAUNA.z);
+    const ss = mesh(new THREE.PlaneGeometry(0.8, 0.2), new THREE.MeshBasicMaterial({ map: tex(signCanvas("SAUNA")), toneMapped: false, transparent: true }), { receive: false });
+    ss.rotation.y = -Math.PI / 2; ss.position.set(SAUNA.x - 0.02, 2.42, SAUNA.z);
+  }
 
   // ── plants (real leaves, home3d/plants.ts), all three in one draw ──
   const plantParts: any[] = [];
-  for (const [x, z, kind, h] of [[W2 - 0.4, -D2 + 0.45, "monstera", 1.3], [-W2 + 0.45, D2 - 0.45, "fiddle", 1.6], [1.45, D2 - 0.35, "snake", 0.9]] as [number, number, any, number][]) {
+  const PLANTS: [number, number, any, number][] = home ? [[X1 - 0.4, Z0 + 0.45, "monstera", Math.min(1.3, H - 1.0)], [X0 + 0.45, Z1 - 0.45, "fiddle", Math.min(1.6, H - 0.8)]]
+    : [[W2 - 0.4, -D2 + 0.45, "monstera", 1.3], [-W2 + 0.45, D2 - 0.45, "fiddle", 1.6], [1.45, D2 - 0.35, "snake", 0.9]];
+  for (const [x, z, kind, h] of PLANTS) {
     const pm = plantMesh(THREE, kind, Math.abs(x * 31 + z * 17), { h, pot: "#2b2c30" });
     pm.updateMatrix();
     const g = pm.geometry.clone(); g.applyMatrix4(new THREE.Matrix4().makeTranslation(x, 0, z));
@@ -468,8 +642,8 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   // ── the things you can use ──
   const objects: SmartObject[] = [];
   const gameObj = (o: Parameters<typeof standObject>[0], game: GymGameKind) => { const so = standObject(o); so.game = game; objects.push(so); return so; };
-  gameObj({ id: "bench", kind: "gym", label: "Bench press", front: [B.x + 0.62, B.foot + 0.15], face: [B.x, B.foot - 0.2], verb: "Start a set", lines: [HOW_TO.bench, "Builds Strength."], pickR: 0.8, pickH: 1.3 }, "bench");
-  for (const tm of GYM.treadmills) {
+  if (has("bench")) gameObj({ id: "bench", kind: "gym", label: "Bench press", front: [B.x + 0.62, B.foot + 0.15], face: [B.x, B.foot - 0.2], verb: "Start a set", lines: [HOW_TO.bench, "Builds Strength."], pickR: 0.8, pickH: 1.3 }, "bench");
+  for (const tm of mills) {
     gameObj({ id: tm.id, kind: "gym", label: "Treadmill", front: [tm.x, BL.back + TREAD_STAND], face: [tm.x, BL.front], verb: "Start running", lines: [HOW_TO.treadmill, "Builds Cardio."], pickR: 0.55, pickH: 1.6 }, "treadmill");
   }
   // the team-mate's run (the world kit's routine): stood on the far belt's back half, 0.2 m up, jogging. Not tappable
@@ -477,8 +651,8 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   const run = standObject({ id: "treadmill2-belt", kind: "gym", label: "Treadmill", front: [GYM.treadmills[1].x, BL.back - 0.3], face: [GYM.treadmills[1].x, BL.front - 2], verb: "Run", loop: [{ clip: "jog", secs: 6 }], stay: [60, 90], who: "people", pickR: 0, pickH: 0 });
   run.slots[0].lift = BL.top;
   run.pick = { at: [99, 99], r: 0, h: 0 };
-  objects.push(run);
-  gameObj({ id: "bag", kind: "gym", label: "Heavy bag", front: [BG.x + 0.66, BG.z], face: [BG.x, BG.z], verb: "Hit the bag", lines: [HOW_TO.bag, "Builds Focus."], pickR: 0.45, pickH: 2.0 }, "bag");
+  if (!home) objects.push(run);
+  if (has("bag")) gameObj({ id: "bag", kind: "gym", label: "Heavy bag", front: [BG.x + 0.66, BG.z], face: [BG.x, BG.z], verb: "Hit the bag", lines: [HOW_TO.bag, "Builds Focus."], pickR: 0.45, pickH: 2.0 }, "bag");
   // phase 2: the ten new exercises, each its own smart object (you walk to its spot; the fade; the game)
   const PICK: Record<Gym2Kind, [number, number, number, number]> = {
     pullup: [GYM2.pull.x, GYM2.pull.z, 0.6, 2.4], squat: [GYM2.rack.x, GYM2.rack.z - 0.4, 0.7, 2.2], pushup: [GYM2.matA.x - 0.35, GYM2.matA.z, 0.5, 0.5], plank: [GYM2.matA.x + 0.45, GYM2.matA.z, 0.45, 0.5],
@@ -486,15 +660,19 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
     ladder: [(GYM2.ladder.x0 + GYM2.ladder.x1) / 2, GYM2.ladder.z, 0.7, 0.3], landing: [GYM2.pad.x, GYM2.pad.z, 0.4, 0.3],
   };
   for (const k of GYM2_KINDS) {
+    if (!has(k)) continue;
     const sp = spot2(k), pk = PICK[k];
     gameObj({ id: k, kind: "gym", label: GAME_NAMES[k], front: [sp.x, sp.z], face: [pk[0], pk[1]], verb: "Start", lines: [HOW_TO[k], `Builds ${STAT_NAMES[STAT_OF[k]]}.`], pickR: pk[2], pickH: pk[3] }, k);
   }
-  objects.push(standObject({
+  if (big) objects.push(standObject({
     id: "cooler", kind: "fridge", label: "Water cooler", front: [CO.x - 0.62, CO.z], face: [CO.x, CO.z], verb: "Protein shake",
     lines: ["A shake after training: this week's gym points ×1.2."], enter: { clip: "pickup", speed: 1.6 }, loop: [{ clip: "idle", secs: 1.2 }],
     effect: { text: "Protein in. This week's gym points ×1.2." }, stay: [1.2, 1.2], pickR: 0.45, pickH: 1.5,
   }));
-  objects.push(standObject({
+  if (home?.plan.sauna) objects.push(standObject({
+    id: "sauna", kind: "spot", label: "Sauna", front: [SAUNA.x - 0.75, SAUNA.z], face: [SAUNA.x, SAUNA.z], verb: "Look in", lines: ["Cedar benches and hot stones."], pickR: 0.5, pickH: 2.1,
+  }));
+  if (!home) objects.push(standObject({
     id: "mat", kind: "gym", label: "Stretching mat", front: [-2.35, 2.35], face: [-2.35, -D2], verb: "Stretch", lines: ["Loosen up between sets."],
     loop: [{ clip: "stretch", or: ["idle"], secs: 6 }], effect: { mood: 1, text: "Loose." }, stay: [6, 6], pickR: 0.6, pickH: 0.6,
   }));
@@ -502,7 +680,7 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   const tick = (dt: number) => {
     for (const b of belts) if (b.speed > 0.01) { b.mat.map.offset.y += (b.speed * dt) / ((BL.back - BL.front + 0.25) / 3); }
     // the bag: a damped pendulum (two ways), from its chain
-    const k = 9.81 / (H - BG.bottom - 0.3);
+    const k = 9.81 / (GYM.H - BG.bottom - 0.3);
     swing.vx += (-k * swing.ax - 2.6 * swing.vx) * dt; swing.vz += (-k * swing.az - 2.6 * swing.vz) * dt;
     swing.ax += swing.vx * dt; swing.az += swing.vz * dt;
     // a heavy bag only rocks: at most 0.12 rad, and never more than 0.04 back towards where you stand (east):
@@ -516,10 +694,10 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
 
   return {
     objects, solids,
-    bounds: [-W2, W2, -D2, D2],
-    you: { x: -0.2, z: D2 - 0.55, yaw: Math.PI },
+    bounds: [X0, X1, Z0, Z1],
+    you: home ? homeGymStart(home.plan.tier) : { x: -0.2, z: D2 - 0.55, yaw: Math.PI },
     ceil: H - 0.15,
-    camBox: [-W2 + 0.2, W2 - 0.2, -D2 + 0.2, D2 - 0.15],
+    camBox: [X0 + 0.2, X1 - 0.2, Z0 + 0.2, Z1 - 0.15],
     sun,
     mirror,
     props: { bar, barRack: { y: hookY + 0.02, z: rackZ }, belts, bag: { pivot, body: bagBody, swing, hit }, rackBar, box, roller, tick },

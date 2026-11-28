@@ -19,6 +19,8 @@
  *    visit opens the window again. Let it close with no visit and Strength and Cardio slip SLIP points for each
  *    window missed (at most MAX_SLIPS at once), Resilience half that. Focus never slips.
  *  - SLEEP AND PROTEIN. Slept in your bed this gap: points ×1.2. A protein shake this gap: ×1.2. Both: ×1.44.
+ *    Lunch's plate (life/lunch.ts: protein ×1.1, balanced ×1.05, the session after it) shares the shake's ×1.2:
+ *    shake and plate together never pass FUEL_CEILING.
  *  - NEVER MAXED IN ONE GO. A stat gains at most PER_GAP_MAX points in a gap, so level 1 to 4 takes at least
  *    6 perfect gaps.
  *  - THE BODY FOLLOWS, LATE. Each visit leaves a mark (`trail`) of Strength and Cardio; the body's shape reads
@@ -33,6 +35,7 @@
 import type { CareerState } from "../types";
 import type { GameResult, GymGameKind } from "./games";
 import { actionsLeft, rest } from "../week";
+import { lunchGymLift } from "../life/lunch";
 
 export type GymStat = "strength" | "cardio" | "focus" | "resilience";
 export const GYM_STATS: GymStat[] = ["strength", "cardio", "focus", "resilience"];
@@ -69,6 +72,10 @@ export const SLIP_SHARE: Record<GymStat, number> = { strength: 1, cardio: 1, res
 export const MAX_SLIPS = 3;
 export const SLEEP_BOOST = 1.2;
 export const PROTEIN_BOOST = 1.2;
+/** The shake and lunch's plate together (life/lunch.ts lunchGymLift) never pass this: one ceiling, never stacked. */
+export const FUEL_CEILING = 1.2;
+/** The shake times the plate, capped at FUEL_CEILING. */
+export const fuelMult = (shake: boolean, plate = 1) => Math.min(FUEL_CEILING, (shake ? PROTEIN_BOOST : 1) * Math.max(1, plate));
 /** Outside the window a visit counts this much. */
 export const COLD_START = 0.5;
 
@@ -181,7 +188,7 @@ export const ringStats = (done: Partial<Record<GymGameKind, number>>) => Array.f
 /**
  * One exercise done. `slept`: you slept this gap (sleep.ts). Pure; returns a new gym.
  */
-export function doExercise(g0: GymState, now: Gap, result: Pick<GameResult, "kind" | "quality">, o: { slept?: boolean } = {}): ExerciseOut {
+export function doExercise(g0: GymState, now: Gap, result: Pick<GameResult, "kind" | "quality">, o: { slept?: boolean; plate?: number } = {}): ExerciseOut {
   const stat = STAT_OF[result.kind];
   const { gym: g1, slipped } = gymAt(gymOf({ gym: g0 }), now);
   const ring = g1.ring && sameGap(g1.ring.gap, now) ? { ...g1.ring, done: { ...g1.ring.done }, gained: { ...(g1.ring.gained ?? {}) } } : { gap: now, done: {} as Partial<Record<GymGameKind, number>>, closed: false, gained: {} as Partial<Record<GymStat, number>> };
@@ -192,7 +199,7 @@ export function doExercise(g0: GymState, now: Gap, result: Pick<GameResult, "kin
   if (ring.done[result.kind] !== undefined) return { ...base, gym: { ...g1, ring }, why: "machineDone", words: `${STAT_NAMES[stat]} from this one is done for this week. Try something else.` };
   const open = windowOpen(g1, now);
   const cold = !open;
-  const mult = (cold ? COLD_START : 1) * (o.slept ? SLEEP_BOOST : 1) * (ring.protein ? PROTEIN_BOOST : 1);
+  const mult = (cold ? COLD_START : 1) * (o.slept ? SLEEP_BOOST : 1) * fuelMult(!!ring.protein, o.plate);
   const q = Math.max(0, Math.min(1, result.quality));
   ring.done[result.kind] = q;
   const before = { ...g1.points };
@@ -282,7 +289,8 @@ export function gymExercise(c: CareerState, result: Pick<GameResult, "kind" | "q
   const now = gapOf(c);
   const g0 = gymOf(c);
   const wasVisited = !!g0.ring && sameGap(g0.ring.gap, now) && Object.keys(g0.ring.done).length > 0;
-  const out = doExercise(g0, now, result, { slept: sleptNow(c) });
+  // lunch's plate (protein ×1.1, balanced ×1.05) for the session after it, sharing the shake's ×1.2 ceiling
+  const out = doExercise(g0, now, result, { slept: sleptNow(c), plate: lunchGymLift(c) });
   let career: CareerState = { ...c, gym: out.gym };
   let energy = 0, power = 0, pace = 0, spentAction = false;
   if (mode !== "off" && !out.why) {

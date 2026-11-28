@@ -16,6 +16,7 @@
  * The 3D is lib/star/shop3d/scene.ts; three.js only loads when this opens.
  */
 import Reload3dPill from "./Reload3d";
+import { afterLoss, healReset, newHealState } from "@/lib/star/three3d/autoHeal";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { shopDisplays, type DisplayId, type ShopPrices } from "@/lib/star/shop3d/catalogue";
@@ -36,6 +37,8 @@ import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import LoadingCurtain from "./loading/LoadingCurtain";
 import ViewToggle3D from "./ViewToggle3D";
+import ClockPill, { useLiveClock } from "./ClockPill";
+import { leaveAt } from "@/lib/star/life/clock";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -60,9 +63,15 @@ export interface Shop3DProps {
   where?: "career" | "test";
   /** Test page: fill its box on the admin frame instead of the whole screen. */
   embedded?: boolean;
+  /** The career clock (lib/star/life/clock.ts): game minutes that passed here. */
+  onTime?: (mins: number) => void;
+  /** "Go to the match" (the clock stopped at time to leave). */
+  onMatch?: () => void;
 }
 
-export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop", onGoToItem, onDoor, atDoor = false, where = "career", embedded = false }: Shop3DProps) {
+export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop", onGoToItem, onDoor, atDoor = false, where = "career", embedded = false, onTime, onMatch }: Shop3DProps) {
+  // the career clock, top middle (components/star/ClockPill.tsx)
+  const live = useLiveClock(career, onTime);
   // an approved 3D Scene Editor edit for the shop here, walking in from the garden or opened from the Shop page (none = as built)
   const approved = useApprovedEdit<WalkSceneEdit>("shop", where, [atDoor ? "door" : "page"]);
   const approvedRef = useRef(approved);
@@ -117,14 +126,16 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
     return () => document.body.classList.remove("knowitball-immersive");
   }, []);
 
-  // Start the 3D once (again if the phone takes the 3D away: once, at "low").
+  // Start the 3D once; again, silently, if the phone takes the 3D away or the build fails (Low after
+  // the first), up to three3d/autoHeal.ts AUTO_REBUILDS times a minute, as the garden and the house
+  // (3D places audit P3, 28 Nov 2026; it gave up after one before and never retried a failed build).
+  const heal = useRef(newHealState());
   const [restarts, setRestarts] = useState(0);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
     let dead = false;
     const el = holder.current;
     if (!el) return;
-    if (restarts > 1) { setErrText("The phone stopped the 3D (out of memory?)"); setStatus("error"); return; }
     (async () => {
       try {
         const { startShop } = await import("@/lib/star/shop3d/scene");
@@ -141,12 +152,14 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
             console.error("3D shop: the phone took the 3D away");
             ctrlRef.current?.dispose();
             ctrlRef.current = null;
+            if (afterLoss(heal.current, Date.now()) === "give-up") { setErrText("The phone stopped the 3D (out of memory?)"); setStatus("error"); return; }
             setStatus("loading");
             setRestarts((n) => n + 1);
           },
         }, kit, displays, {
           atDoor,
           edit: approvedRef.current,
+          isDead: () => dead,
           number: career?.squadNumber ?? 10,
           // Settings → Look → "3D quality" (Auto, else the player's pick; ?q=
           // on the test page). After the phone took the 3D away: Low.
@@ -182,6 +195,8 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
       } catch (e) {
         if (dead) return; // closed mid-load: nothing to show
         console.error("3D shop failed to load", e);
+        // tried again by itself on a fresh renderer (three3d/autoHeal.ts) before the error card and its tap
+        if (afterLoss(heal.current, Date.now()) === "rebuild") { const m = await import("@/lib/star/three3d/perf"); if (dead) return; m.dropSharedRenderer(); el.replaceChildren(); setRestarts((n) => n + 1); return; }
         if (!dead) {
           setErrText(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
           setStatus("error");
@@ -286,9 +301,9 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
         <button onClick={onBack} aria-label={`Back to the ${backLabel}`} style={{ ...pill, pointerEvents: "auto", cursor: "pointer", gap: 4, paddingLeft: 10 }}>
           <span style={{ fontSize: 20, lineHeight: 1, marginTop: -2 }}>&#8249;</span>{backLabel}
         </button>
-        <div style={{ ...pill, fontWeight: 900, fontSize: 14, gap: 6 }}>
+        {!career && <div style={{ ...pill, fontWeight: 900, fontSize: 14, gap: 6 }}>
           3D Shop <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", color: "#111", background: GOLD, borderRadius: 999, padding: "2px 6px" }}>BETA</span>
-        </div>
+        </div>}
         <div style={{ flex: 1 }} />
         {career && <div style={{ ...pill, color: "#fde047", fontWeight: 900 }}>{MONEY_SIGN}{formatWallet(career.money)}</div>}
         {dev && (
@@ -298,6 +313,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
           </button>
         )}
       </div>
+      {career && <ClockPill career={career} abs={live.abs} held={live.abs >= leaveAt(career)} onMatch={onMatch} title="The shop" />}
       {status === "ready" && dev && (
         <div style={{ position: "absolute", top: 56, right: 12, fontSize: 11, fontWeight: 800, color: MUTED, background: "rgba(0,0,0,0.35)", padding: "2px 7px", borderRadius: 999 }}>
           {fps} fps
@@ -319,7 +335,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
                   {errText.slice(0, 200)}
                 </div>
               )}
-              <Reload3dPill floating={false} onReload={() => { setErrText(""); setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} />
+              <Reload3dPill floating={false} onReload={() => { healReset(heal.current); setErrText(""); setRestarts(0); setStatus("loading"); setRetry((n) => n + 1); }} />
               <div><button onClick={onBack} style={{ ...cta, marginTop: 10 }}>Back to the {backLabel}</button></div>
             </div>
           )}
@@ -411,6 +427,7 @@ export function Stick({ onMove }: { onMove: (x: number, y: number) => void }) {
     <div
       ref={base}
       aria-label="Walk"
+      data-control
       onPointerDown={(e) => { e.stopPropagation(); id.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); move(e.clientX, e.clientY); }}
       onPointerMove={(e) => { if (id.current === e.pointerId) move(e.clientX, e.clientY); }}
       onPointerUp={end}

@@ -368,13 +368,17 @@ ${FI_CANVAS}
     // a person preset's haircut on a head whose hair is modelled in: the scalp shaved or bald, the beard
     // shaved off, or stubble painted on (the hair under the eyes, front half = the beard; the rest = scalp)
     float lowFront = step(r.y, uFaceF.y - 0.03) * step(uNeck.z - 0.01, r.z);
-    float cut = smoothstep(0.02, 0.45, hairM) * mix(uHairCut.x, TN_BEARD_OFF, lowFront);
+    // beard off 2 (your barber's cut, lib/star/barber.ts): the sideburns fade out softly up to the temple, as a
+    // barber blends them, instead of stopping in a hard-edged block by the ear
+    float tnBOff = min(TN_BEARD_OFF, 1.0);
+    if (TN_BEARD_OFF > 1.5) lowFront = max(lowFront, smoothstep(uFaceF.y + 0.02, uFaceF.y - 0.035, r.y) * smoothstep(uNeck.z - 0.04, uNeck.z + 0.005, r.z));
+    float cut = smoothstep(0.02, 0.45, hairM) * mix(uHairCut.x, tnBOff, lowFront);
     // never the brows: a bald or shaved head lost them with its scalp (they are hair in the mask), and a
     // light-skinned bald man's face read bleached, with no features
     cut *= 1.0 - step(uFaceF.y - 0.03, r.y) * step(r.y, uFaceF.y + 0.05) * step(uFaceF.w - 0.075, r.z) * step(abs(r.x), 0.09);
     // the beard's own drawn edge where the mask already says skin (dark lines left round a shaved jaw)
     float lumK = dot(c, vec3(0.2126, 0.7152, 0.0722)) / max(dot(uSkinAvg, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
-    cut = max(cut, TN_BEARD_OFF * lowFront * head * (1.0 - hairM) * smoothstep(0.5, 0.25, lumK) * step(0.025, abs(r.y - uTfMouth.y) + step(0.03, abs(r.x))));
+    cut = max(cut, tnBOff * lowFront * head * (1.0 - hairM) * smoothstep(0.5, 0.25, lumK) * step(0.025, abs(r.y - uTfMouth.y) + step(0.03, abs(r.x))));
     vec3 bare = uSkinTone * 0.75;
     col = mix(col, bare, cut);
     tnSkin = max(tnSkin, cut);

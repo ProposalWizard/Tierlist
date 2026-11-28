@@ -185,6 +185,9 @@ export function addToonHair(T: Three, p: Person3D, g: GLTF, hair: ToonHair, opts
     outline.name = "ToonHairOutline";
     put(outline);
   }
+  // under a cap he already wears (accessories.ts): pressed in under its crown, as the hair on his head is
+  const press = (p as Person3D & { capPress?: ((m: THREE.SkinnedMesh) => number) | null }).capPress;
+  if (press) press(mesh);
   // one weight on a spring, trailing a point behind and below the head (rest pose → world by the head bone's own skin matrix)
   const head = p.bones.Head;
   const hi = bones.indexOf(head);
@@ -226,6 +229,7 @@ export function addToonHair(T: Three, p: Person3D, g: GLTF, hair: ToonHair, opts
     dispose() {
       mesh.removeFromParent(); outline?.removeFromParent();
       geo.dispose(); mat.dispose(); (outline?.material as THREE.Material | undefined)?.dispose();
+      if (outline && outline.geometry !== geo) outline.geometry.dispose(); // pressed under a cap: its own copy
     },
   };
 }

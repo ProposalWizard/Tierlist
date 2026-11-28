@@ -7,6 +7,7 @@ import { getTuning } from "@/lib/star/tuningStore";
 import { ClubCard, Glow, Pop, Shine, Shake, Burst, FloatText, rgba, tint, useClubTheme } from "./ui";
 import { CardTitle, DeltaBar, useSeen, seenScope } from "./screenKit";
 import { mechanicOpen, mechanicDef } from "@/lib/star/mechanics";
+import LunchCard from "./LunchCard";
 
 /**
  * TRAINING — one card per skill.
@@ -26,6 +27,10 @@ interface Props {
   onTrain: (skill: keyof Skills) => void;
   /** The 3D gym (components/star/Gym3D.tsx), opened from here while it is tested (Harry, 28 Nov 2026). */
   onGym?: () => void;
+  /** The drive to training (only while its setting is on, lib/star/drive3d/careerFlag.ts): the same drive as the garden's gate. */
+  onDrive?: () => void;
+  /** Lunch (the food hall's phone card, lib/star/life/lunch.ts) changes the career: shown only when given. */
+  onCareer?: (c: CareerState) => void;
 }
 
 const SKILL_LABELS: [keyof Skills, string, string, string][] = [
@@ -50,7 +55,7 @@ const SKILL_COLOR: Record<keyof Skills, [string, string]> = {
 const ENERGY_COST = getTuning("energy.trainingCost");
 
 
-export default function SkillsScreen({ career, onTrain, onGym }: Props) {
+export default function SkillsScreen({ career, onTrain, onGym, onDrive, onCareer }: Props) {
   const left = trainingLeft(career);
   const { glow } = useClubTheme(career);
   const scope = seenScope(career);
@@ -78,6 +83,8 @@ export default function SkillsScreen({ career, onTrain, onGym }: Props) {
       {noMore && <NoMoreSessions onClose={() => setNoMore(false)} />}
 
       {onGym && <GymCard onOpen={onGym} />}
+      {onDrive && <DriveCard onOpen={onDrive} />}
+      {onCareer && <LunchCard career={career} onCareer={onCareer} />}
 
       {/* The "Set-piece duty" card (penalty and free-kick numbers) is gone
           (Harry, 1 Oct 2026, P4, P78): the manager tells you once, in a
@@ -137,6 +144,40 @@ function GymCard({ onOpen }: { onOpen: () => void }) {
           <div className="mt-0.5 text-[11px] font-bold text-white/60">3D · 13 exercises · test</div>
         </div>
         <span className="shrink-0 rounded-full bg-gradient-to-b from-pink-400 to-pink-600 px-3 py-1.5 text-[12px] font-black uppercase tracking-wide text-white">Go in ›</span>
+      </div>
+    </button>
+  );
+}
+
+/** The drive to training (Harry's drive setting on): your car, the street, then the compound. */
+function DriveCard({ onOpen }: { onOpen: () => void }) {
+  const c1 = "#38bdf8";
+  return (
+    <button
+      onClick={onOpen}
+      data-tour="drive"
+      data-drive-card
+      className="kib-press relative block w-full overflow-hidden rounded-2xl p-3 text-left"
+      style={{
+        background: `radial-gradient(120% 140% at 0% 0%, ${rgba(c1, 0.3)} 0%, transparent 55%), var(--sk-card, linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96)))`,
+        boxShadow: `inset 0 1px 0 rgba(255,255,255,.10), inset 0 0 0 1px ${rgba(c1, 0.32)}, 0 10px 24px -12px rgba(0,0,0,.8)`,
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <div className="relative grid h-11 w-11 shrink-0 place-items-center">
+          <Glow color={c1} alpha={0.45} className="inset-0.5 blur-md" />
+          <span
+            className="relative grid h-11 w-11 place-items-center rounded-xl text-[22px]"
+            style={{ background: `linear-gradient(180deg, ${rgba(c1, 0.35)}, ${rgba(tint(c1, -0.4), 0.35)})`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.25), inset 0 0 0 1px ${rgba(c1, 0.5)}` }}
+          >
+            🚗
+          </span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[15px] font-black leading-tight text-white">Drive to training</div>
+          <div className="mt-0.5 text-[11px] font-bold text-white/60">3D · your car to the training ground</div>
+        </div>
+        <span className="shrink-0 rounded-full bg-gradient-to-b from-sky-400 to-sky-600 px-3 py-1.5 text-[12px] font-black uppercase tracking-wide text-white">Drive ›</span>
       </div>
     </button>
   );

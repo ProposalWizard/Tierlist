@@ -1,6 +1,7 @@
 import type { CareerState } from "./types";
 import { happinessEnergyFactor, happinessOf } from "./relationships";
 import { getTuning } from "./tuningStore";
+import { passTime, WEEK_THING_MINS } from "./life/clock";
 
 /**
  * THE WEEK BETWEEN MATCHES
@@ -59,7 +60,8 @@ export function canAct(career: CareerState): boolean {
 export function spendAction(career: CareerState): CareerState {
   const left = actionsLeft(career);
   if (left <= 0) return career;
-  return { ...career, weekActions: left - 1 };
+  // each of the week's 3 things also costs half a day on the career clock (life/clock.ts; Harry's question 2)
+  return passTime({ ...career, weekActions: left - 1 }, WEEK_THING_MINS);
 }
 
 /** Put your feet up. Costs a day, buys back energy (more when you're happy).

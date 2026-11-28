@@ -16,6 +16,14 @@
  * on his own session. Demos: ?demo=gym (the film: walk in, a set, off the treadmill) | walk (bench, then the walk to the treadmill and up onto it) | bench | treadmill | fall | bag.
  * Phase 2 (lib/star/world3d/gymPoses2.ts): ?demo=pullup | squat | pushup | plank | nordic | copenhagen | boxjump | ladder | landing | mobility | tour (four in a row) | body1..body4 (the body at gym levels 1-4).
  *
+ * ?place=compound: THE TRAINING COMPOUND (Harry, 27-28 Nov 2026, phase 1 of docs/research/gym-compound-driving-2026-11-27.md:
+ * the grounds; lib/star/world3d/compoundPlace.ts): you have just parked; the gate with the crest board and the security
+ * hut, the forecourt, the building's front (the gym door opens the gym above; reception and the canteen are coming
+ * soon), three pitches, a stand, the coach, the kit man and team-mates on their routines. ?sky=day|sunset|night.
+ * Demos: ?demo=arrive (the film: car park, the gate, in at the gym door) | compound (the people at work) |
+ * drive (the drive's arrival: your car in under the barrier, into your bay, then out and in at the gym door).
+ * ?arrive=hatch|family|suv|sports|classic|super: the compound opens with that car's arrival (lib/star/drive3d/arrival.ts).
+ *
  * ?place=house|garden, ?demo=sofa|fridge|visitor|talk (a scripted run, for
  * filming with scripts/film/frames3d.mjs), ?bare=1 / ?film=1 full screen,
  * ?q=low|medium|high the quality tier. Nothing is saved.
@@ -30,6 +38,7 @@ import { useSearchParams } from "next/navigation";
 import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Btn, Pill } from "@/components/admin/broadcast/BroadcastPage";
 import World3D from "@/components/star/World3D";
+import { DRIVE_CAR_IDS, type DriveCarId } from "@/lib/star/drive3d/cars";
 import Home3D from "@/components/star/Home3D";
 import { parseHomeTier, HOME_TIERS, type HomeTier } from "@/lib/star/home3d/homes";
 import "../star-3d-area-dev/stage3d.css";
@@ -53,7 +62,18 @@ function World3DTest() {
   const params = useSearchParams();
   const demo = params.get("demo");
   const GYM_DEMOS = ["gym", "walk", "bench", "treadmill", "fall", "bag", "tour", "pullup", "squat", "pushup", "plank", "nordic", "copenhagen", "boxjump", "ladder", "landing", "mobility", "body1", "body2", "body3", "body4"];
-  const [place, setPlace] = useState<WorldPlace>(params.get("place") === "house" || demo === "sofa" || demo === "fridge" ? "house" : params.get("place") === "gym" || GYM_DEMOS.includes(demo ?? "") ? "gym" : "garden");
+  const COMPOUND_DEMOS = ["arrive", "compound", "drive"];
+  // the drive's arrival (lib/star/drive3d/arrival.ts): ?arrive=hatch|family|suv|sports|classic|super (?demo=drive films it)
+  const ac = params.get("arrive") ?? (demo === "drive" ? "sports" : null);
+  const arriveCar = ac && (DRIVE_CAR_IDS as string[]).includes(ac) ? (ac as DriveCarId) : null;
+  const [place, setPlace] = useState<WorldPlace>(params.get("place") === "house" || demo === "sofa" || demo === "fridge" ? "house" : params.get("place") === "gym" || GYM_DEMOS.includes(demo ?? "") ? "gym" : params.get("place") === "compound" || COMPOUND_DEMOS.includes(demo ?? "") ? "compound" : "garden");
+  const sky = params.get("sky");
+  // a door that leads on (the compound's gym door): the demo only belongs to the place it started in
+  const [went, setWent] = useState(false);
+  // the gym reached through the compound's door: its "‹ Compound" goes back out of that door (gym/homeGym.ts gymBack)
+  const [from, setFrom] = useState<"compound" | "back" | "house" | null>(null);
+  // ?homeGym=<tier>: that house level's home gym (gym/homeGym.ts), its machines only
+  const [homeGym, setHomeGym] = useState<HomeTier | null>(() => parseHomeTier(params.get("homeGym")));
   const [run, setRun] = useState(0);
   const quality = parseQuality3d(params.get("q")) ?? undefined;
   // a made-up career: the squad gives the team-mates their names, numbers and the living world's chat
@@ -67,9 +87,15 @@ function World3DTest() {
   const options = useMemo<WorldOptions>(() => {
     const c = career.current!;
     const kit = kitsOf("Arsenal").home;
-    const mates = (c.squad ?? []).filter((p) => p.position !== "GK").slice(0, 3).map((p, i) => ({ id: p.id, name: p.shortName || p.name, number: [8, 14, 21][i] }));
+    const mates = (c.squad ?? []).filter((p) => p.position !== "GK").slice(0, 4).map((p, i) => ({ id: p.id, name: p.shortName || p.name, number: [8, 14, 21, 4][i] }));
     return {
-      place, demo, quality, number: 9, mates, club: "Arsenal",
+      place, demo: went ? null : demo, quality, number: 9, mates, club: "Arsenal", sky,
+      homeGym: place === "gym" ? homeGym : null,
+      fadeIn: !!from,
+      compoundKit: place === "gym" && from === "compound",
+      startAt: place === "compound" && from === "back" ? "gym-door" : null,
+      // the drive's arrival (lib/star/drive3d/arrival.ts): ?arrive=<car>, not after a door (you walked out of the gym)
+      arrive: place === "compound" && arriveCar && !went && !from ? { car: arriveCar } : null,
       kit: { shirt: kit.shirt, trim: kit.trim },
       // the living world's chat (lib/star/life/social.ts): pure, on this page's made-up career only
       chat: (slot: string) => {
@@ -86,14 +112,17 @@ function World3DTest() {
       },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [place, demo, quality, run]);
+  }, [place, demo, quality, run, sky, went, from, homeGym]);
 
   const bare = params.get("bare") === "1" || params.get("film") === "1";
   const houseTier: HomeTier | null = parseHomeTier(params.get("tier"));
   const [tier, setTier] = useState<HomeTier | null>(houseTier);
   const stage = place === "house" && tier
-    ? <Home3D key={`${tier}-${run}`} career={career.current!} tier={tier} living house="new" where="test" embedded={!bare} backLabel="Back" onBack={() => setTier(null)} />
-    : <World3D key={`${place}-${run}`} options={options} clean={params.get("clean") === "1"} />;
+    ? <Home3D key={`${tier}-${run}`} career={career.current!} tier={tier} living house="new" where="test" embedded={!bare} backLabel="Back" onBack={() => setTier(null)}
+      onGym={(t) => { setHomeGym(t); setFrom("house"); setPlace("gym"); }} />
+    : <World3D key={`${place}-${run}`} options={options} clean={params.get("clean") === "1"} onGo={(p) => { setWent(true); setFrom("compound"); setPlace(p); }}
+      onBack={place === "gym" && from === "compound" ? () => { setFrom("back"); setPlace("compound"); } : place === "gym" && from === "house" ? () => { setFrom(null); setPlace("house"); } : undefined}
+      backLabel={from === "house" ? "House" : "Compound"} />;
   if (bare) {
     return (
       <>
@@ -109,6 +138,7 @@ function World3DTest() {
           <Pill on={place === "house"} onClick={() => setPlace("house")}>House</Pill>
           <Pill on={place === "garden"} onClick={() => setPlace("garden")}>Garden</Pill>
           <Pill on={place === "gym"} onClick={() => setPlace("gym")}>Gym</Pill>
+          <Pill on={place === "compound"} onClick={() => setPlace("compound")}>Compound</Pill>
           {HOME_TIERS.map((t) => <Pill key={t} on={place === "house" && tier === t} onClick={() => { setPlace("house"); setTier(t); }}>{t}</Pill>)}
           <Btn onClick={() => setRun((k) => k + 1)}>↻ Restart</Btn>
         </div>

@@ -645,53 +645,82 @@ def comb(p, n=20.0):
 
 
 def s_crew(H, M, rnd):
+    """A crew cut (28 Nov 2026, the barber: it read as the same dark bowl as the slick back): the sides and back
+    clipped close (a few mm, darker: they read as a fade over the head's own buzz), a little length on top that
+    rises to a short textured front, tufts you can see at phone size."""
     S = H.S
 
+    def top(az, el):
+        return smooth(RAD(38), RAD(62), el)
+
     def thick(az, el, f, loc):
-        t = lerp(0.0045, 0.0105, smooth(RAD(15), RAD(55), el))
-        t += 0.005 * smooth(RAD(70), RAD(15), abs(az)) * smooth(RAD(75), RAD(40), el) * smooth(RAD(20), RAD(40), el)
-        return (t + 0.0012 * noise.noise(loc * 90)) * S
-    cap(M, lambda az: H.hl(az) - RAD(2), thick, naz=36, rings=(0, 0.05, 0.16, 0.3, 0.45, 0.6, 0.75, 0.9), blend=0.6, shade=lambda az, el, f, p: 0.86 + 0.1 * noise.noise(p * 90), wall=0.8)
+        k = top(az, el)
+        t = lerp(0.0022, 0.0095, k)
+        # the front stands up a little (a short brushed-up front, not a fringe)
+        t += 0.008 * smooth(RAD(70), RAD(10), abs(az)) * smooth(RAD(48), RAD(66), el) * smooth(RAD(90), RAD(72), el)
+        return (t + 0.0055 * k * (cell(loc, 48) - 0.45) + 0.0006 * noise.noise(loc * 90)) * S
+    # the sides and back are clipped right down: the cut starts above the ears (the head's own close crop under it,
+    # faded by the barber's scalp paint, lib/star/barber.ts), the front keeps its hairline
+    def lo(az):
+        side = smooth(RAD(35), RAD(70), abs(az))
+        return max(H.hl(az) - RAD(2), lerp(H.hl(az) - RAD(2), RAD(30), side))
+    cap(M, lo, thick, naz=72, rings=(0, 0.05, 0.12, 0.2, 0.28, 0.36, 0.44, 0.52, 0.6, 0.68, 0.76, 0.84, 0.92), blend=0.6,
+        shade=lambda az, el, f, p: lerp(0.55, 0.7 + 0.45 * cell(p, 48), top(az, el)), wall=0.8)
 
 
 def s_slick(H, M, rnd, tight=False):
+    """The slick back: a tall front combed straight back over the crown (deep comb lines you can see), a side parting
+    cut in on his left, the sides combed close. tight=True: the flat, combed base under a tied-back style or a bun."""
     S = H.S
-    lines = 3.2 if not tight else 20.0   # the comb's lines, front to back (few and deep when worn loose)
+    lines = 9.0 if not tight else 20.0   # the comb's lines, front to back
+    part_az = RAD(38)                    # the parting: on his left, from the hairline to the crown
+
+    def parting(az, el):
+        return (1 - smooth(RAD(0), RAD(7), abs(az - part_az))) * smooth(RAD(25), RAD(35), el) * (1 - smooth(RAD(70), RAD(82), el)) if not tight else 0.0
 
     def thick(az, el, f, loc):
         front = smooth(RAD(95), RAD(20), abs(az))
         back = smooth(RAD(110), RAD(170), abs(az))
-        t = lerp(0.006, 0.011, smooth(RAD(10), RAD(50), el))
+        side = smooth(RAD(40), RAD(20), el)
+        t = lerp(0.004, 0.011, smooth(RAD(10), RAD(50), el))
         if not tight:
-            # a high swept-back front, the length carried over the crown and gathered at the nape
-            t += 0.021 * front * smooth(RAD(92), RAD(50), el) + 0.007 * smooth(RAD(40), RAD(80), el) + 0.009 * back * smooth(RAD(40), RAD(-10), el)
-        return (t + (0.0042 if not tight else 0.0009) * (comb(loc, lines) - 0.5) * smooth(0.03, 0.2, f)) * S
-    cap(M, lambda az: H.hl(az) - RAD(2), thick, naz=72 if not tight else 48, rings=(0, 0.045, 0.14, 0.26, 0.4, 0.55, 0.7, 0.85), blend=0.5,
-        shade=lambda az, el, f, p: (0.62 + 0.38 * comb(p, lines)) if not tight else 0.8 + 0.2 * comb(p), wall=0.92 if not tight else 0.75)
+            # a high swept-back front, the length carried over the crown and gathered at the nape; the sides close
+            t += 0.026 * front * smooth(RAD(92), RAD(48), el) * smooth(RAD(30), RAD(50), el) + 0.008 * smooth(RAD(40), RAD(80), el) + 0.007 * back * smooth(RAD(40), RAD(-10), el)
+            t *= lerp(1.0, 0.55, side * (1 - back))
+            t *= 1 - 0.75 * parting(az, el)
+        return (t + (0.0028 if not tight else 0.0009) * (comb(loc, lines) - 0.5) * smooth(0.03, 0.2, f)) * S
+    cap(M, lambda az: H.hl(az) - RAD(2), thick, naz=96 if not tight else 48, rings=(0, 0.045, 0.14, 0.26, 0.4, 0.55, 0.7, 0.85), blend=0.5,
+        shade=lambda az, el, f, p: ((0.5 + 0.5 * comb(p, lines)) * (1 - 0.55 * parting(az, el))) if not tight else 0.62 + 0.38 * comb(p), wall=0.92 if not tight else 0.75)
 
 
 def s_ponytail(H, M, rnd):
+    """Tied back: combed flat and pulled to a tie high on the back of the head (a thick band you see from the
+    three-quarter and the side), the tail falling from it to the collar."""
     S = H.S
     s_slick(H, M, rnd, tight=True)
-    loc, nor, fi = H.ray(math.pi, RAD(12))
+    loc, nor, fi = H.ray(math.pi, RAD(26))
     w = H.weights(loc)
-    d0 = (nor * 0.8 + Vector((0, -0.25, -0.3))).normalized()
-    base = loc + nor * 0.004 * S
-    pts = [base, base + d0 * 0.02 * S]
+    back = Vector((nor.x, 0, nor.z)).normalized()
+    d0 = (back * 0.8 + Vector((0, -0.35, 0))).normalized()
+    base = loc + nor * 0.003 * S
+    # the gathered knot at the tie: a short fat bulge
+    knot = [base, base + d0 * 0.012 * S, base + d0 * 0.026 * S]
+    tube(M, knot, [0.017 * S, 0.02 * S, 0.018 * S], sides=9, shade=(0.8, 0.95), w=w, tip=0.0, hint=Vector((1, 0, 0)))
+    pts = [base + d0 * 0.024 * S, base + d0 * 0.04 * S]
     p = pts[-1]; d = d0.copy()
-    for k in range(12):
-        d = (d + Vector((0, -0.7, 0.04))).normalized()
-        p = H.push_out(p + d * 0.021 * S, 0.022 * S)
+    for k in range(14):
+        d = (d + Vector((0, -0.75, 0))).normalized()
+        p = H.push_out(p + d * 0.022 * S, 0.024 * S)
         pts.append(p)
-        if p.y < H.collarY + 0.02:
+        if p.y < H.collarY + 0.015:
             break
     if os.environ.get('HAIR_DEBUG'):
         print('PONY', [tuple(round(x, 3) for x in q) for q in pts])
     n = len(pts)
-    rad = [lerp(0.012, 0.023, smooth(0, 0.3, k / (n - 1))) * lerp(1.0, 0.4, smooth(0.5, 1.0, k / (n - 1))) * S for k in range(n)]
-    tube(M, pts, rad, sides=7, shade=(0.82, 1.0), w=w, tip=1.2, hint=Vector((1, 0, 0)), flat=1.5, swing=1.0, swing_from=1)
-    # the band
-    tube(M, [base + d0 * 0.012 * S, base + d0 * 0.02 * S, base + d0 * 0.028 * S], [0.0135 * S, 0.0145 * S, 0.0135 * S], sides=7, shade=(0.45, 0.45), w=w, tip=0.0, hint=Vector((1, 0, 0)))
+    rad = [lerp(0.016, 0.024, smooth(0, 0.3, k / (n - 1))) * lerp(1.0, 0.35, smooth(0.45, 1.0, k / (n - 1))) * S for k in range(n)]
+    tube(M, pts, rad, sides=8, shade=(0.82, 1.0), w=w, tip=1.3, hint=Vector((1, 0, 0)), flat=1.35, swing=1.0, swing_from=1)
+    # the band: wide and dark, round the knot
+    tube(M, [base + d0 * 0.017 * S, base + d0 * 0.025 * S, base + d0 * 0.033 * S], [0.0215 * S, 0.0225 * S, 0.0215 * S], sides=10, shade=(0.3, 0.3), w=w, tip=0.0, hint=Vector((1, 0, 0)))
 
 
 def s_manbun(H, M, rnd):

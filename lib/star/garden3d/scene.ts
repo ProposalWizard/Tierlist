@@ -58,7 +58,7 @@ import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality
 import { Governor, sessionStartTier } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
 import { tightCull } from "../three3d/tightCull";
-import { DynamicResolution, rememberGpu, loadGltfCached, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, loadGltfCached, noteSceneFiles, acquireRenderer, awaitSmoothFrame, abandonedSceneError, abandonedContainer } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
 import { loadRealNature, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
@@ -79,8 +79,11 @@ import {
   lawnCanvasSoft, meadowCanvas, brickCanvas, hedgeCanvas, stripeCanvas, slateCanvas,
 } from "./textures";
 import { safeCompileAsync } from "../three3d/safeCompile";
+import type { GardenLevelsOpt, LevelZones, RideReport } from "./levelZones";
+import { clearedRects, inRect, levelTrees } from "./levelLayout";
+import { gardenLevelOf } from "../gardenLevels";
 
-export type GardenSpot = "trophies" | "horse" | "mates" | "fountain" | "cars" | "shop" | "teqball" | "casino" | "training" | "house";
+export type GardenSpot = "trophies" | "horse" | "mates" | "fountain" | "cars" | "shop" | "teqball" | "casino" | "training" | "house" | "street";
 export type GardenSky = "day" | "sunset" | "night";
 
 export interface GardenTrophy { name: string; count: number; art: string | null }
@@ -102,7 +105,7 @@ export interface GardenData {
   mates: number[];
   /** Where you appear: at the shop's doors (coming out of it), the casino's
    *  doors, the training pitch's gate, or the garden gate. */
-  arrive: "shop" | "gate" | "casino" | "training" | "house";
+  arrive: "shop" | "gate" | "casino" | "training" | "house" | /** back from the shopping street: at the gate */ "street";
   /** Who you are: the 3D shop's own player (its Settings → "3D shop player"
    *  switch and your saved skin, hair and hair style). Absent → the shop's
    *  default, the new player. */
@@ -124,9 +127,13 @@ export interface GardenCallbacks {
   onTrainingGate?: () => void;
   /** He walked through your house's back door (9 Oct 2026). Absent: the door stays shut. */
   onHouseDoor?: () => void;
+  /** He walked out of the garden gate, to the shopping street (28 Nov 2026, lib/star/street3d). Absent: the gate stays shut. */
+  onStreetGate?: () => void;
   /** The phone took the 3D away (iPhone Safari does this when memory runs
    *  short): the screen should restart the garden or fall back. */
   onContextLost?: () => void;
+  /** Garden levels (opts.levels): a ride ended — the horse's energy and the laps, for the career (gardenLevels.ts applyRide). */
+  onRide?: (r: RideReport) => void;
 }
 
 export interface GardenController {
@@ -153,6 +160,8 @@ export interface GardenController {
   debug: () => Record<string, unknown>;
   /** 3D Scene Editor (and approved edits in the game): the edit to play with (null = as written). */
   setEdit?: (e: WalkSceneEdit | null) => void;
+  /** Garden levels on (opts.levels, level 2+): mount, ride, the lap state — for the test page, tests and filming. */
+  levels?: LevelZones["test"];
   /** Editor only: stand him somewhere to look at the walking camera (gate, fountain, shop, casino, training, house). */
   showView?: (stand: string) => void;
   /** Editor only: where the camera stands and looks at the last frame. */
@@ -163,12 +172,17 @@ export interface GardenController {
 }
 
 export interface GardenOptions {
+  /** The screen was closed while this was still building (3D places audit P1): stop at the next step, never take the canvas. */
+  isDead?: () => boolean;
   /** Settings → Look → "3D quality" (lib/star/three3d/quality.ts). Unset: the setting, else Auto. */
   quality?: Quality3d;
   fixedStep?: number;
   /** The 3D Scene Editor's edit (/star-scene-editor-dev), or an approved one in the
    *  game (lib/star/sceneEdits). Absent = the garden exactly as before. */
   edit?: WalkSceneEdit | null;
+  /** Garden levels (lib/star/gardenLevels.ts, ./levelZones.ts; the setting ./levelsFlag.ts). Absent, or level 1:
+   *  the garden exactly as before. Level 2+ opens the west gate and the new areas, and you can ride your horse. */
+  levels?: GardenLevelsOpt;
 }
 
 // ── The plan of the garden (metres; north is -z, the gate is south) ──
@@ -228,6 +242,8 @@ const SKY: Record<GardenSky, { top: string; mid: string; low: string; fog: strin
 };
 
 async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions, own: { release?: (root?: any) => void; root?: any }): Promise<GardenController> {
+  /** The screen closed while this was still building (3D places audit P1): stop at the next step. */
+  const gone = () => !!opts.isDead?.() || abandonedContainer(container);
   // ── 3D quality (Settings → Look → "3D quality"): one tier, chosen before the
   // renderer (antialias is fixed when the context is made). High is the New
   // look exactly as it was on 5 Oct 2026. ──
@@ -253,6 +269,20 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // test page switches, to check a lag measure on its own (?noimp, ?nofreeze)
   const dbg = new URLSearchParams(typeof location === "undefined" ? "" : location.search);
   const night = data.sky === "night";
+  // garden levels: which new areas are open (level 1 = nothing new; the 3D is ./levelZones.ts, built below)
+  const gLevel = opts.levels ? gardenLevelOf(opts.levels.xp).level : 1;
+  const gCleared = clearedRects(gLevel);
+  const levelCleared = (x: number, z: number) => gCleared.some((r) => inRect(x, z, r));
+  /** Take out every triangle whose middle is in one of the rects (an indexed geometry, in place). */
+  const dropTrianglesIn = (g: any, rects: [number, number, number, number][]) => {
+    if (!g.index) return;
+    const ix = g.index.array, p = g.attributes.position, keep: number[] = [];
+    for (let t = 0; t < ix.length; t += 3) {
+      const cx = (p.getX(ix[t]) + p.getX(ix[t + 1]) + p.getX(ix[t + 2])) / 3, cz = (p.getZ(ix[t]) + p.getZ(ix[t + 1]) + p.getZ(ix[t + 2])) / 3;
+      if (!rects.some((r) => inRect(cx, cz, r))) keep.push(ix[t], ix[t + 1], ix[t + 2]);
+    }
+    g.setIndex(keep);
+  };
 
   // ── Renderer ──
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
@@ -260,6 +290,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // ONE renderer for every 3D place (three3d/perf.ts): garden → shop → garden
   // keeps the same WebGL context and its compiled shaders (Mikey's video, 12 Oct:
   // 1.5-1.7 s freezes coming back into the garden were a new context + every shader again)
+  // closed while its files loaded (3D places audit P1, 28 Nov 2026): never take the canvas from the place on screen
+  if (gone()) throw abandonedSceneError();
   const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   own.release = release;
   rememberGpu(renderer);
@@ -306,7 +338,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 
   const scene = new THREE.Scene();
   own.root = scene;
-  scene.fog = new THREE.Fog(look.fog, 30, 110);
+  // (garden levels 3+: the field reaches 95 m out, so the haze starts and ends further away)
+  scene.fog = new THREE.Fog(look.fog, gLevel >= 3 ? 42 : 30, gLevel >= 3 ? 150 : 110);
   scene.background = new THREE.Color(look.fog);
   // The shop's soft room reflection, so the people and the glass are lit as
   // they are in the shop (the old garden had none).
@@ -334,7 +367,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
    */
   const breathe = async () => {
     await new Promise<void>((r) => setTimeout(r, 0));
-    if (disposed) throw new Error("disposed");
+    if (disposed || gone()) throw new Error("disposed");
   };
 
   const canvasTex = (c: HTMLCanvasElement, repeat?: [number, number]) => {
@@ -431,7 +464,9 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     const g = new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2);
     g.scale(22 + (i % 3) * 8, 5 + ((i * 7) % 5) * 1.6, 16);
     g.rotateY(-a);
-    g.translate(Math.cos(a) * 78, -0.5, Math.sin(a) * 78);
+    // garden levels: a hill that would stand on the new areas sits further out, behind them
+    const far = gLevel >= 2 && gCleared.some((r) => inRect(Math.cos(a) * 78, Math.sin(a) * 78, [r[0] - 30, r[1] + 30, r[2] - 30, r[3] + 30])) ? (gLevel >= 3 ? 158 : 118) : 78;
+    g.translate(Math.cos(a) * far, -0.5, Math.sin(a) * far);
     hillGeos.push(g);
   }
   scene.add(new THREE.Mesh(mergeGeometries(hillGeos), hillM));
@@ -479,7 +514,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 
   // Look H: real trees, hay, flowers and paving (./realNature.ts); Old: exactly as before
   const nature = look3dStyle() === "h" ? await loadRealNature(THREE, renderer).catch((e) => { console.error("garden nature maps failed", e); return null; }) : null;
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
 
   /** Look H: the lawn in look H's scanned grass (blades, normals), a copy every 2.4 m. */
   function realLawn() {
@@ -488,7 +523,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     return mat("#e6f2d2", { map: c, normalMap: n, normalScale: new THREE.Vector2(0.9, 0.9), roughness: 0.95 });
   }
   const hGrass = nature ? await grassMaps(THREE).catch(() => null) : null;
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
 
   // ── The ground ──
   // the mown lawn stops at the boundary; long meadow grass beyond it
@@ -497,8 +532,11 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   lawn.position.y = 0.004;
   lawn.receiveShadow = true;
   scene.add(lawn);
-  const meadow = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), mat("#ffffff", { map: canvasTex(meadowCanvas(), [50, 50]), roughness: 1 }));
+  // (garden levels 3+: the field runs out to x -113, so the meadow is wider and reaches further west)
+  const meadowW = gLevel >= 3 ? 320 : 200;
+  const meadow = new THREE.Mesh(new THREE.PlaneGeometry(meadowW, 200), mat("#ffffff", { map: canvasTex(meadowCanvas(), [50 * meadowW / 200, 50]), roughness: 1 }));
   meadow.rotation.x = -Math.PI / 2;
+  if (gLevel >= 3) meadow.position.x = -(meadowW - 200) / 2;
   meadow.receiveShadow = true;
   scene.add(meadow);
   /** A flat piece of ground. `tile`: the picture repeats every `tile` m, set in the piece's own UVs, so
@@ -589,7 +627,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     load("/star/shop3d/anims.glb").then((g: any) => withMocapOwn(loader, g, "ual")),
     load("/star/garden3d/anims.glb"),
   ]);
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
   // Each piece by its key, as ALL its parts (a tree is trunk + leaves, two
   // meshes). The old garden kept only single-mesh pieces, so every tree, the
   // paddock fence, the fountain basin and the potted plants never appeared.
@@ -669,6 +707,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const bound = batch(scene);
   // each side as [x0, z0, x1, z1]; the south side has the gate in it
   const sides: [number, number, number, number][] = [[-B, -B, B, -B], [-B, -B, -B, B], [B, -B, B, B], [-B, B, -GATE, B], [GATE, B, B, B]];
+  // garden level 2+: a farm gate in the west wall, where the side path ends (./levelLayout.ts WEST_GATE)
+  if (gLevel >= 2) sides.splice(1, 1, [-B, -B, -B, -2.9], [-B, -0.7, -B, B]);
   const runOf = (s4: [number, number, number, number], h: number, t: number, m: any, y0 = 0, grow = 0) => {
     const [x0, z0, x1, z1] = s4;
     const len = Math.hypot(x1 - x0, z1 - z0) + grow;
@@ -756,7 +796,12 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   let treeSeed = 0;
   for (const [k, list] of Object.entries(treeAt)) {
     const sz = treeSize.get(k) ?? { h: 1.6, w: 1.2 };
-    for (const [x, z, s, ry] of list) plantTrees.push({ x, z, s, ry, h: sz.h, w: sz.w, shape: TREE_SHAPE[k] ?? "round", seed: 101 + 37 * treeSeed++, light: TREE_TONE[k]?.[0], dark: TREE_TONE[k]?.[1], tint: CARD_TINT[k] });
+    for (const [x, z, s, ry] of list) if (!levelCleared(x, z)) plantTrees.push({ x, z, s, ry, h: sz.h, w: sz.w, shape: TREE_SHAPE[k] ?? "round", seed: 101 + 37 * treeSeed++, light: TREE_TONE[k]?.[0], dark: TREE_TONE[k]?.[1], tint: CARD_TINT[k] });
+  }
+  // garden levels: the trees round the new areas, the same trees in the same zones (./levelLayout.ts levelTrees)
+  for (const t of levelTrees(gLevel)) {
+    const sz = treeSize.get(t.key) ?? { h: 1.6, w: 1.2 };
+    plantTrees.push({ x: t.x, z: t.z, s: t.s, ry: t.ry, h: sz.h, w: sz.w, shape: TREE_SHAPE[t.key] ?? "round", seed: 101 + 37 * treeSeed++, light: TREE_TONE[t.key]?.[0], dark: TREE_TONE[t.key]?.[1], tint: CARD_TINT[t.key] });
   }
   for (const [x, z] of [[16.8, -15.8], [17, -2], [-17.2, -5.5], [17.2, -9.5], [-3.6, 16.2], [3.6, 16.2]]) CIRCLES.push([x, z, 0.8]);
 
@@ -799,7 +844,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const bush = (x: number, z: number, sz: number) => {
     // inside the casino or the training pitch (8 Oct 2026): not planted, but
     // its random numbers are still drawn, so every other bush stays put
-    const gone = (x > CASINO.x0 - 0.5 && x < CASINO.x1 + 0.5 && z < CASINO.z1 + 0.5) || (x > PITCH.x0 - 0.5 && x < PITCH.x1 + 0.5 && z < PITCH.z1 + 0.5);
+    const gone = (x > CASINO.x0 - 0.5 && x < CASINO.x1 + 0.5 && z < CASINO.z1 + 0.5) || (x > PITCH.x0 - 0.5 && x < PITCH.x1 + 0.5 && z < PITCH.z1 + 0.5)
+      || (gLevel >= 2 && x < -10 && Math.abs(z + 1.8) < 2.2); // the side path out to the west gate (garden level 2+)
     for (let k = 0; k < 5; k++) {
       const a = r() * Math.PI * 2, d = r() * sz * 0.45;
       const sc = sz * (0.42 + r() * 0.2);
@@ -818,7 +864,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // made cheap; the low-poly styles stay only as an option (?trees=facet|clump|leafy)
   const lowPolyPick = (["clump", "facet", "leafy"] as TreeStyle[]).find((t) => t === dbg.get("trees"));
   const cardAtlas = lowPolyPick ? null : await loadCardAtlas(THREE, renderer).catch((e) => { console.error("garden tree atlas", e); return null; });
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
   const treeStyle: PlantStyle = lowPolyPick ?? (cardAtlas ? "cards" : TREE_STYLE);
   const cardMat = cardAtlas ? cardMaterial(THREE, cardAtlas.map, cardAtlas.nrm) : null;
   // zones wholly behind the shop or the casino are left out of the picture (a little inside their walls, to be safe)
@@ -832,6 +878,14 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   });
   scene.add(plants.group);
   occluders.push(plants.group);
+  // ── Garden levels: the new areas west of the garden (./levelZones.ts; level 1 builds nothing) ──
+  const ext: LevelZones | null = gLevel >= 2 && opts.levels
+    ? await (await import("./levelZones")).buildLevelZones({
+      THREE, scene, container, tier, load, SkeletonUtils, mergeGeometries, plantStyle: treeStyle, cardMaterial: cardMat, blobTex: blobT, night, dbg,
+      wallTop: data.tier >= 3 ? 1.85 : data.tier >= 1 ? 1.9 : 1.6,
+    }, opts.levels, { onRide: (r) => cb.onRide?.(r), onHouse: cb.onHouseDoor ? () => { if (!doorFired) { doorFired = true; cb.onHouseDoor!(); } } : undefined })
+    : null;
+  if (disposed) { ext?.dispose(); throw new Error("disposed"); }
   // clipped box hedges framing the shop's forecourt, and two topiary balls
   // in square planters either side of the trophy cabinet
   const boxHedgeT = canvasTex(hedgeCanvas("#2c5a25"), [1, 1]);
@@ -1312,6 +1366,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // the path to it: from the fountain court, west, then up to the gate
   sidePave(-2.7 - (PITCH.gate - 0.7), 1.4, (-2.7 + PITCH.gate - 0.7) / 2, SIDE_Z, 0.0155);
   sidePave(1.4, SIDE_Z - 0.7 - PITCH.z1, PITCH.gate, (SIDE_Z - 0.7 + PITCH.z1) / 2, 0.016);
+  // garden level 2+: on to the farm gate in the west wall
+  if (gLevel >= 2) sidePave(-(PITCH.gate - 0.7) - 18.9, 1.4, (PITCH.gate - 0.7 - 18.9) / 2, SIDE_Z, 0.0156);
 
   await breathe();
   // ── The fountain, and a bird that drops in for a drink ──
@@ -1951,6 +2007,15 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   strideFor(THREE, personRef, mixer, { idle: idleA, walk: walkA, jog: jogA })
     .then((g) => { if (!disposed) gaitBlend = g; })
     .catch((e) => console.error("gait clips", e));
+  // garden levels: you can ride (the one body only: it has the seated clip the rider's pose starts from)
+  if (ext && personRef?.actions.sitidle) {
+    ext.attachRider({
+      person: personRef, player,
+      place: (x, z, y) => ctrl.place(x, z, y),
+      // on the horse every walking loop sits out (the seated clip takes him)
+      zeroLegs: (dt) => { if (gaitBlend) gaitBlend.update(0, dt, 0); for (const a of [idleA, walkA, jogA]) a?.setEffectiveWeight(0); },
+    });
+  }
   await breathe();
   // ── Your horse, grazing and wandering the paddock ──
   // More than one pose (7 Oct 2026, "horses have one pose"): between walks he
@@ -1965,7 +2030,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     neck: any; head: any; tail: any[];
   } | null = null;
   let horseBlob: any = null;
-  if (data.horse) {
+  if (data.horse && !ext) {
     load("/star/garden3d/horse.glb").then((g: any) => {
       if (disposed) return;
       const root = g.scene;
@@ -2042,7 +2107,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // draw: here every still piece is joined with the others of the same
   // material in the same group, so the garden draws in far fewer calls. The
   // picture is exactly the same.
-  const frozen = dbg.has("nofreeze") ? { before: 0, after: 0 } : freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, dome, sunSprite, plants.group, ...mates.map((m) => m.root)]));
+  const frozen = dbg.has("nofreeze") ? { before: 0, after: 0 } : freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, dome, sunSprite, plants.group, ...mates.map((m) => m.root), ...(ext?.movers ?? [])]));
   // 3D quality look New (12 Oct 2026): where nothing casts a live shadow (Low), a long soft shadow
   // along the sun under him, so he stands on the path, never floats. One small draw.
   let sunBlob: any = null;
@@ -2342,13 +2407,21 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       if (!doorFired && x > HOUSE.x + 0.1) { doorFired = true; cb.onHouseDoor(); }
       return [Math.min(x, HOUSE.x + 0.5), z];
     }
+    // the garden gate, out to the shopping street (28 Nov 2026)
+    if (cb.onStreetGate && Math.abs(x) < 1.3 && z > LIMIT - 0.6) {
+      if (!doorFired && z > LIMIT - 0.15) { doorFired = true; cb.onStreetGate(); }
+      return [x, Math.min(z, LIMIT + 0.3)];
+    }
     // the training pitch's gate
     if (cb.onTrainingGate && Math.abs(x - PITCH.gate) < PITCH.gateHalf - 0.2 && z < PITCH.z1 + 0.7 && z > PITCH.z1 - 1.0) {
       if (!doorFired && z < PITCH.z1 - 0.1) { doorFired = true; cb.onTrainingGate(); }
       return [x, Math.max(z, PITCH.z1 - 0.5)];
     }
-    x = Math.max(-LIMIT, Math.min(LIMIT, x));
-    z = Math.max(-LIMIT, Math.min(LIMIT, z));
+    if (ext) [x, z] = ext.clamp(x, z, rr, (gx, gz) => [Math.max(-LIMIT, Math.min(LIMIT, gx)), Math.max(-LIMIT, Math.min(LIMIT, gz))]);
+    else {
+      x = Math.max(-LIMIT, Math.min(LIMIT, x));
+      z = Math.max(-LIMIT, Math.min(LIMIT, z));
+    }
     for (const [x0, x1, z0, z1] of BOXES) {
       if (x > x0 - rr && x < x1 + rr && z > z0 - rr && z < z1 + rr) {
         const push = [x - (x0 - rr), x1 + rr - x, z - (z0 - rr), z1 + rr - z];
@@ -2365,7 +2438,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   /** Somewhere he can stand (for the tap-walk's path), with a little room. */
   const isFree = (x: number, z: number) => {
     const rr = RR + 0.08;
-    if (Math.abs(x) > LIMIT - 0.1 || Math.abs(z) > LIMIT - 0.1) return false;
+    if (Math.abs(x) > LIMIT - 0.1 || Math.abs(z) > LIMIT - 0.1) return !!ext && ext.inside(x, z);
     for (const [x0, x1, z0, z1] of BOXES) if (x > x0 - rr && x < x1 + rr && z > z0 - rr && z < z1 + rr) return false;
     for (const [cx, cz, cr] of CIRCLES) if (Math.hypot(x - cx, z - cz) < cr + rr) return false;
     return true;
@@ -2394,9 +2467,11 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     horse: { at: [PADDOCK.x1 + 0.9, (PADDOCK.gate[0] + PADDOCK.gate[1]) / 2], face: [(PADDOCK.x0 + PADDOCK.x1) / 2, 7] },
     cars: { at: [9.5, PARK.z0 + 0.3], face: [11, PARK.z0 + 3.6] },
     fountain: { at: [FOUNTAIN.x, FOUNTAIN.z + FOUNTAIN.r + 0.9], face: [FOUNTAIN.x, FOUNTAIN.z] },
+    street: { at: [0, 17.4], face: [0, 19] },
   };
+  if (cb.onStreetGate) ZONES.unshift({ id: "street", inside: (x, z) => Math.abs(x) < 2.2 && z > 16.6 });
   const walkTo = (to: XZ, face: XZ | null) => {
-    grid ??= buildGrid(-LIMIT, LIMIT, -LIMIT, LIMIT, 0.3, isFree);
+    grid ??= ext ? buildGrid(ext.bounds[0], ext.bounds[1], ext.bounds[2], ext.bounds[3], 0.3, isFree) : buildGrid(-LIMIT, LIMIT, -LIMIT, LIMIT, 0.3, isFree);
     const path = findPath(grid, [player.position.x, player.position.z], to);
     if (!path) return false;
     faceTo = null;
@@ -2445,6 +2520,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
    *  garden (the inner face of the boundary, with room for the hedge). */
   const CAM_IN = 18.35;
   const exitGarden = (x: number, z: number, dx: number, dz: number) => {
+    const er = ext?.room(x, z, dx, dz);
+    if (er !== undefined && er !== null) return er;
     let t = Infinity;
     if (dx > 1e-9) t = Math.min(t, (CAM_IN - x) / dx); else if (dx < -1e-9) t = Math.min(t, (-CAM_IN - x) / dx);
     if (dz > 1e-9) t = Math.min(t, (CAM_IN - z) / dz); else if (dz < -1e-9) t = Math.min(t, (-CAM_IN - z) / dz);
@@ -2483,14 +2560,16 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // Look H: shade where things meet the grass, and long-grass tufts round them and along the boundary
   if (nature) {
     const spots: [number, number, number][] = CIRCLES.filter(([, , rr]) => rr >= 0.45 && rr <= 1.2).map(([x, z, rr]) => [x, z, rr]);
-    for (const list of Object.values(treeAt)) for (const [x, z, s] of list) if (Math.hypot(x, z) < 30) spots.push([x, z, Math.min(1.1, 0.16 * s)]);
+    for (const list of Object.values(treeAt)) for (const [x, z, s] of list) if (Math.hypot(x, z) < 30 && !levelCleared(x, z)) spots.push([x, z, Math.min(1.1, 0.16 * s)]);
     const gd = makeGroundDetail(THREE, nature, spots, B, 11);
+    // garden levels: no long grass in the west gate, on its path or on the new areas' gravel and paths
+    if (gLevel >= 2) for (const m of [gd.contacts, gd.tufts]) dropTrianglesIn(m.geometry, [...gCleared, [-19.8, -17.4, -3.2, -0.4], [-19, -10, -2.7, -0.9]]);
     scene.add(gd.contacts, gd.tufts);
   }
   // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
   const savings = sceneSavings(THREE, renderer, scene);
   // don't draw what the camera can't see: each still piece by its real box, and the tree zones behind the shop (three3d/tightCull.ts)
-  const cull = tightCull(THREE, scene, renderer, { moving: new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, sunSprite, ...mates.map((m) => m.root)]), extraHide: () => plants.behind() });
+  const cull = tightCull(THREE, scene, renderer, { moving: new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, sunSprite, ...mates.map((m) => m.root), ...(ext ? [dome, ...ext.movers] : [])]), extraHide: (cam: any) => (ext ? [...plants.behind(), ...ext.behindWall(cam)] : plants.behind()) });
   // look H draws into its pass's picture: build the shaders for THAT (enhance.ts compile), not the screen
   try {
     await Promise.all([
@@ -2499,7 +2578,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       ...[impostor, ...carImpostors].filter(Boolean).map((im) => im!.prime()),
     ]);
   } catch { /* older browsers: compiled on first use */ }
-  if (disposed) throw new Error("disposed");
+  if (disposed || gone()) throw new Error("disposed");
 
   // the shared renderer's loop is set and stopped only by its owner: a build thrown away while a
   // newer one is starting (React's double effects in dev, a quick switch) never stops the live one
@@ -2544,6 +2623,20 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         mag = s.push * Math.max(0.15, Math.cos(Math.min(Math.PI / 2, Math.abs(angDiff(yaw, s.yaw)))));
       } else if (!walker.active && marker.visible) marker.fade();
     }
+    // garden levels: on the horse, the stick rides him (./levelZones.ts); the legs, feet and walk below sit out
+    const riding = !!ext?.riding();
+    let nx = player.position.x, nz = player.position.z;
+    if (riding) {
+      if (walker.active) stopWalk();
+      ext!.ride(dt, mag, wantYaw, keys.has("shift"));
+      speed = ext!.speed(); yaw = ext!.yaw();
+      ext!.poseRider();
+      const [hx, hz] = ext!.at();
+      nx = hx; nz = hz;
+      playerBlob.visible = false;
+      if (sunBlob) sunBlob.visible = false;
+    } else {
+    if (playerBlob.visible === false && player.position.y === 0) { playerBlob.visible = true; if (sunBlob) sunBlob.visible = true; }
     if (gaitBlend) {
       // a small push walks, medium jogs, near-full runs, full sprints (no stamina in the garden)
       speed = approach(speed, stickTarget(mag, keys.has("shift"), STROLL_SPEEDS), dt, STROLL_SPEEDS);
@@ -2558,8 +2651,9 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       yaw += d * Math.min(1, dt * 5);
       if (Math.abs(d) < 0.03) faceTo = null;
     }
-    const [nx, nz] = collide(player.position.x + Math.sin(yaw) * speed * dt, player.position.z + Math.cos(yaw) * speed * dt);
+    [nx, nz] = collide(player.position.x + Math.sin(yaw) * speed * dt, player.position.z + Math.cos(yaw) * speed * dt);
     player.position.x = nx; player.position.z = nz;
+    player.position.y = 0;
     player.rotation.y = yaw;
     playerBlob.position.set(nx, 0.02, nz);
     sunBlob?.position.set(nx + sbx, 0.021, nz + sbz);
@@ -2583,6 +2677,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       jogA.timeScale = Math.max(0.8, speed / 3.2);
     }
     mixer.update(dt);
+    }
 
     // team-mates: sit, chat; the one with the can takes a drink now and then.
     // As a picture (far off) they hold still and cost nothing.
@@ -2703,6 +2798,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     // the camera follows behind him: camera D at the zoom's distance
     zoom.step(dt);
     zoomedFollowCam(zoom.now, FOLLOW_CAM_D, CS);
+    ext?.camAdjust(CS);
     if (!edit?.views?.follow && container.clientWidth / (container.clientHeight || 1) < 0.7 && Math.abs(camera.fov - CS.fov) > 1e-3) { camera.fov = baseFov = CS.fov; camera.updateProjectionMatrix(); }
     camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
@@ -2832,9 +2928,11 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     if (seen !== seenWas) { seenWas = seen; showBody(player, seen); shadowDirty = true; } // in his eyes: not drawn at all
     if (testCam) { camera.position.set(...testCam[0]); camera.lookAt(...testCam[1]); }
     fillLight.position.set(camPos.x * 0.6 + player.position.x * 0.4, 2.6, camPos.z * 0.6 + player.position.z * 0.4);
+    if (ext) { dome.position.set(camera.position.x, 0, camera.position.z); sunSprite.position.copy(sunDir).multiplyScalar(105).add(dome.position); }
     camera.updateMatrixWorld();
     frustum.setFromProjectionMatrix(projM.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
     plants.update(camera, tier); // each plant zone's detail by its distance, and which are behind the shop (./plantZones.ts)
+    ext?.update(dt, camera, player.position.x, player.position.z);
     impostor?.update(camera.position, dt);
     for (const ci of carImpostors) ci.update(camera.position, dt);
 
@@ -2944,6 +3042,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       return walkTo([hit.x, hit.z], null) ? { spot: null } : null;
     },
     debugCamera: (pos, look) => { testCam = pos ? [pos, look ?? [0, 1, 0]] : null; },
+    levels: ext?.test,
     walking: () => ({ to: walker.goal ? [walker.goal[0], walker.goal[1]] : null, active: walker.active }),
     place: (x, z, y = yaw) => { stopWalk(); player.position.x = x; player.position.z = z; yaw = y; camYaw = y + Math.PI; orb.reset(); first = true; },
     where: () => ({ x: player.position.x, z: player.position.z, yaw, t: gameT, cam: camera.position.toArray().map((n: number) => +n.toFixed(2)), dodge: +dodge.toFixed(2), block: lastBlock }),
@@ -3006,6 +3105,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     },
     dispose: () => {
       disposed = true;
+      ext?.dispose();
       detachZoom();
       gov.dispose();
       savings.dispose();
@@ -3030,7 +3130,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // the loading cover stays up until the real first frames are drawn and the
   // page runs at ~30 a second again (perf.ts awaitSmoothFrame): the first
   // draws' leftover building (shadow shaders, uploads) happens behind it
-  await awaitSmoothFrame(renderer, { isDead: () => disposed });
+  await awaitSmoothFrame(renderer, { isDead: () => disposed || gone(), isOwner });
   return ctrl;
 }
 

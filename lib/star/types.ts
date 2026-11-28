@@ -1319,11 +1319,28 @@ export interface CareerState {
    */
   lastSleep?: { season: number; week: number };
   /**
+   * The career clock between matches (lib/star/life/clock.ts): which gap, the day, the minute, and the
+   * house's small daily counters. About 20 bytes. Absent on every older save: it reads as the evening
+   * of the last match.
+   */
+  clock?: import("./life/clock").SavedClock;
+  /**
+   * Your hair and beard (lib/star/barber.ts): the style, your hair type, the beard after the last shave,
+   * the weeks of the last cut and shave, and the cut's small effects (one short string, about 15 bytes:
+   * "afro.k.0.161.161"). Absent on every older save: your own haircut as before, not growing yet.
+   */
+  hair?: string;
+  /**
    * The gym's Strength, Cardio and Focus, its ring and workout window (lib/star/gym/progress.ts).
    * Absent on every older save: no gym visit yet. Changes nothing else on the career while
    * progress.ts GYM_CAREER_EFFECT is "off".
    */
   gym?: import("./gym/progress").GymState;
+  /**
+   * Garden levels (lib/star/gardenLevels.ts): XP from the garden's drills and casino play, best lap
+   * times, the stable horse's energy. Absent on every older save: garden level 1, 0 XP.
+   */
+  gardenXp?: import("./gardenLevels").GardenProgress;
   /**
    * Training sessions left this week (absent = the full 2). Refilled only
    * after a SATURDAY match, so a Saturday-Wednesday-Saturday week still has
@@ -1946,4 +1963,13 @@ export type StarPhase =
   | "home-3d"
   /** The 3D gym (28 Nov 2026), from the Training page's Gym card while it is tested: all 13 exercises,
    *  the gym's own numbers saved (career.gym), no career effect. See components/star/Gym3D.tsx. */
-  | "gym-3d";
+  | "gym-3d"
+  /** The shopping street (28 Nov 2026), out of the garden's gate: the 3D shop, the car showroom, the boutique
+   *  and the barber on a short high street. See components/star/Street3D.tsx, lib/star/street3d/. */
+  | "street-3d"
+  /** The drive to training and the real compound (28 Nov 2026), from the garden's training gate while its setting
+   *  is on (lib/star/drive3d/careerFlag.ts, off by default). See components/star/DriveToTraining.tsx. */
+  | "drive-3d"
+  /** The barber's shop (28 Nov 2026), through the street's BARBER door: the chair, a style list on your own head,
+   *  pay, a cut, back out onto the street. See components/star/Barber3D.tsx, lib/star/barber3d/, lib/star/barber.ts. */
+  | "barber-3d";

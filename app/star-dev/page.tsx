@@ -15,6 +15,7 @@ import "@/components/star/ui/glassLook.css";
 import { freshItem, isWornOut } from "@/lib/star/fame";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { setToonYou, yourToonBody, yourToonHead } from "@/lib/star/style3d/toon/bodies";
+import { yourHairLook3d, hairLookKey, withHairStarted, applyMirror } from "@/lib/star/barber";
 import { skinToneHex, hairColourHex } from "@/lib/star/playerIdentity";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay, FarewellRecord } from "@/lib/star/types";
 import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type FreeKickRunupId } from "@/lib/star/runupStyles";
@@ -29,7 +30,7 @@ import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
   clearCareerFromCloud, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
   reconcileCareerLoad, resolveSaveClash, deferSaveClash, hasUnsyncedProgress, type SaveClash,
-  peekSlotCareer, collectRetiredIntoHall, onSaveCorrected,
+  peekSlotCareer, collectRetiredIntoHall, onSaveCorrected, backupCareer, WHY_DELETED,
 } from "@/lib/star/storage";
 import { addToHall, loadHall, syncHall, hallEntryFor, type HallEntry } from "@/lib/star/hallOfFame";
 import { hallRecordBook, freshHallRecords, hallChaseLine, amount as hallAmount } from "@/lib/star/hallRecords";
@@ -61,12 +62,16 @@ import { goalBonusFor, assistBonusFor } from "@/lib/star/economy";
 import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { brandsOf, signOffer, declineOffer, askLonger, askEasier, counterPoach, walkAway, settleNegotiation, } from "@/lib/star/sponsorDeals";
 import { renameHorse } from "@/lib/star/horse";
+import { addGardenXp, applyRide } from "@/lib/star/gardenLevels";
+import { driveToTrainingOn } from "@/lib/star/drive3d/careerFlag";
 import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { devInfoOn } from "@/lib/star/matchDayPrefs";
 import { simulateOwnMatch } from "@/lib/star/simMatch";
 import { gymSkillBonus } from "@/lib/star/gym/effect";
+import { gymBack } from "@/lib/star/gym/homeGym";
+import { doorRoute as streetDoorRoute, type StreetArrive } from "@/lib/star/street3d/plan";
 import { opponentMatchStrength } from "@/lib/star/matchInputs";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound, lastSixteenIndex } from "@/lib/star/cups";
@@ -80,6 +85,9 @@ import { refreshXpConfig } from "@/lib/star/xpStore";
 import { DEFAULT_FORMATION, formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct, projectedEnergy, startNewWeek, trainingLeft, spendTrainingSession } from "@/lib/star/week";
 import { sleepNight } from "@/lib/star/home3d/sleep";
+import { passTime, sleepClock } from "@/lib/star/life/clock";
+import { withInvite } from "@/lib/star/life/dayPlan";
+import { applyThing } from "@/lib/star/life/houseActs";
 import { acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { clearAfterWindow, requestOf } from "@/lib/star/transferRequest";
 import { windowInterest, withRecall, withAgreedWage, markWalkedAway } from "@/lib/star/transferInterest";
@@ -110,6 +118,7 @@ import { earnedBetween, addSeasonRecords, type EarnPop } from "@/lib/star/earnPo
 // The unlock chain a new career walks (Harry, 1 Oct 2026, P13-P40).
 import { needsYou, barBadges, needsInput, transferWindowWeeks, transferWindowLine, type NeedId } from "@/lib/star/needsYou";
 import { openFrom as navOpenFrom, backFrom as navBackFrom, ROOT_PHASES, type NavEntry, type NavSpot } from "@/lib/star/navReturn";
+import { keepsHouseFromGarden, houseBack } from "@/lib/star/home3d/houseBack";
 import { isStory, storyBeat, ackBeat, beatText, trainingDayOn, trainingDayLeft, recordTrainingDayDrill, TRAINING_DAY, type Beat } from "@/lib/star/story";
 import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, lockHint, installApp, appInstalled, appIsNew, newAppCount, markAppOpened, LOCK_HINT, pendingAnnouncements, markAnnounced, nextStep, slotQuestionDue, setBottomLeft, bottomLeft, gameFirst, managerTalkDue, phoneShortfall, phoneStepLine, DRILLS_TO_OPEN_SHOP } from "@/lib/star/unlocks";
 import { applyGameGain } from "@/lib/star/relationshipGame";
@@ -300,6 +309,10 @@ const Casino3D = lazyScreen(() => import("@/components/star/Casino3D"), { fallba
 const TrainingPitchScreen = lazyScreen(() => import("@/components/star/TrainingPitchScreen"));
 const Training3D = lazyScreen(() => import("@/components/star/Training3D"), { fallback: loadingCover("training") });
 const Gym3D = lazyScreen(() => import("@/components/star/Gym3D"), { fallback: loadingCover("gym") });
+// The drive to training and the compound (driving phase 2, 28 Nov 2026): only while its setting is on (drive3d/careerFlag.ts).
+const DriveToTraining = lazyScreen(() => import("@/components/star/DriveToTraining"), { fallback: loadingCover("drive") });
+const Street3D = lazyScreen(() => import("@/components/star/Street3D"), { fallback: loadingCover("street") });
+const Barber3D = lazyScreen(() => import("@/components/star/Barber3D"), { fallback: loadingCover("street") });
 const AdvertShoot = lazyScreen(() => import("@/components/star/relgames/AdvertShoot"));
 const KnockoutRoundup = lazyScreen(() => import("@/components/star/KnockoutRoundup"));
 const CupDrawReveal = lazyScreen(() => import("@/components/star/CupDrawReveal"));
@@ -536,12 +549,26 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [shopFocus, setShopFocus] = useState<{ phase: StarPhase; id: string; level: number } | null>(null);
   // The 3D garden and 3D shop are joined by doors (Mikey, 3 Oct 2026): which
   // door you came through decides where you appear.
-  const [gardenArrive, setGardenArrive] = useState<"shop" | "gate" | "casino" | "training" | "house">("gate");
+  const [gardenArrive, setGardenArrive] = useState<"shop" | "gate" | "casino" | "training" | "house" | "street">("gate");
+  // the drive to training (only while its setting is on): where "drive-3d" opens, and whether the gym came from it
+  const [driveStart, setDriveStart] = useState<"in" | "compound" | "back">("in");
+  const [gymFromDrive, setGymFromDrive] = useState(false);
   /** Your 3D house was opened from the garden's door (its Back and front door lead back there). */
   const [homeFromGarden, setHomeFromGarden] = useState(false);
+  // the gym opened from your house (its home gym of that level, gym/homeGym.ts); null = the club gym from Training
+  const [gymHome, setGymHome] = useState<import("@/lib/star/home3d/homes").HomeTier | null>(null);
+  // forgotten the moment you go anywhere else (the phone's HOME, the bar, a match; 3D places audit P4)
+  useEffect(() => { if (!keepsHouseFromGarden(phase)) setHomeFromGarden(false); }, [phase]);
   // Settings → Look → "Casino: 3D | Classic" (8 Oct 2026)
   const casinoLook = useCasino3dLook();
   const [shopAtDoor, setShopAtDoor] = useState(false);
+  // The shopping street (28 Nov 2026): out of the garden's gate. Which door you came out of decides where you
+  // appear; the 3D shop's front doors lead back to the street when you came in from it; a showroom or boutique
+  // door opens that aisle of the shop (its Back returns to the street).
+  const [streetArrive, setStreetArrive] = useState<StreetArrive>("gate");
+  const [shopFromStreet, setShopFromStreet] = useState(false);
+  const [menuStart, setMenuStart] = useState<"cars" | "drip" | null>(null);
+  useEffect(() => { if (phase !== "shop-lifestyle" && phase !== "street-3d") setMenuStart(null); }, [phase]);
   useEffect(() => { if (shopFocus && phase !== shopFocus.phase) setShopFocus(null); }, [phase, shopFocus]);
   const [trainingSkill, setTrainingSkill] = useState<keyof Skills | null>(null);
   /** Which of the 30 levels is being played; null while picking one. */
@@ -1361,6 +1388,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   useEffect(() => {
     setToonYou({ body: yourBody3d, head: yourHead3d, skin: skinToneHex(yourSkin3d), hair: hairColourHex(yourHair3d), name: yourShirtName, boots: bootLookOf(yourBootId ? { id: yourBootId, level: yourBootLevel } : null) });
   }, [yourBody3d, yourHead3d, yourSkin3d, yourHair3d, yourShirtName, yourBootId, yourBootLevel]);
+  // your barber's cut and the beard grown this week (lib/star/barber.ts), on your 3D player everywhere
+  const yourHairLook = career && yourHead3d ? yourHairLook3d(career, yourHead3d) : undefined;
+  const yourHairKey = yourHairLook ? hairLookKey(yourHairLook) : "";
+  useEffect(() => { setToonYou({ hairLook: yourHairLook }); }, [yourHairKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // an old save (or a new career): its hair and beard start growing from now, looking exactly as before
+  const hairUnstarted = !!career && !career.hair;
+  useEffect(() => { if (hairUnstarted) setCareer(c => (c && !c.hair ? withHairStarted(c, yourToonHead(c.player)) : c)); }, [hairUnstarted]);
 
   const handleSetPortrait = useCallback((portrait: string | undefined) => {
     setCareer(c => (c
@@ -2971,6 +3005,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleDeleteSave = useCallback((slot: number) => {
     // A retired career is kept in the Hall of Fame before its slot goes.
     keepRetiredThen(slot, () => {
+      // Kept as a backup first (Settings → Saves → Backups), never just lost.
+      const gone = slot === activeSlotRef.current && career ? career : peekSlotCareer(scopeRef.current, slot);
+      if (gone) backupCareer(scopeRef.current, slot, gone, WHY_DELETED);
       clearCareer(slotScope(scopeRef.current, slot));
       clearCareerFromCloud(slot);
       if (slot === activeSlotRef.current) {
@@ -2985,7 +3022,23 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         bumpSaves(v => v + 1);
       }
     });
-  }, [resetTransientState, keepRetiredThen]);
+  }, [career, resetTransientState, keepRetiredThen]);
+
+  /**
+   * Settings → Saves → Backups restored a backup into `slot` (storage.ts
+   * restoreCareerBackup has already written it, and sent it online). The
+   * old career's waiting upload is dropped: it is a backup now. The save
+   * being played is swapped at once; once the Backups page shuts it is
+   * loaded properly, which decides its screen.
+   */
+  const handleRestoredSave = useCallback((slot: number, restored: CareerState, closed: boolean) => {
+    if (slot !== activeSlotRef.current) { bumpSaves(v => v + 1); return; }
+    pendingCloudSave.current = null;
+    if (cloudSaveTimer.current) { clearTimeout(cloudSaveTimer.current); cloudSaveTimer.current = null; }
+    latestCareerRef.current = null;
+    if (closed) void loadCareerIntoState(slot, restored);
+    else setCareer(restored);
+  }, [loadCareerIntoState]);
 
   /**
    * "Move my saves" just wrote saves from a pasted code (MoveSavesPanel —
@@ -3046,6 +3099,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   const handleFullReset = useCallback(() => {
     const reset = () => {
+      // Kept as a backup first (Settings → Saves → Backups), never just lost.
+      if (career) backupCareer(scopeRef.current, activeSlotRef.current, career, WHY_DELETED);
       clearCareer(slotScope(scopeRef.current, activeSlotRef.current));
       clearCareerFromCloud(activeSlotRef.current);
       resetTransientState();
@@ -3197,7 +3252,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   const handleHorseRace = useCallback((finish: number, prize: number, energyCost: number) => {
     if (!career || !career.horse) return;
-    setCareer({
+    setCareer(addGardenXp({
       ...career,
       money: career.money + prize,
       horse: {
@@ -3207,7 +3262,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         racesWon: career.horse.racesWon + (finish === 1 ? 1 : 0),
         earnings: career.horse.earnings + prize,
       },
-    });
+    }, { kind: "horseRace" })); // garden XP: a horse race run (lib/star/gardenLevels.ts)
   }, [career]);
 
   const handleRenameHorse = useCallback((name: string) => {
@@ -3651,7 +3706,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const start = casinoVisitStart.current ?? c.money;
     casinoVisitStart.current = null;
     const bets = takeCasinoVisitBets();
-    const { career: after, story } = rollCasinoScandal(c, bets, c.money - start, Math.random());
+    const { career: rolled, story } = rollCasinoScandal(c, bets, c.money - start, Math.random());
+    // garden XP (lib/star/gardenLevels.ts): casino play, by the bets placed this visit
+    const after = addGardenXp(rolled, { kind: "casino", bets });
     if (!story) return after;
     try {
       return { ...after, media: generateForCareer(after, { kind: "casino-scandal", story: story.kind, step: story.step, bets: story.bets }, `casino-${after.casinoScandal?.count ?? 1}`) };
@@ -4899,8 +4956,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <Shop3D
         career={career}
+        onTime={(mins) => setCareer((c) => (c ? passTime(c, mins) : c))}
+        onMatch={() => handleNavigate("play")}
         atDoor={shopAtDoor}
-        onDoor={() => { setShopAtDoor(false); setGardenArrive("shop"); setPhase("garden"); }}
+        onDoor={() => {
+          setShopAtDoor(false);
+          if (shopFromStreet) { setShopFromStreet(false); setStreetArrive("shop"); setPhase("street-3d"); return; }
+          setGardenArrive("shop"); setPhase("garden");
+        }}
         onBack={() => {
           setShopAtDoor(false); setActiveNav("home");
           if (shopLookNow === "new") setPhase(lastShowroom.current);
@@ -4909,6 +4972,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onGoToItem={(display, id, level) => {
           const to: StarPhase = display === "boots" ? "shop-boots" : display === "cans" ? "shop-kib" : "shop-lifestyle";
           setShopFocus({ phase: to, id, level });
+          // its Back returns to the 3D shop, not Home (3D places audit P7)
+          setShopAtDoor(false);
+          pushFrom({ phase: "shop-3d", nav: activeNav }, to);
           setPhase(to);
         }}
       />
@@ -4928,7 +4994,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               Sponsors, Casino and Store are phone apps, so the shop has no doors to them. */}
           <MenuShop
             career={career}
-            startCat={kind === "kib" ? "cans" : kind === "boots" ? "boots" : "drip"}
+            startCat={kind === "kib" ? "cans" : kind === "boots" ? "boots" : menuStart ?? "drip"}
             mainBar={mainBarRaw(null)}
             onBack={() => { if (goBackRemembered()) return; setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
             onBuyKib={handleBuyKib}
@@ -5006,10 +5072,58 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  if (phase === "street-3d" && career) {
+    // The shopping street (phase 1): the 3D shop, the car showroom, the boutique, the barber.
+    const toGardenGate = () => { setStreetArrive("gate"); setGardenArrive("street"); setPhase("garden"); };
+    return (
+      <Street3D
+        career={career}
+        arrive={streetArrive}
+        onBack={toGardenGate}
+        onLeave={toGardenGate}
+        onDoor={(id) => {
+          const r = streetDoorRoute(id);
+          if (r.kind === "phase" && r.phase === "barber-3d") { setStreetArrive(id); setPhase("barber-3d"); return; }
+          if (r.kind === "phase") { setStreetArrive(id); setShopFromStreet(true); setShopAtDoor(true); setPhase(r.phase); return; }
+          if (r.kind === "menu") { setStreetArrive(id); setMenuStart(r.cat); setActiveNav("home"); pushFrom({ phase: "street-3d", nav: activeNav }, r.phase); setPhase(r.phase); }
+        }}
+      />
+    );
+  }
+
+  if (phase === "barber-3d" && career) {
+    // The barber's (lib/star/barber.ts): try styles on, pay, a cut; back out onto the street at its door.
+    return <Barber3D career={career} onCareer={(c) => setCareer(c)} onBack={() => { setStreetArrive("barber"); setPhase("street-3d"); }} />;
+  }
+
   if (phase === "gym-3d") {
     // The 3D gym from the Training page (testing, 28 Nov 2026): its own numbers saved, no career effect.
     const backToTraining = () => { setTrainingTab("training"); setActiveNav("skills"); setPhase("skills"); };
+    // from the house: its home gym (gym/homeGym.ts), back to the house; the minutes on the career clock
+    if (career && gymHome) return <Gym3D career={career} home={gymHome} backLabel={gymBack("home").label} onBack={() => setPhase("home-3d")} onCareer={(c) => setCareer(c)} onTime={(mins) => setCareer((c) => (c ? passTime(c, mins) : c))} />;
+    // through the compound's gym door (the drive's setting): Back goes out to the compound, to your car
+    if (career && gymFromDrive) return <Gym3D career={career} backLabel="Outside" onBack={() => { setGymFromDrive(false); setDriveStart("compound"); setPhase("drive-3d"); }} onCareer={(c) => setCareer(c)} />;
     if (career) return <Gym3D career={career} onBack={backToTraining} onCareer={(c) => setCareer(c)} />;
+  }
+
+  if (phase === "drive-3d" && career) {
+    // The drive to training and the real compound (driving phase 2; lib/star/drive3d/careerFlag.ts, off by default).
+    return (
+      <DriveToTraining
+        key={driveStart}
+        career={career}
+        start={driveStart}
+        onCareer={(c) => setCareer(c)}
+        onGym={() => { setGymFromDrive(true); setPhase("gym-3d"); }}
+        onBack={() => { setTrainingTab("training"); setActiveNav("skills"); setPhase("skills"); }}
+        onFork={(f) => {
+          setGardenArrive("gate");
+          if (f === "casino" && !PACKED_APP) { setPhase("casino-3d"); return; }
+          if (f === "shop") { setShopFromStreet(false); setShopAtDoor(true); setPhase("shop-3d"); return; }
+          setPhase("garden");
+        }}
+      />
+    );
   }
 
   if (phase === "training-3d") {
@@ -5034,7 +5148,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           }, "team");
           checkAndSetAchievements(updated);
           if (res.train) updated.starRating = computeStarRating(updated);
-          setCareer(spendAction(updated));
+          // garden XP (lib/star/gardenLevels.ts): a drill on the garden's own pitch
+          setCareer(spendAction(addGardenXp(updated, { kind: "drill", stars: res.train?.stars })));
           backToGate();
         }}
       />
@@ -5188,19 +5303,29 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // The 3D phone (RUL-UI-008): the Phone tab opens it in your hand, your 3D house behind
   // (HousePhone.tsx), wherever 3D runs; the first visit keeps the flat phone for its tour.
   const phone3dUp = phase === "media" && activeNav === "media" && hasSeen(career, "help-phone") && phone3dCan();
-  const phoneFrom3d = isOpen(career, "phone") ? () => navTo("media") : undefined;
+  // The Phone pill in a 3D place ALWAYS shows and ALWAYS opens the phone, never the boss talk (Harry,
+  // 27 Nov 2026: "I should be able to pull up the phone again after putting it down"). Not unlocked
+  // yet, or broken: the one line why.
+  const phoneFrom3d = () => (!isOpen(career, "phone") ? showLock(lockHint(career, "phone")) : phoneBroken ? showLock("Your phone broke — repair it in Style") : handleNavigate("media"));
+  // The career clock (lib/star/life/clock.ts) in the 3D places: their minutes, and "Go to the match".
+  const clockLink = { onTime: (mins: number) => setCareer((c) => (c ? passTime(c, mins) : c)), onMatch: () => handleNavigate("play") };
   if (phase === "garden") {
     return (
       <Garden3D
         career={career}
         arrive={gardenArrive}
         onBack={() => { setGardenArrive("gate"); handleBackToDashboard(); }}
-        onShop={() => { setGardenArrive("gate"); setShopAtDoor(true); setPhase("shop-3d"); }}
+        onShop={() => { setGardenArrive("gate"); setShopFromStreet(false); setShopAtDoor(true); setPhase("shop-3d"); }}
+        onStreet={() => { setGardenArrive("gate"); setStreetArrive("gate"); setPhase("street-3d"); }}
         // The packed phone app has no casino: its doors stay shut (Mikey, 5 Nov 2026).
         onCasino={PACKED_APP ? undefined : () => { setGardenArrive("gate"); setPhase("casino-3d"); }}
-        onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
+        // the training gate: the drive to training while its setting is on (lib/star/drive3d/careerFlag.ts), else the pitch
+        onTraining={() => { setGardenArrive("gate"); if (driveToTrainingOn()) { setDriveStart("in"); setPhase("drive-3d"); } else setPhase("training-3d"); }}
         onHouse={HOME3D_IN_CAREER ? () => { setGardenArrive("gate"); setHomeFromGarden(true); setPhase("home-3d"); } : undefined}
-        onPhone={phoneFrom3d && (() => { setGardenArrive("gate"); phoneFrom3d(); })}
+        onPhone={phoneFrom3d && (() => { setGardenArrive("gate"); setHomeFromGarden(true); phoneFrom3d(); })}
+        {...clockLink}
+        // garden levels (only while their setting is on): a ride's horse energy, laps and best times
+        onRide={(r) => setCareer((c) => (c ? applyRide(c, r) : c))}
       />
     );
   }
@@ -5214,14 +5339,24 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         up={phone3dUp}
         phone={phoneApp}
         house={{
-          backLabel: homeFromGarden ? "Garden" : "Home",
+          backLabel: houseBack(homeFromGarden).label,
           onBack: homeFromGarden ? toGarden : () => { setHomeFromGarden(false); handleBackToDashboard(); },
           onDoor: toGarden,
           onOutfit: (choice) => setCareer((c) => (c ? withOutfit(c, choice) : c)),
-          onSleep: () => setCareer((c) => (c ? sleepNight(c).career : c)),
+          // "come round?" texted to a team-mate: saved on the clock; the house plans him in (life/dayPlan.ts)
+          onInvite: (mateId, day, minute) => setCareer((c) => (c ? withInvite(c, day, mateId, minute).career : c)),
+          // a thing used in the house: its time on the clock, its energy/mood within the day's caps (life/houseActs.ts)
+          onUse: (thing, e) => setCareer((c) => (c ? applyThing(c, thing, e).career : c)),
+          // the night: the week's Rest (once a gap) and the clock to 07:00 next morning
+          onSleep: () => setCareer((c) => (c ? sleepClock(c, sleepNight(c).career) : c)),
+          // the home gym (gym/homeGym.ts): the gym of this house's level, back to the house after
+          onGym: (tier) => { setGymHome(tier); setPhase("gym-3d"); },
+          // the bathroom mirror's Shave / Trim beard / Tidy hair (lib/star/barber.ts applyMirror): free, 10 minutes
+          onHair: (act) => setCareer((c) => (c ? applyMirror(c, act, yourToonHead(c.player)).career : c)),
+          ...clockLink,
         }}
         onHome={() => handleNavigate("home")}
-        onPutAway={() => { setHomeFromGarden(false); setPhase("home-3d"); }}
+        onPutAway={() => setPhase("home-3d")}
         onPhone={phoneFrom3d}
         notice={lockNote ?? sponsorNote}
       />
@@ -5311,6 +5446,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onStartNewInSlot={handleStartNewInSlot}
         onDeleteSave={handleDeleteSave}
         moveSaves={{ scope: scopeRef.current, onImported: handleImportedSaves }}
+        onRestoredSave={handleRestoredSave}
         immersiveActive={immersive.active}
         onToggleImmersive={immersive.toggle}
         fullscreenSupport={immersive.support}
@@ -5554,7 +5690,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const trainingBody = (
         <div>
           {trainingTab === "training" ? (
-            <SkillsScreen career={career} onTrain={handleTrain} onGym={() => setPhase("gym-3d")} />
+            <SkillsScreen career={career} onTrain={handleTrain} onGym={() => { setGymHome(null); setPhase("gym-3d"); }} onCareer={(c) => setCareer(c)} onDrive={driveToTrainingOn() ? () => { setDriveStart("in"); setPhase("drive-3d"); } : undefined} />
           ) : (
             <RelationsPage
               career={career}
