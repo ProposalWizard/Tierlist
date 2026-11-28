@@ -347,6 +347,19 @@
        },
        {
         "text": "A photo of you, up to your knees in the fountain, holding a glass in the air. \"Best client I've got,\" he says, and means something by it.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "ended-up-in-the-fountain",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-fountain"
         }
@@ -361,12 +374,39 @@
        {
         "if": "arc.path=='speech'",
         "text": "He keeps looking past you at the frame. He's softer in negotiations than he used to be, with you.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "made-the-speech-at-my-fiftieth",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-speech"
         }
        },
        {
         "text": "He keeps looking past you at the photo, and laughing.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "ended-up-in-the-fountain",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-fountain"
         }

@@ -390,6 +390,15 @@
        },
        {
         "text": "The stewards get it down.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-crowd"
         }

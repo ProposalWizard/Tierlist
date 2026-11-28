@@ -368,6 +368,15 @@
        },
        {
         "text": "You hit the first man. Nobody in row F says anything, because nobody is there.",
+        "npc": [
+         {
+          "slot": "fan",
+          "grudge": 4
+         }
+        ],
+        "effects": {
+         "fans": -1
+        },
         "arc": {
          "end": "the-steward"
         }

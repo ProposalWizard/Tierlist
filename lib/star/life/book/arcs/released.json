@@ -477,6 +477,12 @@
        },
        {
         "text": "A like. He doesn't write again.",
+        "npc": [
+         {
+          "slot": "lad",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "one-more-kid"
         }

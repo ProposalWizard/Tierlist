@@ -196,12 +196,30 @@
        {
         "if": "arc.path=='grandson'",
         "text": "A lad of nineteen with the same pram and the same scarves, and a card reader.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "outside-the-ground"
         }
        },
        {
         "text": "An official stall. The pram is inside, in a glass case by the trophies.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 4
+         }
+        ],
         "arc": {
          "end": "in-the-museum"
         }
@@ -216,12 +234,38 @@
        {
         "if": "arc.path=='museum'",
         "text": "It's in a glass case, with one scarf hung over the handle and his photo.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "put-the-pram-in-the-museum",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "in-the-museum"
         }
        },
        {
         "text": "It isn't there. It's outside, with his grandson.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": 1
+         }
+        ],
         "arc": {
          "end": "outside-the-ground"
         }

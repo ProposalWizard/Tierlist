@@ -196,12 +196,45 @@
        {
         "if": "!arc.path=='leave'",
         "text": "There's a woollen scarf on the third peg from the door.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "came-to-the-scarf-boys-trial",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-scarf-signed"
         }
        },
        {
         "text": "Not this year. The scarf's on the seat by the tunnel on Saturday, with the boy in it.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "came-to-the-scarf-boys-trial",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-scarf-in-the-stand"
         }
@@ -216,12 +249,42 @@
        {
         "if": "arc.path=='talk' || arc.path=='know'",
         "text": "\"Kept him on. He wears that scarf to the bus. In August.\"",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 5
+         },
+         {
+          "slot": "coach",
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "came-to-the-scarf-boys-trial",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-scarf-signed"
         }
        },
        {
         "text": "\"Not this year. He'll grow.\"",
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 2
+         },
+         {
+          "slot": "coach",
+          "bond": 1
+         }
+        ],
         "arc": {
          "end": "the-scarf-in-the-stand"
         }

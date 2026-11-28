@@ -177,12 +177,32 @@
        {
         "if": "arc.path=='go'",
         "text": "Stripes you can see from the road. A man on a mower in a council jacket waves without looking up.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "played-the-first-ball-at-the-rec",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "his-pitch"
         }
        },
        {
         "text": "Stripes you can see from the road. You still haven't been.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "the-plastic-still"
         }
@@ -197,12 +217,32 @@
        {
         "if": "arc.path=='go'",
         "text": "He's mowing. He turns the mower off to shake your hand and asks how the plastic's playing.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "played-the-first-ball-at-the-rec",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "his-pitch"
         }
        },
        {
         "text": "He's mowing. He asks how the plastic's playing, like it's an old dog.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "the-plastic-still"
         }

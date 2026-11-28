@@ -538,12 +538,46 @@
        {
         "if": "arc.path=='slid'",
         "text": "\"Don't come to our end when you play us,\" he says, and grins, and doesn't grin.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "slid-in-front-of-my-old-club",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-knee-slide"
         }
        },
        {
         "text": "He hugs you, which he's never done. \"You never went to their end. They noticed.\"",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "didnt-celebrate-at-my-old-club",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "respect-in-the-away-end"
         }
@@ -558,12 +592,46 @@
        {
         "if": "arc.path=='slid'",
         "text": "\"Not while you're here.\" It's a joke. It's mostly a joke.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -3,
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "slid-in-front-of-my-old-club",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-knee-slide"
         }
        },
        {
         "text": "\"I won't.\" He won't. He sends you a photo from his first game back, in front of their end, arm up.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "didnt-celebrate-at-my-old-club",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "respect-in-the-away-end"
         }

@@ -440,6 +440,19 @@
        {
         "if": "arc.path=='fountain'",
         "text": "The next page is the wedding. You're in that one, in the front row, dry.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "came-to-my-stag-do",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-fountain"
         }
@@ -459,6 +472,12 @@
        },
        {
         "text": "The next page is the wedding, and you're in all of those.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "missed-it"
         }

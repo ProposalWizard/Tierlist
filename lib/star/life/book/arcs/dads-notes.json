@@ -728,12 +728,32 @@
        {
         "if": "arc.path=='listened'",
         "text": "The first one says \"first touch\" eleven times. He watches you read it and doesn't say anything.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "said-he-was-proud",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "he-said-it"
         }
        },
        {
         "text": "You open it, and close it again. \"Thanks, Dad.\" He nods and goes.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "the-calls-stopped"
         }
@@ -748,12 +768,39 @@
        {
         "if": "arc.path=='listened'",
         "text": "You put it next to your boots from when you were nine. He watches you do it and seems happy enough.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "said-he-was-proud",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "he-said-it"
         }
        },
        {
         "text": "It goes in the loft. You go up there once, in the summer, and sit for an hour.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -1
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "notebooks-went-in-the-loft",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "the-calls-stopped"
         }

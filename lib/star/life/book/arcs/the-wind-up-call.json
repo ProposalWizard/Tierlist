@@ -238,12 +238,25 @@
        {
         "chance": 0.5,
         "text": "He falls for it for eleven seconds. You'll take eleven seconds.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "got-him-back"
         }
        },
        {
         "text": "\"Nice try. You can't do voices.\" You can't.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 3
+         }
+        ],
         "arc": {
          "end": "the-voice"
         }

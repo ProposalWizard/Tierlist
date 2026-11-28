@@ -358,6 +358,13 @@
        },
        {
         "text": "He's not having it, but he lets you go.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -1,
+          "respect": 1
+         }
+        ],
         "arc": {
          "end": "the-bed"
         }

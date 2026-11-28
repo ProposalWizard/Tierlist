@@ -484,6 +484,12 @@
        },
        {
         "text": "She lets you. You talk about the game, and she leaves before {mate.short} comes up.",
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "kept-out-of-it",
          "set": {
@@ -573,12 +579,40 @@
        {
         "if": "arc.path=='lied'",
         "text": "His dad says, \"You were with him that night, were you?\" You say yes, again. {mate.short} looks at the floor.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -4,
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "lied-for-a-team-mate",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-lie"
         }
        },
        {
         "text": "His dad tells you a long story about a goal in 1979. You listen to all of it.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "met-my-dad",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "kept-out-of-it"
         }
@@ -593,12 +627,25 @@
        {
         "if": "arc.path=='lied'",
         "text": "You watch them from the tunnel. The lie is still sitting there between you and him.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -4,
+          "grudge": 4
+         }
+        ],
         "arc": {
          "end": "the-lie"
         }
        },
        {
         "text": "You give them a wave from the tunnel. His dad waves his scarf.",
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "kept-out-of-it"
         }

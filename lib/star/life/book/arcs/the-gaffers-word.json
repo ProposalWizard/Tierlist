@@ -504,6 +504,23 @@
        {
         "if": "arc.paper=='truth'",
         "text": "He looks at you. \"I know what you said. Everyone does.\" He asks someone else.",
+        "effects": {
+         "boss": -6
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": -6,
+          "grudge": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "went-to-the-paper-about-me",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-truth-in-print"
         }

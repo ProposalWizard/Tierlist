@@ -199,12 +199,46 @@
        {
         "if": "arc.path=='pen'",
         "text": "\"He said you shook his hand after he gave the penalty. He talks about it at every course.\"",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "effects": {
+         "reputation": 2
+        },
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "shook-my-lads-hand-after-the-penalty",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-big-call"
         }
        },
        {
         "text": "\"He's on the list for the top league now. He says you were the first to wish him luck.\"",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "effects": {
+         "reputation": 1
+        },
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "wished-my-lad-luck",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "good-game"
         }
@@ -219,12 +253,46 @@
        {
         "if": "!arc.path=='pen'",
         "text": "You read it a week later: his son is on the top list. The team sheet from that night is framed in their hall.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "effects": {
+         "reputation": 1
+        },
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "wished-my-lad-luck",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "good-game"
         }
        },
        {
         "text": "You read it a week later. The penalty was right, and the lad still thinks about your handshake.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "effects": {
+         "reputation": 2
+        },
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "shook-my-lads-hand-after-the-penalty",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-big-call"
         }

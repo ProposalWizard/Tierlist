@@ -396,12 +396,35 @@
        {
         "if": "arc.sundays==4",
         "text": "It goes on your fridge next to the physio's exercises.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "coached-the-under-nines",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-league"
         }
        },
        {
         "text": "It goes on your fridge. The next week's note says \"LOST\".",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-cones"
         }

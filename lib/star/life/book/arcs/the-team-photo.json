@@ -346,6 +346,12 @@
        },
        {
         "text": "He's at the end of the row, not smiling. You wonder why he framed that one.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "the-back-row"
         }
@@ -360,12 +366,34 @@
        {
         "if": "arc.path=='next'",
         "text": "\"It's the only one I framed.\"",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "stood-next-to-me-in-my-last-photo",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "next-to-him"
         }
        },
        {
         "text": "\"Cheers.\" That's all.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -1
+         }
+        ],
+        "effects": {
+         "team": -1
+        },
         "arc": {
          "end": "the-back-row"
         }

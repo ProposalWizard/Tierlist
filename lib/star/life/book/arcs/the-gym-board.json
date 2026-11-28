@@ -337,6 +337,12 @@
        },
        {
         "text": "He wipes everything off except his plank.",
+        "npc": [
+         {
+          "slot": "hard",
+          "bond": 4
+         }
+        ],
         "arc": {
          "end": "his-board"
         }

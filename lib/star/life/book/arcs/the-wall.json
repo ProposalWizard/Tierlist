@@ -343,6 +343,15 @@
        },
        {
         "text": "The rainbow's very good. The kids show you your name in chalk, proudly. You sign the wall under it.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -1
+         }
+        ],
         "arc": {
          "end": "no-wall"
         }
@@ -357,12 +366,37 @@
        {
         "if": "arc.path=='yes'",
         "text": "\"I'm not having it cleaned,\" says your mum. \"It suits you.\"",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "stood-for-the-painter",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-mural"
         }
        },
        {
         "text": "\"It's a lovely rainbow,\" says your mum, for the hundredth time.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -1
+         }
+        ],
+        "effects": {
+         "fans": 1
+        },
         "arc": {
          "end": "no-wall"
         }

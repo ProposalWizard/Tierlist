@@ -233,6 +233,15 @@
        },
        {
         "text": "\"Do you lot care?\" Same question. You give him a better answer this time. She nods, like she's marking it.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "the-line"
         }
@@ -247,12 +256,31 @@
        {
         "if": "arc.path=='truth'",
         "text": "The chairman takes it. {neighbour.short} looks at you the whole time, and winks.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "the-answer"
         }
        },
        {
         "text": "The chairman talks about car parking again.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "the-line"
         }

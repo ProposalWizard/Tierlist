@@ -519,12 +519,37 @@
        {
         "if": "arc.photo=='zipped'",
         "text": "Still QUIDNOW. But in the club shop window there's a poster of you zipped to the chin, and someone's written \"COLD?\" on it.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "zipped-the-jacket-at-the-launch",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-zip"
         }
        },
        {
         "text": "Still QUIDNOW. {capt.short} holds it up. Nobody says anything. You all put it on.",
+        "effects": {
+         "fans": -3
+        },
+        "npc": [
+         {
+          "slot": "capt",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-loan-shirt"
         }
@@ -539,6 +564,22 @@
        {
         "if": "arc.photo=='zipped'",
         "text": "It has. The lads laugh. The chairman, passing the door, doesn't.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "chairman",
+          "tag": "zipped-the-jacket-at-the-launch",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-zip"
         }
@@ -546,12 +587,30 @@
        {
         "if": "arc.fanshirt=='wore'",
         "text": "No need. It's the food bank on the front now. You put it on without a jacket.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4
+         }
+        ],
         "arc": {
          "end": "the-food-bank-shirt"
         }
        },
        {
         "text": "It has. You don't use it. It's still QUIDNOW.",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "the-loan-shirt"
         }

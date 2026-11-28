@@ -239,6 +239,19 @@
        },
        {
         "text": "You sign them. Her mum says thank you, quietly, for something you didn't do.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 2
+         },
+         {
+          "slot": "sponsor",
+          "respect": 2
+         }
+        ],
+        "effects": {
+         "moneyWeeks": 1
+        },
         "arc": {
          "end": "the-advert-kid"
         }
@@ -253,12 +266,37 @@
        {
         "if": "arc.path=='her'",
         "text": "She waves the flat studs at you. She's grown out of them, she shouts. She's still wearing them.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "gave-me-his-boots",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "her-boots"
         }
        },
        {
         "text": "She waves back. The advert's on the telly that night, with the actor.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 2
+         }
+        ],
+        "effects": {
+         "moneyWeeks": 1
+        },
         "arc": {
          "end": "the-advert-kid"
         }

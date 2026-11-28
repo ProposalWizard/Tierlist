@@ -236,6 +236,22 @@
        {
         "if": "arc.path=='thumb'",
         "text": "The next morning there's a sticker on your peg: a thumb, with a plaster on it. The gaffer's handwriting. \"Steady.\"",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "called-me-thumbs",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-thumb"
         }
@@ -259,12 +275,38 @@
        {
         "if": "arc.path=='thumb'",
         "text": "The next morning he says, \"Morning, Thumbs,\" in front of everyone. It's stuck.",
+        "effects": {
+         "boss": 1,
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "called-me-thumbs",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-thumb"
         }
        },
        {
         "text": "Face down. You're learning.",
+        "effects": {
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "manager",
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "the-like"
         }

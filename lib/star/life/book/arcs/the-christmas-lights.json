@@ -511,6 +511,12 @@
        },
        {
         "text": "\"The weather man, then,\" he sighs.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "the-weather-man",
          "set": {
@@ -635,12 +641,30 @@
        {
         "if": "arc.path=='did'",
         "text": "You watch from the back with a hot chocolate. People still come up and say you did it better.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-lights-man"
         }
        },
        {
         "text": "The weather man presents it. He's been doing it for years now.",
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": -1
+         }
+        ],
+        "effects": {
+         "fans": -1
+        },
         "arc": {
          "end": "the-weather-man"
         }

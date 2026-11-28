@@ -442,6 +442,19 @@
        {
         "if": "arc.path=='stay'",
         "text": "You leave it. She leaves it too.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "asked-me-to-stay",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "she-stayed"
         }

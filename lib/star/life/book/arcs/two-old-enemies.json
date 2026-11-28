@@ -344,6 +344,20 @@
        {
         "if": "arc.path=='you'",
         "text": "Inside: \"You never beat me in a game. Testimonials don't count.\"",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "scored-ten-at-his-testimonial",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "you-won"
         }
@@ -351,12 +365,40 @@
        {
         "if": "arc.path=='him'",
         "text": "Inside: \"Told you.\" And a photo of the save.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "saved-my-last-penalty",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "he-won"
         }
        },
        {
         "text": "Your face on the back, crossed out in biro. Underneath: \"Holiday nice?\"",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "missed-his-testimonial",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "no-show"
         }
@@ -371,6 +413,20 @@
        {
         "if": "arc.path=='you'",
         "text": "He picks up laughing. \"Testimonials don't count.\"",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "scored-ten-at-his-testimonial",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "you-won"
         }
@@ -378,12 +434,40 @@
        {
         "if": "arc.path=='him'",
         "text": "He picks up and says, \"Who's this?\" and then laughs.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "saved-my-last-penalty",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "he-won"
         }
        },
        {
         "text": "It rings out.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": -6,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "missed-his-testimonial",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "no-show"
         }

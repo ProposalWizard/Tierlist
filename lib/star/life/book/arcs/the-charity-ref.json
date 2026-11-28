@@ -324,12 +324,38 @@
        {
         "if": "arc.path=='red'",
         "text": "He behaves for sixty-nine minutes. In the seventieth he looks at you, very deliberately, and doesn't tackle anyone. The whole pitch claps.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "sent-me-off-at-the-charity-match",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-red"
         }
        },
        {
         "text": "They give you a new whistle with \"PLEASE\" engraved on it.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
         "arc": {
          "end": "the-whistle"
         }
@@ -344,12 +370,35 @@
        {
         "if": "arc.path=='red'",
         "text": "He sends a photo from the match: the framed red card, held up at the side of the pitch.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "sent-me-off-at-the-charity-match",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-red"
         }
        },
        {
         "text": "\"They said you were the worst ref they'd ever had,\" he says. \"They meant it nicely.\"",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
         "arc": {
          "end": "the-whistle"
         }

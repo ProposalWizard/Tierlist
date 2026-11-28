@@ -776,6 +776,19 @@
        },
        {
         "text": "\"WELCOME TO THE NEW ERA.\" The man in the good suit owns it. He's nice enough. He's never heard of the buckets.",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -2
+         },
+         {
+          "slot": "capt",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-new-man"
         }
@@ -803,12 +816,45 @@
        {
         "if": "arc.bucket=='held'",
         "text": "{kidfan.short} waves at you from the turnstile, with her badge. The fans own it now.",
+        "effects": {
+         "fans": 6
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4
+         },
+         {
+          "slot": "canteen",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "saved-by-the-buckets",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "saved-by-the-buckets"
         }
        },
        {
         "text": "The man in the good suit owns it now. The wages go in. You train.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": -1
+         },
+         {
+          "slot": "canteen",
+          "bond": 1
+         }
+        ],
         "arc": {
          "end": "the-new-man"
         }

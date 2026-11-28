@@ -224,6 +224,15 @@
        },
        {
         "text": "She's got your name on the back, from the door, as you left. You sign the front. \"She'd have liked that,\" she says.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 2
+         }
+        ],
+        "effects": {
+         "fans": -1
+        },
         "arc": {
          "end": "forty-photos"
         }
@@ -238,12 +247,37 @@
        {
         "if": "arc.path=='stopped'",
         "text": "She tells you about her nan for five minutes. The man with the folder is at the other end of the barrier. You don't go over.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "skipped-the-dealer-for-me",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "her-programme"
         }
        },
        {
         "text": "She tells you about her nan. You think about the forty photos.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 1
+         }
+        ],
         "arc": {
          "end": "forty-photos"
         }

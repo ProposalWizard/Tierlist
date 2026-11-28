@@ -653,6 +653,26 @@
        },
        {
         "text": "There is no new pitch. The club stays at the rival's ground, and then moves to a new one by the bypass.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": -3
+         },
+         {
+          "slot": "chairman",
+          "grudge": 3
+         }
+        ],
+        "effects": {
+         "fans": -4
+        },
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "lost-the-old-pitch",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-new-ground"
         }
@@ -671,6 +691,22 @@
        },
        {
         "text": "You run out at the rival's ground one more time. The old ground's sold that summer.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 4
+         }
+        ],
+        "effects": {
+         "fans": -3
+        },
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "lost-the-old-pitch",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-new-ground"
         }

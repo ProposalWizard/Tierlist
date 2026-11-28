@@ -612,6 +612,19 @@
        },
        {
         "text": "You hand them out. She thanks you on the microphone, briefly, and gets on with it.",
+        "npc": [
+         {
+          "slot": "sister",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sister",
+          "tag": "kept-me-in-the-posts",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "still-in-the-photos"
         }

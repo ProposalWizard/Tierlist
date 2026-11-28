@@ -201,12 +201,45 @@
        {
         "if": "arc.path=='yes'",
         "text": "The armband, folded, next to the first shirt. She polishes the glass on Sundays.",
+        "effects": {
+         "fame": 3
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "led-the-country-out",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "captain-for-the-night"
         }
        },
        {
         "text": "A photo of you and the young lad at the anthem. He's captain now, and he rings you before every game.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "gave-the-armband-to-the-young-lad",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "gave-it-back"
         }
@@ -221,12 +254,45 @@
        {
         "if": "arc.path=='yes'",
         "text": "\"I need a bigger hall,\" she says, pleased.",
+        "effects": {
+         "fame": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "led-the-country-out",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "captain-for-the-night"
         }
        },
        {
         "text": "\"I've room for one more,\" she says, and looks at the photo of the young lad.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "gave-the-armband-to-the-young-lad",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "gave-it-back"
         }

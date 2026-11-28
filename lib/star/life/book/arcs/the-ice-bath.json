@@ -504,6 +504,9 @@
        },
        {
         "text": "\"Again?\" The lads do the noise. You know the noise.",
+        "effects": {
+         "team": 1
+        },
         "arc": {
          "end": "frozen-out",
          "set": {
@@ -575,12 +578,42 @@
        {
         "if": "arc.path=='won'",
         "text": "He does thirteen minutes on his own. He gets out, looks at the board where your name is, and leaves it there. \"Yours,\" he says.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4,
+          "respect": 2
+         },
+         {
+          "slot": "hard",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "hard",
+          "tag": "beat-me-in-the-ice",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "ice-king"
         }
        },
        {
         "text": "Thirteen minutes. He writes his own name at the top in marker and caps the pen like a full stop.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "hard",
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "frozen-out"
         }
@@ -619,12 +652,43 @@
        {
         "if": "arc.path=='won'",
         "text": "You beat him again, by a minute. He doesn't mind. He's retiring.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4,
+          "respect": 2
+         },
+         {
+          "slot": "hard",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "hard",
+          "tag": "beat-me-in-the-ice",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "ice-king"
         }
        },
        {
         "text": "You last eight. He does fourteen to make his point, on his last day, at his age.",
+        "effects": {
+         "team": 1
+        },
+        "npc": [
+         {
+          "slot": "hard",
+          "respect": -2,
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "frozen-out"
         }

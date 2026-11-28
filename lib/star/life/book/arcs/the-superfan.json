@@ -437,6 +437,22 @@
        {
         "if": "arc.went==1",
         "text": "He waves at your back.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "fan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "came-to-my-sixtieth",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-sixtieth"
         }

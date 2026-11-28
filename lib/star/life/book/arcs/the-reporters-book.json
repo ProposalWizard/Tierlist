@@ -202,6 +202,15 @@
        },
        {
         "text": "You sign the corner of a photo. She was kind about it.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 2
+         }
+        ],
+        "effects": {
+         "fans": 1
+        },
         "arc": {
          "end": "the-footnote"
         }
@@ -216,12 +225,37 @@
        {
         "if": "arc.path=='tell'",
         "text": "She puts the flowers by the till and tells the queue you're shy.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "gave-me-the-chapter",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-chapter"
         }
        },
        {
         "text": "She puts the flowers by the till.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 2
+         }
+        ],
+        "effects": {
+         "fans": 1
+        },
         "arc": {
          "end": "the-footnote"
         }

@@ -525,6 +525,22 @@
        {
         "if": "arc.min=='play'",
         "text": "They're not walking out. They just stand there, all looking at the pitch. At you, it feels like. Then they sit down.",
+        "effects": {
+         "fans": -3
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "didnt-clap-us-out",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-empty-stand"
         }
@@ -548,6 +564,26 @@
        {
         "if": "arc.min=='play'",
         "text": "You keep playing. You always will. They remember that you did.",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 3
+         },
+         {
+          "slot": "neighbour",
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "didnt-clap-us-out",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-empty-stand"
         }
@@ -555,12 +591,24 @@
        {
         "if": "arc.min=='clap'",
         "text": "You keep your eyes on the ball. You can hear them clapping anyway. Prices frozen.",
+        "effects": {
+         "fans": 4
+        },
         "arc": {
          "end": "prices-frozen"
         }
        },
        {
         "text": "You keep playing. In the front row they've had 74 printed on homemade shirts, and some of them have your name over it.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "neighbour",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "seventy-four"
         }

@@ -336,6 +336,15 @@
        },
        {
         "text": "An official stall, a lad in a club fleece. The same scarves, ten pound.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "moved-on"
         }
@@ -350,12 +359,30 @@
        {
         "if": "arc.path=='stayed'",
         "text": "\"His sell better than ours,\" he says, grimly. \"So we sell his.\"",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "the-pram"
         }
        },
        {
         "text": "\"Very well,\" he says. You notice he doesn't wear one.",
+        "effects": {
+         "fans": -1
+        },
+        "npc": [
+         {
+          "slot": "chairman",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "moved-on"
         }

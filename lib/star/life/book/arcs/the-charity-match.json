@@ -439,12 +439,43 @@
        {
         "if": "arc.played==1",
         "text": "He high-fives you so hard it stings.",
+        "effects": {
+         "fans": 4
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6
+         },
+         {
+          "slot": "reporter",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "walked-out-with-me",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-walk-out"
         }
        },
        {
         "text": "He high-fives the next player as well.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 2
+         },
+         {
+          "slot": "reporter",
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "short-of-the-target"
         }

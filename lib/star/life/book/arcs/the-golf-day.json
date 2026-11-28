@@ -238,6 +238,19 @@
        },
        {
         "text": "It's a nice day. He wins the fruit bowl again. He knows, and he doesn't mind.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sponsor",
+          "tag": "let-me-win-at-golf",
+          "strength": 1
+         }
+        ],
         "arc": {
          "end": "a-good-day-out"
         }
@@ -252,12 +265,39 @@
        {
         "if": "arc.path=='straight'",
         "text": "He sends you a photo from the pond: \"Missed you.\" Two balls, floating.",
+        "effects": {
+         "moneyWeeks": 0.5
+        },
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "sponsor",
+          "tag": "came-last-at-golf-with-the-boss",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-worst-pair"
         }
        },
        {
         "text": "He plays with the chairman instead and comes second.",
+        "npc": [
+         {
+          "slot": "sponsor",
+          "bond": 1
+         },
+         {
+          "slot": "chairman",
+          "bond": 1
+         }
+        ],
         "arc": {
          "end": "a-good-day-out"
         }

@@ -317,6 +317,9 @@
        },
        {
         "text": "It isn't him. It's just a girl who found a pound. You sign her programme anyway.",
+        "effects": {
+         "fans": 1
+        },
         "arc": {
          "end": "the-ban"
         }
@@ -331,12 +334,26 @@
        {
         "if": "arc.path=='wrote'",
         "text": "You wave once. She waves back with the coin. He keeps his eyes on the pitch.",
+        "effects": {
+         "fans": 2,
+         "reputation": 2
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "wrote-back-to-the-coin-man",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-letter-back"
         }
        },
        {
         "text": "You don't know if it's him. You'll never know.",
+        "effects": {
+         "reputation": -1
+        },
         "arc": {
          "end": "the-ban"
         }

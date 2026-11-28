@@ -364,6 +364,15 @@
        },
        {
         "text": "You park in it. Somebody's left a note on your windscreen: \"He'd have something to say.\" You move it.",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "the-far-end"
         }
@@ -378,12 +387,35 @@
        {
         "if": "arc.path=='moved'",
         "text": "The kit man comes out in the rain and taps on your window. \"He said it's yours. He's had the sign made since August.\" He never mentioned it to you.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "gave-me-his-space",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "his-space"
         }
        },
        {
         "text": "By the bins. Same as always. The space stays empty.",
+        "npc": [
+         {
+          "slot": "vet",
+          "respect": 1
+         }
+        ],
         "arc": {
          "end": "the-far-end"
         }

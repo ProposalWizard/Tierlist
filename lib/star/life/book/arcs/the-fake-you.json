@@ -328,6 +328,22 @@
        },
        {
         "text": "\"The bank never gave it back,\" he says, cheerfully. \"Worth it for the story.\" You give him your shirt.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "effects": {
+         "fans": 2
+        },
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "gave-me-a-shirt-for-the-story",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-account"
         }
@@ -342,12 +358,31 @@
        {
         "if": "arc.path=='paid'",
         "text": "They give one back, both of them, with both hands.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
         "arc": {
          "end": "paid-him-back"
         }
        },
        {
         "text": "He waves the card. You never find out about the money.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 3
+         }
+        ],
+        "effects": {
+         "fans": 1
+        },
         "arc": {
          "end": "the-account"
         }

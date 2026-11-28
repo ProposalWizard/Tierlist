@@ -361,6 +361,13 @@
        },
        {
         "text": "A wedding invitation, to the whole squad. Your name's on the list with everyone else's. You go and sit at the back.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -2,
+          "respect": 2
+         }
+        ],
         "arc": {
          "end": "the-other-end"
         }
@@ -375,12 +382,33 @@
        {
         "if": "arc.path=='fine'",
         "text": "You open it at home: an invitation, and a note. You RSVP the same night.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "said-it-was-fine-about-my-girlfriend",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-invitation"
         }
        },
        {
         "text": "You open it in March. The wedding was in February.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -4,
+          "grudge": 2
+         }
+        ],
         "arc": {
          "end": "the-other-end"
         }

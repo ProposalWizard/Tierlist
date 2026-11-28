@@ -184,12 +184,39 @@
        {
         "if": "arc.path=='talk'",
         "text": "\"Two of them knocked the week after you spoke. One still does.\"",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "spoke-at-the-wellbeing-day",
+          "strength": 3
+         }
+        ],
+        "effects": {
+         "team": 2
+        },
         "arc": {
          "end": "you-spoke"
         }
        },
        {
         "text": "\"The lad from lunch knocked. He said you listened.\"",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "effects": {
+         "team": 1
+        },
         "arc": {
          "end": "you-listened"
         }
@@ -204,12 +231,35 @@
        {
         "if": "arc.path=='talk'",
         "text": "She laughs and puts the kettle on. \"About anything,\" she says.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "physio",
+          "tag": "spoke-at-the-wellbeing-day",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "you-spoke"
         }
        },
        {
         "text": "She puts the kettle on. You talk about nothing for ten minutes and feel better.",
+        "npc": [
+         {
+          "slot": "physio",
+          "bond": 4
+         }
+        ],
+        "effects": {
+         "energy": 5
+        },
         "arc": {
          "end": "you-listened"
         }

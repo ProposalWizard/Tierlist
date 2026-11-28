@@ -648,12 +648,44 @@
        {
         "if": "arc.raised>=1 || arc.council=='dad'",
         "text": "The pitch, in the frost, with the under-nines' cones out already. \"Still ours,\" he's written.",
+        "effects": {
+         "fans": 4
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "came-to-the-rec-fundraiser",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "the-rec-saved"
         }
        },
        {
         "text": "A fence, and a sign for flats, and the slope already gone. He hasn't written anything.",
+        "effects": {
+         "fans": -2
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "missed-the-rec-fundraiser",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "flats-on-the-rec"
         }
@@ -668,12 +700,35 @@
        {
         "if": "arc.raised>=1",
         "text": "\"Go and look at the photo,\" he says. You do. It's the Rec, in the frost. Still a pitch.",
+        "effects": {
+         "fans": 3
+        },
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         }
+        ],
         "arc": {
          "end": "the-rec-saved"
         }
        },
        {
         "text": "He says it's fine. He's driving the long way round these days.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -6,
+          "grudge": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "missed-the-rec-fundraiser",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "flats-on-the-rec"
         }

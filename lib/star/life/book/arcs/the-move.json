@@ -206,6 +206,22 @@
        {
         "if": "arc.path=='come'",
         "text": "She's in the next room. You live in a flat with a balcony and you can't read the electricity bill.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "moved-abroad-with-me",
+          "strength": 3
+         }
+        ],
+        "effects": {
+         "boss": -2
+        },
         "arc": {
          "end": "went-with-her"
         }
@@ -213,12 +229,39 @@
        {
         "if": "arc.path=='weekends'",
         "text": "She picks up in a corridor, an hour ahead. \"Sunday?\" Sunday.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "rang-me-every-sunday",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "she-went"
         }
        },
        {
         "text": "She's downstairs. She says she doesn't think about it. Mostly.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -3,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "partner",
+          "tag": "asked-me-to-give-up-the-move",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "she-said-no-again"
         }
@@ -233,12 +276,24 @@
        {
         "if": "!arc.path=='stay'",
         "text": "They go to an office abroad with your name spelt wrong by the florist.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 4
+         }
+        ],
         "arc": {
          "end": "she-went"
         }
        },
        {
         "text": "They go to her office in town. She sends a photo of them on her desk.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 3
+         }
+        ],
         "arc": {
          "end": "she-said-no-again"
         }

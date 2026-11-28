@@ -225,6 +225,12 @@
        },
        {
         "text": "You go. It's a bit awkward. Nobody passes to you. Fair enough.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 2
+         }
+        ],
         "arc": {
          "end": "the-photo"
         }
@@ -239,12 +245,34 @@
        {
         "if": "arc.path=='stayed'",
         "text": "\"We know. We just wanted to ask.\" They send you the team photo every week, and you're in every one, photoshopped in, badly.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "turns-out-for-the-old-team",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-old-team"
         }
        },
        {
         "text": "\"No worries.\" The reunion photo is the last one you're in.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -1
+         }
+        ],
         "arc": {
          "end": "the-photo"
         }

@@ -488,6 +488,19 @@
        {
         "if": "arc.photo=='yes'",
         "text": "You go. A photographer is waiting in the car park, because somebody tipped him off. You go home.",
+        "effects": {
+         "reputation": -2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "grudge": 3
+         },
+         {
+          "slot": "mum",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "the-photo-op"
         }
@@ -514,6 +527,15 @@
        {
         "if": "arc.photo=='yes'",
         "text": "They thank you on their website. Your photo with the beans is still at the top.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "the-photo-op"
         }
@@ -521,12 +543,34 @@
        {
         "if": "arc.path=='cheque'",
         "text": "\"That's kind,\" your mum says, again. She does the Tuesdays.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "effects": {
+         "reputation": 2
+        },
         "arc": {
          "end": "the-cheque"
         }
        },
        {
         "text": "Your mum tells you they've named the van after you. They haven't. She's joking. You check.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "stacked-tins-with-me",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "tuesday-mornings"
         }

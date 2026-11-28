@@ -236,6 +236,13 @@
        },
        {
         "text": "The name on the handle is the goalkeeper's. He's already out there with it.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": -2,
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "called-off"
         }
@@ -250,12 +257,31 @@
        {
         "if": "arc.path=='shovelled'",
         "text": "\"Fair,\" he says. He leans your shovel by the door, in case.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "groundsman",
+          "tag": "shovelled-snow-at-six",
+          "strength": 2
+         }
+        ],
         "arc": {
          "end": "the-shovel"
         }
        },
        {
         "text": "\"Course you will.\" He tells you about every shovel, at length, after the game.",
+        "npc": [
+         {
+          "slot": "groundsman",
+          "respect": -2
+         }
+        ],
         "arc": {
          "end": "called-off"
         }

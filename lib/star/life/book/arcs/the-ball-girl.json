@@ -335,6 +335,12 @@
        },
        {
         "text": "She doesn't look up. She gives you the ball slowly all night.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -2
+         }
+        ],
         "arc": {
          "end": "just-a-throw"
         }
@@ -349,12 +355,34 @@
        {
         "if": "arc.path=='kind'",
         "text": "You don't see her. At full time she shouts your name. She's got your boots on, two sizes too big.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "gave-me-his-boots-after-the-throw",
+          "strength": 3
+         }
+        ],
         "arc": {
          "end": "quick-hands"
         }
        },
        {
         "text": "You don't see her. You don't think about the throw.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -1
+         }
+        ],
         "arc": {
          "end": "just-a-throw"
         }
