@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "PL Draft — Build Your Dream XI | Knowitball",
+  title: "PL Draft — Build Your Dream XI",
   description:
     "Spin for a random Premier League club and season from FIFA history, pick players, and simulate a full 38-match season.",
   openGraph: {

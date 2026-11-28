@@ -121,6 +121,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/admin/xp", "Site XP rewards", "Level-up rewards across the whole site (frames, titles)", "site", "site", "Harry", "live", "shared", "admin"),
   P("/admin/football", "Tic Tac Toe data", "Wikidata data behind Tic Tac Toe", "site", "site", "Harry", "live", "shared", "admin"),
   P("/squad-builder", "Dream XI builder", "Pick a formation and drag players into a dream XI", "old", "old", "Harry", "old", "none", "team"),
+  P("/admin/new-look", "New look", "Try the new site look on your own device (Light or Dark); nobody else sees it", "site", "site", "Leo", "live", "browser", "admin"),
   P("/admin/site-content", "Site content", "Tierlists, votes, blind rankings, daily games, objectives, cards, feedback", "tierlists", "tierlists", "Harry", "live", "shared", "admin"),
   P("/admin/football/players", "SoFIFA players", "Edit SoFIFA players", "draft", "draft", "Harry", "live", "shared", "admin"),
   P("/admin/football/pl-clubs", "PL clubs per season", "Which clubs the Draft has for each season", "draft", "draft", "Harry", "live", "none", "admin"),

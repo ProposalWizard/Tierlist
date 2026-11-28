@@ -38,5 +38,9 @@ export async function GET() {
   return NextResponse.json({
     config: configRes.data ?? { season: 1, name: "Season 1", total_levels: 50 },
     rewards,
+  }, {
+    // Every Draft result screen asks for this. The same for everyone, so Vercel
+    // keeps it a minute (26 Nov 2026); an admin's edit shows within a minute.
+    headers: { "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=600", "Vercel-CDN-Cache-Control": "max-age=60, stale-while-revalidate=600" },
   });
 }

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import TicTacToeBuilder from "@/components/TicTacToeBuilder";
 
 export const metadata: Metadata = {
-  title: "Create a Tic Tac Toe — Knowitball",
+  title: "Create a Tic Tac Toe",
   description: "Build your own Football Tic Tac Toe puzzle for the community to play.",
 };
 

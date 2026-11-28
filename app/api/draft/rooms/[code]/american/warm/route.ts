@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { fetchRoundPlayers, roundOptionsFromSettings } from "@/lib/americanDraft";
+import { overLimit, slowDown, LIMITS } from "@/lib/rateLimit";
 
 /**
  * Warm the player pool for a room's era.
@@ -19,6 +20,8 @@ export async function POST(
   _req: Request,
   { params }: { params: { code: string } }
 ) {
+  // Too many from one person: a friendly 429, never a crash (lib/rateLimit).
+  if (await overLimit(_req, LIMITS.roomWarm)) return slowDown(LIMITS.roomWarm);
   try {
     const service = createServiceClient();
     const { data: room } = await service

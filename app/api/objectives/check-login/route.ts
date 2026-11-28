@@ -8,7 +8,9 @@ export async function POST() {
   const supabase = await createClient();
   const { data: { user: signedIn } } = await supabase.auth.getUser();
   const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Signed out: nothing to count, and no error. The Objectives page asks on every
+  // visit, and a 401 showed as a red error in every signed-out visitor's browser (26 Nov 2026).
+  if (!user) return NextResponse.json({ completed: [], signedIn: false });
 
   const service = createServiceClient();
 

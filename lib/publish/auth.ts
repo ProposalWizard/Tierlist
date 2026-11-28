@@ -11,8 +11,9 @@
  */
 import { timingSafeEqual } from "node:crypto";
 import { getCaller } from "@/lib/marketing/caller";
+import type { Space } from "./types";
 
-export type Who = { kind: "admin"; name: string; id: string } | { kind: "agent"; name: "chat" } | { kind: "cron"; name: "timer" };
+export type Who = { kind: "admin"; name: string; id: string; email?: string } | { kind: "agent"; name: "chat" } | { kind: "cron"; name: "timer" };
 
 const same = (a: string, b: string) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
 const secret = (name: string) => { const v = process.env[name]?.trim(); return v && v.length >= 16 ? v : null; };
@@ -36,9 +37,20 @@ export async function whoIs(req: Request, allow: Who["kind"][]): Promise<Who | n
     const vc = secret("CRON_SECRET"), auth = h.get("authorization");
     if (vc && auth && same(auth, `Bearer ${vc}`)) return { kind: "cron", name: "timer" };
   }
-  if (allow.includes("admin")) { const c = await getCaller(); if (c?.admin && ownerOk(c.email)) return { kind: "admin", name: c.name, id: c.id }; }
+  if (allow.includes("admin")) { const c = await getCaller(); if (c?.admin) return { kind: "admin", name: c.name, id: c.id, email: c.email }; }
   return null;
 }
+
+/**
+ * May this caller use this space? football and content are Mikey's own (the PUBLISH_OWNER_EMAIL lock); kib is the
+ * team's (every admin). The chat (its key) and the timer may use every space.
+ */
+export function mayUse(who: Who | null, space: Space): boolean {
+  if (!who) return false;
+  if (who.kind !== "admin") return true;
+  return space === "kib" ? true : ownerOk(who.email);
+}
+export const NOT_YOURS = "Only the owner of this space can use it (PUBLISH_OWNER_EMAIL); the Knowitball space is open to every admin.";
 
 /** The site's own address, for the login round trips (must match what is registered with Meta and Google). */
 export const siteUrl = (req: Request) => (process.env.NEXT_PUBLIC_APP_URL?.trim() || new URL(req.url).origin).replace(/\/$/, "");

@@ -28,85 +28,112 @@ import type { PatchNote } from "./patchNotes";
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
   {
       "version": "0.143",
-      "title": "Leo's patch notes: One Knowitball, the whole-site plan",
+      "title": "Leo's patch notes: One Knowitball, the whole website",
       "author": "Leo",
       "publishedAt": "2026-11-24T16:19:34Z",
-      "updatedAt": null,
+      "updatedAt": "2026-11-27T04:46:26Z",
       "artifactUrl": null,
-      "summary": "Plan only, nothing on the site changed. Today the home is cream and green and every other page is dark navy and purple. The plan: one frame (green top bar with one menu, a game bar, green footer) and one look on every page, 10 faults fixed, Tic Tac Toe and Ten-A-Ball brought up to date, and Draft in three waves (faces back, Daily Draft with rankings and a share grid, links between players, Challenge Draft, play a friend). About 15 working days in 7 steps. 5 decisions for Leo.",
+      "updateNote": "Rounds 1–5 in one note: plan, the New look switch, readability check, Daily Draft and old games, Chemistry + Ranked/Custom + watching games.",
+      "summary": "One patch note for the whole website job, updated each round. Behind the New look switch: the home's look on every page (light or dark), Daily Draft, Draft spot ratings, Chemistry with Ranked or Custom (three Hall of Fame boards), higher-or-lower, Watch the big games, Tic Tac Toe and Ten-A-Ball updates, Rankings for the tester, a readability check every round. Fixed for everyone: titles, sign-in name, Ten-A-Ball line and duplicate, Objectives badge, three wrong Draft seasons, faint text. Needs: the Chemistry SQL run; Mikey's yes for Rankings.",
       "stats": [
         {
-          "value": "22",
-          "label": "live pages checked, phone + computer"
+          "value": "5",
+          "label": "rounds so far, one note"
         },
         {
-          "value": "2",
-          "label": "looks on the site today"
+          "value": "3",
+          "label": "Hall of Fame boards (Normal, Prime, Chemistry)"
         },
         {
-          "value": "10",
-          "label": "faults found"
+          "value": "84 → 0",
+          "label": "unreadable words on the Hall of Fame"
         },
         {
-          "value": "~15 days",
-          "label": "to do all of it, 7 steps"
+          "value": "0",
+          "label": "changes for anyone without the switch"
         }
       ],
       "sections": [
         {
           "kind": "added",
-          "title": "Check these",
+          "title": "Check these (switch on)",
           "items": [
             {
-              "title": "Before and after pictures",
-              "detail": "Draft, Tic Tac Toe and Ten-A-Ball now, and drawn in the home's look."
+              "title": "Draft",
+              "detail": "Daily Draft; Rules: Chemistry; spot ratings and Best spot; Watch the big games."
             },
             {
-              "title": "The 5 decisions at the bottom",
-              "detail": "Cream everywhere; one menu; Tierlists back or gone; Daily Draft first; Ten-A-Ball challenge of the day."
+              "title": "Tic Tac Toe",
+              "detail": "Today's grid first; streak and Share."
+            },
+            {
+              "title": "Ten-A-Ball",
+              "detail": "Topics, your best on each, Share."
+            },
+            {
+              "title": "Every page",
+              "detail": "● New look → Light or Dark."
             }
           ]
         },
         {
-          "kind": "added",
-          "title": "The plan",
+          "kind": "fixed",
+          "title": "Fixed for everyone",
           "items": [
             {
-              "title": "One frame, one look",
-              "detail": "Green top bar with one menu, a game bar, the green footer, the home's colours and cards everywhere; a build check stops the old look coming back."
+              "title": "Site",
+              "detail": "Titles, sign-in name, Objectives badge clear of Sign in, faint text."
             },
             {
-              "title": "Old games",
-              "detail": "Tic Tac Toe: today's grid first, rarity, streaks, share. Ten-A-Ball: a real daily challenge, topics, best scores."
-            },
-            {
-              "title": "Draft, three waves",
-              "detail": "Faces, clean clubs, faster picks; Daily Draft with ranking and share grid, links between players; Challenge Draft, beat-my-XI, season story, levels."
+              "title": "Games",
+              "detail": "Ten-A-Ball lives line and duplicate; three wrong Draft seasons."
             }
           ]
         },
         {
           "kind": "known",
-          "title": "Faults found (not fixed yet)",
+          "title": "Needs you / next",
           "items": [
             {
-              "title": "Look",
-              "detail": "Two menu buttons on phones; sign-in says Football Tierlist; titles say Knowitball twice; Objectives badge covers Sign in on a computer."
+              "title": "Chemistry board",
+              "detail": "Run supabase/migrations/draft_records_chemistry.sql."
             },
             {
-              "title": "Ten-A-Ball",
-              "detail": "Says daily but is a fixed 33; one listed twice; menu says ten lives, game gives 3."
-            },
-            {
-              "title": "Draft",
-              "detail": "All silhouettes; a French club in the PL reel; a keeper can play up front with no warning."
+              "title": "Next",
+              "detail": "Friend matches watched together, Manager mode, page polish."
             }
           ]
         }
       ],
-      "updates": []
+      "updates": [
+        {
+          "at": "2026-11-26T03:19:33Z",
+          "where": "was 0.144",
+          "note": "The new look, only for you"
+        },
+        {
+          "at": "2026-11-26T18:21:03Z",
+          "where": "was 0.145",
+          "note": "New look fixes and a readability check"
+        },
+        {
+          "at": "2026-11-27T02:22:14Z",
+          "where": "was 0.146",
+          "note": "Daily Draft and the old games"
+        },
+        {
+          "at": "2026-11-27T04:30:23Z",
+          "where": "was 0.147",
+          "note": "Draft chemistry, Ranked or Custom, and watching games"
+        },
+        {
+          "at": "2026-11-27T04:46:26Z",
+          "where": "0.143",
+          "note": "Rounds 1–5 in one note: plan, the New look switch, readability check, Daily Draft and old games, Chemistry + Ranked/Custom + watching games."
+        }
+      ]
     },
-    {
+  {
       "version": "0.142",
       "title": "Harry's patch notes: 3D phone, real clothes at home",
       "author": "Harry",

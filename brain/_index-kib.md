@@ -19,6 +19,7 @@ FACT-KIB-016 | "Secret B" is Mikey's name for the Publish key (PUBLISH_AGENT_TOK
 FACT-KIB-017 | The Brain page posts by itself: Send writes the post into publish_posts through Mikey's Supabase connector and the site's 5-minute timer posts Instagram and YouTube; Facebook is by hand on his profile. A video posts only if its file is in PKEY. | team,style,brain,client-kib
 PRO-KIB-001 | Stat Twins episode for any player-season: write episodes/<player>.json, run make_episode.py, tts.py (Hugo), timeline.py, render.cjs; the format is locked to the Salah v02 cut 5 (Poster style). | career,style
 PRO-KIB-002 | "Update my stats" (Mikey) = read publish_posts results from Supabase and write one doc per post into Mikey's Brain artifact database (collection stats); "post my videos" = post what he sent from Mikey's Brain with scripts/publish/post.mjs. | team,style,brain
+PRO-KIB-003 | Publish has spaces - football (Mikey's Brain), content (Mikey's Brain: Content, artifact Enn1Dd9KwhEkJjvZSJNsxW), kib (team, later); each its own accounts, videos, posts; post.mjs --space; "post my content videos" / "update my content stats" use space content. | team,brain
 REF-KIB-001 | Script v01, patch notes 0.1 to 0.3: the first Knowitball short, word for word with its sources. | process,client-kib
 RUL-KIB-001 | Voice: short, cheeky, football-mad, numbers first ("9.8% to 47.6%"). | client-kib
 RUL-KIB-002 | Real game footage only, or marked "ILLUSTRATION" on screen. | client-kib

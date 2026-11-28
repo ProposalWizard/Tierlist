@@ -49,3 +49,4 @@ RUL-TEAM-030 | A Team room bot never changes anything. A person's bot turns a bi
 RUL-TEAM-031 | Propose designs to Harry throughout, tell him if Higgsfield is ever used, and show updates every 5 mins using images and visuals. | three-d,team
 RUL-TEAM-032 | Tell Harry when the connector for Supabase is needed, before starting a task that needs it (the connector is linked to another project, not Knowitball). | team
 RUL-TEAM-033 | Put all images and videos into this chat, even with the test pages. | ui,process,team
+RUL-TEAM-034 | One topic, one patch note (Leo's chats): a job keeps ONE patch note that is updated each round (updatedAt, updateNote, a new updates line, a new round section on its page, newest first) until the job is finished; only the next job gets a new number. | team,process

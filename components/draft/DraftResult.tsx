@@ -1,6 +1,7 @@
 "use client";
 import { shortName } from "@/lib/draft/shortName";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
+import { withChemistry } from "@/lib/draft/chemistry";
 import { simulateSeason, positionFitness } from "@/lib/seasonSimulator";
 import type { SeasonResult, UCLMatch, UCLResult, FaCupMatch, SuperCupResult, CharityShieldResult } from "@/lib/seasonSimulator";
 import { XP_AWARDS, FRAME_STYLES } from "@/lib/xp";
@@ -28,6 +29,14 @@ interface Props {
   playerTeamName?: string;
   /** True only on the final season of a draft (all 5 seasons played). Gates the
    * "draft complete" XP so it's awarded once per full draft, not per season. */
+  /** Chemistry rules: the season is played by the squad with its chemistry boosts (lib/draft/chemistry.ts). */
+  chemistry?: boolean;
+  /** Which Hall of Fame board (New look preview): null = a Custom draft, records not sent. Undefined = as before. */
+  recordsBoard?: "normal" | "prime" | "chem" | null;
+  /** The Daily Draft: tags this first season "daily:<date>:" so it counts in today's ranking. */
+  runKeyPrefix?: string;
+  /** Told once when the season is worked out (the Daily Draft's card). */
+  onSeasonDone?: (r: { points: number; finish: number; season: SeasonResult }) => void;
   isFinalSeason?: boolean;
 }
 
@@ -605,10 +614,10 @@ export async function loadDraftHistory(): Promise<DraftRunRecord[]> {
   }
 }
 
-export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal", revealStartTime, speedMultiplier = 1, playerTeamName, isFinalSeason = false }: Props) {
+export default function DraftResult({ players, onNewRun, onPlayNextSeason, seasonNumber = 1, previousResult, allSeasonResults, formationName, isSignedIn = false, preComputedSeason, roomPlayers, roomCode, allRoomPlayerSeasons, mode = "normal", revealStartTime, speedMultiplier = 1, playerTeamName, isFinalSeason = false, runKeyPrefix, onSeasonDone, chemistry: chemOn = false, recordsBoard }: Props) {
   const computedSeason = useMemo(
-    () => preComputedSeason ?? simulateSeason(players, undefined, seasonNumber, previousResult?.leagueTable, previousResult ?? undefined, playerTeamName),
-    [players, seasonNumber, previousResult, preComputedSeason, playerTeamName],
+    () => preComputedSeason ?? simulateSeason(chemOn ? withChemistry(players, formationName) : players, undefined, seasonNumber, previousResult?.leagueTable, previousResult ?? undefined, playerTeamName),
+    [players, seasonNumber, previousResult, preComputedSeason, playerTeamName, chemOn, formationName],
   );
   const season = computedSeason;
   const [showMatches, setShowMatches] = useState(false);
@@ -662,6 +671,14 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
 
   const [revealedIdx, setRevealedIdx] = useState(0);
   const [seasonComplete, setSeasonComplete] = useState(false);
+  // The Daily Draft card and "Watch the big games" get the season once it has
+  // finished revealing (they would give the results away otherwise).
+  const toldSeason = useRef(false);
+  useEffect(() => {
+    if (!seasonComplete || toldSeason.current || !onSeasonDone) return;
+    toldSeason.current = true;
+    onSeasonDone({ points: season.teamRecord.points, finish: season.actualFinish, season });
+  }, [seasonComplete, season, onSeasonDone]);
   const matchListRef = useRef<HTMLDivElement>(null);
 
   // Poll every 100ms using real wall-clock time — immune to background-tab setTimeout throttling
@@ -713,7 +730,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
     const squadFp = players.map(p => `${p.name}:${p.overall}`).join("|");
     let sqHash = 0;
     for (let i = 0; i < squadFp.length; i++) sqHash = ((sqHash << 5) - sqHash + squadFp.charCodeAt(i)) | 0;
-    const runKey = `s${seasonNumber}-f${season.actualFinish}-p${season.teamRecord.points}-g${season.teamRecord.goalsFor}.${season.teamRecord.goalsAgainst}-q${Math.abs(sqHash).toString(36)}`;
+    const runKey = `${seasonNumber === 1 && runKeyPrefix ? runKeyPrefix : ""}s${seasonNumber}-f${season.actualFinish}-p${season.teamRecord.points}-g${season.teamRecord.goalsFor}.${season.teamRecord.goalsAgainst}-q${Math.abs(sqHash).toString(36)}`;
     let alreadyCredited = false;
     try { alreadyCredited = localStorage.getItem(`draft-credited-${runKey}`) === "1"; } catch { /* ignore */ }
     // Signed out, the history save does nothing; wait until sign-in resolves so
@@ -1126,12 +1143,12 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
           const totalTrophies = [...(allSeasonResults ?? []), season].reduce((sum, s) => sum + countTrophies(s), 0);
 
           console.log("[records] PL assists:", topBy(season.plPlayerStats, "assists"), "All assists:", topBy(season.playerStats, "assists"), "mode:", mode);
-          await fetch("/api/draft/records", {
+          if (recordsBoard !== null) await fetch("/api/draft/records", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               hasDevPlayers,
-              mode,
+              mode: recordsBoard ?? mode,
               eventKey: runKey,
               pl: {
                 wins: { value: season.teamRecord.wins, teamOvr },

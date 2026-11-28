@@ -85,6 +85,14 @@ the subtitle since the name's already in the title — use that line for
 what's actually useful instead (feature name, PRs, commit count, test
 count).
 
+## One topic, one patch note (Leo, 27 Nov 2026, RUL-TEAM-034)
+
+In Leo's chats a JOB keeps one patch note until it is finished: each new
+round UPDATES that note (updatedAt + updateNote + an `updates` line, a new
+"ROUND N" section at the top of its page, the "Where it stands" block
+refreshed) instead of taking a new number. Only the next job gets a new
+version. Example: 0.143 "One Knowitball, the whole website".
+
 ## Versioning
 
 One number, decimal, incrementing by 0.1 — `v0.1`, `v0.2`, `v0.3`... The

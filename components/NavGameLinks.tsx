@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GAME_PATH } from "@/lib/star/gamePath";
 import { withoutPaused } from "@/lib/rankingsPaused";
+import { usePreview } from "@/lib/siteLook/usePreview";
 
 const ALL_LIVE_GAMES = [
   { name: "Draft", href: "/draft" },
@@ -25,6 +26,8 @@ function BetaBadge() {
 
 export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
+  // With the New look preview on, Rankings shows (it runs for the tester; middleware.ts).
+  const games = usePreview() ? ALL_LIVE_GAMES : LIVE_GAMES;
 
   if (mobile) {
     return (
@@ -33,12 +36,15 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
         className="md:hidden flex overflow-x-auto border-t border-gray-800/60 px-3 py-1.5 gap-1"
         style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
       >
-        {LIVE_GAMES.map(g => {
+        {games.map(g => {
           const isActive = pathname === g.href || pathname.startsWith(g.href + "/");
           return (
             <Link
               key={g.href}
               href={g.href}
+                  // No early download (26 Nov 2026): on every page the menus pulled in
+                  // about 5 MB of game code nobody had asked for yet.
+                  prefetch={false}
               className={`flex flex-shrink-0 items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
                 isActive
                   ? "bg-purple-700/40 text-purple-300"
@@ -56,12 +62,15 @@ export default function NavGameLinks({ mobile = false }: { mobile?: boolean }) {
 
   return (
     <div data-nav-games className="hidden md:flex items-center gap-0.5 overflow-x-auto w-full" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-      {LIVE_GAMES.map(g => {
+      {games.map(g => {
         const isActive = pathname === g.href || pathname.startsWith(g.href + "/");
         return (
           <Link
             key={g.href}
             href={g.href}
+                  // No early download (26 Nov 2026): on every page the menus pulled in
+                  // about 5 MB of game code nobody had asked for yet.
+                  prefetch={false}
             className={`flex flex-shrink-0 items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap ${
               isActive
                 ? "bg-purple-700/40 text-purple-300"
