@@ -1178,7 +1178,7 @@ export const ADMIN_GUIDES = {
         ["Save again", "Shown only if saving to team storage failed (for example the connection dropped). Tries again."],
         ["Save to Drive", "Shown instead of Also save to Drive when the recording is not in team storage."],
         ["Open in Drive ↗", "The copy in your Drive, once it is there."],
-        ["Send to Marketing", "Admins only. Puts the recording into the Marketing tab's private video storage (the Uploads page), not linked to a card, ready to open in the editing suite. Same limits as the Uploads page (500 MB a file, 30 files and 5 GB a day)."],
+        ["Send to Marketing", "Admins only. Puts the recording into the Marketing tab's private video storage (the Uploads page), not linked to a card, ready to open in the editing suite. Limits: 500 MB a recording (the Uploads page itself takes up to 4.9 GB a file)."],
         ["Open in Studio", "Shown once Send to Marketing has finished: opens the recording in Marketing → Studio."],
         ["Download", "Saves the video to this device instead."],
         ["Open the Breakdowns folder ↗", "Harry's Drive folder where every breakdown is saved."],
@@ -3221,7 +3221,7 @@ export const ADMIN_GUIDES = {
     saving: [
       "Shared with Harry, Mikey and Leo: files go into our private video storage (Cloudflare R2, bucket kib-marketing). Nobody outside the admin can open them; a play link lasts one hour.",
       "The list is read from the storage itself, so there is nothing else to keep in step.",
-      "Limits (to keep the bill at zero): one file up to 500 MB; videos (mp4, mov, webm) and pictures (jpg, png, webp, gif) only; 30 files and 5 GB per person per day, reset at midnight UK time. A link handed out counts even if the upload then fails.",
+      "Limits: one file up to 4.9 GB (the most one plain upload to Cloudflare takes); videos (mp4, mov, webm) and pictures (jpg, png, webp, gif) only; 30 files and 50 GB per person per day, reset at midnight UK time. Storage past 10 GB costs about 1p per GB a month. A link handed out counts even if the upload then fails.",
       "A dropped connection means starting that file again (no resume yet). Use Wi-Fi for big files.",
     ],
     inGame: ["Nowhere. This is for making our own videos."],
