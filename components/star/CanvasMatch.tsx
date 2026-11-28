@@ -842,8 +842,11 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
 
 /** A feature's decoration on the pitch (EngineFeature's `markers`). Nothing in the engine reads it.
  *  Default: a cone on the grass. `z` lifts it off the ground (metres, drawn at the goal's own height
- *  scale); `shape` "ring" is a hanging tyre of radius `r` (with a `rope` up to the bar), "bucket" a pail. */
-export interface CanvasMarker { x: number; y: number; color?: string; z?: number; shape?: "cone" | "ring" | "bucket"; r?: number; rope?: number }
+ *  scale); `shape` "ring" is a hanging tyre of radius `r` (with a `rope` up to the bar), "bucket" a pail,
+ *  "skip" a builder's skip `r` by `l` metres (half-sizes) with sides `z` high, "man" a person standing
+ *  there (the kit man), painted by the match's own figure painter at the match's own size: shirt
+ *  `color`, shorts `trim`, his `label`. Looks only: nobody in the engine knows he is there. */
+export interface CanvasMarker { x: number; y: number; color?: string; z?: number; shape?: "cone" | "ring" | "bucket" | "skip" | "man"; r?: number; rope?: number; l?: number; trim?: string; label?: string }
 
 export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell, plannedOffAt, leadIn, dribbleControl, dribbleOnly = false, vfxOverride, realGoal }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
@@ -4699,6 +4702,28 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           ctx.lineWidth = Math.max(2, rr * 0.14);
           ctx.strokeStyle = m.color ?? "#facc15";
           ctx.beginPath(); ctx.arc(px, py, rr + rr * 0.17, 0, Math.PI * 2); ctx.stroke();
+          continue;
+        }
+        if (m.shape === "man") {
+          // A person on the pitch (the kit man): the same painter and the same R as you, so one scale.
+          footballer(m.x, m.y, R, m.color ?? "#1e293b", m.trim ?? "#f5b942", {
+            sid: "marker-man", pose: "idle", face: getFaceImage(fakeFaceFor(m.label ?? "kitman")), label: m.label, labelColor: "#f5b942",
+          });
+          continue;
+        }
+        if (m.shape === "skip") {
+          // A builder's skip: its near and far rims at the pitch's own projection, sides z high.
+          const hw = m.r ?? 1.7, hl = m.l ?? 0.9, hz = (m.z ?? 1) * heightScale;
+          const nl = toPx(m.x - hw, m.y + hl), nr = toPx(m.x + hw, m.y + hl);
+          const fl = toPx(m.x - hw * 0.86, m.y - hl), fr = toPx(m.x + hw * 0.86, m.y - hl);
+          const rim = () => { ctx.beginPath(); ctx.moveTo(fl.px, fl.py - hz); ctx.lineTo(fr.px, fr.py - hz); ctx.lineTo(nr.px, nr.py - hz); ctx.lineTo(nl.px, nl.py - hz); ctx.closePath(); };
+          // The inside (dark), then the front face with its ribs, then the bright rim.
+          ctx.fillStyle = "rgba(20,16,8,.92)"; rim(); ctx.fill();
+          ctx.fillStyle = m.color ?? "#eab308";
+          ctx.beginPath(); ctx.moveTo(nl.px, nl.py - hz); ctx.lineTo(nr.px, nr.py - hz); ctx.lineTo(nr.px - (nr.px - nl.px) * 0.06, nr.py); ctx.lineTo(nl.px + (nr.px - nl.px) * 0.06, nl.py); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.lineWidth = Math.max(1, hz * 0.05);
+          for (let k = 1; k < 4; k++) { const t = k / 4; ctx.beginPath(); ctx.moveTo(nl.px + (nr.px - nl.px) * t, nl.py - hz); ctx.lineTo(nl.px + (nr.px - nl.px) * t, nl.py); ctx.stroke(); }
+          ctx.strokeStyle = "#fde68a"; ctx.lineWidth = Math.max(1.5, hz * 0.07); rim(); ctx.stroke();
           continue;
         }
         if (m.shape === "bucket") {

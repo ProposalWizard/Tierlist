@@ -18,6 +18,13 @@
  * Each ball you get counts ten, so Den's voiced counts ("Ten." … "And a
  * hundred.") still fit, and the score out of a hundred still picks his line.
  *
+ * v4 (this one): Den's own night is ten DIFFERENT balls, each a different thing a kit man
+ * would set up, every one on the real engine's own ball (EngineFeature): a volley off his
+ * throw, a header off his lob, a first-time finish off his cut-back, a half-volley inside a
+ * post, a chip over the dummy (a real blocker, the engine's own block rule), the skip (drop
+ * it in, not the net), the crossbar, then Den in goal twice and double or nowt. Den stands
+ * on the pitch, drawn by the match's own figure at the match's own scale.
+ *
  * Since 20 Nov 2026 (Harry: "there should be hundreds of things like this") the rounds are a
  * LIBRARY (ROUND_LIBRARY) any story's "challenge" activity picks from (dials.rounds), with its
  * own words (calls, round lines, reaction lines) and its own person in goal; Den's hundred is
@@ -29,7 +36,7 @@
  * The dice (a device that cannot run the drill, a skipped Thursday, the soak)
  * roll each ball against its own difficulty.
  */
-import { GOAL_H, POST_L, POST_R } from "../pitch";
+import { CX, GOAL_H, POST_L, POST_R } from "../pitch";
 
 /** A low corner: under this height, within this of a post. */
 export const TARGET_LOW = 1.0;
@@ -50,7 +57,16 @@ export type Target =
   /** The bucket on the line: crosses low (under 0.7 m) within w of it. */
   | { kind: "bucket"; x: number; w: number }
   /** Past the keeper: a goal anywhere. */
-  | { kind: "past" };
+  | { kind: "past" }
+  /** In the net, anywhere under the bar (nobody in goal). */
+  | { kind: "net" }
+  /** Inside either post: within 1.4 m of a post, under the bar. */
+  | { kind: "either" }
+  /** In the skip: the ball comes down into it (its first fall through SKIP_H inside the box). */
+  | { kind: "skip"; x: number; y: number; w: number; l: number };
+
+/** The skip's sides: the ball has to come down through this height inside it. */
+export const SKIP_H = 1.0;
 
 /** The library of rounds any story's challenge can use (lib/star/life/README.md). */
 export type RoundKind =
@@ -61,7 +77,14 @@ export type RoundKind =
   | "lights-out"  // the light goes; he shouts the corner in the dark
   | "double"      // the last ball, the named person in goal: twenty, or ten off
   | "corners"     // a plain ball, low in a corner (either)
-  | "far";        // from twenty yards, low in a corner
+  | "far"         // from twenty yards, low in a corner
+  // v4, Den's own night (each one the real engine's own ball):
+  | "volley"      // he throws it up: hit it before it lands (the match's volley)
+  | "header"      // he lobs it in: head it (the match's header)
+  | "cutback"     // he rolls it back from the byline: first time, far corner
+  | "half-volley" // he drops it: on the bounce, inside a post
+  | "chip"        // the dummy stands in the way (a real blocker): chip it
+  | "skip";       // the skip in the six-yard box: drop it in
 
 /** @deprecated the v3 drill's names for its rounds; kept so old callers read. */
 export type RoundId = RoundKind;
@@ -90,6 +113,14 @@ export interface Feed {
   call: string;
   /** A voiced clip of exactly that line (played only if its speaker is in the story; voice.ts). */
   voice?: string;
+  /** Which of the match's own balls this is: on the volley, a header, or at your feet (default). */
+  engine?: "volley" | "header" | "ground";
+  /** A ball rolled to you (the strike screen's moving ball): the cut-back. */
+  rolling?: boolean;
+  /** The dummy in the way (metres in front of the ball, toward goal): a real blocker. */
+  dummy?: number;
+  /** Where the feeder stands, from the ball (metres across, metres toward goal); drawn on the pitch. */
+  feeder?: { dx: number; dy: number };
 }
 
 /** A round as the screen shows it: its name and his line on the round's card. */
@@ -110,11 +141,13 @@ export interface RoundSpec {
 }
 
 const TYRE = { x: POST_L + 0.95, z: 1.6, r: 0.55 };
+/** The skip: in the six-yard box, off-centre, 3.4 m by 1.8 m (a real builder's skip). */
+const SKIP = { x: CX + 1.6, y: 4.2, w: 1.7, l: 0.9 };
 const BUCKET = { x: POST_R - 0.65, w: 0.6 };
 type Ball = Omit<Feed, "round" | "roundNo">;
 
 /** Each round's card and its balls (k = the ball's place in the round). */
-export const ROUND_LIBRARY: Record<RoundKind, { name: string; line: string; balls: number; ball: (k: number) => Ball }> = {
+export const ROUND_LIBRARY: Record<RoundKind, { name: string; line: string; balls: number; ball: (k: number) => Ball; maxDist?: number }> = {
   "call-it": {
     name: "Call it", line: "I shout a corner as I roll it. You hit that one, low.", balls: 2,
     ball: (k) => k === 0
@@ -155,6 +188,30 @@ export const ROUND_LIBRARY: Record<RoundKind, { name: string; line: string; ball
     name: "Twenty yards", line: "From out here. Keep it down.", balls: 1,
     ball: (k) => ({ label: "Twenty yards", x: k % 2 ? 2 : -2, dist: 20, target: { kind: "corner", side: k % 2 ? "R" : "L" }, diff: 0.24, call: "Keep it down." }),
   },
+  volley: {
+    name: "Off my throw", line: "I throw it up, you hit it before it lands.", balls: 1, maxDist: 16,
+    ball: (k) => ({ label: k ? "Another volley" : "On the volley", x: k % 2 ? 1.5 : -1, dist: 13, engine: "volley", feeder: { dx: 2.4, dy: -2.6 }, target: { kind: "net" }, diff: 0.14, call: "Don't let it bounce." }),
+  },
+  header: {
+    name: "Head it", line: "I'll lob it in. Use your forehead.", balls: 1, maxDist: 10,
+    ball: (k) => ({ label: k ? "Another header" : "Head it", x: k % 2 ? 1 : 0, dist: 8, engine: "header", feeder: { dx: -3.2, dy: -1.8 }, target: { kind: "net" }, diff: 0.12, call: "Up it goes. Head it." }),
+  },
+  cutback: {
+    name: "First time", line: "I roll it back from the byline. No touch. Far corner.", balls: 1, maxDist: 14,
+    ball: (k) => ({ label: k ? "Another cut-back" : "The cut-back", x: 0.5, dist: 11, rolling: true, feeder: { dx: 5.2, dy: -8.4 }, target: { kind: "corner", side: "L" }, diff: 0.18, call: "First time. Far corner." }),
+  },
+  "half-volley": {
+    name: "On the bounce", line: "I drop it, you hit it on the bounce. Inside a post.", balls: 1, maxDist: 18,
+    ball: (k) => ({ label: k ? "Another bounce" : "Half-volley", x: k % 2 ? -1.5 : 1.5, dist: 14, engine: "volley", feeder: { dx: -2.2, dy: -1.6 }, target: { kind: "either" }, diff: 0.26, call: "On the bounce. Inside a post." }),
+  },
+  chip: {
+    name: "The dummy", line: "The dummy's in the way. Go over him.", balls: 1,
+    ball: (k) => ({ label: k ? "Over him again" : "Chip the dummy", x: k % 2 ? 1 : 0, dist: 14, dummy: 3.2, target: { kind: "net" }, diff: 0.26, call: "Over him. Not through him." }),
+  },
+  skip: {
+    name: "The skip", line: "See the skip? In it. Not the net. The skip.", balls: 1,
+    ball: () => ({ label: "Hit the skip", x: -1, dist: 15, target: { kind: "skip", ...SKIP }, diff: 0.36, call: "In the skip. Drop it in." }),
+  },
 };
 
 /** A whole challenge from a story's rounds: its balls and its round cards. At most ten balls;
@@ -171,24 +228,31 @@ export function challenge(specs: RoundSpec[], extraDist = 0, seed?: number): { f
       const b = lib.ball(k);
       const call = sp.calls?.length ? sp.calls[Math.min(k, sp.calls.length - 1)] : b.call;
       const voice = sp.voices?.[k] ?? undefined;
-      feeds.push({ ...b, round: sp.kind, roundNo, dist: b.dist + extraDist, call, ...(voice ? { voice } : {}) });
+      // A further-out night moves the ball back, but a header stays a header (each kind's own cap).
+      const dist = Math.max(b.dist, Math.min(b.dist + extraDist, lib.maxDist ?? Infinity));
+      feeds.push({ ...b, round: sp.kind, roundNo, dist, call, ...(voice ? { voice } : {}) });
     }
   });
   return { feeds: seed === undefined ? feeds : seedSides(feeds, seed), rounds };
 }
 
-/** Den's hundred (the kit man arc): ten balls in six rounds, in his words. */
+/** Den's hundred (the kit man arc): ten different balls in nine rounds, in his words (v4).
+ *  Easy first (his throw, his lob), hard in the middle (the dummy, the skip, the bar), then
+ *  Den in goal to finish. */
 export const HUNDRED_ROUNDS: RoundSpec[] = [
-  { kind: "call-it" },
+  { kind: "volley", line: "I throw it up, you hit it before it lands.", calls: ["Don't let it bounce."] },
+  { kind: "header", line: "I'll lob it in. Forehead, not your nose.", calls: ["Up it goes. Head it."] },
+  { kind: "cutback", line: "I roll it back from the byline. No touch. Far corner.", calls: ["First time. Far corner."] },
+  { kind: "half-volley", line: "I drop it, you hit it on the bounce. Inside a post." },
+  { kind: "chip", line: "The dummy's in the way. Over him, not through him.", calls: ["Over him."] },
+  { kind: "skip", line: "See the skip? In it. Not the net. The skip.", calls: ["In the skip. Drop it in."] },
   { kind: "crossbar", line: "Hit the crossbar. I've a fiver says you can't.", calls: ["A fiver on the bar."] },
-  { kind: "props", line: "Same tyre since '94. Through it, then knock my bucket over.", calls: ["Through the tyre.", "Knock my bucket over."] },
   { kind: "keeper", line: "I kept for the reserves in '89. Mind my knees.", calls: ["Aye, go on.", "I'm warm now."], voices: ["b3-thursdays.t-soup.say0.q0", null] },
-  { kind: "lights-out", line: "The groundsman's timer. When it goes, I shout the corner." },
   { kind: "double" },
 ];
 
 const HUNDRED = challenge(HUNDRED_ROUNDS);
-/** The six round cards of Den's hundred. */
+/** The round cards of Den's hundred (nine). */
 export const ROUNDS: Round[] = HUNDRED.rounds;
 /** The ten balls (12 m night). The sides he calls change night to night (`seedSides`). */
 export const HUNDRED_FEEDS: Feed[] = HUNDRED.feeds;
@@ -199,6 +263,12 @@ function seedSides(feeds: Feed[], seed: number): Feed[] {
   const flip = () => { s = Math.imul(s ^ (s >>> 13), 0x5bd1e995); s ^= s >>> 15; return (s & 1) === 1; };
   return feeds.map((f) => {
     if (f.target.kind !== "corner" && f.target.kind !== "half") return f;
+    if (f.round === "cutback") {
+      // Some nights he rolls it from the other byline: the far corner and his spot swap.
+      if (!flip()) return f;
+      const side: Side = f.target.side === "L" ? "R" : "L";
+      return { ...f, target: { ...f.target, side }, feeder: f.feeder ? { ...f.feeder, dx: -f.feeder.dx } : f.feeder };
+    }
     if (f.round !== "call-it" && f.round !== "lights-out") return f;
     const side: Side = flip() ? "L" : "R";
     const call = f.round === "call-it" && /^(Left|Right)/.test(f.call) ? (side === "L" ? (f.label === "Call it" ? "Left. Low." : "Left!") : (f.label === "Call it" ? "Right. Low." : "Right!")) : f.call;
@@ -225,11 +295,20 @@ export function pointsOf(hits: boolean[], feeds: Feed[] = HUNDRED_FEEDS): number
 }
 
 /** How a ball ended, as Den sees it. */
-export type BallEnd = "hit" | "post" | "wide" | "over" | "central" | "saved" | "high" | "wrong" | "under-bar" | "missed-it";
+export type BallEnd = "hit" | "post" | "wide" | "over" | "central" | "saved" | "high" | "wrong" | "under-bar" | "missed-it" | "in-net" | "blocked";
 
 /** Where the ball crossed the goal line (x across, z height; null = it never got there),
  *  whether it struck the bar on the way, and the match's own outcome word. */
-export interface BallSeen { cross: { x: number; z: number } | null; bar: boolean; outcome: string }
+export interface BallSeen {
+  cross: { x: number; z: number } | null; bar: boolean; outcome: string;
+  /** Where the ball first came down through SKIP_H (pitch x, y), for the skip. */
+  land?: { x: number; y: number } | null;
+}
+
+/** Did the ball come down into the skip? */
+export function inSkip(t: Extract<Target, { kind: "skip" }>, land: { x: number; y: number } | null | undefined): boolean {
+  return !!land && Math.abs(land.x - t.x) <= t.w && Math.abs(land.y - t.y) <= t.l;
+}
 
 const inGoal = (c: { x: number; z: number }) => c.x > POST_L && c.x < POST_R && c.z < GOAL_H;
 
@@ -243,13 +322,18 @@ export function judge(f: Feed, seen: BallSeen): BallEnd {
     if (c && inGoal(c)) return "under-bar";
     return c && c.z >= GOAL_H ? "over" : "wide";
   }
+  if (t.kind === "skip") {
+    if (inSkip(t, seen.land)) return "hit";
+    return c && inGoal(c) ? "in-net" : "missed-it";
+  }
   if (saved) return "saved";
-  if (!c) return seen.outcome === "post" ? "post" : "wide";
+  if (!c) return seen.outcome === "post" ? "post" : seen.outcome === "blocked" ? "blocked" : "wide";
   if (c.x <= POST_L || c.x >= POST_R) return seen.outcome === "post" ? "post" : "wide";
   if (c.z >= GOAL_H) return seen.bar ? "post" : "over";
   const mid = (POST_L + POST_R) / 2;
   switch (t.kind) {
-    case "past": return "hit";
+    case "past": case "net": return "hit";
+    case "either": return (c.x <= POST_L + TARGET_WIDTH || c.x >= POST_R - TARGET_WIDTH) ? "hit" : "central";
     case "half": return (t.side === "L" ? c.x < mid : c.x > mid) ? "hit" : "wrong";
     case "corner": {
       const near = t.side === "L" ? c.x <= POST_L + TARGET_WIDTH : c.x >= POST_R - TARGET_WIDTH;
@@ -287,6 +371,12 @@ export function denAfter(end: BallEnd, streak: number, i: number, feeds: Feed[] 
       case "props": return f.target.kind === "tyre" ? "\"Through the tyre! Thirty years that's hung there.\"" : "\"Bucket's over. I'll fill it again.\"";
       case "keeper": return i % 2 ? "\"I never saw it. Honest.\"" : "\"Too quick for me, that.\"";
       case "lights-out": return "\"Heard me, hit it. That's the job.\"";
+      case "volley": return "\"Never touched the floor. Lovely.\"";
+      case "header": return "\"Forehead. Told you.\"";
+      case "cutback": return "\"First time, far corner. That's a goal on Saturday.\"";
+      case "half-volley": return "\"Off the bounce and in. Sweet as you like.\"";
+      case "chip": return "\"Over his head. He never saw it, and he's a dummy.\"";
+      case "skip": return "\"In the skip! Thirty years and nobody's done that.\"";
       default: return i % 2 ? "\"Right where I said.\"" : "\"Low and hard, that's it.\"";
     }
   }
@@ -297,12 +387,14 @@ export function denAfter(end: BallEnd, streak: number, i: number, feeds: Feed[] 
   switch (end) {
     case "wrong": return round === "lights-out" ? "\"Other side! Were you listening?\"" : "\"I said the other one.\"";
     case "under-bar": return "\"In, but I said the bar. My fiver's safe.\"";
-    case "missed-it": return f?.target.kind === "tyre" ? "\"Round it, not through it.\"" : "\"Bucket's still standing.\"";
+    case "missed-it": return f?.target.kind === "tyre" ? "\"Round it, not through it.\"" : f?.target.kind === "skip" ? "\"Skip's still empty. Drop it in, don't drive it.\"" : "\"Bucket's still standing.\"";
+    case "in-net": return "\"In the net. I said the skip.\"";
+    case "blocked": return "\"Straight into the dummy. Over him!\"";
     case "post": return "\"Off the post, and that's nowt.\"";
-    case "wide": return "\"Wide. You opened your body.\"";
+    case "wide": return round === "volley" || round === "half-volley" ? "\"Wide. Watch it onto your laces.\"" : round === "header" ? "\"Wide. Eyes open next time.\"" : "\"Wide. You opened your body.\"";
     case "over": return round === "crossbar" ? "\"Over the bar, not on it.\"" : "\"Over. Get your knee over it.\"";
     case "high": return "\"In, but too high. A keeper eats that.\"";
-    case "central": return "\"In, but he'd have saved that one.\"";
+    case "central": return round === "half-volley" ? "\"In, but I said inside a post.\"" : "\"In, but he'd have saved that one.\"";
     case "saved": return round === "keeper" ? "\"Still got it! {age}, me.\"" : "\"He's read you.\"";
   }
 }
@@ -318,4 +410,23 @@ export function rollHundred(technique: number, rng: () => number, extraDist = 0,
   // Further out is harder: two points off the chance per extra metre.
   const hits = feeds.map((f) => rng() < hitChance(technique - extraDist * 2, f));
   return { score: hits.filter(Boolean).length, tens: pointsOf(hits, feeds), hits };
+}
+
+/** What the target card says for a ball: the words under "Aim here". Whoever is in goal is
+ *  named (the card used to say "BEAT DEN" whoever was in goal). */
+export function promptOf(f: Feed, keeper: string | null | undefined, shout?: string | null): string {
+  const t = f.target;
+  const who = (keeper && keeper.trim() && keeper.trim() !== "He" ? keeper.trim() : "the keeper").toUpperCase();
+  if (f.dark) return shout ? `${shout.replace(/[.!]/g, "").toUpperCase()} CORNER, LOW` : "WAIT FOR HIS SHOUT";
+  switch (t.kind) {
+    case "corner": return `${f.round === "cutback" ? "FIRST TIME · " : ""}${t.side === "L" ? "LEFT" : "RIGHT"} CORNER, LOW`;
+    case "half": return `${t.side === "L" ? "LEFT" : "RIGHT"} HALF`;
+    case "bar": return "HIT THE CROSSBAR";
+    case "tyre": return "THROUGH THE TYRE";
+    case "bucket": return "KNOCK THE BUCKET";
+    case "either": return "ON THE BOUNCE · INSIDE A POST";
+    case "skip": return "DROP IT IN THE SKIP";
+    case "net": return f.dummy ? "CHIP THE DUMMY" : f.engine === "header" ? "HEAD IT IN" : f.engine === "volley" ? "VOLLEY IT IN" : "IN THE NET";
+    case "past": return f.double ? `BEAT ${who} · TWENTY OR TEN OFF` : `BEAT ${who}`;
+  }
 }

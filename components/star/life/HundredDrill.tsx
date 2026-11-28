@@ -4,8 +4,13 @@
  * (Harry, 20 Nov 2026: "the worst thing of the kit man is the drill, I think
  * it's a chance to be creative, also make sure it's the main engine").
  *
- * Ten balls in six rounds (lib/star/life/drill.ts): Call it, The bar, Old
- * tricks (the tyre, the bucket), Den in goal, Lights out, Double or nowt.
+ * v4: ten different balls (lib/star/life/drill.ts HUNDRED_ROUNDS): off his
+ * throw (a volley), his lob (a header), his cut-back (first time), on the
+ * bounce (inside a post), over the dummy (a chip), the skip, the crossbar, Den
+ * in goal twice, double or nowt. Den stands on the pitch, painted by the
+ * match's own figure painter at the match's own size (drillScene feederSpot +
+ * the "man" marker), so he and you are one scale. A round of one ball shows
+ * its call on its card (no separate call beat): 60-90 s a night.
  *
  * THE ENGINE: every ball is EngineFeature → the real CanvasMatch (one-engine
  * skill, RUL-ENG-002). The ball, the drag, the strike screen, the flight and
@@ -22,8 +27,8 @@ import type { Scenario } from "@/lib/star/canvasEngine";
 import type { ActivityResult } from "@/lib/star/life/arcs";
 import { mulberry32 } from "@/lib/star/season";
 import { CX, GOAL_H, POST_L, POST_R } from "@/lib/star/pitch";
-import { challenge, denAfter, HUNDRED_ROUNDS, judge, pointsOf, shoutOf, TARGET_LOW, TARGET_WIDTH, type BallEnd, type ReactionLines, type RoundSpec } from "@/lib/star/life/drill";
-import { closeFrame, hundredMarkers, hundredScenario } from "@/lib/star/life/drillScene";
+import { challenge, denAfter, HUNDRED_ROUNDS, judge, pointsOf, promptOf, shoutOf, SKIP_H, TARGET_LOW, TARGET_WIDTH, type BallEnd, type ReactionLines, type RoundSpec } from "@/lib/star/life/drill";
+import { closeFrame, feederSpot, hundredMarkers, hundredScenario, seedFor } from "@/lib/star/life/drillScene";
 import { EngineFeature } from "../EnginePlay";
 import type { ChanceResolved } from "../CanvasMatch";
 import { speak, stopVoice } from "@/lib/star/life/voice";
@@ -33,8 +38,8 @@ interface Shot { hit: boolean; x: number | null; z: number | null; end: BallEnd 
 type Phase = "round" | "call" | "play" | "react";
 type Light = "on" | "flicker" | "out";
 
-const WORD: Record<BallEnd, string> = { hit: "IN", saved: "SAVED", post: "OFF THE POST", wide: "WIDE", over: "OVER", high: "TOO HIGH", central: "TOO CENTRAL", wrong: "WRONG CORNER", "under-bar": "UNDER THE BAR", "missed-it": "MISSED IT" };
-const HIT_WORD: Record<string, string> = { "call-it": "THAT CORNER", crossbar: "CROSSBAR!", tyre: "THROUGH IT!", bucket: "BUCKET'S OVER", keeper: "PAST HIM", "lights-out": "IN THE DARK", double: "TWENTY!", corners: "IN THE CORNER", far: "FROM TWENTY YARDS" };
+const WORD: Record<BallEnd, string> = { hit: "IN", saved: "SAVED", post: "OFF THE POST", wide: "WIDE", over: "OVER", high: "TOO HIGH", central: "TOO CENTRAL", wrong: "WRONG CORNER", "under-bar": "UNDER THE BAR", "missed-it": "MISSED IT", "in-net": "NET, NOT SKIP", blocked: "BLOCKED" };
+const HIT_WORD: Record<string, string> = { "call-it": "THAT CORNER", crossbar: "CROSSBAR!", tyre: "THROUGH IT!", bucket: "BUCKET'S OVER", keeper: "PAST HIM", "lights-out": "IN THE DARK", double: "TWENTY!", corners: "IN THE CORNER", far: "FROM TWENTY YARDS", volley: "VOLLEYED IN", header: "HEADED IN", cutback: "FIRST TIME!", "half-volley": "INSIDE THE POST", chip: "OVER HIM!", skip: "IN THE SKIP!" };
 
 export default function HundredDrill({ career, title, seed0, extraDist, calls, callerName, callerAge, keeperName, rounds: specs, lines, face, canAbandon, energy, best, onDone, allowDice, onDice, fill }: {
   career: CareerState;
@@ -53,7 +58,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
   rounds?: RoundSpec[];
   /** The story's own reaction lines (drill.ts ReactionLines). */
   lines?: ReactionLines;
-  /** His still, as a small chip beside his words (he is not drawn on the pitch). */
+  /** His still, as a small chip beside his words (on the pitch he is the match's own figure). */
   face?: string | null;
   canAbandon?: boolean;
   energy?: number;
@@ -87,6 +92,9 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
   const round = plan.rounds[feed.roundNo];
   const roundNo = feed.roundNo + 1;
   const nRounds = plan.rounds.length;
+  // A round of one ball: its card carries his call, and play follows the card (no call beat).
+  const ballsInRound = feeds.filter((f) => f.roundNo === feed.roundNo).length;
+  const soloRound = ballsInRound === 1;
 
   // The beats between balls: a round's card (its first ball), Den's call, then you play.
   useEffect(() => {
@@ -94,7 +102,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
     if (phase === "round") {
       setLight("on");
       speak("b3-thursdays.t-sorry.say0.q1", ball === 0 ? "Go and stand on the D." : "");
-      const t = window.setTimeout(() => setPhase("call"), ball === 0 ? 2400 : 1900);
+      const t = window.setTimeout(() => setPhase(soloRound ? "play" : "call"), ball === 0 ? 2600 : soloRound ? 2100 : 1900);
       return () => window.clearTimeout(t);
     }
     if (phase === "call") {
@@ -115,16 +123,20 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
     }
     if (phase === "play") setLight("on");
     // (the dark holds through "call" and "react" inside its round)
-  }, [phase, ball, feed, feeds, over]);
+  }, [phase, ball, feed, feeds, over, soloRound]);
 
   const prevRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const crossRef = useRef<{ x: number; z: number } | null>(null);
   const barRef = useRef(false);
+  // The skip: where the ball first came down through its sides' height.
+  const landRef = useRef<{ x: number; y: number } | null>(null);
+  // The match's own seed for this ball (the cut-back takes a seed whose strike screen rolls it).
+  const ballSeed = useMemo(() => seedFor(feed, seed0 * 7 + ball * 13), [feed, seed0, ball]);
 
   const openOn = useCallback((): Scenario => {
-    prevRef.current = null; crossRef.current = null; barRef.current = false;
-    return hundredScenario(feed, mulberry32(seed0 * 7 + ball * 13));
-  }, [seed0, ball, feed]);
+    prevRef.current = null; crossRef.current = null; barRef.current = false; landRef.current = null;
+    return hundredScenario(feed, mulberry32(ballSeed));
+  }, [ballSeed, feed]);
 
   const onBallStep = useCallback((b: { x: number; y: number; z: number }) => {
     const prev = prevRef.current;
@@ -132,6 +144,10 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
       if (!crossRef.current && prev.y > 0 && b.y <= 0) {
         const t = prev.y / (prev.y - b.y);
         crossRef.current = { x: prev.x + (b.x - prev.x) * t, z: prev.z + (b.z - prev.z) * t };
+      }
+      if (!landRef.current && prev.z > SKIP_H && b.z <= SKIP_H) {
+        const t = (prev.z - SKIP_H) / (prev.z - b.z);
+        landRef.current = { x: prev.x + (b.x - prev.x) * t, y: prev.y + (b.y - prev.y) * t };
       }
       if (!barRef.current && b.y < 0.6 && b.y > -0.3 && b.x > POST_L - 0.15 && b.x < POST_R + 0.15 && Math.abs(b.z - GOAL_H) < 0.28) barRef.current = true;
     }
@@ -149,7 +165,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
     if (doneRef.current >= ball) return;
     doneRef.current = ball;
     const c = crossRef.current;
-    const end = judge(feed, { cross: c, bar: barRef.current, outcome: info.outcome });
+    const end = judge(feed, { cross: c, bar: barRef.current, outcome: info.outcome, land: landRef.current });
     const hit = end === "hit";
     let streak = 0;
     for (let k = shots.length - 1; k >= 0 && shots[k].hit; k--) streak++;
@@ -165,6 +181,11 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
     const list = [...shots, { hit, x: c?.x ?? null, z: c?.z ?? null, end }];
     setShout(null);
     setFlash({ text: hit ? (HIT_WORD[feed.target.kind === "tyre" || feed.target.kind === "bucket" ? feed.target.kind : feed.round] ?? "IN") : WORD[end], good: hit });
+    if (!hit && feed.target.kind === "skip" && landRef.current) {
+      // How far off the skip it came down: the miss you can see.
+      const off = Math.hypot(Math.max(0, Math.abs(landRef.current.x - feed.target.x) - feed.target.w), Math.max(0, Math.abs(landRef.current.y - feed.target.y) - feed.target.l));
+      if (off > 0) setFlash({ text: `${off.toFixed(1)} M OFF THE SKIP`, good: false });
+    }
     setPhase("react");
     window.setTimeout(() => setFlash(null), 1300);
     if (list.length >= n) window.setTimeout(() => finish(list, false), 2100);
@@ -190,7 +211,9 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
     window.addEventListener("resize", read);
     return () => window.removeEventListener("resize", read);
   }, [ball]);
-  const vp = closeFrame(CX + feed.x, feed.dist);
+  // The same frame the scenario carries (hundredScenario): the ball, the goal, Den and the skip.
+  const vp = useMemo(() => hundredScenario(feed, mulberry32(ballSeed)).viewport ?? closeFrame(CX + feed.x, feed.dist), [feed, ballSeed]);
+  const den = feederSpot(feed);
   const toPct = (x: number, y: number) => {
     const w = vp.x2 - vp.x1;
     return { left: ((x - vp.x1) / w) * 100, top: ((y - vp.y1) / w) * aspect * 100 };
@@ -212,15 +235,13 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
   const chip = (size: number) => (face ? <img src={face} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: 999, objectFit: "cover", boxShadow: "0 0 0 2px rgba(245,185,66,.7)" }} /> : null);
   // Where the target sits on the screen (the test driver aims at it; nothing in the game reads it).
   const aimX = target.kind === "corner" || target.kind === "half" ? (target.side === "L" ? POST_L + 0.7 : POST_R - 0.7)
-    : target.kind === "tyre" || target.kind === "bucket" ? target.x : target.kind === "past" ? (feed.x >= 0 ? POST_R - 0.7 : POST_L + 0.7) : CX;
-  const aimAt = toPct(aimX, 0);
-  const markers = useMemo(() => (feed.dark && !shout ? undefined : hundredMarkers(feed)), [feed, shout]);
-  const prompt = feed.dark ? (shout ? `${shout.replace(/[.!]/g, "").toUpperCase()} CORNER, LOW` : "WAIT FOR HIS SHOUT")
-    : target.kind === "corner" ? `${target.side === "L" ? "LEFT" : "RIGHT"} CORNER, LOW`
-    : target.kind === "bar" ? "HIT THE CROSSBAR"
-    : target.kind === "tyre" ? "THROUGH THE TYRE"
-    : target.kind === "bucket" ? "KNOCK THE BUCKET"
-    : feed.double ? "BEAT DEN · TWENTY OR TEN OFF" : "BEAT DEN";
+    : target.kind === "tyre" || target.kind === "bucket" || target.kind === "skip" ? target.x
+    : target.kind === "past" || target.kind === "net" || target.kind === "either" ? (feed.x >= 0 ? POST_R - 0.7 : POST_L + 0.7) : CX;
+  const aimAt = toPct(aimX, target.kind === "skip" ? target.y : 0);
+  const markers = useMemo(() => (feed.dark && !shout ? undefined : hundredMarkers(feed, callerName !== "He" ? callerName : undefined)), [feed, shout, callerName]);
+  // Whoever is actually in goal is named ("BEAT DEN" used to say Den whoever was in goal).
+  const inGoal = keeperName ?? callerName;
+  const prompt = promptOf(feed, inGoal, shout);
 
   return (
     <div className="dd" data-activity="strike-drill" data-round={feed.round} data-ball={ball} data-aim={feed.dark && !shout ? "" : `${aimAt.left.toFixed(1)},${aimAt.top.toFixed(1)}`} data-ballpct={`${ballAt.left.toFixed(1)},${ballAt.top.toFixed(1)}`} data-phase={phase} data-light={light} style={{ background: "#040a08", display: "flex", flexDirection: "column", minHeight: "100%" }}>
@@ -262,7 +283,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
             onChanceResolved={onChanceResolved}
             skills={{ power: career.skills.power, technique: career.skills.technique }}
             keeperStrength={feed.keeper?.strength ?? 0}
-            seed={seed0 * 7 + ball * 13}
+            seed={ballSeed}
             markers={markers}
             scene={{ teammates: false, banners: false, ownFrame: true, keeper: !!feed.keeper, night: true }}
             career={ball > 0 ? careerSeen : career}
@@ -308,6 +329,10 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
                   {target.kind === "corner" && !showSide && <text x="56" y="28" textAnchor="middle" fontSize="10" fontWeight="900" fill="#f5b942">?</text>}
                   {target.kind === "tyre" && <circle cx={gx(target.x)} cy={gz(target.z)} r={(target.r / GOAL_H) * 38} fill="rgba(34,197,94,.35)" stroke="#111" strokeWidth="3" />}
                   {target.kind === "bucket" && <rect x={gx(target.x - target.w)} y={gz(0.7)} width={gx(target.x + target.w) - gx(target.x - target.w)} height={gz(0) - gz(0.7)} fill="rgba(220,38,38,.55)" stroke="#f87171" />}
+                  {target.kind === "net" && <rect x="4" y="4" width="104" height="38" fill="rgba(34,197,94,.32)" />}
+                  {target.kind === "either" && <><rect x="4" y="4" width={gx(POST_L + TARGET_WIDTH) - 4} height="38" fill="rgba(34,197,94,.42)" stroke={g} /><rect x={gx(POST_R - TARGET_WIDTH)} y="4" width={108 - gx(POST_R - TARGET_WIDTH)} height="38" fill="rgba(34,197,94,.42)" stroke={g} /></>}
+                  {target.kind === "skip" && <><rect x={gx(target.x - target.w)} y="30" width={gx(target.x + target.w) - gx(target.x - target.w)} height="12" fill="#eab308" stroke="#fde68a" /><path d={`M${gx(target.x)} 8 Q ${gx(target.x) - 14} 0 ${gx(target.x)} 28`} fill="none" stroke="#86efac" strokeWidth="1.6" strokeDasharray="3 2" /></>}
+                  {feed.dummy && <><circle cx="56" cy="27" r="4" fill="#94a3b8" /><rect x="51" y="31" width="10" height="11" rx="2" fill="#94a3b8" /></>}
                   {target.kind === "past" && <><rect x="4" y="4" width="104" height="38" fill="rgba(34,197,94,.18)" /><circle cx="56" cy="18" r="5" fill="#cbd5e1" /><rect x="50" y="23" width="12" height="17" rx="3" fill="#cbd5e1" /></>}
                   {shotsShown.map((s, i) => s.x === null || s.z === null ? null : (
                     <circle key={i} cx={Math.max(0, Math.min(112, gx(s.x)))} cy={Math.max(0, Math.min(46, gz(s.z)))} r="3.2" fill={s.hit ? "#22c55e" : "#ef4444"} stroke="#000" strokeWidth=".6" />
@@ -324,7 +349,7 @@ export default function HundredDrill({ career, title, seed0, extraDist, calls, c
         {/* A round's card: its name and Den's line */}
         {phase === "round" && !over && (
           <div className="pointer-events-none absolute inset-x-0 z-30 text-center" style={{ top: "30%", padding: "0 22px" }} data-round-card={feed.round}>
-            <div className="dd-kick" style={{ color: "rgba(255,255,255,.7)" }}>Round {roundNo} of {nRounds} · {feeds.filter((f) => f.roundNo === feed.roundNo).length === 1 ? "one ball" : `${feeds.filter((f) => f.roundNo === feed.roundNo).length} balls`}</div>
+            <div className="dd-kick" style={{ color: "rgba(255,255,255,.7)" }}>{soloRound ? `Ball ${ball + 1} of ${n}${feed.double ? " · twenty, or ten off" : ""}` : `Round ${roundNo} of ${nRounds} · ${ballsInRound} balls`}</div>
             <div className="dd-anton" style={{ fontSize: 46, lineHeight: 1.02, color: feed.round === "double" ? "#f5c542" : "#fff", textShadow: "0 3px 12px #000" }}>{say(round.name)}</div>
             <div style={{ fontSize: 16, fontWeight: 800, marginTop: 12, textShadow: "0 2px 6px #000" }}><span className="dd-kick" style={{ color: "#f5b942", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 4 }}>{chip(26)}{callerName}</span>{ball === 0 && !specs?.length ? "Go and stand on the D. " : ""}{say(fill(round.line))}</div>
           </div>

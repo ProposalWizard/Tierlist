@@ -14,7 +14,7 @@
  * technique. Den's keeper plays live (stepKeeper).
  */
 import { launch, stepBall, stepKeeper, stepReactions, stepDefenders, type Scenario } from "../../lib/star/canvasEngine";
-import { feedsFor, judge, pointsOf, type Feed } from "../../lib/star/life/drill";
+import { feedsFor, judge, pointsOf, SKIP_H, type Feed } from "../../lib/star/life/drill";
 import { hundredScenario } from "../../lib/star/life/drillScene";
 import { mulberry32 } from "../../lib/star/season";
 import { GOAL_H, POST_L, POST_R } from "../../lib/star/pitch";
@@ -32,6 +32,7 @@ function play(f: Feed, inp: Input, tech: number, rng: () => number, keeper: bool
   const dx = Math.sin(inp.ang), dy = -Math.cos(inp.ang);
   const ball = launch(sc, { x: dx, y: dy }, inp.power, { cx: 0, cy: inp.cy }, { power: tech, technique: tech }, rng);
   let cross: { x: number; z: number } | null = null;
+  let land: { x: number; y: number } | null = null;
   let bar = false;
   let out: string | null = null;
   let prev = { x: ball.pos.x, y: ball.pos.y, z: ball.z };
@@ -45,10 +46,14 @@ function play(f: Feed, inp: Input, tech: number, rng: () => number, keeper: bool
       const t = prev.y / (prev.y - b.y);
       cross = { x: prev.x + (b.x - prev.x) * t, z: prev.z + (b.z - prev.z) * t };
     }
+    if (!land && prev.z > SKIP_H && b.z <= SKIP_H) {
+      const t = (prev.z - SKIP_H) / (prev.z - b.z);
+      land = { x: prev.x + (b.x - prev.x) * t, y: prev.y + (b.y - prev.y) * t };
+    }
     if (!bar && b.y < 0.6 && b.y > -0.3 && b.x > POST_L - 0.15 && b.x < POST_R + 0.15 && Math.abs(b.z - GOAL_H) < 0.28) bar = true;
     prev = b;
   }
-  return { cross, bar, outcome: out ?? "none" };
+  return { cross, bar, outcome: out ?? "none", land };
 }
 
 /** Where the thumb aims for this ball. */
@@ -61,8 +66,16 @@ function aimPoint(f: Feed): { x: number; z: number } {
     case "bar": return { x: mid + (f.x > 0 ? 0.8 : -0.8), z: GOAL_H };
     case "tyre": return { x: t.x, z: t.z };
     case "bucket": return { x: t.x, z: 0.3 };
-    case "past": return { x: f.x >= 0 ? POST_R - 0.75 : POST_L + 0.75, z: 0.5 };
+    case "past": case "net": case "either": return { x: f.x >= 0 ? POST_R - 0.75 : POST_L + 0.75, z: f.dummy ? 2.0 : 0.5 };
+    case "skip": return { x: t.x, z: 0 };
   }
+}
+
+/** How far a strike's result is from where the thumb aims (the skip: where it lands). */
+function missBy(f: Feed, r: ReturnType<typeof play>, p: { x: number; z: number }): number | null {
+  if (f.target.kind === "skip") return r.land ? Math.hypot(r.land.x - f.target.x, r.land.y - f.target.y) : null;
+  if (f.dummy && r.outcome === "blocked") return null;
+  return r.cross ? Math.hypot(r.cross.x - p.x, (r.cross.z - p.z) * 1.2) : null;
 }
 
 /** The perfect strike for a point: a search over aim, power and contact with no error. */
@@ -77,8 +90,9 @@ function ideal(f: Feed, tech: number): Input {
       for (let cy = -0.9; cy <= 1.0; cy += 0.12) {
         const inp = { ang: base + da, power, cy };
         const r = play(f, inp, tech, steady, false);
-        if (!r.cross) continue;
-        const d = Math.hypot(r.cross.x - p.x, (r.cross.z - p.z) * 1.2) + (power < 0.45 ? 0.3 : 0);
+        const m = missBy(f, r, p);
+        if (m === null) continue;
+        const d = m + (power < 0.45 && f.target.kind !== "skip" ? 0.3 : 0);
         if (d < bestD) { bestD = d; best = inp; }
       }
     }
