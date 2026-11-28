@@ -32,6 +32,7 @@ import { arrivalAt, lobbyOf, lobbyPoint, type DoorPlan } from "../home3d/rooms";
 import { whereAt } from "../life/houseRoutines";
 import type { HouseVisit } from "../life/dayPlan";
 import { houseTalk } from "../life/houseTalk";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 /** How many team-mates are round, by home. */
 export const GUESTS_BY_TIER: Record<HomeTier, number> = { starter: 1, flat: 1, penthouse: 2, house: 2, villa: 3, estate: 4 };
@@ -600,8 +601,8 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
   // ── the front door: a real door that swings out onto the porch for whoever goes through it ──
   interface Leaf { d: DoorPlan; g: any; a: number }
   let leaf: Leaf | null = null;
-  const doorM = new THREE.MeshStandardMaterial({ color: "#8a6040", roughness: 0.5 }); // painted oak: a navy door read as a black hole against the lit hall
-  const knobM = new THREE.MeshStandardMaterial({ color: "#d9c08a", roughness: 0.3, metalness: 0.85 });
+  // painted oak (a navy door read as a black hole against the lit hall), a brass bar: one mesh, one draw
+  const doorM = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45, metalness: 0.1 });
   const LEAF_OPEN = 1.48;
   const buildLeaf = (r: BuiltRoom) => {
     if (leaf) { leaf.g.parent?.remove(leaf.g); leaf.g.traverse((m: any) => m.geometry?.dispose?.()); leaf = null; }
@@ -609,11 +610,10 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     if (!d) return;
     const W = d.half * 2 - 0.03, Hh = 2.12;
     const g = new THREE.Group();
-    const slab = new THREE.Mesh(new THREE.BoxGeometry(W, Hh, 0.045).translate(W / 2, Hh / 2, 0), doorM);
+    const tint = (geo: any, c: string) => { const col = new THREE.Color(c), n = geo.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) col.toArray(a, i * 3); geo.setAttribute("color", new THREE.BufferAttribute(a, 3)); return geo; };
+    const slab = new THREE.Mesh(mergeGeometries([tint(new THREE.BoxGeometry(W, Hh, 0.045).translate(W / 2, Hh / 2, 0), "#8a6040"), tint(new THREE.BoxGeometry(0.028, 0.028, 0.15).translate(W - 0.085, 1.02, 0), "#d9c08a")]), doorM);
     slab.castShadow = true; slab.receiveShadow = true;
     g.add(slab);
-    const knob = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.028, 0.15).translate(W - 0.085, 1.02, 0), knobM);
-    g.add(knob);
     const [hx, hz] = lobbyPoint(d, -d.half + 0.015, 0.09);
     g.position.set(hx, 0, hz);
     o.scene.add(g);

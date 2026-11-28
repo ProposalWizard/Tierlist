@@ -1028,8 +1028,7 @@ export function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, win
   const signM = new THREE.MeshBasicMaterial({ map: k.tex(signAtlas), transparent: true });
   // the lobby beyond every doorway (rooms.ts lobbyOf): a floor, two side walls, a lid and an end, so a person
   // walks through the doorway into a lit space and on out of sight (28 Nov 2026: the floor used to stop at the
-  // wall and a visitor vanished in the doorway). One material per kind: freezeStatic joins them (no new draws).
-  let lidM: any = null, porchFloorM: any = null, porchWallM: any = null;
+  // wall and a visitor vanished in the doorway). Only the room's own materials: freezeStatic joins them into its draws.
   plan.doors.forEach((d, di) => {
     const L = wallLine(d.wall, W2, D2);
     const c = L.along === "x" ? d.x : d.z;
@@ -1041,19 +1040,21 @@ export function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, win
     const [mx, mz] = out(P / 2);
     const across = (a: number, b: number) => (L.along === "x" ? [a, b] : [b, a]) as [number, number];
     /** The lobby's floor, side walls and lid in these materials (a side wall faces in). */
+    // (each piece flagged like the room's own pieces of that material, so freezeStatic joins it into their draw)
     const lobby = (floor: any, side: any, lid: any) => {
       const [fw, fd] = across(LW * 2, P);
-      k.plane(fw, fd, floor, mx, 0.0, mz, -Math.PI / 2, 0);
-      for (const s of [-1, 1]) k.plane(P, LOBBY_H, side, mx + tx * s * LW, LOBBY_H / 2, mz + tz * s * LW, 0, Math.atan2(-tx * s, -tz * s));
-      k.plane(fw, fd, lid, mx, LOBBY_H, mz, Math.PI / 2, 0);
+      const f = k.plane(fw, fd, floor, mx, 0.0, mz, -Math.PI / 2, 0);
+      f.receiveShadow = true; k.seen(f);
+      for (const s of [-1, 1]) {
+        const w = k.plane(P, LOBBY_H, side, mx + tx * s * LW, LOBBY_H / 2, mz + tz * s * LW, 0, Math.atan2(-tx * s, -tz * s));
+        if (side === wallM) { w.receiveShadow = true; k.seen(w); }
+      }
+      k.plane(fw, fd, lid, mx, LOBBY_H, mz, Math.PI / 2, 0).receiveShadow = true;
     };
     if (d.to === "garden") {
       gardenM ??= new THREE.MeshBasicMaterial({ map: k.tex(viewCanvas("garden")), fog: false, userData: { daylight: "view" } });
-      // the porch: stone underfoot, the house's walls each side, a canopy; the garden past its open end
-      porchFloorM ??= k.mat("#b8b0a3", { roughness: 0.85 });
-      porchWallM ??= new THREE.MeshBasicMaterial({ map: k.tex(wallCanvas(R.wall)), color: new THREE.Color("#efe4d2"), fog: false });
-      lidM ??= k.mat(R.trim, { roughness: 0.9 });
-      lobby(porchFloorM, porchWallM, lidM);
+      // the porch: the hall's floor carried on out, the house's walls each side, a canopy; the garden past its open end
+      lobby(floorM, wallM, trimM);
       const [gx, gz] = out(P + 0.45);
       k.plane(Math.max(5, LW * 2 + 2), 4.4, gardenM, gx, 1.8, gz, 0, ry);
       k.glow(k.patchT, "#fff0d6", 0.16, L.along === "x" ? d.half * 2 : 1.4, L.along === "x" ? 1.4 : d.half * 2, d.x + d.nx * 0.75, 0.007, d.z + d.nz * 0.75, -Math.PI / 2, 0);
@@ -1067,8 +1068,7 @@ export function shellOf(k: Kit, env: RoomEnv, R: RoomPreset, plan: RoomPlan, win
       if (!beyondM.has(nextWall)) beyondM.set(nextWall, new THREE.MeshBasicMaterial({ map: k.tex(wallCanvas(nextWall)), color: new THREE.Color("#e6d8c2"), fog: false }));
       const [bx, bz] = out(P);
       k.plane(LW * 2 + 0.02, LOBBY_H, beyondM.get(nextWall), bx, LOBBY_H / 2, bz, 0, ry);
-      lidM ??= k.mat(R.trim, { roughness: 0.9 });
-      lobby(floorM, beyondM.get(nextWall), lidM);
+      lobby(floorM, beyondM.get(nextWall), trimM);
       // light from the next room spilling in across the floor
       k.glow(k.patchT, "#ffe2b8", 0.22, L.along === "x" ? d.half * 2.2 : 1.5, L.along === "x" ? 1.5 : d.half * 2.2, d.x + d.nx * 0.7, 0.008, d.z + d.nz * 0.7, -Math.PI / 2, 0);
     }
