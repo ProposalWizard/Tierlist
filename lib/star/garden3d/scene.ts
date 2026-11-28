@@ -63,7 +63,8 @@ import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
 import { loadRealNature, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
 import { TREE_STYLE, addBush, binGeometry, newBin, type TreeShape, type TreeStyle } from "./lowPolyTrees";
-import { buildPlantZones, type TreeAt, type BushAt } from "./plantZones";
+import { buildPlantZones, type TreeAt, type BushAt, type PlantStyle } from "./plantZones";
+import { addCardBush, cardGeometry, cardMaterial, loadCardAtlas, newCardBin } from "./cardTrees";
 import { grassMaps } from "../style3d/real/assets";
 import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footballAnims";
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
@@ -744,12 +745,14 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   plant("tree_oak", 17.2, -9.5, 4.4, 1.3); plant("tree_tall", -3.6, 16.2, 3.6); plant("tree_tall", 3.6, 16.2, 3.6);
   // every tree: low-poly, joined by zone into one draw each with the bushes below (./plantZones.ts)
   const TREE_SHAPE: Record<string, TreeShape> = { tree_oak: "round", tree_default: "round", tree_detailed: "round", tree_fat: "wide", tree_tall: "tall", tree_pine: "pine", tree_pine2: "pine" };
+  // the textured trees' tints (as realNature.ts makeTree had them)
+  const CARD_TINT: Record<string, string | undefined> = { tree_fat: "#b8d894", tree_tall: "#c8e2a0", tree_oak: "#afcf88" };
   const TREE_TONE: Record<string, [string, string] | undefined> = { tree_oak: ["#6e9a3e", "#28501f"], tree_detailed: ["#8bb556", "#386a2c"], tree_pine2: ["#5a8848", "#21472a"] };
   const plantTrees: TreeAt[] = [];
   let treeSeed = 0;
   for (const [k, list] of Object.entries(treeAt)) {
     const sz = treeSize.get(k) ?? { h: 1.6, w: 1.2 };
-    for (const [x, z, s, ry] of list) plantTrees.push({ x, z, s, ry, h: sz.h, w: sz.w, shape: TREE_SHAPE[k] ?? "round", seed: 101 + 37 * treeSeed++, light: TREE_TONE[k]?.[0], dark: TREE_TONE[k]?.[1] });
+    for (const [x, z, s, ry] of list) plantTrees.push({ x, z, s, ry, h: sz.h, w: sz.w, shape: TREE_SHAPE[k] ?? "round", seed: 101 + 37 * treeSeed++, light: TREE_TONE[k]?.[0], dark: TREE_TONE[k]?.[1], tint: CARD_TINT[k] });
   }
   for (const [x, z] of [[16.8, -15.8], [17, -2], [-17.2, -5.5], [17.2, -9.5], [-3.6, 16.2], [3.6, 16.2]]) CIRCLES.push([x, z, 0.8]);
 
@@ -804,13 +807,20 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   for (const [x, z, sz] of [[-2.6, 17.4, 1.3], [2.6, 17.4, 1.3], [17.2, -12.5, 1.6], [16.4, -14.0, 1.2], [-17.2, 15, 1.6], [-16.2, 16.6, 1.1], [12.6, -12, 1.3], [-12.4, -12.6, 1.4], [17.0, 6.0, 1.4], [-17.2, -1.0, 1.3]]) bush(x, z, sz);
   // the bushes go into the same zones as the trees (one draw a zone, ./plantZones.ts)
   const plantBushes: BushAt[] = [
-    ...bushAt.map(([x, z, sc], i) => ({ x, z, s: sc, seed: 501 + i * 13, light: "#5f8f3a", dark: "#1f421b" })),
-    ...bushLightAt.map(([x, z, sc], i) => ({ x, z, s: sc, seed: 901 + i * 17, light: "#78a848", dark: "#2a5222" })),
+    ...bushAt.map(([x, z, sc], i) => ({ x, z, s: sc, seed: 501 + i * 13, light: "#5f8f3a", dark: "#1f421b", tint: "#93bd74" })),
+    ...bushLightAt.map(([x, z, sc], i) => ({ x, z, s: sc, seed: 901 + i * 17, light: "#78a848", dark: "#2a5222", tint: "#b2d68c" })),
   ];
-  const treeStyle = (["clump", "facet", "leafy"] as TreeStyle[]).find((t) => t === dbg.get("trees")) ?? TREE_STYLE;
+  // Harry, 28 Nov 2026: "the textured trees so much better" — the scanned-leaf trees (./cardTrees.ts),
+  // made cheap; the low-poly styles stay only as an option (?trees=facet|clump|leafy)
+  const lowPolyPick = (["clump", "facet", "leafy"] as TreeStyle[]).find((t) => t === dbg.get("trees"));
+  const cardAtlas = lowPolyPick ? null : await loadCardAtlas(THREE, renderer).catch((e) => { console.error("garden tree atlas", e); return null; });
+  if (disposed) throw new Error("disposed");
+  const treeStyle: PlantStyle = lowPolyPick ?? (cardAtlas ? "cards" : TREE_STYLE);
+  const cardMat = cardAtlas ? cardMaterial(THREE, cardAtlas.map, cardAtlas.nrm) : null;
   // zones wholly behind the shop or the casino are left out of the picture (a little inside their walls, to be safe)
   const plants = buildPlantZones(THREE, plantTrees, plantBushes, {
     style: treeStyle,
+    cardMaterial: cardMat,
     occluders: dbg.get("plantcull") === "0" ? [] : [
       { x0: SHOP.x0 + 0.3, x1: SHOP.x1 - 0.3, y0: 0, y1: SHOP.h + 1.2, z0: SHOP.z0 + 0.3, z1: SHOP.z1 - 0.3 },
       { x0: CASINO.x0 + 0.3, x1: CASINO.x1 - 0.3, y0: 0, y1: CASINO.h - 0.2, z0: CASINO.z0 + 0.3, z1: CASINO.z1 - 0.3 },
@@ -1453,9 +1463,11 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   CIRCLES.push([BENCH_X - 0.05, gz.z - benchLen / 2 - 0.5, 0.35]);
   one("pot_large", gz.x - gz.w / 2 - 0.6, gz.z + gz.d / 2 + 0.5, 2.2);
   { // the shrub in the big pot: leaf clumps like the bushes (./lowPolyTrees.ts), the plants' own material
-    const pb = newBin();
-    addBush(THREE, pb, { x: 0, z: 0, s: 0.42, seed: 77, style: treeStyle, lod: 0, light: "#78a848", dark: "#2a5222" });
-    const potBush = new THREE.Mesh(binGeometry(THREE, pb), plants.material);
+    let potGeo: any;
+    if (treeStyle === "cards") { const cb = newCardBin(); addCardBush(THREE, cb, { x: 0, z: 0, s: 0.42, seed: 77, lod: 0, tint: "#b2d68c" }); potGeo = cardGeometry(THREE, cb); }
+    else { const pb = newBin(); addBush(THREE, pb, { x: 0, z: 0, s: 0.42, seed: 77, style: treeStyle, lod: 0, light: "#78a848", dark: "#2a5222" }); potGeo = binGeometry(THREE, pb); }
+    const potBush = new THREE.Mesh(potGeo, plants.material);
+    if (plants.material.userData?.depth) potBush.customDepthMaterial = plants.material.userData.depth;
     potBush.position.set(gz.x - gz.w / 2 - 0.6, 0.41, gz.z + gz.d / 2 + 0.5);
     potBush.castShadow = true; potBush.receiveShadow = true;
     scene.add(potBush);

@@ -16,8 +16,12 @@ export const GARDEN_BUDGET = {
 
 export interface GardenMeasure { view: string; tier: "high" | "medium" | "low"; walking: boolean; draws: number; triangles: number }
 
-/** Before (27 Nov 2026, card trees, no tight culling) and after (28 Nov 2026), same views. */
-export const GARDEN_MEASURED: { before: GardenMeasure[]; after: GardenMeasure[] } = {
+/**
+ * Before (27 Nov 2026: the old textured trees, instanced per kind, no tight culling), the low-poly
+ * try (`facet`, 28 Nov, rejected by Harry: "the textured trees so much better") and after (28 Nov:
+ * the textured trees made cheap, ./cardTrees.ts, plus every saving that does not depend on the look).
+ */
+export const GARDEN_MEASURED: { before: GardenMeasure[]; facet: GardenMeasure[]; after: GardenMeasure[] } = {
   before: [
     { view: "gate", tier: "medium", walking: false, draws: 129, triangles: 110_008 },
     { view: "fountain", tier: "medium", walking: false, draws: 105, triangles: 105_836 },
@@ -30,16 +34,24 @@ export const GARDEN_MEASURED: { before: GardenMeasure[]; after: GardenMeasure[] 
     { view: "gate", tier: "low", walking: false, draws: 123, triangles: 110_228 },
     { view: "shop", tier: "low", walking: false, draws: 102, triangles: 106_710 },
   ],
-  after: [
+  facet: [
     { view: "gate", tier: "medium", walking: false, draws: 86, triangles: 49_360 },
     { view: "fountain", tier: "medium", walking: false, draws: 68, triangles: 43_142 },
     { view: "shop", tier: "medium", walking: false, draws: 48, triangles: 40_922 },
     { view: "training", tier: "medium", walking: false, draws: 54, triangles: 40_114 },
     { view: "gate", tier: "medium", walking: true, draws: 85, triangles: 55_377 },
     { view: "shop", tier: "medium", walking: true, draws: 50, triangles: 46_615 },
-    { view: "gate", tier: "high", walking: false, draws: 92, triangles: 66_078 },
-    { view: "shop", tier: "high", walking: false, draws: 54, triangles: 58_426 },
-    { view: "gate", tier: "low", walking: false, draws: 81, triangles: 45_116 },
-    { view: "shop", tier: "low", walking: false, draws: 43, triangles: 40_114 },
+  ],
+  after: [
+    { view: "gate", tier: "medium", walking: false, draws: 86, triangles: 50_516 },
+    { view: "fountain", tier: "medium", walking: false, draws: 67, triangles: 42_934 },
+    { view: "shop", tier: "medium", walking: false, draws: 47, triangles: 40_994 },
+    { view: "training", tier: "medium", walking: false, draws: 55, triangles: 41_148 },
+    { view: "gate", tier: "medium", walking: true, draws: 82, triangles: 55_735 },
+    { view: "shop", tier: "medium", walking: true, draws: 49, triangles: 46_687 },
+    { view: "gate", tier: "high", walking: false, draws: 92, triangles: 67_234 },
+    { view: "shop", tier: "high", walking: false, draws: 53, triangles: 58_330 },
+    { view: "gate", tier: "low", walking: false, draws: 81, triangles: 44_700 },
+    { view: "shop", tier: "low", walking: false, draws: 42, triangles: 39_802 },
   ],
 };

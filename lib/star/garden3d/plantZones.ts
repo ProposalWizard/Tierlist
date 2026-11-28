@@ -17,16 +17,27 @@
  *   - Shadows always come from the middle detail (stable, so the kept shadow picture stays right).
  */
 import { addBush, addTree, binGeometry, newBin, placeSince, plantMaterial, type Bin, type Lod, type TreeShape, type TreeStyle } from "./lowPolyTrees";
+import { addCardBush, addCardTree, cardGeometry, newCardBin, placeCardsSince, type CardBin } from "./cardTrees";
 import type { Quality3d } from "../three3d/quality";
 
-export interface TreeAt { x: number; z: number; s: number; ry: number; h: number; w: number; shape: TreeShape; seed: number; light?: string; dark?: string }
-export interface BushAt { x: number; z: number; s: number; seed: number; light?: string; dark?: string }
+/** The garden's trees: "cards" (the scanned-leaf look, ./cardTrees.ts; the default) or a low-poly style (?trees=facet). */
+export type PlantStyle = TreeStyle | "cards";
+
+export interface TreeAt { x: number; z: number; s: number; ry: number; h: number; w: number; shape: TreeShape; seed: number; light?: string; dark?: string; tint?: string }
+export interface BushAt { x: number; z: number; s: number; seed: number; light?: string; dark?: string; tint?: string }
 
 /** From this many metres a zone draws its middle detail, and from this many its far detail. */
 export const LOD_DIST: Record<Quality3d, [number, number]> = {
   high: [22, 55],
   medium: [12, 40],
   low: [6, 24],
+};
+
+/** The textured trees' distances: on Low always the far level (40 sprays), as asked (28 Nov 2026). */
+export const CARD_LOD_DIST: Record<Quality3d, [number, number]> = {
+  high: [22, 55],
+  medium: [12, 40],
+  low: [0, 0],
 };
 
 /** Which zone a spot is in: four quarters inside `inner` m of the middle, twelve slices of the ring outside. */
@@ -37,8 +48,8 @@ export function zoneOf(x: number, z: number, inner = 20): string {
 }
 
 /** Pick a detail level from a distance (pure; the budget test reads it). */
-export function lodFor(dist: number, tier: Quality3d): Lod {
-  const [a, b] = LOD_DIST[tier];
+export function lodFor(dist: number, tier: Quality3d, table: Record<Quality3d, [number, number]> = LOD_DIST): Lod {
+  const [a, b] = table[tier];
   return dist < a ? 0 : dist < b ? 1 : 2;
 }
 
@@ -65,8 +76,11 @@ export function hiddenBehind(eye: number[], corners: number[][], occ: Occluder):
 
 interface Zone { mesh: any; ranges: [number, number][]; box: number[]; corners: number[][]; lod: Lod; tris: number[]; hidden: boolean }
 
-export function buildPlantZones(T: any, trees: TreeAt[], bushes: BushAt[], o: { style: TreeStyle; occluders?: Occluder[] }) {
-  const material = plantMaterial(T);
+export function buildPlantZones(T: any, trees: TreeAt[], bushes: BushAt[], o: { style: PlantStyle; occluders?: Occluder[]; cardMaterial?: any }) {
+  const cards = o.style === "cards";
+  if (cards && !o.cardMaterial) throw new Error("plantZones: the textured trees need their material (cardTrees.ts cardMaterial)");
+  const material = cards ? o.cardMaterial : plantMaterial(T);
+  const dist = cards ? CARD_LOD_DIST : LOD_DIST;
   const group = new T.Group();
   group.name = "plants";
   group.userData.kind = "plants";
@@ -75,21 +89,29 @@ export function buildPlantZones(T: any, trees: TreeAt[], bushes: BushAt[], o: { 
   for (const b of bushes) { const k = zoneOf(b.x, b.z); if (!byZone.has(k)) byZone.set(k, { trees: [], bushes: [] }); byZone.get(k)!.bushes.push(b); }
   const zones: Zone[] = [];
   byZone.forEach((list, name) => {
-    const bin: Bin = newBin();
+    const bin: Bin | CardBin = cards ? newCardBin() : newBin();
     const ranges: [number, number][] = [];
     const tris: number[] = [];
     for (const lod of [0, 1, 2] as Lod[]) {
       const start = bin.p.length / 3;
       for (const t of list.trees) {
         const from = bin.p.length / 9;
-        addTree(T, bin, { h: t.h, w: t.w, shape: t.shape, seed: t.seed, style: o.style, lod, light: t.light, dark: t.dark });
-        placeSince(bin, from, t.x, 0, t.z, t.s, t.ry);
+        if (cards) {
+          addCardTree(T, bin as CardBin, { h: t.h, w: t.w, pine: t.shape === "pine", seed: t.seed, tint: t.tint, lod });
+          placeCardsSince(bin as CardBin, from, t.x, 0, t.z, t.s, t.ry);
+        } else {
+          addTree(T, bin, { h: t.h, w: t.w, shape: t.shape, seed: t.seed, style: o.style as TreeStyle, lod, light: t.light, dark: t.dark });
+          placeSince(bin, from, t.x, 0, t.z, t.s, t.ry);
+        }
       }
-      for (const b of list.bushes) addBush(T, bin, { ...b, style: o.style, lod });
+      for (const b of list.bushes) {
+        if (cards) addCardBush(T, bin as CardBin, { x: b.x, z: b.z, s: b.s, seed: b.seed, lod, tint: b.tint });
+        else addBush(T, bin, { ...b, style: o.style as TreeStyle, lod });
+      }
       ranges.push([start, bin.p.length / 3 - start]);
       tris.push((bin.p.length / 3 - start) / 3);
     }
-    const geo = binGeometry(T, bin);
+    const geo = cards ? cardGeometry(T, bin as CardBin) : binGeometry(T, bin);
     geo.computeBoundingBox();
     const bb = geo.boundingBox;
     const mesh = new T.Mesh(geo, material);
@@ -97,6 +119,8 @@ export function buildPlantZones(T: any, trees: TreeAt[], bushes: BushAt[], o: { 
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.userData.kind = "plants";
+    // cut-out leaves: the shadow is cut out by the leaves, not the card
+    if (material.userData?.depth) { mesh.customDepthMaterial = material.userData.depth; mesh.customDistanceMaterial = material.userData.distance; }
     const z: Zone = {
       mesh, ranges, lod: 1, tris, hidden: false,
       box: [bb.min.x, bb.max.x, bb.min.z, bb.max.z],
@@ -104,8 +128,10 @@ export function buildPlantZones(T: any, trees: TreeAt[], bushes: BushAt[], o: { 
     };
     const set = (lod: Lod) => { const [s, c] = z.ranges[lod]; geo.setDrawRange(s, c); };
     set(1);
-    // the shadow always from the middle detail; the picture's own range put back after
-    mesh.onBeforeShadow = () => set(1);
+    // the shadow always from one fixed detail (the kept shadow picture stays right): the textured trees
+    // from the near one (a coarser crown shades itself darker than the old tree did), the low-poly from the middle
+    const shadowLod: Lod = cards ? 0 : 1;
+    mesh.onBeforeShadow = () => set(shadowLod);
     mesh.onAfterShadow = () => set(z.lod);
     zones.push(z);
     group.add(mesh);
@@ -122,7 +148,7 @@ export function buildPlantZones(T: any, trees: TreeAt[], bushes: BushAt[], o: { 
       const occ = o.occluders?.length && (tick++ % 4 === 0); // the hidden test every 4th frame is plenty
       for (const z of zones) {
         const dx = Math.max(z.box[0] - e.x, 0, e.x - z.box[1]), dz = Math.max(z.box[2] - e.z, 0, e.z - z.box[3]);
-        const lod = lodFor(Math.hypot(dx, dz), tier);
+        const lod = lodFor(Math.hypot(dx, dz), tier, dist);
         if (lod !== z.lod) { z.lod = lod; z.mesh.geometry.setDrawRange(z.ranges[lod][0], z.ranges[lod][1]); }
         if (occ) z.hidden = o.occluders!.some((b) => hiddenBehind(eye, z.corners, b));
       }
