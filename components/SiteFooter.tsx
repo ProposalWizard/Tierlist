@@ -24,6 +24,12 @@ export default function SiteFooter() {
               Credits
             </Link>
             <Link
+              href="/support"
+              className="text-xs text-white transition-colors hover:text-gray-300"
+            >
+              Support
+            </Link>
+            <Link
               href="/legal"
               className="text-xs text-white transition-colors hover:text-gray-300"
             >

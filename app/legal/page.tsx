@@ -90,9 +90,34 @@ export default function LegalPage() {
               </li>
             </ul>
 
-            <h3 id="app" className="mb-2 font-semibold text-white">Our Phone App (Road to the Golden Ball)</h3>
+            <h3 id="apps" className="mb-2 font-semibold text-white">Our iPhone and Android Apps</h3>
             <p className="mb-2">
-              The Road to the Golden Ball app on Google Play works differently from this website:
+              Our apps on the App Store and Google Play show the same games as this website, so
+              everything in this policy applies to them too. In particular:
+            </p>
+            <ul className="mb-4 list-disc space-y-1.5 pl-5">
+              <li>Signing in is optional. If you sign in with Google, we receive your name, email address and profile picture from Google, and we use them only to run your account.</li>
+              <li>If you do not sign in, your progress is kept on your own phone and we cannot see it.</li>
+              <li>If you do sign in, your saved games, tierlists, votes and anything you upload are stored on our servers so you can use them on another device.</li>
+              <li>Analytics (Google Analytics and PostHog) are only used if you choose Accept. If you choose No thanks, they are never loaded.</li>
+              <li>We do not sell your personal information and we do not use it to track you across other companies&apos; apps or websites.</li>
+              <li>Apple or Google may collect information about your download and device under their own privacy policies; we do not control that.</li>
+            </ul>
+
+            <h3 id="delete-account" className="mb-2 font-semibold text-white">Deleting Your Account and Data</h3>
+            <p className="mb-4">
+              You can ask us to delete your account and everything linked to it (saved games,
+              tierlists, votes, uploaded images and your email address) at any time. Email{" "}
+              <a className="underline" href="mailto:knowitballcontact@gmail.com?subject=Delete%20my%20account">knowitballcontact@gmail.com</a>{" "}
+              from the email address you signed in with, with the subject &quot;Delete my account&quot;.
+              We will delete it within 30 days and confirm by email. Anonymous vote counts that
+              cannot be linked back to you may stay. Full steps are on our{" "}
+              <a className="underline" href="/support#delete-account">Support page</a>.
+            </p>
+
+            <h3 id="app" className="mb-2 font-semibold text-white">Our Offline Phone App (Road to the Golden Ball)</h3>
+            <p className="mb-2">
+              The offline Road to the Golden Ball app on Google Play works differently from this website:
             </p>
             <ul className="mb-4 list-disc space-y-1.5 pl-5">
               <li>The whole game is inside the download and plays without an internet connection.</li>
@@ -181,7 +206,7 @@ export default function LegalPage() {
           </section>
 
           {/* 6 */}
-          <section>
+          <section id="ip">
             <h2 className="mb-3 text-lg font-bold text-white">6. Intellectual Property</h2>
             <p className="mb-3">
               All football player names, club names, league names, and other football-related
