@@ -8,7 +8,7 @@
  *     better car wins more often; a race day has the other lane clear (his car never meets anyone);
  *  5. the words: nothing left to fill in, short enough for the card, invented names only (no real brands).
  */
-import { DRIVE_EVENTS, DRIVE_EVENT_IDS, pickEvent, eventOutcome, fineFor, raceWon, fillEvent, EVENT_CHANCE, CAMERA_LIMIT, type DriveEffect } from "../../lib/star/drive3d/events";
+import { DRIVE_EVENTS, DRIVE_EVENT_IDS, pickEvent, eventOutcome, fineFor, raceWon, fillEvent, EVENT_CHANCE, CAMERA_LIMIT, CROSS_AHEAD, STOP_SHORT, BREAKDOWN_AHEAD, HELP_S, FAN_CLEAR_S, type DriveEffect } from "../../lib/star/drive3d/events";
 import { newDrive, stepDrive, answerEvent, answerCall, type DriveOptions } from "../../lib/star/drive3d/drive";
 import { applyEffects } from "../../lib/star/dilemmas";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
@@ -130,6 +130,26 @@ function run(o: Partial<DriveOptions> & { seed: number }, yes = false) {
     check(f.lines.length >= 1 && f.lines.length <= 3 && f.lines.every((l) => l.length <= 70), `${ev.id}: one to three short lines`);
     check((f.yes ?? "").length <= 22 && (f.no ?? "").length <= 22, `${ev.id}: answers fit a button`);
     check(ev.kind !== "choice" || (!!ev.yes && !!ev.no), `${ev.id}: a choice has two answers`);
+  }
+}
+
+// 5b. the car stops: short of the fan on the crossing (until he has walked off), behind the broken-down car to help
+{
+  for (const ev of ["fan-crossing", "breakdown"] as const) {
+    const S = newDrive({ ...base, tier: "medium", seed: 3, event: ev } as DriveOptions);
+    let openT = -1, stopT = -1, stopAt = -1, goT = -1, outT = -1, answered = false;
+    for (let n = 0; n < 60 * 90 && S.phase !== "done"; n++) {
+      stepDrive(S, { hold: false });
+      if (S.eventState === "open" && openT < 0) openT = S.t;
+      if (openT >= 0 && !answered && S.t - openT > 1.2) { answerEvent(S, "yes"); answered = true; }
+      if (openT >= 0 && stopT < 0 && S.car.v < 0.05) { stopT = S.t; stopAt = S.car.s; }
+      if (stopT >= 0 && goT < 0 && S.car.v > 1) goT = S.t;
+      if (outT < 0 && S.outcome) outT = S.t;
+    }
+    check(stopT > 0, `${ev}: the car comes to a stop`);
+    if (ev === "fan-crossing") check(stopAt <= S.eventS + CROSS_AHEAD - STOP_SHORT + 0.2 && stopAt > S.eventS + CROSS_AHEAD - STOP_SHORT - 1.5, `fan: you stop ${STOP_SHORT} m short of the crossing (${(S.eventS + CROSS_AHEAD - stopAt).toFixed(1)} m)`);
+    if (ev === "fan-crossing") check(goT - stopT >= FAN_CLEAR_S - 0.05, `fan: you wait while he walks off (${(goT - stopT).toFixed(1)} s)`);
+    if (ev === "breakdown") check(Math.abs(stopAt - (S.eventS + BREAKDOWN_AHEAD - 6.5)) < 1 && outT - stopT >= HELP_S - 0.05 && goT >= outT, `breakdown: you pull up behind it, ${HELP_S} s there, then the outcome (${(outT - stopT).toFixed(1)} s)`);
   }
 }
 

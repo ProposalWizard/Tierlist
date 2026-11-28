@@ -17,9 +17,10 @@ import { buildRoute, at, DRIVE_IN, LANE, type Piece, type Route } from "./route"
 import { startCar, stepCar, stepTraffic, type CarState, type SteerMode, type Traffic, type CarSpec } from "./car";
 import { callMemory, callTime, fillCall, pickCall, CALL_RING_S, type CallMemory, type DriveCall } from "./calls";
 import type { Quality3d } from "../three3d/quality";
-import { pickEvent, fillEvent, eventStartS, eventOutcome, raceWon, CAMERA_AHEAD, CAMERA_LIMIT, CAMERA_SLOW, RACE_S, RACE_BOOST, type DriveEvent, type DriveEffect, type EventOutcome } from "./events";
+import { pickEvent, fillEvent, eventStartS, eventOutcome, raceWon, CAMERA_AHEAD, CAMERA_LIMIT, CAMERA_SLOW, RACE_S, RACE_BOOST, CROSS_AHEAD, STOP_SHORT, BREAKDOWN_AHEAD, HELP_S, FAN_CLEAR_S, type DriveEvent, type DriveEffect, type EventOutcome } from "./events";
 import { formatMoney, MONEY_SIGN } from "../money";
 import { laneClear } from "./car";
+import { BRAKE } from "./route";
 
 export type DrivePhase = "intro" | "drive" | "arrive" | "fork" | "done";
 export type DriveCam = "chase" | "bumper" | "cabin";
@@ -132,6 +133,11 @@ export interface DriveSession {
   raceT0: number;
   /** Rain 0..1 (eases in). */
   rain: number;
+  /** Where you stop for the event (s): the fan's crossing, the broken-down car when you help; −1 = no stop. */
+  stopS: number;
+  /** Helping at the broken-down car: when you came to a stop beside it (t), −1 before. */
+  helping: boolean;
+  helpAt: number;
 }
 
 export interface DriveScript { hold?: [number, number][]; taps?: [number, -1 | 1][]; answer?: [number, "yes" | "no"]; fork?: [number, ForkChoice]; /** answer the event's card this many seconds after it opens */ event?: [number, "yes" | "no"] }
@@ -149,10 +155,12 @@ export function newDrive(opts: DriveOptions): DriveSession {
   const ev = ev0 && evS >= 0 ? fillEvent(ev0, opts.names.mate) : null;
   // a race day has nobody else on the lane (the race needs both lanes): the street's cars stay
   const laneS0 = route.pts.find((p) => p.kind === "lane")?.s ?? 0;
-  const traffic = makeTraffic(route, TRAFFIC_BY_TIER[opts.tier]).filter((c) => !(ev?.id === "mate-race" && (c.dir === 1 || c.s > laneS0 - 20)));
+  // a fan or breakdown day has nobody going your way (they would drive through him on the crossing, or block the view)
+  const traffic = makeTraffic(route, TRAFFIC_BY_TIER[opts.tier]).filter((c) => !(ev?.id === "mate-race" && (c.dir === 1 || c.s > laneS0 - 20)) && !((ev?.id === "fan-crossing" || ev?.id === "breakdown") && c.dir === 1));
   return {
     event: ev, eventS: ev ? evS : -1, eventState: ev ? "waiting" : "over", eventAnswer: null, eventSince: 0, outcome: null, effects: [],
     cameraS: ev?.id === "speed-camera" ? Math.min(route.length - 2, evS + CAMERA_AHEAD) : -1, slowing: false, mateCar: null, raceT0: -1, rain: 0,
+    stopS: -1, helping: false, helpAt: -1,
     opts, route, car: startCar(), traffic,
     phase: opts.leg === "in" ? "intro" : "drive", t: 0, ta: 0, stoppedAt: -1,
     call: raw ? fillCall(raw, opts.names) : null, callAt: callTime(opts.seed), callState: "waiting", callAnswer: null, callSince: 0,
@@ -186,7 +194,14 @@ export function stepDrive(S: DriveSession, input: DriveInput, dt = STEP): void {
     stepTraffic(S.route, S.traffic, dt);
     // an event's hold on your speed: slowing for the camera, the race's burst
     const racing = S.raceT0 >= 0 && S.t - S.raceT0 < RACE_S;
-    const evIn = { ...input, cap: S.slowing && S.car.s < S.cameraS + 4 ? CAMERA_SLOW : undefined, boost: racing ? RACE_BOOST : undefined };
+    // stopping for the event: the fan on the crossing (until he has walked off), the broken-down car while you help
+    const stopping = S.stopS >= 0 && S.car.s <= S.stopS + 0.5 && (
+      (S.event?.id === "fan-crossing" && (S.eventState === "open" || (S.eventState === "done" && (S.helpAt < 0 || S.t - Math.max(S.helpAt, S.eventSince) < FAN_CLEAR_S)))) ||
+      (S.event?.id === "breakdown" && S.helping && S.eventState === "open"));
+    const stopCap = stopping ? Math.sqrt(2 * BRAKE * 0.7 * Math.max(0, S.stopS - S.car.s)) : undefined;
+    const camCap = S.slowing && S.car.s < S.cameraS + 4 ? CAMERA_SLOW : undefined;
+    const cap = stopCap !== undefined && camCap !== undefined ? Math.min(stopCap, camCap) : stopCap ?? camCap;
+    const evIn = { ...input, cap, boost: racing ? RACE_BOOST : undefined };
     stepCar(S.route, S.car, S.phase === "arrive" ? { hold: false } : evIn, dt, S.opts.spec, { mode: S.phase === "arrive" ? "lanes" : S.opts.mode, traffic: S.traffic, auto });
     stepEvent(S, dt);
   }
@@ -249,18 +264,25 @@ function stepEvent(S: DriveSession, dt: number) {
     }
     if (ev.id === "speed-camera" && S.car.s > S.cameraS - 40) { S.eventState = "over"; return; }
     S.eventState = "open"; S.eventSince = S.t;
+    if (ev.id === "fan-crossing") S.stopS = Math.max(S.eventS + CROSS_AHEAD - STOP_SHORT, S.car.s + (S.car.v * S.car.v) / (2 * BRAKE * 0.7) + 0.5);
     if (ev.id === "mate-race") S.mateCar = { s: S.car.s - 16, v: S.car.v + 5, off: -LANE };
     if (ev.kind === "notice") finishEvent(S, "yes");
     return;
   }
   stepMate(S, dt);
+  // the fan: when you came to a stop for him (he walks off once you have stopped AND answered)
+  if (ev.id === "fan-crossing" && S.helpAt < 0 && S.car.v < 0.05 && S.car.s >= S.stopS - 1) S.helpAt = S.t;
   if (S.eventState === "open") {
     if (ev.id === "speed-camera") {
       if (S.car.s >= S.cameraS) finishEvent(S, S.slowing ? "yes" : "no", { fast: S.car.v > CAMERA_LIMIT });
     } else if (ev.id === "mate-race" && S.raceT0 >= 0) {
       if (S.t - S.raceT0 >= RACE_S) finishEvent(S, "yes", { won: raceWon(S.opts.seed, S.opts.carId ?? "hatch") });
+    } else if (ev.id === "breakdown" && S.helping) {
+      // pulled over beside it: a couple of seconds there, then what happened
+      if (S.helpAt < 0 && S.car.v < 0.05 && S.car.s >= S.stopS - 0.6) S.helpAt = S.t;
+      if (S.helpAt >= 0 && S.t - S.helpAt >= HELP_S) finishEvent(S, "yes");
     } else if (S.t - S.eventSince > EVENT_DECIDE_S) finishEvent(S, "no");
-  } else if (S.eventState === "done" && S.t - S.eventSince > EVENT_SHOW_S) S.eventState = "over";
+  } else if (S.eventState === "done" && S.t - S.eventSince > EVENT_SHOW_S && !(ev.id === "fan-crossing" && (S.helpAt < 0 || S.t - Math.max(S.helpAt, S.eventSince) < FAN_CLEAR_S))) S.eventState = "over";
 }
 
 /** The team-mate's car: alongside you in the other lane while you race, then away ahead (or he goes alone). */
@@ -298,6 +320,14 @@ export function answerEvent(S: DriveSession, a: "yes" | "no") {
   if (!ev || S.eventState !== "open") return;
   if (ev.id === "speed-camera") { if (a === "yes") S.slowing = true; return; }
   if (ev.id === "mate-race" && a === "yes") { if (S.raceT0 < 0) { S.raceT0 = S.t; S.eventAnswer = "yes"; } return; }
+  if (ev.id === "breakdown" && a === "yes") {
+    if (S.helping) return;
+    // pull over beside it (or as soon after it as you can stop)
+    S.helping = true; S.eventAnswer = "yes";
+    // just behind it on the road, its hazards and the bonnet in view ahead on the left
+    S.stopS = Math.max(S.eventS + BREAKDOWN_AHEAD - 6.5, S.car.s + (S.car.v * S.car.v) / (2 * BRAKE * 0.7) + 0.5);
+    return;
+  }
   finishEvent(S, a);
 }
 

@@ -83,7 +83,7 @@ export const DOOR_AFTER_STOP = 0.55;
 export const FADE_OUT = 0.4;
 export const FADE_IN = 0.5;
 /** The bay shot takes over this far past the barrier (the car is in the car park, turning into the aisle). */
-export const BAY_SHOT_AFTER = 5;
+export const BAY_SHOT_AFTER = 8;
 export const ASTEP = 1 / 60;
 
 export function newArrival(spec: CarSpec = { wheelR: 0.42, wheelbase: 2.6 }): ArrivalSession {
@@ -164,10 +164,11 @@ export function arrivalCam(A: ArrivalSession): { pos: [number, number, number]; 
   // from an empty bay across the aisle, a little high (over the car's roof to the two by the gate): the car
   // swings past and into its bay; a slow push in (up to 1.6 m)
   const into = Math.max(0, A.car.s - (A.bS + BAY_SHOT_AFTER));
-  const push = Math.min(1.6, into * 0.14);
-  const P: XZ = [5.0, 40.6], L: XZ = [-2.4, 26.6];
+  const push = Math.min(1.2, into * 0.1);
+  // far enough back that the car is a third of the frame, not half of it: the building, the crest and the two read
+  const P: XZ = [6.4, 43.1], L: XZ = [-2.0, 26.8];
   const dx = L[0] - P[0], dz = L[1] - P[1], dl = Math.hypot(dx, dz);
-  return { pos: [P[0] + (dx / dl) * push, 1.8, P[1] + (dz / dl) * push], look: [L[0], 1.25, L[1]], fov: 50 };
+  return { pos: [P[0] + (dx / dl) * push, 2.1, P[1] + (dz / dl) * push], look: [L[0], 1.5, L[1]], fov: 46 };
 }
 
 /** Where you stand when you get out: at the driver's door (the right: a UK car), facing the gate. */

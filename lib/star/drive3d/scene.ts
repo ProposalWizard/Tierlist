@@ -29,7 +29,7 @@ import { DRIVE_CARS, carFile, toLinear, type DriveCarId } from "./cars";
 import { rigCar } from "./rig";
 import type { SteerMode } from "./car";
 import type { CallMemory } from "./calls";
-import { CAMERA_AHEAD, type DriveEffect } from "./events";
+import { CAMERA_AHEAD, CROSS_AHEAD, BREAKDOWN_AHEAD, FAN_CLEAR_S, type DriveEffect } from "./events";
 
 export interface DriveSceneOptions {
   car: DriveCarId;
@@ -64,7 +64,7 @@ export interface DriveUi {
   fade: number;
   caption: string | null;
   /** The event's card (./events.ts), or null. */
-  event: { id: string; kind: "choice" | "brake" | "notice"; icon: string; title: string; lines: string[]; yes?: string; no?: string; state: "open" | "done"; slowing: boolean; racing: boolean; line?: string; effect?: string; flash: boolean } | null;
+  event: { id: string; kind: "choice" | "brake" | "notice"; icon: string; title: string; lines: string[]; yes?: string; no?: string; state: "open" | "done"; slowing: boolean; racing: boolean; helping: boolean; line?: string; effect?: string; flash: boolean } | null;
   fork: boolean;
   forkChoice: ForkChoice | null;
   blocked: boolean;
@@ -362,7 +362,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
   const myG: any = await loadGltfCached(loader, carFile(opts.car, lodMine));
   if (disposed) throw new Error("disposed");
   dead();
-  const mine = rigCar(THREE, myG.scene.clone(true));
+  const mine = rigCar(THREE, myG.scene.clone(true), { creased: BGU.toCreasedNormals, paint: DRIVE_CARS[opts.car].paint });
   mine.root.traverse((o: any) => { if (o.isMesh) { o.castShadow = realShadow; } });
   scene.add(mine.root);
   S.opts.spec = { wheelR: mine.wheelR, wheelbase: mine.wheelbase };
@@ -399,7 +399,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
 
   // ── the drive's event (./events.ts): its set piece by the road (only the one this drive has) ──
   dead();
-  const evSet = await buildEventSet(THREE, S, R, loader, tex, opts, tier, scene, { fog: scene.fog, hemi, sun, sky: skyT });
+  const evSet = await buildEventSet(THREE, S, R, loader, tex, opts, tier, scene, { fog: scene.fog, hemi, sun, sky: skyT, crease: BGU.toCreasedNormals });
   dead();
 
 
@@ -408,6 +408,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
   let lastUi = "";
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
   let camInit = false;
+  let stopZoom = 0;
   let fps = 0, frames = 0, fpsT = performance.now();
   const memSent = new Set<number>();
   let doneSent = false;
@@ -462,7 +463,10 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
       look = local(c.yaw, carP, 0, 0.7, 25); fov = 64; snap = true;
     } else {
       // the chase camera: behind and above, a little wider and further back at speed
-      const back = 6.4 + c.v * 0.09, up = 2.25 + c.v * 0.03;
+      // stopped for an event (the fan, the broken-down car): eased further back and up, so the scene ahead reads
+      const evStop = S.stopS >= 0 && (S.eventState === "open" || S.eventState === "done") && c.v < 4 ? 1 : 0;
+      stopZoom += (evStop - stopZoom) * Math.min(1, dt * 1.5);
+      const back = 6.4 + c.v * 0.09 + stopZoom * 3.2, up = 2.25 + c.v * 0.03 + stopZoom * 1.0;
       pos = [carP.x - fwd[0] * back, up, carP.z - fwd[1] * back];
       look = [carP.x + fwd[0] * 5, 1.0, carP.z + fwd[1] * 5];
       fov = 54 + Math.min(10, c.v * 0.45);
@@ -488,7 +492,7 @@ async function build(container: HTMLElement, cb: DriveCallbacks, opts: DriveScen
     const caption = null;
     const ev = S.event && (S.eventState === "open" || S.eventState === "done") ? {
       id: S.event.id, kind: S.event.kind, icon: S.event.icon, title: S.event.title, lines: S.event.lines, yes: S.event.yes, no: S.event.no,
-      state: S.eventState as "open" | "done", slowing: S.slowing, racing: S.raceT0 >= 0 && S.eventState === "open",
+      state: S.eventState as "open" | "done", slowing: S.slowing, racing: S.raceT0 >= 0 && S.eventState === "open", helping: S.helping && S.eventState === "open",
       line: S.outcome?.line, effect: S.outcome?.effect, flash: S.event.id === "speed-camera" && S.eventState === "done" && !!S.outcome?.apply.money && S.t - S.eventSince < 0.25,
     } : null;
     const u: DriveUi = {
@@ -963,9 +967,9 @@ function buildCabin(T: any, mine: ReturnType<typeof rigCar>, RB: any, merge?: (g
  * The drive's event, built by the road (./events.ts): the zebra crossing with its beacons and the fan waving, the
  * speed camera and its 40 signs, the team-mate's car (the light copy of the sports car in the club's colour), the
  * broken-down car with its hazards, its bonnet up and a warning triangle, or the rain (falling streaks round the
- * camera, a grey sky). Only the one this drive has is built: a few draws, no people models (a code-built fan).
+ * camera, a grey sky). Only the one this drive has is built (the fan is one of the game's people: ./fan.ts).
  */
-async function buildEventSet(T: any, S: DriveSession, R: Route, loader: any, tex: (cv: HTMLCanvasElement, rep?: [number, number]) => any, opts: DriveSceneOptions, tier: Quality3d, scene: any, look: { fog: any; hemi: any; sun: any; sky: any }) {
+async function buildEventSet(T: any, S: DriveSession, R: Route, loader: any, tex: (cv: HTMLCanvasElement, rep?: [number, number]) => any, opts: DriveSceneOptions, tier: Quality3d, scene: any, look: { fog: any; hemi: any; sun: any; sky: any; crease?: (g: any, a: number) => any }) {
   const ev = S.event;
   const none = { update: (S2: DriveSession, camera: any) => { void S2; void camera; } };
   if (!ev || S.eventS < 0) return none;
@@ -973,28 +977,21 @@ async function buildEventSet(T: any, S: DriveSession, R: Route, loader: any, tex
   const mat = (c: string, o: any = {}) => new T.MeshStandardMaterial({ color: c, roughness: 0.7, ...o });
   const put = (geo: any, m: any, s: number, off: number, y: number, yaw = 0) => { const p = offsetAt(R, s, off); const me = new T.Mesh(geo, m); me.position.set(p.x, y, p.z); me.rotation.y = p.h + yaw; g.add(me); return me; };
   const blink: any[] = [];
-  let arm: any = null, fan: any = null, mateRig: ReturnType<typeof rigCar> | null = null, rain: any = null;
-  const crossS = S.eventS + 34;
+  let fan: import("./fan").DriveFan | null = null, fanT = -1, fanLast = "", mateRig: ReturnType<typeof rigCar> | null = null, rain: any = null;
+  const crossS = S.eventS + CROSS_AHEAD;
   if (ev.id === "fan-crossing") {
     const white = mat("#f4f2ec", { roughness: 0.9 });
     for (let i = 0; i < 7; i++) put(new T.BoxGeometry(0.5, 0.012, 2.6), white, crossS, -ROAD_HALF + 0.5 + i * 1.0, 0.012);
     const pole = new T.CylinderGeometry(0.05, 0.05, 2.6, 8), globe = new T.SphereGeometry(0.17, 14, 10);
     const poleM = mat("#202226"), globeM = mat("#ff9a1f", { emissive: "#ff7a00", emissiveIntensity: 0.6 });
     for (const side of [1, -1]) { put(pole, poleM, crossS - 1.6, side * (ROAD_HALF + 0.4), 1.3); blink.push(put(globe, globeM, crossS - 1.6, side * (ROAD_HALF + 0.4), 2.7)); }
-    // the fan: a lad on the left pavement by the crossing, in the club's colours with a scarf, waving
-    fan = new T.Group();
-    const shirt = mat(opts.kit.shirt), dark = mat("#22252b"), skin = mat("#c99a76"), scarf = mat(opts.kit.trim);
-    const add = (geo: any, m: any, x: number, y: number, z: number) => { const me = new T.Mesh(geo, m); me.position.set(x, y, z); fan.add(me); return me; };
-    add(new T.BoxGeometry(0.14, 0.82, 0.16), dark, -0.1, 0.41, 0); add(new T.BoxGeometry(0.14, 0.82, 0.16), dark, 0.1, 0.41, 0);
-    add(new T.BoxGeometry(0.42, 0.6, 0.24), shirt, 0, 1.12, 0);
-    add(new T.SphereGeometry(0.13, 14, 10), skin, 0, 1.58, 0);
-    add(new T.BoxGeometry(0.3, 0.1, 0.27), scarf, 0, 1.4, 0.01);
-    add(new T.BoxGeometry(0.1, 0.55, 0.12), shirt, -0.27, 1.12, 0);
-    arm = new T.Group(); arm.position.set(0.24, 1.38, 0); fan.add(arm);
-    const a1 = new T.Mesh(new T.BoxGeometry(0.1, 0.56, 0.12), shirt); a1.position.y = 0.26; arm.add(a1);
-    const p = offsetAt(R, crossS + 1.2, ROAD_HALF + 1.0);
-    fan.position.set(p.x, 0.12, p.z); fan.rotation.y = p.h + Math.PI / 2 + 0.5; // facing the road and your car coming
-    g.add(fan);
+    // the fan: one of the game's people (a fan preset, a hoodie in the club's colour, a club scarf), on the crossing in
+    // your lane, waving; you stop short of him; once you have stopped and answered he walks off to the pavement
+    try {
+      const { makeDriveFan } = await import("./fan");
+      fan = await makeDriveFan(T, loader, { club: opts.names.club, kit: opts.kit, tier });
+      g.add(fan.root);
+    } catch (e) { console.warn("drive: the fan", e); fan = null; }
   } else if (ev.id === "speed-camera") {
     const cs = S.cameraS;
     const grey = mat("#6b7078");
@@ -1012,12 +1009,12 @@ async function buildEventSet(T: any, S: DriveSession, R: Route, loader: any, tex
     }
   } else if (ev.id === "mate-race") {
     const gl: any = await loadGltfCached(loader, carFile("sports", true));
-    mateRig = rigCar(T, gl.scene.clone(true));
+    mateRig = rigCar(T, gl.scene.clone(true), { creased: look.crease });
     repaint(T, mateRig.root, DRIVE_CARS.sports.paint, opts.kit.shirt);
     mateRig.root.visible = false;
     g.add(mateRig.root);
   } else if (ev.id === "breakdown") {
-    const bs = S.eventS + 58;
+    const bs = S.eventS + BREAKDOWN_AHEAD;
     const body = "#8b8f78";
     const gl: any = await loadGltfCached(loader, "/star/home3d/car-family-lod.glb").catch(() => null);
     if (gl) {
@@ -1030,10 +1027,9 @@ async function buildEventSet(T: any, S: DriveSession, R: Route, loader: any, tex
       g.add(root);
     }
     for (const [a, o] of [[2.15, 0.7], [2.15, -0.7], [-2.15, 0.7], [-2.15, -0.7]]) blink.push(put(new T.BoxGeometry(0.16, 0.1, 0.06), mat("#ff9a1f", { emissive: "#ff8a00", emissiveIntensity: 0 }), bs + a, ROAD_HALF + 1.5 + o, 0.78));
-    // the warning triangle on the road edge behind it, the bonnet up
+    // the warning triangle on the road edge just behind it (you pull up behind the triangle)
     const tri = new T.Shape(); tri.moveTo(-0.3, 0); tri.lineTo(0.3, 0); tri.lineTo(0, 0.52); tri.closePath();
-    put(new T.ShapeGeometry(tri), new T.MeshStandardMaterial({ color: "#e0251b", emissive: "#5a0a05", side: T.DoubleSide }), bs - 9, ROAD_HALF - 0.4, 0.02, Math.PI);
-    put(new T.BoxGeometry(1.5, 0.04, 1.0), mat(body), bs + 1.9, ROAD_HALF + 1.5, 1.4).rotation.x = -0.9;
+    put(new T.ShapeGeometry(tri), new T.MeshStandardMaterial({ color: "#e0251b", emissive: "#5a0a05", side: T.DoubleSide }), bs - 3.6, ROAD_HALF - 0.3, 0.02, Math.PI);
   } else if (ev.id === "rain") {
     const N = tier === "low" ? 260 : 620;
     const pos = new Float32Array(N * 6);
@@ -1051,8 +1047,21 @@ async function buildEventSet(T: any, S: DriveSession, R: Route, loader: any, tex
       const t = S2.t;
       const on = Math.floor(t * 2.4) % 2 === 0;
       for (const b of blink) b.material.emissiveIntensity = on ? 1.4 : 0.05;
-      if (arm) arm.rotation.z = 2.5 + Math.sin(t * 9) * 0.45;
-      if (fan) fan.visible = Math.abs(S2.car.s - crossS) < 90;
+      if (fan) {
+        fan.root.visible = Math.abs(S2.car.s - crossS) < 90;
+        // on the crossing (in your lane) facing you; after you have stopped and answered, across to the pavement
+        const from = Math.max(S2.helpAt, S2.eventSince);
+        const k = S2.eventState !== "waiting" && S2.eventState !== "open" && S2.helpAt >= 0 ? Math.max(0, Math.min(1, (t - from) / FAN_CLEAR_S)) : 0;
+        const off = 2.0 + (ROAD_HALF + 1.2 - 2.0) * k;
+        const p = offsetAt(R, crossS - 0.2, off);
+        fan.root.position.set(p.x, k >= 1 ? 0.12 : 0, p.z);
+        const walking = k > 0 && k < 1;
+        fan.root.rotation.y = walking ? p.h + Math.PI / 2 : k >= 1 ? p.h - Math.PI / 2 - 0.6 : p.h + Math.PI;
+        const st = walking ? "walk" : "wave";
+        if (st !== fanLast) { fanLast = st; fan.walk(walking); }
+        if (fan.root.visible) fan.update(fanT < 0 ? 0 : t - fanT);
+        fanT = t;
+      }
       if (mateRig) {
         const m = S2.mateCar;
         mateRig.root.visible = !!m;

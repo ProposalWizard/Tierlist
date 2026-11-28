@@ -30,24 +30,30 @@ try {
     await page.addStyleTag({ content: ".tr-float,[data-cookie-banner],[class*=\"fixed left-0 top-1/2\"],[data-page-guide],[data-pageguide],.page-guide{display:none!important}" });
     await page.waitForTimeout(800);
     let t = 0, step = 0, pressed = false, raced = false;
-    const shot = async (n) => { await page.waitForTimeout(250); await page.screenshot({ path: path.join(outDir, `e-${id}-${n}.png`) }); };
+    const shot = async (n) => { await page.waitForTimeout(250); await page.screenshot({ path: path.join(outDir, `e-${id}-${n}.png`) }); const st = await page.evaluate(() => window.__drive.stats()); console.log(`  ${id} ${n}: ${st.calls} draws, ${st.triangles} triangles (${q})`); };
     while (t < 42) {
       t += 0.2;
       await page.evaluate((tt) => window.__frameStep.seek(tt), t);
       await page.waitForTimeout(30);
-      const st = await page.evaluate(() => { const S = window.__drive.S; return { state: S.eventState, racing: S.raceT0 >= 0, phase: S.phase, mph: Math.round(S.car.v * 2.237), effects: S.effects }; });
+      const st = await page.evaluate(() => { const S = window.__drive.S; return { state: S.eventState, racing: S.raceT0 >= 0, phase: S.phase, mph: Math.round(S.car.v * 2.237), v: S.car.v, helpAt: S.helpAt, effects: S.effects }; });
       if (step === 0 && (st.state === "open" || st.state === "done")) {
         // let the set piece come into view a little before the still
-        const wait = id === "fan-crossing" ? 1.4 : id === "breakdown" ? 1.8 : id === "speed-camera" ? 0.6 : id === "mate-race" ? 1.2 : 2.6;
+        const wait = id === "fan-crossing" ? 0 : id === "breakdown" ? 1.0 : id === "speed-camera" ? 0.6 : id === "mate-race" ? 1.2 : 2.6;
         t += wait; await page.evaluate((tt) => window.__frameStep.seek(tt), t);
+        // the fan: the still once the car has stopped for him on the crossing
+        if (id === "fan-crossing") for (let k = 0; k < 40; k++) { const v = await page.evaluate(() => window.__drive.S.car.v); if (v < 0.05) break; t += 0.2; await page.evaluate((tt) => window.__frameStep.seek(tt), t); }
         await shot("1-card"); step = 1;
         console.log(id, "card at", t.toFixed(1), "s", st.mph, "mph");
         if (press) { await page.click(`[data-drive-event-answer="${press}"]`).catch((e) => console.error("click", e.message)); pressed = true; }
+      } else if (step === 1 && id === "breakdown" && st.helpAt >= 0 && !raced) {
+        t += 0.6; await page.evaluate((tt) => window.__frameStep.seek(tt), t);
+        await shot("2-pulled-over"); raced = true;
       } else if (step === 1 && st.racing && !raced) {
         t += 2.2; await page.evaluate((tt) => window.__frameStep.seek(tt), t);
         await shot("2-racing"); raced = true;
       } else if (step === 1 && st.state === "done") {
         if (id === "speed-camera") { await page.waitForTimeout(60); await page.screenshot({ path: path.join(outDir, `e-${id}-2-flash.png`) }); t += 0.4; await page.evaluate((tt) => window.__frameStep.seek(tt), t); }
+        if (id === "fan-crossing") { t += 0.9; await page.evaluate((tt) => window.__frameStep.seek(tt), t); } // he walks off
         await shot("3-outcome"); step = 2;
         console.log(id, "outcome at", t.toFixed(1), "s", JSON.stringify(st.effects), pressed ? "(pressed yes)" : "");
         break;

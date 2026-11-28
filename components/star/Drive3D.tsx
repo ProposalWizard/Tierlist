@@ -208,7 +208,9 @@ export default function Drive3D({ options, clean, onDone, onMemory }: Drive3DPro
               {ui.event.state === "open" && (
                 <>
                   {ui.event.lines.map((l, i) => <div key={i} style={{ fontSize: 14, lineHeight: 1.35, marginTop: i ? 3 : 9 }}>{l}</div>)}
-                  {ui.event.racing ? (
+                  {ui.event.helping ? (
+                    <div style={{ fontSize: 14, fontWeight: 900, color: "#facc15", marginTop: 10 }}>Pulling over to help…</div>
+                  ) : ui.event.racing ? (
                     <div style={{ fontSize: 14, fontWeight: 900, color: "#facc15", marginTop: 10 }}>Foot down! Racing to the car park…</div>
                   ) : ui.event.kind === "brake" ? (
                     <div style={{ display: "flex", gap: 8, marginTop: 11 }}>

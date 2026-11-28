@@ -50,8 +50,8 @@ export const DRIVE_EVENTS: Record<DriveEventId, DriveEvent> = {
   },
   breakdown: {
     id: "breakdown", kind: "choice", icon: "⚠️", title: "A car broken down",
-    lines: ["Hazards on, bonnet up. An old couple by the verge.", "Stop and give them a hand?"],
-    yes: "Pull over and help", no: "Drive on", where: { kind: "lane", m: 60 },
+    lines: ["Hazards on, a warning triangle out. An old couple by the verge.", "Stop and give them a hand?"],
+    yes: "Pull over and help", no: "Drive on", where: { kind: "lane", m: 40 },
   },
   rain: {
     id: "rain", kind: "notice", icon: "🌧️", title: "Here comes the rain",
@@ -82,6 +82,15 @@ export function eventStartS(route: Route, ev: DriveEvent): number {
   for (const q of route.pts) if (q.s >= p.s) { if (q.kind !== ev.where.kind) break; end = q.s; }
   return Math.min(p.s + ev.where.m, end - 5);
 }
+
+/** The zebra crossing is this far on from where the fan's card opens (m); you stop STOP_SHORT before it. The
+ *  broken-down car is BREAKDOWN_AHEAD on; helping, you stop alongside it for HELP_S. */
+export const CROSS_AHEAD = 34;
+export const STOP_SHORT = 7;
+export const BREAKDOWN_AHEAD = 95;
+export const HELP_S = 2;
+/** After you answer the fan he takes this long to walk off the crossing before you move. */
+export const FAN_CLEAR_S = 1.8;
 
 /** The speed camera: it is this far on from where the card opens (m), and its limit (m/s: 40 mph). */
 export const CAMERA_AHEAD = 80;

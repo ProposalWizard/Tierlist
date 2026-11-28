@@ -270,16 +270,17 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     carsLod = await addParkedCars(THREE, c.carPark, (u) => carLoader.loadAsync(u), tier, { omitYours: !!opts.arrive });
     // the drive's arrival: the car you drove (its wheels cut: they turn and steer), not the parked copy
     if (opts.arrive) {
-      const { carFile } = await import("../drive3d/cars");
+      const { carFile, DRIVE_CARS } = await import("../drive3d/cars");
       const { rigCar } = await import("../drive3d/rig");
       const g: any = await loadGltfCached(carLoader, carFile(opts.arrive.car, tier === "low"));
-      myCar = rigCar(THREE, g.scene.clone(true));
+      const { toCreasedNormals }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
+      myCar = rigCar(THREE, g.scene.clone(true), { creased: toCreasedNormals, paint: DRIVE_CARS[opts.arrive.car].paint });
       myCar.root.name = "your-car";
       myCar.root.traverse((o: any) => { if (o.isMesh) { o.castShadow = prof.shadows; o.receiveShadow = true; } });
       scene.add(myCar.root);
       if (tier !== "low") {
         const gl: any = await loadGltfCached(carLoader, carFile(opts.arrive.car, true));
-        myCarFar = rigCar(THREE, gl.scene.clone(true));
+        myCarFar = rigCar(THREE, gl.scene.clone(true), { creased: toCreasedNormals, paint: DRIVE_CARS[opts.arrive.car].paint });
         myCarFar.root.name = "your-car-far";
         myCarFar.root.visible = false;
         scene.add(myCarFar.root);
@@ -1127,8 +1128,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   let camPin: { cam: number[]; look: number[] } | null = null;
   (window as any).__world3dCam = (cam: number[] | null, look?: number[]) => { camPin = cam && look ? { cam, look } : null; };
   const stepCam = (dt: number) => {
-    if (arriveCam()) return;
     if (camPin) { camera.position.set(camPin.cam[0], camPin.cam[1], camPin.cam[2]); camera.lookAt(camPin.look[0], camPin.look[1], camPin.look[2]); return; }
+    if (arriveCam()) return;
     // a gym mini-game: its own shot (set while the screen is black, eased after)
     const sh = gym?.shot();
     if (sh) {
