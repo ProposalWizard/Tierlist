@@ -263,7 +263,8 @@
         ],
         "arc": {
          "end": "the-old-team"
-        }
+        },
+        "snub": "pal"
        },
        {
         "text": "\"No worries.\" The reunion photo is the last one you're in.",
@@ -275,7 +276,8 @@
         ],
         "arc": {
          "end": "the-photo"
-        }
+        },
+        "snub": "pal"
        }
       ]
      }

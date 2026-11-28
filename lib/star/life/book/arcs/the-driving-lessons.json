@@ -195,7 +195,8 @@
          "set": {
           "path": "no"
          }
-        }
+        },
+        "snub": "brother"
        }
       ]
      }
@@ -325,7 +326,8 @@
         ],
         "arc": {
          "end": "the-instructor"
-        }
+        },
+        "snub": "brother"
        }
       ]
      }

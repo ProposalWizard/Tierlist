@@ -103,7 +103,15 @@
       "respect": -4,
       "grudge": 4
      }
-    ]
+    ],
+    "remember": [
+     {
+      "slot": "coach",
+      "tag": "wasnt-at-my-last-session",
+      "strength": 3
+     }
+    ],
+    "snub": "coach"
    }
   }
  },
@@ -397,7 +405,7 @@
          "id": "ok",
          "label": "\"Tomorrow.\"",
          "tone": "calm",
-         "end": "no"
+         "end": "stopped"
         }
        ]
       }
@@ -445,6 +453,17 @@
        }
       ],
       "no": [
+       {
+        "text": "\"Another day.\" He puts the bucket back in the shed.",
+        "arc": {
+         "set": {
+          "drill": 0
+         }
+        },
+        "snub": "coach"
+       }
+      ],
+      "stopped": [
        {
         "text": "\"Another day.\" He puts the bucket back in the shed.",
         "arc": {
@@ -573,6 +592,40 @@
         }
        }
       ]
+     },
+     {
+      "id": "skip",
+      "label": "Go home. You've a game on Saturday.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "His wife sends a photo of the kids round him at the end. There's a space at the back where you'd have stood.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": -6,
+          "respect": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "wasnt-at-my-last-session",
+          "strength": 3
+         }
+        ],
+        "promiseBroken": [
+         "p-last-session"
+        ],
+        "snub": "coach",
+        "arc": {
+         "set": {
+          "last": "skipped"
+         }
+        }
+       }
+      ]
      }
     ],
     "callbacks": [],
@@ -617,7 +670,8 @@
      ]
     },
     "setup": [
-     "A season on. {coach.short} is in the stand with his wife and a flask, in the same coat. He has a season ticket now, two rows behind the dugout, and he shouts the same things he used to shout on the training pitch."
+     "A season on. {coach.short} is in the stand with his wife and a flask, in the same coat. He has a season ticket now, two rows behind the dugout, and he shouts the same things he used to shout on the training pitch.",
+     "{if mem(coach,'wasnt-at-my-last-session')}He sees you see him, and looks at the pitch.{/if}"
     ],
     "choices": [
      {

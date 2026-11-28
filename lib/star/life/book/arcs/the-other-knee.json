@@ -144,7 +144,8 @@
          "set": {
           "path": "busy"
          }
-        }
+        },
+        "snub": "physio"
        }
       ]
      }

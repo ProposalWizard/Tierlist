@@ -205,6 +205,24 @@ Over the cap the weakest go first, never someone in an open story or owed a prom
 minor person is forgotten once his story closes; write a strength-3 memory only for something
 he should carry for good.
 
+### 4b2. Follow-through: promises and turn-downs (Harry, 28 Nov 2026)
+
+"'I'll see you Thursday' and then not coming and seeing him when offered should do something."
+
+- **You say you will do something later** ("I'll be there", "See you Thursday", "Home by eleven"):
+  make it a promise (`promises` + `"promise"` on the reply), with a way to keep it (a later beat,
+  `keptBy`), a `kept` reward and a `broken` cost that is felt: a short line from that person, their
+  numbers down, a memory of strength 2+. A later beat can read that memory (`{if mem(slot,'tag')}`).
+- **You turn someone down** (an invite's `@send-apologies` / `@ignore`, an offer's `ifIgnored`, a
+  "no" when they ask you round, a promise broken by not turning up): add `"snub": "<slot>"` to the
+  outcome. `snubs.ts` gives them a `turned-me-down` memory the first time; the second time, with the
+  same person in any story, bond and respect drop, a grudge, a `turned-me-down-twice` memory
+  (strength 3) and their line (`"snubTwice"`, else a plain one). Stories can read both memories.
+- `npx tsx scripts/life/follow-through-check.mts` lists every reply that commits to something with
+  no follow-up, every turn-down with no `snub`, and every promise whose keeping gives nothing or
+  whose breaking is not felt. Keep it at 0. A reply that needs nothing (done on the spot, a figure
+  of speech) goes in `scripts/life/follow-through-left.json` with the reason.
+
 ### 4c. A game that does not exist yet
 
 Mark the story `"needsActivity": "<mode>"` and write the talk with that mode. It is checked

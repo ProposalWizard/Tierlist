@@ -463,7 +463,8 @@
           "won": 0,
           "stake": "none"
          }
-        }
+        },
+        "snub": "legend"
        }
       ]
      }
@@ -681,7 +682,9 @@
           "tag": "wouldnt-open-the-cage",
           "strength": 2
          }
-        ]
+        ],
+        "snub": "legend",
+        "snubTwice": "\"That's twice, son. I'll not ask a third time.\""
        }
       ]
      }

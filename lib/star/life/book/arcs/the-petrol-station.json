@@ -642,7 +642,8 @@
         ],
         "arc": {
          "end": "the-sweets-story"
-        }
+        },
+        "snub": "tabloid"
        },
        {
         "text": "\"Right.\" His last piece is about someone else.",
@@ -657,7 +658,8 @@
         ],
         "arc": {
          "end": "no-comment-man"
-        }
+        },
+        "snub": "tabloid"
        }
       ]
      }

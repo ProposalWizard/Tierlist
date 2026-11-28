@@ -372,7 +372,8 @@
          "set": {
           "mid": "no"
          }
-        }
+        },
+        "snub": "partner"
        }
       ]
      }

@@ -353,6 +353,27 @@
       "tone": "brave",
       "outcomes": [
        {
+        "if": "arc.deep=='yes'",
+        "text": "You pull in under the door with his permit on the windscreen. He texts you a thumbs up from somebody else's car park.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "looked-after-my-space",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "his-space"
+        }
+       },
+       {
         "if": "arc.path=='moved' || arc.path=='joke'",
         "text": "There's a sign on the wall you've never seen before, his handwriting, laminated: RESERVED. ASK FIRST. And under it: \"Asked. It's his. The old man.\"",
         "effects": {
@@ -384,6 +405,27 @@
       "label": "Park at the far end.",
       "tone": "calm",
       "outcomes": [
+       {
+        "if": "arc.deep=='yes'",
+        "text": "His permit sits in your glovebox all season. He hears the space has been empty and rings the kit man to ask why he bothered.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": -4,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "gave-him-the-space-for-nothing",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "end": "the-far-end"
+        }
+       },
        {
         "if": "arc.path=='moved'",
         "text": "The kit man comes out in the rain and taps on your window. \"He said it's yours. He's had the sign made since August.\" He never mentioned it to you.",

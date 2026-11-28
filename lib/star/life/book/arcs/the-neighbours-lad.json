@@ -181,7 +181,8 @@
          "set": {
           "path": "no"
          }
-        }
+        },
+        "snub": "neighbour"
        }
       ]
      }

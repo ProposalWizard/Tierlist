@@ -253,7 +253,8 @@
          "set": {
           "path": "barrier"
          }
-        }
+        },
+        "snub": "mate"
        }
       ]
      }

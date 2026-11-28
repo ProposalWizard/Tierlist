@@ -230,7 +230,8 @@
           "tag": "wouldnt-put-a-word-in",
           "strength": 2
          }
-        ]
+        ],
+        "snub": "coach"
        }
       ],
       "no-honest": [
@@ -241,7 +242,8 @@
           "slot": "coach",
           "respect": 4
          }
-        ]
+        ],
+        "snub": "coach"
        }
       ]
      }

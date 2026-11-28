@@ -120,7 +120,7 @@
          "id": "no",
          "label": "\"I'll get fit in the games.\"",
          "tone": "calm",
-         "end": "lie"
+         "end": "wont"
         }
        ]
       }
@@ -168,6 +168,23 @@
           "path": "bottom"
          }
         }
+       }
+      ],
+      "wont": [
+       {
+        "text": "\"A bug.\" He writes BUG next to your time.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": -4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "bottom"
+         }
+        },
+        "snub": "coach"
        }
       ]
      }

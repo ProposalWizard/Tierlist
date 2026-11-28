@@ -253,7 +253,8 @@
          "set": {
           "path": "lost"
          }
-        }
+        },
+        "snub": "kidfan"
        }
       ]
      }
@@ -344,6 +345,28 @@
       "label": "Wave and point at the sign.",
       "tone": "calm",
       "outcomes": [
+       {
+        "if": "arc.path=='won'",
+        "text": "You said next year. She holds the sign up until you're in the tunnel, then does her keep-ups on her own.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -4,
+          "respect": -2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "waved-off-my-rematch",
+          "strength": 2
+         }
+        ],
+        "snub": "kidfan",
+        "arc": {
+         "end": "keepy-rivals"
+        }
+       },
        {
         "text": "She does them on her own at the front, and the kids count her.",
         "effects": {

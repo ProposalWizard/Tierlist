@@ -35,6 +35,7 @@ import { BAND, MAX_LINE, MAX_TELLTALE_LINE, PICKS, REAL_NAMES } from "./validate
 import { PLACEHOLDER_KEYS, YOU_KEYS } from "./text";
 import { ROUND_LIBRARY, type RoundKind } from "./drill";
 import { packProblems } from "./arcPack";
+import { SNUB_TAG, SNUB_TWICE_TAG } from "./snubs";
 
 export interface ArcProblem { id: string; problem: string }
 
@@ -194,7 +195,7 @@ function linesOfBeat(b: ArcBeat): string[] {
     if (n.activity) out.push(n.activity.name, n.activity.intro ?? "", ...(n.activity.caller?.lines ?? []));
   }
   for (const c of e.choices) out.push(c.label);
-  for (const [, outs] of outcomesOf(b)) for (const o of outs) out.push(o.text, o.objective?.text ?? "", o.objective?.why ?? "", ...(o.giveWords ?? []));
+  for (const [, outs] of outcomesOf(b)) for (const o of outs) out.push(o.text, o.objective?.text ?? "", o.objective?.why ?? "", ...(o.giveWords ?? []), o.snubTwice ?? "");
   if (e.entry) out.push(e.entry.bubble ?? "", e.entry.hint ?? "", e.entry.text ?? "", ...Object.values(e.entry.labels ?? {}));
   for (const v of e.variants ?? []) out.push(v.setupSwap ?? "");
   return out.filter(Boolean);
@@ -230,6 +231,8 @@ export function validateArcBook(arcs: LifeArc[], events: LifeEvent[] = []): ArcP
   const written = new Set<string>();
   for (const e of events) for (const c of e.choices ?? []) for (const o of c.outcomes ?? []) for (const r of o.remember ?? []) written.add(r.tag);
   for (const a of arcs) for (const { o } of allOutcomes(a)) { for (const r of o.remember ?? []) written.add(r.tag); if (o.noteSquad) written.add(o.noteSquad); }
+  // A turned-down ending (snubs.ts) writes these two.
+  if (arcs.some((a) => allOutcomes(a).some(({ o }) => o.snub))) { written.add(SNUB_TAG); written.add(SNUB_TWICE_TAG); }
   // Chains (28 Nov 2026): a story that waits on another (ended(...), a flag, a memory) must wait on
   // something that can happen. Flags are set by outcomes; ended() names a real story and endings.
   // The scrapbook (job B): the tags some story writes, so a read of one nothing writes fails.
@@ -429,6 +432,7 @@ export function validateArcBook(arcs: LifeArc[], events: LifeEvent[] = []): ArcP
       for (const n of Object.values(b.event.talk?.nodes ?? {})) for (const r of n.replies ?? []) if (r.promise) made.add(r.promise);
       for (const [, outs] of outcomesOf(b)) for (const o of outs) if (o.promise) made.add(o.promise);
     }
+    for (const { where, o } of allOutcomes(arc)) if (o.snub && !slots.has(o.snub)) bad(where, `turns down "${o.snub}", who is not in the cast`);
     for (const [id, p] of Object.entries(arc.promises)) {
       if (!slots.has(p.to)) bad(`${arc.id}/promise ${id}`, `made to "${p.to}", who is not in the cast`);
       if (!made.has(id)) bad(`${arc.id}/promise ${id}`, "nothing the player picks ever makes it");

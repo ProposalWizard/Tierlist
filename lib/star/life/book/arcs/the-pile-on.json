@@ -59,7 +59,60 @@
    "text": "After the pile-on you turned the app off and never turned it back on. You find out what people think from your sister, who edits it."
   }
  ],
- "promises": {},
+ "promises": {
+  "p-pens-thursday": {
+   "id": "p-pens-thursday",
+   "to": "coach",
+   "text": "Take ten penalties with {coach.short} on Thursday",
+   "due": {
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "keptBy": {
+    "beat": "pon-3b-thursday",
+    "ends": [
+     "take"
+    ]
+   },
+   "dueText": "Thursday, under the floodlights",
+   "kept": {
+    "text": "He writes your score on the back of his hand and shows you on Friday.",
+    "npc": [
+     {
+      "slot": "coach",
+      "respect": 3
+     }
+    ],
+    "remember": [
+     {
+      "slot": "coach",
+      "tag": "took-the-thursday-pens",
+      "strength": 2
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"Thursday, you said. Bag's still by the goal.\"",
+    "npc": [
+     {
+      "slot": "coach",
+      "bond": -4,
+      "respect": -5
+     }
+    ],
+    "remember": [
+     {
+      "slot": "coach",
+      "tag": "never-came-for-the-pens",
+      "strength": 2
+     }
+    ],
+    "snub": "coach"
+   }
+  }
+ },
  "beats": [
   {
    "id": "pon-1-miss",
@@ -437,6 +490,11 @@
          "id": "ok",
          "label": "\"Thursday.\"",
          "tone": "humble",
+         "end": "stopped"
+        },
+        {
+         "id": "every",
+         "label": "\"Every Thursday. Till I'm bored.\"",
          "end": "poor"
         }
        ]
@@ -451,7 +509,7 @@
          "id": "ok",
          "label": "\"Thursday.\"",
          "tone": "calm",
-         "end": "no"
+         "end": "stopped"
         }
        ]
       }
@@ -505,7 +563,24 @@
          "set": {
           "pens": 0
          }
-        }
+        },
+        "snub": "coach"
+       }
+      ],
+      "stopped": [
+       {
+        "text": "\"Thursday, then.\" He writes it on the side of the ball bag in marker.",
+        "arc": {
+         "set": {
+          "pens": 0
+         },
+         "next": "pon-3b-thursday",
+         "afterWeeks": [
+          0,
+          1
+         ]
+        },
+        "promise": "p-pens-thursday"
        }
       ]
      }
@@ -671,6 +746,96 @@
     ]
    },
    "hint": "A season on, a penalty"
+  },
+  {
+   "id": "pon-3b-thursday",
+   "title": "Thursday, pitch two",
+   "event": {
+    "id": "arc-pon-3b-thursday",
+    "title": "Thursday, pitch two",
+    "category": "life",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Thursday. The floodlights are on over pitch two and {coach.short} is standing on the penalty spot with the bag, looking at his watch."
+    ],
+    "choices": [
+     {
+      "id": "take",
+      "label": "Take your ten.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "Seven out of ten, then eight, then you stop counting. He walks off without saying anything, which from him is a lot.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "came-back-for-penalties",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "pens": 1
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "home",
+      "label": "Go home. You're not in the mood.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "You see the floodlights from the car park. He's still out there with the bag at half six.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": -4,
+          "respect": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "left-me-on-the-spot",
+          "strength": 2
+         }
+        ],
+        "promiseBroken": [
+         "p-pens-thursday"
+        ],
+        "snub": "coach"
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "You told the coach Thursday"
   }
  ]
 }

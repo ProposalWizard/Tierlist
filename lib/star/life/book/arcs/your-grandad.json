@@ -169,7 +169,8 @@
          "id": "busy",
          "label": "\"I'll try.\"",
          "tone": "calm",
-         "end": "busy"
+         "end": "try",
+         "promise": "p-grandad"
         }
        ]
       }
@@ -198,6 +199,23 @@
          {
           "slot": "mum",
           "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "busy"
+         }
+        },
+        "snub": "mum"
+       }
+      ],
+      "try": [
+       {
+        "text": "\"Try, then.\" She writes it on the calendar in the kitchen anyway.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
          }
         ],
         "arc": {
@@ -303,6 +321,13 @@
         },
         "promiseBroken": [
          "p-grandad"
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "left-grandad-after-ten-minutes",
+          "strength": 2
+         }
         ]
        }
       ]

@@ -284,7 +284,8 @@
         ],
         "arc": {
          "end": "the-worst-pair"
-        }
+        },
+        "snub": "sponsor"
        },
        {
         "text": "He plays with the chairman instead and comes second.",
@@ -300,7 +301,8 @@
         ],
         "arc": {
          "end": "a-good-day-out"
-        }
+        },
+        "snub": "sponsor"
        }
       ]
      }

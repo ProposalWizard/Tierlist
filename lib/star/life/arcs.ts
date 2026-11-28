@@ -33,6 +33,7 @@ import { allRuns, arcCode, isPacked, packDone, runIn, unpackRun } from "./arcPac
 import { ITEM_WORDS, UNLOCK_BY_ID, grantUnlocks, unlockParts } from "./unlocks";
 import { addEcho, bookWrite, tagOfCode } from "./scrapbook";
 import { noteMilestones } from "./milestones";
+import { withSnub } from "./snubs";
 
 /** lifeWeek counts 50 weeks to a season. */
 export const LIFE_SEASON = 50;
@@ -549,7 +550,7 @@ export function playEnding(c0: CareerState, b: BeatLive, endId: string, opts: Pl
   let c: CareerState = { ...c0, life: life0 };
   const ctx = arcCtx(c, b.arc, { ...b, tv: {} }, opts.facts);
   const outs = choiceOuts?.outs ?? b.event.talk?.ends[endId] ?? [];
-  const outcome = (outs.length ? pickOutcome(outs, (s) => holds(s, ctx), opts.rng()) : { text: "" }) as ArcOutcome;
+  const outcome = withSnub((outs.length ? pickOutcome(outs, (s) => holds(s, ctx), opts.rng()) : { text: "" }) as ArcOutcome, life0, b.cast);
   const choice: LifeChoice = choiceOuts?.choice ?? { id: endId, label: b.lastReply?.label ?? "", tone: b.lastReply?.tone, silent: b.lastReply?.silent, outcomes: [outcome] };
   const live: LiveEvent = {
     id: b.event.id, event: b.event as unknown as LifeEvent, moment: "followUp", cast: b.cast, lines: [], callbacks: [],

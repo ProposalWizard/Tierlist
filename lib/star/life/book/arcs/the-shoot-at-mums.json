@@ -58,7 +58,58 @@
    "text": "Your mum got an advert of her own, the washing line one. She did your renewal for you and got more than your agent ever has."
   }
  ],
- "promises": {},
+ "promises": {
+  "p-next-time": {
+   "id": "p-next-time",
+   "to": "mum",
+   "text": "Get Mum in the next shoot, a real one",
+   "due": {
+    "beat": "msh-3-renewal"
+   },
+   "keptBy": {
+    "beat": "msh-3-renewal",
+    "ends": [
+     "mum"
+    ]
+   },
+   "dueText": "When the boot deal is renewed",
+   "kept": {
+    "text": "Next time came, and you rang her.",
+    "npc": [
+     {
+      "slot": "mum",
+      "bond": 4,
+      "respect": 2
+     }
+    ],
+    "remember": [
+     {
+      "slot": "mum",
+      "tag": "kept-the-next-time",
+      "strength": 3
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"Another next time, then.\" She adds it to the list.",
+    "npc": [
+     {
+      "slot": "mum",
+      "bond": -6,
+      "respect": -3
+     }
+    ],
+    "remember": [
+     {
+      "slot": "mum",
+      "tag": "another-next-time",
+      "strength": 2
+     }
+    ],
+    "snub": "mum"
+   }
+  }
+ },
  "beats": [
   {
    "id": "msh-1-ask",
@@ -299,7 +350,8 @@
          "id": "next",
          "label": "\"Next time. I promise.\"",
          "tone": "kind",
-         "end": "next"
+         "end": "next",
+         "promise": "p-next-time"
         }
        ]
       }
@@ -677,6 +729,27 @@
         }
        },
        {
+        "if": "promise(p-next-time)",
+        "text": "She gets a line at the end of the new advert, holding the kettle. \"Next time,\" she says to the camera, and only you know why.",
+        "effects": {
+         "fans": 1
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6,
+          "respect": 3
+         },
+         {
+          "slot": "sponsor",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "end": "her-own-advert"
+        }
+       },
+       {
         "if": "arc.path=='kitchen'",
         "text": "She sits next to you and says nothing until the end, then asks if they still do the teapot shot. They do.",
         "effects": {
@@ -711,6 +784,34 @@
       "label": "Go on your own and let the agent talk.",
       "tone": "calm",
       "outcomes": [
+       {
+        "if": "promise(p-next-time)",
+        "text": "Another studio. Mum sees the advert at teatime. \"That was the next time, was it?\"",
+        "effects": {
+         "moneyWeeks": 1
+        },
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": -6,
+          "respect": -3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "another-next-time",
+          "strength": 2
+         }
+        ],
+        "snub": "mum",
+        "promiseBroken": [
+         "p-next-time"
+        ],
+        "arc": {
+         "end": "the-studio"
+        }
+       },
        {
         "if": "arc.path=='kitchen'",
         "text": "They want the kitchen again, and the teapot. You sign. Mum's already bought a better teapot.",

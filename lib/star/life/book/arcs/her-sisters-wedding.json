@@ -97,6 +97,56 @@
     ]
    },
    "remind": "\"Suit's back from the cleaners. Just saying.\""
+  },
+  "p-evening-do": {
+   "id": "p-evening-do",
+   "to": "partner",
+   "text": "Get to the evening do at {partner.short}'s sister's wedding",
+   "due": {
+    "beat": "wed-2-saturday"
+   },
+   "keptBy": {
+    "beat": "wed-2-saturday",
+    "ends": [
+     "both",
+     "wedding"
+    ]
+   },
+   "dueText": "The Saturday in March, after the game",
+   "kept": {
+    "text": "You said the evening do, and you got there.",
+    "npc": [
+     {
+      "slot": "partner",
+      "bond": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "partner",
+      "tag": "made-the-evening-do",
+      "strength": 2
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"Not even the evening.\" She takes her shoes off in the taxi and doesn't say anything else.",
+    "npc": [
+     {
+      "slot": "partner",
+      "bond": -8,
+      "respect": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "partner",
+      "tag": "missed-the-evening-do-too",
+      "strength": 3
+     }
+    ],
+    "snub": "partner"
+   }
   }
  },
  "beats": [
@@ -242,7 +292,8 @@
          "set": {
           "went": "evening"
          }
-        }
+        },
+        "promise": "p-evening-do"
        }
       ],
       "no": [
@@ -510,7 +561,8 @@
          }
         },
         "promiseBroken": [
-         "p-wedding"
+         "p-wedding",
+         "p-evening-do"
         ]
        }
       ]

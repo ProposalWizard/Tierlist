@@ -253,7 +253,8 @@
          "set": {
           "path": "lost"
          }
-        }
+        },
+        "snub": "mate"
        }
       ]
      }

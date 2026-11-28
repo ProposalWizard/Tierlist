@@ -391,7 +391,8 @@
         ],
         "arc": {
          "end": "the-cheats"
-        }
+        },
+        "snub": "pal"
        },
        {
         "text": "He sends a photo: the toilet seat, on a table, with a new team round it.",
@@ -410,7 +411,8 @@
         ],
         "arc": {
          "end": "the-trophy"
-        }
+        },
+        "snub": "pal"
        }
       ]
      }

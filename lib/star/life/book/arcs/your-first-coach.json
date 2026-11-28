@@ -97,7 +97,69 @@
       "respect": -4,
       "grudge": 4
      }
+    ],
+    "remember": [
+     {
+      "slot": "dad",
+      "tag": "left-my-first-coach-at-the-door",
+      "strength": 2
+     }
+    ],
+    "snub": "dad"
+   }
+  },
+  "p-coach-seat": {
+   "id": "p-coach-seat",
+   "to": "dad",
+   "text": "Get your first coach a good seat on Saturday",
+   "due": {
+    "weeks": [
+     1,
+     3
     ]
+   },
+   "keptBy": {
+    "beat": "yfc-2-game",
+    "ends": [
+     "lounge",
+     "wave"
+    ]
+   },
+   "dueText": "Saturday",
+   "kept": {
+    "text": "Your dad says he had the best seat in the house and told everyone near him who he was.",
+    "npc": [
+     {
+      "slot": "dad",
+      "bond": 4,
+      "respect": 2
+     }
+    ],
+    "remember": [
+     {
+      "slot": "dad",
+      "tag": "sorted-my-first-coach-a-seat",
+      "strength": 2
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"He sat in the away end, son. Nobody had his name on a list.\"",
+    "npc": [
+     {
+      "slot": "dad",
+      "bond": -5,
+      "respect": -3
+     }
+    ],
+    "remember": [
+     {
+      "slot": "dad",
+      "tag": "forgot-my-first-coachs-ticket",
+      "strength": 2
+     }
+    ],
+    "snub": "dad"
    }
   }
  },
@@ -142,7 +204,8 @@
          "id": "ticket",
          "label": "\"I'll sort him a ticket.\"",
          "tone": "calm",
-         "end": "ticket"
+         "end": "ticket",
+         "promise": "p-coach-seat"
         },
         {
          "id": "who",
@@ -169,7 +232,8 @@
          "id": "ticket",
          "label": "\"I'll get him a good seat.\"",
          "tone": "calm",
-         "end": "ticket"
+         "end": "ticket",
+         "promise": "p-coach-seat"
         }
        ]
       }
@@ -309,7 +373,18 @@
          "set": {
           "game": "skip"
          }
-        }
+        },
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "left-my-first-coach-waiting",
+          "strength": 2
+         }
+        ],
+        "promiseBroken": [
+         "p-first-coach",
+         "p-coach-seat"
+        ]
        }
       ]
      }
@@ -440,7 +515,8 @@
      ]
     },
     "setup": [
-     "A season on. Your first club, the one in the park, wants someone to give out the under-tens awards. Your first coach is eighty-one. He's asked if it could be you."
+     "A season on. Your first club, the one in the park, wants someone to give out the under-tens awards. Your first coach is eighty-one. He's asked if it could be you.",
+     "{if mem(dad,'left-my-first-coach-waiting')}\"Don't leave him in a corner this time,\" your dad says.{/if}"
     ],
     "choices": [
      {

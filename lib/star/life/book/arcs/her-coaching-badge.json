@@ -50,7 +50,62 @@
    "text": "You ran your drill, not hers, and she failed the practical. She passed the next year without you."
   }
  ],
- "promises": {},
+ "promises": {
+  "p-her-session": {
+   "id": "p-her-session",
+   "to": "kidfan",
+   "text": "Run {kidfan.short}'s under-fourteens for her badge on Thursday",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "hcb-1b-thursday",
+    "ends": [
+     "run"
+    ]
+   },
+   "dueText": "Thursday, an hour, the school field",
+   "remind": "\"Thursday. Six o'clock. The assessor's called Brian and he doesn't smile.\"",
+   "kept": {
+    "text": "You turned up for her badge, cones and all.",
+    "npc": [
+     {
+      "slot": "kidfan",
+      "bond": 6,
+      "respect": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "kidfan",
+      "tag": "ran-my-badge-session",
+      "strength": 2
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"Twenty kids and an assessor, and me on my own. Cheers.\"",
+    "npc": [
+     {
+      "slot": "kidfan",
+      "bond": -8,
+      "respect": -6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "kidfan",
+      "tag": "no-show-at-my-badge",
+      "strength": 3
+     }
+    ],
+    "snub": "kidfan"
+   }
+  }
+ },
  "beats": [
   {
    "id": "hcb-1-ask",
@@ -118,8 +173,14 @@
         "arc": {
          "set": {
           "path": "hers"
-         }
-        }
+         },
+         "next": "hcb-1b-thursday",
+         "afterWeeks": [
+          1,
+          2
+         ]
+        },
+        "promise": "p-her-session"
        }
       ],
       "mine": [
@@ -134,8 +195,14 @@
         "arc": {
          "set": {
           "path": "mine"
-         }
-        }
+         },
+         "next": "hcb-1b-thursday",
+         "afterWeeks": [
+          1,
+          2
+         ]
+        },
+        "promise": "p-her-session"
        }
       ],
       "no": [
@@ -145,7 +212,8 @@
          "set": {
           "path": "no"
          }
-        }
+        },
+        "snub": "kidfan"
        }
       ]
      }
@@ -164,6 +232,113 @@
     ]
    },
    "hint": "The girl from the sign needs you for her coaching badge"
+  },
+  {
+   "id": "hcb-1b-thursday",
+   "title": "Thursday, the school field",
+   "hint": "Her coaching badge session, an hour on Thursday",
+   "event": {
+    "id": "arc-hcb-1b-thursday",
+    "title": "Thursday, the school field",
+    "category": "life",
+    "place": "training",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "home:evening"
+     ]
+    },
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ],
+    "setup": [
+     "Thursday, ten to six. Twenty under-fourteens on the school field, and a man with a clipboard standing next to {kidfan.short}. Training's run over and your phone says you'll be twenty minutes late if you leave now."
+    ],
+    "choices": [
+     {
+      "id": "run",
+      "label": "Drive straight there in your training kit.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='mine'",
+        "text": "You run your drill. The kids love it. The assessor writes a lot, and {kidfan.short} watches you with her arms folded.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "ran"
+         }
+        }
+       },
+       {
+        "text": "You do her session, word for word, cones where she drew them. The man with the clipboard nods at her twice.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "ran"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Text her that training's run late.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "She does it on her own, twenty kids and one bag of balls. Her reply is a thumbs up and nothing else.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "left-me-with-twenty-kids",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no",
+          "mid": "skipped"
+         }
+        },
+        "promiseBroken": [
+         "p-her-session"
+        ],
+        "snub": "kidfan"
+       }
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "hcb-2-result",
@@ -192,7 +367,8 @@
      ]
     },
     "setup": [
-     "A season on. Her results came this morning. She's sent a photo of the letter."
+     "A season on. Her results came this morning. She's sent a photo of the letter.",
+     "{if arc.mid=='skipped'}She's put the letter in front of a photo of the school field.{/if}"
     ],
     "choices": [
      {

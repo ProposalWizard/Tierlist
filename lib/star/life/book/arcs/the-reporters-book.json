@@ -243,7 +243,8 @@
         ],
         "arc": {
          "end": "the-chapter"
-        }
+        },
+        "snub": "reporter"
        },
        {
         "text": "She puts the flowers by the till.",
@@ -258,7 +259,8 @@
         },
         "arc": {
          "end": "the-footnote"
-        }
+        },
+        "snub": "reporter"
        }
       ]
      }

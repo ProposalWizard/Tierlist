@@ -215,7 +215,9 @@
          "set": {
           "path": "no"
          }
-        }
+        },
+        "snub": "brother",
+        "snubTwice": "\"That's twice you've had a game, mate. I'll stop asking.\""
        }
       ]
      }

@@ -932,7 +932,8 @@
         ],
         "arc": {
          "end": "the-leak"
-        }
+        },
+        "snub": "vet"
        },
        {
         "if": "arc.last=='gave'",
@@ -953,7 +954,8 @@
         ],
         "arc": {
          "end": "his-last-penalty"
-        }
+        },
+        "snub": "vet"
        },
        {
         "text": "He understands. He sends you a thumbs up and a photo of his kids in your shirt.",
@@ -973,7 +975,8 @@
         ],
         "arc": {
          "end": "kept-his-secret"
-        }
+        },
+        "snub": "vet"
        }
       ]
      }

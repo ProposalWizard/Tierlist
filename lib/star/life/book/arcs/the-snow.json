@@ -166,7 +166,8 @@
          "set": {
           "path": "bed"
          }
-        }
+        },
+        "snub": "groundsman"
        }
       ]
      }
@@ -272,7 +273,9 @@
         ],
         "arc": {
          "end": "the-shovel"
-        }
+        },
+        "snub": "groundsman",
+        "snubTwice": "Second winter you've stayed in bed. {groundsman.short} paints over the name on the handle."
        },
        {
         "text": "\"Course you will.\" He tells you about every shovel, at length, after the game.",
@@ -284,7 +287,9 @@
         ],
         "arc": {
          "end": "called-off"
-        }
+        },
+        "snub": "groundsman",
+        "snubTwice": "Second winter you've stayed in bed. {groundsman.short} paints over the name on the handle."
        }
       ]
      }

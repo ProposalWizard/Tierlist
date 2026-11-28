@@ -157,7 +157,8 @@
          "set": {
           "path": "none"
          }
-        }
+        },
+        "snub": "agent"
        }
       ]
      }
@@ -253,6 +254,9 @@
          "set": {
           "deep": "pay"
          }
+        },
+        "effects": {
+         "moneyWeeks": -0.25
         }
        }
       ],
@@ -279,6 +283,9 @@
          "set": {
           "deep": "all"
          }
+        },
+        "effects": {
+         "moneyWeeks": -0.5
         }
        }
       ]

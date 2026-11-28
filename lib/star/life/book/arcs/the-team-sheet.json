@@ -57,7 +57,60 @@
    "text": "You were dropped once. When a young lad got dropped, a season on, you were the one he came to, and you told him about a Tuesday night in the rain."
   }
  ],
- "promises": {},
+ "promises": {
+  "p-get-it-back": {
+   "id": "p-get-it-back",
+   "to": "manager",
+   "text": "Win your place back for {manager.short}",
+   "due": {
+    "beat": "tsh-4b-miss"
+   },
+   "keptBy": {
+    "beat": "tsh-4-back",
+    "ends": [
+     "thanks",
+     "nothing"
+    ]
+   },
+   "dueText": "Within the next few games",
+   "kept": {
+    "text": "You said you'd get it back, and you did. He remembers that sort of thing.",
+    "effects": {
+     "boss": 2
+    },
+    "npc": [
+     {
+      "slot": "manager",
+      "bond": 3,
+      "respect": 5
+     }
+    ],
+    "remember": [
+     {
+      "slot": "manager",
+      "tag": "won-his-place-back",
+      "strength": 2
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"You said you'd get it back.\" He leaves it there.",
+    "npc": [
+     {
+      "slot": "manager",
+      "respect": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "manager",
+      "tag": "said-hed-get-it-back",
+      "strength": 2
+     }
+    ]
+   }
+  }
+ },
  "beats": [
   {
    "id": "tsh-1-dropped",
@@ -96,7 +149,8 @@
          "id": "humble",
          "label": "\"Fair. I'll get it back.\"",
          "tone": "humble",
-         "end": "humble"
+         "end": "humble",
+         "promise": "p-get-it-back"
         },
         {
          "id": "calm",
@@ -537,6 +591,31 @@
       "tone": "brave",
       "outcomes": [
        {
+        "text": "\"I know you will.\" You're on the bench for a month. You run on Tuesdays anyway. {manager.short} reads the sheet out without looking at you. \"You said you'd get it back.\"",
+        "arc": {
+         "set": {
+          "back": "bench"
+         }
+        },
+        "if": "promise(p-get-it-back)",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "said-hed-get-it-back",
+          "strength": 2
+         }
+        ],
+        "promiseBroken": [
+         "p-get-it-back"
+        ]
+       },
+       {
         "text": "\"I know you will.\" You're on the bench for a month. You run on Tuesdays anyway.",
         "arc": {
          "set": {
@@ -551,6 +630,31 @@
       "label": "Nod.",
       "tone": "calm",
       "outcomes": [
+       {
+        "text": "You nod. You learn a lot about the bench. {manager.short} catches your eye across the room. \"You said you'd get it back.\" He leaves it there.",
+        "arc": {
+         "set": {
+          "back": "bench"
+         }
+        },
+        "if": "promise(p-get-it-back)",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "said-hed-get-it-back",
+          "strength": 2
+         }
+        ],
+        "promiseBroken": [
+         "p-get-it-back"
+        ]
+       },
        {
         "text": "You nod. You learn a lot about the bench.",
         "arc": {

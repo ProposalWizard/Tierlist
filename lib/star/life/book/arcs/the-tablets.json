@@ -750,7 +750,8 @@
         ],
         "arc": {
          "end": "clean-sample"
-        }
+        },
+        "snub": "physio"
        },
        {
         "text": "Someone else does it. They use your case on a slide, without your name, and everybody knows.",
@@ -774,7 +775,8 @@
         ],
         "arc": {
          "end": "the-letter-from-testing"
-        }
+        },
+        "snub": "physio"
        }
       ]
      }

@@ -57,7 +57,59 @@
    "text": "You never wrote back. A year later his daughter sent the photo anyway, with a note: he talked about your grandad to the end."
   }
  ],
- "promises": {},
+ "promises": {
+  "p-wilf": {
+   "id": "p-wilf",
+   "to": "dad",
+   "text": "Ring Wilf about Grandad, after the season",
+   "due": {
+    "weeks": [
+     0,
+     56
+    ]
+   },
+   "keptBy": {
+    "beat": "gtm-1c-glovebox",
+    "ends": [
+     "ring"
+    ]
+   },
+   "dueText": "When the season's done",
+   "kept": {
+    "text": "Your dad tells everybody at work that his dad played left half. He's got the photo on his phone.",
+    "npc": [
+     {
+      "slot": "dad",
+      "bond": 6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "dad",
+      "tag": "found-out-about-grandad",
+      "strength": 2
+     }
+    ]
+   },
+   "broken": {
+    "text": "Wilf's daughter rings the club in the end. He's been asking if you got the letter.",
+    "npc": [
+     {
+      "slot": "dad",
+      "bond": -6,
+      "respect": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "dad",
+      "tag": "never-rang-wilf",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
  "beats": [
   {
    "id": "gtm-1-letter",
@@ -108,7 +160,8 @@
          "label": "\"I'll do it after the season.\"",
          "tone": "humble",
          "silent": true,
-         "end": "later"
+         "end": "later",
+         "promise": "p-wilf"
         }
        ]
       }
@@ -146,7 +199,12 @@
         "arc": {
          "set": {
           "path": "later"
-         }
+         },
+         "next": "gtm-1c-glovebox",
+         "afterWeeks": [
+          2,
+          4
+         ]
         }
        }
       ]
@@ -345,6 +403,7 @@
     },
     "setup": [
      "A season on. The wire works ground is a lorry park now, except for one goal at the far end that nobody ever took down. The net is somebody's old fishing net.",
+     "{if arc.path=='rang-late'}Wilf has the programme ready on his knee. He tells you it took you a full season to ring, and he says it nicely.{/if}",
      "{if arc.path=='later'}His daughter rang the club in the end. Wilf has been asking if you got the letter.{/if}Wilf is in a camping chair by the post, in a blanket, with a flask."
     ],
     "talk": {
@@ -845,6 +904,95 @@
     ]
    },
    "hint": "Your dad has something to show you"
+  },
+  {
+   "id": "gtm-1c-glovebox",
+   "title": "The glovebox",
+   "event": {
+    "id": "arc-gtm-1c-glovebox",
+    "title": "The glovebox",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "season-end"
+     ]
+    },
+    "setup": [
+     "The season's done. You're clearing the car out for the summer and Wilf's letter is in the glovebox, under the parking tickets, the blue ink gone a bit pale."
+    ],
+    "choices": [
+     {
+      "id": "ring",
+      "label": "Ring the number. Put your dad on speaker.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "Wilf picks up on the ninth ring. \"I thought you'd lost it,\" he says. \"I'd have lost it.\" Your dad laughs for the first time in the call.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 5,
+          "respect": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "rang-wilf-in-the-end",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "rang-late"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Put it back under the parking tickets.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "It goes back under the parking tickets. Your dad asks about it once, in August, and then stops asking.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": -6,
+          "respect": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "dad",
+          "tag": "left-wilfs-letter",
+          "strength": 2
+         }
+        ],
+        "promiseBroken": [
+         "p-wilf"
+        ]
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Wilf's letter is still in the glovebox"
   }
  ]
 }

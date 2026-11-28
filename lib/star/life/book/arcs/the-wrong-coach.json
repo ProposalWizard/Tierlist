@@ -133,7 +133,8 @@
          "set": {
           "path": "taxi"
          }
-        }
+        },
+        "snub": "kidfan"
        }
       ]
      }
@@ -238,7 +239,9 @@
         ],
         "arc": {
          "end": "seat-fourteen"
-        }
+        },
+        "snub": "kidfan",
+        "snubTwice": "Her dad takes the tape off seat fourteen. \"Twice is plenty.\""
        },
        {
         "text": "\"Taxi man.\" They've been calling you that all season.",
@@ -253,7 +256,9 @@
         ],
         "arc": {
          "end": "a-taxi"
-        }
+        },
+        "snub": "kidfan",
+        "snubTwice": "Her dad takes the tape off seat fourteen. \"Twice is plenty.\""
        }
       ]
      }

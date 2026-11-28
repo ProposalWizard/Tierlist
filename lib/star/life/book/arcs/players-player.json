@@ -399,6 +399,24 @@
         }
        }
       ]
+     },
+     {
+      "id": "blank",
+      "label": "Fold your slip and leave it blank.",
+      "outcomes": [
+       {
+        "text": "You drop it in the cup blank. You win it again anyway, by two votes. {mate.short} saw you didn't write your own name.",
+        "npc": [
+         {
+          "slot": "mate",
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "my-award"
+        }
+       }
+      ]
      }
     ],
     "callbacks": [],

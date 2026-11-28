@@ -108,6 +108,61 @@
      }
     ]
    }
+  },
+  "p-no-story": {
+   "id": "p-no-story",
+   "to": "pal",
+   "text": "Don't tell the under-twelves story at {pal.short}'s wedding",
+   "due": {
+    "weeks": [
+     0,
+     30
+    ]
+   },
+   "keptBy": {
+    "beat": "bst-3-wedding",
+    "ends": [
+     "humble",
+     "calm",
+     "confident",
+     "guest"
+    ]
+   },
+   "dueText": "At the wedding, in June",
+   "kept": {
+    "text": "His new wife finds you at the bar. \"You didn't tell it. I owe you.\" She tells it herself, later, to her table.",
+    "npc": [
+     {
+      "slot": "pal",
+      "bond": 4,
+      "respect": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "pal",
+      "tag": "kept-the-under-twelves-quiet",
+      "strength": 2
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"You promised her, mate. You actually promised her.\"",
+    "npc": [
+     {
+      "slot": "pal",
+      "bond": -6,
+      "respect": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "pal",
+      "tag": "promised-and-told-it-anyway",
+      "strength": 3
+     }
+    ]
+   }
   }
  },
  "beats": [
@@ -271,7 +326,8 @@
          "set": {
           "story": "no"
          }
-        }
+        },
+        "promise": "p-no-story"
        }
       ]
      },
@@ -457,6 +513,33 @@
        }
       ],
       "fiery": [
+       {
+        "text": "The penalty, the shorts, the bus home. The marquee is screaming. {pal.short} has his head in his hands. His new wife doesn't laugh until the shorts, and then she can't stop. At the bar she won't look at you. You did promise.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -4,
+          "respect": -4,
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "promised-and-told-it-anyway",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "speech": "story"
+         }
+        },
+        "promiseBroken": [
+         "p-no-story"
+        ],
+        "if": "promise(p-no-story)"
+       },
        {
         "text": "The penalty, the shorts, the bus home. The marquee is screaming. {pal.short} has his head in his hands. His new wife doesn't laugh until the shorts, and then she can't stop.",
         "npc": [

@@ -337,7 +337,8 @@
          "set": {
           "path": "square"
          }
-        }
+        },
+        "snub": "coach"
        }
       ]
      }

@@ -103,6 +103,52 @@
      }
     ]
    }
+  },
+  "p-her-try": {
+   "id": "p-her-try",
+   "to": "kidfan",
+   "text": "Try to get to {kidfan.short}'s trial",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "sgu-2",
+    "ends": [
+     "go"
+    ]
+   },
+   "dueText": "A Sunday morning, two weeks away",
+   "remind": "\"It's Sunday. Pitch three. Only if you can.\"",
+   "kept": {
+    "text": "You said you'd try. She didn't expect you, and you came.",
+    "npc": [
+     {
+      "slot": "kidfan",
+      "bond": 6,
+      "respect": 2
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"You said you'd try.\"",
+    "npc": [
+     {
+      "slot": "kidfan",
+      "bond": -4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "kidfan",
+      "tag": "tried-and-didnt-come",
+      "strength": 2
+     }
+    ],
+    "snub": "kidfan"
+   }
   }
  },
  "beats": [
@@ -157,7 +203,8 @@
          "id": "busy",
          "label": "\"I'll try. Sundays are hard.\"",
          "tone": "honest",
-         "end": "maybe"
+         "end": "maybe",
+         "promise": "p-her-try"
         },
         {
          "id": "quiet",
@@ -184,7 +231,8 @@
          "id": "busy",
          "label": "\"Good feet. I'll try and come.\"",
          "tone": "calm",
-         "end": "maybe"
+         "end": "maybe",
+         "promise": "p-her-try"
         }
        ]
       }
@@ -332,7 +380,15 @@
          }
         },
         "promiseBroken": [
-         "p-her-trial"
+         "p-her-trial",
+         "p-her-try"
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "stayed-in-bed-for-my-trial",
+          "strength": 2
+         }
         ]
        }
       ]
@@ -829,7 +885,8 @@
         ],
         "arc": {
          "end": "the-ticket"
-        }
+        },
+        "snub": "kidfan"
        },
        {
         "text": "You send a text. She sends back a photo of her, at the stadium, in the stand.",
@@ -841,7 +898,8 @@
         ],
         "arc": {
          "end": "she-stopped"
-        }
+        },
+        "snub": "kidfan"
        }
       ]
      }

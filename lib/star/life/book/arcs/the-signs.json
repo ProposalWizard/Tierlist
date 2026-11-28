@@ -51,7 +51,62 @@
    "text": "A team-mate's deaf son stood on his own at the family day. You meant to learn a sign. You never did."
   }
  ],
- "promises": {},
+ "promises": {
+  "p-sign-lesson": {
+   "id": "p-sign-lesson",
+   "to": "mate",
+   "text": "Ten minutes after training: a sign lesson from {mate.short}'s boy",
+   "due": {
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "keptBy": {
+    "beat": "sgl-2b-nextweek",
+    "ends": [
+     "stay"
+    ]
+   },
+   "dueText": "Next week, after training",
+   "remind": "\"He's practising being patient with you. {mate.short}\"",
+   "kept": {
+    "text": "Ten minutes on a video call. You learn good morning and well done. He's very strict.",
+    "npc": [
+     {
+      "slot": "mate",
+      "bond": 6,
+      "respect": 3
+     }
+    ],
+    "remember": [
+     {
+      "slot": "mate",
+      "tag": "kept-the-sign-lesson",
+      "strength": 2
+     }
+    ]
+   },
+   "broken": {
+    "text": "\"He waited by the laptop with his signs written out. Don't worry about it.\"",
+    "npc": [
+     {
+      "slot": "mate",
+      "bond": -6,
+      "respect": -3
+     }
+    ],
+    "remember": [
+     {
+      "slot": "mate",
+      "tag": "never-came-for-the-lesson",
+      "strength": 3
+     }
+    ],
+    "snub": "mate"
+   }
+  }
+ },
  "beats": [
   {
    "id": "sgl-1-familyday",
@@ -269,12 +324,18 @@
       "tone": "cold",
       "outcomes": [
        {
-        "text": "Next week comes and goes. So does the one after.",
+        "text": "\"Next week, then. I'll tell him.\" The boy writes it on the kitchen calendar in red.",
         "arc": {
          "set": {
           "signs": "none"
-         }
-        }
+         },
+         "next": "sgl-2b-nextweek",
+         "afterWeeks": [
+          1,
+          2
+         ]
+        },
+        "promise": "p-sign-lesson"
        }
       ]
      }
@@ -359,7 +420,8 @@
          "set": {
           "dinner": "gift"
          }
-        }
+        },
+        "snub": "mate"
        }
       ]
      },
@@ -374,7 +436,8 @@
          "set": {
           "dinner": "no"
          }
-        }
+        },
+        "snub": "mate"
        }
       ]
      }
@@ -417,7 +480,8 @@
      ]
     },
     "setup": [
-     "A season on. {mate.short}'s boy is the mascot, holding your hand in the tunnel, in a kit that comes down to his knees. Twenty minutes in, you score."
+     "A season on. {mate.short}'s boy is the mascot, holding your hand in the tunnel, in a kit that comes down to his knees. Twenty minutes in, you score.",
+     "{if mem(mate,'never-came-for-the-lesson')}His dad gives you a nod. Just a nod.{/if}"
     ],
     "choices": [
      {
@@ -536,6 +600,92 @@
     ]
    },
    "hint": "A season on, the mascot"
+  },
+  {
+   "id": "sgl-2b-nextweek",
+   "title": "Next week, then",
+   "hint": "You said next week",
+   "event": {
+    "id": "arc-sgl-2b-nextweek",
+    "title": "Next week, then",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     }
+    ],
+    "setup": [
+     "{mate.short} has his phone out by the boot room. \"He's on. You said next week. It's next week.\""
+    ],
+    "choices": [
+     {
+      "id": "stay",
+      "label": "Sit on the bench and do the lesson.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "He teaches you pass and good morning. You get pass wrong four times and he signs something to his dad that makes his dad cough.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "signs": "some"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "later",
+      "label": "\"Can't today, mate. Physio.\"",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "{mate.short} turns the phone round. The boy's face drops before the screen goes off.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "never-came-for-the-lesson",
+          "strength": 3
+         }
+        ],
+        "promiseBroken": [
+         "p-sign-lesson"
+        ],
+        "snub": "mate",
+        "arc": {
+         "set": {
+          "signs": "none"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": []
+   }
   }
  ]
 }

@@ -182,7 +182,8 @@
          "set": {
           "path": "home"
          }
-        }
+        },
+        "snub": "groundsman"
        }
       ]
      }
@@ -679,6 +680,22 @@
        }
       ],
       "me": [
+       {
+        "if": "arc.back=='bucket'",
+        "text": "You run out first. Halfway to the centre circle you stop and wait for him, and you walk the rest together. The ground fills up behind you.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "groundsman",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "the-bucket-night"
+        }
+       },
        {
         "if": "!arc.back=='short'",
         "text": "You run out to a sell-out. The kids measure themselves against the line on the stand.",

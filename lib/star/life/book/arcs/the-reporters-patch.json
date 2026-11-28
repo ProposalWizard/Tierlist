@@ -171,7 +171,8 @@
          "set": {
           "path": "no"
          }
-        }
+        },
+        "snub": "reporter"
        }
       ]
      }

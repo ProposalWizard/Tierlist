@@ -274,7 +274,8 @@
          "set": {
           "path": "no"
          }
-        }
+        },
+        "snub": "pal"
        }
       ]
      }
@@ -321,7 +322,8 @@
      ]
     },
     "setup": [
-     "A season on. {pal.short}: \"We're in the leisure centre cup final. Wednesday. Against the plumbers. Just come and watch.\""
+     "A season on. {pal.short}: \"We're in the leisure centre cup final. Wednesday. Against the plumbers. Just come and watch.\"",
+     "{if mem(pal,'turned-me-down')}He's added: \"No pressure. You've said no before.\"{/if}"
     ],
     "choices": [
      {
@@ -375,7 +377,9 @@
         ],
         "arc": {
          "end": "too-good-for-us"
-        }
+        },
+        "snub": "pal",
+        "snubTwice": "\"Twice now. We'll stop asking, mate.\""
        }
       ]
      }

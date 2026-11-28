@@ -251,7 +251,8 @@
          "set": {
           "played": 0
          }
-        }
+        },
+        "snub": "reporter"
        }
       ]
      }
