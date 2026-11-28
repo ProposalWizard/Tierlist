@@ -136,14 +136,14 @@ function beltCanvas(): HTMLCanvasElement {
 }
 
 /** A colour a share darker (0.72 = 72% of it). */
-function shadeOf(hex: string, k: number): string {
+export function shadeOf(hex: string, k: number): string {
   const n = parseInt(hex.replace("#", ""), 16);
   const c = (v: number) => Math.max(0, Math.min(255, Math.round(v * k))).toString(16).padStart(2, "0");
   return `#${c((n >> 16) & 255)}${c((n >> 8) & 255)}${c(n & 255)}`;
 }
 
 /** A painter: boxes and cylinders in vertex colours, joined into one mesh (one draw). */
-function painter(THREE: any, merge: (g: any[]) => any) {
+export function painter(THREE: any, merge: (g: any[]) => any) {
   const parts: any[] = [];
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1), col = new THREE.Color();
   const put = (g: any, colour: string, x: number, y: number, z: number, rx = 0, ry = 0, rz = 0) => {
