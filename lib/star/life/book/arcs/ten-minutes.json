@@ -25,7 +25,6 @@
    "age<=29"
   ]
  },
- "needsActivity": "penalties",
  "cast": [
   {
    "slot": "vet",
@@ -372,7 +371,8 @@
         "dials": {
          "shots": 1,
          "keeper": true,
-         "choice": "score or miss, the player's own aim"
+         "choice": "score or miss, the player's own aim",
+         "missIf": "arc.deal=='yes'"
         },
         "score": "scored (1) or not (0)",
         "canAbandon": true,

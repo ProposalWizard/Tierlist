@@ -38,7 +38,8 @@
  * in the career, and plays those careers for real, the same way. The check is the same (every
  * ending seen in real play); the reach pass only chooses which careers to play. Its careers are
  * counted apart and never in the stage tables. This also makes the two endings that were flaky
- * last round (free-kick-duty "your-penalties", the-penalty-taker "shared") robust.
+ * last round (free-kick-duty "your-penalties", the-penalty-taker "shared") robust. For a big story,
+ * each other big story in a name's career counts against it (one big story is open at a time).
  *
  *   SOAK_JSON=out.json npx tsx scripts/soak/lifeSoak.mts 200 15   also write the report as data
  *   REACH=0 ...                                                     skip the reach pass
@@ -400,11 +401,16 @@ if (process.env.REACH !== "0") {
     const target = need[0];
     // The name (from the next 600) that puts the target's whole chain in the career, and as many
     // other unfinished stories as it can.
-    let best = "", bestN = -1;
+    let best = "", bestN = -Infinity;
+    // Only one big story is open at a time (arcs.ts bigOpen), so for a big target every other big
+    // story in the career counts against the name (a long big story, e.g. ten-minutes, runs for seasons).
+    const otherBig = target.size === "big" ? ARCS.filter((x) => x.size === "big" && x.start && !chainOf(target).includes(x)) : [];
     for (let j = 0; j < 600; j++, k++) {
       const p = { firstName: "Soak", lastName: `Reach${k}`, startYear: 2027 };
       if (!chainOf(target).every((x) => inCareer(x, p))) continue;
-      const score = need.filter((x) => chainOf(x).every((y) => inCareer(y, p))).length;
+      const blockers = otherBig.filter((x) => inCareer(x, p)).length;
+      // A big story that could block the target costs as much as one unfinished story the name holds.
+      const score = need.filter((x) => chainOf(x).every((y) => inCareer(y, p))).length - blockers;
       if (score > bestN) { bestN = score; best = p.lastName; }
     }
     for (const x of need) if (chainOf(x).every((y) => inCareer(y, { firstName: "Soak", lastName: best, startYear: 2027 }))) reachTries.set(x.id, (reachTries.get(x.id) ?? 0) + 1);

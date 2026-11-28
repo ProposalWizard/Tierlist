@@ -19,7 +19,6 @@
   "tier": "uncommon",
   "stage": "any"
  },
- "needsActivity": "two-touch",
  "cast": [
   {
    "slot": "kidfan",

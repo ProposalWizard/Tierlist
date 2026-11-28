@@ -28,7 +28,8 @@ import { makeWembley, wembleyLeave, wembleyPlace, wembleyPlayers, wembleyReward,
 import { makeHeadersVolleys, hvReward, crossWord, HV_CROSSES, HV_TARGET, HV_POINTS } from "./headersVolleys";
 import { makePaceDrill, paceCountdown, kmhText, PACE_DISTANCE, STAR_SLACK } from "./paceDrill";
 
-export type DrillId = "crossbar" | "two-touch" | "free-roam" | "headers-volleys" | "wembley" | "pace";
+/** "keep-ups" is opened by a story only (./keepUps.ts keepUpsDrill), never listed in DRILLS. */
+export type DrillId = "crossbar" | "two-touch" | "free-roam" | "headers-volleys" | "wembley" | "pace" | "keep-ups";
 
 /** A drill that trains a skill: the level played and its stars (the career banks them, lib/star/trainingLevels.ts applyLevelResult). */
 export interface DrillTrain { skill: "pace"; level: number; stars: number }

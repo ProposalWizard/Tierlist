@@ -132,8 +132,8 @@ export function useStory({ career, setCareer, rng, facts, toast }: StoryOpts) {
   }, [queue]);
 
   /** A moment: notices first, then the beat that wants a screen, else the offer (his round menu). */
-  const moment = useCallback((c0: CareerState, m: LifeMoment, f: FactOverride = facts, pre: ArcNotice[] = []): boolean => {
-    const r = arcMoment(c0, m, { rng, facts: f });
+  const moment = useCallback((c0: CareerState, m: LifeMoment, f: FactOverride = facts, pre: ArcNotice[] = [], force?: string): boolean => {
+    const r = arcMoment(c0, m, { rng, facts: f, force });
     let c = r.career;
     const list: StoryView[] = [];
     const notes = [...pre, ...r.notices];
@@ -233,6 +233,15 @@ export function useStory({ career, setCareer, rng, facts, toast }: StoryOpts) {
         setCareer(o.career);
         return viewForBeat(o.career, o.live);
       }
+    },
+    /** Test page: start this story now at training (its first beat), whatever its start rules say;
+     *  with `beat`, jump straight to that beat once it has started (the games' screens). */
+    story: (arcId: string, beat?: string, c0: CareerState | null = career) => {
+      if (!c0) return;
+      if (!beat) { if (!moment(c0, "arrive:training", facts, [], arcId)) toast("That story could not start here."); return; }
+      const r = arcMoment(c0, "arrive:training", { rng, facts, force: arcId });
+      const v = open(r.career, arcId, beat);
+      if (v) show([v]); else toast("That beat could not open.");
     },
     menu: (id: string) => setView({ k: "menu", id }),
     phone: (tab: "promises" | "stories" = "promises") => setView({ k: "phone", tab }),

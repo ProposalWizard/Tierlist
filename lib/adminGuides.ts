@@ -653,6 +653,15 @@ export const ADMIN_GUIDES = {
         ["+10 weeks", "Jumps ten weeks with nothing happening, so a follow-up comes due."],
         ["Last match: Won / Drew / Lost and the ratings", "What the director thinks your last match was. Some events only fire after a loss or a bad rating."],
       ] },
+      { group: "Stories with a game", items: [
+        ["▶ Miss it / The board / Bet you can't do fifty / Fastest in the squad", "Starts that story now at training (its first beat), whatever its start rules say. Miss it: the penalty is the next Saturday, so press Saturday after the talk in the car."],
+        ["The penalty", "One penalty on the real match engine with a keeper and your run-up. Drag back from the ball and let go. You aim it: missing on purpose is your own aim. Scored is a win for the story."],
+        ["The gym board", "The gym's plank (or the bench press, if you said \"The bench.\") against his record on the whiteboard: 26 s braced, or 8 reps with 6 lowered slowly. Press and hold anywhere on the dark pad (or Space). Beat it and your name goes on the board."],
+        ["Keep-ups", "The 3D kickabout: tap as the ball drops to your foot; you step under it yourself. One go, up to a hundred. Her count is rolled and shown at the end; beat it to win."],
+        ["Forty metres", "A sprint race on your legs. Press on GO (before it is a false start), then hold to sprint, let go to run. Your sprint bar can never be fuller than your energy, so a tired man fades."],
+        ["✕ Stop / 🎲 Roll", "Stop is a real result (the story's own line). Roll plays it by the dice instead, as a device that cannot run the game would."],
+        ["URL", "?story=<arc id> starts a story, &beat=<beat id> opens that beat (e.g. ?story=arc-the-race&beat=rce-1-race)."],
+      ] },
       { group: "A moment, now", items: [
         ["After a match … Season end", "Asks the director at that one moment. It may say nothing happened: that is the rules working (budget, cooldowns, a reason to fire)."],
       ] },
@@ -675,7 +684,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing is saved. The sample starts again when you reload the page.", "The decision clock setting is kept in this browser only."],
     inGame: ["Nowhere yet: it is off in the real career (lib/star/life/flag.ts) until Harry says. Phase 2 wires the moments into the game and adds the legend, the star pass story stops and more events."],
-    dev: "app/star-life-dev/page.tsx; screens components/star/life/ (PeoplePage, EventCard, LifeFace, life.css; decision screens Telltale, ToneDial, RoundMenu, DecisionParts, decision.css); decision data lib/star/life/decision.ts (which screen, tones, clock setting, who is listening, the squad line, your voice) and roundMenu.ts (the round menu's API for the 3D world); stills public/star/life/; system lib/star/life/ (types, cond, people, facts, director, resolve, social, sim, migrate, validate, flag); the book lib/star/life/book/events.json; tests/star/lifeEvents.mts; soak scripts/soak/lifeSoak.mts. Design: docs/plans/living-world-design-2026-11-20.md. Events v2 (the kit man arc): talks lib/star/life/talk.ts, arcs arcs.ts + arcBook.ts (book/arcs/hundred-balls.json), promises promises.ts, checker validateArcs.ts, test tests/star/lifeArcs.mts; screens StoryPlayer, StoryCards, ActivityHost (the drills on EngineFeature); stills public/star/life/kitman/ (people drawn on /star-life-dev/portrait?id=<preset>). Design: docs/plans/living-world-events-v2-2026-11-20.md.",
+    dev: "app/star-life-dev/page.tsx; screens components/star/life/ (PeoplePage, EventCard, LifeFace, life.css; decision screens Telltale, ToneDial, RoundMenu, DecisionParts, decision.css); decision data lib/star/life/decision.ts (which screen, tones, clock setting, who is listening, the squad line, your voice) and roundMenu.ts (the round menu's API for the 3D world); stills public/star/life/; system lib/star/life/ (types, cond, people, facts, director, resolve, social, sim, migrate, validate, flag); the book lib/star/life/book/events.json; tests/star/lifeEvents.mts; soak scripts/soak/lifeSoak.mts. Design: docs/plans/living-world-design-2026-11-20.md. Events v2 (the kit man arc): talks lib/star/life/talk.ts, arcs arcs.ts + arcBook.ts (book/arcs/hundred-balls.json), promises promises.ts, checker validateArcs.ts, test tests/star/lifeArcs.mts; screens StoryPlayer, StoryCards, ActivityHost (the drills on EngineFeature), StoryModes (penalties on EngineFeature, the gym board from lib/star/gym/games.ts + lib/star/life/gymBoard.ts, keep-ups on Play3D + lib/star/play3d/keepUps.ts, the sprint from lib/star/life/sprint.ts on lib/star/legs.ts; test tests/star/lifeModes.mts); stills public/star/life/kitman/ (people drawn on /star-life-dev/portrait?id=<preset>). Design: docs/plans/living-world-events-v2-2026-11-20.md.",
   },
   "/admin/star-xp": {
     title: "XP Book",
