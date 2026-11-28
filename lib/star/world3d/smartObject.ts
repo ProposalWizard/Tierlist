@@ -30,7 +30,7 @@ export interface ClipStep {
   /** How long a loop step lasts (s). Unset: the clip's own length. */
   secs?: number;
   /** A small move the scene adds over the clip (no clip of its own yet). */
-  gesture?: "drink" | "remote";
+  gesture?: "drink" | "remote" | "cook";
 }
 
 /** A place on the object one person uses. */
@@ -79,6 +79,8 @@ export interface SmartObject {
   bed?: { at: XZ; head: number; top: number; duvet: string };
   /** A gym machine you play a mini-game on (lib/star/gym/games.ts): "bench" | "treadmill" | "bag". */
   game?: string;
+  /** Where the hands work (a hob: the pan to stir, the handle the other hand holds; world points, m). npc.ts "cook". */
+  hands?: { pan: [number, number, number]; handle: [number, number, number] };
 }
 
 /** Forward and right on the floor for a facing. */

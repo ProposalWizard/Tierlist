@@ -837,6 +837,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       visits: opts.living.visits, roomCap: roomPeople(tier, typeof navigator !== "undefined" && /Android|Mobi/i.test(navigator.userAgent) && !/iPhone|iPad/i.test(navigator.userAgent)),
       onSleep: () => { sleepSeq = { t: 0, text: "", morning: false }; },
       onGym: opts.living.onGym,
+      camera: () => camera,
       dip: (text, mid) => { dipSeq = { t: 0, text, mid }; },
     }).catch((e) => { console.error("home: living", e); return null; });
     life?.enterRoom(room);

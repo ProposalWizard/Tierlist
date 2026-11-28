@@ -225,6 +225,30 @@ export function arrivalAt(door: DoorPlan, inside = 1.0): { x: number; z: number;
   return { x: door.x + door.nx * inside, z: door.z + door.nz * inside, yaw: Math.atan2(door.nx, door.nz) };
 }
 
+/**
+ * THE LOBBY BEYOND A DOORWAY (28 Nov 2026: a visitor vanished in the doorway, because the floor stopped at the
+ * wall). Every doorway of a room opens onto a short lit space: a bit of hallway (another room) or the porch (the
+ * front door). People walk through it and out of sight; roomBuild.ts shellOf draws it, world3d/houseLife.ts walks it.
+ * `depth` out from the wall line, `half` its half-width (narrower where two doors share a wall, so the lobbies never
+ * cross), `side` where a person stands out of sight in it (lateral, out): off the line from the doorway.
+ */
+export const LOBBY_DEPTH = 2.3;
+export const LOBBY_H = 2.5;
+export function lobbyOf(plan: RoomPlan, door: DoorPlan): { half: number; depth: number; side: [number, number] } {
+  const along = door.wall === "n" || door.wall === "s";
+  const c = along ? door.x : door.z;
+  let gap = Infinity;
+  for (const o of plan.doors) if (o !== door && o.wall === door.wall) gap = Math.min(gap, Math.abs((along ? o.x : o.z) - c));
+  const half = Math.max(door.half + 0.32, Math.min(1.3, gap / 2 - 0.03));
+  // out of the line of the doorway: to one side, past the jamb (the front door: the side its door does not swing to)
+  return { half, depth: LOBBY_DEPTH, side: [Math.min(half - 0.4, door.half + 0.35), 1.45] };
+}
+/** A point of a door's lobby (or the room, inside > 0): `lat` along the wall (the door's own left-right), `out` beyond it. */
+export function lobbyPoint(door: DoorPlan, lat: number, out: number): [number, number] {
+  const tx = -door.nz, tz = door.nx;
+  return [door.x + tx * lat - door.nx * out, door.z + tz * lat - door.nz * out];
+}
+
 /** The door you come in by from `from` (the one that leads back), else the room's first door. */
 export function arrivalDoor(plan: RoomPlan, from: RoomId | "garden" | null): DoorPlan | null {
   return plan.doors.find((d) => d.to === from) ?? plan.doors[0] ?? null;
