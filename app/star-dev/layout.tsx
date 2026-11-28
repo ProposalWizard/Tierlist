@@ -11,9 +11,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
   // Add to Home Screen opens the game with no browser bars (v0.25, point 3).
   // iPhone has no Fullscreen API for pages; this is the only way there.
-  manifest: "/star-app.webmanifest?v=2",
+  manifest: "/star-app.webmanifest?v=3",
   appleWebApp: { capable: true, title: "Knowitball", statusBarStyle: "black" },
-  icons: { apple: "/star/app-icon-180.png?v=2" },
+  icons: { apple: "/star/kib-trophy-180.png" },
   other: { "mobile-web-app-capable": "yes" },
 };
 
