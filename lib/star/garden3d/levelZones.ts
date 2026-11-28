@@ -37,6 +37,7 @@ import {
 import { gardenChip, gardenLevelOf, GARDEN_LEVELS } from "../gardenLevels";
 import { boardsCanvas, gravelCanvas, hedgeCanvas, slateCanvas, stripeCanvas, strawCanvas } from "./textures";
 import { hiddenBehind, type PlantStyle } from "./plantZones";
+import { buildFarGarden, farEyes, CELL, CELL_FIELD, FAR_FROM_X, FIELD_FROM_X, type FarGarden } from "./farGarden";
 import type { Person3D } from "../people3d";
 import { RIDE_POSE, carryTack, makeRideHorse, riderCheck, seatRider, type HorseRig } from "./rideHorse";
 import type { Quality3d } from "../three3d/quality";
@@ -925,6 +926,8 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
       cs.height += 1.15; cs.back += 2.4; cs.lookY += 1.0; cs.lookAhead += 1.4 + hp.speed * 0.12;
     },
     update: (dt, camera, px, pz) => {
+      mainCam = camera;
+      if (farWanted) buildFar();
       if (!mounted) {
         // the horse at rest: grazes, now and then ambles to a new spot in the paddock
         if (horse) {
@@ -994,6 +997,7 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
     dispose: () => {
       if (mounted) cb.onRide?.({ energy: hp.energy, laps: lapsDone });
       disposed = true;
+      nearCopy?.dispose(); fieldCopy?.dispose();
       hud.remove();
       void signs;
     },
@@ -1009,13 +1013,30 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
   ];
   let wallItems: { m: any; c: number[]; r: number; corners: number[][] }[] | null = null;
   const SMALL = Number(d.dbg.get("smallcull") ?? 0.03), SMALL_FAR = Number(d.dbg.get("smallcullfar") ?? 0.07);
-  let wallHidden: any[] = [], wallTick = 0;
+  let wallHidden: any[] = [], wallTick = 0, farSet: Set<any> | null = null;
   const mine = new Set<any>();
   const people: any[] = [];
   const pw = new THREE.Vector3();
+  // ── the far copies (./farGarden.ts): out past ~25 m the garden's still pieces draw as one merged copy; out in
+  // the field (40 m+) a coarser one ──
+  let nearCopy: FarGarden | null = null, fieldCopy: FarGarden | null = null, far: FarGarden | null = null;
+  const farOff = d.dbg.get("gardenfar") === "0";
+  const showFar = (f: FarGarden | null) => {
+    if (f === far) return;
+    if (far) far.group.visible = false;
+    far = f;
+    if (far) far.group.visible = true;
+    farSet = far ? new Set(far.replaces) : null;
+    wallTick = 0;
+    if (typeof window !== "undefined") (window as any).__gardenFar = far ? { ...far.stats, which: far === nearCopy ? "near" : "field", on: true } : { on: false };
+  };
+  // only the garden's own camera decides (the bench's and the cars' far pictures render this scene from their own
+  // cameras, on their own layers: they must not switch the far copy off for the next real picture)
+  let mainCam: any = null;
   const behindWall = (camera: any): any[] => {
+    if (mainCam && camera !== mainCam) return [];
     const e = camera.position;
-    if (e.x > WEST_GATE.x - 0.6) { wallHidden = []; return wallHidden; }
+    if (e.x > WEST_GATE.x - 0.6) { wallHidden = []; showFar(null); return wallHidden; }
     if (!wallItems) {
       // once: the garden's own still meshes, each with its box (not the new areas, not anything that moves)
       scene.traverse((o: any) => { if (o.name?.startsWith("garden-level-")) o.traverse((c: any) => mine.add(c)); });
@@ -1031,17 +1052,46 @@ export async function buildLevelZones(d: ZoneDeps, opt: GardenLevelsOpt, cb: Zon
         const c = b.getCenter(new THREE.Vector3()), r = b.getSize(new THREE.Vector3()).length() / 2;
         wallItems!.push({ m: o, c: [c.x, c.y, c.z], r, corners: [b.min.x, b.max.x].flatMap((x) => [b.min.y, b.max.y].flatMap((y) => [b.min.z, b.max.z].map((z) => [x, y, z]))) });
       });
+      farWanted = !farOff;
+    }
+    // which copy: none inside FAR_FROM_X, the near one to the field's gate, the field's past it (a metre either way
+    // so it does not flicker at a line)
+    if (nearCopy) {
+      const past = (x: number, on: boolean) => (on ? e.x < x + 1 : e.x < x - 1);
+      const inField = !!fieldCopy && past(FIELD_FROM_X, far === fieldCopy);
+      showFar(inField ? fieldCopy : past(FAR_FROM_X, !!far) ? nearCopy : null);
+      if (!fieldCopy && level >= 3 && e.x < FIELD_FROM_X + 3) farWanted = true;
     }
     if (wallTick++ % 4 === 0) {
       const eye = [e.x, e.y, e.z];
       // hidden behind the wall, or too small to matter from out here (under ~1% of the view across: a pot, a lantern, a bed)
       const small = e.x < -40 ? SMALL_FAR : SMALL; // out in the field the garden is 30-60 m off: its small pieces are a few pixels
-      wallHidden = wallItems.filter((it) => it.r / Math.hypot(it.c[0] - e.x, it.c[1] - e.y, it.c[2] - e.z) < small || wallBoxes.some((w) => hiddenBehind(eye, it.corners, w))).map((it) => it.m);
+      wallHidden = wallItems.filter((it) => (farSet?.has(it.m) ?? false) || it.r / Math.hypot(it.c[0] - e.x, it.c[1] - e.y, it.c[2] - e.z) < small || wallBoxes.some((w) => hiddenBehind(eye, it.corners, w))).map((it) => it.m);
       // the garden's people and the bird (each a few thousand cloth triangles, measured 90k for the bench from the
       // field): out past the gate's lane they are left out of the picture altogether
       if (e.x < WEST_GATE.x - 2) for (const o of people) { o.getWorldPosition(pw); if (pw.x > WEST_GATE.x + 0.3) wallHidden.push(o); }
     }
     return wallHidden;
+  };
+  /** Build the far copy outside a render (in one, the tight cull has pieces off for that picture): ctrl.update. */
+  let farWanted = false;
+  const buildFar = () => {
+    farWanted = false;
+    if (!wallItems) return;
+    const underPlants = (m: any) => { for (let p = m; p; p = p.parent) if (p.name === "plants") return true; return false; };
+    // every spot out there it is drawn from (on foot and on the horse; higher over the axis where the camera rises
+    // when you ride): the near copy from the lane past FAR_FROM_X to the field's gate, the field's beyond
+    const make = (x0: number, x1: number, cell: number) => {
+      const f = buildFarGarden(THREE, d.mergeGeometries, wallItems!, {
+        eyes: [...farEyes(x0, x1, FIELD[2] - 3, FIELD[3] + 3), ...farEyes(x0, x1, -6, 6, [7])],
+        walls: wallBoxes, small: (eye) => (eye[0] < -40 ? SMALL_FAR : SMALL), skip: underPlants, cell,
+      });
+      scene.add(f.group);
+      f.group.traverse((c: any) => mine.add(c));
+      return f;
+    };
+    if (!nearCopy) nearCopy = make(FIELD_FROM_X - 2, FAR_FROM_X + 1, CELL);
+    else if (!fieldCopy && level >= 3) fieldCopy = make(FIELD[0] - 4, FIELD_FROM_X + 1, CELL_FIELD);
   };
   // a rough "is the horse in view" for skipping his clips off screen
   const fr = new THREE.Frustum(), pm = new THREE.Matrix4(), sph = new THREE.Sphere(new THREE.Vector3(), 2.2);

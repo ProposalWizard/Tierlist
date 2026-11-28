@@ -69,7 +69,6 @@ export interface LevelMeasure {
   /** Over the draw budget, and why (still to fix; the test holds it at this ceiling so it cannot grow). */
   over?: { ceiling: number; why: string };
 }
-const BACK = "looking back at the garden through the west gate: the whole garden is in the picture (the wall and small-piece culling, levelZones.ts behindWall, took it from 158 to 120)";
 export const GARDEN_LEVELS_MEASURED: LevelMeasure[] = [
   // 28 Nov 2026, second pass (the stable's stall interiors, hay net, lamps and name plate in)
   { level: 1, view: "gate", walking: false, draws: 95, triangles: 53_346, baselineOver: 95 },
@@ -83,8 +82,15 @@ export const GARDEN_LEVELS_MEASURED: LevelMeasure[] = [
   { level: 5, view: "field", walking: false, draws: 26, triangles: 49_188 },
   { level: 5, view: "riding the course", walking: true, draws: 53, triangles: 61_801 },
   { level: 5, view: "riding the course (later)", walking: true, draws: 35, triangles: 51_305 },
-  { level: 5, view: "paddock, facing the garden", walking: false, draws: 120, triangles: 73_586, over: { ceiling: 125, why: BACK } },
-  { level: 5, view: "field, facing the garden", walking: false, draws: 101, triangles: 74_384, over: { ceiling: 112, why: BACK } },
+  // 28 Nov 2026, the far copy (./farGarden.ts): out past 25 m the garden's still pieces draw from one merged
+  // low-detail copy (9 draws near, 6 in the field). Before → after (scripts/perf3d/garden-outside.mjs, stood 6 s,
+  // the paddock 120 and field 101 of the first pass were taken from other spots): paddock 86 → 63, field 99 → 80,
+  // yard 120 → 74, the lane past the gate 119 → 69; walking in from the paddock 89-163 → 65-77.
+  { level: 5, view: "paddock, facing the garden", walking: false, draws: 63, triangles: 76_019 },
+  { level: 5, view: "field, facing the garden", walking: false, draws: 80, triangles: 73_258 },
+  { level: 5, view: "yard, facing the garden", walking: false, draws: 74, triangles: 78_669 },
+  { level: 5, view: "lane past the west gate, facing the garden", walking: false, draws: 69, triangles: 79_793 },
+  { level: 5, view: "walking in from the paddock to the gate", walking: true, draws: 77, triangles: 85_950 },
 ];
 
 /** The rider on the saddle, measured on the one body (scripts/perf3d H.rider → rideHorse.ts riderCheck), metres. */
