@@ -11,6 +11,7 @@
  *               cut scene's look (no input)
  *   garden / house / shop / casino
  *               keepie-uppies over a real still of the place (several lights).
+ *   street      keepie-uppies over a still of the shopping street (28 Nov 2026)
  *   gym         keepie-uppies over a still of the 3D gym (opened from the
  *               Training page while it is tested, 28 Nov 2026)
  *   training    the coach's drill board (three boards)
@@ -24,7 +25,7 @@
 
 export type LoadSection =
   | "first-load" | "match"
-  | "garden" | "house" | "shop" | "casino" | "gym"
+  | "garden" | "house" | "shop" | "casino" | "gym" | "street"
   | "training" | "ballon-dor" | "awards";
 
 /** What a variant is drawn as. */
@@ -75,6 +76,11 @@ export const LOAD_VARIANTS: Record<LoadSection, LoadVariant[]> = {
   gym: [
     K("keepie-gym", "gym"),
     K("keepie-gym-lamp", "gym", "lamp"),
+  ],
+  // the shopping street (phase 1, 28 Nov 2026): a still of the high street at golden hour
+  street: [
+    K("keepie-street", "street"),
+    K("keepie-street-lamp", "street", "lamp"),
   ],
   training: [
     { id: "board-white", kind: "board", look: "white" },

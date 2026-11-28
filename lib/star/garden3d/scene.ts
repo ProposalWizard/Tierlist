@@ -80,7 +80,7 @@ import {
 } from "./textures";
 import { safeCompileAsync } from "../three3d/safeCompile";
 
-export type GardenSpot = "trophies" | "horse" | "mates" | "fountain" | "cars" | "shop" | "teqball" | "casino" | "training" | "house";
+export type GardenSpot = "trophies" | "horse" | "mates" | "fountain" | "cars" | "shop" | "teqball" | "casino" | "training" | "house" | "street";
 export type GardenSky = "day" | "sunset" | "night";
 
 export interface GardenTrophy { name: string; count: number; art: string | null }
@@ -102,7 +102,7 @@ export interface GardenData {
   mates: number[];
   /** Where you appear: at the shop's doors (coming out of it), the casino's
    *  doors, the training pitch's gate, or the garden gate. */
-  arrive: "shop" | "gate" | "casino" | "training" | "house";
+  arrive: "shop" | "gate" | "casino" | "training" | "house" | /** back from the shopping street: at the gate */ "street";
   /** Who you are: the 3D shop's own player (its Settings → "3D shop player"
    *  switch and your saved skin, hair and hair style). Absent → the shop's
    *  default, the new player. */
@@ -124,6 +124,8 @@ export interface GardenCallbacks {
   onTrainingGate?: () => void;
   /** He walked through your house's back door (9 Oct 2026). Absent: the door stays shut. */
   onHouseDoor?: () => void;
+  /** He walked out of the garden gate, to the shopping street (28 Nov 2026, lib/star/street3d). Absent: the gate stays shut. */
+  onStreetGate?: () => void;
   /** The phone took the 3D away (iPhone Safari does this when memory runs
    *  short): the screen should restart the garden or fall back. */
   onContextLost?: () => void;
@@ -2348,6 +2350,11 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       if (!doorFired && x > HOUSE.x + 0.1) { doorFired = true; cb.onHouseDoor(); }
       return [Math.min(x, HOUSE.x + 0.5), z];
     }
+    // the garden gate, out to the shopping street (28 Nov 2026)
+    if (cb.onStreetGate && Math.abs(x) < 1.3 && z > LIMIT - 0.6) {
+      if (!doorFired && z > LIMIT - 0.15) { doorFired = true; cb.onStreetGate(); }
+      return [x, Math.min(z, LIMIT + 0.3)];
+    }
     // the training pitch's gate
     if (cb.onTrainingGate && Math.abs(x - PITCH.gate) < PITCH.gateHalf - 0.2 && z < PITCH.z1 + 0.7 && z > PITCH.z1 - 1.0) {
       if (!doorFired && z < PITCH.z1 - 0.1) { doorFired = true; cb.onTrainingGate(); }
@@ -2400,7 +2407,9 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     horse: { at: [PADDOCK.x1 + 0.9, (PADDOCK.gate[0] + PADDOCK.gate[1]) / 2], face: [(PADDOCK.x0 + PADDOCK.x1) / 2, 7] },
     cars: { at: [9.5, PARK.z0 + 0.3], face: [11, PARK.z0 + 3.6] },
     fountain: { at: [FOUNTAIN.x, FOUNTAIN.z + FOUNTAIN.r + 0.9], face: [FOUNTAIN.x, FOUNTAIN.z] },
+    street: { at: [0, 17.4], face: [0, 19] },
   };
+  if (cb.onStreetGate) ZONES.unshift({ id: "street", inside: (x, z) => Math.abs(x) < 2.2 && z > 16.6 });
   const walkTo = (to: XZ, face: XZ | null) => {
     grid ??= buildGrid(-LIMIT, LIMIT, -LIMIT, LIMIT, 0.3, isFree);
     const path = findPath(grid, [player.position.x, player.position.z], to);

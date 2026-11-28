@@ -1946,4 +1946,7 @@ export type StarPhase =
   | "home-3d"
   /** The 3D gym (28 Nov 2026), from the Training page's Gym card while it is tested: all 13 exercises,
    *  the gym's own numbers saved (career.gym), no career effect. See components/star/Gym3D.tsx. */
-  | "gym-3d";
+  | "gym-3d"
+  /** The shopping street (28 Nov 2026), out of the garden's gate: the 3D shop, the car showroom, the boutique
+   *  and the barber (shut) on a short high street. See components/star/Street3D.tsx, lib/star/street3d/. */
+  | "street-3d";

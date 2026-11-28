@@ -67,6 +67,7 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { devInfoOn } from "@/lib/star/matchDayPrefs";
 import { simulateOwnMatch } from "@/lib/star/simMatch";
 import { gymSkillBonus } from "@/lib/star/gym/effect";
+import { doorRoute as streetDoorRoute, type StreetArrive } from "@/lib/star/street3d/plan";
 import { opponentMatchStrength } from "@/lib/star/matchInputs";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound, lastSixteenIndex } from "@/lib/star/cups";
@@ -301,6 +302,7 @@ const Casino3D = lazyScreen(() => import("@/components/star/Casino3D"), { fallba
 const TrainingPitchScreen = lazyScreen(() => import("@/components/star/TrainingPitchScreen"));
 const Training3D = lazyScreen(() => import("@/components/star/Training3D"), { fallback: loadingCover("training") });
 const Gym3D = lazyScreen(() => import("@/components/star/Gym3D"), { fallback: loadingCover("gym") });
+const Street3D = lazyScreen(() => import("@/components/star/Street3D"), { fallback: loadingCover("street") });
 const AdvertShoot = lazyScreen(() => import("@/components/star/relgames/AdvertShoot"));
 const KnockoutRoundup = lazyScreen(() => import("@/components/star/KnockoutRoundup"));
 const CupDrawReveal = lazyScreen(() => import("@/components/star/CupDrawReveal"));
@@ -537,7 +539,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [shopFocus, setShopFocus] = useState<{ phase: StarPhase; id: string; level: number } | null>(null);
   // The 3D garden and 3D shop are joined by doors (Mikey, 3 Oct 2026): which
   // door you came through decides where you appear.
-  const [gardenArrive, setGardenArrive] = useState<"shop" | "gate" | "casino" | "training" | "house">("gate");
+  const [gardenArrive, setGardenArrive] = useState<"shop" | "gate" | "casino" | "training" | "house" | "street">("gate");
   /** Your 3D house was opened from the garden's door (its Back and front door lead back there). */
   const [homeFromGarden, setHomeFromGarden] = useState(false);
   // forgotten the moment you go anywhere else (the phone's HOME, the bar, a match; 3D places audit P4)
@@ -545,6 +547,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // Settings → Look → "Casino: 3D | Classic" (8 Oct 2026)
   const casinoLook = useCasino3dLook();
   const [shopAtDoor, setShopAtDoor] = useState(false);
+  // The shopping street (28 Nov 2026): out of the garden's gate. Which door you came out of decides where you
+  // appear; the 3D shop's front doors lead back to the street when you came in from it; a showroom or boutique
+  // door opens that aisle of the shop (its Back returns to the street).
+  const [streetArrive, setStreetArrive] = useState<StreetArrive>("gate");
+  const [shopFromStreet, setShopFromStreet] = useState(false);
+  const [menuStart, setMenuStart] = useState<"cars" | "drip" | null>(null);
+  useEffect(() => { if (phase !== "shop-lifestyle" && phase !== "street-3d") setMenuStart(null); }, [phase]);
   useEffect(() => { if (shopFocus && phase !== shopFocus.phase) setShopFocus(null); }, [phase, shopFocus]);
   const [trainingSkill, setTrainingSkill] = useState<keyof Skills | null>(null);
   /** Which of the 30 levels is being played; null while picking one. */
@@ -4903,7 +4912,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <Shop3D
         career={career}
         atDoor={shopAtDoor}
-        onDoor={() => { setShopAtDoor(false); setGardenArrive("shop"); setPhase("garden"); }}
+        onDoor={() => {
+          setShopAtDoor(false);
+          if (shopFromStreet) { setShopFromStreet(false); setStreetArrive("shop"); setPhase("street-3d"); return; }
+          setGardenArrive("shop"); setPhase("garden");
+        }}
         onBack={() => {
           setShopAtDoor(false); setActiveNav("home");
           if (shopLookNow === "new") setPhase(lastShowroom.current);
@@ -4934,7 +4947,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               Sponsors, Casino and Store are phone apps, so the shop has no doors to them. */}
           <MenuShop
             career={career}
-            startCat={kind === "kib" ? "cans" : kind === "boots" ? "boots" : "drip"}
+            startCat={kind === "kib" ? "cans" : kind === "boots" ? "boots" : menuStart ?? "drip"}
             mainBar={mainBarRaw(null)}
             onBack={() => { if (goBackRemembered()) return; setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
             onBuyKib={handleBuyKib}
@@ -5008,6 +5021,24 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         renderGame={(game, done) => game
           ? <Casino hud={screenHud("casino")} bankStart={career.money} career={career} startGame={game} onExit={(bank) => { handleCasinoBank(bank); done(); }} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />
           : <Casino hud={screenHud("casino")} bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />}
+      />
+    );
+  }
+
+  if (phase === "street-3d" && career) {
+    // The shopping street (phase 1): the 3D shop, the car showroom, the boutique, the barber (shut).
+    const toGardenGate = () => { setStreetArrive("gate"); setGardenArrive("street"); setPhase("garden"); };
+    return (
+      <Street3D
+        career={career}
+        arrive={streetArrive}
+        onBack={toGardenGate}
+        onLeave={toGardenGate}
+        onDoor={(id) => {
+          const r = streetDoorRoute(id);
+          if (r.kind === "phase") { setStreetArrive(id); setShopFromStreet(true); setShopAtDoor(true); setPhase(r.phase); return; }
+          if (r.kind === "menu") { setStreetArrive(id); setMenuStart(r.cat); setActiveNav("home"); pushFrom({ phase: "street-3d", nav: activeNav }, r.phase); setPhase(r.phase); }
+        }}
       />
     );
   }
@@ -5201,7 +5232,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         career={career}
         arrive={gardenArrive}
         onBack={() => { setGardenArrive("gate"); handleBackToDashboard(); }}
-        onShop={() => { setGardenArrive("gate"); setShopAtDoor(true); setPhase("shop-3d"); }}
+        onShop={() => { setGardenArrive("gate"); setShopFromStreet(false); setShopAtDoor(true); setPhase("shop-3d"); }}
+        onStreet={() => { setGardenArrive("gate"); setStreetArrive("gate"); setPhase("street-3d"); }}
         // The packed phone app has no casino: its doors stay shut (Mikey, 5 Nov 2026).
         onCasino={PACKED_APP ? undefined : () => { setGardenArrive("gate"); setPhase("casino-3d"); }}
         onTraining={() => { setGardenArrive("gate"); setPhase("training-3d"); }}
