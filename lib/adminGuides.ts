@@ -2427,6 +2427,7 @@ export const ADMIN_GUIDES = {
     what: "The walk-around 3D garden, on a made-up career, so every part can be seen without playing to it. It is the same screen a career opens from Home's Garden.",
     buttons: [
       { items: [
+          ["Eye button (top right; bottom right on the world kit)", "First person | third person: tap to see through his eyes (gold = on), tap again to go back behind him. Drag to look round. Using something (a seat, a card, a machine) shows him in third person and goes back into his eyes after. Remembered on this device only (lib/star/three3d/viewCam.ts), never in the save."],
         ["‹ Home", "Back to the 3D places group page."],
         ["Day / Sunset / Night (above the scene)", "Changes the time of day. In a career it follows the time of your next kick-off."],
         ["Full career / New career (above the scene)", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
@@ -2492,6 +2493,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
+          ["Eye button (top right; bottom right on the world kit)", "First person | third person: tap to see through his eyes (gold = on), tap again to go back behind him. Drag to look round. Using something (a seat, a card, a machine) shows him in third person and goes back into his eyes after. Remembered on this device only (lib/star/three3d/viewCam.ts), never in the save."],
           ["‹ 3D places", "Back to the 3D places group page."],
           ["Start at the doors / Start in the middle (above the scene)", "Open the shop just inside its front doors (as when you walk in from the garden), or in the middle."],
           ["Edit in the scene editor › (above the scene)", "Opens the 3D Scene Editor on the shop: walking and card views (turn, rise, distance, lens), the light, Approve, Commit to game."],
@@ -2536,6 +2538,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
+          ["Eye button (top right; bottom right on the world kit)", "First person | third person: tap to see through his eyes (gold = on), tap again to go back behind him. Drag to look round. Using something (a seat, a card, a machine) shows him in third person and goes back into his eyes after. Remembered on this device only (lib/star/three3d/viewCam.ts), never in the save."],
           ["‹ 3D places", "Back to the 3D places group page."],
           ["Scene editor › (above the scene)", "Opens the 3D Scene Editor on the house: walking and card views (turn, rise, distance, lens), the sun, Approve, Commit to game."],
           ["?bare=1 (in the address)", "The house full screen, as before the admin frame. ?film=1 does the same for the film tools."],
@@ -2589,6 +2592,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
+          ["Eye button (top right; bottom right on the world kit)", "First person | third person: tap to see through his eyes (gold = on), tap again to go back behind him. Drag to look round. Using something (a seat, a card, a machine) shows him in third person and goes back into his eyes after. Remembered on this device only (lib/star/three3d/viewCam.ts), never in the save."],
           ["House / Garden (above the scene)", "Which place opens: the house's lounge (sofa, TV, fridge) or the garden (bench, gate, team-mates)."],
           ["starter / flat / penthouse / house / villa / estate", "Opens the LIVING HOUSE of that home (the real house screen with every room of that home): things to use in every room (sofa and TV, fridge, bed, shower, mirror, coffee machine, treadmill, pool table, loungers, cinema seats) and team-mates round (1 in the starter flat up to 4 at the estate). Walk through a doorway to the next room. Same as ?place=house&tier=villa. Nothing is saved; a home reaches the real game only once it is switched on in the code (LIVING_TIERS)."],
           ["Gym (above the scene)", "THE GYM, GTA 6 style (same as ?place=gym): a bench press, two treadmills, a heavy bag, mirrors, mats and a water cooler; one team-mate runs, drinks and stretches on his own. Tap a machine, then Start: a mini-game of its own (not football). Hold anywhere (or the space bar) to push: the bar up, run on the belt, the cursor right; let go to ease off. Drop the bar too fast and it bounces; let the belt take you and you fall off. Not in the career yet."],

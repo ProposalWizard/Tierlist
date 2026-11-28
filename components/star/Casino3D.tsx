@@ -41,6 +41,7 @@ import { Stick, pill } from "./Shop3D";
 import Casino3DTable from "./Casino3DTable";
 import { isInRoomGame } from "@/lib/star/casino3d/plan";
 import { CASINO_ON_SERVER } from "@/lib/star/casinoRules";
+import ViewToggle3D from "./ViewToggle3D";
 
 const INK = "#f7f1e8";
 const GOLD = "#facc15";
@@ -231,6 +232,7 @@ export default function Casino3D({ career, onBack, backLabel = "Home", onDoor, r
         </div>
       )}
 
+      {status === "ready" && !open && ctrlRef.current?.setView && <ViewToggle3D onChange={(m) => ctrlRef.current?.setView?.(m)} />}
       {status === "ready" && !open && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
 
       {status === "ready" && !open && near && (

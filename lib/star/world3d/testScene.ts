@@ -28,6 +28,8 @@ import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, toonHeadsFor, ty
 import { people3dLook } from "../look3d";
 import { addClips, clipInfo, loadAnims3d } from "../three3d/footballAnims";
 import { FOLLOW_CAM_D, FollowBoom, FollowZoom, attachFollowZoom, boxRoom, capOnLine, loadFollowZoom, riseForMin, zoomedFollowCam } from "../three3d/followCam";
+import { ViewCam, findHeadBone, headWorld, loadViewMode, showBody, type ViewMode } from "../three3d/viewCam";
+import { OrbitCam } from "../three3d/orbitCam";
 import { buildGrid, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
 import { angDiff } from "../three3d/animBlend";
 import { numberCanvas, blobCanvas } from "../shop3d/textures";
@@ -89,6 +91,9 @@ export interface WorldController {
   perf: () => { frames: number; stepMs: number; renderMs: number };
   stats: () => { calls: number; triangles: number; tier: Quality3d; people: number; animated: number };
   debug: () => Record<string, unknown>;
+  /** First person | third person (the eye button; lib/star/three3d/viewCam.ts), remembered per device. */
+  setView: (m: ViewMode) => void;
+  viewMode: () => ViewMode;
   dispose: () => void;
 }
 
@@ -766,17 +771,30 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     const o = objects.get(id);
     if (o) return tapObject(o);
   };
+  // a drag looks round (left/right turns, up/down tilts; in first person, the eyes)
+  const orb = new OrbitCam();
+  let orbitHold = 0;
   const onPointer = (() => {
     let down: { x: number; y: number; t: number } | null = null;
-    const pd = (e: PointerEvent) => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; };
+    let lastP: { x: number; y: number } | null = null;
+    const pd = (e: PointerEvent) => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; lastP = { x: e.clientX, y: e.clientY }; };
+    const pm = (e: PointerEvent) => {
+      if (!lastP || !down || container.dataset.pinching || gym?.shot()) return;
+      if (Math.hypot(e.clientX - down.x, e.clientY - down.y) < 12) return; // a tap, not a drag (yet)
+      const dx = e.clientX - lastP.x, dy = e.clientY - lastP.y;
+      lastP = { x: e.clientX, y: e.clientY };
+      orb.drag(dx, view.first ? 0 : dy); view.drag(dy); orbitHold = 1.5;
+    };
     const pu = (e: PointerEvent) => {
+      lastP = null;
       if (!down || container.dataset.pinching) { down = null; return; }
       if (Math.hypot(e.clientX - down.x, e.clientY - down.y) < 12 && performance.now() - down.t < 600) tap(e.clientX, e.clientY);
       down = null;
     };
     renderer.domElement.addEventListener("pointerdown", pd);
     renderer.domElement.addEventListener("pointerup", pu);
-    return () => { renderer.domElement.removeEventListener("pointerdown", pd); renderer.domElement.removeEventListener("pointerup", pu); };
+    renderer.domElement.addEventListener("pointermove", pm);
+    return () => { renderer.domElement.removeEventListener("pointerdown", pd); renderer.domElement.removeEventListener("pointerup", pu); renderer.domElement.removeEventListener("pointermove", pm); };
   })();
 
   // ── Camera D: behind you, pinch / wheel zooms out (three3d/followCam.ts) ──
@@ -788,6 +806,15 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   let camYaw = you.yaw + Math.PI;
   let camSide = 0;
   let first = true;
+  /** First person | third person (the eye button), eased; using something steps back out to third (../three3d/viewCam.ts). */
+  const view = new ViewCam(demo ? "third" : loadViewMode());
+  const viewHead = new THREE.Vector3();
+  let headBone: any = null;
+  const placeView = (dt: number, busy: boolean) => {
+    view.step(dt, busy);
+    headBone ??= findHeadBone(you.root);
+    showBody(you.root, view.place(camera, camPos, camLook, headWorld(headBone, you.root, viewHead), -Math.sin(camYaw), -Math.cos(camYaw), built.ceil, dt)); // in his eyes: not drawn (root.visible is "here or away" to the world kit)
+  };
   const [cx0, cx1, cz0, cz1] = built.camBox;
   const freeBehind = (dx: number, dz: number) => boxRoom(you.x, you.z, dx, dz, cx0, cx1, cz0, cz1);
   const resize = () => {
@@ -813,7 +840,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       // a cut behind the black screen, or (he walked on: no black) a glide from where the camera is
       if (!shotWas && !gym?.easeIn) { camPos.copy(want); camLook.copy(wantLook); shotWas = true; }
       else { shotWas = true; camPos.lerp(want, Math.min(1, dt * 3)); camLook.lerp(wantLook, Math.min(1, dt * 3)); }
-      camera.position.copy(camPos); camera.lookAt(camLook);
+      placeView(dt, true); // the mini-game's own shot (first person steps out to it)
       return;
     }
     if (shotWas) { shotWas = false; first = true; camYaw = you.yaw + Math.PI; }
@@ -823,7 +850,9 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     if (aspect < 0.7 && Math.abs(camera.fov - CS.fov) > 1e-3) { camera.fov = CS.fov; camera.updateProjectionMatrix(); }
     // behind him: swings round slowly as he turns, faster when he walks
     const k = you.speed > 0.3 ? CS.yawK : you.seated ? 0.8 : watch ? 1.2 : 0.5;
-    camYaw += angDiff(camYaw, you.yaw + Math.PI) * Math.min(1, dt * k);
+    camYaw += orb.step(dt);
+    if (orbitHold > 0) orbitHold -= dt;
+    else camYaw += angDiff(camYaw, you.yaw + Math.PI) * Math.min(1, dt * k);
     const cfx = -Math.sin(camYaw), cfz = -Math.cos(camYaw);
     if (first) boom.reset();
     const len = boom.step(CS.back, freeBehind(-cfx, -cfz), dt);
@@ -839,8 +868,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     else { camPos.lerp(want, Math.min(1, dt * CS.posK)); camLook.lerp(wantLook, Math.min(1, dt * CS.lookK)); }
     const flat = capOnLine(camPos, you.x, you.z, freeBehind);
     camPos.y = riseForMin(flat, camPos.y, built.ceil);
-    camera.position.copy(camPos);
-    camera.lookAt(camLook);
+    placeView(dt, !!you.using || you.seated || !!(talking && card));
   };
 
   // ── One frame ──
@@ -957,6 +985,8 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     gymBot: (skill: number | null) => { if (gym) gym.bot = skill; },
     perf: () => { const o = { ...perf }; perf.frames = 0; perf.stepMs = 0; perf.renderMs = 0; return o; },
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, tier, people: people.filter((p) => p.root.visible).length, animated }),
+    setView: (m) => { view.set(m); },
+    viewMode: () => view.mode,
     debug: () => ({
       place, tier, budget, clock: clock.hhmm, simT: +simT.toFixed(2),
       you: you.info(), people: npcs.map((n) => n.info()),

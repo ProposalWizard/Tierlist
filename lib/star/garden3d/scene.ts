@@ -67,6 +67,7 @@ import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
 import { FOLLOW_CAM_D, FollowCarry, FollowZoom, attachFollowZoom, loadFollowZoom, riseForMin, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
+import { ViewCam, findHeadBone, headWorld, loadViewMode, showBody, type ViewMode } from "../three3d/viewCam";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
 import { cullSkinned } from "../three3d/cullPeople";
 import {
@@ -128,6 +129,9 @@ export interface GardenController {
   setStick: (x: number, y: number) => void;
   /** A drag on the view (pixels): left/right turns, up/down tilts (lib/star/three3d/orbitCam.ts). */
   orbit: (dxPixels: number, dyPixels?: number) => void;
+  /** First person | third person (the eye button; lib/star/three3d/viewCam.ts), remembered per device. */
+  setView?: (m: ViewMode) => void;
+  viewMode?: () => ViewMode;
   pick: (clientX: number, clientY: number) => GardenSpot | null;
   /** Tap to move: a tap on something you can use walks you up to it (its
    *  card then appears as you arrive); a tap on the ground walks you there.
@@ -2332,6 +2336,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const CS: FollowCam = zoomedFollowCam(zoom.now, FOLLOW_CAM_D);
   const detachZoom = attachFollowZoom(container, zoom);
   const carry = new FollowCarry(); // his steps go straight into the camera (only turning is eased)
+  /** First person | third person (the eye button), eased (../three3d/viewCam.ts). */
+  const view = new ViewCam(opts.fixedStep ? "third" : loadViewMode());
+  const viewHead = new THREE.Vector3();
+  let headBone: any = null, seenWas = true;
   let near: GardenSpot | null = null;
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0, gameT = 0;
   let doorFired = false;
@@ -2772,7 +2780,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         return gzClear(dx, dz) && wallRoom(dx, dz) >= CS.back * 0.7;
       };
       let target = 0;
-      if (!clear(dodge)) {
+      if (view.inEyes) target = 0; // in his eyes: straight ahead, no swing round him
+      else if (!clear(dodge)) {
         if (!clear(0)) {
           const pref = dodge < 0 ? -1 : 1;
           target = 0;
@@ -2863,8 +2872,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       if (camPos.distanceTo(headPos) > lim) camPos.sub(headPos).setLength(lim).add(headPos);
     }
     if (camPos.y < CAM_MIN_Y) camPos.y = CAM_MIN_Y;
-    camera.position.copy(camPos);
-    camera.lookAt(camLook);
+    view.step(dt);
+    headBone ??= findHeadBone(player);
+    const seen = view.place(camera, camPos, camLook, headWorld(headBone, player, viewHead), -Math.sin(camYaw), -Math.cos(camYaw), 99, dt);
+    if (seen !== seenWas) { seenWas = seen; showBody(player, seen); shadowDirty = true; } // in his eyes: not drawn at all
     if (testCam) { camera.position.set(...testCam[0]); camera.lookAt(...testCam[1]); }
     fillLight.position.set(camPos.x * 0.6 + player.position.x * 0.4, 2.6, camPos.z * 0.6 + player.position.z * 0.4);
     camera.updateMatrixWorld();
@@ -2895,7 +2906,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 
     // busy (walking, turning, the camera swinging): full frame rate at fewer
     // pixels; still: 30 a second at full pixels
-    busy = zoom.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || camWas.distanceToSquared(camPos) > 1e-6 || !!faceTo;
+    busy = view.moving || zoom.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || camWas.distanceToSquared(camPos) > 1e-6 || !!faceTo;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       // dynamic resolution: judged only while moving at the full cap (the
@@ -2965,7 +2976,9 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       return { people: [{ id: "you", x: player.position.x, z: player.position.z }], sunDir: [d.x, d.y, d.z], bounds: { min: [-LIMIT, 0, -LIMIT], max: [LIMIT, 6, LIMIT] } };
     },
     setStick: (x, y) => { stick = { x, y }; if (Math.hypot(x, y) > 0.05) stopWalk(); },
-    orbit: (dx, dy = 0) => { orb.drag(dx, dy); orbitHold = 1.5; },
+    orbit: (dx, dy = 0) => { orb.drag(dx, view.first ? 0 : dy); view.drag(dy); orbitHold = 1.5; },
+    setView: (m) => { view.set(m); },
+    viewMode: () => view.mode,
     pick: (px, py) => { aim(px, py); return pickSpot(); },
     tap: (px, py) => {
       aim(px, py);

@@ -40,6 +40,7 @@ import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import { Stick, pill, round } from "./Shop3D";
 import { sleepNight } from "@/lib/star/home3d/sleep";
 import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
+import ViewToggle3D from "./ViewToggle3D";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -326,6 +327,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         </div>
       )}
 
+      {status === "ready" && chrome && !open && <ViewToggle3D onChange={(m) => ctrlRef.current?.setView(m)} />}
       {status === "ready" && chrome && !open && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
       {status === "ready" && chrome && !open && (
         <div style={{ position: "absolute", bottom: 40, right: 16, maxWidth: 180, textAlign: "right", fontSize: 12.5, fontWeight: 800, lineHeight: 1.4, pointerEvents: "none", textShadow: "0 1px 6px rgba(0,0,0,.8)" }}>

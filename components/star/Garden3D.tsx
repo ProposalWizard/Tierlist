@@ -37,6 +37,7 @@ import GardenScreen from "./GardenScreen";
 import Reload3dPill from "./Reload3d";
 import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
 import { Stick, pill } from "./Shop3D";
+import ViewToggle3D from "./ViewToggle3D";
 
 const INK = "#f7f1e8";
 /** A query parameter, on the client only. */
@@ -267,6 +268,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
         </div>
       )}
 
+      {status === "ready" && ctrlRef.current?.setView && <ViewToggle3D onChange={(m) => ctrlRef.current?.setView?.(m)} />}
       {status === "ready" && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
 
       {status === "ready" && spot && spot !== "fountain" && (

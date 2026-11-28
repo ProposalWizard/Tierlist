@@ -34,6 +34,7 @@ import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
 import { wornAt } from "@/lib/star/home3d/outfits";
 import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
+import ViewToggle3D from "./ViewToggle3D";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -327,6 +328,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
         </div>
       )}
 
+      {status === "ready" && !open && ctrlRef.current?.setView && <ViewToggle3D onChange={(m) => ctrlRef.current?.setView?.(m)} style={dev ? { top: "calc(max(12px, env(safe-area-inset-top)) + 70px)" } : undefined} />}
       {status === "ready" && !open && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
       {status === "ready" && !open && !near && (
         <div style={{ position: "absolute", bottom: 40, right: 16, maxWidth: 176, textAlign: "right", fontSize: 12.5, fontWeight: 800, color: INK, lineHeight: 1.4, pointerEvents: "none", textShadow: "0 1px 6px rgba(0,0,0,.8)" }}>
