@@ -244,7 +244,8 @@ export interface HomeOptions {
   houseCam?: HouseCam;
   /** A living house (homes.ts LIVING_TIERS, the world-kit test page): things you use, team-mates round. Absent = as before. */
   living?: { mates: LifeMate[]; club?: string; chat?: (id: string) => { line: string; change?: string } | null;
-    onEffect?: (thing: string, e: { mood?: number; energy?: number; text?: string }) => void;
+    /** You used a thing: the career's answer (lib/star/life/houseActs.ts: time, energy, mood within the day's caps) for its card. */
+    onEffect?: (thing: string, e: { mood?: number; energy?: number; text?: string }) => { text: string; sub?: string } | void;
     /** "Sleep till morning" in your bed: called in the dark, once the night has passed; returns the card's words (home3d/sleep.ts). */
     onSleep?: () => string;
     /** The career clock (lib/star/life/liveClock.ts): minutes since day 0 of this gap, now. Absent: the house's own clock (15:00). */

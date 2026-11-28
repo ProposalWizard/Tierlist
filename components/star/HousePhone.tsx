@@ -114,7 +114,7 @@ export default function HousePhone({ career, up, phone, house, onHome, onPutAway
   /** The real phone, with the glass's props spread on it. */
   phone: (glass: PhoneGlass) => ReactNode;
   /** The house's own props (back, the front door, the wardrobe, sleep). */
-  house: Pick<Home3DProps, "onBack" | "backLabel" | "onDoor" | "onOutfit" | "onSleep" | "onTime" | "onMatch" | "onInvite">;
+  house: Pick<Home3DProps, "onBack" | "backLabel" | "onDoor" | "onOutfit" | "onSleep" | "onTime" | "onMatch" | "onInvite" | "onUse">;
   /** The phone's HOME: the Home screen. */
   onHome: () => void;
   /** The phone's BACK: put it away, into the house. */

@@ -43,7 +43,8 @@ import { sleepNight } from "@/lib/star/home3d/sleep";
 import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
 import LoadingCurtain from "./loading/LoadingCurtain";
 import ClockPill, { useLiveClock } from "./ClockPill";
-import { leaveAt, clockOf, dayNumber, nextMatchInfo, hhmm } from "@/lib/star/life/clock";
+import { leaveAt, clockOf, dayNumber, nextMatchInfo, hhmm, passTime } from "@/lib/star/life/clock";
+import { applyThing } from "@/lib/star/life/houseActs";
 import { dayPlanFor, forcedDay, houseMates, visitsToday, inviteAnswer } from "@/lib/star/life/dayPlan";
 import ViewToggle3D from "./ViewToggle3D";
 
@@ -91,6 +92,8 @@ export interface Home3DProps {
   clockPaused?: boolean;
   /** "Come round?" texted to a team-mate (lib/star/life/dayPlan.ts withInvite): save it on the career. */
   onInvite?: (mateId: string, day: number, minute: number) => void;
+  /** You used a thing in the house (lib/star/life/houseActs.ts useThing): its time and capped effect, to save on the career. */
+  onUse?: (thing: string, effect: { energy?: number; mood?: number; text?: string }) => void;
 }
 
 type Tab = "casual" | "kit" | "boots" | "extras";
@@ -131,7 +134,11 @@ function livingFor(career: CareerState) {
   return { mates, club: career.player.club };
 }
 
-export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep, onTime, onMatch, clockRate, clockPaused, onInvite }: Home3DProps) {
+export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false, pov, chrome = true, onReady, houseCam, living, onSleep, onTime, onMatch, clockRate, clockPaused, onInvite, onUse }: Home3DProps) {
+  const onUseRef = useRef(onUse);
+  onUseRef.current = onUse;
+  const onTimeRef = useRef(onTime);
+  onTimeRef.current = onTime;
   // the career clock, ticking while you are in the house (stopped while the phone is up); the house's people read it
   const live = useLiveClock(career, onTime, { paused: clockPaused || !chrome, rate: clockRate });
   const liveRef = useRef(live.clock);
@@ -252,7 +259,16 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           ...(houseCam && houseCam !== "D" ? { houseCam } : {}),
           ...(alive ? { living: { ...livingFor(career), onSleep: () => { const r = sleepNight(careerRef.current); sleepRef.current?.(); return sleepRef.current ? r.text : "A good night."; }, clock: () => liveRef.current.now(),
             // who is in the house each day (lib/star/life/dayPlan.ts); a test page can force one (?visit=mate|chef|quiet)
-            visits: visitsFn(q.get("visit"), liveRef.current.now(), rooms, tier) } } : {}),
+            visits: visitsFn(q.get("visit"), liveRef.current.now(), rooms, tier),
+            // a thing used: its minutes and its energy/mood within the day's caps (the career keeps it); the card says what it really did
+            onEffect: (thing: string, e: { energy?: number; mood?: number; text?: string }) => {
+              // the live clock's unsent minutes first (sent before the use), so the card's time is the time now
+              const pend = liveRef.current.flush(1);
+              if (pend) onTimeRef.current?.(pend);
+              const r = applyThing(passTime(careerRef.current, pend), thing, e);
+              onUseRef.current?.(thing, e);
+              return { text: r.text, sub: r.sub };
+            } } } : {}),
         });
         let c: HomeController;
         try {

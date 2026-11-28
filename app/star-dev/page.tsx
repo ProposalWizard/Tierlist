@@ -82,6 +82,7 @@ import { spendAction, rest, canAct, projectedEnergy, startNewWeek, trainingLeft,
 import { sleepNight } from "@/lib/star/home3d/sleep";
 import { passTime, sleepClock } from "@/lib/star/life/clock";
 import { withInvite } from "@/lib/star/life/dayPlan";
+import { applyThing } from "@/lib/star/life/houseActs";
 import { acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { clearAfterWindow, requestOf } from "@/lib/star/transferRequest";
 import { windowInterest, withRecall, withAgreedWage, markWalkedAway } from "@/lib/star/transferInterest";
@@ -5223,6 +5224,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onOutfit: (choice) => setCareer((c) => (c ? withOutfit(c, choice) : c)),
           // "come round?" texted to a team-mate: saved on the clock; the house plans him in (life/dayPlan.ts)
           onInvite: (mateId, day, minute) => setCareer((c) => (c ? withInvite(c, day, mateId, minute).career : c)),
+          // a thing used in the house: its time on the clock, its energy/mood within the day's caps (life/houseActs.ts)
+          onUse: (thing, e) => setCareer((c) => (c ? applyThing(c, thing, e).career : c)),
           // the night: the week's Rest (once a gap) and the clock to 07:00 next morning
           onSleep: () => setCareer((c) => (c ? sleepClock(c, sleepNight(c).career) : c)),
           ...clockLink,

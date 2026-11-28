@@ -74,7 +74,7 @@ export interface LifeOptions {
   onCard: (c: InteractCard | null) => void;
   chat?: (id: string) => { line: string; change?: string } | null;
   /** Something used did something (+1 mood…): for the career, later. */
-  onEffect?: (thing: string, e: NonNullable<SmartObject["effect"]>) => void;
+  onEffect?: (thing: string, e: NonNullable<SmartObject["effect"]>) => { text: string; sub?: string } | void;
   /** The career clock (life/liveClock.ts): minutes since day 0 of the gap. Absent: the house's own clock (15:00 on arrival). */
   clockNow?: () => number;
   /** "Sleep till morning": you are down on the bed; the house plays the night (scene.ts) and then calls `wake`. */
@@ -152,6 +152,8 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
   let using: SmartObject | null = null;
   let pending: { obj: SmartObject; slot: string | null } | null = null;
   let card: InteractCard | null = null;
+  /** What the last thing you used did, in the career's words (shown on its card). */
+  let lastEffect: { text: string; sub?: string } | null = null;
   let talking: Npc | null = null;
   /** The house clock (game minutes): mid-afternoon when you walk in; a night's sleep moves it to 07:00 next day. */
   let clockMin = 15 * 60;
@@ -647,8 +649,10 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
           if (ob.kind === "fridge" || ob.id === "coffee") hold(meNpc!, pr);
           if (sleeping) { show(null); o.onSleep?.(); return; }
           if (ob.id === "bath") { o.dip?.("Half an hour later", () => fxOn("bath", true)); }
-          if (ob.effect) o.onEffect?.(ob.id, ob.effect);
-          show(quick || timed ? null : objectCard(ob, { using: true }));
+          // the career's answer (life/houseActs.ts: the time it took, the energy or mood within the day's caps)
+          lastEffect = ob.effect ? o.onEffect?.(ob.id, ob.effect) || null : null;
+          if (quick || timed) show(null);
+          else { const c = objectCard(ob, { using: true }); show(lastEffect ? { ...c, sub: lastEffect.sub, lines: [lastEffect.text] } : c); }
         },
         onOut: () => {
           if (quick || timed) {
@@ -659,7 +663,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
             if (keepProp && prop && n) n.prop = null; // the can / cup stays in your hand a while
             handBack();
             if (keepProp && prop) setTimeout(() => prop.parent?.remove(prop), 6000);
-            show({ key: `obj:${ob.id}`, title: ob.label, lines: [ob.effect?.text ?? "Done."], actions: [{ id: "close", label: "OK", primary: true }] });
+            show({ key: `obj:${ob.id}`, title: ob.label, ...(lastEffect ? { sub: lastEffect.sub } : null), lines: [lastEffect?.text ?? ob.effect?.text ?? "Done."], actions: [{ id: "close", label: "OK", primary: true }] });
           }
         },
       });
