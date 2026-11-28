@@ -123,13 +123,11 @@ E. THE STORY BOOK: regenerate and republish it after each job (same URL), so
    0.08?
 3. The 5 people-plan questions in docs/plans/PEOPLE_AND_MEMORY_PLAN.md.
 
-## Status after the first try (28 Nov 2026, night)
+## How the jobs really use the API credit (28 Nov 2026, night)
 
-Step 1 stopped the run. Error type: **ANTHROPIC_API_KEY not set** in "The space".
-`claude -p` still answered (is_error false, cost shown about $0.003), but with no
-key it is billed to the chat account, not the API credit. So no jobs were started.
-A network secret can't hold this key (Anthropic hosts are refused). Fix: Harry
-adds `ANTHROPIC_API_KEY` as an environment variable in "The space" settings
-(cloud environment menu → Edit → environment variables), then starts a NEW chat
-with the starter above. Before job A, check `[ -n "$ANTHROPIC_API_KEY" ]` as well
-as the test call.
+The key is `KIB_API_KEY` (not ANTHROPIC_API_KEY). A plain `claude -p` in a cloud
+chat IGNORES any API key and bills the chat account (a fake key still works). To
+bill the credit, run each job with a clean environment and its own config folder:
+`env -i HOME PATH proxy vars NODE_EXTRA_CA_CERTS CLAUDE_CONFIG_DIR=<own dir>
+ANTHROPIC_API_KEY="$KIB_API_KEY" claude -p ...`. Proof check: the same command
+with a fake key must fail with "Invalid API key".
