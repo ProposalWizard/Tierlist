@@ -65,7 +65,10 @@ export async function POST(request: Request) {
 
   try {
     const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-    const { error } = await supabase.from("beta_signups").insert({ email, source: "home" });
+    // Where the sign-up came from: the home page, or the /beta page (with ?from=discord etc.).
+    const SOURCES = ["home", "beta", "discord", "tiktok", "instagram", "youtube"] as const;
+    const source = (SOURCES as readonly string[]).includes(String(b.source)) ? String(b.source) : "home";
+    const { error } = await supabase.from("beta_signups").insert({ email, source });
     if (!error) return NextResponse.json({ ok: true });
     // Already on the list: the same happy answer (never tells a stranger who is on it).
     if (error.code === "23505") return NextResponse.json({ ok: true });

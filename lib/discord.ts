@@ -18,7 +18,7 @@
  */
 
 /** Paste the server's permanent invite here once the server exists ("https://discord.gg/xxxx"). */
-const DEFAULT_INVITE = "";
+const DEFAULT_INVITE = "https://discord.gg/4kvXDZRBnh"; // permanent invite on 👋・welcome, made 28 Nov 2026
 
 export const DISCORD_INVITE: string = (process.env.NEXT_PUBLIC_DISCORD_INVITE || DEFAULT_INVITE).trim();
 
