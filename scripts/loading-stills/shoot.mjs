@@ -35,7 +35,8 @@ const SHOTS = [
   { id: "house", url: "/star-home3d-dev?bare=1", settle: 9000, nobody: true },
   { id: "shop", url: "/star-shop3d-dev?bare=1", settle: 9000, nobody: true },
   { id: "casino", url: "/star-garden3d-dev?place=casino", settle: 12000, nobody: true },
-  { id: "gym", url: "/star-world3d-dev?place=gym&bare=1&clean=1", settle: 9000, nobody: true },
+  // the gym (world kit): a fixed camera from the far corner, eye height, across the kit to the mirror wall
+  { id: "gym", url: "/star-world3d-dev?place=gym&bare=1&clean=1", settle: 9000, nobody: true, cam: [[4.3, 1.7, 3.7], [-1.2, 1.1, -2.6]] },
   // the walk-out cut scene (lib/star/cutscene/fixtures.ts walkout): its wide shots, where no face or kit is close
   { id: "tunnel-1", url: "/star-3d-bench-dev/scene?scene=director&fixture=walkout&clean=1", seek: 0.3 },
   { id: "tunnel-2", url: "/star-3d-bench-dev/scene?scene=director&fixture=walkout&clean=1", seek: 1.3 },
@@ -93,6 +94,7 @@ for (const s of SHOTS) {
       }
       await page.waitForTimeout(s.settle);
     }
+    if (s.cam) { await page.evaluate((c) => window.__world3dCam?.(c[0], c[1]), s.cam); await page.waitForTimeout(800); }
     if (s.nobody) {
       // again every frame: some places show their people afresh each frame (cullPeople, the casino)
       const hidden = await page.evaluate(() => {
