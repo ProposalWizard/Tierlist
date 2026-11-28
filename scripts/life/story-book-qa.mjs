@@ -18,7 +18,9 @@ const srv = http.createServer((q, r) => {
   let p = decodeURIComponent(q.url.split("?")[0]); if (p === "/") p = "/index.html";
   const f = path.join(ROOT, p);
   if (!f.startsWith(ROOT) || !fs.existsSync(f)) { r.writeHead(404); return r.end(); }
-  r.writeHead(200, { "content-type": TYPES[path.extname(f)] || "application/octet-stream" }); fs.createReadStream(f).pipe(r);
+  const size = fs.statSync(f).size, m = /bytes=(\d+)-(\d*)/.exec(q.headers.range || "");
+  if (m) { const a = +m[1], b = m[2] ? +m[2] : size - 1; r.writeHead(206, { "content-type": TYPES[path.extname(f)] || "application/octet-stream", "content-range": `bytes ${a}-${b}/${size}`, "accept-ranges": "bytes", "content-length": b - a + 1 }); return fs.createReadStream(f, { start: a, end: b }).pipe(r); }
+  r.writeHead(200, { "content-type": TYPES[path.extname(f)] || "application/octet-stream", "accept-ranges": "bytes", "content-length": size }); fs.createReadStream(f).pipe(r);
 }).listen(0);
 const port = srv.address().port;
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, "data.json"), "utf8"));
@@ -35,7 +37,8 @@ const browser = await chromium.launch({ args: ["--disable-dev-shm-usage"] });
 const page = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
 let errs = [];
 page.on("pageerror", (e) => errs.push(String(e)));
-page.on("requestfailed", (r) => errs.push(`request failed: ${r.url()}`));
+// A film's preload that the next story page cancels is not a failure (net::ERR_ABORTED); anything else is.
+page.on("requestfailed", (r) => { if (!/ERR_ABORTED/.test(r.failure()?.errorText ?? "")) errs.push(`request failed: ${r.url()} ${r.failure()?.errorText}`); });
 page.on("response", (r) => { if (r.status() >= 400) errs.push(`HTTP ${r.status()} ${r.url()}`); });
 await page.goto(`http://localhost:${port}/`, { waitUntil: "networkidle" });
 await page.waitForFunction(() => window.__bookReady);
@@ -75,8 +78,15 @@ for (const s of data.stories) {
   const ends = await page.evaluate(() => document.querySelectorAll(".endc").length);
   if (ends !== s.ends.length) fail(s.slug, "endings", `${ends} ending cards for ${s.ends.length} endings`);
   if (videos[s.slug]) {
-    const ok = await page.evaluate(() => !!document.querySelector(".watch video"));
+    // The film at the top: tap it, and it must load and be as long as videos.json says.
+    const ok = await page.evaluate(() => { const b = document.querySelector(".watch .wbtn"); if (!b) return false; b.click(); const v = document.querySelector(".watch video"); if (v) { v.muted = true; } return true; });
     if (!ok) fail(s.slug, "film", "no film at the top");
+    else {
+      const dur = await page.waitForFunction(() => { const v = document.querySelector(".watch video"); return v && v.readyState >= 1 && v.duration; }, null, { timeout: 15000 }).then((h) => h.jsonValue()).catch(() => 0);
+      await page.evaluate(() => { const v = document.querySelector(".watch video"); if (v) { v.pause(); v.removeAttribute("src"); v.load(); v.remove(); } });
+      if (!dur) fail(s.slug, "film", "the film does not load");
+      else if (Math.abs(dur - videos[s.slug].seconds) > 2) fail(s.slug, "film", `the film is ${Math.round(dur)} s, not ${videos[s.slug].seconds} s`);
+    }
   }
   for (let bi = 0; bi < s.beats.length; bi++) {
     beatsSeen++;
@@ -108,6 +118,7 @@ for (const k of ["gallery", "problems", "oddities", "items", "links"]) {
   await page.evaluate((x) => { location.hash = "more-" + x; }, k); await page.waitForTimeout(200);
   const t = await page.evaluate(() => document.getElementById("sheet").innerText.length);
   if (t < 60) fail("", `more-${k}`, "blank page");
+  if (k === "gallery" && !(await page.evaluate(() => document.querySelectorAll("#sheet .gal button").length))) fail("", "more-gallery", "no pictures");
   for (const e of errs) fail("", `more-${k}`, e);
 }
 await browser.close(); srv.close();

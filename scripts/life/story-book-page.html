@@ -68,7 +68,9 @@ a { color: var(--accent); }
 .tools { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
 .tile .one { font-size: 13px; color: var(--muted); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .search { flex: 1 1 180px; min-width: 0; padding: 8px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
-.tools select { padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); max-width: 46vw; }
+.tools select { padding: 7px 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); flex: 1 1 0; min-width: 0; }
+.tools .sel { order: 3; display: flex; gap: 6px; flex: 1 1 100%; min-width: 0; }
+.tools .count { order: 4; flex: 1 1 100%; font-size: 12px; }
 .count { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* home grid */
@@ -88,6 +90,10 @@ a { color: var(--accent); }
 .size.tier-very-rare { background: var(--gold-weak); color: var(--gold); }
 .size.tier-legendary { background: var(--gold); color: var(--surface); }
 .chain { margin: 8px 0 0; font-size: 14px; }
+.wbtn { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: center; width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px; text-align: left; cursor: pointer; }
+.wbtn:hover { border-color: var(--accent); }
+.wbtn b { display: block; font-size: 16px; }
+.wth { display: block; width: 64px; aspect-ratio: 3 / 4; border-radius: 8px; background-color: var(--phone); background-repeat: no-repeat; }
 .lab3 { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted2); }
 .size.wait { background: var(--red-weak); color: var(--red); }
 .empty { padding: 30px 0; text-align: center; color: var(--muted); }
@@ -179,10 +185,11 @@ details.more2 > summary { cursor: pointer; font-weight: 600; font-size: 14px; co
   </header>
   <div class="tools" id="tools">
     <input class="search" id="q" type="search" placeholder="Search a title, a person, any word" aria-label="Search" autocomplete="off">
+    <div class="sel">
     <select id="f-tier" aria-label="Rarity"><option value="">Any rarity</option><option value="legendary">Legendary</option><option value="very-rare">Very rare</option><option value="rare">Rare</option><option value="uncommon">Uncommon</option><option value="common">Common</option></select>
     <select id="f-size" aria-label="Size"><option value="">Any size</option><option value="big">Big</option><option value="medium">Medium</option><option value="small">Small</option></select>
     <select id="f-role" aria-label="Who is in it"><option value="">Anyone</option></select>
-    <button class="btn" id="f-video" aria-pressed="false">Has a film</button>
+    </div>
     <div class="more">
       <button class="btn" id="morebtn" aria-expanded="false" aria-haspopup="true">More ▾</button>
       <div class="menu" id="menu" hidden>
@@ -300,7 +307,7 @@ details.more2 > summary { cursor: pointer; font-weight: 600; font-size: 14px; co
     S.forEach(function (s) {
       if (!matches(s)) return; n++;
       var th = h("div", { class: "thumb" }); var st = shotsOf(s);
-      if (st) shotBg(th, s, firstOpen(s), 0.58);
+      tileInto(th, s);
       if (V[s.slug]) th.appendChild(h("span", { class: "vid", text: "▶ " + mmss(V[s.slug].seconds) }));
       var sz = sizeOf(s);
       var t = h("button", { class: "tile", type: "button" }, [th, h("div", { class: "m" }, [h("span", { class: "size tier-" + tierOf(s) + (s.waiting ? " wait" : ""), text: s.waiting ? "waiting" : tierWord(s) }), sz + " · " + stageWord(s)]), h("div", { class: "t", text: plain(s.title) }), h("div", { class: "one", text: (s.after && s.after.length ? "Follows “" + plain(s.after[0].title) + "”. " : "") + whoLine(s) + ": " + plain(s.premise) })]);
@@ -311,6 +318,14 @@ details.more2 > summary { cursor: pointer; font-weight: 600; font-size: 14px; co
     if (!n) v.appendChild(h("div", { class: "empty", text: "No story matches. Clear the search or a filter." }));
     document.getElementById("count").textContent = n + " of " + S.length;
   }
+  /* the grid's tiles come from a few small tile sheets (36 a sheet), drawn when they scroll near */
+  function tileInto(th, s) {
+    var tl = SH && SH.tiles && SH.tiles[s.slug]; if (!tl) return th;
+    th.setAttribute("data-img", tl.file); th.setAttribute("data-size", (tl.cols * 100) + "% " + (tl.rows * 100) + "%"); th.setAttribute("data-pos", (tl.cols > 1 ? tl.c / (tl.cols - 1) * 100 : 0) + "% " + (tl.rows > 1 ? tl.r / (tl.rows - 1) * 100 : 0) + "%");
+    if (tio) tio.observe(th); else tpaint(th); return th;
+  }
+  function tpaint(e) { var u = e.getAttribute("data-img"); if (!u) return; e.style.backgroundImage = "url(" + u + ")"; e.style.backgroundSize = e.getAttribute("data-size"); e.style.backgroundPosition = e.getAttribute("data-pos"); e.removeAttribute("data-img"); }
+  var tio = "IntersectionObserver" in window ? new IntersectionObserver(function (es) { es.forEach(function (x) { if (x.isIntersecting) { tpaint(x.target); tio.unobserve(x.target); } }); }, { rootMargin: "600px" }) : null;
   function firstOpen(s) { var st = shotsOf(s); if (!st) return -1; for (var i = 0; i < st.shots.length; i++) if (st.shots[i].kind === "open") return i; return 0; }
   function tools(on) { /* the grid's tools stay; a sheet covers them */ }
   var lastScroll = 0, cameFromGrid = false;
@@ -331,15 +346,17 @@ details.more2 > summary { cursor: pointer; font-weight: 600; font-size: 14px; co
     var v = openSheet(plain(s.title));
     var sz = sizeOf(s), st = s.start || {};
     var hd = h("div", { class: "shead" }, [h("h2", { text: plain(s.title) }),
-      h("div", { class: "line" }, [h("span", { class: "size tier-" + tierOf(s), text: tierWord(s) }), (s.waiting ? "Not playable yet · " : sz + " story · ") + stageWord(s) + " · " + rarity(s) + " · starts " + (st.moments || []).join(" or ") + (st.chance ? " (" + Math.round(st.chance * 100) + " times in 100 when it can)" : "") + " · " + s.beats.length + " beats · " + s.ends.length + " endings"])]);
+      h("div", { class: "line" }, [h("span", { class: "size tier-" + tierOf(s), text: tierWord(s) }), (s.waiting ? "Not playable yet · " : sz + " story · ") + stageWord(s) + " · " + rarity(s) + " · starts " + (st.moments || []).join(" or ") + (st.chance ? " (" + (st.chance < 0.01 ? "less than 1 time in 100" : Math.round(st.chance * 100) + " time" + (Math.round(st.chance * 100) === 1 ? "" : "s") + " in 100") + " when it can)" : "") + " · " + s.beats.length + " beats · " + s.ends.length + " endings"])]);
     hd.appendChild(el("p", "prem", s.premise));
     var c1 = chainLine(s.after, "Unlocks after:");
     if (c1) hd.appendChild(c1);
     if (s.leadsTo && s.leadsTo.length) { var lp = h("p", { class: "chain" }, [h("b", { text: "Leads to: " })]); s.leadsTo.forEach(function (x, i) { if (i) lp.appendChild(document.createTextNode("; ")); var a = h("a", { href: "#s-" + x.slug }); a.appendChild(fmt(x.title)); lp.appendChild(a); lp.appendChild(document.createTextNode(x.neg ? " (only if this did NOT end so)" : x.ends.length ? " if this ends “" + x.ends.map(function (e) { return plain(e.title); }).join("” or “") + "”" : " once this has ended")); }); hd.appendChild(lp); }
     v.appendChild(hd);
     if (V[s.slug]) {
-      var w = h("div", { class: "watch" }, [h("div", { class: "lab3", text: "Watch the story · " + mmss(V[s.slug].seconds) + " · made only from its screenshots" }), h("video", { src: V[s.slug].file, controls: true, playsinline: true, preload: "metadata" })]);
-      v.appendChild(w);
+      // The film loads only when tapped (a phone fetches nothing for it until then).
+      var w = h("div", { class: "watch" }), wb = h("button", { class: "wbtn", type: "button" }, [tileInto(h("span", { class: "wth" }), s), h("span", null, [h("b", { text: "▶ Watch the story · " + mmss(V[s.slug].seconds) }), h("span", { class: "tiny grey", text: "A film made only from its in-game screenshots, with its own lines as captions." })])]);
+      wb.addEventListener("click", function () { var vd = h("video", { src: V[s.slug].file, controls: true, playsinline: true, preload: "auto" }); w.replaceChild(vd, wb); vd.play().catch(function () {}); });
+      w.appendChild(wb); v.appendChild(w);
     }
     if (s.waiting) v.appendChild(h("p", { class: "result", text: "This story waits for a game that is not built (“" + s.waiting + "”). The game never starts such a story, so no part of it could be photographed yet. Its lines are below." }));
     var path = h("nav", { class: "path", "aria-label": "Beats", id: "path" });
@@ -470,7 +487,7 @@ details.more2 > summary { cursor: pointer; font-weight: 600; font-size: 14px; co
       if (i !== null) { mini = h("button", { class: "mini", type: "button", "aria-label": "Enlarge" }); shotBg(mini, s, i, 0.5); mini.addEventListener("click", function () { enlarge(s, i); }); }
       else mini = h("div", { class: "mini none", text: "not reached on screen" });
       var body = h("div", null, [el("h4", "", e.title), el("p", "", e.text)]);
-      var how = (e.reachedBy || []).slice(0, 2).map(function (r) { return plain(r.where) + " " + plain(r.how); }).join("; ");
+      var how = (e.reachedBy || []).slice(0, 2).map(function (r) { return plain(r.where) + " " + plain(r.how); }).join("; ").replace(/“["“]/g, "“").replace(/["”]”/g, "”");
       body.appendChild(h("div", { class: "how", text: how ? "Reached at " + how + (e.reachedBy.length > 2 ? " (and " + (e.reachedBy.length - 2) + " more ways)" : "") : "Nothing reaches this ending." }));
       g.appendChild(h("div", { class: "endc" }, [mini, body]));
     });
@@ -538,7 +555,7 @@ details.more2 > summary { cursor: pointer; font-weight: 600; font-size: 14px; co
     document.getElementById("f-size").addEventListener("change", function () { F.size = this.value; home(); });
     document.getElementById("f-tier").addEventListener("change", function () { F.tier = this.value; home(); });
     rs.addEventListener("change", function () { F.role = this.value; home(); });
-    ["video"].forEach(function (k) { var b = document.getElementById("f-" + k); b.addEventListener("click", function () { F[k] = !F[k]; b.setAttribute("aria-pressed", F[k] ? "true" : "false"); home(); }); });
+
     route();
     window.__bookReady = true;
   });
