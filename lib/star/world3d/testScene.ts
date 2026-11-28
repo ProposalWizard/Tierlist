@@ -68,7 +68,7 @@ export interface WorldOptions {
 export interface WorldStatus { clock: string; people: { id: string; name: string; doing: string }[]; fitness?: GymFitness }
 
 /** The gym's three stats, the ring and the window, for the test page's strip (lib/star/gym/progress.ts gymView). */
-export type GymFitness = ReturnType<typeof import("../gym/progress").gymView> & { week: number };
+export type GymFitness = ReturnType<typeof import("../gym/progress").gymView> & { week: number; /** the test page's body slider (1-4), null = from the gym's own points */ body: number | null };
 
 export interface WorldCallbacks {
   onCard: (card: InteractCard | null) => void;
@@ -97,8 +97,17 @@ export interface WorldController {
   dispose: () => void;
 }
 
+type Demo = { place: WorldPlace; duration: number; rate?: number; steps: [number, string][]; you?: [number, number, number]; watch?: string; zoom?: number; /** the gym: the body slider's level (1-4) */ body?: number };
+/** The ten new exercises' demos: start a step away from the spot, walk up, play it with a good thumb. */
+const GYM2_DEMO_FROM: Record<string, [number, number]> = { pullup: [4.2, 3.2], squat: [0.3, -1.1], pushup: [1.5, 2.8], plank: [1.5, 2.8], nordic: [0.4, 2.3], mobility: [0.4, 2.3], boxjump: [2.2, 2.1], copenhagen: [3.55, 2.0], ladder: [1.6, 3.5], landing: [3.1, 2.8] };
+const GYM2_DEMOS: Record<string, Demo> = {
+  ...Object.fromEntries(Object.entries(GYM2_DEMO_FROM).map(([k, at]) => [k, { place: "gym", duration: 40, steps: [[0.2, `tap:${k}`], [0.25, "bot:1"], [0.3, "act:use"]], you: [at[0], at[1], Math.PI] } as Demo])),
+  // the body strip: stood still by the mirror at gym levels 1 to 4 (pin the camera in front for the stills)
+  ...Object.fromEntries([1, 2, 3, 4].map((lv) => [`body${lv}`, { place: "gym", duration: 4, steps: [], you: [-1.0, -1.2, Math.PI], body: lv } as Demo])),
+};
+
 /** The demos: what happens when (seconds), and how long each runs. */
-const DEMOS: Record<string, { place: WorldPlace; duration: number; rate?: number; steps: [number, string][]; you?: [number, number, number]; watch?: string; zoom?: number }> = {
+const DEMOS: Record<string, Demo> = {
   sofa: { place: "house", duration: 14, steps: [[0.4, "tap:tv"], [4.6, "act:use"], [11.4, "act:leave"]] },
   fridge: { place: "house", duration: 15, steps: [[0.4, "tap:fridge"], [5.0, "act:use"]] },
   visitor: { place: "garden", duration: 34, rate: 10, steps: [], you: [-0.3, 1.9, 2.6], watch: "mate-2", zoom: 0.5 },
@@ -111,6 +120,10 @@ const DEMOS: Record<string, { place: WorldPlace; duration: number; rate?: number
   treadmill: { place: "gym", duration: 36, steps: [[0.2, "tap:treadmill"], [3.6, "bot:1"], [3.6, "act:use"]], you: [1.4, 1.2, Math.PI] },
   fall: { place: "gym", duration: 14, steps: [[0.2, "tap:treadmill"], [3.6, "bot:0"], [3.6, "act:use"]], you: [1.4, 1.2, Math.PI] },
   bag: { place: "gym", duration: 31, steps: [[0.2, "tap:bag"], [3.0, "bot:1"], [3.0, "act:use"]], you: [-1.2, 2.6, Math.PI] },
+  // phase 2 (gymPoses2.ts): one demo per new exercise (walk up, the fade, a good thumb), ?demo=pullup etc.
+  ...GYM2_DEMOS,
+  // the tour: box jumps, landing balance, pull-ups, the ladder (a few seconds of each)
+  tour: { place: "gym", duration: 30, steps: [[0.1, "bot:1"], [0.1, "go:boxjump"], [5.6, "act:gym:quit"], [5.65, "go:landing"], [12.8, "act:gym:quit"], [12.85, "go:pullup"], [20.6, "act:gym:quit"], [20.65, "go:ladder"]], you: [2.2, 2.05, Math.PI] },
 };
 export const WORLD_DEMOS = DEMOS;
 /** The gym mirror's picture, as a share of the screen's pixels each way (Low: plain dark glass, no live mirror). */
@@ -602,7 +615,21 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   let gymState = GP ? GP.newGym() : null;
   const gymGap = { season: 1, week: 1 };
   let gym: import("./gymPlace").GymSession | null = null;
-  const fitness = (): GymFitness | undefined => (GP && gymState ? { ...GP.gymView(gymState, gymGap), week: gymGap.week } : undefined);
+  // the body follows the gym (lib/star/gym/body.ts): the gym's own points a window late, or the test page's slider
+  let bodyLevel: number | null = demo?.body ?? null;
+  const GB = place === "gym" ? await import("../gym/body") : null;
+  const TB = place === "gym" ? await import("../style3d/toon/bodies") : null;
+  const applyBody = () => {
+    if (!GB || !TB || !GP || !gymState) return;
+    const inner = you.person.root.children[0];
+    const base = TB.TOON_BUILD_SCALE[(you.person as any).toon ?? "c1"] ?? [1, 1, 1];
+    const pts = bodyLevel != null ? { strength: GB.pointsForLevel(bodyLevel), cardio: GB.pointsForLevel(bodyLevel) / 2 } : GP.bodyPoints(gymState, gymGap);
+    const k = GB.gymBodyScale(pts);
+    inner?.scale.set(base[0] * k[0], base[1] * k[1], base[2] * k[2]);
+    inner?.updateMatrixWorld(true);
+  };
+  const fitness = (): GymFitness | undefined => (GP && gymState ? { ...GP.gymView(gymState, gymGap), week: gymGap.week, body: bodyLevel } : undefined);
+  applyBody();
   if (gymRoom && GP && GG) {
     const { GymSession } = await import("./gymPlace");
     const size = (() => { const hipsRest = you.person.rest.get(you.person.bones.Hips)?.[0].y ?? you.person.bones.Hips.position.y; const hy = (footG.scene?.userData as any)?.hipsY as number | undefined; return hy ? hipsRest / hy : 1; })();
@@ -611,14 +638,39 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       clipSpeed: (name) => (clipInfo(footG, name)?.speed ?? (name === "sprint" ? 6.5 : name === "run" ? 4.5 : 3)) * size,
       seed: 7,
       onResult: (r, quit) => {
+        book.release(you.id);
         const out = GP.doExercise(gymState!, gymGap, r);
         gymState = out.gym;
+        applyBody();
         if (demo && quit) return; // the film moves straight on
         show({ key: `gym:${r.kind}`, sub: GG.GAME_NAMES[r.kind], title: r.failed ? (r.kind === "treadmill" ? "Off the back!" : "Too fast!") : quit ? "Stopped early" : "Set done", lines: [r.headline + ".", out.words], actions: [{ id: "close", label: "OK", primary: true }] });
       },
     });
   }
   const mateBeltSpeed = place === "gym" ? (clipInfo(footG, "jog")?.speed ?? 3) : 0;
+  // the team-mate on phase 2's kit: while his routine has him "using" one of the new exercises, he plays it
+  // on a bot thumb with his own Exercise2 (the same poses and contacts as yours); a finished go starts again
+  const G2 = place === "gym" ? await import("../gym/games2") : null;
+  const PZ2 = place === "gym" ? await import("./gymPoses2") : null;
+  const mateGym = new Map<Npc, { kind: import("../gym/games2").Gym2Kind; ex: import("./gymPoses2").Exercise2; game: import("../gym/games2").Gym2State; n: number }>();
+  const mateGymFrame = (n: Npc, dt: number) => {
+    if (!G2 || !PZ2 || !gymRoom) return;
+    const cur = mateGym.get(n);
+    const o = n.using;
+    const on = n.state === "use" && !!o?.game && (G2.GYM2_KINDS as string[]).includes(o.game);
+    if (!on) { if (cur) { cur.ex.tearDown(); mateGym.delete(n); const s0 = o?.slots[0]; if (s0) n.place(n.x, n.z, n.yaw); } return; }
+    const kind = o!.game as import("../gym/games2").Gym2Kind;
+    let m = cur;
+    if (!m || m.kind !== kind) {
+      const ex = new PZ2.Exercise2(THREE, n, gymRoom);
+      ex.setUp(kind, true);
+      m = { kind, ex, game: G2.start2(kind, 2, 11 + mateGym.size), n: 0 };
+      mateGym.set(n, m);
+    }
+    m.game = G2.step2(m.game, dt, G2.botHold2(m.game, 1));
+    if (m.game.done) m.game = G2.start2(kind, 2, 11 + ++m.n);
+    m.ex.apply(m.game, "play", 9, dt);
+  };
 
   // ── Tapping: a person, a thing, else the floor; walk up; one card ──
   const marker = makeTapMarker(THREE, scene);
@@ -713,9 +765,11 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   const act = (a: string) => {
     if (a === "close") { endTalk(); pending = null; show(null); return; }
     if (a === "gym:quit") { gym?.quit(); return; }
+    if (a.startsWith("gym:body:")) { const v = a.slice(9); bodyLevel = v === "auto" ? null : Number(v); applyBody(); statusT = 0; return; }
     if (a === "gym:nextWeek" && GP && gymState) {
       // a match played: the next gap between matches (the window counts down; miss it and you slip)
       gymGap.week++;
+      applyBody();
       const v = GP.gymView(gymState, gymGap);
       show({ key: "gym:week", sub: `Week ${gymGap.week}`, title: "A match later", lines: [v.window >= 0 ? `Workout window: ${v.window === 0 ? "last week to train" : `${v.window + 1} weeks left`}.` : v.slipping ? `You missed the window: Strength and Cardio will slip ${GP.SLIP * v.slipping}.` : "No workout window open: your next visit opens one."], actions: [{ id: "close", label: "OK", primary: true }] });
       return;
@@ -724,6 +778,9 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       marker.fade();
       const o = pending.obj;
       if (o.id === "treadmill2" && npcs.some((n) => n.using?.id === "treadmill2-belt")) { show(objectCard(o, { taken: true })); return; }
+      // the team-mate on it (phase 2's kit is shared): taken; else it is yours until the result card
+      if (!book.free(o).length && o.slots.length) { show(objectCard(o, { taken: true })); return; }
+      if (o.slots.length) book.book(o, you.id);
       pending = null;
       show(null);
       // stood at the machine: the session takes it from here (the fade, the game, the result card)
@@ -875,6 +932,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
   let frameN = 0, shadowT = 0, statusT = 0, animated = 0;
   let simT = 0;
   const demoSteps = demo ? demo.steps.slice() : [];
+  let goNext: string | null = null;
   const frustum = new THREE.Frustum();
   const pm = new THREE.Matrix4();
   const tv3 = new THREE.Vector3();
@@ -885,7 +943,10 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       const [, what] = demoSteps.shift()!;
       if (what.startsWith("tap:")) tapId(what.slice(4)); else if (what.startsWith("act:")) act(what.slice(4));
       else if (what.startsWith("bot:") && gym) gym.bot = Number(what.slice(4));
+      else if (what.startsWith("go:")) goNext = what.slice(3);
     }
+    // a filmed tour: the next exercise as soon as the last one has finished (tap it, walk there, start)
+    if (goNext && !gym?.active) { tapId(goNext); act("use"); goNext = null; }
     clock.advance(dt);
     // a filmed run can have you turn to watch someone (the camera turns with you)
     if (watch && you.state === "stand") {
@@ -916,6 +977,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
     }
     you.update(dt, world, true);
     gym?.afterPose(dt);
+    mateGym.forEach((m) => m.ex.restore());
     vis.forEach((n, i) => {
       const every = plan[i].every;
       const on = animatesOn(every, frameN, i + 1);
@@ -923,6 +985,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       if (n.update(dt, world, on, since)) { lastPosed.set(n, 0); animated++; } else lastPosed.set(n, since);
     });
     for (const n of npcs) if (!n.root.visible) n.update(dt, world, false);
+    if (place === "gym") for (const n of npcs) if (n.root.visible) mateGymFrame(n, dt);
     blobs.forEach((b, n) => { b.visible = n.root.visible; const [x, z] = n.bodyXZ(); b.position.set(x, 0.012, z); });
     faces.forEach((f, n) => { if (n.root.visible) f.rig.set({ blink: FACE.blinkAt(simT, f.seed) }); });
     for (const h of hairs) h.update?.(dt);
@@ -1024,7 +1087,7 @@ async function build(container: HTMLElement, cb: WorldCallbacks, opts: WorldOpti
       }),
       minGap: (() => { let m = Infinity; const b = world.bodies(); for (let i = 0; i < b.length; i++) for (let j = i + 1; j < b.length; j++) m = Math.min(m, Math.hypot(b[i].x - b[j].x, b[i].z - b[j].z)); return +m.toFixed(2); })(),
       card: card?.title ?? null,
-      gym: gym ? { phase: gym.phase, kind: gym.kind, benchPierceCm: gym.benchPierceCm, gripGapCm: gym.gripGapCm, barPierceCm: gym.barPierceCm, railPierceCm: gym.railPierceCm, info: gym.active ? gym.info() : null, game: gym.game ? { t: +gym.game.t.toFixed(2), done: gym.game.done } : null, fitness: fitness() } : null,
+      gym: gym ? { ex2: gym.ex2.stats, mate: mateGym.size ? Array.from(mateGym.values()).map((m) => ({ kind: m.kind, stats: m.ex.stats })) : null, body: (() => { const inner = you.person.root.children[0]; return inner ? [+inner.scale.x.toFixed(4), +inner.scale.y.toFixed(4), +inner.scale.z.toFixed(4)] : null; })(), phase: gym.phase, kind: gym.kind, benchPierceCm: gym.benchPierceCm, gripGapCm: gym.gripGapCm, barPierceCm: gym.barPierceCm, railPierceCm: gym.railPierceCm, info: gym.active ? gym.info() : null, game: gym.game ? { t: +gym.game.t.toFixed(2), done: gym.game.done } : null, fitness: fitness() } : null,
       stats: ctrl.stats(),
     }),
     dispose: () => {

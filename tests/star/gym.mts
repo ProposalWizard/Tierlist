@@ -19,7 +19,8 @@ import {
 } from "../../lib/star/gym/progress";
 import type { CareerState } from "../../lib/star/types";
 import { GAME_NAMES, HOW_TO, MAX_SECS } from "../../lib/star/gym/games";
-import { GYM2_KINDS, start2, step2, SQUAT, type pullupStart, type squatStart } from "../../lib/star/gym/games2";
+import { GYM2_KINDS, start2, step2, SQUAT, type pullupStart, type squatStart, type Gym2State } from "../../lib/star/gym/games2";
+import { hudView } from "../../lib/star/gym/hudView";
 import { STAT_MIX, STAT_OF, bodyPoints } from "../../lib/star/gym/progress";
 import { gymBodyScale, pointsForLevel } from "../../lib/star/gym/body";
 import { setGymEffectForTest, gymEffectMode, gymSkillBonus, recoveryScale, lateEnergyBack, resilienceInjuryScale, LASTING_BONUS, MATCH_LIFT, LATE_DRAIN_CUT, RECOVERY_BOOST, INJURY_SCALE } from "../../lib/star/gym/effect";
@@ -187,6 +188,18 @@ for (const kind of GYM2_KINDS) {
   // Resilience exercises feed Resilience
   for (const k of ["nordic", "copenhagen", "landing", "mobility"] as const) check((STAT_MIX[k].resilience ?? 0) >= 0.7, `${k} feeds Resilience`);
   check(STAT_OF.pullup === "strength" && STAT_OF.squat === "strength" && STAT_OF.ladder === "cardio" && STAT_OF.nordic === "resilience", "main stats");
+}
+// ── phase 2: the screen's meter for each new game (lib/star/gym/hudView.ts) ──
+for (const kind of GYM2_KINDS) {
+  let s = startGame(kind, 1, 3) as Gym2State, okAll = true;
+  for (let i = 0; i < 60 * 40 && !s.done; i++) {
+    s = stepGame(s, 1 / 60, botHold(s, 1)) as Gym2State;
+    if (i % 30) continue;
+    const v = hudView(s);
+    const inRange = (x?: number) => x === undefined || (x >= -0.2 && x <= 1.2);
+    if (!v.big || !v.cue || !inRange(v.meter?.marker) || !inRange(v.ring) || (v.dots ?? []).some((d) => !inRange(d))) okAll = false;
+  }
+  check(okAll, `${kind}: the screen always has a count, a cue and a meter in range`);
 }
 // ── phase 2: the ring of three, Resilience, the body trail ──
 {

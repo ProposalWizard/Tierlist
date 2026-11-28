@@ -31,7 +31,28 @@
  */
 import type { GameResult } from "./games";
 
-export type Gym2Kind = "pullup" | "squat" | "pushup" | "plank" | "nordic" | "copenhagen" | "boxjump" | "ladder" | "landing" | "mobility";
+/**
+ * FOOTBALL DRILLS WITH A BALL: NOT HERE (a later job). The one-engine rule (CLAUDE.md "ONE ENGINE",
+ * RUL-ENG-002): anything with a ball must mount EnginePlay and run the real match, never a mini-game of its
+ * own. The list for that job, each a gym "station" that hands off to EnginePlay with its own scenario:
+ */
+export const BALL_DRILLS_LATER = [
+  { id: "rondo", what: "Rondo 5 v 2: quick passing under pressure", stat: "focus" },
+  { id: "firstTouch", what: "First touch off the rebound wall", stat: "focus" },
+  { id: "finishing", what: "Finishing from cut-backs, both feet", stat: "strength" },
+  { id: "dribbleGates", what: "Dribble through cones at speed", stat: "cardio" },
+  { id: "headers", what: "Heading from crosses (jump timing)", stat: "strength" },
+  { id: "keeperReflex", what: "Keeper: reflex saves (keepers only)", stat: "resilience" },
+] as const;
+
+/** Exercises from the research list left out of this phase, and why (docs/research/gym-effects-2026-11-27.md section 3). */
+export const CUT_FOR_NOW = [
+  { id: "sled", why: "needs a 10 m strip the room hasn't got; the treadmill and the ladder already cover acceleration" },
+  { id: "sprint", why: "the treadmill is the sprint (its belt speeds up to 14 km/h); a second running game would feel the same" },
+  { id: "rdl", why: "a third barbell lift felt the same as the squat on the thumb" },
+] as const;
+
+export type Gym2Kind ="pullup" | "squat" | "pushup" | "plank" | "nordic" | "copenhagen" | "boxjump" | "ladder" | "landing" | "mobility";
 export const GYM2_KINDS: Gym2Kind[] = ["pullup", "squat", "pushup", "plank", "nordic", "copenhagen", "boxjump", "ladder", "landing", "mobility"];
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));

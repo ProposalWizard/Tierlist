@@ -35,6 +35,12 @@ export class PoseBlend {
     bone.quaternion.copy(r);
     bone.updateMatrixWorld(true);
   }
+  /** Set a bone's world rotation outright (a foot kept flat on the floor, a hand turned palm down). */
+  setWorld(bone: any, qWorld: any) {
+    if (!bone) return;
+    const cur = bone.getWorldQuaternion(new this.T.Quaternion());
+    this.rotWorld(bone, qWorld.clone().multiply(cur.invert()));
+  }
   /** Turn a bone round a world axis by an angle (radians). */
   turn(bone: any, axis: V3, angle: number) {
     if (!bone || Math.abs(angle) < 1e-5) return;
