@@ -320,6 +320,8 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     mode: "in" | "out" | "leaving";
     /** Real seconds since his last move began (the watchdog: nobody walks for ever). */
     walkT: number;
+    /** Walking in through the doorway (off the floor grid): nothing else starts until he is in. */
+    entering?: boolean;
   }
   let guests: Guest[] = [];
   let plannedDay = Number.NaN;
@@ -339,18 +341,22 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       planCheckT += dt;
       if (planCheckT < 2) return;
       planCheckT = 0;
-      for (const v of o.visits(d)) if (!guests.some((g) => g.v.id === v.id && g.v.from === v.from)) guests.push({ v, n: null, loading: false, stepI: -1, token: 0, mode: "out", walkT: 0 });
+      for (const v of o.visits(d)) if (!guests.some((g) => g.v.id === v.id && g.v.from === v.from)) { guests.push({ v, n: null, loading: false, stepI: -1, token: 0, mode: "out", walkT: 0 }); ensureBody(guests[guests.length - 1]); }
       return;
     }
     plannedDay = d;
     for (const g of guests) if (g.n) { if (g.n.seated) g.n.leave(); book.release(g.n.id); g.n.show(false); visitOf.delete(g.n); }
     guests = o.visits(d).map((v) => ({ v, n: null, loading: false, stepI: -1, token: 0, mode: "out", walkT: 0 }));
+    // their bodies now (a body takes seconds to build): nobody pops in late or skips his walk through the door
+    for (const g of guests) ensureBody(g);
   };
   const ensureBody = (g: Guest) => {
     if (g.n || g.loading) return;
     const key = bodyKey(g.v);
     const have = bodyOf.get(key);
     if (have) { g.n = have; visitOf.set(have, g); return; }
+    // the same person already on his way (lunch and dinner: one chef): that load fills this visit too
+    if (guests.some((h) => h !== g && h.loading && bodyKey(h.v) === key)) return;
     g.loading = true;
     const lookId = g.v.who === "mate" ? `world-mate-${g.v.mateId}` : `house-${g.v.who}-${o.club ?? ""}`;
     void makeBody(lookId, g.v.who, `guest-${key}`, g.v.name).then((n) => {
@@ -426,7 +432,8 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     hold(n, null);
     const standAt = (spot: { at: XZ; face: number } | null, loop: any[], prop: keyof typeof propG | null = null) => {
       if (!spot) { if (!n.busy) n.act(loop[0], 9999); return; }
-      const go = () => { if (!alive()) return; hold(n, prop); n.act(loop[0], 9999); };
+      // on the phone: stood, the phone up to his ear (the drink gesture lifts the hand to his face); else the step's clip
+      const go = () => { if (!alive()) return; hold(n, prop); if (prop === "phone") { n.stop(); n.sip(true); } else n.act(loop[0], 9999); };
       if (snap) { n.place(spot.at[0], spot.at[1], spot.face); go(); }
       else if (!n.walkTo(world, spot.at, { face: spot.face, onArrive: go })) go();
     };
@@ -488,7 +495,10 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
     const out = inside(d, -0.6), inn = inside(d, 0.7);
     n.place(out[0], out[1], yawTo(out, inn));
     n.show(true);
-    if (!n.walkLine([inn], () => { if (g.token === tok) doStep(g, i, false); })) doStep(g, i, false);
+    g.stepI = i;
+    g.entering = true;
+    const inDone = () => { g.entering = false; if (g.token === tok) doStep(g, i, false); };
+    if (!n.walkLine([inn], inDone)) inDone();
   };
 
   /** Each frame (cheap: a few comparisons per visitor). */
@@ -522,6 +532,11 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
         continue;
       }
       // mode in
+      if (g.entering) {
+        // the watchdog: a doorway walk that has not finished in 8 s ends just inside
+        if (g.walkT > 8) { g.entering = false; const d = doorTo(null); if (d) { const p = inside(d, 0.7); n.place(p[0], p[1], n.yaw); } doStep(g, g.stepI, true); }
+        continue;
+      }
       if (!here) {
         const tok = ++g.token;
         const next = w ? (w.step.room === "away" ? null : w.step.room) : "garden";
@@ -684,7 +699,7 @@ export async function startLife(o: LifeOptions): Promise<HouseLife> {
       objects = new SmartSet(r.things ?? []);
       grid = buildRoomGrid(r);
       // visitors: out of sight; the next frame puts those whose step is in this room in place (mid-step)
-      for (const g of guests) { g.token++; g.mode = "out"; g.stepI = -1; if (g.n) { g.n.show(false); hold(g.n, null); g.n.lookAt = null; } }
+      for (const g of guests) { g.token++; g.mode = "out"; g.stepI = -1; g.entering = false; if (g.n) { g.n.show(false); hold(g.n, null); g.n.lookAt = null; } }
       for (const n of npcs) { if (visitOf.has(n)) { book.release(n.id); continue; } if (n.seated) n.leave(); book.release(n.id); }
       if (where.length) { void loadPeople(); if (npcs.length) seatGuests(); }
     },

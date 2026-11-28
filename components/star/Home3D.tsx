@@ -161,6 +161,8 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const doorRef = useRef(onDoor);
   doorRef.current = onDoor;
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  // the clock waits while the house loads (a loading screen is a menu: no time passes)
+  live.clock.paused = !!clockPaused || !chrome || status !== "ready";
   const [errText, setErrText] = useState("");
   const [near, setNear] = useState<HomeSpot | null>(null);
   const [dismissed, setDismissed] = useState<HomeSpot | null>(null);
