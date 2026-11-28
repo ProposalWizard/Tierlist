@@ -14,8 +14,10 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any"
  },
  "cast": [
   {
@@ -24,7 +26,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -167,6 +170,133 @@
    "hint": "The canteen has one thing left"
   },
   {
+   "id": "pie-1d-deep",
+   "title": "The pie superstition",
+   "after": {
+    "beat": "pie-1-friday",
+    "weeks": [
+     3,
+     8
+    ]
+   },
+   "event": {
+    "id": "arc-pie-1d-deep",
+    "title": "The pie superstition",
+    "category": "club",
+    "place": "club:canteen",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "canteen",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The whole squad has heard about the Friday pie. On Friday there are eleven lads in the queue asking for a steak pie, and {canteen.short} has made four."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "canteen",
+       "say": [
+        "She looks at you over the hatch. \"Your pie. You decide.\""
+       ],
+       "replies": [
+        {
+         "id": "share",
+         "label": "\"Cut them in half. Everyone gets some luck.\"",
+         "tone": "kind",
+         "end": "share"
+        },
+        {
+         "id": "mine",
+         "label": "\"It's my pie.\"",
+         "tone": "confident",
+         "end": "mine"
+        },
+        {
+         "id": "none",
+         "label": "\"Nobody has it. It's daft.\"",
+         "tone": "honest",
+         "end": "none"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "share": [
+       {
+        "text": "Eight halves and a lot of noise. You win on Saturday. Now she makes twelve.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "canteen",
+          "tag": "shared-out-the-pie",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "share"
+         }
+        }
+       }
+      ],
+      "mine": [
+       {
+        "text": "The lads boo. She gives you the biggest one with a wink.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "mine"
+         }
+        }
+       }
+      ],
+      "none": [
+       {
+        "text": "You lose on Saturday. The lads blame you for a fortnight.",
+        "npc": [
+         {
+          "slot": "canteen",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "none"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "canteen",
+      "pick": "canteen"
+     }
+    ]
+   },
+   "hint": "The lads have heard about the pie"
+  },
+  {
    "id": "pie-2-sick",
    "title": "No pie",
    "after": {
@@ -194,7 +324,8 @@
      ]
     },
     "setup": [
-     "A season on. Friday, and {canteen.short} is off sick. The relief cook has never heard of the pie. There's a quiche."
+     "A season on. Friday, and {canteen.short} is off sick. The relief cook has never heard of the pie. There's a quiche.",
+     "{if arc.deep=='share'}She makes twelve pies on Fridays now. She blames you.{/if}"
     ],
     "choices": [
      {

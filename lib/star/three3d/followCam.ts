@@ -4,9 +4,9 @@
  * "D is good and should be the base for all 3D areas — maybe you should be able
  * to zoom out though?").
  *
- * D: close (2.5 m behind), centred straight behind him, at 2.2 m looking a little
- * down at him (17°), a smooth follow, a small swing (±23°) off walls. Zoom pulls it
- * back to about the old house camera's distance (4.4 m), rising a little as it goes.
+ * D: 4.0 m behind since 28 Nov 2026 (was 2.5), centred straight behind him, at
+ * 2.75 m looking a little down at him, a smooth follow, a small swing (±23°) off walls. Zoom pulls it
+ * back to 5.4 m, rising a little as it goes.
  * Pinch on a phone, the mouse wheel on a computer; the zoom is remembered per device.
  *
  * Pure numbers + small helpers; each scene does its own placing and keeps its own
@@ -45,15 +45,22 @@ export interface FollowCam {
   fov: number;
 }
 
-/** Camera D: the closest the zoom goes. */
+/**
+ * Camera D: the closest the zoom goes. Zoomed out a bit (Harry, 28 Nov 2026: "we need to
+ * zoom out the camera a bit"; he filled too much of the screen): 4.0 m behind (was 2.5),
+ * 2.75 m up (was 2.2), looking 1.9 m ahead of him (was 1.4), a lens of 60° (was 56°).
+ * Picked from tries at 3.0 / 3.4 / 3.8 / 4.0 m on stills of the starter flat, the lounge,
+ * the garden and the gym: his whole body and more of the room. Small rooms: the walls
+ * pull the boom in as before (FollowBoom), the ceiling holds the height.
+ */
 export const FOLLOW_CAM_D: FollowCam = {
-  height: 2.2, back: 2.5, lookY: 1.0, lookAhead: 1.4, side: 0, lookSide: 0,
-  riseIfShort: 0.3, minBoom: 1.0, posK: 4, lookK: 5, yawK: 2.0, swing: 2, fov: 56,
+  height: 2.75, back: 4.0, lookY: 1.0, lookAhead: 1.9, side: 0, lookSide: 0,
+  riseIfShort: 0.3, minBoom: 1.0, posK: 4, lookK: 5, yawK: 2.0, swing: 2, fov: 60,
 };
 
-/** The furthest the zoom goes: about the old house camera's distance, a little higher, still centred. */
+/** The furthest the zoom goes (5.4 m since 28 Nov 2026; was 4.4 m), higher, still centred. */
 export const FOLLOW_CAM_FAR: Pick<FollowCam, "height" | "back" | "lookY" | "lookAhead" | "fov"> = {
-  height: 2.75, back: 4.4, lookY: 0.95, lookAhead: 2.0, fov: 60,
+  height: 3.1, back: 5.4, lookY: 0.95, lookAhead: 2.3, fov: 62,
 };
 
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -257,7 +264,7 @@ export class FollowCarry {
 export function settledArrival(
   door: { x: number; z: number; nx: number; nz: number },
   ok: (x: number, z: number) => boolean,
-  back = FOLLOW_CAM_D.back, min = 1.5, max = 3.2,
+  back = FOLLOW_CAM_D.back, min = 1.5, max = 4.0,
 ): { x: number; z: number; yaw: number; d: number } | null {
   for (let d = Math.min(max, back + 0.45); d > min; d -= 0.25) {
     const x = door.x + door.nx * d, z = door.z + door.nz * d;

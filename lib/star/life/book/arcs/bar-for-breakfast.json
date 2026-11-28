@@ -13,7 +13,13 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.064,
+  "tier": "common",
+  "stage": "breaking-through",
+  "when": [
+   "age>=19",
+   "age<=23"
+  ]
  },
  "cast": [
   {
@@ -22,7 +28,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -347,6 +354,133 @@
    "hint": "The coach fancies his chances on the bar"
   },
   {
+   "id": "brk-1d-deep",
+   "title": "The breakfast queue",
+   "after": {
+    "beat": "brk-1-bet",
+    "weeks": [
+     3,
+     8
+    ]
+   },
+   "event": {
+    "id": "arc-brk-1d-deep",
+    "title": "The breakfast queue",
+    "category": "training",
+    "place": "club:canteen",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Half seven, the canteen. {coach.short} is in the queue in front of you with a tray and a very full plate, and he's telling the physio about the bar."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "coach",
+       "say": [
+        "\"Ask him,\" he says, nodding at you. \"Ask him who's buying.\""
+       ],
+       "replies": [
+        {
+         "id": "own",
+         "label": "\"He's buying. Every word of it's true.\"",
+         "tone": "confident",
+         "end": "own"
+        },
+        {
+         "id": "pay",
+         "label": "Pay for his breakfast and say nothing.",
+         "tone": "kind",
+         "end": "pay"
+        },
+        {
+         "id": "tell",
+         "label": "\"Tell her the score, then.\"",
+         "tone": "fiery",
+         "end": "tell"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "own": [
+       {
+        "text": "The physio laughs. {coach.short} pays for two bacon rolls and says it's the last time.",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "own"
+         }
+        }
+       }
+      ],
+      "pay": [
+       {
+        "text": "He looks at the roll, then at you. \"You don't have to be nice. It's worse.\"",
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "bought-me-breakfast",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "pay"
+         }
+        }
+       }
+      ],
+      "tell": [
+       {
+        "text": "He tells her a score that never happened, and you let him.",
+        "npc": [
+         {
+          "slot": "coach",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "tell"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The coach is in the breakfast queue"
+  },
+  {
    "id": "brk-2-whiteboard",
    "title": "The whiteboard",
    "after": {
@@ -374,7 +508,10 @@
     },
     "setup": [
      "{if arc.path=='double'}It's still on the whiteboard in the coaches' room: \"DOUBLE OR NOTHING. THE BAR.\" {coach.short} has rubbed out the date and written \"NOW\".{/if}",
-     "{if !arc.path=='double'}{coach.short} is in the canteen queue in front of you.{/if}"
+     "{if !arc.path=='double'}{coach.short} is in the canteen queue in front of you.{/if}",
+     "{if arc.deep=='own'}He still tells the canteen you lied about the bacon rolls.{/if}",
+     "{if arc.deep=='pay'}He hasn't forgotten the bacon roll you bought him.{/if}",
+     "{if arc.deep=='tell'}He's told the story so often the score has changed twice.{/if}"
     ],
     "choices": [
      {

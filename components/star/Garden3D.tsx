@@ -38,6 +38,7 @@ import Reload3dPill from "./Reload3d";
 import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
 import { Stick, pill } from "./Shop3D";
 import LoadingCurtain from "./loading/LoadingCurtain";
+import ViewToggle3D from "./ViewToggle3D";
 
 const INK = "#f7f1e8";
 /** A query parameter, on the client only. */
@@ -265,6 +266,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
       {/* the loading screen: keepie-uppies in the garden (components/star/loading) */}
       <LoadingCurtain section="garden" loading={status === "loading"} box={embedded} />
 
+      {status === "ready" && ctrlRef.current?.setView && <ViewToggle3D onChange={(m) => ctrlRef.current?.setView?.(m)} />}
       {status === "ready" && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
 
       {status === "ready" && spot && spot !== "fountain" && (

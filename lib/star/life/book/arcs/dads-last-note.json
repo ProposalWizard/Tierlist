@@ -1,0 +1,237 @@
+{
+ "id": "arc-dads-last-note",
+ "title": "Dad's last note",
+ "owner": "dad",
+ "summary": "Your dad has written notes on every game since you were nine. It's near the end now, and he's bought one more notebook. He says it's the last one, and he wants to fill it properly.",
+ "size": "small",
+ "about": {
+  "who": [
+   "your dad"
+  ],
+  "tone": [
+   "moving",
+   "family"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "last-seasons",
+  "when": [
+   "ended(arc-dads-notes:the-notebooks|he-said-it)",
+   "age>=31"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "dad",
+   "pick": "dad"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-last-page",
+   "title": "The last page",
+   "text": "Your dad filled the last notebook. The last page is one line long."
+  },
+  {
+   "id": "still-writing",
+   "title": "Still writing",
+   "text": "Your dad said the last notebook was the last one. He's on his third since."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "dln-1-book",
+   "title": "One more notebook",
+   "n": 1,
+   "event": {
+    "id": "arc-dln-1-book",
+    "title": "One more notebook",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your dad has a new notebook, the same make he's bought since you were nine. \"Last one. I've decided. I'll fill it, and that's me done.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "dad",
+       "say": [
+        "He's older than you notice, most days. He writes the date on the first page very slowly."
+       ],
+       "replies": [
+        {
+         "id": "every",
+         "label": "\"Then come to every game.\"",
+         "tone": "kind",
+         "end": "every"
+        },
+        {
+         "id": "away",
+         "label": "\"Even the away ones?\"",
+         "tone": "confident",
+         "end": "every"
+        },
+        {
+         "id": "dont",
+         "label": "\"Don't stop on my account.\"",
+         "tone": "honest",
+         "end": "dont"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "every": [
+       {
+        "text": "He comes to every one. The notes get shorter as the season goes on, and better.",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "every"
+         }
+        }
+       }
+      ],
+      "dont": [
+       {
+        "text": "\"Not on your account,\" he says. \"On mine.\"",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "dont"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "Your dad has bought one more notebook"
+  },
+  {
+   "id": "dln-2-later",
+   "title": "The last page",
+   "after": {
+    "beat": "dln-1-book",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-dln-2-later",
+    "title": "The last page",
+    "category": "life",
+    "place": "home:dads",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "dad",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. Your dad hands you the notebook. It's full."
+    ],
+    "choices": [
+     {
+      "id": "last",
+      "label": "Turn to the last page.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='every'",
+        "text": "One line, in his small writing: \"Never better.\"",
+        "npc": [
+         {
+          "slot": "dad",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "end": "the-last-page"
+        }
+       },
+       {
+        "text": "No last page. He's already bought the next one.",
+        "arc": {
+         "end": "still-writing"
+        }
+       }
+      ]
+     },
+     {
+      "id": "first",
+      "label": "Turn to the first page.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='every'",
+        "text": "The date in slow writing. Then every game, shorter and shorter, to the last: \"Never better.\"",
+        "arc": {
+         "end": "the-last-page"
+        }
+       },
+       {
+        "text": "The date, then forty games. He's started another already, he says, just in case.",
+        "arc": {
+         "end": "still-writing"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "dad",
+      "pick": "dad"
+     }
+    ]
+   },
+   "hint": "A season on, your dad's notebook"
+  }
+ ]
+}

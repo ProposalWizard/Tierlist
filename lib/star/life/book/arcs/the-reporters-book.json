@@ -1,0 +1,243 @@
+{
+ "id": "arc-the-reporters-book",
+ "title": "Her book",
+ "owner": "reporter",
+ "summary": "The reporter is writing a book about the club, a hundred years of it, and she wants a chapter about you. She wants the true version of one night you've never talked about.",
+ "size": "small",
+ "about": {
+  "who": [
+   "local reporter"
+  ],
+  "tone": [
+   "press",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-reporters-patch)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-chapter",
+   "title": "The chapter",
+   "text": "There's a chapter about you in her book. It's the one people read first, and it's true."
+  },
+  {
+   "id": "the-footnote",
+   "title": "The footnote",
+   "text": "You're a footnote in her book. She was kind about it."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "rbk-1-ask",
+   "title": "A chapter",
+   "n": 1,
+   "event": {
+    "id": "arc-rbk-1-ask",
+    "title": "A chapter",
+    "category": "media",
+    "place": "town:cafe",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{reporter.short} has a dictaphone, a real one this time, and a list of questions in very small writing. A hundred years of the club, and a chapter about you."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "reporter",
+       "say": [
+        "\"I want the night you nearly left. The real one. Not the press-office one.\""
+       ],
+       "replies": [
+        {
+         "id": "tell",
+         "label": "Tell her all of it.",
+         "tone": "honest",
+         "end": "tell"
+        },
+        {
+         "id": "some",
+         "label": "Tell her some, and ask her to leave the rest.",
+         "tone": "calm",
+         "end": "some"
+        },
+        {
+         "id": "other",
+         "label": "\"Write about the lads instead.\"",
+         "tone": "humble",
+         "end": "other"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "tell": [
+       {
+        "text": "Two hours. She stops the tape once, to let you get a drink of water.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "tell"
+         }
+        }
+       }
+      ],
+      "some": [
+       {
+        "text": "She crosses things out while you watch, so you know.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "some"
+         }
+        }
+       }
+      ],
+      "other": [
+       {
+        "text": "She writes about the lads, and puts you in the corner of one photo.",
+        "arc": {
+         "set": {
+          "path": "other"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "The reporter wants a chapter about you in her book"
+  },
+  {
+   "id": "rbk-2-launch",
+   "title": "The launch",
+   "after": {
+    "beat": "rbk-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-rbk-2-launch",
+    "title": "The launch",
+    "category": "life",
+    "place": "town:bookshop",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. The launch is in the bookshop by the station. There's a queue out of the door, and a lot of them are holding the book open at your chapter."
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go and sign them with her.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "!arc.path=='other'",
+        "text": "You sign three hundred books next to her. Somebody asks you to sign the photo of the night you nearly left.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "the-chapter"
+        }
+       },
+       {
+        "text": "You sign the corner of a photo. She was kind about it.",
+        "arc": {
+         "end": "the-footnote"
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Send flowers.",
+      "tone": "humble",
+      "outcomes": [
+       {
+        "if": "arc.path=='tell'",
+        "text": "She puts the flowers by the till and tells the queue you're shy.",
+        "arc": {
+         "end": "the-chapter"
+        }
+       },
+       {
+        "text": "She puts the flowers by the till.",
+        "arc": {
+         "end": "the-footnote"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "A season on, her book comes out"
+  }
+ ]
+}

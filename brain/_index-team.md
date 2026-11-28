@@ -50,3 +50,4 @@ RUL-TEAM-031 | Propose designs to Harry throughout, tell him if Higgsfield is ev
 RUL-TEAM-032 | Tell Harry when the connector for Supabase is needed, before starting a task that needs it (the connector is linked to another project, not Knowitball). | team
 RUL-TEAM-033 | Put all images and videos into this chat, even with the test pages. | ui,process,team
 RUL-TEAM-034 | One topic, one patch note (Leo's chats): a job keeps ONE patch note that is updated each round (updatedAt, updateNote, a new updates line, a new round section on its page, newest first) until the job is finished; only the next job gets a new number. | team,process
+RUL-TEAM-035 | "Segmented patch notes" is a named OPTION (the live board page), asked for by that name; normal patch notes stay the default. | process,team

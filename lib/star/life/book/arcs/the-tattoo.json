@@ -14,8 +14,14 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.008,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "breaking-through",
+  "when": [
+   "age>=19",
+   "age<=23"
+  ]
  },
  "cast": [
   {
@@ -24,7 +30,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -164,6 +171,133 @@
    "hint": "You've got something to show Mum"
   },
   {
+   "id": "tat-1d-deep",
+   "title": "Sunday lunch",
+   "after": {
+    "beat": "tat-1-arm",
+    "weeks": [
+     3,
+     8
+    ]
+   },
+   "event": {
+    "id": "arc-tat-1d-deep",
+    "title": "Sunday lunch",
+    "category": "family",
+    "place": "home:mums",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mum",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Sunday lunch at your mum's, and your auntie is there. \"Go on,\" says your mum. \"Show her.\" Your sleeve is down."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mum",
+       "say": [
+        "Your mum is smiling the smile she uses at the doctor's."
+       ],
+       "replies": [
+        {
+         "id": "show",
+         "label": "Roll your sleeve up.",
+         "tone": "brave",
+         "end": "show"
+        },
+        {
+         "id": "plaster",
+         "label": "\"It's under a plaster. It's healing.\"",
+         "tone": "lie",
+         "end": "plaster"
+        },
+        {
+         "id": "joke",
+         "label": "\"It's a limited edition.\"",
+         "tone": "confident",
+         "end": "joke"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "show": [
+       {
+        "text": "Your auntie reads it out loud, spelling and all. Your mum laughs till she has to sit down.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 5
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "showed-auntie-the-tattoo",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "show"
+         }
+        }
+       }
+      ],
+      "plaster": [
+       {
+        "text": "Your mum knows. She passes you the gravy without a word.",
+        "npc": [
+         {
+          "slot": "mum",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "plaster"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "Your auntie says that's what your uncle said about his.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "joke"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Your mum wants to see the tattoo again"
+  },
+  {
    "id": "tat-2-window",
    "title": "The window",
    "after": {
@@ -190,7 +324,8 @@
      ]
     },
     "setup": [
-     "A season on, the tattoo artist texts. He wants a photo of your arm for his window. \"Famous client. I'll fix the spelling for free first, obviously.\" Your mum sends a text a minute later: \"Don't you dare fix it.\""
+     "A season on, the tattoo artist texts. He wants a photo of your arm for his window. \"Famous client. I'll fix the spelling for free first, obviously.\" Your mum sends a text a minute later: \"Don't you dare fix it.\"",
+     "{if arc.deep=='show'}Your auntie still calls you by the wrong spelling.{/if}"
     ],
     "choices": [
      {

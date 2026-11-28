@@ -57,16 +57,21 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor, sessionStartTier } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
+import { tightCull } from "../three3d/tightCull";
 import { DynamicResolution, rememberGpu, loadGltfCached, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
-import { loadRealNature, makeTree, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
+import { loadRealNature, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
+import { TREE_STYLE, addBush, binGeometry, newBin, type TreeShape, type TreeStyle } from "./lowPolyTrees";
+import { buildPlantZones, type TreeAt, type BushAt, type PlantStyle } from "./plantZones";
+import { addCardBush, cardGeometry, cardMaterial, loadCardAtlas, newCardBin } from "./cardTrees";
 import { grassMaps } from "../style3d/real/assets";
 import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footballAnims";
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
 import { FOLLOW_CAM_D, FollowCarry, FollowZoom, attachFollowZoom, loadFollowZoom, riseForMin, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
+import { ViewCam, findHeadBone, headWorld, loadViewMode, showBody, type ViewMode } from "../three3d/viewCam";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
 import { cullSkinned } from "../three3d/cullPeople";
 import {
@@ -128,6 +133,9 @@ export interface GardenController {
   setStick: (x: number, y: number) => void;
   /** A drag on the view (pixels): left/right turns, up/down tilts (lib/star/three3d/orbitCam.ts). */
   orbit: (dxPixels: number, dyPixels?: number) => void;
+  /** First person | third person (the eye button; lib/star/three3d/viewCam.ts), remembered per device. */
+  setView?: (m: ViewMode) => void;
+  viewMode?: () => ViewMode;
   pick: (clientX: number, clientY: number) => GardenSpot | null;
   /** Tap to move: a tap on something you can use walks you up to it (its
    *  card then appears as you arrive); a tap on the ground walks you there.
@@ -456,7 +464,11 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // one fixed shadow over the whole garden (it used to follow him, so it had
   // to be redrawn every frame); redrawn only when a caster moves
   Object.assign(sun.shadow.camera, { left: -21, right: 21, top: 21, bottom: -21, near: 1, far: 100 });
-  sun.shadow.autoUpdate = false;
+  // The pass itself still runs only when he moves (renderer.shadowMap.autoUpdate is off; the loop asks).
+  // 28 Nov 2026: the light is left to the shadow cache (three3d/shadowCache.ts), which keeps the
+  // still things' shadows (walls, the shop, every tree) in a kept picture and draws only the movers
+  // on top. Before, every step redrew the whole map: 122 draws and ~58k triangles a frame while walking.
+  sun.shadow.autoUpdate = dbg.get("gardenshadowcache") !== "0";
   sun.shadow.bias = -0.0005;
   sun.shadow.normalBias = 0.04;
   scene.add(sun, sun.target);
@@ -489,8 +501,12 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   meadow.rotation.x = -Math.PI / 2;
   meadow.receiveShadow = true;
   scene.add(meadow);
-  const flat = (w: number, d: number, m: any, x: number, z: number, y = 0.012, ry = 0) => {
-    const p = new THREE.Mesh(new THREE.PlaneGeometry(w, d), m);
+  /** A flat piece of ground. `tile`: the picture repeats every `tile` m, set in the piece's own UVs, so
+   *  every piece of one kind shares ONE material and the pieces join into one draw (freezeStatic). */
+  const flat = (w: number, d: number, m: any, x: number, z: number, y = 0.012, ry = 0, tile = 0) => {
+    const pg = new THREE.PlaneGeometry(w, d);
+    if (tile > 0) { const uv = pg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / tile, uv.getY(i) * d / tile); }
+    const p = new THREE.Mesh(pg, m);
     p.rotation.x = -Math.PI / 2;
     p.rotation.z = ry;
     p.position.set(x, y, z);
@@ -500,18 +516,22 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   };
   const paveT = canvasTex(pavingCanvas(), [1, 1]);
   /** Look H: real pavers, about 2.4 m to one copy of the map (slabs ~30 cm). */
-  const realPaving = (w: number, d: number) => {
-    const t = nature!.paving.clone(), n = nature!.pavingN.clone();
-    for (const m of [t, n]) { m.repeat.set(w / 2.4, d / 2.4); m.needsUpdate = true; }
+  // (one shared material each: the repeat is in each piece's UVs, so all the paths are one draw)
+  const realPaveM = nature ? (() => {
+    const t = nature.paving.clone(), n = nature.pavingN.clone();
+    for (const m of [t, n]) { m.repeat.set(1, 1); m.needsUpdate = true; }
     return mat("#f6eee2", { map: t, normalMap: n, normalScale: new THREE.Vector2(1.1, 1.1), roughness: 0.88 });
-  };
-  const pave = (w: number, d: number, x: number, z: number) => {
-    if (nature) return flat(w, d, realPaving(w, d), x, z, 0.015);
+  })() : null;
+  const oldPaveM = (() => {
     const t = paveT.clone();
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(w / 0.9, d / 0.9);
+    t.repeat.set(1, 1);
     t.needsUpdate = true;
-    return flat(w, d, mat("#f3ece0", { map: t, roughness: 0.9 }), x, z, 0.015);
+    return mat("#f3ece0", { map: t, roughness: 0.9 });
+  })();
+  const pave = (w: number, d: number, x: number, z: number) => {
+    if (realPaveM) return flat(w, d, realPaveM, x, z, 0.015, 0, 2.4);
+    return flat(w, d, oldPaveM, x, z, 0.015, 0, 0.9);
   };
   // a stone kerb along each side of a path (x0..x1 or z0..z1 at a fixed line)
   const kerbM = mat("#bdb3a2", { roughness: 0.85 });
@@ -523,7 +543,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   pave(7.0, 1.8, -3.6, -5.8);
   pave(6.6, 1.8, 3.8, 2.2);
   pave(8.4, 8.4, 0, -11 + 4.2); // the forecourt in front of the shop
-  flat(5.4, 5.4, nature ? realPaving(5.4, 5.4) : mat("#ffffff", { map: canvasTex(pavingCanvas(), [4.5, 4.5]), roughness: 0.9 }), FOUNTAIN.x, FOUNTAIN.z, 0.017);
+  if (realPaveM) flat(5.4, 5.4, realPaveM, FOUNTAIN.x, FOUNTAIN.z, 0.017, 0, 2.4);
+  else flat(5.4, 5.4, mat("#ffffff", { map: canvasTex(pavingCanvas(), [4.5, 4.5]), roughness: 0.9 }), FOUNTAIN.x, FOUNTAIN.z, 0.017);
   flat(PARK.x1 - PARK.x0, PARK.z1 - PARK.z0, mat("#ffffff", { map: canvasTex(gravelCanvas(), [6, 4]), roughness: 1 }), (PARK.x0 + PARK.x1) / 2, (PARK.z0 + PARK.z1) / 2, 0.014);
   flat(PADDOCK.x1 - PADDOCK.x0, PADDOCK.z1 - PADDOCK.z0, mat("#7b8d43", { roughness: 1 }), (PADDOCK.x0 + PADDOCK.x1) / 2, (PADDOCK.z0 + PADDOCK.z1) / 2, 0.008);
   flat(6.2, 3.6, mat("#ffffff", { map: canvasTex(gravelCanvas("#b8a17a"), [3, 2]), roughness: 1 }), -10.6, 6.5, 0.011); // the stable yard
@@ -585,124 +606,18 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     });
     if (parts.length) pieces.set(top.name, parts);
   }
-  const leafFix = new Map<any, any>();
+  // The trees' sizes, from the Kenney trees they stand in for (so every tree keeps its exact size):
+  // the trees themselves are the low-poly ones built in code (./lowPolyTrees.ts, ./plantZones.ts).
+  const treeSize = new Map<string, { h: number; w: number }>();
   pieces.forEach((parts, key) => {
     if (!key.startsWith("tree_")) return;
-    for (const part of parts) {
-      const n = String(part.material?.name ?? "");
-      if (!/^leafs/i.test(n)) continue;
-      if (!leafFix.has(part.material)) {
-        const m2 = part.material.clone();
-        m2.color.set(/dark/i.test(n) ? "#3d6a2a" : key.includes("pine") ? "#45703a" : "#5d8d36");
-        m2.roughness = 0.9;
-        m2.envMapIntensity = 0.4;
-        leafFix.set(part.material, m2);
-      }
-      part.material = leafFix.get(part.material);
-      if (!key.includes("pine")) puffLeaves(part);
-      softenLeaves(part);
-    }
+    const bb = new THREE.Box3();
+    for (const p of parts) { p.geometry.computeBoundingBox(); bb.union(p.geometry.boundingBox); }
+    const size = bb.getSize(new THREE.Vector3());
+    treeSize.set(key, { h: size.y, w: Math.max(size.x, size.z) });
   });
-  // Look H: every Kenney tree becomes a real one the same size (bark, a crown of scanned leaves or fir twigs)
-  if (nature) {
-    let k = 0;
-    pieces.forEach((parts, key) => {
-      if (!key.startsWith("tree_")) return;
-      const bb = new THREE.Box3();
-      for (const p of parts) { p.geometry.computeBoundingBox(); bb.union(p.geometry.boundingBox); }
-      const size = bb.getSize(new THREE.Vector3());
-      const pine = key.includes("pine");
-      const tint = key === "tree_fat" ? "#b8d894" : key === "tree_tall" ? "#c8e2a0" : key === "tree_oak" ? "#afcf88" : undefined;
-      pieces.set(key, makeTree(THREE, nature, { h: size.y, w: Math.max(size.x, size.z), pine, seed: 101 + k++ * 37, tint }));
-    });
-    // the paddock rails: weathered timber, not orange
-    for (const p of pieces.get("fence_wood") ?? []) { p.material = p.material.clone(); p.material.color.set("#8f7458"); p.material.roughness = 0.92; }
-  }
-  /**
-   * Rounder crowns (the broadleaf trees; the pines keep their layered cones).
-   * Kenney's crowns are a few hard-edged blocks; each block is swapped for a
-   * smooth, slightly fuller ball the same size and in the same place, so the
-   * tree keeps its outline and size but reads soft, like the people. 80
-   * triangles a ball, shared by every copy of that tree (they are instanced).
-   */
-  function puffLeaves(part: { geometry: any; material: any }) {
-    if (part.geometry.userData.puffed) return;
-    const g = part.geometry.index ? part.geometry.toNonIndexed() : part.geometry;
-    const pos = g.attributes.position;
-    const n = pos.count;
-    // which block each corner belongs to: corners at the same spot are joined
-    const parent = new Int32Array(n).map((_, i) => i);
-    const find = (x: number): number => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
-    const join = (a: number, b: number) => { a = find(a); b = find(b); if (a !== b) parent[a] = b; };
-    const seen = new Map<string, number>();
-    for (let i = 0; i < n; i++) {
-      const k = `${pos.getX(i).toFixed(3)},${pos.getY(i).toFixed(3)},${pos.getZ(i).toFixed(3)}`;
-      const j = seen.get(k);
-      if (j === undefined) seen.set(k, i); else join(i, j);
-    }
-    for (let t = 0; t < n; t += 3) { join(t, t + 1); join(t, t + 2); }
-    const boxes = new Map<number, any>();
-    const v = new THREE.Vector3();
-    for (let i = 0; i < n; i++) {
-      const r0 = find(i);
-      if (!boxes.has(r0)) boxes.set(r0, new THREE.Box3());
-      boxes.get(r0).expandByPoint(v.set(pos.getX(i), pos.getY(i), pos.getZ(i)));
-    }
-    const ball = new THREE.IcosahedronGeometry(1, 1);
-    const balls: any[] = [];
-    const c = new THREE.Vector3(), h = new THREE.Vector3();
-    boxes.forEach((bb) => {
-      bb.getCenter(c); bb.getSize(h).multiplyScalar(0.5 * 1.12);
-      h.x = Math.max(h.x, 1e-3); h.y = Math.max(h.y, 1e-3); h.z = Math.max(h.z, 1e-3);
-      const b = ball.clone();
-      const bp = b.attributes.position, bn = b.attributes.normal;
-      for (let i = 0; i < bp.count; i++) {
-        const ux = bp.getX(i), uy = bp.getY(i), uz = bp.getZ(i);
-        bp.setXYZ(i, c.x + ux * h.x, c.y + uy * h.y, c.z + uz * h.z);
-        v.set(ux / h.x, uy / h.y, uz / h.z).normalize();
-        bn.setXYZ(i, v.x, v.y, v.z);
-      }
-      b.deleteAttribute("uv");
-      balls.push(b);
-    });
-    const out = mergeGeometries(balls);
-    if (!out) return;
-    out.userData.puffed = true;
-    part.geometry = out;
-  }
-  /**
-   * Softer trees, for nothing extra to draw (Harry: the trees "look very
-   * blocky next to the smooth people"). Kenney's leaves are faceted blocks: each
-   * face its own flat shade. Here every leaf point is lit as if it sat on a
-   * round canopy (its normal points out from the canopy's middle, mixed with a
-   * little of its own), so the light rolls smoothly over the whole crown like
-   * a painted tree; and the underside is a touch darker, as under real leaves.
-   * Same triangles, same draw calls.
-   */
-  function softenLeaves(part: { geometry: any; material: any }) {
-    if (part.geometry.userData.soft) return;
-    const g = part.geometry.index ? part.geometry.toNonIndexed() : part.geometry;
-    g.computeBoundingBox();
-    const bb = g.boundingBox, c = new THREE.Vector3();
-    bb.getCenter(c);
-    const half = new THREE.Vector3().subVectors(bb.max, bb.min).multiplyScalar(0.5);
-    const pos = g.attributes.position, nor = g.attributes.normal;
-    const col = new Float32Array(pos.count * 3);
-    const v = new THREE.Vector3(), n = new THREE.Vector3();
-    for (let i = 0; i < pos.count; i++) {
-      v.set(pos.getX(i), pos.getY(i), pos.getZ(i));
-      // out from the middle, the crown squashed to a ball first
-      n.set((v.x - c.x) / Math.max(1e-3, half.x), (v.y - c.y) / Math.max(1e-3, half.y) + 0.25, (v.z - c.z) / Math.max(1e-3, half.z)).normalize();
-      if (nor) { n.multiplyScalar(0.8).addScaledVector(v.set(nor.getX(i), nor.getY(i), nor.getZ(i)), 0.2).normalize(); nor.setXYZ(i, n.x, n.y, n.z); }
-      const up = (pos.getY(i) - bb.min.y) / Math.max(1e-3, bb.max.y - bb.min.y);
-      const k = 0.72 + 0.36 * up;
-      col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = k;
-    }
-    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
-    g.userData.soft = true;
-    part.geometry = g;
-    if (!part.material.vertexColors) { part.material.vertexColors = true; part.material.flatShading = false; part.material.needsUpdate = true; }
-  }
+  // the paddock rails: weathered timber, not orange
+  if (nature) for (const p of pieces.get("fence_wood") ?? []) { p.material = p.material.clone(); p.material.color.set("#8f7458"); p.material.roughness = 0.92; }
   /** Many copies of one piece, one draw call per part: [x, z, scale, rotY, sx?, sy?, sz?, y?]. */
   const many = (key: string, at: number[][], cast = true) => {
     const parts = pieces.get(key);
@@ -759,8 +674,17 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     const len = Math.hypot(x1 - x0, z1 - z0) + grow;
     const alongX = Math.abs(x1 - x0) > Math.abs(z1 - z0);
     const tex = m.map;
-    if (tex) { const t = tex.clone(); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(len / (tex.userData.tile ?? 2), h / (tex.userData.tileH ?? tex.userData.tile ?? 2)); t.needsUpdate = true; m = m.clone(); m.map = t; }
-    const me = new THREE.Mesh(new THREE.BoxGeometry(alongX ? len : t, h, alongX ? t : len), m);
+    const geo = new THREE.BoxGeometry(alongX ? len : t, h, alongX ? t : len);
+    if (tex) {
+      // the repeat goes in this run's own UVs and every run shares one material, so the
+      // whole boundary joins into one draw (freezeStatic); the same picture as a repeat per run
+      const ru = len / (tex.userData.tile ?? 2), rv = h / (tex.userData.tileH ?? tex.userData.tile ?? 2);
+      const uv = geo.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * ru, uv.getY(i) * rv);
+      if (!m.userData.runShared) { const t2 = tex.clone(); t2.wrapS = t2.wrapT = THREE.RepeatWrapping; t2.repeat.set(1, 1); t2.needsUpdate = true; const m2 = m.clone(); m2.map = t2; m.userData.runShared = m2; }
+      m = m.userData.runShared;
+    }
+    const me = new THREE.Mesh(geo, m);
     me.position.set((x0 + x1) / 2, y0 + h / 2, (z0 + z1) / 2);
     me.castShadow = true; me.receiveShadow = true;
     scene.add(me);
@@ -823,10 +747,16 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   plant("tree_detailed", 16.8, -15.8, 4.8, 2);
   plant("tree_fat", 17, -2, 4.2, 0.4); plant("tree_default", -17.2, -5.5, 4.4, 2.2);
   plant("tree_oak", 17.2, -9.5, 4.4, 1.3); plant("tree_tall", -3.6, 16.2, 3.6); plant("tree_tall", 3.6, 16.2, 3.6);
-  // the far ring casts no shadow (it is outside the shadow's reach anyway)
+  // every tree: low-poly, joined by zone into one draw each with the bushes below (./plantZones.ts)
+  const TREE_SHAPE: Record<string, TreeShape> = { tree_oak: "round", tree_default: "round", tree_detailed: "round", tree_fat: "wide", tree_tall: "tall", tree_pine: "pine", tree_pine2: "pine" };
+  // the textured trees' tints (as realNature.ts makeTree had them)
+  const CARD_TINT: Record<string, string | undefined> = { tree_fat: "#b8d894", tree_tall: "#c8e2a0", tree_oak: "#afcf88" };
+  const TREE_TONE: Record<string, [string, string] | undefined> = { tree_oak: ["#6e9a3e", "#28501f"], tree_detailed: ["#8bb556", "#386a2c"], tree_pine2: ["#5a8848", "#21472a"] };
+  const plantTrees: TreeAt[] = [];
+  let treeSeed = 0;
   for (const [k, list] of Object.entries(treeAt)) {
-    many(k, list.filter(([x, z]) => Math.hypot(x, z) <= 26));
-    many(k, list.filter(([x, z]) => Math.hypot(x, z) > 26), false);
+    const sz = treeSize.get(k) ?? { h: 1.6, w: 1.2 };
+    for (const [x, z, s, ry] of list) plantTrees.push({ x, z, s, ry, h: sz.h, w: sz.w, shape: TREE_SHAPE[k] ?? "round", seed: 101 + 37 * treeSeed++, light: TREE_TONE[k]?.[0], dark: TREE_TONE[k]?.[1], tint: CARD_TINT[k] });
   }
   for (const [x, z] of [[16.8, -15.8], [17, -2], [-17.2, -5.5], [17.2, -9.5], [-3.6, 16.2], [3.6, 16.2]]) CIRCLES.push([x, z, 0.8]);
 
@@ -865,8 +795,6 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   bloomAt.forEach((at, i) => sphereMany(mat(bloomCols[i], { roughness: 0.6, emissive: bloomCols[i], emissiveIntensity: night ? 0.05 : 0.12 }), at, 0.24));
   }
   // round leafy bushes (Kenney's read as dark spikes at this size)
-  const bushM = mat("#33652b", { roughness: 0.9 });
-  const bushLightM = mat("#46803a", { roughness: 0.9 });
   const bushAt: number[][] = [], bushLightAt: number[][] = [];
   const bush = (x: number, z: number, sz: number) => {
     // inside the casino or the training pitch (8 Oct 2026): not planted, but
@@ -881,8 +809,29 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   };
   // shrubs in the corners and either side of the gate, planted in groups
   for (const [x, z, sz] of [[-2.6, 17.4, 1.3], [2.6, 17.4, 1.3], [17.2, -12.5, 1.6], [16.4, -14.0, 1.2], [-17.2, 15, 1.6], [-16.2, 16.6, 1.1], [12.6, -12, 1.3], [-12.4, -12.6, 1.4], [17.0, 6.0, 1.4], [-17.2, -1.0, 1.3]]) bush(x, z, sz);
-  const smoothBall = new THREE.IcosahedronGeometry(1, 2);
-  occluders.push(sphereMany(bushM, bushAt, -0.05, smoothBall), sphereMany(bushLightM, bushLightAt, 0.05, smoothBall));
+  // the bushes go into the same zones as the trees (one draw a zone, ./plantZones.ts)
+  const plantBushes: BushAt[] = [
+    ...bushAt.map(([x, z, sc], i) => ({ x, z, s: sc, seed: 501 + i * 13, light: "#5f8f3a", dark: "#1f421b", tint: "#93bd74" })),
+    ...bushLightAt.map(([x, z, sc], i) => ({ x, z, s: sc, seed: 901 + i * 17, light: "#78a848", dark: "#2a5222", tint: "#b2d68c" })),
+  ];
+  // Harry, 28 Nov 2026: "the textured trees so much better" — the scanned-leaf trees (./cardTrees.ts),
+  // made cheap; the low-poly styles stay only as an option (?trees=facet|clump|leafy)
+  const lowPolyPick = (["clump", "facet", "leafy"] as TreeStyle[]).find((t) => t === dbg.get("trees"));
+  const cardAtlas = lowPolyPick ? null : await loadCardAtlas(THREE, renderer).catch((e) => { console.error("garden tree atlas", e); return null; });
+  if (disposed) throw new Error("disposed");
+  const treeStyle: PlantStyle = lowPolyPick ?? (cardAtlas ? "cards" : TREE_STYLE);
+  const cardMat = cardAtlas ? cardMaterial(THREE, cardAtlas.map, cardAtlas.nrm) : null;
+  // zones wholly behind the shop or the casino are left out of the picture (a little inside their walls, to be safe)
+  const plants = buildPlantZones(THREE, plantTrees, plantBushes, {
+    style: treeStyle,
+    cardMaterial: cardMat,
+    occluders: dbg.get("plantcull") === "0" ? [] : [
+      { x0: SHOP.x0 + 0.3, x1: SHOP.x1 - 0.3, y0: 0, y1: SHOP.h + 1.2, z0: SHOP.z0 + 0.3, z1: SHOP.z1 - 0.3 },
+      { x0: CASINO.x0 + 0.3, x1: CASINO.x1 - 0.3, y0: 0, y1: CASINO.h - 0.2, z0: CASINO.z0 + 0.3, z1: CASINO.z1 - 0.3 },
+    ],
+  });
+  scene.add(plants.group);
+  occluders.push(plants.group);
   // clipped box hedges framing the shop's forecourt, and two topiary balls
   // in square planters either side of the trophy cabinet
   const boxHedgeT = canvasTex(hedgeCanvas("#2c5a25"), [1, 1]);
@@ -896,7 +845,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const planterM = mat("#e9e1d2", { roughness: 0.7 });
   for (const dz of [-2.4, 2.4]) {
     clipped.box(0.7, 0.6, 0.7, planterM, CABINET.x + 1.0, 0.3, CABINET.z + dz);
-    clipped.put(new THREE.IcosahedronGeometry(0.48, 3), boxHedgeM, CABINET.x + 1.0, 1.05, CABINET.z + dz);
+    clipped.put(new THREE.IcosahedronGeometry(0.48, 2), boxHedgeM, CABINET.x + 1.0, 1.05, CABINET.z + dz);
     clipped.box(0.07, 0.3, 0.07, mat("#5a3b25"), CABINET.x + 1.0, 0.7, CABINET.z + dz);
     CIRCLES.push([CABINET.x + 1.0, CABINET.z + dz, 0.45]);
   }
@@ -1047,7 +996,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     sb.box(0.56, 0.56, 0.56, greenM, px, 0.28, pz);
     sb.box(0.62, 0.05, 0.62, goldM, px, 0.58, pz);
     sb.box(0.05, 0.7, 0.05, mat("#5a3b25"), px, 0.95, pz);
-    sb.put(new THREE.IcosahedronGeometry(0.42, 3), boxHedgeM, px, 1.55, pz);
+    sb.put(new THREE.IcosahedronGeometry(0.42, 2), boxHedgeM, px, 1.55, pz);
   }
   sb.done();
   // a glow on the forecourt from the door
@@ -1194,7 +1143,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       if (px < CASINO.x0 - 0.2 || px > CASINO.x1 + 0.2) continue;
       cb2.box(0.6, 0.6, 0.6, blackM, px, 0.3, F + 0.6);
       cb2.box(0.66, 0.05, 0.66, gold2M, px, 0.62, F + 0.6);
-      cb2.put(new THREE.IcosahedronGeometry(0.45, 3), boxHedgeM, px, 1.1, F + 0.6);
+      cb2.put(new THREE.IcosahedronGeometry(0.45, 2), boxHedgeM, px, 1.1, F + 0.6);
       CIRCLES.push([px, F + 0.6, 0.4]);
     }
     cb2.done();
@@ -1217,13 +1166,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     };
   }
   // the path to it: from the forecourt's right-hand hedge, along, then up to the doors
-  const sidePave = (w: number, d: number, x: number, z: number, y: number) => {
-    const t = paveT.clone();
-    t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(w / 0.9, d / 0.9);
-    t.needsUpdate = true;
-    return flat(w, d, mat("#f3ece0", { map: t, roughness: 0.9 }), x, z, y);
-  };
+  const sidePave = (w: number, d: number, x: number, z: number, y: number) => flat(w, d, oldPaveM, x, z, y, 0, 0.9);
   sidePave(CASINO.door + 1.0 - 4.2, 1.4, (4.2 + CASINO.door + 1.0) / 2, -6.0, 0.0155);
   sidePave(2.0, -6.7 - CASINO.z1, CASINO.door, (CASINO.z1 - 6.7) / 2, 0.016);
 
@@ -1523,7 +1466,16 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   one("potted_plant", BENCH_X - 0.05, gz.z - benchLen / 2 - 0.5, 3.4);
   CIRCLES.push([BENCH_X - 0.05, gz.z - benchLen / 2 - 0.5, 0.35]);
   one("pot_large", gz.x - gz.w / 2 - 0.6, gz.z + gz.d / 2 + 0.5, 2.2);
-  sphereMany(bushLightM, [[gz.x - gz.w / 2 - 0.6, gz.z + gz.d / 2 + 0.5, 0.42]], 0.35);
+  { // the shrub in the big pot: leaf clumps like the bushes (./lowPolyTrees.ts), the plants' own material
+    let potGeo: any;
+    if (treeStyle === "cards") { const cb = newCardBin(); addCardBush(THREE, cb, { x: 0, z: 0, s: 0.42, seed: 77, lod: 0, tint: "#b2d68c" }); potGeo = cardGeometry(THREE, cb); }
+    else { const pb = newBin(); addBush(THREE, pb, { x: 0, z: 0, s: 0.42, seed: 77, style: treeStyle, lod: 0, light: "#78a848", dark: "#2a5222" }); potGeo = binGeometry(THREE, pb); }
+    const potBush = new THREE.Mesh(potGeo, plants.material);
+    if (plants.material.userData?.depth) potBush.customDepthMaterial = plants.material.userData.depth;
+    potBush.position.set(gz.x - gz.w / 2 - 0.6, 0.41, gz.z + gz.d / 2 + 0.5);
+    potBush.castShadow = true; potBush.receiveShadow = true;
+    scene.add(potBush);
+  }
 
   // the teqball table: a curved black top (high in the middle, curving down
   // to both ends), orange arched legs, a net across the middle
@@ -2090,7 +2042,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // draw: here every still piece is joined with the others of the same
   // material in the same group, so the garden draws in far fewer calls. The
   // picture is exactly the same.
-  const frozen = dbg.has("nofreeze") ? { before: 0, after: 0 } : freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, dome, sunSprite, ...mates.map((m) => m.root)]));
+  const frozen = dbg.has("nofreeze") ? { before: 0, after: 0 } : freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, dome, sunSprite, plants.group, ...mates.map((m) => m.root)]));
   // 3D quality look New (12 Oct 2026): where nothing casts a live shadow (Low), a long soft shadow
   // along the sun under him, so he stands on the path, never floats. One small draw.
   let sunBlob: any = null;
@@ -2334,6 +2286,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const CS: FollowCam = zoomedFollowCam(zoom.now, FOLLOW_CAM_D);
   const detachZoom = attachFollowZoom(container, zoom);
   const carry = new FollowCarry(); // his steps go straight into the camera (only turning is eased)
+  /** First person | third person (the eye button), eased (../three3d/viewCam.ts). */
+  const view = new ViewCam(opts.fixedStep ? "third" : loadViewMode());
+  const viewHead = new THREE.Vector3();
+  let headBone: any = null, seenWas = true;
   let near: GardenSpot | null = null;
   let frames = 0, fpsT0 = performance.now(), slowSeconds = 0, gameT = 0;
   let doorFired = false;
@@ -2533,6 +2489,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   }
   // same picture, less work: still shadows kept, lamps only where they reach (before the shaders are built)
   const savings = sceneSavings(THREE, renderer, scene);
+  // don't draw what the camera can't see: each still piece by its real box, and the tree zones behind the shop (three3d/tightCull.ts)
+  const cull = tightCull(THREE, scene, renderer, { moving: new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, sunSprite, ...mates.map((m) => m.root)]), extraHide: () => plants.behind() });
   // look H draws into its pass's picture: build the shaders for THAT (enhance.ts compile), not the screen
   try {
     await Promise.all([
@@ -2629,6 +2587,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     // team-mates: sit, chat; the one with the can takes a drink now and then.
     // As a picture (far off) they hold still and cost nothing.
     const matesReal = !impostor || !impostor.on();
+    // the bench off screen: their timers run on, their bodies are not posed (nobody sees them; 28 Nov 2026)
+    const matesSeen = inView(GAZEBO.x, 1.0, GAZEBO.z, 3.6);
     for (const m of mates) {
       if (!matesReal) break;
       if (m.drink) {
@@ -2645,7 +2605,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         } else { d.a.setEffectiveWeight(0); d.sit.setEffectiveWeight(1); }
       }
       if (m.upright) m.upright.a.time = 0.45 + 0.12 * Math.sin(gameT * 0.45 + m.upright.phase);
-      m.mixer.update(dt);
+      if (matesSeen) m.mixer.update(dt);
     }
 
     stepPitchMen(dt);
@@ -2774,7 +2734,8 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
         return gzClear(dx, dz) && wallRoom(dx, dz) >= CS.back * 0.7;
       };
       let target = 0;
-      if (!clear(dodge)) {
+      if (view.inEyes) target = 0; // in his eyes: straight ahead, no swing round him
+      else if (!clear(dodge)) {
         if (!clear(0)) {
           const pref = dodge < 0 ? -1 : 1;
           target = 0;
@@ -2865,12 +2826,15 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       if (camPos.distanceTo(headPos) > lim) camPos.sub(headPos).setLength(lim).add(headPos);
     }
     if (camPos.y < CAM_MIN_Y) camPos.y = CAM_MIN_Y;
-    camera.position.copy(camPos);
-    camera.lookAt(camLook);
+    view.step(dt);
+    headBone ??= findHeadBone(player);
+    const seen = view.place(camera, camPos, camLook, headWorld(headBone, player, viewHead), -Math.sin(camYaw), -Math.cos(camYaw), 99, dt);
+    if (seen !== seenWas) { seenWas = seen; showBody(player, seen); shadowDirty = true; } // in his eyes: not drawn at all
     if (testCam) { camera.position.set(...testCam[0]); camera.lookAt(...testCam[1]); }
     fillLight.position.set(camPos.x * 0.6 + player.position.x * 0.4, 2.6, camPos.z * 0.6 + player.position.z * 0.4);
     camera.updateMatrixWorld();
     frustum.setFromProjectionMatrix(projM.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    plants.update(camera, tier); // each plant zone's detail by its distance, and which are behind the shop (./plantZones.ts)
     impostor?.update(camera.position, dt);
     for (const ci of carImpostors) ci.update(camera.position, dt);
 
@@ -2897,7 +2861,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
 
     // busy (walking, turning, the camera swinging): full frame rate at fewer
     // pixels; still: 30 a second at full pixels
-    busy = zoom.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || camWas.distanceToSquared(camPos) > 1e-6 || !!faceTo;
+    busy = view.moving || zoom.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || camWas.distanceToSquared(camPos) > 1e-6 || !!faceTo;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       // dynamic resolution: judged only while moving at the full cap (the
@@ -2967,7 +2931,9 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       return { people: [{ id: "you", x: player.position.x, z: player.position.z }], sunDir: [d.x, d.y, d.z], bounds: { min: [-LIMIT, 0, -LIMIT], max: [LIMIT, 6, LIMIT] } };
     },
     setStick: (x, y) => { stick = { x, y }; if (Math.hypot(x, y) > 0.05) stopWalk(); },
-    orbit: (dx, dy = 0) => { orb.drag(dx, dy); orbitHold = 1.5; },
+    orbit: (dx, dy = 0) => { orb.drag(dx, view.first ? 0 : dy); view.drag(dy); orbitHold = 1.5; },
+    setView: (m) => { view.set(m); },
+    viewMode: () => view.mode,
     pick: (px, py) => { aim(px, py); return pickSpot(); },
     tap: (px, py) => {
       aim(px, py);
@@ -3043,6 +3009,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       detachZoom();
       gov.dispose();
       savings.dispose();
+      cull.dispose();
       hEnh?.dispose();
       if (isOwner()) renderer.setAnimationLoop(null);
       ro.disconnect();

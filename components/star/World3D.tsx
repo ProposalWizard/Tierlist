@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import type { InteractCard } from "@/lib/star/world3d/interact";
 import { GymHud, type GymHudHandle } from "@/components/star/GymHud";
 import type { WorldController, WorldOptions, WorldStatus } from "@/lib/star/world3d/testScene";
+import ViewToggle3D from "./ViewToggle3D";
 
 export default function World3D({ options, clean }: { options: WorldOptions; clean?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
@@ -68,8 +69,9 @@ export default function World3D({ options, clean }: { options: WorldOptions; cle
         </div>
       )}
       {state === "ready" && options.place === "gym" && (
-        <GymHud ref={hud} fitness={clean ? undefined : status?.fitness} film={!!options.demo} onHold={(on) => ctrl.current?.gymHold(on)} onAct={(id) => ctrl.current?.act(id)} />
+        <GymHud ref={hud} fitness={clean ? undefined : status?.fitness} body={status?.fitness?.body ?? null} film={!!options.demo} onHold={(on) => ctrl.current?.gymHold(on)} onAct={(id) => ctrl.current?.act(id)} />
       )}
+      {state === "ready" && !(options.place === "gym" && gymOn) && <ViewToggle3D onChange={(m) => ctrl.current?.setView(m)} style={{ top: "auto", bottom: card ? 200 : 16 }} />}
       {card && (
         <div data-world3d-card style={{ position: "absolute", left: 12, right: 12, bottom: 16, maxWidth: 460, margin: "0 auto", padding: "12px 14px", borderRadius: 14, background: "rgba(8,10,16,.9)", color: "#f8fafc", borderTop: "3px solid #facc15", boxShadow: "0 10px 30px rgba(0,0,0,.4)" }}>
           {card.sub && <div style={{ fontSize: 11, fontWeight: 900, color: "#facc15", textTransform: "uppercase", letterSpacing: 0.5 }}>{card.sub}</div>}

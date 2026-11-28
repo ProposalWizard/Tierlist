@@ -18,6 +18,12 @@ import {
   GYM_CAREER_EFFECT, MACHINE_POINTS, PER_GAP_MAX, MAX_POINTS, SLIP, WINDOW_GAPS, type GymState, type Gap,
 } from "../../lib/star/gym/progress";
 import type { CareerState } from "../../lib/star/types";
+import { GAME_NAMES, HOW_TO, MAX_SECS } from "../../lib/star/gym/games";
+import { GYM2_KINDS, start2, step2, SQUAT, type pullupStart, type squatStart, type Gym2State } from "../../lib/star/gym/games2";
+import { hudView } from "../../lib/star/gym/hudView";
+import { STAT_MIX, STAT_OF, bodyPoints } from "../../lib/star/gym/progress";
+import { gymBodyScale, pointsForLevel } from "../../lib/star/gym/body";
+import { setGymEffectForTest, gymEffectMode, gymSkillBonus, recoveryScale, lateEnergyBack, resilienceInjuryScale, LASTING_BONUS, MATCH_LIFT, LATE_DRAIN_CUT, RECOVERY_BOOST, INJURY_SCALE } from "../../lib/star/gym/effect";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -148,11 +154,129 @@ const G = (week: number, season = 1): Gap => ({ season, week });
   const none = gymExercise({ ...base, weekActions: 0 }, { kind: "bench", quality: 1 }, "energy");
   check(!none.spentAction && none.energy === 0, "no week's things left: no energy");
   const v = gymView(off.career.gym!, G(4));
-  check(v.stats.length === 3 && v.ring.done.length === 1 && v.window === WINDOW_GAPS, "the view: three stats, the ring, the window");
+  check(v.stats.length === 4 && v.ring.done.length === 1 && v.window === WINDOW_GAPS, "the view: four stats, the ring, the window");
+}
+
+// ── phase 2: the ten new exercises ──
+for (const kind of GYM2_KINDS) {
+  const a = play(kind, 30), b = play(kind, 120);
+  check(a.done && a.t >= 20 && a.t <= 40, `${kind}: a decent player's go lasts 20-40 s (${a.t.toFixed(1)} s)`);
+  const ra = resultOf(a), rb = resultOf(b);
+  check(ra.quality >= 0.6 && !ra.failed, `${kind}: a decent player does well (${ra.quality}, ${ra.headline})`);
+  check(rb.quality >= 0.6 && !rb.failed, `${kind}: good at 120 fps too (${rb.quality})`);
+  check(Math.abs(ra.quality - rb.quality) < 0.08, `${kind}: the same thumb, about the same grade at 30 and 120 fps (${ra.quality} vs ${rb.quality})`);
+  const fixed = (fps: number) => { let s: GameState = startGame(kind, 1, 3); for (let i = 0; i < fps * 45 && !s.done; i++) s = stepGame(s, 1 / fps, Math.floor(s.t * 2.5) % 3 !== 0); return resultOf(s).quality; };
+  const f30 = fixed(30), f120 = fixed(120);
+  check(Math.abs(f30 - f120) < 0.05, `${kind}: a fixed thumb is the same at 30 and 120 fps (${f30} vs ${f120})`);
+  const bad = resultOf(play(kind, 60, 0));
+  check(bad.failed && bad.quality < ra.quality, `${kind}: a poor thumb fails it (${bad.headline})`);
+  check(JSON.stringify(play(kind, 60, 1, 9)) === JSON.stringify(play(kind, 60, 1, 9)), `${kind}: seeded`);
+  check(!!GAME_NAMES[kind] && !!HOW_TO[kind] && MAX_SECS[kind] >= 20 && MAX_SECS[kind] <= 40, `${kind}: named, explained, at most 40 s`);
+  check(Object.values(STAT_MIX[kind]).reduce((x, y) => x + (y ?? 0), 0) === 1 && !!STAT_OF[kind], `${kind}: feeds the stats (shares add to 1)`);
+}
+{
+  // each thumb is its own: the specific fails
+  let p = start2("pullup", 1, 1) as ReturnType<typeof pullupStart>;
+  for (let i = 0; i < 6000 && !p.done; i++) p = step2(p, 1 / 60, i % 2 === 0) as typeof p; // mash every frame: 30 taps a second
+  check(p.dropped, "pull-ups: mashing burns the grip and you drop off the bar");
+  let q = start2("squat", 1, 1) as ReturnType<typeof squatStart>;
+  for (let i = 0; i < 6000 && !q.done; i++) q = step2(q, 1 / 60, true) as typeof q; // never let go
+  check(q.strikes >= SQUAT.strikesOut && resultOf(q).failed, "squat: never letting go = stuck in the hole");
+  let pl = start2("plank", 1, 1);
+  for (let i = 0; i < 6000 && !pl.done; i++) pl = step2(pl, 1 / 60, false); // never brace
+  check(resultOf(pl).failed, "plank: never bracing = the hips drop");
+  // Resilience exercises feed Resilience
+  for (const k of ["nordic", "copenhagen", "landing", "mobility"] as const) check((STAT_MIX[k].resilience ?? 0) >= 0.7, `${k} feeds Resilience`);
+  check(STAT_OF.pullup === "strength" && STAT_OF.squat === "strength" && STAT_OF.ladder === "cardio" && STAT_OF.nordic === "resilience", "main stats");
+}
+// ── phase 2: the screen's meter for each new game (lib/star/gym/hudView.ts) ──
+for (const kind of GYM2_KINDS) {
+  let s = startGame(kind, 1, 3) as Gym2State, okAll = true;
+  for (let i = 0; i < 60 * 40 && !s.done; i++) {
+    s = stepGame(s, 1 / 60, botHold(s, 1)) as Gym2State;
+    if (i % 30) continue;
+    const v = hudView(s);
+    const inRange = (x?: number) => x === undefined || (x >= -0.2 && x <= 1.2);
+    if (!v.big || !v.cue || !inRange(v.meter?.marker) || !inRange(v.ring) || (v.dots ?? []).some((d) => !inRange(d))) okAll = false;
+  }
+  check(okAll, `${kind}: the screen always has a count, a cue and a meter in range`);
+}
+// ── phase 2: the ring of three, Resilience, the body trail ──
+{
+  const g0 = { ...newGym(), last: G(1) } as GymState; // window open
+  const a = doExercise(g0, G(2), { kind: "nordic", quality: 1 });
+  check(a.by.resilience === MACHINE_POINTS && a.gym.points.resilience === MACHINE_POINTS, `Nordic: Resilience +${a.by.resilience}`);
+  const mixed = doExercise(g0, G(2), { kind: "ladder", quality: 1 });
+  check(mixed.by.cardio === 24 && mixed.by.focus === 16, `the ladder shares: Cardio 24, Focus 16 (${JSON.stringify(mixed.by)})`);
+  // three Strength exercises: the visit is full but the ring is not closed (one kind of training)
+  let s = doExercise(g0, G(2), { kind: "bench", quality: 1 }).gym;
+  s = doExercise(s, G(2), { kind: "pullup", quality: 1 }).gym;
+  const third = doExercise(s, G(2), { kind: "squat", quality: 1 });
+  check(!third.ringClosed && third.gym.points.strength === PER_GAP_MAX, `three Strength: no ring, and Strength stops at ${PER_GAP_MAX} this gap (${third.gym.points.strength})`);
+  const fourth = doExercise(third.gym, G(2), { kind: "nordic", quality: 1 });
+  check(fourth.why === "ringFull" && fourth.gained === 0, "after three, a fourth pays nothing");
+  // three covering two stats closes it
+  let m = doExercise(g0, G(2), { kind: "pullup", quality: 1 }).gym;
+  m = doExercise(m, G(2), { kind: "squat", quality: 1 }).gym;
+  const close = doExercise(m, G(2), { kind: "mobility", quality: 1 });
+  check(close.ringClosed && close.gym.rings === 1, "three covering two stats close the ring");
+  check(close.gym.points.resilience === MACHINE_POINTS + close.ringBonus && close.gym.points.focus === 0, "the bonus goes to what you trained (Resilience yes, Focus no)");
+  // Resilience slips half, Focus never
+  const r = { ...newGym(), points: { strength: 200, cardio: 200, focus: 200, resilience: 200 }, last: G(1) } as GymState;
+  const later = gymAt(r, G(1 + WINDOW_GAPS + 1)).gym.points;
+  check(later.strength === 200 - SLIP && later.resilience === 200 - SLIP / 2 && later.focus === 200, `slips: Strength -${SLIP}, Resilience -${SLIP / 2}, Focus 0`);
+  // an old phase 1 gym loads with Resilience 0
+  const old = gymOf({ gym: { v: 1, points: { strength: 50, cardio: 10, focus: 5 }, visits: 1, rings: 0 } as unknown as GymState });
+  check(old.points.resilience === 0 && old.points.strength === 50, "a phase 1 save gets Resilience 0");
+  // the body: nothing until a window after the first visit, then the points from then
+  const v1 = doExercise(newGym(), G(1), { kind: "bench", quality: 1 }).gym;
+  check(bodyPoints(v1, G(1)).strength === 0 && bodyPoints(v1, G(1 + WINDOW_GAPS)).strength === v1.points.strength, `the body catches up a window later (${bodyPoints(v1, G(1 + WINDOW_GAPS)).strength})`);
+  const v2 = doExercise(v1, G(2), { kind: "bench", quality: 1 }).gym;
+  check(bodyPoints(v2, G(3)).strength === v1.points.strength && bodyPoints(v2, G(4)).strength === v2.points.strength, "the body lags the stat by one window");
+  const lapsed = bodyPoints(v2, G(30));
+  check(lapsed.strength <= gymAt(v2, G(30)).gym.points.strength, "the body never shows more than the stat now (it fades with a lapse)");
+}
+// ── phase 2: the body's shape ──
+{
+  const top = gymBodyScale({ strength: MAX_POINTS, cardio: 0 }), lean = gymBodyScale({ strength: 0, cardio: MAX_POINTS }), none = gymBodyScale({ strength: 0, cardio: 0 });
+  check(none.join() === "1,1,1", "no gym, no change");
+  check(Math.abs(top[0] - 1.045) < 1e-6 && top[1] === 1, `Strength 4: +4.5% across, height the same (${top})`);
+  check(lean[0] < 1 && lean[2] < 1 && lean[1] === 1, `Cardio 4 leans him out (${lean})`);
+  let ok = true;
+  for (let s = 0; s <= 400; s += 25) for (let c = 0; c <= 400; c += 25) { const k = gymBodyScale({ strength: s, cardio: c }); if (k[1] !== 1 || k[0] < 0.98 || k[0] > 1.0451 || k[2] < 0.97 || k[2] > 1.031) ok = false; }
+  check(ok, "every shape within 0.98..1.045 across, 0.97..1.03 front to back, height exactly 1");
+  check(pointsForLevel(1) === 0 && pointsForLevel(4) === MAX_POINTS, "the slider's levels");
+}
+// ── phase 2: the career effect (option C), off and on ──
+{
+  const strong = { ...newGym(), points: { strength: 250, cardio: 120, focus: 0, resilience: 300 }, last: G(4) } as GymState;
+  const c0 = { season: 1, week: 4, energy: 80, gym: strong, skills: { pace: 70, power: 70 } } as unknown as CareerState;
+  check(gymEffectMode() === "off", "the effect is OFF by default");
+  check(gymSkillBonus(c0).power === 0 && recoveryScale(c0) === 1 && lateEnergyBack(c0, 60, 90) === 0 && resilienceInjuryScale(c0) === 1, "off: no Power, no Pace, no energy, no injury change");
+  setGymEffectForTest("mix");
+  const b = gymSkillBonus(c0);
+  check(b.lasting.power === LASTING_BONUS[2] && b.lasting.pace === LASTING_BONUS[1] && b.lift === 0, `on: Strength 3 = Power +${b.lasting.power}, Cardio 2 = Pace +${b.lasting.pace}, no visit = no lift`);
+  let vis = doExercise(strong, G(4), { kind: "bench", quality: 1 }).gym;
+  check(gymSkillBonus({ ...c0, gym: vis }).lift === MATCH_LIFT.trained, "one exercise this gap: +1 next match");
+  vis = doExercise(vis, G(4), { kind: "treadmill", quality: 1 }).gym;
+  vis = doExercise(vis, G(4), { kind: "nordic", quality: 1 }).gym;
+  check(gymSkillBonus({ ...c0, gym: vis }).lift === MATCH_LIFT.ring, "the ring closed: +2 next match");
+  check(gymSkillBonus({ ...c0, week: 5, gym: vis }).lift === 0, "the lift is gone after that match (the next gap)");
+  const maxed = { ...c0, gym: { ...strong, points: { strength: 300, cardio: 300, focus: 300, resilience: 300 } } } as CareerState;
+  check(gymSkillBonus(maxed).power <= 5 + MATCH_LIFT.ring && LASTING_BONUS[3] === 5, "capped: +5 lasting, +7 with the lift");
+  check(Math.abs(lateEnergyBack(c0, 60, 90) - 60 * (30 / 90) * LATE_DRAIN_CUT[3]) < 1e-9 && lateEnergyBack(c0, 20, 30) === 0, `Resilience 4: ${lateEnergyBack(c0, 60, 90).toFixed(1)} energy back from a 60-energy match; a 30-minute sub, none`);
+  check(recoveryScale(c0) === 1 + RECOVERY_BOOST[3] && resilienceInjuryScale(c0) === INJURY_SCALE[3], "Resilience 4: rest days ×1.08, injury chance ×0.75 (the hook)");
+  // a missed window takes the lasting gain down with it
+  check(gymSkillBonus({ ...c0, week: 4 + WINDOW_GAPS * 3 + 1 }).lasting.power < b.lasting.power, "a lapse slips the lasting gain");
+  // the visit costs one of the week's things in "mix", gives no energy
+  const mixOut = gymExercise({ ...c0, weekActions: 3, gym: undefined } as unknown as CareerState, { kind: "bench", quality: 1 }, "mix");
+  check(mixOut.spentAction && mixOut.career.weekActions === 2 && mixOut.energy === 0, `"mix": a visit is one of the week's things, no energy`);
+  setGymEffectForTest(null);
+  check(gymSkillBonus(c0).power === 0, "back off after the test");
 }
 
 if (problems.length) {
   console.error(`gym: ${problems.length} problem(s)\n - ${problems.join("\n - ")}`);
   process.exit(1);
 }
-console.log("gym: three mini-games (length, fail, frame-rate free, seeded), Strength/Cardio/Focus levels, ring, window, slip, sleep + protein, career flag off — all OK");
+console.log("gym: thirteen mini-games (length, fail, frame-rate free, seeded), four stats with Resilience, the ring of three, window, slip, sleep + protein, the body trail and shape, the career effect off and on — all OK");

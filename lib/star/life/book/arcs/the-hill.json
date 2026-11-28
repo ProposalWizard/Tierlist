@@ -15,8 +15,9 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.18
+  "chance": 0.015,
+  "tier": "common",
+  "stage": "any"
  },
  "cast": [
   {
@@ -25,7 +26,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -182,6 +184,127 @@
    "hint": "Pre-season: the hill"
   },
   {
+   "id": "hll-1d-deep",
+   "title": "The board",
+   "after": {
+    "beat": "hll-1",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-hll-1d-deep",
+    "title": "The board",
+    "category": "career",
+    "place": "club:coaches-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The hill times are still on the coaches' board in marker. Yours is at the bottom, circled. {coach.short} catches you looking."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "coach",
+       "say": [
+        "\"Leave it there. It's good for you.\""
+       ],
+       "replies": [
+        {
+         "id": "run",
+         "label": "\"I'll run it on Sundays.\"",
+         "tone": "brave",
+         "end": "run"
+        },
+        {
+         "id": "rub",
+         "label": "Rub it out when he's gone.",
+         "tone": "reckless",
+         "end": "rub"
+        },
+        {
+         "id": "laugh",
+         "label": "\"It's a hill, coach.\"",
+         "tone": "confident",
+         "end": "laugh"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "run": [
+       {
+        "text": "You run it on Sundays on your own. He finds out from the farmer.",
+        "npc": [
+         {
+          "slot": "coach",
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "coach",
+          "tag": "ran-the-hill-on-sundays",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "run"
+         }
+        }
+       }
+      ],
+      "rub": [
+       {
+        "text": "He writes it back in, bigger.",
+        "npc": [
+         {
+          "slot": "coach",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "rub"
+         }
+        }
+       }
+      ],
+      "laugh": [
+       {
+        "text": "\"It's THE hill,\" he says.",
+        "arc": {
+         "set": {
+          "deep": "laugh"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The coach has kept your time on the board"
+  },
+  {
    "id": "hll-2",
    "title": "The hill again",
    "after": {
@@ -210,7 +333,8 @@
     "setup": [
      "A season on, the first day of pre-season. The hill.",
      "{if arc.path=='hill'}You did June on the hill near your mum's, at seven.{/if}",
-     "{if arc.path=='bottom'}The board still says BUG.{/if}"
+     "{if arc.path=='bottom'}The board still says BUG.{/if}",
+     "{if arc.deep=='run'}The farmer told him you ran the hill on Sundays.{/if}"
     ],
     "choices": [
      {

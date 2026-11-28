@@ -14,8 +14,14 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0064,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "season>=2",
+   "clubApps<=10"
+  ]
  },
  "cast": [
   {
@@ -27,7 +33,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -180,6 +187,136 @@
    "hint": "You've parked somewhere"
   },
   {
+   "id": "pkg-1d-deep",
+   "title": "His last day",
+   "after": {
+    "beat": "pkg-1-space",
+    "weeks": [
+     10,
+     30
+    ]
+   },
+   "event": {
+    "id": "arc-pkg-1d-deep",
+    "title": "His last day",
+    "category": "teammates",
+    "place": "club:car-park",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "vet",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{vet.name}'s last day at the club. He's driven in at six to get the space by the door one last time. He's sitting in his car with the engine off."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "vet",
+       "say": [
+        "He winds the window down. \"Want it? After me?\""
+       ],
+       "replies": [
+        {
+         "id": "no",
+         "label": "\"It stays empty. It's yours.\"",
+         "tone": "kind",
+         "end": "no"
+        },
+        {
+         "id": "yes",
+         "label": "\"I'll look after it.\"",
+         "tone": "confident",
+         "end": "yes"
+        },
+        {
+         "id": "joke",
+         "label": "\"I've had it since August, mate.\"",
+         "tone": "reckless",
+         "end": "joke"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "no": [
+       {
+        "text": "He looks at the door for a long time. \"Daft,\" he says, and he's pleased.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "vet",
+          "tag": "kept-my-space-empty",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "no"
+         }
+        }
+       }
+      ],
+      "yes": [
+       {
+        "text": "He gives you the parking permit off his windscreen, which nobody knew existed.",
+        "npc": [
+         {
+          "slot": "vet",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "yes"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "He laughs, then he doesn't.",
+        "npc": [
+         {
+          "slot": "vet",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "joke"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "vet",
+      "pick": "squad",
+      "where": [
+       "veteran"
+      ]
+     }
+    ]
+   },
+   "hint": "It's the veteran's last day"
+  },
+  {
    "id": "pkg-2-gone",
    "title": "The empty space",
    "after": {
@@ -206,7 +343,8 @@
      ]
     },
     "setup": [
-     "A season on. {vet.short} has moved on. The space by the door is empty, and nobody's parked in it all summer."
+     "A season on. {vet.short} has moved on. The space by the door is empty, and nobody's parked in it all summer.",
+     "{if arc.deep=='no'}He still asks if the space by the door is empty.{/if}"
     ],
     "choices": [
      {

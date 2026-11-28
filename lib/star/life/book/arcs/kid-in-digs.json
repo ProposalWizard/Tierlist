@@ -15,7 +15,14 @@
   ]
  },
  "start": {
-  "chance": 0.2
+  "chance": 0.0061,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
  },
  "cast": [
   {
@@ -34,7 +41,8 @@
  "vars": {
   "trained": 0,
   "kept": 0,
-  "made": "none"
+  "made": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -420,6 +428,140 @@
     ]
    },
    "hint": "The youngest lad has a week to show something"
+  },
+  {
+   "id": "dig-1d-deep",
+   "title": "His landlady",
+   "after": {
+    "beat": "dig-3-coach",
+    "weeks": [
+     2,
+     6
+    ]
+   },
+   "event": {
+    "id": "arc-dig-1d-deep",
+    "title": "His landlady",
+    "category": "teammates",
+    "place": "club:gate",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kid",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A woman in a raincoat at the training ground gate with a carrier bag. She's {kid.short}'s landlady. \"He doesn't eat. He sends his money home. Will you tell him to eat? He'll listen to you.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kid",
+       "say": [
+        "She hands you the bag. Four foil-wrapped sandwiches with his name on in marker."
+       ],
+       "replies": [
+        {
+         "id": "give",
+         "label": "Give him the bag and sit with him while he eats one.",
+         "tone": "kind",
+         "end": "give"
+        },
+        {
+         "id": "tell",
+         "label": "Tell the coach the lad isn't eating.",
+         "tone": "honest",
+         "end": "tell"
+        },
+        {
+         "id": "not",
+         "label": "\"He's a grown man.\"",
+         "tone": "cold",
+         "end": "not"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "give": [
+       {
+        "text": "He eats two, red in the face. The landlady sends a cake on Friday with your name on it too.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "made-me-eat",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "give"
+         }
+        }
+       }
+      ],
+      "tell": [
+       {
+        "text": "The coach puts him on the club's meal plan. The lad knows who told, and he's grateful and embarrassed in equal parts.",
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 3,
+          "grudge": 2
+         },
+         {
+          "slot": "coach",
+          "respect": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "tell"
+         }
+        }
+       }
+      ],
+      "not": [
+       {
+        "text": "She takes the bag back to her car.",
+        "arc": {
+         "set": {
+          "deep": "not"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=19"
+      ],
+      "order": "youngest"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The lad's landlady wants a word"
   },
   {
    "id": "dig-2-tuesday",
@@ -851,7 +993,9 @@
     },
     "setup": [
      "{if arc.kept==1}{kid.name} made his debut today. He came on with eight minutes left and scored with his first touch, low into the corner.{/if}",
-     "{if arc.kept==0}A call from {kid.name}, from his loan club. It's late, and there's a television on somewhere behind him.{/if}"
+     "{if arc.kept==0}A call from {kid.name}, from his loan club. It's late, and there's a television on somewhere behind him.{/if}",
+     "{if arc.deep=='give'}He still eats a sandwich in the car park before every game, because you made him.{/if}",
+     "{if arc.deep=='tell'}He's on the meal plan now. He knows you told.{/if}"
     ],
     "talk": {
      "start": "d1",

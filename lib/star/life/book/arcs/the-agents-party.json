@@ -14,8 +14,14 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0061,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "established",
+  "when": [
+   "age>=22",
+   "age<=29"
+  ]
  },
  "cast": [
   {
@@ -24,7 +30,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -167,6 +174,128 @@
    "hint": "Your agent has a big birthday"
   },
   {
+   "id": "agp-1d-deep",
+   "title": "The bill",
+   "after": {
+    "beat": "agp-1-party",
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "event": {
+    "id": "arc-agp-1d-deep",
+    "title": "The bill",
+    "category": "money",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your agent rings. The hotel with the fountain has sent a bill for the fountain. \"You went in. Half each? I'm joking. Mostly.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "agent",
+       "say": [
+        "He waits for you to laugh.",
+        "{if arc.path=='speech'}\"Your speech made my mum cry. That's worth something.\"{/if}"
+       ],
+       "replies": [
+        {
+         "id": "pay",
+         "label": "Pay half.",
+         "tone": "kind",
+         "end": "pay"
+        },
+        {
+         "id": "no",
+         "label": "\"It was your party.\"",
+         "tone": "honest",
+         "end": "no"
+        },
+        {
+         "id": "all",
+         "label": "\"I'll pay the lot.\"",
+         "tone": "confident",
+         "end": "all"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "pay": [
+       {
+        "text": "He frames the receipt.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "agent",
+          "tag": "paid-half-the-fountain",
+          "strength": 1
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "pay"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "He laughs. He pays it.",
+        "arc": {
+         "set": {
+          "deep": "no"
+         }
+        }
+       }
+      ],
+      "all": [
+       {
+        "text": "He doesn't argue.",
+        "npc": [
+         {
+          "slot": "agent",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "all"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     }
+    ]
+   },
+   "hint": "Your agent wants you to pay for something"
+  },
+  {
    "id": "agp-2-photo",
    "title": "The photo",
    "after": {
@@ -194,7 +323,8 @@
      ]
     },
     "setup": [
-     "A season on. You're in your agent's office for the first time in months. On the wall behind his desk, in a frame, there's something from the party."
+     "A season on. You're in your agent's office for the first time in months. On the wall behind his desk, in a frame, there's something from the party.",
+     "{if arc.deep=='pay'}He has the fountain receipt framed in his office.{/if}"
     ],
     "choices": [
      {

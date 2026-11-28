@@ -1,0 +1,260 @@
+{
+ "id": "arc-the-move",
+ "title": "The move",
+ "owner": "partner",
+ "summary": "Years after the job four hours away, your partner is offered the top job, abroad this time. You're older now, and you could go with her. This time she isn't asking what you think. She's asking if you'll come.",
+ "size": "small",
+ "about": {
+  "who": [
+   "your partner"
+  ],
+  "tone": [
+   "family",
+   "big choice"
+  ]
+ },
+ "start": {
+  "chance": 0.04,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "veteran",
+  "when": [
+   "ended(arc-her-job:four-hours|the-motorway)",
+   "age>=27",
+   "hasPartner"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "partner",
+   "pick": "partner"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "went-with-her",
+   "title": "Went with her",
+   "text": "You followed your partner abroad for the last years of your career. You're the footballer who moved for his partner, and you're fine with it."
+  },
+  {
+   "id": "she-went",
+   "title": "She went",
+   "text": "Your partner took the job abroad. You fly out on Sundays when the fixtures let you."
+  },
+  {
+   "id": "she-said-no-again",
+   "title": "She said no again",
+   "text": "Your partner said no to the job abroad. This time it was her choice, she says, and you believe her."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "mov-1-offer",
+   "title": "Abroad",
+   "n": 1,
+   "event": {
+    "id": "arc-mov-1-offer",
+    "title": "Abroad",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your partner puts a letter on the kitchen table, folded in three. Head of the whole thing, abroad, three years. {if ended(arc-her-job:the-motorway)}The last time, the weekends didn't work. She remembers that. So do you.{/if}"
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "partner",
+       "say": [
+        "\"I'm not asking what you think this time. I'm asking if you'll come.\""
+       ],
+       "replies": [
+        {
+         "id": "come",
+         "label": "\"I'll come. I'll find a club.\"",
+         "tone": "brave",
+         "end": "come"
+        },
+        {
+         "id": "weekends",
+         "label": "\"Go. I'll do the Sundays.\"",
+         "tone": "kind",
+         "end": "weekends"
+        },
+        {
+         "id": "stay",
+         "label": "\"I can't leave now.\"",
+         "tone": "honest",
+         "end": "stay"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "come": [
+       {
+        "text": "She cries, then laughs, then rings her mum. Your agent rings you with three clubs in her city by Friday.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 10
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "come"
+         }
+        }
+       }
+      ],
+      "weekends": [
+       {
+        "text": "She holds your face in both hands. \"Every Sunday?\" Every Sunday you can.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "weekends"
+         }
+        }
+       }
+      ],
+      "stay": [
+       {
+        "text": "She folds the letter back up. A week later she turns it down, and says she wanted to.",
+        "npc": [
+         {
+          "slot": "partner",
+          "bond": -3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "stay"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "Your partner has been offered the top job, abroad"
+  },
+  {
+   "id": "mov-2-later",
+   "title": "A season on",
+   "after": {
+    "beat": "mov-1-offer",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-mov-2-later",
+    "title": "A season on",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "partner",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on."
+    ],
+    "choices": [
+     {
+      "id": "call",
+      "label": "Ring her at lunch.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='come'",
+        "text": "She's in the next room. You live in a flat with a balcony and you can't read the electricity bill.",
+        "arc": {
+         "end": "went-with-her"
+        }
+       },
+       {
+        "if": "arc.path=='weekends'",
+        "text": "She picks up in a corridor, an hour ahead. \"Sunday?\" Sunday.",
+        "arc": {
+         "end": "she-went"
+        }
+       },
+       {
+        "text": "She's downstairs. She says she doesn't think about it. Mostly.",
+        "arc": {
+         "end": "she-said-no-again"
+        }
+       }
+      ]
+     },
+     {
+      "id": "flowers",
+      "label": "Send flowers to her work.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "!arc.path=='stay'",
+        "text": "They go to an office abroad with your name spelt wrong by the florist.",
+        "arc": {
+         "end": "she-went"
+        }
+       },
+       {
+        "text": "They go to her office in town. She sends a photo of them on her desk.",
+        "arc": {
+         "end": "she-said-no-again"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "partner",
+      "pick": "partner"
+     }
+    ]
+   },
+   "hint": "A season on, abroad or not"
+  }
+ ]
+}

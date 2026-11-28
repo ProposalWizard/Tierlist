@@ -93,6 +93,27 @@ round UPDATES that note (updatedAt + updateNote + an `updates` line, a new
 refreshed) instead of taking a new number. Only the next job gets a new
 version. Example: 0.143 "One Knowitball, the whole website".
 
+## SEGMENTED PATCH NOTES: an option, not the default (Harry, 28 Nov 2026, RUL-TEAM-035)
+
+*"I think this should be the new patch notes for everyone ... actually - not to
+replace patch notes - but as a new option - let's call it Segmented patch notes."*
+Ask for it with the words "segmented patch notes". Normal patch notes stay the
+default unless the person asks for segmented. 
+- **When:** a round-up of many changes, or when the reader needs "what is live,
+  what is ready but not live, what is being built" at a glance.
+- **Shape:** the LIVE BOARD (`artifact-house-style/references/live-board-standard.html`,
+  live example https://claude.ai/artifact/RhFAsHCMQJGKo7T5xV5TSk). Counters at
+  the top: LIVE, READY (NOT LIVE), BEING BUILT. A 2-column grid of picture or
+  clip tiles, each with a 3 to 6 word title and one line. Every tile opens a
+  sheet with 2 to 3 pictures, what it does, how we checked it (with a number),
+  and what is still weak. One "Waiting on you" box. About 4 phone screens
+  collapsed.
+- **Rules:** never mark a tile LIVE without checking origin/main. Real game
+  captures only, no AI images.
+- **Shipping:** `scripts/patch-notes/ship.mjs` has no template switch; a
+  segmented page ships like any kept page (`patch-notes/pages/<version>/index.html`
+  plus an entry in `lib/patchNotesData.ts`). No script change was needed.
+
 ## Versioning
 
 One number, decimal, incrementing by 0.1 — `v0.1`, `v0.2`, `v0.3`... The

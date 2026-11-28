@@ -1,0 +1,867 @@
+{
+ "id": "arc-the-other-you",
+ "title": "The other you",
+ "owner": "pal",
+ "summary": "A photo of you signing a baby's babygro at a christening you never went to. The man in it is Lee, he washes cars by the ring road, and he has your face. A season on you're in goal at his Sunday side's penalty night, and then your mum sees his picture in the paper and goes very quiet.",
+ "size": "big",
+ "about": {
+  "who": [
+   "school mate",
+   "your mum",
+   "tabloid reporter",
+   "your double"
+  ],
+  "tone": [
+   "strange",
+   "funny",
+   "moving"
+  ]
+ },
+ "start": {
+  "chance": 0.0021,
+  "careers": 0.025,
+  "tier": "legendary",
+  "stage": "any",
+  "when": [
+   "age>=20",
+   "age<=31"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "pal",
+   "pick": "pal"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  },
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none",
+  "mum": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "sunday-dinner",
+   "title": "Sunday dinner",
+   "text": "Lee comes for Sunday dinner now. Your mum does his plate first and nobody says why."
+  },
+  {
+   "id": "the-other-you",
+   "title": "The other you",
+   "text": "Lee does openings and christenings as you, forty quid a time. He sends you a card every Christmas signed with your name."
+  },
+  {
+   "id": "never-met-again",
+   "title": "Never met again",
+   "text": "You never saw Lee again. Now and then somebody tells you they met you at a wedding, and you say thanks."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "oth-1-photo",
+   "title": "The christening",
+   "n": 1,
+   "event": {
+    "id": "arc-oth-1-photo",
+    "title": "The christening",
+    "category": "life",
+    "place": "home",
+    "size": "medium",
+    "rarity": "common",
+    "template": "text-thread",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{pal.short} sends a photo at eleven at night. It's you, in a grey suit, holding a baby in a church in a town you've never been to, signing the babygro with a felt tip.",
+     "\"Didn't know you did christenings. Cousin's mate's lad. They're made up.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "pal",
+       "say": [
+        "\"It's you, isn't it? Tell me it's you.\"",
+        "You zoom in. Same nose. Same ears. He's even got the bit of hair that won't lie down."
+       ],
+       "replies": [
+        {
+         "id": "find",
+         "label": "\"It isn't. Find out who he is.\"",
+         "tone": "calm",
+         "goto": "b"
+        },
+        {
+         "id": "laugh",
+         "label": "\"Fair play to him. Leave it.\"",
+         "tone": "humble",
+         "end": "leave"
+        },
+        {
+         "id": "club",
+         "label": "\"I'm sending it to the club's lawyers.\"",
+         "tone": "cold",
+         "end": "lawyers"
+        }
+       ]
+      },
+      "b": {
+       "who": "pal",
+       "say": [
+        "Ten minutes later. \"His name's Lee. Works at the hand car wash on the ring road. My cousin says he's been doing it for a free pint.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Text me the address.\"",
+         "tone": "brave",
+         "end": "go"
+        },
+        {
+         "id": "leave2",
+         "label": "\"A free pint. Leave him to it.\"",
+         "tone": "kind",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "go": [
+       {
+        "text": "{pal.short} sends the address and a row of crying-laughing faces. You tell him you'll go Saturday after the game.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "go"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "You put the phone face down. Then you pick it up and look again.",
+        "arc": {
+         "set": {
+          "path": "leave"
+         }
+        }
+       }
+      ],
+      "lawyers": [
+       {
+        "text": "The club's solicitor writes to a car wash. Nobody writes back.",
+        "effects": {
+         "reputation": 1
+        },
+        "arc": {
+         "set": {
+          "path": "lawyers"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Your mate has a photo of you at a christening you never went to"
+  },
+  {
+   "id": "oth-1b-carwash",
+   "title": "The car wash",
+   "after": {
+    "beat": "oth-1-photo",
+    "weeks": [
+     2,
+     5
+    ]
+   },
+   "event": {
+    "id": "arc-oth-1b-carwash",
+    "title": "The car wash",
+    "category": "life",
+    "place": "town:carwash",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "driving",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "The hand car wash behind the tyre place. A lad in a wet tracksuit is doing the wheels on a van, and when he stands up it's like a mirror that's had a hard week.",
+     "{if arc.path=='lawyers'}He's got the solicitor's letter in his back pocket. It's gone soft in the rain.{/if}"
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "pal",
+       "say": [
+        "\"Lee,\" he says, and wipes his hand on his leg before he holds it out. \"I know. I KNOW. I never said I was you. I just never said I wasn't.\""
+       ],
+       "replies": [
+        {
+         "id": "sign",
+         "label": "\"Do you want one signed by the real one?\"",
+         "tone": "kind",
+         "end": "mate"
+        },
+        {
+         "id": "stop",
+         "label": "\"You need to stop. Today.\"",
+         "tone": "cold",
+         "end": "stop"
+        },
+        {
+         "id": "use",
+         "label": "\"Fancy doing a sponsor shoot for me on Tuesday?\"",
+         "tone": "reckless",
+         "end": "use"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "mate": [
+       {
+        "text": "You sign his tracksuit top and he does your car for nothing. He does it badly. You both laugh at the same moment, the same laugh.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "met-the-other-you",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "mate"
+         }
+        }
+       }
+      ],
+      "stop": [
+       {
+        "text": "He goes red and says sorry about four times. On the way out you see him in your wing mirror, watching you go.",
+        "arc": {
+         "set": {
+          "mid": "stop"
+         }
+        }
+       }
+      ],
+      "use": [
+       {
+        "text": "He does two hours under the lights in a boot advert, and the photographer never knows. The sponsor says it's your best shoot yet.",
+        "effects": {
+         "reputation": -1,
+         "moneyWeeks": 1
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "sent-a-double-to-a-shoot",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "use"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Lee works at the car wash on the ring road"
+  },
+  {
+   "id": "oth-2-penalties",
+   "title": "His Sunday side",
+   "after": {
+    "beat": "oth-1-photo",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-oth-2-penalties",
+    "title": "His Sunday side",
+    "category": "life",
+    "place": "park:pitch",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. Lee's Sunday side, the Crown and Anchor, are raising money for a minibus. A pound a penalty, and the whole pub wants to see the two of you on one pitch.",
+     "{if arc.mid=='stop'}He's stopped doing christenings. He says the pub won't let him forget it.{/if}{if arc.mid=='use'}He's got his own agent now. It's his brother-in-law.{/if}"
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "pal",
+       "say": [
+        "{pal.short} has driven you down. \"Ten balls, him behind you calling the corners like he's your dad. Half the pub thinks you're both him.\""
+       ],
+       "replies": [
+        {
+         "id": "play",
+         "label": "Take the ten.",
+         "tone": "confident",
+         "goto": "g"
+        },
+        {
+         "id": "no",
+         "label": "\"Not tonight. Put me down for fifty quid.\"",
+         "tone": "humble",
+         "end": "paid"
+        }
+       ]
+      },
+      "g": {
+       "who": "pal",
+       "say": [
+        "The park, two floodlights on a generator, forty people with pints in plastic glasses."
+       ],
+       "activity": {
+        "mode": "challenge",
+        "name": "The Crown and Anchor's penalties",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "corners",
+           "balls": 2
+          },
+          {
+           "kind": "call-it",
+           "balls": 2,
+           "line": "Lee shouts the corner. Same voice as yours."
+          },
+          {
+           "kind": "lights-out",
+           "balls": 2
+          },
+          {
+           "kind": "far",
+           "balls": 1
+          },
+          {
+           "kind": "crossbar",
+           "balls": 1
+          }
+         ],
+         "lines": {
+          "hit": "\"That's him. Or that's the other one.\"",
+          "wide": "\"Lee could've done better than that.\""
+         }
+        },
+        "caller": {
+         "slot": "pal"
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": {
+         "kind": "skill-check",
+         "stat": "technique",
+         "target": 60
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "r-stop"
+        ],
+        [
+         "activity.score>=6",
+         "r-good"
+        ],
+        [
+         "",
+         "r-poor"
+        ]
+       ]
+      },
+      "r-stop": {
+       "who": "pal",
+       "say": [
+        "You stop there and hand the ball back."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Walk off.",
+         "tone": "calm",
+         "end": "stop"
+        }
+       ]
+      },
+      "r-good": {
+       "who": "pal",
+       "say": [
+        "{activity.score} out of ten. Not bad at all."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "good"
+        }
+       ]
+      },
+      "r-poor": {
+       "who": "pal",
+       "say": [
+        "{activity.score} out of ten."
+       ],
+       "replies": [
+        {
+         "id": "on",
+         "label": "Pick the balls up.",
+         "tone": "calm",
+         "end": "poor"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "good": [
+       {
+        "text": "The pub raises four hundred and twelve pounds. Lee buys the minibus a sticker with both your faces on it.",
+        "effects": {
+         "fans": 2
+        },
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "good"
+         }
+        }
+       }
+      ],
+      "poor": [
+       {
+        "text": "You miss more than you score and the pub chants Lee's name. He takes a bow you've seen yourself do on the telly.",
+        "effects": {
+         "fans": 1
+        },
+        "arc": {
+         "set": {
+          "path": "poor"
+         }
+        }
+       }
+      ],
+      "stop": [
+       {
+        "text": "You hand {pal.short} the ball and say you've a game Saturday. Lee takes the rest in your place, and the pub can't tell.",
+        "arc": {
+         "set": {
+          "path": "poor"
+         }
+        }
+       }
+      ],
+      "paid": [
+       {
+        "text": "You send fifty quid. The Crown and Anchor's minibus has a sticker on the back: SPONSORED BY BOTH OF THEM.",
+        "arc": {
+         "set": {
+          "path": "paid"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "A season on: Lee's Sunday side want you for their penalty night"
+  },
+  {
+   "id": "oth-3-paper",
+   "title": "The paper",
+   "after": {
+    "beat": "oth-2-penalties",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-oth-3-paper",
+    "title": "The paper",
+    "category": "life",
+    "place": "home:mums",
+    "size": "big",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Sunday's {tabloid.outlet}: \"STAR'S SECRET TWIN?\" Two photos side by side, you at the ground and Lee with a sponge. {tabloid.name} wants a quote by six.",
+     "Your mum rings, and she doesn't say hello. \"What's his birthday?\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mum",
+       "say": [
+        "\"Same as yours, isn't it.\" She isn't asking. \"The General. There was a girl in the next bed, sixteen, on her own. Nine pound two, her boy was. Same as you. I always wondered.\""
+       ],
+       "replies": [
+        {
+         "id": "test",
+         "label": "\"There's a test. We could know.\"",
+         "tone": "honest",
+         "goto": "b"
+        },
+        {
+         "id": "dinner",
+         "label": "\"Shall I ask him round on Sunday?\"",
+         "tone": "kind",
+         "end": "dinner"
+        },
+        {
+         "id": "leave",
+         "label": "\"Mum. It's a coincidence. Leave it.\"",
+         "tone": "calm",
+         "end": "leave"
+        }
+       ]
+      },
+      "b": {
+       "who": "mum",
+       "say": [
+        "A long breath down the phone. \"And what would we do with it, love?\""
+       ],
+       "replies": [
+        {
+         "id": "know",
+         "label": "\"Know.\"",
+         "tone": "brave",
+         "end": "test"
+        },
+        {
+         "id": "nothing",
+         "label": "\"Nothing. You're right.\"",
+         "tone": "humble",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "test": [
+       {
+        "text": "You both spit in a tube that the tabloid paid for. You're not related. Lee rings to say he's gutted, and he sounds it.",
+        "effects": {
+         "fame": 2
+        },
+        "npc": [
+         {
+          "slot": "tabloid",
+          "bond": 3
+         },
+         {
+          "slot": "mum",
+          "bond": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "mum": "test"
+         }
+        }
+       }
+      ],
+      "dinner": [
+       {
+        "text": "Lee comes round in a borrowed shirt with a cake from the garage. Your mum keeps putting her hand on his arm.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mum",
+          "tag": "had-lee-for-sunday-dinner",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mum": "dinner"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "You give the paper nothing. Your mum doesn't bring it up again, and you can hear her not bringing it up.",
+        "npc": [
+         {
+          "slot": "tabloid",
+          "grudge": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "mum": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Your mum has seen Lee in the paper"
+  },
+  {
+   "id": "oth-4-later",
+   "title": "Lee",
+   "after": {
+    "beat": "oth-3-paper",
+    "seasons": [
+     1,
+     2
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-oth-4-later",
+    "title": "Lee",
+    "category": "life",
+    "place": "ground:stand",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "after-match",
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Years on. A man in the front row of the family stand has your face, a bit heavier now, and a lad on his shoulders in your shirt.",
+     "{if arc.mum=='dinner'}Your mum's beside them with a flask.{/if}"
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "pal",
+       "say": [
+        "{pal.short} spots him first. \"Is that Lee? Go on. Go over.\""
+       ],
+       "replies": [
+        {
+         "id": "over",
+         "label": "Go over to the front row.",
+         "tone": "kind",
+         "end": "over"
+        },
+        {
+         "id": "wave",
+         "label": "Wave from the pitch.",
+         "tone": "calm",
+         "end": "wave"
+        },
+        {
+         "id": "tunnel",
+         "label": "Go down the tunnel.",
+         "tone": "cold",
+         "silent": true,
+         "end": "tunnel"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "over": [
+       {
+        "if": "arc.mum=='dinner' || arc.mid=='mate'",
+        "text": "You sign the lad's shirt and Lee says, \"Tell him who's the better looking one.\" The lad says you.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "end": "sunday-dinner"
+        }
+       },
+       {
+        "text": "He takes a selfie of the three of you. By teatime it's on the car wash's page with a price list.",
+        "arc": {
+         "end": "the-other-you"
+        }
+       }
+      ],
+      "wave": [
+       {
+        "if": "arc.mid=='use' || arc.path=='poor'",
+        "text": "He waves back with both arms. Somebody near him says it's you, waving at yourself.",
+        "arc": {
+         "end": "the-other-you"
+        }
+       },
+       {
+        "text": "He waves back, then picks his lad up so he can see you.",
+        "arc": {
+         "end": "sunday-dinner"
+        }
+       }
+      ],
+      "tunnel": [
+       {
+        "text": "When you look back from the tunnel he's gone, or he's somebody else.",
+        "arc": {
+         "end": "never-met-again"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "Years on, Lee"
+  }
+ ]
+}

@@ -1,0 +1,238 @@
+{
+ "id": "arc-the-man-from-the-number",
+ "title": "The man from the number",
+ "owner": "manager",
+ "summary": "Years on, a thin man in a borrowed coat is waiting by the training ground gate. It's the fixer who texted you. He's out, he's on a course, and he wants five minutes to say sorry.",
+ "size": "small",
+ "about": {
+  "who": [
+   "the gaffer"
+  ],
+  "tone": [
+   "serious",
+   "moving"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "veteran",
+  "when": [
+   "ended(arc-the-hearing)",
+   "age>=26"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "tabloid",
+   "pick": "tabloid"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "five-minutes",
+   "title": "Five minutes",
+   "text": "The fixer who texted you came to the gate years later to say sorry. You gave him five minutes. He talks to young players about it now."
+  },
+  {
+   "id": "the-gate-shut",
+   "title": "The gate shut",
+   "text": "The fixer came to the gate to say sorry and you drove past. The security man moved him on."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "mfn-1-gate",
+   "title": "By the gate",
+   "n": 1,
+   "event": {
+    "id": "arc-mfn-1-gate",
+    "title": "By the gate",
+    "category": "life",
+    "place": "club:gate",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A thin man in a borrowed coat by the gate, holding a carrier bag. It takes you a second. It's him, the man from the number, older by more than the years."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "manager",
+       "say": [
+        "The gaffer sees him too, from his car. He winds the window down. \"Your call, son. I'll stay right here.\""
+       ],
+       "replies": [
+        {
+         "id": "talk",
+         "label": "Stop and give him five minutes.",
+         "tone": "kind",
+         "end": "talk"
+        },
+        {
+         "id": "past",
+         "label": "Drive past.",
+         "tone": "cold",
+         "silent": true,
+         "end": "past"
+        },
+        {
+         "id": "security",
+         "label": "Ask security to move him on.",
+         "tone": "cold",
+         "end": "past"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "talk": [
+       {
+        "text": "He says sorry twice and means it once, then means it the second time too. He's on a course. He talks to lads in academies about texts like his.",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "talk"
+         }
+        }
+       }
+      ],
+      "past": [
+       {
+        "text": "In the mirror he's watching your car all the way to the barrier.",
+        "arc": {
+         "set": {
+          "path": "past"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "A man is waiting by the training ground gate"
+  },
+  {
+   "id": "mfn-2-talk",
+   "title": "The academy talk",
+   "after": {
+    "beat": "mfn-1-gate",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-mfn-2-talk",
+    "title": "The academy talk",
+    "category": "life",
+    "place": "club:academy",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The academy has booked a talk for the under-eighteens about gambling and fixers. The name on the poster is his."
+    ],
+    "choices": [
+     {
+      "id": "sit",
+      "label": "Sit at the back for it.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='talk'",
+        "text": "He sees you at the back and loses his place for a second. Then he tells them about the text he sent you.",
+        "arc": {
+         "end": "five-minutes"
+        }
+       },
+       {
+        "text": "He sees you at the back and does the whole talk without looking your way.",
+        "arc": {
+         "end": "the-gate-shut"
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Go to the gym instead.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "if": "arc.path=='talk'",
+        "text": "The academy manager says it was the best talk they've had.",
+        "arc": {
+         "end": "five-minutes"
+        }
+       },
+       {
+        "text": "You hear it was good. You stay in the gym.",
+        "arc": {
+         "end": "the-gate-shut"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "tabloid",
+      "pick": "tabloid"
+     }
+    ]
+   },
+   "hint": "A season on, the man from the number"
+  }
+ ]
+}

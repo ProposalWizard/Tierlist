@@ -1,0 +1,645 @@
+{
+ "id": "arc-the-stowaway",
+ "title": "The stowaway",
+ "owner": "kidfan",
+ "summary": "On a trip abroad, the hotel porter opens the luggage hold of the team bus and a girl of fifteen climbs out with a rucksack and your shirt on. She came all the way in there. The gaffer wants her on the first flight home. A season on she's banned from the ground, and years on she's working in it.",
+ "size": "big",
+ "about": {
+  "who": [
+   "a young fan",
+   "the gaffer",
+   "your mum"
+  ],
+  "tone": [
+   "strange",
+   "funny",
+   "moving"
+  ]
+ },
+ "start": {
+  "chance": 0.0032,
+  "careers": 0.025,
+  "tier": "legendary",
+  "stage": "any",
+  "when": [
+   "age>=20",
+   "europe || divisionLevel<=2"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "kidfan",
+   "pick": "kidfan"
+  },
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none",
+  "later": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-apprentice",
+   "title": "The apprentice",
+   "text": "The girl from the luggage hold works in the club's kit room now. She packs the bus herself and checks the hold twice."
+  },
+  {
+   "id": "the-banned-season",
+   "title": "The banned season",
+   "text": "She served her ban and came back with a season ticket she paid for herself, in the away end, every away game."
+  },
+  {
+   "id": "home-on-the-flight",
+   "title": "On the first flight",
+   "text": "She was on the first flight home with a steward, and you never heard from her again. The hold of the bus has a lock on it now."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "stw-1-hold",
+   "title": "The luggage hold",
+   "n": 1,
+   "event": {
+    "id": "arc-stw-1-hold",
+    "title": "The luggage hold",
+    "category": "life",
+    "place": "away:hotel",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "walkout"
+     ]
+    },
+    "setup": [
+     "The hotel abroad, ten at night. The porter opens the bus's luggage hold for the kit hampers and a girl climbs out with a rucksack, stiff as a board, in your shirt.",
+     "She's fifteen. She got in at the services before the ferry. Nine hours."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "manager",
+       "say": [
+        "The gaffer is in the car park in his slippers, already on the phone to the club. \"Police, her mother, a flight. In that order.\""
+       ],
+       "replies": [
+        {
+         "id": "sit",
+         "label": "Sit with her while he rings.",
+         "tone": "kind",
+         "goto": "b"
+        },
+        {
+         "id": "mum",
+         "label": "\"Let me ring her mum. She'll take it better from me.\"",
+         "tone": "brave",
+         "goto": "c"
+        },
+        {
+         "id": "go",
+         "label": "Go up to your room. It's his problem.",
+         "tone": "cold",
+         "silent": true,
+         "end": "away"
+        }
+       ]
+      },
+      "b": {
+       "who": "kidfan",
+       "say": [
+        "She won't look at you. \"I just wanted to see one away. Mum said we couldn't afford it.\" She's shaking. Somebody brings her a hotel dressing gown."
+       ],
+       "replies": [
+        {
+         "id": "ticket",
+         "label": "\"I'll get you a ticket for tomorrow. If he lets me.\"",
+         "tone": "confident",
+         "end": "ticket"
+        },
+        {
+         "id": "home",
+         "label": "\"You need to go home. I'll ring you after.\"",
+         "tone": "honest",
+         "end": "home"
+        }
+       ]
+      },
+      "c": {
+       "who": "mum",
+       "say": [
+        "Her mum picks up on the first ring, and she's been crying for hours. \"Is she all right? Is she hurt? I'll kill her.\""
+       ],
+       "replies": [
+        {
+         "id": "ticket2",
+         "label": "\"She's fine. Let her see the game, and I'll bring her home.\"",
+         "tone": "confident",
+         "end": "ticket"
+        },
+        {
+         "id": "home2",
+         "label": "\"She's fine. She'll be on the first flight.\"",
+         "tone": "calm",
+         "end": "home"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ticket": [
+       {
+        "text": "The gaffer stares at you for a long time. Then: \"Steward with her. Hotel room with a woman from the club. And she's YOUR problem.\" She watches from the away end with a steward either side.",
+        "effects": {
+         "boss": -3,
+         "fans": 5
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 12
+         },
+         {
+          "slot": "manager",
+          "grudge": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kidfan",
+          "tag": "got-me-into-the-away-end",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "ticket"
+         }
+        }
+       }
+      ],
+      "home": [
+       {
+        "text": "She's on the seven o'clock flight with a woman from the club. She writes on your hand in biro before she goes: SORRY.",
+        "effects": {
+         "boss": 2
+        },
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4
+         },
+         {
+          "slot": "manager",
+          "respect": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "home"
+         }
+        }
+       }
+      ],
+      "away": [
+       {
+        "text": "You hear the police car come and go. At breakfast nobody says her name.",
+        "arc": {
+         "set": {
+          "path": "away"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Somebody has climbed out of the team bus's luggage hold"
+  },
+  {
+   "id": "stw-1b-papers",
+   "title": "The papers",
+   "after": {
+    "beat": "stw-1-hold",
+    "weeks": [
+     1,
+     3
+    ]
+   },
+   "event": {
+    "id": "arc-stw-1b-papers",
+    "title": "The papers",
+    "category": "media",
+    "place": "home",
+    "size": "medium",
+    "rarity": "common",
+    "template": "feed-post",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "It's in every paper: SUPERFAN, 15, IN TEAM BUS HOLD. The club is talking about a ban. Her mum has sent you a message through the club's office."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mum",
+       "say": [
+        "Your own mum has read it twice. \"That poor woman. Nine hours, love. Anything could have happened.\""
+       ],
+       "replies": [
+        {
+         "id": "speak",
+         "label": "Ask the club to go easy on her.",
+         "tone": "kind",
+         "end": "speak"
+        },
+        {
+         "id": "ban",
+         "label": "Tell the club a ban is right.",
+         "tone": "honest",
+         "end": "ban"
+        },
+        {
+         "id": "out",
+         "label": "Stay out of it.",
+         "tone": "calm",
+         "silent": true,
+         "end": "out"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "speak": [
+       {
+        "text": "The club gives her a season's ban instead of five. The chairman says it's because of you, and doesn't say it nicely.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 5
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "speak"
+         }
+        }
+       }
+      ],
+      "ban": [
+       {
+        "text": "Five seasons, the club says, and then they halve it. She posts a photo of her bedroom wall with your face on it, and then takes it down.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "grudge": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "mid": "ban"
+         }
+        }
+       }
+      ],
+      "out": [
+       {
+        "text": "The club bans her for three seasons. You read it on your phone in the canteen.",
+        "arc": {
+         "set": {
+          "mid": "out"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "The stowaway is in the papers"
+  },
+  {
+   "id": "stw-2-letter",
+   "title": "A letter",
+   "after": {
+    "beat": "stw-1-hold",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-stw-2-letter",
+    "title": "A letter",
+    "category": "life",
+    "place": "club:reception",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. A letter at reception, four sides, very neat. She's doing her exams. She's been watching every game on the radio. She's got a Saturday job to pay back the club for the flight.",
+     "{if arc.path=='ticket'}She's put the ticket stub from the away end in with it.{/if}"
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kidfan",
+       "say": [
+        "\"I know I can't come for ages. I just wanted to say I'm sorry for the trouble and I'm saving up for when I can.\""
+       ],
+       "replies": [
+        {
+         "id": "visit",
+         "label": "Take a signed ball round to her school.",
+         "tone": "kind",
+         "end": "visit"
+        },
+        {
+         "id": "write",
+         "label": "Write back, two sides.",
+         "tone": "calm",
+         "end": "write"
+        },
+        {
+         "id": "file",
+         "label": "Put it in the drawer with the others.",
+         "tone": "cold",
+         "silent": true,
+         "end": "file"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "visit": [
+       {
+        "text": "The whole year group comes out to the playground. She goes the colour of the shirt and then tells you she wants to work in football, not watch it.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "later": "visit"
+         }
+        }
+       }
+      ],
+      "write": [
+       {
+        "text": "She writes back by return. She wants to work in football, she says, behind the scenes, where you don't need to be good.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "later": "write"
+         }
+        }
+       }
+      ],
+      "file": [
+       {
+        "text": "The letter goes in the drawer.",
+        "arc": {
+         "set": {
+          "later": "file"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, the stowaway has written to you"
+  },
+  {
+   "id": "stw-3-years",
+   "title": "Years on",
+   "after": {
+    "beat": "stw-2-letter",
+    "seasons": [
+     1,
+     3
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-stw-3-years",
+    "title": "Years on",
+    "category": "life",
+    "place": "club:kit-room",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "kidfan",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Years on. There's a new apprentice in the kit room, nineteen, with her hair in a scrunchie and a list on a clipboard.",
+     "{if arc.mid=='ban'}She doesn't smile when she sees you, but she nods.{/if}"
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "kidfan",
+       "say": [
+        "\"Don't,\" she says, before you can say anything. \"I check the hold twice now. Every trip.\""
+       ],
+       "replies": [
+        {
+         "id": "laugh",
+         "label": "\"Three times, I'd do.\"",
+         "tone": "kind",
+         "end": "laugh"
+        },
+        {
+         "id": "proud",
+         "label": "\"I'm proud of you.\"",
+         "tone": "honest",
+         "end": "proud"
+        },
+        {
+         "id": "nod",
+         "label": "Just nod and go past.",
+         "tone": "calm",
+         "silent": true,
+         "end": "nod"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "laugh": [
+       {
+        "if": "arc.later=='visit' || arc.later=='write'",
+        "text": "She laughs, and the kit man shouts at her to stop laughing and fold.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 6
+         }
+        ],
+        "arc": {
+         "end": "the-apprentice"
+        }
+       },
+       {
+        "text": "She doesn't laugh. Later you see her in the away end on her day off, with a ticket she paid for.",
+        "arc": {
+         "end": "the-banned-season"
+        }
+       }
+      ],
+      "proud": [
+       {
+        "if": "!arc.path=='away'",
+        "text": "She looks at her clipboard for a while. \"Go and get changed, you're late.\"",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "bond": 8
+         }
+        ],
+        "arc": {
+         "end": "the-apprentice"
+        }
+       },
+       {
+        "text": "\"You didn't even come down to the car park,\" she says, and goes back to folding.",
+        "npc": [
+         {
+          "slot": "kidfan",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "end": "home-on-the-flight"
+        }
+       }
+      ],
+      "nod": [
+       {
+        "if": "arc.path=='away' || arc.later=='file'",
+        "text": "She nods back. Next away trip, there's a padlock on the hold.",
+        "arc": {
+         "end": "home-on-the-flight"
+        }
+       },
+       {
+        "text": "She nods back. Next away game you see her in the away end on her day off.",
+        "arc": {
+         "end": "the-banned-season"
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "kidfan",
+      "pick": "kidfan"
+     },
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "Years on, the stowaway"
+  }
+ ]
+}

@@ -13,6 +13,7 @@
  * wander a little, the expression of the beat, lips that move as he speaks.
  */
 import { dressCloth, type ClothKind } from "../style3d/toon/clothes";
+import { groundSpeedOf } from "../three3d/stride";
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { ActorSpec, BodyPart, CutsceneActor, CutscenePeople, CutscenePeopleInit, Expression, HandPose, ReachLag, Vec3 } from "./types";
@@ -238,6 +239,7 @@ class StubActor implements CutsceneActor {
 
   clips() { return Object.keys(this.person.actions); }
   clipDuration(n: string) { return this.person.actions[n]?.getClip().duration ?? 1; }
+  groundSpeed(n: string) { return groundSpeedOf(this.person.actions[n]?.getClip()); }
 
   beginFrame() {
     this.fingers = { L: handShape("relax"), R: handShape("relax") };

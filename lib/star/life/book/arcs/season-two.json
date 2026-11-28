@@ -1,0 +1,270 @@
+{
+ "id": "arc-season-two",
+ "title": "Season two",
+ "owner": "agent",
+ "summary": "The documentary did well. Now they want a second series, and this time they want your mum as a main character. She's already bought a new cardigan.",
+ "size": "small",
+ "about": {
+  "who": [
+   "your agent",
+   "your mum"
+  ],
+  "tone": [
+   "funny",
+   "fame"
+  ]
+ },
+ "start": {
+  "chance": 0.02,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any",
+  "when": [
+   "ended(arc-the-documentary:the-good-one|the-row)"
+  ]
+ },
+ "cast": [
+  {
+   "slot": "agent",
+   "pick": "agent"
+  },
+  {
+   "slot": "mum",
+   "pick": "mum"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "mid": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "mums-series",
+   "title": "Mum's series",
+   "text": "The second series of your documentary was really about your mum. She gets stopped in the supermarket."
+  },
+  {
+   "id": "no-season-two",
+   "title": "No season two",
+   "text": "You said no to a second series. Your mum kept the cardigan."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "ss2-1-ask",
+   "title": "Series two",
+   "n": 1,
+   "event": {
+    "id": "arc-ss2-1-ask",
+    "title": "Series two",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "Your agent, very excited, on speaker in your mum's kitchen. \"Series two! They loved your mum. They want her front and centre. Bingo, the hairdresser's, all of it.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mum",
+       "say": [
+        "Your mum is wearing a cardigan you've never seen. The label is still on it."
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"If Mum wants it, yes.\"",
+         "tone": "kind",
+         "end": "yes"
+        },
+        {
+         "id": "rules",
+         "label": "\"Yes, but nothing at the hairdresser's.\"",
+         "tone": "confident",
+         "end": "rules"
+        },
+        {
+         "id": "no",
+         "label": "\"No. Once was enough.\"",
+         "tone": "honest",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "Your mum takes the label off the cardigan.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 5
+         },
+         {
+          "slot": "agent",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "rules": [
+       {
+        "text": "The producer agrees to everything and then films the hairdresser's anyway.",
+        "npc": [
+         {
+          "slot": "mum",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "yes"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "Your agent goes very quiet. Your mum keeps the label on, just in case.",
+        "npc": [
+         {
+          "slot": "agent",
+          "grudge": 4
+         },
+         {
+          "slot": "mum",
+          "bond": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "They want a second series of the documentary"
+  },
+  {
+   "id": "ss2-2-later",
+   "title": "Episode one",
+   "after": {
+    "beat": "ss2-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-ss2-2-later",
+    "title": "Episode one",
+    "category": "life",
+    "place": "home",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "agent",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on."
+    ],
+    "choices": [
+     {
+      "id": "watch",
+      "label": "Watch episode one with Mum.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "It's twenty minutes of your mum at bingo and four of you. It's the best thing on.",
+        "effects": {
+         "fame": 2
+        },
+        "arc": {
+         "end": "mums-series"
+        }
+       },
+       {
+        "text": "There is no episode one. You watch the old one again with her and she does the voices.",
+        "arc": {
+         "end": "no-season-two"
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Don't watch it.",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "if": "arc.path=='yes'",
+        "text": "Your mum gets stopped in the supermarket four times on the Monday.",
+        "arc": {
+         "end": "mums-series"
+        }
+       },
+       {
+        "text": "Your agent sends you a list of what you could have earned.",
+        "arc": {
+         "end": "no-season-two"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "agent",
+      "pick": "agent"
+     },
+     {
+      "slot": "mum",
+      "pick": "mum"
+     }
+    ]
+   },
+   "hint": "A season on, series two"
+  }
+ ]
+}

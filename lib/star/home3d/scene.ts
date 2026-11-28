@@ -59,6 +59,7 @@ import type { InteractCard } from "../world3d/interact";
 import type { HouseLife, LifeMate } from "../world3d/houseLife";
 import { FURNITURE, isLiving } from "./rooms";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
+import { ViewCam, headWorld, loadViewMode, showBody, type ViewMode } from "../three3d/viewCam";
 import { FOLLOW_CAM_D, FollowBoom, FollowCarry, FollowZoom, FOLLOW_HEAD_Y, attachFollowZoom, boxRoom, capOnLine, followFade, loadFollowZoom, riseForMin, settledArrival, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
 
 export type { HomeSpot } from "./rooms";
@@ -283,6 +284,9 @@ export interface HomeController {
    *  camera, between = on the straight line from one to the other (he fades in
    *  once the camera is clear of his head); null = off, as before. */
   setPov: (k: number | null) => void;
+  /** First person | third person (the eye button; ../three3d/viewCam.ts), remembered per device. */
+  setView: (m: ViewMode) => void;
+  viewMode: () => ViewMode;
   /** The 3D phone in the game (components/star/HousePhone.tsx): ease the pov to `to` over `ms` inside the
    *  house's own loop (it runs while easing, at the moving frame rate); `done` after the last frame. setPov cancels it. */
   easePov?: (to: number | null, ms: number, done?: () => void) => void;
@@ -563,6 +567,10 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   let lastFlat = 9;
   const zoomCam: FollowCam = { ...FOLLOW_CAM_D };
   const detachZoom = zoom ? attachFollowZoom(container, zoom) : null;
+  /** First person | third person (the eye button), eased; using something steps back out to third (../three3d/viewCam.ts). */
+  // (the 3D phone held up in first person is simply his eyes: the phone's pull-back is skipped)
+  const view = new ViewCam(opts.fixedStep ? "third" : loadViewMode());
+  const viewHead = new THREE.Vector3();
   if (zoom) CS = zoomedFollowCam(zoom.now, FOLLOW_CAM_D, zoomCam);
   let speed = 0, yaw = Math.PI, camYaw = openCamYaw(START.x, START.z, START.yaw + Math.PI, CS.back, room.w2 - ROOM_CAM.wallGap, room.d2 - ROOM_CAM.wallGap, CS.swing), orbitHold = 0;
   /** The shown facing's turn speed (three3d/animBlend.ts turnTo: turns ease in and out). */
@@ -1050,7 +1058,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       // walking straight at the camera (turned round), D holds its side and backs off, so the camera
       // never swings over his head; it swings round only once a wall stops it backing off
       const toCam = camKey === "D" && !blocked ? Math.max(0, Math.min(1, (Math.cos(angDiff(yaw, camYaw)) - 0.3) / 0.5)) : 0;
-      camYaw += angDiff(camYaw, openCamYaw(P.x, P.z, yaw + Math.PI, CS.back, W2 - ROOM_CAM.wallGap, D2 - ROOM_CAM.wallGap, blocked ? 6 : CS.swing)) * Math.min(1, dt * CS.yawK * (blocked ? 1.6 : 1)) * (1 - toCam);
+      camYaw += angDiff(camYaw, view.inEyes ? yaw + Math.PI : openCamYaw(P.x, P.z, yaw + Math.PI, CS.back, W2 - ROOM_CAM.wallGap, D2 - ROOM_CAM.wallGap, blocked ? 6 : CS.swing)) * Math.min(1, dt * CS.yawK * (blocked ? 1.6 : 1)) * (1 - toCam);
     }
     const shot0 = framed ? shotOf(framed) : null;
     // the editor's card-shot edit (none = as written; the room's own shot is never changed in place)
@@ -1085,7 +1093,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       const fov = editFov(baseFov, edit, shot ? framed : null, frame);
       if (Math.abs(fov - camera.fov) > 1e-3) { camera.fov = fov; camera.updateProjectionMatrix(); }
     }
-    if (intro && (speed > 0.3 || walker.active || orbitHold > 0 || shot)) intro = null; // he moved: the follow camera takes over
+    if (intro && (speed > 0.3 || walker.active || orbitHold > 0 || shot || view.first)) intro = null; // he moved: the follow camera takes over
     if (intro) { want.set(...intro.cam); wantLook.set(...intro.look); }
     // a living house: using something frames it (houseLife.ts useShot); talking frames you both
     const useShot = life?.useShot() ?? null;
@@ -1120,8 +1128,11 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       meA = followFade(Math.hypot(flat, camPos.y - FOLLOW_HEAD_Y));
     }
     if (!(intro as { outside?: boolean } | null)?.outside) inRoom(camPos);
+    // first person: his eyes; a card, a seat, a talk or the night step back out to third person for it
+    view.step(dt, frame > 0.02 || !!useShot || !!mate || !!sleepSeq || !!dipSeq || changing);
+    let seen = true;
     if (dbgCam) { camera.position.set(...dbgCam.pos); camera.lookAt(...dbgCam.look); }
-    else { camera.position.copy(camPos); camera.lookAt(camLook); }
+    else seen = view.place(camera, camPos, camLook, headWorld(headBone, me.person.root, viewHead), -Math.sin(camYaw), -Math.cos(camYaw), H - 0.15, dt);
     if (povEase) {
       const e = povEase;
       // on the wall clock (a slow frame never makes the move longer); the film clock when filming
@@ -1130,8 +1141,11 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       pov = e.from + ((e.to ?? 0) - e.from) * q;
       if (p >= 1) { povEase = null; pov = e.to; if (e.to === null) { setMeAlpha(1); me.person.root.visible = true; } if (e.done) setTimeout(e.done, 0); }
     }
-    if (pov !== null && !dbgCam) applyPov(P);
-    else if (camKey === "D") setMeAlpha(meA);
+    if (pov !== null && !dbgCam && !view.first) applyPov(P);
+    else {
+      if (camKey === "D") setMeAlpha(meA);
+      showBody(me.person.root, seen); // in his eyes: not drawn at all (one fewer draw)
+    }
     // a card open: the picture slides up so the spot sits above the card
     const vw = container.clientWidth || 1, vh = container.clientHeight || 1;
     const offY = dbgCam ? 0 : Math.round(frame * (framed === "wardrobe" ? 0.24 : 0.17) * vh);
@@ -1152,7 +1166,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     renderer.info.reset();
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
 
-    busy = !!povEase || !!sleepSeq || !!dipSeq || !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || changing || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
+    busy = view.moving || !!povEase || !!sleepSeq || !!dipSeq || !!zoom?.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || changing || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       if (busy && !capAlways) dyn.frame(performance.now()); else dyn.pause();
@@ -1206,7 +1220,9 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       return { people: [{ id: "you", x: p.x, z: p.z }], sunDir: [d.x, d.y, d.z], bounds: { min: [-W2, 0, -D2], max: [W2, H, D2] } };
     },
     setStick: (x, y) => { stick = { x, y }; if (Math.hypot(x, y) > 0.05) stopWalk(); },
-    orbit: (dx, dy = 0) => { orb.drag(dx, dy); orbitHold = 1.5; },
+    orbit: (dx, dy = 0) => { orb.drag(dx, view.first ? 0 : dy); view.drag(dy); orbitHold = 1.5; },
+    setView: (m) => { view.set(m); if (held && isOwner()) tick(true); },
+    viewMode: () => view.mode,
     pick: (px, py) => {
       ray.setFromCamera(ndc(px, py), camera);
       const hit = ray.intersectObjects(room.pickables, false)[0];

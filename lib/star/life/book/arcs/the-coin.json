@@ -15,8 +15,10 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0011,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any"
  },
  "cast": [
   {
@@ -25,7 +27,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -151,6 +154,121 @@
    "hint": "Something from the crowd"
   },
   {
+   "id": "con-1d-deep",
+   "title": "The letter",
+   "after": {
+    "beat": "con-1-corner",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-con-1d-deep",
+    "title": "The letter",
+    "category": "fans",
+    "place": "club:office",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A letter, through the club, from the man who threw the coin. Two pages. He's lost his season ticket for life and his job, and his daughter won't speak to him. He doesn't ask for anything."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "manager",
+       "say": [
+        "{manager.short} has read it first. \"Up to you, son. The club won't reply.\""
+       ],
+       "replies": [
+        {
+         "id": "reply",
+         "label": "Write back. Short.",
+         "tone": "kind",
+         "end": "reply"
+        },
+        {
+         "id": "keep",
+         "label": "Keep the letter. Don't reply.",
+         "tone": "calm",
+         "end": "keep"
+        },
+        {
+         "id": "bin",
+         "label": "Bin it.",
+         "tone": "cold",
+         "end": "bin"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "reply": [
+       {
+        "text": "You write four lines. He writes one back: \"Thank you. I'll be better.\"",
+        "npc": [
+         {
+          "slot": "manager",
+          "respect": 3
+         }
+        ],
+        "remember": [
+         {
+          "slot": "manager",
+          "tag": "replied-to-the-coin-man",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "reply"
+         }
+        }
+       }
+      ],
+      "keep": [
+       {
+        "text": "It's in your drawer, under the passport.",
+        "arc": {
+         "set": {
+          "deep": "keep"
+         }
+        }
+       }
+      ],
+      "bin": [
+       {
+        "text": "You let it go, and get on with your day.",
+        "arc": {
+         "set": {
+          "deep": "bin"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     }
+    ]
+   },
+   "hint": "A letter from the man who threw the coin"
+  },
+  {
    "id": "con-2-family",
    "title": "The family stand",
    "after": {
@@ -177,7 +295,8 @@
      ]
     },
     "setup": [
-     "A season on. Warming up, you spot a man in the family stand with a girl of nine. He's not looking at you. She is, and she's holding up a pound coin."
+     "A season on. Warming up, you spot a man in the family stand with a girl of nine. He's not looking at you. She is, and she's holding up a pound coin.",
+     "{if arc.deep=='reply'}The gaffer still asks if the coin man wrote again.{/if}"
     ],
     "choices": [
      {

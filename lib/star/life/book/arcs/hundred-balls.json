@@ -3,6 +3,14 @@
  "title": "A hundred balls in the dark",
  "owner": "kitman",
  "summary": "The kit man offers to feed you a hundred balls after a bad game. Say yes and you play the drill. He tells the manager, the drill becomes a thing the two of you do, your best score goes on the kit room door, and seasons later he retires and holds you to a promise.",
+ "start": {
+  "chance": 0.05,
+  "tier": "common",
+  "stage": "first-seasons",
+  "when": [
+   "age<=20"
+  ]
+ },
  "cast": [
   {
    "slot": "kitman",

@@ -447,6 +447,8 @@ export interface CutsceneActor {
   /** Clip names this body can play. */
   clips(): string[];
   clipDuration(name: string): number;
+  /** A walk or run's own ground speed on this body (m/s at its natural rate; three3d/stride.ts), when measured. */
+  groundSpeed?(name: string): number | undefined;
   /** Bind pose, every weight to 0. */
   beginFrame(): void;
   /** [clip, time, weight][] — sampled now (no internal clock). */

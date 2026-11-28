@@ -53,6 +53,7 @@ import { look3dStyle } from "../look3dStyle";
 import { dressShopH } from "./hRoom";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
 import { FOLLOW_CAM_D, FollowBoom, FollowCarry, FollowZoom, attachFollowZoom, boxRoom, capOnLine, loadFollowZoom, riseForMin, zoomedFollowCam, type FollowCam } from "../three3d/followCam";
+import { ViewCam, findHeadBone, headWorld, loadViewMode, showBody, type ViewMode } from "../three3d/viewCam";
 import { safeCompileAsync } from "../three3d/safeCompile";
 import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
 
@@ -89,6 +90,9 @@ export interface ShopController {
   setOwned: (owned: Record<string, string>) => void;
   /** Drag on the view: left/right swings the camera round, up/down tilts it (lib/star/three3d/orbitCam.ts). */
   orbit: (dxPixels: number, dyPixels?: number) => void;
+  /** First person | third person (the eye button; lib/star/three3d/viewCam.ts), remembered per device. */
+  setView?: (m: ViewMode) => void;
+  viewMode?: () => ViewMode;
   /** What is under a tap at (x, y) in page pixels, if anything. */
   pick: (clientX: number, clientY: number) => Picked | null;
   /** Tap to move: a tap on a display walks you up to it (its card opens as
@@ -1183,6 +1187,10 @@ async function buildShop(
   const detachZoom = attachFollowZoom(container, zoom);
   const boom = new FollowBoom();
   const carry = new FollowCarry(); // his steps go straight into the camera (only turning is eased)
+  /** First person | third person (the eye button), eased; a card's close-up steps back out to third (../three3d/viewCam.ts). */
+  const view = new ViewCam(opts.fixedStep ? "third" : loadViewMode());
+  const viewHead = new THREE.Vector3();
+  let headBone: any = null;
   let near: DisplayId | null = null;
   /** The card's dwell (./dwell.ts): the display area he is in, its timer, a tap-walk that just arrived. */
   let dwellZone: DisplayId | null = null;
@@ -1512,8 +1520,9 @@ async function buildShop(
     camPos.x = Math.max(-ROOM.x + 0.3, Math.min(ROOM.x - 0.3, camPos.x));
     camPos.z = Math.max(-ROOM.z + 0.3, Math.min(ROOM.z - 0.35, camPos.z));
     camPos.y = Math.max(CAM_MIN_Y, Math.min(ROOM.h - 0.25, camPos.y));
-    camera.position.copy(camPos);
-    camera.lookAt(camLook);
+    view.step(dt, frame > 0.02);
+    headBone ??= findHeadBone(player);
+    showBody(player, view.place(camera, camPos, camLook, headWorld(headBone, player, viewHead), -Math.sin(camYaw), -Math.cos(camYaw), ROOM.h - 0.25, dt)); // in his eyes: not drawn (root.visible left alone)
     // with a card open, slide the picture up so the item sits above the card
     const vw = container.clientWidth || 1, vh = container.clientHeight || 1;
     const offY = Math.round(frame * 0.17 * vh);
@@ -1584,7 +1593,7 @@ async function buildShop(
     if (hEnh) hEnh.render(scene, camera); else renderer.render(scene, camera);
     drawn++;
     // busy (walking, turning, the camera moving): every frame, fewer pixels
-    busy = zoom.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
+    busy = view.moving || zoom.moving || speed > 0.05 || mag > 0.05 || walker.active || orbitHold > 0 || orb.moving || !!faceTo || Math.abs(frame - (shot && orbitHold <= 0 ? 1 : 0)) > 0.01 || camPos.distanceToSquared(want) > 1e-4;
     if (busy) { busyT += dt; stillT = 0; } else { stillT += dt; busyT = 0; }
     if (!opts.fixedStep) {
       // dynamic resolution: judged only while moving at the full cap
@@ -1644,7 +1653,9 @@ async function buildShop(
       buyA.play();
       buying = buyA.getClip().duration;
     },
-    orbit: (dx, dy = 0) => { orb.drag(dx, dy); orbitHold = 1.5; },
+    orbit: (dx, dy = 0) => { orb.drag(dx, view.first ? 0 : dy); view.drag(dy); orbitHold = 1.5; },
+    setView: (m) => { view.set(m); },
+    viewMode: () => view.mode,
     pick: (px, py) => {
       const r = renderer.domElement.getBoundingClientRect();
       ray.setFromCamera(new THREE.Vector2(((px - r.left) / r.width) * 2 - 1, -((py - r.top) / r.height) * 2 + 1), camera);

@@ -18,7 +18,10 @@
  */
 import { plantMesh } from "../home3d/plants";
 import { glowCanvas, wallCanvas, signCanvas } from "../home3d/textures";
-import { startGame, stepGame, resultOf, botHold, GAME_NAMES, HOW_TO, TREADMILL, BENCH, type GameState, type GymGameKind, type GameResult } from "../gym/games";
+import { startGame, stepGame, resultOf, botHold, GAME_NAMES, HOW_TO, TREADMILL, MAX_SECS, type GameState, type GymGameKind, type GameResult } from "../gym/games";
+import { GYM2_KINDS, COPEN, type Gym2Kind, type Gym2State } from "../gym/games2";
+import { STAT_OF, STAT_NAMES } from "../gym/progress";
+import { Exercise2, GYM2, spot2 } from "./gymPoses2";
 import { standObject, type SmartObject } from "./smartObject";
 import { PoseBlend, ease } from "./gymPose";
 import type { Npc } from "./npc";
@@ -82,6 +85,11 @@ export interface GymProps {
   barRack: { y: number; z: number };
   belts: { id: string; mat: any; speed: number }[];
   bag: { pivot: any; body: any; swing: { ax: number; az: number; vx: number; vz: number }; hit: (dx: number, dz: number, f: number) => void };
+  /** Phase 2: the power rack's bar (its own draw: it goes on your back for the squat), the plyo box (scaled
+   *  up as the box jumps go well), the Nordic ankle roller (set on your ankles). */
+  rackBar: any;
+  box: any;
+  roller: any;
   tick: (dt: number) => void;
 }
 
@@ -337,12 +345,16 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) S.box(0.07, rh, 0.07, steel, rx + sx * rw / 2, rh / 2, rz + sz * rd / 2);
   for (const sz of [-1, 1]) S.box(rw + 0.07, 0.07, 0.07, steel, rx, rh, rz + sz * rd / 2);
   for (const sx of [-1, 1]) S.box(0.07, 0.07, rd + 0.07, steel, rx + sx * rw / 2, rh, rz);
-  S.cyl(0.016, 0.016, 2.1, chrome, rx, 1.36, rz + rd / 2 - 0.05, 0, 0, Math.PI / 2, 10);
+  // the rack's bar is its own draw (phase 2: it goes onto your back for the squat), loaded in your colours
+  const RB = painter(THREE, env.mergeGeometries);
+  RB.cyl(GYM2.rack.r, GYM2.rack.r, 2.1, chrome, 0, 0, 0, 0, 0, Math.PI / 2, 10);
   for (const sx of [-1, 1]) {
-    P.cyl(0.225, 0.225, 0.05, plate, rx + sx * 0.8, 1.36, rz + rd / 2 - 0.05, 0, 0, Math.PI / 2, 22);
-    P.cyl(0.2, 0.2, 0.04, plate2, rx + sx * 0.86, 1.36, rz + rd / 2 - 0.05, 0, 0, Math.PI / 2, 20);
+    RB.cyl(0.225, 0.225, 0.05, plate, sx * 0.8, 0, 0, 0, 0, Math.PI / 2, 22);
+    RB.cyl(0.2, 0.2, 0.04, plate2, sx * 0.86, 0, 0, 0, 0, Math.PI / 2, 20);
     S.box(0.08, 0.06, 0.12, steel, rx + sx * rw / 2, 1.31, rz + rd / 2 - 0.02);
   }
+  const rackBar = mesh(RB.merged(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.4, metalness: 0.45, envMapIntensity: 1.1 }), { cast: true });
+  rackBar.position.set(GYM2.rack.x, GYM2.rack.y, GYM2.rack.z);
   P.box(rw - 0.1, 0.03, rd - 0.1, "#5a4630", rx, 0.015, rz);
   solids.push([rx - 0.75, rx + 0.75, rz - rd / 2 - 0.1, rz + rd / 2 + 0.15]);
   const ptx = rx + 1.15, ptz = -D2 + 0.45;
@@ -350,6 +362,46 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   S.box(0.5, 0.04, 0.5, steel, ptx, 0.02, ptz);
   for (const [y, rr, cc] of [[0.35, 0.225, plate], [0.41, 0.225, plate], [0.66, 0.16, plate2], [0.72, 0.16, plate2], [0.9, 0.12, "#1a1b1f"]] as [number, number, string][]) P.cyl(rr, rr, 0.045, cc, ptx, y, ptz + 0.07, Math.PI / 2, 0, 0, 20);
   solids.push([ptx - 0.3, ptx + 0.3, ptz - 0.3, ptz + 0.35]);
+
+  // ── phase 2's kit (gymPoses2.ts GYM2): a pull-up bar, a plyo box, an agility ladder, a landing pad, a mat for
+  //    the Copenhagen, the Nordic ankle roller on the second mat ──
+  const PU = GYM2.pull;
+  for (const sx of [-1, 1]) {
+    const px = PU.x + sx * (PU.half + 0.06);
+    S.box(0.07, PU.y + 0.08, 0.07, steel, px, (PU.y + 0.08) / 2, PU.z);
+    S.box(0.07, 0.05, 0.9, steel, px, 0.025, PU.z);
+    S.box(0.05, 0.05, 0.6, steel, px, 0.42, PU.z, 0.7);
+    P.box(0.05, 0.05, 0.05, plate, px, PU.y + 0.1, PU.z);
+  }
+  S.cyl(PU.r, PU.r, 2 * PU.half + 0.12, chrome, PU.x, PU.y, PU.z, 0, 0, Math.PI / 2, 12);
+  for (const sx of [-1, 1]) solids.push([PU.x + sx * (PU.half + 0.06) - 0.1, PU.x + sx * (PU.half + 0.06) + 0.1, PU.z - 0.48, PU.z + 0.48]);
+  // the plyo box: its own draw, built from its base so it can grow taller (scale y) as the jumps go well
+  const XB = GYM2.box;
+  const BXP = painter(THREE, env.mergeGeometries);
+  BXP.box(2 * XB.half, XB.h[0], 2 * XB.half, "#7a5a3a", 0, XB.h[0] / 2, 0);
+  BXP.box(2 * XB.half + 0.004, 0.05, 2 * XB.half + 0.004, plate, 0, XB.h[0] - 0.08, 0);
+  BXP.box(2 * XB.half - 0.04, 0.004, 2 * XB.half - 0.04, "#2a2b30", 0, XB.h[0] + 0.002, 0);
+  const box = mesh(BXP.merged(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), { cast: true });
+  box.position.set(XB.x, 0, XB.z);
+  solids.push([XB.x - XB.half - 0.05, XB.x + XB.half + 0.05, XB.z - XB.half - 0.05, XB.z + XB.half + 0.05]);
+  // the Copenhagen's mat, east of the box
+  P.box(1.0, 0.025, 0.6, "#2d6b6b", GYM2.copenMat.x, 0.0125, GYM2.copenMat.z);
+  // the agility ladder: two yellow rails and the rungs, flat on the floor
+  const LD = GYM2.ladder, lsq = (LD.x1 - LD.x0) / LD.squares;
+  for (const sz of [-1, 1]) P.box(LD.x1 - LD.x0, 0.008, 0.03, "#e2b44a", (LD.x0 + LD.x1) / 2, 0.004, LD.z + sz * 0.22);
+  for (let i = 0; i <= LD.squares; i++) P.box(0.03, 0.008, 0.44, "#e2b44a", LD.x0 + i * lsq, 0.005, LD.z);
+  // the landing pad: a round rubber mat with a ring painted on
+  P.cyl(GYM2.pad.r, GYM2.pad.r, 0.012, "#1d1e22", GYM2.pad.x, 0.006, GYM2.pad.z, 0, 0, 0, 24);
+  P.ring(0.14, 0.008, plate, GYM2.pad.x, 0.013, GYM2.pad.z, Math.PI / 2, 0, 0);
+  // the Nordic ankle roller: two little posts at the second mat's west end and a padded roller (its own draw:
+  // its height is set on your ankles when you kneel)
+  const NR = GYM2.nordic;
+  for (const sz of [-1, 1]) S.box(0.05, 0.3, 0.05, steel, NR.rollerX, 0.15, GYM2.matB.z + sz * 0.33);
+  const RL = painter(THREE, env.mergeGeometries);
+  RL.cyl(0.045, 0.045, 0.62, pad, 0, 0, 0, Math.PI / 2, 0, 0, 14);
+  RL.cyl(0.012, 0.012, 0.7, chrome, 0, 0, 0, Math.PI / 2, 0, 0, 8);
+  const roller = mesh(RL.merged(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6 }), { cast: true });
+  roller.position.set(NR.rollerX, 0.2, GYM2.matB.z);
 
   // ── dumbbells (west wall), kettlebells, a medicine-ball crate, foam rollers ──
   const dbx = -W2 + 0.32, dbz0 = -2.9, dbz1 = -0.6;
@@ -427,13 +479,23 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
   run.pick = { at: [99, 99], r: 0, h: 0 };
   objects.push(run);
   gameObj({ id: "bag", kind: "gym", label: "Heavy bag", front: [BG.x + 0.66, BG.z], face: [BG.x, BG.z], verb: "Hit the bag", lines: [HOW_TO.bag, "Builds Focus."], pickR: 0.45, pickH: 2.0 }, "bag");
+  // phase 2: the ten new exercises, each its own smart object (you walk to its spot; the fade; the game)
+  const PICK: Record<Gym2Kind, [number, number, number, number]> = {
+    pullup: [GYM2.pull.x, GYM2.pull.z, 0.6, 2.4], squat: [GYM2.rack.x, GYM2.rack.z - 0.4, 0.7, 2.2], pushup: [GYM2.matA.x - 0.35, GYM2.matA.z, 0.5, 0.5], plank: [GYM2.matA.x + 0.45, GYM2.matA.z, 0.45, 0.5],
+    nordic: [GYM2.matB.x - 0.35, GYM2.matB.z, 0.5, 0.5], mobility: [GYM2.matB.x + 0.45, GYM2.matB.z, 0.45, 0.5], boxjump: [GYM2.box.x, GYM2.box.z, 0.35, 0.7], copenhagen: [GYM2.copenMat.x, GYM2.copenMat.z, 0.45, 0.4],
+    ladder: [(GYM2.ladder.x0 + GYM2.ladder.x1) / 2, GYM2.ladder.z, 0.7, 0.3], landing: [GYM2.pad.x, GYM2.pad.z, 0.4, 0.3],
+  };
+  for (const k of GYM2_KINDS) {
+    const sp = spot2(k), pk = PICK[k];
+    gameObj({ id: k, kind: "gym", label: GAME_NAMES[k], front: [sp.x, sp.z], face: [pk[0], pk[1]], verb: "Start", lines: [HOW_TO[k], `Builds ${STAT_NAMES[STAT_OF[k]]}.`], pickR: pk[2], pickH: pk[3] }, k);
+  }
   objects.push(standObject({
     id: "cooler", kind: "fridge", label: "Water cooler", front: [CO.x - 0.62, CO.z], face: [CO.x, CO.z], verb: "Protein shake",
     lines: ["A shake after training: this week's gym points ×1.2."], enter: { clip: "pickup", speed: 1.6 }, loop: [{ clip: "idle", secs: 1.2 }],
     effect: { text: "Protein in. This week's gym points ×1.2." }, stay: [1.2, 1.2], pickR: 0.45, pickH: 1.5,
   }));
   objects.push(standObject({
-    id: "mat", kind: "gym", label: "Stretching mat", front: [GYM.mat.x, GYM.mat.z], face: [GYM.mat.x, -D2], verb: "Stretch", lines: ["Loosen up between sets."],
+    id: "mat", kind: "gym", label: "Stretching mat", front: [-2.35, 2.35], face: [-2.35, -D2], verb: "Stretch", lines: ["Loosen up between sets."],
     loop: [{ clip: "stretch", or: ["idle"], secs: 6 }], effect: { mood: 1, text: "Loose." }, stay: [6, 6], pickR: 0.6, pickH: 0.6,
   }));
 
@@ -460,7 +522,7 @@ export function buildGymRoom(env: GymEnv): GymRoomOut {
     camBox: [-W2 + 0.2, W2 - 0.2, -D2 + 0.2, D2 - 0.15],
     sun,
     mirror,
-    props: { bar, barRack: { y: hookY + 0.02, z: rackZ }, belts, bag: { pivot, body: bagBody, swing, hit }, tick },
+    props: { bar, barRack: { y: hookY + 0.02, z: rackZ }, belts, bag: { pivot, body: bagBody, swing, hit }, rackBar, box, roller, tick },
     still: { meshes },
   };
 }
@@ -531,9 +593,12 @@ export class GymSession {
   /** The deepest any skin went into the treadmill's rails, uprights or console this run (cm). */
   railPierceCm = 0;
   private checkN = 0;
+  /** Phase 2's ten exercises: their poses and their contact numbers (./gymPoses2.ts). */
+  ex2: Exercise2;
 
   constructor(private T: any, private room: GymRoomOut, private you: Npc, private o: GymSessionOpts) {
     this.pose = new PoseBlend(T);
+    this.ex2 = new Exercise2(T, you, room);
     this.v = { a: new T.Vector3(), b: new T.Vector3(), c: new T.Vector3(), p: new T.Vector3(), up: new T.Vector3(0, 1, 0), x: new T.Vector3(1, 0, 0) };
   }
 
@@ -565,6 +630,7 @@ export class GymSession {
   /** One frame, BEFORE your body's clip is posed: the game, the fades, the props. */
   step(dt: number) {
     this.pose.restore();
+    this.ex2.restore();
     const P = this.room.props;
     if (this.phase !== "none") this.t += dt;
     if (this.phase === "in" && this.stepOn) this.walkOn();
@@ -590,6 +656,9 @@ export class GymSession {
       const y = L.barChest + (L.barTop - L.barChest) * g.bar + bounce;
       P.bar.position.set(GYM.bench.x, P.barRack.y + (y - P.barRack.y) * unrack, P.barRack.z + (L.barZ - P.barRack.z) * unrack);
     } else if (this.phase === "out" || this.phase === "none") P.bar.position.set(GYM.bench.x, P.barRack.y, P.barRack.z);
+    // phase 2's props (the squat bar on your back, the box's height)
+    if (this.game && isGym2(this.game)) this.ex2.props(this.game, this.phase === "count" || this.phase === "play" || this.phase === "end");
+    else if (P.rackBar && this.phase === "none") P.rackBar.position.set(GYM2.rack.x, GYM2.rack.y, GYM2.rack.z);
     P.tick(dt);
   }
 
@@ -599,7 +668,8 @@ export class GymSession {
     if (!g || !(this.phase === "count" || this.phase === "play" || this.phase === "end")) return;
     if (g.kind === "bench") this.poseBench();
     else if (g.kind === "treadmill") this.poseTreadmill(dt);
-    else this.poseBag();
+    else if (g.kind === "bag") this.poseBag();
+    else this.ex2.apply(g, this.phase as "count" | "play" | "end", this.t, dt);
   }
 
   /** The camera glides into the game's shot (he walked on: no black screen to hide a cut). */
@@ -623,6 +693,7 @@ export class GymSession {
   shot(): { cam: [number, number, number]; look: [number, number, number] } | null {
     if (!(this.phase === "count" || this.phase === "play" || this.phase === "end" || (this.phase === "out" && this.t < FADE * 0.5))) return null;
     const B = GYM.bench;
+    if (this.kind && (GYM2_KINDS as string[]).includes(this.kind)) return this.ex2.shot(this.kind as Gym2Kind, this.game && isGym2(this.game) ? this.game : null);
     if (this.kind === "bench") return { cam: [B.x + 1.25, 2.3, B.foot + 1.55], look: [B.x - 0.05, 0.74, this.lie.hipZ - 0.42] };
     if (this.kind === "treadmill") {
       const x = GYM.treadmills.find((t) => t.id === this.obj?.id)?.x ?? 2.55;
@@ -638,9 +709,11 @@ export class GymSession {
   hud(): GymHudFrame {
     const k = this.kind;
     const walked = this.kind === "treadmill" && this.stepOn;
-    const fade = this.phase === "in" ? (walked ? 0 : Math.min(1, this.t / FADE)) : this.phase === "out" ? Math.min(1, this.t / FADE) : this.phase === "count" ? (walked ? 0 : Math.max(0, 1 - this.t / FADE)) : 0;
+    let fade = this.phase === "in" ? (walked ? 0 : Math.min(1, this.t / FADE)) : this.phase === "out" ? Math.min(1, this.t / FADE) : this.phase === "count" ? (walked ? 0 : Math.max(0, 1 - this.t / FADE)) : 0;
     const g = this.game;
-    const dur = g?.kind === "bench" ? BENCH.maxSecs : g?.kind === "treadmill" ? TREADMILL.secs : 25;
+    // the Copenhagen's change of side happens behind a short black
+    if (g?.kind === "copenhagen" && g.swapping > 0) fade = Math.max(fade, Math.sin(Math.min(1, 1 - g.swapping / COPEN.swap) * Math.PI));
+    const dur = g ? MAX_SECS[g.kind] : 25;
     return {
       kind: this.active ? k : null, title: k ? GAME_NAMES[k] : "", how: k ? HOW_TO[k] : "",
       phase: this.phase === "count" ? "count" : this.phase === "play" ? "play" : this.phase === "end" ? "end" : "none",
@@ -698,11 +771,15 @@ export class GymSession {
       you.place(x, this.beltZ(g.pos), Math.PI);
       you.y = GYM.belt.top;
       this.fall = { z: 0, y: 0, started: false };
-    } else {
+    } else if (this.kind === "bag") {
       const BG = GYM.bag;
       you.place(BG.x + 0.62, BG.z, -Math.PI / 2);
       this.lastHits = 0;
       this.addGloves();
+    } else {
+      this.ex2.setUp(this.kind as Gym2Kind);
+      const sp = spot2(this.kind as Gym2Kind);
+      you.place(sp.x, sp.z, sp.yaw);
     }
   }
   private tearDown() {
@@ -711,6 +788,7 @@ export class GymSession {
     you.person.root.rotation.x = 0;
     you.person.root.rotation.z = 0;
     relaxHands(this.T, you.person);
+    if (this.ex2.kind) this.ex2.tearDown();
     this.removeGloves();
     for (const b of this.room.props.belts) if (b.id === o?.id) b.speed = 0;
     you.act({ clip: "idle" }, 0.01);
@@ -925,6 +1003,8 @@ export class GymSession {
 
   dispose() { this.removeGloves(); this.gloveG?.dispose(); this.gloveM?.dispose(); }
 }
+
+const isGym2 = (g: GameState): g is Gym2State => (GYM2_KINDS as string[]).includes(g.kind);
 
 /** The deepest any of his skin goes into the bench pad (cm): inside its width and length, below its top less 1 cm. */
 function padPierce(T: any, you: Npc, B: typeof GYM.bench): number {

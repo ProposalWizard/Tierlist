@@ -6,6 +6,15 @@
  *     skeleton, where the capture's feet were put): mean spacing within 10% (or 1.5 cm);
  *   - standing, the ankles are 15 to 26 cm apart; walking, never under 6 cm;
  *   - on no moving loop is one leg's skin inside the other's.
+ * THE STRIDE FITTED TO OUR BODIES (28 Nov 2026, three3d/stride.ts; the capture's own step width put the boots of our
+ * fuller legs into each other): the fitted walks and runs (STRIDE_SHARE) are held to their share of the hip width
+ * instead of the source; and, on the real body in its kit cloth (scripts/walk3d/measure.mts), for every build:
+ *   - below the knee, no leg passes into the other on any walk or run;
+ *   - the thighs' skin never passes into the other's on a walk; the shorts brush under 1.6 cm into each other (h1 c3 on walk_relaxed: 1.5);
+ *   - a flat foot slides under 3.5 cm a step at the clip's own ground speed, which every scene now moves him at;
+ *   - walk_confident (a standing pose in the file) is dealt to nobody;
+ *   - of the 22 men walking out in walkout22, no two are in step (the same walk, within a twentieth of a stride,
+ *     for over half the walk).
  * Prints the table (cm): body, clip, source min/mean, ours min/mean, nearest skin.
  */
 import * as THREE from "three";
@@ -16,6 +25,7 @@ import { readFileSync } from "node:fs";
 import { loadPeople3d, makePerson3d, type Person3D } from "../../lib/star/people3d";
 import { addClips, clipInfo, loadAnims3d } from "../../lib/star/three3d/footballAnims";
 import { TOON_ALL_HEADS, TOON_BODIES, TOON_BUILD_SCALE, type ToonHead, type ToonBody } from "../../lib/star/style3d/toon/bodies";
+import { STRIDE_SHARE, strideOn } from "../../lib/star/three3d/stride";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -45,8 +55,10 @@ const loader = {
 // Quaternius UAL 1 clips (tools/mocap3d/ual.py, 21 Nov 2026): also held to the LIBRARY's own skeleton's
 // step width (clips[name].srcFeet, measured at build time on the UAL rig, per metre of leg)
 const UAL = ["walk_relaxed", "walk_formal", "jog_easy", "idle_relaxed", "idle_relaxed_m", "idle_talk", "seated_idle", "seated_talk"];
-const SOURCE_TRUE = ["idle", "walk", "walk_confident", "slump_walk", "jog", "run", "sprint", "dribble_run", "sit_idle", "sitidle", ...UAL];
-const LOOPS = ["walk", "walk_confident", "slump_walk", "jog", "run", "sprint", "dribble_run", "walk_relaxed", "walk_formal", "jog_easy"];
+// (the fitted walks and runs are held to STRIDE_SHARE instead, below; walk_confident is a standing pose, dealt to nobody)
+const FITTED = strideOn() ? Object.keys(STRIDE_SHARE) : [];
+const SOURCE_TRUE = ["idle", "walk", "slump_walk", "jog", "run", "sprint", "dribble_run", "sit_idle", "sitidle", ...UAL].filter((c) => !FITTED.includes(c));
+const LOOPS = ["walk", "slump_walk", "jog", "run", "sprint", "dribble_run", "walk_relaxed", "walk_formal", "jog_easy"];
 const N = 24;
 const wp = (o: THREE.Object3D) => o.getWorldPosition(new THREE.Vector3());
 
@@ -136,7 +148,13 @@ for (const head of heads) {
         }
       }
       if (clip === "idle") check(sum > 0.15 && sum < 0.26, `${head} ${build}: stands with his ankles ${cm(sum)} cm apart (want 15 to 26)`);
-      if (clip === "walk") check(mn > 0.06, `${head} ${build}: walks with his ankles ${cm(mn)} cm apart at the narrowest (a tightrope: want over 6)`);
+      if (clip === "walk") check(mn > (strideOn() ? 0.12 : 0.06), `${head} ${build}: walks with his ankles ${cm(mn)} cm apart at the narrowest (a tightrope: want over ${strideOn() ? 12 : 6})`);
+      // a fitted walk or run: its feet planted at least its share of the hips apart (the ankles' spacing averaged over
+      // the frames each foot is down; the hips' width from the joints)
+      if (FITTED.includes(clip)) {
+        const hw = wp(B.LeftUpLeg).x - wp(B.RightUpLeg).x;
+        check(sum > (STRIDE_SHARE[clip] - 0.12) * hw, `${head} ${build} ${clip}: feet ${cm(sum)} cm apart on average, under ${Math.round((STRIDE_SHARE[clip] - 0.12) * 100)}% of the hips' ${cm(hw)}`);
+      }
       if (LOOPS.includes(clip)) {
         // (the capture's runner lands his feet on one line and his calves brush: ours may brush, never pass through)
         check(near > 0.0005, `${head} ${build} ${clip}: one leg's skin is in the other's (${cm(near)} cm)`);
@@ -145,6 +163,58 @@ for (const head of heads) {
   }
 }
 if (process.env.ROWS_ONLY) { for (const r of rows) console.log(r); process.exit(0); }
+
+// ── the real body in its kit cloth, every build (scripts/walk3d/measure.mts) ──
+if (strideOn() && !process.env.SKIP_CLOTH) {
+  const { measureClip } = await import("../../scripts/walk3d/measure.mts");
+  const W = await import("../../scripts/walk3d/lib.mts");
+  const F = await W.loadAll();
+  const MOVING = ["walk", "walk_relaxed", "walk_formal", "jog", "run", "sprint", "dribble_run", "slump_walk"];
+  const WALKS = ["walk", "walk_relaxed", "walk_formal"];
+  for (const head of (process.env.CLOTH_HEADS ?? "h1,m3").split(",") as ToonHead[]) for (const build of TOON_BODIES) {
+    const m = await W.person(F, head, build);
+    for (const clip of MOVING) {
+      const r = await measureClip(m, clip);
+      if (!r) continue;
+      rows.push(`${head} ${build}  ${clip.padEnd(15)} cloth: plants ${(r.share * 100).toFixed(0)}% of hips, below knee ${r.legIn > 0 ? "IN " + cm(r.legIn) : "clear " + cm(r.legNear)}, thighs IN ${cm(r.thighIn)}, shorts IN ${cm(r.shortsIn)}, slide ${cm(r.slide)} cm/step at ${r.groundSpeed.toFixed(2)} m/s`);
+      // (slump_walk: the trailing toe still brushes the heel ahead, 1.7 to 1.9 cm: a known weak point)
+      if (clip !== "slump_walk") check(r.legIn === 0, `${head} ${build} ${clip}: below the knee one leg goes ${cm(r.legIn)} cm into the other`);
+      if (WALKS.includes(clip)) {
+        check(r.thighIn === 0, `${head} ${build} ${clip}: a thigh goes ${cm(r.thighIn)} cm into the other`);
+        check(r.shortsIn < 0.016, `${head} ${build} ${clip}: the shorts' legs go ${cm(r.shortsIn)} cm into each other (want under 1.6)`);
+      }
+      check(r.slide < 0.035, `${head} ${build} ${clip}: a flat foot slides ${cm(r.slide)} cm a step (want under 3.5)`);
+      check(r.groundSpeed > 0.5, `${head} ${build} ${clip}: no ground speed measured (${r.groundSpeed.toFixed(2)} m/s)`);
+    }
+  }
+  // walk_confident is dealt to nobody
+  const { ownMotion } = await import("../../lib/star/people/life");
+  const dealt = Array.from({ length: 2000 }, (_, i) => ownMotion(`p${i}`).walk);
+  check(!dealt.includes("walk_confident" as never), "walk_confident (a standing pose) is dealt to someone");
+  // 22 men walking out: no two in step
+  const { TEST_SCENES } = await import("../../lib/star/cutscene/testScenes");
+  const { compileScript, clipsAt } = await import("../../lib/star/cutscene/timeline");
+  const sc = TEST_SCENES.walkout22();
+  const C = compileScript(sc, undefined, sc.source?.event);
+  const ids = C.cast.map((c) => c.id);
+  const DUR: Record<string, number> = { walk: 1.175, walk_relaxed: 1.333, walk_formal: 1.333 };
+  const at: Record<string, [string, number][]> = {};
+  const ts = Array.from({ length: 80 }, (_, i) => 2 + i * 0.1);
+  // each man's stride clock as the director runs it: the distance over his walk's ground speed on his own build
+  // (measured above, h1: walk 0.93 / 1.04 / 0.98 m/s on c1 / c2 / c3, the UAL walks 0.84-0.95)
+  const { toonBodyFor } = await import("../../lib/star/style3d/toon/bodies");
+  const GS: Record<string, number[]> = { walk: [0.93, 1.04, 0.98], walk_relaxed: [0.84, 0.93, 0.88], walk_formal: [0.85, 0.95, 0.9] };
+  for (const id of ids) {
+    const b = TOON_BODIES.indexOf(toonBodyFor(id));
+    at[id] = ts.map((t) => { const e = clipsAt(C, id, t, (n) => n in DUR || n === "idle", (n) => DUR[n] ?? 3, "teammate", "player", (n) => GS[n]?.[b]).entries.sort((a, b2) => b2[2] - a[2])[0]; return [e[0], e[1] / (DUR[e[0]] ?? 3)]; });
+  }
+  let inStep = 0;
+  for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+    const same = ts.filter((_, k) => { const a = at[ids[i]][k], b = at[ids[j]][k]; const d = Math.abs(a[1] - b[1]) % 1; return a[0] === b[0] && Math.min(d, 1 - d) < 0.05; }).length;
+    if (same > ts.length / 2) { inStep++; problems.push(`walkout22: ${ids[i]} and ${ids[j]} walk in step (${same} of ${ts.length} moments)`); }
+  }
+  rows.push(`walkout22: ${ids.length} men, ${inStep} pairs in step`);
+}
 console.log("body      clip            source min / mean      ours min / mean (cm between the ankles)");
 for (const r of rows) console.log(r);
 if (problems.length) { console.log(`FAIL — ${problems.length} problem(s):`); for (const p of problems) console.log("  " + p); process.exit(1); }

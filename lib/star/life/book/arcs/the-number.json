@@ -14,8 +14,13 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0064,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "any",
+  "when": [
+   "clubApps<=12"
+  ]
  },
  "cast": [
   {
@@ -24,7 +29,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -166,6 +172,133 @@
    "hint": "A team-mate wants something"
   },
   {
+   "id": "num-1d-deep",
+   "title": "The watch",
+   "after": {
+    "beat": "num-1-ask",
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "event": {
+    "id": "arc-num-1d-deep",
+    "title": "The watch",
+    "category": "teammates",
+    "place": "club:dressing-room",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.name} puts his watch down on the bench next to you. \"I said I'd give you this. A deal's a deal.\""
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "mate",
+       "say": [
+        "It's his dad's watch. You can see that now."
+       ],
+       "replies": [
+        {
+         "id": "back",
+         "label": "Give it back. \"Keep it. It's your dad's.\"",
+         "tone": "kind",
+         "end": "back"
+        },
+        {
+         "id": "keep",
+         "label": "Keep it. A deal's a deal.",
+         "tone": "cold",
+         "end": "keep"
+        },
+        {
+         "id": "swap",
+         "label": "\"Lend it me for one game. Then it's yours.\"",
+         "tone": "confident",
+         "end": "swap"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "back": [
+       {
+        "text": "He holds it for a long time. Then he puts it on.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "gave-me-my-dads-watch-back",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "back"
+         }
+        }
+       }
+      ],
+      "keep": [
+       {
+        "text": "He nods and goes to the gym.",
+        "npc": [
+         {
+          "slot": "mate",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "keep"
+         }
+        }
+       }
+      ],
+      "swap": [
+       {
+        "text": "You wear it in the car to the game. He laughs at you for wearing a watch to a game.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "swap"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     }
+    ]
+   },
+   "hint": "Your team-mate has brought the watch back"
+  },
+  {
    "id": "num-2-kid",
    "title": "On his back",
    "after": {
@@ -192,7 +325,9 @@
      ]
     },
     "setup": [
-     "A season on. There's a boy in the stand by the tunnel with your old number on his back. {if arc.path=='gave'}It's {mate.short}'s name above it.{/if}{if arc.path=='kept'}It's your name above it.{/if}"
+     "A season on. There's a boy in the stand by the tunnel with your old number on his back. {if arc.path=='gave'}It's {mate.short}'s name above it.{/if}{if arc.path=='kept'}It's your name above it.{/if}",
+     "{if arc.deep=='back'}He wears his dad's watch on match days. He touches it when he sees you.{/if}",
+     "{if arc.deep=='keep'}He hasn't asked for the watch back, and he hasn't forgotten.{/if}"
     ],
     "choices": [
      {

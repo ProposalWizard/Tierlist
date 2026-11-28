@@ -15,7 +15,13 @@
   ]
  },
  "start": {
-  "chance": 0.3
+  "chance": 0.0096,
+  "tier": "common",
+  "stage": "breaking-through",
+  "when": [
+   "age>=19",
+   "age<=23"
+  ]
  },
  "cast": [
   {

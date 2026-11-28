@@ -14,8 +14,13 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.2
+  "chance": 0.0021,
+  "careers": 0.45,
+  "tier": "uncommon",
+  "stage": "any",
+  "when": [
+   "divisionLevel>=3"
+  ]
  },
  "cast": [
   {
@@ -24,7 +29,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -173,6 +179,133 @@
    "hint": "A trip to the supermarket"
   },
   {
+   "id": "chk-1d-deep",
+   "title": "The match",
+   "after": {
+    "beat": "chk-1-till",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-chk-1d-deep",
+    "title": "The match",
+    "category": "neighbours",
+    "place": "ground:barrier",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "neighbour",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Your neighbour from till four has bought a season ticket. She's in the main stand with a notebook. After the game she's waiting at the barrier."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "neighbour",
+       "say": [
+        "\"You did three of the four things I said. The fourth one, the first touch, still rubbish.\""
+       ],
+       "replies": [
+        {
+         "id": "ask",
+         "label": "\"Show me the notebook.\"",
+         "tone": "humble",
+         "end": "ask"
+        },
+        {
+         "id": "laugh",
+         "label": "\"See you Monday at the till.\"",
+         "tone": "kind",
+         "end": "laugh"
+        },
+        {
+         "id": "enough",
+         "label": "\"I've got a coach.\"",
+         "tone": "cold",
+         "end": "enough"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ask": [
+       {
+        "text": "She shows you. Six pages, a diagram. Some of it is better than the coach's.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "neighbour",
+          "tag": "showed-me-her-notebook",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "ask"
+         }
+        }
+       }
+      ],
+      "laugh": [
+       {
+        "text": "She laughs. On Monday she charges you for a carrier bag you didn't take.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "laugh"
+         }
+        }
+       }
+      ],
+      "enough": [
+       {
+        "text": "She closes the notebook.",
+        "npc": [
+         {
+          "slot": "neighbour",
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "enough"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "neighbour",
+      "pick": "neighbour"
+     }
+    ]
+   },
+   "hint": "Your neighbour has come to a game"
+  },
+  {
    "id": "chk-2-notes",
    "title": "Notes",
    "after": {
@@ -199,7 +332,8 @@
      ]
     },
     "setup": [
-     "A season on, the supermarket. Till four has a queue. The self-service is empty."
+     "A season on, the supermarket. Till four has a queue. The self-service is empty.",
+     "{if arc.deep=='ask'}She has a whole notebook on you now.{/if}"
     ],
     "choices": [
      {

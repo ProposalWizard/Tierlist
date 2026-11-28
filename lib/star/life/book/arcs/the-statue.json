@@ -14,8 +14,13 @@
   ]
  },
  "start": {
-  "chance": 0.22,
-  "careers": 0.18
+  "chance": 0.0187,
+  "careers": 0.22,
+  "tier": "rare",
+  "stage": "last-seasons",
+  "when": [
+   "age>=32"
+  ]
  },
  "cast": [
   {
@@ -24,7 +29,8 @@
   }
  ],
  "vars": {
-  "path": "none"
+  "path": "none",
+  "deep": "none"
  },
  "clocks": [],
  "ends": [
@@ -174,6 +180,127 @@
    "hint": "The legend is getting a statue"
   },
   {
+   "id": "stu-1d-deep",
+   "title": "The sculptor",
+   "after": {
+    "beat": "stu-1",
+    "weeks": [
+     3,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-stu-1d-deep",
+    "title": "The sculptor",
+    "category": "club",
+    "place": "ground:main-stand",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "legend",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The sculptor rings the legend, and the legend rings you. The sculptor wants to fix the face before the season starts. He needs somebody to stand where the legend stood for the old photo."
+    ],
+    "talk": {
+     "start": "a",
+     "nodes": {
+      "a": {
+       "who": "legend",
+       "say": [
+        "\"You've got my shape,\" says {legend.short}. \"Mostly.\""
+       ],
+       "replies": [
+        {
+         "id": "stand",
+         "label": "Stand for the sculptor.",
+         "tone": "kind",
+         "end": "stand"
+        },
+        {
+         "id": "photo",
+         "label": "Find the legend a better photo.",
+         "tone": "calm",
+         "end": "photo"
+        },
+        {
+         "id": "leave",
+         "label": "\"Leave it. It's character.\"",
+         "tone": "confident",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "stand": [
+       {
+        "text": "Two hours with your arms up. The new face is a bit like the legend and a bit like you.",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "legend",
+          "tag": "stood-for-my-statue",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "stand"
+         }
+        }
+       }
+      ],
+      "photo": [
+       {
+        "text": "The club's archive has one from 1972. The sculptor is delighted.",
+        "npc": [
+         {
+          "slot": "legend",
+          "bond": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "deep": "photo"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "The legend laughs. \"It's not your face.\"",
+        "arc": {
+         "set": {
+          "deep": "leave"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "legend",
+      "pick": "legend"
+     }
+    ]
+   },
+   "hint": "The sculptor wants to fix the statue"
+  },
+  {
    "id": "stu-2",
    "title": "The scarf",
    "after": {
@@ -201,7 +328,8 @@
     },
     "setup": [
      "A season on, a derby. Somebody has put a scarf on the statue, and it's the wrong club's.",
-     "{if arc.path=='pulled'}{legend.short} rang you about it at seven this morning.{/if}"
+     "{if arc.path=='pulled'}{legend.short} rang you about it at seven this morning.{/if}",
+     "{if arc.deep=='stand'}The statue has a bit of your chin. He says so.{/if}"
     ],
     "choices": [
      {
