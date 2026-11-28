@@ -2639,6 +2639,31 @@ export const ADMIN_GUIDES = {
     dev: "components/star/Home3D.tsx (the screen, shared with the game's phase \"home-3d\") · app/star-home3d-dev/page.tsx · lib/star/home3d/{homes,rooms,roomBuild,look,trophies,outfits,wear,textures,scene}.ts · the cars and boots: public/star/home3d/*-lod.glb (light copies of the shop's generated models, tools/home3d/make_lods.mjs) · the body: lib/star/home3d/wear.ts (the Style A hook: setWearerBody)",
   },
 
+  "/star-drive3d-dev": {
+    title: "The drive",
+    what: "Driving, phase 1. You leave your garden gate, get in your car and drive to training: your street, a roundabout, a country lane, then the compound gate. At the gate the camera drops low by the barrier, the arm lifts, you park in your bay and two team-mates by the door turn to look; it cuts on the door. A call may ring on the phone on the dash (a team-mate wants to borrow something, or your agent). The drive back ends at a fork: Home, Casino or Shop. Not in the career yet.",
+    buttons: [
+      {
+        items: [
+          ["Hatchback / Family Car / Luxury SUV / Sports Car / Classic Car / Supercar", "Which of your cars you drive (the shop's own cars, with their wheels cut so they turn). In the career it will be the car you own; the Hatchback when you own none."],
+          ["Drive in / Drive back", "To training (ends at the car park) or home from training (ends at the fork: Home / Casino / Shop, then a fade)."],
+          ["Steer: Lanes / Thumb stick / Tilt", "How you steer. Lanes: the car drives itself, tap the left or right half of the screen to change lane. Thumb stick: a stick bottom left slides you across the road. Tilt: tilt the phone. The car can never leave the road or crash. Remembered on this device only."],
+          ["Call: by chance / No call / a call's name", "By chance: one drive in three rings. No call, or force one call to see it."],
+          ["Hold anywhere on the picture", "Faster (about a third). Let go to ease off. It still slows for the roundabout and the gate."],
+          ["Tap the left or right half", "Lanes only: change lane, e.g. to overtake the slow car on the lane. If someone is coming the horn sounds and you stay put."],
+          ["🎥 (top right)", "The camera: behind the car, the bumper, or in the car (the dash, the wheel, the phone)."],
+          ["Skip › (top right)", "Ends the drive from any frame (a fade, then you are there)."],
+          ["The call's two buttons", "Your answer (e.g. Go on then / Not the car). It changes nothing yet: it shows what it would do, and leaves a memory for the people plan (listed under the picture)."],
+          ["← Home / ↑ Casino / Shop → (the fork)", "Where you go after training. Just the choice and a fade for now."],
+          ["↻ Restart", "Starts the drive again."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved. No career is touched. The steer choice is remembered on this device only."],
+    inGame: ["Not in the game yet. The career will open it from the garden gate and after training."],
+    dev: "components/star/Drive3D.tsx · app/star-drive3d-dev/page.tsx · lib/star/drive3d/{route,car,drive,calls,cars,scene}.ts · the cut cars: tools/cars/ (public/star/drive3d/) · test: tests/star/drive.mts",
+  },
+
   "/star-world3d-dev": {
     title: "3D world kit",
     what: "The first test of people who live in the 3D places: the house lounge and a garden where people use things. In the house you sit on the sofa, watch the TV and take a can from the fridge. In the garden two team-mates sit on the bench and chat, now and then one stands up to stretch, and a third drops round at the gate, sits, has a drink and leaves. Tap anyone to talk. Not in the real game yet: the game's house and garden are unchanged.",
