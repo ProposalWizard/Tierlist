@@ -129,6 +129,20 @@ export default function WearablesBench() {
       cards.forEach((c, i) => {
         const { p, at } = people[byKey.get(`${c.outfit}|${c.build}`)!];
         const vw = c.view;
+        // head close-ups all round (the cap and the sunglasses from every side): hfront, h34, hside, hback, htop
+        const HEAD_AROUND: Record<string, [number, number]> = { hfront: [0, 0.02], h34: [0.8, 0.04], hside: [Math.PI / 2, 0.03], hback: [Math.PI * 0.8, 0.05], htop: [0.5, 0.35] };
+        if (HEAD_AROUND[vw]) {
+          const [da, up] = HEAD_AROUND[vw];
+          const t = bw(p, "Head").add(new T.Vector3(0, 0.05, 0));
+          cam.position.set(t.x + Math.sin(yaw + da) * 0.62, t.y + up, t.z + Math.cos(yaw + da) * 0.62);
+          cam.lookAt(t);
+          const x = (i % cols) * W, y = (rows - 1 - Math.floor(i / cols)) * H;
+          renderer.setViewport(x, y, W, H); renderer.setScissor(x, y, W, H);
+          renderer.setClearColor(i % 2 ? "#cfd6de" : "#c6ced8");
+          renderer.clear();
+          renderer.render(scene, cam);
+          return;
+        }
         const target = vw === "neckback" ? bw(p, "neck").add(new T.Vector3(0, -0.04, 0)) : vw === "face" ? bw(p, "Head").add(new T.Vector3(0, 0.05, 0)) : c.view === "neck" ? bw(p, "neck").add(new T.Vector3(0, -0.06, 0)) : c.view === "wrist" ? bw(p, "LeftHand").lerp(bw(p, "LeftForeArm"), 0.2) : c.view === "head" ? bw(p, "Head").add(new T.Vector3(0, 0.06, 0)) : new T.Vector3(at, 0.92, 0);
         const dist = vw === "neckback" ? 0.75 : vw === "face" ? 0.9 : c.view === "neck" ? 0.75 : c.view === "wrist" ? 0.42 : c.view === "head" ? 0.9 : 4.4;
         // full: from the front-quarter; close-ups: from his left (the watch) or the front

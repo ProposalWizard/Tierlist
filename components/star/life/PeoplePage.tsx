@@ -12,7 +12,8 @@ import type { CareerState } from "@/lib/star/types";
 import { TopHud } from "@/components/star/ui";
 import BackButton from "@/components/star/ui/BackButton";
 import LifeFace from "./LifeFace";
-import { fallOuts, lifeWeek, peek, personInfo, ROLE_GROUP, ROLE_ID, ROLE_TITLE, roleOf, teamForMatch } from "@/lib/star/life/people";
+import { clubPeopleLists, fallOuts, lifeWeek, peek, personInfo, ROLE_GROUP, ROLE_ID, ROLE_TITLE, roleOf, teamForMatch } from "@/lib/star/life/people";
+import { shortClub } from "@/lib/star/media/grammar";
 import { tagWords } from "@/lib/star/life/text";
 import { SOCIAL_ICON, SOCIAL_LABEL, socialBlocked, socialCost, type SocialKind } from "@/lib/star/life/social";
 import { eventById } from "@/lib/star/life/book";
@@ -55,11 +56,13 @@ export default function PeoplePage({ career, onAction, onBack }: {
   // The ones with a story first (most memories), then the closest.
   const metMates = squad.filter(met).sort((a, b) => peek(life!, b).m.length - peek(life!, a).m.length || peek(life!, b).b - peek(life!, a).b);
   const others = squad.filter((id) => !met(id));
-  // The story people (batch 1) show once you have met them.
-  const staff = [career.manager ? ROLE_ID.manager : null, ROLE_ID.physio, ROLE_ID.kitman, ...[ROLE_ID.coach, ROLE_ID.groundsman, ROLE_ID.canteen, ROLE_ID.chairman].filter(met)].filter(Boolean) as string[];
+  // The club you are at now's people (club people are per club: people.ts clubPeopleLists); the story
+  // people (batch 1) show once you have met them. Your old clubs' people come below, if they can still ring you.
+  const club = clubPeopleLists(career);
+  const staff = club.now;
   const family = [ROLE_ID.dad, ROLE_ID.mum, ROLE_ID.brother, ...[ROLE_ID.sister, ROLE_ID.partner, ROLE_ID.pal].filter(met)];
   const press = [ROLE_ID.tabloid, ROLE_ID.broadsheet, ROLE_ID.reporter].filter(met);
-  const around = [ROLE_ID.fan, ROLE_ID.kidfan, ROLE_ID.neighbour, ROLE_ID.rival, ROLE_ID.legend, ROLE_ID.referee].filter(met);
+  const around = [...[ROLE_ID.fan, ROLE_ID.kidfan, ROLE_ID.neighbour, ROLE_ID.rival].filter(met), ...(club.legend ? [club.legend] : []), ...[ROLE_ID.referee].filter(met)];
   const gone = Object.keys(life?.people ?? {}).filter((id) => roleOf(id) === "teammate" && !squad.includes(id));
   const lists: Record<(typeof GROUPS)[number], string[]> = {
     "Dressing room": [...metMates, ...(allSquad ? others : [])],
@@ -121,6 +124,15 @@ export default function PeoplePage({ career, onAction, onBack }: {
           );
         })}
 
+        {club.old.length > 0 && (
+          <div data-group="Your old clubs">
+            <div className="lw-group"><span>Your old clubs</span><span>can still ring you</span></div>
+            <div className="lw-card overflow-hidden">
+              {club.old.flatMap(({ club: name, ids }) => ids.map((id) => <PersonRow key={id} career={career} id={id} club={name} onOpen={() => setOpen(id)} />))}
+            </div>
+          </div>
+        )}
+
         {gone.length > 0 && (
           <>
             <div className="lw-group"><span>Gone, not forgotten</span></div>
@@ -144,7 +156,7 @@ export default function PeoplePage({ career, onAction, onBack }: {
   );
 }
 
-function PersonRow({ career, id, onOpen }: { career: CareerState; id: string; onOpen: () => void }) {
+function PersonRow({ career, id, club, onOpen }: { career: CareerState; id: string; club?: string; onOpen: () => void }) {
   const info = personInfo(career, id);
   const p = peek(career.life ?? { people: {} } as never, id);
   const role = roleOf(id);
@@ -158,7 +170,7 @@ function PersonRow({ career, id, onOpen }: { career: CareerState; id: string; on
           <div className="lw-name truncate">{info?.name ?? "Someone"}</div>
           {p.f && <span className="lw-chip" style={{ color: "#fca5a5" }}>Fallen out</span>}
         </div>
-        <div className="lw-sub">{sub}{info?.outlet ? ` · ${info.outlet}` : ""}</div>
+        <div className="lw-sub">{sub}{club ? ` · ${shortClub(club)}` : ""}{info?.outlet ? ` · ${info.outlet}` : ""}</div>
         <Bars p={p} />
         {mem && <div className="lw-mem truncate">Remembers: {mem}</div>}
       </div>
