@@ -27,7 +27,8 @@ import { homeStuffOf, carsIn, ROOM_LABEL, BIKE_LOD } from "@/lib/star/home3d/roo
 import { badgeSvg } from "@/lib/star/clubBadge";
 import { houseLook, type HouseLook } from "@/lib/star/home3d/look";
 import { cabinetSlots } from "@/lib/star/home3d/trophies";
-import { CASUAL_SETS, outfitOf, wornAt, bootChoices, carsOnDrive, type OutfitChoice } from "@/lib/star/home3d/outfits";
+import { casualSetsFor, outfitOf, wornAt, bootChoices, carsOnDrive, type OutfitChoice } from "@/lib/star/home3d/outfits";
+import { ownedWearables, accessoryLook, BODY_SLOTS, type BodySlot } from "@/lib/star/wearables";
 import { kitsOf } from "@/lib/star/kits";
 import { trophyArt } from "@/lib/star/trophyArt";
 import { levelName } from "@/lib/star/lifestyleLevels";
@@ -40,6 +41,7 @@ import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import { Stick, pill, round } from "./Shop3D";
 import { sleepNight } from "@/lib/star/home3d/sleep";
 import { AUTO_REBUILDS } from "@/lib/star/three3d/autoHeal";
+import LoadingCurtain from "./loading/LoadingCurtain";
 import ViewToggle3D from "./ViewToggle3D";
 
 const INK = "#f7f1e8";
@@ -78,7 +80,9 @@ export interface Home3DProps {
   onSleep?: () => void;
 }
 
-type Tab = "casual" | "kit" | "boots";
+type Tab = "casual" | "kit" | "boots" | "extras";
+/** The Extras rail's row names (lib/star/wearables.ts BODY_SLOTS). */
+const SLOT_LABEL: Record<BodySlot, string> = { wrist: "Wrist", neck: "Neck", eyes: "Face", head: "Head" };
 
 /**
  * What the 3D house is built from, off a career (the screen below, and the
@@ -92,14 +96,14 @@ export function homeSceneData(career: CareerState, tier: HomeTier, house: HouseL
     tier,
     kits: kitsOf(career.player.club),
     number: career.squadNumber ?? 10,
-    worn: wornAt({ outfit: choice, currentBoot: career.currentBoot }, "home"),
+    worn: wornAt({ outfit: choice, currentBoot: career.currentBoot, ownedItems: career.ownedItems }, "home"),
     skin: skinToneHex(career.player.skinTone),
     hair: hairColourHex(career.player.hairColour),
     hairStyle: resolveHairStyle(career.player.hairStyle),
     slots: cabinetSlots(career, cabinetSize(tier)),
     cars: carsOnDrive(career, Math.max(room.cars, rooms.includes("garage") ? carsIn("garage", tier) : 0)),
     boots: bootChoices(career),
-    casual: CASUAL_SETS,
+    casual: casualSetsFor(career),
     rooms,
     stuff,
     bikeModel: stuff.bike ? BIKE_LOD : null,
@@ -145,6 +149,9 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const [lifeCard, setLifeCard] = useState<InteractCard | null>(null);
   const cars = useMemo(() => carsOnDrive(career, Math.max(room.cars, rooms.includes("garage") ? carsIn("garage", tier) : 0)), [career, room.cars, rooms, tier]);
   const boots = useMemo(() => bootChoices(career), [career]);
+  // the watches, chains and the rest you own (lib/star/wearables.ts), and the Designer Suit on the Clothes rail
+  const wearables = useMemo(() => ownedWearables(career).filter((w) => w.slot !== "outfit"), [career]);
+  const casualSets = useMemo(() => casualSetsFor(career), [career]);
   const homeName = tierProp ? room.label : homeNameOf(career.ownedItems);
 
   const data: HomeData = useMemo(() => homeSceneData(career, tier, house, choice, alive),
@@ -244,7 +251,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
     const c = ctrlRef.current;
     if (!c) return;
     setChanging(true);
-    c.wear(wornAt({ outfit: next, currentBoot: career.currentBoot }, "home")).finally(() => setChanging(false));
+    c.wear(wornAt({ outfit: next, currentBoot: career.currentBoot, ownedItems: career.ownedItems }, "home")).finally(() => setChanging(false));
   };
 
   const drag = useRef<{ id: number; x: number; y: number; moved: number } | null>(null);
@@ -311,10 +318,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
       {status !== "ready" && (
         <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: 24, textAlign: "center", background: "#1a1612" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }}>
           {status === "loading" ? (
-            <div>
-              <div style={{ fontWeight: 900, fontSize: 17 }}>Opening your house…</div>
-              <div style={{ fontWeight: 700, color: MUTED, fontSize: 13, marginTop: 6 }}>Loading the 3D</div>
-            </div>
+            null
           ) : (
             <div style={{ maxWidth: 300 }}>
               <div style={{ fontWeight: 900, fontSize: 17, marginBottom: 6 }}>Your house didn&apos;t load</div>
@@ -326,6 +330,10 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           )}
         </div>
       )}
+
+      {/* the loading screen: keepie-uppies at home (components/star/loading). Not while the
+          phone is up over the house (chrome off): the phone is what you are looking at. */}
+      <LoadingCurtain section="house" loading={status === "loading" && chrome} box={embedded} />
 
       {status === "ready" && chrome && !open && <ViewToggle3D onChange={(m) => ctrlRef.current?.setView(m)} />}
       {status === "ready" && chrome && !open && <Stick onMove={(x, y) => ctrlRef.current?.setStick(x, y)} />}
@@ -361,14 +369,14 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
 
           {open === "wardrobe" && (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: 10 }}>
-                {(["casual", "kit", "boots"] as Tab[]).map((t) => (
-                  <button key={t} onClick={() => setTab(t)} style={{ ...tabStyle, ...(tab === t ? tabOn : null) }}>{t === "casual" ? "Clothes" : t === "kit" ? "Kits" : "Boots"}</button>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginBottom: 10 }}>
+                {(["casual", "kit", "boots", "extras"] as Tab[]).map((t) => (
+                  <button key={t} onClick={() => setTab(t)} style={{ ...tabStyle, ...(tab === t ? tabOn : null) }} data-wardrobe-tab={t}>{t === "casual" ? "Clothes" : t === "kit" ? "Kits" : t === "boots" ? "Boots" : "Extras"}</button>
                 ))}
               </div>
               {tab === "casual" && (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 6 }}>
-                  {CASUAL_SETS.map((s) => {
+                  {casualSets.map((s) => {
                     const on = casualOn && choice.casual === s.id;
                     const [a, b] = s.swatch(kits.home);
                     return (
@@ -406,8 +414,40 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
                   })}
                 </div>
               )}
+              {tab === "extras" && (
+                <div style={{ display: "grid", gap: 8, maxHeight: "34vh", overflowY: "auto" }} data-wardrobe-extras>
+                  {wearables.length === 0 && <div style={{ fontSize: 14, fontWeight: 800, color: MUTED }}>No watches, chains, caps or sunglasses yet. Buy one in the shop's Style section and it hangs here.</div>}
+                  {BODY_SLOTS.filter((slot) => wearables.some((w) => w.slot === slot)).map((slot) => {
+                    const mine = wearables.filter((w) => w.slot === slot);
+                    const picked = choice.extras?.[slot];
+                    const onId = picked === undefined ? mine[0]?.id : picked;
+                    const set = (id: string) => pick({ extras: { ...choice.extras, [slot]: id } });
+                    return (
+                      <div key={slot}>
+                        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.06em", textTransform: "uppercase", color: MUTED, marginBottom: 4 }}>{SLOT_LABEL[slot]}</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 6 }}>
+                          <button onClick={() => set("none")} style={{ ...tile, ...(onId === "none" ? tileOn : null) }} data-extra={`${slot}-none`}>
+                            <span style={{ width: 22, height: 22, borderRadius: 999, border: "2px dashed rgba(255,255,255,0.4)" }} />
+                            <div style={{ fontSize: 12, fontWeight: 900 }}>None</div>
+                          </button>
+                          {mine.map((w) => {
+                            const l = accessoryLook(w.baseId, w.level);
+                            return (
+                              <button key={w.id} onClick={() => set(w.id)} style={{ ...tile, ...(onId === w.id ? tileOn : null) }} data-extra={w.id}>
+                                <span style={{ width: 22, height: 22, borderRadius: 999, background: `radial-gradient(circle at 35% 30%, #fff8, transparent 45%), ${l?.main ?? "#888"}`, border: `3px solid ${l?.second ?? "#666"}` }} />
+                                <div style={{ fontSize: 12, fontWeight: 900, lineHeight: 1.15 }}>{w.label}</div>
+                                <div style={{ fontSize: 11, fontWeight: 800, color: MUTED }}>Level {w.level}</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               <div style={{ fontSize: 12, fontWeight: 700, color: MUTED, marginTop: 8 }}>
-                {casualOn ? "You wear these clothes in the garden and the shop. Training is always in kit." : "Boots show with a kit."}
+                {tab === "extras" ? "You wear these at home, in the garden and the shop. Off for training and matches." : casualOn ? "You wear these clothes in the garden and the shop. Training is always in kit." : "Boots show with a kit."}
               </div>
             </>
           )}

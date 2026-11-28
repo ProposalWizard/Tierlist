@@ -60,7 +60,8 @@
       "after-match"
      ],
      "requires": [
-      "lastLost || lastRating<6.5"
+      "lastLost || lastRating<6.5",
+      "!mem(fan,'passed-away')"
      ]
     },
     "setup": [

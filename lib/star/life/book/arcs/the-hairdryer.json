@@ -1,0 +1,303 @@
+{
+ "id": "arc-the-hairdryer",
+ "title": "Half time",
+ "owner": "manager",
+ "summary": "Three-nil down at half time. The gaffer throws a cup of tea at the wall and starts on the youngest lad in the room. It's not his fault, and you know whose fault it is. A season on, half time again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "manager",
+   "kid"
+  ],
+  "tone": [
+   "tense",
+   "angry"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "manager",
+   "pick": "manager"
+  },
+  {
+   "slot": "kid",
+   "pick": "squad",
+   "where": [
+    "age<=21"
+   ]
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "spoke-up",
+   "title": "Spoke up",
+   "text": "At half time, three down, you told the gaffer it was your fault and not the kid's. He went quiet. So did the kid, and he's never forgotten it."
+  },
+  {
+   "id": "the-tea-stain",
+   "title": "The tea stain",
+   "text": "There's still a tea stain on the dressing room wall from the day the gaffer lost it. You sat there and said nothing. So did everyone."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "hdr-1-tea",
+   "title": "Half time",
+   "n": 1,
+   "event": {
+    "id": "arc-hdr-1-tea",
+    "title": "Half time",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastLost"
+     ]
+    },
+    "setup": [
+     "Three-nil down at half time. {manager.name} throws his tea at the wall. Then he goes for {kid.name}, nineteen, who lost his man for the second. It was your man. You switched off."
+    ],
+    "talk": {
+     "start": "g1",
+     "nodes": {
+      "g1": {
+       "who": "manager",
+       "screen": "dial",
+       "say": [
+        "\"You. Where were you? Where were you?\" {kid.short} is staring at his boots."
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"It was my man, gaffer. My fault.\"",
+         "tone": "humble",
+         "end": "spoke"
+        },
+        {
+         "id": "calm",
+         "label": "\"We're all off it. Not just him.\"",
+         "tone": "calm",
+         "end": "calm"
+        },
+        {
+         "id": "confident",
+         "label": "\"Shout at me. I'll fix it.\"",
+         "tone": "confident",
+         "end": "spoke"
+        },
+        {
+         "id": "silent",
+         "label": "… Say nothing",
+         "silent": true,
+         "end": "silent"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "spoke": [
+       {
+        "text": "Silence. The gaffer looks at you for a long time. \"Then fix it.\" You lose four-two. On the coach {kid.short} sits next to you and doesn't say anything, and gives you half his sandwich.",
+        "effects": {
+         "team": 3,
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 10,
+          "respect": 6
+         },
+         {
+          "slot": "manager",
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "kid",
+          "tag": "took-the-blame-at-half-time",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "spoke"
+         }
+        }
+       }
+      ],
+      "calm": [
+       {
+        "text": "\"Not just him. Right.\" He calms down, a bit. The kid breathes again.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "spoke"
+         }
+        }
+       }
+      ],
+      "silent": [
+       {
+        "text": "You say nothing. Nobody does. The kid gets hooked. The tea runs down the wall and nobody wipes it.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "kid",
+          "bond": -4,
+          "respect": -4,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "silent"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=21"
+      ]
+     }
+    ]
+   },
+   "hint": "Half time goes badly"
+  },
+  {
+   "id": "hdr-2-again",
+   "title": "Half time again",
+   "after": {
+    "beat": "hdr-1-tea",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-hdr-2-again",
+    "title": "Half time again",
+    "category": "club",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "manager",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. Half time, two down. The gaffer picks up his tea. Everyone's looking at the stain on the wall. {kid.short} is a regular now."
+    ],
+    "choices": [
+     {
+      "id": "first",
+      "label": "Speak before he does.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.path=='spoke'",
+        "text": "You say it's on all of you. {kid.short} says, \"Me as well,\" out loud. The gaffer puts the tea down, and drinks it.",
+        "effects": {
+         "team": 3
+        },
+        "arc": {
+         "end": "spoke-up"
+        }
+       },
+       {
+        "text": "You speak up. The gaffer looks surprised. \"Where was this last year?\"",
+        "effects": {
+         "team": 1
+        },
+        "arc": {
+         "end": "the-tea-stain"
+        }
+       }
+      ]
+     },
+     {
+      "id": "wait",
+      "label": "Wait and see.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='spoke'",
+        "text": "{kid.short} speaks first. He takes the blame for someone else's man. He looks at you while he does it.",
+        "arc": {
+         "end": "spoke-up"
+        }
+       },
+       {
+        "text": "The tea hits the wall. Right next to the old stain.",
+        "arc": {
+         "end": "the-tea-stain"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "manager",
+      "pick": "manager"
+     },
+     {
+      "slot": "kid",
+      "pick": "squad",
+      "where": [
+       "age<=21"
+      ]
+     }
+    ]
+   },
+   "hint": "A season on, half time again"
+  }
+ ]
+}

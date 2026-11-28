@@ -1,0 +1,998 @@
+{
+ "id": "arc-derby-week",
+ "title": "Derby week",
+ "owner": "rival",
+ "summary": "Derby week. Monday the mural of you has been painted over. Tuesday a girl at the school visit is in their shirt. Thursday their centre half says something in the paper. Friday the coach's last session. Saturday. And a season on, the return game.",
+ "size": "big",
+ "about": {
+  "who": [
+   "rival",
+   "coach",
+   "reporter"
+  ],
+  "tone": [
+   "tense",
+   "funny",
+   "proud"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.3
+ },
+ "cast": [
+  {
+   "slot": "rival",
+   "pick": "rival"
+  },
+  {
+   "slot": "coach",
+   "pick": "coach"
+  },
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "kid": "none",
+  "press": "none",
+  "sharp": 0,
+  "day": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "derby-day",
+   "title": "Derby day",
+   "text": "You won a derby week, all of it, from the mural to the last whistle. The girl in their shirt at the school has a different one now."
+  },
+  {
+   "id": "the-wind-up",
+   "title": "The wind-up",
+   "text": "You took the bait in derby week, all week. Their fans still sing about it."
+  },
+  {
+   "id": "shook-on-it",
+   "title": "Shook on it",
+   "text": "You and their centre half went at each other for a week and shook hands at the end. You do every derby now."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "dby-1-mural",
+   "title": "Monday",
+   "n": 1,
+   "event": {
+    "id": "arc-dby-1-mural",
+    "title": "Monday",
+    "category": "rivals",
+    "place": "training:corridor",
+    "size": "big",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ],
+     "requires": [
+      "clubApps>=6"
+     ]
+    },
+    "setup": [
+     "Derby on Saturday. The mural of you on the side of the chip shop by the ground has been painted over in their colours overnight, with a word on your face you won't repeat."
+    ],
+    "talk": {
+     "start": "d1",
+     "nodes": {
+      "d1": {
+       "who": "coach",
+       "say": [
+        "{coach.name} has seen it on the way in. \"Phones off this week. That's what they want. They want you reading.\""
+       ],
+       "replies": [
+        {
+         "id": "leave",
+         "label": "\"Leave it. We'll paint it back after we win.\"",
+         "tone": "calm",
+         "end": "calm"
+        },
+        {
+         "id": "post",
+         "label": "Post a photo of it: \"See you Saturday.\"",
+         "tone": "fiery",
+         "end": "post"
+        },
+        {
+         "id": "paint",
+         "label": "\"Get me a roller. I'll do it tonight.\"",
+         "tone": "brave",
+         "end": "paint"
+        },
+        {
+         "id": "quiet",
+         "label": "Say nothing.",
+         "silent": true,
+         "end": "calm"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "calm": [
+       {
+        "text": "You leave it. A dozen of your fans stand in front of it on Tuesday so nobody can photograph it.",
+        "effects": {
+         "team": 1
+        },
+        "arc": {
+         "set": {
+          "path": "calm"
+         }
+        }
+       }
+      ],
+      "post": [
+       {
+        "text": "A million people see it. Their fans make it their banner for Saturday.",
+        "effects": {
+         "fans": 2,
+         "boss": -2
+        },
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "posted-see-you-saturday",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "wind"
+         }
+        }
+       }
+      ],
+      "paint": [
+       {
+        "text": "You and the chip shop man paint it back at eleven at night with the wrong blue. He gives you chips.",
+        "effects": {
+         "fans": 3
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "painted-the-mural-back",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "paint"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "Derby week starts"
+  },
+  {
+   "id": "dby-2-school",
+   "title": "Tuesday",
+   "after": {
+    "beat": "dby-1-mural",
+    "weeks": [
+     0,
+     0
+    ]
+   },
+   "event": {
+    "id": "arc-dby-2-school",
+    "title": "Tuesday",
+    "category": "rivals",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The club's school visit, derby week. Two hundred kids in your shirt and one girl at the back in theirs, about nine. Her arms are folded and she's not clapping."
+    ],
+    "choices": [
+     {
+      "id": "sign",
+      "label": "Sign her shirt anyway. Their shirt.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "You sign it on the back, small. She looks at it for a long time. \"My dad will go mad,\" she says, and grins.",
+        "effects": {
+         "fans": 2
+        },
+        "remember": [
+         {
+          "slot": "you",
+          "tag": "signed-their-shirt-at-the-school",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "kid": "signed"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "swap",
+      "label": "Give her your training top.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "She puts it on over her shirt. The teachers clap. She takes it off in the car park, but she keeps it.",
+        "arc": {
+         "set": {
+          "kid": "top"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "tease",
+      "label": "\"Who let you in?\"",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "Two hundred kids laugh. She doesn't. She's still not clapping when you leave.",
+        "arc": {
+         "set": {
+          "kid": "teased"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "A school visit, derby week"
+  },
+  {
+   "id": "dby-3-paper",
+   "title": "Thursday",
+   "after": {
+    "beat": "dby-1-mural",
+    "weeks": [
+     0,
+     0
+    ]
+   },
+   "event": {
+    "id": "arc-dby-3-paper",
+    "title": "Thursday",
+    "category": "rivals",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "reporter",
+       "say": [
+        "The press room. {reporter.name} has the paper open. {rival.name} has said in it that you \"go down if somebody breathes on you\". \"What do you say to that?\""
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "\"He's a good player. I'll see him Saturday.\"",
+         "tone": "humble",
+         "end": "humble"
+        },
+        {
+         "id": "calm",
+         "label": "\"I'll stay on my feet. He'll have to breathe harder.\"",
+         "tone": "calm",
+         "end": "calm"
+        },
+        {
+         "id": "confident",
+         "label": "\"Tell him to save his breath for the second half.\"",
+         "tone": "confident",
+         "end": "confident"
+        },
+        {
+         "id": "fiery",
+         "label": "\"He can say it to my face. He knows where I'll be.\"",
+         "tone": "fiery",
+         "end": "fiery"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "humble": [
+       {
+        "text": "It's one line on page forty. Nobody prints it bigger because there's nothing to print.",
+        "effects": {
+         "reputation": 2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "respect": 4,
+          "grudge": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "press": "cool"
+         }
+        }
+       }
+      ],
+      "calm": [
+       {
+        "text": "\"Breathe harder\" is the back page. Your dressing room laughs. So, apparently, does his.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "set": {
+          "press": "cool"
+         }
+        }
+       }
+      ],
+      "confident": [
+       {
+        "text": "It's the back page. Their fans have it on a flag by Friday.",
+        "effects": {
+         "fans": 2,
+         "boss": -1
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "press": "hot"
+         }
+        }
+       }
+      ],
+      "fiery": [
+       {
+        "text": "\"COME AND SAY IT.\" The gaffer reads it and pins it to the dressing room door. You're not sure he means it as praise.",
+        "effects": {
+         "fans": 3,
+         "boss": -2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "said-say-it-to-my-face",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "press": "hot"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "Their centre half has said something"
+  },
+  {
+   "id": "dby-4-friday",
+   "title": "Friday",
+   "after": {
+    "beat": "dby-1-mural",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-dby-4-friday",
+    "title": "Friday",
+    "category": "rivals",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "Friday. The last session before the derby. {coach.short} keeps you back on pitch two with a bag of balls and the floodlights on."
+    ],
+    "talk": {
+     "start": "f1",
+     "nodes": {
+      "f1": {
+       "who": "coach",
+       "say": [
+        "\"Ten. If it's tight tomorrow it'll be one chance, and you'll have to put it away with their whole end screaming. Pretend they're screaming now.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Feed them in.\"",
+         "tone": "confident",
+         "goto": "play"
+        },
+        {
+         "id": "no",
+         "label": "\"I'm saving it for tomorrow.\"",
+         "tone": "calm",
+         "end": "save"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "Derby eve",
+        "intro": "Ten balls under the lights. Their end is screaming. Put it away.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "corners",
+           "balls": 2,
+           "line": "\"Low. Their keeper's good up high.\""
+          },
+          {
+           "kind": "keeper",
+           "balls": 3,
+           "line": "\"Me in goal. Pretend I'm their keeper. I'm better.\""
+          },
+          {
+           "kind": "lights-out",
+           "balls": 2,
+           "line": "\"Lights off. You'll hear me, not see me.\""
+          },
+          {
+           "kind": "far",
+           "balls": 2,
+           "line": "\"From the edge. One chance.\""
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. Ninety-third minute.\""
+          }
+         ],
+         "keeperSlot": "coach",
+         "lines": {
+          "keeper:saved": "\"Their keeper would've had that too.\"",
+          "hit": "\"That's the one.\"",
+          "streak3": "\"Stop. Save some for tomorrow.\"",
+          "double:hit": "\"Ninety-third minute. Bed.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "coach",
+         "lines": [
+          "\"One.\"",
+          "\"Two.\"",
+          "\"Three.\"",
+          "\"Four.\"",
+          "\"Five.\"",
+          "\"Six.\"",
+          "\"Seven.\"",
+          "\"Eight.\"",
+          "\"Nine.\"",
+          "\"Ten.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "f-stop"
+        ],
+        [
+         "activity.score>=6",
+         "f-good"
+        ],
+        [
+         "",
+         "f-poor"
+        ]
+       ]
+      },
+      "f-good": {
+       "who": "coach",
+       "say": [
+        "\"{activity.score}.\" He switches the lights off. \"Go home. Don't read anything.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"See you tomorrow.\"",
+         "tone": "calm",
+         "end": "sharp"
+        }
+       ]
+      },
+      "f-poor": {
+       "who": "coach",
+       "say": [
+        "\"{activity.score}. It only takes one tomorrow. Go home.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"One.\"",
+         "tone": "humble",
+         "end": "blunt"
+        }
+       ]
+      },
+      "f-stop": {
+       "who": "coach",
+       "say": [
+        "You stop after a few. \"Fair. Legs for tomorrow.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Legs for tomorrow.\"",
+         "tone": "calm",
+         "end": "blunt"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "sharp": [
+       {
+        "text": "You go home and don't read anything, for once.",
+        "effects": {
+         "energy": -4
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "sharp": 1
+         }
+        }
+       }
+      ],
+      "blunt": [
+       {
+        "text": "You go home. You read everything.",
+        "effects": {
+         "energy": -4
+        },
+        "arc": {
+         "set": {
+          "sharp": 0
+         }
+        }
+       }
+      ],
+      "save": [
+       {
+        "text": "\"Saving it.\" He shrugs and turns the lights off himself.",
+        "arc": {
+         "set": {
+          "sharp": 0
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "The last session before the derby"
+  },
+  {
+   "id": "dby-5-saturday",
+   "title": "Saturday",
+   "after": {
+    "beat": "dby-4-friday",
+    "weeks": [
+     0,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-dby-5-saturday",
+    "title": "Saturday",
+    "category": "rivals",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Derby day. {if lastWon}You won it.{/if}{if lastLost}You lost it.{/if}{if !lastWon && !lastLost}It finished level.{/if} At the whistle {rival.name} is the first one in front of you, sweating, both hands on his knees.",
+     "{if arc.press=='hot'}He's been in your ear for ninety minutes about the back page.{/if}{if arc.press=='cool'}He's barely said a word all game.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "end",
+      "label": "Run to your own end.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "lastWon",
+        "text": "Your end comes down the stand at you. The chip shop man is on the front row with a roller.",
+        "effects": {
+         "fans": 6
+        },
+        "arc": {
+         "set": {
+          "day": "won"
+         }
+        }
+       },
+       {
+        "text": "You clap them. They clap you back, which after a derby is something.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "set": {
+          "day": "level"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "shake",
+      "label": "Hold your hand out.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.press=='cool' || arc.path=='paint'",
+        "text": "He shakes it, and pulls you in. \"Breathe harder,\" he says, and laughs. You swap shirts in the tunnel.",
+        "effects": {
+         "reputation": 3
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 8,
+          "respect": 6,
+          "grudge": -8
+         }
+        ],
+        "remember": [
+         {
+          "slot": "rival",
+          "tag": "shook-on-derby-day",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "day": "shook"
+         }
+        }
+       },
+       {
+        "text": "He looks at the hand, then at your end of the ground, then shakes it quickly so nobody sees.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 2,
+          "respect": 2,
+          "grudge": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "day": "shook"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "theirs",
+      "label": "Cup your ear at their end.",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "if": "lastWon",
+        "text": "Their end goes berserk. A coin goes past your ear. The papers love it and so does your end.",
+        "effects": {
+         "fans": 4,
+         "boss": -3,
+         "reputation": -2
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 8
+         }
+        ],
+        "arc": {
+         "set": {
+          "day": "wind"
+         }
+        }
+       },
+       {
+        "text": "Without having won it. Their end sings your name with a word in front of it for the rest of the season.",
+        "effects": {
+         "fans": -2,
+         "boss": -3
+        },
+        "npc": [
+         {
+          "slot": "rival",
+          "grudge": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "day": "wind"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "Derby day"
+  },
+  {
+   "id": "dby-6-return",
+   "title": "The return",
+   "after": {
+    "beat": "dby-5-saturday",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 4,
+   "event": {
+    "id": "arc-dby-6-return",
+    "title": "The return",
+    "category": "rivals",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "rival",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on, the derby at their place. The girl from the school visit is by the tunnel with her dad.",
+     "{if arc.kid=='signed'}She's in their shirt with your name on the back, small, where you signed it.{/if}",
+     "{if arc.kid=='top'}She's in your old training top, over their shirt, and her dad's pretending not to know her.{/if}",
+     "{if arc.kid=='teased'}She's holding a sign: \"WHO LET YOU IN?\"{/if}"
+    ],
+    "choices": [
+     {
+      "id": "wave",
+      "label": "Wave at her.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.day=='shook'",
+        "text": "{rival.short} sees you wave, and waves at her too. You shake hands in the tunnel before anyone tells you to.",
+        "npc": [
+         {
+          "slot": "rival",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "shook-on-it"
+        }
+       },
+       {
+        "if": "arc.day=='wind'",
+        "text": "She waves back with the sign. Their whole end does your ear-cup at you. It's been a year and they're still doing it.",
+        "arc": {
+         "end": "the-wind-up"
+        }
+       },
+       {
+        "text": "She waves back, small. Her dad sees, and lets her.",
+        "arc": {
+         "end": "derby-day"
+        }
+       }
+      ]
+     },
+     {
+      "id": "head",
+      "label": "Head down, into the tunnel.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.day=='wind' || arc.path=='wind'",
+        "text": "Their end's waiting. \"See you Saturday,\" they sing, with your own words. It's a long ninety minutes.",
+        "arc": {
+         "end": "the-wind-up"
+        }
+       },
+       {
+        "if": "arc.day=='shook' || arc.press=='cool'",
+        "text": "{rival.short} catches you up in the tunnel and holds his hand out first this time.",
+        "arc": {
+         "end": "shook-on-it"
+        }
+       },
+       {
+        "text": "You walk out and score in front of their end, and don't celebrate. Your end does it for you.",
+        "effects": {
+         "fans": 3
+        },
+        "arc": {
+         "end": "derby-day"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "rival",
+      "pick": "rival"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     },
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "A season on, the derby again"
+  }
+ ]
+}

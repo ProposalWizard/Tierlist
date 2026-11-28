@@ -41,6 +41,26 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 27 Nov 2026 — loading screens match where you are going (Harry, 22:3x)
+- **"Loading screens must match the section you're going into … several options
+  per section so it doesn't get old."** One system (components/star/loading/,
+  lib/star/loading/pick.ts): a match → the matchday programme ("the match day
+  programme": three covers built from the real fixture) or the tunnel in the
+  walk-out cut scene's look ("a cut-scene vibe if you use it as loading": no
+  input); a 3D place → keepie-uppies ("keepie-uppies look good") over a real still
+  of that place, several lights (day, sunset, night, rain, lamp, neon); training →
+  the coach's drill board; the award nights → the gala; the first load → the
+  game's opening. Never the same one twice in a row.
+- **Random quiz questions: "not sure that's gonna work."** Dropped.
+- **A plain moving bar: "that's dead."** Real progress only, shown quietly (a
+  small ring by the words), never a bar.
+- Waits are often 1–2 s: a screen must look finished at once and never need a
+  tap. Keepie-uppies keep themselves up; "Tap as it lands" is offered only after
+  4 s. (inferred from "waits are often too short to do an action")
+- **"Make sure the 3D looks really good if we do anything like that."** The
+  backdrops are stills of the game's own 3D, with the stand-in people taken out
+  (a figure in someone else's kit is not you); no live 3D runs while loading.
+
 ### 20 Nov 2026 — decision screens: all three, each for its job (Harry, 15:35)
 - **"I love the sims round bar to decide what to interact on and then the telltale
   for actual conversing … random events where the other person forces the

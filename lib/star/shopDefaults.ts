@@ -247,8 +247,14 @@ const LIFESTYLE_SPECS: LifestyleSpec[] = [
   // bump, pick whichever you like the look of.
   { id: "headphones", name: "Headphones", category: "item", lifestyleValue: 5, tier: "pro", band: "consumable", at: 0.3 },
   { id: "music", name: "Music Player", category: "item", lifestyleValue: 6, tier: "elite", band: "consumable", at: 0.5 },
+  // A cap and sunglasses (Harry, 28 Nov 2026: "yes add caps and sunglasses to the shop"), worn on your player
+  // (lib/star/wearables.ts). The cap sits between the Music Player and the Tablet (worth 7, the dear end of the
+  // same small-buy band); the sunglasses tie the Smartwatch (worth 9, the same price: a choice of flavour, as the
+  // Console and the Headphones tie), the other everyday thing you wear.
+  { id: "cap", name: "Cap", category: "item", lifestyleValue: 7, tier: "elite", band: "consumable", at: 0.75 },
   { id: "tablet", name: "Tablet", category: "item", lifestyleValue: 8, tier: "elite", band: "consumable", at: 1 },
   { id: "smartwatch", name: "Smartwatch", category: "item", lifestyleValue: 9, tier: "starter", band: "upgrade", at: 0 },
+  { id: "shades", name: "Sunglasses", category: "item", lifestyleValue: 9, tier: "starter", band: "upgrade", at: 0 },
   { id: "tv", name: "TV", category: "item", lifestyleValue: 10, tier: "starter", band: "upgrade", at: 0.3 },
   { id: "gaming-pc", name: "Gaming PC", category: "item", lifestyleValue: 11, tier: "starter", band: "upgrade", at: 0.6 },
   { id: "suit", name: "Designer Suit", category: "item", lifestyleValue: 12, tier: "starter", band: "upgrade", at: 0.95 },

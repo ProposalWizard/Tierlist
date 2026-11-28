@@ -807,7 +807,7 @@
           { "text": "Two hours on the ward. {mate.short} does magic tricks, badly. The boy's mum films everything.", "effects": { "fans": 3, "reputation": 2 }, "npc": [ { "slot": "mate", "bond": 6, "respect": 4 } ], "remember": [ { "slot": "mate", "tag": "came-to-the-ward-with-you", "strength": 2 } ] }
         ] },
         { "id": "shirt", "label": "Send a signed shirt and a note.", "outcomes": [
-          { "text": "His mum posts a photo of him holding it. It does well.", "effects": { "fans": 1 } }
+          { "text": "His mum posts a photo of him holding it. It does well.", "effects": { "fans": 1 }, "remember": [ { "slot": "you", "tag": "sent-the-ward-a-shirt", "strength": 1 } ] }
         ] },
         { "id": "busy", "label": "Too busy this week.", "outcomes": [
           { "text": "Somebody posts the letter with 'no reply'. It does better than the shirt would have.", "effects": { "fans": -3 }, "remember": [ { "slot": "you", "tag": "ignored-the-ward-letter", "strength": 1 } ] }

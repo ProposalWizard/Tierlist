@@ -1,0 +1,602 @@
+{
+ "id": "arc-the-best-man",
+ "title": "Best man",
+ "owner": "pal",
+ "summary": "Your oldest mate asks you to be his best man in June. His fiancée begs you not to tell the under-twelves final story. The speech, in a marquee in a field. A season on, they've got news.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "pal"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "pal",
+   "pick": "pal"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "story": "none",
+  "speech": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-speech",
+   "title": "The speech",
+   "text": "You were your oldest mate's best man and your speech made his mum cry the right way. His new wife has it written in the back of the wedding album."
+  },
+  {
+   "id": "the-under-twelves",
+   "title": "The under-twelves",
+   "text": "You told the under-twelves final story at his wedding. The marquee loved it. His wife still hasn't decided if she's forgiven you."
+  },
+  {
+   "id": "not-the-best-man",
+   "title": "Not the best man",
+   "text": "You didn't make his wedding. His brother did the speech. It was fine. You've watched the video twice."
+  }
+ ],
+ "promises": {
+  "p-best-man": {
+   "id": "p-best-man",
+   "to": "pal",
+   "text": "Be his best man in June",
+   "due": {
+    "weeks": [
+     34,
+     36
+    ]
+   },
+   "keptBy": {
+    "beat": "bst-3-wedding",
+    "ends": [
+     "humble",
+     "calm",
+     "confident",
+     "fiery"
+    ]
+   },
+   "dueText": "June, the wedding",
+   "kept": {
+    "text": "You said you'd be his best man, and you were.",
+    "npc": [
+     {
+      "slot": "pal",
+      "bond": 8,
+      "respect": 4
+     }
+    ],
+    "remember": [
+     {
+      "slot": "pal",
+      "tag": "was-my-best-man",
+      "strength": 3
+     }
+    ]
+   },
+   "broken": {
+    "text": "You said you'd be his best man.",
+    "npc": [
+     {
+      "slot": "pal",
+      "bond": -8,
+      "respect": -4,
+      "grudge": 6
+     }
+    ],
+    "remember": [
+     {
+      "slot": "pal",
+      "tag": "missed-my-wedding",
+      "strength": 3
+     }
+    ]
+   }
+  }
+ },
+ "beats": [
+  {
+   "id": "bst-1-ask",
+   "title": "Best man",
+   "n": 1,
+   "event": {
+    "id": "arc-bst-1-ask",
+    "title": "Best man",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "common",
+    "template": "phone-call",
+    "screen": "telltale",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "p1",
+     "nodes": {
+      "p1": {
+       "who": "pal",
+       "say": [
+        "{pal.name}, sounding nervous, which he never does. \"We're getting married. June. After your season. And I want you to be my best man. You can say no. Don't say no.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"I'd be honoured, mate.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-best-man"
+        },
+        {
+         "id": "joke",
+         "label": "\"Does she know what she's marrying?\"",
+         "tone": "reckless",
+         "goto": "p2"
+        },
+        {
+         "id": "brother",
+         "label": "\"What about your brother?\"",
+         "tone": "honest",
+         "end": "brother"
+        }
+       ]
+      },
+      "p2": {
+       "who": "pal",
+       "say": [
+        "\"She's seen the under-twelves final photos. She's going ahead anyway.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "\"Then yes. Obviously yes.\"",
+         "tone": "kind",
+         "end": "yes",
+         "promise": "p-best-man"
+        },
+        {
+         "id": "brother",
+         "label": "\"Ask your brother. I'll only let you down.\"",
+         "tone": "honest",
+         "end": "brother"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "yes": [
+       {
+        "text": "He goes quiet, and then he says thanks in a voice you haven't heard since you were both eleven.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "best"
+         }
+        }
+       }
+      ],
+      "brother": [
+       {
+        "text": "\"He's a plasterer. He's never said a sentence with a verb in it.\" He asks his brother.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": -4,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "brother"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "Your oldest mate has a question"
+  },
+  {
+   "id": "bst-2-story",
+   "title": "Please don't",
+   "after": {
+    "beat": "bst-1-ask",
+    "weeks": [
+     4,
+     10
+    ]
+   },
+   "event": {
+    "id": "arc-bst-2-story",
+    "title": "Please don't",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A text from {pal.short}'s fiancée. \"Hi! Please, please don't tell the under-twelves final story at the wedding. He still has dreams about it. Thank you!!!\""
+    ],
+    "choices": [
+     {
+      "id": "promise",
+      "label": "\"I won't. Promise.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "\"You're a star.\" She sends a photo of the venue: a marquee in a field.",
+        "arc": {
+         "set": {
+          "story": "no"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "best",
+      "label": "\"It's the best story I've got.\"",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "\"I know.\" Three dots for a long time. \"Please.\"",
+        "arc": {
+         "set": {
+          "story": "maybe"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "what",
+      "label": "\"Which bit? The penalty or the shorts?\"",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "text": "\"THERE WAS SHORTS???\" You've said too much.",
+        "arc": {
+         "set": {
+          "story": "shorts"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "A message from his fiancée"
+  },
+  {
+   "id": "bst-3-wedding",
+   "title": "The speech",
+   "after": {
+    "beat": "bst-1-ask",
+    "weeks": [
+     26,
+     32
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-bst-3-wedding",
+    "title": "The speech",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "dial",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": {
+      "if": "arc.path=='best'",
+      "then": "s1",
+      "else": "x1"
+     },
+     "nodes": {
+      "s1": {
+       "who": "pal",
+       "screen": "dial",
+       "say": [
+        "A marquee in a field, a hundred and forty people, warm wine. You stand up with your cards. {pal.short} is looking at you like you've got a penalty to take."
+       ],
+       "replies": [
+        {
+         "id": "humble",
+         "label": "Keep it short. Thank everyone. Say why he's your best mate.",
+         "tone": "humble",
+         "end": "humble"
+        },
+        {
+         "id": "calm",
+         "label": "The one about him carrying your bag on your first day.",
+         "tone": "calm",
+         "end": "calm"
+        },
+        {
+         "id": "confident",
+         "label": "Do the jokes you've been practising for a month.",
+         "tone": "confident",
+         "end": "confident"
+        },
+        {
+         "id": "fiery",
+         "label": "Tell the under-twelves final story. All of it.",
+         "tone": "fiery",
+         "end": "fiery"
+        }
+       ]
+      },
+      "x1": {
+       "who": "pal",
+       "say": [
+        "A marquee in a field, in June. You're there, as a guest. His brother is doing the speech, off his phone, and he's sweating."
+       ],
+       "replies": [
+        {
+         "id": "help",
+         "label": "Shout something nice from the back.",
+         "tone": "kind",
+         "end": "guest"
+        },
+        {
+         "id": "sit",
+         "label": "Clap politely.",
+         "tone": "calm",
+         "end": "guest"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "humble": [
+       {
+        "text": "Four minutes. His mum cries, the good way. His new wife mouths \"thank you\" at you over his head.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "speech": "good"
+         }
+        }
+       }
+      ],
+      "calm": [
+       {
+        "text": "The bag story. He has to look at the ceiling. So does his dad.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "speech": "good"
+         }
+        }
+       }
+      ],
+      "confident": [
+       {
+        "text": "Three of the jokes land. One really doesn't. You finish on the bag story and it saves you.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "speech": "jokes"
+         }
+        }
+       }
+      ],
+      "fiery": [
+       {
+        "text": "The penalty, the shorts, the bus home. The marquee is screaming. {pal.short} has his head in his hands. His new wife doesn't laugh until the shorts, and then she can't stop.",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "pal",
+          "tag": "told-the-under-twelves-story-at-my-wedding",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "speech": "story"
+         }
+        }
+       }
+      ],
+      "guest": [
+       {
+        "text": "His brother gets through it. {pal.short} hugs you at the bar, and he means it, mostly.",
+        "arc": {
+         "set": {
+          "speech": "none"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "The wedding, in June"
+  },
+  {
+   "id": "bst-4-news",
+   "title": "News",
+   "after": {
+    "beat": "bst-3-wedding",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-bst-4-news",
+    "title": "News",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "phone-call",
+    "screen": "card",
+    "speaker": "pal",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A season on. {pal.short} rings. They're having a baby. \"We wanted you to know first. After my mum, obviously.\""
+    ],
+    "choices": [
+     {
+      "id": "great",
+      "label": "\"That's brilliant, mate.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.speech=='good' || arc.speech=='jokes'",
+        "text": "\"She wants you to do a speech at the christening. Same rules.\" You can hear her in the background: \"SAME RULES.\"",
+        "npc": [
+         {
+          "slot": "pal",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "the-speech"
+        }
+       },
+       {
+        "if": "arc.speech=='story'",
+        "text": "\"She says you're not allowed to hold the baby till you apologise for the shorts.\" You apologise for the shorts.",
+        "arc": {
+         "end": "the-under-twelves"
+        }
+       },
+       {
+        "text": "\"Thanks, mate.\" It's a good call. It's a bit shorter than it would have been.",
+        "arc": {
+         "end": "not-the-best-man"
+        }
+       }
+      ]
+     },
+     {
+      "id": "joke",
+      "label": "\"Does the baby know about the under-twelves?\"",
+      "tone": "reckless",
+      "outcomes": [
+       {
+        "if": "arc.speech=='story'",
+        "text": "\"Everyone knows about the under-twelves now. Thanks to you.\" He's laughing.",
+        "arc": {
+         "end": "the-under-twelves"
+        }
+       },
+       {
+        "if": "arc.path=='brother'",
+        "text": "\"My brother told it at the wedding. Badly.\" He doesn't sound as pleased as you'd hoped.",
+        "arc": {
+         "end": "not-the-best-man"
+        }
+       },
+       {
+        "text": "\"Don't.\" But he laughs.",
+        "arc": {
+         "end": "the-speech"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "pal",
+      "pick": "pal"
+     }
+    ]
+   },
+   "hint": "A season on, your mate has news"
+  }
+ ]
+}

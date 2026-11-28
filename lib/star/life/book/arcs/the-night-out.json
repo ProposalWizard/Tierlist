@@ -573,7 +573,7 @@
       "outcomes": [
        {
         "if": "arc.path=='honest' && !arc.mid=='rang'",
-        "text": "He owns up. The gaffer fines him and lets him play. He doesn't send him to you again, but he doesn't need to.",
+        "text": "He owns up. The gaffer fines him and lets him play. He sends the next one to you, though, in March.",
         "arc": {
          "end": "trusted"
         }

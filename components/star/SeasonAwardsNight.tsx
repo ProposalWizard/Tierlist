@@ -40,6 +40,7 @@ import { useYouLook } from "./Farewell";
 import { headshotLookFor } from "@/lib/star/headshot3d/look";
 import { toonYou } from "@/lib/star/style3d/toon/bodies";
 import { Burst, KitStyles } from "./ui";
+import LoadingCurtain from "./loading/LoadingCurtain";
 
 const GOLD = "#fbbf24";
 /** The longest the 3D may take to load before the drawn room takes over. */
@@ -133,6 +134,8 @@ export function AwardsCeremony({ career, plan, onDone, drawn = false }: {
           ? <Room3D career={career} plan={plan} kit={ownKit} clock={clock} handleRef={handleRef} onReady={() => setReady(true)} onFail={() => setMode("drawn")} />
           : <RoomDrawn career={career} plan={plan} t={t} />}
         <Captions career={career} plan={plan} t={t} loading={!ready} />
+        {/* the loading screen while the room is built: the gala (components/star/loading) */}
+        <LoadingCurtain section="awards" loading={!ready} ctx={{ gala: { title: "Season Awards", name: `${career.player.firstName} ${career.player.lastName}`.trim(), season: career.season } }} />
         {youWonThis && (
           <div key={a!.key} className="pointer-events-none absolute inset-0 z-20">
             <Burst trigger={1} colors={["#fde047", "#fbbf24", "#ffffff", ownKit.shirt, ownKit.trim]} count={36} spread={2} className="left-1/2 top-[38%]" />

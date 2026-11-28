@@ -1,0 +1,741 @@
+{
+ "id": "arc-the-penalty-taker",
+ "title": "The penalty",
+ "owner": "striker",
+ "summary": "You win a penalty and the team's top scorer takes the ball off you. The coach settles it on the training ground: ten each, him in goal. The next real one. A season on, whose name is on the board.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "striker",
+   "coach"
+  ],
+  "tone": [
+   "tense",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "striker",
+   "pick": "squad",
+   "where": [
+    "!samePosition"
+   ],
+   "order": "best"
+  },
+  {
+   "slot": "coach",
+   "pick": "coach"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "shootout": 0,
+  "real": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "your-penalties",
+   "title": "Your penalties",
+   "text": "You won the penalties off the top scorer, in front of everyone, on a Thursday. He still says he let you."
+  },
+  {
+   "id": "his-penalties",
+   "title": "His penalties",
+   "text": "The top scorer kept the penalties. He's scored most of them. You still think about the one he took off you."
+  },
+  {
+   "id": "shared",
+   "title": "Shared",
+   "text": "You and the top scorer take a penalty each, in turn. The gaffer thinks it's mad. It works."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "ptk-1-ball",
+   "title": "The ball",
+   "n": 1,
+   "event": {
+    "id": "arc-ptk-1-ball",
+    "title": "The ball",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "striker",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "You won the penalty. You were about to put it down when {striker.name} took the ball out of your hands. He scored, just, off the keeper's glove."
+    ],
+    "talk": {
+     "start": "s1",
+     "nodes": {
+      "s1": {
+       "who": "striker",
+       "say": [
+        "In the dressing room, still in his boots. \"I'm on them. I've always been on them. Don't take it personal.\""
+       ],
+       "replies": [
+        {
+         "id": "fine",
+         "label": "\"Fine. Your call.\"",
+         "tone": "calm",
+         "end": "fine"
+        },
+        {
+         "id": "mine",
+         "label": "\"I won it. It was mine.\"",
+         "tone": "fiery",
+         "end": "mine"
+        },
+        {
+         "id": "share",
+         "label": "\"Let the coach decide.\"",
+         "tone": "honest",
+         "end": "coach"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "fine": [
+       {
+        "text": "\"Good lad.\" He pats your head, which you don't like.",
+        "npc": [
+         {
+          "slot": "striker",
+          "bond": 2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "fine"
+         }
+        }
+       }
+      ],
+      "mine": [
+       {
+        "text": "\"Was it?\" The dressing room goes quiet. The coach, at the door, writes something down.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "striker",
+          "bond": -4,
+          "respect": 2,
+          "grudge": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "mine"
+         }
+        }
+       }
+      ],
+      "coach": [
+       {
+        "text": "\"Fine. He'll pick me.\" He's very sure.",
+        "arc": {
+         "set": {
+          "path": "coach"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "striker",
+      "pick": "squad",
+      "where": [
+       "!samePosition"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "A penalty, and a row"
+  },
+  {
+   "id": "ptk-2-shootout",
+   "title": "Ten each",
+   "after": {
+    "beat": "ptk-1-ball",
+    "weeks": [
+     0,
+     2
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-ptk-2-shootout",
+    "title": "Ten each",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [],
+    "talk": {
+     "start": "c1",
+     "nodes": {
+      "c1": {
+       "who": "coach",
+       "say": [
+        "{coach.name} has two bags of balls and the whole squad watching from the touchline. \"Ten each. Me in goal. Most wins the penalties. He's done his. He got five.\""
+       ],
+       "replies": [
+        {
+         "id": "go",
+         "label": "\"Five. Right.\"",
+         "tone": "brave",
+         "goto": "play"
+        },
+        {
+         "id": "no",
+         "label": "\"Let him have them.\"",
+         "tone": "humble",
+         "end": "gave"
+        }
+       ]
+      },
+      "play": {
+       "activity": {
+        "mode": "challenge",
+        "name": "Five to beat",
+        "intro": "Ten balls, the coach in goal, the squad on the touchline. He got five.",
+        "dials": {
+         "rounds": [
+          {
+           "kind": "keeper",
+           "balls": 3,
+           "line": "\"Penalty spot. Me in goal. He got five, remember.\""
+          },
+          {
+           "kind": "corners",
+           "balls": 3,
+           "line": "\"Corners. No excuses.\""
+          },
+          {
+           "kind": "call-it",
+           "balls": 2,
+           "line": "\"The lads will shout. Ignore them.\""
+          },
+          {
+           "kind": "far",
+           "balls": 1,
+           "line": "\"From the edge. One for luck.\""
+          },
+          {
+           "kind": "double",
+           "line": "\"Last one. Twenty or ten off.\""
+          }
+         ],
+         "keeperSlot": "coach",
+         "lines": {
+          "keeper:saved": "\"Saved. Five to beat.\"",
+          "hit": "\"In.\"",
+          "streak3": "\"The touchline's gone quiet.\"",
+          "double:hit": "\"Count them up.\""
+         }
+        },
+        "score": "balls that count (0-10)",
+        "canAbandon": true,
+        "fallback": null,
+        "cost": {
+         "energy": -4
+        },
+        "caller": {
+         "slot": "coach",
+         "lines": [
+          "\"One.\"",
+          "\"Two.\"",
+          "\"Three.\"",
+          "\"Four.\"",
+          "\"Five.\"",
+          "\"Six.\"",
+          "\"Seven.\"",
+          "\"Eight.\"",
+          "\"Nine.\"",
+          "\"Ten.\""
+         ]
+        }
+       },
+       "result": [
+        [
+         "activity.abandoned",
+         "c-stop"
+        ],
+        [
+         "activity.score>=6",
+         "c-won"
+        ],
+        [
+         "activity.score>=5",
+         "c-tie"
+        ],
+        [
+         "",
+         "c-lost"
+        ]
+       ]
+      },
+      "c-won": {
+       "who": "coach",
+       "say": [
+        "\"{activity.score}. That's more than five.\" The touchline goes up. {striker.short} walks off to the gym without a word."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Mine, then.\"",
+         "tone": "confident",
+         "end": "won"
+        },
+        {
+         "id": "share",
+         "label": "\"We'll share them.\"",
+         "tone": "kind",
+         "end": "tie"
+        }
+       ]
+      },
+      "c-tie": {
+       "who": "coach",
+       "say": [
+        "\"Five. Five each.\" He looks at both of you. \"Then you take turns. Don't look at me like that.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Turns.\"",
+         "tone": "calm",
+         "end": "tie"
+        }
+       ]
+      },
+      "c-lost": {
+       "who": "coach",
+       "say": [
+        "\"{activity.score}. He got five.\" {striker.short} does a little dance on the touchline."
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"Fair. They're his.\"",
+         "tone": "humble",
+         "end": "lost"
+        }
+       ]
+      },
+      "c-stop": {
+       "who": "coach",
+       "say": [
+        "You stop. \"Then they're his.\""
+       ],
+       "replies": [
+        {
+         "id": "ok",
+         "label": "\"They're his.\"",
+         "tone": "calm",
+         "end": "lost"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "won": [
+       {
+        "text": "They're yours. {striker.short} doesn't speak to you till Wednesday. On Wednesday he says, \"Don't miss.\"",
+        "effects": {
+         "team": -1
+        },
+        "npc": [
+         {
+          "slot": "coach",
+          "bond": 2,
+          "respect": 4
+         },
+         {
+          "slot": "striker",
+          "bond": -2,
+          "respect": 4,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "shootout": 2
+         }
+        }
+       }
+      ],
+      "tie": [
+       {
+        "text": "Turns. The gaffer, when he hears, says it's the daftest thing he's ever heard, and then says fine.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "striker",
+          "bond": 4,
+          "respect": 4,
+          "grudge": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "shootout": 1
+         }
+        }
+       }
+      ],
+      "lost": [
+       {
+        "text": "They're his. He buys you a coffee, which you'd rather he hadn't.",
+        "npc": [
+         {
+          "slot": "striker",
+          "bond": 2,
+          "grudge": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "shootout": 0
+         }
+        }
+       }
+      ],
+      "gave": [
+       {
+        "text": "\"Thanks.\" He means it. The squad on the touchline go back in, a bit disappointed.",
+        "npc": [
+         {
+          "slot": "striker",
+          "bond": 4,
+          "grudge": -4
+         }
+        ],
+        "arc": {
+         "set": {
+          "shootout": 0
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "striker",
+      "pick": "squad",
+      "where": [
+       "!samePosition"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The coach is settling it"
+  },
+  {
+   "id": "ptk-3-real",
+   "title": "The next one",
+   "after": {
+    "beat": "ptk-2-shootout",
+    "weeks": [
+     1,
+     4
+    ]
+   },
+   "event": {
+    "id": "arc-ptk-3-real",
+    "title": "The next one",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "striker",
+    "trigger": {
+     "when": [
+      "after-match"
+     ]
+    },
+    "setup": [
+     "Next penalty, a real one, sixtieth minute. {if arc.shootout==2}It's yours.{/if}{if arc.shootout==1}It's your turn.{/if}{if arc.shootout==0}It's his. He looks at you anyway.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "take",
+      "label": "Take it.",
+      "tone": "confident",
+      "outcomes": [
+       {
+        "if": "arc.shootout==2",
+        "chance": 0.75,
+        "text": "Bottom corner. {striker.short} is the second one to you. He says \"lucky\" in your ear.",
+        "effects": {
+         "fans": 3
+        },
+        "arc": {
+         "set": {
+          "real": "scored"
+         }
+        }
+       },
+       {
+        "if": "arc.shootout==1",
+        "chance": 0.75,
+        "text": "Bottom corner. On the bench the coach holds up one finger: that was the tie-break. They're yours now. {striker.short} says \"lucky\" in your ear.",
+        "effects": {
+         "fans": 3
+        },
+        "arc": {
+         "set": {
+          "real": "scored",
+          "shootout": 2
+         }
+        }
+       },
+       {
+        "if": "arc.shootout>=1",
+        "text": "Saved. {striker.short} doesn't say anything, which is kind of him, and you notice.",
+        "effects": {
+         "fans": -1
+        },
+        "arc": {
+         "set": {
+          "real": "missed"
+         }
+        }
+       },
+       {
+        "text": "You pick it up. He takes it off you again, in front of everyone. He scores.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "striker",
+          "bond": -2,
+          "grudge": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "real": "his"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "give",
+      "label": "Hand it to him.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.shootout>=1",
+        "text": "You hand it to him. He looks at you like you've done something strange. He scores. \"Next one's yours,\" he says. It is.",
+        "effects": {
+         "team": 3
+        },
+        "npc": [
+         {
+          "slot": "striker",
+          "bond": 6,
+          "respect": 4,
+          "grudge": -4
+         }
+        ],
+        "arc": {
+         "set": {
+          "real": "shared"
+         }
+        }
+       },
+       {
+        "text": "He scores, and points at you on the way back to halfway.",
+        "npc": [
+         {
+          "slot": "striker",
+          "bond": 2,
+          "respect": 2,
+          "grudge": -2
+         }
+        ],
+        "arc": {
+         "set": {
+          "real": "his"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "striker",
+      "pick": "squad",
+      "where": [
+       "!samePosition"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "The next penalty"
+  },
+  {
+   "id": "ptk-4-board",
+   "title": "The board",
+   "after": {
+    "beat": "ptk-2-shootout",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-ptk-4-board",
+    "title": "The board",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "coach",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. The coach keeps a board of penalties in the gym: every one this season, who took it, in or out."
+    ],
+    "choices": [
+     {
+      "id": "look",
+      "label": "Look at the board.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.real=='shared' || arc.shootout==1",
+        "text": "Two columns, your name and his, taking turns all the way down. {striker.short} has drawn a little crown next to his best one. You've drawn one next to yours.",
+        "effects": {
+         "team": 2
+        },
+        "arc": {
+         "end": "shared"
+        }
+       },
+       {
+        "if": "arc.shootout==2",
+        "text": "Your name, eleven times, nine of them in. {striker.short}'s name isn't on it once. He's written \"LET HIM\" at the bottom in marker.",
+        "arc": {
+         "end": "your-penalties"
+        }
+       },
+       {
+        "text": "His name, twelve times. Ten in. You count them twice. You think about the one he took off you.",
+        "arc": {
+         "end": "his-penalties"
+        }
+       }
+      ]
+     },
+     {
+      "id": "skip",
+      "label": "Don't look.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.shootout==2",
+        "text": "You don't need to look. You know it's yours.",
+        "arc": {
+         "end": "your-penalties"
+        }
+       },
+       {
+        "if": "arc.shootout==1",
+        "text": "He tells you anyway: \"We're level. Again.\"",
+        "arc": {
+         "end": "shared"
+        }
+       },
+       {
+        "text": "You don't need to look. It's his.",
+        "arc": {
+         "end": "his-penalties"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "striker",
+      "pick": "squad",
+      "where": [
+       "!samePosition"
+      ],
+      "order": "best"
+     },
+     {
+      "slot": "coach",
+      "pick": "coach"
+     }
+    ]
+   },
+   "hint": "A season on, the penalty board"
+  }
+ ]
+}

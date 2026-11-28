@@ -24,6 +24,7 @@ import { createPortal } from "react-dom";
 import { KitStyles } from "./ui";
 import type { TourStep } from "@/lib/star/tours";
 import { useLeoUpdate } from "@/lib/star/leoUpdate";
+import { useCurtainUp } from "@/lib/star/loading/state";
 
 export type { TourStep } from "@/lib/star/tours";
 
@@ -92,6 +93,7 @@ export default function PointerTour({ steps, onDone, skippable = false, forced =
   const step = steps[i];
 
   useEffect(() => setMounted(true), []);
+  const loadingUp = useCurtainUp();
 
   const finish = () => {
     if (doneRef.current) return;
@@ -180,7 +182,8 @@ export default function PointerTour({ steps, onDone, skippable = false, forced =
     if (h && Math.abs(h - bubbleH) > 1) setBubbleH(h);
   });
 
-  if (later || !mounted || !step || !box) return null;
+  // A loading screen is up: the tip waits for it to lift (never over or under it).
+  if (later || !mounted || !step || !box || loadingUp) return null;
   const press = !!step.press && !dead;
 
   const wholeScreen = step.target === "screen";

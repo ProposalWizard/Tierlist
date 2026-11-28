@@ -440,6 +440,11 @@
           "slot": "fan",
           "tag": "put-the-scarf-on-his-seat",
           "strength": 3
+         },
+         {
+          "slot": "fan",
+          "tag": "passed-away",
+          "strength": 3
          }
         ],
         "arc": {
@@ -472,7 +477,14 @@
           40,
           60
          ]
-        }
+        },
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "passed-away",
+          "strength": 3
+         }
+        ]
        }
       ]
      },
@@ -493,7 +505,14 @@
           40,
           60
          ]
-        }
+        },
+        "remember": [
+         {
+          "slot": "fan",
+          "tag": "passed-away",
+          "strength": 3
+         }
+        ]
        }
       ]
      }

@@ -1,0 +1,272 @@
+{
+ "id": "arc-the-ex",
+ "title": "The ex",
+ "owner": "mate",
+ "summary": "Your ex has started going out with a team-mate. He wants to know if you're all right with it before it gets out. You'll see them both at the Christmas do. A season on, there's an invitation.",
+ "size": "small",
+ "about": {
+  "who": [
+   "mate"
+  ],
+  "tone": [
+   "tense",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad",
+   "where": [
+    "age>=21"
+   ]
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-invitation",
+   "title": "The invitation",
+   "text": "Your ex married a team-mate. You were at the wedding, on table six, and you danced with his nan."
+  },
+  {
+   "id": "the-other-end",
+   "title": "The other end",
+   "text": "Your ex is with a team-mate now. You change at opposite ends of the dressing room. It works."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "exx-1-ask",
+   "title": "A word",
+   "n": 1,
+   "event": {
+    "id": "arc-exx-1-ask",
+    "title": "A word",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.name} has been weird for a week. He finds you in the car park. \"I need to tell you before someone else does. I'm seeing your ex. Is that, are you, I mean, are you all right with it?\""
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "mate",
+       "say": [
+        "\"I'll stop if you're not. I mean it. Well. I'd try.\""
+       ],
+       "replies": [
+        {
+         "id": "fine",
+         "label": "\"It's fine, mate. Thanks for telling me.\"",
+         "tone": "kind",
+         "end": "fine"
+        },
+        {
+         "id": "joke",
+         "label": "\"Good luck. She hates football.\"",
+         "tone": "calm",
+         "end": "joke"
+        },
+        {
+         "id": "cold",
+         "label": "\"Don't talk to me about it.\"",
+         "tone": "cold",
+         "end": "cold"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "fine": [
+       {
+        "text": "He breathes out for about ten seconds. At the Christmas do she comes over and says thanks for being nice to him. You say he's a good lad. He is.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "said-it-was-fine-about-my-girlfriend",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "fine"
+         }
+        }
+       }
+      ],
+      "joke": [
+       {
+        "text": "\"She does. She makes me watch films about cooking.\" You both laugh, a bit.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "fine"
+         }
+        }
+       }
+      ],
+      "cold": [
+       {
+        "text": "\"Right.\" He changes at the other end of the dressing room from then on.",
+        "effects": {
+         "team": -2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -4,
+          "grudge": 6
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "cold"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age>=21"
+      ]
+     }
+    ]
+   },
+   "hint": "A team-mate wants a word"
+  },
+  {
+   "id": "exx-2-card",
+   "title": "A card",
+   "after": {
+    "beat": "exx-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-exx-2-card",
+    "title": "A card",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. There's a cream envelope in your pigeon hole with your name on it in her handwriting."
+    ],
+    "choices": [
+     {
+      "id": "open",
+      "label": "Open it.",
+      "tone": "brave",
+      "outcomes": [
+       {
+        "if": "arc.path=='fine'",
+        "text": "A wedding invitation. Table six. On the back, in his handwriting: \"Only if you want to. We'd really like you there.\" You go. You dance with his nan.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-invitation"
+        }
+       },
+       {
+        "text": "A wedding invitation, to the whole squad. Your name's on the list with everyone else's. You go and sit at the back.",
+        "arc": {
+         "end": "the-other-end"
+        }
+       }
+      ]
+     },
+     {
+      "id": "leave",
+      "label": "Leave it till later.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='fine'",
+        "text": "You open it at home: an invitation, and a note. You RSVP the same night.",
+        "arc": {
+         "end": "the-invitation"
+        }
+       },
+       {
+        "text": "You open it in March. The wedding was in February.",
+        "arc": {
+         "end": "the-other-end"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad",
+      "where": [
+       "age>=21"
+      ]
+     }
+    ]
+   },
+   "hint": "A season on, something in your pigeon hole"
+  }
+ ]
+}

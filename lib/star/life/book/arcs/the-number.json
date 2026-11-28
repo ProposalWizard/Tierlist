@@ -1,0 +1,253 @@
+{
+ "id": "arc-the-number",
+ "title": "The number",
+ "owner": "mate",
+ "summary": "A team-mate wants your shirt number. He's worn it since he was nine, everywhere but here, and he offers you his watch for it. A season on, there's a kid in the stand with that number on his back.",
+ "size": "small",
+ "about": {
+  "who": [
+   "mate"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "gave-it-up",
+   "title": "Gave it up",
+   "text": "You gave your shirt number to a team-mate who'd worn it since he was nine. He scored more in it than you ever did, and he tells everyone why he has it."
+  },
+  {
+   "id": "kept-it",
+   "title": "Kept it",
+   "text": "A team-mate wanted your number and you kept it. He wears a different one. He mentions it about once a month."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "num-1-ask",
+   "title": "The number",
+   "n": 1,
+   "event": {
+    "id": "arc-num-1-ask",
+    "title": "The number",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.name} catches you by the boot room. He's holding his watch, which is expensive."
+    ],
+    "talk": {
+     "start": "n1",
+     "nodes": {
+      "n1": {
+       "who": "mate",
+       "say": [
+        "\"Your number. I've worn it since I was nine, everywhere but here. My dad wore it. I'll give you this for it.\" He holds out the watch."
+       ],
+       "replies": [
+        {
+         "id": "free",
+         "label": "\"Have it. Keep the watch.\"",
+         "tone": "kind",
+         "end": "free"
+        },
+        {
+         "id": "watch",
+         "label": "Take the watch.",
+         "tone": "reckless",
+         "end": "watch"
+        },
+        {
+         "id": "no",
+         "label": "\"Sorry, mate. It's mine.\"",
+         "tone": "honest",
+         "end": "no"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "free": [
+       {
+        "text": "He stares at you. Then he hugs you, which he's never done.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "gave-me-his-number",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "gave"
+         }
+        }
+       }
+      ],
+      "watch": [
+       {
+        "text": "You've got a very nice watch and a new number. The kit man has to do new shirts and says a word about it.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "gave"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"Fair.\" He takes a number nobody wants. He's fine about it. He says he's fine about it a lot.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": -2,
+          "respect": 2,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kept"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     }
+    ]
+   },
+   "hint": "A team-mate wants something"
+  },
+  {
+   "id": "num-2-kid",
+   "title": "On his back",
+   "after": {
+    "beat": "num-1-ask",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-num-2-kid",
+    "title": "On his back",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "walkout"
+     ]
+    },
+    "setup": [
+     "A season on. There's a boy in the stand by the tunnel with your old number on his back. {if arc.path=='gave'}It's {mate.short}'s name above it.{/if}{if arc.path=='kept'}It's your name above it.{/if}"
+    ],
+    "choices": [
+     {
+      "id": "point",
+      "label": "Point him out to {mate.short}.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='gave'",
+        "text": "{mate.short} goes over and gives the boy his armband for the warm-up. \"He wore it since he was nine,\" he tells the boy's dad, pointing at you. \"Then I did.\"",
+        "effects": {
+         "team": 2
+        },
+        "arc": {
+         "end": "gave-it-up"
+        }
+       },
+       {
+        "text": "\"Your number,\" {mate.short} says. \"Lucky number.\" He doesn't look at you.",
+        "arc": {
+         "end": "kept-it"
+        }
+       }
+      ]
+     },
+     {
+      "id": "wave",
+      "label": "Wave at the boy.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='gave'",
+        "text": "The boy points at {mate.short}, not you. Fair enough.",
+        "arc": {
+         "end": "gave-it-up"
+        }
+       },
+       {
+        "text": "He waves back, and turns round to show you your name.",
+        "arc": {
+         "end": "kept-it"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     }
+    ]
+   },
+   "hint": "A season on, the number in the stand"
+  }
+ ]
+}

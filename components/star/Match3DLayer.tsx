@@ -45,6 +45,7 @@ import FhrSwitchRow from "./FhrSwitchRow";
 import { quality3dTier } from "@/lib/star/three3d/quality";
 import { afterLoss, healReset, newHealState, HEAL_DELAY_MS } from "@/lib/star/three3d/autoHeal";
 import { SetCard, SetToggle } from "./settingsKit";
+import LoadingCurtain from "./loading/LoadingCurtain";
 
 /** The TV camera's angle, degrees from straight down (the Style Testing page's default). */
 const CAREER_3D_TILT = 45;
@@ -226,16 +227,26 @@ export default function Match3DLayer({ children, tod = "golden", hold = false }:
     </>
   );
 
+  // The loading screen (the matchday programme, components/star/loading) covers only the first
+  // build at kick-off, with 3D on from the start: never a rebuild or a 2D/3D flip mid-match,
+  // where the 2D match carries on underneath and is the screen. While it is up the
+  // match is held, so its clock and its first tip start when it lifts.
+  const kickOff3d = useRef(on);
+  const firstDone = useRef(false);
+  if (status === "ready" || status === "off" || status === "lost") firstDone.current = true;
+  const curtainOn = kickOff3d.current && on && !firstDone.current && (status === "idle" || status === "loading");
+
   // Until the 3D picture is ready the 2D match shows, so the screen is never blank.
   const obs = useMemo<EngineFrameObserver>(() => ({
-    hide2D: on && status === "ready", attach, onFrame, hold: settingsOpen || hold, chrome,
+    hide2D: on && status === "ready", attach, onFrame, hold: settingsOpen || hold || curtainOn, chrome,
     warming: on && (status === "idle" || status === "loading"),
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [on, status, attach, onFrame, settingsOpen, hold, rebuild]);
+  }), [on, status, attach, onFrame, settingsOpen, hold, rebuild, curtainOn]);
 
   return (
     <div className="relative" data-career-3d={on ? status : "2d"}>
       <EngineFrameContext.Provider value={obs}>{children}</EngineFrameContext.Provider>
+      <LoadingCurtain section="match" loading={curtainOn} />
       {settingsOpen && <MatchSettings onClose={() => {
         setSettingsOpen(false);
         // 3D quality changed while the match was held: build the 3D again at the new quality now

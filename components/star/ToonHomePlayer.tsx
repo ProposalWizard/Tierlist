@@ -37,8 +37,10 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
   const turn = useRef({ yaw: where === "title" ? -0.35 : 0, drag: null as null | number, from: 0 });
   const you = useSyncExternalStore(subscribeToonYou, toonYou, toonYou);
   const num = career.squadNumber ?? 9;
+  // the boots you bought, on his feet (lib/star/wearables.ts; Harry, 28 Nov 2026): the pair and its level
+  const bootKey = career.currentBoot?.id ? `${career.currentBoot.id}:${career.currentBoot.level ?? ""}` : "plain";
   // what he looks like now: the kept picture is shown only while it still matches
-  const sig = [where, width, height, kitShirt, kitTrim, num, you.head, you.body, you.skin, you.hair].join("|");
+  const sig = [where, width, height, kitShirt, kitTrim, num, you.head, you.body, you.skin, you.hair, bootKey].join("|");
   const [snap, setSnap] = useState<string | null>(null);
   useEffect(() => { setSnap(readSnap(where, sig)); }, [where, sig]);
 
@@ -82,6 +84,7 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
         const JUGGLE_BEAT = { from: jb?.from ?? 6, dur: jb?.dur ?? 6, round: HOME_IDLE_ROUND };
         const { makeHomeSet, homeBallAt } = await import("@/lib/star/homeSet3d");
         const { numberTexture } = await import("@/lib/star/style3d/gameplay");
+        const { bootLookOf, bootWorn } = await import("@/lib/star/wearables");
         if (dead) return;
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
         let notify: (() => void) | null = null;
@@ -116,7 +119,7 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
         if (dead) { renderer.dispose(); renderer.forceContextLoss(); return; }
         const SK = (SkeletonUtils as unknown as { default?: unknown }).default ?? SkeletonUtils;
         const p = makePerson3d(THREE, SK as never, g, anims, { outline: 0.006, you: true });
-        dressPerson3d(THREE, p, { skin: you.skin, hair: you.hair, kit: { shirt: kitShirt, trim: kitTrim }, number: numberTexture(THREE, num) });
+        dressPerson3d(THREE, p, { skin: you.skin, hair: you.hair, kit: { shirt: kitShirt, trim: kitTrim }, number: numberTexture(THREE, num), accessories: [bootWorn(bootLookOf(career.currentBoot))] });
         if (fb) addClips(THREE, p, fb);
         scene.add(p.root);
         // his face moves: blinks, eyes that look round, lips when he talks (toon/face.ts)
@@ -233,7 +236,7 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
     })();
     return () => { dead = true; if (!entry) cancelAnimationFrame(raf); dispose(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [width, height, where, kitShirt, kitTrim, num, you.head, you.body, you.skin, you.hair, gen]);
+  }, [width, height, where, kitShirt, kitTrim, num, you.head, you.body, you.skin, you.hair, bootKey, gen]);
 
   const onDown = (e: React.PointerEvent) => { if (where !== "home") return; turn.current.drag = e.clientX; turn.current.from = turn.current.yaw; (e.target as Element).setPointerCapture?.(e.pointerId); };
   const onMove = (e: React.PointerEvent) => { const t = turn.current; if (t.drag !== null) t.yaw = t.from + (e.clientX - t.drag) * 0.02; };

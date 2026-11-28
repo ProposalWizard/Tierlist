@@ -162,6 +162,10 @@ exactly today's bodies. You never pick a file yourself:
   `TOON_HEADS` in `bodies.ts` → `node scripts/assets3d-manifest.mjs`.
   Inputs live in `tools/modeltest/` (one folder per tag).
 
+### The loading screen (27 Nov 2026)
+
+Every 3D place shows the ONE loading screen while it builds: `<LoadingCurtain section="garden" loading={status === "loading"} />` (`components/star/loading/LoadingCurtain.tsx`; `box` covers only the parent, e.g. a drill's pitch box). Harry: "loading screens must match the section you're going into, with several options per section"; "a plain moving bar … that's dead". The section picks the screen (`lib/star/loading/pick.ts`: keepie-uppies over a real still of the place, the matchday programme or the tunnel for a match, the drill board for training, the gala for the award nights), never the same one twice in a row. It runs no 3D and no JS loop (CSS transforms only, `curtain.css`), so it does not slow the build; it lifts the moment `loading` is false. A new place: add a section and its variants in `pick.ts`, shoot its backdrop (`node scripts/loading-stills/shoot.mjs`, people hidden), and pass the curtain. A lazy screen gets the same screen from the tap: `lazyScreen(load, { fallback: loadingCover("garden") })` in `app/star-dev/page.tsx`. All screens: `/star-loading-dev`.
+
 ### Kits
 
 - `lib/star/kits.ts` — `kitsOf(club)` gives a club's real colours.
@@ -1232,6 +1236,14 @@ Harry: "instead of using aim of rough cm why not try and find walking animations
 - **Checks**: `tests/star/gaitWidth.mts` holds every head and build to the library rig's own step width (`clips[name].srcFeet`); `bodyOverlap.mts` includes the new clips.
 - **Test scenes** (`lib/star/cutscene/testScenes.ts`, not in any list): `?scene=director&fixture=walkers&cam=old` (eight men crossing a pitch), `solo-walk_relaxed`, `solo-idle_relaxed`. `cam=old` because the film pass cuts away from any walk.
 - Not done: `jog_easy` is a stylised, bouncy run (5.6 m/s in place) and is not picked by anyone yet; UAL 2 (arms folded, phone) is not on this machine.
+### Shop boots and wearables on your player (28 Nov 2026)
+
+Harry: "buying boots/accessories needs to translate onto your guy (on the home screen for boots; in your wardrobe / wearable for the rest)".
+- **What maps to what** (pure, `lib/star/wearables.ts`, test `tests/star/wearables.mts`): every boot family × level → a colourway (upper, sole, studs, heel from L2, flash from L3, gold from L5); every wearable Style item (Smartwatch, Gold Watch, Diamond Rolex on the wrist; Silver Chain, Diamond Necklace, Headphones at the neck; the Designer Suit on the Clothes rail) × level → colours, stones and shine. Sunglasses (`shades`, Face row) and a cap (`cap`, Head row) are sold since 28 Nov 2026 (Harry: "yes add caps and sunglasses to the shop"): Drip group, 5 levels each, the cap priced between the Music Player and the Tablet (★30 → ★5,825), the sunglasses tied with the Smartwatch (★650 → ★135k); shop pictures are drawings (`StylePicture` CapPic/ShadesPic, `DRAWN_ONLY` until a render exists). Test pages can still force any wearable on with `?extras=`.
+- **Boots**: painted by the toon shader below the boot line (`uBoot2/3/4`, `uBootK`; uniforms only). `dressPerson3d` gives YOU your boots (`toonYou().boots`, set by the page from `career.currentBoot`) wherever a scene dresses you in a kit without naming boots (training, drills); the Home player and the 3D match pass them.
+- **Accessories**: `wearAccessories(T, p, looks)` (`lib/star/style3d/toon/accessories.ts`) after `dressCloth`: ONE skinned mesh, one draw, fitted to the body and cloth by measuring them in the bind pose; each vertex mapped into the geometry space through its own skin weights (a Style A head's bones carry a scale). A cap presses the hair in (`squashBody`: his own copy of the mesh, paint kept with TOON_AREST, the ink copy pressed deeper because the outline is drawn 1.5 cm nearer the camera). Worn in the house, garden and shop (`wornAt` Worn.extras; never at training or in matches). Wardrobe → Extras tab; a slot never picked wears the best you own.
+- Bench: `/star-3d-bench-dev/wearables`.
+
 ### Cloth clothes in the houses and the garden (21 Nov 2026)
 
 Harry, after the re-filmed press conference and walk-out: "yes the clothes films are better, put them in houses".
@@ -1254,3 +1266,14 @@ Harry, after the re-filmed press conference and walk-out: "yes the clothes films
 - Not done: the untucked hem notch on the tee (trousers show at the front corners, as on the fan shirt); the hood is a
   simple lump at the back; no family or partner people exist in the houses yet.
 
+
+### Low-poly trees and "don't draw what the camera can't see" (28 Nov 2026)
+
+Harry: "this damn tree feature, I hate it … low polygon trees and leaves", and "wherever the camera isn't looking unloads". Galaxy S20 lag in the garden.
+- **Trees**: `lib/star/garden3d/lowPolyTrees.ts` builds every garden tree and bush in code: a tapered trunk and chunky clumps of leaves in hard facets (style `facet`, picked from three candidates; `?trees=clump|facet|leafy` on any garden page shows the others). Vertex colours, no pictures, nothing see-through, ONE shared material. Near / middle / far detail: ~436 / 250 / 86 triangles a broadleaf, 82 / 52 / 26 a fir (was 680 see-through leaf cards a tree). Each tree keeps the size of the Kenney tree it stands in for (RUL-3D-006). The 3D drills' backdrop trees use them too (`lib/star/training3d/scene.ts`: 18 draws → 1).
+- **Zones**: `lib/star/garden3d/plantZones.ts` joins the trees and bushes into 16 zones (four quarters of the garden, twelve slices of the ring outside), one draw each. A zone draws only the part of its buffer its distance asks for (`LOD_DIST` per tier); shadows always use the middle detail. Zones wholly behind the shop or casino are skipped (`hiddenBehind`; `?plantcull=0` off).
+- **Tight culling**: `lib/star/three3d/tightCull.ts`. three tests a ball round each mesh; the garden's joined still pieces (freezeStatic) and instanced sets had balls so big that things behind the camera still "touched" the view. Each still mesh now keeps its real box and is skipped while three sorts the picture, then put back before the shadow pass and after the frame (no unloading, no hitches, the shadow cache never sees a flicker). Off: `?tightcull=0`. Stats: `window.__tightCull`.
+- **Garden shadow while walking**: the sun's shadow now goes through the shadow cache (`sun.shadow.autoUpdate = true`; `?gardenshadowcache=0` off): the still things' shadows are kept, only the movers drawn on top. Walking was 122 shadow draws / 58k triangles a frame, now ~9 / 6k.
+- Also: the bench team-mates' bodies are not posed while off screen; paths and the boundary wall share one material each (repeat in the UVs) so they join into one draw; the topiary balls are 320 triangles, not 1,280.
+- **Numbers** (Medium, 412×915 at 2.625, S20 browser name, scripts/perf3d harness): gate 129 → 86 draws, 110k → 49k triangles; shop view 108 → 48, 106k → 41k; walking at the gate 241 → 85 draws, 168k → 55k. All views, tiers and the budget: `lib/star/garden3d/gardenBudget.ts`, checked by `tests/star/gardenPlants.mts`. Tree candidates side by side: `H.trees({...})` in `scripts/perf3d/entry.ts`.
+- Houses were already one room at a time (`home3d/scene.ts` builds only the room you are in; a doorway shows the next room's door, not its contents): nothing to change there.

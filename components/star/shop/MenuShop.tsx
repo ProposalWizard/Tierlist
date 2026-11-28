@@ -45,7 +45,7 @@ import TopHud from "../ui/TopHud";
 import BackButton from "../ui/BackButton";
 import PressButton from "../ui/PressButton";
 import BootPicture from "../BootPicture";
-import StylePicture from "../StylePicture";
+import StylePicture, { DRAWN_ONLY } from "../StylePicture";
 
 interface ActionResult { ok: boolean; reason?: string }
 
@@ -95,7 +95,7 @@ function ItemPic({ kind, base, level }: { kind: "boot" | "style"; base: string; 
   const lv = base === "phone" ? 1 : Math.max(1, Math.min(5, level));
   const src = kind === "boot" ? `/shop/boot-${base}-L${lv}.webp` : `/shop/${base}-L${lv}.webp`;
   const [bad, setBad] = useState<string | null>(null);
-  if (bad === src) return kind === "boot" ? <BootPicture base={base} level={lv} className="h-full w-full" /> : <StylePicture base={base} level={lv} className="h-full w-full" />;
+  if (bad === src || (kind === "style" && DRAWN_ONLY.has(base))) return kind === "boot" ? <BootPicture base={base} level={lv} className="h-full w-full" /> : <StylePicture base={base} level={lv} className="h-full w-full" />;
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={src} alt="" draggable={false} decoding="async" onError={() => setBad(src)} />;
 }

@@ -16,7 +16,7 @@
  * direct or the waiting kind and never switches, so a screen's own state is
  * never thrown away by the file arriving.
  */
-import { createElement, lazy, Suspense, useRef, type ComponentProps, type ComponentType } from "react";
+import { createElement, lazy, Suspense, useRef, type ComponentProps, type ComponentType, type ReactNode } from "react";
 
 export interface LazyScreen<P> {
   (props: P): ReturnType<typeof createElement> | null;
@@ -26,6 +26,8 @@ export interface LazyScreen<P> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function lazyScreen<C extends ComponentType<any>>(
   load: () => Promise<{ default: C }>,
+  /** What shows while the file downloads the first time (default nothing): a 3D place passes its loading screen. */
+  opts?: { fallback?: () => ReactNode },
 ): LazyScreen<ComponentProps<C>> {
   let mod: C | null = null;
   let pending: Promise<void> | null = null;
@@ -41,7 +43,7 @@ export function lazyScreen<C extends ComponentType<any>>(
     const direct = useRef<boolean | null>(null);
     if (direct.current === null) direct.current = mod !== null;
     if (direct.current && mod) return createElement(mod, props);
-    return createElement(Suspense, { fallback: null }, createElement(Waiting, props));
+    return createElement(Suspense, { fallback: opts?.fallback ? opts.fallback() : null }, createElement(Waiting, props));
   }
   (Screen as LazyScreen<ComponentProps<C>>).preload = preload;
   return Screen as LazyScreen<ComponentProps<C>>;

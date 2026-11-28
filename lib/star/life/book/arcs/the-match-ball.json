@@ -1,0 +1,261 @@
+{
+ "id": "arc-the-match-ball",
+ "title": "The match ball",
+ "owner": "referee",
+ "summary": "Your first hat-trick, and the referee has the match ball under his arm, because he keeps one from every game. You want it. A season on, he's refereeing you again.",
+ "size": "small",
+ "about": {
+  "who": [
+   "referee"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "referee",
+   "pick": "referee"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-ball",
+   "title": "The ball",
+   "text": "The referee gave you the match ball from your first hat-trick. You both signed it. He says it's the only one he's ever given away."
+  },
+  {
+   "id": "his-shed",
+   "title": "His shed",
+   "text": "The referee kept the match ball from your first hat-trick. It's in his shed with four hundred others. He sends you a photo of it every year."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "mbl-1-ball",
+   "title": "Three",
+   "n": 1,
+   "event": {
+    "id": "arc-mbl-1-ball",
+    "title": "Three",
+    "category": "rivals",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "after-match"
+     ],
+     "requires": [
+      "lastGoals>=1"
+     ]
+    },
+    "setup": [
+     "Your first hat-trick. At the whistle {referee.name} has the match ball under his arm, walking off. You know referees keep balls. You didn't know he'd keep this one."
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "referee",
+       "say": [
+        "\"Every game I've done, one ball. Four hundred and twelve. They're in my shed.\" He holds it tighter."
+       ],
+       "replies": [
+        {
+         "id": "ask",
+         "label": "\"Can I have it? Please. First one.\"",
+         "tone": "humble",
+         "end": "ask"
+        },
+        {
+         "id": "swap",
+         "label": "\"I'll swap you my shirt for it.\"",
+         "tone": "kind",
+         "end": "swap"
+        },
+        {
+         "id": "leave",
+         "label": "\"Fair enough. Rules are rules.\"",
+         "tone": "calm",
+         "end": "leave"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "ask": [
+       {
+        "text": "He looks at it for a long time. \"First one.\" He signs it, then holds it out for you to sign. \"Only one I've ever given away. Don't tell anyone.\"",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "gave-me-the-hat-trick-ball",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "given"
+         }
+        }
+       }
+      ],
+      "swap": [
+       {
+        "text": "\"I can't take a shirt off a player.\" He gives you the ball anyway, and asks you to sign one for his grandson.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 4,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "referee",
+          "tag": "gave-me-the-hat-trick-ball",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "given"
+         }
+        }
+       }
+      ],
+      "leave": [
+       {
+        "text": "He nods, pleased. \"Shed number four hundred and thirteen.\" He takes a photo of it for you.",
+        "npc": [
+         {
+          "slot": "referee",
+          "bond": 2,
+          "respect": 4
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kept"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "The referee has something you want"
+  },
+  {
+   "id": "mbl-2-again",
+   "title": "The same ref",
+   "after": {
+    "beat": "mbl-1-ball",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-mbl-2-again",
+    "title": "The same ref",
+    "category": "rivals",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "referee",
+    "trigger": {
+     "when": [
+      "walkout",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. {referee.short} is doing your game. In the tunnel he says, very quietly, \"Shed's full. I'm on to the garage now.\""
+    ],
+    "choices": [
+     {
+      "id": "laugh",
+      "label": "Laugh.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='given'",
+        "text": "\"Yours is still the only one I gave away,\" he says. \"Behave today.\" You don't get booked.",
+        "arc": {
+         "end": "the-ball"
+        }
+       },
+       {
+        "text": "He shows you a photo on his phone: your ball, in the shed, on its own shelf, with a little label.",
+        "arc": {
+         "end": "his-shed"
+        }
+       }
+      ]
+     },
+     {
+      "id": "ask",
+      "label": "\"Can I see the shed one day?\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='kept'",
+        "text": "\"After you retire.\" He means it. He sends you a photo of shelf four hundred and thirteen every year.",
+        "arc": {
+         "end": "his-shed"
+        }
+       },
+       {
+        "text": "\"There's a gap where yours should be,\" he says. \"I look at it every week.\"",
+        "arc": {
+         "end": "the-ball"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "referee",
+      "pick": "referee"
+     }
+    ]
+   },
+   "hint": "A season on, the same referee"
+  }
+ ]
+}

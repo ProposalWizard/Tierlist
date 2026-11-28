@@ -1,0 +1,297 @@
+{
+ "id": "arc-the-driving-lessons",
+ "title": "Mirror, signal",
+ "owner": "brother",
+ "summary": "Your brother has his driving test in three weeks and wants to practise in your car. Your very nice car. A season on, he passes, or he doesn't, and he wants to drive you to a game.",
+ "size": "small",
+ "about": {
+  "who": [
+   "brother"
+  ],
+  "tone": [
+   "funny",
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "brother",
+   "pick": "brother"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "he-drives-you",
+   "title": "He drives you",
+   "text": "You taught your brother to drive in your car and lived. He drives you to home games now, too slowly, with both hands on the wheel."
+  },
+  {
+   "id": "the-instructor",
+   "title": "The instructor",
+   "text": "You said no to the lessons in your car. He passed with an instructor on his fourth go. He still mentions it."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "drv3-1-lesson",
+   "title": "The car park",
+   "n": 1,
+   "event": {
+    "id": "arc-drv3-1-lesson",
+    "title": "The car park",
+    "category": "family",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "{brother.short} is on your doorstep with L plates. \"Test in three weeks. Mum's car's in the garage. Yours is right there.\" Yours is right there, and very new."
+    ],
+    "talk": {
+     "start": "b1",
+     "nodes": {
+      "b1": {
+       "who": "brother",
+       "say": [
+        "\"An hour. The supermarket car park. It's Sunday, it'll be empty. Please. I'll wash it after.\""
+       ],
+       "replies": [
+        {
+         "id": "yes",
+         "label": "Throw him the keys.",
+         "tone": "brave",
+         "goto": "b2"
+        },
+        {
+         "id": "pay",
+         "label": "\"I'll pay for an instructor.\"",
+         "tone": "calm",
+         "end": "instructor"
+        },
+        {
+         "id": "no",
+         "label": "\"Not in this car. No.\"",
+         "tone": "cold",
+         "end": "no"
+        }
+       ]
+      },
+      "b2": {
+       "who": "brother",
+       "say": [
+        "The supermarket car park. He stalls four times, then does a perfect lap of the trolley bays, then nearly hits the only other car there, which is a police car."
+       ],
+       "replies": [
+        {
+         "id": "calm",
+         "label": "\"Mirror, signal. Breathe.\"",
+         "tone": "calm",
+         "end": "lesson"
+        },
+        {
+         "id": "shout",
+         "label": "\"BRAKE.\"",
+         "tone": "fiery",
+         "end": "shouted"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "lesson": [
+       {
+        "text": "Three Sundays. By the last one he can reverse round a corner, just. He washes the car, badly.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "taught-me-to-drive",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "taught"
+         }
+        }
+       }
+      ],
+      "shouted": [
+       {
+        "text": "He brakes. So does the police car. The officer asks for a selfie. Your brother won't speak to you for a day, then asks for another lesson.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4,
+          "grudge": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "brother",
+          "tag": "taught-me-to-drive",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "taught"
+         }
+        }
+       }
+      ],
+      "instructor": [
+       {
+        "text": "\"Not the same,\" he says, and takes the money.",
+        "effects": {
+         "moneyWeeks": -0.3
+        },
+        "arc": {
+         "set": {
+          "path": "instructor"
+         }
+        }
+       }
+      ],
+      "no": [
+       {
+        "text": "\"It's a car. It's for driving.\" He goes off to ask your mum's neighbour.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": -3,
+          "grudge": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "no"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     }
+    ]
+   },
+   "hint": "Your brother wants a lesson"
+  },
+  {
+   "id": "drv3-2-test",
+   "title": "The test",
+   "after": {
+    "beat": "drv3-1-lesson",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-drv3-2-test",
+    "title": "The test",
+    "category": "family",
+    "place": "home:sofa",
+    "size": "small",
+    "rarity": "callback",
+    "template": "text-thread",
+    "screen": "card",
+    "speaker": "brother",
+    "trigger": {
+     "when": [
+      "home:evening",
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "A season on. A photo from {brother.short}: him holding a pink certificate, grinning. \"Passed. Fourth go. I'll drive you Saturday.\""
+    ],
+    "choices": [
+     {
+      "id": "yes",
+      "label": "\"Go on, then. Pick me up at one.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='taught'",
+        "text": "He picks you up at twelve. Ten and two on the wheel, twenty-eight in a thirty. He checks his mirror every four seconds. \"Mirror, signal,\" he says, to you.",
+        "npc": [
+         {
+          "slot": "brother",
+          "bond": 4
+         }
+        ],
+        "arc": {
+         "end": "he-drives-you"
+        }
+       },
+       {
+        "text": "He drives like the instructor's still in the car. He tells you it took four goes \"because nobody would help\".",
+        "arc": {
+         "end": "the-instructor"
+        }
+       }
+      ]
+     },
+     {
+      "id": "no",
+      "label": "\"I'll get the bus, mate.\"",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='taught'",
+        "text": "He comes anyway, and parks outside your house, and beeps. You get in.",
+        "arc": {
+         "end": "he-drives-you"
+        }
+       },
+       {
+        "text": "\"Fair.\" He drives your mum to the game instead.",
+        "arc": {
+         "end": "the-instructor"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "brother",
+      "pick": "brother"
+     }
+    ]
+   },
+   "hint": "A season on, your brother has news"
+  }
+ ]
+}

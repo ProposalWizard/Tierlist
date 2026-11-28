@@ -1,0 +1,257 @@
+{
+ "id": "arc-the-young-reporter",
+ "title": "Her first interview",
+ "owner": "reporter",
+ "summary": "The local paper sends its newest reporter, twenty-two, for her first ever interview, and it's you. Her hands are shaking and her recorder isn't on. A season on, she's been promoted, or she hasn't.",
+ "size": "small",
+ "about": {
+  "who": [
+   "reporter"
+  ],
+  "tone": [
+   "warm"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "reporter",
+   "pick": "reporter"
+  }
+ ],
+ "vars": {
+  "path": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "her-first",
+   "title": "Her first",
+   "text": "You were a young reporter's first ever interview and you told her the recorder wasn't on. She covers the club now. She always gets the first question."
+  },
+  {
+   "id": "the-press-line",
+   "title": "The press line",
+   "text": "You gave a young reporter her first interview, in press office lines. She writes about someone else's club now."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "yrp-1-first",
+   "title": "The recorder",
+   "n": 1,
+   "event": {
+    "id": "arc-yrp-1-first",
+    "title": "The recorder",
+    "category": "media",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The {reporter.outlet} has sent its newest reporter for her first ever interview. {reporter.name}, twenty-two. Her hands are shaking. Her recorder's on the table. The red light isn't on."
+    ],
+    "talk": {
+     "start": "r1",
+     "nodes": {
+      "r1": {
+       "who": "reporter",
+       "say": [
+        "She's asked four questions. They were good questions. She's writing nothing down, because she thinks the recorder's doing it."
+       ],
+       "replies": [
+        {
+         "id": "tell",
+         "label": "\"Your recorder's not on.\"",
+         "tone": "kind",
+         "end": "tell"
+        },
+        {
+         "id": "slow",
+         "label": "Slow down, and repeat the good answers.",
+         "tone": "kind",
+         "end": "slow"
+        },
+        {
+         "id": "press",
+         "label": "Give her the press office lines.",
+         "tone": "calm",
+         "end": "press"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "tell": [
+       {
+        "text": "She goes bright red, presses it, and asks if you'd mind going back to question one. You go back to question one. You give better answers the second time.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 10,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "saved-my-first-interview",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "slow": [
+       {
+        "text": "You say the good bits again, slowly, at the end, \"in case.\" She looks at the recorder, and goes red, and writes them down.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 6,
+          "respect": 6
+         }
+        ],
+        "remember": [
+         {
+          "slot": "reporter",
+          "tag": "saved-my-first-interview",
+          "strength": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "kind"
+         }
+        }
+       }
+      ],
+      "press": [
+       {
+        "text": "She gets her piece. It's three hundred words of the gaffer believing in you. It's on page thirty.",
+        "arc": {
+         "set": {
+          "path": "press"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "A new reporter wants an interview"
+  },
+  {
+   "id": "yrp-2-later",
+   "title": "The first question",
+   "after": {
+    "beat": "yrp-1-first",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-yrp-2-later",
+    "title": "The first question",
+    "category": "media",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "reporter",
+    "trigger": {
+     "when": [
+      "arrive:training",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on, the press room after a game. {reporter.short} is in the front row with a lanyard that says CHIEF FOOTBALL WRITER. Her recorder's red light is on. She checks it twice."
+    ],
+    "choices": [
+     {
+      "id": "her",
+      "label": "Point at her for the first question.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.path=='kind'",
+        "text": "\"Is it on?\" you ask. The whole room laughs. She's the only one who knows why.",
+        "npc": [
+         {
+          "slot": "reporter",
+          "bond": 4,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "her-first"
+        }
+       },
+       {
+        "text": "She asks a sharp question. You give her a press office line. She writes it down without looking up.",
+        "arc": {
+         "end": "the-press-line"
+        }
+       }
+      ]
+     },
+     {
+      "id": "any",
+      "label": "Take questions from whoever.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.path=='kind'",
+        "text": "She doesn't get one in. She waits for you by the door instead and asks it there, recorder on.",
+        "arc": {
+         "end": "her-first"
+        }
+       },
+       {
+        "text": "She doesn't get one in. She covers a different club by the summer.",
+        "arc": {
+         "end": "the-press-line"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "reporter",
+      "pick": "reporter"
+     }
+    ]
+   },
+   "hint": "A season on, the press room"
+  }
+ ]
+}

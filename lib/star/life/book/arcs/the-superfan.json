@@ -106,6 +106,9 @@
     "trigger": {
      "when": [
       "after-match"
+     ],
+     "requires": [
+      "!mem(fan,'passed-away')"
      ]
     },
     "setup": [

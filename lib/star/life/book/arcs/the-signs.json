@@ -1,0 +1,491 @@
+{
+ "id": "arc-the-signs",
+ "title": "The signs",
+ "owner": "mate",
+ "summary": "At the club's family day a team-mate's little boy, who is deaf, stands on his own while the other kids take penalties. You could learn a sign or two. His dad teaches you more. Dinner at theirs. A season on the boy is mascot, and you're on the pitch.",
+ "size": "medium",
+ "about": {
+  "who": [
+   "mate"
+  ],
+  "tone": [
+   "warm",
+   "funny"
+  ]
+ },
+ "start": {
+  "chance": 0.22,
+  "careers": 0.2
+ },
+ "cast": [
+  {
+   "slot": "mate",
+   "pick": "squad"
+  }
+ ],
+ "vars": {
+  "path": "none",
+  "signs": "none",
+  "dinner": "none"
+ },
+ "clocks": [],
+ "ends": [
+  {
+   "id": "the-sign-for-goal",
+   "title": "The sign for goal",
+   "text": "A team-mate's deaf son was the mascot, and when you scored you signed it to him from the pitch. He'd taught you the sign himself, on the training ground, a season before."
+  },
+  {
+   "id": "your-words",
+   "title": "Your words",
+   "text": "You learned enough sign language from a team-mate and his boy to say good morning, well done, and something rude about the referee. The boy taught you that one."
+  },
+  {
+   "id": "the-quiet-one",
+   "title": "The quiet one",
+   "text": "A team-mate's deaf son stood on his own at the family day. You meant to learn a sign. You never did."
+  }
+ ],
+ "promises": {},
+ "beats": [
+  {
+   "id": "sgl-1-familyday",
+   "title": "The family day",
+   "n": 1,
+   "event": {
+    "id": "arc-sgl-1-familyday",
+    "title": "The family day",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "common",
+    "template": "talk-scene",
+    "screen": "telltale",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "The club's family day on pitch one. Forty kids queueing to take penalties. {mate.name}'s boy, six, is deaf, and he's standing on his own by the corner flag with a ball under his arm, watching everyone else's mouths."
+    ],
+    "talk": {
+     "start": "m1",
+     "nodes": {
+      "m1": {
+       "who": "mate",
+       "say": [
+        "{mate.short} sees you looking. \"He hates the queue. He can't hear when it's his go.\" He shows you a sign: a flat hand, then a thumb up. \"That means your turn.\""
+       ],
+       "replies": [
+        {
+         "id": "sign",
+         "label": "Go and show the boy the sign. Your turn.",
+         "tone": "kind",
+         "end": "signed"
+        },
+        {
+         "id": "goal",
+         "label": "Take the boy in goal yourself, away from the queue.",
+         "tone": "kind",
+         "end": "goal"
+        },
+        {
+         "id": "leave",
+         "label": "Leave it to his dad.",
+         "tone": "calm",
+         "end": "left"
+        }
+       ]
+      }
+     },
+     "ends": {
+      "signed": [
+       {
+        "text": "You do it badly. The boy laughs at you, then does it properly, slowly, so you can see. Then he takes a penalty and puts it past you.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 10,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "signed-to-my-boy",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "signed"
+         }
+        }
+       }
+      ],
+      "goal": [
+       {
+        "text": "You go in goal on pitch two with just him. He scores eleven. He does a celebration that's clearly yours. His dad films it.",
+        "effects": {
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 2
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "went-in-goal-for-my-boy",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "path": "goal"
+         }
+        }
+       }
+      ],
+      "left": [
+       {
+        "text": "His dad goes over. The boy takes one penalty and goes and sits in the car.",
+        "arc": {
+         "set": {
+          "path": "left"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "choices": [],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     }
+    ]
+   },
+   "hint": "The club's family day"
+  },
+  {
+   "id": "sgl-2-lessons",
+   "title": "A sign a day",
+   "after": {
+    "beat": "sgl-1-familyday",
+    "weeks": [
+     2,
+     4
+    ]
+   },
+   "event": {
+    "id": "arc-sgl-2-lessons",
+    "title": "A sign a day",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "small",
+    "rarity": "follow-up",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "arrive:training"
+     ]
+    },
+    "setup": [
+     "{mate.short} catches you in the canteen. \"He keeps asking when you're coming back. He wants to teach you. Ten minutes after training, a sign a day? He says you're terrible.\""
+    ],
+    "choices": [
+     {
+      "id": "learn",
+      "label": "\"A sign a day. Tell him I'm ready.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "Ten minutes after training on a video call, three weeks. Good morning, well done, pass, and a sign for the referee that his dad pretends not to see.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "my-boy-taught-him-to-sign",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "signs": "learned"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "juggle",
+      "label": "\"Only if I can teach him to juggle.\"",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "A swap: a sign for every keepy-up. By the end he can do eleven and you can say good morning.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "set": {
+          "signs": "some"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "busy",
+      "label": "\"Next week, mate. Promise.\"",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "Next week comes and goes. So does the one after.",
+        "arc": {
+         "set": {
+          "signs": "none"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     }
+    ]
+   },
+   "hint": "Your team-mate has an offer"
+  },
+  {
+   "id": "sgl-3-dinner",
+   "title": "Sunday dinner",
+   "after": {
+    "beat": "sgl-1-familyday",
+    "weeks": [
+     5,
+     10
+    ]
+   },
+   "n": 2,
+   "event": {
+    "id": "arc-sgl-3-dinner",
+    "title": "Sunday dinner",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "home:evening"
+     ]
+    },
+    "setup": [
+     "A text from {mate.short}: \"Sunday dinner at ours. He's made you a card. Don't be late, he's been waiting at the window since Thursday.\""
+    ],
+    "choices": [
+     {
+      "id": "go",
+      "label": "Go for Sunday dinner.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "text": "The card has a drawing of you missing a penalty. All through dinner the boy signs things to his mum and they both laugh, and you've a fair idea who at.",
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 8,
+          "respect": 4
+         }
+        ],
+        "remember": [
+         {
+          "slot": "mate",
+          "tag": "came-to-sunday-dinner",
+          "strength": 3
+         }
+        ],
+        "arc": {
+         "set": {
+          "dinner": "went"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "gift",
+      "label": "Send a ball and say you've got a family thing.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "text": "His dad sends a video of the boy opening it. He signs something to the camera. His dad types underneath: \"He says you still owe him a dinner.\"",
+        "arc": {
+         "set": {
+          "dinner": "gift"
+         }
+        }
+       }
+      ]
+     },
+     {
+      "id": "no",
+      "label": "\"Can't this week.\"",
+      "tone": "cold",
+      "outcomes": [
+       {
+        "text": "\"No worries.\" There's no card, after that.",
+        "arc": {
+         "set": {
+          "dinner": "no"
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     }
+    ]
+   },
+   "hint": "Your team-mate has an invitation"
+  },
+  {
+   "id": "sgl-4-mascot",
+   "title": "The mascot",
+   "after": {
+    "beat": "sgl-3-dinner",
+    "seasons": [
+     1,
+     1
+    ]
+   },
+   "n": 3,
+   "event": {
+    "id": "arc-sgl-4-mascot",
+    "title": "The mascot",
+    "category": "teammates",
+    "place": "training:corridor",
+    "size": "medium",
+    "rarity": "callback",
+    "template": "talk-scene",
+    "screen": "card",
+    "speaker": "mate",
+    "trigger": {
+     "when": [
+      "walkout",
+      "after-match"
+     ]
+    },
+    "setup": [
+     "A season on. {mate.short}'s boy is the mascot, holding your hand in the tunnel, in a kit that comes down to his knees. Twenty minutes in, you score."
+    ],
+    "choices": [
+     {
+      "id": "sign",
+      "label": "Sign the goal to him in the stand.",
+      "tone": "kind",
+      "outcomes": [
+       {
+        "if": "arc.signs=='learned' || arc.signs=='some' || arc.path=='signed'",
+        "text": "You do the sign for goal, the one he taught you, at the front of the family stand. He goes berserk. So does his dad, on the pitch, which he gets booked for.",
+        "effects": {
+         "fans": 3,
+         "team": 2
+        },
+        "npc": [
+         {
+          "slot": "mate",
+          "bond": 6,
+          "respect": 2
+         }
+        ],
+        "arc": {
+         "end": "the-sign-for-goal"
+        }
+       },
+       {
+        "text": "You try. You do the wrong one. He laughs so much his mum has to hold him up, and then he does the right one back.",
+        "effects": {
+         "fans": 2
+        },
+        "arc": {
+         "end": "the-quiet-one"
+        }
+       }
+      ]
+     },
+     {
+      "id": "usual",
+      "label": "Do your usual celebration.",
+      "tone": "calm",
+      "outcomes": [
+       {
+        "if": "arc.signs=='learned'",
+        "text": "At full time he's at the tunnel, signing something very fast. You know enough to know it's rude, and about the referee.",
+        "arc": {
+         "end": "your-words"
+        }
+       },
+       {
+        "if": "arc.path=='goal'",
+        "text": "He does it with you from the stand, exactly, the way he did on pitch two.",
+        "arc": {
+         "end": "your-words"
+        }
+       },
+       {
+        "text": "He claps with everyone else. You wish you'd learned the sign.",
+        "arc": {
+         "end": "the-quiet-one"
+        }
+       }
+      ]
+     }
+    ],
+    "callbacks": [],
+    "cast": [
+     {
+      "slot": "mate",
+      "pick": "squad"
+     }
+    ]
+   },
+   "hint": "A season on, the mascot"
+  }
+ ]
+}
