@@ -17,6 +17,7 @@ import type { DriveEffect } from "@/lib/star/drive3d/events";
 import type { ForkChoice } from "@/lib/star/drive3d/drive";
 import LoadingCurtain from "@/components/star/loading/LoadingCurtain";
 import { afterLoss, newHealState, HEAL_DELAY_MS } from "@/lib/star/three3d/autoHeal";
+import { unlockDriveSound } from "@/lib/star/drive3d/sound";
 
 export interface Drive3DProps {
   options: DriveSceneOptions;
@@ -83,6 +84,7 @@ export default function Drive3D({ options, clean, onDone, onMemory }: Drive3DPro
   // a computer: space = hold, ←/→ = lanes (or steer), C = camera, S = skip
   useEffect(() => {
     const kd = (e: KeyboardEvent) => {
+      unlockDriveSound();
       const c = ctrl.current; if (!c) return;
       if (e.code === "Space") { e.preventDefault(); c.hold(true); }
       if (e.code === "ArrowLeft") { if (options.mode === "lanes") c.tap(-1); else c.side(1); }
@@ -129,7 +131,8 @@ export default function Drive3D({ options, clean, onDone, onMemory }: Drive3DPro
   const driving = ui && (ui.phase === "drive" || ui.phase === "intro");
   const call = ui?.call;
   return (
-    <div style={{ position: "absolute", inset: 0, background: "#0b0d12", overflow: "hidden", fontFamily: "system-ui, sans-serif", userSelect: "none", WebkitUserSelect: "none" }} data-drive3d={state}>
+    // any tap on the drive (the pad, a card, Skip) lets the sound start (browsers and iPhones need one first)
+    <div onPointerDownCapture={unlockDriveSound} style={{ position: "absolute", inset: 0, background: "#0b0d12", overflow: "hidden", fontFamily: "system-ui, sans-serif", userSelect: "none", WebkitUserSelect: "none" }} data-drive3d={state}>
       <div ref={host} style={{ position: "absolute", inset: 0 }} />
       {/* the thumb area: the whole screen under the buttons */}
       {state === "ready" && <div data-drive-pad onPointerDown={onDown} onPointerUp={onUp} onPointerCancel={onUp} style={{ position: "absolute", inset: 0, touchAction: "none" }} />}

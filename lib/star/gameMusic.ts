@@ -21,6 +21,7 @@
  *   full time       03 win · 06 loss · 08 draw
  *   Ballon d'Or     02 while the names are read · 03 you won · 06 not you
  *   cut scenes      nothing (they have their own music)
+ *   the drive       08 lobby, ducked to DRIVE_VOLUME under the engine and the road
  *
  * Quiet on purpose: a match plays at MATCH_VOLUME, under the crowd and the
  * kicks; the match's mute button mutes it too. Loops are gapless (each file
@@ -56,6 +57,8 @@ export const MUSIC_KEY = "star-game-music";
 export const MENU_VOLUME = 0.32;
 export const MATCH_VOLUME = 0.17;
 export const RESULT_VOLUME = 0.34;
+/** Under the drive (lib/star/drive3d/sound.ts): the lobby track, ducked under the engine and the road. */
+export const DRIVE_VOLUME = 0.12;
 const FADE_S = 1.6;
 /**
  * A change of track: the old one fades out fast, and the new one starts only as
@@ -100,6 +103,8 @@ export type MusicScene =
   | { kind: "none" }
   | { kind: "menu"; lastWon: boolean }
   | { kind: "practice" }
+  /** The drive to training and back (lib/star/drive3d/sound.ts): the lobby track, ducked. */
+  | { kind: "drive" }
   | { kind: "match"; state: MatchMusicState }
   | { kind: "full-time"; us: number; them: number }
   /** won: null while the names are still being read out. */
@@ -125,6 +130,7 @@ export function sceneCue(s: MusicScene): CueId | null {
     case "none": return null;
     case "menu": return s.lastWon ? "03-winning" : "08-lobby";
     case "practice": return "02-working-it-out";
+    case "drive": return "08-lobby";
     case "match": return matchCue(s.state);
     case "full-time": return s.us > s.them ? "03-winning" : s.us < s.them ? "06-defeat" : "08-lobby";
     case "ballon-dor": return s.won === null ? "02-working-it-out" : s.won ? "03-winning" : "06-defeat";
@@ -132,6 +138,7 @@ export function sceneCue(s: MusicScene): CueId | null {
 }
 
 export function sceneVolume(s: MusicScene): number {
+  if (s.kind === "drive") return DRIVE_VOLUME;
   return s.kind === "match" || s.kind === "practice" ? MATCH_VOLUME : s.kind === "menu" ? MENU_VOLUME : RESULT_VOLUME;
 }
 
